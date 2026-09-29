@@ -1,0 +1,27 @@
+{
+  "name": "easyimmerse",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": "24.21.0"
+  },
+  "scripts": {
+    "check": "biome check",
+    "check:fix": "biome check --write",
+    "typecheck": "pnpm --recursive typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "pnpm --recursive build",
+    "dev:web": "pnpm --filter @easyimmerse/web dev",
+    "dev:server": "pnpm --filter @easyimmerse/server dev",
+    "dev:native": "pnpm --filter @easyimmerse/native dev",
+    "storybook": "pnpm --filter @easyimmerse/client storybook"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "^24.0.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.2"
+  }
+}

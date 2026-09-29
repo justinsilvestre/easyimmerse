@@ -1,0 +1,18 @@
+node_modules/
+dist/
+coverage/
+storybook-static/
+test-results/
+playwright-report/
+*.tsbuildinfo
+.DS_Store
+
+# Local application data created while developing.
+*.sqlite
+*.sqlite-*
+
+# Tauri build output and generated files.
+apps/native/src-tauri/target/
+apps/native/src-tauri/gen/
+apps/native/src-tauri/binaries/
+apps/native/src-tauri/resources/
