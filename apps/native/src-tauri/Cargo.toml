@@ -1,0 +1,22 @@
+[package]
+name = "easyimmerse"
+version = "0.0.0"
+description = "Learn languages through native media."
+edition = "2021"
+rust-version = "1.85"
+
+[lib]
+name = "easyimmerse_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+dunce = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-shell = "2"

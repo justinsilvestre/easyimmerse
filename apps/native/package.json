@@ -1,0 +1,27 @@
+{
+  "name": "@easyimmerse/native",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "vite build",
+    "build:app": "tauri build",
+    "prepare-sidecar": "node prepareSidecar.ts",
+    "smoke-test": "node smokeTest.ts",
+    "tauri": "tauri",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@easyimmerse/client": "workspace:*",
+    "@tauri-apps/api": "2.12.0"
+  },
+  "devDependencies": {
+    "@easyimmerse/server": "workspace:*",
+    "@tailwindcss/vite": "4.3.3",
+    "@tauri-apps/cli": "2.12.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "tailwindcss": "4.3.3",
+    "vite": "8.3.1"
+  }
+}
