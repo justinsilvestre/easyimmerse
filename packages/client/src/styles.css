@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* The apps import this stylesheet from their own folders, so the location of the class names must be stated. */
+@source ".";
