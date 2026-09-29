@@ -1,0 +1,113 @@
+name: Native apps
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-app:
+    name: Desktop app (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # The two macOS entries cover computers with Apple and Intel processors, respectively.
+        os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the libraries required by Tauri
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev xvfb
+      - uses: ./.github/actions/set-up-workspace
+      - uses: ./.github/actions/set-up-rust
+      - uses: ./.github/actions/install-ffmpeg
+      - name: Build the server
+        run: pnpm --filter @easyimmerse/server build
+      - name: Prepare the server for bundling
+        run: pnpm --filter @easyimmerse/native prepare-sidecar
+      - name: Build the desktop app
+        run: pnpm --filter @easyimmerse/native build:app
+      - name: Run the smoke test
+        if: runner.os != 'Linux'
+        run: pnpm --filter @easyimmerse/native smoke-test
+      - name: Run the smoke test on a virtual display
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum pnpm --filter @easyimmerse/native smoke-test
+      - name: Upload the installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-app-${{ matrix.os }}
+          path: |
+            apps/native/src-tauri/target/release/bundle/**/*.AppImage
+            apps/native/src-tauri/target/release/bundle/**/*.deb
+            apps/native/src-tauri/target/release/bundle/**/*.rpm
+            apps/native/src-tauri/target/release/bundle/**/*.dmg
+            apps/native/src-tauri/target/release/bundle/**/*.msi
+            apps/native/src-tauri/target/release/bundle/**/*.exe
+
+  android-app:
+    name: Android app
+    runs-on: ubuntu-latest
+    env:
+      APK_PATH: apps/native/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Select the Android NDK installed on the runner
+        run: echo "NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/set-up-workspace
+      - uses: ./.github/actions/set-up-rust
+        with:
+          targets: x86_64-linux-android
+      - name: Generate the Android project
+        run: pnpm --filter @easyimmerse/native tauri android init --ci
+      - name: Build the Android app
+        run: pnpm --filter @easyimmerse/native tauri android build --debug --apk --target x86_64 --ci
+      - name: Allow the emulator to use hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run the smoke test on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          script: bash apps/native/smokeTestAndroid.sh "$APK_PATH"
+      - name: Upload the app
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-app
+          path: ${{ env.APK_PATH }}
+
+  ios-app:
+    name: iOS app
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/set-up-workspace
+      - uses: ./.github/actions/set-up-rust
+        with:
+          targets: aarch64-apple-ios-sim
+      - name: Install the tools required by Tauri
+        run: brew install xcodegen cocoapods
+      - name: Generate the Xcode project
+        run: pnpm --filter @easyimmerse/native tauri ios init --ci
+      - name: Build the iOS app for the simulator
+        run: pnpm --filter @easyimmerse/native tauri ios build --debug --target aarch64-sim --no-sign --ci
+      - name: Run the smoke test on a simulator
+        run: bash apps/native/smokeTestIos.sh

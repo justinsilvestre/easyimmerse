@@ -1,0 +1,21 @@
+name: Set up Rust
+description: Installs the Rust toolchain and restores the build cache of the native app.
+
+inputs:
+  targets:
+    description: A comma-separated list of additional build targets to install.
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install the Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ inputs.targets }}
+
+    - name: Restore the build cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: apps/native/src-tauri
+        key: ${{ inputs.targets }}

@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/set-up-workspace
+      - name: Check formatting and lint rules
+        run: pnpm biome ci
+      - name: Check types
+        run: pnpm typecheck
+      - name: Build Storybook
+        run: pnpm --filter @easyimmerse/client build-storybook
+
+  unit-tests:
+    name: Unit tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/set-up-workspace
+      - uses: ./.github/actions/install-ffmpeg
+      # These include the tests of media processing, which use the ffmpeg of the operating system.
+      - name: Run unit tests
+        run: pnpm test
+
+  web-app:
+    name: Web app (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/set-up-workspace
+      - uses: ./.github/actions/install-ffmpeg
+      - name: Build the server and the web app
+        run: pnpm --filter @easyimmerse/server --filter @easyimmerse/web build
+      - name: Install browsers
+        run: pnpm --filter @easyimmerse/web exec playwright install --with-deps
+      - name: Run end-to-end tests
+        run: pnpm --filter @easyimmerse/web test:e2e
+      - name: Upload the test report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-app-test-report-${{ matrix.os }}
+          path: apps/web/playwright-report
+          if-no-files-found: ignore
+
+  browser-extension:
+    name: Browser extension (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/set-up-workspace
+      - uses: ./.github/actions/install-ffmpeg
+      - name: Build the server and the extension
+        run: pnpm --filter @easyimmerse/server --filter @easyimmerse/extension build
+      - name: Check compatibility with Firefox
+        run: pnpm --filter @easyimmerse/extension lint:firefox
+      - name: Install Chromium
+        run: pnpm --filter @easyimmerse/extension exec playwright install --with-deps chromium
+      - name: Run end-to-end tests
+        run: pnpm --filter @easyimmerse/extension test:e2e
+      - name: Upload the extension
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-extension
+          path: apps/extension/dist

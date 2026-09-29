@@ -1,0 +1,24 @@
+name: Set up workspace
+description: Installs Node, pnpm, and the dependencies of all packages.
+
+runs:
+  using: composite
+  steps:
+    - name: Install the tools pinned in mise.toml
+      uses: jdx/mise-action@v3
+
+    - name: Find the pnpm store
+      id: pnpm-store
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore the pnpm store
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
