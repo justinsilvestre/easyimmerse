@@ -1,0 +1,25 @@
+{
+  "name": "@easyimmerse/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./buildApiServer": "./src/buildApiServer.ts",
+    "./contract": "./src/contract.ts",
+    "./database/openDatabase": "./src/database/openDatabase.ts",
+    "./database/sourceMigrationsFolder": "./src/database/sourceMigrationsFolder.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "generate-migrations": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@easyimmerse/media": "workspace:*",
+    "@fastify/cors": "11.3.0",
+    "drizzle-orm": "1.0.0-rc.4",
+    "fastify": "5.12.5"
+  },
+  "devDependencies": {
+    "drizzle-kit": "1.0.0-rc.4"
+  }
+}
