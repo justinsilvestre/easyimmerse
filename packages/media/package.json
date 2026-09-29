@@ -1,0 +1,22 @@
+{
+  "name": "@easyimmerse/media",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./ebooks/readEpubMetadata": "./src/ebooks/readEpubMetadata.ts",
+    "./ffmpeg/captureScreenshot": "./src/ffmpeg/captureScreenshot.ts",
+    "./ffmpeg/clipAudio": "./src/ffmpeg/clipAudio.ts",
+    "./ffmpeg/extractSubtitles": "./src/ffmpeg/extractSubtitles.ts",
+    "./ffmpeg/probeMediaTracks": "./src/ffmpeg/probeMediaTracks.ts",
+    "./ffmpeg/readFfmpegVersion": "./src/ffmpeg/readFfmpegVersion.ts",
+    "./subtitles/parseWebVtt": "./src/subtitles/parseWebVtt.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "fast-xml-parser": "5.11.2",
+    "fflate": "0.8.3"
+  }
+}
