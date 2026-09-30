@@ -4,7 +4,12 @@ name: ffmpeg-macos
 # first-party LGPL macOS build exists. scripts/fetch-ffmpeg/manifest.json pins the
 # resulting assets by hash.
 
+# Push a tag such as `ffmpeg-macos-8.1.2` on any branch to build that ffmpeg version.
+# A tag push runs the workflow file at the tagged commit, so nothing needs to be on the
+# default branch first. Manual dispatch only works once the file is on the default branch.
 on:
+  push:
+    tags: ["ffmpeg-macos-*"]
   workflow_dispatch:
     inputs:
       ffmpeg-version:
@@ -19,10 +24,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Read the ffmpeg version from the input or the tag
+        id: version
+        run: |
+          v="${{ steps.version.outputs.version }}"
+          echo "version=${v:-${GITHUB_REF_NAME#ffmpeg-macos-}}" >> "$GITHUB_OUTPUT"
+
       - name: Download and verify the source
         run: |
           set -eu
-          v="${{ inputs.ffmpeg-version }}"
+          v="${{ steps.version.outputs.version }}"
           curl -fsSLO "https://ffmpeg.org/releases/ffmpeg-$v.tar.xz"
           curl -fsSLO "https://ffmpeg.org/releases/ffmpeg-$v.tar.xz.asc"
           curl -fsSL https://ffmpeg.org/ffmpeg-devel.asc | gpg --import
@@ -36,7 +47,7 @@ jobs:
       - name: Build for both architectures
         run: |
           set -eu
-          v="${{ inputs.ffmpeg-version }}"
+          v="${{ steps.version.outputs.version }}"
           common="--disable-gpl --disable-nonfree --enable-version3 --disable-shared --enable-static \
                   --disable-doc --disable-debug --disable-ffplay --pkg-config-flags=--static"
           mkdir -p out/aarch64-apple-darwin out/x86_64-apple-darwin
@@ -53,7 +64,7 @@ jobs:
       - name: Package
         run: |
           set -eu
-          v="${{ inputs.ffmpeg-version }}"
+          v="${{ steps.version.outputs.version }}"
           cd out
           for triple in aarch64-apple-darwin x86_64-apple-darwin; do
             tar -C "$triple" -cJf "ffmpeg-$v-$triple.tar.xz" ffmpeg ffprobe
@@ -75,6 +86,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          v="${{ inputs.ffmpeg-version }}"
+          v="${{ steps.version.outputs.version }}"
           gh release create "ffmpeg-macos-$v" --title "ffmpeg $v for macOS (LGPL)" --notes-file out/BUILD.md \
             out/*.tar.xz out/SHA256SUMS out/BUILD.md
