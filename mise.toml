@@ -19,6 +19,7 @@ run = [
   "pnpm biome ci .",
   "pnpm -r typecheck",
   "pnpm -r test",
+  "node --test scripts/",
   "cargo fmt --all --check",
   "cargo fmt --manifest-path plugins/Cargo.toml --all --check",
   "cargo clippy --workspace --exclude easyimmerse-native --all-targets -- -D warnings",

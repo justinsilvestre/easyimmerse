@@ -4,18 +4,44 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { ReadableStream } from "node:stream/web";
 
+import {
+  findGitHubToken,
+  parseGitHubReleaseUrl,
+  resolveAssetApiUrl,
+} from "./githubReleaseAsset.ts";
+
 export async function downloadToFile(
   url: string,
   destination: string,
 ): Promise<void> {
-  const response = await fetch(url);
+  const request = await resolveRequest(url);
+  const response = await fetch(request.url, { headers: request.headers });
   if (!response.ok || !response.body) {
-    throw new Error(`download failed: ${response.status} ${url}`);
+    throw new Error(`download failed: ${response.status} ${request.url}`);
   }
   await pipeline(
     Readable.fromWeb(response.body as ReadableStream),
     createWriteStream(destination),
   );
+}
+
+/**
+ * GitHub release assets in private repositories are served only through the API, so a
+ * release download URL is rewritten to its API form whenever a token is available.
+ */
+async function resolveRequest(
+  url: string,
+): Promise<{ url: string; headers: Record<string, string> }> {
+  const asset = parseGitHubReleaseUrl(url);
+  const token = asset && findGitHubToken();
+  if (!asset || !token) return { url, headers: {} };
+  return {
+    url: await resolveAssetApiUrl(asset, token),
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/octet-stream",
+    },
+  };
 }
 
 export async function sha256OfFile(path: string): Promise<string> {

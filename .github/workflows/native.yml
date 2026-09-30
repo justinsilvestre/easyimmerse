@@ -56,6 +56,8 @@ jobs:
 
       - name: Fetch the ffmpeg sidecar
         run: mise run fetch-ffmpeg
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Debug build without bundling
         run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle
