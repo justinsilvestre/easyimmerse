@@ -1,5 +1,4 @@
-# Architecture notes are kept out of the repository on purpose.
-docs/architecture.md
+docs/*.tmp.md
 
 # Local overrides
 .env
