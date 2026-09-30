@@ -33,9 +33,11 @@ The media routes will call `ffmpeg` and `ffprobe` sidecar binaries. `mise run fe
 
 ## Mobile
 
-`gen/android` and `gen/apple` are gitignored for now. CI creates them with `tauri android init --ci` and `tauri ios init --ci` and builds a debug APK and an unsigned iOS simulator build.
+`gen/android` and `gen/apple` are gitignored for now. CI creates them with `tauri android init --ci` and `tauri ios init --ci`, builds a debug APK, and builds an unsigned iOS simulator app with `tauri ios build --no-sign`. Building through the Tauri CLI is required: the generated Xcode project's build phase asks a server started by `tauri ios build` for its options, so a direct `xcodebuild` fails.
 
-Before mobile can load the app, the generated projects need two changes, after which `gen/` should be committed:
+Building proves the projects compile. Loading the app at runtime needs plain HTTP to the embedded server at 127.0.0.1, which both platforms restrict:
 
-- Android: a `network_security_config` that allows cleartext traffic to `127.0.0.1`.
-- iOS: `NSAllowsLocalNetworking` in `Info.plist`.
+- Android allows cleartext traffic in debug builds already; the generated Gradle file sets the `usesCleartextTraffic` placeholder to true for debug and false for release. Release builds need a network security config that permits cleartext for 127.0.0.1 only. That file lives inside `gen/android`, so commit `gen/android` when adding it.
+- iOS App Transport Security blocks `http://127.0.0.1` inside WKWebView, and an IP address cannot be an exception domain. Add the exception to `Info.ios.plist` in this directory, which Tauri merges into the generated project on every build, so `gen/apple` can stay uncommitted. Either allow web content loads with `NSAllowsArbitraryLoadsInWebContent`, or set `NSAllowsLocalNetworking` and have the app use `http://localhost:<port>` with `localhost` added to the server's expected hosts.
+
+Neither change has been tried on a device or simulator yet.
