@@ -19,8 +19,8 @@ pub fn built_plugin_dir(name: &str) -> PathBuf {
     dir
 }
 
-/// The `bin/<target>/` directory in a plugin's source tree. The build script
-/// does not copy `bin/` into `dist/`, so the tests grant this directory instead.
+/// The `bin/<target>/` directory in a plugin's source tree, granted to the plugin
+/// under test.
 pub fn source_bin_dir(name: &str) -> Option<PathBuf> {
     let target = easyimmerse_plugins::current_target_name()?;
     let dir = repo_root()

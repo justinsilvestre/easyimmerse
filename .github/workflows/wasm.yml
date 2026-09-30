@@ -33,6 +33,11 @@ on:
       - "packages/**"
       - "fixtures/**"
 
+# A newer push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   wasm:
     runs-on: ubuntu-latest
