@@ -14,13 +14,6 @@ runs:
         cache: true
         install: true
 
-    # mise-action trusts the config through an environment variable, which does not reach
-    # subprocesses with a rebuilt environment such as Xcode build phases. Trusting on disk
-    # does, but only when that variable is unset, or mise sees nothing left to trust.
-    - name: Trust the Mise configuration on disk
-      shell: bash
-      run: env -u MISE_TRUSTED_CONFIG_PATHS mise trust
-
     # Mise installs the toolchain through rustup but does not add the components and
     # targets that rust-toolchain.toml lists, so they are installed here.
     - name: Install the Rust components and cross-compilation targets
