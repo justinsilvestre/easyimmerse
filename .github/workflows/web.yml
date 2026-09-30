@@ -2,8 +2,40 @@ name: web
 
 on:
   pull_request:
+    paths:
+      - ".github/workflows/web.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "apps/web/**"
+      - "packages/**"
+      - "crates/**"
+      - "apps/server/**"
+      - "fixtures/**"
   push:
     branches: [main]
+    paths:
+      - ".github/workflows/web.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "apps/web/**"
+      - "packages/**"
+      - "crates/**"
+      - "apps/server/**"
+      - "fixtures/**"
 
 jobs:
   web:
