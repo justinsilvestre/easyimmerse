@@ -1,0 +1,22 @@
+name: wasm
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Build the WebAssembly module
+        run: mise run wasm:build
+
+      - name: Node tests against the fixtures
+        run: pnpm --filter @easyimmerse/wasm test
+
+      - name: Backend package tests
+        run: pnpm --filter @easyimmerse/backend test

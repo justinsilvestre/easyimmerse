@@ -1,0 +1,5 @@
+name = "hello-loop"
+version = "0.1.0"
+kind = "hello"
+interface_version = "0.1.0"
+allowed_hosts = []

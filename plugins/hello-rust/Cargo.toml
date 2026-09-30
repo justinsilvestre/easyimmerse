@@ -1,0 +1,12 @@
+[package]
+name = "hello-rust"
+description = "A test plugin that greets by name and logs through the host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen.workspace = true

@@ -1,0 +1,12 @@
+[package]
+name = "hello-loop"
+description = "A test plugin whose every export loops forever, for the host's fuel-limit test"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen.workspace = true

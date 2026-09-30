@@ -1,0 +1,30 @@
+# Architecture notes are kept out of the repository on purpose.
+docs/architecture.md
+
+# Local overrides
+.env
+
+# Rust
+target/
+
+# Node
+node_modules/
+dist/
+.output/
+.wxt/
+
+# Generated at build time
+packages/wasm/pkg/
+plugins/*/dist/
+apps/native/src-tauri/binaries/
+apps/native/src-tauri/gen/
+
+# Test output
+playwright-report/
+test-results/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

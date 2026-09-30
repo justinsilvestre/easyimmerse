@@ -1,0 +1,28 @@
+name: rust
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Format
+        run: |
+          cargo fmt --all --check
+          cargo fmt --manifest-path plugins/Cargo.toml --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --exclude easyimmerse-native --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test

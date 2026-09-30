@@ -1,0 +1,62 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "apps/server", "apps/native/src-tauri"]
+default-members = ["crates/*", "apps/server"]
+exclude = ["plugins"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "AGPL-3.0-only"
+repository = "https://github.com/justinsilvestre/easyimmerse"
+rust-version = "1.98"
+
+[workspace.dependencies]
+easyimmerse-core = { path = "crates/core" }
+easyimmerse-media = { path = "crates/media" }
+easyimmerse-media-ffmpeg = { path = "crates/media-ffmpeg" }
+easyimmerse-storage = { path = "crates/storage" }
+easyimmerse-plugin-api = { path = "crates/plugin-api" }
+easyimmerse-plugins = { path = "crates/plugins" }
+easyimmerse-api = { path = "crates/api" }
+
+anyhow = "1.0"
+axum = "0.8"
+base64 = "0.22"
+clap = { version = "4.6", features = ["derive", "env"] }
+hex = "0.4"
+matroska = "0.30"
+mp4 = "0.14"
+rand = "0.10"
+roxmltree = "0.21"
+rusqlite = { version = "0.40", features = ["bundled"] }
+rusqlite_migration = "2.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.11"
+tauri = "2.12"
+tauri-build = "2.7"
+tauri-plugin-clipboard-manager = "2.4"
+tauri-plugin-dialog = "2.8"
+tauri-plugin-notification = "2.5"
+tauri-plugin-opener = "2.7"
+tempfile = "3.27"
+thiserror = "2.0"
+tiny_http = "0.12"
+tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "net", "fs", "signal", "sync"] }
+toml = "1.1"
+tower = "0.5"
+tower-http = { version = "0.7", features = ["cors", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+ts-rs = { version = "12.0", features = ["serde-compat", "no-serde-warnings"] }
+ureq = "3.4"
+utoipa = { version = "6.0", features = ["axum_extras"] }
+utoipa-axum = "0.3"
+wasm-bindgen = "0.2"
+wasmtime = { version = "49.0", default-features = false, features = ["runtime", "cranelift", "component-model", "std", "wat"] }
+wasmtime-wasi = "49.0"
+zip = { version = "8.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+
+[profile.release]
+strip = true

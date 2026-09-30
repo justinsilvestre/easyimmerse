@@ -1,0 +1,36 @@
+name: web
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Build the server and the WebAssembly module
+        run: |
+          cargo build -p easyimmerse-server
+          mise run wasm:build
+
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(pnpm --filter @easyimmerse/web exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium
+        run: pnpm --filter @easyimmerse/web exec playwright install --with-deps chromium
+
+      - name: Build the web app
+        run: pnpm --filter @easyimmerse/web build
+
+      - name: Playwright smoke test
+        run: pnpm --filter @easyimmerse/web e2e

@@ -1,0 +1,23 @@
+{
+  "name": "@easyimmerse/config",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.react.json": "./tsconfig.react.json",
+    "./vitest": "./src/createVitestConfig.ts",
+    "./vite-plugins": "./src/sharedVitePlugins.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}

@@ -1,0 +1,19 @@
+[package]
+name = "easyimmerse-media"
+description = "Pure-Rust media handling: container metadata, embedded subtitles, and waveform peaks"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+easyimmerse-core = { workspace = true }
+matroska = { workspace = true }
+mp4 = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+ts-rs = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

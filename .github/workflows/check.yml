@@ -1,0 +1,30 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Biome
+        run: pnpm biome ci .
+
+      - name: Regenerate types and OpenAPI document
+        run: |
+          mise run typegen
+          mise run openapi
+
+      - name: Fail when generated files are stale
+        run: git diff --exit-code -- packages/types crates/api/openapi.json
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Vitest
+        run: pnpm -r --filter '!@easyimmerse/wasm' test

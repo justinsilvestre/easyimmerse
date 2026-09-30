@@ -1,0 +1,8 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Exports used only by the host tests.
+interface hello {
+    greet: func(name: string) -> string;
+    /// Never returns. The host tests use it to check the fuel limit.
+    loop-forever: func();
+}

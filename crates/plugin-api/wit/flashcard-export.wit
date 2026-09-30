@@ -1,0 +1,13 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Write flashcards in a format the core does not support.
+interface flashcard-export {
+    use types.{plugin-error};
+
+    /// A flashcard as a list of named fields, in order.
+    record flashcard {
+        fields: list<tuple<string, string>>,
+    }
+
+    %export: func(cards: list<flashcard>, output-path: string) -> result<_, plugin-error>;
+}

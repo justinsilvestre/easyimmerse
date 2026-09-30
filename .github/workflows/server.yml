@@ -1,0 +1,32 @@
+name: server
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Build
+        run: cargo build -p easyimmerse-server --release
+
+      - name: Start and probe
+        run: |
+          target/release/easyimmerse-server serve --token ci --seed-placeholders &
+          for _ in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:8787/health && break
+            sleep 0.2
+          done
+          curl -fsS http://127.0.0.1:8787/health | grep -q '"status":"ok"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/projects)" = 401
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: evil.test' http://127.0.0.1:8787/health)" = 421
+          curl -fsS -H 'Authorization: Bearer ci' http://127.0.0.1:8787/projects | grep -q placeholder-1
+          kill %1
+
+      - name: API integration tests
+        run: cargo test -p easyimmerse-api -p easyimmerse-storage

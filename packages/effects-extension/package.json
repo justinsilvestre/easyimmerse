@@ -1,0 +1,23 @@
+{
+  "name": "@easyimmerse/effects-extension",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@easyimmerse/effects-web": "workspace:*",
+    "@easyimmerse/state": "workspace:*",
+    "@wxt-dev/browser": "^0.3.4"
+  },
+  "devDependencies": {
+    "@easyimmerse/config": "workspace:*",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.2"
+  }
+}

@@ -1,0 +1,33 @@
+[package]
+name = "easyimmerse-api"
+description = "The axum router, authentication, OpenAPI document, and server lifecycle of easyimmerse"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[features]
+# Enables the plugin host. The dependency on `easyimmerse-plugins` is wired in once that
+# crate lands; until then the feature is an empty placeholder.
+plugins = []
+
+[dependencies]
+axum = { workspace = true }
+easyimmerse-core = { workspace = true }
+easyimmerse-storage = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tower-http = { workspace = true }
+tracing = { workspace = true }
+ts-rs = { workspace = true }
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
+
+[dev-dependencies]
+hex = { workspace = true }
+rand = { workspace = true }
+tower = { workspace = true }
+ureq = { workspace = true }

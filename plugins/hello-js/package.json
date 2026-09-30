@@ -1,0 +1,12 @@
+{
+  "name": "@easyimmerse/plugin-hello-js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "mkdir -p dist && jco componentize src/plugin.js --wit ../../crates/plugin-api/wit --world-name hello-plugin --disable all -o dist/plugin.wasm && cp plugin.toml dist/plugin.toml"
+  },
+  "devDependencies": {
+    "@bytecodealliance/componentize-js": "^0.22.0",
+    "@bytecodealliance/jco": "^1.35.0"
+  }
+}

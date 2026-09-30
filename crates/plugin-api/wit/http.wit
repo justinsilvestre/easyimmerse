@@ -1,0 +1,13 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Outbound HTTP requests. The host allows only hosts listed in the plugin manifest.
+interface http {
+    use types.{plugin-error};
+
+    record http-response {
+        status: u16,
+        body: list<u8>,
+    }
+
+    get: func(url: string) -> result<http-response, plugin-error>;
+}

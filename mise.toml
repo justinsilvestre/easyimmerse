@@ -1,0 +1,78 @@
+[tools]
+node = "24.21.0"
+pnpm = "12.8.1"
+rust = "1.98.1"
+cargo-binstall = "1.24.0"
+"cargo:wasm-pack" = "0.15.0"
+"cargo:wasm-tools" = "1.259.0"
+
+[settings]
+# Let the cargo backend fetch prebuilt binaries instead of compiling them.
+cargo.binstall = true
+
+[env]
+_.file = ".env"
+
+[tasks.check]
+description = "Lint, typecheck, and test every layer"
+run = [
+  "pnpm biome ci .",
+  "pnpm -r typecheck",
+  "pnpm -r test",
+  "cargo fmt --all --check",
+  "cargo fmt --manifest-path plugins/Cargo.toml --all --check",
+  "cargo clippy --workspace --exclude easyimmerse-native --all-targets -- -D warnings",
+  "cargo test",
+]
+
+[tasks.typegen]
+description = "Regenerate packages/types/src/generated from Rust with ts-rs"
+run = [
+  "rm -rf packages/types/src/generated",
+  "cargo test --workspace --exclude easyimmerse-native export_bindings",
+  "node packages/types/scripts/writeGeneratedIndex.ts",
+]
+sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
+
+[tasks.openapi]
+description = "Regenerate crates/api/openapi.json and its TypeScript schema"
+run = [
+  "cargo run -p easyimmerse-server -- openapi --out crates/api/openapi.json",
+  "pnpm --filter @easyimmerse/types generate:openapi",
+]
+sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
+
+[tasks.watch]
+description = "Rerun type generation whenever Rust files change"
+run = "mise watch typegen openapi"
+
+[tasks."wasm:build"]
+description = "Build the offline WebAssembly module into packages/wasm/pkg"
+run = "wasm-pack build crates/wasm --target web --out-dir ../../packages/wasm/pkg --out-name easyimmerse_wasm"
+
+[tasks."plugins:build"]
+description = "Build every example plugin to a WebAssembly component"
+depends = ["plugins:build-rust", "plugins:build-js"]
+
+[tasks."plugins:build-rust"]
+run = "node plugins/build-rust.ts"
+
+[tasks."plugins:build-js"]
+run = "pnpm --filter @easyimmerse/plugin-hello-js build"
+
+[tasks."fetch-ffmpeg"]
+description = "Download the ffmpeg sidecar binaries for the current platform"
+run = "node scripts/fetch-ffmpeg/index.ts"
+
+[tasks."fixtures:media"]
+description = "Regenerate the media fixtures with ffmpeg"
+run = "sh fixtures/generate-media.sh"
+
+[tasks.e2e]
+description = "Run the browser end-to-end tests"
+depends = ["wasm:build"]
+run = [
+  "cargo build -p easyimmerse-server",
+  "pnpm --filter @easyimmerse/web e2e",
+  "pnpm --filter @easyimmerse/extension e2e",
+]

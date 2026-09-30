@@ -1,0 +1,15 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Running executables. The host allows only executables bundled with the plugin
+/// or configured by the user.
+interface run-command {
+    use types.{plugin-error};
+
+    record command-output {
+        exit-code: s32,
+        stdout: string,
+        stderr: string,
+    }
+
+    run: func(command: string, args: list<string>) -> result<command-output, plugin-error>;
+}

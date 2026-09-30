@@ -1,0 +1,162 @@
+import { describe, expect, it } from "vitest";
+import { actions } from "./actions.ts";
+import type { AppState } from "./appState.ts";
+import { initialAppState } from "./appState.ts";
+import type { PickedFile } from "./effects.ts";
+import { update } from "./update.ts";
+
+const pickedFile: PickedFile = {
+  name: "episode.srt",
+  source: { kind: "inline", text: "1\n00:00:01,000 --> 00:00:02,000\nHello" },
+};
+
+const withPreference = (value: string): AppState => ({
+  ...initialAppState,
+  preferences: { showTranslations: value },
+});
+
+describe("update", () => {
+  it("leaves state unchanged for seekRequested", () => {
+    const [state] = update(initialAppState, actions.seekRequested(12.5));
+    expect(state).toBe(initialAppState);
+  });
+
+  it("returns a seekPlayer effect for seekRequested", () => {
+    const [, effects] = update(initialAppState, actions.seekRequested(12.5));
+    expect(effects).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);
+  });
+
+  it("stores the current time for playerTimeChanged", () => {
+    const [state] = update(initialAppState, actions.playerTimeChanged(3));
+    expect(state.player.currentTimeSeconds).toBe(3);
+  });
+
+  it("returns no effects for playerTimeChanged", () => {
+    const [, effects] = update(initialAppState, actions.playerTimeChanged(3));
+    expect(effects).toEqual([]);
+  });
+
+  it("marks a file pick as pending for filePickRequested", () => {
+    const [state] = update(initialAppState, actions.filePickRequested());
+    expect(state.pendingFilePick).toBe(true);
+  });
+
+  it("returns a pickFile effect accepting subtitle files for filePickRequested", () => {
+    const [, effects] = update(initialAppState, actions.filePickRequested());
+    expect(effects).toEqual([{ type: "pickFile", accept: [".srt", ".vtt"] }]);
+  });
+
+  it("clears the pending file pick for fileChosen", () => {
+    const pending = { ...initialAppState, pendingFilePick: true };
+    const [state] = update(pending, actions.fileChosen(pickedFile));
+    expect(state.pendingFilePick).toBe(false);
+  });
+
+  it("stores the chosen file's source as the subtitle source for fileChosen", () => {
+    const [state] = update(initialAppState, actions.fileChosen(pickedFile));
+    expect(state.subtitleSource).toEqual(pickedFile.source);
+  });
+
+  it("clears the pending file pick for filePickCancelled", () => {
+    const pending = { ...initialAppState, pendingFilePick: true };
+    const [state] = update(pending, actions.filePickCancelled());
+    expect(state.pendingFilePick).toBe(false);
+  });
+
+  it("turns an unset preference on for preferenceToggled", () => {
+    const [state] = update(
+      initialAppState,
+      actions.preferenceToggled("showTranslations"),
+    );
+    expect(state.preferences.showTranslations).toBe("true");
+  });
+
+  it("turns a preference that is on off for preferenceToggled", () => {
+    const [state] = update(
+      withPreference("true"),
+      actions.preferenceToggled("showTranslations"),
+    );
+    expect(state.preferences.showTranslations).toBe("false");
+  });
+
+  it("returns a savePreference effect with the new value for preferenceToggled", () => {
+    const [, effects] = update(
+      withPreference("true"),
+      actions.preferenceToggled("showTranslations"),
+    );
+    expect(effects).toEqual([
+      { type: "savePreference", key: "showTranslations", value: "false" },
+    ]);
+  });
+
+  it("returns a loadPreference effect for every preference key for preferencesLoadRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.preferencesLoadRequested(),
+    );
+    expect(effects).toEqual([
+      { type: "loadPreference", key: "showTranslations" },
+    ]);
+  });
+
+  it("stores the loaded value for preferenceLoaded", () => {
+    const [state] = update(
+      initialAppState,
+      actions.preferenceLoaded("showTranslations", "true"),
+    );
+    expect(state.preferences.showTranslations).toBe("true");
+  });
+
+  it("leaves state unchanged when preferenceLoaded carries null", () => {
+    const [state] = update(
+      initialAppState,
+      actions.preferenceLoaded("showTranslations", null),
+    );
+    expect(state).toBe(initialAppState);
+  });
+
+  it("returns a showNotification effect for notificationRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.notificationRequested("Saved"),
+    );
+    expect(effects).toEqual([{ type: "showNotification", message: "Saved" }]);
+  });
+
+  it("returns two effects for cueCopyRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.cueCopyRequested("Hello"),
+    );
+    expect(effects).toHaveLength(2);
+  });
+
+  it("returns a copyToClipboard effect first for cueCopyRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.cueCopyRequested("Hello"),
+    );
+    expect(effects[0]).toEqual({ type: "copyToClipboard", text: "Hello" });
+  });
+
+  it("returns a confirmation notification second for cueCopyRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.cueCopyRequested("Hello"),
+    );
+    expect(effects[1]).toEqual({
+      type: "showNotification",
+      message: "Copied to clipboard",
+    });
+  });
+
+  it("returns an openExternalUrl effect for externalLinkRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.externalLinkRequested("https://example.com"),
+    );
+    expect(effects).toEqual([
+      { type: "openExternalUrl", url: "https://example.com" },
+    ]);
+  });
+});

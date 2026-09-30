@@ -1,0 +1,42 @@
+name: extension
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Build the server and the WebAssembly module
+        run: |
+          cargo build -p easyimmerse-server
+          mise run wasm:build
+
+      - name: Chrome build
+        run: pnpm --filter @easyimmerse/extension build
+
+      - name: Firefox build
+        run: pnpm --filter @easyimmerse/extension build:firefox
+
+      - name: Firefox manifest lint
+        run: pnpm --filter @easyimmerse/extension lint:firefox
+
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(pnpm --filter @easyimmerse/extension exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium
+        run: pnpm --filter @easyimmerse/extension exec playwright install --with-deps chromium
+
+      - name: Playwright smoke test
+        run: xvfb-run --auto-servernum pnpm --filter @easyimmerse/extension e2e

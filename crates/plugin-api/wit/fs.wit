@@ -1,0 +1,9 @@
+package easyimmerse:plugin@0.1.0;
+
+/// File access limited to the directories the host has granted.
+interface fs {
+    use types.{plugin-error};
+
+    read-file: func(path: string) -> result<list<u8>, plugin-error>;
+    write-file: func(path: string, contents: list<u8>) -> result<_, plugin-error>;
+}

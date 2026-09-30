@@ -1,0 +1,8 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Translate text between languages.
+interface translation {
+    use types.{language, plugin-error};
+
+    translate: func(text: string, source-language: option<language>, target-language: language) -> result<string, plugin-error>;
+}
