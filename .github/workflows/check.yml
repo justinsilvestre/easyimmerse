@@ -2,8 +2,16 @@ name: check
 
 on:
   pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
 
 jobs:
   check:
@@ -22,6 +30,9 @@ jobs:
 
       - name: Fail when generated files are stale
         run: git diff --exit-code -- packages/types crates/api/openapi.json
+
+      - name: Build the WebAssembly module the wasm package imports
+        run: mise run wasm:build
 
       - name: Typecheck
         run: pnpm -r typecheck
