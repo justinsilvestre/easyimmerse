@@ -30,6 +30,9 @@ jobs:
           shasum -a 256 "ffmpeg-$v.tar.xz" > source-sha256.txt
           tar xf "ffmpeg-$v.tar.xz"
 
+      - name: Install the x86_64 assembler
+        run: brew install nasm
+
       - name: Build for both architectures
         run: |
           set -eu
