@@ -27,7 +27,7 @@ jobs:
       - name: Read the ffmpeg version from the input or the tag
         id: version
         run: |
-          v="${{ steps.version.outputs.version }}"
+          v="${{ inputs.ffmpeg-version }}"
           echo "version=${v:-${GITHUB_REF_NAME#ffmpeg-macos-}}" >> "$GITHUB_OUTPUT"
 
       - name: Download and verify the source
