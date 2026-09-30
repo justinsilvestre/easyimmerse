@@ -29,12 +29,12 @@ export function readManifestEntry(triple: string): ManifestEntry {
       `no ffmpeg build is listed for ${triple} (known: ${known})`,
     );
   }
-  if (entry.sha256.startsWith("TODO")) {
-    throw new Error(
-      `the ffmpeg build for ${triple} has no hash yet: ${entry.sha256}`,
-    );
-  }
   return entry;
+}
+
+/** Entries whose hash is still a TODO string cannot be verified, so they are skipped. */
+export function hasVerifiedHash(entry: ManifestEntry): boolean {
+  return !entry.sha256.startsWith("TODO");
 }
 
 /** Asks rustc for the target triple of the machine running this script. */

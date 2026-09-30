@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { downloadToFile, verifySha256 } from "./download.ts";
 import { extractArchive } from "./extract.ts";
 import {
+  hasVerifiedHash,
   hostTriple,
   type ManifestEntry,
   readManifestEntry,
@@ -43,6 +44,10 @@ async function main(args: string[]): Promise<void> {
     return;
   }
   const entry = readManifestEntry(triple);
+  if (!hasVerifiedHash(entry)) {
+    console.warn(`skipping ffmpeg for ${triple}: ${entry.sha256}`);
+    return;
+  }
   await fetchIntoOutputDir(entry, triple);
   printPaths(outputs);
 }
