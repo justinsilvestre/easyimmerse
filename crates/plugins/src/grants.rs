@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
 
 use crate::error::PluginError;
@@ -11,6 +12,9 @@ pub struct CapabilityGrants {
     pub granted_dirs: Vec<PathBuf>,
     /// The directory holding the executables the `run-command` import may run.
     pub bundled_bin_dir: Option<PathBuf>,
+    /// The values the user entered for the settings the manifest declares, keyed by setting key.
+    /// The plugin reads them through the `secrets` import.
+    pub setting_values: HashMap<String, String>,
 }
 
 impl CapabilityGrants {

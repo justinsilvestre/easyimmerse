@@ -43,14 +43,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-15, windows-2025]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
 
       - name: Format
-        run: |
+        run: cargo fmt --all --check
+|
           cargo fmt --all --check
           cargo fmt --manifest-path plugins/Cargo.toml --all --check
 

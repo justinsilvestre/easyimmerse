@@ -44,6 +44,19 @@ describe("effectsMiddleware", () => {
     });
   });
 
+  it("dispatches filePickCancelled once the file pick fails", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.filePickRequested());
+    effects.rejectPickFile(new Error("dialog unavailable"));
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.filePickCancelled(),
+      );
+    });
+  });
+
   it("dispatches preferenceLoaded after preferencesLoadRequested", async () => {
     const effects = createRecordingEffects();
     effects.preferences.set("showTranslations", "true");

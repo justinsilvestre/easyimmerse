@@ -21,7 +21,7 @@ export function runEffect(
             file ? actions.fileChosen(file) : actions.filePickCancelled(),
           ),
         )
-        .catch(ignoreFailure);
+        .catch(() => dispatch(actions.filePickCancelled()));
       return;
     case "savePreference":
       effects.savePreference(effect.key, effect.value).catch(ignoreFailure);
@@ -44,5 +44,5 @@ export function runEffect(
   }
 }
 
-/** Rejections are dropped for now. Reporting errors to the user is a later effect. */
+/** Rejections other than a failed file pick are dropped for now. Reporting errors to the user is a later effect. */
 function ignoreFailure(): void {}

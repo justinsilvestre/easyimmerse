@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use easyimmerse_core::providers::media_source::ProgressEvent;
 use wasmtime::StoreLimits;
 use wasmtime::component::ResourceTable;
@@ -16,7 +14,6 @@ pub struct HostState {
     pub grants: CapabilityGrants,
     pub log: Vec<LogEntry>,
     pub progress: Vec<ProgressEvent>,
-    pub secrets: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,7 +31,7 @@ pub enum LogLevel {
 
 impl HostState {
     /// Builds a state whose WASI context inherits nothing from the host process.
-    pub fn new(grants: CapabilityGrants, secrets: HashMap<String, String>) -> Self {
+    pub fn new(grants: CapabilityGrants) -> Self {
         Self {
             wasi: WasiCtxBuilder::new().build(),
             table: ResourceTable::new(),
@@ -42,7 +39,6 @@ impl HostState {
             grants,
             log: Vec::new(),
             progress: Vec::new(),
-            secrets,
         }
     }
 

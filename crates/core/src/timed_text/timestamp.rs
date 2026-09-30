@@ -6,17 +6,25 @@ pub fn parse_timestamp(text: &str) -> Result<u64, TimedTextError> {
     let (clock, fraction) = text.rsplit_once([',', '.']).ok_or_else(invalid)?;
     let millis = parse_millis(fraction).ok_or_else(invalid)?;
     let seconds = parse_clock(clock).ok_or_else(invalid)?;
-    Ok(seconds * 1_000 + millis)
+    seconds
+        .checked_mul(1_000)
+        .and_then(|value| value.checked_add(millis))
+        .ok_or_else(invalid)
 }
 
+/// Returns `None` when a field is not a number or the total does not fit in a `u64`.
 fn parse_clock(clock: &str) -> Option<u64> {
     let parts: Vec<u64> = clock
         .split(':')
         .map(|part| part.parse().ok())
         .collect::<Option<_>>()?;
     match parts[..] {
-        [minutes, seconds] => Some(minutes * 60 + seconds),
-        [hours, minutes, seconds] => Some((hours * 60 + minutes) * 60 + seconds),
+        [minutes, seconds] => minutes.checked_mul(60)?.checked_add(seconds),
+        [hours, minutes, seconds] => hours
+            .checked_mul(60)?
+            .checked_add(minutes)?
+            .checked_mul(60)?
+            .checked_add(seconds),
         _ => None,
     }
 }
@@ -71,6 +79,15 @@ mod tests {
     #[test]
     fn rejects_a_timestamp_with_non_numeric_parts() {
         assert!(parse_timestamp("00:xx:01.000").is_err());
+    }
+
+    #[test]
+    fn rejects_a_timestamp_whose_hours_overflow() {
+        let text = format!("{}:00:00.000", u64::MAX);
+        assert_eq!(
+            parse_timestamp(&text),
+            Err(TimedTextError::InvalidTimestamp(text.clone()))
+        );
     }
 
     #[test]

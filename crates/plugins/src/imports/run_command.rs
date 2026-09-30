@@ -27,20 +27,21 @@ fn run_executable(executable: &Path, args: &[String]) -> std::io::Result<Output>
     build_command(executable).args(args).output()
 }
 
-/// Runs scripts through their interpreter, so that the bundled file needs no
-/// execute permission on Unix and `.cmd` files run on Windows.
+/// Runs shell scripts through `sh`, so that the bundled file needs no execute permission on Unix.
+/// Batch files are handed to the standard library directly:
+/// it starts them through `cmd.exe` itself and escapes each argument for that interpreter,
+/// refusing arguments it cannot escape safely.
 fn build_command(executable: &Path) -> Command {
     let extension = executable.extension().and_then(|ext| ext.to_str());
     match extension {
-        Some("sh") => script_command("sh", &[], executable),
-        Some("cmd" | "bat") => script_command("cmd", &["/C"], executable),
+        Some("sh") => script_command("sh", executable),
         _ => Command::new(executable),
     }
 }
 
-fn script_command(interpreter: &str, flags: &[&str], script: &Path) -> Command {
+fn script_command(interpreter: &str, script: &Path) -> Command {
     let mut command = Command::new(interpreter);
-    command.args(flags).arg(script);
+    command.arg(script);
     command
 }
 

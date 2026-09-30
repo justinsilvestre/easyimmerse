@@ -26,6 +26,7 @@ impl Fixture {
                 .bin_dir
                 .clone()
                 .or_else(|| support::source_bin_dir("fixture-media-source")),
+            ..CapabilityGrants::default()
         };
         let plugin = MediaSourcePlugin::load(
             &package,

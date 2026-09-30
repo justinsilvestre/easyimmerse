@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use wasmtime::component::{Component, Linker};
 use wasmtime::{Engine, Store};
 
@@ -39,7 +37,7 @@ impl CompiledPlugin {
         grants: CapabilityGrants,
         limits: &HostLimits,
     ) -> Result<Store<HostState>, PluginError> {
-        let mut store = Store::new(&self.engine, HostState::new(grants, HashMap::new()));
+        let mut store = Store::new(&self.engine, HostState::new(grants));
         apply_limits(&mut store, limits)?;
         Ok(store)
     }

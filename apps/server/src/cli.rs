@@ -37,6 +37,10 @@ pub struct ServeArgs {
     /// Inserts two example projects into an empty database.
     #[arg(long)]
     pub seed_placeholders: bool,
+    /// A `Host` header value clients will send, such as `192.168.1.5:8787`. Needed when the
+    /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
+    #[arg(long = "expected-host")]
+    pub expected_hosts: Vec<String>,
 }
 
 #[derive(Debug, Args)]

@@ -13,4 +13,8 @@ describe("formatPlayerTime", () => {
   it("carries whole minutes into the minute field", () => {
     expect(formatPlayerTime(125.2)).toBe("2:05.2");
   });
+
+  it("carries a rounded-up second into the minute field", () => {
+    expect(formatPlayerTime(59.96)).toBe("1:00.0");
+  });
 });

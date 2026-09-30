@@ -54,16 +54,31 @@ fn parse_style_box_body(body: &[u8]) -> impl Iterator<Item = StyleRecord> + '_ {
 }
 
 /// Inserts opening and closing tags around each styled character range.
+/// Ranges that reach past the end of the text are cut off at the last character,
+/// so every opening tag is closed.
 pub(crate) fn apply_style_records(text: &str, records: &[StyleRecord]) -> String {
+    let character_count = text.chars().count();
+    let records = clamp_records(records, character_count);
     let mut output = String::with_capacity(text.len());
     let mut position = 0;
     for character in text.chars() {
-        push_tags_at(&mut output, records, position);
+        push_tags_at(&mut output, &records, position);
         output.push(character);
         position += 1;
     }
-    push_tags_at(&mut output, records, position);
+    push_tags_at(&mut output, &records, position);
     output
+}
+
+fn clamp_records(records: &[StyleRecord], character_count: usize) -> Vec<StyleRecord> {
+    records
+        .iter()
+        .map(|record| StyleRecord {
+            start_char: record.start_char.min(character_count),
+            end_char: record.end_char.min(character_count),
+            face_flags: record.face_flags,
+        })
+        .collect()
 }
 
 fn push_tags_at(output: &mut String, records: &[StyleRecord], position: usize) {
@@ -135,6 +150,20 @@ mod tests {
     #[test]
     fn leaves_text_alone_without_style_flags() {
         assert_eq!(apply_style_records("plain", &[record(0, 5, 0)]), "plain");
+    }
+
+    #[test]
+    fn closes_a_range_that_runs_past_the_end_of_the_text() {
+        let styled = apply_style_records("short", &[record(2, 40, BOLD_FLAG)]);
+        assert_eq!(styled, "sh<b>ort</b>");
+    }
+
+    #[test]
+    fn ignores_a_range_that_starts_past_the_end_of_the_text() {
+        assert_eq!(
+            apply_style_records("short", &[record(9, 12, BOLD_FLAG)]),
+            "short"
+        );
     }
 
     #[test]

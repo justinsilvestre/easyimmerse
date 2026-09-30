@@ -4,6 +4,7 @@
 mod embedded_server;
 mod injected_config_script;
 mod main_window;
+mod navigation_guard;
 mod smoke_test;
 
 use tauri::Manager;

@@ -7,6 +7,11 @@ export default defineConfig({
     ...sharedVitePlugins(),
     VitePWA({
       registerType: "autoUpdate",
+      // The default patterns leave out the wasm module, which the offline backend needs.
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,wasm}"],
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+      },
       manifest: {
         name: "easyImmerse",
         short_name: "easyImmerse",

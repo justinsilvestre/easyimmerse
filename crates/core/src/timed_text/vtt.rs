@@ -31,12 +31,21 @@ fn has_webvtt_header(text: &str) -> bool {
     rest.is_empty() || rest.starts_with([' ', '\t', '\n', '\r'])
 }
 
+/// A block is a cue unless its first line is the file header
+/// or starts a comment, style, or region block.
+/// Those keywords count only when the rest of the line is empty or begins with a space or tab,
+/// so a cue identifier such as `NOTES-1` is still a cue.
 fn is_cue_block(block: &[&str]) -> bool {
     !block.first().is_some_and(|first| {
         ["WEBVTT", "NOTE", "STYLE", "REGION"]
             .iter()
-            .any(|word| first.starts_with(word))
+            .any(|word| is_block_keyword(first, word))
     })
+}
+
+fn is_block_keyword(line: &str, word: &str) -> bool {
+    line.strip_prefix(word)
+        .is_some_and(|rest| rest.is_empty() || rest.starts_with([' ', '\t']))
 }
 
 /// `position` is the 1-based number of the cue among all cues, used as the index when the
@@ -128,6 +137,18 @@ mod tests {
         let track =
             parse_vtt("WEBVTT\n\nSTYLE\n::cue { color: red }\n\n00:00.000 --> 00:01.000\nA")
                 .unwrap();
+        assert_eq!(track.cues.len(), 1);
+    }
+
+    #[test]
+    fn keeps_a_cue_whose_identifier_starts_with_a_block_keyword() {
+        let track = parse_vtt("WEBVTT\n\nNOTES-1\n00:00.000 --> 00:01.000\nA").unwrap();
+        assert_eq!(track.cues.len(), 1);
+    }
+
+    #[test]
+    fn skips_a_note_block_with_text_on_the_same_line() {
+        let track = parse_vtt("WEBVTT\n\nNOTE a comment\n\n00:00.000 --> 00:01.000\nA").unwrap();
         assert_eq!(track.cues.len(), 1);
     }
 

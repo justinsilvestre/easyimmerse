@@ -16,13 +16,26 @@ export type RecordingEffects = Effects & {
   preferences: Map<string, string>;
   /** Settles the pending pickFile promise. Throws when no pick is pending. */
   resolvePickFile(file: PickedFile | null): void;
+  /** Rejects the pending pickFile promise. Throws when no pick is pending. */
+  rejectPickFile(error: Error): void;
+};
+
+type PendingPick = {
+  resolve: (file: PickedFile | null) => void;
+  reject: (error: Error) => void;
 };
 
 /** Builds an Effects implementation for tests that records calls instead of performing them. */
 export function createRecordingEffects(): RecordingEffects {
   const calls: EffectCall[] = [];
   const preferences = new Map<string, string>();
-  let resolvePendingPick: ((file: PickedFile | null) => void) | null = null;
+  let pendingPick: PendingPick | null = null;
+  function takePendingPick(): PendingPick {
+    if (pendingPick === null) throw new Error("No file pick is pending.");
+    const pick = pendingPick;
+    pendingPick = null;
+    return pick;
+  }
   return {
     calls,
     preferences,
@@ -31,8 +44,8 @@ export function createRecordingEffects(): RecordingEffects {
     },
     pickFile: (accept) => {
       calls.push({ type: "pickFile", accept });
-      return new Promise((resolve) => {
-        resolvePendingPick = resolve;
+      return new Promise((resolve, reject) => {
+        pendingPick = { resolve, reject };
       });
     },
     savePreference: async (key, value) => {
@@ -53,10 +66,10 @@ export function createRecordingEffects(): RecordingEffects {
       calls.push({ type: "openExternalUrl", url });
     },
     resolvePickFile: (file) => {
-      if (resolvePendingPick === null)
-        throw new Error("No file pick is pending.");
-      resolvePendingPick(file);
-      resolvePendingPick = null;
+      takePendingPick().resolve(file);
+    },
+    rejectPickFile: (error) => {
+      takePendingPick().reject(error);
     },
   };
 }

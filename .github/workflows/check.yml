@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
@@ -44,3 +44,6 @@ jobs:
 
       - name: Vitest
         run: pnpm -r --filter '!@easyimmerse/wasm' test
+
+      - name: Script tests
+        run: node --test 'scripts/**/*.test.ts'

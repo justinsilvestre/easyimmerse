@@ -1,5 +1,6 @@
 use std::io::{Cursor, Read};
 
+use percent_encoding::percent_decode_str;
 use roxmltree::Document as XmlDocument;
 use zip::ZipArchive;
 use zip::result::ZipError;
@@ -75,10 +76,12 @@ fn parent_directory(path: &str) -> &str {
     path.rsplit_once('/').map_or("", |(directory, _)| directory)
 }
 
-/// Joins an href from the OPF onto the OPF's directory, resolving `.` and `..` segments and
-/// dropping any fragment.
+/// Joins an href from the OPF onto the OPF's directory,
+/// resolving `.` and `..` segments and dropping any fragment.
+/// The result is percent-decoded, since archive entry names are not percent-encoded.
 fn resolve_href(directory: &str, href: &str) -> String {
-    let path = href.split('#').next().unwrap_or_default();
+    let encoded_path = href.split('#').next().unwrap_or_default();
+    let path = percent_decode_str(encoded_path).decode_utf8_lossy();
     let mut segments: Vec<&str> = directory
         .split('/')
         .filter(|segment| !segment.is_empty())
@@ -165,6 +168,14 @@ mod tests {
             parse_epub(&read_fixture_bytes("sample-yomitan.zip")),
             Err(DocumentError::MissingEntry(name)) if name == "META-INF/container.xml"
         ));
+    }
+
+    #[test]
+    fn percent_decodes_hrefs() {
+        assert_eq!(
+            resolve_href("OEBPS", "Chapter%201.xhtml"),
+            "OEBPS/Chapter 1.xhtml"
+        );
     }
 
     #[test]

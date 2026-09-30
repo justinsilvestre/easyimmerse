@@ -9,6 +9,11 @@ pub(crate) type BytesReader<'a> = Mp4Reader<Cursor<&'a [u8]>>;
 
 pub(crate) fn probe_mp4(bytes: &[u8]) -> Result<ContainerInfo, MediaError> {
     let reader = open_mp4(bytes)?;
+    if reader.timescale() == 0 {
+        return Err(MediaError::InvalidMp4(
+            "the movie header has a timescale of zero".to_owned(),
+        ));
+    }
     let mut tracks: Vec<TrackInfo> = reader.tracks().values().map(describe_track).collect();
     tracks.sort_by_key(|track| track.id);
     Ok(ContainerInfo {
@@ -86,5 +91,24 @@ mod tests {
     #[test]
     fn reads_a_five_second_duration() {
         assert_eq!(probe_fixture().duration_ms, Some(5000));
+    }
+
+    #[test]
+    fn rejects_a_movie_header_with_a_zero_timescale() {
+        let mut bytes = read_fixture_bytes("sample.mp4");
+        let mvhd = find_box(&bytes, b"mvhd");
+        let version = bytes[mvhd + 8];
+        let timescale_offset = if version == 1 { mvhd + 28 } else { mvhd + 20 };
+        bytes[timescale_offset..timescale_offset + 4].fill(0);
+        assert!(matches!(probe_mp4(&bytes), Err(MediaError::InvalidMp4(_))));
+    }
+
+    /// The offset of the first box with the given type, found by scanning for its four-byte name.
+    fn find_box(bytes: &[u8], name: &[u8; 4]) -> usize {
+        bytes
+            .windows(4)
+            .position(|window| window == name)
+            .expect("the fixture should contain the box")
+            - 4
     }
 }

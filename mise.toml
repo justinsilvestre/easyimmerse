@@ -15,6 +15,8 @@ _.file = ".env"
 
 [tasks.check]
 description = "Lint, typecheck, and test every layer"
+# The wasm package and the plugin host tests import build outputs, so those are built first.
+depends = ["wasm:build", "plugins:build"]
 run = [
   "pnpm biome ci .",
   "pnpm -r typecheck",

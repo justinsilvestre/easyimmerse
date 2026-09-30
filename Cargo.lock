@@ -1382,6 +1382,7 @@ dependencies = [
 name = "easyimmerse-core"
 version = "0.1.0"
 dependencies = [
+ "percent-encoding",
  "roxmltree",
  "serde",
  "serde_json",
