@@ -1,0 +1,77 @@
+name: ffmpeg-macos
+
+# Builds an LGPL-only ffmpeg for macOS and publishes it as a release, because no
+# first-party LGPL macOS build exists. scripts/fetch-ffmpeg/manifest.json pins the
+# resulting assets by hash.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ffmpeg-version:
+        description: ffmpeg release to build, for example 8.1.2
+        required: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download and verify the source
+        run: |
+          set -eu
+          v="${{ inputs.ffmpeg-version }}"
+          curl -fsSLO "https://ffmpeg.org/releases/ffmpeg-$v.tar.xz"
+          curl -fsSLO "https://ffmpeg.org/releases/ffmpeg-$v.tar.xz.asc"
+          curl -fsSL https://ffmpeg.org/ffmpeg-devel.asc | gpg --import
+          gpg --verify "ffmpeg-$v.tar.xz.asc" "ffmpeg-$v.tar.xz"
+          shasum -a 256 "ffmpeg-$v.tar.xz" > source-sha256.txt
+          tar xf "ffmpeg-$v.tar.xz"
+
+      - name: Build for both architectures
+        run: |
+          set -eu
+          v="${{ inputs.ffmpeg-version }}"
+          common="--disable-gpl --disable-nonfree --enable-version3 --disable-shared --enable-static \
+                  --disable-doc --disable-debug --disable-ffplay --pkg-config-flags=--static"
+          mkdir -p out/aarch64-apple-darwin out/x86_64-apple-darwin
+          (cd "ffmpeg-$v" && ./configure $common --prefix="$PWD/../install-arm64" && make -j"$(sysctl -n hw.ncpu)" && make install && make distclean)
+          (cd "ffmpeg-$v" && ./configure $common --enable-cross-compile --arch=x86_64 --target-os=darwin \
+              --cc="clang -arch x86_64" --prefix="$PWD/../install-x86_64" && make -j"$(sysctl -n hw.ncpu)" && make install)
+          for bin in ffmpeg ffprobe; do
+            cp "install-arm64/bin/$bin" "out/aarch64-apple-darwin/$bin"
+            cp "install-x86_64/bin/$bin" "out/x86_64-apple-darwin/$bin"
+          done
+          strip out/*/ffmpeg out/*/ffprobe
+          echo "$common" > out/configure-flags.txt
+
+      - name: Package
+        run: |
+          set -eu
+          v="${{ inputs.ffmpeg-version }}"
+          cd out
+          for triple in aarch64-apple-darwin x86_64-apple-darwin; do
+            tar -C "$triple" -cJf "ffmpeg-$v-$triple.tar.xz" ffmpeg ffprobe
+          done
+          {
+            echo "# ffmpeg $v for macOS (LGPL)"
+            echo
+            echo "Source: https://ffmpeg.org/releases/ffmpeg-$v.tar.xz"
+            echo "Source SHA-256: $(cut -d' ' -f1 ../source-sha256.txt)"
+            echo
+            echo "Configure flags:"
+            echo '```'
+            cat configure-flags.txt
+            echo '```'
+          } > BUILD.md
+          shasum -a 256 *.tar.xz > SHA256SUMS
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ inputs.ffmpeg-version }}"
+          gh release create "ffmpeg-macos-$v" --title "ffmpeg $v for macOS (LGPL)" --notes-file out/BUILD.md \
+            out/*.tar.xz out/SHA256SUMS out/BUILD.md
