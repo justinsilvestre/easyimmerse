@@ -14,9 +14,20 @@ runs:
         cache: true
         install: true
 
-    - name: Install the Rust cross-compilation targets
+    # mise-action trusts the config through an environment variable, which does not reach
+    # subprocesses with a rebuilt environment such as Xcode build phases. Trusting on disk
+    # does.
+    - name: Trust the Mise configuration on disk
       shell: bash
-      run: rustup target add wasm32-unknown-unknown wasm32-wasip2
+      run: mise trust
+
+    # Mise installs the toolchain through rustup but does not add the components and
+    # targets that rust-toolchain.toml lists, so they are installed here.
+    - name: Install the Rust components and cross-compilation targets
+      shell: bash
+      run: |
+        rustup component add rustfmt clippy
+        rustup target add wasm32-unknown-unknown wasm32-wasip2
 
     - uses: Swatinem/rust-cache@v2
       if: inputs.rust-cache == 'true'
