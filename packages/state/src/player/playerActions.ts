@@ -22,6 +22,9 @@ export const playerActions = {
     ({ type: "volumeChanged", volume }) as const,
   loopRequested: (range: TimeRange | null) =>
     ({ type: "loopRequested", range }) as const,
+  /** Reports that the media element could not play the file, with the code and message of its `MediaError`. */
+  playerMediaFailed: (fileName: string, code: number, message: string) =>
+    ({ type: "playerMediaFailed", fileName, code, message }) as const,
   mediaUrlResolved: (mediaId: string, url: string) =>
     ({ type: "mediaUrlResolved", mediaId, url }) as const,
   mediaUrlFailed: (mediaId: string, message: string) =>

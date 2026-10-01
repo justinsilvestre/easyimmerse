@@ -17,6 +17,7 @@ import { SubtitlesPanel } from "./SubtitlesPanel.tsx";
  */
 export function MediaView({
   kind,
+  name,
   src,
   targetCues,
   translationCues,
@@ -25,6 +26,8 @@ export function MediaView({
   onGenerateSubtitles,
 }: {
   kind: "video" | "audio";
+  /** The name of the media file, used in messages about it. */
+  name: string;
   src: string;
   targetCues: readonly Cue[] | null;
   translationCues: readonly Cue[] | null;
@@ -63,7 +66,7 @@ export function MediaView({
     >
       {kind === "audio" && panel}
       <div className="flex min-w-0 flex-1 flex-col">
-        <MediaPlayer kind={kind} src={src}>
+        <MediaPlayer kind={kind} name={name} src={src}>
           <SubtitlesOverlay
             targetCues={targetCues}
             translationCues={translationCues}

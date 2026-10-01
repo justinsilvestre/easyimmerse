@@ -73,6 +73,7 @@ function OpenMediaScreen({
       ) : (
         <MediaScreenPlayer
           kind={media.kind}
+          name={media.name}
           targetCues={targetCues}
           translationCues={translationCues}
           onWordActivated={createDraft}

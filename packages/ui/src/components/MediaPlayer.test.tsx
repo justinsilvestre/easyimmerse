@@ -9,6 +9,7 @@ import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import {
   stubCanvasEncoding,
   stubMediaDuration,
+  stubMediaError,
   stubVideoFrameSize,
 } from "../testSupport/stubMediaElement.ts";
 import { MediaPlayer } from "./MediaPlayer.tsx";
@@ -22,6 +23,7 @@ function renderPlayer(kind: "video" | "audio" = "video") {
   const rendered = renderWithAppStore(
     <MediaPlayer
       kind={kind}
+      name={`sample.${kind === "video" ? "mp4" : "mp3"}`}
       src={`/sample.${kind === "video" ? "mp4" : "mp3"}`}
     />,
   );
@@ -71,7 +73,7 @@ describe("MediaPlayer", () => {
     const seen: (PlayerHandle | null)[] = [];
     renderWithAppStore(
       <ReadPlayerOnMount seen={seen}>
-        <MediaPlayer kind="video" src="/sample.mp4" />
+        <MediaPlayer kind="video" name="sample.mp4" src="/sample.mp4" />
       </ReadPlayerOnMount>,
     );
     expect(seen[0]).not.toBeNull();
@@ -218,6 +220,17 @@ describe("MediaPlayer", () => {
       fireEvent.play(element);
       fireEvent.ended(element);
       expect(selectPlayer(store.getState()).playing).toBe(false);
+    });
+
+    it("reports that the element cannot play the file", () => {
+      const { element, effects } = renderPlayer();
+      stubMediaError(element, 4, "Format error");
+      fireEvent.error(element);
+      expect(effects.calls).toContainEqual({
+        type: "showNotification",
+        message:
+          "Could not play sample.mp4. Its format may not be supported here. (MEDIA_ERR_SRC_NOT_SUPPORTED: Format error)",
+      });
     });
   });
 

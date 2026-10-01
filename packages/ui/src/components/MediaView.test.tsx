@@ -21,6 +21,7 @@ function renderView(
   return renderWithAppStore(
     <MediaView
       kind={kind}
+      name="sample"
       src="/sample"
       targetCues={targetCues}
       translationCues={null}

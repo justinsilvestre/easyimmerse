@@ -118,6 +118,28 @@ describe("update", () => {
     expect(effects).toEqual([{ type: "setPlayerLoop", range: null }]);
   });
 
+  it("leaves state unchanged for playerMediaFailed", () => {
+    const [state] = update(
+      initialAppState,
+      actions.playerMediaFailed("clip.mkv", 4, ""),
+    );
+    expect(state).toBe(initialAppState);
+  });
+
+  it("returns a showNotification effect naming the file for playerMediaFailed", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.playerMediaFailed("clip.mkv", 4, "Format error"),
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotification",
+        message:
+          "Could not play clip.mkv. Its format may not be supported here. (MEDIA_ERR_SRC_NOT_SUPPORTED: Format error)",
+      },
+    ]);
+  });
+
   describe("when the media is open", () => {
     it("stores the URL for mediaUrlResolved", () => {
       const [state] = update(

@@ -10,7 +10,10 @@ type MediaEvent = SyntheticEvent<HTMLMediaElement>;
  * Returns event handlers for a media element that report its time, duration, and playing state to the store.
  * The time handler also repeats the loop in the ref, seeking back to its start once the time leaves it.
  */
-export function usePlayerElementEvents(loop: RefObject<TimeRange | null>) {
+export function usePlayerElementEvents(
+  loop: RefObject<TimeRange | null>,
+  fileName: string,
+) {
   const dispatch = useAppDispatch();
   return {
     onTimeUpdate: ({ currentTarget }: MediaEvent) => {
@@ -24,5 +27,11 @@ export function usePlayerElementEvents(loop: RefObject<TimeRange | null>) {
     onPlay: () => dispatch(actions.playerPlayingChanged(true)),
     onPause: () => dispatch(actions.playerPlayingChanged(false)),
     onEnded: () => dispatch(actions.playerPlayingChanged(false)),
+    onError: ({ currentTarget: { error } }: MediaEvent) => {
+      if (error)
+        dispatch(
+          actions.playerMediaFailed(fileName, error.code, error.message),
+        );
+    },
   };
 }

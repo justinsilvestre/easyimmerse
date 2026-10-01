@@ -53,3 +53,15 @@ export function stubRequestFullscreen() {
   };
   return { requestFullscreen, restore };
 }
+
+/** Gives the element a media error, which happy-dom never sets because it loads nothing. */
+export function stubMediaError(
+  element: HTMLMediaElement,
+  code: number,
+  message: string,
+) {
+  Object.defineProperty(element, "error", {
+    configurable: true,
+    value: { code, message },
+  });
+}

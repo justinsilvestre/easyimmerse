@@ -1,6 +1,7 @@
 import type { AppState } from "../appState.ts";
 import type { UpdateHandlers } from "../updateHandlers.ts";
 import { clamp } from "./clamp.ts";
+import { describePlaybackFailure } from "./describePlaybackFailure.ts";
 import type { PlayerState } from "./playerState.ts";
 import { loopPlayer, withPlayer } from "./withPlayer.ts";
 
@@ -37,6 +38,15 @@ export const playerHandlers = {
     return [withPlayer(state, { volume }), [{ type: "setVolume", volume }]];
   },
   loopRequested: (state, { range }) => loopPlayer(state, range),
+  playerMediaFailed: (state, { fileName, code, message }) => [
+    state,
+    [
+      {
+        type: "showNotification",
+        message: describePlaybackFailure(fileName, code, message),
+      },
+    ],
+  ],
   mediaUrlResolved: (state, { mediaId, url }) => [
     isMediaOpen(state, mediaId)
       ? withPlayer(state, { mediaUrl: url, mediaUrlError: null })

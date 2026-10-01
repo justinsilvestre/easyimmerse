@@ -9,15 +9,18 @@ import { AudioArtwork } from "./AudioArtwork.tsx";
 
 /**
  * Plays video or audio and registers itself as the app's player, reporting its time, duration, and playing state to the store.
+ * When the file named by `name` cannot be played, it asks the store to tell the user.
  * The children, such as subtitles, show over the bottom of a video or below the artwork of audio.
  * An empty src renders the player without media.
  */
 export function MediaPlayer({
   kind,
+  name,
   src,
   children,
 }: {
   kind: "video" | "audio";
+  name: string;
   src: string;
   children?: ReactNode;
 }) {
@@ -26,7 +29,7 @@ export function MediaPlayer({
   const loop = useRef<TimeRange | null>(null);
   const attachMedia = usePlayerHandleRegistration(media, loop);
   usePlayerSettingsSync(media);
-  const events = usePlayerElementEvents(loop);
+  const events = usePlayerElementEvents(loop, name);
   // An empty src would make the browser request the page itself as media.
   const mediaSrc = src === "" ? undefined : src;
   if (kind === "audio")

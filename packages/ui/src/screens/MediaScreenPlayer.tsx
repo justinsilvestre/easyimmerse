@@ -8,11 +8,13 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 /** Plays the open video or audio with its subtitles, and reports when the media cannot be loaded. */
 export function MediaScreenPlayer({
   kind,
+  name,
   targetCues,
   translationCues,
   onWordActivated,
 }: {
   kind: "video" | "audio";
+  name: string;
   targetCues: readonly Cue[] | null;
   translationCues: readonly Cue[] | null;
   onWordActivated: (hover: WordHover) => void;
@@ -28,6 +30,7 @@ export function MediaScreenPlayer({
       )}
       <MediaView
         kind={kind}
+        name={name}
         src={mediaUrl ?? ""}
         targetCues={targetCues}
         translationCues={translationCues}
