@@ -2,6 +2,7 @@ import type { MediaFile } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import {
   createResolveMediaUrl,
+  readStoredFileBytes,
   readStoredFileText,
 } from "./storedFileEffects.ts";
 
@@ -36,5 +37,11 @@ describe("createResolveMediaUrl", () => {
 describe("readStoredFileText", () => {
   it("rejects", async () => {
     await expect(readStoredFileText()).rejects.toThrow("browser");
+  });
+});
+
+describe("readStoredFileBytes", () => {
+  it("rejects", async () => {
+    await expect(readStoredFileBytes()).rejects.toThrow("browser");
   });
 });

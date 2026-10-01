@@ -5,6 +5,7 @@ import type { MediaFile } from "@easyimmerse/types";
 import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  createReadStoredFileBytes,
   createReadStoredFileText,
   createResolveMediaUrl,
 } from "./browserFileEffects.ts";
@@ -68,6 +69,21 @@ describe("createReadStoredFileText", () => {
 
   it("rejects for an unknown key", async () => {
     const read = createReadStoredFileText(createBrowserFileStore());
+    await expect(read("missing")).rejects.toThrow("no longer stored");
+  });
+});
+
+describe("createReadStoredFileBytes", () => {
+  it("reads the bytes of a stored file", async () => {
+    const store = createBrowserFileStore();
+    const key = await store.put(new File([new Uint8Array([1, 2, 3])], "a.zip"));
+    expect(await createReadStoredFileBytes(store)(key)).toEqual(
+      new Uint8Array([1, 2, 3]),
+    );
+  });
+
+  it("rejects for an unknown key", async () => {
+    const read = createReadStoredFileBytes(createBrowserFileStore());
     await expect(read("missing")).rejects.toThrow("no longer stored");
   });
 });

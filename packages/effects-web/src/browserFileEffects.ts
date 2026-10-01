@@ -34,10 +34,23 @@ async function findStoredMedia(
 export function createReadStoredFileText(
   store: BrowserFileStore,
 ): Effects["readStoredFileText"] {
-  return async (key) => {
-    const blob = await store.get(key);
-    if (blob === null)
-      throw new Error("The file is no longer stored in this browser.");
-    return blob.text();
-  };
+  return async (key) => (await getStoredBlob(store, key)).text();
+}
+
+/** Builds the effect that reads the bytes of a file stored in the browser. Rejects for an unknown key. */
+export function createReadStoredFileBytes(
+  store: BrowserFileStore,
+): Effects["readStoredFileBytes"] {
+  return async (key) =>
+    new Uint8Array(await (await getStoredBlob(store, key)).arrayBuffer());
+}
+
+async function getStoredBlob(
+  store: BrowserFileStore,
+  key: string,
+): Promise<Blob> {
+  const blob = await store.get(key);
+  if (blob === null)
+    throw new Error("The file is no longer stored in this browser.");
+  return blob;
 }

@@ -1,5 +1,6 @@
 import type { Effects, PlayerRegistry } from "@easyimmerse/state";
 import {
+  createReadStoredFileBytes,
   createReadStoredFileText,
   createResolveMediaUrl,
 } from "./browserFileEffects.ts";
@@ -24,6 +25,7 @@ export function createWebEffects(options: {
     pickFile: createPickFile(files),
     resolveMediaUrl: createResolveMediaUrl(files),
     readStoredFileText: createReadStoredFileText(files),
+    readStoredFileBytes: createReadStoredFileBytes(files),
     savePreference: preferences.save,
     loadPreference: preferences.load,
     showNotification: options.notify ?? showNotification,
