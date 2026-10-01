@@ -8,6 +8,18 @@ export function stubMediaDuration(element: HTMLMediaElement, seconds: number) {
   });
 }
 
+/** Gives the element an error with the code and message, as a browser does before it fires the error event. */
+export function stubMediaError(
+  element: HTMLMediaElement,
+  code: number,
+  message: string,
+) {
+  Object.defineProperty(element, "error", {
+    configurable: true,
+    value: { code, message },
+  });
+}
+
 /** Sets whether the element reports a pending seek, which happy-dom never does because it loads nothing. */
 export function stubMediaSeeking(element: HTMLMediaElement, seeking: boolean) {
   Object.defineProperty(element, "seeking", {

@@ -9,6 +9,7 @@ import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import {
   stubCanvasEncoding,
   stubMediaDuration,
+  stubMediaError,
   stubMediaSeeking,
   stubVideoFrameSize,
 } from "../testSupport/stubMediaElement.ts";
@@ -17,6 +18,7 @@ import { MediaPlayer } from "./MediaPlayer.tsx";
 afterEach(() => {
   cleanup();
   resetBackend();
+  vi.restoreAllMocks();
 });
 
 function renderPlayer(kind: "video" | "audio" = "video") {
@@ -267,6 +269,35 @@ describe("MediaPlayer", () => {
       fireEvent.play(element);
       fireEvent.ended(element);
       expect(selectPlayer(store.getState()).playing).toBe(false);
+    });
+
+    describe("when the element fails", () => {
+      /** Fires an error for a format the element cannot play, as for an MKV file in WebKit. */
+      function failWithUnsupportedFormat(element: HTMLMediaElement) {
+        stubMediaError(element, 4, "MEDIA_ELEMENT_ERROR: Format error");
+        fireEvent.error(element);
+      }
+
+      it("reports a message for the user", () => {
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+        const { element, store } = renderPlayer();
+        failWithUnsupportedFormat(element);
+        expect(selectPlayer(store.getState()).playbackError).toBe(
+          "This player does not support the file's format.",
+        );
+      });
+
+      it("logs the error's code and message", () => {
+        const loggedErrors = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => undefined);
+        const { element } = renderPlayer();
+        failWithUnsupportedFormat(element);
+        expect(loggedErrors).toHaveBeenCalledWith("The media failed to play.", {
+          code: 4,
+          message: "MEDIA_ELEMENT_ERROR: Format error",
+        });
+      });
     });
   });
 

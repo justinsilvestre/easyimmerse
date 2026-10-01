@@ -2,13 +2,14 @@ import type { MediaPlayback } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
 import type Hls from "hls.js";
 import { type RefObject, useEffect } from "react";
+import { describeStreamError } from "./describeStreamError.ts";
 import { useAppDispatch } from "./useAppDispatch.ts";
 
 type HlsPlayback = Extract<MediaPlayback, { kind: "hls" }>;
 
 /**
  * Plays the HLS stream (HTTP Live Streaming) in the media element through hls.js, which loads only when a stream is given.
- * The stream stops when the component unmounts or the stream's URL or token changes. Errors that stop playback go to the store.
+ * The stream stops when the component unmounts or the stream's URL or token changes. Errors that stop playback go to the store as messages for the user and to the console in full.
  */
 export function useHlsPlayback(
   media: RefObject<HTMLMediaElement | null>,
@@ -21,7 +22,7 @@ export function useHlsPlayback(
     const element = media.current;
     if (url === undefined || token === undefined || element === null) return;
     const report = (message: string) =>
-      dispatch(actions.playerStreamFailed(message));
+      dispatch(actions.playerPlaybackFailed(message));
     let hls: Hls | null = null;
     let isStopped = false;
     import("hls.js")
@@ -30,7 +31,10 @@ export function useHlsPlayback(
         if (!isStopped)
           hls = startHls(HlsPlayer, element, { url, token }, report);
       })
-      .catch(() => report("The player for converted streams failed to load."));
+      .catch((error: unknown) => {
+        console.error("hls.js failed to load.", error);
+        report("The player for converted streams failed to load.");
+      });
     return () => {
       isStopped = true;
       hls?.destroy();
@@ -52,7 +56,8 @@ function startHls(
     xhrSetup: (xhr) => xhr.setRequestHeader("Authorization", `Bearer ${token}`),
   });
   let hasRecoveredMediaError = false;
-  hls.on(HlsPlayer.Events.ERROR, (_event, { fatal, type, details }) => {
+  hls.on(HlsPlayer.Events.ERROR, (_event, data) => {
+    const { fatal, type } = data;
     if (!fatal) return;
     // hls.js can often resume after a decoding error by resetting the media buffer, so it gets one retry.
     if (type === HlsPlayer.ErrorTypes.MEDIA_ERROR && !hasRecoveredMediaError) {
@@ -60,7 +65,8 @@ function startHls(
       hls.recoverMediaError();
       return;
     }
-    report(`The converted stream failed (${details}).`);
+    console.error("The converted stream failed.", data);
+    report(describeStreamError(type));
   });
   hls.loadSource(url);
   hls.attachMedia(element);

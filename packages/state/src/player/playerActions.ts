@@ -30,9 +30,9 @@ export const playerActions = {
     ({ type: "mediaPlaybackResolved", mediaId, playback }) as const,
   mediaPlaybackFailed: (mediaId: string, message: string) =>
     ({ type: "mediaPlaybackFailed", mediaId, message }) as const,
-  /** Reports that the player could not play the HLS stream it was given. */
-  playerStreamFailed: (message: string) =>
-    ({ type: "playerStreamFailed", message }) as const,
+  /** Reports that the player stopped or could not start playing the media it was given, with a message for the user. */
+  playerPlaybackFailed: (message: string) =>
+    ({ type: "playerPlaybackFailed", message }) as const,
   /** Starts a playback held for the conversion notice. The user may ask not to see the notice again. */
   conversionNoticeConfirmed: (dontShowAgain: boolean) =>
     ({ type: "conversionNoticeConfirmed", dontShowAgain }) as const,

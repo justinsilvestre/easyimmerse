@@ -14,7 +14,7 @@ export const playbackHandlers = {
       : state,
     [],
   ],
-  playerStreamFailed: (state, { message }) => [
+  playerPlaybackFailed: (state, { message }) => [
     withPlayer(state, { playbackError: message }),
     [],
   ],

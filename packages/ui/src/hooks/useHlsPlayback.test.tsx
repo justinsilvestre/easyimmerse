@@ -1,7 +1,7 @@
 import { resetBackend } from "@easyimmerse/backend";
 import type { MediaPlayback } from "@easyimmerse/state";
 import { selectPlayer } from "@easyimmerse/state";
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MediaPlayer } from "../components/MediaPlayer.tsx";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
@@ -67,7 +67,13 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   resetBackend();
+  vi.restoreAllMocks();
 });
+
+/** Keeps the errors the player logs out of the test output and returns the spy that records them. */
+function spyOnLoggedErrors() {
+  return vi.spyOn(console, "error").mockImplementation(() => undefined);
+}
 
 /** Renders the player and waits for the lazily imported hls.js to attach. */
 async function renderPlayer(playback: MediaPlayback = stream) {
@@ -171,12 +177,29 @@ describe("useHlsPlayback", () => {
     expect(hls.recorded.instances).toHaveLength(0);
   });
 
-  it("reports a fatal network error to the store", async () => {
+  it("reports a fatal network error to the store as a message for the user", async () => {
+    spyOnLoggedErrors();
     const { store } = await renderPlayer();
     emitError(fatalNetworkError);
     expect(selectPlayer(store.getState()).playbackError).toBe(
-      "The converted stream failed (manifestLoadError).",
+      "The server could not provide the converted stream.",
     );
+  });
+
+  it("logs the type and details of a fatal error", async () => {
+    const loggedErrors = spyOnLoggedErrors();
+    await renderPlayer();
+    emitError(fatalNetworkError);
+    expect(loggedErrors).toHaveBeenCalledWith(
+      "The converted stream failed.",
+      fatalNetworkError,
+    );
+  });
+
+  it("does not report errors of the video element, which hls.js handles", async () => {
+    const { store } = await renderPlayer();
+    fireEvent.error(document.querySelector("video") as HTMLVideoElement);
+    expect(selectPlayer(store.getState()).playbackError).toBeNull();
   });
 
   it("ignores an error that hls.js recovers from", async () => {
@@ -199,11 +222,12 @@ describe("useHlsPlayback", () => {
     });
 
     it("reports a second fatal media error to the store", async () => {
+      spyOnLoggedErrors();
       const { store } = await renderPlayer();
       emitError(fatalMediaError);
       emitError(fatalMediaError);
       expect(selectPlayer(store.getState()).playbackError).toBe(
-        "The converted stream failed (bufferAppendError).",
+        "This player could not decode the converted stream.",
       );
     });
   });
