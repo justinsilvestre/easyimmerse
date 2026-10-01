@@ -1,0 +1,4 @@
+{
+  "extends": "@easyimmerse/config/tsconfig.react.json",
+  "include": ["src"]
+}

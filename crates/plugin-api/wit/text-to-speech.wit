@@ -1,0 +1,8 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Produce audio from text.
+interface text-to-speech {
+    use types.{language, plugin-error};
+
+    synthesize: func(text: string, language: language, output-path: string) -> result<_, plugin-error>;
+}

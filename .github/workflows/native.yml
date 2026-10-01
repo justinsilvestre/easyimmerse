@@ -1,0 +1,124 @@
+name: native
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/native.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "apps/native/**"
+      - "packages/**"
+      - "crates/**"
+      - "scripts/fetch-ffmpeg/**"
+      - "fixtures/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/native.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "apps/native/**"
+      - "packages/**"
+      - "crates/**"
+      - "scripts/fetch-ffmpeg/**"
+      - "fixtures/**"
+
+# A newer push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Linux webview dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xvfb
+
+      - name: Fetch the ffmpeg sidecar
+        run: mise run fetch-ffmpeg
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Debug build without bundling
+        run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle
+
+      - name: Embedded server health check
+        shell: bash
+        run: |
+          binary=target/debug/easyimmerse-native
+          if [ "$RUNNER_OS" = "Windows" ]; then binary="$binary.exe"; fi
+          if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run --auto-servernum "$binary"; else "$binary"; fi
+        env:
+          EASYIMMERSE_SMOKE_TEST: "1"
+
+  android:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v4
+      - uses: nttld/setup-ndk@v1
+        id: ndk
+        with:
+          ndk-version: r28c
+      # The debug link for Android fills the runner's disk, and the NDK linker dies with a
+      # bus error instead of a clear message. Removing unused preinstalled toolchains frees
+      # over ten gigabytes.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/.ghcup /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/powershell
+          df -h /
+      - name: Rust Android target
+        run: rustup target add aarch64-linux-android
+      - name: Initialize the Android project
+        run: pnpm --filter @easyimmerse/native exec tauri android init --ci --skip-targets-install
+        env:
+          NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+      - name: Debug APK
+        run: pnpm --filter @easyimmerse/native exec tauri android build --debug --target aarch64 --apk --ci
+        env:
+          NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Rust iOS simulator target
+        run: rustup target add aarch64-apple-ios-sim
+      - name: Initialize the Xcode project
+        run: pnpm --filter @easyimmerse/native exec tauri ios init --ci --skip-targets-install
+      # Xcode's build phase runs cargo in a rebuilt environment that keeps only PATH and
+      # HOME, where the mise shim refuses mise.toml as untrusted. Putting rustup's own
+      # cargo first keeps mise out of that phase; rust-toolchain.toml still picks the version.
+      - name: Simulator build without signing
+        run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci

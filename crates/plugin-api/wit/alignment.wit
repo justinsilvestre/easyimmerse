@@ -1,0 +1,8 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Align a transcript with audio, producing timed text.
+interface alignment {
+    use types.{plugin-error, timed-text-track};
+
+    align: func(audio-path: string, transcript: list<string>) -> result<timed-text-track, plugin-error>;
+}

@@ -1,0 +1,8 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Transform a media file.
+interface media-step {
+    use types.{plugin-error};
+
+    transform: func(input-path: string, output-path: string, options: list<tuple<string, string>>) -> result<_, plugin-error>;
+}

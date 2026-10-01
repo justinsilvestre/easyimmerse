@@ -1,0 +1,8 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Produce timed text from audio.
+interface speech-to-text {
+    use types.{language, plugin-error, timed-text-track};
+
+    transcribe: func(audio-path: string, language: option<language>) -> result<timed-text-track, plugin-error>;
+}

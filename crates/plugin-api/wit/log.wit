@@ -1,0 +1,11 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Structured logging and progress reporting into the host application.
+interface log {
+    use types.{progress-event};
+
+    info: func(message: string);
+    warn: func(message: string);
+    error: func(message: string);
+    progress: func(event: progress-event);
+}

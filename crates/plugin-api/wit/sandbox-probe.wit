@@ -1,0 +1,10 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Exports used only by the host tests to check that the sandbox denies
+/// operations the plugin was not granted.
+interface sandbox-probe {
+    use types.{plugin-error};
+
+    try-run: func(command: string) -> result<_, plugin-error>;
+    try-get: func(url: string) -> result<_, plugin-error>;
+}

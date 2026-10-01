@@ -1,0 +1,15 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Parse a dictionary file format the core does not support.
+interface dictionary-format {
+    use types.{plugin-error};
+
+    record dictionary-entry {
+        term: string,
+        reading: option<string>,
+        definitions: list<string>,
+    }
+
+    can-parse: func(path: string) -> bool;
+    parse: func(path: string) -> result<list<dictionary-entry>, plugin-error>;
+}

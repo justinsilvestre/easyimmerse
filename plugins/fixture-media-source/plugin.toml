@@ -1,0 +1,5 @@
+name = "fixture-media-source"
+version = "0.1.0"
+kind = "media-source"
+interface_version = "0.1.0"
+allowed_hosts = ["127.0.0.1"]

@@ -1,0 +1,62 @@
+package easyimmerse:plugin@0.1.0;
+
+/// The host interfaces every plugin may import.
+world plugin-base {
+    import log;
+    import http;
+    import fs;
+    import run-command;
+    import secrets;
+}
+
+world speech-to-text-plugin {
+    include plugin-base;
+    export speech-to-text;
+}
+
+world text-to-speech-plugin {
+    include plugin-base;
+    export text-to-speech;
+}
+
+world translation-plugin {
+    include plugin-base;
+    export translation;
+}
+
+world alignment-plugin {
+    include plugin-base;
+    export alignment;
+}
+
+world dictionary-format-plugin {
+    include plugin-base;
+    export dictionary-format;
+}
+
+world media-step-plugin {
+    include plugin-base;
+    export media-step;
+}
+
+world flashcard-export-plugin {
+    include plugin-base;
+    export flashcard-export;
+}
+
+world media-source-plugin {
+    include plugin-base;
+    export media-source;
+}
+
+/// Test-only world for the hello plugins.
+world hello-plugin {
+    include plugin-base;
+    export hello;
+}
+
+/// Test-only world for the media-source fixture plugin.
+world media-source-fixture {
+    include media-source-plugin;
+    export sandbox-probe;
+}

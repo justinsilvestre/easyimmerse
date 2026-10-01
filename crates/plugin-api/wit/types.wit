@@ -1,0 +1,54 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Types shared by the host interfaces and the plugin interfaces.
+interface types {
+    /// A language tag such as "en" or "ja".
+    type language = string;
+
+    /// One line of timed text. Times are milliseconds from the start of the media.
+    record timed-text-cue {
+        index: u32,
+        start-ms: u64,
+        end-ms: u64,
+        text: string,
+    }
+
+    record timed-text-track {
+        cues: list<timed-text-cue>,
+    }
+
+    record media-metadata {
+        title: string,
+        duration-ms: option<u64>,
+        media-url: string,
+    }
+
+    record subtitle-track {
+        language: option<language>,
+        url: string,
+    }
+
+    /// The outcome of resolving an external locator: what the media is, and where
+    /// the plugin wrote the media file and the subtitle files.
+    record resolved-media {
+        metadata: media-metadata,
+        subtitle-tracks: list<subtitle-track>,
+        media-path: string,
+        subtitle-paths: list<string>,
+    }
+
+    /// A report of partial completion. `fraction` runs from 0.0 to 1.0.
+    record progress-event {
+        fraction: f32,
+        message: string,
+    }
+
+    variant plugin-error {
+        /// The host refused the operation because the plugin was not granted it.
+        not-permitted(string),
+        not-found(string),
+        io(string),
+        invalid-input(string),
+        other(string),
+    }
+}

@@ -1,0 +1,45 @@
+name: Set up toolchain
+description: Installs every tool through Mise and restores the Rust and pnpm caches. Assumes the repository is already checked out.
+
+inputs:
+  rust-cache:
+    description: Whether to restore the Cargo cache.
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - uses: jdx/mise-action@v5
+      with:
+        cache: true
+        install: true
+
+    # Mise installs the toolchain through rustup but does not add the components and
+    # targets that rust-toolchain.toml lists, so they are installed here.
+    - name: Install the Rust components and cross-compilation targets
+      shell: bash
+      run: |
+        rustup component add rustfmt clippy
+        rustup target add wasm32-unknown-unknown wasm32-wasip2
+
+    - uses: Swatinem/rust-cache@v2
+      if: inputs.rust-cache == 'true'
+      with:
+        workspaces: |
+          . -> target
+          plugins -> target
+
+    - name: Locate the pnpm store
+      id: pnpm-store
+      shell: bash
+      run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-store.outputs.path }}
+        key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: pnpm-${{ runner.os }}-
+
+    - name: Install Node dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile

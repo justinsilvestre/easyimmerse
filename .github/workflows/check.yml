@@ -1,0 +1,49 @@
+name: check
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+
+# A newer push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Biome
+        run: pnpm biome ci .
+
+      - name: Regenerate types and OpenAPI document
+        run: |
+          mise run typegen
+          mise run openapi
+
+      - name: Fail when generated files are stale
+        run: git diff --exit-code -- packages/types crates/api/openapi.json
+
+      - name: Build the WebAssembly module the wasm package imports
+        run: mise run wasm:build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Vitest
+        run: pnpm -r --filter '!@easyimmerse/wasm' test
+
+      - name: Script tests
+        run: node --test 'scripts/**/*.test.ts'

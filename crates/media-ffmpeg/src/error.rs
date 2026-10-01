@@ -1,0 +1,28 @@
+use std::process::ExitStatus;
+
+use thiserror::Error;
+
+use crate::locate::BinaryName;
+
+#[derive(Debug, Error)]
+pub enum FfmpegError {
+    #[error(
+        "{0} was not found: set EASYIMMERSE_FFMPEG_DIR, place it next to the executable, or add it to PATH"
+    )]
+    BinaryNotFound(BinaryName),
+    #[error("failed to start {binary}: {source}")]
+    Spawn {
+        binary: BinaryName,
+        source: std::io::Error,
+    },
+    #[error("{binary} exited with {status}: {stderr}")]
+    Failed {
+        binary: BinaryName,
+        status: ExitStatus,
+        stderr: String,
+    },
+    #[error("ffprobe printed output that could not be parsed: {0}")]
+    InvalidOutput(#[from] serde_json::Error),
+    #[error("ffprobe reported a format this application does not handle: {0}")]
+    UnsupportedFormat(String),
+}

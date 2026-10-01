@@ -1,0 +1,28 @@
+{
+  "name": "@easyimmerse/effects-native",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@easyimmerse/backend": "workspace:*",
+    "@easyimmerse/effects-web": "workspace:*",
+    "@easyimmerse/state": "workspace:*",
+    "@tauri-apps/plugin-clipboard-manager": "^2.4.0",
+    "@tauri-apps/plugin-dialog": "^2.8.0",
+    "@tauri-apps/plugin-notification": "^2.5.0",
+    "@tauri-apps/plugin-opener": "^2.7.0"
+  },
+  "devDependencies": {
+    "@easyimmerse/config": "workspace:*",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}

@@ -1,0 +1,55 @@
+name: wasm
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/wasm.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "crates/**"
+      - "packages/**"
+      - "fixtures/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/wasm.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "crates/**"
+      - "packages/**"
+      - "fixtures/**"
+
+# A newer push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wasm:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Build the WebAssembly module
+        run: mise run wasm:build
+
+      - name: Node tests against the fixtures
+        run: pnpm --filter @easyimmerse/wasm test
+
+      - name: Backend package tests
+        run: pnpm --filter @easyimmerse/backend test

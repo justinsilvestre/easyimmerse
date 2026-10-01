@@ -1,0 +1,9 @@
+package easyimmerse:plugin@0.1.0;
+
+/// Resolve an external locator, such as a URL, to media and subtitles written
+/// into a directory the host has granted.
+interface media-source {
+    use types.{plugin-error, resolved-media};
+
+    resolve: func(locator: string, output-dir: string) -> result<resolved-media, plugin-error>;
+}

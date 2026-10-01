@@ -1,0 +1,22 @@
+{
+  "name": "@easyimmerse/types",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate:index": "node scripts/writeGeneratedIndex.ts",
+    "generate:openapi": "openapi-typescript ../../crates/api/openapi.json -o src/openapi/schema.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@easyimmerse/config": "workspace:*",
+    "@types/node": "^24",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.2"
+  }
+}

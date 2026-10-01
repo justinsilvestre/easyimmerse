@@ -1,0 +1,73 @@
+name: plugins
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/plugins.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "plugins/**"
+      - "crates/**"
+      - "fixtures/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/plugins.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "plugins/**"
+      - "crates/**"
+      - "fixtures/**"
+
+# A newer push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Format
+        run: cargo fmt --manifest-path plugins/Cargo.toml --all --check
+
+      - name: Build the example plugins
+        run: mise run plugins:build
+
+      - name: Host tests
+        run: cargo test -p easyimmerse-plugins
+
+  interpreter:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Build the example plugins
+        run: mise run plugins:build
+
+      - name: Host tests under the Pulley interpreter
+        run: cargo test -p easyimmerse-plugins --features interpreter
+        env:
+          EASYIMMERSE_PLUGIN_EXECUTION: interpreter

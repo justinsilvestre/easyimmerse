@@ -1,0 +1,73 @@
+name: web
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/web.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "apps/web/**"
+      - "packages/**"
+      - "crates/**"
+      - "apps/server/**"
+      - "fixtures/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/web.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "apps/web/**"
+      - "packages/**"
+      - "crates/**"
+      - "apps/server/**"
+      - "fixtures/**"
+
+# A newer push to the same branch cancels the run still going for the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Build the server and the WebAssembly module
+        run: |
+          cargo build -p easyimmerse-server
+          mise run wasm:build
+
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(pnpm --filter @easyimmerse/web exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium
+        run: pnpm --filter @easyimmerse/web exec playwright install --with-deps chromium
+
+      - name: Build the web app
+        run: pnpm --filter @easyimmerse/web build
+
+      - name: Playwright smoke test
+        run: pnpm --filter @easyimmerse/web e2e
