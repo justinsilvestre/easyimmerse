@@ -1,5 +1,6 @@
 import type {
   FlashcardDraftRequest,
+  PlaybackEnvironment,
   ProjectSettings,
 } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
@@ -147,6 +148,43 @@ describe("backendApi project, media, and flashcard endpoints", () => {
       method: "PUT",
       path: "/projects/p1/media/m1/duration",
       body: { kind: "json", value: { duration_ms: 5000 } },
+    });
+  });
+
+  it("fetches a media file's tracks under the project and media ids", async () => {
+    const request = await requestFor((store) =>
+      store.dispatch(
+        backendApi.endpoints.getMediaTracks.initiate({
+          projectId: "p1",
+          mediaId: "m1",
+        }),
+      ),
+    );
+    expect(request).toEqual({
+      method: "GET",
+      path: "/projects/p1/media/m1/tracks",
+    });
+  });
+
+  it("posts the measured environment to plan a media file's playback", async () => {
+    const environment: PlaybackEnvironment = {
+      engine: "webkit",
+      direct_play: false,
+      fmp4_codecs: ["avc1.64001F", "mp4a.40.2"],
+    };
+    const request = await requestFor((store) =>
+      store.dispatch(
+        backendApi.endpoints.planPlayback.initiate({
+          projectId: "p1",
+          mediaId: "m1",
+          environment,
+        }),
+      ),
+    );
+    expect(request).toEqual({
+      method: "POST",
+      path: "/projects/p1/media/m1/playback",
+      body: { kind: "json", value: { environment } },
     });
   });
 

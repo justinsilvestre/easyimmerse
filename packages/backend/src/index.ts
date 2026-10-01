@@ -9,6 +9,7 @@ export {
   useDeleteFlashcardMutation,
   useDeleteProjectMutation,
   useDraftFlashcardMutation,
+  useGetMediaTracksQuery,
   useGetPreferenceQuery,
   useGetProjectQuery,
   useGetSubtitleCuesQuery,
@@ -25,6 +26,7 @@ export {
   useParseDocumentMutation,
   useParseLocalDocumentMutation,
   useParseTimedTextMutation,
+  usePlanPlaybackMutation,
   useRemoveMediaFileMutation,
   useRemoveSubtitleTrackMutation,
   useSetDictionaryLanguagesMutation,
@@ -47,6 +49,10 @@ export {
   resetBackend,
 } from "./configureBackend.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
+export {
+  buildMediaTracksRequest,
+  buildPlaybackRequest,
+} from "./mediaPlaybackRequests.ts";
 export type { OfflineOperation } from "./offlineOperation.ts";
 export type { ServerConfig } from "./resolveServerConfig.ts";
 export { resolveServerConfig } from "./resolveServerConfig.ts";
