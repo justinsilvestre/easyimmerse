@@ -32,7 +32,7 @@ run = [
 description = "Regenerate packages/types/src/generated from Rust with ts-rs"
 run = [
   "rm -rf packages/types/src/generated",
-  "cargo test --workspace --exclude easyimmerse-native export_bindings",
+  "cargo test -p easyimmerse-core -p easyimmerse-media -p easyimmerse-api export_bindings",
   "node packages/types/scripts/writeGeneratedIndex.ts",
 ]
 sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
