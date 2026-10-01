@@ -19,6 +19,7 @@ easyimmerse-storage = { path = "crates/storage" }
 easyimmerse-plugin-api = { path = "crates/plugin-api" }
 easyimmerse-plugins = { path = "crates/plugins" }
 easyimmerse-api = { path = "crates/api" }
+easyimmerse-conversion = { path = "crates/conversion" }
 
 anyhow = "1.0"
 axum = "0.8"
