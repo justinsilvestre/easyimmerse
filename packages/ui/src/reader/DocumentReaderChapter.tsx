@@ -1,6 +1,6 @@
 import type { Chapter } from "@easyimmerse/types";
 import clsx from "clsx";
-import type { ReactNode, Ref } from "react";
+import type { ReactNode } from "react";
 import { TokenizedText } from "../components/TokenizedText.tsx";
 import { formatChapterTitle } from "./formatChapterTitle.ts";
 import type { ReaderSettings } from "./readerSettings.ts";
@@ -27,13 +27,11 @@ export function DocumentReaderChapter(props: {
   language: string | null;
   settings: ReaderSettings;
   highlightedParagraphIndex: number | null;
-  paragraphsRef: Ref<HTMLElement>;
   onWordHovered: (event: WordInContext) => void;
   onWordActivated: (event: WordInContext) => void;
 }) {
   return (
     <article
-      ref={props.paragraphsRef}
       lang={props.language ?? undefined}
       className={clsx(
         "mx-auto max-w-[65ch] px-6 pt-10 pb-24 sm:pt-16",
@@ -43,7 +41,7 @@ export function DocumentReaderChapter(props: {
     >
       <h2
         tabIndex={-1}
-        className="mb-[1.5em] font-semibold text-[1.5em] text-stone-900 leading-tight focus:outline-none"
+        className="mb-[1.5em] scroll-mt-24 font-semibold text-[1.5em] text-stone-900 leading-tight focus:outline-none"
       >
         {formatChapterTitle(props.chapter, props.chapterIndex)}
       </h2>

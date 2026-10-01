@@ -44,7 +44,7 @@ export function DocumentReader({
   const [settings, setSettings] = useState(defaultReaderSettings);
   const [isTableOfContentsOpen, setTableOfContentsOpen] = useState(false);
   const search = useDocumentSearch(document);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const readerRef = useRef<HTMLDivElement>(null);
 
   function moveTo(nextPosition: ReadingPosition, shouldFocusChapter = false) {
     setCurrentPosition(nextPosition);
@@ -60,15 +60,18 @@ export function DocumentReader({
   });
 
   useEffect(() => {
-    const scrollArea = scrollAreaRef.current;
-    if (scrollArea) scrollToRequest(scrollArea, scrollRequest);
+    const reader = readerRef.current;
+    if (reader) scrollToRequest(reader, scrollRequest);
   }, [scrollRequest]);
 
   const { chapterIndex } = currentPosition;
   const chapter = document.chapters[chapterIndex];
   const shownMatch = search.shownMatch;
   return (
-    <div className="flex h-full flex-col bg-stone-50 text-stone-900">
+    <div
+      ref={readerRef}
+      className="flex h-full flex-col bg-stone-50 text-stone-900"
+    >
       <ReaderToolbar
         chapterIndex={chapterIndex}
         chapterCount={document.chapters.length}
@@ -103,10 +106,13 @@ export function DocumentReader({
             />
           </div>
         )}
-        <div ref={scrollAreaRef} className="min-w-0 flex-1 overflow-y-auto">
+        <div
+          key={chapterIndex}
+          ref={paragraphsRef}
+          className="min-w-0 flex-1 overflow-y-auto"
+        >
           {chapter ? (
             <DocumentReaderChapter
-              key={chapterIndex}
               chapter={chapter}
               chapterIndex={chapterIndex}
               language={document.language}
@@ -116,7 +122,6 @@ export function DocumentReader({
                   ? shownMatch.paragraphIndex
                   : null
               }
-              paragraphsRef={paragraphsRef}
               onWordHovered={onWordHovered}
               onWordActivated={onWordActivated}
             />
@@ -131,13 +136,16 @@ export function DocumentReader({
   );
 }
 
-function scrollToRequest(scrollArea: HTMLElement, request: ScrollRequest) {
+/** Scrolls to the requested paragraph, or to the chapter heading for the first paragraph, and focuses the heading if requested. */
+function scrollToRequest(reader: HTMLElement, request: ScrollRequest) {
   const { paragraphIndex } = request.position;
-  const paragraph = scrollArea.querySelector(
-    `[${paragraphIndexAttribute}="${paragraphIndex}"]`,
-  );
-  if (paragraphIndex === 0) scrollArea.scrollTop = 0;
-  else paragraph?.scrollIntoView?.({ block: "start" });
-  if (request.shouldFocusChapter)
-    scrollArea.querySelector("h2")?.focus({ preventScroll: true });
+  const heading = reader.querySelector("h2");
+  const target =
+    paragraphIndex === 0
+      ? heading
+      : reader.querySelector(
+          `[${paragraphIndexAttribute}="${paragraphIndex}"]`,
+        );
+  target?.scrollIntoView?.({ block: "start" });
+  if (request.shouldFocusChapter) heading?.focus({ preventScroll: true });
 }
