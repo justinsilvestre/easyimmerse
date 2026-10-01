@@ -49,6 +49,14 @@ export function request<T>(idbRequest: IDBRequest<T>): Promise<T> {
   });
 }
 
+/** Resolves once the transaction commits, and rejects if it aborts, as when storage runs out. */
+export function commit(transaction: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    transaction.addEventListener("complete", () => resolve());
+    transaction.addEventListener("abort", () => reject(transaction.error));
+  });
+}
+
 function createMissingStores(database: IDBDatabase): void {
   for (const name of Object.values(appStoreNames)) {
     if (!database.objectStoreNames.contains(name))

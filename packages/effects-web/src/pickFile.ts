@@ -4,7 +4,7 @@ import type { BrowserFileStore } from "./browserFileStore.ts";
 /**
  * Builds the effect that opens the browser's file dialog through a hidden input.
  * The chosen file is kept in the store and stands in as a browser_file source.
- * Resolves null when the user cancels.
+ * Resolves null when the user cancels, and rejects when the store cannot keep the file.
  */
 export function createPickFile(store: BrowserFileStore): Effects["pickFile"] {
   return (_purpose, accept) => {
@@ -33,7 +33,10 @@ function createHiddenFileInput(accept: readonly string[]): HTMLInputElement {
   return input;
 }
 
-function storePickedFile(store: BrowserFileStore, file: File): PickedFile {
-  const key = store.put(file);
+async function storePickedFile(
+  store: BrowserFileStore,
+  file: File,
+): Promise<PickedFile> {
+  const key = await store.put(file);
   return { name: file.name, source: { kind: "browser_file", key } };
 }

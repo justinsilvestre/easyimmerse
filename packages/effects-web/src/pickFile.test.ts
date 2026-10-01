@@ -1,6 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
-import { createBrowserFileStore } from "./browserFileStore.ts";
+import "fake-indexeddb/auto";
+import { IDBFactory } from "fake-indexeddb";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  type BrowserFileStore,
+  createBrowserFileStore,
+} from "./browserFileStore.ts";
 import { createPickFile } from "./pickFile.ts";
+
+beforeEach(() => {
+  globalThis.indexedDB = new IDBFactory();
+});
 
 const subtitles = { kind: "subtitles", role: "target" } as const;
 
@@ -31,7 +40,25 @@ describe("createPickFile", () => {
     chooseFile(findFileInput(), file);
     const source = (await picked)?.source;
     const key = source?.kind === "browser_file" ? source.key : "";
-    expect(store.get(key)).toBe(file);
+    expect(await store.get(key)).not.toBeNull();
+  });
+
+  it("resolves a browser_file source", async () => {
+    const picked = createPickFile(createBrowserFileStore())(subtitles, [
+      ".srt",
+    ]);
+    chooseFile(findFileInput(), new File(["Hi"], "episode.srt"));
+    expect((await picked)?.source.kind).toBe("browser_file");
+  });
+
+  it("rejects when the store cannot keep the chosen file", async () => {
+    const store: BrowserFileStore = {
+      ...createBrowserFileStore(),
+      put: () => Promise.reject(new Error("The quota is exceeded.")),
+    };
+    const picked = createPickFile(store)(subtitles, [".srt"]);
+    chooseFile(findFileInput(), new File(["Hi"], "episode.srt"));
+    await expect(picked).rejects.toThrow("quota");
   });
 
   it("resolves null when the dialog is cancelled", async () => {

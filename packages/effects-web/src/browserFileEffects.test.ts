@@ -1,10 +1,18 @@
+// @vitest-environment node
+// Node's own File survives IndexedDB's structured cloning; happy-dom's File does not.
+import "fake-indexeddb/auto";
 import type { MediaFile } from "@easyimmerse/types";
-import { describe, expect, it, vi } from "vitest";
+import { IDBFactory } from "fake-indexeddb";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createReadStoredFileText,
   createResolveMediaUrl,
 } from "./browserFileEffects.ts";
 import { createBrowserFileStore } from "./browserFileStore.ts";
+
+beforeEach(() => {
+  globalThis.indexedDB = new IDBFactory();
+});
 
 const createMedia = (source: MediaFile["source"]): MediaFile => ({
   id: "m1",
@@ -19,7 +27,7 @@ const createMedia = (source: MediaFile["source"]): MediaFile => ({
 describe("createResolveMediaUrl", () => {
   it("resolves an object URL for media stored in the browser", async () => {
     const store = createBrowserFileStore();
-    const key = store.put(new File(["video"], "episode.mp4"));
+    const key = await store.put(new File(["video"], "episode.mp4"));
     const resolve = createResolveMediaUrl(store);
     const url = await resolve("p1", createMedia({ kind: "browser_file", key }));
     expect(url.startsWith("blob:")).toBe(true);
@@ -28,7 +36,7 @@ describe("createResolveMediaUrl", () => {
   it("revokes the previous object URL when resolving the next", async () => {
     const revoke = vi.spyOn(URL, "revokeObjectURL");
     const store = createBrowserFileStore();
-    const key = store.put(new File(["video"], "episode.mp4"));
+    const key = await store.put(new File(["video"], "episode.mp4"));
     const resolve = createResolveMediaUrl(store);
     const first = await resolve(
       "p1",
@@ -43,12 +51,18 @@ describe("createResolveMediaUrl", () => {
     const media = createMedia({ kind: "path", path: "/episode.mp4" });
     await expect(resolve("p1", media)).rejects.toThrow("episode.mp4");
   });
+
+  it("rejects for media the browser no longer holds", async () => {
+    const resolve = createResolveMediaUrl(createBrowserFileStore());
+    const media = createMedia({ kind: "browser_file", key: "missing" });
+    await expect(resolve("p1", media)).rejects.toThrow("not stored");
+  });
 });
 
 describe("createReadStoredFileText", () => {
   it("reads the text of a stored file", async () => {
     const store = createBrowserFileStore();
-    const key = store.put(new File(["WEBVTT"], "episode.vtt"));
+    const key = await store.put(new File(["WEBVTT"], "episode.vtt"));
     expect(await createReadStoredFileText(store)(key)).toBe("WEBVTT");
   });
 
