@@ -19,6 +19,9 @@ apps/native/src-tauri/binaries/
 apps/native/src-tauri/gen/
 packages/ui/storybook-static/
 
+# Local development data
+.dev/
+
 # Test output
 playwright-report/
 test-results/

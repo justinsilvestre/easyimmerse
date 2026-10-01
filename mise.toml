@@ -85,6 +85,30 @@ description = "Run the desktop app in development mode with its embedded server"
 depends = ["fetch-ffmpeg"]
 run = "pnpm --filter @easyimmerse/native dev"
 
+[tasks.web-dev]
+description = "Run the web app with hot reloading against a local server at http://127.0.0.1:8788"
+depends = ["web-dev:server", "web-dev:vite"]
+
+[tasks."web-dev:build"]
+run = "cargo build -p easyimmerse-server"
+
+# The server keeps its data in .dev/ and seeds the placeholder projects only into a new database.
+# Port 8788 leaves 8787 to the desktop app's embedded server.
+[tasks."web-dev:server"]
+depends = ["web-dev:build"]
+env = { EASYIMMERSE_TOKEN = "dev" }
+run = '''
+mkdir -p .dev
+seed=$([ -e .dev/server.sqlite ] || echo --seed-placeholders)
+exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed
+'''
+
+# Waits for the server build so that a compile error stops the task before Vite starts.
+[tasks."web-dev:vite"]
+depends = ["web-dev:build"]
+env = { VITE_EASYIMMERSE_SERVER_URL = "http://127.0.0.1:8788", VITE_EASYIMMERSE_TOKEN = "dev" }
+run = "pnpm --filter @easyimmerse/web dev"
+
 [tasks.storybook]
 description = "Serve the UI component stories at http://localhost:6006"
 run = "pnpm --filter @easyimmerse/ui storybook"
