@@ -17,6 +17,7 @@ packages/wasm/pkg/
 plugins/*/dist/
 apps/native/src-tauri/binaries/
 apps/native/src-tauri/gen/
+packages/ui/storybook-static/
 
 # Test output
 playwright-report/
