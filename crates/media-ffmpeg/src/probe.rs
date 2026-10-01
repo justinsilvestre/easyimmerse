@@ -1,7 +1,6 @@
 //! Container metadata read through ffprobe, for files the pure-Rust probe cannot read.
 
 use std::path::Path;
-use std::process::Command;
 
 use easyimmerse_media::{ContainerFormat, ContainerInfo};
 
@@ -9,37 +8,16 @@ use crate::error::FfmpegError;
 use crate::ffprobe_output::{FfprobeOutput, parse_ffprobe_output};
 use crate::ffprobe_track::to_track_info;
 use crate::locate::{BinaryName, FfmpegPaths, locate_binary};
+use crate::run_ffprobe::run_ffprobe;
 
 pub fn probe_file(path: &Path, paths: &FfmpegPaths) -> Result<ContainerInfo, FfmpegError> {
     let ffprobe = locate_binary(BinaryName::Ffprobe, paths)?;
-    let json = run_ffprobe(&ffprobe, path)?;
+    let json = run_ffprobe(
+        &ffprobe,
+        path,
+        &["-print_format", "json", "-show_format", "-show_streams"],
+    )?;
     to_container_info(&parse_ffprobe_output(&json)?)
-}
-
-fn run_ffprobe(ffprobe: &Path, path: &Path) -> Result<String, FfmpegError> {
-    let output = Command::new(ffprobe)
-        .args([
-            "-v",
-            "error",
-            "-print_format",
-            "json",
-            "-show_format",
-            "-show_streams",
-        ])
-        .arg(path)
-        .output()
-        .map_err(|source| FfmpegError::Spawn {
-            binary: BinaryName::Ffprobe,
-            source,
-        })?;
-    if !output.status.success() {
-        return Err(FfmpegError::Failed {
-            binary: BinaryName::Ffprobe,
-            status: output.status,
-            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-        });
-    }
-    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
 fn to_container_info(output: &FfprobeOutput) -> Result<ContainerInfo, FfmpegError> {
