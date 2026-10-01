@@ -1,5 +1,6 @@
 import { useParseTimedTextMutation } from "@easyimmerse/backend";
-import { actions, selectSubtitleSource } from "@easyimmerse/state";
+import type { ChosenFile } from "@easyimmerse/state";
+import { actions, selectChosenFile } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { useEffect } from "react";
 import { fixtureSubtitleText } from "../fixtureSubtitle.ts";
@@ -9,14 +10,17 @@ import { Button } from "./Button.tsx";
 
 /** Parses the chosen subtitle file, or the fixture until one is chosen, and lists its cues. */
 export function SubtitlesPanel() {
-  const subtitleSource = useAppSelector(selectSubtitleSource);
+  const subtitlePath = readSubtitlePath(useAppSelector(selectChosenFile));
   const [parseTimedText, { data, error }] = useParseTimedTextMutation();
   useEffect(() => {
     parseTimedText({
-      source: subtitleSource ?? { kind: "inline", text: fixtureSubtitleText },
+      source:
+        subtitlePath === null
+          ? { kind: "inline", text: fixtureSubtitleText }
+          : { kind: "path", path: subtitlePath },
       format: null,
     });
-  }, [subtitleSource, parseTimedText]);
+  }, [subtitlePath, parseTimedText]);
   if (error) return <p role="alert">Could not parse the subtitles.</p>;
   return (
     <ol aria-label="Subtitles" className="flex flex-col gap-1">
@@ -27,6 +31,17 @@ export function SubtitlesPanel() {
   );
 }
 
+/**
+ * Returns the path of a subtitle file picked in the native app.
+ * A file picked in the web app is stored in the browser, which the server cannot read,
+ * so the fixture stays shown.
+ */
+function readSubtitlePath(chosen: ChosenFile | null): string | null {
+  if (chosen?.purpose.kind !== "subtitles") return null;
+  const { source } = chosen.file;
+  return source.kind === "path" ? source.path : null;
+}
+
 function CueItem({ cue }: { cue: Cue }) {
   const dispatch = useAppDispatch();
   return (
@@ -34,7 +49,7 @@ function CueItem({ cue }: { cue: Cue }) {
       <Button
         variant="subtle"
         className="whitespace-pre-line text-left"
-        onClick={() => dispatch(actions.seekRequested(cue.start_ms / 1000))}
+        onClick={() => dispatch(actions.seekRequested(cue.start_ms))}
       >
         {cue.text}
       </Button>

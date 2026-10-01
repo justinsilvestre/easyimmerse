@@ -1,41 +1,61 @@
+import type { MediaFile } from "@easyimmerse/types";
 import { describe, expect, it, vi } from "vitest";
 import { actions } from "./actions.ts";
 import { createAppStore } from "./createAppStore.ts";
 import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
-import type { PickedFile } from "./effects.ts";
+import type { Effects } from "./effects.ts";
+import type { PickedFile } from "./filePick/chosenFile.ts";
 import { createRecordingEffects } from "./recordingEffects.ts";
+import { createMediaFile } from "./testSupport/createMediaFile.ts";
+
+const subtitles = { kind: "subtitles", role: "target" } as const;
 
 const pickedFile: PickedFile = {
   name: "episode.srt",
-  source: { kind: "inline", text: "1\n00:00:01,000 --> 00:00:02,000\nHello" },
+  source: { kind: "path", path: "/videos/episode.srt" },
 };
+
+const mediaWithStoredTrack = (): MediaFile =>
+  createMediaFile({
+    subtitle_tracks: [
+      {
+        id: "t1",
+        name: "episode.srt",
+        role: "target",
+        language: null,
+        source: { kind: "file", source: { kind: "browser_file", key: "k1" } },
+      },
+    ],
+  });
+
+function createStore(effects: Effects = createRecordingEffects()) {
+  const server = createFakeServerStoreParts();
+  return { store: createAppStore(effects, server), server };
+}
 
 describe("effectsMiddleware", () => {
   it("calls seekPlayer after seekRequested is dispatched", () => {
     const effects = createRecordingEffects();
-    const store = createAppStore(effects, createFakeServerStoreParts());
-    store.dispatch(actions.seekRequested(12.5));
-    expect(effects.calls).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);
+    createStore(effects).store.dispatch(actions.seekRequested(12_500));
+    expect(effects.calls).toEqual([{ type: "seekPlayer", ms: 12_500 }]);
   });
 
-  it("dispatches fileChosen once the file pick resolves", async () => {
+  it("dispatches fileChosen with the purpose once the file pick resolves", async () => {
     const effects = createRecordingEffects();
-    const server = createFakeServerStoreParts();
-    const store = createAppStore(effects, server);
-    store.dispatch(actions.filePickRequested());
+    const { store, server } = createStore(effects);
+    store.dispatch(actions.filePickRequested(subtitles));
     effects.resolvePickFile(pickedFile);
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
-        actions.fileChosen(pickedFile),
+        actions.fileChosen(subtitles, pickedFile),
       );
     });
   });
 
   it("dispatches filePickCancelled once the file pick resolves to null", async () => {
     const effects = createRecordingEffects();
-    const server = createFakeServerStoreParts();
-    const store = createAppStore(effects, server);
-    store.dispatch(actions.filePickRequested());
+    const { store, server } = createStore(effects);
+    store.dispatch(actions.filePickRequested(subtitles));
     effects.resolvePickFile(null);
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
@@ -46,9 +66,8 @@ describe("effectsMiddleware", () => {
 
   it("dispatches filePickCancelled once the file pick fails", async () => {
     const effects = createRecordingEffects();
-    const server = createFakeServerStoreParts();
-    const store = createAppStore(effects, server);
-    store.dispatch(actions.filePickRequested());
+    const { store, server } = createStore(effects);
+    store.dispatch(actions.filePickRequested(subtitles));
     effects.rejectPickFile(new Error("dialog unavailable"));
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
@@ -57,11 +76,64 @@ describe("effectsMiddleware", () => {
     });
   });
 
+  it("stores the resolved media URL after mediaOpened", async () => {
+    const { store } = createStore();
+    store.dispatch(actions.mediaOpened("p1", createMediaFile()));
+    await vi.waitFor(() => {
+      expect(store.getState().app.player.mediaUrl).toBe("blob:test");
+    });
+  });
+
+  it("stores the failure message when the media URL cannot be resolved", async () => {
+    const effects: Effects = {
+      ...createRecordingEffects(),
+      resolveMediaUrl: () => Promise.reject(new Error("file moved")),
+    };
+    const { store } = createStore(effects);
+    store.dispatch(actions.mediaOpened("p1", createMediaFile()));
+    await vi.waitFor(() => {
+      expect(store.getState().app.player.mediaUrlError).toBe("file moved");
+    });
+  });
+
+  it("stores the text of a subtitle file the browser holds after mediaOpened", async () => {
+    const effects = createRecordingEffects();
+    effects.storedFileTexts.set("k1", "WEBVTT");
+    const { store } = createStore(effects);
+    store.dispatch(actions.mediaOpened("p1", mediaWithStoredTrack()));
+    await vi.waitFor(() => {
+      expect(store.getState().app.subtitles.browserFileTexts).toEqual({
+        t1: "WEBVTT",
+      });
+    });
+  });
+
+  it("dispatches subtitleTextFailed when a stored subtitle file cannot be read", async () => {
+    const { store, server } = createStore();
+    store.dispatch(actions.mediaOpened("p1", mediaWithStoredTrack()));
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.subtitleTextFailed("t1", "Nothing is stored at k1."),
+      );
+    });
+  });
+
+  it("dispatches frameCaptured with the captured frame after frameCaptureRequested", async () => {
+    const effects = createRecordingEffects();
+    effects.frameDataUrl = "data:image/png;base64,AA";
+    const { store, server } = createStore(effects);
+    store.dispatch(actions.frameCaptureRequested());
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.frameCaptured("data:image/png;base64,AA"),
+      );
+    });
+  });
+
   it("dispatches preferenceLoaded after preferencesLoadRequested", async () => {
     const effects = createRecordingEffects();
     effects.preferences.set("showTranslations", "true");
-    const server = createFakeServerStoreParts();
-    const store = createAppStore(effects, server);
+    const { store, server } = createStore(effects);
     store.dispatch(actions.preferencesLoadRequested());
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
@@ -72,15 +144,15 @@ describe("effectsMiddleware", () => {
 
   it("calls savePreference after preferenceToggled is dispatched", () => {
     const effects = createRecordingEffects();
-    const store = createAppStore(effects, createFakeServerStoreParts());
-    store.dispatch(actions.preferenceToggled("showTranslations"));
+    createStore(effects).store.dispatch(
+      actions.preferenceToggled("showTranslations"),
+    );
     expect(effects.preferences.get("showTranslations")).toBe("true");
   });
 
   it("calls showNotification with a confirmation after cueCopyRequested is dispatched", () => {
     const effects = createRecordingEffects();
-    const store = createAppStore(effects, createFakeServerStoreParts());
-    store.dispatch(actions.cueCopyRequested("Hello"));
+    createStore(effects).store.dispatch(actions.cueCopyRequested("Hello"));
     expect(effects.calls).toContainEqual({
       type: "showNotification",
       message: "Copied to clipboard",

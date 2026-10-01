@@ -1,7 +1,8 @@
 import type { AppStore, PlayerRegistry } from "@easyimmerse/state";
-import { useReducer } from "react";
+import { actions, selectScreen } from "@easyimmerse/state";
 import { Provider } from "react-redux";
-import { initialNavigation, navigate } from "./navigation.ts";
+import { useAppDispatch } from "./hooks/useAppDispatch.ts";
+import { useAppSelector } from "./hooks/useAppSelector.ts";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
 import { MediaScreen } from "./screens/MediaScreen.tsx";
@@ -13,26 +14,36 @@ export function AppRoot({
   store: AppStore;
   playerRegistry: PlayerRegistry;
 }) {
-  const [navigation, dispatchNavigation] = useReducer(
-    navigate,
-    initialNavigation,
-  );
   return (
     <Provider store={store}>
       <PlayerRegistryContext value={playerRegistry}>
-        {navigation.screen === "home" ? (
-          <HomeScreen
-            onOpenProject={(projectId) =>
-              dispatchNavigation({ type: "openProject", projectId })
-            }
-          />
-        ) : (
-          <MediaScreen
-            projectId={navigation.projectId}
-            onBack={() => dispatchNavigation({ type: "goHome" })}
-          />
-        )}
+        <CurrentScreen />
       </PlayerRegistryContext>
     </Provider>
   );
+}
+
+/** Shows the screen the store names. The project screen and the new-project form are stand-ins until they get screens of their own. */
+function CurrentScreen() {
+  const dispatch = useAppDispatch();
+  const screen = useAppSelector(selectScreen);
+  switch (screen.kind) {
+    case "home":
+    case "newProject":
+      return <HomeScreen />;
+    case "project":
+      return (
+        <MediaScreen
+          projectId={screen.projectId}
+          onBack={() => dispatch(actions.homeOpened())}
+        />
+      );
+    case "media":
+      return (
+        <MediaScreen
+          projectId={screen.projectId}
+          onBack={() => dispatch(actions.mediaClosed())}
+        />
+      );
+  }
 }

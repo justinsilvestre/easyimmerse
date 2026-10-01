@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@easyimmerse/config": "workspace:*",
+    "@easyimmerse/types": "workspace:*",
     "typescript": "~6.0.3",
     "vite": "^8.3.1",
     "vitest": "^5.0.2"

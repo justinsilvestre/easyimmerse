@@ -51,7 +51,7 @@ describe("MediaScreen", () => {
     fireEvent.click(
       within(list).getByRole("button", { name: "The cat is sleeping." }),
     );
-    expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 0.5 });
+    expect(effects.calls).toContainEqual({ type: "seekPlayer", ms: 500 });
   });
 
   it("copies the cue text when its Copy button is clicked", async () => {
@@ -67,7 +67,7 @@ describe("MediaScreen", () => {
   it("shows the time the player was seeked to", async () => {
     const { playerRegistry } = renderMediaScreen();
     await findSubtitles();
-    act(() => playerRegistry.current()?.seek(61.75));
+    act(() => playerRegistry.current()?.seek(61_750));
     expect(screen.getByRole("region", { name: "Player" }).textContent).toBe(
       "1:01.8",
     );
@@ -80,6 +80,7 @@ describe("MediaScreen", () => {
     );
     expect(effects.calls).toContainEqual({
       type: "pickFile",
+      purpose: { kind: "subtitles", role: "target" },
       accept: [".srt", ".vtt"],
     });
   });

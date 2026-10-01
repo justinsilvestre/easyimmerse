@@ -1,20 +1,34 @@
-import type { TextSource } from "@easyimmerse/types";
-
-export type PreferenceKey = "showTranslations";
-
-export const preferenceKeys: readonly PreferenceKey[] = ["showTranslations"];
+import type { ChosenFile, FilePickPurpose } from "./filePick/chosenFile.ts";
+import type { FlashcardEditorState } from "./flashcardEditor/flashcardEditorState.ts";
+import { closedFlashcardEditor } from "./flashcardEditor/flashcardEditorState.ts";
+import type { LookupState } from "./lookup/lookupState.ts";
+import { closedLookup } from "./lookup/lookupState.ts";
+import type { Screen } from "./navigation/screen.ts";
+import type { PlayerState } from "./player/playerState.ts";
+import { initialPlayerState } from "./player/playerState.ts";
+import type { PreferenceKey } from "./preferences/preferenceKey.ts";
+import type { SubtitlesState } from "./subtitles/subtitlesState.ts";
+import { initialSubtitlesState } from "./subtitles/subtitlesState.ts";
 
 export type AppState = {
-  player: { currentTimeSeconds: number };
-  /** The text the subtitles panel parses. Null until a file is chosen. */
-  subtitleSource: TextSource | null;
+  screen: Screen;
+  player: PlayerState;
+  subtitles: SubtitlesState;
+  lookup: LookupState;
+  flashcardEditor: FlashcardEditorState;
   preferences: Partial<Record<PreferenceKey, string>>;
-  pendingFilePick: boolean;
+  /** What the open file dialog is for. Null when no dialog is open. */
+  pendingFilePick: FilePickPurpose | null;
+  chosenFile: ChosenFile | null;
 };
 
 export const initialAppState: AppState = {
-  player: { currentTimeSeconds: 0 },
-  subtitleSource: null,
+  screen: { kind: "home" },
+  player: initialPlayerState,
+  subtitles: initialSubtitlesState,
+  lookup: closedLookup,
+  flashcardEditor: closedFlashcardEditor,
   preferences: {},
-  pendingFilePick: false,
+  pendingFilePick: null,
+  chosenFile: null,
 };

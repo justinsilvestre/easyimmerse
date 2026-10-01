@@ -1,17 +1,18 @@
 import { useListProjectsQuery } from "@easyimmerse/backend";
+import { actions } from "@easyimmerse/state";
 import { Button } from "../components/Button.tsx";
 import { HelpLink } from "../components/HelpLink.tsx";
 import { ProjectList } from "../components/ProjectList.tsx";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 
 /** The project id the media screen opens with when no server can list projects. */
 const offlineProjectId = "offline";
 
-export function HomeScreen({
-  onOpenProject,
-}: {
-  onOpenProject: (projectId: string) => void;
-}) {
+export function HomeScreen() {
+  const dispatch = useAppDispatch();
   const { data, isLoading, error } = useListProjectsQuery();
+  const openProject = (projectId: string) =>
+    dispatch(actions.projectOpened(projectId));
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-4 p-4">
       <header className="flex items-center justify-between">
@@ -21,11 +22,11 @@ export function HomeScreen({
       {isLoading && <p>Loading projects...</p>}
       {error && <p role="alert">Could not load the projects.</p>}
       {isOffline(error) && (
-        <Button onClick={() => onOpenProject(offlineProjectId)}>
+        <Button onClick={() => openProject(offlineProjectId)}>
           Continue offline
         </Button>
       )}
-      {data && <ProjectList projects={data.projects} onOpen={onOpenProject} />}
+      {data && <ProjectList projects={data.projects} onOpen={openProject} />}
     </main>
   );
 }

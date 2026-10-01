@@ -1,22 +1,28 @@
-import type { PickedFile } from "@easyimmerse/state";
+import type { Effects, PickedFile } from "@easyimmerse/state";
+import type { BrowserFileStore } from "./browserFileStore.ts";
 
-/** Opens the browser's file dialog through a hidden input. Resolves null when the user cancels. */
-export function pickFile(
-  accept: readonly string[],
-): Promise<PickedFile | null> {
-  const input = createHiddenFileInput(accept);
-  return new Promise((resolve) => {
-    input.addEventListener("change", () => {
-      input.remove();
-      resolve(readPickedFile(input.files?.[0]));
+/**
+ * Builds the effect that opens the browser's file dialog through a hidden input.
+ * The chosen file is kept in the store and stands in as a browser_file source.
+ * Resolves null when the user cancels.
+ */
+export function createPickFile(store: BrowserFileStore): Effects["pickFile"] {
+  return (_purpose, accept) => {
+    const input = createHiddenFileInput(accept);
+    return new Promise((resolve) => {
+      input.addEventListener("change", () => {
+        input.remove();
+        const file = input.files?.[0];
+        resolve(file === undefined ? null : storePickedFile(store, file));
+      });
+      input.addEventListener("cancel", () => {
+        input.remove();
+        resolve(null);
+      });
+      document.body.append(input);
+      input.click();
     });
-    input.addEventListener("cancel", () => {
-      input.remove();
-      resolve(null);
-    });
-    document.body.append(input);
-    input.click();
-  });
+  };
 }
 
 function createHiddenFileInput(accept: readonly string[]): HTMLInputElement {
@@ -27,12 +33,7 @@ function createHiddenFileInput(accept: readonly string[]): HTMLInputElement {
   return input;
 }
 
-async function readPickedFile(
-  file: File | undefined,
-): Promise<PickedFile | null> {
-  if (file === undefined) return null;
-  return {
-    name: file.name,
-    source: { kind: "inline", text: await file.text() },
-  };
+function storePickedFile(store: BrowserFileStore, file: File): PickedFile {
+  const key = store.put(file);
+  return { name: file.name, source: { kind: "browser_file", key } };
 }

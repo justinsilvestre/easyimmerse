@@ -7,11 +7,15 @@ import { sendOsNotification } from "./osNotification.ts";
 import { pickFile } from "./pickFile.ts";
 import { createServerPreferenceStore } from "./serverPreferenceStore.ts";
 import { createShowNotification } from "./showNotification.ts";
+import {
+  createResolveMediaUrl,
+  readStoredFileText,
+} from "./storedFileEffects.ts";
 
 /**
- * Builds the Tauri implementation of the app's side effects. Native dialogs, notifications,
- * the clipboard, and external links go through Tauri plugins; preferences are stored by the
- * embedded server.
+ * Builds the Tauri implementation of the app's side effects.
+ * Native dialogs, notifications, the clipboard, and external links go through Tauri plugins.
+ * Preferences are stored by the embedded server, which also streams media files.
  */
 export function createNativeEffects(options: {
   playerRegistry: PlayerRegistry;
@@ -24,6 +28,8 @@ export function createNativeEffects(options: {
   return {
     ...webEffects,
     pickFile,
+    resolveMediaUrl: createResolveMediaUrl(options.server),
+    readStoredFileText,
     savePreference: preferences.save,
     loadPreference: preferences.load,
     showNotification: createShowNotification(

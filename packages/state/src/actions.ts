@@ -1,27 +1,23 @@
 import type { Action } from "redux";
-import type { PreferenceKey } from "./appState.ts";
-import type { PickedFile } from "./effects.ts";
+import { filePickActions } from "./filePick/filePickActions.ts";
+import { flashcardEditorActions } from "./flashcardEditor/flashcardEditorActions.ts";
+import { lookupActions } from "./lookup/lookupActions.ts";
+import { navigationActions } from "./navigation/navigationActions.ts";
+import { playerActions } from "./player/playerActions.ts";
+import { preferenceActions } from "./preferences/preferenceActions.ts";
+import { subtitleActions } from "./subtitles/subtitleActions.ts";
+import { systemActions } from "./system/systemActions.ts";
 
+/** Every action creator, keyed by the type of the action it creates. */
 export const actions = {
-  seekRequested: (seconds: number) =>
-    ({ type: "seekRequested", seconds }) as const,
-  playerTimeChanged: (seconds: number) =>
-    ({ type: "playerTimeChanged", seconds }) as const,
-  filePickRequested: () => ({ type: "filePickRequested" }) as const,
-  fileChosen: (file: PickedFile) => ({ type: "fileChosen", file }) as const,
-  filePickCancelled: () => ({ type: "filePickCancelled" }) as const,
-  preferenceToggled: (key: PreferenceKey) =>
-    ({ type: "preferenceToggled", key }) as const,
-  preferencesLoadRequested: () =>
-    ({ type: "preferencesLoadRequested" }) as const,
-  preferenceLoaded: (key: PreferenceKey, value: string | null) =>
-    ({ type: "preferenceLoaded", key, value }) as const,
-  notificationRequested: (message: string) =>
-    ({ type: "notificationRequested", message }) as const,
-  cueCopyRequested: (text: string) =>
-    ({ type: "cueCopyRequested", text }) as const,
-  externalLinkRequested: (url: string) =>
-    ({ type: "externalLinkRequested", url }) as const,
+  ...navigationActions,
+  ...playerActions,
+  ...subtitleActions,
+  ...lookupActions,
+  ...flashcardEditorActions,
+  ...filePickActions,
+  ...preferenceActions,
+  ...systemActions,
 };
 
 export type AppAction = ReturnType<(typeof actions)[keyof typeof actions]>;

@@ -1,4 +1,4 @@
-import { actions, selectCurrentTime } from "@easyimmerse/state";
+import { actions, selectCurrentTimeMs } from "@easyimmerse/state";
 import { useEffect } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -12,15 +12,23 @@ export function formatPlayerTime(seconds: number): string {
   return `${minutes}:${rest}`;
 }
 
-/** Stands in for a real media element: it only tracks the time it was told to seek to. */
+const doNothing = () => undefined;
+
+/** Stands in for a real media element: it tracks the time it was told to seek to and whether it was told to play. */
 export function StubPlayer() {
   const dispatch = useAppDispatch();
   const registry = usePlayerRegistry();
-  const currentTime = useAppSelector(selectCurrentTime);
+  const currentTimeMs = useAppSelector(selectCurrentTimeMs);
   useEffect(
     () =>
       registry.register({
-        seek: (seconds) => dispatch(actions.playerTimeChanged(seconds)),
+        seek: (ms) => dispatch(actions.playerTimeChanged(ms)),
+        play: () => dispatch(actions.playerPlayingChanged(true)),
+        pause: () => dispatch(actions.playerPlayingChanged(false)),
+        setLoop: doNothing,
+        setPlaybackRate: doNothing,
+        setVolume: doNothing,
+        captureFrame: () => null,
       }),
     [registry, dispatch],
   );
@@ -29,7 +37,7 @@ export function StubPlayer() {
       aria-label="Player"
       className="rounded bg-gray-900 p-6 font-mono text-2xl text-white"
     >
-      {formatPlayerTime(currentTime)}
+      {formatPlayerTime(currentTimeMs / 1000)}
     </section>
   );
 }

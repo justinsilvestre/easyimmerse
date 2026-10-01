@@ -5,11 +5,15 @@ import { Button } from "./Button.tsx";
 
 export function PickFileButton() {
   const dispatch = useAppDispatch();
-  const pending = useAppSelector(selectPendingFilePick);
+  const pending = useAppSelector(selectPendingFilePick) !== null;
   return (
     <Button
       disabled={pending}
-      onClick={() => dispatch(actions.filePickRequested())}
+      onClick={() =>
+        dispatch(
+          actions.filePickRequested({ kind: "subtitles", role: "target" }),
+        )
+      }
     >
       Pick a subtitle file
     </Button>
