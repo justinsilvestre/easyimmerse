@@ -16,6 +16,14 @@ function createFakeWasm(): OfflineWasm {
     parseDictionary: () => {
       throw new Error("not a zip archive");
     },
+    draftFlashcard: (request) => ({
+      media_id: request.media_id,
+      fields: [],
+      tags: [],
+      clip: null,
+      screenshot_ms: null,
+    }),
+    lookupTerm: () => [],
   };
 }
 

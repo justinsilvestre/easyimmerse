@@ -1,3 +1,7 @@
+import type {
+  FlashcardDraftRequest,
+  ProjectSettings,
+} from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
 import { afterEach, describe, expect, it } from "vitest";
 import { backendApi } from "./backendApi.ts";
@@ -94,5 +98,112 @@ describe("backendApi", () => {
       }),
     );
     expect(client.requests[0]?.query).toEqual({ format: "epub" });
+  });
+});
+
+describe("backendApi project, media, and flashcard endpoints", () => {
+  async function requestFor(
+    dispatchInto: (store: ReturnType<typeof createStore>) => Promise<unknown>,
+  ) {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await dispatchInto(createStore());
+    return client.requests[0];
+  }
+
+  it("creates a project with its settings as the JSON body", async () => {
+    const settings: ProjectSettings = {
+      name: "Alpha",
+      target_language: "de",
+      translation_language: "en",
+      flashcard_settings: {
+        included_fields: ["word"],
+        default_tags: [],
+        tag_with_media_name: true,
+        use_tts_when_no_audio: false,
+      },
+    };
+    const request = await requestFor((store) =>
+      store.dispatch(backendApi.endpoints.createProject.initiate(settings)),
+    );
+    expect(request).toEqual({
+      method: "POST",
+      path: "/projects",
+      body: { kind: "json", value: settings },
+    });
+  });
+
+  it("sends the media duration under the project and media ids", async () => {
+    const request = await requestFor((store) =>
+      store.dispatch(
+        backendApi.endpoints.setMediaDuration.initiate({
+          projectId: "p1",
+          mediaId: "m1",
+          duration_ms: 5000,
+        }),
+      ),
+    );
+    expect(request).toEqual({
+      method: "PUT",
+      path: "/projects/p1/media/m1/duration",
+      body: { kind: "json", value: { duration_ms: 5000 } },
+    });
+  });
+
+  it("deletes a flashcard with DELETE", async () => {
+    const request = await requestFor((store) =>
+      store.dispatch(
+        backendApi.endpoints.deleteFlashcard.initiate({
+          projectId: "p1",
+          flashcardId: "f1",
+        }),
+      ),
+    );
+    expect(request).toEqual({
+      method: "DELETE",
+      path: "/projects/p1/flashcards/f1",
+    });
+  });
+
+  it("carries the offline operation for draftFlashcard", async () => {
+    const draftRequest: FlashcardDraftRequest = {
+      word: "cats",
+      lemma: null,
+      reading: null,
+      l1_definitions: [],
+      l2_definitions: [],
+      context: null,
+      context_translation: null,
+      media_id: null,
+      media_name: null,
+      clip: null,
+      screenshot_ms: null,
+      settings: {
+        included_fields: ["word"],
+        default_tags: [],
+        tag_with_media_name: false,
+        use_tts_when_no_audio: false,
+      },
+    };
+    const request = await requestFor((store) =>
+      store.dispatch(
+        backendApi.endpoints.draftFlashcard.initiate(draftRequest),
+      ),
+    );
+    expect(request?.offlineOperation).toEqual({
+      kind: "draftFlashcard",
+      request: draftRequest,
+    });
+  });
+
+  it("looks a term up across dictionaries with a query parameter", async () => {
+    const request = await requestFor((store) =>
+      store.dispatch(backendApi.endpoints.lookupTermEverywhere.initiate("cat")),
+    );
+    expect(request).toEqual({
+      method: "GET",
+      path: "/dictionaries/lookup",
+      query: { term: "cat" },
+    });
   });
 });
