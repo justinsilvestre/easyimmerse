@@ -77,7 +77,7 @@ function PresetSegment({
 }) {
   const id = useId();
   return (
-    <label className="flex cursor-pointer flex-col rounded-md px-3 py-2 text-left has-checked:bg-surface-raised has-checked:shadow-sm has-checked:ring-1 has-checked:ring-line has-focus-visible:ring-2 has-focus-visible:ring-accent hover:bg-surface-raised/60">
+    <label className="flex cursor-pointer flex-col rounded-md px-3 py-2 text-left has-checked:bg-white dark:has-checked:bg-gray-700 has-checked:shadow-sm has-checked:ring-1 has-checked:ring-line has-focus-visible:ring-2 has-focus-visible:ring-accent hover:bg-white/60 dark:hover:bg-gray-700/60">
       <input
         type="radio"
         name={groupName}

@@ -58,7 +58,7 @@ function OpenFlashcardEditor({
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) save();
   });
   return (
-    <div className="fixed inset-0 z-30 flex items-end justify-center bg-scrim sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-gray-900/40 dark:bg-black/70 sm:items-center sm:p-4">
       <div
         ref={panel}
         role="dialog"

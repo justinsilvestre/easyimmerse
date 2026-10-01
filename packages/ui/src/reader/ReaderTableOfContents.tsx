@@ -17,7 +17,7 @@ export function ReaderTableOfContents({
       aria-label="Table of contents"
       className="h-full overflow-y-auto py-4 text-sm"
     >
-      <h2 className="px-4 pb-2 font-semibold text-fg-muted text-xs uppercase tracking-wider">
+      <h2 className="px-4 pb-2 font-semibold text-stone-500 text-xs dark:text-stone-400 uppercase tracking-wider">
         Contents
       </h2>
       <ol>
@@ -28,16 +28,16 @@ export function ReaderTableOfContents({
               type="button"
               aria-current={index === currentIndex ? "true" : undefined}
               className={clsx(
-                "flex w-full gap-3 border-l-2 px-4 py-2 text-left hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:outline-none",
+                "flex w-full gap-3 border-l-2 px-4 py-2 text-left hover:bg-stone-100 focus-visible:bg-stone-100 dark:focus-visible:bg-stone-800 dark:hover:bg-stone-800 focus-visible:outline-none",
                 index === currentIndex
-                  ? "border-fg-soft bg-surface-muted font-medium text-fg"
-                  : "border-transparent text-fg-muted",
+                  ? "border-stone-800 bg-stone-100 font-medium text-stone-900 dark:border-stone-200 dark:bg-stone-800 dark:text-stone-100"
+                  : "border-transparent text-stone-600 dark:text-stone-400",
               )}
               onClick={() => onSelect(index)}
             >
               <span
                 aria-hidden="true"
-                className="w-5 shrink-0 text-right text-fg-faint tabular-nums"
+                className="w-5 shrink-0 text-right text-stone-400 tabular-nums dark:text-stone-500"
               >
                 {index + 1}
               </span>

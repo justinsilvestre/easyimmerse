@@ -1,6 +1,8 @@
 @import "tailwindcss" source(none);
 @source "./";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * Semantic colors. Components use these names (bg-surface, text-fg-muted, border-line) instead of palette colors,
  * so that the dark theme only needs to redefine the variables below.
@@ -11,7 +13,6 @@
   --color-surface: var(--color-white);
   --color-surface-muted: var(--color-gray-100);
   --color-surface-strong: var(--color-gray-200);
-  --color-surface-raised: var(--color-white);
 
   --color-fg: var(--color-gray-900);
   --color-fg-soft: var(--color-gray-700);
@@ -38,9 +39,6 @@
   --color-warning-line: var(--color-amber-200);
 
   --color-success-fg: var(--color-green-600);
-
-  --color-highlight: var(--color-amber-100);
-  --color-scrim: color-mix(in oklab, var(--color-gray-900) 40%, transparent);
 }
 
 /*
@@ -66,12 +64,6 @@
 }
 
 @property --color-surface-strong {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: transparent;
-}
-
-@property --color-surface-raised {
   syntax: "<color>";
   inherits: true;
   initial-value: transparent;
@@ -191,18 +183,6 @@
   initial-value: transparent;
 }
 
-@property --color-highlight {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: transparent;
-}
-
-@property --color-scrim {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: transparent;
-}
-
 @property --color-success-fg {
   syntax: "<color>";
   inherits: true;
@@ -212,7 +192,7 @@
 @media (prefers-reduced-motion: no-preference) {
   :root[data-theme-transitions] {
     transition-property:
-      --color-canvas, --color-surface, --color-surface-muted, --color-surface-strong, --color-surface-raised, --color-fg, --color-fg-soft, --color-fg-muted, --color-fg-faint, --color-line, --color-line-strong, --color-accent, --color-accent-hover, --color-accent-fg, --color-accent-soft, --color-on-accent, --color-danger, --color-danger-hover, --color-danger-fg, --color-danger-soft, --color-danger-line, --color-warning-fg, --color-warning-soft, --color-warning-line, --color-success-fg, --color-highlight, --color-scrim;
+      --color-canvas, --color-surface, --color-surface-muted, --color-surface-strong, --color-fg, --color-fg-soft, --color-fg-muted, --color-fg-faint, --color-line, --color-line-strong, --color-accent, --color-accent-hover, --color-accent-fg, --color-accent-soft, --color-on-accent, --color-danger, --color-danger-hover, --color-danger-fg, --color-danger-soft, --color-danger-line, --color-warning-fg, --color-warning-soft, --color-warning-line, --color-success-fg;
     transition-duration: 250ms;
     transition-timing-function: ease-out;
   }
@@ -229,7 +209,6 @@
     --color-surface: var(--color-gray-900);
     --color-surface-muted: var(--color-gray-800);
     --color-surface-strong: var(--color-gray-700);
-    --color-surface-raised: var(--color-gray-700);
 
     --color-fg: var(--color-gray-100);
     --color-fg-soft: var(--color-gray-300);
@@ -268,13 +247,6 @@
     --color-warning-line: var(--color-amber-900);
 
     --color-success-fg: var(--color-green-400);
-
-    --color-highlight: color-mix(
-      in oklab,
-      var(--color-amber-500) 25%,
-      transparent
-    );
-    --color-scrim: color-mix(in oklab, var(--color-black) 70%, transparent);
   }
 
   body {

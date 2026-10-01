@@ -41,7 +41,7 @@ export function DocumentReaderChapter(props: {
     >
       <h2
         tabIndex={-1}
-        className="mb-[1.5em] scroll-mt-24 font-semibold text-[1.5em] text-fg leading-tight focus:outline-none"
+        className="mb-[1.5em] scroll-mt-24 font-semibold text-[1.5em] text-stone-900 leading-tight dark:text-stone-100 focus:outline-none"
       >
         {formatChapterTitle(props.chapter, props.chapterIndex)}
       </h2>
@@ -50,7 +50,7 @@ export function DocumentReaderChapter(props: {
           // biome-ignore lint/suspicious/noArrayIndexKey: Paragraphs have no identity beyond their order.
           key={paragraphIndex}
           {...{ [paragraphIndexAttribute]: paragraphIndex }}
-          className="mb-[1em] scroll-mt-6 text-fg-soft leading-[1.8]"
+          className="mb-[1em] scroll-mt-6 text-stone-800 leading-[1.8] dark:text-stone-200"
         >
           <ParagraphText
             isHighlighted={paragraphIndex === props.highlightedParagraphIndex}
@@ -80,7 +80,7 @@ function ParagraphText({
 }) {
   if (!isHighlighted) return children;
   return (
-    <mark className="box-decoration-clone rounded-sm bg-highlight px-0.5 text-inherit">
+    <mark className="box-decoration-clone rounded-sm bg-amber-100 dark:bg-amber-500/25 px-0.5 text-inherit">
       {children}
     </mark>
   );

@@ -74,7 +74,10 @@ export function DocumentReader({
   const chapter = document.chapters[chapterIndex];
   const shownMatch = search.shownMatch;
   return (
-    <div ref={readerRef} className="flex h-full flex-col bg-canvas text-fg">
+    <div
+      ref={readerRef}
+      className="flex h-full flex-col bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100"
+    >
       <ReaderToolbar
         chapterIndex={chapterIndex}
         chapterCount={document.chapters.length}
@@ -98,7 +101,7 @@ export function DocumentReader({
       />
       <div className="relative flex min-h-0 flex-1">
         {isTableOfContentsOpen && (
-          <div className="absolute inset-0 z-10 bg-surface sm:static sm:w-72 sm:shrink-0 sm:border-line sm:border-r">
+          <div className="absolute inset-0 z-10 bg-white sm:static sm:w-72 sm:shrink-0 sm:border-stone-200 sm:border-r dark:bg-stone-900 dark:sm:border-stone-800">
             <ReaderTableOfContents
               chapters={document.chapters}
               currentIndex={chapterIndex}
@@ -129,7 +132,7 @@ export function DocumentReader({
               onWordActivated={onWordActivated}
             />
           ) : (
-            <p className="p-8 text-center text-fg-muted">
+            <p className="p-8 text-center text-stone-500 dark:text-stone-400">
               This document has no text.
             </p>
           )}
