@@ -10,7 +10,10 @@ test("a word in the subtitles becomes a saved flashcard", async ({ page }) => {
   await addMediaWithSubtitles(page, "sample.mp4");
 
   await page.getByRole("button", { name: "Back", exact: true }).click();
-  // A server reused from an earlier run may already hold the dictionary.
+  // A server reused from an earlier run may already hold the dictionary, so the status is awaited before it is read.
+  await expect(
+    page.getByText(/dictionaries (ready|for English yet)/i),
+  ).toBeVisible();
   const setUp = page.getByRole("button", { name: "Set up dictionaries" });
   if (await setUp.isVisible())
     await pickFixture(page, "Set up dictionaries", "sample-yomitan-en.zip");
