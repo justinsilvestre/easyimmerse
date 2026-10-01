@@ -6,7 +6,8 @@ import { GlossaryItem } from "../glossary/GlossaryItem.tsx";
 /**
  * Shows one dictionary entry as a list item that makes a flashcard when clicked.
  * A transparent button covers the whole item, so the definitions can stay a real list for assistive technology.
- * Links and other controls inside the definitions sit above that button.
+ * The definitions sit above that button so that no dictionary style can hide their links beneath it,
+ * and they let presses through everywhere except on their links and other controls.
  */
 export function LookupEntry({
   entry,
@@ -31,7 +32,7 @@ export function LookupEntry({
           <span className="ml-2 text-sm text-gray-500">{entry.reading}</span>
         )}
       </p>
-      <div className="text-sm [--font-size-no-units:14]">
+      <div className="pointer-events-none relative z-20 text-sm [--font-size-no-units:14]">
         <DictionaryStylesheet dictionaryId={dictionaryId} />
         <ol
           className={clsx(

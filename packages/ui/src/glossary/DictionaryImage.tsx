@@ -29,7 +29,7 @@ export function DictionaryImage({
   const picture = <ImagePicture image={image} url={url} />;
   if (!image.collapsed) return picture;
   return (
-    <details className="relative z-20 inline-block align-top">
+    <details className="pointer-events-auto inline-block align-top">
       <summary className="cursor-pointer text-blue-700">Image</summary>
       {picture}
     </details>

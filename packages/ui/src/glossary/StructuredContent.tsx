@@ -55,7 +55,7 @@ function ElementView({
       );
     case "table":
       return (
-        <div className="max-w-full overflow-x-auto">
+        <div className="pointer-events-auto max-w-full overflow-x-auto">
           <table
             lang={element.lang}
             className="table-auto border-collapse"
@@ -149,5 +149,5 @@ const styledClassNames: Partial<Record<Tag, string>> = {
   ol: "list-decimal pl-[1.4em]",
   ul: "list-disc pl-[1.4em]",
   details: "pl-[0.7em]",
-  summary: "relative z-20 cursor-pointer",
+  summary: "pointer-events-auto cursor-pointer",
 };
