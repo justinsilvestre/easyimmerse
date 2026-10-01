@@ -8,6 +8,9 @@ use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure};
 use crate::clock::now_rfc3339;
+use crate::conversion_cleanup::{
+    delete_project_and_find_unused_sources, remove_conversions_of_sources,
+};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -154,8 +157,11 @@ pub async fn delete_project(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, ApiFailure> {
-    state
-        .with_storage(move |storage| storage.delete_project(&ProjectId(id)))
+    let unused_sources = state
+        .with_storage(move |storage| {
+            delete_project_and_find_unused_sources(storage, &ProjectId(id))
+        })
         .await?;
+    remove_conversions_of_sources(&state, unused_sources).await;
     Ok(StatusCode::NO_CONTENT)
 }

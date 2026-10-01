@@ -35,7 +35,7 @@ function createPlayerEffects(
     seekPlayer: (ms) => registry.current()?.seek(ms),
     playPlayer: () => registry.current()?.play(),
     pausePlayer: () => registry.current()?.pause(),
-    setPlayerLoop: (range) => registry.current()?.setLoop(range),
+    setPlayerLoop: (loop) => registry.current()?.setLoop(loop),
     setPlaybackRate: (rate) => registry.current()?.setPlaybackRate(rate),
     setVolume: (volume) => registry.current()?.setVolume(volume),
     captureFrame: async () => registry.current()?.captureFrame() ?? null,

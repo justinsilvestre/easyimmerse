@@ -92,23 +92,26 @@ describe("effectsMiddleware", () => {
     });
   });
 
-  it("stores the resolved media URL after mediaOpened", async () => {
+  it("gives the resolved playback to the player after mediaOpened", async () => {
     const { store } = createStore();
     store.dispatch(actions.mediaOpened("p1", createMediaFile()));
     await vi.waitFor(() => {
-      expect(store.getState().app.player.mediaUrl).toBe("blob:test");
+      expect(store.getState().app.player.playback).toEqual({
+        kind: "direct",
+        url: "blob:test",
+      });
     });
   });
 
-  it("stores the failure message when the media URL cannot be resolved", async () => {
+  it("stores the failure message when the media playback cannot be resolved", async () => {
     const effects: Effects = {
       ...createRecordingEffects(),
-      resolveMediaUrl: () => Promise.reject(new Error("file moved")),
+      resolveMediaPlayback: () => Promise.reject(new Error("file moved")),
     };
     const { store } = createStore(effects);
     store.dispatch(actions.mediaOpened("p1", createMediaFile()));
     await vi.waitFor(() => {
-      expect(store.getState().app.player.mediaUrlError).toBe("file moved");
+      expect(store.getState().app.player.playbackError).toBe("file moved");
     });
   });
 

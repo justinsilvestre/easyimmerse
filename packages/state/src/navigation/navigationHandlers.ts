@@ -24,7 +24,7 @@ export const navigationHandlers = {
     openMedia(state, projectId, media),
     [
       ...stopLoopIfSet(state.player),
-      { type: "resolveMediaUrl", projectId, media },
+      { type: "resolveMediaPlayback", projectId, media },
       ...readStoredSubtitleTexts(media),
       ...readStoredDocumentBytes(media),
     ],

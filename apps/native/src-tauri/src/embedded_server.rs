@@ -1,10 +1,14 @@
 //! Starts the API server on the loopback interface with a database in the app data directory.
+//! Media conversions are cached in the app cache directory.
 
 use std::io::ErrorKind;
 use std::net::Ipv4Addr;
 use std::path::PathBuf;
 
-use easyimmerse_api::{ApiConfig, ServeError, ServerHandle, serve};
+use easyimmerse_api::{
+    ApiConfig, AppState, ConversionService, ServeError, ServerHandle, serve,
+    start_conversion_service,
+};
 use easyimmerse_storage::{Storage, StorageError};
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
@@ -42,12 +46,15 @@ pub enum EmbeddedServerError {
 /// Opens the database, binds a loopback port, and serves the API on the app's async runtime.
 pub fn start(app: &AppHandle) -> Result<EmbeddedServer, EmbeddedServerError> {
     let storage = open_storage(app)?;
+    // Tauri places the bundled ffmpeg and ffprobe next to the executable, where the conversion service finds them.
+    let conversions = start_conversion_service(cache_dir(app));
     let token = hex::encode(rand::random::<[u8; 32]>());
-    tauri::async_runtime::block_on(serve_on_loopback(storage, token))
+    tauri::async_runtime::block_on(serve_on_loopback(storage, conversions, token))
 }
 
 async fn serve_on_loopback(
     storage: Storage,
+    conversions: Option<ConversionService>,
     token: String,
 ) -> Result<EmbeddedServer, EmbeddedServerError> {
     let listener = bind_loopback().await?;
@@ -56,7 +63,8 @@ async fn serve_on_loopback(
         .map_err(EmbeddedServerError::Bind)?
         .port();
     let config = ApiConfig::for_loopback(port, token.clone(), true);
-    let handle = serve(listener, config, storage).await?;
+    let state = AppState::new(storage, config).with_conversions(conversions);
+    let handle = serve(listener, state).await?;
     tracing::info!("embedded server listening on 127.0.0.1:{port}");
     Ok(EmbeddedServer {
         url: format!("http://127.0.0.1:{port}"),
@@ -85,4 +93,12 @@ fn open_storage(app: &AppHandle) -> Result<Storage, EmbeddedServerError> {
     let storage = Storage::open(&directory.join(DATABASE_FILE_NAME))?;
     storage.seed_placeholder_projects()?;
     Ok(storage)
+}
+
+/// Returns the app cache directory, or `None` with a warning when the platform has none.
+fn cache_dir(app: &AppHandle) -> Option<PathBuf> {
+    app.path()
+        .app_cache_dir()
+        .inspect_err(|error| tracing::warn!("could not resolve the app cache directory: {error}"))
+        .ok()
 }

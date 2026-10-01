@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+    "/conversions/{key}/index.m3u8": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serves the HLS playlist of a registered conversion. */
+        get: operations["getConversionPlaylist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversions/{key}/init.mp4": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serves the initialization segment of a conversion, converting the start of the file when necessary. */
+        get: operations["getConversionInitSegment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversions/{key}/{segment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serves a media segment of a conversion, converting the part of the file around it when necessary. */
+        get: operations["getConversionSegment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dictionaries": {
         parameters: {
             query?: never;
@@ -374,6 +425,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/playback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Plans how the client's browser will play a media file with its default tracks.
+         *     When the plan converts, the conversion is registered and the response names its playlist.
+         */
+        post: operations["planMediaPlayback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/{media_id}/stream": {
         parameters: {
             query?: never;
@@ -447,6 +518,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/tracks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Describes a media file's tracks, so that the client can measure what its browser plays. */
+        get: operations["getMediaTracks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/opened": {
         parameters: {
             query?: never;
@@ -505,6 +593,20 @@ export interface components {
             code: string;
             message: string;
         };
+        AudioDetails: {
+            /** Format: int32 */
+            channels?: number | null;
+            /**
+             * Format: int32
+             * @description The sample rate in hertz.
+             */
+            sample_rate?: number | null;
+        };
+        /**
+         * @description The audio codec to transcode to when a track's own codec cannot be streamed.
+         * @enum {string}
+         */
+        AudioTarget: "aac" | "flac";
         Chapter: {
             paragraphs: string[];
             title?: string | null;
@@ -515,6 +617,25 @@ export interface components {
             /** @description The language of the element, as an RFC 5646 tag. */
             lang?: string | null;
         };
+        /**
+         * @description A container format the application accepts.
+         *     MOV and M4A files count as MP4, and WebM files count as Matroska.
+         * @enum {string}
+         */
+        ContainerFormat: "mp4" | "matroska" | "mp3" | "adts" | "ogg" | "flac" | "wav" | "avi";
+        ContainerInfo: {
+            /** Format: int64 */
+            duration_ms?: number | null;
+            format: components["schemas"]["ContainerFormat"];
+            tracks: components["schemas"]["TrackInfo"][];
+        };
+        /** @description The tracks that go into the converted stream. A kind without a track is left out of the stream. */
+        ConversionPlan: {
+            audio?: components["schemas"]["TrackConversion"] | null;
+            video?: components["schemas"]["TrackConversion"] | null;
+        };
+        /** @enum {string} */
+        ConversionReason: "container_unsupported" | "inaccurate_seeking" | "non_default_tracks" | "codec_unsupported";
         /** @description A CSS length given either as a number, which Yomitan reads as `em`, or as a CSS string. */
         CssLength: number | string;
         /**
@@ -650,6 +771,13 @@ export interface components {
         FontStyle: "normal" | "italic";
         /** @enum {string} */
         FontWeight: "normal" | "bold";
+        /** @description Frames per second as an exact fraction, for example 24000/1001 for NTSC film. */
+        FrameRate: {
+            /** Format: int32 */
+            denominator: number;
+            /** Format: int32 */
+            numerator: number;
+        };
         /** @description One definition of a term, in any of the forms the Yomitan term bank v3 schema allows. */
         Glossary: string | components["schemas"]["Deinflection"] | components["schemas"]["DetailedGlossary"];
         /**
@@ -766,6 +894,14 @@ export interface components {
             /** @enum {string} */
             kind: "browser_file";
         };
+        /** @description A media file's tracks, with what a client needs to measure whether its browser can play the file. */
+        MediaTracks: {
+            container: components["schemas"]["ContainerInfo"];
+            /** @description The MIME type of the original file with the selected tracks' codecs, which the client passes to `canPlayType`. */
+            direct_type: string;
+            /** @description The tracks that play when the client makes no choice. */
+            selection: components["schemas"]["TrackSelection"];
+        };
         /** @description A flashcard as sent to be created or updated: everything but the id and the timestamp. */
         NewFlashcard: {
             clip?: components["schemas"]["TimeRange"] | null;
@@ -796,6 +932,39 @@ export interface components {
         ParseTimedTextRequest: {
             format?: components["schemas"]["TimedTextFormat"] | null;
             source: components["schemas"]["TextSource"];
+        };
+        /** @description The playback abilities that a client measures in its browser and sends to the server. */
+        PlaybackEnvironment: {
+            /** @description Whether the browser says it can play the original file's MIME type and codecs. */
+            direct_play: boolean;
+            engine: components["schemas"]["WebEngine"];
+            /** @description The codec strings that the browser accepts inside fragmented MP4 streamed through Media Source Extensions, for example `avc1.64001F`. */
+            fmp4_codecs: string[];
+        };
+        /** @description How a browser will play a file with the selected tracks. */
+        PlaybackPlan: {
+            /** @enum {string} */
+            kind: "direct";
+        } | (components["schemas"]["ConversionPlan"] & {
+            /** @enum {string} */
+            kind: "convert";
+        }) | {
+            /** @enum {string} */
+            kind: "unsupported";
+            reason: components["schemas"]["UnsupportedReason"];
+        };
+        /** @description What a client sends to ask how its browser will play a media file. */
+        PlaybackRequest: {
+            environment: components["schemas"]["PlaybackEnvironment"];
+        };
+        /** @description The server's plan for playing a media file, with the playlist to stream when the plan converts. */
+        PlaybackResponse: {
+            plan: components["schemas"]["PlaybackPlan"];
+            /**
+             * @description The server path of the converted stream's HLS playlist, for example `/conversions/<key>/index.m3u8`.
+             *     Present only when the plan converts.
+             */
+            playlist_path?: string | null;
         };
         /** @description A preference value. `null` means the preference has not been set. */
         PreferenceValue: {
@@ -1043,12 +1212,88 @@ export interface components {
             cues: components["schemas"]["Cue"][];
             format: components["schemas"]["TimedTextFormat"];
         };
+        TrackAction: {
+            /** @enum {string} */
+            kind: "copy";
+        } | {
+            /** @enum {string} */
+            kind: "transcode";
+            target: components["schemas"]["AudioTarget"];
+        };
+        /** @description How one selected track goes into the converted stream. */
+        TrackConversion: {
+            action: components["schemas"]["TrackAction"];
+            /** @description Why the track is converted rather than played from the original file. */
+            reasons: components["schemas"]["ConversionReason"][];
+            /** Format: int32 */
+            track_id: number;
+        };
+        /**
+         * @description One stream inside a container.
+         *     The codec name comes from whichever probe read the file, so one codec can have different names.
+         *     Details that a probe cannot read are `None`.
+         */
+        TrackInfo: {
+            audio?: components["schemas"]["AudioDetails"] | null;
+            /**
+             * Format: int64
+             * @description The average bit rate in bits per second.
+             */
+            bit_rate?: number | null;
+            codec: string;
+            /**
+             * @description The codec string that a browser checks to decide whether it can play this track inside fragmented MP4, for example `avc1.64001F`.
+             *     `None` when the codec cannot be stored in fragmented MP4 or the probe could not identify it.
+             */
+            codec_string?: string | null;
+            /** Format: int32 */
+            id: number;
+            /** @description Whether the container marks this track as the one to play by default. */
+            is_default: boolean;
+            kind: components["schemas"]["TrackKind"];
+            /** @description The language tag stored in the container, or `None` when it is undetermined. */
+            language?: string | null;
+            /**
+             * Format: int32
+             * @description The codec level as ffprobe reports it, for example `31` for H.264 level 3.1.
+             */
+            level?: number | null;
+            /** @description The codec profile as ffprobe names it, for example `High` or `LC`. */
+            profile?: string | null;
+            title?: string | null;
+            video?: components["schemas"]["VideoDetails"] | null;
+        };
+        /** @enum {string} */
+        TrackKind: "video" | "audio" | "subtitle" | "other";
+        /** @description The ids of the tracks to play. A kind without an id is left out. */
+        TrackSelection: {
+            /** Format: int32 */
+            audio?: number | null;
+            /** Format: int32 */
+            video?: number | null;
+        };
+        /** @enum {string} */
+        UnsupportedReason: "no_tracks_selected" | "track_not_found" | "video_codec_unsupported" | "audio_codec_unsupported" | "conversion_unavailable";
         UpdateMediaDurationRequest: {
             /** Format: int64 */
             duration_ms: number;
         };
         /** @enum {string} */
         VerticalAlign: "baseline" | "sub" | "super" | "text-top" | "text-bottom" | "middle" | "top" | "bottom";
+        VideoDetails: {
+            frame_rate?: components["schemas"]["FrameRate"] | null;
+            /** Format: int32 */
+            height?: number | null;
+            /** @description The pixel format as ffprobe names it, for example `yuv420p`. */
+            pixel_format?: string | null;
+            /** Format: int32 */
+            width?: number | null;
+        };
+        /**
+         * @description The browser engine that plays media, for example WebKit in Safari and in the macOS app.
+         * @enum {string}
+         */
+        WebEngine: "webkit" | "chromium" | "gecko";
         /** @enum {string} */
         WordBreak: "normal" | "break-all" | "keep-all";
     };
@@ -1060,6 +1305,212 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getConversionPlaylist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The conversion key from the playback plan */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The HLS playlist */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.apple.mpegurl": string;
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No conversion is registered under this key */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The conversion's cache entry could not be updated */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server cannot convert media */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getConversionInitSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The conversion key from the playback plan */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The fragmented MP4 initialization segment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "video/mp4": unknown;
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No conversion is registered under this key */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description ffmpeg failed */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server cannot convert media, or the segment took too long */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getConversionSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The conversion key from the playback plan */
+                key: string;
+                /** @description The segment file name from the playlist, such as `seg-0.m4s` */
+                segment: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The fragmented MP4 media segment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "video/iso.segment": unknown;
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such conversion or segment */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description ffmpeg failed */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server cannot convert media, or the segment took too long */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     listDictionaries: {
         parameters: {
             query?: never;
@@ -2468,6 +2919,89 @@ export interface operations {
             };
         };
     };
+    planMediaPlayback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaybackRequest"];
+            };
+        };
+        responses: {
+            /** @description The playback plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaybackResponse"];
+                };
+            };
+            /** @description The container could not be read */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, or the browser holds it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The conversion could not be prepared */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     streamMedia: {
         parameters: {
             query?: {
@@ -2709,6 +3243,76 @@ export interface operations {
                 };
             };
             /** @description No such track, or the browser holds its file */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getMediaTracks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The container and its tracks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaTracks"];
+                };
+            };
+            /** @description The container could not be read */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, or the browser holds it */
             404: {
                 headers: {
                     [name: string]: unknown;

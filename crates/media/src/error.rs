@@ -1,11 +1,16 @@
 use thiserror::Error;
 
+use crate::container::ContainerFormat;
 use crate::mov_text_sample::MovTextSampleError;
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum MediaError {
+    #[error("failed to read the media file: {0}")]
+    Read(String),
     #[error("the data does not start with a recognized container signature")]
     UnknownContainerFormat,
+    #[error("the pure-Rust probe cannot read {0:?} containers")]
+    UnreadableContainerFormat(ContainerFormat),
     #[error("invalid MP4 data: {0}")]
     InvalidMp4(String),
     #[error("invalid Matroska data: {0}")]

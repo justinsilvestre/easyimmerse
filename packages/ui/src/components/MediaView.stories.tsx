@@ -17,8 +17,7 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     kind: "video",
-    name: "sample.mp4",
-    src: "/fixtures/sample.mp4",
+    playback: { kind: "direct", url: "/fixtures/sample.mp4" },
     targetCues: fixtureTrack.cues,
     translationCues: fixtureTranslationCues,
     onWordActivated: fn(),
@@ -39,7 +38,10 @@ export const VideoWithoutSubtitles: Story = {
 };
 
 export const AudioWithTranscript: Story = {
-  args: { kind: "audio", name: "sample.mp3", src: "/fixtures/sample.mp3" },
+  args: {
+    kind: "audio",
+    playback: { kind: "direct", url: "/fixtures/sample.mp3" },
+  },
   decorators: [withDispatchedActions(startInSecondCue)],
 };
 

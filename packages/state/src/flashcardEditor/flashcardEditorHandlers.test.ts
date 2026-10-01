@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { actions } from "../actions.ts";
 import type { AppState } from "../appState.ts";
 import { initialAppState } from "../appState.ts";
+import { interiorSeekTime } from "../player/interiorSeekTime.ts";
 import { createAppState } from "../testSupport/createAppState.ts";
 import { createEditingFlashcardEditor } from "../testSupport/createEditingFlashcardEditor.ts";
 import { createNewFlashcard } from "../testSupport/createNewFlashcard.ts";
@@ -77,7 +78,15 @@ describe("update", () => {
 
     it("loops the card's clip", () => {
       const [, effects] = open(initialAppState, createNewFlashcard({ clip }));
-      expect(effects).toEqual([{ type: "setPlayerLoop", range: clip }]);
+      expect(effects).toEqual([
+        {
+          type: "setPlayerLoop",
+          loop: {
+            range: clip,
+            restartMs: interiorSeekTime(clip.start_ms, undefined),
+          },
+        },
+      ]);
     });
 
     it("pauses when the card has no clip", () => {
@@ -176,7 +185,7 @@ describe("update", () => {
 
     it("clears the loop without resuming for flashcardEditorClosed when playback was not interrupted", () => {
       const [, effects] = update(editing(), actions.flashcardEditorClosed());
-      expect(effects).toEqual([{ type: "setPlayerLoop", range: null }]);
+      expect(effects).toEqual([{ type: "setPlayerLoop", loop: null }]);
     });
 
     it("clears the loop and resumes for flashcardEditorClosed when playback was interrupted", () => {
@@ -185,7 +194,7 @@ describe("update", () => {
         actions.flashcardEditorClosed(),
       );
       expect(effects).toEqual([
-        { type: "setPlayerLoop", range: null },
+        { type: "setPlayerLoop", loop: null },
         { type: "playPlayer" },
       ]);
     });

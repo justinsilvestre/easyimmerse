@@ -71,8 +71,9 @@ mod tests {
     use easyimmerse_core::timed_text::parse_timed_text;
 
     use super::*;
-    use crate::container::{TrackKind, probe_container};
+    use crate::container::probe_container;
     use crate::test_support::{read_fixture_bytes, read_fixture_text};
+    use crate::track_info::TrackKind;
 
     fn subtitle_track_id(bytes: &[u8]) -> u32 {
         probe_container(bytes)

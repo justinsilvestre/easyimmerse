@@ -41,6 +41,10 @@ pub struct ServeArgs {
     /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
     #[arg(long = "expected-host")]
     pub expected_hosts: Vec<String>,
+    /// The directory for cached media conversions.
+    /// Without it, media that a browser cannot play directly is reported as unsupported.
+    #[arg(long, env = "EASYIMMERSE_CACHE_DIR")]
+    pub cache_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Args)]

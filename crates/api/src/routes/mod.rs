@@ -1,3 +1,4 @@
+pub mod conversions;
 pub mod dictionaries;
 pub mod dictionary_assets;
 pub mod dictionary_lookup;
@@ -7,6 +8,7 @@ pub mod health;
 pub mod media;
 pub mod media_stream;
 pub mod openapi;
+pub mod playback;
 pub mod preferences;
 pub mod projects;
 pub mod subtitle_cues;

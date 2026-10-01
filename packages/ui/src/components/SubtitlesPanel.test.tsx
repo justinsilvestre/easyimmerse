@@ -1,5 +1,5 @@
 import { resetBackend } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, interiorSeekTime } from "@easyimmerse/state";
 import type { Cue, SubtitleRole } from "@easyimmerse/types";
 import {
   act,
@@ -47,10 +47,13 @@ describe("SubtitlesPanel", () => {
       );
     });
 
-    it("seeks to a cue's start when its card is clicked", () => {
+    it("seeks just inside the frame at a cue's start when its card is clicked", () => {
       const { effects } = renderPanel();
       fireEvent.click(screen.getByRole("button", { name: /The dog/ }));
-      expect(effects.calls).toContainEqual({ type: "seekPlayer", ms: 1750 });
+      expect(effects.calls).toContainEqual({
+        type: "seekPlayer",
+        ms: interiorSeekTime(1750, undefined),
+      });
     });
 
     it("highlights the card of the cue at the current time", () => {

@@ -11,6 +11,9 @@ use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure};
 use crate::clock::now_rfc3339;
+use crate::conversion_cleanup::{
+    remove_conversions_of_sources, remove_media_file_and_find_unused_sources,
+};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -98,9 +101,12 @@ pub async fn remove_media_file(
     State(state): State<AppState>,
     Path((id, media_id)): Path<(String, String)>,
 ) -> Result<StatusCode, ApiFailure> {
-    state
-        .with_storage(move |storage| storage.remove_media_file(&ProjectId(id), &MediaId(media_id)))
+    let unused_sources = state
+        .with_storage(move |storage| {
+            remove_media_file_and_find_unused_sources(storage, &ProjectId(id), &MediaId(media_id))
+        })
         .await?;
+    remove_conversions_of_sources(&state, unused_sources).await;
     Ok(StatusCode::NO_CONTENT)
 }
 

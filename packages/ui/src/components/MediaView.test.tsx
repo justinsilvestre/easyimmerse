@@ -1,6 +1,6 @@
 import { resetBackend } from "@easyimmerse/backend";
 import type { AppAction, AppStore } from "@easyimmerse/state";
-import { actions, selectSubtitles } from "@easyimmerse/state";
+import { actions, interiorSeekTime, selectSubtitles } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -21,8 +21,7 @@ function renderView(
   return renderWithAppStore(
     <MediaView
       kind={kind}
-      name="sample"
-      src="/sample"
+      playback={{ kind: "direct", url: "/sample" }}
       targetCues={targetCues}
       translationCues={null}
       onWordActivated={() => undefined}
@@ -73,11 +72,14 @@ describe("MediaView", () => {
       expect(effects.calls).toContainEqual({ type: "playPlayer" });
     });
 
-    it("skips to the next cue for ArrowRight", () => {
+    it("skips to just inside the frame at the next cue's start for ArrowRight", () => {
       const { effects, store } = renderView();
       dispatchAll(store, actions.playerTimeChanged(600));
       pressKey("ArrowRight");
-      expect(effects.calls).toContainEqual({ type: "seekPlayer", ms: 1750 });
+      expect(effects.calls).toContainEqual({
+        type: "seekPlayer",
+        ms: interiorSeekTime(1750, undefined),
+      });
     });
 
     it("skips back five seconds for ArrowLeft without cues", () => {

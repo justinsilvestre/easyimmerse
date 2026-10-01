@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { actions } from "../actions.ts";
 import type { AppState } from "../appState.ts";
 import { initialAppState } from "../appState.ts";
+import { interiorSeekTime } from "../player/interiorSeekTime.ts";
 import { createAppState } from "../testSupport/createAppState.ts";
 import { createEditingFlashcardEditor } from "../testSupport/createEditingFlashcardEditor.ts";
 import { createNewFlashcard } from "../testSupport/createNewFlashcard.ts";
@@ -65,7 +66,15 @@ describe("update", () => {
   describe("when media is playing", () => {
     it("loops the clip for wordHovered with a clip", () => {
       const [, effects] = update(playing(), hover(true));
-      expect(effects).toEqual([{ type: "setPlayerLoop", range: clip }]);
+      expect(effects).toEqual([
+        {
+          type: "setPlayerLoop",
+          loop: {
+            range: clip,
+            restartMs: interiorSeekTime(clip.start_ms, undefined),
+          },
+        },
+      ]);
     });
 
     it("records the loop in the player state for wordHovered with a clip", () => {
@@ -137,13 +146,13 @@ describe("update", () => {
 
     it("clears the loop without resuming for lookupClosed when playback was not interrupted", () => {
       const [, effects] = update(withLookup(false), actions.lookupClosed());
-      expect(effects).toEqual([{ type: "setPlayerLoop", range: null }]);
+      expect(effects).toEqual([{ type: "setPlayerLoop", loop: null }]);
     });
 
     it("clears the loop and resumes for lookupClosed when playback was interrupted", () => {
       const [, effects] = update(withLookup(true), actions.lookupClosed());
       expect(effects).toEqual([
-        { type: "setPlayerLoop", range: null },
+        { type: "setPlayerLoop", loop: null },
         { type: "playPlayer" },
       ]);
     });
@@ -159,7 +168,15 @@ describe("update", () => {
 
     it("restores the editor's loop without resuming for lookupClosed", () => {
       const [, effects] = update(overEditor(true), actions.lookupClosed());
-      expect(effects).toEqual([{ type: "setPlayerLoop", range: editorClip }]);
+      expect(effects).toEqual([
+        {
+          type: "setPlayerLoop",
+          loop: {
+            range: editorClip,
+            restartMs: interiorSeekTime(editorClip.start_ms, undefined),
+          },
+        },
+      ]);
     });
 
     it("leaves resuming playback to the editor for lookupClosed when playback was interrupted", () => {

@@ -13,11 +13,14 @@ import type {
   LookupAllResponse,
   LookupResponse,
   MediaFile,
+  MediaTracks,
   NewFlashcard,
   NewMediaFile,
   NewSubtitleTrack,
   ParseLocalDocumentRequest,
   ParseTimedTextRequest,
+  PlaybackRequest,
+  PlaybackResponse,
   PreferenceValue,
   Project,
   ProjectSettings,
@@ -27,6 +30,10 @@ import type {
 } from "@easyimmerse/types";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
+import {
+  buildMediaTracksRequest,
+  buildPlaybackRequest,
+} from "./mediaPlaybackRequests.ts";
 
 type ParseDocumentArgs = {
   bytes: Uint8Array | Blob;
@@ -172,6 +179,16 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/media/${mediaId}/embedded-subtitles`,
       }),
     }),
+    getMediaTracks: build.query<MediaTracks, MediaArgs>({
+      query: ({ projectId, mediaId }) =>
+        buildMediaTracksRequest(projectId, mediaId),
+    }),
+    planPlayback: build.mutation<PlaybackResponse, MediaArgs & PlaybackRequest>(
+      {
+        query: ({ projectId, mediaId, environment }) =>
+          buildPlaybackRequest(projectId, mediaId, { environment }),
+      },
+    ),
     listFlashcards: build.query<ListFlashcardsResponse, string>({
       query: (projectId) => ({
         method: "GET",
@@ -342,6 +359,8 @@ export const {
   useRemoveSubtitleTrackMutation,
   useGetSubtitleCuesQuery,
   useListEmbeddedSubtitlesQuery,
+  useGetMediaTracksQuery,
+  usePlanPlaybackMutation,
   useListFlashcardsQuery,
   useCreateFlashcardMutation,
   useUpdateFlashcardMutation,

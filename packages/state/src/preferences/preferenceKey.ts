@@ -1,3 +1,6 @@
-export type PreferenceKey = "showTranslations";
+export type PreferenceKey = "showTranslations" | "conversionNoticeDismissed";
 
-export const preferenceKeys: readonly PreferenceKey[] = ["showTranslations"];
+export const preferenceKeys: readonly PreferenceKey[] = [
+  "showTranslations",
+  "conversionNoticeDismissed",
+];

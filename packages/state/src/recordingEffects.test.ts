@@ -54,10 +54,22 @@ describe("createRecordingEffects", () => {
     );
   });
 
-  it("resolves a test media URL", async () => {
+  it("resolves a direct playback of a test URL", async () => {
     const effects = createRecordingEffects();
-    expect(await effects.resolveMediaUrl("p1", createMediaFile())).toBe(
-      "blob:test",
+    expect(await effects.resolveMediaPlayback("p1", createMediaFile())).toEqual(
+      { kind: "direct", url: "blob:test" },
+    );
+  });
+
+  it("resolves the media playback a test sets", async () => {
+    const effects = createRecordingEffects();
+    effects.mediaPlayback = {
+      kind: "hls",
+      url: "http://x/index.m3u8",
+      token: "t",
+    };
+    expect(await effects.resolveMediaPlayback("p1", createMediaFile())).toEqual(
+      effects.mediaPlayback,
     );
   });
 

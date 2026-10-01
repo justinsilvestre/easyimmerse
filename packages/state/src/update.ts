@@ -5,6 +5,7 @@ import { filePickHandlers } from "./filePick/filePickHandlers.ts";
 import { flashcardEditorHandlers } from "./flashcardEditor/flashcardEditorHandlers.ts";
 import { lookupHandlers } from "./lookup/lookupHandlers.ts";
 import { navigationHandlers } from "./navigation/navigationHandlers.ts";
+import { playbackHandlers } from "./player/playbackHandlers.ts";
 import { playerHandlers } from "./player/playerHandlers.ts";
 import { preferenceHandlers } from "./preferences/preferenceHandlers.ts";
 import { readerHandlers } from "./reader/readerHandlers.ts";
@@ -22,6 +23,7 @@ export type Update<S, A, E> = (
 const handlers: UpdateHandlers = {
   ...navigationHandlers,
   ...playerHandlers,
+  ...playbackHandlers,
   ...subtitleHandlers,
   ...readerHandlers,
   ...lookupHandlers,

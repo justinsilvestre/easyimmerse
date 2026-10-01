@@ -8,6 +8,26 @@ export function stubMediaDuration(element: HTMLMediaElement, seconds: number) {
   });
 }
 
+/** Gives the element an error with the code and message, as a browser does before it fires the error event. */
+export function stubMediaError(
+  element: HTMLMediaElement,
+  code: number,
+  message: string,
+) {
+  Object.defineProperty(element, "error", {
+    configurable: true,
+    value: { code, message },
+  });
+}
+
+/** Sets whether the element reports a pending seek, which happy-dom never does because it loads nothing. */
+export function stubMediaSeeking(element: HTMLMediaElement, seeking: boolean) {
+  Object.defineProperty(element, "seeking", {
+    configurable: true,
+    value: seeking,
+  });
+}
+
 /** Gives the video element a frame size, which happy-dom leaves at zero because it decodes nothing. */
 export function stubVideoFrameSize(
   video: HTMLVideoElement,
@@ -52,16 +72,4 @@ export function stubRequestFullscreen() {
     Reflect.deleteProperty(Element.prototype, "requestFullscreen");
   };
   return { requestFullscreen, restore };
-}
-
-/** Gives the element a media error, which happy-dom never sets because it loads nothing. */
-export function stubMediaError(
-  element: HTMLMediaElement,
-  code: number,
-  message: string,
-) {
-  Object.defineProperty(element, "error", {
-    configurable: true,
-    value: { code, message },
-  });
 }

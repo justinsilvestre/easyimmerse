@@ -3,13 +3,14 @@ import type { PlayerHandle } from "@easyimmerse/state";
 import { actions, selectPlayer } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { type ReactNode, useEffect } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { usePlayerRegistry } from "../playerRegistryContext.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import {
   stubCanvasEncoding,
   stubMediaDuration,
   stubMediaError,
+  stubMediaSeeking,
   stubVideoFrameSize,
 } from "../testSupport/stubMediaElement.ts";
 import { MediaPlayer } from "./MediaPlayer.tsx";
@@ -17,14 +18,17 @@ import { MediaPlayer } from "./MediaPlayer.tsx";
 afterEach(() => {
   cleanup();
   resetBackend();
+  vi.restoreAllMocks();
 });
 
 function renderPlayer(kind: "video" | "audio" = "video") {
   const rendered = renderWithAppStore(
     <MediaPlayer
       kind={kind}
-      name={`sample.${kind === "video" ? "mp4" : "mp3"}`}
-      src={`/sample.${kind === "video" ? "mp4" : "mp3"}`}
+      playback={{
+        kind: "direct",
+        url: `/sample.${kind === "video" ? "mp4" : "mp3"}`,
+      }}
     />,
   );
   const element = document.querySelector(kind);
@@ -32,6 +36,13 @@ function renderPlayer(kind: "video" | "audio" = "video") {
     throw new Error(`No ${kind} element was rendered.`);
   return { ...rendered, element };
 }
+
+const frameDataUrl = "data:image/png;base64,AAAA";
+
+const oneSecondLoop = {
+  range: { start_ms: 1000, end_ms: 2000 },
+  restartMs: 1010,
+};
 
 function readHandle(handle: PlayerHandle | null): PlayerHandle {
   if (handle === null) throw new Error("No player is registered.");
@@ -73,7 +84,10 @@ describe("MediaPlayer", () => {
     const seen: (PlayerHandle | null)[] = [];
     renderWithAppStore(
       <ReadPlayerOnMount seen={seen}>
-        <MediaPlayer kind="video" name="sample.mp4" src="/sample.mp4" />
+        <MediaPlayer
+          kind="video"
+          playback={{ kind: "direct", url: "/sample.mp4" }}
+        />
       </ReadPlayerOnMount>,
     );
     expect(seen[0]).not.toBeNull();
@@ -126,64 +140,99 @@ describe("MediaPlayer", () => {
       expect(element.volume).toBe(0.25);
     });
 
-    it("seeks back to the loop start once the time reaches the loop end", () => {
+    it("seeks back to the loop's restart time once the time reaches the loop end", () => {
       const { element, playerRegistry } = renderPlayer();
-      readHandle(playerRegistry.current()).setLoop({
-        start_ms: 1000,
-        end_ms: 2000,
-      });
+      readHandle(playerRegistry.current()).setLoop(oneSecondLoop);
       element.currentTime = 2.1;
       fireEvent.timeUpdate(element);
-      expect(element.currentTime).toBe(1);
+      expect(element.currentTime).toBe(1.01);
     });
 
-    it("seeks to the loop start when the loop is set while past its end", () => {
+    it("seeks to the loop's restart time when the loop is set while past its end", () => {
       const { element, playerRegistry } = renderPlayer();
       element.currentTime = 2.5;
-      readHandle(playerRegistry.current()).setLoop({
-        start_ms: 1000,
-        end_ms: 2000,
-      });
-      expect(element.currentTime).toBe(1);
+      readHandle(playerRegistry.current()).setLoop(oneSecondLoop);
+      expect(element.currentTime).toBe(1.01);
     });
 
-    it("seeks to the loop start when the loop is set while before it", () => {
+    it("seeks to the loop's restart time when the loop is set while before it", () => {
       const { element, playerRegistry } = renderPlayer();
       element.currentTime = 0.5;
-      readHandle(playerRegistry.current()).setLoop({
-        start_ms: 1000,
-        end_ms: 2000,
-      });
-      expect(element.currentTime).toBe(1);
+      readHandle(playerRegistry.current()).setLoop(oneSecondLoop);
+      expect(element.currentTime).toBe(1.01);
+    });
+
+    it("keeps a time inside the loop that lies before its restart time", () => {
+      const { element, playerRegistry } = renderPlayer();
+      readHandle(playerRegistry.current()).setLoop(oneSecondLoop);
+      element.currentTime = 1.005;
+      fireEvent.timeUpdate(element);
+      expect(element.currentTime).toBe(1.005);
     });
 
     it("stops repeating once the loop is cleared", () => {
       const { element, playerRegistry } = renderPlayer();
       const handle = readHandle(playerRegistry.current());
-      handle.setLoop({ start_ms: 1000, end_ms: 2000 });
+      handle.setLoop(oneSecondLoop);
       handle.setLoop(null);
       element.currentTime = 2.1;
       fireEvent.timeUpdate(element);
       expect(element.currentTime).toBe(2.1);
     });
 
-    it("captures the current video frame as a PNG data URL", () => {
+    it("captures the current video frame as a PNG data URL", async () => {
       const { element, playerRegistry } = renderPlayer("video");
       stubVideoFrameSize(element as HTMLVideoElement, 320, 180);
-      const restoreCanvas = stubCanvasEncoding("data:image/png;base64,AAAA");
-      const frame = readHandle(playerRegistry.current()).captureFrame();
+      const restoreCanvas = stubCanvasEncoding(frameDataUrl);
+      const frame = await readHandle(playerRegistry.current()).captureFrame();
       restoreCanvas();
-      expect(frame).toBe("data:image/png;base64,AAAA");
+      expect(frame).toBe(frameDataUrl);
     });
 
-    it("captures no frame before the video has one", () => {
+    it("captures no frame before the video has one", async () => {
       const { playerRegistry } = renderPlayer("video");
-      expect(readHandle(playerRegistry.current()).captureFrame()).toBeNull();
+      expect(
+        await readHandle(playerRegistry.current()).captureFrame(),
+      ).toBeNull();
     });
 
-    it("captures no frame for audio", () => {
+    it("captures no frame for audio", async () => {
       const { playerRegistry } = renderPlayer("audio");
-      expect(readHandle(playerRegistry.current()).captureFrame()).toBeNull();
+      expect(
+        await readHandle(playerRegistry.current()).captureFrame(),
+      ).toBeNull();
+    });
+
+    describe("while a seek is pending", () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it("captures the frame once the seek finishes", async () => {
+        const { element, playerRegistry } = renderPlayer("video");
+        stubMediaSeeking(element, true);
+        const frame = readHandle(playerRegistry.current()).captureFrame();
+        stubVideoFrameSize(element as HTMLVideoElement, 320, 180);
+        const restoreCanvas = stubCanvasEncoding(frameDataUrl);
+        stubMediaSeeking(element, false);
+        fireEvent.seeked(element);
+        const captured = await frame;
+        restoreCanvas();
+        expect(captured).toBe(frameDataUrl);
+      });
+
+      it("captures no frame when the seek does not finish in time", async () => {
+        vi.useFakeTimers();
+        const { element, playerRegistry } = renderPlayer("video");
+        stubVideoFrameSize(element as HTMLVideoElement, 320, 180);
+        const restoreCanvas = stubCanvasEncoding(frameDataUrl);
+        stubMediaSeeking(element, true);
+        const frame = readHandle(playerRegistry.current()).captureFrame();
+        await vi.runAllTimersAsync();
+        const captured = await frame;
+        restoreCanvas();
+        expect(captured).toBeNull();
+      });
     });
   });
 
@@ -222,14 +271,32 @@ describe("MediaPlayer", () => {
       expect(selectPlayer(store.getState()).playing).toBe(false);
     });
 
-    it("reports that the element cannot play the file", () => {
-      const { element, effects } = renderPlayer();
-      stubMediaError(element, 4, "Format error");
-      fireEvent.error(element);
-      expect(effects.calls).toContainEqual({
-        type: "showNotification",
-        message:
-          "Could not play sample.mp4. Its format may not be supported here. (MEDIA_ERR_SRC_NOT_SUPPORTED: Format error)",
+    describe("when the element fails", () => {
+      /** Fires an error for a format the element cannot play, as for an MKV file in WebKit. */
+      function failWithUnsupportedFormat(element: HTMLMediaElement) {
+        stubMediaError(element, 4, "MEDIA_ELEMENT_ERROR: Format error");
+        fireEvent.error(element);
+      }
+
+      it("reports a message for the user", () => {
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+        const { element, store } = renderPlayer();
+        failWithUnsupportedFormat(element);
+        expect(selectPlayer(store.getState()).playbackError).toBe(
+          "This player does not support the file's format.",
+        );
+      });
+
+      it("logs the error's code and message", () => {
+        const loggedErrors = vi
+          .spyOn(console, "error")
+          .mockImplementation(() => undefined);
+        const { element } = renderPlayer();
+        failWithUnsupportedFormat(element);
+        expect(loggedErrors).toHaveBeenCalledWith("The media failed to play.", {
+          code: 4,
+          message: "MEDIA_ELEMENT_ERROR: Format error",
+        });
       });
     });
   });

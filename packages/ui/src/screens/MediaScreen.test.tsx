@@ -1,5 +1,5 @@
 import { resetBackend } from "@easyimmerse/backend";
-import type { AppAction } from "@easyimmerse/state";
+import type { AppAction, MediaPlayback } from "@easyimmerse/state";
 import { actions, selectScreen } from "@easyimmerse/state";
 import type { MediaFile, SubtitleTrack } from "@easyimmerse/types";
 import {
@@ -16,9 +16,25 @@ import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { MediaScreen } from "./MediaScreen.tsx";
 
+const loadedStreamUrls = vi.hoisted(() => [] as string[]);
+
+vi.mock("hls.js", () => ({
+  default: class {
+    static Events = { ERROR: "hlsError" };
+    static isSupported = () => true;
+    on() {}
+    loadSource(url: string) {
+      loadedStreamUrls.push(url);
+    }
+    attachMedia() {}
+    destroy() {}
+  },
+}));
+
 afterEach(() => {
   cleanup();
   resetBackend();
+  loadedStreamUrls.length = 0;
 });
 
 const [video, , book] = fixtureProject.media as [
@@ -35,9 +51,16 @@ const storedTrack: SubtitleTrack = {
   source: { kind: "file", source: { kind: "browser_file", key: "k1" } },
 };
 
+const convertedPlayback: MediaPlayback = {
+  kind: "hls",
+  url: "http://127.0.0.1:8787/conversions/k1/index.m3u8",
+  token: "secret",
+};
+
 function renderMediaScreen(
   media: MediaFile = video,
   storedFileTexts: Record<string, string> = {},
+  playback?: MediaPlayback,
 ) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
@@ -51,12 +74,26 @@ function renderMediaScreen(
   );
   for (const [key, text] of Object.entries(storedFileTexts))
     rendered.effects.storedFileTexts.set(key, text);
+  if (playback) rendered.effects.mediaPlayback = playback;
   const dispatch = (action: AppAction) =>
     act(() => {
       rendered.store.dispatch(action);
     });
   dispatch(actions.mediaOpened("project-1", media));
   return { ...rendered, client, dispatch };
+}
+
+const renderConvertedMediaScreen = () =>
+  renderMediaScreen(video, {}, convertedPlayback);
+
+const findConversionNotice = () =>
+  screen.findByRole("dialog", {
+    name: "This file will be converted as it plays",
+  });
+
+async function clickNoticeButton(name: "Play" | "Cancel") {
+  const notice = await findConversionNotice();
+  fireEvent.click(within(notice).getByRole("button", { name }));
 }
 
 async function findCueItems() {
@@ -134,8 +171,60 @@ describe("MediaScreen", () => {
   it("reports a media file that cannot be loaded", async () => {
     const { dispatch } = renderMediaScreen();
     await screen.findByRole("heading", { name: video.name });
-    dispatch(actions.mediaUrlFailed(video.id, "The file moved."));
+    dispatch(actions.mediaPlaybackFailed(video.id, "The file moved."));
     expect(screen.getByRole("alert").textContent).toContain("The file moved.");
+  });
+
+  describe("when the media converts as it plays", () => {
+    it("shows the conversion notice", async () => {
+      renderConvertedMediaScreen();
+      expect(await findConversionNotice()).toBeTruthy();
+    });
+
+    it("loads nothing into the player while the notice shows", async () => {
+      renderConvertedMediaScreen();
+      await findConversionNotice();
+      expect(document.querySelector("video")?.hasAttribute("src")).toBe(false);
+    });
+
+    it("hides the notice once Play is clicked", async () => {
+      renderConvertedMediaScreen();
+      await clickNoticeButton("Play");
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("loads the converted media into the player once Play is clicked", async () => {
+      renderConvertedMediaScreen();
+      await clickNoticeButton("Play");
+      await act(async () => {
+        await vi.dynamicImportSettled();
+      });
+      expect(loadedStreamUrls).toEqual([convertedPlayback.url]);
+    });
+
+    it("saves the dismissal when Play is clicked after ticking Don't show this again", async () => {
+      const { effects } = renderConvertedMediaScreen();
+      fireEvent.click(
+        within(await findConversionNotice()).getByRole("checkbox", {
+          name: "Don't show this again",
+        }),
+      );
+      await clickNoticeButton("Play");
+      expect(effects.calls).toContainEqual({
+        type: "savePreference",
+        key: "conversionNoticeDismissed",
+        value: "true",
+      });
+    });
+
+    it("returns to the project when Cancel is clicked", async () => {
+      const { store } = renderConvertedMediaScreen();
+      await clickNoticeButton("Cancel");
+      expect(selectScreen(store.getState())).toEqual({
+        kind: "project",
+        projectId: "project-1",
+      });
+    });
   });
 
   it("saves the duration once the player knows it", async () => {

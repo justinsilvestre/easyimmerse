@@ -17,7 +17,8 @@
         "connect-src": "'self' http://127.0.0.1:* http://localhost:* ipc: http://ipc.localhost",
         "style-src": "'self' 'unsafe-inline'",
         "img-src": "'self' data: http://127.0.0.1:*",
-        "media-src": "'self' http://127.0.0.1:*"
+        "media-src": "'self' http://127.0.0.1:* blob:",
+        "worker-src": "'self' blob:"
       }
     }
   },
@@ -30,6 +31,8 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "externalBin": ["binaries/ffmpeg", "binaries/ffprobe"],
+    "resources": ["licenses/ffmpeg/*"]
   }
 }

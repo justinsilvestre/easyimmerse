@@ -1,14 +1,15 @@
-import type { TimeRange } from "@easyimmerse/types";
+import type { PlayerLoop } from "@easyimmerse/state";
 
-/** Seeks the element to the loop's start when its time lies outside the loop. Does nothing without a loop. */
+/** Seeks the element to the loop's restart time when its time lies outside the loop's range. Does nothing without a loop. */
 export function keepWithinLoop(
   element: HTMLMediaElement,
-  loop: TimeRange | null,
+  loop: PlayerLoop | null,
 ) {
   if (loop === null) return;
   const timeMs = toMs(element.currentTime);
-  if (timeMs < loop.start_ms || timeMs >= loop.end_ms)
-    element.currentTime = loop.start_ms / 1000;
+  const { range } = loop;
+  if (timeMs < range.start_ms || timeMs >= range.end_ms)
+    element.currentTime = loop.restartMs / 1000;
 }
 
 export function toMs(seconds: number): number {

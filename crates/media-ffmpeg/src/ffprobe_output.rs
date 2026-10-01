@@ -18,18 +18,44 @@ pub struct FfprobeFormat {
     pub duration: Option<String>,
 }
 
+/// One stream. ffprobe prints some numbers, such as sample rates and bit rates, as strings.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct FfprobeStream {
     pub index: u32,
     pub codec_type: String,
     pub codec_name: Option<String>,
+    pub profile: Option<String>,
+    /// The codec level, or a negative number when unknown.
+    pub level: Option<i32>,
+    /// ffprobe's own codec string, for example `avc1.64000c`. Its spellings differ from the ones browsers accept for some codecs.
+    pub mime_codec_string: Option<String>,
+    pub bit_rate: Option<String>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    /// The average frame rate as a fraction such as `24000/1001`, or `0/0` when unknown.
+    pub avg_frame_rate: Option<String>,
+    /// The lowest frame rate that represents every timestamp exactly, as a fraction.
+    pub r_frame_rate: Option<String>,
+    pub pix_fmt: Option<String>,
+    pub sample_rate: Option<String>,
+    pub channels: Option<u32>,
+    #[serde(default)]
+    pub disposition: FfprobeDisposition,
     #[serde(default)]
     pub tags: FfprobeStreamTags,
+}
+
+/// The stream's flags, each printed as 0 or 1.
+#[derive(Debug, Clone, PartialEq, Default, Deserialize)]
+pub struct FfprobeDisposition {
+    #[serde(default)]
+    pub default: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Deserialize)]
 pub struct FfprobeStreamTags {
     pub language: Option<String>,
+    pub title: Option<String>,
 }
 
 pub fn parse_ffprobe_output(json: &str) -> Result<FfprobeOutput, serde_json::Error> {
@@ -74,6 +100,28 @@ mod tests {
     fn reads_the_subtitle_language() {
         let subtitle = parse_sample().streams.remove(2);
         assert_eq!(subtitle.tags.language.as_deref(), Some("eng"));
+    }
+
+    #[test]
+    fn reads_the_video_level() {
+        assert_eq!(parse_sample().streams[0].level, Some(12));
+    }
+
+    #[test]
+    fn reads_the_reported_codec_string() {
+        let video = parse_sample().streams.remove(0);
+        assert_eq!(video.mime_codec_string.as_deref(), Some("avc1.64000c"));
+    }
+
+    #[test]
+    fn reads_the_default_disposition() {
+        assert_eq!(parse_sample().streams[1].disposition.default, 1);
+    }
+
+    #[test]
+    fn reads_the_sample_rate_as_a_string() {
+        let audio = parse_sample().streams.remove(1);
+        assert_eq!(audio.sample_rate.as_deref(), Some("44100"));
     }
 
     #[test]

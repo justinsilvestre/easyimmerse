@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 
 use anyhow::Context;
-use easyimmerse_api::{ApiConfig, serve};
+use easyimmerse_api::{ApiConfig, AppState, serve, start_conversion_service};
 use easyimmerse_storage::Storage;
 use tokio::net::TcpListener;
 
@@ -15,7 +15,9 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
     let addr = listener.local_addr()?;
     let config = build_config(&args, addr);
     let storage = open_storage(&args.db, args.seed_placeholders)?;
-    let handle = serve(listener, config, storage).await?;
+    let conversions = start_conversion_service(args.cache_dir.clone());
+    let state = AppState::new(storage, config).with_conversions(conversions);
+    let handle = serve(listener, state).await?;
     println!("listening on http://{addr}");
     tokio::signal::ctrl_c()
         .await
@@ -87,6 +89,7 @@ mod tests {
             allow_local_paths: false,
             seed_placeholders: false,
             expected_hosts: expected_hosts.iter().map(|host| host.to_string()).collect(),
+            cache_dir: None,
         }
     }
 

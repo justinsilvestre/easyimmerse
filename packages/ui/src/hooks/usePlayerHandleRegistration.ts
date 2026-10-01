@@ -1,8 +1,11 @@
-import type { PlayerHandle } from "@easyimmerse/state";
-import type { TimeRange } from "@easyimmerse/types";
+import type { PlayerHandle, PlayerLoop } from "@easyimmerse/state";
 import { type RefObject, useCallback } from "react";
 import { usePlayerRegistry } from "../playerRegistryContext.ts";
 import { keepWithinLoop } from "./keepWithinLoop.ts";
+import { waitForSeek } from "./waitForSeek.ts";
+
+/** How long a frame capture waits for a pending seek. A seek in a converted stream can wait for the server to produce a segment. */
+const seekTimeoutMs = 5000;
 
 /**
  * Returns a ref callback for the media element. It keeps the element in `media` and registers a handle on it while it is mounted.
@@ -10,7 +13,7 @@ import { keepWithinLoop } from "./keepWithinLoop.ts";
  */
 export function usePlayerHandleRegistration(
   media: RefObject<HTMLMediaElement | null>,
-  loop: RefObject<TimeRange | null>,
+  loop: RefObject<PlayerLoop | null>,
 ) {
   const registry = usePlayerRegistry();
   return useCallback(
@@ -31,11 +34,11 @@ export function usePlayerHandleRegistration(
 
 /**
  * Builds a handle on the element. The loop is kept in the ref for the element's timeupdate handler to enforce,
- * and setting it while the time lies outside it seeks to its start right away.
+ * and setting it while the time lies outside it seeks to its restart time right away.
  */
 function createMediaElementHandle(
   element: HTMLMediaElement,
-  loop: RefObject<TimeRange | null>,
+  loop: RefObject<PlayerLoop | null>,
 ): PlayerHandle {
   return {
     seek: (ms) => {
@@ -46,9 +49,9 @@ function createMediaElementHandle(
       element.play()?.catch(() => undefined);
     },
     pause: () => element.pause(),
-    setLoop: (range) => {
-      loop.current = range;
-      keepWithinLoop(element, range);
+    setLoop: (next) => {
+      loop.current = next;
+      keepWithinLoop(element, next);
     },
     setPlaybackRate: (rate) => {
       element.playbackRate = rate;
@@ -58,8 +61,11 @@ function createMediaElementHandle(
     setVolume: (volume) => {
       element.volume = volume;
     },
-    captureFrame: () =>
-      element instanceof HTMLVideoElement ? captureVideoFrame(element) : null,
+    captureFrame: async () =>
+      element instanceof HTMLVideoElement &&
+      (await waitForSeek(element, seekTimeoutMs))
+        ? captureVideoFrame(element)
+        : null,
   };
 }
 

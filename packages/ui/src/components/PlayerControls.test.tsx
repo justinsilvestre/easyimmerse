@@ -1,6 +1,6 @@
 import { resetBackend } from "@easyimmerse/backend";
 import type { AppAction, AppStore } from "@easyimmerse/state";
-import { actions, selectSubtitles } from "@easyimmerse/state";
+import { actions, interiorSeekTime, selectSubtitles } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -68,18 +68,24 @@ describe("PlayerControls", () => {
   });
 
   describe("with cues", () => {
-    it("skips to the start of the next cue", () => {
+    it("skips to just inside the frame at the next cue's start", () => {
       const { effects, store } = renderControls();
       dispatchAll(store, actions.playerTimeChanged(600));
       fireEvent.click(findButton("Next cue"));
-      expect(effects.calls).toContainEqual({ type: "seekPlayer", ms: 1750 });
+      expect(effects.calls).toContainEqual({
+        type: "seekPlayer",
+        ms: interiorSeekTime(1750, undefined),
+      });
     });
 
-    it("skips to the start of the previous cue", () => {
+    it("skips to just inside the frame at the previous cue's start", () => {
       const { effects, store } = renderControls();
       dispatchAll(store, actions.playerTimeChanged(3300));
       fireEvent.click(findButton("Previous cue"));
-      expect(effects.calls).toContainEqual({ type: "seekPlayer", ms: 1750 });
+      expect(effects.calls).toContainEqual({
+        type: "seekPlayer",
+        ms: interiorSeekTime(1750, undefined),
+      });
     });
 
     it("skips forward five seconds after the last cue has started", () => {
@@ -169,7 +175,7 @@ describe("PlayerControls", () => {
       fireEvent.click(findButton(/Stop repeating/));
       expect(effects.calls).toContainEqual({
         type: "setPlayerLoop",
-        range: null,
+        loop: null,
       });
     });
   });

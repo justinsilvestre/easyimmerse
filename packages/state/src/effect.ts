@@ -1,5 +1,6 @@
-import type { MediaFile, TimeRange } from "@easyimmerse/types";
+import type { MediaFile } from "@easyimmerse/types";
 import type { FilePickPurpose } from "./filePick/chosenFile.ts";
+import type { PlayerLoop } from "./player/playerLoop.ts";
 import type { PreferenceKey } from "./preferences/preferenceKey.ts";
 
 /** A description of a side effect to perform. Effects are plain data and contain no code. */
@@ -7,12 +8,12 @@ export type Effect =
   | { type: "seekPlayer"; ms: number }
   | { type: "playPlayer" }
   | { type: "pausePlayer" }
-  | { type: "setPlayerLoop"; range: TimeRange | null }
+  | { type: "setPlayerLoop"; loop: PlayerLoop | null }
   | { type: "setPlaybackRate"; rate: number }
   | { type: "setVolume"; volume: number }
   | { type: "captureFrame" }
   | { type: "pickFile"; purpose: FilePickPurpose; accept: readonly string[] }
-  | { type: "resolveMediaUrl"; projectId: string; media: MediaFile }
+  | { type: "resolveMediaPlayback"; projectId: string; media: MediaFile }
   | { type: "readStoredFileText"; trackId: string; key: string }
   | { type: "readStoredFileBytes"; key: string; target: StoredFileTarget }
   | { type: "savePreference"; key: PreferenceKey; value: string }

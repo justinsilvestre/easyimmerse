@@ -1,43 +1,33 @@
 //! Container metadata read from the leading bytes of a media file.
 
+use std::io::{Cursor, Read, Seek};
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+use utoipa::ToSchema;
 
 use crate::error::MediaError;
+use crate::track_info::TrackInfo;
 use crate::{mkv_container, mp3_container, mp4_container};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+/// A container format the application accepts.
+/// MOV and M4A files count as MP4, and WebM files count as Matroska.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[serde(rename_all = "snake_case")]
 #[ts(export)]
 pub enum ContainerFormat {
     Mp4,
     Matroska,
     Mp3,
+    /// Raw AAC audio framed as ADTS (Audio Data Transport Stream), usually a `.aac` file.
+    Adts,
+    Ogg,
+    Flac,
+    Wav,
+    Avi,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[serde(rename_all = "snake_case")]
-#[ts(export)]
-pub enum TrackKind {
-    Video,
-    Audio,
-    Subtitle,
-    Other,
-}
-
-/// One stream inside a container. The codec string is the container's own name for
-/// the codec, so it differs between formats.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct TrackInfo {
-    pub id: u32,
-    pub kind: TrackKind,
-    pub codec: String,
-    /// The language tag stored in the container, or `None` when it is undetermined.
-    pub language: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct ContainerInfo {
     pub format: ContainerFormat,
@@ -47,8 +37,10 @@ pub struct ContainerInfo {
 
 const MP4_BOX_TYPE_OFFSET: usize = 4;
 const EBML_MAGIC: [u8; 4] = [0x1A, 0x45, 0xDF, 0xA3];
+/// The number of leading bytes that `detect_container_format` inspects.
+const SIGNATURE_LENGTH: usize = MP4_BOX_TYPE_OFFSET + 4;
 
-/// Recognizes the container from its signature bytes.
+/// Recognizes, from its signature bytes, a container that the pure-Rust probe can read.
 pub fn detect_container_format(bytes: &[u8]) -> Option<ContainerFormat> {
     if bytes.get(MP4_BOX_TYPE_OFFSET..MP4_BOX_TYPE_OFFSET + 4) == Some(b"ftyp") {
         Some(ContainerFormat::Mp4)
@@ -63,11 +55,34 @@ pub fn detect_container_format(bytes: &[u8]) -> Option<ContainerFormat> {
 
 /// Reads the container format, duration, and track list from a complete media file.
 pub fn probe_container(bytes: &[u8]) -> Result<ContainerInfo, MediaError> {
-    match detect_container_format(bytes).ok_or(MediaError::UnknownContainerFormat)? {
-        ContainerFormat::Mp4 => mp4_container::probe_mp4(bytes),
-        ContainerFormat::Matroska => mkv_container::probe_mkv(bytes),
+    probe_container_reader(Cursor::new(bytes), bytes.len() as u64)
+}
+
+/// Reads the container format, duration, and track list from a media file of `size` bytes.
+/// Only the parts of the file that describe the container and its tracks are read.
+pub fn probe_container_reader<R: Read + Seek>(
+    mut reader: R,
+    size: u64,
+) -> Result<ContainerInfo, MediaError> {
+    let signature = read_signature(&mut reader)?;
+    match detect_container_format(&signature).ok_or(MediaError::UnknownContainerFormat)? {
+        ContainerFormat::Mp4 => mp4_container::probe_mp4(reader, size),
+        ContainerFormat::Matroska => mkv_container::probe_mkv(reader),
         ContainerFormat::Mp3 => Ok(mp3_container::probe_mp3()),
+        other => Err(MediaError::UnreadableContainerFormat(other)),
     }
+}
+
+/// Reads the leading bytes that identify the container, then returns the reader to the start of the file.
+fn read_signature<R: Read + Seek>(reader: &mut R) -> Result<Vec<u8>, MediaError> {
+    let mut signature = Vec::with_capacity(SIGNATURE_LENGTH);
+    reader
+        .by_ref()
+        .take(SIGNATURE_LENGTH as u64)
+        .read_to_end(&mut signature)
+        .and_then(|_| reader.rewind())
+        .map_err(|error| MediaError::Read(error.to_string()))?;
+    Ok(signature)
 }
 
 /// Turns a container's language field into a tag, treating the empty string and

@@ -16,7 +16,7 @@ export function usePlayerSkip(cues: readonly Cue[] | null) {
     (direction: "previous" | "next") => {
       const timeMs = selectCurrentTimeMs(store.getState());
       const cueStart = cues && findAdjacentCueStart(cues, timeMs, direction);
-      if (cueStart !== null) dispatch(actions.seekRequested(cueStart));
+      if (cueStart !== null) dispatch(actions.momentSeekRequested(cueStart));
       else
         dispatch(
           actions.skipRequested(

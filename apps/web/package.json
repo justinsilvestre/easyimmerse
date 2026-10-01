@@ -21,6 +21,7 @@
   "devDependencies": {
     "@easyimmerse/config": "workspace:*",
     "@easyimmerse/fixtures": "workspace:*",
+    "@easyimmerse/types": "workspace:*",
     "@playwright/test": "^1.63.0",
     "@types/node": "^24",
     "@types/react": "^19.3.0",

@@ -19,7 +19,7 @@ export function SubtitlesPanelCard({
       <button
         type="button"
         aria-current={isCurrent || undefined}
-        onClick={() => dispatch(actions.seekRequested(cue.start_ms))}
+        onClick={() => dispatch(actions.momentSeekRequested(cue.start_ms))}
         className={clsx(
           "flex w-full flex-col gap-0.5 rounded-md px-3 py-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
           isCurrent
