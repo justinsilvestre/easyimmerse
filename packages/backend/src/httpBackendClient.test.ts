@@ -60,6 +60,28 @@ describe("createHttpBackendClient", () => {
     expect(result).toEqual({ data: { projects: [] } });
   });
 
+  it("returns the body as text when the request expects text", async () => {
+    const fakeFetch = createFakeFetch(() => new Response("b { color: red; }"));
+    const result = await createClient(fakeFetch).send({
+      method: "GET",
+      path: "/dictionaries/d1/stylesheet",
+      responseType: "text",
+    });
+    expect(result).toEqual({ data: "b { color: red; }" });
+  });
+
+  it("builds a URL that carries the token in its query string", () => {
+    const client = createClient(createFakeFetch(() => jsonResponse(200, {})));
+    const url = client.resolveUrl?.({
+      method: "GET",
+      path: "/dictionaries/d1/asset",
+      query: { path: "img/cat.svg" },
+    });
+    expect(url).toBe(
+      "http://127.0.0.1:8787/dictionaries/d1/asset?path=img%2Fcat.svg&token=secret",
+    );
+  });
+
   it("returns undefined data for a 204 response", async () => {
     const fakeFetch = createFakeFetch(
       () => new Response(null, { status: 204 }),

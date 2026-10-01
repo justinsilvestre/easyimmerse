@@ -53,6 +53,21 @@ describe("backendApi", () => {
     expect(client.requests).toEqual([{ method: "GET", path: "/projects" }]);
   });
 
+  it("asks for the stylesheet as text for getDictionaryStylesheet", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.getDictionaryStylesheet.initiate("d1"),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "GET",
+        path: "/dictionaries/d1/stylesheet",
+        responseType: "text",
+      },
+    ]);
+  });
+
   it("returns the client's data for listProjects", async () => {
     configureBackend(createRecordingClient());
     const result = await createStore().dispatch(

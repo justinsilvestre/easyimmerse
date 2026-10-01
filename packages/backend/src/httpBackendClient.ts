@@ -26,10 +26,15 @@ export function createHttpBackendClient(
           headers: buildHeaders(options.token, request.body),
           body: serializeBody(request.body),
         });
-        return readResponse(response);
+        return readResponse(response, request.responseType ?? "json");
       } catch (cause) {
         return { error: { status: "NETWORK", message: describe(cause) } };
       }
+    },
+    resolveUrl: (request) => {
+      const url = new URL(buildUrl(options.serverUrl, request));
+      url.searchParams.set("token", options.token);
+      return url.toString();
     },
   };
 }
@@ -60,9 +65,13 @@ function serializeBody(body: BackendRequestBody | undefined): BodyInit | null {
   return body.value as BodyInit;
 }
 
-async function readResponse<T>(response: Response): Promise<BackendResult<T>> {
+async function readResponse<T>(
+  response: Response,
+  responseType: "json" | "text",
+): Promise<BackendResult<T>> {
   if (!response.ok) return { error: await readError(response) };
   if (response.status === 204) return { data: undefined as T };
+  if (responseType === "text") return { data: (await response.text()) as T };
   return { data: (await response.json()) as T };
 }
 

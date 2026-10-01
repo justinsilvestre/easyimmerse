@@ -9,6 +9,8 @@ export type BackendRequest = {
   path: string;
   query?: Record<string, string>;
   body?: BackendRequestBody;
+  /** How to read a successful response's body. Defaults to JSON. */
+  responseType?: "json" | "text";
   /** The equivalent WebAssembly operation, for clients that have no server. */
   offlineOperation?: OfflineOperation;
 };
@@ -25,4 +27,9 @@ export type BackendResult<T> = { data: T } | { error: BackendError };
 /** The one way the frontend reaches the backend, over HTTP or through WebAssembly. */
 export interface BackendClient {
   send<T>(request: BackendRequest): Promise<BackendResult<T>>;
+  /**
+   * Builds a URL that an element unable to send headers, such as an image, can load the request's response from.
+   * Clients without a server leave it out.
+   */
+  resolveUrl?(request: BackendRequest): string;
 }

@@ -9,6 +9,7 @@ export {
   useDeleteFlashcardMutation,
   useDeleteProjectMutation,
   useDraftFlashcardMutation,
+  useGetDictionaryStylesheetQuery,
   useGetPreferenceQuery,
   useGetProjectQuery,
   useGetSubtitleCuesQuery,
@@ -41,6 +42,7 @@ export type {
   BackendResult,
 } from "./backendClient.ts";
 export { backendStoreParts } from "./backendStoreParts.ts";
+export { buildDictionaryAssetUrl } from "./buildDictionaryAssetUrl.ts";
 export {
   configureBackend,
   getBackendClient,

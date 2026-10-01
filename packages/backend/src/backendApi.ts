@@ -304,6 +304,13 @@ export const backendApi = createApi({
       query: (id) => ({ method: "DELETE", path: `/dictionaries/${id}` }),
       invalidatesTags: ["Dictionaries"],
     }),
+    getDictionaryStylesheet: build.query<string, string>({
+      query: (id) => ({
+        method: "GET",
+        path: `/dictionaries/${id}/stylesheet`,
+        responseType: "text",
+      }),
+    }),
     lookupTerm: build.query<LookupResponse, { id: string; term: string }>({
       query: ({ id, term }) => ({
         method: "GET",
@@ -350,6 +357,7 @@ export const {
   useListDictionariesQuery,
   useSetDictionaryLanguagesMutation,
   useDeleteDictionaryMutation,
+  useGetDictionaryStylesheetQuery,
   useLookupTermQuery,
   useLookupTermEverywhereQuery,
   useLazyLookupTermEverywhereQuery,
