@@ -16,6 +16,9 @@ runs:
 
     # Mise installs the toolchain through rustup but does not add the components and
     # targets that rust-toolchain.toml lists, so they are installed here.
+    # On Windows runners, this step occasionally fails with "detected conflict" on a clippy executable.
+    # The toolchain install in the mise step left clippy's files behind without registering the component.
+    # The cause is unknown and the failure is rare, so re-running the failed job is the expected remedy.
     - name: Install the Rust components and cross-compilation targets
       shell: bash
       run: |
