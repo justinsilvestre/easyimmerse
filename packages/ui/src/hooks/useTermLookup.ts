@@ -35,11 +35,25 @@ export function useTermLookup(targetLanguage: string): {
   const dictionaries = useListDictionariesQuery();
   return {
     results: shown.currentData?.results ?? [],
-    status: shown.isFetching ? "loading" : shown.isError ? "error" : "idle",
+    status: term === "" ? "idle" : describeStatus(shown),
     hasDictionaries:
       dictionaries.isLoading ||
       hasDictionaryFor(dictionaries.data?.dictionaries ?? [], targetLanguage),
   };
+}
+
+/** A query that has not started yet counts as loading, so that nothing claims there are no entries before it runs. */
+function describeStatus({
+  isUninitialized,
+  isFetching,
+  isError,
+}: {
+  isUninitialized: boolean;
+  isFetching: boolean;
+  isError: boolean;
+}): LookupStatus {
+  if (isUninitialized || isFetching) return "loading";
+  return isError ? "error" : "idle";
 }
 
 /** Tells whether any dictionary found entries for the term. */
