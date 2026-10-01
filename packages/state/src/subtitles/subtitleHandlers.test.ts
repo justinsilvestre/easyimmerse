@@ -42,4 +42,20 @@ describe("update", () => {
       },
     ]);
   });
+
+  it("reads the text of an added track the browser holds for subtitleTrackAdded", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.subtitleTrackAdded({
+        id: "t1",
+        name: "episode.srt",
+        role: "target",
+        language: null,
+        source: { kind: "file", source: { kind: "browser_file", key: "k1" } },
+      }),
+    );
+    expect(effects).toEqual([
+      { type: "readStoredFileText", trackId: "t1", key: "k1" },
+    ]);
+  });
 });

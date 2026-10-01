@@ -1,8 +1,13 @@
 import type { AppState } from "../appState.ts";
 import type { UpdateHandlers } from "../updateHandlers.ts";
+import { readStoredSubtitleText } from "./readStoredSubtitleTexts.ts";
 import type { SubtitlesState } from "./subtitlesState.ts";
 
 export const subtitleHandlers = {
+  subtitleTrackAdded: (state, { track }) => [
+    state,
+    readStoredSubtitleText(track),
+  ],
   subtitleOverlayToggled: (state) => [
     withSubtitles(state, {
       overlay: state.subtitles.overlay === "target" ? "translation" : "target",

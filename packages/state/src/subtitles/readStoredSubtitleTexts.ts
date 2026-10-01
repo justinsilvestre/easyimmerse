@@ -6,7 +6,8 @@ export function readStoredSubtitleTexts(media: MediaFile): Effect[] {
   return media.subtitle_tracks.flatMap(readStoredSubtitleText);
 }
 
-function readStoredSubtitleText(track: SubtitleTrack): Effect[] {
+/** Builds an effect reading the track's file when only the browser can read it. */
+export function readStoredSubtitleText(track: SubtitleTrack): Effect[] {
   const { source } = track;
   if (source.kind !== "file" || source.source.kind !== "browser_file")
     return [];
