@@ -22,6 +22,7 @@ export function useImportChosenDictionary(): ChosenFileHandler {
   const importDictionary = useImportDictionary();
   const [setDictionaryLanguages] = useSetDictionaryLanguagesMutation();
   return async (chosen) => {
+    dispatch(actions.notificationRequested(`Importing ${chosen.file.name}…`));
     let dictionary = await importDictionary(chosen);
     if (settings && hasNoLanguages(dictionary))
       dictionary = await setDictionaryLanguages({

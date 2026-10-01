@@ -228,6 +228,22 @@ describe("useChosenFileHandler", () => {
       });
     });
 
+    it("announces the import before confirming it", async () => {
+      const { effects, dispatch } = renderHandler();
+      choose(
+        dispatch,
+        { kind: "dictionary" },
+        { name: "d.zip", source: { kind: "path", path: "/d.zip" } },
+      );
+      await vi.waitFor(() => {
+        expect(
+          effects.calls.flatMap((call) =>
+            call.type === "showNotification" ? [call.message] : [],
+          ),
+        ).toEqual(["Importing d.zip…", "Dictionary added: Imported"]);
+      });
+    });
+
     it("confirms the import", async () => {
       const { effects, dispatch } = renderHandler();
       choose(
