@@ -1,36 +1,20 @@
-import { backendStoreParts, configureBackend } from "@easyimmerse/backend";
-import {
-  createAppStore,
-  createPlayerRegistry,
-  createRecordingEffects,
-} from "@easyimmerse/state";
 import type { Decorator } from "@storybook/react-vite";
 import { type ReactNode, useState } from "react";
-import { Provider } from "react-redux";
-import { PlayerRegistryContext } from "../playerRegistryContext.ts";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
-import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
+import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
+import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 
 /** Renders a story inside a fresh app store with recording effects, a fake backend that answers with the fixture responses, and a player registry. */
 export const withAppStore: Decorator = (Story) => (
-  <AppStoreProvider>
+  <StoryAppStore>
     <Story />
-  </AppStoreProvider>
+  </StoryAppStore>
 );
 
-function AppStoreProvider({ children }: { children: ReactNode }) {
-  const [{ store, playerRegistry }] = useState(createStoryContext);
+function StoryAppStore({ children }: { children: ReactNode }) {
+  const [{ store, playerRegistry }] = useState(() => createTestAppStore());
   return (
-    <Provider store={store}>
-      <PlayerRegistryContext value={playerRegistry}>
-        {children}
-      </PlayerRegistryContext>
-    </Provider>
+    <AppStoreProviders store={store} playerRegistry={playerRegistry}>
+      {children}
+    </AppStoreProviders>
   );
-}
-
-function createStoryContext() {
-  configureBackend(createFakeBackendClient(fixtureResponses));
-  const store = createAppStore(createRecordingEffects(), backendStoreParts);
-  return { store, playerRegistry: createPlayerRegistry() };
 }
