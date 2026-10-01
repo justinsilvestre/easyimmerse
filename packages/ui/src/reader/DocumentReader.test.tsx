@@ -78,6 +78,13 @@ describe("DocumentReader", () => {
       ).toBeNull();
     });
 
+    it("moves focus to the heading of the chapter chosen in the table of contents", () => {
+      renderReader();
+      clickButton("Contents");
+      clickButton("Chapter Two");
+      expect(document.activeElement).toBe(getChapterHeading());
+    });
+
     it("reports the start of the chapter chosen in the table of contents", () => {
       const positions = renderReaderRecordingPositions();
       clickButton("Contents");
