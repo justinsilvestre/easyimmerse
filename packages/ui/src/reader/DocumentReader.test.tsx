@@ -126,6 +126,12 @@ describe("DocumentReader", () => {
       const activated: unknown[] = [];
       renderReader({ onWordActivated: (event) => activated.push(event) });
       clickButton("hungry");
+
+    it("does not count a paragraph that only reaches into the top 48 pixels of the reading area", () => {
+      const observers = stubIntersectionObserver();
+      renderReader();
+      expect(observers.rootMargin).toBe("-48px 0px 0px 0px");
+    });
       expect(activated).toEqual([
         { word: "hungry", context: "The dog wants to eat, and it is hungry." },
       ]);
@@ -203,7 +209,10 @@ function stubIntersectionObserver() {
   const instances: FakeIntersectionObserver[] = [];
   class FakeIntersectionObserver {
     readonly targets: Element[] = [];
-    constructor(readonly callback: IntersectionObserverCallback) {
+    constructor(
+      readonly callback: IntersectionObserverCallback,
+      readonly options: IntersectionObserverInit,
+    ) {
       instances.push(this);
     }
     observe(target: Element) {
@@ -230,3 +239,6 @@ function stubIntersectionObserver() {
     },
   };
 }
+    get rootMargin() {
+      return instances[0]?.options.rootMargin;
+    },

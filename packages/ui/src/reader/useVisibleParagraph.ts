@@ -3,10 +3,7 @@ import { pickTopmostVisibleIndex } from "./pickTopmostVisibleIndex.ts";
 
 export const paragraphIndexAttribute = "data-paragraph-index";
 
-/**
- * The height of the band at the top of the scroll container in which paragraphs are not counted as visible.
- * It keeps the end of the paragraph above the top-most one from counting when a paragraph is scrolled to the top with a scroll margin smaller than this.
- */
+/** A paragraph that only reaches into this many pixels at the top of the scroll container is not counted as visible, so that the end of the previous paragraph does not win when a paragraph has just been scrolled to the top. */
 const ignoredTopBandPixels = 48;
 
 /**
