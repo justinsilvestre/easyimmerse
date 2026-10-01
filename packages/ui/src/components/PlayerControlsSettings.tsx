@@ -29,7 +29,7 @@ export function PlayerControlsSettings({
         title="Switch the overlaid subtitles (T)"
         onClick={() => dispatch(actions.subtitleOverlayToggled())}
       >
-        {overlayName}
+        <span className="hidden sm:inline">{overlayName}</span>
       </PlayerControlsButton>
       <PlayerControlsButton
         icon="panel"

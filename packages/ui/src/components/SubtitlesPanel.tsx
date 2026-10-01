@@ -40,7 +40,7 @@ function SubtitlesPanelCueList({ cues }: { cues: readonly Cue[] }) {
       ref={listRef}
       aria-label="Subtitles"
       // The list is positioned so that its items' offsets are measured from it.
-      className="relative flex h-full flex-col gap-1 overflow-y-auto p-2"
+      className="relative mx-auto flex h-full w-full max-w-3xl flex-col gap-1 overflow-y-auto p-2"
       {...scrollHandlers}
     >
       {cues.map((cue) => (

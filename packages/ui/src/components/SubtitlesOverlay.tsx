@@ -49,7 +49,7 @@ export function SubtitlesOverlay({
   return (
     <section
       aria-label="Overlaid subtitles"
-      className="pointer-events-auto flex max-w-3xl flex-col gap-1 rounded-lg bg-black/70 px-4 py-2 text-center text-white shadow-lg backdrop-blur-sm"
+      className="pointer-events-auto flex max-w-3xl flex-col gap-0.5 rounded-md bg-black/70 px-3 py-1.5 text-center text-white shadow-lg backdrop-blur-sm sm:gap-1 sm:rounded-lg sm:px-4 sm:py-2"
     >
       {translationOnTop ? translation : target}
       {translationOnTop ? target : translation}
@@ -105,8 +105,8 @@ function SubtitlesOverlayLine({
       className={clsx(
         "whitespace-pre-line leading-snug",
         isPrimary
-          ? "text-lg font-medium sm:text-2xl lg:text-3xl"
-          : "text-sm font-light text-white/80 sm:text-lg",
+          ? "text-base font-medium sm:text-xl lg:text-2xl"
+          : "text-xs font-light text-white/80 sm:text-base",
       )}
     >
       {children}
