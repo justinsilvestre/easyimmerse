@@ -6,6 +6,7 @@ import { actions } from "@easyimmerse/state";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { HelpLink } from "../components/HelpLink.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { describeBackendError } from "../describeBackendError.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { isOfflineError } from "../isOfflineError.ts";
 import { HomeScreenView } from "./HomeScreenView.tsx";
@@ -20,7 +21,11 @@ export function HomeScreen() {
     <HomeScreenView
       projects={data?.projects ?? []}
       loading={isLoading}
-      error={error ? "Could not load your projects." : null}
+      error={
+        error === undefined
+          ? null
+          : `Could not load your projects: ${describeBackendError(error)}`
+      }
       onOpenProject={(projectId) => {
         markProjectOpened(projectId);
         dispatch(actions.projectOpened(projectId));

@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { HelpLink } from "../components/HelpLink.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { describeBackendError } from "../describeBackendError.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { findDictionaryStatus } from "./findDictionaryStatus.ts";
 import { ProjectScreenSettings } from "./ProjectScreenSettings.tsx";
@@ -18,7 +19,7 @@ import { ProjectScreenView } from "./ProjectScreenView.tsx";
 /** Shows a project from the server, or its settings form while the user edits them. */
 export function ProjectScreen({ projectId }: { projectId: string }) {
   const dispatch = useAppDispatch();
-  const { data: project, isError } = useGetProjectQuery(projectId);
+  const { data: project, error } = useGetProjectQuery(projectId);
   const [isEditingSettings, setEditingSettings] = useState(false);
   if (project && isEditingSettings)
     return (
@@ -36,9 +37,9 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
     );
   return (
     <ScreenLayout headerActions={<HelpLink />}>
-      {isError ? (
+      {error !== undefined ? (
         <p role="alert" className="text-sm text-red-700">
-          Could not load the project.
+          Could not load the project: {describeBackendError(error)}
         </p>
       ) : (
         <p role="status" className="text-sm text-gray-500">

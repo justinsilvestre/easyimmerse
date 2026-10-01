@@ -3,6 +3,7 @@ import { actions, selectLookup } from "@easyimmerse/state";
 import type { MediaFile, Project, SubtitleRole } from "@easyimmerse/types";
 import { DictionaryPopup } from "../components/DictionaryPopup.tsx";
 import { FlashcardEditor } from "../components/FlashcardEditor.tsx";
+import { describeBackendError } from "../describeBackendError.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useCreateFlashcardDraft } from "../hooks/useCreateFlashcardDraft.ts";
@@ -22,15 +23,16 @@ export function MediaScreen({
   projectId: string;
   mediaId: string;
 }) {
-  const { data: project, isError } = useGetProjectQuery(projectId);
+  const { data: project, error } = useGetProjectQuery(projectId);
   const media = project?.media.find(({ id }) => id === mediaId);
+  const failure = describeLoadFailure(error, project);
   return (
     <MediaScreenLayout title={media?.name ?? ""}>
       {project && media ? (
         <OpenMediaScreen project={project} media={media} />
-      ) : isError || project ? (
+      ) : failure !== null ? (
         <p role="alert" className="bg-red-50 px-4 py-2 text-sm text-red-800">
-          Could not load the media file.
+          {failure}
         </p>
       ) : (
         <p role="status" className="p-8 text-center text-sm text-neutral-400">
@@ -95,6 +97,17 @@ function OpenMediaScreen({
       <FlashcardEditor onSave={saveFlashcard} onDelete={deleteFlashcard} />
     </>
   );
+}
+
+/** Explains why the media cannot be shown, or returns null while the project is still loading. */
+function describeLoadFailure(
+  error: unknown,
+  project: Project | undefined,
+): string | null {
+  if (error !== undefined)
+    return `Could not load the project: ${describeBackendError(error)}`;
+  if (project) return "The media file is no longer in this project.";
+  return null;
 }
 
 /** Returns the first track in the role. */
