@@ -27,7 +27,7 @@ export function useCreateFlashcardDraft(
   return async (hover, definitions) => {
     const request = buildFlashcardDraftRequest(
       hover,
-      definitions ?? { entry: null, results: await lookUpWord(hover.word) },
+      definitions ?? { picked: null, results: await lookUpWord(hover.word) },
       { file: media, translationCues },
       project.settings,
     );

@@ -83,12 +83,12 @@ function OpenMediaScreen({
         results={termLookup.results}
         status={termLookup.status}
         hasDictionaries={termLookup.hasDictionaries}
-        onCreateFlashcard={(entry) => {
+        onCreateFlashcard={(picked) => {
           if (lookup.kind === "closed") return;
           const { term, context, clip } = lookup;
           createDraft(
             { word: term, context, clip },
-            { entry, results: termLookup.results },
+            { picked, results: termLookup.results },
           );
         }}
         onSetUpDictionary={() =>

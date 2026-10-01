@@ -9,13 +9,15 @@ import type {
   TermEntry,
   TimeRange,
 } from "@easyimmerse/types";
+import type { PickedEntry } from "../components/DictionaryPopupBody.tsx";
 import { findOverlappingCue } from "../cues/findOverlappingCue.ts";
 import { stripCueMarkup } from "../cues/stripCueMarkup.ts";
+import { formatGlossaryAsText } from "../glossary/formatGlossaryAsText.ts";
 import { isSameLanguage } from "../isSameLanguage.ts";
 
 /** The dictionary entries a card draws on: the one the user picked, or every result when the user picked none. */
 export type DraftDefinitions = {
-  entry: TermEntry | null;
+  picked: PickedEntry | null;
   results: readonly DictionaryLookupResult[];
 };
 
@@ -26,8 +28,7 @@ export type DraftMedia = {
 };
 
 type DefinitionSource = {
-  /** Null for an entry whose dictionary is not among the results. */
-  dictionary: DictionarySummary | null;
+  dictionary: DictionarySummary;
   entries: readonly TermEntry[];
 };
 
@@ -69,36 +70,27 @@ export function buildFlashcardDraftRequest(
 }
 
 function listDefinitionSources({
-  entry,
+  picked,
   results,
 }: DraftDefinitions): DefinitionSource[] {
-  const withEntries = results.filter((result) => result.entries.length > 0);
-  if (entry === null) return withEntries;
-  const result = withEntries.find((candidate) =>
-    candidate.entries.some((other) => isSameEntry(other, entry)),
-  );
-  return [{ dictionary: result?.dictionary ?? null, entries: [entry] }];
+  if (picked !== null)
+    return [{ dictionary: picked.dictionary, entries: [picked.entry] }];
+  return results.filter((result) => result.entries.length > 0);
 }
 
-function isSameEntry(first: TermEntry, second: TermEntry): boolean {
-  return (
-    first.term === second.term &&
-    first.reading === second.reading &&
-    JSON.stringify(first.definitions) === JSON.stringify(second.definitions)
-  );
-}
-
-/** Collects the definitions of the sources whose dictionary is written in a language the test accepts. */
+/**
+ * Collects, as plain text, the definitions of the sources whose dictionary is written in a language the test accepts.
+ * Definitions with no text, such as images without a description, are left out.
+ */
 function collectDefinitions(
   sources: readonly DefinitionSource[],
   acceptsLanguage: (language: string | null) => boolean,
 ): string[] {
   return sources
-    .filter(({ dictionary }) =>
-      acceptsLanguage(dictionary?.target_language ?? null),
-    )
+    .filter(({ dictionary }) => acceptsLanguage(dictionary.target_language))
     .flatMap(({ entries }) => entries.flatMap((entry) => entry.definitions))
-    .filter((definition) => typeof definition === "string");
+    .map(formatGlossaryAsText)
+    .filter((definition) => definition !== "");
 }
 
 function findContextTranslation(

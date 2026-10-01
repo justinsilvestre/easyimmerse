@@ -1,5 +1,5 @@
 import { actions, type LookupState, selectLookup } from "@easyimmerse/state";
-import type { DictionaryLookupResult, TermEntry } from "@easyimmerse/types";
+import type { DictionaryLookupResult } from "@easyimmerse/types";
 import { useRef } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -7,6 +7,7 @@ import { useDocumentListener } from "../hooks/useDocumentListener.ts";
 import {
   DictionaryPopupBody,
   type LookupStatus,
+  type PickedEntry,
 } from "./DictionaryPopupBody.tsx";
 import { DictionaryPopupHeader } from "./DictionaryPopupHeader.tsx";
 
@@ -17,7 +18,7 @@ type DictionaryPopupProps = {
   /** Whether the project has any dictionary to look terms up in. */
   hasDictionaries: boolean;
   /** Receives the entry the user picked, or null when the user picked none in particular. */
-  onCreateFlashcard: (entry: TermEntry | null) => void;
+  onCreateFlashcard: (picked: PickedEntry | null) => void;
   onSetUpDictionary: () => void;
 };
 

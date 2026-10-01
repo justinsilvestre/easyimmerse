@@ -1,13 +1,19 @@
 import type { WordHover } from "@easyimmerse/state";
-import type { MediaFile, TermEntry } from "@easyimmerse/types";
+import type { MediaFile } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
+import type { PickedEntry } from "../components/DictionaryPopupBody.tsx";
 import { fixtureTranslationCues } from "../storybook/fixtureTranslationCues.ts";
 import {
   fixtureBilingualEntry,
   fixtureLookupResults,
+  fixtureMonolingualDictionary,
   fixtureMonolingualEntry,
 } from "../testSupport/fixtureLookup.ts";
 import { fixtureProject } from "../testSupport/fixtureProject.ts";
+import {
+  findStructuredEntry,
+  fixtureStructuredDictionary,
+} from "../testSupport/fixtureStructuredLookup.ts";
 import {
   buildFlashcardDraftRequest,
   type DraftMedia,
@@ -26,10 +32,20 @@ const media = (file: MediaFile = video): DraftMedia => ({
   translationCues: fixtureTranslationCues,
 });
 
-function build(entry: TermEntry | null = null, draftMedia = media()) {
+const pickedMonolingualEntry: PickedEntry = {
+  dictionary: fixtureMonolingualDictionary,
+  entry: fixtureMonolingualEntry,
+};
+
+const pickStructuredEntry = (term: string): PickedEntry => ({
+  dictionary: fixtureStructuredDictionary,
+  entry: findStructuredEntry(term),
+});
+
+function build(picked: PickedEntry | null = null, draftMedia = media()) {
   return buildFlashcardDraftRequest(
     hover,
-    { entry, results: fixtureLookupResults },
+    { picked, results: fixtureLookupResults },
     draftMedia,
     fixtureProject.settings,
   );
@@ -45,7 +61,7 @@ describe("buildFlashcardDraftRequest", () => {
   });
 
   it("takes the first reading any entry has", () => {
-    expect(build(fixtureMonolingualEntry).reading).toBeNull();
+    expect(build(pickedMonolingualEntry).reading).toBeNull();
   });
 
   describe("when no entry was picked", () => {
@@ -62,13 +78,28 @@ describe("buildFlashcardDraftRequest", () => {
 
   describe("when an entry was picked", () => {
     it("leaves out the L1 definitions of other dictionaries", () => {
-      expect(build(fixtureMonolingualEntry).l1_definitions).toEqual([]);
+      expect(build(pickedMonolingualEntry).l1_definitions).toEqual([]);
     });
 
     it("fills the L2 definitions from the picked entry", () => {
-      expect(build(fixtureMonolingualEntry).l2_definitions).toEqual(
+      expect(build(pickedMonolingualEntry).l2_definitions).toEqual(
         fixtureMonolingualEntry.definitions,
       );
+    });
+  });
+
+  describe("when the picked entry has structured definitions", () => {
+    it("writes each definition as plain text", () => {
+      expect(build(pickStructuredEntry("猫")).l1_definitions).toEqual([
+        "n\ncat",
+      ]);
+    });
+
+    it("leaves out definitions that have no text", () => {
+      expect(build(pickStructuredEntry("犬")).l1_definitions).toEqual([
+        "dog",
+        "hound",
+      ]);
     });
   });
 
@@ -76,7 +107,7 @@ describe("buildFlashcardDraftRequest", () => {
     const request = buildFlashcardDraftRequest(
       hover,
       {
-        entry: null,
+        picked: null,
         results: [
           {
             dictionary: {

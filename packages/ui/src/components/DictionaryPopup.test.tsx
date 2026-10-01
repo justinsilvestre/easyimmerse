@@ -18,6 +18,7 @@ import {
 import { fixtureStructuredLookupResult } from "../testSupport/fixtureStructuredLookup.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { DictionaryPopup } from "./DictionaryPopup.tsx";
+import type { PickedEntry } from "./DictionaryPopupBody.tsx";
 
 afterEach(() => {
   cleanup();
@@ -35,14 +36,14 @@ function renderPopup(
   props: Partial<ComponentProps<typeof DictionaryPopup>> = {},
   opening: AppAction | null = hoverKatze,
 ) {
-  const created: (TermEntry | null)[] = [];
+  const created: (PickedEntry | null)[] = [];
   const setUpRequests: string[] = [];
   const rendered = renderWithAppStore(
     <DictionaryPopup
       results={fixtureLookupResults}
       status="idle"
       hasDictionaries
-      onCreateFlashcard={(entry) => created.push(entry)}
+      onCreateFlashcard={(picked) => created.push(picked)}
       onSetUpDictionary={() => setUpRequests.push("set up")}
       {...props}
     />,
@@ -88,7 +89,9 @@ describe("DictionaryPopup", () => {
       name: "Make flashcard from Katze",
     });
     fireEvent.click(firstEntry as HTMLElement);
-    expect(created).toEqual([fixtureBilingualEntry]);
+    expect(created).toEqual([
+      { dictionary: fixtureBilingualDictionary, entry: fixtureBilingualEntry },
+    ]);
   });
 
   it("makes a flashcard from no particular entry with the header button", () => {

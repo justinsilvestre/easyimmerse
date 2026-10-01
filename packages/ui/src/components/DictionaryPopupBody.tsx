@@ -1,8 +1,18 @@
-import type { DictionaryLookupResult, TermEntry } from "@easyimmerse/types";
+import type {
+  DictionaryLookupResult,
+  DictionarySummary,
+  TermEntry,
+} from "@easyimmerse/types";
 import { Button } from "./Button.tsx";
 import { LookupEntry } from "./LookupEntry.tsx";
 
 export type LookupStatus = "idle" | "loading" | "error";
+
+/** An entry the user picked, with the dictionary it comes from. */
+export type PickedEntry = {
+  dictionary: DictionarySummary;
+  entry: TermEntry;
+};
 
 /** Shows the entries grouped by dictionary, or the reason there are none to show. */
 export function DictionaryPopupBody({
@@ -20,7 +30,7 @@ export function DictionaryPopupBody({
   results: readonly DictionaryLookupResult[];
   status: LookupStatus;
   hasDictionaries: boolean;
-  onCreateFlashcard: (entry: TermEntry) => void;
+  onCreateFlashcard: (picked: PickedEntry) => void;
   onSetUpDictionary: () => void;
 }) {
   if (!hasDictionaries)
@@ -54,7 +64,7 @@ export function DictionaryPopupBody({
             key={`${entry.term}-${entry.reading}-${index}`}
             entry={entry}
             dictionaryId={dictionary.id}
-            onClick={() => onCreateFlashcard(entry)}
+            onClick={() => onCreateFlashcard({ dictionary, entry })}
           />
         ))}
       </ul>
