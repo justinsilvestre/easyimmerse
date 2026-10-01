@@ -22,7 +22,11 @@ const preview: Preview = {
   initialGlobals: { theme: "light" },
   decorators: [
     (Story, { globals }) => {
-      document.documentElement.dataset.theme = globals.theme;
+      const root = document.documentElement;
+      root.dataset.theme = globals.theme;
+      requestAnimationFrame(() => {
+        root.dataset.themeTransitions = "";
+      });
       return Story();
     },
   ],
