@@ -352,4 +352,5 @@ export const {
   useDeleteDictionaryMutation,
   useLookupTermQuery,
   useLookupTermEverywhereQuery,
+  useLazyLookupTermEverywhereQuery,
 } = backendApi;

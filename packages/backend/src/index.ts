@@ -1,3 +1,4 @@
+export { skipToken } from "@reduxjs/toolkit/query";
 export {
   backendApi,
   useAddMediaFileMutation,
@@ -13,6 +14,7 @@ export {
   useGetSubtitleCuesQuery,
   useImportDictionaryMutation,
   useImportLocalDictionaryMutation,
+  useLazyLookupTermEverywhereQuery,
   useListDictionariesQuery,
   useListEmbeddedSubtitlesQuery,
   useListFlashcardsQuery,
