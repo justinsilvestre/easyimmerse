@@ -80,6 +80,11 @@ run = [
   "pnpm --filter @easyimmerse/extension e2e",
 ]
 
+[tasks.desktop]
+description = "Run the desktop app in development mode with its embedded server"
+depends = ["fetch-ffmpeg"]
+run = "pnpm --filter @easyimmerse/native dev"
+
 [tasks.storybook]
 description = "Serve the UI component stories at http://localhost:6006"
 run = "pnpm --filter @easyimmerse/ui storybook"
