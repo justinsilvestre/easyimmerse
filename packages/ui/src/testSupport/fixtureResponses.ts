@@ -14,6 +14,11 @@ import {
   fixtureMonolingualDictionary,
 } from "./fixtureLookup.ts";
 import { fixtureProject } from "./fixtureProject.ts";
+import {
+  fixtureStructuredDictionary,
+  fixtureStructuredImageUrl,
+  fixtureStructuredStylesheet,
+} from "./fixtureStructuredLookup.ts";
 
 /** The cues of `fixtures/sample.srt`, as the backend returns them. */
 export const fixtureTrack: TimedTextTrack = {
@@ -58,6 +63,7 @@ export const fixtureProjects: ListProjectsResponse = {
 };
 
 const fixtureMediaPath = "/projects/project-1/media/media-1";
+const structuredDictionaryPath = `/dictionaries/${fixtureStructuredDictionary.id}`;
 
 /** Canned responses for the fixture projects, the fixture project's video, and the fixture dictionaries. */
 export const fixtureResponses: Record<string, FakeResponse> = {
@@ -75,6 +81,8 @@ export const fixtureResponses: Record<string, FakeResponse> = {
     dictionaries: [fixtureBilingualDictionary, fixtureMonolingualDictionary],
   },
   "GET /dictionaries/lookup": { results: fixtureLookupResults },
+  [`GET ${structuredDictionaryPath}/stylesheet`]: fixtureStructuredStylesheet,
+  [`GET ${structuredDictionaryPath}/asset`]: fixtureStructuredImageUrl,
   "POST /flashcards/draft": draftFixtureFlashcard,
 };
 
