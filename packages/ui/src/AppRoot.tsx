@@ -1,8 +1,10 @@
 import type { AppStore, PlayerRegistry } from "@easyimmerse/state";
 import { selectScreen } from "@easyimmerse/state";
 import { Provider } from "react-redux";
+import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useAppSelector } from "./hooks/useAppSelector.ts";
 import { useChosenFileHandler } from "./hooks/useChosenFileHandler.ts";
+import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
 import { MediaScreen } from "./screens/MediaScreen.tsx";
@@ -19,6 +21,7 @@ export function AppRoot({
   return (
     <Provider store={store}>
       <PlayerRegistryContext value={playerRegistry}>
+        <ThemeHandler />
         <ChosenFileHandler />
         <CurrentScreen />
       </PlayerRegistryContext>
@@ -52,5 +55,12 @@ function CurrentScreen() {
 /** Acts on the files the user picks, whichever screen is showing. */
 function ChosenFileHandler() {
   useChosenFileHandler();
+  return null;
+}
+
+/** Follows the operating system's theme unless the user has switched it, and shows the chosen theme. */
+function ThemeHandler() {
+  useTrackSystemTheme();
+  useApplyTheme();
   return null;
 }

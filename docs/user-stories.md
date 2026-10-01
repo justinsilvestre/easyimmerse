@@ -23,7 +23,9 @@ Where mouse actions are specified, the actions should generally also be possible
 As a user:
 - when I am using the app:
   - [ ] I can resize the app window, and the app's layout adjusts accordingly
-  - [ ] I can switch between a light and dark theme for the app
+  - [x] the app follows my system's light or dark theme
+  - [x] I can switch between a light and dark theme with the toggle at the bottom of the screen, and the app follows my system again the next time the system theme changes
+  - [ ] I can choose in the settings to always use the light or the dark theme
   - [ ] *on desktop*, I can see a menu bar with options:
     - easyImmerse menu: About, Preferences, Quit
     - File menu: New project, Open project, Save project, Export flashcards, Import/export project, Exit

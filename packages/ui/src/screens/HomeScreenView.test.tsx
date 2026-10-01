@@ -1,22 +1,21 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
+import { resetBackend } from "@easyimmerse/backend";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fixtureProjects } from "../testSupport/fixtureResponses.ts";
+import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { HomeScreenView } from "./HomeScreenView.tsx";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  resetBackend();
+});
 
 function renderHomeScreenView(
   props: Partial<ComponentProps<typeof HomeScreenView>> = {},
 ) {
   const callbacks = { onOpenProject: vi.fn(), onCreateProject: vi.fn() };
-  render(
+  renderWithAppStore(
     <HomeScreenView
       projects={fixtureProjects.projects}
       loading={false}

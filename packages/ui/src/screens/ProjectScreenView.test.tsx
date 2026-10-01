@@ -1,10 +1,15 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { resetBackend } from "@easyimmerse/backend";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fixtureProject } from "../testSupport/fixtureProject.ts";
+import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { ProjectScreenView } from "./ProjectScreenView.tsx";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  resetBackend();
+});
 
 function renderProjectScreenView(
   props: Partial<ComponentProps<typeof ProjectScreenView>> = {},
@@ -20,7 +25,7 @@ function renderProjectScreenView(
     onSetUpAnkiConnect: vi.fn(),
     onStartReview: vi.fn(),
   };
-  render(
+  renderWithAppStore(
     <ProjectScreenView
       project={fixtureProject}
       flashcardCount={12}
