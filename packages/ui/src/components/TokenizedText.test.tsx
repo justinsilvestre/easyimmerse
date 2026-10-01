@@ -122,11 +122,46 @@ describe("TokenizedText", () => {
       pressKeyOnWord("The", "ArrowRight");
       expect(keysReachingParent).toEqual([]);
     });
+
+    it("lets keys it does not handle reach enclosing elements", () => {
+      const keysReachingParent: string[] = [];
+      render(
+        <section
+          aria-label="Player"
+          onKeyDown={(event) => keysReachingParent.push(event.key)}
+        >
+          <TokenizedText text="The cat sleeps." />
+        </section>,
+      );
+      pressKeyOnWord("The", " ");
+      expect(keysReachingParent).toEqual([" "]);
+    });
+
+    it("keeps focus in place on an arrow key pressed with a modifier", () => {
+      render(<TokenizedText text="The cat sleeps." />);
+      pressKeyOnWord("The", "ArrowRight", { shiftKey: true });
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "The" }),
+      );
+    });
+
+    it("moves focus between the new words after the text changes", () => {
+      const { rerender } = render(<TokenizedText text="The cat sleeps." />);
+      rerender(<TokenizedText text="A dog barks." />);
+      pressKeyOnWord("A", "ArrowRight");
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "dog" }),
+      );
+    });
   });
 });
 
-function pressKeyOnWord(word: string, key: string) {
+function pressKeyOnWord(
+  word: string,
+  key: string,
+  modifiers: { shiftKey?: boolean } = {},
+) {
   const button = screen.getByRole("button", { name: word });
   act(() => button.focus());
-  fireEvent.keyDown(button, { key });
+  fireEvent.keyDown(button, { key, ...modifiers });
 }
