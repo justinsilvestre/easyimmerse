@@ -35,7 +35,7 @@ export function ReaderFontControls({
   onSettingsChanged: (settings: ReaderSettings) => void;
 }) {
   return (
-    <div className="ml-auto flex items-center gap-2">
+    <div className="flex items-center gap-2 sm:ml-auto">
       <SegmentedGroup label="Font size">
         {fontSizeOptions.map((option) => (
           <ReaderToolbarButton
