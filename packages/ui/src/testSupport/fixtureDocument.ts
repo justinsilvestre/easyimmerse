@@ -48,8 +48,9 @@ export const fixtureLongDocument: Document = {
   language: "en",
   chapters: Array.from({ length: longChapterCount }, (_, chapterIndex) => ({
     title: chapterIndex === 2 ? null : `Part ${chapterIndex + 1}`,
-    paragraphs: Array.from({ length: longParagraphCount }, (_, paragraphIndex) =>
-      buildParagraph(chapterIndex + paragraphIndex),
+    paragraphs: Array.from(
+      { length: longParagraphCount },
+      (_, paragraphIndex) => buildParagraph(chapterIndex + paragraphIndex),
     ),
   })),
 };
