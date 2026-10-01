@@ -79,3 +79,7 @@ run = [
   "pnpm --filter @easyimmerse/web e2e",
   "pnpm --filter @easyimmerse/extension e2e",
 ]
+
+[tasks.storybook]
+description = "Serve the UI component stories at http://localhost:6006"
+run = "pnpm --filter @easyimmerse/ui storybook"
