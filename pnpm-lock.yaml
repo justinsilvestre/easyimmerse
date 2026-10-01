@@ -325,6 +325,9 @@ importers:
       '@easyimmerse/fixtures':
         specifier: workspace:*
         version: link:../../fixtures
+      '@easyimmerse/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0

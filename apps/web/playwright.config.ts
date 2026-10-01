@@ -1,10 +1,18 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+import { serverToken, serverUrl } from "./e2e/e2eServer.ts";
 
-const serverUrl = "http://127.0.0.1:8787";
-const token = "e2e-token";
 const onlineUrl = "http://127.0.0.1:4173";
 const offlineUrl = "http://127.0.0.1:4174";
 const reuseExistingServer = !process.env.CI;
+
+// Each run gets an empty conversion cache, so the server converts media again instead of serving segments from an earlier run.
+// Workers inherit the variable, so they do not create directories of their own.
+process.env.EASYIMMERSE_E2E_CACHE_DIR ??= mkdtempSync(
+  join(tmpdir(), "easyimmerse-e2e-conversions-"),
+);
 
 /** The web servers start in order: the API server, the online build, then the offline build. */
 export default defineConfig({
@@ -27,7 +35,8 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `cargo run -p easyimmerse-server -- serve --bind 127.0.0.1:8787 --token ${token} --seed-placeholders`,
+      // Local paths and the cache let the server stream fixtures it converts with ffmpeg, when ffmpeg is installed.
+      command: `cargo run -p easyimmerse-server -- serve --bind 127.0.0.1:8787 --token ${serverToken} --seed-placeholders --allow-local-paths --cache-dir "${process.env.EASYIMMERSE_E2E_CACHE_DIR}"`,
       url: `${serverUrl}/health`,
       reuseExistingServer,
       timeout: 300_000,
@@ -40,7 +49,7 @@ export default defineConfig({
       timeout: 120_000,
       env: {
         VITE_EASYIMMERSE_SERVER_URL: serverUrl,
-        VITE_EASYIMMERSE_TOKEN: token,
+        VITE_EASYIMMERSE_TOKEN: serverToken,
       },
     },
     {
