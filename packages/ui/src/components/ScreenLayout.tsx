@@ -27,7 +27,7 @@ export function ScreenLayout({
           )}
         >
           <span className="text-lg font-semibold tracking-tight">
-            easy<span className="text-accent-fg">Immerse</span>
+            easy<span className="text-accent">Immerse</span>
           </span>
           <div className="flex items-center gap-2">{headerActions}</div>
         </div>
