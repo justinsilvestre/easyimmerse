@@ -8,3 +8,8 @@ packages:
 # after 2026-09-30 and run `pnpm install` to confirm the lockfile still resolves.
 minimumReleaseAgeExclude:
   - '@tauri-apps/plugin-opener@2.7.0'
+# Storybook depends on esbuild, whose install script only verifies the platform binary that pnpm
+# already installs as an optional dependency. Skipping the script is safe, and listing it here
+# stops pnpm from warning about an ignored build script on every install.
+allowBuilds:
+  esbuild: false

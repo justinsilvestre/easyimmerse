@@ -1,32 +1,16 @@
 import type { BackendClient } from "@easyimmerse/backend";
-import { backendStoreParts, configureBackend } from "@easyimmerse/backend";
-import {
-  createAppStore,
-  createPlayerRegistry,
-  createRecordingEffects,
-} from "@easyimmerse/state";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { Provider } from "react-redux";
-import { PlayerRegistryContext } from "../playerRegistryContext.ts";
-import { createFakeBackendClient } from "./createFakeBackendClient.ts";
-import { fixtureResponses } from "./fixtureResponses.ts";
+import { AppStoreProviders } from "./AppStoreProviders.tsx";
+import { createTestAppStore } from "./createTestAppStore.ts";
 
 /** Builds a fresh store, recording effects, and fake backend, then renders the element inside them. */
-export function renderWithAppStore(
-  element: ReactNode,
-  client: BackendClient = createFakeBackendClient(fixtureResponses),
-) {
-  const effects = createRecordingEffects();
-  configureBackend(client);
-  const store = createAppStore(effects, backendStoreParts);
-  const playerRegistry = createPlayerRegistry();
+export function renderWithAppStore(element: ReactNode, client?: BackendClient) {
+  const { effects, store, playerRegistry } = createTestAppStore(client);
   render(
-    <Provider store={store}>
-      <PlayerRegistryContext value={playerRegistry}>
-        {element}
-      </PlayerRegistryContext>
-    </Provider>,
+    <AppStoreProviders store={store} playerRegistry={playerRegistry}>
+      {element}
+    </AppStoreProviders>,
   );
   return { effects, store, playerRegistry };
 }

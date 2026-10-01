@@ -14,6 +14,6 @@ A monorepo with a Rust backend (`crates/`, `apps/server`, `apps/native/src-tauri
 - HTTP routes: `crates/api/src/routes/`. Each route carries its utoipa annotation.
 - Redux store, actions, update functions, and the `Effects` interface: `packages/state`.
 - RTK Query endpoints: `packages/backend/src/backendApi.ts`.
-- Screens and components: `packages/ui`.
+- Screens and components: `packages/ui`. Their stories sit next to them as `<Component>.stories.tsx`; `mise run storybook` serves them.
 - Per-platform side effects: `packages/effects-web`, `packages/effects-native`, `packages/effects-extension`.
 - Plugin interfaces (WIT): `crates/plugin-api/wit/`. Plugin host: `crates/plugins`.
