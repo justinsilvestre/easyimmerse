@@ -60,6 +60,12 @@ describe("TagsInput", () => {
     expect(changes).toEqual([["dark"]]);
   });
 
+  it("replaces inner whitespace with underscores, as Anki splits tags on spaces", () => {
+    const changes = renderTagsInput([]);
+    typeTag("german  tv");
+    expect(changes).toEqual([["german_tv"]]);
+  });
+
   it("ignores a tag that is already present", () => {
     const changes = renderTagsInput(["dark"]);
     typeTag("dark");

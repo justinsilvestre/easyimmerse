@@ -2,7 +2,10 @@ import { useId, useState } from "react";
 import { FieldHint } from "./FieldHint.tsx";
 import { FieldLabel } from "./FieldLabel.tsx";
 
-/** Edits a list of tags. A tag is added on Enter, on a comma, or when the input loses focus. */
+/**
+ * Edits a list of tags. A tag is added on Enter, on a comma, or when the input loses focus.
+ * Whitespace inside a tag becomes underscores, since Anki separates tags on whitespace.
+ */
 export function TagsInput({
   label,
   tags,
@@ -91,6 +94,10 @@ function mergeTags(
   tags: readonly string[],
   texts: readonly string[],
 ): string[] {
-  const trimmed = texts.map((text) => text.trim()).filter(Boolean);
-  return [...new Set([...tags, ...trimmed])];
+  const normalized = texts.map(normalizeTag).filter(Boolean);
+  return [...new Set([...tags, ...normalized])];
+}
+
+function normalizeTag(text: string): string {
+  return text.trim().split(/\s+/).join("_");
 }
