@@ -7,10 +7,10 @@ The Tauri shell for desktop and mobile. On start-up it opens the SQLite database
 From the repository root:
 
 ```sh
-mise exec -- pnpm --filter @easyimmerse/native dev
+mise run desktop
 ```
 
-This starts Vite on port 1421 and the Rust app in debug mode. The database lands in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS.
+This fetches the ffmpeg sidecars, then starts Vite on port 1421 and the Rust app in debug mode. The database lands in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS.
 
 ## Smoke test
 
@@ -25,11 +25,11 @@ On Linux the Tauri runtime initializes GTK before the check runs, so the command
 
 ## ffmpeg sidecars
 
-The media routes will call `ffmpeg` and `ffprobe` sidecar binaries. `mise run fetch-ffmpeg` downloads them to `binaries/` (gitignored). `tauri.conf.json` does not declare them yet because Tauri fails the build when a declared sidecar file is missing, and local development has none. Once `mise run fetch-ffmpeg` is part of every developer's setup, add this to `bundle` (the CI job already runs the fetch task):
+The media routes call the `ffmpeg` and `ffprobe` sidecar binaries. `tauri.conf.json` declares them under `bundle.externalBin`, and `mise run fetch-ffmpeg` downloads them to `binaries/` (gitignored). The build script of this crate fails when they are missing, so run the fetch task before any `cargo` or `tauri` command that builds this crate; `mise run desktop` does so already. The macOS binaries come from a release of this private repository, so the fetch needs a GitHub token (see `scripts/fetch-ffmpeg/README.md`).
 
-```json
-"externalBin": ["binaries/ffmpeg", "binaries/ffprobe"]
-```
+Every build copies the binaries next to the executable without the target triple in their names (`target/debug/ffmpeg`, or `Contents/MacOS/ffmpeg` in a macOS bundle), where `easyimmerse-media-ffmpeg` looks for them. `tauri.android.conf.json` and `tauri.ios.conf.json` clear the declaration because mobile builds ship no ffmpeg.
+
+The bundle also ships `licenses/ffmpeg/` as a resource. It holds a notice that names the version, configure flags, and source of each ffmpeg build, along with the LGPL and GPL texts. Update the notice when `scripts/fetch-ffmpeg/manifest.json` changes.
 
 ## Mobile
 
