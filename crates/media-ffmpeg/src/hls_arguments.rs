@@ -75,8 +75,10 @@ fn output_arguments(has_video: bool, output_dir: &Path) -> Vec<OsString> {
         "vod",
         "-hls_fmp4_init_filename",
         INIT_SEGMENT_NAME,
-        "-movflags",
-        "+negative_cts_offsets",
+        // The muxer that writes each segment receives movflags only through this option.
+        // frag_discont keeps each segment's decode times on the source timeline when ffmpeg starts partway through the file, and negative_cts_offsets keeps B-frame presentation times equal to the source.
+        "-hls_segment_options",
+        "movflags=+frag_discont+negative_cts_offsets",
         "-hls_flags",
         "temp_file",
         "-hls_segment_filename",
@@ -178,8 +180,8 @@ mod tests {
             "vod",
             "-hls_fmp4_init_filename",
             "init.mp4",
-            "-movflags",
-            "+negative_cts_offsets",
+            "-hls_segment_options",
+            "movflags=+frag_discont+negative_cts_offsets",
             "-hls_flags",
             "temp_file",
             "-hls_segment_filename",
