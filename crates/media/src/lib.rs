@@ -6,6 +6,7 @@ pub mod container;
 pub mod error;
 pub mod mov_text;
 pub mod peaks;
+pub mod playback;
 pub mod track_info;
 
 mod codec_string_hevc;
