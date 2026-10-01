@@ -1,0 +1,18 @@
+Encoders:
+ V..... = Video
+ A..... = Audio
+ S..... = Subtitle
+ .F.... = Frame-level multithreading
+ ..S... = Slice-level multithreading
+ ...X.. = Codec is experimental
+ ....B. = Supports draw_horiz_band
+ .....D = Supports direct rendering method 1
+ ------
+ V....D a64multi             Multicolor charset for Commodore 64 (codec a64_multi)
+ V....D amv                  AMV Video
+ V....D h264_videotoolbox    VideoToolbox H.264 Encoder (codec h264)
+ V....D hevc_videotoolbox    VideoToolbox H.265 Encoder (codec hevc)
+ A....D aac                  AAC (Advanced Audio Coding)
+ A..... aac_at               aac (AudioToolbox) (codec aac)
+ A....D flac                 FLAC (Free Lossless Audio Codec)
+ S..... srt                  SubRip subtitle (codec subrip)
