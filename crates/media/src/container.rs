@@ -2,42 +2,30 @@
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+use utoipa::ToSchema;
 
 use crate::error::MediaError;
+use crate::track_info::TrackInfo;
 use crate::{mkv_container, mp3_container, mp4_container};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+/// A container format the application accepts. MOV and M4A files count as MP4, and
+/// WebM files count as Matroska.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[serde(rename_all = "snake_case")]
 #[ts(export)]
 pub enum ContainerFormat {
     Mp4,
     Matroska,
     Mp3,
+    /// Raw AAC audio framed as ADTS (Audio Data Transport Stream), usually a `.aac` file.
+    Adts,
+    Ogg,
+    Flac,
+    Wav,
+    Avi,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[serde(rename_all = "snake_case")]
-#[ts(export)]
-pub enum TrackKind {
-    Video,
-    Audio,
-    Subtitle,
-    Other,
-}
-
-/// One stream inside a container. The codec string is the container's own name for
-/// the codec, so it differs between formats.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct TrackInfo {
-    pub id: u32,
-    pub kind: TrackKind,
-    pub codec: String,
-    /// The language tag stored in the container, or `None` when it is undetermined.
-    pub language: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct ContainerInfo {
     pub format: ContainerFormat,
@@ -48,7 +36,7 @@ pub struct ContainerInfo {
 const MP4_BOX_TYPE_OFFSET: usize = 4;
 const EBML_MAGIC: [u8; 4] = [0x1A, 0x45, 0xDF, 0xA3];
 
-/// Recognizes the container from its signature bytes.
+/// Recognizes the containers that the pure-Rust probe can read from their signature bytes.
 pub fn detect_container_format(bytes: &[u8]) -> Option<ContainerFormat> {
     if bytes.get(MP4_BOX_TYPE_OFFSET..MP4_BOX_TYPE_OFFSET + 4) == Some(b"ftyp") {
         Some(ContainerFormat::Mp4)
@@ -67,6 +55,7 @@ pub fn probe_container(bytes: &[u8]) -> Result<ContainerInfo, MediaError> {
         ContainerFormat::Mp4 => mp4_container::probe_mp4(bytes),
         ContainerFormat::Matroska => mkv_container::probe_mkv(bytes),
         ContainerFormat::Mp3 => Ok(mp3_container::probe_mp3()),
+        other => Err(MediaError::UnreadableContainerFormat(other)),
     }
 }
 

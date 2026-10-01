@@ -1,4 +1,5 @@
-use crate::container::{ContainerFormat, ContainerInfo, TrackInfo, TrackKind};
+use crate::container::{ContainerFormat, ContainerInfo};
+use crate::track_info::{TrackInfo, TrackKind};
 
 /// Describes an MP3 file without parsing its frames. The duration stays unknown
 /// because computing it requires walking every frame.
@@ -7,10 +8,8 @@ pub(crate) fn probe_mp3() -> ContainerInfo {
         format: ContainerFormat::Mp3,
         duration_ms: None,
         tracks: vec![TrackInfo {
-            id: 1,
-            kind: TrackKind::Audio,
-            codec: "mp3".to_owned(),
-            language: None,
+            is_default: true,
+            ..TrackInfo::new(1, TrackKind::Audio, "mp3".to_owned())
         }],
     }
 }

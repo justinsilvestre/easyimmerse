@@ -2,10 +2,14 @@ use std::io::Cursor;
 
 use mp4::{Mp4Reader, Mp4Track, TrackType};
 
-use crate::container::{ContainerFormat, ContainerInfo, TrackInfo, TrackKind, parse_language_tag};
+use crate::container::{ContainerFormat, ContainerInfo, parse_language_tag};
 use crate::error::MediaError;
+use crate::track_info::{AudioDetails, TrackInfo, TrackKind, VideoDetails};
 
 pub(crate) type BytesReader<'a> = Mp4Reader<Cursor<&'a [u8]>>;
+
+/// The track header (`tkhd`) flag that marks a track as enabled for playback.
+const TKHD_FLAG_ENABLED: u32 = 1;
 
 pub(crate) fn probe_mp4(bytes: &[u8]) -> Result<ContainerInfo, MediaError> {
     let reader = open_mp4(bytes)?;
@@ -29,13 +33,33 @@ pub(crate) fn open_mp4(bytes: &[u8]) -> Result<BytesReader<'_>, MediaError> {
 }
 
 fn describe_track(track: &Mp4Track) -> TrackInfo {
+    let kind = track.track_type().map_or(TrackKind::Other, to_track_kind);
+    let codec = track
+        .media_type()
+        .map_or_else(|_| "unknown".to_owned(), |media| media.to_string());
     TrackInfo {
-        id: track.track_id(),
-        kind: track.track_type().map_or(TrackKind::Other, to_track_kind),
-        codec: track
-            .media_type()
-            .map_or_else(|_| "unknown".to_owned(), |media| media.to_string()),
         language: parse_language_tag(track.language()),
+        is_default: track.trak.tkhd.flags & TKHD_FLAG_ENABLED != 0,
+        video: (kind == TrackKind::Video).then(|| describe_video(track)),
+        audio: (kind == TrackKind::Audio).then(|| describe_audio(track)),
+        ..TrackInfo::new(track.track_id(), kind, codec)
+    }
+}
+
+fn describe_video(track: &Mp4Track) -> VideoDetails {
+    VideoDetails {
+        width: Some(u32::from(track.width())),
+        height: Some(u32::from(track.height())),
+        ..VideoDetails::default()
+    }
+}
+
+/// Reads the sample entry of an AAC track. Other audio codecs get empty details.
+fn describe_audio(track: &Mp4Track) -> AudioDetails {
+    let mp4a = track.trak.mdia.minf.stbl.stsd.mp4a.as_ref();
+    AudioDetails {
+        sample_rate: mp4a.map(|entry| u32::from(entry.samplerate.value())),
+        channels: mp4a.map(|entry| u32::from(entry.channelcount)),
     }
 }
 
@@ -86,6 +110,36 @@ mod tests {
     fn names_the_video_codec() {
         let video = probe_fixture().tracks.remove(0);
         assert_eq!(video.codec, "h264");
+    }
+
+    #[test]
+    fn reads_the_video_dimensions() {
+        let video = probe_fixture()
+            .tracks
+            .remove(0)
+            .video
+            .expect("video details");
+        assert_eq!((video.width, video.height), (Some(320), Some(180)));
+    }
+
+    #[test]
+    fn reads_the_audio_sample_rate() {
+        let audio = probe_fixture()
+            .tracks
+            .remove(1)
+            .audio
+            .expect("audio details");
+        assert_eq!(audio.sample_rate, Some(44100));
+    }
+
+    #[test]
+    fn marks_the_enabled_tracks_as_default() {
+        let defaults: Vec<bool> = probe_fixture()
+            .tracks
+            .iter()
+            .map(|t| t.is_default)
+            .collect();
+        assert_eq!(defaults, [true, true, true]);
     }
 
     #[test]

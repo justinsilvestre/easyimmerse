@@ -1,9 +1,10 @@
 use std::io::Cursor;
 
-use matroska::{Matroska, Track, Tracktype};
+use matroska::{Matroska, Settings, Track, Tracktype};
 
-use crate::container::{ContainerFormat, ContainerInfo, TrackInfo, TrackKind, parse_language_tag};
+use crate::container::{ContainerFormat, ContainerInfo, parse_language_tag};
 use crate::error::MediaError;
+use crate::track_info::{AudioDetails, TrackInfo, TrackKind, VideoDetails};
 
 pub(crate) fn probe_mkv(bytes: &[u8]) -> Result<ContainerInfo, MediaError> {
     let matroska = Matroska::open(Cursor::new(bytes))
@@ -19,14 +20,42 @@ pub(crate) fn probe_mkv(bytes: &[u8]) -> Result<ContainerInfo, MediaError> {
 }
 
 fn describe_track(track: &Track) -> TrackInfo {
+    let (video, audio) = describe_settings(&track.settings);
     TrackInfo {
-        id: track.number as u32,
-        kind: to_track_kind(track.tracktype),
-        codec: track.codec_id.clone(),
         language: track
             .language
             .as_ref()
             .and_then(|language| parse_language_tag(&language.to_string())),
+        title: track.name.clone(),
+        is_default: track.default,
+        video,
+        audio,
+        ..TrackInfo::new(
+            track.number as u32,
+            to_track_kind(track.tracktype),
+            track.codec_id.clone(),
+        )
+    }
+}
+
+fn describe_settings(settings: &Settings) -> (Option<VideoDetails>, Option<AudioDetails>) {
+    match settings {
+        Settings::Video(video) => (
+            Some(VideoDetails {
+                width: u32::try_from(video.pixel_width).ok(),
+                height: u32::try_from(video.pixel_height).ok(),
+                ..VideoDetails::default()
+            }),
+            None,
+        ),
+        Settings::Audio(audio) => (
+            None,
+            Some(AudioDetails {
+                sample_rate: Some(audio.sample_rate.round() as u32),
+                channels: u32::try_from(audio.channels).ok(),
+            }),
+        ),
+        Settings::None => (None, None),
     }
 }
 
@@ -72,6 +101,26 @@ mod tests {
             kinds,
             [TrackKind::Video, TrackKind::Audio, TrackKind::Subtitle]
         );
+    }
+
+    #[test]
+    fn reads_the_video_dimensions() {
+        let video = probe_fixture()
+            .tracks
+            .remove(0)
+            .video
+            .expect("video details");
+        assert_eq!((video.width, video.height), (Some(320), Some(180)));
+    }
+
+    #[test]
+    fn reads_the_audio_channel_count() {
+        let audio = probe_fixture()
+            .tracks
+            .remove(1)
+            .audio
+            .expect("audio details");
+        assert_eq!(audio.channels, Some(1));
     }
 
     #[test]

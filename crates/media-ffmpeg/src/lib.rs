@@ -2,6 +2,7 @@
 
 pub mod error;
 pub mod ffprobe_output;
+mod ffprobe_track;
 pub mod locate;
 pub mod probe;
 

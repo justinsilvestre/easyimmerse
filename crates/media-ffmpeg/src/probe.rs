@@ -3,10 +3,11 @@
 use std::path::Path;
 use std::process::Command;
 
-use easyimmerse_media::{ContainerFormat, ContainerInfo, TrackInfo, TrackKind, parse_language_tag};
+use easyimmerse_media::{ContainerFormat, ContainerInfo};
 
 use crate::error::FfmpegError;
-use crate::ffprobe_output::{FfprobeOutput, FfprobeStream, parse_ffprobe_output};
+use crate::ffprobe_output::{FfprobeOutput, parse_ffprobe_output};
+use crate::ffprobe_track::to_track_info;
 use crate::locate::{BinaryName, FfmpegPaths, locate_binary};
 
 pub fn probe_file(path: &Path, paths: &FfmpegPaths) -> Result<ContainerInfo, FfmpegError> {
@@ -53,19 +54,28 @@ fn to_container_info(output: &FfprobeOutput) -> Result<ContainerInfo, FfmpegErro
     })
 }
 
-/// ffprobe names every demuxer that handles the file, so the list is matched by
-/// substring: `mov,mp4,m4a,3gp,3g2,mj2` for MP4 and `matroska,webm` for Matroska.
+/// Demuxer names paired with the container each one reads. The `aac` demuxer reads ADTS
+/// streams, and the `ogg` demuxer also reads Opus files.
+const DEMUXER_FORMATS: [(&str, ContainerFormat); 8] = [
+    ("mp4", ContainerFormat::Mp4),
+    ("matroska", ContainerFormat::Matroska),
+    ("mp3", ContainerFormat::Mp3),
+    ("aac", ContainerFormat::Adts),
+    ("ogg", ContainerFormat::Ogg),
+    ("flac", ContainerFormat::Flac),
+    ("wav", ContainerFormat::Wav),
+    ("avi", ContainerFormat::Avi),
+];
+
+/// ffprobe names every demuxer that handles the file as a comma-separated list, for
+/// example `mov,mp4,m4a,3gp,3g2,mj2` for MP4 and `matroska,webm` for Matroska.
 fn to_container_format(format_name: &str) -> Result<ContainerFormat, FfmpegError> {
     let names: Vec<&str> = format_name.split(',').collect();
-    if names.contains(&"mp4") {
-        Ok(ContainerFormat::Mp4)
-    } else if names.contains(&"matroska") {
-        Ok(ContainerFormat::Matroska)
-    } else if names.contains(&"mp3") {
-        Ok(ContainerFormat::Mp3)
-    } else {
-        Err(FfmpegError::UnsupportedFormat(format_name.to_owned()))
-    }
+    DEMUXER_FORMATS
+        .iter()
+        .find(|(demuxer, _)| names.contains(demuxer))
+        .map(|(_, format)| *format)
+        .ok_or_else(|| FfmpegError::UnsupportedFormat(format_name.to_owned()))
 }
 
 fn parse_duration_ms(seconds: &str) -> Option<u64> {
@@ -73,30 +83,11 @@ fn parse_duration_ms(seconds: &str) -> Option<u64> {
     (seconds >= 0.0).then(|| (seconds * 1000.0).round() as u64)
 }
 
-fn to_track_info(stream: &FfprobeStream) -> TrackInfo {
-    TrackInfo {
-        id: stream.index,
-        kind: to_track_kind(&stream.codec_type),
-        codec: stream
-            .codec_name
-            .clone()
-            .unwrap_or_else(|| "unknown".to_owned()),
-        language: stream.tags.language.as_deref().and_then(parse_language_tag),
-    }
-}
-
-fn to_track_kind(codec_type: &str) -> TrackKind {
-    match codec_type {
-        "video" => TrackKind::Video,
-        "audio" => TrackKind::Audio,
-        "subtitle" => TrackKind::Subtitle,
-        _ => TrackKind::Other,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+
+    use easyimmerse_media::TrackKind;
 
     use super::*;
 
@@ -125,9 +116,31 @@ mod tests {
     }
 
     #[test]
+    fn recognizes_the_matroska_sample() {
+        let json = include_str!("../tests/data/ffprobe-sample-mkv.json");
+        let info = to_container_info(&parse_ffprobe_output(json).expect("parse")).expect("convert");
+        assert_eq!(info.format, ContainerFormat::Matroska);
+    }
+
+    #[test]
+    fn recognizes_the_adts_demuxer() {
+        assert_eq!(to_container_format("aac").ok(), Some(ContainerFormat::Adts));
+    }
+
+    #[test]
+    fn recognizes_the_ogg_demuxer() {
+        assert_eq!(to_container_format("ogg").ok(), Some(ContainerFormat::Ogg));
+    }
+
+    #[test]
+    fn recognizes_the_wav_demuxer() {
+        assert_eq!(to_container_format("wav").ok(), Some(ContainerFormat::Wav));
+    }
+
+    #[test]
     fn rejects_an_unknown_demuxer_list() {
         assert!(matches!(
-            to_container_format("ogg"),
+            to_container_format("mpegts"),
             Err(FfmpegError::UnsupportedFormat(_))
         ));
     }
