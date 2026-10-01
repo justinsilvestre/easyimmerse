@@ -129,6 +129,26 @@ describe("MediaPlayer", () => {
       expect(element.currentTime).toBe(1);
     });
 
+    it("seeks to the loop start when the loop is set while past its end", () => {
+      const { element, playerRegistry } = renderPlayer();
+      element.currentTime = 2.5;
+      readHandle(playerRegistry.current()).setLoop({
+        start_ms: 1000,
+        end_ms: 2000,
+      });
+      expect(element.currentTime).toBe(1);
+    });
+
+    it("seeks to the loop start when the loop is set while before it", () => {
+      const { element, playerRegistry } = renderPlayer();
+      element.currentTime = 0.5;
+      readHandle(playerRegistry.current()).setLoop({
+        start_ms: 1000,
+        end_ms: 2000,
+      });
+      expect(element.currentTime).toBe(1);
+    });
+
     it("stops repeating once the loop is cleared", () => {
       const { element, playerRegistry } = renderPlayer();
       const handle = readHandle(playerRegistry.current());
