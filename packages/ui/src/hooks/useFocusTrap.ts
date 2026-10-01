@@ -4,10 +4,16 @@ import { useDocumentListener } from "./useDocumentListener.ts";
 const focusableSelector =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** Keeps Tab and Shift+Tab cycling through the focusable elements inside the container, as a modal dialog requires. */
-export function useFocusTrap(container: RefObject<HTMLElement | null>) {
+/**
+ * Keeps Tab and Shift+Tab cycling through the focusable elements inside the container, as a modal dialog requires.
+ * While inactive, as when another dialog is open above the container, Tab moves focus as usual.
+ */
+export function useFocusTrap(
+  container: RefObject<HTMLElement | null>,
+  isActive = true,
+) {
   useDocumentListener("keydown", (event) => {
-    if (event.key !== "Tab" || container.current === null) return;
+    if (!isActive || event.key !== "Tab" || container.current === null) return;
     const focusable = Array.from(
       container.current.querySelectorAll<HTMLElement>(focusableSelector),
     );

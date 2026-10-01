@@ -181,6 +181,15 @@ describe("FlashcardEditor", () => {
       );
     });
 
+    it("lets focus leave the dialog while the lookup is open above it", () => {
+      const rendered = renderEditor();
+      act(() => rendered.store.dispatch(actions.lookupOpenedForTyping()));
+      const save = screen.getByRole("button", { name: "Save" });
+      save.focus();
+      fireEvent.keyDown(save, { key: "Tab" });
+      expect(document.activeElement).toBe(save);
+    });
+
     it("leaves focus alone between the first and last controls", () => {
       renderEditor();
       const sentence = screen.getByRole("textbox", { name: "Sentence" });

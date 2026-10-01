@@ -52,7 +52,7 @@ function OpenFlashcardEditor({
   const save = () =>
     onSave(selectEditedCard(store.getState()) ?? card, flashcardId);
   useEffect(() => panel.current?.focus(), []);
-  useFocusTrap(panel);
+  useFocusTrap(panel, !isLookupOpen);
   useDocumentListener("keydown", (event) => {
     if (event.key === "Escape" && !isLookupOpen) cancel();
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) save();
