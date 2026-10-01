@@ -34,3 +34,11 @@ export const languageOptions: readonly LanguageOption[] = [
   { code: "uk", englishName: "Ukrainian", nativeName: "Українська" },
   { code: "vi", englishName: "Vietnamese", nativeName: "Tiếng Việt" },
 ];
+
+/** Returns the English name of a listed language, or the code itself for any other language. */
+export function findLanguageName(code: string): string {
+  return (
+    languageOptions.find((language) => language.code === code)?.englishName ??
+    code
+  );
+}
