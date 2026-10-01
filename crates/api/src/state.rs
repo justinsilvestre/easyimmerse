@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use easyimmerse_conversion::ConversionService;
 use easyimmerse_storage::{Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
@@ -9,6 +10,8 @@ use crate::config::ApiConfig;
 pub struct AppState {
     pub storage: Arc<Storage>,
     pub config: Arc<ApiConfig>,
+    /// Converts media that a browser cannot play directly. Absent when ffmpeg or a cache directory is missing.
+    pub conversions: Option<ConversionService>,
 }
 
 impl AppState {
@@ -16,6 +19,14 @@ impl AppState {
         Self {
             storage: Arc::new(storage),
             config: Arc::new(config),
+            conversions: None,
+        }
+    }
+
+    pub fn with_conversions(self, conversions: Option<ConversionService>) -> Self {
+        Self {
+            conversions,
+            ..self
         }
     }
 

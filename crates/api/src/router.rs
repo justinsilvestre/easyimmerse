@@ -14,8 +14,8 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    dictionaries, dictionary_lookup, documents, flashcards, health, media, media_stream, openapi,
-    preferences, projects, subtitle_cues, timed_text,
+    conversions, dictionaries, dictionary_lookup, documents, flashcards, health, media,
+    media_stream, openapi, playback, preferences, projects, subtitle_cues, timed_text,
 };
 use crate::state::AppState;
 
@@ -69,6 +69,11 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(subtitle_cues::get_subtitle_cues))
         .routes(routes!(subtitle_cues::list_embedded_subtitles))
         .routes(routes!(media_stream::stream_media))
+        .routes(routes!(playback::get_media_tracks))
+        .routes(routes!(playback::plan_media_playback))
+        .routes(routes!(conversions::get_conversion_playlist))
+        .routes(routes!(conversions::get_conversion_init_segment))
+        .routes(routes!(conversions::get_conversion_segment))
         .routes(routes!(
             flashcards::list_flashcards,
             flashcards::create_flashcard

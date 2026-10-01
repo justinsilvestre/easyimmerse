@@ -38,5 +38,7 @@ function describeUnsupportedReason(reason: UnsupportedReason): string {
       return "This system cannot play the file's video codec, and easyImmerse cannot convert video yet.";
     case "audio_codec_unsupported":
       return "This system cannot play the file's audio codec, and easyImmerse cannot convert it.";
+    case "conversion_unavailable":
+      return "This file must be converted to play, but conversion is not available on this server.";
   }
 }

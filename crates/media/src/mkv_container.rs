@@ -1,4 +1,4 @@
-use std::io::Cursor;
+use std::io::{Read, Seek};
 
 use matroska::{Matroska, Settings, Track, Tracktype};
 
@@ -7,9 +7,9 @@ use crate::error::MediaError;
 use crate::mkv_codec_string::describe_codec_string;
 use crate::track_info::{AudioDetails, TrackInfo, TrackKind, VideoDetails};
 
-pub(crate) fn probe_mkv(bytes: &[u8]) -> Result<ContainerInfo, MediaError> {
-    let matroska = Matroska::open(Cursor::new(bytes))
-        .map_err(|error| MediaError::InvalidMatroska(error.to_string()))?;
+pub(crate) fn probe_mkv<R: Read + Seek>(reader: R) -> Result<ContainerInfo, MediaError> {
+    let matroska =
+        Matroska::open(reader).map_err(|error| MediaError::InvalidMatroska(error.to_string()))?;
     Ok(ContainerInfo {
         format: ContainerFormat::Matroska,
         duration_ms: matroska
@@ -72,11 +72,13 @@ fn to_track_kind(track_type: Tracktype) -> TrackKind {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
+
     use super::*;
     use crate::test_support::read_fixture_bytes;
 
     fn probe_fixture() -> ContainerInfo {
-        probe_mkv(&read_fixture_bytes("sample.mkv")).expect("the fixture should parse")
+        probe_mkv(Cursor::new(read_fixture_bytes("sample.mkv"))).expect("the fixture should parse")
     }
 
     #[test]
@@ -147,7 +149,7 @@ mod tests {
     fn rejects_a_truncated_file() {
         let bytes = &read_fixture_bytes("sample.mkv")[..48];
         assert!(matches!(
-            probe_mkv(bytes),
+            probe_mkv(Cursor::new(bytes)),
             Err(MediaError::InvalidMatroska(_))
         ));
     }

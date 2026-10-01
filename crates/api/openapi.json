@@ -10,6 +10,268 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/conversions/{key}/index.m3u8": {
+      "get": {
+        "tags": [
+          "conversions"
+        ],
+        "summary": "Serves the HLS playlist of a registered conversion.",
+        "operationId": "getConversionPlaylist",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "The conversion key from the playback plan",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The HLS playlist",
+            "content": {
+              "application/vnd.apple.mpegurl": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No conversion is registered under this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The conversion's cache entry could not be updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server cannot convert media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/conversions/{key}/init.mp4": {
+      "get": {
+        "tags": [
+          "conversions"
+        ],
+        "summary": "Serves the initialization segment of a conversion, converting the start of the file when necessary.",
+        "operationId": "getConversionInitSegment",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "The conversion key from the playback plan",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The fragmented MP4 initialization segment",
+            "content": {
+              "video/mp4": {}
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No conversion is registered under this key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ffmpeg failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server cannot convert media, or the segment took too long",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/conversions/{key}/{segment}": {
+      "get": {
+        "tags": [
+          "conversions"
+        ],
+        "summary": "Serves a media segment of a conversion, converting the part of the file around it when necessary.",
+        "operationId": "getConversionSegment",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "The conversion key from the playback plan",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "segment",
+            "in": "path",
+            "description": "The segment file name from the playlist, such as `seg-0.m4s`",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The fragmented MP4 media segment",
+            "content": {
+              "video/iso.segment": {}
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such conversion or segment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ffmpeg failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server cannot convert media, or the segment took too long",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/dictionaries": {
       "get": {
         "tags": [
@@ -1716,6 +1978,122 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/playback": {
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Plans how the client's browser will play a media file with its default tracks.\nWhen the plan converts, the conversion is registered and the response names its playlist.",
+        "operationId": "planMediaPlayback",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaybackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The playback plan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaybackResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The container could not be read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token may not read local paths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file, or the browser holds it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The conversion could not be prepared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/stream": {
       "get": {
         "tags": [
@@ -2083,6 +2461,102 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/tracks": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Describes a media file's tracks, so that the client can measure what its browser plays.",
+        "operationId": "getMediaTracks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The container and its tracks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaTracks"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The container could not be read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token may not read local paths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file, or the browser holds it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/opened": {
       "post": {
         "tags": [
@@ -2330,6 +2804,36 @@
           }
         }
       },
+      "AudioDetails": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "sample_rate": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The sample rate in hertz.",
+            "minimum": 0
+          }
+        }
+      },
+      "AudioTarget": {
+        "type": "string",
+        "description": "The audio codec to transcode to when a track's own codec cannot be streamed.",
+        "enum": [
+          "aac",
+          "flac"
+        ]
+      },
       "Chapter": {
         "type": "object",
         "required": [
@@ -2349,6 +2853,81 @@
             ]
           }
         }
+      },
+      "ContainerFormat": {
+        "type": "string",
+        "description": "A container format the application accepts.\nMOV and M4A files count as MP4, and WebM files count as Matroska.",
+        "enum": [
+          "mp4",
+          "matroska",
+          "mp3",
+          "adts",
+          "ogg",
+          "flac",
+          "wav",
+          "avi"
+        ]
+      },
+      "ContainerInfo": {
+        "type": "object",
+        "required": [
+          "format",
+          "tracks"
+        ],
+        "properties": {
+          "duration_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "format": {
+            "$ref": "#/components/schemas/ContainerFormat"
+          },
+          "tracks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackInfo"
+            }
+          }
+        }
+      },
+      "ConversionPlan": {
+        "type": "object",
+        "description": "The tracks that go into the converted stream. A kind without a track is left out of the stream.",
+        "properties": {
+          "audio": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TrackConversion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "video": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TrackConversion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ConversionReason": {
+        "type": "string",
+        "enum": [
+          "container_unsupported",
+          "inaccurate_seeking",
+          "non_default_tracks",
+          "codec_unsupported"
+        ]
       },
       "Cue": {
         "type": "object",
@@ -2741,6 +3320,26 @@
           }
         }
       },
+      "FrameRate": {
+        "type": "object",
+        "description": "Frames per second as an exact fraction, for example 24000/1001 for NTSC film.",
+        "required": [
+          "numerator",
+          "denominator"
+        ],
+        "properties": {
+          "denominator": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "numerator": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
       "HealthResponse": {
         "type": "object",
         "required": [
@@ -2931,6 +3530,28 @@
         ],
         "description": "Where the bytes of a media or subtitle file live.\n\n`path` names a file on the machine running the server, which only the native app can\nuse. `browser_file` names a file the web app stored in the browser; the server keeps the\nkey but never resolves it."
       },
+      "MediaTracks": {
+        "type": "object",
+        "description": "A media file's tracks, with what a client needs to measure whether its browser can play the file.",
+        "required": [
+          "container",
+          "selection",
+          "direct_type"
+        ],
+        "properties": {
+          "container": {
+            "$ref": "#/components/schemas/ContainerInfo"
+          },
+          "direct_type": {
+            "type": "string",
+            "description": "The MIME type of the original file with the selected tracks' codecs, which the client passes to `canPlayType`."
+          },
+          "selection": {
+            "$ref": "#/components/schemas/TrackSelection",
+            "description": "The tracks that play when the client makes no choice."
+          }
+        }
+      },
       "NewFlashcard": {
         "type": "object",
         "description": "A flashcard as sent to be created or updated: everything but the id and the timestamp.",
@@ -3068,6 +3689,124 @@
           },
           "source": {
             "$ref": "#/components/schemas/TextSource"
+          }
+        }
+      },
+      "PlaybackEnvironment": {
+        "type": "object",
+        "description": "The playback abilities that a client measures in its browser and sends to the server.",
+        "required": [
+          "engine",
+          "direct_play",
+          "fmp4_codecs"
+        ],
+        "properties": {
+          "direct_play": {
+            "type": "boolean",
+            "description": "Whether the browser says it can play the original file's MIME type and codecs."
+          },
+          "engine": {
+            "$ref": "#/components/schemas/WebEngine"
+          },
+          "fmp4_codecs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The codec strings that the browser accepts inside fragmented MP4 streamed through Media Source Extensions, for example `avc1.64001F`."
+          }
+        }
+      },
+      "PlaybackPlan": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "The browser plays the original file.",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "direct"
+                ]
+              }
+            }
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConversionPlan",
+                "description": "The server converts the file into a stream that the browser can play."
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "convert"
+                    ]
+                  }
+                }
+              }
+            ],
+            "description": "The server converts the file into a stream that the browser can play."
+          },
+          {
+            "type": "object",
+            "description": "The browser cannot play the selected tracks, even after conversion.",
+            "required": [
+              "reason",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "unsupported"
+                ]
+              },
+              "reason": {
+                "$ref": "#/components/schemas/UnsupportedReason"
+              }
+            }
+          }
+        ],
+        "description": "How a browser will play a file with the selected tracks."
+      },
+      "PlaybackRequest": {
+        "type": "object",
+        "description": "What a client sends to ask how its browser will play a media file.",
+        "required": [
+          "environment"
+        ],
+        "properties": {
+          "environment": {
+            "$ref": "#/components/schemas/PlaybackEnvironment"
+          }
+        }
+      },
+      "PlaybackResponse": {
+        "type": "object",
+        "description": "The server's plan for playing a media file, with the playlist to stream when the plan converts.",
+        "required": [
+          "plan"
+        ],
+        "properties": {
+          "plan": {
+            "$ref": "#/components/schemas/PlaybackPlan"
+          },
+          "playlist_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The server path of the converted stream's HLS playlist, for example `/conversions/<key>/index.m3u8`.\nPresent only when the plan converts."
           }
         }
       },
@@ -3376,6 +4115,203 @@
           }
         }
       },
+      "TrackAction": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "The encoded track passes into the stream unchanged, so quality is unchanged.",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "copy"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The track is decoded and encoded again in the target codec.",
+            "required": [
+              "target",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "transcode"
+                ]
+              },
+              "target": {
+                "$ref": "#/components/schemas/AudioTarget"
+              }
+            }
+          }
+        ]
+      },
+      "TrackConversion": {
+        "type": "object",
+        "description": "How one selected track goes into the converted stream.",
+        "required": [
+          "track_id",
+          "action",
+          "reasons"
+        ],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/TrackAction"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversionReason"
+            },
+            "description": "Why the track is converted rather than played from the original file."
+          },
+          "track_id": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "TrackInfo": {
+        "type": "object",
+        "description": "One stream inside a container.\nThe codec name comes from whichever probe read the file, so one codec can have different names.\nDetails that a probe cannot read are `None`.",
+        "required": [
+          "id",
+          "kind",
+          "codec",
+          "is_default"
+        ],
+        "properties": {
+          "audio": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AudioDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bit_rate": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The average bit rate in bits per second.",
+            "minimum": 0
+          },
+          "codec": {
+            "type": "string"
+          },
+          "codec_string": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The codec string that a browser checks to decide whether it can play this track inside fragmented MP4, for example `avc1.64001F`.\n`None` when the codec cannot be stored in fragmented MP4 or the probe could not identify it."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "is_default": {
+            "type": "boolean",
+            "description": "Whether the container marks this track as the one to play by default."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/TrackKind"
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The language tag stored in the container, or `None` when it is undetermined."
+          },
+          "level": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The codec level as ffprobe reports it, for example `31` for H.264 level 3.1.",
+            "minimum": 0
+          },
+          "profile": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The codec profile as ffprobe names it, for example `High` or `LC`."
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "video": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/VideoDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "TrackKind": {
+        "type": "string",
+        "enum": [
+          "video",
+          "audio",
+          "subtitle",
+          "other"
+        ]
+      },
+      "TrackSelection": {
+        "type": "object",
+        "description": "The ids of the tracks to play. A kind without an id is left out.",
+        "properties": {
+          "audio": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "video": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "UnsupportedReason": {
+        "type": "string",
+        "enum": [
+          "no_tracks_selected",
+          "track_not_found",
+          "video_codec_unsupported",
+          "audio_codec_unsupported",
+          "conversion_unavailable"
+        ]
+      },
       "UpdateMediaDurationRequest": {
         "type": "object",
         "required": [
@@ -3388,6 +4324,53 @@
             "minimum": 0
           }
         }
+      },
+      "VideoDetails": {
+        "type": "object",
+        "properties": {
+          "frame_rate": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FrameRate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "height": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "pixel_format": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The pixel format as ffprobe names it, for example `yuv420p`."
+          },
+          "width": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "WebEngine": {
+        "type": "string",
+        "description": "The browser engine that plays media, for example WebKit in Safari and in the macOS app.",
+        "enum": [
+          "webkit",
+          "chromium",
+          "gecko"
+        ]
       }
     },
     "securitySchemes": {

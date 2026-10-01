@@ -53,4 +53,14 @@ describe("mediaPlaybackFromResponse", () => {
       mediaPlaybackFromResponse(response, server, directUrl),
     ).toThrow("video codec");
   });
+
+  it("explains when the server cannot convert", () => {
+    const response: PlaybackResponse = {
+      plan: { kind: "unsupported", reason: "conversion_unavailable" },
+      playlist_path: null,
+    };
+    expect(() =>
+      mediaPlaybackFromResponse(response, server, directUrl),
+    ).toThrow("conversion is not available");
+  });
 });

@@ -72,4 +72,6 @@ pub enum UnsupportedReason {
     VideoCodecUnsupported,
     /// The browser can play neither the audio codec nor the audio target codec.
     AudioCodecUnsupported,
+    /// The file needs conversion, but the server cannot convert because ffmpeg or a cache directory is missing.
+    ConversionUnavailable,
 }

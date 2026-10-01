@@ -29,6 +29,7 @@ pub use codec_string::{aac_codec_string, codec_string};
 pub use codec_string_avc::{avc_codec_string, normalize_avc_codec_string};
 pub use container::{
     ContainerFormat, ContainerInfo, detect_container_format, parse_language_tag, probe_container,
+    probe_container_reader,
 };
 pub use error::MediaError;
 pub use fmp4::{Fmp4Error, read_first_decode_times, read_track_timescales};

@@ -4,14 +4,19 @@
 
 use std::path::PathBuf;
 
-use easyimmerse_api::{ApiConfig, ServerHandle, serve};
+use easyimmerse_api::{ApiConfig, AppState, ConversionService, ServerHandle, serve};
+use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use easyimmerse_storage::Storage;
 use serde_json::{Value, json};
+use tempfile::TempDir;
 use tokio::net::TcpListener;
 use ureq::Agent;
 use ureq::http::Request;
 
 pub const TOKEN: &str = "test-token";
+
+/// The codec string of the audio that conversions transcode to.
+const AAC_CODEC: &str = "mp4a.40.2";
 
 pub struct TestServer {
     pub base_url: String,
@@ -48,6 +53,34 @@ pub struct TestRequest {
 }
 
 pub async fn spawn_test_server(allow_local_paths: bool) -> TestServer {
+    spawn_server_with(allow_local_paths, None).await
+}
+
+/// Starts a server that may read local paths and caches conversions in the returned directory.
+pub async fn spawn_converting_server() -> (TestServer, TempDir) {
+    let cache = TempDir::new().expect("a cache directory");
+    let conversions = ConversionService::new(cache.path().to_path_buf(), FfmpegPaths::default())
+        .expect("ffmpeg to be found");
+    (spawn_server_with(true, Some(conversions)).await, cache)
+}
+
+/// Reports whether ffmpeg and ffprobe can be found, and explains the skip when they cannot.
+pub fn has_ffmpeg() -> bool {
+    let paths = FfmpegPaths::default();
+    let found = locate_binary(BinaryName::Ffmpeg, &paths).is_ok()
+        && locate_binary(BinaryName::Ffprobe, &paths).is_ok();
+    if !found {
+        eprintln!(
+            "skipping: ffmpeg or ffprobe was not found; set EASYIMMERSE_FFMPEG_DIR to run this test"
+        );
+    }
+    found
+}
+
+async fn spawn_server_with(
+    allow_local_paths: bool,
+    conversions: Option<ConversionService>,
+) -> TestServer {
     let listener = TcpListener::bind("127.0.0.1:0")
         .await
         .expect("a free loopback port");
@@ -57,9 +90,8 @@ pub async fn spawn_test_server(allow_local_paths: bool) -> TestServer {
         .seed_placeholder_projects()
         .expect("placeholder projects");
     let config = ApiConfig::for_loopback(port, TOKEN.to_string(), allow_local_paths);
-    let handle = serve(listener, config, storage)
-        .await
-        .expect("the server to start");
+    let state = AppState::new(storage, config).with_conversions(conversions);
+    let handle = serve(listener, state).await.expect("the server to start");
     TestServer {
         base_url: format!("http://127.0.0.1:{port}"),
         token: TOKEN.to_string(),
@@ -112,6 +144,47 @@ impl TestServer {
             .post_json("/projects", &project_settings("Krimi"))
             .await;
         id_of(&response)
+    }
+
+    /// Registers a fixture as a media file in a new project and returns the media file's path on the server.
+    pub async fn add_fixture_media(&self, fixture: &str) -> String {
+        let project_id = self.create_project().await;
+        let media_id = self
+            .add_media(&project_id, fixture, path_source(fixture))
+            .await;
+        format!("/projects/{project_id}/media/{media_id}")
+    }
+
+    /// Plans playback of a media file for a browser that accepts its tracks' codecs and AAC in fragmented MP4.
+    pub async fn plan_playback(
+        &self,
+        media_path: &str,
+        engine: &str,
+        direct_play: bool,
+    ) -> TestResponse {
+        let environment = json!({
+            "engine": engine,
+            "direct_play": direct_play,
+            "fmp4_codecs": self.fmp4_codecs(media_path).await,
+        });
+        self.post_json(
+            &format!("{media_path}/playback"),
+            &json!({ "environment": environment }),
+        )
+        .await
+    }
+
+    async fn fmp4_codecs(&self, media_path: &str) -> Vec<Value> {
+        let tracks = self.get(&format!("{media_path}/tracks")).await.json();
+        let mut codecs: Vec<Value> = tracks["container"]["tracks"]
+            .as_array()
+            .expect("a track list")
+            .iter()
+            .map(|track| track["codec_string"].clone())
+            .filter(Value::is_string)
+            .collect();
+        codecs.push(json!(AAC_CODEC));
+        codecs
     }
 
     /// Registers a media file in a project and returns its id.
