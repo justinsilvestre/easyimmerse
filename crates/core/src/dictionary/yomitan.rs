@@ -35,6 +35,8 @@ impl DictionaryFormat for YomitanFormat {
         Ok(Dictionary {
             title: index.title,
             revision: index.revision,
+            source_language: index.source_language,
+            target_language: index.target_language,
             entries,
         })
     }
@@ -47,6 +49,10 @@ struct Index {
     format: Option<u32>,
     /// Older dictionaries state the format version under this key instead of `format`.
     version: Option<u32>,
+    #[serde(rename = "sourceLanguage")]
+    source_language: Option<String>,
+    #[serde(rename = "targetLanguage")]
+    target_language: Option<String>,
 }
 
 const SUPPORTED_VERSION: u32 = 3;
@@ -149,6 +155,14 @@ mod tests {
         ZipArchive::new(Cursor::new(bytes)).expect("fixture should be a zip archive")
     }
 
+    fn parse_fixture(name: &str) -> Dictionary {
+        let bytes = read_fixture_bytes(name);
+        let mut archive = ZipArchive::new(Cursor::new(bytes.as_slice())).expect("a zip archive");
+        YomitanFormat
+            .parse(&mut archive)
+            .expect("fixture should parse")
+    }
+
     fn cat_row() -> Vec<Value> {
         json!(["猫", "ねこ", "n common", "", 1, ["cat", {"type": "image"}], 1, "P"])
             .as_array()
@@ -174,6 +188,33 @@ mod tests {
         assert_eq!(
             YomitanFormat.parse(&mut open_fixture()).unwrap().revision,
             Some("2026-09-30".into())
+        );
+    }
+
+    #[test]
+    fn leaves_the_source_language_empty_when_the_index_omits_it() {
+        assert_eq!(
+            YomitanFormat
+                .parse(&mut open_fixture())
+                .unwrap()
+                .source_language,
+            None
+        );
+    }
+
+    #[test]
+    fn reads_the_source_language_from_the_index() {
+        assert_eq!(
+            parse_fixture("sample-yomitan-en.zip").source_language,
+            Some("en".into())
+        );
+    }
+
+    #[test]
+    fn reads_the_target_language_from_the_index() {
+        assert_eq!(
+            parse_fixture("sample-yomitan-en.zip").target_language,
+            Some("de".into())
         );
     }
 

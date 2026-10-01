@@ -17,6 +17,7 @@
       "!**/gen",
       "!**/crates/api/openapi.json",
       "!**/fixtures/sample-yomitan",
+      "!**/fixtures/sample-yomitan-en",
       "!**/fixtures/sample-epub"
     ]
   },

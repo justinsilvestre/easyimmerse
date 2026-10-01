@@ -95,10 +95,10 @@ fn draft_field_value(kind: FlashcardFieldKind, request: &FlashcardDraftRequest) 
 
 fn draft_tags(request: &FlashcardDraftRequest) -> Vec<String> {
     let mut tags = request.settings.default_tags.clone();
-    if request.settings.tag_with_media_name {
-        if let Some(name) = &request.media_name {
-            tags.push(media_name_tag(name));
-        }
+    if request.settings.tag_with_media_name
+        && let Some(name) = &request.media_name
+    {
+        tags.push(media_name_tag(name));
     }
     tags
 }

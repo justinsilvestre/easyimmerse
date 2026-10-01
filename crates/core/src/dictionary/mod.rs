@@ -43,6 +43,10 @@ fn registered_formats() -> Vec<Box<dyn DictionaryFormat>> {
 pub struct Dictionary {
     pub title: String,
     pub revision: Option<String>,
+    /// The language of the headwords, as an ISO 639 code, when the dictionary states it.
+    pub source_language: Option<String>,
+    /// The language of the definitions, as an ISO 639 code, when the dictionary states it.
+    pub target_language: Option<String>,
     pub entries: Vec<TermEntry>,
 }
 
