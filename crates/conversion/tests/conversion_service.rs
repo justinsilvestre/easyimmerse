@@ -6,7 +6,9 @@ use std::path::{Path, PathBuf};
 use easyimmerse_conversion::{ConversionError, ConversionKey, ConversionService, EntryPaths};
 use easyimmerse_media::playback::{AudioTarget, ConversionPlan, TrackAction, TrackConversion};
 use easyimmerse_media::{ContainerInfo, TrackKind, read_first_decode_times, read_track_timescales};
-use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary, probe_file};
+use easyimmerse_media_ffmpeg::{
+    BinaryName, FfmpegPaths, TIMESTAMP_OFFSET_SECONDS, locate_binary, probe_file,
+};
 use tempfile::TempDir;
 
 /// The keyframe times of `conversion.mkv` in seconds, from the fixture's documentation. Segment `n` starts at keyframe `n`.
@@ -95,7 +97,7 @@ async fn set_up(fixture: &str) -> Option<Setup> {
     })
 }
 
-/// Fetches a segment, and then the init segment, and returns the segment's first decode time in seconds.
+/// Fetches a segment, and then the init segment, and returns the segment's first decode time in seconds of the source timeline.
 /// Fetching the segment first lets it decide where ffmpeg starts.
 async fn first_decode_seconds(setup: &Setup, index: u32) -> f64 {
     let segment_path = setup
@@ -108,8 +110,7 @@ async fn first_decode_seconds(setup: &Setup, index: u32) -> f64 {
     let init = std::fs::read(init_path).expect("read init");
     let timescale = read_track_timescales(&init).expect("timescales")[&FIRST_TRACK_ID];
     let decode_time = read_first_decode_times(&segment).expect("decode times")[&FIRST_TRACK_ID];
-    // A time before zero is stored as its 64-bit two's complement.
-    decode_time as i64 as f64 / f64::from(timescale)
+    decode_time as f64 / f64::from(timescale) - f64::from(TIMESTAMP_OFFSET_SECONDS)
 }
 
 fn is_segment_start(index: u32, seconds: f64) -> bool {

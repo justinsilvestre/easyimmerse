@@ -5,7 +5,7 @@ use std::path::Path;
 use easyimmerse_conversion::ConversionService;
 use easyimmerse_media::playback::{AudioTarget, ConversionPlan, TrackAction, TrackConversion};
 use easyimmerse_media::{ContainerInfo, TrackKind};
-use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, probe_file};
+use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, TIMESTAMP_OFFSET_SECONDS, probe_file};
 use tempfile::TempDir;
 
 use super::fmp4_samples::{Sample, read_samples, read_timescales};
@@ -37,12 +37,19 @@ impl ConvertedMedia {
         timescale
     }
 
-    /// Returns the samples of one track in each segment, in planned order.
+    /// Returns the samples of one track in each segment, in planned order, with times on the source timeline.
     pub fn samples_by_segment(&self, track_id: u32) -> Vec<Vec<Sample>> {
+        let offset = i64::from(TIMESTAMP_OFFSET_SECONDS) * i64::from(self.timescale(track_id));
+        let on_source_timeline = |sample: Sample| Sample {
+            decode_time: sample.decode_time - offset,
+            presentation_time: sample.presentation_time - offset,
+            ..sample
+        };
         let of_track = |segment: &Vec<u8>| {
             let samples = read_samples(segment).into_iter();
             samples
                 .filter(|sample| sample.track_id == track_id)
+                .map(on_source_timeline)
                 .collect()
         };
         self.segments.iter().map(of_track).collect()

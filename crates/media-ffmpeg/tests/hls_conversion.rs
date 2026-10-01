@@ -6,8 +6,8 @@ use std::process::Command;
 use easyimmerse_media::playback::{AudioTarget, TrackAction, TrackConversion};
 use easyimmerse_media::{TrackKind, read_first_decode_times, read_track_timescales};
 use easyimmerse_media_ffmpeg::{
-    AacEncoder, BinaryName, FfmpegPaths, HlsSource, HlsTracks, hls_arguments, locate_binary,
-    probe_file,
+    AacEncoder, BinaryName, FfmpegPaths, HlsSource, HlsTracks, TIMESTAMP_OFFSET_SECONDS,
+    hls_arguments, locate_binary, probe_file,
 };
 use tempfile::TempDir;
 
@@ -56,6 +56,7 @@ fn convert_fixture() -> Option<TempDir> {
         &HlsSource {
             path: &source,
             start_seconds: None,
+            timeline_start_seconds: "0.000000",
         },
         &HlsTracks {
             video,
@@ -93,17 +94,23 @@ fn writes_the_first_media_segment() {
     assert!(output.path().join("s00000.m4s").is_file());
 }
 
+/// Returns the first decode time of a track in an output segment, in seconds of the source timeline.
+fn first_decode_seconds(output: &TempDir, segment_name: &str, track_id: u32) -> f64 {
+    let timescales = read_track_timescales(&read_output(output, "init.mp4")).expect("init");
+    let decode_times =
+        read_first_decode_times(&read_output(output, segment_name)).expect("segment");
+    let seconds = decode_times[&track_id] as f64 / f64::from(timescales[&track_id]);
+    seconds - f64::from(TIMESTAMP_OFFSET_SECONDS)
+}
+
 #[test]
-fn starts_the_first_segment_at_decode_time_zero() {
+fn starts_the_first_segment_at_the_start_of_the_source() {
     let Some(output) = convert_fixture() else {
         return;
     };
-    let decode_times = read_first_decode_times(&read_output(&output, "s00000.m4s"));
     assert_eq!(
-        decode_times
-            .ok()
-            .and_then(|times| times.get(&VIDEO_TRACK_ID).copied()),
-        Some(0)
+        first_decode_seconds(&output, "s00000.m4s", VIDEO_TRACK_ID),
+        0.0
     );
 }
 
@@ -112,10 +119,7 @@ fn starts_the_second_segment_within_a_frame_of_the_second_keyframe() {
     let Some(output) = convert_fixture() else {
         return;
     };
-    let timescales = read_track_timescales(&read_output(&output, "init.mp4")).expect("init");
-    let decode_times =
-        read_first_decode_times(&read_output(&output, "s00001.m4s")).expect("segment");
-    let seconds = decode_times[&VIDEO_TRACK_ID] as f64 / f64::from(timescales[&VIDEO_TRACK_ID]);
+    let seconds = first_decode_seconds(&output, "s00001.m4s", VIDEO_TRACK_ID);
     assert!(
         (seconds - SECOND_KEYFRAME_SECONDS).abs() < FRAME_SECONDS,
         "{seconds}"

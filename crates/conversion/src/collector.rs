@@ -87,8 +87,7 @@ impl RunCollector {
 
     /// Caches the run's init segment unless an earlier run's is cached, so the entry keeps the init segment of the first run that completed a segment.
     /// The init segments of all runs describe the same tracks and timescales, so any one serves every run's segments.
-    /// They differ in one respect: a run from the beginning of the file adds an audio edit list that hides the encoder priming samples before time zero, and a run that seeks has none. Priming samples are the near-silent samples an AAC encoder emits before the first source sample.
-    /// Each run that transcodes audio also starts its own sequence of AAC frames, so where segments from different runs meet, their audio can overlap or leave a gap shorter than one frame (about 21 ms).
+    /// Each run that transcodes audio starts its own sequence of AAC frames, so where segments from different runs meet, their audio can overlap or leave a gap shorter than one frame (about 21 ms).
     async fn cache_init_segment(&self, init_path: &Path) -> Result<(), std::io::Error> {
         let copy = self.run_dir.join(INIT_COPY_NAME);
         copy_without_replacing(init_path, &copy, &self.entry.init_segment()).await

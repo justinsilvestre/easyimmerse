@@ -3,7 +3,8 @@
 
 mod support;
 
-use support::converted_media::{AUDIO_TRACK_ID, convert_fixture};
+use easyimmerse_media::read_first_decode_times;
+use support::converted_media::{AUDIO_TRACK_ID, VIDEO_TRACK_ID, convert_fixture};
 use support::seek_comparison::{mismatched_seek_targets, misplaced_frames};
 use support::segment_comparison::{audio_gaps, mismatched_segments, presentation_offsets};
 
@@ -15,6 +16,32 @@ const AAC_FRAME_SAMPLES: i64 = 1024;
 
 /// How far the audio timestamps of two runs may disagree where their segments meet. Restarted runs reproduced audio timestamps this closely in the spike.
 const SEAM_TOLERANCE_US: f64 = 45.0;
+
+/// Some players, such as WebKit's, read a decode time of 2^63 or more as a very large positive time rather than as a time before zero.
+#[tokio::test(flavor = "multi_thread")]
+async fn stores_every_decode_time_below_2_63() {
+    let Some(media) = convert_fixture(&IN_ORDER).await else {
+        return;
+    };
+    let wrapped = media.segments.iter().flat_map(|segment| {
+        let decode_times = read_first_decode_times(segment).expect("decode times");
+        decode_times.into_values().filter(|&time| time >= 1 << 63)
+    });
+    assert_eq!(wrapped.count(), 0);
+}
+
+/// hls.js aligns the playlist with whichever track starts earlier in the first segment it loads, so audio that started earlier would shift the video.
+#[tokio::test(flavor = "multi_thread")]
+async fn starts_the_audio_of_the_first_segment_no_earlier_than_its_video() {
+    let Some(media) = convert_fixture(&IN_ORDER).await else {
+        return;
+    };
+    let first_us = |track_id| {
+        let sample = media.samples_by_segment(track_id)[0][0].clone();
+        sample.decode_time * 1_000_000 / i64::from(media.timescale(track_id))
+    };
+    assert!(first_us(AUDIO_TRACK_ID) >= first_us(VIDEO_TRACK_ID));
+}
 
 #[tokio::test(flavor = "multi_thread")]
 async fn copies_each_group_of_pictures_into_its_planned_segment_in_one_run() {

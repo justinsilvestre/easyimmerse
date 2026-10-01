@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 /// The version of the conversion output. Raising it gives every conversion a new key, so outdated cache entries are never served.
-pub const CONVERTER_VERSION: u32 = 1;
+pub const CONVERTER_VERSION: u32 = 2;
 
 const KEY_LENGTH: usize = 64;
 

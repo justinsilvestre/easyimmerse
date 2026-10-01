@@ -7,6 +7,7 @@ use super::error::Fmp4Error;
 
 /// Returns, keyed by track id, the decode time of each track's first sample in the segment.
 /// Each time is a count of units of the track's timescale, as read from the track fragment decode time (`tfdt`) box.
+/// The count is unsigned, so a writer that stores a time before zero produces a value of 2^63 or more.
 /// In video whose frames are stored out of display order, a decode time can be slightly earlier than the presentation time of the same frame.
 pub fn read_first_decode_times(segment: &[u8]) -> Result<BTreeMap<u32, u64>, Fmp4Error> {
     let moofs = boxes_of_kind(&parse_boxes(segment)?, b"moof");
@@ -86,6 +87,15 @@ mod tests {
         assert_eq!(
             read_first_decode_times(&segment),
             Ok(BTreeMap::from([(1, 1 << 40)]))
+        );
+    }
+
+    #[test]
+    fn reads_a_decode_time_of_2_63_or_more_as_unsigned() {
+        let segment = moof(&[traf(2, u64::MAX - 2111)]);
+        assert_eq!(
+            read_first_decode_times(&segment),
+            Ok(BTreeMap::from([(2, u64::MAX - 2111)]))
         );
     }
 

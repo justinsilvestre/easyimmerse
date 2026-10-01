@@ -68,7 +68,8 @@ fn read_track_fragment(traf: &[u8], fragment: &[u8]) -> Vec<Sample> {
     let header = read_track_fragment_header(only_box(&children, b"tfhd").payload);
     let tfdt = only_box(&children, b"tfdt").payload;
     let mut decode_time = if tfdt[0] == 1 {
-        read_u64(tfdt, 4) as i64
+        i64::try_from(read_u64(tfdt, 4))
+            .expect("a decode time below 2^63, not a time before zero stored as unsigned")
     } else {
         i64::from(read_u32(tfdt, 4))
     };
