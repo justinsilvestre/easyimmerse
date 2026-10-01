@@ -11,6 +11,8 @@ export function createVitestConfig(options: {
     test: {
       environment: options.environment,
       include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+      // Vitest replaces CSS imports with empty modules, but tests read the fixture stylesheets as text.
+      css: { include: [/\/fixtures\//] },
       typecheck: {
         enabled: options.typecheck ?? false,
         include: ["src/**/*.test-d.ts"],

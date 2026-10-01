@@ -70,6 +70,7 @@ function OpenDictionaryPopup({
         )}
         <DictionaryPopupBody
           term={lookup.term}
+          preferredReading={lookup.preferredReading}
           results={results}
           status={status}
           hasDictionaries={hasDictionaries}

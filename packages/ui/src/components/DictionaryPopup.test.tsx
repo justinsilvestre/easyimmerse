@@ -1,13 +1,21 @@
 import { resetBackend } from "@easyimmerse/backend";
 import { type AppAction, actions, selectLookup } from "@easyimmerse/state";
 import type { TermEntry } from "@easyimmerse/types";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  fixtureBilingualDictionary,
   fixtureBilingualEntry,
   fixtureLookupResults,
 } from "../testSupport/fixtureLookup.ts";
+import { fixtureStructuredLookupResult } from "../testSupport/fixtureStructuredLookup.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { DictionaryPopup } from "./DictionaryPopup.tsx";
 
@@ -121,6 +129,57 @@ describe("DictionaryPopup", () => {
     expect(isLookupOpen(store)).toBe(true);
   });
 
+  describe("for a dictionary with structured content", () => {
+    const structuredResults = [fixtureStructuredLookupResult];
+
+    it("shows the structured definitions", () => {
+      renderPopup({ results: structuredResults });
+      expect(screen.getByText("cat")).toBeTruthy();
+    });
+
+    it("applies the dictionary's stylesheet within the scope of its entries", async () => {
+      renderPopup({ results: structuredResults });
+      await waitFor(() =>
+        expect(
+          screen.getByRole("dialog").querySelector("style")?.textContent,
+        ).toMatch(/^@scope \{\nspan\[data-sc-content/),
+      );
+    });
+  });
+
+  describe("after following a reference that names a reading", () => {
+    const entryWithReading = (reading: string): TermEntry => ({
+      term: "一の字点",
+      reading,
+      definitions: [reading],
+      tags: [],
+    });
+
+    it("lists the entry with that reading first", () => {
+      const { store } = renderPopup({
+        results: [
+          {
+            dictionary: fixtureBilingualDictionary,
+            entries: [
+              entryWithReading("いっちてん"),
+              entryWithReading("いちのじてん"),
+            ],
+          },
+        ],
+      });
+      act(() =>
+        store.dispatch(
+          actions.lookupReferenceFollowed({
+            term: "一の字点",
+            reading: "いちのじてん",
+          }),
+        ),
+      );
+      const [first] = screen.getAllByRole("listitem");
+      expect(first?.textContent).toContain("いちのじてん");
+    });
+  });
+
   describe("while the lookup is loading", () => {
     it("announces the lookup in progress", () => {
       renderPopup({ status: "loading", results: [] });
@@ -178,6 +237,16 @@ describe("DictionaryPopup", () => {
       fireEvent.change(findInput(), { target: { value: "Hund" } });
       act(() => vi.advanceTimersByTime(299));
       expect(selectLookup(store.getState())).toMatchObject({ term: "" });
+    });
+
+    it("shows the term of a followed reference", () => {
+      const { store } = renderPopup({ results: [] }, openForTyping);
+      act(() =>
+        store.dispatch(
+          actions.lookupReferenceFollowed({ term: "Hund", reading: null }),
+        ),
+      );
+      expect((findInput() as HTMLInputElement).value).toBe("Hund");
     });
   });
 });

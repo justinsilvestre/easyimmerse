@@ -7,6 +7,7 @@ export type LookupStatus = "idle" | "loading" | "error";
 /** Shows the entries grouped by dictionary, or the reason there are none to show. */
 export function DictionaryPopupBody({
   term,
+  preferredReading,
   results,
   status,
   hasDictionaries,
@@ -14,6 +15,8 @@ export function DictionaryPopupBody({
   onSetUpDictionary,
 }: {
   term: string;
+  /** The reading whose entries come first in each dictionary, when one is preferred. */
+  preferredReading: string | null;
   results: readonly DictionaryLookupResult[];
   status: LookupStatus;
   hasDictionaries: boolean;
@@ -45,16 +48,30 @@ export function DictionaryPopupBody({
         {dictionary.title}
       </h3>
       <ul className="flex flex-col gap-1">
-        {entries.map((entry) => (
+        {putReadingFirst(entries, preferredReading).map((entry, index) => (
           <LookupEntry
-            key={`${entry.term}-${entry.definitions.join("|")}`}
+            // biome-ignore lint/suspicious/noArrayIndexKey: Entries of one lookup never change, and two may share a term and reading.
+            key={`${entry.term}-${entry.reading}-${index}`}
             entry={entry}
+            dictionaryId={dictionary.id}
             onClick={() => onCreateFlashcard(entry)}
           />
         ))}
       </ul>
     </section>
   ));
+}
+
+function putReadingFirst(
+  entries: readonly TermEntry[],
+  reading: string | null,
+): TermEntry[] {
+  if (reading === null) return [...entries];
+  const isPreferred = (entry: TermEntry) => entry.reading === reading;
+  return [
+    ...entries.filter(isPreferred),
+    ...entries.filter((entry) => !isPreferred(entry)),
+  ];
 }
 
 function LookupSkeleton({ term }: { term: string }) {
