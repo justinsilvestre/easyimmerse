@@ -8,6 +8,7 @@ import { preferenceActions } from "./preferences/preferenceActions.ts";
 import { readerActions } from "./reader/readerActions.ts";
 import { subtitleActions } from "./subtitles/subtitleActions.ts";
 import { systemActions } from "./system/systemActions.ts";
+import { themeActions } from "./theme/themeActions.ts";
 
 /** Every action creator, keyed by the type of the action it creates. */
 export const actions = {
@@ -20,6 +21,7 @@ export const actions = {
   ...filePickActions,
   ...preferenceActions,
   ...systemActions,
+  ...themeActions,
 };
 
 export type AppAction = ReturnType<(typeof actions)[keyof typeof actions]>;

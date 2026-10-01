@@ -1,6 +1,7 @@
 import type { RootState } from "./createAppStore.ts";
 import { hasScreenshotField } from "./flashcardEditor/hasScreenshotField.ts";
 import type { PreferenceKey } from "./preferences/preferenceKey.ts";
+import { chooseTheme } from "./theme/themeState.ts";
 
 export const selectScreen = (state: RootState) => state.app.screen;
 
@@ -31,3 +32,6 @@ export const selectChosenFile = (state: RootState) => state.app.chosenFile;
 
 export const selectPreference = (key: PreferenceKey) => (state: RootState) =>
   state.app.preferences[key];
+
+/** Returns the theme the app shows: the one the user chose, or else the operating system's. */
+export const selectTheme = (state: RootState) => chooseTheme(state.app.theme);

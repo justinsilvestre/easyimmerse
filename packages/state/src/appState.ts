@@ -11,6 +11,8 @@ import type { ReaderState } from "./reader/readerState.ts";
 import { initialReaderState } from "./reader/readerState.ts";
 import type { SubtitlesState } from "./subtitles/subtitlesState.ts";
 import { initialSubtitlesState } from "./subtitles/subtitlesState.ts";
+import type { ThemeState } from "./theme/themeState.ts";
+import { initialThemeState } from "./theme/themeState.ts";
 
 export type AppState = {
   screen: Screen;
@@ -23,6 +25,7 @@ export type AppState = {
   /** What the open file dialog is for. Null when no dialog is open. */
   pendingFilePick: FilePickPurpose | null;
   chosenFile: ChosenFile | null;
+  theme: ThemeState;
 };
 
 export const initialAppState: AppState = {
@@ -35,4 +38,5 @@ export const initialAppState: AppState = {
   preferences: {},
   pendingFilePick: null,
   chosenFile: null,
+  theme: initialThemeState,
 };

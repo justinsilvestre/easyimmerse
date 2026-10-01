@@ -10,6 +10,7 @@ import { preferenceHandlers } from "./preferences/preferenceHandlers.ts";
 import { readerHandlers } from "./reader/readerHandlers.ts";
 import { subtitleHandlers } from "./subtitles/subtitleHandlers.ts";
 import { systemHandlers } from "./system/systemHandlers.ts";
+import { themeHandlers } from "./theme/themeHandlers.ts";
 import type { UpdateHandlers, UpdateResult } from "./updateHandlers.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
@@ -28,6 +29,7 @@ const handlers: UpdateHandlers = {
   ...filePickHandlers,
   ...preferenceHandlers,
   ...systemHandlers,
+  ...themeHandlers,
 };
 
 export const update: Update<AppState, AppAction, Effect> = (state, action) => {

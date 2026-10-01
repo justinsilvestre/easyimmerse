@@ -11,6 +11,7 @@ import {
   selectPreference,
   selectScreen,
   selectSubtitles,
+  selectTheme,
 } from "./selectors.ts";
 import { createAppState } from "./testSupport/createAppState.ts";
 import { createEditingFlashcardEditor } from "./testSupport/createEditingFlashcardEditor.ts";
@@ -89,5 +90,19 @@ describe("selectors", () => {
 
   it("selectPreference returns the stored preference value", () => {
     expect(selectPreference("showTranslations")(rootState)).toBe("true");
+  });
+
+  it("selectTheme returns the system theme when nothing overrides it", () => {
+    const state: RootState = {
+      app: createAppState({}, { theme: { system: "dark", override: null } }),
+    };
+    expect(selectTheme(state)).toBe("dark");
+  });
+
+  it("selectTheme returns the override when there is one", () => {
+    const state: RootState = {
+      app: createAppState({}, { theme: { system: "dark", override: "light" } }),
+    };
+    expect(selectTheme(state)).toBe("light");
   });
 });
