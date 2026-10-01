@@ -8,3 +8,6 @@ packages:
 # after 2026-09-30 and run `pnpm install` to confirm the lockfile still resolves.
 minimumReleaseAgeExclude:
   - '@tauri-apps/plugin-opener@2.7.0'
+# esbuild's install script only checks its platform binary, which pnpm already installs as an optional dependency.
+allowBuilds:
+  esbuild: false
