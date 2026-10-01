@@ -105,8 +105,8 @@ function SubtitlesOverlayLine({
       className={clsx(
         "whitespace-pre-line leading-snug",
         isPrimary
-          ? "text-xl font-medium sm:text-2xl lg:text-3xl"
-          : "text-base font-light text-white/80 sm:text-lg",
+          ? "text-lg font-medium sm:text-2xl lg:text-3xl"
+          : "text-sm font-light text-white/80 sm:text-lg",
       )}
     >
       {children}
