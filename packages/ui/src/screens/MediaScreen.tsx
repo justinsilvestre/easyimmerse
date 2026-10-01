@@ -1,75 +1,103 @@
-import { useParseTimedTextMutation } from "@easyimmerse/backend";
-import type { ChosenFile } from "@easyimmerse/state";
-import { actions, selectChosenFile, selectPlayer } from "@easyimmerse/state";
-import type { SubtitleRole } from "@easyimmerse/types";
-import { useEffect } from "react";
-import { Button } from "../components/Button.tsx";
-import { MediaView } from "../components/MediaView.tsx";
-import { PickFileButton } from "../components/PickFileButton.tsx";
-import { PreferenceToggle } from "../components/PreferenceToggle.tsx";
-import { fixtureSubtitleText } from "../fixtureSubtitle.ts";
+import { useGetProjectQuery } from "@easyimmerse/backend";
+import { actions, selectLookup } from "@easyimmerse/state";
+import type { MediaFile, Project, SubtitleRole } from "@easyimmerse/types";
+import { DictionaryPopup } from "../components/DictionaryPopup.tsx";
+import { FlashcardEditor } from "../components/FlashcardEditor.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { useCreateFlashcardDraft } from "../hooks/useCreateFlashcardDraft.ts";
+import { useRecordMediaDuration } from "../hooks/useRecordMediaDuration.ts";
+import { useSaveFlashcard } from "../hooks/useSaveFlashcard.ts";
+import { useSubtitleCues } from "../hooks/useSubtitleCues.ts";
+import { useTermLookup } from "../hooks/useTermLookup.ts";
+import { MediaScreenLayout } from "./MediaScreenLayout.tsx";
+import { MediaScreenPlayer } from "./MediaScreenPlayer.tsx";
+import { MediaScreenReader } from "./MediaScreenReader.tsx";
 
+/** Plays or shows a media file of a project, with the dictionary pop-up and the flashcard editor. */
 export function MediaScreen({
   projectId,
-  onBack,
+  mediaId,
 }: {
   projectId: string;
-  onBack: () => void;
+  mediaId: string;
 }) {
-  const dispatch = useAppDispatch();
-  const { cues, failed } = useChosenOrFixtureCues();
-  const mediaUrl = useAppSelector((state) => selectPlayer(state).mediaUrl);
-  const addSubtitles = (role: SubtitleRole) =>
-    dispatch(actions.filePickRequested({ kind: "subtitles", role }));
+  const { data: project, isError } = useGetProjectQuery(projectId);
+  const media = project?.media.find(({ id }) => id === mediaId);
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-4 p-4">
-      <header className="flex items-center justify-between">
-        <Button onClick={onBack}>Back</Button>
-        <h1 className="text-xl font-semibold">Project {projectId}</h1>
-      </header>
-      <div className="flex items-center gap-4">
-        <PickFileButton />
-        <PreferenceToggle />
-      </div>
-      {failed && <p role="alert">Could not parse the subtitles.</p>}
-      <MediaView
-        kind="video"
-        src={mediaUrl ?? ""}
-        targetCues={cues}
-        translationCues={null}
-        onWordActivated={() => undefined}
-        onAddSubtitles={addSubtitles}
-        onGenerateSubtitles={() => undefined}
-      />
-    </main>
+    <MediaScreenLayout title={media?.name ?? ""}>
+      {project && media ? (
+        <OpenMediaScreen project={project} media={media} />
+      ) : isError || project ? (
+        <p role="alert" className="bg-red-50 px-4 py-2 text-sm text-red-800">
+          Could not load the media file.
+        </p>
+      ) : (
+        <p role="status" className="p-8 text-center text-sm text-neutral-400">
+          Loading…
+        </p>
+      )}
+    </MediaScreenLayout>
   );
 }
 
-/** Parses the chosen subtitle file, or the fixture until one is chosen. */
-function useChosenOrFixtureCues() {
-  const subtitlePath = readSubtitlePath(useAppSelector(selectChosenFile));
-  const [parseTimedText, { data, error }] = useParseTimedTextMutation();
-  useEffect(() => {
-    parseTimedText({
-      source:
-        subtitlePath === null
-          ? { kind: "inline", text: fixtureSubtitleText }
-          : { kind: "path", path: subtitlePath },
-      format: null,
-    });
-  }, [subtitlePath, parseTimedText]);
-  return { cues: data?.cues ?? null, failed: error !== undefined };
+function OpenMediaScreen({
+  project,
+  media,
+}: {
+  project: Project;
+  media: MediaFile;
+}) {
+  const dispatch = useAppDispatch();
+  const lookup = useAppSelector(selectLookup);
+  const targetCues = useSubtitleCues(
+    project.id,
+    media.id,
+    findTrack(media, "target"),
+  );
+  const translationCues = useSubtitleCues(
+    project.id,
+    media.id,
+    findTrack(media, "translation"),
+  );
+  const termLookup = useTermLookup(project.settings.target_language);
+  const createDraft = useCreateFlashcardDraft(project, media, translationCues);
+  const { saveFlashcard, deleteFlashcard } = useSaveFlashcard(project.id);
+  useRecordMediaDuration(project.id, media);
+  return (
+    <>
+      {media.kind === "document" ? (
+        <MediaScreenReader media={media} onWordActivated={createDraft} />
+      ) : (
+        <MediaScreenPlayer
+          kind={media.kind}
+          targetCues={targetCues}
+          translationCues={translationCues}
+          onWordActivated={createDraft}
+        />
+      )}
+      <DictionaryPopup
+        results={termLookup.results}
+        status={termLookup.status}
+        hasDictionaries={termLookup.hasDictionaries}
+        onCreateFlashcard={(entry) => {
+          if (lookup.kind === "closed") return;
+          const { term, context, clip } = lookup;
+          createDraft(
+            { word: term, context, clip },
+            { entry, results: termLookup.results },
+          );
+        }}
+        onSetUpDictionary={() =>
+          dispatch(actions.filePickRequested({ kind: "dictionary" }))
+        }
+      />
+      <FlashcardEditor onSave={saveFlashcard} onDelete={deleteFlashcard} />
+    </>
+  );
 }
 
-/**
- * Returns the path of a subtitle file picked in the native app.
- * A file picked in the web app is stored in the browser, which the server cannot read,
- * so the fixture stays shown.
- */
-function readSubtitlePath(chosen: ChosenFile | null): string | null {
-  if (chosen?.purpose.kind !== "subtitles") return null;
-  const { source } = chosen.file;
-  return source.kind === "path" ? source.path : null;
+/** Returns the first track in the role. */
+function findTrack(media: MediaFile, role: SubtitleRole) {
+  return media.subtitle_tracks.find((track) => track.role === role);
 }
