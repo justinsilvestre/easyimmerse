@@ -49,19 +49,9 @@ describe("MediaScreen", () => {
     const { effects } = renderMediaScreen();
     const list = await findSubtitles();
     fireEvent.click(
-      within(list).getByRole("button", { name: "The cat is sleeping." }),
+      within(list).getByRole("button", { name: /The cat is sleeping\./ }),
     );
     expect(effects.calls).toContainEqual({ type: "seekPlayer", ms: 500 });
-  });
-
-  it("copies the cue text when its Copy button is clicked", async () => {
-    const { effects } = renderMediaScreen();
-    const list = await findSubtitles();
-    fireEvent.click(within(list).getByRole("button", { name: "Copy cue 4" }));
-    expect(effects.calls).toContainEqual({
-      type: "copyToClipboard",
-      text: "Good night.",
-    });
   });
 
   it("shows the time the player was seeked to", async () => {

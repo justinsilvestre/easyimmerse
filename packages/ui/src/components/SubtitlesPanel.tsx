@@ -1,64 +1,48 @@
-import { useParseTimedTextMutation } from "@easyimmerse/backend";
-import type { ChosenFile } from "@easyimmerse/state";
-import { actions, selectChosenFile } from "@easyimmerse/state";
-import type { Cue } from "@easyimmerse/types";
-import { useEffect } from "react";
-import { fixtureSubtitleText } from "../fixtureSubtitle.ts";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { selectCurrentTimeMs } from "@easyimmerse/state";
+import type { Cue, SubtitleRole } from "@easyimmerse/types";
+import { findCueAt } from "../cues/findCueAt.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { Button } from "./Button.tsx";
-
-/** Parses the chosen subtitle file, or the fixture until one is chosen, and lists its cues. */
-export function SubtitlesPanel() {
-  const subtitlePath = readSubtitlePath(useAppSelector(selectChosenFile));
-  const [parseTimedText, { data, error }] = useParseTimedTextMutation();
-  useEffect(() => {
-    parseTimedText({
-      source:
-        subtitlePath === null
-          ? { kind: "inline", text: fixtureSubtitleText }
-          : { kind: "path", path: subtitlePath },
-      format: null,
-    });
-  }, [subtitlePath, parseTimedText]);
-  if (error) return <p role="alert">Could not parse the subtitles.</p>;
-  return (
-    <ol aria-label="Subtitles" className="flex flex-col gap-1">
-      {(data?.cues ?? []).map((cue) => (
-        <CueItem key={cue.index} cue={cue} />
-      ))}
-    </ol>
-  );
-}
+import { SubtitlesPanelCard } from "./SubtitlesPanelCard.tsx";
+import { SubtitlesPanelEmpty } from "./SubtitlesPanelEmpty.tsx";
 
 /**
- * Returns the path of a subtitle file picked in the native app.
- * A file picked in the web app is stored in the browser, which the server cannot read,
- * so the fixture stays shown.
+ * Lists the cues as cards, highlighting the cue at the player's current time and keeping it in view.
+ * Clicking a card seeks to its cue. Without cues, offers adding or generating subtitles.
  */
-function readSubtitlePath(chosen: ChosenFile | null): string | null {
-  if (chosen?.purpose.kind !== "subtitles") return null;
-  const { source } = chosen.file;
-  return source.kind === "path" ? source.path : null;
+export function SubtitlesPanel({
+  cues,
+  onAddSubtitles,
+  onGenerateSubtitles,
+}: {
+  cues: readonly Cue[] | null;
+  onAddSubtitles: (role: SubtitleRole) => void;
+  onGenerateSubtitles: () => void;
+}) {
+  if (cues === null || cues.length === 0)
+    return (
+      <SubtitlesPanelEmpty
+        onAddSubtitles={onAddSubtitles}
+        onGenerateSubtitles={onGenerateSubtitles}
+      />
+    );
+  return <SubtitlesPanelCueList cues={cues} />;
 }
 
-function CueItem({ cue }: { cue: Cue }) {
-  const dispatch = useAppDispatch();
+function SubtitlesPanelCueList({ cues }: { cues: readonly Cue[] }) {
+  const timeMs = useAppSelector(selectCurrentTimeMs);
+  const currentCue = findCueAt(cues, timeMs);
   return (
-    <li className="flex items-center gap-2">
-      <Button
-        variant="subtle"
-        className="whitespace-pre-line text-left"
-        onClick={() => dispatch(actions.seekRequested(cue.start_ms))}
-      >
-        {cue.text}
-      </Button>
-      <Button
-        aria-label={`Copy cue ${cue.index}`}
-        onClick={() => dispatch(actions.cueCopyRequested(cue.text))}
-      >
-        Copy
-      </Button>
-    </li>
+    <ol
+      aria-label="Subtitles"
+      className="relative flex h-full flex-col gap-1 overflow-y-auto p-2"
+    >
+      {cues.map((cue) => (
+        <SubtitlesPanelCard
+          key={cue.index}
+          cue={cue}
+          isCurrent={cue === currentCue}
+        />
+      ))}
+    </ol>
   );
 }
