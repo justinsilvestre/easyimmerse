@@ -1,5 +1,6 @@
 import {
   appStoreNames,
+  commit,
   openAppDatabaseOnFirstUse,
   openObjectStore,
   request,
@@ -17,7 +18,9 @@ export function createPreferenceStore(): PreferenceStore {
     openObjectStore(await open(), appStoreNames.preferences, mode);
   return {
     save: async (key, value) => {
-      await request((await openStore("readwrite")).put(value, key));
+      const store = await openStore("readwrite");
+      store.put(value, key);
+      await commit(store.transaction);
     },
     load: async (key) => {
       const value = await request((await openStore("readonly")).get(key));
