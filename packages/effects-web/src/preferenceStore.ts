@@ -1,5 +1,10 @@
-const databaseName = "easyimmerse";
-const storeName = "preferences";
+import {
+  appStoreNames,
+  commit,
+  openAppDatabaseOnFirstUse,
+  openObjectStore,
+  request,
+} from "./openAppDatabase.ts";
 
 export type PreferenceStore = {
   save(key: string, value: string): Promise<void>;
@@ -8,42 +13,18 @@ export type PreferenceStore = {
 
 /** Persists preferences in the browser's IndexedDB. The database opens on first use. */
 export function createPreferenceStore(): PreferenceStore {
-  let database: Promise<IDBDatabase> | null = null;
-  const open = () => {
-    database ??= openDatabase();
-    return database;
-  };
+  const open = openAppDatabaseOnFirstUse();
+  const openStore = async (mode: IDBTransactionMode) =>
+    openObjectStore(await open(), appStoreNames.preferences, mode);
   return {
     save: async (key, value) => {
-      await request(writableStore(await open()).put(value, key));
+      const store = await openStore("readwrite");
+      store.put(value, key);
+      await commit(store.transaction);
     },
     load: async (key) => {
-      const value = await request(readableStore(await open()).get(key));
+      const value = await request((await openStore("readonly")).get(key));
       return typeof value === "string" ? value : null;
     },
   };
-}
-
-function openDatabase(): Promise<IDBDatabase> {
-  const opening = indexedDB.open(databaseName, 1);
-  opening.addEventListener("upgradeneeded", () => {
-    opening.result.createObjectStore(storeName);
-  });
-  return request(opening);
-}
-
-function readableStore(database: IDBDatabase): IDBObjectStore {
-  return database.transaction(storeName, "readonly").objectStore(storeName);
-}
-
-function writableStore(database: IDBDatabase): IDBObjectStore {
-  return database.transaction(storeName, "readwrite").objectStore(storeName);
-}
-
-/** Turns an IndexedDB request into a promise of its result. */
-function request<T>(idbRequest: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    idbRequest.addEventListener("success", () => resolve(idbRequest.result));
-    idbRequest.addEventListener("error", () => reject(idbRequest.error));
-  });
 }

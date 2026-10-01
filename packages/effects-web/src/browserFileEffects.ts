@@ -12,22 +12,22 @@ export function createResolveMediaUrl(
 ): Effects["resolveMediaUrl"] {
   let currentUrl: string | null = null;
   return async (_projectId, media) => {
-    const file = findStoredMedia(store, media);
-    if (file === undefined)
+    const blob = await findStoredMedia(store, media);
+    if (blob === null)
       throw new Error(`${media.name} is not stored in this browser.`);
     if (currentUrl !== null) URL.revokeObjectURL(currentUrl);
-    currentUrl = URL.createObjectURL(file);
+    currentUrl = URL.createObjectURL(blob);
     return currentUrl;
   };
 }
 
-function findStoredMedia(
+async function findStoredMedia(
   store: BrowserFileStore,
   media: MediaFile,
-): File | undefined {
+): Promise<Blob | null> {
   return media.source.kind === "browser_file"
     ? store.get(media.source.key)
-    : undefined;
+    : null;
 }
 
 /** Builds the effect that reads the text of a file stored in the browser. Rejects for an unknown key. */
@@ -35,9 +35,9 @@ export function createReadStoredFileText(
   store: BrowserFileStore,
 ): Effects["readStoredFileText"] {
   return async (key) => {
-    const file = store.get(key);
-    if (file === undefined)
+    const blob = await store.get(key);
+    if (blob === null)
       throw new Error("The file is no longer stored in this browser.");
-    return file.text();
+    return blob.text();
   };
 }

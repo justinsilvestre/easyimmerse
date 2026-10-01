@@ -32,5 +32,10 @@ export function createWebEffects(options: {
   };
 }
 
+export type {
+  BrowserFileStore,
+  StoredFileSummary,
+} from "./browserFileStore.ts";
+export { createBrowserFileStore } from "./browserFileStore.ts";
 export type { PreferenceStore } from "./preferenceStore.ts";
 export { createPreferenceStore } from "./preferenceStore.ts";
