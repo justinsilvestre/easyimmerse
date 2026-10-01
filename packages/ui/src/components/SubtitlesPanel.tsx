@@ -1,7 +1,9 @@
 import { selectCurrentTimeMs } from "@easyimmerse/state";
 import type { Cue, SubtitleRole } from "@easyimmerse/types";
+import { useRef } from "react";
 import { findCueAt } from "../cues/findCueAt.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { useCurrentCueInView } from "../hooks/useCurrentCueInView.ts";
 import { SubtitlesPanelCard } from "./SubtitlesPanelCard.tsx";
 import { SubtitlesPanelEmpty } from "./SubtitlesPanelEmpty.tsx";
 
@@ -31,10 +33,15 @@ export function SubtitlesPanel({
 function SubtitlesPanelCueList({ cues }: { cues: readonly Cue[] }) {
   const timeMs = useAppSelector(selectCurrentTimeMs);
   const currentCue = findCueAt(cues, timeMs);
+  const listRef = useRef<HTMLOListElement>(null);
+  const scrollHandlers = useCurrentCueInView(listRef, currentCue);
   return (
     <ol
+      ref={listRef}
       aria-label="Subtitles"
+      // The list is positioned so that its items' offsets are measured from it.
       className="relative flex h-full flex-col gap-1 overflow-y-auto p-2"
+      {...scrollHandlers}
     >
       {cues.map((cue) => (
         <SubtitlesPanelCard

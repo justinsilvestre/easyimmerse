@@ -1,12 +1,11 @@
 import { actions } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
-import { useEffect, useRef } from "react";
 import { stripCueMarkup } from "../cues/stripCueMarkup.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { formatMediaTime } from "./formatMediaTime.ts";
 
-/** A list item showing a cue's start time and text, which seeks to the cue when clicked and scrolls into view once current. */
+/** A list item showing a cue's start time and text, which seeks to the cue when clicked. */
 export function SubtitlesPanelCard({
   cue,
   isCurrent,
@@ -15,12 +14,8 @@ export function SubtitlesPanelCard({
   isCurrent: boolean;
 }) {
   const dispatch = useAppDispatch();
-  const itemRef = useRef<HTMLLIElement>(null);
-  useEffect(() => {
-    if (isCurrent && itemRef.current) scrollToMiddleOfList(itemRef.current);
-  }, [isCurrent]);
   return (
-    <li ref={itemRef}>
+    <li>
       <button
         type="button"
         aria-current={isCurrent || undefined}
@@ -41,15 +36,4 @@ export function SubtitlesPanelCard({
       </button>
     </li>
   );
-}
-
-/**
- * Scrolls the item's list, and only that list, so that the item sits in its middle.
- * Scrolling the page as well, as `scrollIntoView` does, would move the player out of sight.
- */
-function scrollToMiddleOfList(item: HTMLLIElement) {
-  const list = item.parentElement;
-  if (list === null || typeof list.scrollTo !== "function") return;
-  const top = item.offsetTop - (list.clientHeight - item.offsetHeight) / 2;
-  list.scrollTo({ top, behavior: "smooth" });
 }
