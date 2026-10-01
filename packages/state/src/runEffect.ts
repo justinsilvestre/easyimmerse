@@ -22,7 +22,7 @@ export function runEffect(
       effects.pausePlayer();
       return;
     case "setPlayerLoop":
-      effects.setPlayerLoop(effect.range);
+      effects.setPlayerLoop(effect.loop);
       return;
     case "setPlaybackRate":
       effects.setPlaybackRate(effect.rate);
@@ -39,8 +39,8 @@ export function runEffect(
     case "pickFile":
       pickFile(effect, effects, dispatch);
       return;
-    case "resolveMediaUrl":
-      resolveMediaUrl(effect, effects, dispatch);
+    case "resolveMediaPlayback":
+      resolveMediaPlayback(effect, effects, dispatch);
       return;
     case "readStoredFileText":
       readStoredFileText(effect, effects, dispatch);
@@ -84,16 +84,18 @@ function pickFile(
     .catch(() => dispatch(actions.filePickCancelled()));
 }
 
-function resolveMediaUrl(
-  { projectId, media }: Extract<Effect, { type: "resolveMediaUrl" }>,
+function resolveMediaPlayback(
+  { projectId, media }: Extract<Effect, { type: "resolveMediaPlayback" }>,
   effects: Effects,
   dispatch: Dispatch,
 ): void {
   effects
-    .resolveMediaUrl(projectId, media)
-    .then((url) => dispatch(actions.mediaUrlResolved(media.id, url)))
+    .resolveMediaPlayback(projectId, media)
+    .then((playback) =>
+      dispatch(actions.mediaPlaybackResolved(media.id, playback)),
+    )
     .catch((error: unknown) =>
-      dispatch(actions.mediaUrlFailed(media.id, describeError(error))),
+      dispatch(actions.mediaPlaybackFailed(media.id, describeError(error))),
     );
 }
 

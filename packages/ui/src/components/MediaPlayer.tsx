@@ -1,5 +1,5 @@
+import type { PlayerLoop } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
-import type { TimeRange } from "@easyimmerse/types";
 import { type ReactNode, useRef } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { usePlayerElementEvents } from "../hooks/usePlayerElementEvents.ts";
@@ -23,7 +23,7 @@ export function MediaPlayer({
 }) {
   const dispatch = useAppDispatch();
   const media = useRef<HTMLMediaElement | null>(null);
-  const loop = useRef<TimeRange | null>(null);
+  const loop = useRef<PlayerLoop | null>(null);
   const attachMedia = usePlayerHandleRegistration(media, loop);
   usePlayerSettingsSync(media);
   const events = usePlayerElementEvents(loop);

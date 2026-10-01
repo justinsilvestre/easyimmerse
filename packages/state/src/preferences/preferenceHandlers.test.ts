@@ -43,6 +43,7 @@ describe("update", () => {
     );
     expect(effects).toEqual([
       { type: "loadPreference", key: "showTranslations" },
+      { type: "loadPreference", key: "conversionNoticeDismissed" },
     ]);
   });
 

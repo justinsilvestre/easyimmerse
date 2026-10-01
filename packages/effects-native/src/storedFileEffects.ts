@@ -2,14 +2,15 @@ import type { ServerConfig } from "@easyimmerse/backend";
 import type { Effects } from "@easyimmerse/state";
 import { buildMediaStreamUrl } from "./buildMediaStreamUrl.ts";
 
-/** Builds the effect that has the embedded server stream media files on disk. Rejects for media stored in a browser. */
-export function createResolveMediaUrl(
+/** Builds the effect that has the player load media files on disk directly from the embedded server. Rejects for media stored in a browser. */
+export function createResolveMediaPlayback(
   server: ServerConfig,
-): Effects["resolveMediaUrl"] {
+): Effects["resolveMediaPlayback"] {
   return async (projectId, media) => {
     if (media.source.kind !== "path")
       throw new Error(`${media.name} was added in a browser and is not here.`);
-    return buildMediaStreamUrl(server, projectId, media.id);
+    const url = buildMediaStreamUrl(server, projectId, media.id);
+    return { kind: "direct", url };
   };
 }
 

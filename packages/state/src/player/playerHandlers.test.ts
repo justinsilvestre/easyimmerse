@@ -3,9 +3,7 @@ import { actions } from "../actions.ts";
 import { initialAppState } from "../appState.ts";
 import { createAppState } from "../testSupport/createAppState.ts";
 import { update } from "../update.ts";
-
-const mediaScreenState = (mediaId: string) =>
-  createAppState({}, { screen: { kind: "media", projectId: "p1", mediaId } });
+import { interiorSeekTime } from "./interiorSeekTime.ts";
 
 describe("update", () => {
   it("stores the current time for playerTimeChanged", () => {
@@ -57,6 +55,26 @@ describe("update", () => {
   it("returns a seekPlayer effect for seekRequested", () => {
     const [, effects] = update(initialAppState, actions.seekRequested(12_500));
     expect(effects).toEqual([{ type: "seekPlayer", ms: 12_500 }]);
+  });
+
+  it("returns a seekPlayer effect half a frame past the moment for momentSeekRequested", () => {
+    const [, effects] = update(
+      createAppState({
+        playback: { kind: "direct", url: "blob:x", frameDurationMs: 40 },
+      }),
+      actions.momentSeekRequested(1000),
+    );
+    expect(effects).toEqual([{ type: "seekPlayer", ms: 1020 }]);
+  });
+
+  it("falls back to the default frame duration for momentSeekRequested while the frame duration is unknown", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.momentSeekRequested(1000),
+    );
+    expect(effects).toEqual([
+      { type: "seekPlayer", ms: interiorSeekTime(1000, undefined) },
+    ]);
   });
 
   describe("when skipping", () => {
@@ -115,38 +133,19 @@ describe("update", () => {
 
   it("returns a setPlayerLoop effect for loopRequested", () => {
     const [, effects] = update(initialAppState, actions.loopRequested(null));
-    expect(effects).toEqual([{ type: "setPlayerLoop", range: null }]);
+    expect(effects).toEqual([{ type: "setPlayerLoop", loop: null }]);
   });
 
-  describe("when the media is open", () => {
-    it("stores the URL for mediaUrlResolved", () => {
-      const [state] = update(
-        mediaScreenState("m1"),
-        actions.mediaUrlResolved("m1", "blob:x"),
-      );
-      expect(state.player.mediaUrl).toBe("blob:x");
-    });
-
-    it("stores the message for mediaUrlFailed", () => {
-      const [state] = update(
-        mediaScreenState("m1"),
-        actions.mediaUrlFailed("m1", "gone"),
-      );
-      expect(state.player.mediaUrlError).toBe("gone");
-    });
-  });
-
-  describe("when other media is open", () => {
-    it("ignores mediaUrlResolved", () => {
-      const before = mediaScreenState("m2");
-      const [state] = update(before, actions.mediaUrlResolved("m1", "blob:x"));
-      expect(state).toBe(before);
-    });
-
-    it("ignores mediaUrlFailed", () => {
-      const before = mediaScreenState("m2");
-      const [state] = update(before, actions.mediaUrlFailed("m1", "gone"));
-      expect(state).toBe(before);
-    });
+  it("returns a setPlayerLoop effect that restarts half a frame into the range for loopRequested", () => {
+    const range = { start_ms: 1000, end_ms: 2000 };
+    const [, effects] = update(
+      createAppState({
+        playback: { kind: "direct", url: "blob:x", frameDurationMs: 40 },
+      }),
+      actions.loopRequested(range),
+    );
+    expect(effects).toEqual([
+      { type: "setPlayerLoop", loop: { range, restartMs: 1020 } },
+    ]);
   });
 });

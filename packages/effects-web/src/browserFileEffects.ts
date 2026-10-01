@@ -3,13 +3,13 @@ import type { MediaFile } from "@easyimmerse/types";
 import type { BrowserFileStore } from "./browserFileStore.ts";
 
 /**
- * Builds the effect that gives the player an object URL for media stored in the browser.
+ * Builds the effect that has the player load media stored in the browser directly from an object URL.
  * Rejects for media the browser does not hold.
  * Only one media file is open at a time, so each URL is revoked when the next one is made.
  */
-export function createResolveMediaUrl(
+export function createResolveMediaPlayback(
   store: BrowserFileStore,
-): Effects["resolveMediaUrl"] {
+): Effects["resolveMediaPlayback"] {
   let currentUrl: string | null = null;
   return async (_projectId, media) => {
     const blob = await findStoredMedia(store, media);
@@ -17,7 +17,7 @@ export function createResolveMediaUrl(
       throw new Error(`${media.name} is not stored in this browser.`);
     if (currentUrl !== null) URL.revokeObjectURL(currentUrl);
     currentUrl = URL.createObjectURL(blob);
-    return currentUrl;
+    return { kind: "direct", url: currentUrl };
   };
 }
 

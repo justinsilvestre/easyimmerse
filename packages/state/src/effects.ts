@@ -1,13 +1,15 @@
-import type { MediaFile, TimeRange } from "@easyimmerse/types";
+import type { MediaFile } from "@easyimmerse/types";
 import type { FilePickPurpose, PickedFile } from "./filePick/chosenFile.ts";
+import type { MediaPlayback } from "./player/mediaPlayback.ts";
+import type { PlayerLoop } from "./player/playerLoop.ts";
 
 /** Every side effect the app can perform. Each platform implements it; tests use a recording fake. Media times are in milliseconds. */
 export interface Effects {
   seekPlayer(ms: number): void;
   playPlayer(): void;
   pausePlayer(): void;
-  /** Makes the player repeat the range, or stop repeating when given null. */
-  setPlayerLoop(range: TimeRange | null): void;
+  /** Makes the player repeat the loop, or stop repeating when given null. */
+  setPlayerLoop(loop: PlayerLoop | null): void;
   setPlaybackRate(rate: number): void;
   /** Sets the volume, from 0 to 1. */
   setVolume(volume: number): void;
@@ -18,8 +20,11 @@ export interface Effects {
     purpose: FilePickPurpose,
     accept: readonly string[],
   ): Promise<PickedFile | null>;
-  /** Resolves a URL the player can load the media from. */
-  resolveMediaUrl(projectId: string, media: MediaFile): Promise<string>;
+  /** Resolves how the player loads the media. */
+  resolveMediaPlayback(
+    projectId: string,
+    media: MediaFile,
+  ): Promise<MediaPlayback>;
   /** Reads the text of a file the browser stored under the key. */
   readStoredFileText(key: string): Promise<string>;
   /** Reads the bytes of a file the browser stored under the key. */

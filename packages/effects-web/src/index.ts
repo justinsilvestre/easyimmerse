@@ -2,7 +2,7 @@ import type { Effects, PlayerRegistry } from "@easyimmerse/state";
 import {
   createReadStoredFileBytes,
   createReadStoredFileText,
-  createResolveMediaUrl,
+  createResolveMediaPlayback,
 } from "./browserFileEffects.ts";
 import { createBrowserFileStore } from "./browserFileStore.ts";
 import { copyToClipboard } from "./copyToClipboard.ts";
@@ -23,7 +23,7 @@ export function createWebEffects(options: {
   return {
     ...createPlayerEffects(options.playerRegistry),
     pickFile: createPickFile(files),
-    resolveMediaUrl: createResolveMediaUrl(files),
+    resolveMediaPlayback: createResolveMediaPlayback(files),
     readStoredFileText: createReadStoredFileText(files),
     readStoredFileBytes: createReadStoredFileBytes(files),
     savePreference: preferences.save,

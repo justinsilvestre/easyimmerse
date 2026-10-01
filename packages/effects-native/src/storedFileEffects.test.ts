@@ -1,7 +1,7 @@
 import type { MediaFile } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import {
-  createResolveMediaUrl,
+  createResolveMediaPlayback,
   readStoredFileBytes,
   readStoredFileText,
 } from "./storedFileEffects.ts";
@@ -18,19 +18,20 @@ const createMedia = (source: MediaFile["source"]): MediaFile => ({
   added_at: "2026-01-01T00:00:00Z",
 });
 
-describe("createResolveMediaUrl", () => {
-  it("resolves the server's stream URL for media on disk", async () => {
+describe("createResolveMediaPlayback", () => {
+  it("resolves a direct playback of the server's stream URL for media on disk", async () => {
     const media = createMedia({ kind: "path", path: "/episode.mp4" });
-    expect(await createResolveMediaUrl(server)("p1", media)).toBe(
-      "http://127.0.0.1:8787/projects/p1/media/m1/stream?token=secret",
-    );
+    expect(await createResolveMediaPlayback(server)("p1", media)).toEqual({
+      kind: "direct",
+      url: "http://127.0.0.1:8787/projects/p1/media/m1/stream?token=secret",
+    });
   });
 
   it("rejects for media stored in a browser", async () => {
     const media = createMedia({ kind: "browser_file", key: "k1" });
-    await expect(createResolveMediaUrl(server)("p1", media)).rejects.toThrow(
-      "episode.mp4",
-    );
+    await expect(
+      createResolveMediaPlayback(server)("p1", media),
+    ).rejects.toThrow("episode.mp4");
   });
 });
 

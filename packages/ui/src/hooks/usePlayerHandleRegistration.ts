@@ -1,5 +1,4 @@
-import type { PlayerHandle } from "@easyimmerse/state";
-import type { TimeRange } from "@easyimmerse/types";
+import type { PlayerHandle, PlayerLoop } from "@easyimmerse/state";
 import { type RefObject, useCallback } from "react";
 import { usePlayerRegistry } from "../playerRegistryContext.ts";
 import { keepWithinLoop } from "./keepWithinLoop.ts";
@@ -10,7 +9,7 @@ import { keepWithinLoop } from "./keepWithinLoop.ts";
  */
 export function usePlayerHandleRegistration(
   media: RefObject<HTMLMediaElement | null>,
-  loop: RefObject<TimeRange | null>,
+  loop: RefObject<PlayerLoop | null>,
 ) {
   const registry = usePlayerRegistry();
   return useCallback(
@@ -31,11 +30,11 @@ export function usePlayerHandleRegistration(
 
 /**
  * Builds a handle on the element. The loop is kept in the ref for the element's timeupdate handler to enforce,
- * and setting it while the time lies outside it seeks to its start right away.
+ * and setting it while the time lies outside it seeks to its restart time right away.
  */
 function createMediaElementHandle(
   element: HTMLMediaElement,
-  loop: RefObject<TimeRange | null>,
+  loop: RefObject<PlayerLoop | null>,
 ): PlayerHandle {
   return {
     seek: (ms) => {
@@ -46,9 +45,9 @@ function createMediaElementHandle(
       element.play()?.catch(() => undefined);
     },
     pause: () => element.pause(),
-    setLoop: (range) => {
-      loop.current = range;
-      keepWithinLoop(element, range);
+    setLoop: (next) => {
+      loop.current = next;
+      keepWithinLoop(element, next);
     },
     setPlaybackRate: (rate) => {
       element.playbackRate = rate;

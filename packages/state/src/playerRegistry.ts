@@ -1,12 +1,12 @@
-import type { TimeRange } from "@easyimmerse/types";
+import type { PlayerLoop } from "./player/playerLoop.ts";
 
 /** Controls a mounted player. Times are in milliseconds. */
 export type PlayerHandle = {
   seek(ms: number): void;
   play(): void;
   pause(): void;
-  /** Makes the player repeat the range, or stop repeating when given null. */
-  setLoop(range: TimeRange | null): void;
+  /** Makes the player repeat the loop, or stop repeating when given null. */
+  setLoop(loop: PlayerLoop | null): void;
   setPlaybackRate(rate: number): void;
   /** Sets the volume, from 0 to 1. */
   setVolume(volume: number): void;

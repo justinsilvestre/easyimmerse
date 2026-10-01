@@ -1,11 +1,15 @@
 import type { WordHover } from "@easyimmerse/state";
 import { actions, selectPlayer } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
+import { ConversionNotice } from "../components/ConversionNotice.tsx";
 import { MediaView } from "../components/MediaView.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 
-/** Plays the open video or audio with its subtitles, and reports when the media cannot be loaded. */
+/**
+ * Plays the open video or audio with its subtitles, and reports when the media cannot be loaded.
+ * Before media that converts as it plays starts, it asks the user to confirm the conversion notice.
+ */
 export function MediaScreenPlayer({
   kind,
   targetCues,
@@ -18,17 +22,26 @@ export function MediaScreenPlayer({
   onWordActivated: (hover: WordHover) => void;
 }) {
   const dispatch = useAppDispatch();
-  const { mediaUrl, mediaUrlError } = useAppSelector(selectPlayer);
+  const { playback, heldPlayback, playbackError } =
+    useAppSelector(selectPlayer);
   return (
     <>
-      {mediaUrlError && (
+      {playbackError && (
         <p role="alert" className="bg-red-50 px-4 py-2 text-sm text-red-800">
-          Could not load the media: {mediaUrlError}
+          Could not load the media: {playbackError}
         </p>
+      )}
+      {heldPlayback && (
+        <ConversionNotice
+          onPlay={(dontShowAgain) =>
+            dispatch(actions.conversionNoticeConfirmed(dontShowAgain))
+          }
+          onCancel={() => dispatch(actions.mediaClosed())}
+        />
       )}
       <MediaView
         kind={kind}
-        src={mediaUrl ?? ""}
+        src={playback?.url ?? ""}
         targetCues={targetCues}
         translationCues={translationCues}
         onWordActivated={onWordActivated}

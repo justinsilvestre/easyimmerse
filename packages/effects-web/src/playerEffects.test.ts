@@ -8,7 +8,7 @@ function createRecordingHandle(calls: string[]): PlayerHandle {
     seek: (ms) => calls.push(`seek ${ms}`),
     play: () => calls.push("play"),
     pause: () => calls.push("pause"),
-    setLoop: (range) => calls.push(`loop ${range?.start_ms ?? "off"}`),
+    setLoop: (loop) => calls.push(`loop ${loop?.restartMs ?? "off"}`),
     setPlaybackRate: (rate) => calls.push(`rate ${rate}`),
     setVolume: (volume) => calls.push(`volume ${volume}`),
     captureFrame: () => "data:image/png;base64,AA",
@@ -28,14 +28,17 @@ describe("createPlayerEffects", () => {
     effects.seekPlayer(1500);
     effects.playPlayer();
     effects.pausePlayer();
-    effects.setPlayerLoop({ start_ms: 100, end_ms: 200 });
+    effects.setPlayerLoop({
+      range: { start_ms: 100, end_ms: 200 },
+      restartMs: 108,
+    });
     effects.setPlaybackRate(0.5);
     effects.setVolume(0.25);
     expect(calls).toEqual([
       "seek 1500",
       "play",
       "pause",
-      "loop 100",
+      "loop 108",
       "rate 0.5",
       "volume 0.25",
     ]);

@@ -1,17 +1,19 @@
-import type { MediaFile, TimeRange } from "@easyimmerse/types";
+import type { MediaFile } from "@easyimmerse/types";
 import type { Effects } from "./effects.ts";
 import type { FilePickPurpose, PickedFile } from "./filePick/chosenFile.ts";
+import type { MediaPlayback } from "./player/mediaPlayback.ts";
+import type { PlayerLoop } from "./player/playerLoop.ts";
 
 export type EffectCall =
   | { type: "seekPlayer"; ms: number }
   | { type: "playPlayer" }
   | { type: "pausePlayer" }
-  | { type: "setPlayerLoop"; range: TimeRange | null }
+  | { type: "setPlayerLoop"; loop: PlayerLoop | null }
   | { type: "setPlaybackRate"; rate: number }
   | { type: "setVolume"; volume: number }
   | { type: "captureFrame" }
   | { type: "pickFile"; purpose: FilePickPurpose; accept: readonly string[] }
-  | { type: "resolveMediaUrl"; projectId: string; media: MediaFile }
+  | { type: "resolveMediaPlayback"; projectId: string; media: MediaFile }
   | { type: "readStoredFileText"; key: string }
   | { type: "readStoredFileBytes"; key: string }
   | { type: "savePreference"; key: string; value: string }
@@ -29,6 +31,8 @@ export type RecordingEffects = Effects & {
   storedFileTexts: Map<string, string>;
   /** The bytes readStoredFileBytes returns, by key. It rejects for a key not in the map. Tests may seed it. */
   storedFileBytes: Map<string, Uint8Array>;
+  /** What resolveMediaPlayback resolves: a direct playback of `blob:test` until a test sets it. */
+  mediaPlayback: MediaPlayback;
   /** What captureFrame resolves. Null until a test sets it. */
   frameDataUrl: string | null;
   /** Settles the pending pickFile promise. Throws when no pick is pending. */
@@ -42,7 +46,7 @@ type PendingPick = {
   reject: (error: Error) => void;
 };
 
-/** Builds an Effects implementation for tests that records calls instead of performing them. resolveMediaUrl resolves `blob:test`. */
+/** Builds an Effects implementation for tests that records calls instead of performing them. */
 export function createRecordingEffects(): RecordingEffects {
   const calls: EffectCall[] = [];
   const record = (call: EffectCall) => {
@@ -60,11 +64,12 @@ export function createRecordingEffects(): RecordingEffects {
     preferences: new Map(),
     storedFileTexts: new Map(),
     storedFileBytes: new Map(),
+    mediaPlayback: { kind: "direct", url: "blob:test" },
     frameDataUrl: null,
     seekPlayer: (ms) => record({ type: "seekPlayer", ms }),
     playPlayer: () => record({ type: "playPlayer" }),
     pausePlayer: () => record({ type: "pausePlayer" }),
-    setPlayerLoop: (range) => record({ type: "setPlayerLoop", range }),
+    setPlayerLoop: (loop) => record({ type: "setPlayerLoop", loop }),
     setPlaybackRate: (rate) => record({ type: "setPlaybackRate", rate }),
     setVolume: (volume) => record({ type: "setVolume", volume }),
     captureFrame: async () => {
@@ -77,9 +82,9 @@ export function createRecordingEffects(): RecordingEffects {
         pendingPick = { resolve, reject };
       });
     },
-    resolveMediaUrl: async (projectId, media) => {
-      record({ type: "resolveMediaUrl", projectId, media });
-      return "blob:test";
+    resolveMediaPlayback: async (projectId, media) => {
+      record({ type: "resolveMediaPlayback", projectId, media });
+      return effects.mediaPlayback;
     },
     readStoredFileText: async (key) => {
       record({ type: "readStoredFileText", key });

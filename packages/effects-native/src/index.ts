@@ -8,7 +8,7 @@ import { pickFile } from "./pickFile.ts";
 import { createServerPreferenceStore } from "./serverPreferenceStore.ts";
 import { createShowNotification } from "./showNotification.ts";
 import {
-  createResolveMediaUrl,
+  createResolveMediaPlayback,
   readStoredFileBytes,
   readStoredFileText,
 } from "./storedFileEffects.ts";
@@ -29,7 +29,7 @@ export function createNativeEffects(options: {
   return {
     ...webEffects,
     pickFile,
-    resolveMediaUrl: createResolveMediaUrl(options.server),
+    resolveMediaPlayback: createResolveMediaPlayback(options.server),
     readStoredFileText,
     readStoredFileBytes,
     savePreference: preferences.save,

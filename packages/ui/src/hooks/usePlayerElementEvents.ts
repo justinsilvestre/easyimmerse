@@ -1,5 +1,5 @@
+import type { PlayerLoop } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
-import type { TimeRange } from "@easyimmerse/types";
 import type { RefObject, SyntheticEvent } from "react";
 import { keepWithinLoop, toMs } from "./keepWithinLoop.ts";
 import { useAppDispatch } from "./useAppDispatch.ts";
@@ -8,9 +8,9 @@ type MediaEvent = SyntheticEvent<HTMLMediaElement>;
 
 /**
  * Returns event handlers for a media element that report its time, duration, and playing state to the store.
- * The time handler also repeats the loop in the ref, seeking back to its start once the time leaves it.
+ * The time handler also repeats the loop in the ref, seeking back to its restart time once the time leaves it.
  */
-export function usePlayerElementEvents(loop: RefObject<TimeRange | null>) {
+export function usePlayerElementEvents(loop: RefObject<PlayerLoop | null>) {
   const dispatch = useAppDispatch();
   return {
     onTimeUpdate: ({ currentTarget }: MediaEvent) => {

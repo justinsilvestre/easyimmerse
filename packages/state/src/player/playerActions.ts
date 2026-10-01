@@ -1,4 +1,5 @@
 import type { TimeRange } from "@easyimmerse/types";
+import type { MediaPlayback } from "./mediaPlayback.ts";
 
 /** Actions about the media player. Times are in milliseconds. */
 export const playerActions = {
@@ -13,6 +14,9 @@ export const playerActions = {
   pauseRequested: () => ({ type: "pauseRequested" }) as const,
   togglePlayRequested: () => ({ type: "togglePlayRequested" }) as const,
   seekRequested: (ms: number) => ({ type: "seekRequested", ms }) as const,
+  /** Seeks to a meaningful moment, such as a cue start, landing inside the frame shown at that moment. */
+  momentSeekRequested: (ms: number) =>
+    ({ type: "momentSeekRequested", ms }) as const,
   /** Seeks forward by the delta, or backward when it is negative. */
   skipRequested: (deltaMs: number) =>
     ({ type: "skipRequested", deltaMs }) as const,
@@ -22,8 +26,11 @@ export const playerActions = {
     ({ type: "volumeChanged", volume }) as const,
   loopRequested: (range: TimeRange | null) =>
     ({ type: "loopRequested", range }) as const,
-  mediaUrlResolved: (mediaId: string, url: string) =>
-    ({ type: "mediaUrlResolved", mediaId, url }) as const,
-  mediaUrlFailed: (mediaId: string, message: string) =>
-    ({ type: "mediaUrlFailed", mediaId, message }) as const,
+  mediaPlaybackResolved: (mediaId: string, playback: MediaPlayback) =>
+    ({ type: "mediaPlaybackResolved", mediaId, playback }) as const,
+  mediaPlaybackFailed: (mediaId: string, message: string) =>
+    ({ type: "mediaPlaybackFailed", mediaId, message }) as const,
+  /** Starts a playback held for the conversion notice. The user may ask not to see the notice again. */
+  conversionNoticeConfirmed: (dontShowAgain: boolean) =>
+    ({ type: "conversionNoticeConfirmed", dontShowAgain }) as const,
 };

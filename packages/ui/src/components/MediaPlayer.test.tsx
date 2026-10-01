@@ -31,6 +31,11 @@ function renderPlayer(kind: "video" | "audio" = "video") {
   return { ...rendered, element };
 }
 
+const oneSecondLoop = {
+  range: { start_ms: 1000, end_ms: 2000 },
+  restartMs: 1010,
+};
+
 function readHandle(handle: PlayerHandle | null): PlayerHandle {
   if (handle === null) throw new Error("No player is registered.");
   return handle;
@@ -124,41 +129,40 @@ describe("MediaPlayer", () => {
       expect(element.volume).toBe(0.25);
     });
 
-    it("seeks back to the loop start once the time reaches the loop end", () => {
+    it("seeks back to the loop's restart time once the time reaches the loop end", () => {
       const { element, playerRegistry } = renderPlayer();
-      readHandle(playerRegistry.current()).setLoop({
-        start_ms: 1000,
-        end_ms: 2000,
-      });
+      readHandle(playerRegistry.current()).setLoop(oneSecondLoop);
       element.currentTime = 2.1;
       fireEvent.timeUpdate(element);
-      expect(element.currentTime).toBe(1);
+      expect(element.currentTime).toBe(1.01);
     });
 
-    it("seeks to the loop start when the loop is set while past its end", () => {
+    it("seeks to the loop's restart time when the loop is set while past its end", () => {
       const { element, playerRegistry } = renderPlayer();
       element.currentTime = 2.5;
-      readHandle(playerRegistry.current()).setLoop({
-        start_ms: 1000,
-        end_ms: 2000,
-      });
-      expect(element.currentTime).toBe(1);
+      readHandle(playerRegistry.current()).setLoop(oneSecondLoop);
+      expect(element.currentTime).toBe(1.01);
     });
 
-    it("seeks to the loop start when the loop is set while before it", () => {
+    it("seeks to the loop's restart time when the loop is set while before it", () => {
       const { element, playerRegistry } = renderPlayer();
       element.currentTime = 0.5;
-      readHandle(playerRegistry.current()).setLoop({
-        start_ms: 1000,
-        end_ms: 2000,
-      });
-      expect(element.currentTime).toBe(1);
+      readHandle(playerRegistry.current()).setLoop(oneSecondLoop);
+      expect(element.currentTime).toBe(1.01);
+    });
+
+    it("keeps a time inside the loop that lies before its restart time", () => {
+      const { element, playerRegistry } = renderPlayer();
+      readHandle(playerRegistry.current()).setLoop(oneSecondLoop);
+      element.currentTime = 1.005;
+      fireEvent.timeUpdate(element);
+      expect(element.currentTime).toBe(1.005);
     });
 
     it("stops repeating once the loop is cleared", () => {
       const { element, playerRegistry } = renderPlayer();
       const handle = readHandle(playerRegistry.current());
-      handle.setLoop({ start_ms: 1000, end_ms: 2000 });
+      handle.setLoop(oneSecondLoop);
       handle.setLoop(null);
       element.currentTime = 2.1;
       fireEvent.timeUpdate(element);

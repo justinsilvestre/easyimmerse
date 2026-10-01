@@ -144,17 +144,17 @@ describe("update", () => {
 
     it("stops the previous media's loop before anything else", () => {
       const [, effects] = openMedia();
-      expect(effects[0]).toEqual({ type: "setPlayerLoop", range: null });
+      expect(effects[0]).toEqual({ type: "setPlayerLoop", loop: null });
     });
 
-    it("resolves the media URL and reads only the subtitle files stored in the browser", () => {
+    it("resolves the media playback and reads only the subtitle files stored in the browser", () => {
       const media = mediaWithTracks();
       const [, effects] = update(
         initialAppState,
         actions.mediaOpened("p1", media),
       );
       expect(effects).toEqual([
-        { type: "resolveMediaUrl", projectId: "p1", media },
+        { type: "resolveMediaPlayback", projectId: "p1", media },
         { type: "readStoredFileText", trackId: "t1", key: "k1" },
       ]);
     });
@@ -179,7 +179,7 @@ describe("update", () => {
     it("stops the loop and pauses for mediaClosed", () => {
       const [, effects] = update(busyMediaState(), actions.mediaClosed());
       expect(effects).toEqual([
-        { type: "setPlayerLoop", range: null },
+        { type: "setPlayerLoop", loop: null },
         { type: "pausePlayer" },
       ]);
     });
