@@ -10,8 +10,8 @@ export type PlayerHandle = {
   setPlaybackRate(rate: number): void;
   /** Sets the volume, from 0 to 1. */
   setVolume(volume: number): void;
-  /** Returns a PNG data URL of the current video frame, or null when there is no frame. */
-  captureFrame(): string | null;
+  /** Resolves a PNG data URL of the current video frame once any pending seek finishes, or null when there is no frame. */
+  captureFrame(): Promise<string | null>;
 };
 
 export type PlayerRegistry = {

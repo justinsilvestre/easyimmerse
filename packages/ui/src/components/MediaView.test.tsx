@@ -21,7 +21,7 @@ function renderView(
   return renderWithAppStore(
     <MediaView
       kind={kind}
-      src="/sample"
+      playback={{ kind: "direct", url: "/sample" }}
       targetCues={targetCues}
       translationCues={null}
       onWordActivated={() => undefined}

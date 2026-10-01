@@ -11,7 +11,7 @@ function createRecordingHandle(calls: string[]): PlayerHandle {
     setLoop: (loop) => calls.push(`loop ${loop?.restartMs ?? "off"}`),
     setPlaybackRate: (rate) => calls.push(`rate ${rate}`),
     setVolume: (volume) => calls.push(`volume ${volume}`),
-    captureFrame: () => "data:image/png;base64,AA",
+    captureFrame: async () => "data:image/png;base64,AA",
   };
 }
 

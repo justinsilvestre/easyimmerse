@@ -69,6 +69,12 @@ describe("update", () => {
     });
   });
 
+  it("stores the message for playerStreamFailed", () => {
+    const before = mediaScreenState("m1", { playback: converted });
+    const [state] = update(before, actions.playerStreamFailed("stalled"));
+    expect(state.player.playbackError).toBe("stalled");
+  });
+
   describe("when other media is open", () => {
     it("ignores mediaPlaybackResolved", () => {
       const before = mediaScreenState("m2");

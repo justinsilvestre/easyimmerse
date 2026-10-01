@@ -41,7 +41,7 @@ export function MediaScreenPlayer({
       )}
       <MediaView
         kind={kind}
-        src={playback?.url ?? ""}
+        playback={playback}
         targetCues={targetCues}
         translationCues={translationCues}
         onWordActivated={onWordActivated}

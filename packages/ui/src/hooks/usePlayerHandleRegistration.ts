@@ -2,6 +2,10 @@ import type { PlayerHandle, PlayerLoop } from "@easyimmerse/state";
 import { type RefObject, useCallback } from "react";
 import { usePlayerRegistry } from "../playerRegistryContext.ts";
 import { keepWithinLoop } from "./keepWithinLoop.ts";
+import { waitForSeek } from "./waitForSeek.ts";
+
+/** How long a frame capture waits for a pending seek. A seek in a converted stream can wait for the server to produce a segment. */
+const seekTimeoutMs = 5000;
 
 /**
  * Returns a ref callback for the media element. It keeps the element in `media` and registers a handle on it while it is mounted.
@@ -57,8 +61,11 @@ function createMediaElementHandle(
     setVolume: (volume) => {
       element.volume = volume;
     },
-    captureFrame: () =>
-      element instanceof HTMLVideoElement ? captureVideoFrame(element) : null,
+    captureFrame: async () =>
+      element instanceof HTMLVideoElement &&
+      (await waitForSeek(element, seekTimeoutMs))
+        ? captureVideoFrame(element)
+        : null,
   };
 }
 

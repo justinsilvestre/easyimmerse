@@ -1,7 +1,8 @@
-import type { PlayerLoop } from "@easyimmerse/state";
+import type { MediaPlayback, PlayerLoop } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
 import { type ReactNode, useRef } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useHlsPlayback } from "../hooks/useHlsPlayback.ts";
 import { usePlayerElementEvents } from "../hooks/usePlayerElementEvents.ts";
 import { usePlayerHandleRegistration } from "../hooks/usePlayerHandleRegistration.ts";
 import { usePlayerSettingsSync } from "../hooks/usePlayerSettingsSync.ts";
@@ -10,15 +11,15 @@ import { AudioArtwork } from "./AudioArtwork.tsx";
 /**
  * Plays video or audio and registers itself as the app's player, reporting its time, duration, and playing state to the store.
  * The children, such as subtitles, show over the bottom of a video or below the artwork of audio.
- * An empty src renders the player without media.
+ * It plays a direct URL as the element's source and an HLS stream through hls.js. Without a playback it renders the player without media.
  */
 export function MediaPlayer({
   kind,
-  src,
+  playback,
   children,
 }: {
   kind: "video" | "audio";
-  src: string;
+  playback: MediaPlayback | null;
   children?: ReactNode;
 }) {
   const dispatch = useAppDispatch();
@@ -27,8 +28,8 @@ export function MediaPlayer({
   const attachMedia = usePlayerHandleRegistration(media, loop);
   usePlayerSettingsSync(media);
   const events = usePlayerElementEvents(loop);
-  // An empty src would make the browser request the page itself as media.
-  const mediaSrc = src === "" ? undefined : src;
+  useHlsPlayback(media, playback?.kind === "hls" ? playback : null);
+  const mediaSrc = playback?.kind === "direct" ? playback.url : undefined;
   if (kind === "audio")
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-black px-4 py-8">

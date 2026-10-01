@@ -16,9 +16,25 @@ import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { MediaScreen } from "./MediaScreen.tsx";
 
+const loadedStreamUrls = vi.hoisted(() => [] as string[]);
+
+vi.mock("hls.js", () => ({
+  default: class {
+    static Events = { ERROR: "hlsError" };
+    static isSupported = () => true;
+    on() {}
+    loadSource(url: string) {
+      loadedStreamUrls.push(url);
+    }
+    attachMedia() {}
+    destroy() {}
+  },
+}));
+
 afterEach(() => {
   cleanup();
   resetBackend();
+  loadedStreamUrls.length = 0;
 });
 
 const [video, , book] = fixtureProject.media as [
@@ -180,9 +196,10 @@ describe("MediaScreen", () => {
     it("loads the converted media into the player once Play is clicked", async () => {
       renderConvertedMediaScreen();
       await clickNoticeButton("Play");
-      expect(document.querySelector("video")?.getAttribute("src")).toBe(
-        convertedPlayback.url,
-      );
+      await act(async () => {
+        await vi.dynamicImportSettled();
+      });
+      expect(loadedStreamUrls).toEqual([convertedPlayback.url]);
     });
 
     it("saves the dismissal when Play is clicked after ticking Don't show this again", async () => {

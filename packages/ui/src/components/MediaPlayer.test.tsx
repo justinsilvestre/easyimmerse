@@ -3,12 +3,13 @@ import type { PlayerHandle } from "@easyimmerse/state";
 import { actions, selectPlayer } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { type ReactNode, useEffect } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { usePlayerRegistry } from "../playerRegistryContext.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import {
   stubCanvasEncoding,
   stubMediaDuration,
+  stubMediaSeeking,
   stubVideoFrameSize,
 } from "../testSupport/stubMediaElement.ts";
 import { MediaPlayer } from "./MediaPlayer.tsx";
@@ -22,7 +23,10 @@ function renderPlayer(kind: "video" | "audio" = "video") {
   const rendered = renderWithAppStore(
     <MediaPlayer
       kind={kind}
-      src={`/sample.${kind === "video" ? "mp4" : "mp3"}`}
+      playback={{
+        kind: "direct",
+        url: `/sample.${kind === "video" ? "mp4" : "mp3"}`,
+      }}
     />,
   );
   const element = document.querySelector(kind);
@@ -30,6 +34,8 @@ function renderPlayer(kind: "video" | "audio" = "video") {
     throw new Error(`No ${kind} element was rendered.`);
   return { ...rendered, element };
 }
+
+const frameDataUrl = "data:image/png;base64,AAAA";
 
 const oneSecondLoop = {
   range: { start_ms: 1000, end_ms: 2000 },
@@ -76,7 +82,10 @@ describe("MediaPlayer", () => {
     const seen: (PlayerHandle | null)[] = [];
     renderWithAppStore(
       <ReadPlayerOnMount seen={seen}>
-        <MediaPlayer kind="video" src="/sample.mp4" />
+        <MediaPlayer
+          kind="video"
+          playback={{ kind: "direct", url: "/sample.mp4" }}
+        />
       </ReadPlayerOnMount>,
     );
     expect(seen[0]).not.toBeNull();
@@ -169,23 +178,59 @@ describe("MediaPlayer", () => {
       expect(element.currentTime).toBe(2.1);
     });
 
-    it("captures the current video frame as a PNG data URL", () => {
+    it("captures the current video frame as a PNG data URL", async () => {
       const { element, playerRegistry } = renderPlayer("video");
       stubVideoFrameSize(element as HTMLVideoElement, 320, 180);
-      const restoreCanvas = stubCanvasEncoding("data:image/png;base64,AAAA");
-      const frame = readHandle(playerRegistry.current()).captureFrame();
+      const restoreCanvas = stubCanvasEncoding(frameDataUrl);
+      const frame = await readHandle(playerRegistry.current()).captureFrame();
       restoreCanvas();
-      expect(frame).toBe("data:image/png;base64,AAAA");
+      expect(frame).toBe(frameDataUrl);
     });
 
-    it("captures no frame before the video has one", () => {
+    it("captures no frame before the video has one", async () => {
       const { playerRegistry } = renderPlayer("video");
-      expect(readHandle(playerRegistry.current()).captureFrame()).toBeNull();
+      expect(
+        await readHandle(playerRegistry.current()).captureFrame(),
+      ).toBeNull();
     });
 
-    it("captures no frame for audio", () => {
+    it("captures no frame for audio", async () => {
       const { playerRegistry } = renderPlayer("audio");
-      expect(readHandle(playerRegistry.current()).captureFrame()).toBeNull();
+      expect(
+        await readHandle(playerRegistry.current()).captureFrame(),
+      ).toBeNull();
+    });
+
+    describe("while a seek is pending", () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it("captures the frame once the seek finishes", async () => {
+        const { element, playerRegistry } = renderPlayer("video");
+        stubMediaSeeking(element, true);
+        const frame = readHandle(playerRegistry.current()).captureFrame();
+        stubVideoFrameSize(element as HTMLVideoElement, 320, 180);
+        const restoreCanvas = stubCanvasEncoding(frameDataUrl);
+        stubMediaSeeking(element, false);
+        fireEvent.seeked(element);
+        const captured = await frame;
+        restoreCanvas();
+        expect(captured).toBe(frameDataUrl);
+      });
+
+      it("captures no frame when the seek does not finish in time", async () => {
+        vi.useFakeTimers();
+        const { element, playerRegistry } = renderPlayer("video");
+        stubVideoFrameSize(element as HTMLVideoElement, 320, 180);
+        const restoreCanvas = stubCanvasEncoding(frameDataUrl);
+        stubMediaSeeking(element, true);
+        const frame = readHandle(playerRegistry.current()).captureFrame();
+        await vi.runAllTimersAsync();
+        const captured = await frame;
+        restoreCanvas();
+        expect(captured).toBeNull();
+      });
     });
   });
 

@@ -14,6 +14,10 @@ export const playbackHandlers = {
       : state,
     [],
   ],
+  playerStreamFailed: (state, { message }) => [
+    withPlayer(state, { playbackError: message }),
+    [],
+  ],
   conversionNoticeConfirmed: (state, { dontShowAgain }) => {
     const { heldPlayback } = state.player;
     if (heldPlayback === null) return [state, []];

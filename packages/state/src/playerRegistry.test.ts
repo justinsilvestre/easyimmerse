@@ -9,7 +9,7 @@ const createHandle = (): PlayerHandle => ({
   setLoop: () => undefined,
   setPlaybackRate: () => undefined,
   setVolume: () => undefined,
-  captureFrame: () => null,
+  captureFrame: async () => null,
 });
 
 describe("createPlayerRegistry", () => {

@@ -1,4 +1,4 @@
-import type { WordHover } from "@easyimmerse/state";
+import type { MediaPlayback, WordHover } from "@easyimmerse/state";
 import { selectSubtitles } from "@easyimmerse/state";
 import type { Cue, SubtitleRole } from "@easyimmerse/types";
 import clsx from "clsx";
@@ -17,7 +17,7 @@ import { SubtitlesPanel } from "./SubtitlesPanel.tsx";
  */
 export function MediaView({
   kind,
-  src,
+  playback,
   targetCues,
   translationCues,
   onWordActivated,
@@ -25,7 +25,7 @@ export function MediaView({
   onGenerateSubtitles,
 }: {
   kind: "video" | "audio";
-  src: string;
+  playback: MediaPlayback | null;
   targetCues: readonly Cue[] | null;
   translationCues: readonly Cue[] | null;
   onWordActivated: (hover: WordHover) => void;
@@ -63,7 +63,7 @@ export function MediaView({
     >
       {kind === "audio" && panel}
       <div className="flex min-w-0 flex-1 flex-col">
-        <MediaPlayer kind={kind} src={src}>
+        <MediaPlayer kind={kind} playback={playback}>
           <SubtitlesOverlay
             targetCues={targetCues}
             translationCues={translationCues}
