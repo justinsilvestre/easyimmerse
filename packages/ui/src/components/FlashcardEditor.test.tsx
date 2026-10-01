@@ -204,6 +204,14 @@ describe("FlashcardEditor", () => {
       expect(saved).toHaveLength(1);
     });
 
+    it("includes a tag still typed in the tags input on Ctrl+Enter", () => {
+      const { saved } = renderEditor();
+      const input = screen.getByRole("textbox", { name: "Tags" });
+      fireEvent.change(input, { target: { value: "noun" } });
+      fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
+      expect(saved[0]?.[0].tags).toEqual(["noun"]);
+    });
+
     it("saves on Cmd+Enter", () => {
       const { saved } = renderEditor();
       fireEvent.keyDown(document, { key: "Enter", metaKey: true });

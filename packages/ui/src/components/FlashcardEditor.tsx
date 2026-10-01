@@ -1,6 +1,7 @@
 import {
   actions,
   type FlashcardEditorState,
+  type RootState,
   selectFlashcardEditor,
   selectLookup,
 } from "@easyimmerse/state";
@@ -8,6 +9,7 @@ import type { NewFlashcard } from "@easyimmerse/types";
 import { useEffect, useId, useRef } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { useAppStore } from "../hooks/useAppStore.ts";
 import { useDocumentListener } from "../hooks/useDocumentListener.ts";
 import { useFocusTrap } from "../hooks/useFocusTrap.ts";
 import { FlashcardEditorFooter } from "./FlashcardEditorFooter.tsx";
@@ -39,11 +41,16 @@ function OpenFlashcardEditor({
   editor: Extract<FlashcardEditorState, { kind: "editing" }>;
 }) {
   const dispatch = useAppDispatch();
+  const store = useAppStore();
   const isLookupOpen = useAppSelector(selectLookup).kind === "open";
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   const cancel = () => dispatch(actions.flashcardEditorClosed());
-  const save = () => onSave(card, flashcardId);
+  // The card is read from the store rather than from this render,
+  // because a shortcut can reach the document after a field's own handler changed the card
+  // but before the change has rendered.
+  const save = () =>
+    onSave(selectEditedCard(store.getState()) ?? card, flashcardId);
   useEffect(() => panel.current?.focus(), []);
   useFocusTrap(panel);
   useDocumentListener("keydown", (event) => {
@@ -89,4 +96,9 @@ function OpenFlashcardEditor({
       </div>
     </div>
   );
+}
+
+function selectEditedCard(state: RootState): NewFlashcard | null {
+  const editor = selectFlashcardEditor(state);
+  return editor.kind === "editing" ? editor.card : null;
 }
