@@ -11,7 +11,10 @@ export function usePlayerSettingsSync(
   );
   const volume = useAppSelector((state) => selectPlayer(state).volume);
   useEffect(() => {
-    if (media.current !== null) media.current.playbackRate = playbackRate;
+    if (media.current === null) return;
+    media.current.playbackRate = playbackRate;
+    // Loading new media resets the rate to the default, so the default follows too.
+    media.current.defaultPlaybackRate = playbackRate;
   }, [media, playbackRate]);
   useEffect(() => {
     if (media.current !== null) media.current.volume = volume;

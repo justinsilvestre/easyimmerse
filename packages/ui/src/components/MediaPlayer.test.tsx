@@ -112,6 +112,12 @@ describe("MediaPlayer", () => {
       expect(element.playbackRate).toBe(1.5);
     });
 
+    it("keeps the playback rate for later loads as the element's default rate", () => {
+      const { element, playerRegistry } = renderPlayer();
+      readHandle(playerRegistry.current()).setPlaybackRate(1.5);
+      expect(element.defaultPlaybackRate).toBe(1.5);
+    });
+
     it("sets the element's volume", () => {
       const { element, playerRegistry } = renderPlayer();
       readHandle(playerRegistry.current()).setVolume(0.25);
