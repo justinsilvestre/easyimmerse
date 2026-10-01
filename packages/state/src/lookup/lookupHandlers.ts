@@ -7,21 +7,44 @@ import { closedLookup, willResumeOnClose } from "./lookupState.ts";
 type OpenLookup = Extract<LookupState, { kind: "open" }>;
 
 /** The fields of an open lookup that the action supplies. */
-type LookupRequest = Pick<OpenLookup, "term" | "context" | "clip" | "typed">;
+type LookupRequest = Pick<
+  OpenLookup,
+  "term" | "context" | "clip" | "typed" | "preferredReading"
+>;
 
 export const lookupHandlers = {
   wordHovered: (state, { word, context, clip }) =>
-    openLookup(state, { term: word, context, clip, typed: false }),
+    openLookup(state, {
+      term: word,
+      context,
+      clip,
+      typed: false,
+      preferredReading: null,
+    }),
   lookupOpenedForTyping: (state) =>
-    openLookup(state, { term: "", context: null, clip: null, typed: true }),
-  lookupTermTyped: (state, { term }) => [
-    state.lookup.kind === "open"
-      ? { ...state, lookup: { ...state.lookup, term } }
-      : state,
+    openLookup(state, {
+      term: "",
+      context: null,
+      clip: null,
+      typed: true,
+      preferredReading: null,
+    }),
+  lookupTermTyped: (state, { term }) => [changeTerm(state, term, null), []],
+  lookupReferenceFollowed: (state, { term, reading }) => [
+    changeTerm(state, term, reading),
     [],
   ],
   lookupClosed: closeLookup,
 } satisfies Partial<UpdateHandlers>;
+
+function changeTerm(
+  state: AppState,
+  term: string,
+  preferredReading: string | null,
+): AppState {
+  if (state.lookup.kind === "closed") return state;
+  return { ...state, lookup: { ...state.lookup, term, preferredReading } };
+}
 
 /**
  * Opens the pop-up in place of any open one.

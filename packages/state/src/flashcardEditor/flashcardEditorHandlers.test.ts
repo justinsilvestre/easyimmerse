@@ -49,6 +49,7 @@ describe("update", () => {
             context: null,
             clip: null,
             typed: false,
+            preferredReading: null,
             resumePlaybackOnClose: true,
           },
         },

@@ -30,6 +30,7 @@ const withLookup = (
     context: null,
     clip,
     typed: false,
+    preferredReading: null,
     resumePlaybackOnClose,
   };
   return createAppState({}, { lookup, ...changes });
@@ -44,6 +45,7 @@ describe("update", () => {
       context: "Die Katze schläft.",
       clip,
       typed: false,
+      preferredReading: null,
       resumePlaybackOnClose: false,
     });
   });
@@ -103,6 +105,31 @@ describe("update", () => {
       expect(state.lookup).toMatchObject({ term: "Hund" });
     });
 
+    it("forgets the preferred reading for lookupTermTyped", () => {
+      const [followed] = update(
+        withLookup(false),
+        actions.lookupReferenceFollowed({ term: "犬", reading: "いぬ" }),
+      );
+      const [state] = update(followed, actions.lookupTermTyped("Hund"));
+      expect(state.lookup).toMatchObject({ preferredReading: null });
+    });
+
+    it("changes the term for lookupReferenceFollowed", () => {
+      const [state] = update(
+        withLookup(false),
+        actions.lookupReferenceFollowed({ term: "犬", reading: null }),
+      );
+      expect(state.lookup).toMatchObject({ term: "犬" });
+    });
+
+    it("prefers the referenced reading for lookupReferenceFollowed", () => {
+      const [state] = update(
+        withLookup(false),
+        actions.lookupReferenceFollowed({ term: "犬", reading: "いぬ" }),
+      );
+      expect(state.lookup).toMatchObject({ preferredReading: "いぬ" });
+    });
+
     it("closes the lookup for lookupClosed", () => {
       const [state] = update(withLookup(false), actions.lookupClosed());
       expect(state.lookup).toEqual({ kind: "closed" });
@@ -153,6 +180,14 @@ describe("update", () => {
   describe("when no lookup is open", () => {
     it("leaves state unchanged for lookupTermTyped", () => {
       const [state] = update(initialAppState, actions.lookupTermTyped("Hund"));
+      expect(state).toBe(initialAppState);
+    });
+
+    it("leaves state unchanged for lookupReferenceFollowed", () => {
+      const [state] = update(
+        initialAppState,
+        actions.lookupReferenceFollowed({ term: "犬", reading: null }),
+      );
       expect(state).toBe(initialAppState);
     });
 

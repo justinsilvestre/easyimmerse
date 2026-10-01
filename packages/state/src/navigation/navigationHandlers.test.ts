@@ -55,6 +55,7 @@ const busyMediaState = () =>
         context: null,
         clip: null,
         typed: false,
+        preferredReading: null,
         resumePlaybackOnClose: true,
       },
       flashcardEditor: createEditingFlashcardEditor(),

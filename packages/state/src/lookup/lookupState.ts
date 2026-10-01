@@ -12,6 +12,8 @@ export type LookupState =
       clip: TimeRange | null;
       /** Whether the user is typing the term rather than hovering a word. */
       typed: boolean;
+      /** The reading whose entries come first, when the term came from a dictionary's cross-reference that names one. */
+      preferredReading: string | null;
       /** Whether media was playing when the pop-up opened, so that it plays again once the pop-up closes. */
       resumePlaybackOnClose: boolean;
     };

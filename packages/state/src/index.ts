@@ -26,7 +26,7 @@ export type {
 export type { FlashcardEditorState } from "./flashcardEditor/flashcardEditorState.ts";
 export { flashcardFieldOrder } from "./flashcardEditor/flashcardFieldOrder.ts";
 export { guessMediaKind, mediaExtensions } from "./guessMediaKind.ts";
-export type { WordHover } from "./lookup/lookupActions.ts";
+export type { LookupReference, WordHover } from "./lookup/lookupActions.ts";
 export type { LookupState } from "./lookup/lookupState.ts";
 export type { Screen } from "./navigation/screen.ts";
 export type { PlayerState } from "./player/playerState.ts";
