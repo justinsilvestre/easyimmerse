@@ -59,29 +59,11 @@ pub fn now_ms() -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use easyimmerse_media::{MediaTimeline, Timebase};
-
     use super::*;
+    use crate::test_support;
 
     fn manifest() -> Manifest {
-        let timeline = MediaTimeline {
-            timebase: Timebase::new(1, 1000).expect("nonzero timebase"),
-            start_pts: 0,
-            duration_ticks: 10_000,
-        };
-        Manifest {
-            source_path: PathBuf::from("/media/episode.mkv"),
-            source_size: 1000,
-            source_modified_ms: 5,
-            plan: ConversionPlan {
-                video: None,
-                audio: None,
-            },
-            video_track: None,
-            segment_plan: SegmentPlan::fixed_length(timeline),
-            created_ms: 10,
-            last_access_ms: 20,
-        }
+        test_support::manifest("/media/episode.mkv")
     }
 
     #[tokio::test]

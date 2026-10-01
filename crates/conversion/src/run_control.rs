@@ -1,5 +1,7 @@
 //! The state of a conversion's ffmpeg runs that requests and run watchers share.
 
+use std::time::{Duration, Instant};
+
 use tokio::task::JoinHandle;
 
 use crate::run_decision::RunProgress;
@@ -17,6 +19,8 @@ pub struct RunControl {
     pub run: Option<CurrentRun>,
     /// The most recently requested segment, which the current run writes ahead of.
     pub requested: u32,
+    /// When a request last used the conversion.
+    pub last_used: Option<Instant>,
     next_run_number: u64,
     pub is_shut_down: bool,
     pub watchers: Vec<JoinHandle<()>>,
@@ -30,6 +34,15 @@ pub struct CurrentRun {
 }
 
 impl RunControl {
+    /// Tells whether a run is active or a request used the conversion within `window`.
+    /// A replaced run counts as active until its watcher ends, since it may still move segments into the cache.
+    pub fn is_in_use(&self, window: Duration) -> bool {
+        let is_running = self.run.as_ref().is_some_and(|run| run.progress.is_running);
+        let is_watched = self.watchers.iter().any(|watcher| !watcher.is_finished());
+        let was_used = self.last_used.is_some_and(|used| used.elapsed() < window);
+        is_running || is_watched || was_used
+    }
+
     /// Returns the current run if it has the given number.
     pub fn current_run(&mut self, run_number: u64) -> Option<&mut CurrentRun> {
         self.run.as_mut().filter(|run| run.number == run_number)
@@ -68,6 +81,15 @@ impl RunControl {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn is_in_use_while_a_replaced_run_is_still_watched() {
+        let mut control = RunControl::default();
+        control
+            .watchers
+            .push(tokio::spawn(std::future::pending::<()>()));
+        assert!(control.is_in_use(Duration::ZERO));
+    }
 
     #[test]
     fn numbers_runs_in_the_order_they_begin() {

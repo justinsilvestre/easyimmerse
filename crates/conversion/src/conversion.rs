@@ -1,6 +1,7 @@
 //! The shared state of one registered conversion: its manifest and the progress of its current ffmpeg run.
 
 use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::time::{Duration, Instant};
 
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
@@ -49,6 +50,23 @@ impl Conversion {
 
     pub fn requested(&self) -> u32 {
         self.control().requested
+    }
+
+    /// Records that a request used the conversion.
+    pub fn mark_used(&self) {
+        self.control().last_used = Some(Instant::now());
+    }
+
+    /// Tells whether ffmpeg is running for the conversion or a request used it within `window`.
+    pub fn is_in_use(&self, window: Duration) -> bool {
+        self.control().is_in_use(window)
+    }
+
+    /// Runs `action` unless the conversion is in use, and keeps requests from using the conversion until it finishes.
+    /// Returns `None` when the conversion is in use.
+    pub fn unless_in_use<T>(&self, window: Duration, action: impl FnOnce() -> T) -> Option<T> {
+        let control = self.control();
+        (!control.is_in_use(window)).then(action)
     }
 
     /// Decides whether a request for an uncached segment waits for the current run or starts a new one, and reserves the new run.
@@ -120,8 +138,10 @@ impl Conversion {
     }
 
     /// Records in the manifest that the entry was just used.
+    /// Recreates the entry directory when the entry was removed from the cache while registered.
     pub async fn touch(&self) -> Result<(), ConversionError> {
         let _write = self.manifest_writes.lock().await;
+        tokio::fs::create_dir_all(&self.entry.dir).await?;
         let manifest = Manifest {
             last_access_ms: now_ms(),
             ..self.manifest.clone()
@@ -136,36 +156,15 @@ impl Conversion {
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
-
-    use easyimmerse_media::playback::ConversionPlan;
-    use easyimmerse_media::{MediaTimeline, SegmentPlan, Timebase};
+    use std::path::Path;
 
     use super::*;
-    use crate::key::ConversionKey;
+    use crate::test_support::{key, manifest};
 
     /// A conversion of 4-second segments over 20 minutes.
     fn conversion() -> Conversion {
-        let key = ConversionKey::parse(&"0".repeat(64)).expect("valid key");
-        let timeline = MediaTimeline {
-            timebase: Timebase::new(1, 1000).expect("nonzero timebase"),
-            start_pts: 0,
-            duration_ticks: 1_200_000,
-        };
-        let manifest = Manifest {
-            source_path: PathBuf::from("/media/episode.mkv"),
-            source_size: 1000,
-            source_modified_ms: 5,
-            plan: ConversionPlan {
-                video: None,
-                audio: None,
-            },
-            video_track: None,
-            segment_plan: SegmentPlan::fixed_length(timeline),
-            created_ms: 10,
-            last_access_ms: 20,
-        };
-        Conversion::new(EntryPaths::new(Path::new("/cache"), &key), manifest)
+        let entry = EntryPaths::new(Path::new("/cache"), &key('0'));
+        Conversion::new(entry, manifest("/media/episode.mkv"))
     }
 
     fn start_index(step: Result<Step, ConversionError>) -> Option<u32> {
@@ -206,6 +205,51 @@ mod tests {
         let _ = conversion.next_step(50, None, true);
         let _ = conversion.next_step(200, None, true);
         assert!(conversion.should_stop(0));
+    }
+
+    #[test]
+    fn is_in_use_while_ffmpeg_runs() {
+        let conversion = conversion();
+        let _ = conversion.next_step(50, None, true);
+        assert!(conversion.is_in_use(Duration::ZERO));
+    }
+
+    #[test]
+    fn is_in_use_shortly_after_a_request() {
+        let conversion = conversion();
+        conversion.mark_used();
+        assert!(conversion.is_in_use(Duration::from_secs(60)));
+    }
+
+    #[test]
+    fn is_not_in_use_once_the_window_after_a_request_has_passed() {
+        let conversion = conversion();
+        conversion.mark_used();
+        assert!(!conversion.is_in_use(Duration::ZERO));
+    }
+
+    #[test]
+    fn is_not_in_use_after_its_run_has_ended() {
+        let conversion = conversion();
+        let _ = conversion.next_step(50, None, true);
+        conversion.finish_run(0, None);
+        assert!(!conversion.is_in_use(Duration::ZERO));
+    }
+
+    #[test]
+    fn skips_an_action_while_in_use() {
+        let conversion = conversion();
+        conversion.mark_used();
+        assert_eq!(
+            conversion.unless_in_use(Duration::from_secs(60), || 1),
+            None
+        );
+    }
+
+    #[test]
+    fn runs_an_action_when_not_in_use() {
+        let conversion = conversion();
+        assert_eq!(conversion.unless_in_use(Duration::ZERO, || 1), Some(1));
     }
 
     #[test]

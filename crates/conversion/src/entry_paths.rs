@@ -8,6 +8,8 @@ use crate::key::ConversionKey;
 
 const CONVERSIONS_DIR: &str = "conversions";
 const MANIFEST_NAME: &str = "manifest.json";
+const RUN_DIR_PREFIX: &str = "run-";
+const TEMPORARY_EXTENSION: &str = ".tmp";
 
 /// The paths of a cache entry's manifest, init segment, media segments, and run directories.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -18,7 +20,7 @@ pub struct EntryPaths {
 impl EntryPaths {
     pub fn new(cache_dir: &Path, key: &ConversionKey) -> Self {
         EntryPaths {
-            dir: cache_dir.join(CONVERSIONS_DIR).join(key.as_str()),
+            dir: conversions_dir(cache_dir).join(key.as_str()),
         }
     }
 
@@ -37,8 +39,18 @@ impl EntryPaths {
 
     /// The directory where one ffmpeg run writes its output before the segments move into the entry.
     pub fn run_dir(&self, run_number: u64) -> PathBuf {
-        self.dir.join(format!("run-{run_number}"))
+        self.dir.join(format!("{RUN_DIR_PREFIX}{run_number}"))
     }
+}
+
+/// The directory that holds every cache entry.
+pub fn conversions_dir(cache_dir: &Path) -> PathBuf {
+    cache_dir.join(CONVERSIONS_DIR)
+}
+
+/// Tells whether a file or directory inside an entry holds unfinished output: a run directory or a file being written.
+pub fn is_temporary(file_name: &str) -> bool {
+    file_name.starts_with(RUN_DIR_PREFIX) || file_name.ends_with(TEMPORARY_EXTENSION)
 }
 
 #[cfg(test)]
@@ -64,5 +76,20 @@ mod tests {
     #[test]
     fn numbers_run_directories() {
         assert_eq!(paths().run_dir(3), paths().dir.join("run-3"));
+    }
+
+    #[test]
+    fn treats_a_run_directory_as_temporary() {
+        assert!(is_temporary("run-3"));
+    }
+
+    #[test]
+    fn treats_a_manifest_being_written_as_temporary() {
+        assert!(is_temporary("manifest.json.tmp"));
+    }
+
+    #[test]
+    fn keeps_a_cached_segment() {
+        assert!(!is_temporary("seg-7.m4s"));
     }
 }

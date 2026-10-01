@@ -130,6 +130,11 @@ impl Storage {
         })
     }
 
+    /// Lists the distinct local file paths that media files in any project are read from.
+    pub fn list_local_media_paths(&self) -> Result<Vec<String>, StorageError> {
+        self.with_connection(|conn| media_files::list_local_media_paths(conn))
+    }
+
     pub fn remove_media_file(
         &self,
         project_id: &ProjectId,

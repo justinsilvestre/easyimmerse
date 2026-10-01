@@ -1,4 +1,4 @@
-use easyimmerse_core::media_file::{MediaFile, MediaId, NewMediaFile};
+use easyimmerse_core::media_file::{MediaFile, MediaId, MediaSource, NewMediaFile};
 use easyimmerse_core::project::ProjectId;
 use rusqlite::{Connection, OptionalExtension, params};
 
@@ -91,6 +91,21 @@ pub fn remove_media_file(
         params![media_id.0, project_id.0],
     )?;
     require_changed_row(changed, StorageError::MediaNotFound(media_id.0.clone()))
+}
+
+/// Lists the distinct local file paths that media files in any project are read from.
+pub fn list_local_media_paths(conn: &Connection) -> Result<Vec<String>, StorageError> {
+    let mut statement = conn.prepare("SELECT DISTINCT source_json FROM media_files")?;
+    let sources = statement
+        .query_map([], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut paths = Vec::new();
+    for source in sources {
+        if let MediaSource::Path { path } = serde_json::from_str(&source)? {
+            paths.push(path);
+        }
+    }
+    Ok(paths)
 }
 
 pub fn ensure_media_exists(
@@ -260,6 +275,49 @@ mod tests {
             storage.remove_media_file(&project_id, &missing()),
             Err(StorageError::MediaNotFound(_))
         ));
+    }
+
+    #[test]
+    fn lists_the_local_paths_of_media_in_every_project() {
+        let (storage, _, _) = storage_with_media();
+        let other = storage.create_project(&settings(), NOW).unwrap().id;
+        storage
+            .add_media_file(&other, &video("b.mp4"), NOW)
+            .unwrap();
+        let mut paths = storage.list_local_media_paths().unwrap();
+        paths.sort();
+        assert_eq!(paths, vec!["/videos/a.mp4", "/videos/b.mp4"]);
+    }
+
+    #[test]
+    fn lists_a_local_path_shared_by_two_media_files_once() {
+        let (storage, _, _) = storage_with_media();
+        let other = storage.create_project(&settings(), NOW).unwrap().id;
+        storage
+            .add_media_file(&other, &video("a.mp4"), NOW)
+            .unwrap();
+        assert_eq!(
+            storage.list_local_media_paths().unwrap(),
+            vec!["/videos/a.mp4"]
+        );
+    }
+
+    #[test]
+    fn leaves_browser_files_out_of_the_local_paths() {
+        let (storage, project_id, _) = storage_with_media();
+        let browser_file = NewMediaFile {
+            source: MediaSource::BrowserFile {
+                key: "b".to_string(),
+            },
+            ..video("b.mp4")
+        };
+        storage
+            .add_media_file(&project_id, &browser_file, NOW)
+            .unwrap();
+        assert_eq!(
+            storage.list_local_media_paths().unwrap(),
+            vec!["/videos/a.mp4"]
+        );
     }
 
     #[test]

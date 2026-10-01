@@ -1,8 +1,12 @@
 //! The conversion service: registers conversions and serves their playlists and segments, converting on demand.
 
+mod maintenance;
+mod removal;
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::time::Instant;
 
 use easyimmerse_media::playback::ConversionPlan;
 use easyimmerse_media::{ContainerInfo, render_hls_playlist};
@@ -28,6 +32,9 @@ struct ServiceInner {
     ffmpeg_paths: FfmpegPaths,
     settings: RunSettings,
     conversions: Mutex<HashMap<ConversionKey, Arc<Conversion>>>,
+    /// Held while the cache is cleaned up or trimmed, so that only one such task runs at a time.
+    maintenance: tokio::sync::Mutex<()>,
+    next_limit_check: Mutex<Instant>,
 }
 
 impl ConversionService {
@@ -38,13 +45,14 @@ impl ConversionService {
             ffmpeg,
             aac_encoder: AacEncoder::for_current_platform(),
         };
-        let conversions = Mutex::default();
         Ok(ConversionService {
             inner: Arc::new(ServiceInner {
                 cache_dir,
                 ffmpeg_paths,
                 settings,
-                conversions,
+                conversions: Mutex::default(),
+                maintenance: tokio::sync::Mutex::default(),
+                next_limit_check: Mutex::new(Instant::now()),
             }),
         })
     }
@@ -60,6 +68,7 @@ impl ConversionService {
         let source = read_source_identity(source_path).await?;
         let key = derive_key(&source, plan)?;
         if let Some(conversion) = self.find(&key) {
+            conversion.mark_used();
             conversion.touch().await?;
             return Ok(key);
         }
@@ -68,9 +77,9 @@ impl ConversionService {
             Some(manifest) => manifest,
             None => create_manifest(&source, container, plan, &self.inner.ffmpeg_paths).await?,
         };
-        tokio::fs::create_dir_all(&entry.dir).await?;
         let conversion = Arc::new(Conversion::new(entry, manifest));
         let conversion = Arc::clone(self.conversions().entry(key.clone()).or_insert(conversion));
+        conversion.mark_used();
         conversion.touch().await?;
         Ok(key)
     }
@@ -91,6 +100,7 @@ impl ConversionService {
     }
 
     /// Returns the path of a cached media segment, converting the part of the file around it when necessary.
+    /// Serving segments also keeps the cache within its size limit.
     pub async fn segment(
         &self,
         key: &ConversionKey,
@@ -103,7 +113,9 @@ impl ConversionService {
         }
         conversion.note_request(index);
         let path = conversion.entry.segment(index);
-        wait_until_cached(&conversion, &self.inner.settings, path, index).await
+        let cached = wait_until_cached(&conversion, &self.inner.settings, path, index).await?;
+        self.enforce_limit_when_due();
+        Ok(cached)
     }
 
     /// Stops every ffmpeg process and waits for the run directories to be removed. Later requests fail.
@@ -118,7 +130,9 @@ impl ConversionService {
     }
 
     fn get(&self, key: &ConversionKey) -> Result<Arc<Conversion>, ConversionError> {
-        self.find(key).ok_or(ConversionError::UnknownConversion)
+        let conversion = self.find(key).ok_or(ConversionError::UnknownConversion)?;
+        conversion.mark_used();
+        Ok(conversion)
     }
 
     fn find(&self, key: &ConversionKey) -> Option<Arc<Conversion>> {
@@ -133,6 +147,12 @@ impl ConversionService {
 impl ServiceInner {
     fn conversions(&self) -> MutexGuard<'_, HashMap<ConversionKey, Arc<Conversion>>> {
         self.conversions
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+    }
+
+    fn next_limit_check(&self) -> MutexGuard<'_, Instant> {
+        self.next_limit_check
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
     }

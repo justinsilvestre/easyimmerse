@@ -4,6 +4,7 @@
 pub mod auth;
 pub mod clock;
 pub mod config;
+pub mod conversion_cleanup;
 pub mod conversion_setup;
 pub mod local_path;
 pub mod media_probe;

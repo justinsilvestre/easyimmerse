@@ -1,8 +1,9 @@
 //! Converts the fixtures through the conversion service with a real ffmpeg.
 
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use easyimmerse_conversion::{ConversionKey, ConversionService, EntryPaths};
+use easyimmerse_conversion::{ConversionError, ConversionKey, ConversionService, EntryPaths};
 use easyimmerse_media::playback::{AudioTarget, ConversionPlan, TrackAction, TrackConversion};
 use easyimmerse_media::{ContainerInfo, TrackKind, read_first_decode_times, read_track_timescales};
 use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary, probe_file};
@@ -214,6 +215,87 @@ async fn fetches_a_late_segment_of_audio_alone() {
     };
     let seconds = first_decode_seconds(&setup, 2).await;
     assert!((seconds - 8.023).abs() < 0.1, "{seconds}");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn keeps_a_registered_conversion_when_cleaning_up() {
+    let Some(setup) = set_up("conversion.mkv").await else {
+        return;
+    };
+    let segment = setup
+        .service
+        .segment(&setup.key, 0)
+        .await
+        .expect("segment 0");
+    setup
+        .service
+        .clean_up(HashSet::new())
+        .await
+        .expect("clean up");
+    assert!(segment.exists());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn removes_the_entry_of_an_unknown_source_when_cleaning_up_at_startup() {
+    let Some(setup) = set_up("conversion.mkv").await else {
+        return;
+    };
+    setup
+        .service
+        .segment(&setup.key, 0)
+        .await
+        .expect("segment 0");
+    setup.service.shutdown().await;
+    let restarted = ConversionService::new(setup.cache.path().to_owned(), FfmpegPaths::default())
+        .expect("ffmpeg found");
+    restarted.clean_up(HashSet::new()).await.expect("clean up");
+    assert!(!EntryPaths::new(setup.cache.path(), &setup.key).dir.exists());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn removes_the_entry_of_a_removed_source() {
+    let Some(setup) = set_up("conversion.mkv").await else {
+        return;
+    };
+    setup
+        .service
+        .segment(&setup.key, 0)
+        .await
+        .expect("segment 0");
+    let source = fixture_path("conversion.mkv");
+    setup.service.remove_source(&source).await.expect("remove");
+    assert!(!EntryPaths::new(setup.cache.path(), &setup.key).dir.exists());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn forgets_the_conversions_of_a_removed_source() {
+    let Some(setup) = set_up("conversion.mkv").await else {
+        return;
+    };
+    let source = fixture_path("conversion.mkv");
+    setup.service.remove_source(&source).await.expect("remove");
+    let result = setup.service.segment(&setup.key, 0).await;
+    assert!(matches!(result, Err(ConversionError::UnknownConversion)));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn serves_a_segment_again_after_its_entry_is_removed_from_disk() {
+    let Some(setup) = set_up("conversion.mkv").await else {
+        return;
+    };
+    setup
+        .service
+        .segment(&setup.key, 0)
+        .await
+        .expect("segment 0");
+    let entry = EntryPaths::new(setup.cache.path(), &setup.key);
+    std::fs::remove_dir_all(&entry.dir).expect("remove entry");
+    let segment = setup
+        .service
+        .segment(&setup.key, 0)
+        .await
+        .expect("segment 0 again");
+    assert!(segment.is_file());
 }
 
 /// Writes a script that records that it ran and fails, standing in for ffmpeg.

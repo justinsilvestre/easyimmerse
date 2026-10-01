@@ -6,6 +6,7 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 
+use crate::conversion_cleanup::clean_up_conversion_cache;
 use crate::router::build_router;
 use crate::state::AppState;
 
@@ -41,9 +42,11 @@ impl ServerHandle {
 }
 
 /// Serves the API on an already bound listener, so that the caller knows the port.
+/// Cleans up the conversion cache in the background meanwhile.
 pub async fn serve(listener: TcpListener, state: AppState) -> Result<ServerHandle, ServeError> {
     let addr = listener.local_addr()?;
     let conversions = state.conversions.clone();
+    tokio::spawn(clean_up_conversion_cache(state.clone()));
     let (router, _) = build_router(state);
     let (shutdown, shutdown_requested) = oneshot::channel();
     let server = axum::serve(listener, router).with_graceful_shutdown(async {
