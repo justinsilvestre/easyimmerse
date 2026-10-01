@@ -4,10 +4,17 @@
 //! method locks the connection for the duration of one operation.
 
 mod dictionaries;
+mod enum_text;
 mod error;
+mod flashcards;
+mod ids;
+mod media_files;
 mod migrations;
 mod preferences;
 mod projects;
+mod subtitle_tracks;
+#[cfg(test)]
+mod test_support;
 
 pub use dictionaries::{DictionaryId, StoredDictionary};
 pub use error::StorageError;
@@ -16,7 +23,11 @@ use std::path::Path;
 use std::sync::Mutex;
 
 use easyimmerse_core::dictionary::{Dictionary, TermEntry};
-use easyimmerse_core::project::ProjectSummary;
+use easyimmerse_core::flashcard::{Flashcard, FlashcardId, NewFlashcard};
+use easyimmerse_core::media_file::{
+    MediaFile, MediaId, NewMediaFile, NewSubtitleTrack, SubtitleTrack,
+};
+use easyimmerse_core::project::{Project, ProjectId, ProjectSettings, ProjectSummary};
 use rusqlite::Connection;
 
 pub struct Storage {
@@ -60,6 +71,126 @@ impl Storage {
         self.with_connection(|conn| projects::seed_placeholder_projects(conn))
     }
 
+    /// Creates a project. `now` is an RFC 3339 timestamp.
+    pub fn create_project(
+        &self,
+        settings: &ProjectSettings,
+        now: &str,
+    ) -> Result<Project, StorageError> {
+        self.with_connection(|conn| projects::create_project(conn, settings, now))
+    }
+
+    pub fn get_project(&self, id: &ProjectId) -> Result<Project, StorageError> {
+        self.with_connection(|conn| projects::get_project(conn, id))
+    }
+
+    pub fn update_project_settings(
+        &self,
+        id: &ProjectId,
+        settings: &ProjectSettings,
+    ) -> Result<Project, StorageError> {
+        self.with_connection(|conn| projects::update_project_settings(conn, id, settings))
+    }
+
+    /// Records that the project was opened. `now` is an RFC 3339 timestamp.
+    pub fn mark_project_opened(&self, id: &ProjectId, now: &str) -> Result<Project, StorageError> {
+        self.with_connection(|conn| projects::mark_project_opened(conn, id, now))
+    }
+
+    pub fn delete_project(&self, id: &ProjectId) -> Result<(), StorageError> {
+        self.with_connection(|conn| projects::delete_project(conn, id))
+    }
+
+    pub fn get_media_file(
+        &self,
+        project_id: &ProjectId,
+        media_id: &MediaId,
+    ) -> Result<MediaFile, StorageError> {
+        self.with_connection(|conn| media_files::get_media_file(conn, project_id, media_id))
+    }
+
+    /// Registers a media file in a project. `now` is an RFC 3339 timestamp.
+    pub fn add_media_file(
+        &self,
+        project_id: &ProjectId,
+        media: &NewMediaFile,
+        now: &str,
+    ) -> Result<MediaFile, StorageError> {
+        self.with_connection(|conn| media_files::add_media_file(conn, project_id, media, now))
+    }
+
+    pub fn set_media_duration(
+        &self,
+        project_id: &ProjectId,
+        media_id: &MediaId,
+        duration_ms: u64,
+    ) -> Result<MediaFile, StorageError> {
+        self.with_connection(|conn| {
+            media_files::set_media_duration(conn, project_id, media_id, duration_ms)
+        })
+    }
+
+    pub fn remove_media_file(
+        &self,
+        project_id: &ProjectId,
+        media_id: &MediaId,
+    ) -> Result<(), StorageError> {
+        self.with_connection(|conn| media_files::remove_media_file(conn, project_id, media_id))
+    }
+
+    pub fn add_subtitle_track(
+        &self,
+        project_id: &ProjectId,
+        media_id: &MediaId,
+        track: &NewSubtitleTrack,
+    ) -> Result<SubtitleTrack, StorageError> {
+        self.with_connection(|conn| {
+            subtitle_tracks::add_subtitle_track(conn, project_id, media_id, track)
+        })
+    }
+
+    pub fn remove_subtitle_track(
+        &self,
+        project_id: &ProjectId,
+        media_id: &MediaId,
+        track_id: &str,
+    ) -> Result<(), StorageError> {
+        self.with_connection(|conn| {
+            subtitle_tracks::remove_subtitle_track(conn, project_id, media_id, track_id)
+        })
+    }
+
+    pub fn list_flashcards(&self, project_id: &ProjectId) -> Result<Vec<Flashcard>, StorageError> {
+        self.with_connection(|conn| flashcards::list_flashcards(conn, project_id))
+    }
+
+    /// Saves a new flashcard. `now` is an RFC 3339 timestamp.
+    pub fn insert_flashcard(
+        &self,
+        project_id: &ProjectId,
+        card: &NewFlashcard,
+        now: &str,
+    ) -> Result<Flashcard, StorageError> {
+        self.with_connection(|conn| flashcards::insert_flashcard(conn, project_id, card, now))
+    }
+
+    pub fn update_flashcard(
+        &self,
+        project_id: &ProjectId,
+        id: &FlashcardId,
+        card: &NewFlashcard,
+    ) -> Result<Flashcard, StorageError> {
+        self.with_connection(|conn| flashcards::update_flashcard(conn, project_id, id, card))
+    }
+
+    pub fn delete_flashcard(
+        &self,
+        project_id: &ProjectId,
+        id: &FlashcardId,
+    ) -> Result<(), StorageError> {
+        self.with_connection(|conn| flashcards::delete_flashcard(conn, project_id, id))
+    }
+
     pub fn get_preference(&self, key: &str) -> Result<Option<String>, StorageError> {
         self.with_connection(|conn| preferences::get_preference(conn, key))
     }
@@ -82,6 +213,32 @@ impl Storage {
         term: &str,
     ) -> Result<Vec<TermEntry>, StorageError> {
         self.with_connection(|conn| dictionaries::lookup_term(conn, id, term))
+    }
+
+    pub fn get_dictionary(&self, id: &DictionaryId) -> Result<StoredDictionary, StorageError> {
+        self.with_connection(|conn| dictionaries::get_dictionary(conn, id))
+    }
+
+    pub fn lookup_term_everywhere(
+        &self,
+        term: &str,
+    ) -> Result<Vec<(StoredDictionary, Vec<TermEntry>)>, StorageError> {
+        self.with_connection(|conn| dictionaries::lookup_term_everywhere(conn, term))
+    }
+
+    pub fn set_dictionary_languages(
+        &self,
+        id: &DictionaryId,
+        source_language: Option<&str>,
+        target_language: Option<&str>,
+    ) -> Result<StoredDictionary, StorageError> {
+        self.with_connection(|conn| {
+            dictionaries::set_dictionary_languages(conn, id, source_language, target_language)
+        })
+    }
+
+    pub fn delete_dictionary(&self, id: &DictionaryId) -> Result<(), StorageError> {
+        self.with_connection(|conn| dictionaries::delete_dictionary(conn, id))
     }
 }
 

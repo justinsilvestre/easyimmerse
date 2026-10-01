@@ -9,6 +9,7 @@ pub static MIGRATIONS: LazyLock<Migrations<'static>> = LazyLock::new(|| {
         M::up(include_str!("sql/0002_preferences.sql")),
         M::up(include_str!("sql/0003_dictionaries.sql")),
         M::up(include_str!("sql/0004_project_settings.sql")),
+        M::up(include_str!("sql/0005_media_and_flashcards.sql")),
     ])
 });
 

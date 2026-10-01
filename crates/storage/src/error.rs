@@ -12,4 +12,17 @@ pub enum StorageError {
     LockPoisoned,
     #[error("no dictionary has the id {0:?}")]
     DictionaryNotFound(String),
+    #[error("no project has the id {0:?}")]
+    ProjectNotFound(String),
+    #[error("the project has no media file with the id {0:?}")]
+    MediaNotFound(String),
+    #[error("the project has no flashcard with the id {0:?}")]
+    FlashcardNotFound(String),
+    #[error("the media file has no subtitle track with the id {0:?}")]
+    SubtitleTrackNotFound(String),
+}
+
+/// Turns a statement that changed no rows into the given not-found error.
+pub fn require_changed_row(changed: usize, missing: StorageError) -> Result<(), StorageError> {
+    if changed == 0 { Err(missing) } else { Ok(()) }
 }
