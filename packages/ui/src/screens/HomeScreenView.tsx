@@ -30,33 +30,17 @@ export function HomeScreenView({
         </Button>
       </div>
       {error && <HomeScreenError message={error} />}
-      {loading ? (
+      {loading && (
         <p role="status" className="text-sm text-gray-500">
           Loading projects…
         </p>
-      ) : (
-        <HomeScreenProjects
-          projects={projects}
-          showsEmptyState={!error}
-          onOpenProject={onOpenProject}
-        />
       )}
+      {projects.length > 0 && (
+        <ProjectList projects={projects} onOpen={onOpenProject} />
+      )}
+      {projects.length === 0 && !loading && !error && <HomeScreenEmptyState />}
     </ScreenLayout>
   );
-}
-
-function HomeScreenProjects({
-  projects,
-  showsEmptyState,
-  onOpenProject,
-}: {
-  projects: readonly ProjectSummary[];
-  showsEmptyState: boolean;
-  onOpenProject: (projectId: string) => void;
-}) {
-  if (projects.length > 0)
-    return <ProjectList projects={projects} onOpen={onOpenProject} />;
-  return showsEmptyState ? <HomeScreenEmptyState /> : null;
 }
 
 function HomeScreenEmptyState() {
