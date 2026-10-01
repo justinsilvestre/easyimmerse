@@ -24,6 +24,7 @@ type DictionaryPopupProps = {
 /**
  * Shows the dictionary entries for the term in the lookup, in a compact panel that leaves the rest of the page usable.
  * Escape, the close button, or a mouse press outside the panel closes the lookup.
+ * A press on a word button is left to the word, which opens the lookup anew or makes a flashcard.
  */
 export function DictionaryPopup(props: DictionaryPopupProps) {
   const lookup = useAppSelector(selectLookup);
@@ -48,7 +49,8 @@ function OpenDictionaryPopup({
     if (event.key === "Escape") close();
   });
   useDocumentListener("mousedown", (event) => {
-    if (!panel.current?.contains(event.target as Node)) close();
+    if (!isPressOnWord(event) && !panel.current?.contains(event.target as Node))
+      close();
   });
   return (
     <div
@@ -76,5 +78,12 @@ function OpenDictionaryPopup({
         />
       </div>
     </div>
+  );
+}
+
+function isPressOnWord(event: MouseEvent): boolean {
+  return (
+    event.target instanceof Element &&
+    event.target.closest("[data-word]") !== null
   );
 }

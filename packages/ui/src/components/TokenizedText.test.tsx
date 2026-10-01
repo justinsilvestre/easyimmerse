@@ -10,6 +10,13 @@ describe("TokenizedText", () => {
     expect(screen.getAllByRole("button")).toHaveLength(4);
   });
 
+  it("marks each word button with a data-word attribute", () => {
+    render(<TokenizedText text="Good night." />);
+    expect(
+      screen.getByRole("button", { name: "night" }).hasAttribute("data-word"),
+    ).toBe(true);
+  });
+
   it("reports the hovered word", () => {
     const hovered: string[] = [];
     render(

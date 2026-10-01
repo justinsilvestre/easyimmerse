@@ -107,6 +107,14 @@ describe("DictionaryPopup", () => {
     expect(isLookupOpen(store)).toBe(false);
   });
 
+  it("stays open on a mouse press on a word button", () => {
+    const { store } = renderPopup();
+    const word = document.body.appendChild(document.createElement("button"));
+    word.setAttribute("data-word", "");
+    fireEvent.mouseDown(word);
+    expect(isLookupOpen(store)).toBe(true);
+  });
+
   it("stays open on a mouse press inside it", () => {
     const { store } = renderPopup();
     fireEvent.mouseDown(screen.getByRole("heading", { name: "Katze" }));
