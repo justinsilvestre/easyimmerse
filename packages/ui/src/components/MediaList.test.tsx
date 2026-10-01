@@ -89,6 +89,13 @@ describe("MediaList", () => {
         `Remove ${videoName}`,
       );
     });
+
+    it("cancels when Escape is pressed", () => {
+      renderMediaList();
+      askToRemoveVideo();
+      fireEvent.keyDown(screen.getByRole("alertdialog"), { key: "Escape" });
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
   });
 
   describe("with no media", () => {
