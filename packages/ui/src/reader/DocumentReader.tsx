@@ -7,7 +7,10 @@ import {
 import { ReaderTableOfContents } from "./ReaderTableOfContents.tsx";
 import { ReaderToolbar } from "./ReaderToolbar.tsx";
 import { defaultReaderSettings } from "./readerSettings.ts";
-import type { ReadingPosition } from "./readingPosition.ts";
+import {
+  clampReadingPosition,
+  type ReadingPosition,
+} from "./readingPosition.ts";
 import { useDocumentSearch } from "./useDocumentSearch.ts";
 import {
   paragraphIndexAttribute,
@@ -31,14 +34,17 @@ export function DocumentReader({
   onWordActivated,
 }: {
   document: Document;
+  /** The position to open at. Later changes to this prop are ignored, since the reader keeps its own position once open. */
   position: ReadingPosition;
   onPositionChanged: (position: ReadingPosition) => void;
   onWordHovered: (event: WordInContext) => void;
   onWordActivated: (event: WordInContext) => void;
 }) {
-  const [currentPosition, setCurrentPosition] = useState(position);
+  const [currentPosition, setCurrentPosition] = useState(() =>
+    clampReadingPosition(document, position),
+  );
   const [scrollRequest, setScrollRequest] = useState<ScrollRequest>({
-    position,
+    position: currentPosition,
     shouldFocusChapter: false,
   });
   const [settings, setSettings] = useState(defaultReaderSettings);

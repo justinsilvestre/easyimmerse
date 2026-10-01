@@ -13,7 +13,7 @@ afterEach(() => {
 type DocumentReaderProps = ComponentProps<typeof DocumentReader>;
 
 function renderReader(overrides: Partial<DocumentReaderProps> = {}) {
-  render(
+  return render(
     <DocumentReader
       document={fixtureDocument}
       position={{ chapterIndex: 0, paragraphIndex: 0 }}
@@ -47,6 +47,25 @@ describe("DocumentReader", () => {
   it("shows the chapter of the given position", () => {
     renderReader({ position: { chapterIndex: 1, paragraphIndex: 0 } });
     expect(getChapterHeading().textContent).toBe("Chapter Two");
+  });
+
+  it("shows the last chapter for a position past the end of the document", () => {
+    renderReader({ position: { chapterIndex: 9, paragraphIndex: 0 } });
+    expect(getChapterHeading().textContent).toBe("Chapter Two");
+  });
+
+  it("keeps its own position when the position prop changes later", () => {
+    const { rerender } = renderReader();
+    rerender(
+      <DocumentReader
+        document={fixtureDocument}
+        position={{ chapterIndex: 1, paragraphIndex: 0 }}
+        onPositionChanged={() => {}}
+        onWordHovered={() => {}}
+        onWordActivated={() => {}}
+      />,
+    );
+    expect(getChapterHeading().textContent).toBe("Chapter One");
   });
 
   describe("chapter navigation", () => {
@@ -107,6 +126,12 @@ describe("DocumentReader", () => {
       observers.reportVisible([0, 1]);
       expect(positions).toEqual([]);
     });
+
+    it("does not count a paragraph that only reaches into the top 48 pixels of the reading area", () => {
+      const observers = stubIntersectionObserver();
+      renderReader();
+      expect(observers.rootMargin).toBe("-48px 0px 0px 0px");
+    });
   });
 
   describe("word callbacks", () => {
@@ -126,12 +151,6 @@ describe("DocumentReader", () => {
       const activated: unknown[] = [];
       renderReader({ onWordActivated: (event) => activated.push(event) });
       clickButton("hungry");
-
-    it("does not count a paragraph that only reaches into the top 48 pixels of the reading area", () => {
-      const observers = stubIntersectionObserver();
-      renderReader();
-      expect(observers.rootMargin).toBe("-48px 0px 0px 0px");
-    });
       expect(activated).toEqual([
         { word: "hungry", context: "The dog wants to eat, and it is hungry." },
       ]);
@@ -222,6 +241,9 @@ function stubIntersectionObserver() {
   }
   vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
   return {
+    get rootMargin() {
+      return instances[0]?.options.rootMargin;
+    },
     reportVisible(paragraphIndices: number[]) {
       for (const observer of instances) {
         const entries = observer.targets.map((target) => {
@@ -239,6 +261,3 @@ function stubIntersectionObserver() {
     },
   };
 }
-    get rootMargin() {
-      return instances[0]?.options.rootMargin;
-    },
