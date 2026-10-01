@@ -12,7 +12,7 @@ const meta = {
   component: SubtitlesOverlay,
   decorators: [
     (Story) => (
-      <div className="flex h-64 w-[40rem] max-w-full items-end justify-center bg-linear-to-b from-slate-600 to-slate-900 p-6">
+      <div className="flex h-64 w-[min(40rem,calc(100vw-2rem))] items-end justify-center bg-linear-to-b from-slate-600 to-slate-900 p-6">
         <Story />
       </div>
     ),

@@ -10,7 +10,7 @@ const meta = {
   component: PlayerControls,
   decorators: [
     (Story) => (
-      <div className="w-[48rem] max-w-full">
+      <div className="w-[min(48rem,calc(100vw-2rem))]">
         <Story />
       </div>
     ),
