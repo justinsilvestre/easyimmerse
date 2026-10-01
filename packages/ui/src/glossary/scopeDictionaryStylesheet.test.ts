@@ -42,6 +42,18 @@ describe("scopeDictionaryStylesheet", () => {
       );
     });
 
+    it("ends a string at a carriage return, as browsers do", () => {
+      expect(sanitize('a{x:"\r}}*{color:red}"}')).toBe(
+        'a{x:"\n}*{color:red}"}"',
+      );
+    });
+
+    it("ends a string at a form feed, as browsers do", () => {
+      expect(sanitize('a{x:"\f}}*{color:red}"}')).toBe(
+        'a{x:"\n}*{color:red}"}"',
+      );
+    });
+
     it("closes a string left open at the end", () => {
       expect(sanitize('b { content: "a')).toBe('b { content: "a"}');
     });
@@ -76,6 +88,12 @@ describe("scopeDictionaryStylesheet", () => {
 
     it("replaces a url function written with escapes", () => {
       expect(sanitize("b { background: u\\72l(a.png); }")).toBe(
+        "b { background: none; }",
+      );
+    });
+
+    it("replaces a url function whose escape ends in a CRLF", () => {
+      expect(sanitize("b { background: \\75\r\nrl(a.png); }")).toBe(
         "b { background: none; }",
       );
     });

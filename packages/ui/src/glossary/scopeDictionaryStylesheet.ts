@@ -23,7 +23,15 @@ const plainImageDataUrl =
  * Rules and values that would load other files are removed, so that a dictionary cannot make the app fetch remote resources.
  */
 export function scopeDictionaryStylesheet(css: string): string {
-  return `@scope {\n${new StylesheetSanitizer(css).run()}\n}`;
+  return `@scope {\n${new StylesheetSanitizer(preprocess(css)).run()}\n}`;
+}
+
+/**
+ * Normalizes line breaks and null characters the way a browser does before it reads a stylesheet,
+ * so that the scanner reads the same tokens as the browser.
+ */
+function preprocess(css: string): string {
+  return css.replace(/\r\n?|\f/g, "\n").replace(/\0/g, "\uFFFD");
 }
 
 /**
