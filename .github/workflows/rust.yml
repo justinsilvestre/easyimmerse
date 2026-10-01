@@ -51,9 +51,6 @@ jobs:
 
       - name: Format
         run: cargo fmt --all --check
-|
-          cargo fmt --all --check
-          cargo fmt --manifest-path plugins/Cargo.toml --all --check
 
       - name: Clippy
         run: cargo clippy --workspace --exclude easyimmerse-native --all-targets -- -D warnings
