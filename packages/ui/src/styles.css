@@ -203,6 +203,16 @@
     color-scheme: light;
   }
 
+  /* Until the app sets a theme, the page follows the system, so a dark system does not show a light page while the app loads. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      color-scheme: dark;
+      --color-canvas: var(--color-gray-950);
+      --color-fg: var(--color-gray-100);
+      --color-danger-fg: var(--color-red-300);
+    }
+  }
+
   :root[data-theme="dark"] {
     color-scheme: dark;
     --color-canvas: var(--color-gray-950);
