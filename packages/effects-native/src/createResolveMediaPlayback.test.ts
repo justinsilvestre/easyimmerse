@@ -128,7 +128,7 @@ describe("createResolveMediaPlayback", () => {
         environment: {
           engine: "webkit",
           direct_play: false,
-          fmp4_codecs: ["avc1.64001F"],
+          fmp4_codecs: ["avc1.64001F", "avc1.640033"],
         },
       },
     });

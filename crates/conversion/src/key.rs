@@ -3,7 +3,9 @@
 use std::fmt;
 use std::path::Path;
 
-use easyimmerse_media::playback::{ConversionPlan, TrackAction, TrackConversion};
+use easyimmerse_media::playback::{
+    AudioTarget, ConversionPlan, TrackAction, TrackConversion, VideoTarget,
+};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -76,18 +78,18 @@ struct KeyInput {
     source_path: String,
     source_size: u64,
     source_modified_ms: u64,
-    video: Option<TrackOutput>,
-    audio: Option<TrackOutput>,
+    video: Option<TrackOutput<VideoTarget>>,
+    audio: Option<TrackOutput<AudioTarget>>,
 }
 
 #[derive(Serialize)]
-struct TrackOutput {
+struct TrackOutput<Target> {
     track_id: u32,
-    action: TrackAction,
+    action: TrackAction<Target>,
 }
 
-impl From<&TrackConversion> for TrackOutput {
-    fn from(track: &TrackConversion) -> Self {
+impl<Target: Copy> From<&TrackConversion<Target>> for TrackOutput<Target> {
+    fn from(track: &TrackConversion<Target>) -> Self {
         TrackOutput {
             track_id: track.track_id,
             action: track.action,

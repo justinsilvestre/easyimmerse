@@ -1,6 +1,7 @@
 //! Decides how each selected track goes into a converted stream.
 
-use super::environment::{AudioTarget, PlaybackEnvironment};
+use super::conversion_settings::{AudioTarget, ConversionSettings, VideoTarget};
+use super::environment::PlaybackEnvironment;
 use super::plan::{
     ConversionPlan, ConversionReason, TrackAction, TrackConversion, UnsupportedReason,
 };
@@ -12,7 +13,7 @@ use crate::track_info::{TrackInfo, TrackKind};
 pub(super) struct TrackPlanner<'a> {
     pub(super) container: &'a ContainerInfo,
     pub(super) environment: &'a PlaybackEnvironment,
-    pub(super) target: AudioTarget,
+    pub(super) settings: ConversionSettings,
     /// The reasons that apply to every track in the conversion.
     pub(super) reasons: Vec<ConversionReason>,
 }
@@ -27,26 +28,22 @@ impl TrackPlanner<'_> {
         Ok(ConversionPlan { video, audio })
     }
 
-    fn plan_video(&self, id: u32) -> Result<TrackConversion, UnsupportedReason> {
+    fn plan_video(&self, id: u32) -> Result<TrackConversion<VideoTarget>, UnsupportedReason> {
         let track = self.find_track(id, TrackKind::Video)?;
-        if !self.is_streamable(track) {
-            return Err(UnsupportedReason::VideoCodecUnsupported);
-        }
-        Ok(self.conversion(id, TrackAction::Copy, vec![]))
+        let target = self
+            .settings
+            .video_target
+            .filter(|target| self.environment.accepts_fmp4_codec(target.codec_string()));
+        let conversion = self.copy_or_transcode(track, target);
+        conversion.ok_or(UnsupportedReason::VideoCodecUnsupported)
     }
 
-    fn plan_audio(&self, id: u32) -> Result<TrackConversion, UnsupportedReason> {
+    fn plan_audio(&self, id: u32) -> Result<TrackConversion<AudioTarget>, UnsupportedReason> {
         let track = self.find_track(id, TrackKind::Audio)?;
-        if self.is_streamable(track) {
-            Ok(self.conversion(id, TrackAction::Copy, vec![]))
-        } else if self.accepts_target() {
-            let action = TrackAction::Transcode {
-                target: self.target,
-            };
-            Ok(self.conversion(id, action, vec![ConversionReason::CodecUnsupported]))
-        } else {
-            Err(UnsupportedReason::AudioCodecUnsupported)
-        }
+        let target = Some(self.settings.audio_target)
+            .filter(|target| self.environment.accepts_fmp4_codec(target.codec_string()));
+        let conversion = self.copy_or_transcode(track, target);
+        conversion.ok_or(UnsupportedReason::AudioCodecUnsupported)
     }
 
     fn find_track(&self, id: u32, kind: TrackKind) -> Result<&TrackInfo, UnsupportedReason> {
@@ -57,9 +54,21 @@ impl TrackPlanner<'_> {
         found.ok_or(UnsupportedReason::TrackNotFound)
     }
 
-    fn accepts_target(&self) -> bool {
-        let codec_string = self.target.codec_string();
-        self.environment.accepts_fmp4_codec(codec_string)
+    /// Copies a streamable track, or else transcodes it to a target that the browser accepts.
+    /// Returns `None` when the track is not streamable and there is no such target.
+    fn copy_or_transcode<Target>(
+        &self,
+        track: &TrackInfo,
+        accepted_target: Option<Target>,
+    ) -> Option<TrackConversion<Target>> {
+        if self.is_streamable(track) {
+            return Some(self.conversion(track.id, TrackAction::Copy, vec![]));
+        }
+        let action = TrackAction::Transcode {
+            target: accepted_target?,
+        };
+        let reasons = vec![ConversionReason::CodecUnsupported];
+        Some(self.conversion(track.id, action, reasons))
     }
 
     fn is_streamable(&self, track: &TrackInfo) -> bool {
@@ -67,12 +76,12 @@ impl TrackPlanner<'_> {
         codec_string.is_some_and(|codec| self.environment.accepts_fmp4_codec(codec))
     }
 
-    fn conversion(
+    fn conversion<Target>(
         &self,
         track_id: u32,
-        action: TrackAction,
+        action: TrackAction<Target>,
         track_reasons: Vec<ConversionReason>,
-    ) -> TrackConversion {
+    ) -> TrackConversion<Target> {
         let reasons = [self.reasons.clone(), track_reasons].concat();
         TrackConversion {
             track_id,

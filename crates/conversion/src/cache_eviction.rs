@@ -3,7 +3,7 @@
 use std::collections::HashSet;
 use std::path::Path;
 
-use easyimmerse_media::playback::{ConversionPlan, TrackAction};
+use easyimmerse_media::playback::ConversionPlan;
 
 use crate::cache_disk::{directory_size, disk_space};
 use crate::cache_limit::cache_limit;
@@ -60,10 +60,15 @@ fn measure_entries(
 }
 
 fn has_transcode(plan: &ConversionPlan) -> bool {
-    [&plan.video, &plan.audio]
-        .into_iter()
-        .flatten()
-        .any(|track| matches!(track.action, TrackAction::Transcode { .. }))
+    let is_video_transcoded = plan
+        .video
+        .as_ref()
+        .is_some_and(|video| video.action.is_transcode());
+    let is_audio_transcoded = plan
+        .audio
+        .as_ref()
+        .is_some_and(|audio| audio.action.is_transcode());
+    is_video_transcoded || is_audio_transcoded
 }
 
 #[cfg(test)]

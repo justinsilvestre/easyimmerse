@@ -51,7 +51,7 @@ describe("mediaPlaybackFromResponse", () => {
     };
     expect(() =>
       mediaPlaybackFromResponse(response, server, directUrl),
-    ).toThrow("video codec");
+    ).toThrow("cannot convert it to a format that this system plays");
   });
 
   it("explains when the server cannot convert", () => {

@@ -17,6 +17,7 @@ const frierenTracks = createTestMediaTracks([
 const webkitTypeCheck = (mimeType: string) =>
   [
     'video/mp4; codecs="avc1.64001F"',
+    'video/mp4; codecs="avc1.640033"',
     'audio/mp4; codecs="mp4a.40.2"',
     'audio/mp4; codecs="fLaC"',
   ].includes(mimeType);
@@ -63,10 +64,10 @@ describe("measurePlaybackEnvironment", () => {
     ).toBe(false);
   });
 
-  it("lists the track and audio target codecs that the browser accepts in fragmented MP4", () => {
+  it("lists the track and target codecs that the browser accepts in fragmented MP4", () => {
     expect(
       measurePlaybackEnvironment(frierenTracks, createBrowser({})).fmp4_codecs,
-    ).toEqual(["avc1.64001F", "mp4a.40.2", "fLaC"]);
+    ).toEqual(["avc1.64001F", "avc1.640033", "mp4a.40.2", "fLaC"]);
   });
 
   it("lists an accepted codec once when a track uses an audio target codec", () => {
@@ -75,7 +76,20 @@ describe("measurePlaybackEnvironment", () => {
     ]);
     expect(
       measurePlaybackEnvironment(aacTracks, createBrowser({})).fmp4_codecs,
-    ).toEqual(["mp4a.40.2", "fLaC"]);
+    ).toEqual(["mp4a.40.2", "avc1.640033", "fLaC"]);
+  });
+
+  it("checks the video target codec under the video MIME type", () => {
+    const checkedTypes: string[] = [];
+    const isTypeSupported = (mimeType: string) => {
+      checkedTypes.push(mimeType);
+      return false;
+    };
+    measurePlaybackEnvironment(
+      frierenTracks,
+      createBrowser({ isTypeSupported }),
+    );
+    expect(checkedTypes).toContain('video/mp4; codecs="avc1.640033"');
   });
 
   it("checks audio codecs under the audio MIME type", () => {
@@ -104,7 +118,7 @@ describe("measurePlaybackEnvironment", () => {
       vorbisTracks,
       createBrowser({ isTypeSupported }),
     );
-    expect(checkedTypes).toHaveLength(2);
+    expect(checkedTypes).toHaveLength(3);
   });
 
   it("lists no codecs when the browser has no Media Source Extensions", () => {

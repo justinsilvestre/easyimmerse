@@ -35,7 +35,7 @@ function describeUnsupportedReason(reason: UnsupportedReason): string {
     case "track_not_found":
       return "The selected track is not in this file.";
     case "video_codec_unsupported":
-      return "This system cannot play the file's video codec, and easyImmerse cannot convert video yet.";
+      return "This system cannot play the file's video, and easyImmerse cannot convert it to a format that this system plays.";
     case "audio_codec_unsupported":
       return "This system cannot play the file's audio codec, and easyImmerse cannot convert it.";
     case "conversion_unavailable":

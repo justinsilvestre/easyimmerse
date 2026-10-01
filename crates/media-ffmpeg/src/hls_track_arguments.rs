@@ -44,7 +44,10 @@ pub(crate) fn video_arguments(video: &TrackInfo) -> Vec<OsString> {
     arguments
 }
 
-pub(crate) fn audio_arguments(audio: &TrackConversion, aac_encoder: AacEncoder) -> Vec<OsString> {
+pub(crate) fn audio_arguments(
+    audio: &TrackConversion<AudioTarget>,
+    aac_encoder: AacEncoder,
+) -> Vec<OsString> {
     let codec_arguments: &[&str] = match audio.action {
         TrackAction::Copy => &["-c:a", "copy"],
         TrackAction::Transcode {
@@ -89,7 +92,7 @@ mod tests {
         }
     }
 
-    fn audio_conversion(action: TrackAction) -> TrackConversion {
+    fn audio_conversion(action: TrackAction<AudioTarget>) -> TrackConversion<AudioTarget> {
         TrackConversion {
             track_id: 2,
             action,

@@ -3,9 +3,9 @@ import type { ConversionReason } from "./ConversionReason";
 import type { TrackAction } from "./TrackAction";
 
 /**
- * How one selected track goes into the converted stream.
+ * How one selected track goes into the converted stream, where `Target` is the codec type of the track's kind.
  */
-export type TrackConversion = { track_id: number, action: TrackAction, 
+export type TrackConversion<Target> = { track_id: number, action: TrackAction<Target>, 
 /**
  * Why the track is converted rather than played from the original file.
  */

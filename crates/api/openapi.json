@@ -2983,14 +2983,6 @@
           }
         }
       },
-      "AudioTarget": {
-        "type": "string",
-        "description": "The audio codec to transcode to when a track's own codec cannot be streamed.",
-        "enum": [
-          "aac",
-          "flac"
-        ]
-      },
       "Chapter": {
         "type": "object",
         "required": [
@@ -3090,7 +3082,7 @@
           "audio": {
             "oneOf": [
               {
-                "$ref": "#/components/schemas/TrackConversion"
+                "$ref": "#/components/schemas/TrackConversion_AudioTarget"
               },
               {
                 "type": "null"
@@ -3100,7 +3092,7 @@
           "video": {
             "oneOf": [
               {
-                "$ref": "#/components/schemas/TrackConversion"
+                "$ref": "#/components/schemas/TrackConversion_VideoTarget"
               },
               {
                 "type": "null"
@@ -5491,7 +5483,7 @@
           }
         }
       },
-      "TrackAction": {
+      "TrackAction_AudioTarget": {
         "oneOf": [
           {
             "type": "object",
@@ -5523,15 +5515,62 @@
                 ]
               },
               "target": {
-                "$ref": "#/components/schemas/AudioTarget"
+                "type": "string",
+                "description": "The audio codec to transcode to when a track's own codec cannot be streamed.",
+                "enum": [
+                  "aac",
+                  "flac"
+                ]
               }
             }
           }
         ]
       },
-      "TrackConversion": {
+      "TrackAction_VideoTarget": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "The encoded track passes into the stream unchanged, so quality is unchanged.",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "copy"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The track is decoded and encoded again in the target codec.",
+            "required": [
+              "target",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "transcode"
+                ]
+              },
+              "target": {
+                "type": "string",
+                "description": "The video codec to transcode to when a track's own codec cannot be streamed.",
+                "enum": [
+                  "h264"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "TrackConversion_AudioTarget": {
         "type": "object",
-        "description": "How one selected track goes into the converted stream.",
+        "description": "How one selected track goes into the converted stream, where `Target` is the codec type of the track's kind.",
         "required": [
           "track_id",
           "action",
@@ -5539,7 +5578,33 @@
         ],
         "properties": {
           "action": {
-            "$ref": "#/components/schemas/TrackAction"
+            "$ref": "#/components/schemas/TrackAction_AudioTarget"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversionReason"
+            },
+            "description": "Why the track is converted rather than played from the original file."
+          },
+          "track_id": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "TrackConversion_VideoTarget": {
+        "type": "object",
+        "description": "How one selected track goes into the converted stream, where `Target` is the codec type of the track's kind.",
+        "required": [
+          "track_id",
+          "action",
+          "reasons"
+        ],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/TrackAction_VideoTarget"
           },
           "reasons": {
             "type": "array",

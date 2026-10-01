@@ -4,8 +4,8 @@ use axum::extract::{Path, State};
 use axum::{Extension, Json};
 use easyimmerse_media::ContainerInfo;
 use easyimmerse_media::playback::{
-    AudioTarget, MediaTracks, PlaybackPlan, PlaybackRequest, PlaybackResponse, UnsupportedReason,
-    default_selection, plan_playback,
+    AudioTarget, ConversionSettings, MediaTracks, PlaybackPlan, PlaybackRequest, PlaybackResponse,
+    UnsupportedReason, default_selection, plan_playback,
 };
 
 use crate::auth::error_body::{ApiError, ApiFailure};
@@ -80,7 +80,10 @@ pub async fn plan_media_playback(
         &container,
         &selection,
         &request.environment,
-        AudioTarget::Aac,
+        ConversionSettings {
+            audio_target: AudioTarget::Aac,
+            video_target: None,
+        },
     );
     let response = prepare_playback(&state, FilePath::new(&path), &container, plan).await?;
     Ok(Json(response))

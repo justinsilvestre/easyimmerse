@@ -4,7 +4,7 @@ use std::ffi::OsString;
 use std::path::Path;
 
 use easyimmerse_media::TrackInfo;
-use easyimmerse_media::playback::TrackConversion;
+use easyimmerse_media::playback::{AudioTarget, TrackConversion};
 
 use crate::hls_track_arguments::{AacEncoder, audio_arguments, os_strings, video_arguments};
 
@@ -39,7 +39,7 @@ pub struct HlsSource<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HlsTracks<'a> {
     pub video: Option<&'a TrackInfo>,
-    pub audio: Option<&'a TrackConversion>,
+    pub audio: Option<&'a TrackConversion<AudioTarget>>,
 }
 
 /// Builds the ffmpeg arguments that write the init segment, numbered media segments, and a playlist into the output directory.
@@ -123,7 +123,7 @@ mod tests {
         }
     }
 
-    fn audio_copy() -> TrackConversion {
+    fn audio_copy() -> TrackConversion<AudioTarget> {
         TrackConversion {
             track_id: 2,
             action: TrackAction::Copy,

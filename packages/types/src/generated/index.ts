@@ -108,6 +108,7 @@ export type * from "./UnsupportedReason";
 export type * from "./UpdateMediaDurationRequest";
 export type * from "./VerticalAlign";
 export type * from "./VideoDetails";
+export type * from "./VideoTarget";
 export type * from "./WaveformPeaks";
 export type * from "./WebEngine";
 export type * from "./WordBreak";

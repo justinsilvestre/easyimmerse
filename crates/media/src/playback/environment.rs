@@ -17,33 +17,12 @@ pub struct PlaybackEnvironment {
     pub fmp4_codecs: Vec<String>,
 }
 
-/// The audio codec to transcode to when a track's own codec cannot be streamed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
-#[serde(rename_all = "snake_case")]
-#[ts(export)]
-pub enum AudioTarget {
-    /// AAC LC, a lossy codec.
-    Aac,
-    /// 16-bit FLAC, a lossless codec.
-    Flac,
-}
-
 impl PlaybackEnvironment {
     /// Reports whether the browser accepts the codec string inside fragmented MP4.
     pub fn accepts_fmp4_codec(&self, codec_string: &str) -> bool {
         self.fmp4_codecs
             .iter()
             .any(|accepted| accepted == codec_string)
-    }
-}
-
-impl AudioTarget {
-    /// Returns the codec string that a browser checks for this target.
-    pub fn codec_string(self) -> &'static str {
-        match self {
-            AudioTarget::Aac => "mp4a.40.2",
-            AudioTarget::Flac => "fLaC",
-        }
     }
 }
 
@@ -70,15 +49,5 @@ mod tests {
     #[test]
     fn matches_codec_strings_case_sensitively() {
         assert!(!environment_accepting(&["fLaC"]).accepts_fmp4_codec("flac"));
-    }
-
-    #[test]
-    fn spells_the_aac_target_as_aac_lc() {
-        assert_eq!(AudioTarget::Aac.codec_string(), "mp4a.40.2");
-    }
-
-    #[test]
-    fn spells_the_flac_target_as_webkit_accepts_it() {
-        assert_eq!(AudioTarget::Flac.codec_string(), "fLaC");
     }
 }

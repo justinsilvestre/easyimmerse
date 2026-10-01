@@ -1,19 +1,20 @@
 //! Decides between direct playback and a converted stream.
 
+use super::conversion_settings::ConversionSettings;
 use super::engine::container_support;
-use super::environment::{AudioTarget, PlaybackEnvironment};
+use super::environment::PlaybackEnvironment;
 use super::plan::{ConversionReason, PlaybackPlan, UnsupportedReason};
 use super::selection::{TrackSelection, default_selection};
 use super::track_planner::TrackPlanner;
 use crate::container::ContainerInfo;
 
 /// Plans how the browser described by the environment will play the selected tracks.
-/// Audio whose codec the browser cannot stream is transcoded to the target; video is only ever copied.
+/// A track whose codec the browser cannot stream is transcoded to the settings' target for its kind, when the browser accepts that target.
 pub fn plan_playback(
     container: &ContainerInfo,
     selection: &TrackSelection,
     environment: &PlaybackEnvironment,
-    target: AudioTarget,
+    settings: ConversionSettings,
 ) -> PlaybackPlan {
     if selection.video.is_none() && selection.audio.is_none() {
         return unsupported(UnsupportedReason::NoTracksSelected);
@@ -25,7 +26,7 @@ pub fn plan_playback(
     let planner = TrackPlanner {
         container,
         environment,
-        target,
+        settings,
         reasons,
     };
     planner
@@ -61,16 +62,35 @@ fn unsupported(reason: UnsupportedReason) -> PlaybackPlan {
 mod tests {
     use super::*;
     use crate::container::ContainerFormat;
+    use crate::playback::conversion_settings::{AudioTarget, VideoTarget};
     use crate::playback::plan::{ConversionPlan, TrackAction, TrackConversion};
     use crate::playback::test_containers::*;
     use crate::track_info::TrackKind;
 
+    const AAC_ONLY: ConversionSettings = ConversionSettings {
+        audio_target: AudioTarget::Aac,
+        video_target: None,
+    };
+
+    const AAC_AND_H264: ConversionSettings = ConversionSettings {
+        audio_target: AudioTarget::Aac,
+        video_target: Some(VideoTarget::H264),
+    };
+
     fn plan_default(container: &ContainerInfo, environment: &PlaybackEnvironment) -> PlaybackPlan {
+        plan_default_with(container, environment, AAC_ONLY)
+    }
+
+    fn plan_default_with(
+        container: &ContainerInfo,
+        environment: &PlaybackEnvironment,
+        settings: ConversionSettings,
+    ) -> PlaybackPlan {
         plan_playback(
             container,
             &default_selection(container),
             environment,
-            AudioTarget::Aac,
+            settings,
         )
     }
 
@@ -163,7 +183,7 @@ mod tests {
             &mp4_h264_aac(),
             &selection,
             &webkit(true, WEBKIT_FMP4_CODECS),
-            AudioTarget::Aac,
+            AAC_ONLY,
         );
         assert_eq!(
             conversion(plan).audio.map(|audio| audio.reasons),
@@ -171,21 +191,85 @@ mod tests {
         );
     }
 
-    #[test]
-    fn rejects_hevc_video_that_the_browser_cannot_stream() {
-        let mkv = container(
+    fn mkv_with_video(codec_string: &str) -> ContainerInfo {
+        container(
             ContainerFormat::Matroska,
             vec![
-                track(0, TrackKind::Video, HEVC),
+                track(0, TrackKind::Video, codec_string),
                 track(1, TrackKind::Audio, AAC),
             ],
-        );
-        let plan = plan_default(&mkv, &webkit(false, WEBKIT_FMP4_CODECS));
+        )
+    }
+
+    fn unsupported_video() -> PlaybackPlan {
+        PlaybackPlan::Unsupported {
+            reason: UnsupportedReason::VideoCodecUnsupported,
+        }
+    }
+
+    #[test]
+    fn transcodes_high_10_h264_video_out_of_matroska_to_h264_on_webkit() {
+        let mkv = mkv_with_video(H264_HIGH_10);
+        let plan = plan_default_with(&mkv, &webkit(false, WEBKIT_FMP4_CODECS), AAC_AND_H264);
         assert_eq!(
-            plan,
-            PlaybackPlan::Unsupported {
-                reason: UnsupportedReason::VideoCodecUnsupported
-            }
+            conversion(plan).video,
+            Some(TrackConversion {
+                track_id: 0,
+                action: TrackAction::Transcode {
+                    target: VideoTarget::H264
+                },
+                reasons: vec![
+                    ConversionReason::ContainerUnsupported,
+                    ConversionReason::CodecUnsupported
+                ],
+            })
+        );
+    }
+
+    #[test]
+    fn rejects_high_10_h264_video_on_webkit_without_a_video_target() {
+        let plan = plan_default(
+            &mkv_with_video(H264_HIGH_10),
+            &webkit(false, WEBKIT_FMP4_CODECS),
+        );
+        assert_eq!(plan, unsupported_video());
+    }
+
+    #[test]
+    fn transcodes_hevc_video_that_the_browser_cannot_stream_to_h264() {
+        let mkv = mkv_with_video(HEVC);
+        let plan = plan_default_with(&mkv, &webkit(false, WEBKIT_FMP4_CODECS), AAC_AND_H264);
+        assert_eq!(
+            conversion(plan).video.map(|video| video.action),
+            Some(TrackAction::Transcode {
+                target: VideoTarget::H264
+            })
+        );
+    }
+
+    #[test]
+    fn rejects_hevc_video_that_the_browser_cannot_stream_without_a_video_target() {
+        let plan = plan_default(&mkv_with_video(HEVC), &webkit(false, WEBKIT_FMP4_CODECS));
+        assert_eq!(plan, unsupported_video());
+    }
+
+    #[test]
+    fn rejects_video_when_the_browser_does_not_accept_the_video_target() {
+        let mkv = mkv_with_video(HEVC);
+        let plan = plan_default_with(&mkv, &webkit(false, &[H264, AAC]), AAC_AND_H264);
+        assert_eq!(plan, unsupported_video());
+    }
+
+    #[test]
+    fn copies_streamable_video_even_with_a_video_target() {
+        let plan = plan_default_with(
+            &frieren_mkv(),
+            &webkit(false, WEBKIT_FMP4_CODECS),
+            AAC_AND_H264,
+        );
+        assert_eq!(
+            conversion(plan).video.map(|video| video.action),
+            Some(TrackAction::Copy)
         );
     }
 
@@ -225,7 +309,7 @@ mod tests {
             &mp4_h264_aac(),
             &TrackSelection::default(),
             &webkit(true, WEBKIT_FMP4_CODECS),
-            AudioTarget::Aac,
+            AAC_ONLY,
         );
         assert_eq!(
             plan,
@@ -245,7 +329,7 @@ mod tests {
             &mp4_h264_aac(),
             &selection,
             &webkit(true, WEBKIT_FMP4_CODECS),
-            AudioTarget::Aac,
+            AAC_ONLY,
         );
         assert_eq!(
             plan,

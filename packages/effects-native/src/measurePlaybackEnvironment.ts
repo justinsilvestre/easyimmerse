@@ -16,8 +16,9 @@ export type BrowserMediaApis = {
 
 type CodecCandidate = { codec: string; kind: "video" | "audio" };
 
-/** The codec strings of the audio codecs that the server can transcode to. */
-const audioTargetCodecs: CodecCandidate[] = [
+/** The codec strings of the codecs that the server can transcode to. */
+const targetCodecs: CodecCandidate[] = [
+  { codec: "avc1.640033", kind: "video" },
   { codec: "mp4a.40.2", kind: "audio" },
   { codec: "fLaC", kind: "audio" },
 ];
@@ -39,7 +40,7 @@ function listFmp4Codecs(
   { isTypeSupported }: BrowserMediaApis,
 ): string[] {
   if (isTypeSupported === null) return [];
-  const candidates = [...listTrackCodecs(tracks), ...audioTargetCodecs];
+  const candidates = [...listTrackCodecs(tracks), ...targetCodecs];
   const accepted = candidates.filter((candidate) =>
     isTypeSupported(`${candidate.kind}/mp4; codecs="${candidate.codec}"`),
   );

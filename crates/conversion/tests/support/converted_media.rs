@@ -104,11 +104,11 @@ fn plan(container: &ContainerInfo) -> ConversionPlan {
     }
 }
 
-fn track_conversion(
+fn track_conversion<Target>(
     container: &ContainerInfo,
     kind: TrackKind,
-    action: TrackAction,
-) -> Option<TrackConversion> {
+    action: TrackAction<Target>,
+) -> Option<TrackConversion<Target>> {
     let track = container.tracks.iter().find(|track| track.kind == kind)?;
     Some(TrackConversion {
         track_id: track.id,

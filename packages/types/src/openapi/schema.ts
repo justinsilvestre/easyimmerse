@@ -602,11 +602,6 @@ export interface components {
              */
             sample_rate?: number | null;
         };
-        /**
-         * @description The audio codec to transcode to when a track's own codec cannot be streamed.
-         * @enum {string}
-         */
-        AudioTarget: "aac" | "flac";
         Chapter: {
             paragraphs: string[];
             title?: string | null;
@@ -631,8 +626,8 @@ export interface components {
         };
         /** @description The tracks that go into the converted stream. A kind without a track is left out of the stream. */
         ConversionPlan: {
-            audio?: components["schemas"]["TrackConversion"] | null;
-            video?: components["schemas"]["TrackConversion"] | null;
+            audio?: components["schemas"]["TrackConversion_AudioTarget"] | null;
+            video?: components["schemas"]["TrackConversion_VideoTarget"] | null;
         };
         /** @enum {string} */
         ConversionReason: "container_unsupported" | "inaccurate_seeking" | "non_default_tracks" | "codec_unsupported";
@@ -1212,17 +1207,41 @@ export interface components {
             cues: components["schemas"]["Cue"][];
             format: components["schemas"]["TimedTextFormat"];
         };
-        TrackAction: {
+        TrackAction_AudioTarget: {
             /** @enum {string} */
             kind: "copy";
         } | {
             /** @enum {string} */
             kind: "transcode";
-            target: components["schemas"]["AudioTarget"];
+            /**
+             * @description The audio codec to transcode to when a track's own codec cannot be streamed.
+             * @enum {string}
+             */
+            target: "aac" | "flac";
         };
-        /** @description How one selected track goes into the converted stream. */
-        TrackConversion: {
-            action: components["schemas"]["TrackAction"];
+        TrackAction_VideoTarget: {
+            /** @enum {string} */
+            kind: "copy";
+        } | {
+            /** @enum {string} */
+            kind: "transcode";
+            /**
+             * @description The video codec to transcode to when a track's own codec cannot be streamed.
+             * @enum {string}
+             */
+            target: "h264";
+        };
+        /** @description How one selected track goes into the converted stream, where `Target` is the codec type of the track's kind. */
+        TrackConversion_AudioTarget: {
+            action: components["schemas"]["TrackAction_AudioTarget"];
+            /** @description Why the track is converted rather than played from the original file. */
+            reasons: components["schemas"]["ConversionReason"][];
+            /** Format: int32 */
+            track_id: number;
+        };
+        /** @description How one selected track goes into the converted stream, where `Target` is the codec type of the track's kind. */
+        TrackConversion_VideoTarget: {
+            action: components["schemas"]["TrackAction_VideoTarget"];
             /** @description Why the track is converted rather than played from the original file. */
             reasons: components["schemas"]["ConversionReason"][];
             /** Format: int32 */

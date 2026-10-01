@@ -6,13 +6,17 @@ use crate::container::{ContainerFormat, ContainerInfo};
 use crate::track_info::{TrackInfo, TrackKind};
 
 pub const H264: &str = "avc1.64001F";
+/// H.264 in the High 10 profile, which WebKit does not play.
+pub const H264_HIGH_10: &str = "avc1.6E0028";
+/// The codec string of the H.264 video target.
+pub const H264_TARGET: &str = "avc1.640033";
 pub const HEVC: &str = "hvc1.1.6.L93.B0";
 pub const AAC: &str = "mp4a.40.2";
 pub const MP3: &str = "mp4a.6B";
 pub const FLAC: &str = "fLaC";
 
 /// Codec strings that WebKit accepts in fragmented MP4, without HEVC.
-pub const WEBKIT_FMP4_CODECS: &[&str] = &[H264, AAC, FLAC];
+pub const WEBKIT_FMP4_CODECS: &[&str] = &[H264, H264_TARGET, AAC, FLAC];
 
 pub fn track(id: u32, kind: TrackKind, codec_string: &str) -> TrackInfo {
     TrackInfo {
