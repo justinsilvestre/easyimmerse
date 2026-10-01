@@ -68,4 +68,41 @@ describe("OfflineWasm", () => {
       expect(dictionary.title).toBe("Sample Dictionary");
     });
   });
+
+  describe("draftFlashcard", () => {
+    it("uses the lemma for the word field", async () => {
+      const wasm = await loadFromDisk();
+      const card = wasm.draftFlashcard({
+        word: "cats",
+        lemma: "cat",
+        reading: null,
+        l1_definitions: ["Katze"],
+        l2_definitions: [],
+        context: null,
+        context_translation: null,
+        media_id: null,
+        media_name: null,
+        clip: null,
+        screenshot_ms: null,
+        settings: {
+          included_fields: ["word"],
+          default_tags: [],
+          tag_with_media_name: true,
+          use_tts_when_no_audio: false,
+        },
+      });
+      expect(card.fields).toEqual([{ kind: "word", value: "cat" }]);
+    });
+  });
+
+  describe("lookupTerm", () => {
+    it("finds the entry for a term in a parsed dictionary", async () => {
+      const wasm = await loadFromDisk();
+      const dictionary = wasm.parseDictionary(
+        readFixtureBytes("sample-yomitan-en.zip"),
+      );
+      const entries = wasm.lookupTerm(dictionary, "dog");
+      expect(entries.map((entry) => entry.definitions)).toEqual([["Hund"]]);
+    });
+  });
 });

@@ -26,7 +26,12 @@ pub fn to_json_result<T: Serialize, E: Display>(
     result: Result<T, E>,
 ) -> Result<String, JsonCallError> {
     let value = result.map_err(|error| JsonCallError::Failed(error.to_string()))?;
-    serde_json::to_string(&value).map_err(JsonCallError::InvalidOutput)
+    to_json(&value)
+}
+
+/// Serializes a result that cannot fail to JSON.
+pub fn to_json<T: Serialize>(value: &T) -> Result<String, JsonCallError> {
+    serde_json::to_string(value).map_err(JsonCallError::InvalidOutput)
 }
 
 #[cfg(test)]

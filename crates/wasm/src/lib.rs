@@ -8,12 +8,13 @@ mod json_call;
 
 use easyimmerse_core::dictionary::{self, Dictionary};
 use easyimmerse_core::document::{self, DocumentFormat};
+use easyimmerse_core::flashcard::{self, FlashcardDraftRequest};
 use easyimmerse_core::text_source::TextSource;
 use easyimmerse_core::timed_text::{self, ParseTimedTextRequest};
 use wasm_bindgen::JsError;
 
 pub use json_call::JsonCallError;
-use json_call::{parse_input, to_json_result};
+use json_call::{parse_input, to_json, to_json_result};
 
 /// Parses a JSON-encoded `ParseTimedTextRequest` into a JSON-encoded `TimedTextTrack`.
 #[wasm_bindgen::prelude::wasm_bindgen]
@@ -34,6 +35,20 @@ pub fn parse_dictionary(bytes: &[u8]) -> Result<String, JsError> {
     Ok(parse_dictionary_json(bytes)?)
 }
 
+/// Drafts a flashcard from a JSON-encoded `FlashcardDraftRequest` and returns the
+/// JSON-encoded `NewFlashcard`.
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn draft_flashcard(request_json: &str) -> Result<String, JsError> {
+    Ok(draft_flashcard_json(request_json)?)
+}
+
+/// Looks a term up in a JSON-encoded `Dictionary` and returns the JSON-encoded entries whose
+/// term or reading equals it exactly.
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn lookup_term(dictionary_json: &str, term: &str) -> Result<String, JsError> {
+    Ok(lookup_term_json(dictionary_json, term)?)
+}
+
 fn parse_timed_text_json(request_json: &str) -> Result<String, JsonCallError> {
     let request: ParseTimedTextRequest = parse_input(request_json)?;
     let text = inline_text(request.source)?;
@@ -47,6 +62,16 @@ fn parse_document_json(bytes: &[u8], format_json: &str) -> Result<String, JsonCa
 
 fn parse_dictionary_json(bytes: &[u8]) -> Result<String, JsonCallError> {
     to_json_result::<Dictionary, _>(dictionary::parse_dictionary(bytes))
+}
+
+fn draft_flashcard_json(request_json: &str) -> Result<String, JsonCallError> {
+    let request: FlashcardDraftRequest = parse_input(request_json)?;
+    to_json(&flashcard::draft_flashcard(request))
+}
+
+fn lookup_term_json(dictionary_json: &str, term: &str) -> Result<String, JsonCallError> {
+    let dictionary: Dictionary = parse_input(dictionary_json)?;
+    to_json(&dictionary::lookup(&dictionary, term))
 }
 
 fn inline_text(source: TextSource) -> Result<String, JsonCallError> {
@@ -115,5 +140,57 @@ mod tests {
         )
         .unwrap();
         assert_eq!(dictionary["title"], "Sample Dictionary");
+    }
+
+    fn draft_request() -> String {
+        serde_json::json!({
+            "word": "cats", "lemma": "cat", "reading": null,
+            "l1_definitions": ["Katze"], "l2_definitions": [],
+            "context": null, "context_translation": null,
+            "media_id": null, "media_name": null, "clip": null, "screenshot_ms": null,
+            "settings": {
+                "included_fields": ["word"], "default_tags": [],
+                "tag_with_media_name": true, "use_tts_when_no_audio": false
+            }
+        })
+        .to_string()
+    }
+
+    fn fixture_dictionary_json() -> String {
+        parse_dictionary_json(&read_fixture("sample-yomitan-en.zip")).unwrap()
+    }
+
+    #[test]
+    fn drafts_a_flashcard_with_the_lemma_as_its_word() {
+        let card: serde_json::Value =
+            serde_json::from_str(&draft_flashcard_json(&draft_request()).unwrap()).unwrap();
+        assert_eq!(
+            card["fields"],
+            serde_json::json!([{ "kind": "word", "value": "cat" }])
+        );
+    }
+
+    #[test]
+    fn rejects_a_malformed_draft_request() {
+        assert!(matches!(
+            draft_flashcard_json("{}"),
+            Err(JsonCallError::InvalidInput(_))
+        ));
+    }
+
+    #[test]
+    fn looks_up_a_term_in_a_dictionary() {
+        let entries: serde_json::Value =
+            serde_json::from_str(&lookup_term_json(&fixture_dictionary_json(), "dog").unwrap())
+                .unwrap();
+        assert_eq!(entries[0]["definitions"], serde_json::json!(["Hund"]));
+    }
+
+    #[test]
+    fn finds_no_entries_for_an_unknown_term() {
+        assert_eq!(
+            lookup_term_json(&fixture_dictionary_json(), "bird").unwrap(),
+            "[]"
+        );
     }
 }
