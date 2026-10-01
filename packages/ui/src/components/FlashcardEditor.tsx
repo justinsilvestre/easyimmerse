@@ -67,7 +67,10 @@ function OpenFlashcardEditor({
         tabIndex={-1}
         className="flex max-h-[90vh] w-full flex-col rounded-t-xl bg-white text-gray-900 shadow-xl focus:outline-none sm:max-w-lg sm:rounded-xl"
       >
-        <h2 id={titleId} className="px-5 pt-4 pb-2 text-lg font-semibold">
+        <h2
+          id={titleId}
+          className="border-b border-gray-200 px-5 py-3 text-lg font-semibold"
+        >
           {flashcardId === null ? "New flashcard" : "Edit flashcard"}
         </h2>
         <form
@@ -77,7 +80,7 @@ function OpenFlashcardEditor({
             save();
           }}
         >
-          <div className="flex flex-col gap-4 overflow-y-auto px-5 py-2">
+          <div className="flex flex-col gap-4 overflow-y-auto px-5 py-4">
             {card.fields.map((field) => (
               <FlashcardField key={field.kind} field={field} clip={card.clip} />
             ))}
