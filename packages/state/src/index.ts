@@ -5,6 +5,7 @@ export { initialAppState, preferenceKeys } from "./appState.ts";
 export type {
   AppDispatch,
   AppStore,
+  EnhancerComposer,
   RootState,
   ServerStoreParts,
 } from "./createAppStore.ts";
