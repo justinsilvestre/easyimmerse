@@ -6,11 +6,11 @@ export function searchDocument(
   document: Document,
   query: string,
 ): ReadingPosition[] {
-  const needle = query.trim().toLowerCase();
-  if (needle === "") return [];
+  const normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery === "") return [];
   return document.chapters.flatMap((chapter, chapterIndex) =>
     chapter.paragraphs.flatMap((paragraph, paragraphIndex) =>
-      paragraph.toLowerCase().includes(needle)
+      paragraph.toLowerCase().includes(normalizedQuery)
         ? [{ chapterIndex, paragraphIndex }]
         : [],
     ),
