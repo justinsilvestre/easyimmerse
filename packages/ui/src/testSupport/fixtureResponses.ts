@@ -9,6 +9,10 @@ import { fixtureTranslationCues } from "../storybook/fixtureTranslationCues.ts";
 import type { FakeResponse } from "./createFakeBackendClient.ts";
 import { fixtureDocument } from "./fixtureDocument.ts";
 import {
+  fixtureJitendexDictionary,
+  fixtureJitendexStylesheet,
+} from "./fixtureJitendexLookup.ts";
+import {
   fixtureBilingualDictionary,
   fixtureLookupResults,
   fixtureMonolingualDictionary,
@@ -64,6 +68,7 @@ export const fixtureProjects: ListProjectsResponse = {
 
 const fixtureMediaPath = "/projects/project-1/media/media-1";
 const structuredDictionaryPath = `/dictionaries/${fixtureStructuredDictionary.id}`;
+const jitendexDictionaryPath = `/dictionaries/${fixtureJitendexDictionary.id}`;
 
 /** Canned responses for the fixture projects, the fixture project's video, and the fixture dictionaries. */
 export const fixtureResponses: Record<string, FakeResponse> = {
@@ -83,6 +88,8 @@ export const fixtureResponses: Record<string, FakeResponse> = {
   "GET /dictionaries/lookup": { results: fixtureLookupResults },
   [`GET ${structuredDictionaryPath}/stylesheet`]: fixtureStructuredStylesheet,
   [`GET ${structuredDictionaryPath}/asset`]: fixtureStructuredImageUrl,
+  [`GET ${jitendexDictionaryPath}/stylesheet`]: fixtureJitendexStylesheet,
+  [`GET ${jitendexDictionaryPath}/asset`]: fixtureStructuredImageUrl,
   "POST /flashcards/draft": draftFixtureFlashcard,
 };
 

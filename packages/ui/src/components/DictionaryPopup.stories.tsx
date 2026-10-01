@@ -4,7 +4,9 @@ import { type ComponentProps, useEffect } from "react";
 import { fn } from "storybook/test";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
+import { fixtureJitendexLookupResult } from "../testSupport/fixtureJitendexLookup.ts";
 import { fixtureLookupResults } from "../testSupport/fixtureLookup.ts";
+import { fixtureStructuredLookupResult } from "../testSupport/fixtureStructuredLookup.ts";
 import { DictionaryPopup } from "./DictionaryPopup.tsx";
 
 const hoveredKatze: WordHover = {
@@ -48,6 +50,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Hovered: Story = {};
+
+export const StructuredContent: Story = {
+  args: {
+    hover: { word: "猫", context: "猫が寝ている。", clip: null },
+    results: [fixtureJitendexLookupResult, fixtureStructuredLookupResult],
+  },
+};
 
 export const Typed: Story = { args: { hover: null, results: [] } };
 

@@ -61,7 +61,11 @@ function ElementView({
             className="table-auto border-collapse"
             {...toDataAttributes(element.data)}
           >
-            {children}
+            {hasTableSections(element.content) ? (
+              children
+            ) : (
+              <tbody>{children}</tbody>
+            )}
           </table>
         </div>
       );
@@ -118,6 +122,17 @@ function ElementView({
 }
 
 type Tag = StructuredContentElement["tag"];
+
+/** Tells whether a table's content holds its own sections. A table without them gets a body, as the browser's HTML parser would add. */
+function hasTableSections(content: Content | undefined): boolean {
+  const nodes = Array.isArray(content) ? content : [content];
+  return nodes.some(
+    (node) =>
+      typeof node === "object" &&
+      !Array.isArray(node) &&
+      (node.tag === "thead" || node.tag === "tbody" || node.tag === "tfoot"),
+  );
+}
 
 // These class names restore the browser's default look for lists and tables, which the app's base styles reset.
 const containerClassNames: Partial<Record<Tag, string>> = {

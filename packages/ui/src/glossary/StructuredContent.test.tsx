@@ -70,6 +70,11 @@ describe("StructuredContent", () => {
     expect(findElement("td").getAttribute("colspan")).toBe("2");
   });
 
+  it("puts rows outside a table section into a table body", () => {
+    renderContent({ tag: "table", content: { tag: "tr", content: "a" } });
+    expect(findElement("table > tbody > tr")).not.toBeNull();
+  });
+
   it("renders a table cell spanning rows", () => {
     renderContent({
       tag: "table",
