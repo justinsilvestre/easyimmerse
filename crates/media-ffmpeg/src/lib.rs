@@ -14,7 +14,7 @@ mod run_ffprobe;
 
 pub use error::FfmpegError;
 pub use format_seconds::format_seconds;
-pub use hls_arguments::{HlsSource, HlsTracks, hls_arguments};
+pub use hls_arguments::{HlsSource, HlsTracks, TIMESTAMP_OFFSET_SECONDS, hls_arguments};
 pub use hls_track_arguments::{AAC_BIT_RATE, AacEncoder};
 pub use keyframe_index::{KeyframeIndexError, audio_timeline, keyframe_index};
 pub use locate::{BinaryName, FfmpegPaths, locate_binary};

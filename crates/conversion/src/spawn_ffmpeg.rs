@@ -29,9 +29,11 @@ pub async fn spawn_ffmpeg(
     let start_seconds = (start_index > 0)
         .then(|| seek_seconds(conversion, start_index))
         .flatten();
+    let timeline_start_seconds = timeline_start_seconds(conversion);
     let source = HlsSource {
         path: &manifest.source_path,
         start_seconds: start_seconds.as_deref(),
+        timeline_start_seconds: &timeline_start_seconds,
     };
     let tracks = HlsTracks {
         video: manifest.video_track.as_ref(),
@@ -63,4 +65,10 @@ fn seek_seconds(conversion: &Conversion, index: u32) -> Option<String> {
     let segment = plan.segments.get(usize::try_from(index).ok()?)?;
     let offset = segment.start_pts.saturating_sub(plan.timeline.start_pts);
     Some(format_seconds(offset, plan.timeline.timebase))
+}
+
+/// The start of the source's timeline in seconds.
+fn timeline_start_seconds(conversion: &Conversion) -> String {
+    let timeline = &conversion.manifest.segment_plan.timeline;
+    format_seconds(timeline.start_pts, timeline.timebase)
 }

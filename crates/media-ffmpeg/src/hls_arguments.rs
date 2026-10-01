@@ -17,6 +17,13 @@ pub const PLAYLIST_NAME: &str = "index.m3u8";
 /// The pattern of media segment names that ffmpeg writes, numbered from zero in the order it produces them in each run.
 pub const SEGMENT_NAME_PATTERN: &str = "s%05d.m4s";
 
+/// How many seconds later than in the source every output timestamp is.
+/// Encoder priming samples and some sources start before zero, and some players, such as WebKit's, read a decode time before zero as a very large positive time.
+/// Priming samples are the near-silent samples an AAC encoder emits before the first source sample.
+/// Every run uses the same offset, so segments from different runs line up.
+/// hls.js subtracts the decode time of the first segment it loads, so the offset does not change playback times.
+pub const TIMESTAMP_OFFSET_SECONDS: u32 = 10;
+
 /// The file to read and where in it to begin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HlsSource<'a> {
@@ -24,6 +31,8 @@ pub struct HlsSource<'a> {
     /// The source time in seconds at which to begin, as a decimal string, or `None` to begin at the start of the file.
     /// ffmpeg starts at a keyframe before this time, sometimes one or two keyframes earlier than the nearest one, and keeps the source timestamps.
     pub start_seconds: Option<&'a str>,
+    /// The time in seconds at which the source's timeline starts, as a decimal string. Audio packets that start before it are dropped.
+    pub timeline_start_seconds: &'a str,
 }
 
 /// The tracks that go into the stream. The video track is always copied unchanged.
@@ -45,6 +54,7 @@ pub fn hls_arguments(
     arguments.extend(tracks.video.into_iter().flat_map(video_arguments));
     if let Some(audio) = tracks.audio {
         arguments.extend(audio_arguments(audio, aac_encoder));
+        arguments.extend(audio_drop_arguments(source.timeline_start_seconds));
     }
     arguments.extend(output_arguments(tracks.video.is_some(), output_dir));
     arguments
@@ -59,10 +69,21 @@ fn input_arguments(source: &HlsSource) -> Vec<OsString> {
     arguments
 }
 
+/// Drops the audio packets that start before the source's timeline, such as those holding only encoder priming samples.
+/// hls.js aligns the playlist with the track that starts earliest in the first segment it loads, so audio that starts before the video would shift the video's place on the playlist timeline.
+/// The filter sees timestamps before the output offset is added.
+fn audio_drop_arguments(timeline_start_seconds: &str) -> Vec<OsString> {
+    let filter = format!("noise=drop=lt(pts*tb\\,{timeline_start_seconds})");
+    os_strings(&["-bsf:a", &filter])
+}
+
 fn output_arguments(has_video: bool, output_dir: &Path) -> Vec<OsString> {
     // A target duration shorter than any keyframe interval makes ffmpeg cut at every keyframe.
     let segment_seconds = if has_video { "0.001" } else { "4" };
+    let offset = TIMESTAMP_OFFSET_SECONDS.to_string();
     let mut arguments = os_strings(&[
+        "-output_ts_offset",
+        &offset,
         "-avoid_negative_ts",
         "disabled",
         "-f",
@@ -121,6 +142,7 @@ mod tests {
         HlsSource {
             path: Path::new("/media/source.mkv"),
             start_seconds,
+            timeline_start_seconds: "0.000000",
         }
     }
 
@@ -168,6 +190,10 @@ mod tests {
             "0:2",
             "-c:a",
             "copy",
+            "-bsf:a",
+            "noise=drop=lt(pts*tb\\,0.000000)",
+            "-output_ts_offset",
+            "10",
             "-avoid_negative_ts",
             "disabled",
             "-f",
