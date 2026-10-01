@@ -3,13 +3,13 @@ name: check
 on:
   pull_request:
     paths-ignore:
-      - "**.md"
+      - "**/*.md"
       - "docs/**"
       - "LICENSE"
   push:
     branches: [main]
     paths-ignore:
-      - "**.md"
+      - "**/*.md"
       - "docs/**"
       - "LICENSE"
 
@@ -19,7 +19,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Skips the other jobs when an earlier run passed on the same inputs.
+  gate:
+    runs-on: ubuntu-24.04
+    outputs:
+      passed: ${{ steps.find.outputs.passed }}
+      key: ${{ steps.find.outputs.key }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/find-passed-run
+        id: find
+
   check:
+    needs: gate
+    if: needs.gate.outputs.passed != 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -50,3 +63,14 @@ jobs:
 
       - name: Script tests
         run: node --test 'scripts/**/*.test.ts'
+
+  record:
+    needs: [gate, check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/actions
+      - uses: ./.github/actions/record-passed-run
+        with:
+          key: ${{ needs.gate.outputs.key }}

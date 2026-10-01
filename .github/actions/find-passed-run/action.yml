@@ -1,0 +1,34 @@
+name: Find a passed run
+description: >-
+  Checks whether this workflow already passed on the same inputs, meaning the files its pull_request path filter selects.
+  A manual re-run never counts as passed, so it always runs every job.
+  Assumes the repository is checked out.
+
+outputs:
+  passed:
+    description: "\"true\" when an earlier run of this workflow passed on the same inputs."
+    value: ${{ steps.lookup.outputs.cache-hit == 'true' }}
+  key:
+    description: The cache key that record-passed-run saves a marker under once every job passes.
+    value: ${{ steps.hash.outputs.key }}
+
+runs:
+  using: composite
+  steps:
+    - name: Hash the workflow's inputs
+      id: hash
+      shell: bash
+      run: |
+        workflow="${GITHUB_WORKFLOW_REF#*/*/}"
+        workflow="${workflow%%@*}"
+        hash="$("$GITHUB_ACTION_PATH/hashInputs.sh" "$workflow")"
+        echo "key=passed-run-$(basename "$workflow" .yml)-$hash" >> "$GITHUB_OUTPUT"
+
+    - name: Look for a passed run with the same inputs
+      id: lookup
+      if: github.run_attempt == '1'
+      uses: actions/cache/restore@v4
+      with:
+        path: .passed-run
+        key: ${{ steps.hash.outputs.key }}
+        lookup-only: true
