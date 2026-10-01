@@ -27,6 +27,8 @@ pub struct FfprobeStream {
     pub profile: Option<String>,
     /// The codec level, or a negative number when unknown.
     pub level: Option<i32>,
+    /// ffprobe's own codec string, for example `avc1.64000c`. Its spellings differ from the ones browsers accept for some codecs.
+    pub mime_codec_string: Option<String>,
     pub bit_rate: Option<String>,
     pub width: Option<u32>,
     pub height: Option<u32>,
@@ -103,6 +105,12 @@ mod tests {
     #[test]
     fn reads_the_video_level() {
         assert_eq!(parse_sample().streams[0].level, Some(12));
+    }
+
+    #[test]
+    fn reads_the_reported_codec_string() {
+        let video = parse_sample().streams.remove(0);
+        assert_eq!(video.mime_codec_string.as_deref(), Some("avc1.64000c"));
     }
 
     #[test]

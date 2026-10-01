@@ -1,7 +1,8 @@
 //! Converts one ffprobe stream into the application's track description.
 
 use easyimmerse_media::{
-    AudioDetails, FrameRate, TrackInfo, TrackKind, VideoDetails, parse_language_tag,
+    AudioDetails, FrameRate, TrackInfo, TrackKind, VideoDetails, codec_string,
+    normalize_avc_codec_string, parse_language_tag,
 };
 
 use crate::ffprobe_output::FfprobeStream;
@@ -12,9 +13,11 @@ pub(crate) fn to_track_info(stream: &FfprobeStream) -> TrackInfo {
         .codec_name
         .clone()
         .unwrap_or_else(|| "unknown".to_owned());
+    let level = stream.level.and_then(|level| u32::try_from(level).ok());
     TrackInfo {
         profile: stream.profile.clone(),
-        level: stream.level.and_then(|level| u32::try_from(level).ok()),
+        level,
+        codec_string: to_codec_string(stream, &codec, level),
         bit_rate: stream
             .bit_rate
             .as_deref()
@@ -26,6 +29,18 @@ pub(crate) fn to_track_info(stream: &FfprobeStream) -> TrackInfo {
         audio: (kind == TrackKind::Audio).then(|| to_audio_details(stream)),
         ..TrackInfo::new(stream.index, kind, codec)
     }
+}
+
+/// Prefers ffprobe's own codec string for H.264 because it carries the stream's real constraint flags.
+/// For other codecs ffprobe's spellings can be wrong for browsers, for example `mp4a.40.34` for MP3 or `mp4a.40.2` for HE-AAC.
+fn to_codec_string(stream: &FfprobeStream, codec: &str, level: Option<u32>) -> Option<String> {
+    let reported = stream
+        .mime_codec_string
+        .as_deref()
+        .filter(|_| codec == "h264");
+    reported
+        .and_then(normalize_avc_codec_string)
+        .or_else(|| codec_string(codec, stream.profile.as_deref(), level))
 }
 
 fn to_track_kind(codec_type: &str) -> TrackKind {
@@ -90,6 +105,60 @@ mod tests {
     #[test]
     fn reads_the_video_level() {
         assert_eq!(mkv_sample_track(0).level, Some(12));
+    }
+
+    #[test]
+    fn takes_the_h264_codec_string_that_ffprobe_reports() {
+        assert_eq!(
+            mkv_sample_track(0).codec_string.as_deref(),
+            Some("avc1.64000C")
+        );
+    }
+
+    #[test]
+    fn derives_the_h264_codec_string_when_ffprobe_reports_none() {
+        let stream = stream_from(
+            r#"{"index":0,"codec_type":"video","codec_name":"h264","profile":"Main","level":31}"#,
+        );
+        assert_eq!(
+            to_track_info(&stream).codec_string.as_deref(),
+            Some("avc1.4D401F")
+        );
+    }
+
+    #[test]
+    fn derives_the_aac_codec_string() {
+        assert_eq!(
+            mkv_sample_track(1).codec_string.as_deref(),
+            Some("mp4a.40.2")
+        );
+    }
+
+    #[test]
+    fn ignores_the_mp3_codec_string_that_ffprobe_reports() {
+        let stream = stream_from(
+            r#"{"index":1,"codec_type":"audio","codec_name":"mp3","mime_codec_string":"mp4a.40.34"}"#,
+        );
+        assert_eq!(
+            to_track_info(&stream).codec_string.as_deref(),
+            Some("mp4a.6B")
+        );
+    }
+
+    #[test]
+    fn ignores_the_he_aac_codec_string_that_ffprobe_reports() {
+        let stream = stream_from(
+            r#"{"index":1,"codec_type":"audio","codec_name":"aac","profile":"HE-AAC","mime_codec_string":"mp4a.40.2"}"#,
+        );
+        assert_eq!(
+            to_track_info(&stream).codec_string.as_deref(),
+            Some("mp4a.40.5")
+        );
+    }
+
+    #[test]
+    fn has_no_codec_string_for_a_subrip_subtitle() {
+        assert_eq!(mkv_sample_track(2).codec_string, None);
     }
 
     #[test]

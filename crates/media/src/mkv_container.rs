@@ -4,6 +4,7 @@ use matroska::{Matroska, Settings, Track, Tracktype};
 
 use crate::container::{ContainerFormat, ContainerInfo, parse_language_tag};
 use crate::error::MediaError;
+use crate::mkv_codec_string::describe_codec_string;
 use crate::track_info::{AudioDetails, TrackInfo, TrackKind, VideoDetails};
 
 pub(crate) fn probe_mkv(bytes: &[u8]) -> Result<ContainerInfo, MediaError> {
@@ -28,6 +29,7 @@ fn describe_track(track: &Track) -> TrackInfo {
             .and_then(|language| parse_language_tag(&language.to_string())),
         title: track.name.clone(),
         is_default: track.default,
+        codec_string: describe_codec_string(&track.codec_id, track.codec_private.as_deref()),
         video,
         audio,
         ..TrackInfo::new(
@@ -86,6 +88,18 @@ mod tests {
     fn names_the_subtitle_codec() {
         let subtitle = probe_fixture().tracks.remove(2);
         assert_eq!(subtitle.codec, "S_TEXT/UTF8");
+    }
+
+    #[test]
+    fn reads_the_video_codec_string() {
+        let video = probe_fixture().tracks.remove(0);
+        assert_eq!(video.codec_string.as_deref(), Some("avc1.64000C"));
+    }
+
+    #[test]
+    fn reads_the_audio_codec_string() {
+        let audio = probe_fixture().tracks.remove(1);
+        assert_eq!(audio.codec_string.as_deref(), Some("mp4a.40.2"));
     }
 
     #[test]

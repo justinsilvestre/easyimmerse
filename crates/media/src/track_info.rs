@@ -29,6 +29,9 @@ pub struct TrackInfo {
     pub level: Option<u32>,
     /// The average bit rate in bits per second.
     pub bit_rate: Option<u64>,
+    /// The codec string that a browser checks to decide whether it can play this track inside fragmented MP4, for example `avc1.64001F`.
+    /// `None` when the codec cannot be stored in fragmented MP4 or the probe could not identify it.
+    pub codec_string: Option<String>,
     /// The language tag stored in the container, or `None` when it is undetermined.
     pub language: Option<String>,
     pub title: Option<String>,
@@ -74,6 +77,7 @@ impl TrackInfo {
             profile: None,
             level: None,
             bit_rate: None,
+            codec_string: None,
             language: None,
             title: None,
             is_default: false,

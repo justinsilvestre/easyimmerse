@@ -22,6 +22,11 @@ level: number | null,
  */
 bit_rate: number | null, 
 /**
+ * The codec string that a browser checks to decide whether it can play this track inside fragmented MP4, for example `avc1.64001F`.
+ * `None` when the codec cannot be stored in fragmented MP4 or the probe could not identify it.
+ */
+codec_string: string | null, 
+/**
  * The language tag stored in the container, or `None` when it is undetermined.
  */
 language: string | null, title: string | null, 

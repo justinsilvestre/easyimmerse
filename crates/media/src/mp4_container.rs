@@ -4,6 +4,7 @@ use mp4::{Mp4Reader, Mp4Track, TrackType};
 
 use crate::container::{ContainerFormat, ContainerInfo, parse_language_tag};
 use crate::error::MediaError;
+use crate::mp4_codec_string::describe_codec_string;
 use crate::track_info::{AudioDetails, TrackInfo, TrackKind, VideoDetails};
 
 pub(crate) type BytesReader<'a> = Mp4Reader<Cursor<&'a [u8]>>;
@@ -40,6 +41,7 @@ fn describe_track(track: &Mp4Track) -> TrackInfo {
     TrackInfo {
         language: parse_language_tag(track.language()),
         is_default: track.trak.tkhd.flags & TKHD_FLAG_ENABLED != 0,
+        codec_string: describe_codec_string(track),
         video: (kind == TrackKind::Video).then(|| describe_video(track)),
         audio: (kind == TrackKind::Audio).then(|| describe_audio(track)),
         ..TrackInfo::new(track.track_id(), kind, codec)
@@ -121,6 +123,24 @@ mod tests {
             .video
             .expect("video details");
         assert_eq!((video.width, video.height), (Some(320), Some(180)));
+    }
+
+    #[test]
+    fn reads_the_video_codec_string() {
+        let video = probe_fixture().tracks.remove(0);
+        assert_eq!(video.codec_string.as_deref(), Some("avc1.64000C"));
+    }
+
+    #[test]
+    fn reads_the_audio_codec_string() {
+        let audio = probe_fixture().tracks.remove(1);
+        assert_eq!(audio.codec_string.as_deref(), Some("mp4a.40.2"));
+    }
+
+    #[test]
+    fn has_no_codec_string_for_the_subtitle_track() {
+        let subtitle = probe_fixture().tracks.remove(2);
+        assert_eq!(subtitle.codec_string, None);
     }
 
     #[test]
