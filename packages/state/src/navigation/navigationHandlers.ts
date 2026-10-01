@@ -4,6 +4,8 @@ import { closedFlashcardEditor } from "../flashcardEditor/flashcardEditorState.t
 import { closedLookup } from "../lookup/lookupState.ts";
 import { initialPlayerState } from "../player/playerState.ts";
 import { stopLoopIfSet } from "../player/withPlayer.ts";
+import { initialReaderState } from "../reader/readerState.ts";
+import { readStoredDocumentBytes } from "../reader/readStoredDocumentBytes.ts";
 import { readStoredSubtitleTexts } from "../subtitles/readStoredSubtitleTexts.ts";
 import type { UpdateHandlers, UpdateResult } from "../updateHandlers.ts";
 import type { Screen } from "./screen.ts";
@@ -24,6 +26,7 @@ export const navigationHandlers = {
       ...stopLoopIfSet(state.player),
       { type: "resolveMediaUrl", projectId, media },
       ...readStoredSubtitleTexts(media),
+      ...readStoredDocumentBytes(media),
     ],
   ],
   mediaClosed: closeMedia,
@@ -61,6 +64,7 @@ function withoutMedia(state: AppState): AppState {
   return {
     ...state,
     player: initialPlayerState,
+    reader: initialReaderState,
     lookup: closedLookup,
     flashcardEditor: closedFlashcardEditor,
   };

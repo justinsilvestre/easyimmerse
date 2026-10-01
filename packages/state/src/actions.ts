@@ -5,6 +5,7 @@ import { lookupActions } from "./lookup/lookupActions.ts";
 import { navigationActions } from "./navigation/navigationActions.ts";
 import { playerActions } from "./player/playerActions.ts";
 import { preferenceActions } from "./preferences/preferenceActions.ts";
+import { readerActions } from "./reader/readerActions.ts";
 import { subtitleActions } from "./subtitles/subtitleActions.ts";
 import { systemActions } from "./system/systemActions.ts";
 
@@ -13,6 +14,7 @@ export const actions = {
   ...navigationActions,
   ...playerActions,
   ...subtitleActions,
+  ...readerActions,
   ...lookupActions,
   ...flashcardEditorActions,
   ...filePickActions,

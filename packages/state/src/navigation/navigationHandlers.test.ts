@@ -34,6 +34,14 @@ const mediaWithTracks = () =>
     ],
   });
 
+const storedDocument = () =>
+  createMediaFile({
+    id: "m2",
+    name: "book.epub",
+    kind: "document",
+    source: { kind: "browser_file", key: "k2" },
+  });
+
 const loop = { start_ms: 1000, end_ms: 2000 };
 
 const busyMediaState = () =>
@@ -50,6 +58,10 @@ const busyMediaState = () =>
         resumePlaybackOnClose: true,
       },
       flashcardEditor: createEditingFlashcardEditor(),
+      reader: {
+        documentBytes: { mediaId: "m0", bytes: new Uint8Array([1]) },
+        position: { chapterIndex: 1, paragraphIndex: 2 },
+      },
       subtitles: {
         ...initialAppState.subtitles,
         browserFileTexts: { t0: "text" },
@@ -113,6 +125,23 @@ describe("update", () => {
       expect(state.subtitles.browserFileTexts).toEqual({});
     });
 
+    it("forgets the previous document and reading position", () => {
+      const [state] = openMedia();
+      expect(state.reader).toEqual({ documentBytes: null, position: null });
+    });
+
+    it("reads the bytes of a document stored in the browser", () => {
+      const [, effects] = update(
+        initialAppState,
+        actions.mediaOpened("p1", storedDocument()),
+      );
+      expect(effects).toContainEqual({
+        type: "readStoredFileBytes",
+        key: "k2",
+        target: { kind: "document", mediaId: "m2" },
+      });
+    });
+
     it("stops the previous media's loop before anything else", () => {
       const [, effects] = openMedia();
       expect(effects[0]).toEqual({ type: "setPlayerLoop", range: null });
@@ -135,6 +164,11 @@ describe("update", () => {
     it("returns to the project screen for mediaClosed", () => {
       const [state] = update(busyMediaState(), actions.mediaClosed());
       expect(state.screen).toEqual({ kind: "project", projectId: "p1" });
+    });
+
+    it("forgets the document and reading position for mediaClosed", () => {
+      const [state] = update(busyMediaState(), actions.mediaClosed());
+      expect(state.reader).toEqual({ documentBytes: null, position: null });
     });
 
     it("resets the player for mediaClosed", () => {

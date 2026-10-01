@@ -45,6 +45,9 @@ export function runEffect(
     case "readStoredFileText":
       readStoredFileText(effect, effects, dispatch);
       return;
+    case "readStoredFileBytes":
+      readStoredFileBytes(effect, effects, dispatch);
+      return;
     case "savePreference":
       effects.savePreference(effect.key, effect.value).catch(ignoreFailure);
       return;
@@ -104,6 +107,25 @@ function readStoredFileText(
     .then((text) => dispatch(actions.subtitleTextLoaded(trackId, text)))
     .catch((error: unknown) =>
       dispatch(actions.subtitleTextFailed(trackId, describeError(error))),
+    );
+}
+
+function readStoredFileBytes(
+  { key, target }: Extract<Effect, { type: "readStoredFileBytes" }>,
+  effects: Effects,
+  dispatch: Dispatch,
+): void {
+  effects
+    .readStoredFileBytes(key)
+    .then((bytes) =>
+      dispatch(
+        target.kind === "chosenFile"
+          ? actions.chosenFileBytesRead(key, bytes)
+          : actions.documentBytesRead(target.mediaId, bytes),
+      ),
+    )
+    .catch((error: unknown) =>
+      dispatch(actions.storedFileReadFailed(describeError(error))),
     );
 }
 

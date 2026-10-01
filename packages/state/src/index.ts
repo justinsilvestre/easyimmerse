@@ -9,7 +9,7 @@ export type {
   ServerStoreParts,
 } from "./createAppStore.ts";
 export { createAppStore } from "./createAppStore.ts";
-export type { Effect } from "./effect.ts";
+export type { Effect, StoredFileTarget } from "./effect.ts";
 export type { Effects } from "./effects.ts";
 export { acceptedExtensions } from "./filePick/acceptedExtensions.ts";
 export type {
@@ -28,6 +28,10 @@ export type { PlayerHandle, PlayerRegistry } from "./playerRegistry.ts";
 export { createPlayerRegistry } from "./playerRegistry.ts";
 export type { PreferenceKey } from "./preferences/preferenceKey.ts";
 export { preferenceKeys } from "./preferences/preferenceKey.ts";
+export type {
+  ReaderState,
+  ReadingPosition,
+} from "./reader/readerState.ts";
 export type { EffectCall, RecordingEffects } from "./recordingEffects.ts";
 export { createRecordingEffects } from "./recordingEffects.ts";
 export {
@@ -39,6 +43,7 @@ export {
   selectPendingFilePick,
   selectPlayer,
   selectPreference,
+  selectReader,
   selectScreen,
   selectSubtitles,
 } from "./selectors.ts";

@@ -6,4 +6,6 @@ export const systemActions = {
     ({ type: "cueCopyRequested", text }) as const,
   externalLinkRequested: (url: string) =>
     ({ type: "externalLinkRequested", url }) as const,
+  storedFileReadFailed: (message: string) =>
+    ({ type: "storedFileReadFailed", message }) as const,
 };

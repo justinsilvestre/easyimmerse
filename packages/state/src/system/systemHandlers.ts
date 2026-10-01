@@ -16,4 +16,13 @@ export const systemHandlers = {
     state,
     [{ type: "openExternalUrl", url }],
   ],
+  storedFileReadFailed: (state, { message }) => [
+    state,
+    [
+      {
+        type: "showNotification",
+        message: `Could not read a file stored in this browser: ${message}`,
+      },
+    ],
+  ],
 } satisfies Partial<UpdateHandlers>;

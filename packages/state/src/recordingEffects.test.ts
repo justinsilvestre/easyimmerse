@@ -72,6 +72,19 @@ describe("createRecordingEffects", () => {
     await expect(effects.readStoredFileText("k1")).rejects.toThrow("k1");
   });
 
+  it("reads a stored file's bytes", async () => {
+    const effects = createRecordingEffects();
+    effects.storedFileBytes.set("k1", new Uint8Array([7]));
+    expect(await effects.readStoredFileBytes("k1")).toEqual(
+      new Uint8Array([7]),
+    );
+  });
+
+  it("rejects reading bytes that were never stored", async () => {
+    const effects = createRecordingEffects();
+    await expect(effects.readStoredFileBytes("k1")).rejects.toThrow("k1");
+  });
+
   it("captures the frame a test set", async () => {
     const effects = createRecordingEffects();
     effects.frameDataUrl = "data:image/png;base64,AA";

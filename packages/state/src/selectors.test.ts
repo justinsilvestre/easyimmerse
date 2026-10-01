@@ -19,6 +19,7 @@ import { createNewFlashcard } from "./testSupport/createNewFlashcard.ts";
 const chosenFile = {
   purpose: { kind: "dictionary" },
   file: { name: "jmdict.zip", source: { kind: "path", path: "/jmdict.zip" } },
+  bytes: null,
 } as const;
 
 const rootState: RootState = {

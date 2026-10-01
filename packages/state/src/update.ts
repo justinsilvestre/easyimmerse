@@ -7,6 +7,7 @@ import { lookupHandlers } from "./lookup/lookupHandlers.ts";
 import { navigationHandlers } from "./navigation/navigationHandlers.ts";
 import { playerHandlers } from "./player/playerHandlers.ts";
 import { preferenceHandlers } from "./preferences/preferenceHandlers.ts";
+import { readerHandlers } from "./reader/readerHandlers.ts";
 import { subtitleHandlers } from "./subtitles/subtitleHandlers.ts";
 import { systemHandlers } from "./system/systemHandlers.ts";
 import type { UpdateHandlers, UpdateResult } from "./updateHandlers.ts";
@@ -21,6 +22,7 @@ const handlers: UpdateHandlers = {
   ...navigationHandlers,
   ...playerHandlers,
   ...subtitleHandlers,
+  ...readerHandlers,
   ...lookupHandlers,
   ...flashcardEditorHandlers,
   ...filePickHandlers,

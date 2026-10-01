@@ -11,6 +11,8 @@ export const selectCurrentTimeMs = (state: RootState) =>
 
 export const selectSubtitles = (state: RootState) => state.app.subtitles;
 
+export const selectReader = (state: RootState) => state.app.reader;
+
 export const selectLookup = (state: RootState) => state.app.lookup;
 
 export const selectFlashcardEditor = (state: RootState) =>

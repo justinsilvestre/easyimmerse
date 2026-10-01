@@ -13,6 +13,7 @@ export type EffectCall =
   | { type: "pickFile"; purpose: FilePickPurpose; accept: readonly string[] }
   | { type: "resolveMediaUrl"; projectId: string; media: MediaFile }
   | { type: "readStoredFileText"; key: string }
+  | { type: "readStoredFileBytes"; key: string }
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
   | { type: "showNotification"; message: string }
@@ -26,6 +27,8 @@ export type RecordingEffects = Effects & {
   preferences: Map<string, string>;
   /** The texts readStoredFileText returns, by key. It rejects for a key not in the map. Tests may seed it. */
   storedFileTexts: Map<string, string>;
+  /** The bytes readStoredFileBytes returns, by key. It rejects for a key not in the map. Tests may seed it. */
+  storedFileBytes: Map<string, Uint8Array>;
   /** What captureFrame resolves. Null until a test sets it. */
   frameDataUrl: string | null;
   /** Settles the pending pickFile promise. Throws when no pick is pending. */
@@ -56,6 +59,7 @@ export function createRecordingEffects(): RecordingEffects {
     calls,
     preferences: new Map(),
     storedFileTexts: new Map(),
+    storedFileBytes: new Map(),
     frameDataUrl: null,
     seekPlayer: (ms) => record({ type: "seekPlayer", ms }),
     playPlayer: () => record({ type: "playPlayer" }),
@@ -82,6 +86,12 @@ export function createRecordingEffects(): RecordingEffects {
       const text = effects.storedFileTexts.get(key);
       if (text === undefined) throw new Error(`Nothing is stored at ${key}.`);
       return text;
+    },
+    readStoredFileBytes: async (key) => {
+      record({ type: "readStoredFileBytes", key });
+      const bytes = effects.storedFileBytes.get(key);
+      if (bytes === undefined) throw new Error(`Nothing is stored at ${key}.`);
+      return bytes;
     },
     savePreference: async (key, value) => {
       record({ type: "savePreference", key, value });

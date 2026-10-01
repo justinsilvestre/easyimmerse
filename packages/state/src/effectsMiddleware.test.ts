@@ -28,6 +28,21 @@ const mediaWithStoredTrack = (): MediaFile =>
     ],
   });
 
+const dictionary = { kind: "dictionary" } as const;
+
+const storedDictionary: PickedFile = {
+  name: "dictionary.zip",
+  source: { kind: "browser_file", key: "k1" },
+};
+
+const storedDocument = (): MediaFile =>
+  createMediaFile({
+    id: "m2",
+    kind: "document",
+    name: "book.epub",
+    source: { kind: "browser_file", key: "k2" },
+  });
+
 function createStore(effects: Effects = createRecordingEffects()) {
   const server = createFakeServerStoreParts();
   return { store: createAppStore(effects, server), server };
@@ -114,6 +129,42 @@ describe("effectsMiddleware", () => {
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
         actions.subtitleTextFailed("t1", "Nothing is stored at k1."),
+      );
+    });
+  });
+
+  it("dispatches chosenFileBytesRead once a stored dictionary's bytes are read", async () => {
+    const effects = createRecordingEffects();
+    const bytes = new Uint8Array([1, 2]);
+    effects.storedFileBytes.set("k1", bytes);
+    const { store, server } = createStore(effects);
+    store.dispatch(actions.fileChosen(dictionary, storedDictionary));
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.chosenFileBytesRead("k1", bytes),
+      );
+    });
+  });
+
+  it("dispatches documentBytesRead once a stored document's bytes are read", async () => {
+    const effects = createRecordingEffects();
+    const bytes = new Uint8Array([3]);
+    effects.storedFileBytes.set("k2", bytes);
+    const { store, server } = createStore(effects);
+    store.dispatch(actions.mediaOpened("p1", storedDocument()));
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.documentBytesRead("m2", bytes),
+      );
+    });
+  });
+
+  it("dispatches storedFileReadFailed when a stored file's bytes cannot be read", async () => {
+    const { store, server } = createStore();
+    store.dispatch(actions.fileChosen(dictionary, storedDictionary));
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.storedFileReadFailed("Nothing is stored at k1."),
       );
     });
   });

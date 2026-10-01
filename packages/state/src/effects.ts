@@ -22,6 +22,8 @@ export interface Effects {
   resolveMediaUrl(projectId: string, media: MediaFile): Promise<string>;
   /** Reads the text of a file the browser stored under the key. */
   readStoredFileText(key: string): Promise<string>;
+  /** Reads the bytes of a file the browser stored under the key. */
+  readStoredFileBytes(key: string): Promise<Uint8Array>;
   savePreference(key: string, value: string): Promise<void>;
   loadPreference(key: string): Promise<string | null>;
   showNotification(message: string): void;

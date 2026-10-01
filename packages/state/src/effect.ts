@@ -14,8 +14,14 @@ export type Effect =
   | { type: "pickFile"; purpose: FilePickPurpose; accept: readonly string[] }
   | { type: "resolveMediaUrl"; projectId: string; media: MediaFile }
   | { type: "readStoredFileText"; trackId: string; key: string }
+  | { type: "readStoredFileBytes"; key: string; target: StoredFileTarget }
   | { type: "savePreference"; key: PreferenceKey; value: string }
   | { type: "loadPreference"; key: PreferenceKey }
   | { type: "showNotification"; message: string }
   | { type: "copyToClipboard"; text: string }
   | { type: "openExternalUrl"; url: string };
+
+/** What the bytes of a stored file are read for: the chosen file, or the open document. */
+export type StoredFileTarget =
+  | { kind: "chosenFile" }
+  | { kind: "document"; mediaId: string };

@@ -32,4 +32,17 @@ describe("update", () => {
       { type: "openExternalUrl", url: "https://example.com" },
     ]);
   });
+
+  it("returns a showNotification effect for storedFileReadFailed", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.storedFileReadFailed("gone"),
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotification",
+        message: "Could not read a file stored in this browser: gone",
+      },
+    ]);
+  });
 });
