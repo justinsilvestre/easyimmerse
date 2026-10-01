@@ -12,22 +12,38 @@ type AppStoreName = (typeof appStoreNames)[keyof typeof appStoreNames];
 /**
  * Opens the app's IndexedDB database, creating any object store that an earlier version lacked.
  * The connection closes itself when a newer version of the app needs to upgrade the database.
+ * `onClose` runs whenever the connection closes, whether by that or because the browser closed it.
  */
-export async function openAppDatabase(): Promise<IDBDatabase> {
+export async function openAppDatabase(
+  onClose: () => void = () => {},
+): Promise<IDBDatabase> {
   const opening = indexedDB.open(databaseName, databaseVersion);
   opening.addEventListener("upgradeneeded", () =>
     createMissingStores(opening.result),
   );
   const database = await request(opening);
-  database.addEventListener("versionchange", () => database.close());
+  database.addEventListener("versionchange", () => {
+    database.close();
+    onClose();
+  });
+  database.addEventListener("close", onClose);
   return database;
 }
 
-/** Returns a function that opens the app database on its first call and reuses the connection afterwards. */
+/**
+ * Returns a function that opens the app database on its first call and reuses the connection afterwards.
+ * Once the connection closes, or when the opening fails, the next call opens a new one.
+ */
 export function openAppDatabaseOnFirstUse(): () => Promise<IDBDatabase> {
   let database: Promise<IDBDatabase> | null = null;
+  const forgetConnection = () => {
+    database = null;
+  };
   return () => {
-    database ??= openAppDatabase();
+    database ??= openAppDatabase(forgetConnection).catch((error) => {
+      forgetConnection();
+      throw error;
+    });
     return database;
   };
 }
