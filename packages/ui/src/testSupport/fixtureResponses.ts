@@ -1,4 +1,19 @@
-import type { ListProjectsResponse, TimedTextTrack } from "@easyimmerse/types";
+import type { BackendRequest } from "@easyimmerse/backend";
+import type {
+  FlashcardDraftRequest,
+  ListProjectsResponse,
+  NewFlashcard,
+  TimedTextTrack,
+} from "@easyimmerse/types";
+import { fixtureTranslationCues } from "../storybook/fixtureTranslationCues.ts";
+import type { FakeResponse } from "./createFakeBackendClient.ts";
+import { fixtureDocument } from "./fixtureDocument.ts";
+import {
+  fixtureBilingualDictionary,
+  fixtureLookupResults,
+  fixtureMonolingualDictionary,
+} from "./fixtureLookup.ts";
+import { fixtureProject } from "./fixtureProject.ts";
 
 /** The cues of `fixtures/sample.srt`, as the backend returns them. */
 export const fixtureTrack: TimedTextTrack = {
@@ -42,7 +57,38 @@ export const fixtureProjects: ListProjectsResponse = {
   ],
 };
 
-export const fixtureResponses = {
+const fixtureMediaPath = "/projects/project-1/media/media-1";
+
+/** Canned responses for the fixture projects, the fixture project's video, and the fixture dictionaries. */
+export const fixtureResponses: Record<string, FakeResponse> = {
   "GET /projects": fixtureProjects,
   "POST /timed-text/parse": fixtureTrack,
+  "GET /projects/project-1": fixtureProject,
+  "GET /projects/project-1/flashcards": { flashcards: [] },
+  [`GET ${fixtureMediaPath}/subtitle-tracks/track-1/cues`]: fixtureTrack,
+  [`GET ${fixtureMediaPath}/subtitle-tracks/track-2/cues`]: {
+    format: "srt",
+    cues: fixtureTranslationCues,
+  },
+  "POST /documents/parse-local": fixtureDocument,
+  "GET /dictionaries": {
+    dictionaries: [fixtureBilingualDictionary, fixtureMonolingualDictionary],
+  },
+  "GET /dictionaries/lookup": { results: fixtureLookupResults },
+  "POST /flashcards/draft": draftFixtureFlashcard,
 };
+
+/** Drafts a card holding the word or its lemma and the L1 definitions, as a simplified stand-in for the server. */
+function draftFixtureFlashcard(request: BackendRequest): NewFlashcard {
+  const draft = (request.body?.value ?? {}) as FlashcardDraftRequest;
+  return {
+    media_id: draft.media_id,
+    fields: [
+      { kind: "word", value: draft.lemma ?? draft.word },
+      { kind: "l1_definition", value: draft.l1_definitions.join("; ") },
+    ],
+    tags: [],
+    clip: draft.clip,
+    screenshot_ms: draft.screenshot_ms,
+  };
+}
