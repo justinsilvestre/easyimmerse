@@ -44,15 +44,15 @@ As a user:
 
 As a user:
 - when I am on the home screen:
-  - [ ] I see a list of my recent projects (if I have any), most recently opened first
-  - [ ] I see a button to create a new project
+  - [x] I see a list of my recent projects (if I have any), most recently opened first
+  - [x] I see a button to create a new project
 - when I click on a project in the list:
-  - [ ] I am taken to the project's screen
+  - [x] I am taken to the project's screen
 - when I click on the "Create new project" button:
-  - [ ] the new project form opens
+  - [x] the new project form opens
 - when I open the new project form:
-  - [ ] my last created project's language and settings are pre-filled in the form
-  - [ ] I can enter the project settings:
+  - [x] my last created project's language and settings are pre-filled in the form
+  - [x] I can enter the project settings:
     - project name
     - target language
     - translation language (defaulting to my interface language)
@@ -60,16 +60,16 @@ As a user:
       - which fields to include by default in new flashcards (with presets for beginner, intermediate, and advanced learners)
       - default tags for new flashcards (defaulting to just a tag for the media file name)
       - whether to try filling in the audio fields with TTS in the absence of an audio track
-  - [ ] I see a preview of an example flashcard with the current settings, which updates as I change the settings
+  - [x] I see a preview of an example flashcard with the current settings, which updates as I change the settings
 - when I select the *beginner* flashcard preset in the new project form:
-  - [ ] the pronunciation fields are included by default
+  - [x] the pronunciation fields are included by default
 - when I select the *intermediate* flashcard preset in the new project form:
-  - [ ] the pronunciation fields are excluded by default
+  - [x] the pronunciation fields are excluded by default
 - when I select the *advanced* flashcard preset in the new project form:
-  - [ ] the L1 translation field is excluded by default
-  - [ ] the L2 definition field is included by default
+  - [x] the L1 translation field is excluded by default
+  - [x] the L2 definition field is included by default
 - when I submit the new project form:
-  - [ ] I am taken to the new project's screen
+  - [x] I am taken to the new project's screen
 
 ---
 
@@ -77,12 +77,12 @@ As a user:
 
 As a user:
 - when I am on the project screen:
-  - [ ] I see the open project's name
-  - [ ] I see a list of the project's media files
-  - [ ] I can click on a media file to open it
+  - [x] I see the open project's name
+  - [x] I see a list of the project's media files
+  - [x] I can click on a media file to open it
   - [ ] the menu bar has an option to save the project
-  - [ ] I see a button to edit the project's settings
-  - [ ] the status of dictionaries is indicated, according to the languages of my project flashcard settings
+  - [x] I see a button to edit the project's settings
+  - [x] the status of dictionaries is indicated, according to the languages of my project flashcard settings
 - when I have not yet exported flashcards from this project or used the easyImmerse SRS for this project:
   - [ ] I see a button to export an Anki deck package for the project
   - [ ] I see a button to set up AnkiConnect for direct export to Anki
@@ -97,10 +97,10 @@ As a user:
   - [ ] I see an indication of whether/how many cards have yet to be sent to Anki, and a preview of the first-created unsent flashcard
   - [ ] I see a button to send new flashcards to Anki via AnkiConnect
 - when I click on the "Add media" button:
-  - [ ] I am prompted to select a media file to add to the project
+  - [x] I am prompted to select a media file to add to the project
 - when I add a media file to the project:
-  - [ ] I see the new media file in the list of media files
-  - [ ] the new media file is opened
+  - [x] I see the new media file in the list of media files
+  - [x] the new media file is opened
 - when I save the project via the menu bar or keyboard shortcut:
   - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
 
@@ -110,27 +110,27 @@ As a user:
 
 As a user:
 - when a video has been opened:
-  - [ ] I see a video player
-  - [ ] I can pause and resume playback through player controls or keyboard shortcuts
-  - [ ] I can seek to a different time in the video via the playback bar
-  - [ ] I can skip forward or backward by a small amount (or to the next/previous cue, if any subtitles tracks are open) via player controls or keyboard shortcuts
-  - [ ] I can adjust the volume of the audio track
-  - [ ] I can adjust the playback speed of the video
+  - [x] I see a video player
+  - [x] I can pause and resume playback through player controls or keyboard shortcuts
+  - [x] I can seek to a different time in the video via the playback bar
+  - [x] I can skip forward or backward by a small amount (or to the next/previous cue, if any subtitles tracks are open) via player controls or keyboard shortcuts
+  - [x] I can adjust the volume of the audio track
+  - [x] I can adjust the playback speed of the video
   - [ ] I can switch between different audio tracks, when multiple are present
   - [ ] I can switch between different subtitle tracks, when multiple are present
-  - [ ] I can add a subtitles file from disk as the target-language or translation subtitles
-  - [ ] I can enter a distraction-free fullscreen mode, in which only the video and subtitles are shown
+  - [x] I can add a subtitles file from disk as the target-language or translation subtitles
+  - [x] I can enter a distraction-free fullscreen mode, in which only the video and subtitles are shown
 - when I open a video for the first time:
   - [ ] given multiple audio tracks, a lone track in the language of the project is automatically selected, or else I am prompted to select a track
   - [ ] given embedded subtitles or automatically found subtitles resources, a lone track in the language of the project is automatically selected as the target language subtitles, or else I am prompted to select a track
   - [ ] given embedded subtitles or automatically found subtitles resources, a lone track in my language is automatically selected as the translation subtitles, or else I am prompted to select a track
   - [ ] given an unsupported video or audio format, I am prompted to allow the file to be converted to a supported format
 - when a subtitles track is opened:
-  - [ ] I see the subtitles displayed on top of the video
+  - [x] I see the subtitles displayed on top of the video
   - [ ] I see indications of the cue timings in the waveform visualization, and can click on them to seek the video to that cue
 - when both a target-language subtitles track and a translation subtitles track are opened:
-  - [ ] I see the target-language subtitles above the translation subtitles
-  - [ ] I can toggle between displaying the target-language and translation subtitles on top of the video
+  - [x] I see the target-language subtitles above the translation subtitles
+  - [x] I can toggle between displaying the target-language and translation subtitles on top of the video
 
 ---
 
@@ -138,9 +138,9 @@ As a user:
 
 As a user:
 - when an audio file has been opened:
-  - [ ] I see an audio player
+  - [x] I see an audio player
   - [ ] I see a visualization of the album art, if present in the audio file
-  - [ ] I can control the audio in the same ways as a video
+  - [x] I can control the audio in the same ways as a video
 - when I open an audio file for the first time:
   - [ ] given multiple audio tracks, a lone track in the language of the project is automatically selected, or else I am prompted to select a track
   - [ ] given embedded subtitles or automatically found subtitles/timing-enhanced transcript resources, a lone track in the language of the project is automatically selected as the target language subtitles/timing-enhanced transcript, or else I am prompted to select a track
@@ -172,14 +172,14 @@ As a user:
 
 As a user:
 - when a subtitles track is opened:
-  - [ ] I can access the collapsible subtitles panel
+  - [x] I can access the collapsible subtitles panel
 - while the subtitles panel is open:
-  - [ ] I see the subtitles displayed in the panel, with one card per cue
-  - [ ] it is docked to the side of the video player, or at the top of the audio player
-  - [ ] the card for the cue currently being spoken is highlighted, and the panel scrolls to keep it in view
-  - [ ] I can click on a card to seek the media to the start of that cue
+  - [x] I see the subtitles displayed in the panel, with one card per cue
+  - [x] it is docked to the side of the video player, or at the top of the audio player
+  - [x] the card for the cue currently being spoken is highlighted, and the panel scrolls to keep it in view
+  - [x] I can click on a card to seek the media to the start of that cue
 - when the open media file has no subtitles:
-  - [ ] I see a button to add a subtitles file from disk
+  - [x] I see a button to add a subtitles file from disk
   - [ ] I see a button to generate subtitles automatically
 
 ---
@@ -188,11 +188,11 @@ As a user:
 
 As a user:
 - when an ebook or text file is opened:
-  - [ ] I can read the text in the ebook/text reader
-  - [ ] I can navigate through the pages and chapters of the ebook
-  - [ ] I can search for specific words or phrases in the text
-  - [ ] I can open the table of contents via a button
-  - [ ] I can change the font size and style of the text
+  - [x] I can read the text in the ebook/text reader
+  - [x] I can navigate through the pages and chapters of the ebook
+  - [x] I can search for specific words or phrases in the text
+  - [x] I can open the table of contents via a button
+  - [x] I can change the font size and style of the text
 - when I close and reopen an ebook or text file:
   - [ ] I am returned to my last reading position
 - when the ebook or text file has been aligned with an audio file:
@@ -223,22 +223,22 @@ As a user:
 
 As a user:
 - when I mouse over or tap on a word in the target-language subtitles or text:
-  - [ ] I can see the definition of the word in the dictionary pop-up, if available
-  - [ ] any audio/video playback is either looped (if the word is in the subtitles/timing-enhanced text) or paused (if no timing is available)
+  - [x] I can see the definition of the word in the dictionary pop-up, if available
+  - [x] any audio/video playback is either looped (if the word is in the subtitles/timing-enhanced text) or paused (if no timing is available)
 - while the dictionary pop-up is open:
-  - [ ] I can click or double-tap on a word in the dictionary pop-up to create a flashcard for the word
+  - [x] I can click or double-tap on a word in the dictionary pop-up to create a flashcard for the word
 - when I click or tap outside the pop-up and not on a word in the target-language subtitles or text:
-  - [ ] the dictionary pop-up is closed
-  - [ ] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
+  - [x] the dictionary pop-up is closed
+  - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
 - when I click or double-tap on a word in the target-language subtitles or text:
-  - [ ] a flashcard is created for the word
-  - [ ] the fields are shown according to my flashcard settings
-  - [ ] the flashcard-editing form is opened
+  - [x] a flashcard is created for the word
+  - [x] the fields are shown according to my flashcard settings
+  - [x] the flashcard-editing form is opened
 - when the flashcard-editing form is open:
-  - [ ] the corresponding segment of audio/video is looped
-  - [ ] I can edit the text fields of the flashcard
-  - [ ] I can toggle whether to include the screenshot in the flashcard
-  - [ ] I can save the flashcard and close the form
+  - [x] the corresponding segment of audio/video is looped
+  - [x] I can edit the text fields of the flashcard
+  - [x] I can toggle whether to include the screenshot in the flashcard
+  - [x] I can save the flashcard and close the form
   - [ ] I can delete the flashcard and close the form
 - when a flashcard is created from a word:
   - [ ] the fields are filled according to my flashcard settings, translation settings, and TTS settings
@@ -253,9 +253,9 @@ As a user:
     - screenshot (taken from a video frame within the timing of the subtitle cue containing the word)
     - tags
 - when I press the lookup button or its keyboard shortcut:
-  - [ ] the dictionary pop-up opens, with focus on a text input field where I can type a word to look up
+  - [x] the dictionary pop-up opens, with focus on a text input field where I can type a word to look up
 - while the dictionary pop-up is open but no dictionary is enabled for the project's language:
-  - [ ] the dictionary pop-up prompts me to set up a dictionary
+  - [x] the dictionary pop-up prompts me to set up a dictionary
 - when I have made flashcards without having saved my work:
   - [ ] I see an indication that my work is unsaved, and a button to save it
 - when I have made flashcards without having logged in:
@@ -266,7 +266,7 @@ As a user:
   - [ ] the flashcard is queued to be sent to Anki, and I see an indication of that
   - [ ] the flashcard is sent to Anki the next time AnkiConnect is reachable, and I see an indication of whether it was successful
 - when a flashcard is created and AnkiConnect is not enabled:
-  - [ ] the flashcard is saved in the project
+  - [x] the flashcard is saved in the project
 
 ---
 
@@ -276,7 +276,7 @@ As a user:
 - when I open the dictionaries settings:
   - [ ] I see a list of my dictionaries, with each one's language(s) and format
   - [ ] I can add a dictionary from the easyImmerse registry
-  - [ ] I can add a dictionary from a file
+  - [x] I can add a dictionary from a file
   - [ ] I can remove a dictionary
 - when I have more than one dictionary enabled for a language:
   - [ ] I can set the order in which their entries appear in the dictionary pop-up
