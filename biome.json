@@ -18,6 +18,7 @@
       "!**/crates/api/openapi.json",
       "!**/fixtures/sample-yomitan",
       "!**/fixtures/sample-yomitan-en",
+      "!**/fixtures/sample-yomitan-structured",
       "!**/fixtures/sample-epub"
     ]
   },
