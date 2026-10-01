@@ -13,8 +13,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Off: Story = {};
+export const FollowingSystem: Story = {};
 
-export const On: Story = {
+export const OverridingSystem: Story = {
   decorators: [withDispatchedActions(actions.themeToggled())],
 };
