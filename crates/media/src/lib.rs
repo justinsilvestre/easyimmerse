@@ -4,6 +4,7 @@ pub mod codec_string;
 pub mod codec_string_avc;
 pub mod container;
 pub mod error;
+pub mod fmp4;
 pub mod hls_playlist;
 pub mod media_timeline;
 pub mod mov_text;
@@ -30,6 +31,7 @@ pub use container::{
     ContainerFormat, ContainerInfo, detect_container_format, parse_language_tag, probe_container,
 };
 pub use error::MediaError;
+pub use fmp4::{Fmp4Error, read_first_decode_times, read_track_timescales};
 pub use hls_playlist::{INIT_SEGMENT_URI, render_hls_playlist, segment_uri};
 pub use media_timeline::{KeyframeIndex, MediaTimeline, Timebase};
 pub use mov_text::extract_mov_text_cues;
