@@ -25,7 +25,7 @@ Other tasks are listed by `mise tasks`. The most useful ones:
 | `mise run e2e` | Browser end-to-end tests for the web app and the extension. |
 | `mise run fetch-ffmpeg` | Download the ffmpeg sidecar for the desktop app. |
 | `pnpm --filter @easyimmerse/web dev` | Web app dev server against a server started with `cargo run -p easyimmerse-server -- serve --token dev --seed-placeholders`. |
-| `pnpm --filter @easyimmerse/native dev` | Desktop app with its embedded server. |
+| `mise run desktop` | Desktop app with its embedded server. Fetches the ffmpeg sidecar first if it is missing. |
 
 ## Layout
 
