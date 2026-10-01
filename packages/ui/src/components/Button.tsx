@@ -2,7 +2,7 @@ import clsx from "clsx";
 import type { ComponentProps } from "react";
 
 type ButtonProps = ComponentProps<"button"> & {
-  variant?: "primary" | "secondary" | "subtle";
+  variant?: "primary" | "secondary" | "subtle" | "danger";
 };
 
 export function Button({
@@ -19,6 +19,7 @@ export function Button({
         variant === "primary" && "bg-blue-600 text-white hover:bg-blue-700",
         variant === "secondary" && "border border-gray-400 hover:bg-gray-100",
         variant === "subtle" && "text-gray-600 underline hover:text-gray-900",
+        variant === "danger" && "bg-red-600 text-white hover:bg-red-700",
         className,
       )}
       {...rest}

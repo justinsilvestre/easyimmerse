@@ -43,5 +43,6 @@ export {
   selectSubtitles,
 } from "./selectors.ts";
 export type { SubtitlesState } from "./subtitles/subtitlesState.ts";
+export { createNewFlashcard } from "./testSupport/createNewFlashcard.ts";
 export type { Update } from "./update.ts";
 export { update } from "./update.ts";

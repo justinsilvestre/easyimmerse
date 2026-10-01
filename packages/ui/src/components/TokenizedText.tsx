@@ -5,7 +5,8 @@ import { splitIntoTokens } from "./splitIntoTokens.ts";
 /**
  * Renders text with every word as a focusable button, so that a word can be looked up by
  * hovering or focusing it and turned into a flashcard by clicking it. Line breaks in the
- * text are kept.
+ * text are kept. Each button carries a `data-word` attribute, so that the dictionary pop-up
+ * can tell a press on a word apart from a press elsewhere on the page.
  */
 export function TokenizedText({
   text,
@@ -48,6 +49,7 @@ function WordButton({
   return (
     <button
       type="button"
+      data-word
       className="rounded-sm hover:bg-blue-600/20 focus:bg-blue-600/20 focus:outline-none"
       onMouseEnter={() => onHovered?.(word)}
       onFocus={() => onHovered?.(word)}
