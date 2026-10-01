@@ -1,4 +1,4 @@
-import type { ProjectSettings } from "@easyimmerse/types";
+import type { FlashcardSettings, ProjectSettings } from "@easyimmerse/types";
 import { type ReactNode, useId, useReducer } from "react";
 import { Button } from "./Button.tsx";
 import { CheckboxField } from "./CheckboxField.tsx";
@@ -28,6 +28,11 @@ export function ProjectSettingsForm({
   );
   const flashcardSettings = settings.flashcard_settings;
   const missingSettings = listMissingSettings(settings);
+  const changeProject = (
+    changes: Partial<Omit<ProjectSettings, "flashcard_settings">>,
+  ) => dispatch({ type: "projectChanged", changes });
+  const changeFlashcardSettings = (changes: Partial<FlashcardSettings>) =>
+    dispatch({ type: "flashcardSettingsChanged", changes });
   return (
     <form
       onSubmit={(event) => {
@@ -42,29 +47,19 @@ export function ProjectSettingsForm({
             label="Name"
             value={settings.name}
             placeholder="Dark, season one"
-            onChange={(name) =>
-              dispatch({ type: "projectChanged", changes: { name } })
-            }
+            onChange={(name) => changeProject({ name })}
           />
           <div className="grid gap-5 sm:grid-cols-2">
             <LanguageSelect
               label="Target language"
               value={settings.target_language}
-              onChange={(target_language) =>
-                dispatch({
-                  type: "projectChanged",
-                  changes: { target_language },
-                })
-              }
+              onChange={(target_language) => changeProject({ target_language })}
             />
             <LanguageSelect
               label="Translation language"
               value={settings.translation_language}
               onChange={(translation_language) =>
-                dispatch({
-                  type: "projectChanged",
-                  changes: { translation_language },
-                })
+                changeProject({ translation_language })
               }
             />
           </div>
@@ -79,20 +74,14 @@ export function ProjectSettingsForm({
           <FlashcardFieldPicker
             includedFields={flashcardSettings.included_fields}
             onChange={(included_fields) =>
-              dispatch({
-                type: "flashcardSettingsChanged",
-                changes: { included_fields },
-              })
+              changeFlashcardSettings({ included_fields })
             }
           />
           <TagsInput
             label="Default tags"
             tags={flashcardSettings.default_tags}
             onChange={(default_tags) =>
-              dispatch({
-                type: "flashcardSettingsChanged",
-                changes: { default_tags },
-              })
+              changeFlashcardSettings({ default_tags })
             }
           />
           <div className="flex flex-col gap-3">
@@ -100,20 +89,14 @@ export function ProjectSettingsForm({
               label="Tag cards with the media file name"
               checked={flashcardSettings.tag_with_media_name}
               onChange={(tag_with_media_name) =>
-                dispatch({
-                  type: "flashcardSettingsChanged",
-                  changes: { tag_with_media_name },
-                })
+                changeFlashcardSettings({ tag_with_media_name })
               }
             />
             <CheckboxField
               label="Use text-to-speech when there is no audio track"
               checked={flashcardSettings.use_tts_when_no_audio}
               onChange={(use_tts_when_no_audio) =>
-                dispatch({
-                  type: "flashcardSettingsChanged",
-                  changes: { use_tts_when_no_audio },
-                })
+                changeFlashcardSettings({ use_tts_when_no_audio })
               }
             />
           </div>
