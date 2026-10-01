@@ -23,6 +23,8 @@ export const Secondary: Story = { args: { variant: "secondary" } };
 
 export const Subtle: Story = { args: { variant: "subtle" } };
 
-export const Danger: Story = { args: { variant: "danger", children: "Delete" } };
+export const Danger: Story = {
+  args: { variant: "danger", children: "Delete" },
+};
 
 export const Disabled: Story = { args: { variant: "primary", disabled: true } };
