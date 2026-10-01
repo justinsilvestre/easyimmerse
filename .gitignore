@@ -27,3 +27,6 @@ test-results/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Agent worktrees
+.claude/worktrees/
