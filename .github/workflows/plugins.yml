@@ -39,7 +39,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Skips the other jobs when an earlier run passed on the same inputs.
+  gate:
+    runs-on: ubuntu-24.04
+    outputs:
+      passed: ${{ steps.find.outputs.passed }}
+      key: ${{ steps.find.outputs.key }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/find-passed-run
+        id: find
+
   host:
+    needs: gate
+    if: needs.gate.outputs.passed != 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -59,6 +72,8 @@ jobs:
         run: cargo test -p easyimmerse-plugins
 
   interpreter:
+    needs: gate
+    if: needs.gate.outputs.passed != 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -71,3 +86,14 @@ jobs:
         run: cargo test -p easyimmerse-plugins --features interpreter
         env:
           EASYIMMERSE_PLUGIN_EXECUTION: interpreter
+
+  record:
+    needs: [gate, host, interpreter]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/actions
+      - uses: ./.github/actions/record-passed-run
+        with:
+          key: ${{ needs.gate.outputs.key }}
