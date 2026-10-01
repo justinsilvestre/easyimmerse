@@ -1,3 +1,4 @@
+import type { StoreEnhancer } from "redux";
 import { describe, expect, it } from "vitest";
 import { actions } from "./actions.ts";
 import { initialAppState } from "./appState.ts";
@@ -29,5 +30,18 @@ describe("createAppStore", () => {
     expect(server.dispatchedActions).toContainEqual(
       actions.playerTimeChanged(1),
     );
+  });
+
+  it("builds the store through the given enhancer composer", () => {
+    const composed: StoreEnhancer[][] = [];
+    createAppStore(
+      createRecordingEffects(),
+      createFakeServerStoreParts(),
+      (...enhancers) => {
+        composed.push(enhancers);
+        return (next) => next;
+      },
+    );
+    expect(composed).toHaveLength(1);
   });
 });

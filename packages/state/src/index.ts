@@ -5,10 +5,16 @@ export { initialAppState } from "./appState.ts";
 export type {
   AppDispatch,
   AppStore,
+  EnhancerComposer,
   RootState,
   ServerStoreParts,
 } from "./createAppStore.ts";
 export { createAppStore } from "./createAppStore.ts";
+export type {
+  DevToolsExtensionCompose,
+  DevToolsOptions,
+} from "./devTools/createDevToolsComposer.ts";
+export { createDevToolsComposer } from "./devTools/createDevToolsComposer.ts";
 export type { Effect, StoredFileTarget } from "./effect.ts";
 export type { Effects } from "./effects.ts";
 export { acceptedExtensions } from "./filePick/acceptedExtensions.ts";
