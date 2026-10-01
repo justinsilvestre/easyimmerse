@@ -28,10 +28,10 @@ export function ReaderTableOfContents({
               type="button"
               aria-current={index === currentIndex ? "true" : undefined}
               className={clsx(
-                "flex w-full gap-3 px-4 py-2 text-left hover:bg-stone-100 focus-visible:bg-stone-100 focus-visible:outline-none",
+                "flex w-full gap-3 border-l-2 px-4 py-2 text-left hover:bg-stone-100 focus-visible:bg-stone-100 focus-visible:outline-none",
                 index === currentIndex
-                  ? "font-medium text-stone-900"
-                  : "text-stone-600",
+                  ? "border-stone-800 bg-stone-100 font-medium text-stone-900"
+                  : "border-transparent text-stone-600",
               )}
               onClick={() => onSelect(index)}
             >
