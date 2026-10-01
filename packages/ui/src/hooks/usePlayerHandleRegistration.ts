@@ -1,18 +1,31 @@
 import type { PlayerHandle } from "@easyimmerse/state";
 import type { TimeRange } from "@easyimmerse/types";
-import { type RefObject, useEffect } from "react";
+import { type RefObject, useCallback } from "react";
 import { usePlayerRegistry } from "../playerRegistryContext.ts";
 
-/** Registers a handle controlling the media element for as long as the element is mounted. */
+/**
+ * Returns a ref callback for the media element. It keeps the element in `media` and registers a handle on it while it is mounted.
+ * Registering as the element attaches, rather than in an effect, lets effects of enclosing components reach the player on mount.
+ */
 export function usePlayerHandleRegistration(
-  element: HTMLMediaElement | null,
+  media: RefObject<HTMLMediaElement | null>,
   loop: RefObject<TimeRange | null>,
 ) {
   const registry = usePlayerRegistry();
-  useEffect(() => {
-    if (element === null) return;
-    return registry.register(createMediaElementHandle(element, loop));
-  }, [registry, element, loop]);
+  return useCallback(
+    (element: HTMLMediaElement | null) => {
+      media.current = element;
+      if (element === null) return;
+      const unregister = registry.register(
+        createMediaElementHandle(element, loop),
+      );
+      return () => {
+        unregister();
+        media.current = null;
+      };
+    },
+    [registry, media, loop],
+  );
 }
 
 /** Builds a handle on the element. The loop is kept in the ref for the element's timeupdate handler to enforce. */

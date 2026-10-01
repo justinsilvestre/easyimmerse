@@ -2,7 +2,9 @@ import { resetBackend } from "@easyimmerse/backend";
 import type { PlayerHandle } from "@easyimmerse/state";
 import { actions, selectPlayer } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import { type ReactNode, useEffect } from "react";
 import { afterEach, describe, expect, it } from "vitest";
+import { usePlayerRegistry } from "../playerRegistryContext.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import {
   stubCanvasEncoding,
@@ -34,6 +36,20 @@ function readHandle(handle: PlayerHandle | null): PlayerHandle {
   return handle;
 }
 
+function ReadPlayerOnMount({
+  seen,
+  children,
+}: {
+  seen: (PlayerHandle | null)[];
+  children: ReactNode;
+}) {
+  const registry = usePlayerRegistry();
+  useEffect(() => {
+    seen.push(registry.current());
+  }, [registry, seen]);
+  return children;
+}
+
 describe("MediaPlayer", () => {
   it("renders a video element for video", () => {
     const { element } = renderPlayer("video");
@@ -49,6 +65,16 @@ describe("MediaPlayer", () => {
     const { element, effects } = renderPlayer("video");
     fireEvent.click(element);
     expect(effects.calls).toContainEqual({ type: "playPlayer" });
+  });
+
+  it("is registered by the time an enclosing component's mount effect runs", () => {
+    const seen: (PlayerHandle | null)[] = [];
+    renderWithAppStore(
+      <ReadPlayerOnMount seen={seen}>
+        <MediaPlayer kind="video" src="/sample.mp4" />
+      </ReadPlayerOnMount>,
+    );
+    expect(seen[0]).not.toBeNull();
   });
 
   it("unregisters its handle on unmount", () => {

@@ -1,6 +1,6 @@
 import { actions } from "@easyimmerse/state";
 import type { TimeRange } from "@easyimmerse/types";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useRef } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { usePlayerElementEvents } from "../hooks/usePlayerElementEvents.ts";
 import { usePlayerHandleRegistration } from "../hooks/usePlayerHandleRegistration.ts";
@@ -22,10 +22,10 @@ export function MediaPlayer({
   children?: ReactNode;
 }) {
   const dispatch = useAppDispatch();
-  const [element, setElement] = useState<HTMLMediaElement | null>(null);
+  const media = useRef<HTMLMediaElement | null>(null);
   const loop = useRef<TimeRange | null>(null);
-  usePlayerHandleRegistration(element, loop);
-  usePlayerSettingsSync(element);
+  const attachMedia = usePlayerHandleRegistration(media, loop);
+  usePlayerSettingsSync(media);
   const events = usePlayerElementEvents(loop);
   // An empty src would make the browser request the page itself as media.
   const mediaSrc = src === "" ? undefined : src;
@@ -33,14 +33,19 @@ export function MediaPlayer({
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-black px-4 py-8">
         <AudioArtwork />
-        <audio ref={setElement} src={mediaSrc} preload="metadata" {...events} />
+        <audio
+          ref={attachMedia}
+          src={mediaSrc}
+          preload="metadata"
+          {...events}
+        />
         {children}
       </div>
     );
   return (
     <div className="relative flex min-h-0 flex-1 items-center justify-center bg-black">
       <video
-        ref={setElement}
+        ref={attachMedia}
         src={mediaSrc}
         preload="metadata"
         playsInline
