@@ -31,7 +31,10 @@ export function MediaScreen({
       {project && media ? (
         <OpenMediaScreen project={project} media={media} />
       ) : failure !== null ? (
-        <p role="alert" className="bg-red-50 px-4 py-2 text-sm text-red-800">
+        <p
+          role="alert"
+          className="bg-danger-soft px-4 py-2 text-sm text-danger-fg"
+        >
           {failure}
         </p>
       ) : (

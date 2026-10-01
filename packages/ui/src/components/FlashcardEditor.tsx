@@ -58,18 +58,18 @@ function OpenFlashcardEditor({
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) save();
   });
   return (
-    <div className="fixed inset-0 z-30 flex items-end justify-center bg-gray-900/40 sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-scrim sm:items-center sm:p-4">
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="flex max-h-[90vh] w-full flex-col rounded-t-xl bg-white text-gray-900 shadow-xl focus:outline-none sm:max-w-lg sm:rounded-xl"
+        className="flex max-h-[90vh] w-full flex-col rounded-t-xl bg-surface text-fg shadow-xl focus:outline-none sm:max-w-lg sm:rounded-xl"
       >
         <h2
           id={titleId}
-          className="border-b border-gray-200 px-5 py-3 text-lg font-semibold"
+          className="border-b border-line px-5 py-3 text-lg font-semibold"
         >
           {flashcardId === null ? "New flashcard" : "Edit flashcard"}
         </h2>

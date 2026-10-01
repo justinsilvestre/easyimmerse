@@ -18,7 +18,7 @@ export function ProjectScreenSettings({
     <ScreenLayout wide headerActions={<HelpLink />}>
       <h1 className="text-2xl font-semibold">Project settings</h1>
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-danger-fg">
           Could not save the settings: {describeBackendError(error)}
         </p>
       )}

@@ -63,7 +63,7 @@ function MediaListItem({
   return (
     <Card as="li" interactive className="px-4 py-3">
       <div className="flex items-center gap-4">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent">
           <MediaKindIcon kind={file.kind} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
@@ -73,7 +73,7 @@ function MediaListItem({
           >
             {file.name}
           </CardTitleButton>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-fg-muted">
             {describeMediaFile(file).join(" · ")}
           </p>
         </div>

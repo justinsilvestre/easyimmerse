@@ -7,7 +7,7 @@ type CardProps = HTMLAttributes<HTMLElement> & {
   interactive?: boolean;
 };
 
-/** A white panel with a subtle border. */
+/** A panel with a subtle border. */
 export function Card({
   as: Tag = "div",
   interactive = false,
@@ -17,9 +17,9 @@ export function Card({
   return (
     <Tag
       className={clsx(
-        "rounded-lg border border-gray-200 bg-white",
+        "rounded-lg border border-line bg-surface",
         interactive &&
-          "relative transition-colors hover:border-gray-300 hover:bg-gray-50",
+          "relative transition-colors hover:border-line-strong hover:bg-surface-muted/50",
         className,
       )}
       {...rest}

@@ -41,20 +41,20 @@ export function DictionaryPopupBody({
       </div>
     );
   if (term === "")
-    return <p className="text-sm text-gray-500">Type a word to look it up.</p>;
+    return <p className="text-sm text-fg-muted">Type a word to look it up.</p>;
   if (status === "loading") return <LookupSkeleton term={term} />;
   if (status === "error")
     return (
-      <p role="alert" className="text-sm text-red-700">
+      <p role="alert" className="text-sm text-danger-fg">
         The lookup failed. Try again in a moment.
       </p>
     );
   const found = results.filter((result) => result.entries.length > 0);
   if (found.length === 0)
-    return <p className="text-sm text-gray-500">No entries for {term}</p>;
+    return <p className="text-sm text-fg-muted">No entries for {term}</p>;
   return found.map(({ dictionary, entries }) => (
     <section key={dictionary.id} className="mt-2 first:mt-0">
-      <h3 className="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+      <h3 className="mb-1 text-xs font-semibold tracking-wide text-fg-muted uppercase">
         {dictionary.title}
       </h3>
       <ul className="flex flex-col gap-1">
@@ -90,9 +90,9 @@ function LookupSkeleton({ term }: { term: string }) {
       <p role="status" className="sr-only">
         Looking up {term}…
       </p>
-      <div className="h-4 w-1/3 rounded bg-gray-200" />
-      <div className="h-3 w-5/6 rounded bg-gray-200" />
-      <div className="h-3 w-2/3 rounded bg-gray-200" />
+      <div className="h-4 w-1/3 rounded bg-surface-strong" />
+      <div className="h-3 w-5/6 rounded bg-surface-strong" />
+      <div className="h-3 w-2/3 rounded bg-surface-strong" />
     </div>
   );
 }

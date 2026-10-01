@@ -14,19 +14,19 @@ export function DictionaryStatus({
   const languageName = formatLanguageName(targetLanguage);
   if (status === "ready")
     return (
-      <p className="flex items-center gap-2 text-sm text-gray-600">
+      <p className="flex items-center gap-2 text-sm text-fg-muted">
         <CheckIcon />
         <span>Dictionaries ready for {languageName}</span>
       </p>
     );
   if (status === "missing")
     return (
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-        <p className="flex-1 basis-64 text-sm text-amber-900">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border border-warning-line bg-warning-soft px-4 py-3">
+        <p className="flex-1 basis-64 text-sm text-warning-fg">
           No dictionaries for {languageName} yet. Set them up to look up words
           as you read and listen.
         </p>
-        <Button onClick={onSetUpDictionaries} className="bg-white">
+        <Button onClick={onSetUpDictionaries} className="bg-surface">
           Set up dictionaries
         </Button>
       </div>
@@ -44,7 +44,7 @@ function CheckIcon() {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="size-4 text-green-600"
+      className="size-4 text-success-fg"
     >
       <path d="M5 12.5l4.5 4.5L19 7.5" />
     </svg>

@@ -79,7 +79,7 @@ function SegmentedGroup({
   children: ReactNode;
 }) {
   return (
-    <fieldset className="inline-flex items-center gap-0.5 rounded-lg border border-stone-300 p-0.5">
+    <fieldset className="inline-flex items-center gap-0.5 rounded-lg border border-line-strong p-0.5">
       <legend className="sr-only">{label}</legend>
       {children}
     </fieldset>

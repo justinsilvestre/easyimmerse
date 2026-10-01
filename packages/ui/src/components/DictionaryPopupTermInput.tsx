@@ -40,7 +40,7 @@ export function DictionaryPopupTermInput({
       aria-label="Word"
       placeholder="Type a word"
       value={term}
-      className="min-w-0 flex-1 rounded border border-gray-300 px-2 py-1 text-lg focus:border-blue-600 focus:outline-none"
+      className="min-w-0 flex-1 rounded border border-line-strong px-2 py-1 text-lg focus:border-accent focus:outline-none"
       onChange={(event) => {
         setTerm(event.target.value);
         sendTerm(event.target.value);

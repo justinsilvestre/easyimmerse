@@ -24,7 +24,10 @@ export function MediaScreenPlayer({
   return (
     <>
       {mediaUrlError && (
-        <p role="alert" className="bg-red-50 px-4 py-2 text-sm text-red-800">
+        <p
+          role="alert"
+          className="bg-danger-soft px-4 py-2 text-sm text-danger-fg"
+        >
           Could not load the media: {mediaUrlError}
         </p>
       )}

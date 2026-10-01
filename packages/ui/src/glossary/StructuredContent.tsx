@@ -136,13 +136,13 @@ function hasTableSections(content: Content | undefined): boolean {
 
 // These class names restore the browser's default look for lists and tables, which the app's base styles reset.
 const containerClassNames: Partial<Record<Tag, string>> = {
-  thead: "bg-gray-100 font-bold",
-  tfoot: "bg-gray-100 font-bold",
+  thead: "bg-surface-muted font-bold",
+  tfoot: "bg-surface-muted font-bold",
 };
 
 const cellClassNames: Partial<Record<Tag, string>> = {
-  td: "border border-gray-300 p-[0.25em] align-top",
-  th: "border border-gray-300 bg-gray-100 p-[0.25em] align-top font-bold",
+  td: "border border-line-strong p-[0.25em] align-top",
+  th: "border border-line-strong bg-surface-muted p-[0.25em] align-top font-bold",
 };
 
 const styledClassNames: Partial<Record<Tag, string>> = {

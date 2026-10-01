@@ -25,7 +25,7 @@ export function FlashcardsSummary({
         <h2 id={headingId} className="text-lg font-semibold">
           Flashcards
         </h2>
-        <p className="text-sm text-gray-500">{describeFlashcardCount(count)}</p>
+        <p className="text-sm text-fg-muted">{describeFlashcardCount(count)}</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button variant="primary" onClick={onStartReview}>

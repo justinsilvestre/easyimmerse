@@ -31,8 +31,8 @@ export function LanguageSelect({
           value={isOtherChosen ? otherOptionValue : value}
           onChange={(event) => chooseOption(event.target.value)}
           className={clsx(
-            "w-full appearance-none rounded-md border border-gray-300 bg-white py-1.5 pr-9 pl-3 text-sm focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-600/20",
-            value === "" && !isOtherChosen ? "text-gray-400" : "text-gray-900",
+            "w-full appearance-none rounded-md border border-line-strong bg-surface py-1.5 pr-9 pl-3 text-sm focus:border-accent focus:outline-hidden focus:ring-2 focus:ring-accent/20",
+            value === "" && !isOtherChosen ? "text-fg-faint" : "text-fg",
           )}
         >
           <option value="" disabled>
@@ -80,7 +80,7 @@ function ChevronDownIcon() {
     <svg
       aria-hidden="true"
       viewBox="0 0 16 16"
-      className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-gray-500"
+      className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-fg-muted"
     >
       <path
         d="M4 6l4 4 4-4"

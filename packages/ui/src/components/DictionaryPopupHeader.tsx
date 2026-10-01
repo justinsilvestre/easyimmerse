@@ -31,7 +31,7 @@ export function DictionaryPopupHeader({
       <button
         type="button"
         aria-label="Close dictionary"
-        className="shrink-0 rounded px-2 text-xl leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+        className="shrink-0 rounded px-2 text-xl leading-none text-fg-muted hover:bg-surface-muted hover:text-fg"
         onClick={onClose}
       >
         ×

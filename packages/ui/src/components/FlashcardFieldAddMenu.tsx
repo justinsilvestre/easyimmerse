@@ -21,7 +21,7 @@ export function FlashcardFieldAddMenu({
       <button
         type="button"
         aria-expanded={isOpen}
-        className="text-sm font-medium text-blue-700 hover:underline"
+        className="text-sm font-medium text-accent-fg hover:underline"
         onClick={() => setIsOpen(!isOpen)}
       >
         Add field
@@ -33,7 +33,7 @@ export function FlashcardFieldAddMenu({
               <button
                 type="button"
                 aria-label={`Add ${flashcardFieldLabels[kind]}`}
-                className="rounded-full border border-dashed border-gray-400 px-2 py-0.5 text-sm text-gray-700 hover:border-blue-600 hover:text-blue-700"
+                className="rounded-full border border-dashed border-line-strong px-2 py-0.5 text-sm text-fg-soft hover:border-accent hover:text-accent-fg"
                 onClick={() => {
                   setIsOpen(false);
                   dispatch(actions.flashcardFieldToggled(kind));

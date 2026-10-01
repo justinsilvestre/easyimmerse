@@ -87,7 +87,7 @@ function WordButton({
       data-word
       tabIndex={tabIndex}
       onKeyDown={onKeyDown}
-      className="rounded-sm hover:bg-blue-600/20 focus:bg-blue-600/20 focus:outline-none"
+      className="rounded-sm hover:bg-accent/20 focus:bg-accent/20 focus:outline-none"
       onMouseEnter={() => onHovered?.(word)}
       onFocus={() => {
         onFocused();

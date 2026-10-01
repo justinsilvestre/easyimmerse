@@ -17,22 +17,22 @@ export function FlashcardTagsEditor({
   };
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
+      <label htmlFor={inputId} className="text-sm font-medium text-fg-soft">
         Tags
       </label>
-      <div className="flex flex-wrap items-center gap-1 rounded border border-gray-300 p-1 focus-within:border-blue-600">
+      <div className="flex flex-wrap items-center gap-1 rounded border border-line-strong p-1 focus-within:border-accent">
         {tags.length > 0 && (
           <ul className="contents">
             {tags.map((tag) => (
               <li
                 key={tag}
-                className="flex items-center gap-1 rounded bg-gray-100 py-0.5 pl-2 text-sm text-gray-700"
+                className="flex items-center gap-1 rounded bg-surface-muted py-0.5 pl-2 text-sm text-fg-soft"
               >
                 {tag}
                 <button
                   type="button"
                   aria-label={`Remove tag ${tag}`}
-                  className="rounded px-1 text-gray-500 hover:bg-gray-200 hover:text-gray-900"
+                  className="rounded px-1 text-fg-muted hover:bg-surface-strong hover:text-fg"
                   onClick={() => onChange(tags.filter((kept) => kept !== tag))}
                 >
                   ×

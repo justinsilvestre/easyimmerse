@@ -25,12 +25,12 @@ export function DictionaryImage({
 }) {
   const url = buildDictionaryAssetUrl(dictionaryId, image.path);
   if (url === null)
-    return <span className="text-gray-500">[{image.alt || "Image"}]</span>;
+    return <span className="text-fg-muted">[{image.alt || "Image"}]</span>;
   const picture = <ImagePicture image={image} url={url} />;
   if (!image.collapsed) return picture;
   return (
     <details className="pointer-events-auto inline-block align-top">
-      <summary className="cursor-pointer text-blue-700">Image</summary>
+      <summary className="cursor-pointer text-accent-fg">Image</summary>
       {picture}
     </details>
   );
@@ -66,7 +66,7 @@ function ImagePicture({
       title={image.title}
       className={clsx(
         "inline-block max-w-full object-contain",
-        image.background !== false && "bg-gray-100",
+        image.background !== false && "bg-surface-muted",
       )}
       style={style}
     />

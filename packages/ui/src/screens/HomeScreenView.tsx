@@ -31,7 +31,7 @@ export function HomeScreenView({
       </div>
       {error && <HomeScreenError message={error} />}
       {loading && (
-        <p role="status" className="text-sm text-gray-500">
+        <p role="status" className="text-sm text-fg-muted">
           Loading projects…
         </p>
       )}
@@ -56,7 +56,7 @@ function HomeScreenError({ message }: { message: string }) {
   return (
     <p
       role="alert"
-      className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+      className="rounded-lg border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger-fg"
     >
       {message}
     </p>

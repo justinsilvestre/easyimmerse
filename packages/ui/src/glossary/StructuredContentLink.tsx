@@ -36,7 +36,7 @@ export function StructuredContentLink({
       lang={link.lang}
       target="_blank"
       rel="noreferrer noopener"
-      className="pointer-events-auto text-blue-700 underline underline-offset-2"
+      className="pointer-events-auto text-accent-fg underline underline-offset-2"
       onClick={(event) => {
         event.preventDefault();
         dispatch(actions.externalLinkRequested(link.href));

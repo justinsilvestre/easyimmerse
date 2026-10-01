@@ -58,7 +58,7 @@ function OpenDictionaryPopup({
       ref={panel}
       role="dialog"
       aria-label="Dictionary"
-      className="fixed inset-x-0 bottom-0 z-40 flex max-h-[60vh] flex-col rounded-t-xl border border-gray-200 bg-white text-gray-900 shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-96 sm:rounded-xl"
+      className="fixed inset-x-0 bottom-0 z-40 flex max-h-[60vh] flex-col rounded-t-xl border border-line bg-surface text-fg shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-96 sm:rounded-xl"
     >
       <DictionaryPopupHeader
         lookup={lookup}
@@ -67,7 +67,7 @@ function OpenDictionaryPopup({
       />
       <div className="overflow-y-auto px-4 pb-4">
         {lookup.context !== null && (
-          <p className="mb-3 text-sm text-gray-500 italic">{lookup.context}</p>
+          <p className="mb-3 text-sm text-fg-muted italic">{lookup.context}</p>
         )}
         <DictionaryPopupBody
           term={lookup.term}

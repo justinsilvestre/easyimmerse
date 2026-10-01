@@ -27,7 +27,7 @@ export function TextInput({
         placeholder={placeholder}
         aria-describedby={hint ? hintId : undefined}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-600/20"
+        className="w-full rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm text-fg placeholder:text-fg-faint focus:border-accent focus:outline-hidden focus:ring-2 focus:ring-accent/20"
       />
       {hint && <FieldHint id={hintId}>{hint}</FieldHint>}
     </div>

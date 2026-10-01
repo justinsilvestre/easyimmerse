@@ -9,7 +9,7 @@ export function FieldLabel({
   children: ReactNode;
 }) {
   return (
-    <label htmlFor={htmlFor} className="text-sm font-medium text-gray-800">
+    <label htmlFor={htmlFor} className="text-sm font-medium text-fg-soft">
       {children}
     </label>
   );
@@ -18,7 +18,7 @@ export function FieldLabel({
 /** The caption of a group of form controls, styled like a field label. */
 export function FieldLegend({ children }: { children: ReactNode }) {
   return (
-    <legend className="mb-2 text-sm font-medium text-gray-800">
+    <legend className="mb-2 text-sm font-medium text-fg-soft">
       {children}
     </legend>
   );

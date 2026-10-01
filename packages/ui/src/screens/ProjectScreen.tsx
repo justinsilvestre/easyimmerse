@@ -38,11 +38,11 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
   return (
     <ScreenLayout headerActions={<HelpLink />}>
       {error !== undefined ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-danger-fg">
           Could not load the project: {describeBackendError(error)}
         </p>
       ) : (
-        <p role="status" className="text-sm text-gray-500">
+        <p role="status" className="text-sm text-fg-muted">
           Loading project…
         </p>
       )}

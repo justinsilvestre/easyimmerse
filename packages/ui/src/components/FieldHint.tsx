@@ -9,7 +9,7 @@ export function FieldHint({
   children: ReactNode;
 }) {
   return (
-    <p id={id} className="text-xs text-gray-500">
+    <p id={id} className="text-xs text-fg-muted">
       {children}
     </p>
   );

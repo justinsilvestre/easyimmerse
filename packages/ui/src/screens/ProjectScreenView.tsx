@@ -97,7 +97,7 @@ function ProjectScreenTitle({
           <h1 className="text-2xl font-semibold break-words">
             {settings.name}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-fg-muted">
             <LanguagePair
               targetLanguage={settings.target_language}
               translationLanguage={settings.translation_language}

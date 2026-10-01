@@ -17,7 +17,7 @@ export function ScreenshotField({ value }: { value: string }) {
       <img
         src={value}
         alt="Screenshot"
-        className="max-h-48 rounded border border-gray-200"
+        className="max-h-48 rounded border border-line"
       />
       <Button onClick={capture}>Capture again</Button>
     </div>

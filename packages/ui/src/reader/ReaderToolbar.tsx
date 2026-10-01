@@ -19,7 +19,7 @@ export function ReaderToolbar(props: {
   onSearchStepped: (step: -1 | 1) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-stone-200 border-b bg-white px-3 py-2 text-sm text-stone-700">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-line border-b bg-surface px-3 py-2 text-sm text-fg-soft">
       <div className="flex items-center gap-1">
         <ReaderToolbarButton
           aria-expanded={props.isTableOfContentsOpen}
@@ -35,7 +35,7 @@ export function ReaderToolbar(props: {
         >
           ‹
         </ReaderToolbarButton>
-        <span className="whitespace-nowrap px-1 text-stone-500 tabular-nums">
+        <span className="whitespace-nowrap px-1 text-fg-muted tabular-nums">
           Chapter {props.chapterIndex + 1} of {props.chapterCount}
         </span>
         <ReaderToolbarButton

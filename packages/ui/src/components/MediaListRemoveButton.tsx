@@ -18,7 +18,7 @@ export function MediaListRemoveButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="relative z-10 shrink-0 rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-blue-600"
+      className="relative z-10 shrink-0 rounded-md p-2 text-fg-faint hover:bg-surface-muted hover:text-fg-soft focus-visible:outline-2 focus-visible:outline-accent"
     >
       <svg
         aria-hidden="true"

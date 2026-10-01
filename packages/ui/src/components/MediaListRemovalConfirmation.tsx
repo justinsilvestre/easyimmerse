@@ -18,10 +18,10 @@ export function MediaListRemovalConfirmation({
     <div
       role="alertdialog"
       aria-labelledby={messageId}
-      className="relative z-10 mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-gray-200 pt-3"
+      className="relative z-10 mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-line pt-3"
       onKeyDown={(event) => event.key === "Escape" && onCancel()}
     >
-      <p id={messageId} className="mr-auto text-sm text-gray-700">
+      <p id={messageId} className="mr-auto text-sm text-fg-soft">
         Remove from this project? The file itself stays on your device.
       </p>
       <Button ref={cancelButtonRef} onClick={onCancel}>

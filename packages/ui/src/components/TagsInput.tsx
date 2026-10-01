@@ -33,7 +33,7 @@ export function TagsInput({
   return (
     <div className="flex flex-col gap-1.5">
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2 py-1 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/20">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-line-strong bg-surface px-2 py-1 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
         {tags.length > 0 && (
           <ul aria-label={label} className="contents">
             {tags.map((tag) => (
@@ -57,7 +57,7 @@ export function TagsInput({
             commitDraft();
           }}
           onBlur={commitDraft}
-          className="min-w-24 flex-1 bg-transparent px-1 py-0.5 text-sm text-gray-900 focus:outline-hidden"
+          className="min-w-24 flex-1 bg-transparent px-1 py-0.5 text-sm text-fg focus:outline-hidden"
         />
       </div>
       <FieldHint id={`${id}-hint`}>
@@ -69,13 +69,13 @@ export function TagsInput({
 
 function TagChip({ tag, onRemove }: { tag: string; onRemove: () => void }) {
   return (
-    <li className="flex items-center gap-0.5 rounded-full bg-gray-100 py-0.5 pr-1 pl-2.5 text-sm text-gray-800">
+    <li className="flex items-center gap-0.5 rounded-full bg-surface-muted py-0.5 pr-1 pl-2.5 text-sm text-fg-soft">
       {tag}
       <button
         type="button"
         aria-label={`Remove ${tag}`}
         onClick={onRemove}
-        className="rounded-full p-0.5 text-gray-500 hover:bg-gray-200 hover:text-gray-900 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-600"
+        className="rounded-full p-0.5 text-fg-muted hover:bg-surface-strong hover:text-fg focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
       >
         <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5">
           <path

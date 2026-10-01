@@ -25,18 +25,18 @@ export function FlashcardField({
         {hasTextControl ? (
           <label
             htmlFor={controlId}
-            className="text-sm font-medium text-gray-700"
+            className="text-sm font-medium text-fg-soft"
           >
             {label}
           </label>
         ) : (
-          <span className="text-sm font-medium text-gray-700">{label}</span>
+          <span className="text-sm font-medium text-fg-soft">{label}</span>
         )}
         {field.kind !== "word" && (
           <button
             type="button"
             aria-label={`Remove ${label}`}
-            className="rounded px-1 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            className="rounded px-1 text-xs text-fg-muted hover:bg-surface-muted hover:text-fg"
             onClick={() => dispatch(actions.flashcardFieldToggled(field.kind))}
           >
             Remove
@@ -50,7 +50,7 @@ export function FlashcardField({
           id={controlId}
           value={field.value}
           rows={field.value.includes("\n") ? 3 : 1}
-          className="field-sizing-content min-h-9 resize-y rounded border border-gray-300 px-2 py-1.5 focus:border-blue-600 focus:outline-none"
+          className="field-sizing-content min-h-9 resize-y rounded border border-line-strong px-2 py-1.5 focus:border-accent focus:outline-none"
           onChange={(event) =>
             dispatch(
               actions.flashcardFieldEdited(field.kind, event.target.value),
@@ -64,11 +64,11 @@ export function FlashcardField({
 
 function ClipSummary({ clip }: { clip: TimeRange | null }) {
   if (clip === null)
-    return <p className="text-sm text-gray-500">This card has no clip.</p>;
+    return <p className="text-sm text-fg-muted">This card has no clip.</p>;
   return (
     <p className="text-sm">
       <span className="tabular-nums">{formatClip(clip)}</span>
-      <span className="block text-gray-500">
+      <span className="block text-fg-muted">
         The audio is cut from the media when the deck is exported.
       </span>
     </p>

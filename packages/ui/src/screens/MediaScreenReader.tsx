@@ -21,7 +21,10 @@ export function MediaScreenReader({
   const position = useAppSelector((state) => selectReader(state).position);
   if (error !== null)
     return (
-      <p role="alert" className="bg-red-50 px-4 py-2 text-sm text-red-800">
+      <p
+        role="alert"
+        className="bg-danger-soft px-4 py-2 text-sm text-danger-fg"
+      >
         Could not open the document: {error}
       </p>
     );

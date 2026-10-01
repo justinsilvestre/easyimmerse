@@ -109,9 +109,9 @@ export function ProjectSettingsForm({
           translationLanguage={settings.translation_language}
         />
       </PreviewColumn>
-      <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 pt-5 lg:col-start-1">
+      <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line pt-5 lg:col-start-1">
         {missingSettings.length > 0 && (
-          <p className="mr-auto text-sm text-gray-500">
+          <p className="mr-auto text-sm text-fg-muted">
             Add {missingSettings.join(" and ")} to continue.
           </p>
         )}
@@ -138,7 +138,7 @@ function FormSection({
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-6">
-      <h2 id={headingId} className="text-lg font-semibold text-gray-900">
+      <h2 id={headingId} className="text-lg font-semibold text-fg">
         {title}
       </h2>
       {children}
@@ -153,7 +153,7 @@ function PreviewColumn({ children }: { children: ReactNode }) {
       aria-labelledby={headingId}
       className="flex flex-col gap-4 lg:sticky lg:top-4 lg:row-span-2 lg:self-start"
     >
-      <h2 id={headingId} className="text-lg font-semibold text-gray-900">
+      <h2 id={headingId} className="text-lg font-semibold text-fg">
         Preview
       </h2>
       {children}

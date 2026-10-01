@@ -22,10 +22,10 @@ export function CheckboxField({
         checked={checked}
         aria-describedby={hint ? hintId : undefined}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-0.5 size-4 shrink-0 accent-blue-600"
+        className="mt-0.5 size-4 shrink-0 accent-accent"
       />
       <div className="flex flex-col gap-0.5">
-        <label htmlFor={id} className="text-sm text-gray-800">
+        <label htmlFor={id} className="text-sm text-fg-soft">
           {label}
         </label>
         {hint && <FieldHint id={hintId}>{hint}</FieldHint>}

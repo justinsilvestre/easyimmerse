@@ -14,7 +14,7 @@ export function FlashcardEditorFooter({
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   if (isConfirmingDelete)
     return (
-      <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 px-5 py-3">
+      <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-5 py-3">
         <p role="alert" className="mr-auto text-sm">
           Delete this flashcard?
         </p>
@@ -25,7 +25,7 @@ export function FlashcardEditorFooter({
       </footer>
     );
   return (
-    <footer className="flex items-center justify-end gap-2 border-t border-gray-200 px-5 py-3">
+    <footer className="flex items-center justify-end gap-2 border-t border-line px-5 py-3">
       {isSaved && (
         <Button
           variant="subtle"

@@ -17,7 +17,7 @@ export function ReferenceButton({
     <button
       type="button"
       lang={lang}
-      className="pointer-events-auto inline cursor-pointer text-blue-700 underline decoration-dotted underline-offset-2 hover:decoration-solid"
+      className="pointer-events-auto inline cursor-pointer text-accent-fg underline decoration-dotted underline-offset-2 hover:decoration-solid"
       onClick={() => dispatch(actions.lookupReferenceFollowed(reference))}
     >
       {children}

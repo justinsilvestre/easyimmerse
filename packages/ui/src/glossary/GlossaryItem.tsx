@@ -52,7 +52,7 @@ function DeinflectionNote({
   deinflection: Deinflection;
 }) {
   return (
-    <span className="text-gray-600">
+    <span className="text-fg-muted">
       Inflected form of{" "}
       <ReferenceButton reference={{ term, reading: null }}>
         {term}

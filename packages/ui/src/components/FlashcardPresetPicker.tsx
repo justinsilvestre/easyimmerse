@@ -41,7 +41,7 @@ export function FlashcardPresetPicker({
   return (
     <fieldset>
       <FieldLegend>Preset</FieldLegend>
-      <div className="grid gap-1 rounded-lg bg-gray-100 p-1 sm:grid-cols-3">
+      <div className="grid gap-1 rounded-lg bg-surface-muted p-1 sm:grid-cols-3">
         {presetChoices.map((choice) => (
           <PresetSegment
             key={choice.preset}
@@ -54,7 +54,7 @@ export function FlashcardPresetPicker({
         ))}
       </div>
       {selectedPreset === null && (
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-fg-muted">
           Your field selection does not match a preset.
         </p>
       )}
@@ -77,7 +77,7 @@ function PresetSegment({
 }) {
   const id = useId();
   return (
-    <label className="flex cursor-pointer flex-col rounded-md px-3 py-2 text-left has-checked:bg-white has-checked:shadow-sm has-checked:ring-1 has-checked:ring-gray-200 has-focus-visible:ring-2 has-focus-visible:ring-blue-600 hover:bg-white/60">
+    <label className="flex cursor-pointer flex-col rounded-md px-3 py-2 text-left has-checked:bg-surface-raised has-checked:shadow-sm has-checked:ring-1 has-checked:ring-line has-focus-visible:ring-2 has-focus-visible:ring-accent hover:bg-surface-raised/60">
       <input
         type="radio"
         name={groupName}
@@ -87,10 +87,10 @@ function PresetSegment({
         aria-describedby={`${id}-description`}
         className="sr-only"
       />
-      <span id={`${id}-title`} className="text-sm font-medium text-gray-900">
+      <span id={`${id}-title`} className="text-sm font-medium text-fg">
         {title}
       </span>
-      <span id={`${id}-description`} className="text-xs text-gray-500">
+      <span id={`${id}-description`} className="text-xs text-fg-muted">
         {description}
       </span>
     </label>

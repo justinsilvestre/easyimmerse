@@ -14,7 +14,7 @@ export function CardTitleButton({
     <button
       type={type}
       className={clsx(
-        "min-w-0 text-left font-medium text-gray-900 after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-blue-600",
+        "min-w-0 text-left font-medium text-fg after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-accent",
         className,
       )}
       {...rest}

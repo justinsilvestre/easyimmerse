@@ -16,12 +16,12 @@ export function NewProjectScreen() {
     <ScreenLayout wide headerActions={<HelpLink />}>
       <h1 className="text-2xl font-semibold">New project</h1>
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-danger-fg">
           Could not create the project: {describeBackendError(error)}
         </p>
       )}
       {initialSettings === null ? (
-        <p role="status" className="text-sm text-gray-500">
+        <p role="status" className="text-sm text-fg-muted">
           Loading…
         </p>
       ) : (

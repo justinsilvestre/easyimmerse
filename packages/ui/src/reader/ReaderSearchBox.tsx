@@ -21,7 +21,7 @@ export function ReaderSearchBox({
         aria-label="Search"
         placeholder="Search"
         value={query}
-        className="h-8 w-full min-w-0 rounded-md border border-stone-300 bg-white px-2.5 placeholder:text-stone-400 focus-visible:border-blue-600 focus-visible:outline-1 focus-visible:outline-blue-600"
+        className="h-8 w-full min-w-0 rounded-md border border-line-strong bg-surface px-2.5 placeholder:text-fg-faint focus-visible:border-accent focus-visible:outline-1 focus-visible:outline-accent"
         onChange={(event) => onQueryChanged(event.target.value)}
         onKeyDown={(event) => {
           if (event.key !== "Enter") return;
@@ -31,7 +31,7 @@ export function ReaderSearchBox({
       />
       <output
         aria-live="polite"
-        className="whitespace-nowrap px-1 text-stone-500 text-xs tabular-nums"
+        className="whitespace-nowrap px-1 text-fg-muted text-xs tabular-nums"
       >
         {describeSearchStatus(query, matchIndex, matchCount)}
       </output>

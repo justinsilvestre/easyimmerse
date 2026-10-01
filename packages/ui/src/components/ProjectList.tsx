@@ -44,7 +44,7 @@ function ProjectListItem({
       </CardTitleButton>
       <p
         id={detailsId}
-        className="flex shrink-0 flex-wrap gap-x-4 text-sm text-gray-500"
+        className="flex shrink-0 flex-wrap gap-x-4 text-sm text-fg-muted"
       >
         <LanguagePair
           targetLanguage={project.target_language}

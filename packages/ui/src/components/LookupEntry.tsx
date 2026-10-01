@@ -19,17 +19,17 @@ export function LookupEntry({
   onClick: () => void;
 }) {
   return (
-    <li className="relative rounded-lg px-2 py-1.5 hover:bg-blue-50">
+    <li className="relative rounded-lg px-2 py-1.5 hover:bg-accent-soft">
       <button
         type="button"
         aria-label={`Make flashcard from ${entry.term}`}
-        className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+        className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
         onClick={onClick}
       />
       <p>
         <span className="font-medium">{entry.term}</span>
         {entry.reading !== null && (
-          <span className="ml-2 text-sm text-gray-500">{entry.reading}</span>
+          <span className="ml-2 text-sm text-fg-muted">{entry.reading}</span>
         )}
       </p>
       <div className="pointer-events-none relative z-20 text-sm [--font-size-no-units:14]">
@@ -52,7 +52,7 @@ export function LookupEntry({
           {entry.tags.map((tag) => (
             <li
               key={tag}
-              className="rounded bg-gray-100 px-1.5 text-xs text-gray-600"
+              className="rounded bg-surface-muted px-1.5 text-xs text-fg-muted"
             >
               {tag}
             </li>
