@@ -21,7 +21,7 @@ export type BrowserFileStore = {
   totalBytes(): Promise<number>;
 };
 
-type StoredFile = { name: string; type: string; blob: Blob };
+type StoredFile = { name: string; blob: Blob };
 
 /** Builds a store that keeps files in the browser's IndexedDB, so they survive reloads. The database opens on first use. */
 export function createBrowserFileStore(): BrowserFileStore {
@@ -32,11 +32,7 @@ export function createBrowserFileStore(): BrowserFileStore {
   return {
     put: async (file) => {
       const key = crypto.randomUUID();
-      const record: StoredFile = {
-        name: file.name,
-        type: file.type,
-        blob: file,
-      };
+      const record: StoredFile = { name: file.name, blob: file };
       const store = await openStore("readwrite");
       store.put(record, key);
       await commit(store.transaction);
@@ -47,7 +43,9 @@ export function createBrowserFileStore(): BrowserFileStore {
       return (record as StoredFile | undefined)?.blob ?? null;
     },
     delete: async (key) => {
-      await request((await openStore("readwrite")).delete(key));
+      const store = await openStore("readwrite");
+      store.delete(key);
+      await commit(store.transaction);
     },
     list,
     totalBytes: async () =>
