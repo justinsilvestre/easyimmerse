@@ -10,8 +10,8 @@ async fn lists_the_two_seeded_projects() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn lists_the_oldest_project_first() {
+async fn lists_the_most_recently_opened_project_first() {
     let server = spawn_test_server(false).await;
     let response = server.get("/projects").await;
-    assert_eq!(response.json()["projects"][0]["name"], "Spanish practice");
+    assert_eq!(response.json()["projects"][0]["name"], "Japanese drama");
 }

@@ -245,12 +245,16 @@ export interface components {
             value?: string | null;
         };
         ProjectId: string;
+        /** @description A project as listed on the home screen. */
         ProjectSummary: {
             /** @description An RFC 3339 timestamp. */
             created_at: string;
             id: components["schemas"]["ProjectId"];
-            language: string;
+            /** @description An RFC 3339 timestamp. */
+            last_opened_at: string;
             name: string;
+            target_language: string;
+            translation_language: string;
         };
         TermEntry: {
             definitions: string[];
@@ -795,7 +799,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Every project, oldest first */
+            /** @description Every project, most recently opened first */
             200: {
                 headers: {
                     [name: string]: unknown;

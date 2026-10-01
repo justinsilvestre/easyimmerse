@@ -21,7 +21,7 @@ pub struct ListProjectsResponse {
     operation_id = "listProjects",
     security(("bearer_token" = [])),
     responses(
-        (status = 200, description = "Every project, oldest first", body = ListProjectsResponse),
+        (status = 200, description = "Every project, most recently opened first", body = ListProjectsResponse),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),

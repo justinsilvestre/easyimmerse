@@ -18,17 +18,21 @@ const PLACEHOLDER_PROJECTS: [(&str, &str, &str, &str); 2] = [
     ),
 ];
 
-/// Lists every project, oldest first.
+/// Lists every project, most recently opened first.
 pub fn list_projects(conn: &Connection) -> Result<Vec<ProjectSummary>, StorageError> {
-    let mut statement =
-        conn.prepare("SELECT id, name, language, created_at FROM projects ORDER BY created_at")?;
+    let mut statement = conn.prepare(
+        "SELECT id, name, target_language, translation_language, created_at, last_opened_at
+         FROM projects ORDER BY last_opened_at DESC, created_at DESC",
+    )?;
     let projects = statement
         .query_map([], |row| {
             Ok(ProjectSummary {
                 id: ProjectId(row.get(0)?),
                 name: row.get(1)?,
-                language: row.get(2)?,
-                created_at: row.get(3)?,
+                target_language: row.get(2)?,
+                translation_language: row.get(3)?,
+                created_at: row.get(4)?,
+                last_opened_at: row.get(5)?,
             })
         })?
         .collect::<Result<_, _>>()?;
@@ -43,7 +47,8 @@ pub fn seed_placeholder_projects(conn: &Connection) -> Result<(), StorageError> 
     }
     for (id, name, language, created_at) in PLACEHOLDER_PROJECTS {
         conn.execute(
-            "INSERT INTO projects (id, name, language, created_at) VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO projects (id, name, target_language, created_at, last_opened_at)
+             VALUES (?1, ?2, ?3, ?4, ?4)",
             params![id, name, language, created_at],
         )?;
     }
@@ -76,9 +81,9 @@ mod tests {
     }
 
     #[test]
-    fn lists_the_oldest_project_first() {
+    fn lists_the_most_recently_opened_project_first() {
         let projects = seeded_storage().list_projects().unwrap();
-        assert_eq!(projects[0].name, "Spanish practice");
+        assert_eq!(projects[0].name, "Japanese drama");
     }
 
     #[test]

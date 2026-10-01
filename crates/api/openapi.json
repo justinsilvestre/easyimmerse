@@ -642,7 +642,7 @@
         "operationId": "listProjects",
         "responses": {
           "200": {
-            "description": "Every project, oldest first",
+            "description": "Every project, most recently opened first",
             "content": {
               "application/json": {
                 "schema": {
@@ -1011,11 +1011,14 @@
       },
       "ProjectSummary": {
         "type": "object",
+        "description": "A project as listed on the home screen.",
         "required": [
           "id",
           "name",
-          "language",
-          "created_at"
+          "target_language",
+          "translation_language",
+          "created_at",
+          "last_opened_at"
         ],
         "properties": {
           "created_at": {
@@ -1025,10 +1028,17 @@
           "id": {
             "$ref": "#/components/schemas/ProjectId"
           },
-          "language": {
-            "type": "string"
+          "last_opened_at": {
+            "type": "string",
+            "description": "An RFC 3339 timestamp."
           },
           "name": {
+            "type": "string"
+          },
+          "target_language": {
+            "type": "string"
+          },
+          "translation_language": {
             "type": "string"
           }
         }

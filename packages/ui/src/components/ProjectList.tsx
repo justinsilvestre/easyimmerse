@@ -15,7 +15,9 @@ export function ProjectList({
           <Button variant="primary" onClick={() => onOpen(project.id)}>
             {project.name}
           </Button>
-          <span className="ml-2 text-sm text-gray-500">{project.language}</span>
+          <span className="ml-2 text-sm text-gray-500">
+            {project.target_language}
+          </span>
         </li>
       ))}
     </ul>

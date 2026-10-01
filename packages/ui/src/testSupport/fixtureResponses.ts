@@ -26,14 +26,18 @@ export const fixtureProjects: ListProjectsResponse = {
     {
       id: "p1",
       name: "Alpha",
-      language: "de",
+      target_language: "de",
+      translation_language: "en",
       created_at: "2026-01-01T00:00:00Z",
+      last_opened_at: "2026-01-03T00:00:00Z",
     },
     {
       id: "p2",
       name: "Beta",
-      language: "ja",
+      target_language: "ja",
+      translation_language: "en",
       created_at: "2026-01-02T00:00:00Z",
+      last_opened_at: "2026-01-02T00:00:00Z",
     },
   ],
 };
