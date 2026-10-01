@@ -34,7 +34,7 @@ export function DocumentReaderChapter(props: {
     <article
       lang={props.language ?? undefined}
       className={clsx(
-        "mx-auto max-w-[65ch] px-6 pt-10 pb-24 sm:pt-16",
+        "mx-auto max-w-[54ch] px-6 pt-10 pb-24 sm:pt-16",
         fontSizeClassNames[props.settings.fontSize],
         fontFamilyClassNames[props.settings.fontFamily],
       )}
@@ -80,7 +80,7 @@ function ParagraphText({
 }) {
   if (!isHighlighted) return children;
   return (
-    <mark className="box-decoration-clone rounded-sm bg-amber-200/70 px-0.5 text-inherit">
+    <mark className="box-decoration-clone rounded-sm bg-amber-100 px-0.5 text-inherit">
       {children}
     </mark>
   );
