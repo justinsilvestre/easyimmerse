@@ -1,6 +1,6 @@
+import { flashcardFieldOrder } from "@easyimmerse/state";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { flashcardFieldOrder } from "../flashcardFieldOrder.ts";
 import { flashcardPresetFields } from "../flashcardPresetFields.ts";
 import { FlashcardFieldPicker } from "./FlashcardFieldPicker.tsx";
 

@@ -1,6 +1,6 @@
+import { flashcardFieldOrder } from "@easyimmerse/state";
 import type { FlashcardFieldKind } from "@easyimmerse/types";
 import { flashcardFieldLabels } from "../flashcardFieldLabels.ts";
-import { flashcardFieldOrder } from "../flashcardFieldOrder.ts";
 import { CheckboxField } from "./CheckboxField.tsx";
 import { FieldLegend } from "./FieldLabel.tsx";
 

@@ -1,7 +1,7 @@
+import { flashcardFieldOrder } from "@easyimmerse/state";
 import type { FlashcardFieldKind, FlashcardSettings } from "@easyimmerse/types";
 import type { ReactNode } from "react";
 import { flashcardFieldLabels } from "../flashcardFieldLabels.ts";
-import { flashcardFieldOrder } from "../flashcardFieldOrder.ts";
 import { findLanguageName } from "./languageOptions.ts";
 
 const exampleMediaNameTag = "Episode_1";
