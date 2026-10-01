@@ -14,8 +14,8 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    dictionaries, dictionary_lookup, documents, flashcards, health, media, media_stream, openapi,
-    preferences, projects, subtitle_cues, timed_text,
+    dictionaries, dictionary_assets, dictionary_lookup, documents, flashcards, health, media,
+    media_stream, openapi, preferences, projects, subtitle_cues, timed_text,
 };
 use crate::state::AppState;
 
@@ -92,6 +92,8 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(dictionaries::import_local_dictionary))
         .routes(routes!(dictionaries::delete_dictionary))
         .routes(routes!(dictionaries::set_dictionary_languages))
+        .routes(routes!(dictionary_assets::get_dictionary_asset))
+        .routes(routes!(dictionary_assets::get_dictionary_stylesheet))
         .routes(routes!(dictionary_lookup::lookup_term))
         .routes(routes!(dictionary_lookup::lookup_term_everywhere))
 }

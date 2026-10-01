@@ -13,6 +13,4 @@ pub enum DictionaryError {
     },
     #[error("unsupported Yomitan dictionary format version {0}")]
     UnsupportedVersion(u32),
-    #[error("the term bank {name:?} contains a malformed entry")]
-    MalformedTermEntry { name: String },
 }

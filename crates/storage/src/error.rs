@@ -8,10 +8,14 @@ pub enum StorageError {
     Migration(#[from] rusqlite_migration::Error),
     #[error("stored JSON is malformed: {0}")]
     Json(#[from] serde_json::Error),
+    #[error("stored glossary data is corrupt: {0}")]
+    CorruptGlossary(String),
     #[error("the database lock was poisoned by a panic")]
     LockPoisoned,
     #[error("no dictionary has the id {0:?}")]
     DictionaryNotFound(String),
+    #[error("the dictionary has no asset at the path {0:?}")]
+    DictionaryAssetNotFound(String),
     #[error("no project has the id {0:?}")]
     ProjectNotFound(String),
     #[error("the project has no media file with the id {0:?}")]

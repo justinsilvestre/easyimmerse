@@ -1,43 +1,47 @@
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
-use serde_json::Value;
 use zip::ZipArchive;
+use zip::result::ZipError;
 
+use super::dictionary_asset::media_type_for_path;
 use super::error::DictionaryError;
 use super::format::DictionaryFormat;
-use super::{Dictionary, TermEntry};
+use super::yomitan_term_bank::read_term_banks;
+use super::{Dictionary, DictionaryAsset};
 
-/// The Yomitan dictionary format, version 3: an `index.json` with the metadata and any
-/// number of `term_bank_N.json` files holding term entries as JSON arrays.
+/// The Yomitan dictionary format, version 3.
+/// Its archive holds an `index.json` with the metadata and an optional `styles.css`.
+/// The entries live in term banks: files named `term_bank_N.json`, each a JSON array of entry rows.
+/// Media files, such as images, are referred to by path from glossary items.
 pub struct YomitanFormat;
+
+pub(super) type Archive<'a> = ZipArchive<Cursor<&'a [u8]>>;
+
+const INDEX_NAME: &str = "index.json";
+const STYLESHEET_NAME: &str = "styles.css";
 
 impl DictionaryFormat for YomitanFormat {
     fn name(&self) -> &'static str {
         "yomitan"
     }
 
-    fn matches(&self, archive: &mut ZipArchive<Cursor<&[u8]>>) -> bool {
-        archive.index_for_name("index.json").is_some()
+    fn matches(&self, archive: &mut Archive) -> bool {
+        archive.index_for_name(INDEX_NAME).is_some()
     }
 
-    fn parse(
-        &self,
-        archive: &mut ZipArchive<Cursor<&[u8]>>,
-    ) -> Result<Dictionary, DictionaryError> {
-        let index: Index = read_json(archive, "index.json")?;
+    fn parse(&self, archive: &mut Archive) -> Result<Dictionary, DictionaryError> {
+        let index: Index = read_json(archive, INDEX_NAME)?;
         check_version(&index)?;
-        let mut entries = Vec::new();
-        for name in term_bank_names(archive) {
-            entries.extend(read_term_bank(archive, &name)?);
-        }
         Ok(Dictionary {
             title: index.title,
             revision: index.revision,
             source_language: index.source_language,
             target_language: index.target_language,
-            entries,
+            entries: read_term_banks(archive)?,
+            stylesheet: read_stylesheet(archive)?,
+            assets: read_assets(archive)?,
         })
     }
 }
@@ -64,96 +68,65 @@ fn check_version(index: &Index) -> Result<(), DictionaryError> {
     }
 }
 
-/// Lists the term bank entries in numeric order, so `term_bank_2` comes before `term_bank_10`.
-fn term_bank_names(archive: &ZipArchive<Cursor<&[u8]>>) -> Vec<String> {
-    let mut names: Vec<String> = archive
+fn read_stylesheet(archive: &mut Archive) -> Result<Option<String>, DictionaryError> {
+    if archive.index_for_name(STYLESHEET_NAME).is_none() {
+        return Ok(None);
+    }
+    let bytes = read_bytes(archive, STYLESHEET_NAME)?;
+    Ok(Some(String::from_utf8_lossy(&bytes).into_owned()))
+}
+
+/// Reads every file that is not part of the dictionary's data, such as images.
+fn read_assets(archive: &mut Archive) -> Result<Vec<DictionaryAsset>, DictionaryError> {
+    let names: Vec<String> = archive
         .file_names()
-        .filter(|name| name.starts_with("term_bank_") && name.ends_with(".json"))
+        .filter(|name| is_asset(name))
         .map(String::from)
         .collect();
-    names.sort_by_key(|name| bank_number(name));
     names
-}
-
-fn bank_number(name: &str) -> u32 {
-    name.trim_start_matches("term_bank_")
-        .trim_end_matches(".json")
-        .parse()
-        .unwrap_or(0)
-}
-
-fn read_term_bank(
-    archive: &mut ZipArchive<Cursor<&[u8]>>,
-    name: &str,
-) -> Result<Vec<TermEntry>, DictionaryError> {
-    let rows: Vec<Vec<Value>> = read_json(archive, name)?;
-    rows.iter()
-        .map(|row| {
-            parse_term_entry(row).ok_or_else(|| DictionaryError::MalformedTermEntry {
-                name: name.to_string(),
+        .into_iter()
+        .map(|path| {
+            Ok(DictionaryAsset {
+                bytes: read_bytes(archive, &path)?,
+                media_type: media_type_for_path(&path).to_string(),
+                path,
             })
         })
         .collect()
 }
 
-fn read_json<T: DeserializeOwned>(
-    archive: &mut ZipArchive<Cursor<&[u8]>>,
+/// Reports whether an archive entry is a media file.
+/// Directories, the index, the stylesheet, and the term, kanji, tag, and meta banks are not.
+fn is_asset(name: &str) -> bool {
+    let is_bank = !name.contains('/') && name.contains("_bank_") && name.ends_with(".json");
+    !(name.ends_with('/') || name == INDEX_NAME || name == STYLESHEET_NAME || is_bank)
+}
+
+/// Reads and parses a JSON entry of the archive.
+pub(super) fn read_json<T: DeserializeOwned>(
+    archive: &mut Archive,
     name: &str,
 ) -> Result<T, DictionaryError> {
-    let entry = archive.by_name(name)?;
-    serde_json::from_reader(entry).map_err(|source| DictionaryError::Json {
+    // Parsing the decompressed bytes is much faster than parsing from the decompressing reader.
+    let bytes = read_bytes(archive, name)?;
+    serde_json::from_slice(&bytes).map_err(|source| DictionaryError::Json {
         name: name.to_string(),
         source,
     })
 }
 
-/// Converts one term bank row of the form
-/// `[expression, reading, definitionTags, rules, score, glossary, sequence, termTags]`.
-/// Glossary entries that are not plain strings are skipped.
-fn parse_term_entry(row: &[Value]) -> Option<TermEntry> {
-    let term = row.first()?.as_str()?.to_string();
-    let reading = row
-        .get(1)
-        .and_then(Value::as_str)
-        .filter(|reading| !reading.is_empty());
-    let glossary = row.get(5).and_then(Value::as_array);
-    Some(TermEntry {
-        term,
-        reading: reading.map(String::from),
-        definitions: glossary
-            .map(|values| string_items(values))
-            .unwrap_or_default(),
-        tags: [split_tags(row.get(2)), split_tags(row.get(7))].concat(),
-    })
-}
-
-fn string_items(values: &[Value]) -> Vec<String> {
-    values
-        .iter()
-        .filter_map(Value::as_str)
-        .map(String::from)
-        .collect()
-}
-
-fn split_tags(value: Option<&Value>) -> Vec<String> {
-    value
-        .and_then(Value::as_str)
-        .unwrap_or_default()
-        .split_whitespace()
-        .map(String::from)
-        .collect()
+fn read_bytes(archive: &mut Archive, name: &str) -> Result<Vec<u8>, DictionaryError> {
+    let mut file = archive.by_name(name)?;
+    let mut bytes = Vec::with_capacity(usize::try_from(file.size()).unwrap_or(0));
+    file.read_to_end(&mut bytes).map_err(ZipError::from)?;
+    Ok(bytes)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dictionary::{DetailedGlossary, Glossary, TermEntry};
     use crate::test_support::read_fixture_bytes;
-    use serde_json::json;
-
-    fn open_fixture() -> ZipArchive<Cursor<&'static [u8]>> {
-        let bytes: &'static [u8] = read_fixture_bytes("sample-yomitan.zip").leak();
-        ZipArchive::new(Cursor::new(bytes)).expect("fixture should be a zip archive")
-    }
 
     fn parse_fixture(name: &str) -> Dictionary {
         let bytes = read_fixture_bytes(name);
@@ -163,43 +136,34 @@ mod tests {
             .expect("fixture should parse")
     }
 
-    fn cat_row() -> Vec<Value> {
-        json!(["猫", "ねこ", "n common", "", 1, ["cat", {"type": "image"}], 1, "P"])
-            .as_array()
-            .cloned()
-            .unwrap()
+    fn sample() -> Dictionary {
+        parse_fixture("sample-yomitan.zip")
+    }
+
+    fn structured() -> Dictionary {
+        parse_fixture("sample-yomitan-structured.zip")
     }
 
     #[test]
     fn matches_the_yomitan_fixture() {
-        assert!(YomitanFormat.matches(&mut open_fixture()));
+        let bytes = read_fixture_bytes("sample-yomitan.zip");
+        let mut archive = ZipArchive::new(Cursor::new(bytes.as_slice())).unwrap();
+        assert!(YomitanFormat.matches(&mut archive));
     }
 
     #[test]
     fn reads_the_title_of_the_yomitan_fixture() {
-        assert_eq!(
-            YomitanFormat.parse(&mut open_fixture()).unwrap().title,
-            "Sample Dictionary"
-        );
+        assert_eq!(sample().title, "Sample Dictionary");
     }
 
     #[test]
     fn reads_the_revision_of_the_yomitan_fixture() {
-        assert_eq!(
-            YomitanFormat.parse(&mut open_fixture()).unwrap().revision,
-            Some("2026-09-30".into())
-        );
+        assert_eq!(sample().revision, Some("2026-09-30".into()));
     }
 
     #[test]
     fn leaves_the_source_language_empty_when_the_index_omits_it() {
-        assert_eq!(
-            YomitanFormat
-                .parse(&mut open_fixture())
-                .unwrap()
-                .source_language,
-            None
-        );
+        assert_eq!(sample().source_language, None);
     }
 
     #[test]
@@ -221,43 +185,63 @@ mod tests {
     #[test]
     fn reads_the_first_entry_of_the_yomitan_fixture() {
         assert_eq!(
-            YomitanFormat.parse(&mut open_fixture()).unwrap().entries[0],
+            sample().entries[0].to_term_entry(),
             TermEntry {
                 term: "猫".into(),
                 reading: Some("ねこ".into()),
-                definitions: vec!["cat".into()],
+                definitions: vec![Glossary::Text("cat".into())],
                 tags: vec!["n".into()],
             }
         );
     }
 
     #[test]
-    fn skips_glossary_entries_that_are_not_strings() {
-        assert_eq!(
-            parse_term_entry(&cat_row()).unwrap().definitions,
-            vec!["cat"]
+    fn reads_every_entry_of_the_structured_fixture() {
+        assert_eq!(structured().entries.len(), 3);
+    }
+
+    #[test]
+    fn keeps_a_structured_content_item() {
+        let entry = structured().entries[0].to_term_entry();
+        assert!(matches!(
+            entry.definitions[0],
+            Glossary::Detailed(DetailedGlossary::StructuredContent { .. })
+        ));
+    }
+
+    #[test]
+    fn keeps_every_kind_of_glossary_item() {
+        assert_eq!(structured().entries[1].to_term_entry().definitions.len(), 3);
+    }
+
+    #[test]
+    fn reads_the_stylesheet() {
+        assert!(
+            structured()
+                .stylesheet
+                .unwrap()
+                .contains("part-of-speech-info")
         );
     }
 
     #[test]
-    fn combines_definition_tags_and_term_tags() {
-        assert_eq!(
-            parse_term_entry(&cat_row()).unwrap().tags,
-            vec!["n", "common", "P"]
-        );
+    fn has_no_stylesheet_when_the_archive_has_none() {
+        assert_eq!(sample().stylesheet, None);
     }
 
     #[test]
-    fn treats_an_empty_reading_as_none() {
-        let row = json!(["cat", "", "", "", 1, ["a cat"], 1, ""])
-            .as_array()
-            .cloned()
-            .unwrap();
-        assert_eq!(parse_term_entry(&row).unwrap().reading, None);
+    fn reads_only_the_image_as_an_asset() {
+        let paths: Vec<String> = structured().assets.into_iter().map(|a| a.path).collect();
+        assert_eq!(paths, vec!["img/cat.svg"]);
     }
 
     #[test]
-    fn rejects_a_row_without_a_term() {
-        assert_eq!(parse_term_entry(&[json!(1)]), None);
+    fn gives_the_image_its_media_type() {
+        assert_eq!(structured().assets[0].media_type, "image/svg+xml");
+    }
+
+    #[test]
+    fn skips_directory_entries() {
+        assert!(!is_asset("jitendex/graphics/"));
     }
 }

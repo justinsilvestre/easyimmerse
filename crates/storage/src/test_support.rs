@@ -1,3 +1,6 @@
+use std::path::Path;
+
+use easyimmerse_core::dictionary::{Dictionary, parse_dictionary};
 use easyimmerse_core::flashcard::{FlashcardPreset, FlashcardSettings};
 use easyimmerse_core::project::{ProjectId, ProjectSettings};
 
@@ -31,4 +34,11 @@ pub fn count_rows(storage: &Storage, table: &str) -> i64 {
             )
         })
         .unwrap()
+}
+
+pub fn parse_dictionary_fixture(name: &str) -> Dictionary {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures")
+        .join(name);
+    parse_dictionary(&std::fs::read(path).unwrap()).unwrap()
 }

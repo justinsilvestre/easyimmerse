@@ -1,4 +1,5 @@
 pub mod dictionaries;
+pub mod dictionary_assets;
 pub mod dictionary_lookup;
 pub mod documents;
 pub mod flashcards;

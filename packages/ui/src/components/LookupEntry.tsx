@@ -26,9 +26,11 @@ export function LookupEntry({
         )}
       </p>
       <ol className="list-decimal pl-5 text-sm">
-        {entry.definitions.map((definition) => (
-          <li key={definition}>{definition}</li>
-        ))}
+        {entry.definitions
+          .filter((definition) => typeof definition === "string")
+          .map((definition) => (
+            <li key={definition}>{definition}</li>
+          ))}
       </ol>
       {entry.tags.length > 0 && (
         <ul className="mt-1 flex flex-wrap gap-1">

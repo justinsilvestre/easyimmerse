@@ -80,6 +80,7 @@ impl From<StorageError> for ApiFailure {
     fn from(error: StorageError) -> Self {
         match error {
             StorageError::DictionaryNotFound(_)
+            | StorageError::DictionaryAssetNotFound(_)
             | StorageError::ProjectNotFound(_)
             | StorageError::MediaNotFound(_)
             | StorageError::FlashcardNotFound(_)

@@ -1,0 +1,5 @@
+[
+  ["猫","ねこ","n","",10,[{"type":"structured-content","content":[{"tag":"span","data":{"content":"part-of-speech-info"},"title":"noun","content":"n"},{"tag":"ul","data":{"content":"glossary"},"content":{"tag":"li","content":"cat"}},{"tag":"img","path":"img/cat.svg","width":1,"height":1,"sizeUnits":"em","alt":"a cat"}]}],1,"P"],
+  ["犬","いぬ","n","",5,[{"type":"text","text":"dog"},{"type":"image","path":"img/cat.svg","alt":"not a dog"},"hound"],2,""],
+  ["食べた","たべた","","",0,[["食べる",["past"]]],3,""]
+]

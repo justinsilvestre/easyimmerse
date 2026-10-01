@@ -314,6 +314,87 @@
         ]
       }
     },
+    "/dictionaries/{id}/asset": {
+      "get": {
+        "tags": [
+          "dictionaries"
+        ],
+        "summary": "Serves a file from the dictionary archive, such as an image that a glossary item refers to.\nAn `<img>` element cannot send headers, so it passes the token as the `token` query parameter.",
+        "operationId": "getDictionaryAsset",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "description": "The file's path inside the dictionary archive, as a glossary item states it.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "The bearer token, for clients that cannot send headers",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file, with a content type guessed from its extension",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No dictionary has the id, or it has no file at the path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/dictionaries/{id}/languages": {
       "put": {
         "tags": [
@@ -423,6 +504,82 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LookupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No dictionary has the id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/{id}/stylesheet": {
+      "get": {
+        "tags": [
+          "dictionaries"
+        ],
+        "summary": "Serves the dictionary's stylesheet, which styles structured content through its `data-sc-*` attributes.\nA dictionary without one gets an empty stylesheet.",
+        "operationId": "getDictionaryStylesheet",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "The bearer token, for clients that cannot send headers",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The stylesheet",
+            "content": {
+              "text/css": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -2350,6 +2507,50 @@
           }
         }
       },
+      "ContainerElement": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContentData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lang": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The language of the element, as an RFC 5646 tag."
+          }
+        }
+      },
+      "CssLength": {
+        "oneOf": [
+          {
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "description": "A CSS length given either as a number, which Yomitan reads as `em`, or as a CSS string."
+      },
       "Cue": {
         "type": "object",
         "description": "One text segment with the time range during which it is shown.\n\nThe text keeps any inline markup from the source file, such as `<i>`, and joins\nmultiple lines with `\\n`.",
@@ -2379,6 +2580,83 @@
             "type": "string"
           }
         }
+      },
+      "Deinflection": {
+        "type": "array",
+        "items": false,
+        "prefixItems": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "The uninflected form of a term, and the inflection rules that produce the term from it."
+      },
+      "DetailedGlossary": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "text",
+              "type"
+            ],
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "text"
+                ]
+              }
+            }
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GlossaryImage"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "image"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "content",
+              "type"
+            ],
+            "properties": {
+              "content": {
+                "$ref": "#/components/schemas/StructuredContent"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "structured-content"
+                ]
+              }
+            }
+          }
+        ]
       },
       "DictionaryLanguages": {
         "type": "object",
@@ -2521,6 +2799,21 @@
             "items": {
               "$ref": "#/components/schemas/EmbeddedSubtitleTrack"
             }
+          }
+        }
+      },
+      "EmptyElement": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContentData"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -2741,6 +3034,131 @@
           }
         }
       },
+      "FontStyle": {
+        "type": "string",
+        "enum": [
+          "normal",
+          "italic"
+        ]
+      },
+      "FontWeight": {
+        "type": "string",
+        "enum": [
+          "normal",
+          "bold"
+        ]
+      },
+      "Glossary": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "A plain-text definition."
+          },
+          {
+            "$ref": "#/components/schemas/Deinflection",
+            "description": "A note that the term is an inflected form of another term."
+          },
+          {
+            "$ref": "#/components/schemas/DetailedGlossary"
+          }
+        ],
+        "description": "One definition of a term, in any of the forms the Yomitan term bank v3 schema allows."
+      },
+      "GlossaryImage": {
+        "type": "object",
+        "description": "An image stored in the dictionary archive, with Yomitan's display hints.\n\n`path` is the image's path inside the archive.\nThe server serves the image at `GET /dictionaries/{id}/asset?path=<path>`.",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "alt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "appearance": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ImageAppearance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "background": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether a background color shows behind the image. Defaults to true."
+          },
+          "collapsed": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the image starts collapsed."
+          },
+          "collapsible": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the person can collapse the image."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "height": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "The preferred height, in the same units as `width`."
+          },
+          "imageRendering": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ImageRendering"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "path": {
+            "type": "string"
+          },
+          "pixelated": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the image looks pixelated when scaled up. `imageRendering` supersedes it."
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Hover text."
+          },
+          "width": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "The preferred width.\nIt is in `sizeUnits` when the image is a structured-content node, and in pixels otherwise."
+          }
+        }
+      },
       "HealthResponse": {
         "type": "object",
         "required": [
@@ -2752,6 +3170,78 @@
           }
         }
       },
+      "ImageAppearance": {
+        "type": "string",
+        "description": "`monochrome` masks the opaque parts of the image with the current text color.",
+        "enum": [
+          "auto",
+          "monochrome"
+        ]
+      },
+      "ImageElement": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GlossaryImage"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "border": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Shorthand for the border width, style, and color."
+              },
+              "borderRadius": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "data": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/StructuredContentData"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "sizeUnits": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/SizeUnits",
+                    "description": "The units of `width` and `height`."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verticalAlign": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/VerticalAlign"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "ImageRendering": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "pixelated",
+          "crisp-edges"
+        ]
+      },
       "ImportLocalDictionaryRequest": {
         "type": "object",
         "required": [
@@ -2760,6 +3250,34 @@
         "properties": {
           "path": {
             "type": "string"
+          }
+        }
+      },
+      "LinkElement": {
+        "type": "object",
+        "required": [
+          "href"
+        ],
+        "properties": {
+          "content": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "href": {
+            "type": "string",
+            "description": "An `http:` or `https:` URL, or a link to a search within the dictionaries.\nA search link starts with `?`, as in `?query=語&wildcards=off`."
+          },
+          "lang": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -3179,6 +3697,760 @@
           }
         }
       },
+      "SizeUnits": {
+        "type": "string",
+        "enum": [
+          "px",
+          "em"
+        ]
+      },
+      "StructuredContent": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "array",
+            "items": {}
+          },
+          {
+            "$ref": "#/components/schemas/StructuredContentElement"
+          }
+        ],
+        "description": "A node of Yomitan structured content: a text node, a list of child nodes, or an HTML-like element."
+      },
+      "StructuredContentData": {
+        "type": "object",
+        "description": "The `data` attributes of an element.\nEach key `k` becomes the HTML attribute `data-sc-k`, which the dictionary's stylesheet selects on.",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "propertyNames": {
+          "type": "string"
+        }
+      },
+      "StructuredContentElement": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmptyElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "br"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "ruby"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "rt"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "rp"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "table"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "thead"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "tbody"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "tfoot"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContainerElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "tr"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TableCellElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "td"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TableCellElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "th"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StyledElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "span"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StyledElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "div"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StyledElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "ol"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StyledElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "ul"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StyledElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "li"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StyledElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "details"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StyledElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "summary"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ImageElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "img"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LinkElement"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "tag"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "a"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "description": "An element of structured content, identified by its HTML tag name.\nIt renders as the HTML element of the same name."
+      },
+      "StructuredContentStyle": {
+        "type": "object",
+        "description": "The inline styles a Yomitan structured-content element may carry.\nEach field mirrors the CSS property of the same name.",
+        "properties": {
+          "background": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "backgroundColor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "borderColor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "borderRadius": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "borderStyle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "borderWidth": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clipPath": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fontSize": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fontStyle": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FontStyle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fontWeight": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FontWeight"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "listStyleType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "margin": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "marginBottom": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CssLength"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "marginLeft": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CssLength"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "marginRight": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CssLength"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "marginTop": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CssLength"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "padding": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paddingBottom": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paddingLeft": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paddingRight": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paddingTop": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "textAlign": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TextAlign"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "textDecorationColor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "textDecorationLine": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TextDecorationLine"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "textDecorationStyle": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TextDecorationStyle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "textEmphasis": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "textShadow": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verticalAlign": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/VerticalAlign"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "whiteSpace": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wordBreak": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WordBreak"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "StyledElement": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContentData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lang": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "open": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether a `details` element starts open."
+          },
+          "style": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContentStyle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Hover text."
+          }
+        }
+      },
       "SubtitleRole": {
         "type": "string",
         "enum": [
@@ -3259,8 +4531,66 @@
         ],
         "description": "Where a subtitle track comes from: a separate file, or a track embedded in the media\ncontainer, identified by the container's own track id."
       },
+      "TableCellElement": {
+        "type": "object",
+        "properties": {
+          "colSpan": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "content": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContentData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lang": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rowSpan": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "style": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StructuredContentStyle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
       "TermEntry": {
         "type": "object",
+        "description": "A term entry as a lookup returns it.\nIts glossary items are validated against the Yomitan schema.",
         "required": [
           "term",
           "definitions",
@@ -3270,7 +4600,7 @@
           "definitions": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/Glossary"
             }
           },
           "reading": {
@@ -3289,6 +4619,52 @@
             "type": "string"
           }
         }
+      },
+      "TextAlign": {
+        "type": "string",
+        "enum": [
+          "start",
+          "end",
+          "left",
+          "right",
+          "center",
+          "justify",
+          "justify-all",
+          "match-parent"
+        ]
+      },
+      "TextDecorationLine": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextDecorationLineKeyword"
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextDecorationLineKeyword"
+            }
+          }
+        ],
+        "description": "Either one CSS `text-decoration-line` keyword or a list of them."
+      },
+      "TextDecorationLineKeyword": {
+        "type": "string",
+        "enum": [
+          "none",
+          "underline",
+          "overline",
+          "line-through"
+        ]
+      },
+      "TextDecorationStyle": {
+        "type": "string",
+        "enum": [
+          "solid",
+          "double",
+          "dotted",
+          "dashed",
+          "wavy"
+        ]
       },
       "TextSource": {
         "oneOf": [
@@ -3388,6 +4764,27 @@
             "minimum": 0
           }
         }
+      },
+      "VerticalAlign": {
+        "type": "string",
+        "enum": [
+          "baseline",
+          "sub",
+          "super",
+          "text-top",
+          "text-bottom",
+          "middle",
+          "top",
+          "bottom"
+        ]
+      },
+      "WordBreak": {
+        "type": "string",
+        "enum": [
+          "normal",
+          "break-all",
+          "keep-all"
+        ]
       }
     },
     "securitySchemes": {

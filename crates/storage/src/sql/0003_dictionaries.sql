@@ -1,17 +1,27 @@
+-- `complete` is zero while an import is still adding entries.
+-- Every query hides incomplete dictionaries.
 CREATE TABLE dictionaries (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
-    revision TEXT
+    revision TEXT,
+    stylesheet TEXT,
+    entry_count INTEGER NOT NULL DEFAULT 0,
+    complete INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE dictionary_entries (
-    id INTEGER PRIMARY KEY,
+-- The entries of each dictionary live in a table of their own, `dictionary_terms_<id>`.
+-- Each block holds the deflated JSON array of the glossaries of consecutive entries.
+CREATE TABLE dictionary_glossary_blocks (
     dictionary_id TEXT NOT NULL REFERENCES dictionaries(id) ON DELETE CASCADE,
-    term TEXT NOT NULL,
-    reading TEXT,
-    definitions_json TEXT NOT NULL,
-    tags_json TEXT NOT NULL
+    block INTEGER NOT NULL,
+    glossaries BLOB NOT NULL,
+    PRIMARY KEY (dictionary_id, block)
 );
 
-CREATE INDEX dictionary_entries_by_term ON dictionary_entries (dictionary_id, term);
-CREATE INDEX dictionary_entries_by_reading ON dictionary_entries (dictionary_id, reading);
+CREATE TABLE dictionary_assets (
+    dictionary_id TEXT NOT NULL REFERENCES dictionaries(id) ON DELETE CASCADE,
+    path TEXT NOT NULL,
+    media_type TEXT NOT NULL,
+    bytes BLOB NOT NULL,
+    PRIMARY KEY (dictionary_id, path)
+);

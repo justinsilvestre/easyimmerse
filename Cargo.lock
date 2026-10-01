@@ -1384,10 +1384,13 @@ dependencies = [
 name = "easyimmerse-core"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "percent-encoding",
+ "rayon",
  "roxmltree",
  "serde",
  "serde_json",
+ "serde_with",
  "thiserror 2.0.21",
  "ts-rs",
  "utoipa",
@@ -1488,8 +1491,10 @@ name = "easyimmerse-storage"
 version = "0.1.0"
 dependencies = [
  "easyimmerse-core",
+ "flate2",
  "hex",
  "rand 0.10.3",
+ "rayon",
  "rusqlite",
  "rusqlite_migration",
  "serde",

@@ -68,6 +68,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dictionaries/{id}/asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Serves a file from the dictionary archive, such as an image that a glossary item refers to.
+         *     An `<img>` element cannot send headers, so it passes the token as the `token` query parameter.
+         */
+        get: operations["getDictionaryAsset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dictionaries/{id}/languages": {
         parameters: {
             query?: never;
@@ -92,6 +112,26 @@ export interface paths {
             cookie?: never;
         };
         get: operations["lookupTerm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/{id}/stylesheet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Serves the dictionary's stylesheet, which styles structured content through its `data-sc-*` attributes.
+         *     A dictionary without one gets an empty stylesheet.
+         */
+        get: operations["getDictionaryStylesheet"];
         put?: never;
         post?: never;
         delete?: never;
@@ -469,6 +509,14 @@ export interface components {
             paragraphs: string[];
             title?: string | null;
         };
+        ContainerElement: {
+            content?: components["schemas"]["StructuredContent"] | null;
+            data?: components["schemas"]["StructuredContentData"] | null;
+            /** @description The language of the element, as an RFC 5646 tag. */
+            lang?: string | null;
+        };
+        /** @description A CSS length given either as a number, which Yomitan reads as `em`, or as a CSS string. */
+        CssLength: number | string;
         /**
          * @description One text segment with the time range during which it is shown.
          *
@@ -483,6 +531,23 @@ export interface components {
             /** Format: int64 */
             start_ms: number;
             text: string;
+        };
+        /** @description The uninflected form of a term, and the inflection rules that produce the term from it. */
+        Deinflection: [
+            string,
+            string[]
+        ];
+        DetailedGlossary: {
+            text: string;
+            /** @enum {string} */
+            type: "text";
+        } | (components["schemas"]["GlossaryImage"] & {
+            /** @enum {string} */
+            type: "image";
+        }) | {
+            content: components["schemas"]["StructuredContent"];
+            /** @enum {string} */
+            type: "structured-content";
         };
         /** @description The languages a dictionary translates between, as ISO 639 codes. `null` clears one. */
         DictionaryLanguages: {
@@ -525,6 +590,9 @@ export interface components {
         };
         EmbeddedSubtitlesResponse: {
             tracks: components["schemas"]["EmbeddedSubtitleTrack"][];
+        };
+        EmptyElement: {
+            data?: components["schemas"]["StructuredContentData"] | null;
         };
         /** @description A saved flashcard. */
         Flashcard: {
@@ -578,11 +646,75 @@ export interface components {
             /** @description Fills the audio fields with synthesized speech when the media has no audio track. */
             use_tts_when_no_audio: boolean;
         };
+        /** @enum {string} */
+        FontStyle: "normal" | "italic";
+        /** @enum {string} */
+        FontWeight: "normal" | "bold";
+        /** @description One definition of a term, in any of the forms the Yomitan term bank v3 schema allows. */
+        Glossary: string | components["schemas"]["Deinflection"] | components["schemas"]["DetailedGlossary"];
+        /**
+         * @description An image stored in the dictionary archive, with Yomitan's display hints.
+         *
+         *     `path` is the image's path inside the archive.
+         *     The server serves the image at `GET /dictionaries/{id}/asset?path=<path>`.
+         */
+        GlossaryImage: {
+            alt?: string | null;
+            appearance?: components["schemas"]["ImageAppearance"] | null;
+            /** @description Whether a background color shows behind the image. Defaults to true. */
+            background?: boolean | null;
+            /** @description Whether the image starts collapsed. */
+            collapsed?: boolean | null;
+            /** @description Whether the person can collapse the image. */
+            collapsible?: boolean | null;
+            description?: string | null;
+            /**
+             * Format: double
+             * @description The preferred height, in the same units as `width`.
+             */
+            height?: number | null;
+            imageRendering?: components["schemas"]["ImageRendering"] | null;
+            path: string;
+            /** @description Whether the image looks pixelated when scaled up. `imageRendering` supersedes it. */
+            pixelated?: boolean | null;
+            /** @description Hover text. */
+            title?: string | null;
+            /**
+             * Format: double
+             * @description The preferred width.
+             *     It is in `sizeUnits` when the image is a structured-content node, and in pixels otherwise.
+             */
+            width?: number | null;
+        };
         HealthResponse: {
             status: string;
         };
+        /**
+         * @description `monochrome` masks the opaque parts of the image with the current text color.
+         * @enum {string}
+         */
+        ImageAppearance: "auto" | "monochrome";
+        ImageElement: components["schemas"]["GlossaryImage"] & {
+            /** @description Shorthand for the border width, style, and color. */
+            border?: string | null;
+            borderRadius?: string | null;
+            data?: components["schemas"]["StructuredContentData"] | null;
+            sizeUnits?: components["schemas"]["SizeUnits"] | null;
+            verticalAlign?: components["schemas"]["VerticalAlign"] | null;
+        };
+        /** @enum {string} */
+        ImageRendering: "auto" | "pixelated" | "crisp-edges";
         ImportLocalDictionaryRequest: {
             path: string;
+        };
+        LinkElement: {
+            content?: components["schemas"]["StructuredContent"] | null;
+            /**
+             * @description An `http:` or `https:` URL, or a link to a search within the dictionaries.
+             *     A search link starts with `?`, as in `?query=語&wildcards=off`.
+             */
+            href: string;
+            lang?: string | null;
         };
         ListDictionariesResponse: {
             dictionaries: components["schemas"]["DictionarySummary"][];
@@ -707,6 +839,130 @@ export interface components {
             translation_language: string;
         };
         /** @enum {string} */
+        SizeUnits: "px" | "em";
+        /** @description A node of Yomitan structured content: a text node, a list of child nodes, or an HTML-like element. */
+        StructuredContent: string | unknown[] | components["schemas"]["StructuredContentElement"];
+        /**
+         * @description The `data` attributes of an element.
+         *     Each key `k` becomes the HTML attribute `data-sc-k`, which the dictionary's stylesheet selects on.
+         */
+        StructuredContentData: {
+            [key: string]: string;
+        };
+        /**
+         * @description An element of structured content, identified by its HTML tag name.
+         *     It renders as the HTML element of the same name.
+         */
+        StructuredContentElement: (components["schemas"]["EmptyElement"] & {
+            /** @enum {string} */
+            tag: "br";
+        }) | (components["schemas"]["ContainerElement"] & {
+            /** @enum {string} */
+            tag: "ruby";
+        }) | (components["schemas"]["ContainerElement"] & {
+            /** @enum {string} */
+            tag: "rt";
+        }) | (components["schemas"]["ContainerElement"] & {
+            /** @enum {string} */
+            tag: "rp";
+        }) | (components["schemas"]["ContainerElement"] & {
+            /** @enum {string} */
+            tag: "table";
+        }) | (components["schemas"]["ContainerElement"] & {
+            /** @enum {string} */
+            tag: "thead";
+        }) | (components["schemas"]["ContainerElement"] & {
+            /** @enum {string} */
+            tag: "tbody";
+        }) | (components["schemas"]["ContainerElement"] & {
+            /** @enum {string} */
+            tag: "tfoot";
+        }) | (components["schemas"]["ContainerElement"] & {
+            /** @enum {string} */
+            tag: "tr";
+        }) | (components["schemas"]["TableCellElement"] & {
+            /** @enum {string} */
+            tag: "td";
+        }) | (components["schemas"]["TableCellElement"] & {
+            /** @enum {string} */
+            tag: "th";
+        }) | (components["schemas"]["StyledElement"] & {
+            /** @enum {string} */
+            tag: "span";
+        }) | (components["schemas"]["StyledElement"] & {
+            /** @enum {string} */
+            tag: "div";
+        }) | (components["schemas"]["StyledElement"] & {
+            /** @enum {string} */
+            tag: "ol";
+        }) | (components["schemas"]["StyledElement"] & {
+            /** @enum {string} */
+            tag: "ul";
+        }) | (components["schemas"]["StyledElement"] & {
+            /** @enum {string} */
+            tag: "li";
+        }) | (components["schemas"]["StyledElement"] & {
+            /** @enum {string} */
+            tag: "details";
+        }) | (components["schemas"]["StyledElement"] & {
+            /** @enum {string} */
+            tag: "summary";
+        }) | (components["schemas"]["ImageElement"] & {
+            /** @enum {string} */
+            tag: "img";
+        }) | (components["schemas"]["LinkElement"] & {
+            /** @enum {string} */
+            tag: "a";
+        });
+        /**
+         * @description The inline styles a Yomitan structured-content element may carry.
+         *     Each field mirrors the CSS property of the same name.
+         */
+        StructuredContentStyle: {
+            background?: string | null;
+            backgroundColor?: string | null;
+            borderColor?: string | null;
+            borderRadius?: string | null;
+            borderStyle?: string | null;
+            borderWidth?: string | null;
+            clipPath?: string | null;
+            color?: string | null;
+            cursor?: string | null;
+            fontSize?: string | null;
+            fontStyle?: components["schemas"]["FontStyle"] | null;
+            fontWeight?: components["schemas"]["FontWeight"] | null;
+            listStyleType?: string | null;
+            margin?: string | null;
+            marginBottom?: components["schemas"]["CssLength"] | null;
+            marginLeft?: components["schemas"]["CssLength"] | null;
+            marginRight?: components["schemas"]["CssLength"] | null;
+            marginTop?: components["schemas"]["CssLength"] | null;
+            padding?: string | null;
+            paddingBottom?: string | null;
+            paddingLeft?: string | null;
+            paddingRight?: string | null;
+            paddingTop?: string | null;
+            textAlign?: components["schemas"]["TextAlign"] | null;
+            textDecorationColor?: string | null;
+            textDecorationLine?: components["schemas"]["TextDecorationLine"] | null;
+            textDecorationStyle?: components["schemas"]["TextDecorationStyle"] | null;
+            textEmphasis?: string | null;
+            textShadow?: string | null;
+            verticalAlign?: components["schemas"]["VerticalAlign"] | null;
+            whiteSpace?: string | null;
+            wordBreak?: components["schemas"]["WordBreak"] | null;
+        };
+        StyledElement: {
+            content?: components["schemas"]["StructuredContent"] | null;
+            data?: components["schemas"]["StructuredContentData"] | null;
+            lang?: string | null;
+            /** @description Whether a `details` element starts open. */
+            open?: boolean | null;
+            style?: components["schemas"]["StructuredContentStyle"] | null;
+            /** @description Hover text. */
+            title?: string | null;
+        };
+        /** @enum {string} */
         SubtitleRole: "target" | "translation";
         SubtitleTrack: {
             id: string;
@@ -730,12 +986,34 @@ export interface components {
             /** Format: int32 */
             track_id: number;
         };
+        TableCellElement: {
+            /** Format: int32 */
+            colSpan?: number | null;
+            content?: components["schemas"]["StructuredContent"] | null;
+            data?: components["schemas"]["StructuredContentData"] | null;
+            lang?: string | null;
+            /** Format: int32 */
+            rowSpan?: number | null;
+            style?: components["schemas"]["StructuredContentStyle"] | null;
+        };
+        /**
+         * @description A term entry as a lookup returns it.
+         *     Its glossary items are validated against the Yomitan schema.
+         */
         TermEntry: {
-            definitions: string[];
+            definitions: components["schemas"]["Glossary"][];
             reading?: string | null;
             tags: string[];
             term: string;
         };
+        /** @enum {string} */
+        TextAlign: "start" | "end" | "left" | "right" | "center" | "justify" | "justify-all" | "match-parent";
+        /** @description Either one CSS `text-decoration-line` keyword or a list of them. */
+        TextDecorationLine: components["schemas"]["TextDecorationLineKeyword"] | components["schemas"]["TextDecorationLineKeyword"][];
+        /** @enum {string} */
+        TextDecorationLineKeyword: "none" | "underline" | "overline" | "line-through";
+        /** @enum {string} */
+        TextDecorationStyle: "solid" | "double" | "dotted" | "dashed" | "wavy";
         /**
          * @description Where the text of a request comes from.
          *
@@ -769,6 +1047,10 @@ export interface components {
             /** Format: int64 */
             duration_ms: number;
         };
+        /** @enum {string} */
+        VerticalAlign: "baseline" | "sub" | "super" | "text-top" | "text-bottom" | "middle" | "top" | "bottom";
+        /** @enum {string} */
+        WordBreak: "normal" | "break-all" | "keep-all";
     };
     responses: never;
     parameters: never;
@@ -1026,6 +1308,61 @@ export interface operations {
             };
         };
     };
+    getDictionaryAsset: {
+        parameters: {
+            query: {
+                /** @description The file's path inside the dictionary archive, as a glossary item states it. */
+                path: string;
+                /** @description The bearer token, for clients that cannot send headers */
+                token?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file, with a content type guessed from its extension */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No dictionary has the id, or it has no file at the path */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     setDictionaryLanguages: {
         parameters: {
             query?: never;
@@ -1102,6 +1439,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LookupResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No dictionary has the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getDictionaryStylesheet: {
+        parameters: {
+            query?: {
+                /** @description The bearer token, for clients that cannot send headers */
+                token?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The stylesheet */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/css": string;
                 };
             };
             /** @description Missing or invalid token */

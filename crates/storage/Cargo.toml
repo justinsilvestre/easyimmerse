@@ -9,8 +9,10 @@ rust-version.workspace = true
 
 [dependencies]
 easyimmerse-core = { workspace = true }
+flate2 = { workspace = true }
 hex = { workspace = true }
 rand = { workspace = true }
+rayon = { workspace = true }
 rusqlite = { workspace = true }
 rusqlite_migration = { workspace = true }
 serde = { workspace = true }

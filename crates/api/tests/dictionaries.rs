@@ -176,3 +176,38 @@ async fn deleting_an_unknown_dictionary_is_not_found() {
     let server = spawn_test_server(false).await;
     assert_eq!(server.delete("/dictionaries/missing").await.status, 404);
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn looks_up_a_structured_content_entry_with_its_glossary_intact() {
+    let server = spawn_test_server(false).await;
+    let id = id_of(&import_named_fixture(&server, "sample-yomitan-structured.zip").await);
+    let response = server
+        .get(&format!("/dictionaries/{id}/lookup?term=%E7%8C%AB"))
+        .await;
+    assert_eq!(
+        response.json()["entries"][0]["definitions"],
+        json!([{
+            "type": "structured-content",
+            "content": [
+                { "tag": "span", "data": { "content": "part-of-speech-info" }, "title": "noun", "content": "n" },
+                { "tag": "ul", "data": { "content": "glossary" }, "content": { "tag": "li", "content": "cat" } },
+                { "tag": "img", "path": "img/cat.svg", "width": 1.0, "height": 1.0, "sizeUnits": "em", "alt": "a cat" }
+            ]
+        }])
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn looks_up_a_deinflection_entry() {
+    let server = spawn_test_server(false).await;
+    let id = id_of(&import_named_fixture(&server, "sample-yomitan-structured.zip").await);
+    let response = server
+        .get(&format!(
+            "/dictionaries/{id}/lookup?term=%E9%A3%9F%E3%81%B9%E3%81%9F"
+        ))
+        .await;
+    assert_eq!(
+        response.json()["entries"][0]["definitions"],
+        json!([["食べる", ["past"]]])
+    );
+}

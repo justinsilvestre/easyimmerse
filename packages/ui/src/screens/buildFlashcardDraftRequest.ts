@@ -84,7 +84,7 @@ function isSameEntry(first: TermEntry, second: TermEntry): boolean {
   return (
     first.term === second.term &&
     first.reading === second.reading &&
-    first.definitions.join("\n") === second.definitions.join("\n")
+    JSON.stringify(first.definitions) === JSON.stringify(second.definitions)
   );
 }
 
@@ -97,7 +97,8 @@ function collectDefinitions(
     .filter(({ dictionary }) =>
       acceptsLanguage(dictionary?.target_language ?? null),
     )
-    .flatMap(({ entries }) => entries.flatMap((entry) => entry.definitions));
+    .flatMap(({ entries }) => entries.flatMap((entry) => entry.definitions))
+    .filter((definition) => typeof definition === "string");
 }
 
 function findContextTranslation(

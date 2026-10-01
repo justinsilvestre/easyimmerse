@@ -142,6 +142,41 @@ mod tests {
         assert_eq!(dictionary["title"], "Sample Dictionary");
     }
 
+    fn structured_dictionary_json() -> String {
+        parse_dictionary_json(&read_fixture("sample-yomitan-structured.zip")).unwrap()
+    }
+
+    fn structured_dictionary() -> serde_json::Value {
+        serde_json::from_str(&structured_dictionary_json()).unwrap()
+    }
+
+    #[test]
+    fn carries_the_stylesheet_of_the_structured_fixture() {
+        assert!(
+            structured_dictionary()["stylesheet"]
+                .as_str()
+                .unwrap()
+                .contains("part-of-speech-info")
+        );
+    }
+
+    #[test]
+    fn carries_the_image_of_the_structured_fixture_as_base64() {
+        let image = &structured_dictionary()["assets"][0];
+        assert!(image["bytes"].as_str().unwrap().starts_with("PHN2Zy"));
+    }
+
+    #[test]
+    fn looks_up_a_structured_entry_with_its_typed_glossary() {
+        let entries: serde_json::Value =
+            serde_json::from_str(&lookup_term_json(&structured_dictionary_json(), "犬").unwrap())
+                .unwrap();
+        assert_eq!(
+            entries[0]["definitions"][0],
+            serde_json::json!({ "type": "text", "text": "dog" })
+        );
+    }
+
     fn draft_request() -> String {
         serde_json::json!({
             "word": "cats", "lemma": "cat", "reading": null,

@@ -4,10 +4,17 @@
 //! method locks the connection for the duration of one operation.
 
 mod dictionaries;
+mod dictionary_assets;
+mod dictionary_import;
+mod dictionary_import_rows;
+mod dictionary_lookup;
+mod dictionary_terms_table;
 mod enum_text;
 mod error;
 mod flashcards;
+mod glossary_block;
 mod ids;
+mod import_connection;
 mod media_files;
 mod migrations;
 mod preferences;
@@ -17,12 +24,13 @@ mod subtitle_tracks;
 mod test_support;
 
 pub use dictionaries::{DictionaryId, StoredDictionary};
+pub use dictionary_assets::StoredDictionaryAsset;
 pub use error::StorageError;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use easyimmerse_core::dictionary::{Dictionary, TermEntry};
+use easyimmerse_core::dictionary::TermEntry;
 use easyimmerse_core::flashcard::{Flashcard, FlashcardId, NewFlashcard};
 use easyimmerse_core::media_file::{
     MediaFile, MediaId, NewMediaFile, NewSubtitleTrack, SubtitleTrack,
@@ -32,26 +40,29 @@ use rusqlite::Connection;
 
 pub struct Storage {
     conn: Mutex<Connection>,
+    /// The database file, or `None` for an in-memory database.
+    path: Option<PathBuf>,
 }
 
 impl Storage {
     /// Opens or creates the database file and brings its schema up to date.
     pub fn open(path: &Path) -> Result<Self, StorageError> {
-        let conn = Connection::open(path)?;
-        conn.pragma_update(None, "journal_mode", "WAL")?;
-        Self::from_connection(conn)
+        let conn = open_file_connection(path)?;
+        Self::from_connection(conn, Some(path.to_path_buf()))
     }
 
     /// Opens an empty database that lives only as long as this value.
     pub fn open_in_memory() -> Result<Self, StorageError> {
-        Self::from_connection(Connection::open_in_memory()?)
+        Self::from_connection(Connection::open_in_memory()?, None)
     }
 
-    fn from_connection(mut conn: Connection) -> Result<Self, StorageError> {
+    fn from_connection(mut conn: Connection, path: Option<PathBuf>) -> Result<Self, StorageError> {
         conn.pragma_update(None, "foreign_keys", "ON")?;
         migrations::MIGRATIONS.to_latest(&mut conn)?;
+        dictionaries::delete_incomplete_dictionaries(&conn)?;
         Ok(Self {
             conn: Mutex::new(conn),
+            path,
         })
     }
 
@@ -199,10 +210,6 @@ impl Storage {
         self.with_connection(|conn| preferences::set_preference(conn, key, value))
     }
 
-    pub fn insert_dictionary(&self, dictionary: &Dictionary) -> Result<DictionaryId, StorageError> {
-        self.with_connection(|conn| dictionaries::insert_dictionary(conn, dictionary))
-    }
-
     pub fn list_dictionaries(&self) -> Result<Vec<StoredDictionary>, StorageError> {
         self.with_connection(|conn| dictionaries::list_dictionaries(conn))
     }
@@ -212,7 +219,7 @@ impl Storage {
         id: &DictionaryId,
         term: &str,
     ) -> Result<Vec<TermEntry>, StorageError> {
-        self.with_connection(|conn| dictionaries::lookup_term(conn, id, term))
+        self.with_connection(|conn| dictionary_lookup::lookup_term(conn, id, term))
     }
 
     pub fn get_dictionary(&self, id: &DictionaryId) -> Result<StoredDictionary, StorageError> {
@@ -223,7 +230,7 @@ impl Storage {
         &self,
         term: &str,
     ) -> Result<Vec<(StoredDictionary, Vec<TermEntry>)>, StorageError> {
-        self.with_connection(|conn| dictionaries::lookup_term_everywhere(conn, term))
+        self.with_connection(|conn| dictionary_lookup::lookup_term_everywhere(conn, term))
     }
 
     pub fn set_dictionary_languages(
@@ -240,6 +247,30 @@ impl Storage {
     pub fn delete_dictionary(&self, id: &DictionaryId) -> Result<(), StorageError> {
         self.with_connection(|conn| dictionaries::delete_dictionary(conn, id))
     }
+
+    pub fn get_dictionary_asset(
+        &self,
+        id: &DictionaryId,
+        path: &str,
+    ) -> Result<StoredDictionaryAsset, StorageError> {
+        self.with_connection(|conn| dictionary_assets::get_dictionary_asset(conn, id, path))
+    }
+
+    pub fn get_dictionary_stylesheet(
+        &self,
+        id: &DictionaryId,
+    ) -> Result<Option<String>, StorageError> {
+        self.with_connection(|conn| dictionary_assets::get_dictionary_stylesheet(conn, id))
+    }
+}
+
+/// Opens a connection to a database file in write-ahead-log mode, in which readers never
+/// wait for a writer on another connection.
+pub(crate) fn open_file_connection(path: &Path) -> Result<Connection, StorageError> {
+    let conn = Connection::open(path)?;
+    conn.pragma_update(None, "journal_mode", "WAL")?;
+    conn.pragma_update(None, "foreign_keys", "ON")?;
+    Ok(conn)
 }
 
 #[cfg(test)]
