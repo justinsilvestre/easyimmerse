@@ -6,6 +6,7 @@ import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
 import type { Effects } from "./effects.ts";
 import type { PickedFile } from "./filePick/chosenFile.ts";
 import { createRecordingEffects } from "./recordingEffects.ts";
+import { selectChosenFile } from "./selectors.ts";
 import { createMediaFile } from "./testSupport/createMediaFile.ts";
 
 const subtitles = { kind: "subtitles", role: "target" } as const;
@@ -166,6 +167,14 @@ describe("effectsMiddleware", () => {
       expect(server.dispatchedActions).toContainEqual(
         actions.storedFileReadFailed("Nothing is stored at k1."),
       );
+    });
+  });
+
+  it("lets go of a chosen dictionary whose bytes cannot be read", async () => {
+    const { store } = createStore();
+    store.dispatch(actions.fileChosen(dictionary, storedDictionary));
+    await vi.waitFor(() => {
+      expect(selectChosenFile(store.getState())).toBeNull();
     });
   });
 

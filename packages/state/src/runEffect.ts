@@ -124,9 +124,11 @@ function readStoredFileBytes(
           : actions.documentBytesRead(target.mediaId, bytes),
       ),
     )
-    .catch((error: unknown) =>
-      dispatch(actions.storedFileReadFailed(describeError(error))),
-    );
+    .catch((error: unknown) => {
+      dispatch(actions.storedFileReadFailed(describeError(error)));
+      // A chosen file that cannot be read is let go of, since nothing can act on it.
+      if (target.kind === "chosenFile") dispatch(actions.chosenFileHandled());
+    });
 }
 
 function describeError(error: unknown): string {
