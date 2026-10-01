@@ -3,9 +3,7 @@ import { formatClip } from "./formatClip.ts";
 
 describe("formatClip", () => {
   it("shows the start and end in minutes, seconds, and tenths", () => {
-    expect(formatClip({ start_ms: 500, end_ms: 1500 })).toBe(
-      "0:00.5 – 0:01.5",
-    );
+    expect(formatClip({ start_ms: 500, end_ms: 1500 })).toBe("0:00.5 – 0:01.5");
   });
 
   it("rounds to the nearest tenth of a second", () => {
