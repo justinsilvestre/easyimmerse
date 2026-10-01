@@ -20,17 +20,16 @@ export function TokenizedText({
 }) {
   return (
     <span className={clsx("whitespace-pre-line", className)}>
-      {splitIntoTokens(text).map((token, index) =>
+      {splitIntoTokens(text).map((token) =>
         token.kind === "word" ? (
           <WordButton
-            // Tokens have no identity beyond their position in the text.
-            key={`${index}-${token.text}`}
+            key={token.start}
             word={token.text}
             onHovered={onWordHovered}
             onActivated={onWordActivated}
           />
         ) : (
-          <Fragment key={`${index}-${token.text}`}>{token.text}</Fragment>
+          <Fragment key={token.start}>{token.text}</Fragment>
         ),
       )}
     </span>
