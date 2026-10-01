@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { fn, userEvent, within } from "storybook/test";
 import { fixtureProject } from "../testSupport/fixtureProject.ts";
 import { MediaList } from "./MediaList.tsx";
 
@@ -20,3 +20,14 @@ type Story = StoryObj<typeof meta>;
 export const WithItems: Story = {};
 
 export const Empty: Story = { args: { media: [] } };
+
+/** Reached by clicking a file's remove control. */
+export const ConfirmingRemoval: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", {
+        name: "Remove Dark S01E01 – Geheimnisse.mkv",
+      }),
+    );
+  },
+};
