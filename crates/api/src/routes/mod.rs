@@ -1,7 +1,12 @@
 pub mod dictionaries;
+pub mod dictionary_lookup;
 pub mod documents;
+pub mod flashcards;
 pub mod health;
+pub mod media;
+pub mod media_stream;
 pub mod openapi;
 pub mod preferences;
 pub mod projects;
+pub mod subtitle_cues;
 pub mod timed_text;

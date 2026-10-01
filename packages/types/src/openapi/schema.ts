@@ -36,6 +36,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dictionaries/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["lookupTermEverywhere"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteDictionary"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/{id}/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setDictionaryLanguages"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dictionaries/{id}/lookup": {
         parameters: {
             query?: never;
@@ -83,6 +131,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["parseLocalDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/flashcards/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["draftFlashcard"];
         delete?: never;
         options?: never;
         head?: never;
@@ -151,6 +215,223 @@ export interface paths {
         };
         get: operations["listProjects"];
         put?: never;
+        post: operations["createProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getProject"];
+        put?: never;
+        post?: never;
+        delete: operations["deleteProject"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/flashcards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listFlashcards"];
+        put?: never;
+        post: operations["createFlashcard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/flashcards/{flashcard_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateFlashcard"];
+        post?: never;
+        delete: operations["deleteFlashcard"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addMediaFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeMediaFile"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/duration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setMediaDuration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/embedded-subtitles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listEmbeddedSubtitles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Serves the bytes of a media file on the server, honoring `Range` requests so that media
+         *     elements can seek. A `<video>` element cannot send headers, so it passes the token as
+         *     the `token` query parameter.
+         */
+        get: operations["streamMedia"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/subtitle-tracks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addSubtitleTrack"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/subtitle-tracks/{track_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeSubtitleTrack"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/subtitle-tracks/{track_id}/cues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns the cues of a subtitle track. Cues extracted from an MP4 `mov_text` track
+         *     report the SubRip format, since they carry the same inline markup.
+         */
+        get: operations["getSubtitleCues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/opened": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markProjectOpened"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateProjectSettings"];
         post?: never;
         delete?: never;
         options?: never;
@@ -203,10 +484,24 @@ export interface components {
             start_ms: number;
             text: string;
         };
+        /** @description The languages a dictionary translates between, as ISO 639 codes. `null` clears one. */
+        DictionaryLanguages: {
+            source_language?: string | null;
+            target_language?: string | null;
+        };
+        /** @description The entries one dictionary has for a term. */
+        DictionaryLookupResult: {
+            dictionary: components["schemas"]["DictionarySummary"];
+            entries: components["schemas"]["TermEntry"][];
+        };
         DictionarySummary: {
             /** Format: int64 */
             entry_count: number;
             id: string;
+            /** @description The language of the headwords, as an ISO 639 code, when known. */
+            source_language?: string | null;
+            /** @description The language of the definitions, as an ISO 639 code, when known. */
+            target_language?: string | null;
             title: string;
         };
         Document: {
@@ -216,6 +511,73 @@ export interface components {
         };
         /** @enum {string} */
         DocumentFormat: "epub" | "plain_text";
+        /** @description A subtitle track stored inside a media container. */
+        EmbeddedSubtitleTrack: {
+            /** @description The container's own name for the codec, such as `S_TEXT/UTF8` in Matroska. */
+            codec: string;
+            /** @description The language tag stored in the container, when there is one. */
+            language?: string | null;
+            /**
+             * Format: int32
+             * @description The container's own id for the track.
+             */
+            track_id: number;
+        };
+        EmbeddedSubtitlesResponse: {
+            tracks: components["schemas"]["EmbeddedSubtitleTrack"][];
+        };
+        /** @description A saved flashcard. */
+        Flashcard: {
+            clip?: components["schemas"]["TimeRange"] | null;
+            /** @description An RFC 3339 timestamp. */
+            created_at: string;
+            fields: components["schemas"]["FlashcardField"][];
+            id: components["schemas"]["FlashcardId"];
+            media_id?: components["schemas"]["MediaId"] | null;
+            /**
+             * Format: int64
+             * @description The media time the screenshot is taken at.
+             */
+            screenshot_ms?: number | null;
+            tags: string[];
+        };
+        /** @description Everything the app knows about a word at the moment the user asks for a flashcard. */
+        FlashcardDraftRequest: {
+            clip?: components["schemas"]["TimeRange"] | null;
+            context?: string | null;
+            context_translation?: string | null;
+            l1_definitions: string[];
+            l2_definitions: string[];
+            /** @description The dictionary headword, when a lookup found one. */
+            lemma?: string | null;
+            media_id?: components["schemas"]["MediaId"] | null;
+            media_name?: string | null;
+            reading?: string | null;
+            /** Format: int64 */
+            screenshot_ms?: number | null;
+            settings: components["schemas"]["FlashcardSettings"];
+            /** @description The word as it appeared in the text. */
+            word: string;
+        };
+        FlashcardField: {
+            kind: components["schemas"]["FlashcardFieldKind"];
+            value: string;
+        };
+        /**
+         * @description The kinds of field a flashcard can have. Each kind appears at most once on a card.
+         * @enum {string}
+         */
+        FlashcardFieldKind: "word" | "word_pronunciation" | "l1_definition" | "l2_definition" | "context" | "context_translation" | "context_pronunciation" | "context_audio" | "screenshot";
+        FlashcardId: string;
+        /** @description Per-project defaults for new flashcards. */
+        FlashcardSettings: {
+            default_tags: string[];
+            included_fields: components["schemas"]["FlashcardFieldKind"][];
+            /** @description Adds a tag made from the media file's name to every new card. */
+            tag_with_media_name: boolean;
+            /** @description Fills the audio fields with synthesized speech when the media has no audio track. */
+            use_tts_when_no_audio: boolean;
+        };
         HealthResponse: {
             status: string;
         };
@@ -225,11 +587,74 @@ export interface components {
         ListDictionariesResponse: {
             dictionaries: components["schemas"]["DictionarySummary"][];
         };
+        ListFlashcardsResponse: {
+            flashcards: components["schemas"]["Flashcard"][];
+        };
         ListProjectsResponse: {
             projects: components["schemas"]["ProjectSummary"][];
         };
+        LookupAllResponse: {
+            /** @description One result per dictionary that has the term, in import order. */
+            results: components["schemas"]["DictionaryLookupResult"][];
+        };
         LookupResponse: {
             entries: components["schemas"]["TermEntry"][];
+        };
+        MediaFile: {
+            /** @description An RFC 3339 timestamp. */
+            added_at: string;
+            /**
+             * Format: int64
+             * @description Filled in once the file has been opened and its length is known.
+             */
+            duration_ms?: number | null;
+            id: components["schemas"]["MediaId"];
+            kind: components["schemas"]["MediaKind"];
+            /** @description The file name, shown in lists and used as a default flashcard tag. */
+            name: string;
+            source: components["schemas"]["MediaSource"];
+            subtitle_tracks: components["schemas"]["SubtitleTrack"][];
+        };
+        MediaId: string;
+        /** @enum {string} */
+        MediaKind: "video" | "audio" | "document";
+        /**
+         * @description Where the bytes of a media or subtitle file live.
+         *
+         *     `path` names a file on the machine running the server, which only the native app can
+         *     use. `browser_file` names a file the web app stored in the browser; the server keeps the
+         *     key but never resolves it.
+         */
+        MediaSource: {
+            /** @enum {string} */
+            kind: "path";
+            path: string;
+        } | {
+            key: string;
+            /** @enum {string} */
+            kind: "browser_file";
+        };
+        /** @description A flashcard as sent to be created or updated: everything but the id and the timestamp. */
+        NewFlashcard: {
+            clip?: components["schemas"]["TimeRange"] | null;
+            fields: components["schemas"]["FlashcardField"][];
+            media_id?: components["schemas"]["MediaId"] | null;
+            /** Format: int64 */
+            screenshot_ms?: number | null;
+            tags: string[];
+        };
+        /** @description The request body for adding a media file to a project. */
+        NewMediaFile: {
+            kind: components["schemas"]["MediaKind"];
+            name: string;
+            source: components["schemas"]["MediaSource"];
+        };
+        /** @description The request body for attaching a subtitle track to a media file. */
+        NewSubtitleTrack: {
+            language?: string | null;
+            name: string;
+            role: components["schemas"]["SubtitleRole"];
+            source: components["schemas"]["SubtitleTrackSource"];
         };
         ParseLocalDocumentRequest: {
             format?: components["schemas"]["DocumentFormat"] | null;
@@ -244,7 +669,32 @@ export interface components {
         PreferenceValue: {
             value?: string | null;
         };
+        /**
+         * @description A complete project as the project screen shows it. Flashcards are listed separately,
+         *     since a project can hold thousands of them.
+         */
+        Project: {
+            /** @description An RFC 3339 timestamp. */
+            created_at: string;
+            id: components["schemas"]["ProjectId"];
+            /** @description An RFC 3339 timestamp. Equals `created_at` until the project is first opened. */
+            last_opened_at: string;
+            media: components["schemas"]["MediaFile"][];
+            settings: components["schemas"]["ProjectSettings"];
+        };
         ProjectId: string;
+        /**
+         * @description Everything the new-project form collects. The same type creates a project and updates
+         *     its settings later.
+         */
+        ProjectSettings: {
+            flashcard_settings: components["schemas"]["FlashcardSettings"];
+            name: string;
+            /** @description The language being learned, as a BCP 47 tag such as `de` or `pt-BR`. */
+            target_language: string;
+            /** @description The language definitions and translations are shown in, as a BCP 47 tag. */
+            translation_language: string;
+        };
         /** @description A project as listed on the home screen. */
         ProjectSummary: {
             /** @description An RFC 3339 timestamp. */
@@ -255,6 +705,30 @@ export interface components {
             name: string;
             target_language: string;
             translation_language: string;
+        };
+        /** @enum {string} */
+        SubtitleRole: "target" | "translation";
+        SubtitleTrack: {
+            id: string;
+            /** @description A BCP 47 tag when known. */
+            language?: string | null;
+            name: string;
+            role: components["schemas"]["SubtitleRole"];
+            source: components["schemas"]["SubtitleTrackSource"];
+        };
+        /**
+         * @description Where a subtitle track comes from: a separate file, or a track embedded in the media
+         *     container, identified by the container's own track id.
+         */
+        SubtitleTrackSource: {
+            /** @enum {string} */
+            kind: "file";
+            source: components["schemas"]["MediaSource"];
+        } | {
+            /** @enum {string} */
+            kind: "embedded";
+            /** Format: int32 */
+            track_id: number;
         };
         TermEntry: {
             definitions: string[];
@@ -278,11 +752,22 @@ export interface components {
             kind: "path";
             path: string;
         };
+        /** @description A span of media time in milliseconds, with `end_ms` exclusive. */
+        TimeRange: {
+            /** Format: int64 */
+            end_ms: number;
+            /** Format: int64 */
+            start_ms: number;
+        };
         /** @enum {string} */
         TimedTextFormat: "srt" | "vtt";
         TimedTextTrack: {
             cues: components["schemas"]["Cue"][];
             format: components["schemas"]["TimedTextFormat"];
+        };
+        UpdateMediaDurationRequest: {
+            /** Format: int64 */
+            duration_ms: number;
         };
     };
     responses: never;
@@ -433,6 +918,149 @@ export interface operations {
                 };
             };
             /** @description No file at the given path */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    lookupTermEverywhere: {
+        parameters: {
+            query: {
+                /** @description The exact term or reading to find. */
+                term: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The matching entries of every dictionary that has the term */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookupAllResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteDictionary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dictionary and its entries were deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No dictionary has the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setDictionaryLanguages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DictionaryLanguages"];
+            };
+        };
+        responses: {
+            /** @description The dictionary with its new languages */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictionarySummary"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No dictionary has the id */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -612,6 +1240,48 @@ export interface operations {
             };
             /** @description No file at the given path */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    draftFlashcard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlashcardDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description The flashcard a click on the word produces, before editing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewFlashcard"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -810,6 +1480,950 @@ export interface operations {
             };
             /** @description Missing or invalid token */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectSettings"];
+            };
+        };
+        responses: {
+            /** @description The new project */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The project with its media files */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No project has the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The project, its media files, and its flashcards were deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No project has the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listFlashcards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The project's flashcards, oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListFlashcardsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No project has the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createFlashcard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewFlashcard"];
+            };
+        };
+        responses: {
+            /** @description The saved flashcard */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Flashcard"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No project has the id, or the project has no media file with the card's media_id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updateFlashcard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The flashcard id */
+                flashcard_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewFlashcard"];
+            };
+        };
+        responses: {
+            /** @description The updated flashcard */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Flashcard"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The project has no flashcard with the id, or no media file with the card's media_id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteFlashcard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The flashcard id */
+                flashcard_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The flashcard was deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The project has no flashcard with the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addMediaFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewMediaFile"];
+            };
+        };
+        responses: {
+            /** @description The registered media file */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaFile"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No project has the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    removeMediaFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The media file and its subtitle tracks were removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The project has no media file with the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setMediaDuration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMediaDurationRequest"];
+            };
+        };
+        responses: {
+            /** @description The media file with its duration */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaFile"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The project has no media file with the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listEmbeddedSubtitles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subtitle tracks inside the media container */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmbeddedSubtitlesResponse"];
+                };
+            };
+            /** @description The container could not be read */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, or the browser holds it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    streamMedia: {
+        parameters: {
+            query?: {
+                /** @description The bearer token, for clients that cannot send headers */
+                token?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The whole file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description The requested byte range */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, or the browser holds it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The requested range lies outside the file */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addSubtitleTrack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewSubtitleTrack"];
+            };
+        };
+        responses: {
+            /** @description The attached subtitle track */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubtitleTrack"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The project has no media file with the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    removeSubtitleTrack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+                /** @description The subtitle track id */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subtitle track was removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file or subtitle track */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getSubtitleCues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+                /** @description The subtitle track id */
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cues of the subtitle track */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimedTextTrack"];
+                };
+            };
+            /** @description The subtitles could not be read from the file */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such track, or the browser holds its file */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    markProjectOpened: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The project, last opened now */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No project has the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    updateProjectSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectSettings"];
+            };
+        };
+        responses: {
+            /** @description The project with its new settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No project has the id */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

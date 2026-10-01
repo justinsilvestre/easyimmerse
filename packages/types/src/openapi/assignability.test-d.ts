@@ -83,4 +83,69 @@ describe("ts-rs output", () => {
   it("TermEntry is assignable to its OpenAPI schema", () => {
     expectTypeOf<generated.TermEntry>().toExtend<Schemas["TermEntry"]>();
   });
+  it("Project is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.Project>().toExtend<Schemas["Project"]>();
+  });
+  it("ProjectSettings is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.ProjectSettings>().toExtend<
+      Schemas["ProjectSettings"]
+    >();
+  });
+  it("MediaFile is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.MediaFile>().toExtend<Schemas["MediaFile"]>();
+  });
+  it("NewMediaFile is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.NewMediaFile>().toExtend<Schemas["NewMediaFile"]>();
+  });
+  it("SubtitleTrack is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.SubtitleTrack>().toExtend<
+      Schemas["SubtitleTrack"]
+    >();
+  });
+  it("NewSubtitleTrack is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.NewSubtitleTrack>().toExtend<
+      Schemas["NewSubtitleTrack"]
+    >();
+  });
+  it("UpdateMediaDurationRequest is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.UpdateMediaDurationRequest>().toExtend<
+      Schemas["UpdateMediaDurationRequest"]
+    >();
+  });
+  it("Flashcard is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.Flashcard>().toExtend<Schemas["Flashcard"]>();
+  });
+  it("NewFlashcard is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.NewFlashcard>().toExtend<Schemas["NewFlashcard"]>();
+  });
+  it("FlashcardDraftRequest is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.FlashcardDraftRequest>().toExtend<
+      Schemas["FlashcardDraftRequest"]
+    >();
+  });
+  it("ListFlashcardsResponse is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.ListFlashcardsResponse>().toExtend<
+      Schemas["ListFlashcardsResponse"]
+    >();
+  });
+  it("LookupAllResponse is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.LookupAllResponse>().toExtend<
+      Schemas["LookupAllResponse"]
+    >();
+  });
+  it("DictionaryLookupResult is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.DictionaryLookupResult>().toExtend<
+      Schemas["DictionaryLookupResult"]
+    >();
+  });
+  it("EmbeddedSubtitlesResponse is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.EmbeddedSubtitlesResponse>().toExtend<
+      Schemas["EmbeddedSubtitlesResponse"]
+    >();
+  });
+  it("DictionaryLanguages is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.DictionaryLanguages>().toExtend<
+      Schemas["DictionaryLanguages"]
+    >();
+  });
 });

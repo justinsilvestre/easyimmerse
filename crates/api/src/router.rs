@@ -13,7 +13,10 @@ use utoipa_axum::routes;
 
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
-use crate::routes::{dictionaries, documents, health, openapi, preferences, projects, timed_text};
+use crate::routes::{
+    dictionaries, dictionary_lookup, documents, flashcards, health, media, media_stream, openapi,
+    preferences, projects, subtitle_cues, timed_text,
+};
 use crate::state::AppState;
 
 /// Dictionaries can be hundreds of megabytes, so the default two-megabyte limit is raised.
@@ -54,7 +57,27 @@ pub fn openapi_document() -> OpenApi {
 fn protected_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::with_openapi(ApiDoc::openapi())
         .routes(routes!(openapi::get_openapi_document))
-        .routes(routes!(projects::list_projects))
+        .routes(routes!(projects::list_projects, projects::create_project))
+        .routes(routes!(projects::get_project, projects::delete_project))
+        .routes(routes!(projects::update_project_settings))
+        .routes(routes!(projects::mark_project_opened))
+        .routes(routes!(media::add_media_file))
+        .routes(routes!(media::set_media_duration))
+        .routes(routes!(media::remove_media_file))
+        .routes(routes!(media::add_subtitle_track))
+        .routes(routes!(media::remove_subtitle_track))
+        .routes(routes!(subtitle_cues::get_subtitle_cues))
+        .routes(routes!(subtitle_cues::list_embedded_subtitles))
+        .routes(routes!(media_stream::stream_media))
+        .routes(routes!(
+            flashcards::list_flashcards,
+            flashcards::create_flashcard
+        ))
+        .routes(routes!(
+            flashcards::update_flashcard,
+            flashcards::delete_flashcard
+        ))
+        .routes(routes!(flashcards::draft_flashcard_route))
         .routes(routes!(
             preferences::get_preference,
             preferences::set_preference
@@ -67,7 +90,10 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             dictionaries::list_dictionaries
         ))
         .routes(routes!(dictionaries::import_local_dictionary))
-        .routes(routes!(dictionaries::lookup_term))
+        .routes(routes!(dictionaries::delete_dictionary))
+        .routes(routes!(dictionaries::set_dictionary_languages))
+        .routes(routes!(dictionary_lookup::lookup_term))
+        .routes(routes!(dictionary_lookup::lookup_term_everywhere))
 }
 
 fn public_routes() -> OpenApiRouter<AppState> {

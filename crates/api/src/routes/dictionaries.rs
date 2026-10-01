@@ -1,14 +1,14 @@
 use axum::body::Bytes;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
-use easyimmerse_core::dictionary::{TermEntry, parse_dictionary};
-use easyimmerse_storage::{DictionaryId, Storage, StoredDictionary};
+use easyimmerse_core::dictionary::{Dictionary, parse_dictionary};
+use easyimmerse_storage::{DictionaryId, Storage, StorageError, StoredDictionary};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
-use utoipa::{IntoParams, ToSchema};
+use utoipa::ToSchema;
 
-use crate::auth::error_body::{ApiError, ApiFailure};
+use crate::auth::error_body::{ApiError, ApiFailure, internal};
 use crate::auth::token_kind::TokenKind;
 use crate::local_path::resolve_local_path;
 use crate::state::AppState;
@@ -19,6 +19,10 @@ pub struct DictionarySummary {
     pub id: String,
     pub title: String,
     pub entry_count: u64,
+    /// The language of the headwords, as an ISO 639 code, when known.
+    pub source_language: Option<String>,
+    /// The language of the definitions, as an ISO 639 code, when known.
+    pub target_language: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -31,20 +35,6 @@ pub struct ImportLocalDictionaryRequest {
 #[ts(export)]
 pub struct ListDictionariesResponse {
     pub dictionaries: Vec<DictionarySummary>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema, IntoParams)]
-#[into_params(parameter_in = Query)]
-#[ts(export)]
-pub struct LookupQuery {
-    /// The exact term or reading to find.
-    pub term: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
-#[ts(export)]
-pub struct LookupResponse {
-    pub entries: Vec<TermEntry>,
 }
 
 #[utoipa::path(
@@ -119,29 +109,68 @@ pub async fn list_dictionaries(
     }))
 }
 
+/// The languages a dictionary translates between, as ISO 639 codes. `null` clears one.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct DictionaryLanguages {
+    pub source_language: Option<String>,
+    pub target_language: Option<String>,
+}
+
 #[utoipa::path(
-    get,
-    path = "/dictionaries/{id}/lookup",
+    put,
+    path = "/dictionaries/{id}/languages",
     tag = "dictionaries",
-    operation_id = "lookupTerm",
+    operation_id = "setDictionaryLanguages",
     security(("bearer_token" = [])),
-    params(("id" = String, Path, description = "The dictionary id"), LookupQuery),
+    params(("id" = String, Path, description = "The dictionary id")),
+    request_body = DictionaryLanguages,
     responses(
-        (status = 200, description = "The entries matching the term exactly", body = LookupResponse),
+        (status = 200, description = "The dictionary with its new languages", body = DictionarySummary),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No dictionary has the id", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
-pub async fn lookup_term(
+pub async fn set_dictionary_languages(
     State(state): State<AppState>,
     Path(id): Path<String>,
-    Query(query): Query<LookupQuery>,
-) -> Result<Json<LookupResponse>, ApiFailure> {
-    let entries = state
-        .with_storage(move |storage| storage.lookup_term(&DictionaryId(id), &query.term))
+    Json(languages): Json<DictionaryLanguages>,
+) -> Result<Json<DictionarySummary>, ApiFailure> {
+    let dictionary = state
+        .with_storage(move |storage| {
+            storage.set_dictionary_languages(
+                &DictionaryId(id),
+                languages.source_language.as_deref(),
+                languages.target_language.as_deref(),
+            )
+        })
         .await?;
-    Ok(Json(LookupResponse { entries }))
+    Ok(Json(summarize(dictionary)))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/dictionaries/{id}",
+    tag = "dictionaries",
+    operation_id = "deleteDictionary",
+    security(("bearer_token" = [])),
+    params(("id" = String, Path, description = "The dictionary id")),
+    responses(
+        (status = 204, description = "The dictionary and its entries were deleted"),
+        (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 404, description = "No dictionary has the id", body = ApiError),
+        (status = 421, description = "Unexpected Host header", body = ApiError),
+    ),
+)]
+pub async fn delete_dictionary(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, ApiFailure> {
+    state
+        .with_storage(move |storage| storage.delete_dictionary(&DictionaryId(id)))
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 /// Parses the archive on the blocking pool, since parsing and storing both take a while
@@ -152,7 +181,7 @@ async fn import_bytes(
 ) -> Result<(StatusCode, Json<DictionarySummary>), ApiFailure> {
     let dictionary = tokio::task::spawn_blocking(move || parse_dictionary(&bytes))
         .await
-        .map_err(|error| crate::auth::error_body::internal(error.to_string()))??;
+        .map_err(|error| internal(error.to_string()))??;
     let summary = state
         .with_storage(move |storage| store_dictionary(storage, &dictionary))
         .await?;
@@ -161,20 +190,24 @@ async fn import_bytes(
 
 fn store_dictionary(
     storage: &Storage,
-    dictionary: &easyimmerse_core::dictionary::Dictionary,
-) -> Result<DictionarySummary, easyimmerse_storage::StorageError> {
+    dictionary: &Dictionary,
+) -> Result<DictionarySummary, StorageError> {
     let id = storage.insert_dictionary(dictionary)?;
     Ok(DictionarySummary {
         id: id.0,
         title: dictionary.title.clone(),
         entry_count: dictionary.entries.len() as u64,
+        source_language: dictionary.source_language.clone(),
+        target_language: dictionary.target_language.clone(),
     })
 }
 
-fn summarize(dictionary: StoredDictionary) -> DictionarySummary {
+pub(crate) fn summarize(dictionary: StoredDictionary) -> DictionarySummary {
     DictionarySummary {
         id: dictionary.id.0,
         title: dictionary.title,
         entry_count: dictionary.entry_count,
+        source_language: dictionary.source_language,
+        target_language: dictionary.target_language,
     }
 }

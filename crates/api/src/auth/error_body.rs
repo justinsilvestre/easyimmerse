@@ -4,6 +4,7 @@ use axum::response::{IntoResponse, Response};
 use easyimmerse_core::dictionary::DictionaryError;
 use easyimmerse_core::document::DocumentError;
 use easyimmerse_core::timed_text::TimedTextError;
+use easyimmerse_media::MediaError;
 use easyimmerse_storage::StorageError;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -78,7 +79,11 @@ pub fn internal(message: impl Into<String>) -> ApiFailure {
 impl From<StorageError> for ApiFailure {
     fn from(error: StorageError) -> Self {
         match error {
-            StorageError::DictionaryNotFound(_) => not_found(error.to_string()),
+            StorageError::DictionaryNotFound(_)
+            | StorageError::ProjectNotFound(_)
+            | StorageError::MediaNotFound(_)
+            | StorageError::FlashcardNotFound(_)
+            | StorageError::SubtitleTrackNotFound(_) => not_found(error.to_string()),
             _ => internal(error.to_string()),
         }
     }
@@ -96,6 +101,15 @@ impl From<DocumentError> for ApiFailure {
     }
 }
 
+impl From<MediaError> for ApiFailure {
+    fn from(error: MediaError) -> Self {
+        match error {
+            MediaError::TrackNotFound(_) => not_found(error.to_string()),
+            _ => bad_request(error.to_string()),
+        }
+    }
+}
+
 impl From<DictionaryError> for ApiFailure {
     fn from(error: DictionaryError) -> Self {
         bad_request(error.to_string())
@@ -110,6 +124,42 @@ mod tests {
     fn a_missing_dictionary_maps_to_not_found() {
         let failure = ApiFailure::from(StorageError::DictionaryNotFound("x".to_string()));
         assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn a_missing_project_maps_to_not_found() {
+        let failure = ApiFailure::from(StorageError::ProjectNotFound("x".to_string()));
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn a_missing_media_file_maps_to_not_found() {
+        let failure = ApiFailure::from(StorageError::MediaNotFound("x".to_string()));
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn a_missing_flashcard_maps_to_not_found() {
+        let failure = ApiFailure::from(StorageError::FlashcardNotFound("x".to_string()));
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn a_missing_subtitle_track_maps_to_not_found() {
+        let failure = ApiFailure::from(StorageError::SubtitleTrackNotFound("x".to_string()));
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn a_missing_container_track_maps_to_not_found() {
+        let failure = ApiFailure::from(MediaError::TrackNotFound(9));
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn an_unreadable_container_maps_to_bad_request() {
+        let failure = ApiFailure::from(MediaError::UnknownContainerFormat);
+        assert_eq!(failure.status, StatusCode::BAD_REQUEST);
     }
 
     #[test]

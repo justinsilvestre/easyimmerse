@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use easyimmerse_api::{ApiConfig, ServerHandle, serve};
 use easyimmerse_storage::Storage;
-use serde_json::Value;
+use serde_json::{Value, json};
 use tokio::net::TcpListener;
 use ureq::Agent;
 use ureq::http::Request;
@@ -21,12 +21,21 @@ pub struct TestServer {
 
 pub struct TestResponse {
     pub status: u16,
-    pub body: String,
+    pub headers: Vec<(String, String)>,
+    pub bytes: Vec<u8>,
 }
 
 impl TestResponse {
     pub fn json(&self) -> Value {
-        serde_json::from_str(&self.body).expect("response body should be JSON")
+        serde_json::from_slice(&self.bytes).expect("response body should be JSON")
+    }
+
+    /// Returns the value of the first header with the given name, ignoring case.
+    pub fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .iter()
+            .find(|(header, _)| header.eq_ignore_ascii_case(name))
+            .map(|(_, value)| value.as_str())
     }
 }
 
@@ -89,6 +98,31 @@ impl TestServer {
         self.request("POST", path).json(body).send().await
     }
 
+    pub async fn put_json(&self, path: &str, body: &Value) -> TestResponse {
+        self.request("PUT", path).json(body).send().await
+    }
+
+    pub async fn delete(&self, path: &str) -> TestResponse {
+        self.request("DELETE", path).send().await
+    }
+
+    /// Creates a project with the intermediate flashcard settings and returns its id.
+    pub async fn create_project(&self) -> String {
+        let response = self
+            .post_json("/projects", &project_settings("Krimi"))
+            .await;
+        id_of(&response)
+    }
+
+    /// Registers a media file in a project and returns its id.
+    pub async fn add_media(&self, project_id: &str, name: &str, source: Value) -> String {
+        let body = json!({ "name": name, "kind": "video", "source": source });
+        let response = self
+            .post_json(&format!("/projects/{project_id}/media"), &body)
+            .await;
+        id_of(&response)
+    }
+
     pub async fn post_bytes(&self, path: &str, content_type: &str, body: Vec<u8>) -> TestResponse {
         self.request("POST", path)
             .header("Content-Type", content_type)
@@ -138,10 +172,44 @@ impl TestRequest {
         let mut response = agent.run(request).expect("the request should be sent");
         TestResponse {
             status: response.status().as_u16(),
-            body: response
-                .body_mut()
-                .read_to_string()
-                .expect("a readable body"),
+            headers: response
+                .headers()
+                .iter()
+                .map(|(name, value)| {
+                    let value = value.to_str().unwrap_or_default();
+                    (name.to_string(), value.to_string())
+                })
+                .collect(),
+            bytes: response.body_mut().read_to_vec().expect("a readable body"),
         }
     }
+}
+
+pub fn project_settings(name: &str) -> Value {
+    json!({
+        "name": name,
+        "target_language": "de",
+        "translation_language": "en",
+        "flashcard_settings": {
+            "included_fields": ["word", "l1_definition", "context", "context_translation", "context_audio", "screenshot"],
+            "default_tags": [],
+            "tag_with_media_name": true,
+            "use_tts_when_no_audio": false
+        }
+    })
+}
+
+pub fn path_source(fixture: &str) -> Value {
+    json!({ "kind": "path", "path": fixture_path(fixture) })
+}
+
+pub fn browser_source() -> Value {
+    json!({ "kind": "browser_file", "key": "browser-key" })
+}
+
+pub fn id_of(response: &TestResponse) -> String {
+    response.json()["id"]
+        .as_str()
+        .expect("the response should carry an id")
+        .to_string()
 }

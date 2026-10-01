@@ -15,7 +15,9 @@ plugins = []
 [dependencies]
 axum = { workspace = true }
 easyimmerse-core = { workspace = true }
+easyimmerse-media = { workspace = true }
 easyimmerse-storage = { workspace = true }
+jiff = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

@@ -32,7 +32,8 @@ pub async fn resolve_local_text(
         .map_err(|error| describe_read_error(path, error))
 }
 
-fn ensure_local_paths_allowed(token: TokenKind, config: &ApiConfig) -> Result<(), ApiFailure> {
+/// Fails with 403 when the request's token kind may not read files on the server.
+pub fn ensure_local_paths_allowed(token: TokenKind, config: &ApiConfig) -> Result<(), ApiFailure> {
     if token.allows_local_paths(config) {
         Ok(())
     } else {
