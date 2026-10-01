@@ -43,7 +43,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Skips the other jobs when an earlier run passed on the same inputs.
+  gate:
+    runs-on: ubuntu-24.04
+    outputs:
+      passed: ${{ steps.find.outputs.passed }}
+      key: ${{ steps.find.outputs.key }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/find-passed-run
+        id: find
+
   extension:
+    needs: gate
+    if: needs.gate.outputs.passed != 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -77,3 +90,14 @@ jobs:
 
       - name: Playwright smoke test
         run: xvfb-run --auto-servernum pnpm --filter @easyimmerse/extension e2e
+
+  record:
+    needs: [gate, extension]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/actions
+      - uses: ./.github/actions/record-passed-run
+        with:
+          key: ${{ needs.gate.outputs.key }}
