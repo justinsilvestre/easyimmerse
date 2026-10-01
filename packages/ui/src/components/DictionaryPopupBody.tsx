@@ -1,12 +1,6 @@
-import type { DictionarySummary, TermEntry } from "@easyimmerse/types";
+import type { DictionaryLookupResult, TermEntry } from "@easyimmerse/types";
 import { Button } from "./Button.tsx";
 import { LookupEntry } from "./LookupEntry.tsx";
-
-/** The entries one dictionary has for the looked-up term. */
-export type DictionaryResult = {
-  dictionary: DictionarySummary;
-  entries: readonly TermEntry[];
-};
 
 export type LookupStatus = "idle" | "loading" | "error";
 
@@ -20,7 +14,7 @@ export function DictionaryPopupBody({
   onSetUpDictionary,
 }: {
   term: string;
-  results: readonly DictionaryResult[];
+  results: readonly DictionaryLookupResult[];
   status: LookupStatus;
   hasDictionaries: boolean;
   onCreateFlashcard: (entry: TermEntry) => void;

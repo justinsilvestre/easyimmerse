@@ -1,19 +1,18 @@
 import { actions, type LookupState, selectLookup } from "@easyimmerse/state";
-import type { TermEntry } from "@easyimmerse/types";
+import type { DictionaryLookupResult, TermEntry } from "@easyimmerse/types";
 import { useRef } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useDocumentListener } from "../hooks/useDocumentListener.ts";
 import {
   DictionaryPopupBody,
-  type DictionaryResult,
   type LookupStatus,
 } from "./DictionaryPopupBody.tsx";
 import { DictionaryPopupHeader } from "./DictionaryPopupHeader.tsx";
 
 type DictionaryPopupProps = {
   /** The entries for the looked-up term, grouped by the dictionary they come from. */
-  results: readonly DictionaryResult[];
+  results: readonly DictionaryLookupResult[];
   status: LookupStatus;
   /** Whether the project has any dictionary to look terms up in. */
   hasDictionaries: boolean;

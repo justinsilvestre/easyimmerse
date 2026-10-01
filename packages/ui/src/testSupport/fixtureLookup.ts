@@ -1,15 +1,23 @@
-import type { DictionarySummary, TermEntry } from "@easyimmerse/types";
+import type {
+  DictionaryLookupResult,
+  DictionarySummary,
+  TermEntry,
+} from "@easyimmerse/types";
 
 export const fixtureBilingualDictionary: DictionarySummary = {
   id: "d1",
   title: "German–English Wiktionary",
   entry_count: 412_031,
+  source_language: "de",
+  target_language: "en",
 };
 
 export const fixtureMonolingualDictionary: DictionarySummary = {
   id: "d2",
   title: "Deutsches Wörterbuch",
   entry_count: 98_456,
+  source_language: "de",
+  target_language: "de",
 };
 
 export const fixtureBilingualEntry: TermEntry = {
@@ -29,7 +37,7 @@ export const fixtureMonolingualEntry: TermEntry = {
 };
 
 /** Lookup results for "Katze" from both fixture dictionaries. */
-export const fixtureLookupResults = [
+export const fixtureLookupResults: DictionaryLookupResult[] = [
   { dictionary: fixtureBilingualDictionary, entries: [fixtureBilingualEntry] },
   {
     dictionary: fixtureMonolingualDictionary,
