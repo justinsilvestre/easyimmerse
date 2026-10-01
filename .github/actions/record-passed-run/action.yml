@@ -1,0 +1,19 @@
+name: Record a passed run
+description: Saves a marker under the key from find-passed-run, so later runs on the same inputs skip their jobs.
+
+inputs:
+  key:
+    description: The key output of find-passed-run.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Write the marker
+      shell: bash
+      run: echo "$GITHUB_RUN_ID" > .passed-run
+
+    - uses: actions/cache/save@v4
+      with:
+        path: .passed-run
+        key: ${{ inputs.key }}
