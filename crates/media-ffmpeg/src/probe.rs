@@ -54,8 +54,8 @@ fn to_container_info(output: &FfprobeOutput) -> Result<ContainerInfo, FfmpegErro
     })
 }
 
-/// Demuxer names paired with the container each one reads. The `aac` demuxer reads ADTS
-/// streams, and the `ogg` demuxer also reads Opus files.
+/// Demuxer names paired with the container each one reads.
+/// The `aac` demuxer reads raw AAC audio framed as ADTS, and the `ogg` demuxer also reads Opus files.
 const DEMUXER_FORMATS: [(&str, ContainerFormat); 8] = [
     ("mp4", ContainerFormat::Mp4),
     ("matroska", ContainerFormat::Matroska),
@@ -67,8 +67,8 @@ const DEMUXER_FORMATS: [(&str, ContainerFormat); 8] = [
     ("avi", ContainerFormat::Avi),
 ];
 
-/// ffprobe names every demuxer that handles the file as a comma-separated list, for
-/// example `mov,mp4,m4a,3gp,3g2,mj2` for MP4 and `matroska,webm` for Matroska.
+/// ffprobe names every demuxer that handles the file as a comma-separated list,
+/// for example `mov,mp4,m4a,3gp,3g2,mj2` for MP4 and `matroska,webm` for Matroska.
 fn to_container_format(format_name: &str) -> Result<ContainerFormat, FfmpegError> {
     let names: Vec<&str> = format_name.split(',').collect();
     DEMUXER_FORMATS

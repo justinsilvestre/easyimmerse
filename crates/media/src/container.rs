@@ -8,8 +8,8 @@ use crate::error::MediaError;
 use crate::track_info::TrackInfo;
 use crate::{mkv_container, mp3_container, mp4_container};
 
-/// A container format the application accepts. MOV and M4A files count as MP4, and
-/// WebM files count as Matroska.
+/// A container format the application accepts.
+/// MOV and M4A files count as MP4, and WebM files count as Matroska.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[serde(rename_all = "snake_case")]
 #[ts(export)]
@@ -36,7 +36,7 @@ pub struct ContainerInfo {
 const MP4_BOX_TYPE_OFFSET: usize = 4;
 const EBML_MAGIC: [u8; 4] = [0x1A, 0x45, 0xDF, 0xA3];
 
-/// Recognizes the containers that the pure-Rust probe can read from their signature bytes.
+/// Recognizes, from its signature bytes, a container that the pure-Rust probe can read.
 pub fn detect_container_format(bytes: &[u8]) -> Option<ContainerFormat> {
     if bytes.get(MP4_BOX_TYPE_OFFSET..MP4_BOX_TYPE_OFFSET + 4) == Some(b"ftyp") {
         Some(ContainerFormat::Mp4)

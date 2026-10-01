@@ -4,8 +4,9 @@ import type { TrackKind } from "./TrackKind";
 import type { VideoDetails } from "./VideoDetails";
 
 /**
- * One stream inside a container. The codec name is the prober's own name for the
- * codec, so it differs between probes. Details a probe cannot read are `None`.
+ * One stream inside a container.
+ * The codec name comes from whichever probe read the file, so one codec can have different names.
+ * Details that a probe cannot read are `None`.
  */
 export type TrackInfo = { id: number, kind: TrackKind, codec: string, 
 /**

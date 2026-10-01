@@ -54,7 +54,8 @@ fn describe_video(track: &Mp4Track) -> VideoDetails {
     }
 }
 
-/// Reads the sample entry of an AAC track. Other audio codecs get empty details.
+/// Reads the sample rate and channel count that an AAC track declares.
+/// Tracks with other audio codecs get empty details.
 fn describe_audio(track: &Mp4Track) -> AudioDetails {
     let mp4a = track.trak.mdia.minf.stbl.stsd.mp4a.as_ref();
     AudioDetails {
