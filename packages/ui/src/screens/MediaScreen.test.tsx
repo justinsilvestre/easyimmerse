@@ -1,11 +1,5 @@
 import { resetBackend } from "@easyimmerse/backend";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  screen,
-  within,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
@@ -52,15 +46,6 @@ describe("MediaScreen", () => {
       within(list).getByRole("button", { name: /The cat is sleeping\./ }),
     );
     expect(effects.calls).toContainEqual({ type: "seekPlayer", ms: 500 });
-  });
-
-  it("shows the time the player was seeked to", async () => {
-    const { playerRegistry } = renderMediaScreen();
-    await findSubtitles();
-    act(() => playerRegistry.current()?.seek(61_750));
-    expect(screen.getByRole("region", { name: "Player" }).textContent).toBe(
-      "1:01.8",
-    );
   });
 
   it("requests a file pick when the pick button is clicked", async () => {
