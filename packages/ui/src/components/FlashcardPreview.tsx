@@ -43,7 +43,7 @@ export function FlashcardPreview({
     <div className="flex flex-col gap-3">
       <article
         aria-label="Example flashcard"
-        className="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+        className="flex flex-col gap-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
       >
         {fields.length === 0 ? (
           <p className="text-sm text-gray-500">
@@ -76,7 +76,7 @@ function PreviewField({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <dt className="text-xs text-gray-400">{caption}</dt>
+      <dt className="text-xs text-gray-500">{caption}</dt>
       <dd className="text-sm text-gray-900">{children}</dd>
     </div>
   );
@@ -85,9 +85,9 @@ function PreviewField({
 function PreviewTags({ tags }: { tags: readonly string[] }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5 border-t border-gray-100 pt-4">
-      <span className="mr-1 text-xs text-gray-400">Tags</span>
+      <span className="mr-1 text-xs text-gray-500">Tags</span>
       {tags.length === 0 ? (
-        <span className="text-xs text-gray-400">None</span>
+        <span className="text-xs text-gray-500">None</span>
       ) : (
         tags.map((tag) => (
           <span

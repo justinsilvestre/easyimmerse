@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useId, useState } from "react";
 import { FieldLabel } from "./FieldLabel.tsx";
 import { type LanguageOption, languageOptions } from "./languageOptions.ts";
@@ -29,7 +30,10 @@ export function LanguageSelect({
           id={id}
           value={isOtherChosen ? otherOptionValue : value}
           onChange={(event) => chooseOption(event.target.value)}
-          className="w-full appearance-none rounded-lg border border-gray-300 bg-white py-2 pr-9 pl-3 text-sm text-gray-900 focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-600/20"
+          className={clsx(
+            "w-full appearance-none rounded-md border border-gray-300 bg-white py-1.5 pr-9 pl-3 text-sm focus:border-blue-600 focus:outline-hidden focus:ring-2 focus:ring-blue-600/20",
+            value === "" && !isOtherChosen ? "text-gray-400" : "text-gray-900",
+          )}
         >
           <option value="" disabled>
             Choose a language
