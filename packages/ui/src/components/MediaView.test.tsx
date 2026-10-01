@@ -119,6 +119,11 @@ describe("MediaView", () => {
       expect(requestFullscreen.mock.contexts).toEqual([findView()]);
     });
 
+    it("leaves the page as it is for F where fullscreen is unsupported", () => {
+      renderView();
+      expect(() => pressKey("f")).not.toThrow();
+    });
+
     it("leaves arrow keys on a slider to the slider", () => {
       const { effects } = renderView();
       pressKey("ArrowRight", screen.getByRole("slider", { name: "Seek" }));

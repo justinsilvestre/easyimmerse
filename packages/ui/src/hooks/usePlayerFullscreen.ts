@@ -9,9 +9,12 @@ export function usePlayerFullscreen(target: RefObject<HTMLElement | null>) {
     () => false,
   );
   const toggleFullscreen = useCallback(() => {
+    const element = target.current;
     if (document.fullscreenElement)
       document.exitFullscreen().catch(ignoreRefusal);
-    else target.current?.requestFullscreen().catch(ignoreRefusal);
+    // iOS Safari offers fullscreen only for video elements. Elsewhere the page stays as it is.
+    else if (typeof element?.requestFullscreen === "function")
+      element.requestFullscreen().catch(ignoreRefusal);
   }, [target]);
   return { isFullscreen, toggleFullscreen };
 }
