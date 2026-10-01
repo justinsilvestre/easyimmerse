@@ -24,8 +24,8 @@ Other tasks are listed by `mise tasks`. The most useful ones:
 | `mise run typegen` and `mise run openapi` | Regenerate the TypeScript types and the OpenAPI document from Rust. CI fails when the committed output is stale. |
 | `mise run e2e` | Browser end-to-end tests for the web app and the extension. |
 | `mise run fetch-ffmpeg` | Download the ffmpeg sidecar for the desktop app. |
-| `pnpm --filter @easyimmerse/web dev` | Web app dev server against a server started with `cargo run -p easyimmerse-server -- serve --token dev --seed-placeholders`. |
-| `mise run desktop` | Desktop app with its embedded server. Fetches the ffmpeg sidecar first if it is missing. |
+| `mise run web-dev` | Web app with hot reloading, connected to a local server at `http://127.0.0.1:8788` with the token `dev`. The server keeps its data in `.dev/server.sqlite` and seeds two placeholder projects when that file is new. Delete `.dev/` to start over. |
+| `mise run desktop` | Desktop app with its embedded server. Fetches the ffmpeg sidecar first if it is missing. The app loads its frontend from a Vite dev server, so it also reloads on change. |
 
 ## Layout
 
