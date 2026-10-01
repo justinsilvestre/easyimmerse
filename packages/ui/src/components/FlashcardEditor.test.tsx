@@ -160,6 +160,36 @@ describe("FlashcardEditor", () => {
     });
   });
 
+  describe("when tabbing through the dialog", () => {
+    it("moves focus from the last control back to the first", () => {
+      renderEditor();
+      const save = screen.getByRole("button", { name: "Save" });
+      save.focus();
+      fireEvent.keyDown(save, { key: "Tab" });
+      expect(document.activeElement).toBe(
+        screen.getByRole("textbox", { name: "Word" }),
+      );
+    });
+
+    it("moves focus from the first control back to the last on Shift+Tab", () => {
+      renderEditor();
+      const word = screen.getByRole("textbox", { name: "Word" });
+      word.focus();
+      fireEvent.keyDown(word, { key: "Tab", shiftKey: true });
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "Save" }),
+      );
+    });
+
+    it("leaves focus alone between the first and last controls", () => {
+      renderEditor();
+      const sentence = screen.getByRole("textbox", { name: "Sentence" });
+      sentence.focus();
+      fireEvent.keyDown(sentence, { key: "Tab" });
+      expect(document.activeElement).toBe(sentence);
+    });
+  });
+
   describe("when saving", () => {
     it("passes the card and its id to onSave", () => {
       const card = createNewFlashcard();

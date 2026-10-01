@@ -9,6 +9,7 @@ import { useEffect, useId, useRef } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useDocumentListener } from "../hooks/useDocumentListener.ts";
+import { useFocusTrap } from "../hooks/useFocusTrap.ts";
 import { FlashcardEditorFooter } from "./FlashcardEditorFooter.tsx";
 import { FlashcardField } from "./FlashcardField.tsx";
 import { FlashcardFieldAddMenu } from "./FlashcardFieldAddMenu.tsx";
@@ -21,7 +22,7 @@ type FlashcardEditorProps = {
 };
 
 /**
- * Edits the card in the flashcard editor, in a dialog.
+ * Edits the card in the flashcard editor, in a modal dialog that keeps keyboard focus inside it.
  * Cmd+Enter or Ctrl+Enter saves, and Escape cancels unless the dictionary pop-up is open above the dialog.
  */
 export function FlashcardEditor(props: FlashcardEditorProps) {
@@ -44,6 +45,7 @@ function OpenFlashcardEditor({
   const cancel = () => dispatch(actions.flashcardEditorClosed());
   const save = () => onSave(card, flashcardId);
   useEffect(() => panel.current?.focus(), []);
+  useFocusTrap(panel);
   useDocumentListener("keydown", (event) => {
     if (event.key === "Escape" && !isLookupOpen) cancel();
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) save();
