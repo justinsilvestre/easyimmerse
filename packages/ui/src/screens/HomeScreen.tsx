@@ -1,41 +1,45 @@
-import { useListProjectsQuery } from "@easyimmerse/backend";
+import {
+  useListProjectsQuery,
+  useMarkProjectOpenedMutation,
+} from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
-import { Button } from "../components/Button.tsx";
+import { EmptyState } from "../components/EmptyState.tsx";
 import { HelpLink } from "../components/HelpLink.tsx";
-import { ProjectList } from "../components/ProjectList.tsx";
+import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { isOfflineError } from "../isOfflineError.ts";
+import { HomeScreenView } from "./HomeScreenView.tsx";
 
-/** The project id the media screen opens with when no server can list projects. */
-const offlineProjectId = "offline";
-
+/** Lists the projects the server holds. Without a server, it explains where projects can be kept instead. */
 export function HomeScreen() {
   const dispatch = useAppDispatch();
   const { data, isLoading, error } = useListProjectsQuery();
-  const openProject = (projectId: string) =>
-    dispatch(actions.projectOpened(projectId));
+  const [markProjectOpened] = useMarkProjectOpenedMutation();
+  if (isOfflineError(error)) return <HomeScreenOffline />;
   return (
-    <main className="mx-auto flex max-w-xl flex-col gap-4 p-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Projects</h1>
-        <HelpLink />
-      </header>
-      {isLoading && <p>Loading projects...</p>}
-      {error && <p role="alert">Could not load the projects.</p>}
-      {isOffline(error) && (
-        <Button onClick={() => openProject(offlineProjectId)}>
-          Continue offline
-        </Button>
-      )}
-      {data && <ProjectList projects={data.projects} onOpen={openProject} />}
-    </main>
+    <HomeScreenView
+      projects={data?.projects ?? []}
+      loading={isLoading}
+      error={error ? "Could not load your projects." : null}
+      onOpenProject={(projectId) => {
+        markProjectOpened(projectId);
+        dispatch(actions.projectOpened(projectId));
+      }}
+      onCreateProject={() => dispatch(actions.newProjectFormOpened())}
+      headerActions={<HelpLink />}
+    />
   );
 }
 
-function isOffline(error: unknown): boolean {
+function HomeScreenOffline() {
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    error.status === "OFFLINE"
+    <ScreenLayout headerActions={<HelpLink />}>
+      <h1 className="text-2xl font-semibold">Projects</h1>
+      <EmptyState title="Projects need the desktop app or a server">
+        This copy of easyImmerse runs without a server, so it cannot keep
+        projects yet. Open easyImmerse in the desktop app, or from a server you
+        run, to create projects and save flashcards.
+      </EmptyState>
+    </ScreenLayout>
   );
 }

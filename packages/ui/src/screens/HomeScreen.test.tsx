@@ -2,7 +2,9 @@ import type { BackendClient } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
 import { selectScreen } from "@easyimmerse/state";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { HomeScreen } from "./HomeScreen.tsx";
 
@@ -36,19 +38,30 @@ describe("HomeScreen", () => {
         projectId: "p2",
       });
     });
-  });
 
-  describe("when no server is configured", () => {
-    it("offers to continue offline", async () => {
-      const { store } = renderWithAppStore(<HomeScreen />, offlineClient);
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Continue offline" }),
-      );
-      expect(selectScreen(store.getState())).toEqual({
-        kind: "project",
-        projectId: "offline",
+    it("tells the server the clicked project was opened", async () => {
+      const client = createFakeBackendClient(fixtureResponses);
+      renderWithAppStore(<HomeScreen />, client);
+      fireEvent.click(await screen.findByRole("button", { name: "Beta" }));
+      await vi.waitFor(() => {
+        expect(client.requests.map((request) => request.path)).toContain(
+          "/projects/p2/opened",
+        );
       });
     });
+  });
+
+  it("opens the new project form when Create new project is clicked", () => {
+    const { store } = renderWithAppStore(<HomeScreen />);
+    fireEvent.click(screen.getByRole("button", { name: "Create new project" }));
+    expect(selectScreen(store.getState())).toEqual({ kind: "newProject" });
+  });
+
+  it("explains that projects need a server when none is configured", async () => {
+    renderWithAppStore(<HomeScreen />, offlineClient);
+    expect(
+      await screen.findByText("Projects need the desktop app or a server"),
+    ).toBeTruthy();
   });
 
   it("requests an external link when Help is clicked", () => {
