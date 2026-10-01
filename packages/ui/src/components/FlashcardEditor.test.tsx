@@ -1,5 +1,9 @@
 import { resetBackend } from "@easyimmerse/backend";
-import { actions, selectFlashcardEditor } from "@easyimmerse/state";
+import {
+  actions,
+  createNewFlashcard,
+  selectFlashcardEditor,
+} from "@easyimmerse/state";
 import type { NewFlashcard } from "@easyimmerse/types";
 import {
   act,
@@ -9,7 +13,6 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { createNewFlashcard } from "../testSupport/createNewFlashcard.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { FlashcardEditor } from "./FlashcardEditor.tsx";
 

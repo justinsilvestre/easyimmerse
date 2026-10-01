@@ -1,11 +1,10 @@
-import { actions } from "@easyimmerse/state";
+import { actions, createNewFlashcard } from "@easyimmerse/state";
 import type { NewFlashcard } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useEffect } from "react";
 import { fn } from "storybook/test";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
-import { createNewFlashcard } from "../testSupport/createNewFlashcard.ts";
 import { FlashcardEditor } from "./FlashcardEditor.tsx";
 
 const clip = { start_ms: 500, end_ms: 1500 };
