@@ -41,3 +41,5 @@ Other tasks are listed by `mise tasks`. The most useful ones:
 ## License
 
 AGPL-3.0-only. See [LICENSE](LICENSE).
+
+The plugin interface in `crates/plugin-api` is licensed MIT, so that plugins under any license can build against it. See [crates/plugin-api/LICENSE](crates/plugin-api/LICENSE).
