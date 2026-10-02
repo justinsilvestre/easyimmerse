@@ -62,3 +62,16 @@ zip = { version = "8.6", default-features = false, features = ["deflate-flate2-z
 
 [profile.release]
 strip = true
+
+# Debug builds keep only the line tables of the workspace crates, which is what panic backtraces need,
+# and no debug information for dependencies.
+# `--profile debugging` builds with full debug information for a debugger.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true
