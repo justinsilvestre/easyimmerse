@@ -33,9 +33,23 @@ pub fn run() {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 fn init_tracing() {
     // Initialization fails only when a subscriber is already installed, which is harmless.
     let _ = tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .try_init();
+}
+
+/// Sends events at the info level and above to logcat, since Android discards standard output.
+#[cfg(target_os = "android")]
+fn init_tracing() {
+    let _ = tracing_subscriber::fmt()
+        .with_writer(paranoid_android::AndroidLogMakeWriter::new(
+            "easyimmerse".to_owned(),
+        ))
+        .with_max_level(tracing::Level::INFO)
+        .with_ansi(false)
+        .without_time()
         .try_init();
 }
