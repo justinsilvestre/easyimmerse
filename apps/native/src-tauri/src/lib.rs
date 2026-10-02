@@ -37,8 +37,16 @@ pub fn run() {
 fn init_tracing() {
     // Initialization fails only when a subscriber is already installed, which is harmless.
     let _ = tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_env_filter(log_filter())
         .try_init();
+}
+
+/// Reads the log filter from `RUST_LOG`, showing info and above when it is unset.
+#[cfg(not(target_os = "android"))]
+fn log_filter() -> tracing_subscriber::EnvFilter {
+    tracing_subscriber::EnvFilter::builder()
+        .with_default_directive(tracing::Level::INFO.into())
+        .from_env_lossy()
 }
 
 /// Sends events at the info level and above to logcat, since Android discards standard output.
