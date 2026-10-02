@@ -119,10 +119,13 @@ jobs:
         run: pnpm --filter @easyimmerse/native exec tauri android init --ci --skip-targets-install
         env:
           NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+      # Keeping only line tables in the debug information halves the build's disk use,
+      # which the plugin host had doubled, and still gives file and line numbers in backtraces.
       - name: Debug APK
         run: pnpm --filter @easyimmerse/native exec tauri android build --debug --target aarch64 --apk --ci
         env:
           NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+          CARGO_PROFILE_DEV_DEBUG: line-tables-only
       - name: Report build sizes
         if: always()
         run: |
