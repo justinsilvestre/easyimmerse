@@ -34,3 +34,4 @@ test-results/
 
 # Agent worktrees
 .claude/worktrees/
+.claude/settings.local.json
