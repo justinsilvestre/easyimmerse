@@ -1,16 +1,26 @@
 use wasmtime::{Config, Engine};
 
 use crate::error::PluginError;
-use crate::execution_mode::ExecutionMode;
+use crate::execution_mode::{ExecutionMode, PLATFORM_FORBIDS_JIT};
 
 /// Builds an engine with fuel metering and the component model enabled.
 pub fn build_engine(mode: ExecutionMode) -> Result<Engine, PluginError> {
     let mut config = Config::new();
     config.consume_fuel(true).wasm_component_model(true);
-    if mode == ExecutionMode::Interpreter {
-        configure_interpreter(&mut config)?;
+    match mode {
+        ExecutionMode::Native => check_native_execution(PLATFORM_FORBIDS_JIT)?,
+        ExecutionMode::Interpreter => configure_interpreter(&mut config)?,
     }
     Ok(Engine::new(&config)?)
+}
+
+/// Refuses native execution where the platform forbids just-in-time compilation,
+/// since wasmtime would otherwise fail only when it first runs the compiled code.
+fn check_native_execution(platform_forbids_jit: bool) -> Result<(), PluginError> {
+    if platform_forbids_jit {
+        return Err(PluginError::NativeUnavailable);
+    }
+    Ok(())
 }
 
 #[cfg(feature = "interpreter")]
@@ -40,12 +50,27 @@ fn pulley_target() -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::build_engine;
+    use super::{build_engine, check_native_execution};
+    use crate::error::PluginError;
     use crate::execution_mode::ExecutionMode;
 
+    #[cfg(not(target_os = "ios"))]
     #[test]
     fn builds_a_native_engine() {
         assert!(build_engine(ExecutionMode::Native).is_ok());
+    }
+
+    #[test]
+    fn allows_native_execution_where_jit_is_allowed() {
+        assert!(check_native_execution(false).is_ok());
+    }
+
+    #[test]
+    fn refuses_native_execution_where_jit_is_forbidden() {
+        assert!(matches!(
+            check_native_execution(true),
+            Err(PluginError::NativeUnavailable)
+        ));
     }
 
     #[cfg(feature = "interpreter")]
@@ -59,7 +84,7 @@ mod tests {
     fn refuses_the_interpreter_when_the_feature_is_off() {
         assert!(matches!(
             build_engine(ExecutionMode::Interpreter),
-            Err(crate::error::PluginError::InterpreterUnavailable)
+            Err(PluginError::InterpreterUnavailable)
         ));
     }
 }
