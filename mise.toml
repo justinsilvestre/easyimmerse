@@ -122,13 +122,14 @@ run = [
 description = "Drive a debug build of the app on a running Android emulator through Appium"
 depends = ["android:build", "appium:install:android"]
 run = "pnpm --filter @easyimmerse/native e2e:android"
+
 # The Rust target follows the machine: Apple silicon simulators run arm64 code, Intel ones x86_64.
 # On Intel, the generated project is restricted to the simulator platform; see the script.
 # The Xcode build phase runs cargo with only PATH and HOME, where the mise shim refuses mise.toml
 # as untrusted, so rustup's own cargo comes first on PATH there.
 [tasks."e2e:ios"]
 description = "Drive a debug build of the app on an iOS simulator through Appium"
-depends = ["plugins:build-rust"]
+depends = ["plugins:build-rust", "appium:install:ios"]
 run = '''
 set -e
 case "$(uname -m)" in arm64) target=aarch64-sim ;; *) target=x86_64 ;; esac
