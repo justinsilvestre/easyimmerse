@@ -507,6 +507,15 @@ importers:
         specifier: ^5.0.2
         version: 5.0.2(@types/node@24.19.0)(happy-dom@20.14.5)(vite@8.3.1(@types/node@24.19.0)(jiti@2.7.0))
 
+  packages/licenses:
+    devDependencies:
+      '@easyimmerse/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+
   packages/state:
     dependencies:
       '@easyimmerse/types':
