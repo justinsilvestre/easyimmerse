@@ -1,6 +1,8 @@
 //! The native shell: a Tauri app that starts the embedded API server on the loopback
 //! interface and opens a window whose page talks to that server over plain HTTP.
 
+#[cfg(desktop)]
+mod dev_server_file;
 mod embedded_server;
 mod injected_config_script;
 mod main_window;
@@ -22,6 +24,8 @@ pub fn run() {
             if smoke_test::is_requested() {
                 smoke_test::run_and_exit(&server);
             }
+            #[cfg(desktop)]
+            dev_server_file::write_in_debug_builds(&server);
             main_window::create(app.handle(), &server)?;
             app.manage(server);
             Ok(())
