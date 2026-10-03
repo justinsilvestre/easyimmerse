@@ -13,12 +13,14 @@ export function TagsField({
   onChange,
   hint,
   isLabelBeside = false,
+  className,
 }: {
   label: string;
   tags: readonly string[];
   onChange: (tags: readonly string[]) => void;
   hint?: string;
   isLabelBeside?: boolean;
+  className?: string;
 }) {
   const id = useId();
   const [text, setText] = useState("");
@@ -32,7 +34,11 @@ export function TagsField({
   };
   return (
     <div
-      className={clsx("flex gap-1", isLabelBeside ? "items-start" : "flex-col")}
+      className={clsx(
+        "flex gap-1",
+        isLabelBeside ? "items-start" : "flex-col",
+        className,
+      )}
     >
       <label
         htmlFor={id}

@@ -26,8 +26,8 @@ function renderEditor(onSave: OnSave = () => undefined) {
   );
 }
 
-const clickAddAField = () =>
-  fireEvent.click(screen.getByRole("button", { name: "Add a field" }));
+const openMoreFields = () =>
+  fireEvent.click(screen.getByRole("button", { name: "More fields" }));
 
 describe("FlashcardEditor", () => {
   it("hides the fields excluded by the flashcard settings", () => {
@@ -35,20 +35,38 @@ describe("FlashcardEditor", () => {
     expect(screen.queryByLabelText("Word pronunciation")).toBeNull();
   });
 
-  it("keeps the menu of fields to add closed at first", () => {
+  it("keeps the fields menu closed at first", () => {
     renderEditor();
     expect(
-      screen.queryByRole("menuitem", { name: "Word pronunciation" }),
+      screen.queryByRole("menuitemcheckbox", { name: "Word pronunciation" }),
     ).toBeNull();
   });
 
-  it("shows an excluded field once it is added from the menu", () => {
+  it("shows an excluded field once it is checked in the menu", () => {
     renderEditor();
-    clickAddAField();
+    openMoreFields();
     fireEvent.click(
-      screen.getByRole("menuitem", { name: "Word pronunciation" }),
+      screen.getByRole("menuitemcheckbox", { name: "Word pronunciation" }),
     );
     expect(screen.getByLabelText("Word pronunciation")).not.toBeNull();
+  });
+
+  it("hides an included field once it is unchecked in the menu", () => {
+    renderEditor();
+    openMoreFields();
+    fireEvent.click(
+      screen.getByRole("menuitemcheckbox", { name: "Definition (en)" }),
+    );
+    expect(screen.queryByLabelText("Definition (en)")).toBeNull();
+  });
+
+  it("keeps the fields menu open after a field is toggled", () => {
+    renderEditor();
+    openMoreFields();
+    fireEvent.click(
+      screen.getByRole("menuitemcheckbox", { name: "Word pronunciation" }),
+    );
+    expect(screen.getByRole("menu")).not.toBeNull();
   });
 
   it("labels a definition with its language", () => {

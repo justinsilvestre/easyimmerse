@@ -33,5 +33,16 @@ type Story = StoryObj<typeof meta>;
 export const Closed: Story = {};
 
 export const WithText: Story = {
-  args: { label: "Add a field", children: "Add a field" },
+  args: { label: "More fields", children: "More fields" },
+};
+
+export const WithCheckboxes: Story = {
+  args: {
+    label: "More fields",
+    children: "More fields",
+    items: [
+      { label: "Word pronunciation", isChecked: true, onSelect: fn() },
+      { label: "Definition (de)", isChecked: false, onSelect: fn() },
+    ],
+  },
 };

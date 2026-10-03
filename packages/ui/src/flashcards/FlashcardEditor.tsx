@@ -1,4 +1,4 @@
-import { Plus, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useReducer } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
@@ -12,7 +12,6 @@ import {
 } from "./FlashcardEditorFields.tsx";
 import {
   type FlashcardContent,
-  type FlashcardFieldDefinition,
   type FlashcardFieldKey,
   type FlashcardLanguages,
   flashcardFields,
@@ -20,7 +19,7 @@ import {
 
 /**
  * The form for a flashcard that was just created or reopened.
- * Fields outside the project's flashcard settings stay hidden until added back from the menu at the bottom.
+ * Fields outside the project's flashcard settings stay hidden until checked in the "More fields" menu; the screenshot has its own checkbox.
  */
 export function FlashcardEditor({
   initialContent,
@@ -48,11 +47,6 @@ export function FlashcardEditor({
     includedFields: initialFields,
   });
   const { content, includedFields } = state;
-  // The screenshot stays in view while the card has one, so that its checkbox can bring it back.
-  const isShown = (field: FlashcardFieldDefinition) =>
-    includedFields.includes(field.key) ||
-    (field.key === "screenshot" && content.screenshot !== null);
-  const hidden = flashcardFields.filter((field) => !isShown(field));
   return (
     <form
       aria-label="Flashcard"
@@ -79,31 +73,30 @@ export function FlashcardEditor({
           <TagsField
             label="Tags"
             isLabelBeside
+            className="shrink-0"
             tags={content.tags}
             onChange={(tags) => dispatch({ type: "tagsChanged", tags })}
           />
         )}
-        {hidden.length > 0 && (
-          <div className="border-t border-line pt-3">
-            <MenuButton
-              label="Add a field"
-              opensUpward
-              items={hidden.map((field) => ({
-                label: field.label(languages),
-                onSelect: () =>
-                  dispatch({ type: "fieldAdded", key: field.key }),
-              }))}
-            >
-              <Plus className="size-3" aria-hidden />
-              Add a field
-            </MenuButton>
-          </div>
-        )}
       </div>
-      <div className="flex justify-between gap-2 border-t border-line px-4 py-2">
+      <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2">
         <Button variant="danger" onClick={onDelete}>
           Delete
         </Button>
+        <MenuButton
+          label="More fields"
+          opensUpward
+          items={flashcardFields
+            .filter((field) => field.key !== "screenshot")
+            .map((field) => ({
+              label: field.label(languages),
+              isChecked: includedFields.includes(field.key),
+              onSelect: () =>
+                dispatch({ type: "fieldToggled", key: field.key }),
+            }))}
+        >
+          More fields
+        </MenuButton>
         <Button variant="primary" type="submit">
           Save
         </Button>

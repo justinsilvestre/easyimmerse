@@ -80,14 +80,14 @@ function Block({
   return (
     <fieldset
       aria-label={label}
-      className="min-w-0 divide-y divide-line overflow-hidden rounded-md border border-line-strong focus-within:border-accent"
+      className="min-w-0 shrink-0 divide-y divide-line overflow-hidden rounded-md border border-line-strong focus-within:border-accent"
     >
       {children}
     </fieldset>
   );
 }
 
-/** One field inside a block: its caption above a borderless input that grows with its text. */
+/** One field inside a block: its caption above a borderless input that wraps and grows with its text. A single-line field takes no line breaks. */
 function Cell({
   fieldKey,
   state,
@@ -96,28 +96,26 @@ function Cell({
 }: FieldsProps & { fieldKey: FlashcardTextFieldKey }) {
   const id = useId();
   const field = findFlashcardField(fieldKey);
-  const inputProps = {
-    id,
-    value: state.content[fieldKey],
-    className:
-      "w-full resize-none overflow-hidden bg-transparent text-sm text-fg outline-none",
-    onChange: (event: { target: { value: string } }) =>
-      dispatch({
-        type: "textChanged",
-        key: fieldKey,
-        value: event.target.value,
-      }),
-  };
   return (
     <div className="flex min-w-0 flex-col px-2.5 pt-1 pb-1.5 focus-within:bg-accent-soft">
       <label htmlFor={id} className="text-xs leading-4 text-fg-muted">
         {field.label(languages)}
       </label>
-      {field.multiline ? (
-        <AutoGrowTextarea {...inputProps} />
-      ) : (
-        <input {...inputProps} />
-      )}
+      <AutoGrowTextarea
+        id={id}
+        value={state.content[fieldKey]}
+        className="w-full resize-none overflow-hidden bg-transparent text-sm wrap-anywhere text-fg outline-none"
+        onChange={(event) =>
+          dispatch({
+            type: "textChanged",
+            key: fieldKey,
+            value: event.target.value,
+          })
+        }
+        onKeyDown={(event) => {
+          if (!field.multiline && event.key === "Enter") event.preventDefault();
+        }}
+      />
     </div>
   );
 }
@@ -139,7 +137,7 @@ export function MediaFields({
     waveform !== null;
   if (!showsClip && content.screenshot === null) return null;
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex shrink-0 items-start gap-2">
       {showsClip && content.audioContext && waveform && (
         <fieldset aria-label="Sentence audio" className="min-w-0 flex-1">
           <ClipEditor

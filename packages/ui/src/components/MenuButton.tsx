@@ -1,14 +1,18 @@
 import clsx from "clsx";
-import { ChevronDown, MoreHorizontal } from "lucide-react";
+import { Check, ChevronDown, MoreHorizontal } from "lucide-react";
 import { type ReactNode, useId, useRef, useState } from "react";
 import { Button } from "./Button.tsx";
 import { IconButton } from "./IconButton.tsx";
 
-/** One action in a menu. A destructive action is drawn in the danger color. */
+/**
+ * One action in a menu. A destructive action is drawn in the danger color.
+ * An item with `isChecked` set is a checkbox that stays in the menu when toggled.
+ */
 export type MenuItem = {
   label: string;
   icon?: ReactNode;
   isDestructive?: boolean;
+  isChecked?: boolean;
   onSelect: () => void;
 };
 
@@ -81,26 +85,48 @@ export function MenuButton({
         >
           {items.map((item) => (
             <div key={item.label} role="none">
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setOpen(false);
-                  item.onSelect();
-                }}
-                className={
-                  item.isDestructive
-                    ? "flex w-full items-center gap-2 px-3 py-1.5 text-left text-danger-fg hover:bg-danger-soft focus-visible:bg-danger-soft focus-visible:outline-none"
-                    : "flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-surface-muted focus-visible:bg-surface-muted focus-visible:outline-none"
-                }
-              >
-                {item.icon}
-                {item.label}
-              </button>
+              {item.isChecked === undefined ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    item.onSelect();
+                  }}
+                  className={itemClassName(item)}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  role="menuitemcheckbox"
+                  aria-checked={item.isChecked}
+                  onClick={item.onSelect}
+                  className={itemClassName(item)}
+                >
+                  <Check
+                    className={clsx("size-4", !item.isChecked && "invisible")}
+                    aria-hidden
+                  />
+                  {item.icon}
+                  {item.label}
+                </button>
+              )}
             </div>
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+function itemClassName(item: MenuItem): string {
+  return clsx(
+    "flex w-full items-center gap-2 px-3 py-1.5 text-left whitespace-nowrap focus-visible:outline-none",
+    item.isDestructive
+      ? "text-danger-fg hover:bg-danger-soft focus-visible:bg-danger-soft"
+      : "hover:bg-surface-muted focus-visible:bg-surface-muted",
   );
 }

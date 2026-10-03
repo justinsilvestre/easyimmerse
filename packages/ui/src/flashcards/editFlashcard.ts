@@ -17,7 +17,7 @@ export type EditorAction =
   | { type: "tagsChanged"; tags: readonly string[] }
   | { type: "clipChanged"; clip: AudioClip }
   | { type: "screenshotMsChanged"; ms: number }
-  | { type: "fieldAdded"; key: FlashcardFieldKey }
+  | { type: "fieldToggled"; key: FlashcardFieldKey }
   | { type: "screenshotToggled" };
 
 export function reduceEditor(
@@ -37,10 +37,10 @@ export function reduceEditor(
         : withContent(state, {
             screenshot: { ...state.content.screenshot, atMs: action.ms },
           });
-    case "fieldAdded":
+    case "fieldToggled":
       return {
         ...state,
-        includedFields: [...state.includedFields, action.key],
+        includedFields: toggleField(state.includedFields, action.key),
       };
     case "screenshotToggled":
       return {
