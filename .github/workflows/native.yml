@@ -144,11 +144,11 @@ jobs:
         run: pnpm --filter @easyimmerse/native exec tauri android init --ci --skip-targets-install
         env:
           NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+      - name: Build the hello-rust plugin
+        run: mise run plugins:build-rust
       # Keeping only line tables in the debug information roughly halves the build's disk use.
       # Backtraces still show file and line numbers.
       # The extra config file turns on the global Tauri object, as for the desktop end-to-end tests.
-      - name: Build the hello-rust plugin
-        run: mise run plugins:build-rust
       - name: Debug APK
         run: pnpm --filter @easyimmerse/native exec tauri android build --debug --target x86_64 --apk --ci --config e2e/tauri.conf.json --features plugin-check
         env:
@@ -228,12 +228,13 @@ jobs:
         run: rustup target add aarch64-apple-ios-sim
       - name: Initialize the Xcode project
         run: pnpm --filter @easyimmerse/native exec tauri ios init --ci --skip-targets-install
-      # Xcode's build phase runs cargo in a rebuilt environment that keeps only PATH and
-      # HOME, where the mise shim refuses mise.toml as untrusted. Putting rustup's own
-      # cargo first keeps mise out of that phase; rust-toolchain.toml still picks the version.
-      # The end-to-end tests need the global Tauri object, which the extra config file turns on.
       - name: Build the hello-rust plugin
         run: mise run plugins:build-rust
+      # Xcode's build phase runs cargo in a rebuilt environment that keeps only PATH and HOME,
+      # where the mise shim refuses mise.toml as untrusted.
+      # Putting rustup's own cargo first keeps mise out of that phase,
+      # and rust-toolchain.toml still picks the version.
+      # The end-to-end tests need the global Tauri object, which the extra config file turns on.
       - name: Simulator build without signing
         run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci --config e2e/tauri.conf.json --features plugin-check
       # The cache holds the XCUITest driver and its WebDriverAgent build, which takes minutes.
