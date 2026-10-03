@@ -104,7 +104,7 @@ TONE="$(stepping_tone 220 48000 8)"
 ffmpeg -y -loglevel error -f lavfi -i "$TONE" -c:a libmp3lame -b:a 64k $BITEXACT conversion-tone.mp3
 ffmpeg -y -loglevel error -f lavfi -i "$TONE" -c:a aac -b:a 64k $BITEXACT conversion-tone.aac
 ffmpeg -y -loglevel error -f lavfi -i "$TONE" -c:a vorbis -strict experimental -b:a 64k $BITEXACT conversion-tone.ogg
-ffmpeg -y -loglevel error -f lavfi -i "$TONE" -ar 16000 -c:a flac $BITEXACT conversion-tone.flac
+ffmpeg -y -loglevel error -f lavfi -i "$TONE" -ar 16000 -sample_fmt s16 -c:a flac $BITEXACT conversion-tone.flac
 ffmpeg -y -loglevel error \
   -f lavfi -i "$(stepping_tone 220 16000 6)" -ac 1 -c:a pcm_s16le $BITEXACT conversion-tone.wav
 
