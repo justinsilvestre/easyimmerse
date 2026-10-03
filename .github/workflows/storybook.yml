@@ -22,6 +22,8 @@ on:
       - "pnpm-workspace.yaml"
       - "packages/**"
       - "fixtures/**"
+  # A manual run publishes the preview of any branch without a pull request.
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -119,6 +121,11 @@ jobs:
           slug="${HEAD_REF//[^A-Za-z0-9._-]/-}"
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
           echo "url=https://$OWNER.github.io/$REPOSITORY/storybook/$slug/" >> "$GITHUB_OUTPUT"
+
+      - name: Link the preview from the run summary
+        env:
+          URL: ${{ steps.slug.outputs.url }}
+        run: echo "Storybook preview at $URL" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: peaceiris/actions-gh-pages@v4
         with:
