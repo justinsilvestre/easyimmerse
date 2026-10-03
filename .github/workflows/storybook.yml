@@ -1,0 +1,199 @@
+name: storybook
+
+# Publishes a browsable Storybook for @easyimmerse/ui to GitHub Pages, one directory per
+# branch on the gh-pages branch, and posts the link on the pull request.
+# The Storybook build does not import the WebAssembly module (the only import of
+# @easyimmerse/wasm it can reach is type-only), so the wasm build is not run here.
+
+on:
+  pull_request:
+    # The closed event runs only the cleanup job, which removes the branch's preview.
+    types: [opened, synchronize, reopened, closed]
+    paths:
+      - ".github/workflows/storybook.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "packages/**"
+      - "fixtures/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/storybook.yml"
+      - ".github/actions/**"
+      - "mise.toml"
+      - "rust-toolchain.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "packages/**"
+      - "fixtures/**"
+
+# A newer push to the same branch cancels the run still going for the older one.
+# The deploy and cleanup jobs add a second, repository-wide group below, because every
+# run pushes to the same gh-pages branch and concurrent pushes would reject each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Skips the other jobs when an earlier run passed on the same inputs.
+  # The gate keys on file content only, so a branch whose files are identical to an
+  # earlier passed run gets no fresh preview. That is accepted.
+  # Skipping this job on the closed event also skips every job that needs it.
+  gate:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-24.04
+    outputs:
+      passed: ${{ steps.find.outputs.passed }}
+      key: ${{ steps.find.outputs.key }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/find-passed-run
+        id: find
+
+  build:
+    needs: gate
+    if: needs.gate.outputs.passed != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+        with:
+          # Nothing here runs Cargo, so the Cargo cache is not restored.
+          rust-cache: "false"
+
+      - name: Build Storybook
+        run: pnpm --filter @easyimmerse/ui build-storybook
+
+      # The artifact lets a reviewer download the preview even when GitHub Pages is not enabled.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storybook
+          path: packages/ui/storybook-static
+          if-no-files-found: error
+
+  # This job does not run the setup action: it only moves files onto the gh-pages branch
+  # with git and needs no toolchain, and it does not check out the source branch either.
+  deploy:
+    needs: [gate, build]
+    # A pull request from a fork gets a read-only token, so its preview is skipped and
+    # only the artifact from the build job remains.
+    if: >-
+      needs.gate.outputs.passed != 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    # Only one job at a time may push to the gh-pages branch, across every branch and
+    # pull request. GitHub keeps at most one job waiting in a group, so a third deploy that
+    # arrives while one runs and one waits replaces the waiting one.
+    concurrency:
+      group: storybook-gh-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: storybook
+          path: packages/ui/storybook-static
+
+      # The branch name goes through an environment variable because it can contain
+      # characters that the shell would interpret.
+      - name: Derive the preview directory from the branch name
+        id: slug
+        env:
+          HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.event.repository.name }}
+        run: |
+          slug="${HEAD_REF//[^A-Za-z0-9._-]/-}"
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "url=https://$OWNER.github.io/$REPOSITORY/storybook/$slug/" >> "$GITHUB_OUTPUT"
+
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: packages/ui/storybook-static
+          destination_dir: storybook/${{ steps.slug.outputs.slug }}
+          keep_files: true
+          full_commit_message: "Deploy the Storybook preview for ${{ steps.slug.outputs.slug }}"
+
+      # The header makes later runs update this comment instead of adding another one.
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          header: storybook-preview
+          message: |
+            ### Storybook preview
+
+            ${{ steps.slug.outputs.url }}
+
+            Built from ${{ github.event.pull_request.head.sha }}. The first deployment of a branch can take a minute or two to appear. If the link still returns a 404 after that, GitHub Pages must be enabled in the repository settings with the `gh-pages` branch and the root folder as its source.
+
+  record:
+    needs: [gate, build, deploy]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/actions
+      - uses: ./.github/actions/record-passed-run
+        with:
+          key: ${{ needs.gate.outputs.key }}
+
+  # Removes the closed pull request's preview from the gh-pages branch. This job does not
+  # run the setup action: it only uses git and needs no toolchain. It is not gated and the
+  # record job does not list it, because it changes nothing the gate hashes.
+  cleanup:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    # Shares the deploy jobs' group so that its push never races with a deploy.
+    concurrency:
+      group: storybook-gh-pages
+      cancel-in-progress: false
+    steps:
+      # The branch does not exist until the first deploy, so a pull request closed before
+      # then has nothing to remove.
+      - name: Check whether the gh-pages branch exists
+        id: branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git ls-remote --exit-code --heads "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git" refs/heads/gh-pages > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.branch.outputs.exists == 'true'
+        with:
+          ref: gh-pages
+
+      - name: Remove the preview directory
+        if: steps.branch.outputs.exists == 'true'
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          slug="${HEAD_REF//[^A-Za-z0-9._-]/-}"
+          git rm -r --quiet --ignore-unmatch "storybook/$slug"
+          if git diff --cached --quiet; then
+            echo "No preview directory for $slug."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove the Storybook preview for $slug"
+          git push
