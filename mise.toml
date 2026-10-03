@@ -80,10 +80,12 @@ run = [
   "pnpm --filter @easyimmerse/extension e2e",
 ]
 
+# The plugin-check feature embeds the hello-rust plugin, so that plugin is built first.
 [tasks."e2e:desktop"]
 description = "Drive a debug build of the desktop app through WebDriver"
+depends = ["plugins:build-rust"]
 run = [
-  "pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json",
+  "pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json --features plugin-check",
   "pnpm --filter @easyimmerse/native e2e",
 ]
 

@@ -18,6 +18,7 @@ on:
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
       - "fixtures/**"
+      - "plugins/**"
   push:
     branches: [main]
     paths:
@@ -36,6 +37,7 @@ on:
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
       - "fixtures/**"
+      - "plugins/**"
   workflow_dispatch:
 
 # A newer push to the same branch cancels the run still going for the older one.
@@ -78,9 +80,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      # The plugin-check feature embeds this plugin, so the end-to-end tests can prove the plugin host runs.
+      - name: Build the hello-rust plugin
+        run: mise run plugins:build-rust
+
       # The end-to-end tests need the global Tauri object, which the extra config file turns on.
       - name: Debug build without bundling
-        run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json
+        run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json --features plugin-check
 
       - name: Embedded server health check
         shell: bash
