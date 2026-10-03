@@ -1,0 +1,191 @@
+import { Download, GraduationCap, Plug, Send } from "lucide-react";
+import type { ReactNode } from "react";
+import { Badge } from "../components/Badge.tsx";
+import { Button } from "../components/Button.tsx";
+import { FlashcardPreview } from "../flashcards/FlashcardPreview.tsx";
+import type {
+  FlashcardContent,
+  FlashcardFieldKey,
+} from "../flashcards/flashcardFields.ts";
+
+/** Where the project's flashcards last went: nowhere yet, the built-in review, an Anki package, or Anki itself. */
+export type FlashcardSyncState =
+  | { kind: "notStarted" }
+  | { kind: "review"; dueCount: number; nextCard: FlashcardContent | null }
+  | {
+      kind: "ankiPackage";
+      unexportedCount: number;
+      nextCard: FlashcardContent | null;
+    }
+  | {
+      kind: "ankiConnect";
+      connection: "connected" | "unreachable";
+      unsentCount: number;
+      nextCard: FlashcardContent | null;
+    };
+
+type Callbacks = {
+  onExportPackage: () => void;
+  onSetUpAnkiConnect: () => void;
+  onStartReview: () => void;
+  onSendToAnki: () => void;
+};
+
+export function FlashcardSyncPanel({
+  state,
+  includedFields,
+  ...callbacks
+}: {
+  state: FlashcardSyncState;
+  includedFields: readonly FlashcardFieldKey[];
+} & Callbacks) {
+  return (
+    <section
+      aria-label="Flashcards"
+      className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4"
+    >
+      <h2 className="font-semibold">Flashcards</h2>
+      {state.kind === "notStarted" ? (
+        <NotStarted {...callbacks} />
+      ) : (
+        <div className="grid items-start gap-4 sm:grid-cols-[1fr_14rem]">
+          <Status state={state} {...callbacks} />
+          {state.nextCard ? (
+            <FlashcardPreview
+              content={state.nextCard}
+              includedFields={includedFields}
+              compact
+            />
+          ) : (
+            <p className="self-center text-center text-sm text-fg-faint">
+              No flashcards yet
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function NotStarted(callbacks: Callbacks) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-fg-muted">
+        Review your flashcards here, or send them to Anki. You can switch later.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="primary" onClick={callbacks.onStartReview}>
+          <GraduationCap className="size-4" aria-hidden />
+          Review in easyImmerse
+        </Button>
+        <Button onClick={callbacks.onExportPackage}>
+          <Download className="size-4" aria-hidden />
+          Export an Anki deck
+        </Button>
+        <Button onClick={callbacks.onSetUpAnkiConnect}>
+          <Plug className="size-4" aria-hidden />
+          Set up AnkiConnect
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Status({
+  state,
+  ...callbacks
+}: { state: Exclude<FlashcardSyncState, { kind: "notStarted" }> } & Callbacks) {
+  switch (state.kind) {
+    case "review":
+      return (
+        <StatusBlock
+          summary={
+            state.dueCount === 0
+              ? "Nothing due for review."
+              : `${state.dueCount} cards due for review.`
+          }
+          action={
+            <Button variant="primary" onClick={callbacks.onStartReview}>
+              <GraduationCap className="size-4" aria-hidden />
+              Continue reviewing
+            </Button>
+          }
+        />
+      );
+    case "ankiPackage":
+      return (
+        <StatusBlock
+          summary={
+            state.unexportedCount === 0
+              ? "Every flashcard has been exported."
+              : `${state.unexportedCount} new flashcards since the last export.`
+          }
+          action={
+            <Button
+              variant="primary"
+              disabled={state.unexportedCount === 0}
+              onClick={callbacks.onExportPackage}
+            >
+              <Download className="size-4" aria-hidden />
+              Export the new cards
+            </Button>
+          }
+        />
+      );
+    case "ankiConnect":
+      return (
+        <StatusBlock
+          badge={
+            state.connection === "connected" ? (
+              <Badge tone="success">Anki connected</Badge>
+            ) : (
+              <Badge tone="danger">Anki unreachable</Badge>
+            )
+          }
+          summary={
+            state.unsentCount === 0
+              ? "Every flashcard is in Anki."
+              : `${state.unsentCount} flashcards waiting to be sent.`
+          }
+          hint={
+            state.connection === "unreachable"
+              ? "Start Anki with the AnkiConnect add-on installed. Cards are sent as soon as it answers."
+              : undefined
+          }
+          action={
+            <Button
+              variant="primary"
+              disabled={
+                state.unsentCount === 0 || state.connection === "unreachable"
+              }
+              onClick={callbacks.onSendToAnki}
+            >
+              <Send className="size-4" aria-hidden />
+              Send to Anki
+            </Button>
+          }
+        />
+      );
+  }
+}
+
+function StatusBlock({
+  badge,
+  summary,
+  hint,
+  action,
+}: {
+  badge?: ReactNode;
+  summary: string;
+  hint?: string;
+  action: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-start gap-2 text-sm">
+      {badge}
+      <p>{summary}</p>
+      {hint && <p className="text-fg-muted">{hint}</p>}
+      <div className="pt-1">{action}</div>
+    </div>
+  );
+}

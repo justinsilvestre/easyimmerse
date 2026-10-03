@@ -213,7 +213,8 @@
     }
   }
 
-  :root[data-theme="dark"] {
+  /* Setting the attribute on an element below the root makes only that subtree dark, which the media screen uses in both themes. */
+  [data-theme="dark"] {
     color-scheme: dark;
     --color-canvas: var(--color-gray-950);
     --color-surface: var(--color-gray-900);
