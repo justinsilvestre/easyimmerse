@@ -111,7 +111,7 @@ jobs:
 
   android:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-android-'))
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -155,7 +155,7 @@ jobs:
 
   ios:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-ios-'))
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
