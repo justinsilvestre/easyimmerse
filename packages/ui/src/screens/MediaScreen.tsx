@@ -1,6 +1,7 @@
 import { Button } from "../components/Button.tsx";
 import { PickFileButton } from "../components/PickFileButton.tsx";
 import { PreferenceToggle } from "../components/PreferenceToggle.tsx";
+import { ScreenFooter } from "../components/ScreenFooter.tsx";
 import { StubPlayer } from "../components/StubPlayer.tsx";
 import { SubtitlesPanel } from "../components/SubtitlesPanel.tsx";
 
@@ -23,6 +24,7 @@ export function MediaScreen({
         <PreferenceToggle />
       </div>
       <SubtitlesPanel />
+      <ScreenFooter />
     </main>
   );
 }

@@ -2,6 +2,7 @@ import { useListProjectsQuery } from "@easyimmerse/backend";
 import { Button } from "../components/Button.tsx";
 import { HelpLink } from "../components/HelpLink.tsx";
 import { ProjectList } from "../components/ProjectList.tsx";
+import { ScreenFooter } from "../components/ScreenFooter.tsx";
 
 /** The project id the media screen opens with when no server can list projects. */
 const offlineProjectId = "offline";
@@ -26,6 +27,7 @@ export function HomeScreen({
         </Button>
       )}
       {data && <ProjectList projects={data.projects} onOpen={onOpenProject} />}
+      <ScreenFooter />
     </main>
   );
 }
