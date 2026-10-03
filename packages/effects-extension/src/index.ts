@@ -1,5 +1,9 @@
 import { createWebEffects } from "@easyimmerse/effects-web";
-import type { Effects, PlayerRegistry } from "@easyimmerse/state";
+import type {
+  BrowserFileRegistry,
+  Effects,
+  PlayerRegistry,
+} from "@easyimmerse/state";
 import { browser } from "@wxt-dev/browser";
 import { createOpenExternalUrl } from "./openExternalUrl.ts";
 
@@ -11,6 +15,7 @@ import { createOpenExternalUrl } from "./openExternalUrl.ts";
  */
 export function createExtensionEffects(options: {
   playerRegistry: PlayerRegistry;
+  browserFileRegistry?: BrowserFileRegistry<File>;
 }): Effects {
   return {
     ...createWebEffects(options),

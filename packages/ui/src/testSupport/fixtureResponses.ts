@@ -1,4 +1,8 @@
-import type { ListProjectsResponse, TimedTextTrack } from "@easyimmerse/types";
+import type {
+  ListMediaFilesResponse,
+  ListProjectsResponse,
+  TimedTextTrack,
+} from "@easyimmerse/types";
 
 /** The cues of `fixtures/sample.srt`, as the backend returns them. */
 export const fixtureTrack: TimedTextTrack = {
@@ -38,7 +42,34 @@ export const fixtureProjects: ListProjectsResponse = {
   ],
 };
 
+/** Two media files of project `p1`: one on the server's disk and one the browser holds. */
+export const fixtureMediaFiles: ListMediaFilesResponse = {
+  media_files: [
+    {
+      id: "m1",
+      project_id: "p1",
+      name: "episode.mkv",
+      source: { kind: "path", path: "/videos/episode.mkv" },
+      created_at_ms: 1767225600000,
+      track_selection_json: null,
+    },
+    {
+      id: "m2",
+      project_id: "p1",
+      name: "interview.mp3",
+      source: {
+        kind: "browser_file",
+        size: 4820133,
+        last_modified_ms: 1767225600000,
+      },
+      created_at_ms: 1767312000000,
+      track_selection_json: null,
+    },
+  ],
+};
+
 export const fixtureResponses = {
   "GET /projects": fixtureProjects,
+  "GET /projects/p1/media": fixtureMediaFiles,
   "POST /timed-text/parse": fixtureTrack,
 };

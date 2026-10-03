@@ -1,4 +1,4 @@
-import type { BackendClient } from "@easyimmerse/backend";
+import type { BackendClient, ServerConfig } from "@easyimmerse/backend";
 import {
   backendStoreParts,
   configureBackend,
@@ -7,7 +7,11 @@ import {
   resolveServerConfig,
 } from "@easyimmerse/backend";
 import { createExtensionEffects } from "@easyimmerse/effects-extension";
-import { createAppStore, createPlayerRegistry } from "@easyimmerse/state";
+import {
+  createAppStore,
+  createBrowserFileRegistry,
+  createPlayerRegistry,
+} from "@easyimmerse/state";
 import { AppRoot } from "@easyimmerse/ui";
 import { loadOfflineWasm } from "@easyimmerse/wasm";
 import wasmUrl from "@easyimmerse/wasm/pkg/easyimmerse_wasm_bg.wasm?url";
@@ -16,18 +20,24 @@ import "@easyimmerse/ui/styles.css";
 
 /** Wires the backend, effects, and store together and mounts the app in the side panel. */
 export async function bootstrap(): Promise<void> {
-  configureBackend(await createBackendClient());
+  const server = resolveServerConfig();
+  configureBackend(await createBackendClient(server), server);
   const playerRegistry = createPlayerRegistry();
-  const effects = createExtensionEffects({ playerRegistry });
+  const browserFileRegistry = createBrowserFileRegistry<File>();
+  const effects = createExtensionEffects({
+    playerRegistry,
+    browserFileRegistry,
+  });
   const store = createAppStore(effects, backendStoreParts);
   createRoot(findRootElement()).render(
     <AppRoot store={store} playerRegistry={playerRegistry} />,
   );
 }
 
-async function createBackendClient(): Promise<BackendClient> {
-  const config = resolveServerConfig();
-  if (config !== null) return createHttpBackendClient(config);
+async function createBackendClient(
+  server: ServerConfig | null,
+): Promise<BackendClient> {
+  if (server !== null) return createHttpBackendClient(server);
   return createWasmBackendClient(await loadOfflineWasm(wasmUrl));
 }
 
