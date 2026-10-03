@@ -12,6 +12,8 @@ export type TrackOption = {
   id: string;
   label: string;
   language: string | null;
+  /** The first lines of a subtitles track, for telling tracks apart. Null for an audio track. */
+  sample: string | null;
 };
 
 /** The tracks a media file offers and which of them are in use. */

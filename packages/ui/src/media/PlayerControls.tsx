@@ -2,18 +2,16 @@ import {
   AudioWaveform,
   Captions,
   Expand,
-  FilePlus,
+  Languages,
   Pause,
   Play,
-  Search,
   SkipBack,
   SkipForward,
   Volume2,
 } from "lucide-react";
 import { IconButton } from "../components/IconButton.tsx";
-import { Kbd } from "../components/Kbd.tsx";
 import { formatTimestamp } from "./formatTimestamp.ts";
-import type { PlaybackState, TrackOption, TrackSelection } from "./playback.ts";
+import type { PlaybackState, TrackSelection } from "./playback.ts";
 
 export type PlayerCallbacks = {
   onTogglePlay: () => void;
@@ -23,10 +21,8 @@ export type PlayerCallbacks = {
   onVolumeChange: (volume: number) => void;
   onSpeedChange: (speed: number) => void;
   onAudioTrackChange: (trackId: string) => void;
-  onTargetSubtitlesChange: (trackId: string | null) => void;
-  onTranslationSubtitlesChange: (trackId: string | null) => void;
-  onAddSubtitlesFile: () => void;
-  onLookup: () => void;
+  /** Cycles which subtitles lie over the video: both, the target language, or the translation. */
+  onToggleSubtitleDisplay: () => void;
   onToggleCuePanel: () => void;
   onToggleWaveform: () => void;
   onToggleDistractionFree: () => void;
@@ -34,7 +30,7 @@ export type PlayerCallbacks = {
 
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-/** The bar below the player: transport, volume, speed, track choices, and the toggles for the panels around it. */
+/** The bar under the player: the position, transport, volume, speed, and audio track, with the toggles for the panels around it. */
 export function PlayerControls({
   playback,
   tracks,
@@ -47,7 +43,7 @@ export function PlayerControls({
   callbacks: PlayerCallbacks;
 }) {
   return (
-    <div className="flex flex-col gap-2 border-t border-line bg-surface px-3 py-2">
+    <div className="flex flex-col gap-1.5 border-t border-line bg-surface px-3 py-2">
       <div className="flex items-center gap-3 text-xs text-fg-muted tabular-nums">
         <span>{formatTimestamp(playback.currentMs)}</span>
         <input
@@ -108,48 +104,26 @@ export function PlayerControls({
           }))}
           onChange={(value) => callbacks.onSpeedChange(Number(value))}
         />
-        <span className="ml-auto flex flex-wrap items-center gap-1">
-          {tracks.audio.length > 1 && (
-            <CompactSelect
-              label="Audio track"
-              value={tracks.audioId ?? ""}
-              options={tracks.audio.map(trackOption)}
-              onChange={callbacks.onAudioTrackChange}
-            />
+        {tracks.audio.length > 1 && (
+          <CompactSelect
+            label="Audio track"
+            value={tracks.audioId ?? ""}
+            options={tracks.audio.map((track) => ({
+              value: track.id,
+              label: track.label,
+            }))}
+            onChange={callbacks.onAudioTrackChange}
+          />
+        )}
+        <span className="ml-auto flex items-center gap-1">
+          {tracks.translationSubtitlesId !== null && (
+            <IconButton
+              label="Switch which subtitles are shown"
+              onClick={callbacks.onToggleSubtitleDisplay}
+            >
+              <Languages className="size-4" />
+            </IconButton>
           )}
-          <CompactSelect
-            label="Subtitles"
-            value={tracks.targetSubtitlesId ?? ""}
-            options={[
-              { value: "", label: "No subtitles" },
-              ...tracks.subtitles.map(trackOption),
-            ]}
-            onChange={(value) =>
-              callbacks.onTargetSubtitlesChange(value || null)
-            }
-          />
-          <CompactSelect
-            label="Translation subtitles"
-            value={tracks.translationSubtitlesId ?? ""}
-            options={[
-              { value: "", label: "No translation" },
-              ...tracks.subtitles.map(trackOption),
-            ]}
-            onChange={(value) =>
-              callbacks.onTranslationSubtitlesChange(value || null)
-            }
-          />
-          <IconButton
-            label="Add a subtitles file"
-            onClick={callbacks.onAddSubtitlesFile}
-          >
-            <FilePlus className="size-4" />
-          </IconButton>
-          <span className="mx-1 h-5 w-px bg-line" aria-hidden />
-          <IconButton label="Look up a word" onClick={callbacks.onLookup}>
-            <Search className="size-4" />
-          </IconButton>
-          <Kbd>L</Kbd>
           <IconButton
             label="Subtitles panel"
             pressed={panels.cues}
@@ -174,10 +148,6 @@ export function PlayerControls({
       </div>
     </div>
   );
-}
-
-function trackOption(track: TrackOption): { value: string; label: string } {
-  return { value: track.id, label: track.label };
 }
 
 function CompactSelect({

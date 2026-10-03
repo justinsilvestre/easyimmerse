@@ -1,11 +1,17 @@
+import type { Cue } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 import {
   exampleFlashcard,
   exampleLanguages,
 } from "../flashcards/exampleFlashcard.ts";
+import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
+import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
+import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleEntries } from "../lookup/exampleLookup.ts";
+import type { LookupState } from "../lookup/lookupState.ts";
+import { CuePanel } from "./CuePanel.tsx";
 import {
   exampleCues,
   exampleFlashcardCueIndexes,
@@ -13,6 +19,74 @@ import {
 } from "./exampleCues.ts";
 import { generateExamplePeaks } from "./examplePeaks.ts";
 import { MediaView } from "./MediaView.tsx";
+import type { TrackSelection } from "./playback.ts";
+import { SubtitleTrackBar } from "./SubtitleTrackBar.tsx";
+
+const tracks: TrackSelection = {
+  audio: [
+    { id: "a1", label: "German (5.1)", language: "de", sample: null },
+    { id: "a2", label: "English", language: "en", sample: null },
+  ],
+  subtitles: [
+    {
+      id: "s1",
+      label: "German",
+      language: "de",
+      sample: "Hast du das Licht gesehen?",
+    },
+    {
+      id: "s2",
+      label: "English",
+      language: "en",
+      sample: "Did you see the light?",
+    },
+  ],
+  audioId: "a1",
+  targetSubtitlesId: "s1",
+  translationSubtitlesId: "s2",
+};
+
+const peaks = generateExamplePeaks(240);
+
+function subtitlesPanel(
+  cues: readonly Cue[] = exampleCues,
+  translationCues: readonly Cue[] = exampleTranslationCues,
+) {
+  return (
+    <>
+      <SubtitleTrackBar
+        tracks={tracks}
+        onTargetChange={fn()}
+        onTranslationChange={fn()}
+        onAddFile={fn()}
+      />
+      <CuePanel
+        cues={cues}
+        translationCues={translationCues}
+        activeCueIndex={3}
+        flashcardCueIndexes={exampleFlashcardCueIndexes}
+        onSeek={fn()}
+        onWordHover={fn()}
+        onWordClick={fn()}
+        onAddSubtitlesFile={fn()}
+        onGenerateSubtitles={fn()}
+      />
+    </>
+  );
+}
+
+function lookupPopup(state: LookupState | null, mode: "hover" | "search") {
+  return (
+    <DictionaryPopup
+      state={state}
+      mode={mode}
+      onSearch={fn()}
+      onCreateFlashcard={fn()}
+      onClose={fn()}
+      onSetUpDictionary={fn()}
+    />
+  );
+}
 
 const meta = {
   title: "Media/MediaView",
@@ -33,32 +107,14 @@ const meta = {
       volume: 0.8,
       speed: 1,
     },
-    tracks: {
-      audio: [
-        { id: "a1", label: "German (5.1)", language: "de" },
-        { id: "a2", label: "English", language: "en" },
-      ],
-      subtitles: [
-        { id: "s1", label: "German", language: "de" },
-        { id: "s2", label: "English", language: "en" },
-      ],
-      audioId: "a1",
-      targetSubtitlesId: "s1",
-      translationSubtitlesId: "s2",
-    },
+    tracks,
     cues: exampleCues,
     translationCues: exampleTranslationCues,
     flashcardCueIndexes: exampleFlashcardCueIndexes,
-    waveform: {
-      peaks: generateExamplePeaks(240),
-      viewStartMs: 0,
-      viewEndMs: 24_000,
-    },
+    waveform: { peaks, viewStartMs: 0, viewEndMs: 24_000 },
     panels: { cues: true, waveform: true, distractionFree: false },
     subtitleDisplay: "both",
-    lookup: null,
-    editingFlashcard: null,
-    work: { hasUnsavedChanges: false, isBackedUp: true },
+    editingSegmentId: null,
     playerCallbacks: {
       onTogglePlay: fn(),
       onSeek: fn(),
@@ -66,10 +122,7 @@ const meta = {
       onVolumeChange: fn(),
       onSpeedChange: fn(),
       onAudioTrackChange: fn(),
-      onTargetSubtitlesChange: fn(),
-      onTranslationSubtitlesChange: fn(),
-      onAddSubtitlesFile: fn(),
-      onLookup: fn(),
+      onToggleSubtitleDisplay: fn(),
       onToggleCuePanel: fn(),
       onToggleWaveform: fn(),
       onToggleDistractionFree: fn(),
@@ -84,17 +137,9 @@ const meta = {
     onBack: fn(),
     onWordHover: fn(),
     onWordClick: fn(),
-    onToggleSubtitleDisplay: fn(),
-    onGenerateSubtitles: fn(),
-    onSearchLookup: fn(),
-    onCreateFlashcard: fn(),
-    onCloseLookup: fn(),
-    onSetUpDictionary: fn(),
-    onSaveFlashcard: fn(),
-    onDeleteFlashcard: fn(),
-    onCloseFlashcard: fn(),
-    onSaveProject: fn(),
-    onLogIn: fn(),
+    onLookup: fn(),
+    onAddFlashcard: fn(),
+    sidePanel: subtitlesPanel(),
   },
 } satisfies Meta<typeof MediaView>;
 
@@ -112,33 +157,46 @@ export const LookingUpAWord: Story = {
       volume: 0.8,
       speed: 1,
     },
-    lookup: {
-      mode: "hover",
-      state: { kind: "found", term: "fressen", entries: exampleEntries },
-    },
+    activeWord: "fressen",
+    lookup: lookupPopup(
+      { kind: "found", term: "fressen", entries: exampleEntries },
+      "hover",
+    ),
   },
 };
 
 export const LookupWithoutDictionary: Story = {
   args: {
-    lookup: { mode: "hover", state: { kind: "noDictionary", language: "de" } },
+    lookup: lookupPopup({ kind: "noDictionary", language: "de" }, "hover"),
   },
 };
 
 export const SearchingForAWord: Story = {
-  args: { lookup: { mode: "search", state: null } },
+  args: { lookup: lookupPopup(null, "search") },
 };
 
 export const EditingAFlashcard: Story = {
   args: {
-    editingFlashcard: {
-      id: "flashcard-3",
-      content: exampleFlashcard,
-      fields: fieldsOfPreset("intermediate"),
-      languages: exampleLanguages,
-      segmentId: "3",
-    },
-    work: { hasUnsavedChanges: true, isBackedUp: false },
+    editingSegmentId: "3",
+    headerContent: (
+      <UnsavedWorkBanner
+        hasUnsavedChanges
+        isBackedUp={false}
+        onSave={fn()}
+        onLogIn={fn()}
+      />
+    ),
+    sidePanel: (
+      <FlashcardEditor
+        initialContent={exampleFlashcard}
+        initialFields={fieldsOfPreset("intermediate")}
+        languages={exampleLanguages}
+        waveform={{ peaks, durationMs: 24_000 }}
+        onSave={fn()}
+        onDelete={fn()}
+        onClose={fn()}
+      />
+    ),
   },
 };
 
@@ -148,12 +206,13 @@ export const NoSubtitles: Story = {
     translationCues: [],
     flashcardCueIndexes: [],
     tracks: {
-      audio: [{ id: "a1", label: "German", language: "de" }],
+      audio: [{ id: "a1", label: "German", language: "de", sample: null }],
       subtitles: [],
       audioId: "a1",
       targetSubtitlesId: null,
       translationSubtitlesId: null,
     },
+    sidePanel: subtitlesPanel([], []),
   },
 };
 
@@ -167,7 +226,7 @@ export const AudioWithTranscript: Story = {
       language: "de",
     },
     translationCues: [],
-    panels: { cues: true, waveform: true, distractionFree: false },
+    sidePanel: subtitlesPanel(exampleCues, []),
   },
 };
 

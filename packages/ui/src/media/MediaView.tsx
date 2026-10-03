@@ -1,20 +1,11 @@
 import type { Cue } from "@easyimmerse/types";
-import { ArrowLeft, Minimize, Music } from "lucide-react";
-import { useMemo } from "react";
+import { ArrowLeft, Layers, Minimize, Music, Search } from "lucide-react";
+import { type ReactNode, useMemo } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
-import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
-import type {
-  FlashcardContent,
-  FlashcardFieldKey,
-  FlashcardLanguages,
-} from "../flashcards/flashcardFields.ts";
-import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
-import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
-import type { LookupState } from "../lookup/lookupState.ts";
+import { Kbd } from "../components/Kbd.tsx";
 import { languageName } from "../projects/languages.ts";
-import { CuePanel } from "./CuePanel.tsx";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
 import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import type { PlaybackState, TrackSelection } from "./playback.ts";
@@ -32,22 +23,6 @@ type MediaSource = {
   language: string;
 };
 
-/** The pop-up over the subtitles, in hover mode for a word under the pointer or in search mode after the lookup shortcut. */
-type LookupPanel = {
-  state: LookupState | null;
-  mode: "hover" | "search";
-};
-
-/** The flashcard open in the side panel, with the fields the project's settings include. */
-type FlashcardEditing = {
-  id: string;
-  content: FlashcardContent;
-  fields: readonly FlashcardFieldKey[];
-  languages: FlashcardLanguages;
-  /** The id of the waveform segment the flashcard was made from, which the waveform emphasizes. */
-  segmentId: string | null;
-};
-
 type MediaViewProps = {
   media: MediaSource;
   playback: PlaybackState;
@@ -63,83 +38,71 @@ type MediaViewProps = {
   };
   panels: { cues: boolean; waveform: boolean; distractionFree: boolean };
   subtitleDisplay: SubtitleDisplay;
-  lookup: LookupPanel | null;
-  editingFlashcard: FlashcardEditing | null;
-  work: { hasUnsavedChanges: boolean; isBackedUp: boolean };
+  /** The word the dictionary pop-up shows, which is highlighted in the subtitles. */
+  activeWord?: string;
+  /** The waveform segment of the flashcard open in the side panel, which the waveform emphasizes. */
+  editingSegmentId: string | null;
   playerCallbacks: PlayerCallbacks;
   waveformCallbacks: WaveformCallbacks;
   onBack: () => void;
   onWordHover: (word: string) => void;
   onWordClick: (word: string) => void;
-  onToggleSubtitleDisplay: () => void;
-  onGenerateSubtitles: () => void;
-  onSearchLookup: (term: string) => void;
-  onCreateFlashcard: (term: string, entryIndex: number | null) => void;
-  onCloseLookup: () => void;
-  onSetUpDictionary: () => void;
-  onSaveFlashcard: (
-    content: FlashcardContent,
-    fields: readonly FlashcardFieldKey[],
-  ) => void;
-  onDeleteFlashcard: () => void;
-  onCloseFlashcard: () => void;
-  onSaveProject: () => void;
-  onLogIn: () => void;
+  onLookup: () => void;
+  onAddFlashcard: () => void;
+  /** Notices to show in the header, such as the unsaved-work banner. */
+  headerContent?: ReactNode;
+  /** The dictionary pop-up, drawn over the lower part of the stage. */
+  lookup?: ReactNode;
+  /** The subtitles panel or the flashcard editor, docked beside the stage. */
+  sidePanel?: ReactNode;
 };
 
-/** The screen for watching or listening to one media file. It is dark in both themes, like a cinema. */
+/**
+ * The screen for watching or listening to one media file. It is dark in both themes, like a cinema.
+ * The panels around the stage come in as children, so that each can be wired to the store on its own.
+ */
 export function MediaView(props: MediaViewProps) {
-  const {
-    media,
-    playback,
-    cues,
-    translationCues,
-    panels,
-    lookup,
-    editingFlashcard,
-  } = props;
+  const { media, playback, cues, translationCues, panels, tracks } = props;
   const activeCue = findCueAt(cues, playback.currentMs);
-  const activeWord =
-    lookup?.state && lookup.state.kind !== "noDictionary"
-      ? lookup.state.term
-      : undefined;
-  const showsSidePanel =
-    !panels.distractionFree && (editingFlashcard !== null || panels.cues);
   const segments = useMemo(
     () => segmentsFromCues(cues, props.flashcardCueIndexes),
     [cues, props.flashcardCueIndexes],
   );
+  const showsSidePanel = !panels.distractionFree && props.sidePanel != null;
   return (
-    <div data-theme="dark" className="flex h-screen flex-col bg-canvas text-fg">
+    <div data-theme="dark" className="flex h-dvh flex-col bg-canvas text-fg">
       {!panels.distractionFree && <Header {...props} />}
-      <div className="flex min-h-0 flex-1">
-        <main className="flex min-w-0 flex-1 flex-col">
-          <div className="relative flex min-h-0 flex-1 items-center justify-center bg-black">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="relative flex min-h-32 flex-1 items-center justify-center bg-black">
             <Stage media={media} />
             <SubtitleOverlay
               targetCue={activeCue}
               translationCue={
                 activeCue ? findTranslationOf(activeCue, translationCues) : null
               }
-              hasTranslation={translationCues.length > 0}
               display={props.subtitleDisplay}
-              activeWord={activeWord}
+              activeWord={props.activeWord}
               onWordHover={props.onWordHover}
               onWordClick={props.onWordClick}
-              onToggleDisplay={props.onToggleSubtitleDisplay}
             />
-            {lookup && (
+            {props.lookup && (
               <div className="absolute bottom-24 left-1/2 -translate-x-1/2">
-                <DictionaryPopup
-                  state={lookup.state}
-                  mode={lookup.mode}
-                  onSearch={props.onSearchLookup}
-                  onCreateFlashcard={props.onCreateFlashcard}
-                  onClose={props.onCloseLookup}
-                  onSetUpDictionary={props.onSetUpDictionary}
-                />
+                {props.lookup}
               </div>
             )}
+            <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-md bg-black/50">
+              <IconButton label="Look up a word" onClick={props.onLookup}>
+                <Search className="size-4" />
+              </IconButton>
+              <Kbd>L</Kbd>
+              <IconButton
+                label="New flashcard from this subtitle"
+                onClick={props.onAddFlashcard}
+              >
+                <Layers className="size-4" />
+              </IconButton>
+            </span>
             {panels.distractionFree && (
               <span className="absolute top-2 right-2">
                 <IconButton
@@ -151,6 +114,14 @@ export function MediaView(props: MediaViewProps) {
               </span>
             )}
           </div>
+          {!panels.distractionFree && (
+            <PlayerControls
+              playback={playback}
+              tracks={tracks}
+              panels={panels}
+              callbacks={props.playerCallbacks}
+            />
+          )}
           {!panels.distractionFree && panels.waveform && (
             <Waveform
               peaks={props.waveform.peaks}
@@ -159,7 +130,7 @@ export function MediaView(props: MediaViewProps) {
               durationMs={playback.durationMs}
               currentMs={playback.currentMs}
               segments={segments}
-              editingSegmentId={editingFlashcard?.segmentId ?? null}
+              editingSegmentId={props.editingSegmentId}
               canZoomIn={
                 props.waveform.viewEndMs - props.waveform.viewStartMs > 5_000
               }
@@ -170,45 +141,10 @@ export function MediaView(props: MediaViewProps) {
               callbacks={props.waveformCallbacks}
             />
           )}
-          {!panels.distractionFree && (
-            <PlayerControls
-              playback={playback}
-              tracks={props.tracks}
-              panels={panels}
-              callbacks={props.playerCallbacks}
-            />
-          )}
         </main>
         {showsSidePanel && (
-          <aside className="flex w-96 shrink-0 flex-col border-l border-line bg-canvas">
-            {editingFlashcard ? (
-              <FlashcardEditor
-                key={editingFlashcard.id}
-                initialContent={editingFlashcard.content}
-                initialFields={editingFlashcard.fields}
-                languages={editingFlashcard.languages}
-                waveform={{
-                  peaks: props.waveform.peaks,
-                  durationMs: playback.durationMs,
-                }}
-                onSave={props.onSaveFlashcard}
-                onDelete={props.onDeleteFlashcard}
-                onClose={props.onCloseFlashcard}
-              />
-            ) : (
-              <CuePanel
-                cues={cues}
-                translationCues={translationCues}
-                activeCueIndex={activeCue?.index ?? null}
-                flashcardCueIndexes={props.flashcardCueIndexes}
-                activeWord={activeWord}
-                onSeek={props.playerCallbacks.onSeek}
-                onWordHover={props.onWordHover}
-                onWordClick={props.onWordClick}
-                onAddSubtitlesFile={props.playerCallbacks.onAddSubtitlesFile}
-                onGenerateSubtitles={props.onGenerateSubtitles}
-              />
-            )}
+          <aside className="flex max-h-[45dvh] shrink-0 flex-col border-t border-line bg-canvas md:max-h-none md:w-96 md:border-t-0 md:border-l">
+            {props.sidePanel}
           </aside>
         )}
       </div>
@@ -216,27 +152,16 @@ export function MediaView(props: MediaViewProps) {
   );
 }
 
-function Header({
-  media,
-  work,
-  onBack,
-  onSaveProject,
-  onLogIn,
-}: MediaViewProps) {
+function Header({ media, headerContent, onBack }: MediaViewProps) {
   return (
-    <header className="flex items-center gap-3 border-b border-line bg-surface px-3 py-2">
+    <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-surface px-3 py-2">
       <Button variant="subtle" onClick={onBack}>
         <ArrowLeft className="size-4" aria-hidden />
         Project
       </Button>
       <h1 className="min-w-0 flex-1 truncate font-medium">{media.title}</h1>
       <Badge>{languageName(media.language)}</Badge>
-      <UnsavedWorkBanner
-        hasUnsavedChanges={work.hasUnsavedChanges}
-        isBackedUp={work.isBackedUp}
-        onSave={onSaveProject}
-        onLogIn={onLogIn}
-      />
+      {headerContent}
     </header>
   );
 }
