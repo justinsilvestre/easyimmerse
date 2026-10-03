@@ -1,8 +1,19 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { appiumHome, createAppiumConfig } from "./appiumConfig.ts";
+import { createAppiumConfig } from "./appiumConfig.ts";
 import { prepareSimulator, uninstallApp } from "./iosSimulator.ts";
+import {
+  downloadWebDriverAgent,
+  webDriverAgentPath,
+} from "./webDriverAgent.ts";
+
+// The XCUITest driver accepts this capability, but @wdio/types does not declare it.
+declare global {
+  namespace WebdriverIO {
+    interface Capabilities {
+      "appium:prebuiltWDAPath"?: string;
+    }
+  }
+}
 
 const bundleId = "com.easyimmerse.app";
 const simulatorUdid = prepareSimulator();
@@ -16,14 +27,7 @@ const appPath = fileURLToPath(
   ),
 );
 
-// WebDriverAgent is built into the Appium home once, and later runs reuse that build.
-const derivedDataPath = join(appiumHome, "WebDriverAgent");
-const isWebDriverAgentBuilt = existsSync(
-  join(
-    derivedDataPath,
-    "Build/Products/Debug-iphonesimulator/WebDriverAgentRunner-Runner.app",
-  ),
-);
+const webDriverAgent = webDriverAgentPath();
 
 /** Drives the iOS simulator build through Appium's XCUITest driver, attached to the app's WKWebView. */
 export const config = createAppiumConfig(
@@ -40,10 +44,9 @@ export const config = createAppiumConfig(
     // The driver retries every 500 ms, so these allow about a minute.
     "appium:webviewConnectTimeout": 30_000,
     "appium:webviewConnectRetries": 120,
-    "appium:derivedDataPath": derivedDataPath,
-    "appium:usePrebuiltWDA": isWebDriverAgentBuilt,
-    "appium:wdaLaunchTimeout": 300_000,
-    "appium:showXcodeLog": Boolean(process.env.CI),
+    // The driver installs this prebuilt WebDriverAgent and launches it without xcodebuild.
+    "appium:usePreinstalledWDA": true,
+    "appium:prebuiltWDAPath": webDriverAgent,
   },
   {},
   {
@@ -51,6 +54,9 @@ export const config = createAppiumConfig(
     connectionRetryTimeout: 600_000,
     connectionRetryCount: 1,
     // Each run starts from a fresh install, so the app opens a new database with the placeholder projects.
-    onPrepare: () => uninstallApp(simulatorUdid, bundleId),
+    onPrepare: () => {
+      downloadWebDriverAgent(webDriverAgent);
+      uninstallApp(simulatorUdid, bundleId);
+    },
   },
 );
