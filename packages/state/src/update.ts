@@ -16,7 +16,10 @@ const subtitleFileExtensions: readonly string[] = [".srt", ".vtt"];
 export const update: Update<AppState, AppAction, Effect> = (state, action) => {
   switch (action.type) {
     case "seekRequested":
-      return [state, [{ type: "seekPlayer", seconds: action.seconds }]];
+      return [
+        { ...state, player: { currentTimeSeconds: action.seconds } },
+        [{ type: "seekPlayer", seconds: action.seconds }],
+      ];
     case "playerTimeChanged":
       return [{ ...state, player: { currentTimeSeconds: action.seconds } }, []];
     case "filePickRequested":
@@ -81,6 +84,11 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       return [{ ...state, currentMediaFileId: action.mediaFileId }, []];
     case "preferenceToggled":
       return togglePreference(state, action.key);
+    case "preferenceSet":
+      return [
+        setPreference(state, action.key, action.value),
+        [{ type: "savePreference", key: action.key, value: action.value }],
+      ];
     case "preferencesLoadRequested":
       return [
         state,

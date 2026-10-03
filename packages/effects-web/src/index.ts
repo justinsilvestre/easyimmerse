@@ -32,7 +32,13 @@ export function createWebEffects(options: {
     showNotification: options.notify ?? showNotification,
     copyToClipboard,
     openExternalUrl,
+    subscribeToSettingsRequests: ignoreSettingsRequests,
   };
+}
+
+/** A browser has no menu item for Settings, so nothing ever asks for it from outside the page. */
+function ignoreSettingsRequests(): () => void {
+  return () => undefined;
 }
 
 export type { PreferenceStore } from "./preferenceStore.ts";

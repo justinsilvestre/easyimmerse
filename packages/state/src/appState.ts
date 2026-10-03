@@ -3,9 +3,16 @@ import type { PickedMediaFile } from "./effects.ts";
 import type { ThemeState } from "./theme.ts";
 import { initialThemeState } from "./theme.ts";
 
-export type PreferenceKey = "showTranslations";
+export type PreferenceKey =
+  | "showTranslations"
+  | "losslessAudio"
+  | "conversionNoticeDismissed";
 
-export const preferenceKeys: readonly PreferenceKey[] = ["showTranslations"];
+export const preferenceKeys: readonly PreferenceKey[] = [
+  "showTranslations",
+  "losslessAudio",
+  "conversionNoticeDismissed",
+];
 
 export type AppState = {
   player: { currentTimeSeconds: number };

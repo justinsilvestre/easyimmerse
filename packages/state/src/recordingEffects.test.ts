@@ -64,4 +64,25 @@ describe("createRecordingEffects", () => {
     await effects.copyToClipboard("Hello");
     expect(effects.calls).toEqual([{ type: "copyToClipboard", text: "Hello" }]);
   });
+
+  it("calls a settings listener when settings are requested", () => {
+    const effects = createRecordingEffects();
+    let callCount = 0;
+    effects.subscribeToSettingsRequests(() => {
+      callCount += 1;
+    });
+    effects.requestSettings();
+    expect(callCount).toBe(1);
+  });
+
+  it("stops calling a settings listener after it unsubscribes", () => {
+    const effects = createRecordingEffects();
+    let callCount = 0;
+    const unsubscribe = effects.subscribeToSettingsRequests(() => {
+      callCount += 1;
+    });
+    unsubscribe();
+    effects.requestSettings();
+    expect(callCount).toBe(0);
+  });
 });

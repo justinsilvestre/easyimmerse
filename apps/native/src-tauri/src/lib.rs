@@ -1,6 +1,8 @@
 //! The native shell: a Tauri app that starts the embedded API server on the loopback
 //! interface and opens a window whose page talks to that server over plain HTTP.
 
+#[cfg(target_os = "macos")]
+mod app_menu;
 #[cfg(desktop)]
 mod dev_server_file;
 mod embedded_server;
@@ -29,6 +31,8 @@ pub fn run() {
             #[cfg(desktop)]
             dev_server_file::write_in_debug_builds(&server);
             main_window::create(app.handle(), &server)?;
+            #[cfg(target_os = "macos")]
+            app_menu::install(app.handle())?;
             app.manage(server);
             Ok(())
         })

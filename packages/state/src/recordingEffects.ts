@@ -8,7 +8,8 @@ export type EffectCall =
   | { type: "loadPreference"; key: string }
   | { type: "showNotification"; message: string }
   | { type: "copyToClipboard"; text: string }
-  | { type: "openExternalUrl"; url: string };
+  | { type: "openExternalUrl"; url: string }
+  | { type: "subscribeToSettingsRequests" };
 
 export type RecordingEffects = Effects & {
   /** Every call made so far, in order, with its arguments. */
@@ -23,6 +24,8 @@ export type RecordingEffects = Effects & {
   resolvePickMediaFile(file: PickedMediaFile | null): void;
   /** Rejects the pending pickMediaFile promise. Throws when no pick is pending. */
   rejectPickMediaFile(error: Error): void;
+  /** Acts as the platform asking for the Settings screen, by calling every subscribed listener. */
+  requestSettings(): void;
 };
 
 type PendingPick<F> = {
@@ -53,6 +56,7 @@ export function createRecordingEffects(): RecordingEffects {
   const preferences = new Map<string, string>();
   const filePick = createPendingPick<PickedFile>("file pick");
   const mediaFilePick = createPendingPick<PickedMediaFile>("media file pick");
+  const settingsListeners = new Set<() => void>();
   return {
     calls,
     preferences,
@@ -84,6 +88,11 @@ export function createRecordingEffects(): RecordingEffects {
     openExternalUrl: (url) => {
       calls.push({ type: "openExternalUrl", url });
     },
+    subscribeToSettingsRequests: (listener) => {
+      calls.push({ type: "subscribeToSettingsRequests" });
+      settingsListeners.add(listener);
+      return () => settingsListeners.delete(listener);
+    },
     resolvePickFile: (file) => {
       filePick.take().resolve(file);
     },
@@ -95,6 +104,9 @@ export function createRecordingEffects(): RecordingEffects {
     },
     rejectPickMediaFile: (error) => {
       mediaFilePick.take().reject(error);
+    },
+    requestSettings: () => {
+      for (const listener of settingsListeners) listener();
     },
   };
 }
