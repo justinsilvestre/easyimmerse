@@ -19,7 +19,7 @@ export function bootstrap(): void {
   const effects = createNativeEffects({ playerRegistry, server });
   const store = createAppStore(effects, backendStoreParts);
   createRoot(findRootElement()).render(
-    <AppRoot store={store} playerRegistry={playerRegistry} />,
+    <AppRoot store={store} playerRegistry={playerRegistry} effects={effects} />,
   );
 }
 

@@ -1,42 +1,89 @@
-import type { AppStore, PlayerRegistry } from "@easyimmerse/state";
-import { useReducer } from "react";
+import type { AppStore, Effects, PlayerRegistry } from "@easyimmerse/state";
+import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
-import { initialNavigation, navigate } from "./navigation.ts";
+import type { MainNavigation, NavigationAction } from "./navigation.ts";
+import { initialNavigation, mainScreenOf, navigate } from "./navigation.ts";
+import { NavigationActionsContext } from "./navigationContext.ts";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
 import { MediaScreen } from "./screens/MediaScreen.tsx";
+import { SettingsScreen } from "./screens/SettingsScreen.tsx";
 
 export function AppRoot({
   store,
   playerRegistry,
+  effects,
 }: {
   store: AppStore;
   playerRegistry: PlayerRegistry;
+  effects: Effects;
 }) {
   const [navigation, dispatchNavigation] = useReducer(
     navigate,
     initialNavigation,
   );
+  const openSettings = () => dispatchNavigation({ type: "openSettings" });
+  useEffect(
+    () =>
+      effects.subscribeToSettingsRequests(() =>
+        dispatchNavigation({ type: "openSettings" }),
+      ),
+    [effects],
+  );
+  const settingsOpen = navigation.screen === "settings";
   return (
     <Provider store={store}>
       <PlayerRegistryContext value={playerRegistry}>
-        <ThemeHandler />
-        {navigation.screen === "home" ? (
-          <HomeScreen
-            onOpenProject={(projectId) =>
-              dispatchNavigation({ type: "openProject", projectId })
-            }
-          />
-        ) : (
-          <MediaScreen
-            projectId={navigation.projectId}
-            onBack={() => dispatchNavigation({ type: "goHome" })}
-          />
-        )}
+        <NavigationActionsContext value={{ openSettings }}>
+          <ThemeHandler />
+          <div inert={settingsOpen}>
+            <MainScreen
+              navigation={mainScreenOf(navigation)}
+              dispatchNavigation={dispatchNavigation}
+            />
+          </div>
+          {settingsOpen && (
+            <SettingsOverlay>
+              <SettingsScreen
+                onBack={() => dispatchNavigation({ type: "closeSettings" })}
+              />
+            </SettingsOverlay>
+          )}
+        </NavigationActionsContext>
       </PlayerRegistryContext>
     </Provider>
+  );
+}
+
+function MainScreen({
+  navigation,
+  dispatchNavigation,
+}: {
+  navigation: MainNavigation;
+  dispatchNavigation: (action: NavigationAction) => void;
+}) {
+  return navigation.screen === "home" ? (
+    <HomeScreen
+      onOpenProject={(projectId) =>
+        dispatchNavigation({ type: "openProject", projectId })
+      }
+    />
+  ) : (
+    <MediaScreen
+      projectId={navigation.projectId}
+      onBack={() => dispatchNavigation({ type: "goHome" })}
+    />
+  );
+}
+
+/** Covers the main screen without unmounting it, so that what is beneath keeps its state. */
+function SettingsOverlay({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-10 overflow-y-auto overscroll-contain bg-canvas">
+      {children}
+    </div>
   );
 }
 
