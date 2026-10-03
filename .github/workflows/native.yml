@@ -224,6 +224,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
+      # Creating and booting the simulator takes minutes on the runner, so it happens in the background while the app builds.
+      # The tests wait for the boot to finish.
+      - name: Start booting the simulator
+        run: nohup node --input-type=module -e 'import("./apps/native/e2e/iosSimulator.ts").then((simulator) => simulator.prepareSimulator())' > simulator-boot.log 2>&1 &
       - name: Rust iOS simulator target
         run: rustup target add aarch64-apple-ios-sim
       - name: Initialize the Xcode project
@@ -237,8 +241,8 @@ jobs:
       # The end-to-end tests need the global Tauri object, which the extra config file turns on.
       - name: Simulator build without signing
         run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci --config e2e/tauri.conf.json --features plugin-check
-      # The cache holds the XCUITest driver and its WebDriverAgent build, which takes minutes.
-      # It is saved at the end even when the tests fail, so a failing run still spares the next one that build.
+      # The cache holds the XCUITest driver and the prebuilt WebDriverAgent the tests download.
+      # It is saved at the end even when the tests fail.
       - uses: actions/cache/restore@v4
         id: appium-cache
         with:
@@ -258,6 +262,7 @@ jobs:
           xcrun simctl io booted screenshot ios-diagnostics/screen.png || true
           xcrun simctl spawn booted log show --last 15m --predicate 'process == "easyImmerse"' --style compact > ios-diagnostics/app.log || true
           cp apps/native/e2e/logs/* ios-diagnostics/ || true
+          cp simulator-boot.log ios-diagnostics/ || true
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
