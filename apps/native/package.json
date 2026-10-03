@@ -6,6 +6,7 @@
     "build": "tauri build",
     "dev": "tauri dev",
     "e2e": "wdio run e2e/wdio.conf.ts",
+    "e2e:ios": "wdio run e2e/wdio.ios.conf.ts",
     "tauri": "tauri",
     "typecheck": "tsc -p tsconfig.json && tsc -p e2e/tsconfig.json",
     "vite:build": "vite build",
