@@ -18,8 +18,10 @@ on:
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
       - "fixtures/**"
+  # A tag named native-ci-<job>-<stamp> runs that one job at the tagged commit, for one-off checks of a branch.
   push:
     branches: [main]
+    tags: ["native-ci-*"]
     paths:
       - ".github/workflows/native.yml"
       - ".github/actions/**"
@@ -103,7 +105,7 @@ jobs:
 
   android:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-android-'))
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
