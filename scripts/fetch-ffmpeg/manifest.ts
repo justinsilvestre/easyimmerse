@@ -16,12 +16,14 @@ export interface ManifestEntry {
 
 const manifestPath = fileURLToPath(new URL("manifest.json", import.meta.url));
 
+/** Returns every manifest entry, keyed by target triple. */
+export function readManifest(): Record<string, ManifestEntry> {
+  return JSON.parse(readFileSync(manifestPath, "utf-8"));
+}
+
 /** Returns the manifest entry for the triple, or throws with a message naming the problem. */
 export function readManifestEntry(triple: string): ManifestEntry {
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as Record<
-    string,
-    ManifestEntry
-  >;
+  const manifest = readManifest();
   const entry = manifest[triple];
   if (!entry) {
     const known = Object.keys(manifest).join(", ");
