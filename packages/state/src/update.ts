@@ -2,6 +2,7 @@ import type { AppAction } from "./actions.ts";
 import type { AppState, PreferenceKey } from "./appState.ts";
 import { preferenceKeys } from "./appState.ts";
 import type { Effect } from "./effect.ts";
+import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { followSystemTheme, toggleTheme } from "./theme.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
@@ -34,6 +35,50 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "filePickCancelled":
       return [{ ...state, pendingFilePick: false }, []];
+    case "mediaFilePickRequested":
+      return [
+        { ...state, pendingMediaFilePick: true },
+        [{ type: "pickMediaFile", accept: mediaFileExtensions }],
+      ];
+    case "mediaFileChosen":
+      return [
+        { ...state, pendingMediaFilePick: false, chosenMediaFile: action.file },
+        [],
+      ];
+    case "mediaFilePickCancelled":
+      return [{ ...state, pendingMediaFilePick: false }, []];
+    case "mediaFileAdded":
+      return [
+        {
+          ...state,
+          chosenMediaFile: null,
+          currentMediaFileId: action.mediaFileId,
+        },
+        [],
+      ];
+    case "mediaFileAddFailed":
+      return [
+        { ...state, chosenMediaFile: null },
+        [
+          {
+            type: "showNotification",
+            message: "The media file could not be added",
+          },
+        ],
+      ];
+    case "mediaFileRemoved":
+      return [
+        {
+          ...state,
+          currentMediaFileId:
+            state.currentMediaFileId === action.mediaFileId
+              ? null
+              : state.currentMediaFileId,
+        },
+        [],
+      ];
+    case "openMedia":
+      return [{ ...state, currentMediaFileId: action.mediaFileId }, []];
     case "preferenceToggled":
       return togglePreference(state, action.key);
     case "preferencesLoadRequested":

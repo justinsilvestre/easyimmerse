@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import { initialAppState } from "./appState.ts";
 import type { RootState } from "./createAppStore.ts";
 import {
+  selectChosenMediaFile,
+  selectCurrentMediaFileId,
   selectCurrentTime,
   selectPendingFilePick,
+  selectPendingMediaFilePick,
   selectPreference,
   selectSubtitleSource,
 } from "./selectors.ts";
@@ -15,6 +18,9 @@ const rootState: RootState = {
     subtitleSource: { kind: "inline", text: "Hello" },
     preferences: { showTranslations: "true" },
     pendingFilePick: true,
+    currentMediaFileId: "m1",
+    pendingMediaFilePick: true,
+    chosenMediaFile: { name: "a.mp4", source: { kind: "path", path: "/a" } },
   },
 };
 
@@ -36,5 +42,17 @@ describe("selectors", () => {
 
   it("selectPendingFilePick returns whether a file pick is pending", () => {
     expect(selectPendingFilePick(rootState)).toBe(true);
+  });
+
+  it("selectCurrentMediaFileId returns the open media file's id", () => {
+    expect(selectCurrentMediaFileId(rootState)).toBe("m1");
+  });
+
+  it("selectPendingMediaFilePick returns whether a media file pick is pending", () => {
+    expect(selectPendingMediaFilePick(rootState)).toBe(true);
+  });
+
+  it("selectChosenMediaFile returns the media file waiting to be added", () => {
+    expect(selectChosenMediaFile(rootState)?.name).toBe("a.mp4");
   });
 });

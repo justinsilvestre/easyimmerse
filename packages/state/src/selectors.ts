@@ -14,5 +14,14 @@ export const selectPreference = (key: PreferenceKey) => (state: RootState) =>
 export const selectPendingFilePick = (state: RootState) =>
   state.app.pendingFilePick;
 
+export const selectCurrentMediaFileId = (state: RootState) =>
+  state.app.currentMediaFileId;
+
+export const selectPendingMediaFilePick = (state: RootState) =>
+  state.app.pendingMediaFilePick;
+
+export const selectChosenMediaFile = (state: RootState) =>
+  state.app.chosenMediaFile;
+
 /** Returns the theme the app shows: the one the user chose, or else the operating system's. */
 export const selectTheme = (state: RootState) => chooseTheme(state.app.theme);

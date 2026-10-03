@@ -1,8 +1,9 @@
-import type { Effects, PickedFile } from "./effects.ts";
+import type { Effects, PickedFile, PickedMediaFile } from "./effects.ts";
 
 export type EffectCall =
   | { type: "seekPlayer"; seconds: number }
   | { type: "pickFile"; accept: readonly string[] }
+  | { type: "pickMediaFile"; accept: readonly string[] }
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
   | { type: "showNotification"; message: string }
@@ -18,24 +19,40 @@ export type RecordingEffects = Effects & {
   resolvePickFile(file: PickedFile | null): void;
   /** Rejects the pending pickFile promise. Throws when no pick is pending. */
   rejectPickFile(error: Error): void;
+  /** Settles the pending pickMediaFile promise. Throws when no pick is pending. */
+  resolvePickMediaFile(file: PickedMediaFile | null): void;
+  /** Rejects the pending pickMediaFile promise. Throws when no pick is pending. */
+  rejectPickMediaFile(error: Error): void;
 };
 
-type PendingPick = {
-  resolve: (file: PickedFile | null) => void;
+type PendingPick<F> = {
+  resolve: (file: F | null) => void;
   reject: (error: Error) => void;
 };
+
+/** Holds at most one unsettled promise, handing it out once to whoever settles it. */
+function createPendingPick<F>(description: string) {
+  let pending: PendingPick<F> | null = null;
+  return {
+    start: () =>
+      new Promise<F | null>((resolve, reject) => {
+        pending = { resolve, reject };
+      }),
+    take: (): PendingPick<F> => {
+      if (pending === null) throw new Error(`No ${description} is pending.`);
+      const pick = pending;
+      pending = null;
+      return pick;
+    },
+  };
+}
 
 /** Builds an Effects implementation for tests that records calls instead of performing them. */
 export function createRecordingEffects(): RecordingEffects {
   const calls: EffectCall[] = [];
   const preferences = new Map<string, string>();
-  let pendingPick: PendingPick | null = null;
-  function takePendingPick(): PendingPick {
-    if (pendingPick === null) throw new Error("No file pick is pending.");
-    const pick = pendingPick;
-    pendingPick = null;
-    return pick;
-  }
+  const filePick = createPendingPick<PickedFile>("file pick");
+  const mediaFilePick = createPendingPick<PickedMediaFile>("media file pick");
   return {
     calls,
     preferences,
@@ -44,9 +61,11 @@ export function createRecordingEffects(): RecordingEffects {
     },
     pickFile: (accept) => {
       calls.push({ type: "pickFile", accept });
-      return new Promise((resolve, reject) => {
-        pendingPick = { resolve, reject };
-      });
+      return filePick.start();
+    },
+    pickMediaFile: (accept) => {
+      calls.push({ type: "pickMediaFile", accept });
+      return mediaFilePick.start();
     },
     savePreference: async (key, value) => {
       calls.push({ type: "savePreference", key, value });
@@ -66,10 +85,16 @@ export function createRecordingEffects(): RecordingEffects {
       calls.push({ type: "openExternalUrl", url });
     },
     resolvePickFile: (file) => {
-      takePendingPick().resolve(file);
+      filePick.take().resolve(file);
     },
     rejectPickFile: (error) => {
-      takePendingPick().reject(error);
+      filePick.take().reject(error);
+    },
+    resolvePickMediaFile: (file) => {
+      mediaFilePick.take().resolve(file);
+    },
+    rejectPickMediaFile: (error) => {
+      mediaFilePick.take().reject(error);
     },
   };
 }
