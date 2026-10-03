@@ -149,6 +149,9 @@ jobs:
     needs: gate
     if: needs.gate.outputs.passed != 'true'
     runs-on: macos-15
+    env:
+      # Only the newest Xcode versions on the runner keep their simulator runtime installed.
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
@@ -159,8 +162,21 @@ jobs:
       # Xcode's build phase runs cargo in a rebuilt environment that keeps only PATH and
       # HOME, where the mise shim refuses mise.toml as untrusted. Putting rustup's own
       # cargo first keeps mise out of that phase; rust-toolchain.toml still picks the version.
+      # The end-to-end tests need the global Tauri object, which the extra config file turns on.
       - name: Simulator build without signing
-        run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci
+        run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci --config e2e/tauri.conf.json
+      # The cache holds the XCUITest driver and its WebDriverAgent build, which takes minutes.
+      - uses: actions/cache@v4
+        with:
+          path: apps/native/.appium
+          key: appium-ios-${{ runner.os }}-xcode16.4-${{ hashFiles('mise.toml', 'pnpm-lock.yaml') }}
+          restore-keys: appium-ios-${{ runner.os }}-xcode16.4-
+      - name: Install the Appium XCUITest driver
+        run: mise run appium:install:ios
+      - name: Simulator runtimes
+        run: xcrun simctl list runtimes
+      - name: End-to-end tests through Appium
+        run: pnpm --filter @easyimmerse/native e2e:ios
 
   record:
     needs: [gate, desktop, android, ios]
