@@ -33,6 +33,11 @@ async function checkPluginHost(): Promise<PluginHostCheck> {
 }
 
 describe("the plugin host", () => {
+  // The XCUITest driver starts a session that allows an asynchronous script no time at all.
+  before(async () => {
+    await browser.setTimeout({ script: 30_000 });
+  });
+
   it("greets through the embedded hello-rust plugin", async () => {
     expect((await checkPluginHost()).greeting).toBe("Hello, world");
   });
