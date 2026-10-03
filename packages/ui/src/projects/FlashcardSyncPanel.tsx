@@ -75,25 +75,59 @@ export function FlashcardSyncPanel({
 
 function NotStarted(callbacks: Callbacks) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <p className="text-sm text-fg-muted">
-        Review your flashcards here, or send them to Anki. You can switch later.
+        Choose where your flashcards go. You can switch later.
       </p>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={callbacks.onStartReview}>
-          <GraduationCap className="size-4" aria-hidden />
-          Review in easyImmerse
-        </Button>
-        <Button onClick={callbacks.onExportPackage}>
-          <Download className="size-4" aria-hidden />
-          Export an Anki deck
-        </Button>
-        <Button onClick={callbacks.onSetUpAnkiConnect}>
-          <Plug className="size-4" aria-hidden />
-          Set up AnkiConnect
-        </Button>
-      </div>
+      <ul className="flex flex-col">
+        <Option
+          icon={<GraduationCap className="size-5" aria-hidden />}
+          title="Review in easyImmerse"
+          description="Study the cards here, with spaced repetition."
+          onClick={callbacks.onStartReview}
+        />
+        <Option
+          icon={<Download className="size-5" aria-hidden />}
+          title="Export an Anki deck"
+          description="Save a package to import into Anki."
+          onClick={callbacks.onExportPackage}
+        />
+        <Option
+          icon={<Plug className="size-5" aria-hidden />}
+          title="Set up AnkiConnect"
+          description="Send new cards straight to Anki while it runs."
+          onClick={callbacks.onSetUpAnkiConnect}
+        />
+      </ul>
     </div>
+  );
+}
+
+function Option({
+  icon,
+  title,
+  description,
+  onClick,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
+      >
+        <span className="text-fg-muted">{icon}</span>
+        <span className="flex flex-col">
+          <span className="font-medium">{title}</span>
+          <span className="text-xs text-fg-muted">{description}</span>
+        </span>
+      </button>
+    </li>
   );
 }
 

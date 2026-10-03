@@ -12,7 +12,7 @@ const meta = {
   component: FlashcardSyncPanel,
   decorators: [
     (Story) => (
-      <div className="w-[40rem]">
+      <div className="w-full max-w-[40rem]">
         <Story />
       </div>
     ),

@@ -6,7 +6,16 @@ import {
 } from "../flashcards/exampleFlashcard.ts";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
+import {
+  DictionaryStatus,
+  type LanguageDictionaryStatus,
+} from "./DictionaryStatus.tsx";
+import {
+  FlashcardSyncPanel,
+  type FlashcardSyncState,
+} from "./FlashcardSyncPanel.tsx";
 import type { MediaItem } from "./MediaList.tsx";
+import { MediaSection } from "./MediaSection.tsx";
 import { ProjectView } from "./ProjectView.tsx";
 
 const media: MediaItem[] = [
@@ -52,6 +61,34 @@ const media: MediaItem[] = [
   },
 ];
 
+const dictionariesSetUp: LanguageDictionaryStatus[] = [
+  { language: "de", role: "target", dictionaryCount: 2 },
+  { language: "en", role: "translation", dictionaryCount: 1 },
+];
+
+/** The sections of a project with the given media and flashcard state, wired to the Actions panel. */
+function sections(
+  mediaItems: readonly MediaItem[],
+  flashcardSync: FlashcardSyncState,
+  dictionaries: readonly LanguageDictionaryStatus[] = dictionariesSetUp,
+) {
+  return (
+    <>
+      <MediaSection media={mediaItems} onAddMedia={fn()} onOpenMedia={fn()} />
+      <FlashcardSyncPanel
+        state={flashcardSync}
+        includedFields={fieldsOfPreset("intermediate")}
+        languages={exampleLanguages}
+        onExportPackage={fn()}
+        onSetUpAnkiConnect={fn()}
+        onStartReview={fn()}
+        onSendToAnki={fn()}
+      />
+      <DictionaryStatus statuses={dictionaries} onOpenDictionaries={fn()} />
+    </>
+  );
+}
+
 const meta = {
   title: "Projects/ProjectView",
   component: ProjectView,
@@ -59,25 +96,11 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     name: "German",
-    media,
-    dictionaries: [
-      { language: "de", role: "target", dictionaryCount: 2 },
-      { language: "en", role: "translation", dictionaryCount: 1 },
-    ],
-    flashcardSync: { kind: "notStarted" },
-    includedFields: fieldsOfPreset("intermediate"),
-    languages: exampleLanguages,
     hasUnsavedChanges: false,
     onBack: fn(),
     onSave: fn(),
     onEditSettings: fn(),
-    onAddMedia: fn(),
-    onOpenMedia: fn(),
-    onOpenDictionaries: fn(),
-    onExportPackage: fn(),
-    onSetUpAnkiConnect: fn(),
-    onStartReview: fn(),
-    onSendToAnki: fn(),
+    children: sections(media, { kind: "notStarted" }),
   },
 } satisfies Meta<typeof ProjectView>;
 
@@ -86,11 +109,10 @@ type Story = StoryObj<typeof meta>;
 
 export const FreshProject: Story = {
   args: {
-    media: [],
-    dictionaries: [
+    children: sections([], { kind: "notStarted" }, [
       { language: "de", role: "target", dictionaryCount: 0 },
       { language: "en", role: "translation", dictionaryCount: 0 },
-    ],
+    ]),
   },
 };
 
@@ -98,32 +120,39 @@ export const WithMedia: Story = {};
 
 export const ReviewingInApp: Story = {
   args: {
-    flashcardSync: { kind: "review", dueCount: 12, nextCard: exampleFlashcard },
     hasUnsavedChanges: true,
+    children: sections(media, {
+      kind: "review",
+      dueCount: 12,
+      nextCard: exampleFlashcard,
+    }),
   },
 };
 
 export const ExportingAnkiPackages: Story = {
   args: {
-    flashcardSync: {
+    children: sections(media, {
       kind: "ankiPackage",
       unexportedCount: 5,
       nextCard: exampleFlashcard,
-    },
+    }),
   },
 };
 
 export const SendingThroughAnkiConnect: Story = {
   args: {
-    flashcardSync: {
-      kind: "ankiConnect",
-      connection: "unreachable",
-      unsentCount: 3,
-      nextCard: exampleFlashcard,
-    },
-    dictionaries: [
-      { language: "de", role: "target", dictionaryCount: 2 },
-      { language: "en", role: "translation", dictionaryCount: 0 },
-    ],
+    children: sections(
+      media,
+      {
+        kind: "ankiConnect",
+        connection: "unreachable",
+        unsentCount: 3,
+        nextCard: exampleFlashcard,
+      },
+      [
+        { language: "de", role: "target", dictionaryCount: 2 },
+        { language: "en", role: "translation", dictionaryCount: 0 },
+      ],
+    ),
   },
 };

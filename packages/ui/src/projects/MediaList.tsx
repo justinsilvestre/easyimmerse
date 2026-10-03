@@ -39,20 +39,24 @@ export function MediaList({
             className="group flex w-full items-center gap-3 rounded-md border border-line bg-surface px-3 py-2 text-left text-sm hover:border-line-strong hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <span className="text-fg-muted">{kindIcons[item.kind]}</span>
-            <span className="min-w-0 flex-1 truncate font-medium">
-              {item.name}
+            <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+              <span className="min-w-0 flex-1 truncate font-medium">
+                {item.name}
+              </span>
+              <span className="flex items-center gap-3">
+                <SubtitlesBadge timedText={item.timedText} />
+                {item.flashcardCount > 0 && (
+                  <span className="text-xs whitespace-nowrap text-fg-muted">
+                    {pluralize(item.flashcardCount, "card")}
+                  </span>
+                )}
+                {item.durationMs !== null && (
+                  <span className="text-xs text-fg-faint tabular-nums sm:w-12 sm:text-right">
+                    {formatTimestamp(item.durationMs)}
+                  </span>
+                )}
+              </span>
             </span>
-            <SubtitlesBadge timedText={item.timedText} />
-            {item.flashcardCount > 0 && (
-              <span className="text-xs text-fg-muted">
-                {pluralize(item.flashcardCount, "card")}
-              </span>
-            )}
-            {item.durationMs !== null && (
-              <span className="w-12 text-right text-xs text-fg-faint tabular-nums">
-                {formatTimestamp(item.durationMs)}
-              </span>
-            )}
             <ChevronRight
               className="size-4 text-fg-faint group-hover:text-fg"
               aria-hidden
