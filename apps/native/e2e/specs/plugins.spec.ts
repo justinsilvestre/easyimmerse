@@ -6,18 +6,30 @@ interface PluginHostCheck {
   executionMode: string;
 }
 
+/** The command's outcome as the page reports it. An error crosses WebDriver only as text. */
+type InvokeOutcome = { result: PluginHostCheck } | { error: string };
+
 // The embedded WebDriver server does not await a promise returned from a synchronous script,
-// so the command's result comes back through the asynchronous script's callback.
+// so the outcome comes back through the asynchronous script's callback.
 // The Tauri service declares `window.__TAURI__` with every member optional.
-function checkPluginHost(): Promise<PluginHostCheck> {
-  return browser.executeAsync((done: (result: unknown) => void) => {
-    const invoke = window.__TAURI__?.core?.invoke;
-    if (!invoke) {
-      done(new Error("the global Tauri object is missing"));
-      return;
-    }
-    invoke("check_plugin_host").then(done, done);
-  }) as Promise<PluginHostCheck>;
+async function checkPluginHost(): Promise<PluginHostCheck> {
+  const outcome = await browser.executeAsync<InvokeOutcome, []>(
+    (done: (outcome?: InvokeOutcome) => void) => {
+      const invoke = window.__TAURI__?.core?.invoke;
+      if (!invoke) {
+        done({ error: "the global Tauri object is missing" });
+        return;
+      }
+      invoke("check_plugin_host").then(
+        (result) => done({ result: result as PluginHostCheck }),
+        (error) => done({ error: String(error) }),
+      );
+    },
+  );
+  if ("error" in outcome) {
+    throw new Error(`check_plugin_host failed: ${outcome.error}`);
+  }
+  return outcome.result;
 }
 
 describe("the plugin host", () => {
