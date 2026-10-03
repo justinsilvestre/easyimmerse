@@ -11,4 +11,9 @@ export interface Effects {
   showNotification(message: string): void;
   copyToClipboard(text: string): Promise<void>;
   openExternalUrl(url: string): void;
+  /**
+   * Calls the listener whenever the platform asks for the Settings screen, as a desktop menu item does.
+   * Returns a function that stops the calls.
+   */
+  subscribeToSettingsRequests(listener: () => void): () => void;
 }

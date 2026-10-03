@@ -16,9 +16,9 @@ const withPreference = (value: string): AppState => ({
 });
 
 describe("update", () => {
-  it("leaves state unchanged for seekRequested", () => {
+  it("stores the target as the current time for seekRequested", () => {
     const [state] = update(initialAppState, actions.seekRequested(12.5));
-    expect(state).toBe(initialAppState);
+    expect(state.player.currentTimeSeconds).toBe(12.5);
   });
 
   it("returns a seekPlayer effect for seekRequested", () => {
@@ -96,6 +96,30 @@ describe("update", () => {
     );
     expect(effects).toEqual([
       { type: "loadPreference", key: "showTranslations" },
+      { type: "loadPreference", key: "losslessAudio" },
+      { type: "loadPreference", key: "conversionNoticeDismissed" },
+    ]);
+  });
+
+  it("stores the given value for preferenceSet", () => {
+    const [state] = update(
+      initialAppState,
+      actions.preferenceSet("conversionNoticeDismissed", "true"),
+    );
+    expect(state.preferences.conversionNoticeDismissed).toBe("true");
+  });
+
+  it("returns a savePreference effect with the given value for preferenceSet", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.preferenceSet("conversionNoticeDismissed", "true"),
+    );
+    expect(effects).toEqual([
+      {
+        type: "savePreference",
+        key: "conversionNoticeDismissed",
+        value: "true",
+      },
     ]);
   });
 

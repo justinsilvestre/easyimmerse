@@ -7,11 +7,12 @@ import { sendOsNotification } from "./osNotification.ts";
 import { pickFile } from "./pickFile.ts";
 import { createServerPreferenceStore } from "./serverPreferenceStore.ts";
 import { createShowNotification } from "./showNotification.ts";
+import { subscribeToSettingsRequests } from "./subscribeToSettingsRequests.ts";
 
 /**
  * Builds the Tauri implementation of the app's side effects. Native dialogs, notifications,
  * the clipboard, and external links go through Tauri plugins; preferences are stored by the
- * embedded server.
+ * embedded server; the Settings menu item reaches the page as a Tauri event.
  */
 export function createNativeEffects(options: {
   playerRegistry: PlayerRegistry;
@@ -32,5 +33,6 @@ export function createNativeEffects(options: {
     ),
     copyToClipboard,
     openExternalUrl,
+    subscribeToSettingsRequests,
   };
 }

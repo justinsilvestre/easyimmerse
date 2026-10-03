@@ -13,6 +13,8 @@ export const actions = {
   filePickCancelled: () => ({ type: "filePickCancelled" }) as const,
   preferenceToggled: (key: PreferenceKey) =>
     ({ type: "preferenceToggled", key }) as const,
+  preferenceSet: (key: PreferenceKey, value: string) =>
+    ({ type: "preferenceSet", key, value }) as const,
   preferencesLoadRequested: () =>
     ({ type: "preferencesLoadRequested" }) as const,
   preferenceLoaded: (key: PreferenceKey, value: string | null) =>
