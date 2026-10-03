@@ -1,6 +1,6 @@
 import { $, expect } from "@wdio/globals";
 
-describe("the desktop app", () => {
+describe("the app's home screen", () => {
   it("lists the placeholder projects of a new database", async () => {
     await expect($('ul[aria-label="Projects"] button')).toBeDisplayed();
   });
