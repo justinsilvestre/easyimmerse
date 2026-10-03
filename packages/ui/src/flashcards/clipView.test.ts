@@ -4,6 +4,7 @@ import {
   moveClipStart,
   timeAfterKey,
   viewAroundClip,
+  viewIncluding,
 } from "./clipView.ts";
 
 describe("viewAroundClip", () => {
@@ -25,6 +26,27 @@ describe("viewAroundClip", () => {
     expect(viewAroundClip({ startMs: 200, endMs: 9800 }, 10_000)).toEqual({
       startMs: 0,
       endMs: 10_000,
+    });
+  });
+});
+
+describe("viewIncluding", () => {
+  it("leaves the view alone for a time on it", () => {
+    const view = { startMs: 1000, endMs: 5000 };
+    expect(viewIncluding(view, 3000, 60_000)).toBe(view);
+  });
+
+  it("widens the view to the left for an earlier time", () => {
+    expect(viewIncluding({ startMs: 1000, endMs: 5000 }, 800, 60_000)).toEqual({
+      startMs: 300,
+      endMs: 5000,
+    });
+  });
+
+  it("widens the view to the right for a later time, within the file", () => {
+    expect(viewIncluding({ startMs: 1000, endMs: 5000 }, 5800, 6000)).toEqual({
+      startMs: 1000,
+      endMs: 6000,
     });
   });
 });

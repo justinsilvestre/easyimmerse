@@ -1,5 +1,5 @@
 import { Camera } from "lucide-react";
-import { type ReactNode, useRef } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { Peaks, peaksBetween } from "../media/Peaks.tsx";
 import {
   clamp,
@@ -7,6 +7,7 @@ import {
   moveClipStart,
   timeAfterKey,
   viewAroundClip,
+  viewIncluding,
 } from "./clipView.ts";
 import type { AudioClip } from "./flashcardFields.ts";
 import { formatClipTime } from "./formatClipTime.ts";
@@ -14,6 +15,7 @@ import { formatClipTime } from "./formatClipTime.ts";
 /**
  * Shows a flashcard's audio clip on the waveform around it. The clip's edges can be dragged, or moved with
  * the arrow keys, and so can the marker for the time the screenshot is taken at.
+ * The part on view stays put while a handle moves, and widens only when a handle is pushed past its edge.
  */
 export function ClipEditor({
   peaks,
@@ -31,8 +33,12 @@ export function ClipEditor({
   onScreenshotMsChange: (ms: number) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const view = viewAroundClip(clip, durationMs);
+  const [view, setView] = useState(() => viewAroundClip(clip, durationMs));
   const span = view.endMs - view.startMs;
+  const moveTo = (ms: number, apply: (ms: number) => void) => {
+    setView(viewIncluding(view, ms, durationMs));
+    apply(ms);
+  };
   const toPercent = (ms: number) => `${((ms - view.startMs) / span) * 100}%`;
   const toMs = (clientX: number) => {
     const { left, width } = ref.current?.getBoundingClientRect() ?? {
@@ -68,7 +74,9 @@ export function ClipEditor({
           max={durationMs}
           left={toPercent(clip.startMs)}
           toMs={toMs}
-          onMove={(ms) => onClipChange(moveClipStart(clip, ms))}
+          onMove={(ms) =>
+            moveTo(ms, () => onClipChange(moveClipStart(clip, ms)))
+          }
         />
         <Handle
           label="Clip end"
@@ -76,7 +84,9 @@ export function ClipEditor({
           max={durationMs}
           left={toPercent(clip.endMs)}
           toMs={toMs}
-          onMove={(ms) => onClipChange(moveClipEnd(clip, ms, durationMs))}
+          onMove={(ms) =>
+            moveTo(ms, () => onClipChange(moveClipEnd(clip, ms, durationMs)))
+          }
         />
         {screenshotMs !== null && (
           <Handle
@@ -85,7 +95,9 @@ export function ClipEditor({
             max={durationMs}
             left={toPercent(screenshotMs)}
             toMs={toMs}
-            onMove={(ms) => onScreenshotMsChange(clamp(ms, 0, durationMs))}
+            onMove={(ms) =>
+              moveTo(ms, () => onScreenshotMsChange(clamp(ms, 0, durationMs)))
+            }
             icon={<Camera className="size-3.5" aria-hidden />}
           />
         )}

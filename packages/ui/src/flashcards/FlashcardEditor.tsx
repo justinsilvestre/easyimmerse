@@ -1,5 +1,5 @@
 import { ChevronDown, Plus, X } from "lucide-react";
-import { useReducer } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { reduceEditor } from "./editFlashcard.ts";
@@ -43,6 +43,11 @@ export function FlashcardEditor({
     showsHiddenFields: false,
   });
   const { content, includedFields } = state;
+  const hiddenFieldsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (state.showsHiddenFields)
+      hiddenFieldsRef.current?.scrollIntoView({ block: "nearest" });
+  }, [state.showsHiddenFields]);
   // The screenshot stays in view while the card has one, so that its checkbox can bring it back.
   const isShown = (field: FlashcardFieldDefinition) =>
     includedFields.includes(field.key) ||
@@ -76,7 +81,10 @@ export function FlashcardEditor({
           />
         ))}
         {hidden.length > 0 && (
-          <div className="flex flex-col gap-1.5 border-t border-line pt-3">
+          <div
+            ref={hiddenFieldsRef}
+            className="flex flex-col gap-1.5 border-t border-line pt-3"
+          >
             <Button
               size="sm"
               variant="subtle"

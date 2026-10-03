@@ -45,7 +45,12 @@ export type FlashcardFieldDefinition = {
 
 /** Every field, in the order forms and previews show them. */
 export const flashcardFields: readonly FlashcardFieldDefinition[] = [
-  { key: "word", group: "target", multiline: false, label: () => "Word" },
+  {
+    key: "word",
+    group: "target",
+    multiline: false,
+    label: ({ target }) => `Word (${target})`,
+  },
   {
     key: "wordPronunciation",
     group: "target",

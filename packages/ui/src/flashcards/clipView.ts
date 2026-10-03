@@ -19,6 +19,18 @@ export function viewAroundClip(
   };
 }
 
+/** Widens the view so that the time is on it, when a handle is dragged past its edge. */
+export function viewIncluding(
+  view: { startMs: number; endMs: number },
+  ms: number,
+  durationMs: number,
+): { startMs: number; endMs: number } {
+  if (ms < view.startMs) return { ...view, startMs: Math.max(0, ms - 500) };
+  if (ms > view.endMs)
+    return { ...view, endMs: Math.min(durationMs, ms + 500) };
+  return view;
+}
+
 /** Moves the clip's start, keeping it within the file and before the end. */
 export function moveClipStart(clip: AudioClip, startMs: number): AudioClip {
   return { ...clip, startMs: clamp(startMs, 0, clip.endMs - minClipMs) };

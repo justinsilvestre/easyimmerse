@@ -57,7 +57,7 @@ describe("FlashcardEditor", () => {
   it("saves the edited text", () => {
     const saved: string[] = [];
     renderEditor((content) => saved.push(content.word));
-    fireEvent.change(screen.getByLabelText("Word"), {
+    fireEvent.change(screen.getByLabelText("Word (de)"), {
       target: { value: "Hunger" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -92,6 +92,15 @@ describe("FlashcardEditor", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(saved).toEqual([6900]);
+  });
+
+  it("excludes the screenshot when its image is clicked", () => {
+    renderEditor();
+    fireEvent.click(screen.getByRole("button", { name: "Screenshot" }));
+    expect(screen.getByLabelText("Include the screenshot")).toHaveProperty(
+      "checked",
+      false,
+    );
   });
 
   it("keeps the screenshot in view after it is unchecked", () => {

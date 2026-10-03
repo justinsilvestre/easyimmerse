@@ -76,9 +76,6 @@ export function FlashcardSyncPanel({
 function NotStarted(callbacks: Callbacks) {
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm text-fg-muted">
-        Choose where your flashcards go. You can switch later.
-      </p>
       <ul className="flex flex-col">
         <Option
           icon={<GraduationCap className="size-5" aria-hidden />}

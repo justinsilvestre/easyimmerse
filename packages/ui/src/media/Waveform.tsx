@@ -86,7 +86,7 @@ export function Waveform({
           className="absolute inset-y-0 w-0.5 bg-fg"
           style={{ left: toPercent(currentMs) }}
         />
-        <span className="absolute top-1 right-1 z-20 flex rounded-md bg-surface/80">
+        <span className="absolute right-1 bottom-1 z-20 flex rounded-md bg-surface/80">
           <IconButton
             label="Zoom out"
             className="size-6"

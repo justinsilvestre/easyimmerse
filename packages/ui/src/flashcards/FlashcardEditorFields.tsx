@@ -1,3 +1,5 @@
+import clsx from "clsx";
+import { X } from "lucide-react";
 import { CheckboxField } from "../components/CheckboxField.tsx";
 import { TagsField } from "../components/TagsField.tsx";
 import { TextField } from "../components/TextField.tsx";
@@ -68,17 +70,33 @@ export function EditorField({
     ) : null;
   }
   if (content.screenshot === null) return null;
+  const isIncluded = state.includedFields.includes("screenshot");
+  const toggle = () => dispatch({ type: "screenshotToggled" });
   return (
     <div className="flex flex-col gap-2 text-sm">
-      <img
-        src={content.screenshot.url}
-        alt="Screenshot from the video"
-        className="max-h-32 self-start rounded-md"
-      />
+      <button
+        type="button"
+        aria-label="Screenshot"
+        aria-pressed={isIncluded}
+        onClick={toggle}
+        className="relative self-start overflow-hidden rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
+        <img
+          src={content.screenshot.url}
+          alt=""
+          className={clsx("max-h-32", !isIncluded && "opacity-40 grayscale")}
+        />
+        {!isIncluded && (
+          <X
+            className="absolute inset-0 m-auto size-10 text-fg-muted"
+            aria-hidden
+          />
+        )}
+      </button>
       <CheckboxField
         label="Include the screenshot"
-        checked={state.includedFields.includes("screenshot")}
-        onChange={() => dispatch({ type: "screenshotToggled" })}
+        checked={isIncluded}
+        onChange={toggle}
       />
     </div>
   );
