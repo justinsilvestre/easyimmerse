@@ -13,3 +13,7 @@ minimumReleaseAgeExclude:
 # stops pnpm from warning about an ignored build script on every install.
 allowBuilds:
   esbuild: false
+# The WebdriverIO runner pulls in browser driver packages whose install scripts download drivers.
+# Tauri tests drive the app through its embedded WebDriver server, so no browser driver is needed.
+  edgedriver: false
+  geckodriver: false

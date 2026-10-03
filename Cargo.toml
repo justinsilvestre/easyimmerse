@@ -42,6 +42,8 @@ tauri-plugin-clipboard-manager = "2.4"
 tauri-plugin-dialog = "2.8"
 tauri-plugin-notification = "2.5"
 tauri-plugin-opener = "2.7"
+tauri-plugin-wdio = "1.4"
+tauri-plugin-wdio-webdriver = "1.4"
 tempfile = "3.27"
 thiserror = "2.0"
 tiny_http = "0.12"
@@ -134,3 +136,9 @@ opt-level = 3
 
 [profile.dev.package.hashbrown]
 opt-level = 3
+
+# tauri-plugin-wdio-webdriver 1.4.0 builds against webview2-com 0.38 and fails to compile on Windows
+# beside Tauri 2.12's 0.39 (webdriverio/desktop-mobile issue 684). This pins the fix from pull request 687
+# until a release carries it. Then remove the patch and run `cargo update -p tauri-plugin-wdio-webdriver`.
+[patch.crates-io]
+tauri-plugin-wdio-webdriver = { git = "https://github.com/webdriverio/desktop-mobile", rev = "fb4a544bcc49605f6c6fb34f04b292abf428a72a" }

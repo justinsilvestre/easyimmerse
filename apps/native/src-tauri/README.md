@@ -23,6 +23,10 @@ EASYIMMERSE_SMOKE_TEST=1 target/debug/easyimmerse-native
 
 On Linux the Tauri runtime initializes GTK before the check runs, so the command needs a display; CI wraps it in `xvfb-run`.
 
+## End-to-end tests
+
+`mise run e2e:desktop` builds the app in debug mode and runs the WebdriverIO specs in `apps/native/e2e/` against it on Linux, macOS, and Windows. Debug builds register an embedded WebDriver server plugin when the test runner sets `TAURI_WEBDRIVER_PORT`, so no browser driver is needed and an ordinary development run exposes no automation server. The build merges `e2e/tauri.conf.json`, which exposes the global Tauri object the test service asks about windows through. Each run opens an empty database in a temporary directory through `EASYIMMERSE_DATABASE`. CI runs the same specs in the `desktop` job, under `xvfb-run` on Linux.
+
 ## ffmpeg sidecars
 
 The media routes will call `ffmpeg` and `ffprobe` sidecar binaries. `mise run fetch-ffmpeg` downloads them to `binaries/` (gitignored). `tauri.conf.json` does not declare them yet because Tauri fails the build when a declared sidecar file is missing, and local development has none. Once `mise run fetch-ffmpeg` is part of every developer's setup, add this to `bundle` (the CI job already runs the fetch task):

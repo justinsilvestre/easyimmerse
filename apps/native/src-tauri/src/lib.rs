@@ -8,17 +8,19 @@ mod injected_config_script;
 mod main_window;
 mod navigation_guard;
 mod smoke_test;
+mod webdriver;
 
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     init_tracing();
-    let outcome = tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_opener::init());
+    let outcome = webdriver::add_plugins_when_requested(builder)
         .setup(|app| {
             let server = embedded_server::start(app.handle())?;
             if smoke_test::is_requested() {

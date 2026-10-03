@@ -80,6 +80,13 @@ run = [
   "pnpm --filter @easyimmerse/extension e2e",
 ]
 
+[tasks."e2e:desktop"]
+description = "Drive a debug build of the desktop app through WebDriver"
+run = [
+  "pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json",
+  "pnpm --filter @easyimmerse/native e2e",
+]
+
 [tasks.desktop]
 description = "Run the desktop app in development mode with its embedded server"
 depends = ["fetch-ffmpeg"]

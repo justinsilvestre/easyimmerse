@@ -37,3 +37,8 @@ ureq = { workspace = true }
 
 [target.'cfg(target_os = "android")'.dependencies]
 paranoid-android = { workspace = true }
+
+# Debug builds register these plugins only when an end-to-end test asks for them; see webdriver.rs.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-wdio = { workspace = true }
+tauri-plugin-wdio-webdriver = { workspace = true }
