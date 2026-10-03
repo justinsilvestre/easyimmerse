@@ -145,8 +145,10 @@ jobs:
       # Keeping only line tables in the debug information roughly halves the build's disk use.
       # Backtraces still show file and line numbers.
       # The extra config file turns on the global Tauri object, as for the desktop end-to-end tests.
+      - name: Build the hello-rust plugin
+        run: mise run plugins:build-rust
       - name: Debug APK
-        run: pnpm --filter @easyimmerse/native exec tauri android build --debug --target x86_64 --apk --ci --config e2e/tauri.conf.json
+        run: pnpm --filter @easyimmerse/native exec tauri android build --debug --target x86_64 --apk --ci --config e2e/tauri.conf.json --features plugin-check
         env:
           NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
           CARGO_PROFILE_DEV_DEBUG: line-tables-only

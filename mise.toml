@@ -112,9 +112,10 @@ run = [
 [tasks."android:build"]
 description = "Build a debug APK of the app for the x86_64 emulator, with the global Tauri object for the end-to-end tests"
 tools = { java = "temurin-17" }
+depends = ["plugins:build-rust"]
 run = [
   "[ -d apps/native/src-tauri/gen/android ] || pnpm --filter @easyimmerse/native exec tauri android init --ci --skip-targets-install",
-  "pnpm --filter @easyimmerse/native exec tauri android build --debug --target x86_64 --apk --ci --config e2e/tauri.conf.json",
+  "pnpm --filter @easyimmerse/native exec tauri android build --debug --target x86_64 --apk --ci --config e2e/tauri.conf.json --features plugin-check",
 ]
 
 [tasks."e2e:android"]
