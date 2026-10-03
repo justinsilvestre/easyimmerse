@@ -26,12 +26,7 @@ export async function bootstrap(): Promise<void> {
     findDevToolsComposer(),
   );
   createRoot(findRootElement()).render(
-    <AppRoot
-      store={store}
-      playerRegistry={playerRegistry}
-      // Browsers zoom pages themselves, so the app leaves the text size to them.
-      features={{ hasTextSizeControl: false }}
-    />,
+    <AppRoot store={store} playerRegistry={playerRegistry} />,
   );
 }
 

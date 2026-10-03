@@ -2,11 +2,6 @@ import type { AppStore, PlayerRegistry } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
 import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
-import {
-  type AppFeatures,
-  AppFeaturesContext,
-  defaultAppFeatures,
-} from "./appFeaturesContext.ts";
 import { useAppDispatch } from "./hooks/useAppDispatch.ts";
 import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
@@ -19,11 +14,9 @@ import { MediaScreen } from "./screens/MediaScreen.tsx";
 export function AppRoot({
   store,
   playerRegistry,
-  features = defaultAppFeatures,
 }: {
   store: AppStore;
   playerRegistry: PlayerRegistry;
-  features?: AppFeatures;
 }) {
   const [navigation, dispatchNavigation] = useReducer(
     navigate,
@@ -32,21 +25,19 @@ export function AppRoot({
   return (
     <Provider store={store}>
       <PlayerRegistryContext value={playerRegistry}>
-        <AppFeaturesContext value={features}>
-          <AppearanceHandler />
-          {navigation.screen === "home" ? (
-            <HomeScreen
-              onOpenProject={(projectId) =>
-                dispatchNavigation({ type: "openProject", projectId })
-              }
-            />
-          ) : (
-            <MediaScreen
-              projectId={navigation.projectId}
-              onBack={() => dispatchNavigation({ type: "goHome" })}
-            />
-          )}
-        </AppFeaturesContext>
+        <AppearanceHandler />
+        {navigation.screen === "home" ? (
+          <HomeScreen
+            onOpenProject={(projectId) =>
+              dispatchNavigation({ type: "openProject", projectId })
+            }
+          />
+        ) : (
+          <MediaScreen
+            projectId={navigation.projectId}
+            onBack={() => dispatchNavigation({ type: "goHome" })}
+          />
+        )}
       </PlayerRegistryContext>
     </Provider>
   );

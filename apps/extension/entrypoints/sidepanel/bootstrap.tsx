@@ -21,12 +21,7 @@ export async function bootstrap(): Promise<void> {
   const effects = createExtensionEffects({ playerRegistry });
   const store = createAppStore(effects, backendStoreParts);
   createRoot(findRootElement()).render(
-    <AppRoot
-      store={store}
-      playerRegistry={playerRegistry}
-      // The browser zooms the side panel itself, so the app leaves the text size to it.
-      features={{ hasTextSizeControl: false }}
-    />,
+    <AppRoot store={store} playerRegistry={playerRegistry} />,
   );
 }
 
