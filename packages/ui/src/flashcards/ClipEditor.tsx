@@ -22,7 +22,8 @@ import {
 /**
  * Shows a flashcard's audio clip on the waveform around it. The clip's edges can be dragged, or moved with
  * the arrow keys, and so can the marker for the time the screenshot is taken at.
- * The part on view stays put while a handle moves, and widens while a handle is held past its edge.
+ * The part on view stays put while a handle moves, widens while a handle is held past its edge,
+ * and settles around the clip again once the handle is let go.
  */
 export function ClipEditor({
   peaks,
@@ -50,11 +51,15 @@ export function ClipEditor({
       : [clip.startMs, clip.endMs, screenshotMs],
     durationMs,
   );
+  const latestClip = useRef(clip);
+  latestClip.current = clip;
   const dragHandlers = useHandleDrag({
     waveformRef,
     view,
     durationMs,
     onViewChange: setStoredView,
+    onDragEnd: () =>
+      setStoredView(viewAroundClip(latestClip.current, durationMs)),
   });
   const percentOf = (ms: number) =>
     ((ms - view.startMs) / (view.endMs - view.startMs)) * 100;

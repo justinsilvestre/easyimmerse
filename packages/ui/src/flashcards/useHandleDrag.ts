@@ -49,11 +49,14 @@ export function useHandleDrag({
   view,
   durationMs,
   onViewChange,
+  onDragEnd,
 }: {
   waveformRef: RefObject<HTMLElement | null>;
   view: WaveformView;
   durationMs: number;
   onViewChange: (view: WaveformView) => void;
+  /** Called once the pointer lets go of a handle, after the last move has been applied. */
+  onDragEnd: () => void;
 }): (time: DraggableTime) => DragHandlers {
   const dragRef = useRef<Drag | null>(null);
 
@@ -96,6 +99,7 @@ export function useHandleDrag({
     if (!drag || drag.pointerId !== event.pointerId) return;
     cancelAnimationFrame(drag.animationFrame);
     dragRef.current = null;
+    onDragEnd();
   };
 
   return (time) => ({

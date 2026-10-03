@@ -1,7 +1,8 @@
-import { ChevronDown, Plus, X } from "lucide-react";
-import { useEffect, useReducer, useRef } from "react";
+import { Plus, X } from "lucide-react";
+import { useReducer } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
+import { MenuButton } from "../components/MenuButton.tsx";
 import { TagsField } from "../components/TagsField.tsx";
 import { reduceEditor } from "./editFlashcard.ts";
 import {
@@ -19,7 +20,7 @@ import {
 
 /**
  * The form for a flashcard that was just created or reopened.
- * Fields outside the project's flashcard settings stay hidden until added back from the list at the bottom.
+ * Fields outside the project's flashcard settings stay hidden until added back from the menu at the bottom.
  */
 export function FlashcardEditor({
   initialContent,
@@ -45,14 +46,8 @@ export function FlashcardEditor({
   const [state, dispatch] = useReducer(reduceEditor, {
     content: initialContent,
     includedFields: initialFields,
-    showsHiddenFields: false,
   });
   const { content, includedFields } = state;
-  const hiddenFieldsRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (state.showsHiddenFields)
-      hiddenFieldsRef.current?.scrollIntoView({ block: "nearest" });
-  }, [state.showsHiddenFields]);
   // The screenshot stays in view while the card has one, so that its checkbox can bring it back.
   const isShown = (field: FlashcardFieldDefinition) =>
     includedFields.includes(field.key) ||
@@ -89,41 +84,19 @@ export function FlashcardEditor({
           />
         )}
         {hidden.length > 0 && (
-          <div
-            ref={hiddenFieldsRef}
-            className="flex flex-col gap-1.5 border-t border-line pt-3"
-          >
-            <Button
-              size="sm"
-              variant="subtle"
-              className="self-start"
-              aria-expanded={state.showsHiddenFields}
-              onClick={() => dispatch({ type: "hiddenFieldsToggled" })}
+          <div className="border-t border-line pt-3">
+            <MenuButton
+              label="Add a field"
+              opensUpward
+              items={hidden.map((field) => ({
+                label: field.label(languages),
+                onSelect: () =>
+                  dispatch({ type: "fieldAdded", key: field.key }),
+              }))}
             >
               <Plus className="size-3" aria-hidden />
               Add a field
-              <ChevronDown
-                className={
-                  state.showsHiddenFields ? "size-3 rotate-180" : "size-3"
-                }
-                aria-hidden
-              />
-            </Button>
-            {state.showsHiddenFields && (
-              <div className="flex flex-wrap gap-1.5">
-                {hidden.map((field) => (
-                  <Button
-                    key={field.key}
-                    size="sm"
-                    onClick={() =>
-                      dispatch({ type: "fieldAdded", key: field.key })
-                    }
-                  >
-                    {field.label(languages)}
-                  </Button>
-                ))}
-              </div>
-            )}
+            </MenuButton>
           </div>
         )}
       </div>

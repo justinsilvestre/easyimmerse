@@ -35,17 +35,19 @@ describe("FlashcardEditor", () => {
     expect(screen.queryByLabelText("Word pronunciation")).toBeNull();
   });
 
-  it("keeps the buttons for adding fields hidden at first", () => {
+  it("keeps the menu of fields to add closed at first", () => {
     renderEditor();
     expect(
-      screen.queryByRole("button", { name: "Word pronunciation" }),
+      screen.queryByRole("menuitem", { name: "Word pronunciation" }),
     ).toBeNull();
   });
 
-  it("shows an excluded field once it is added from the list", () => {
+  it("shows an excluded field once it is added from the menu", () => {
     renderEditor();
     clickAddAField();
-    fireEvent.click(screen.getByRole("button", { name: "Word pronunciation" }));
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Word pronunciation" }),
+    );
     expect(screen.getByLabelText("Word pronunciation")).not.toBeNull();
   });
 

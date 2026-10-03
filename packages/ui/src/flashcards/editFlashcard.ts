@@ -6,11 +6,10 @@ import {
   toggleField,
 } from "./flashcardFields.ts";
 
-/** The flashcard being edited, and whether the list of fields to add back is open. */
+/** The flashcard being edited. */
 export type EditorState = {
   content: FlashcardContent;
   includedFields: readonly FlashcardFieldKey[];
-  showsHiddenFields: boolean;
 };
 
 export type EditorAction =
@@ -18,7 +17,6 @@ export type EditorAction =
   | { type: "tagsChanged"; tags: readonly string[] }
   | { type: "clipChanged"; clip: AudioClip }
   | { type: "screenshotMsChanged"; ms: number }
-  | { type: "hiddenFieldsToggled" }
   | { type: "fieldAdded"; key: FlashcardFieldKey }
   | { type: "screenshotToggled" };
 
@@ -39,8 +37,6 @@ export function reduceEditor(
         : withContent(state, {
             screenshot: { ...state.content.screenshot, atMs: action.ms },
           });
-    case "hiddenFieldsToggled":
-      return { ...state, showsHiddenFields: !state.showsHiddenFields };
     case "fieldAdded":
       return {
         ...state,

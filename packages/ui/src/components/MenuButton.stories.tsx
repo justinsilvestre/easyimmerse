@@ -31,3 +31,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Closed: Story = {};
+
+export const WithText: Story = {
+  args: { label: "Add a field", children: "Add a field" },
+};
