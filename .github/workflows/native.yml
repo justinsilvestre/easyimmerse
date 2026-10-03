@@ -17,6 +17,7 @@ on:
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
+      - "scripts/install-appium-driver.sh"
       - "fixtures/**"
   # A tag named native-ci-<job>-<stamp> runs that one job at the tagged commit, for one-off checks of a branch.
   push:
@@ -37,6 +38,7 @@ on:
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
+      - "scripts/install-appium-driver.sh"
       - "fixtures/**"
   workflow_dispatch:
 
