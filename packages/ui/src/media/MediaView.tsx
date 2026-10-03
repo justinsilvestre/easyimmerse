@@ -7,7 +7,6 @@ import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { Kbd } from "../components/Kbd.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
-import { useMediaQuery } from "../hooks/useMediaQuery.ts";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import { languageName } from "../projects/languages.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
@@ -61,13 +60,9 @@ type MediaViewProps = {
   sidePanel?: ReactNode;
 };
 
-/** Whether the device has a pointer that can hover, which decides whether the header and controls hide themselves. */
-const hoverQuery = "(hover: hover)";
-
 /**
  * The screen for watching or listening to one media file. It is dark in both themes, like a cinema.
  * The controls lie over the bottom of the stage and show only while the pointer moves or playback is paused.
- * On a device with a mouse, the header shows only while the pointer is near the top.
  * The panels around the stage come in as children, so that each can be wired to the store on its own.
  */
 export function MediaView(props: MediaViewProps) {
@@ -77,22 +72,16 @@ export function MediaView(props: MediaViewProps) {
     () => segmentsFromCues(cues, props.flashcardCueIndexes),
     [cues, props.flashcardCueIndexes],
   );
-  const canHover = useMediaQuery(hoverQuery);
   const pointer = usePointerActivity();
   const showsControls = !playback.isPlaying || pointer.isActive;
-  const showsHeader =
-    !panels.distractionFree && (!canHover || pointer.isNearTop);
   const showsSidePanel = !panels.distractionFree && props.sidePanel != null;
   return (
     <div
       data-theme="dark"
-      className="relative flex h-dvh flex-col bg-canvas text-fg"
+      className="flex h-dvh flex-col bg-canvas text-fg"
       onPointerMove={pointer.onPointerMove}
-      onPointerLeave={pointer.onPointerLeave}
     >
-      {!panels.distractionFree && (
-        <Header {...props} isFloating={canHover} isShown={showsHeader} />
-      )}
+      {!panels.distractionFree && <Header {...props} />}
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           {props.headerContent && (
@@ -200,22 +189,9 @@ export function MediaView(props: MediaViewProps) {
   );
 }
 
-/** The bar with the way back and the file's name. On a device with a mouse it floats over the top and slides away. */
-function Header({
-  media,
-  onBack,
-  isFloating,
-  isShown,
-}: MediaViewProps & { isFloating: boolean; isShown: boolean }) {
+function Header({ media, onBack }: MediaViewProps) {
   return (
-    <header
-      className={clsx(
-        "flex items-center gap-3 border-b border-line bg-surface px-3 py-2",
-        isFloating &&
-          "absolute inset-x-0 top-0 z-20 transition-transform focus-within:translate-y-0",
-        isFloating && !isShown && "-translate-y-full",
-      )}
-    >
+    <header className="flex items-center gap-3 border-b border-line bg-surface px-3 py-2">
       <Button variant="subtle" onClick={onBack}>
         <ArrowLeft className="size-4" aria-hidden />
         Project
