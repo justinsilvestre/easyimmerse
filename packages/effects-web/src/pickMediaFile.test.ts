@@ -34,7 +34,8 @@ describe("createPickMediaFile", () => {
     const picked = createPickMediaFile(registry)([".webm"]);
     chooseFile(findFileInput(), clip);
     const result = await picked;
-    expect(registry.find("clip.webm", result?.source ?? clip)).toBe(clip);
+    if (result === null) throw new Error("No file was picked.");
+    expect(registry.find("clip.webm", result.source)).toBe(clip);
   });
 
   it("resolves null when the dialog is cancelled", async () => {
