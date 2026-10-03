@@ -6,7 +6,7 @@ import {
   selectPendingFilePick,
   selectPreference,
   selectSubtitleSource,
-  selectTextSize,
+  selectTextScale,
 } from "./selectors.ts";
 
 const rootState: RootState = {
@@ -39,7 +39,7 @@ describe("selectors", () => {
     expect(selectPendingFilePick(rootState)).toBe(true);
   });
 
-  it("selectTextSize returns medium until a size is stored", () => {
-    expect(selectTextSize(rootState)).toBe("medium");
+  it("selectTextScale returns 100 until a scale is stored", () => {
+    expect(selectTextScale(rootState)).toBe(100);
   });
 });

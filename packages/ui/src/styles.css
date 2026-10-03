@@ -210,15 +210,6 @@
     color-scheme: light;
   }
 
-  /* The sizes are set on the root, so every rem-based measurement in the app scales with the text. */
-  :root[data-text-size="small"] {
-    font-size: 87.5%;
-  }
-
-  :root[data-text-size="large"] {
-    font-size: 118.75%;
-  }
-
   /* Until the app sets a theme, the page follows the system, so a dark system does not show a light page while the app loads. */
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) {

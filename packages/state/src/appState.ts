@@ -2,11 +2,11 @@ import type { TextSource } from "@easyimmerse/types";
 import type { ThemeState } from "./theme.ts";
 import { initialThemeState } from "./theme.ts";
 
-export type PreferenceKey = "showTranslations" | "textSize";
+export type PreferenceKey = "showTranslations" | "textScale";
 
 export const preferenceKeys: readonly PreferenceKey[] = [
   "showTranslations",
-  "textSize",
+  "textScale",
 ];
 
 export type AppState = {

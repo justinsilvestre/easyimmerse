@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { TextSizeControl } from "./TextSizeControl.tsx";
+import { TextSizeMenu } from "./TextSizeMenu.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
 
 /** Shows the theme switch at the bottom of a screen. `contentClassName` lets it line up with the screen's content. */
@@ -12,7 +12,7 @@ export function AppFooter({ contentClassName }: { contentClassName?: string }) {
           contentClassName,
         )}
       >
-        <TextSizeControl />
+        <TextSizeMenu />
         <ThemeToggle />
       </div>
     </footer>

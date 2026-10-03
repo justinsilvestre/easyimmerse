@@ -96,7 +96,7 @@ describe("update", () => {
     );
     expect(effects).toEqual([
       { type: "loadPreference", key: "showTranslations" },
-      { type: "loadPreference", key: "textSize" },
+      { type: "loadPreference", key: "textScale" },
     ]);
   });
 
@@ -161,18 +161,15 @@ describe("update", () => {
     ]);
   });
 
-  it("stores the chosen size as a preference for textSizeChosen", () => {
-    const [state] = update(initialAppState, actions.textSizeChosen("large"));
-    expect(state.preferences.textSize).toBe("large");
+  it("stores the chosen scale as a preference for textScaleChosen", () => {
+    const [state] = update(initialAppState, actions.textScaleChosen(125));
+    expect(state.preferences.textScale).toBe("125");
   });
 
-  it("returns a savePreference effect for textSizeChosen", () => {
-    const [, effects] = update(
-      initialAppState,
-      actions.textSizeChosen("large"),
-    );
+  it("returns a savePreference effect for textScaleChosen", () => {
+    const [, effects] = update(initialAppState, actions.textScaleChosen(125));
     expect(effects).toEqual([
-      { type: "savePreference", key: "textSize", value: "large" },
+      { type: "savePreference", key: "textScale", value: "125" },
     ]);
   });
 });

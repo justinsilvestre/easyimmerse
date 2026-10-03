@@ -67,10 +67,16 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "themeToggled":
       return [{ ...state, theme: toggleTheme(state.theme) }, []];
-    case "textSizeChosen":
+    case "textScaleChosen":
       return [
-        setPreference(state, "textSize", action.size),
-        [{ type: "savePreference", key: "textSize", value: action.size }],
+        setPreference(state, "textScale", String(action.scale)),
+        [
+          {
+            type: "savePreference",
+            key: "textScale",
+            value: String(action.scale),
+          },
+        ],
       ];
   }
 };

@@ -2,7 +2,7 @@ import type { Theme } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
 import type { Decorator } from "@storybook/react-vite";
 import { type ReactNode, useEffect, useState } from "react";
-import { useApplyTextSize } from "../hooks/useApplyTextSize.ts";
+import { useApplyTextScale } from "../hooks/useApplyTextScale.ts";
 import { useApplyTheme } from "../hooks/useApplyTheme.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
@@ -46,6 +46,6 @@ function createTestAppStoreFollowing(systemTheme: Theme) {
 
 function StoryThemeHandler() {
   useApplyTheme();
-  useApplyTextSize();
+  useApplyTextScale();
   return null;
 }

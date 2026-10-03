@@ -8,7 +8,7 @@ import {
   defaultAppFeatures,
 } from "./appFeaturesContext.ts";
 import { useAppDispatch } from "./hooks/useAppDispatch.ts";
-import { useApplyTextSize } from "./hooks/useApplyTextSize.ts";
+import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
 import { initialNavigation, navigate } from "./navigation.ts";
@@ -57,7 +57,7 @@ function AppearanceHandler() {
   const dispatch = useAppDispatch();
   useTrackSystemTheme();
   useApplyTheme();
-  useApplyTextSize();
+  useApplyTextScale();
   useEffect(() => {
     dispatch(actions.preferencesLoadRequested());
   }, [dispatch]);
