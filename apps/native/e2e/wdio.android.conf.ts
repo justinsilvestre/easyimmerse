@@ -21,7 +21,7 @@ const apkPath = fileURLToPath(
 
 /**
  * Drives the app on a running Android emulator through Appium's UiAutomator2 driver.
- * Appium installs the APK, clears its data so the app seeds its placeholder projects,
+ * Appium installs the APK, clears its data so that the app seeds its placeholder projects,
  * downloads a chromedriver matching the emulator's WebView, and switches the session into the WebView.
  */
 export const config = createAppiumConfig(
@@ -37,8 +37,9 @@ export const config = createAppiumConfig(
     "appium:androidInstallTimeout": 180_000,
     "appium:uiautomator2ServerInstallTimeout": 180_000,
     "appium:uiautomator2ServerLaunchTimeout": 180_000,
-    // The emulator has no lock screen. Skipping the unlock also makes the driver tolerate
-    // its Appium Settings helper app starting slowly, which it otherwise fails the session for after 30 s.
+    // The emulator has no lock screen.
+    // Skipping the unlock also lets the driver tolerate a slow start of its Appium Settings helper app,
+    // which otherwise fails the session after 30 seconds.
     "appium:skipUnlock": true,
     "appium:newCommandTimeout": 300,
   },

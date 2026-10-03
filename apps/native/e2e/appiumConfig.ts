@@ -9,9 +9,8 @@ export const appiumHome = fileURLToPath(new URL("../.appium", import.meta.url));
 process.env.APPIUM_HOME ??= appiumHome;
 
 /**
- * Builds a WebdriverIO config that starts Appium from this package's dependencies and
- * drives the app in its WebView. The Android and iOS configs differ only in their capabilities
- * and in the insecure Appium features they allow.
+ * Builds a WebdriverIO config that starts Appium from this package's dependencies and drives the app in its WebView.
+ * The Android and iOS configs differ only in their capabilities and in the insecure Appium features they allow.
  */
 export function createAppiumConfig(
   capabilities: WebdriverIO.Capabilities,
