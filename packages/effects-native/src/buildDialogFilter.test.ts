@@ -3,13 +3,12 @@ import { buildDialogFilter } from "./buildDialogFilter.ts";
 
 describe("buildDialogFilter", () => {
   it("strips the leading dot from each extension", () => {
-    expect(buildDialogFilter([".srt", ".vtt"]).extensions).toEqual([
-      "srt",
-      "vtt",
-    ]);
+    expect(buildDialogFilter("Subtitles", [".srt", ".vtt"]).extensions).toEqual(
+      ["srt", "vtt"],
+    );
   });
 
   it("names the filter for the dialog", () => {
-    expect(buildDialogFilter([".srt"]).name).toBe("Subtitles");
+    expect(buildDialogFilter("Media", [".srt"]).name).toBe("Media");
   });
 });
