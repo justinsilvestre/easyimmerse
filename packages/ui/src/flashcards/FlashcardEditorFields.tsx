@@ -1,103 +1,207 @@
 import clsx from "clsx";
 import { X } from "lucide-react";
-import { CheckboxField } from "../components/CheckboxField.tsx";
-import { TagsField } from "../components/TagsField.tsx";
-import { TextField } from "../components/TextField.tsx";
+import { type ReactNode, useId } from "react";
+import { AutoGrowTextarea } from "../components/AutoGrowTextarea.tsx";
 import { ClipEditor } from "./ClipEditor.tsx";
 import type { EditorAction, EditorState } from "./editFlashcard.ts";
 import {
-  type FlashcardFieldDefinition,
   type FlashcardLanguages,
-  isTextField,
+  type FlashcardTextFieldKey,
+  findFlashcardField,
 } from "./flashcardFields.ts";
 
 /** The peaks of a media file's audio, each between 0 and 1, and the file's length. */
 export type MediaWaveform = { peaks: readonly number[]; durationMs: number };
 
+type FieldsProps = {
+  state: EditorState;
+  languages: FlashcardLanguages;
+  dispatch: (action: EditorAction) => void;
+};
+
 /**
- * One field of the flashcard editor. The audio clip and the screenshot share one waveform,
- * which is drawn with whichever of the two comes first.
+ * The text fields of the editor in two bordered blocks: the word with its pronunciation and definitions,
+ * and the sentence with its translation and pronunciation. Each block holds only the included fields.
  */
-export function EditorField({
-  field,
+export function TextFieldBlocks(props: FieldsProps) {
+  const isIncluded = (key: FlashcardTextFieldKey) =>
+    props.state.includedFields.includes(key);
+  const cell = (key: FlashcardTextFieldKey) =>
+    isIncluded(key) && <Cell key={key} fieldKey={key} {...props} />;
+  const wordKeys: FlashcardTextFieldKey[] = ["word", "wordPronunciation"];
+  return (
+    <>
+      <Block
+        label="Word and definition"
+        isShown={
+          isIncluded("word") ||
+          isIncluded("l1Definition") ||
+          isIncluded("l2Definition") ||
+          isIncluded("wordPronunciation")
+        }
+      >
+        <div
+          className={clsx(
+            "grid divide-x divide-line",
+            wordKeys.every(isIncluded) && "grid-cols-2",
+          )}
+        >
+          {wordKeys.map(cell)}
+        </div>
+        {cell("l1Definition")}
+        {cell("l2Definition")}
+      </Block>
+      <Block
+        label="Sentence"
+        isShown={
+          isIncluded("textContext") ||
+          isIncluded("textContextTranslation") ||
+          isIncluded("textContextPronunciation")
+        }
+      >
+        {cell("textContext")}
+        {cell("textContextTranslation")}
+        {cell("textContextPronunciation")}
+      </Block>
+    </>
+  );
+}
+
+function Block({
+  label,
+  isShown,
+  children,
+}: {
+  label: string;
+  isShown: boolean;
+  children: ReactNode;
+}) {
+  if (!isShown) return null;
+  return (
+    <fieldset
+      aria-label={label}
+      className="min-w-0 divide-y divide-line overflow-hidden rounded-md border border-line-strong focus-within:border-accent"
+    >
+      {children}
+    </fieldset>
+  );
+}
+
+/** One field inside a block: its caption above a borderless input that grows with its text. */
+function Cell({
+  fieldKey,
   state,
   languages,
+  dispatch,
+}: FieldsProps & { fieldKey: FlashcardTextFieldKey }) {
+  const id = useId();
+  const field = findFlashcardField(fieldKey);
+  const inputProps = {
+    id,
+    value: state.content[fieldKey],
+    className:
+      "w-full resize-none overflow-hidden bg-transparent text-sm text-fg outline-none",
+    onChange: (event: { target: { value: string } }) =>
+      dispatch({
+        type: "textChanged",
+        key: fieldKey,
+        value: event.target.value,
+      }),
+  };
+  return (
+    <div className="flex min-w-0 flex-col px-2.5 pt-1 pb-1.5 focus-within:bg-accent-soft">
+      <label htmlFor={id} className="text-xs leading-4 text-fg-muted">
+        {field.label(languages)}
+      </label>
+      {field.multiline ? (
+        <AutoGrowTextarea {...inputProps} />
+      ) : (
+        <input {...inputProps} />
+      )}
+    </div>
+  );
+}
+
+/** The clip's waveform with the screenshot thumbnail beside it. Clicking the thumbnail includes or excludes the screenshot. */
+export function MediaFields({
+  state,
   waveform,
   dispatch,
 }: {
-  field: FlashcardFieldDefinition;
   state: EditorState;
-  languages: FlashcardLanguages;
   waveform: MediaWaveform | null;
   dispatch: (action: EditorAction) => void;
 }) {
   const { content } = state;
-  const { key } = field;
-  const label = field.label(languages);
-  if (isTextField(key)) {
-    return (
-      <TextField
-        label={label}
-        multiline={field.multiline}
-        value={content[key]}
-        onChange={(event) =>
-          dispatch({ type: "textChanged", key, value: event.target.value })
-        }
-      />
-    );
-  }
-  if (key === "tags") {
-    return (
-      <TagsField
-        label={label}
-        tags={content.tags}
-        onChange={(tags) => dispatch({ type: "tagsChanged", tags })}
-      />
-    );
-  }
-  if (key === "audioContext") {
-    return content.audioContext && waveform ? (
-      <ClipEditor
-        peaks={waveform.peaks}
-        durationMs={waveform.durationMs}
-        clip={content.audioContext}
-        screenshotMs={content.screenshot?.atMs ?? null}
-        onClipChange={(clip) => dispatch({ type: "clipChanged", clip })}
-        onScreenshotMsChange={(ms) =>
-          dispatch({ type: "screenshotMsChanged", ms })
-        }
-      />
-    ) : null;
-  }
-  if (content.screenshot === null) return null;
-  const isIncluded = state.includedFields.includes("screenshot");
-  const toggle = () => dispatch({ type: "screenshotToggled" });
+  const showsClip =
+    state.includedFields.includes("audioContext") &&
+    content.audioContext !== null &&
+    waveform !== null;
+  if (!showsClip && content.screenshot === null) return null;
   return (
-    <div className="flex flex-col gap-2 text-sm">
-      <button
-        type="button"
-        aria-label="Screenshot"
-        aria-pressed={isIncluded}
-        onClick={toggle}
-        className="relative self-start overflow-hidden rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >
+    <div className="flex items-start gap-2">
+      {showsClip && content.audioContext && waveform && (
+        <fieldset aria-label="Sentence audio" className="min-w-0 flex-1">
+          <ClipEditor
+            peaks={waveform.peaks}
+            durationMs={waveform.durationMs}
+            clip={content.audioContext}
+            screenshotMs={content.screenshot?.atMs ?? null}
+            onClipChange={(clip) => dispatch({ type: "clipChanged", clip })}
+            onScreenshotMsChange={(ms) =>
+              dispatch({ type: "screenshotMsChanged", ms })
+            }
+          />
+        </fieldset>
+      )}
+      {content.screenshot && (
+        <ScreenshotThumbnail
+          url={content.screenshot.url}
+          isIncluded={state.includedFields.includes("screenshot")}
+          onToggle={() => dispatch({ type: "screenshotToggled" })}
+        />
+      )}
+    </div>
+  );
+}
+
+function ScreenshotThumbnail({
+  url,
+  isIncluded,
+  onToggle,
+}: {
+  url: string;
+  isIncluded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <label className="flex w-24 shrink-0 cursor-pointer flex-col gap-1 text-xs text-fg-muted">
+      <span className="relative">
         <img
-          src={content.screenshot.url}
-          alt=""
-          className={clsx("max-h-32", !isIncluded && "opacity-40 grayscale")}
+          src={url}
+          alt="Screenshot from the video"
+          className={clsx(
+            "w-full rounded-md",
+            !isIncluded && "opacity-40 grayscale",
+          )}
         />
         {!isIncluded && (
           <X
-            className="absolute inset-0 m-auto size-10 text-fg-muted"
+            className="absolute inset-0 m-auto size-8 text-fg-muted"
             aria-hidden
           />
         )}
-      </button>
-      <CheckboxField
-        label="Include the screenshot"
-        checked={isIncluded}
-        onChange={toggle}
-      />
-    </div>
+      </span>
+      <span className="flex items-center gap-1.5">
+        <input
+          type="checkbox"
+          aria-label="Include the screenshot"
+          checked={isIncluded}
+          onChange={onToggle}
+          className="size-3.5 accent-accent"
+        />
+        Screenshot
+      </span>
+    </label>
   );
 }

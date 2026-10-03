@@ -2,8 +2,13 @@ import { ChevronDown, Plus, X } from "lucide-react";
 import { useEffect, useReducer, useRef } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
+import { TagsField } from "../components/TagsField.tsx";
 import { reduceEditor } from "./editFlashcard.ts";
-import { EditorField, type MediaWaveform } from "./FlashcardEditorFields.tsx";
+import {
+  MediaFields,
+  type MediaWaveform,
+  TextFieldBlocks,
+} from "./FlashcardEditorFields.tsx";
 import {
   type FlashcardContent,
   type FlashcardFieldDefinition,
@@ -52,7 +57,6 @@ export function FlashcardEditor({
   const isShown = (field: FlashcardFieldDefinition) =>
     includedFields.includes(field.key) ||
     (field.key === "screenshot" && content.screenshot !== null);
-  const shown = flashcardFields.filter(isShown);
   const hidden = flashcardFields.filter((field) => !isShown(field));
   return (
     <form
@@ -70,16 +74,20 @@ export function FlashcardEditor({
         </IconButton>
       </div>
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
-        {shown.map((field) => (
-          <EditorField
-            key={field.key}
-            field={field}
-            state={state}
-            languages={languages}
-            waveform={waveform}
-            dispatch={dispatch}
+        <TextFieldBlocks
+          state={state}
+          languages={languages}
+          dispatch={dispatch}
+        />
+        <MediaFields state={state} waveform={waveform} dispatch={dispatch} />
+        {includedFields.includes("tags") && (
+          <TagsField
+            label="Tags"
+            isLabelBeside
+            tags={content.tags}
+            onChange={(tags) => dispatch({ type: "tagsChanged", tags })}
           />
-        ))}
+        )}
         {hidden.length > 0 && (
           <div
             ref={hiddenFieldsRef}

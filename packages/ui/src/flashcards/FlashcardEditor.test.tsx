@@ -96,7 +96,7 @@ describe("FlashcardEditor", () => {
 
   it("excludes the screenshot when its image is clicked", () => {
     renderEditor();
-    fireEvent.click(screen.getByRole("button", { name: "Screenshot" }));
+    fireEvent.click(screen.getByAltText("Screenshot from the video"));
     expect(screen.getByLabelText("Include the screenshot")).toHaveProperty(
       "checked",
       false,

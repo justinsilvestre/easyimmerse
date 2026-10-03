@@ -1,21 +1,24 @@
+import clsx from "clsx";
 import { X } from "lucide-react";
 import { useId, useState } from "react";
 import { addTags, splitTypedTags } from "../flashcards/parseTags.ts";
 
 /**
  * A field that holds a list of tags. A comma or Enter turns the typed text into a tag;
- * Backspace in the empty field takes the last tag back.
+ * Backspace in the empty field takes the last tag back. The label stands above the field, or beside it.
  */
 export function TagsField({
   label,
   tags,
   onChange,
   hint,
+  isLabelBeside = false,
 }: {
   label: string;
   tags: readonly string[];
   onChange: (tags: readonly string[]) => void;
   hint?: string;
+  isLabelBeside?: boolean;
 }) {
   const id = useId();
   const [text, setText] = useState("");
@@ -28,11 +31,16 @@ export function TagsField({
     finish(`${text},`);
   };
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium">
+    <div
+      className={clsx("flex gap-1", isLabelBeside ? "items-start" : "flex-col")}
+    >
+      <label
+        htmlFor={id}
+        className={clsx("text-sm font-medium", isLabelBeside && "py-1.5")}
+      >
         {label}
       </label>
-      <div className="flex flex-wrap items-center gap-1 rounded-md border border-line-strong bg-surface px-2 py-1 focus-within:border-accent focus-within:outline-2 focus-within:outline-accent/30">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 rounded-md border border-line-strong bg-surface px-2 py-1 focus-within:border-accent focus-within:outline-2 focus-within:outline-accent/30">
         {tags.map((tag) => (
           <span
             key={tag}
