@@ -11,6 +11,8 @@
       "!**/packages/types/src/generated",
       "!**/packages/types/src/openapi/schema.ts",
       "!**/packages/wasm/pkg",
+      "!**/packages/licenses/src/generated",
+      "!**/scripts/ffmpeg-notices/noticeInputs.json",
       "!**/.wxt",
       "!**/.output",
       "!**/dist",
