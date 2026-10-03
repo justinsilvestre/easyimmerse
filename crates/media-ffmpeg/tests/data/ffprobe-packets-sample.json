@@ -1,26 +1,26 @@
 {
-    "packets": [
-        { "pts": 0, "dts": -1024, "flags": "K__" },
-        { "pts": 2048, "dts": -512, "flags": "___" },
-        { "pts": 1024, "dts": 0, "flags": "___" },
-        { "pts": 512, "dts": 512, "flags": "___" },
-        { "pts": 1536, "dts": 1024, "flags": "___" },
-        { "pts": 4096, "dts": 1536, "flags": "___" },
-        { "pts": 3072, "dts": 2048, "flags": "___" },
-        { "pts": 2560, "dts": 2560, "flags": "K__" }
-    ],
-    "programs": [],
-    "stream_groups": [],
-    "streams": [
-        {
-            "index": 0,
-            "time_base": "1/12288",
-            "start_pts": 0,
-            "start_time": "0.000000"
-        }
-    ],
-    "format": {
-        "start_time": "0.000000",
-        "duration": "5.000000"
+  "packets": [
+    { "pts": 0, "dts": -1024, "flags": "K__" },
+    { "pts": 2048, "dts": -512, "flags": "___" },
+    { "pts": 1024, "dts": 0, "flags": "___" },
+    { "pts": 512, "dts": 512, "flags": "___" },
+    { "pts": 1536, "dts": 1024, "flags": "___" },
+    { "pts": 4096, "dts": 1536, "flags": "___" },
+    { "pts": 3072, "dts": 2048, "flags": "___" },
+    { "pts": 2560, "dts": 2560, "flags": "K__" }
+  ],
+  "programs": [],
+  "stream_groups": [],
+  "streams": [
+    {
+      "index": 0,
+      "time_base": "1/12288",
+      "start_pts": 0,
+      "start_time": "0.000000"
     }
+  ],
+  "format": {
+    "start_time": "0.000000",
+    "duration": "5.000000"
+  }
 }
