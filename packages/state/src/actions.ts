@@ -1,6 +1,7 @@
 import type { Action } from "redux";
 import type { PreferenceKey } from "./appState.ts";
 import type { PickedFile } from "./effects.ts";
+import type { Theme } from "./theme.ts";
 
 export const actions = {
   seekRequested: (seconds: number) =>
@@ -22,6 +23,9 @@ export const actions = {
     ({ type: "cueCopyRequested", text }) as const,
   externalLinkRequested: (url: string) =>
     ({ type: "externalLinkRequested", url }) as const,
+  systemThemeChanged: (theme: Theme) =>
+    ({ type: "systemThemeChanged", theme }) as const,
+  themeToggled: () => ({ type: "themeToggled" }) as const,
 };
 
 export type AppAction = ReturnType<(typeof actions)[keyof typeof actions]>;

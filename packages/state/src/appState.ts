@@ -1,4 +1,6 @@
 import type { TextSource } from "@easyimmerse/types";
+import type { ThemeState } from "./theme.ts";
+import { initialThemeState } from "./theme.ts";
 
 export type PreferenceKey = "showTranslations";
 
@@ -10,6 +12,7 @@ export type AppState = {
   subtitleSource: TextSource | null;
   preferences: Partial<Record<PreferenceKey, string>>;
   pendingFilePick: boolean;
+  theme: ThemeState;
 };
 
 export const initialAppState: AppState = {
@@ -17,4 +20,5 @@ export const initialAppState: AppState = {
   subtitleSource: null,
   preferences: {},
   pendingFilePick: false,
+  theme: initialThemeState,
 };
