@@ -1,8 +1,6 @@
-mod support;
-
+use crate::support::{fixture_path, read_fixture, spawn_test_server};
 use easyimmerse_core::timed_text::parse_timed_text;
 use serde_json::{Value, json};
-use support::{fixture_path, read_fixture, spawn_test_server};
 
 fn fixture_text() -> String {
     String::from_utf8(read_fixture("sample.srt")).unwrap()

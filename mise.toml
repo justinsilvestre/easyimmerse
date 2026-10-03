@@ -32,7 +32,7 @@ run = [
 description = "Regenerate packages/types/src/generated from Rust with ts-rs"
 run = [
   "rm -rf packages/types/src/generated",
-  "cargo test --workspace --exclude easyimmerse-native export_bindings",
+  "cargo test -p easyimmerse-core -p easyimmerse-media -p easyimmerse-api --lib export_bindings",
   "node packages/types/scripts/writeGeneratedIndex.ts",
 ]
 sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
@@ -40,7 +40,7 @@ sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
 [tasks.openapi]
 description = "Regenerate crates/api/openapi.json and its TypeScript schema"
 run = [
-  "cargo run -p easyimmerse-server -- openapi --out crates/api/openapi.json",
+  "EASYIMMERSE_UPDATE_OPENAPI=1 cargo test -p easyimmerse-api --lib the_committed_document_is_current",
   "pnpm --filter @easyimmerse/types generate:openapi",
 ]
 sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
@@ -79,3 +79,57 @@ run = [
   "pnpm --filter @easyimmerse/web e2e",
   "pnpm --filter @easyimmerse/extension e2e",
 ]
+
+[tasks."e2e:desktop"]
+description = "Drive a debug build of the desktop app through WebDriver"
+run = [
+  "pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json",
+  "pnpm --filter @easyimmerse/native e2e",
+]
+
+[tasks.desktop]
+description = "Run the desktop app in development mode with its embedded server"
+depends = ["fetch-ffmpeg"]
+run = "pnpm --filter @easyimmerse/native dev"
+
+[tasks.web-dev]
+description = "Run the web app with hot reloading against a local server at http://127.0.0.1:8788"
+depends = ["web-dev:server", "web-dev:vite"]
+
+[tasks."web-dev:build"]
+run = "cargo build -p easyimmerse-server"
+
+# The server keeps its data in .dev/ and seeds the placeholder projects only into a new database.
+# Port 8788 leaves 8787 to the desktop app's embedded server.
+[tasks."web-dev:server"]
+depends = ["web-dev:build"]
+env = { EASYIMMERSE_TOKEN = "dev" }
+run = '''
+mkdir -p .dev
+seed=$([ -e .dev/server.sqlite ] || echo --seed-placeholders)
+exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed
+'''
+
+# Waits for the server build so that a compile error stops the task before Vite starts.
+[tasks."web-dev:vite"]
+depends = ["web-dev:build"]
+env = { VITE_EASYIMMERSE_SERVER_URL = "http://127.0.0.1:8788", VITE_EASYIMMERSE_TOKEN = "dev" }
+run = "pnpm --filter @easyimmerse/web dev"
+
+# A debug build of the desktop app writes its server's address and a new random token to .dev/desktop-server.env each time it starts.
+# Vite reads them only at start-up, so restart this task after restarting the desktop app.
+[tasks."web:desktop"]
+description = "Run the web app with hot reloading against the server of a running `mise run desktop`"
+run = '''
+file=.dev/desktop-server.env
+[ -e "$file" ] || { echo "Start the desktop app with 'mise run desktop' first. It writes $file." >&2; exit 1; }
+. "./$file"
+curl -sf -o /dev/null -H "Authorization: Bearer $EASYIMMERSE_DESKTOP_TOKEN" "$EASYIMMERSE_DESKTOP_SERVER_URL/projects" ||
+  { echo "The desktop app's server at $EASYIMMERSE_DESKTOP_SERVER_URL is not running. Start it with 'mise run desktop'." >&2; exit 1; }
+export VITE_EASYIMMERSE_SERVER_URL="$EASYIMMERSE_DESKTOP_SERVER_URL" VITE_EASYIMMERSE_TOKEN="$EASYIMMERSE_DESKTOP_TOKEN"
+exec pnpm --filter @easyimmerse/web dev
+'''
+
+[tasks.storybook]
+description = "Serve the UI component stories at http://localhost:6006"
+run = "pnpm --filter @easyimmerse/ui storybook"

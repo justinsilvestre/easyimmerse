@@ -1,7 +1,5 @@
-mod support;
-
+use crate::support::spawn_test_server;
 use serde_json::json;
-use support::spawn_test_server;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn an_unset_preference_is_null() {

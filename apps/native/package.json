@@ -3,12 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tauri dev",
     "build": "tauri build",
+    "dev": "tauri dev",
+    "e2e": "wdio run e2e/wdio.conf.ts",
     "tauri": "tauri",
-    "vite:dev": "vite",
+    "typecheck": "tsc -p tsconfig.json && tsc -p e2e/tsconfig.json",
     "vite:build": "vite build",
-    "typecheck": "tsc -p tsconfig.json"
+    "vite:dev": "vite"
   },
   "dependencies": {
     "@easyimmerse/backend": "workspace:*",
@@ -30,7 +31,14 @@
     "@types/node": "^24",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@wdio/cli": "^9.32.0",
+    "@wdio/globals": "^9.31.3",
+    "@wdio/local-runner": "^9.32.0",
+    "@wdio/mocha-framework": "^9.32.0",
+    "@wdio/spec-reporter": "^9.32.0",
+    "@wdio/tauri-service": "^1.4.0",
     "typescript": "~6.0.3",
-    "vite": "^8.3.1"
+    "vite": "^8.3.1",
+    "webdriverio": "^9.32.0"
   }
 }

@@ -1,6 +1,4 @@
-mod support;
-
-use support::spawn_test_server;
+use crate::support::spawn_test_server;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn a_request_without_a_token_is_unauthorized() {

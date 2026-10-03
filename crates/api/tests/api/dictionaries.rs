@@ -1,9 +1,7 @@
-mod support;
-
+use crate::support::{TestServer, fixture_path, read_fixture, spawn_test_server};
 use serde_json::json;
-use support::{TestServer, fixture_path, read_fixture, spawn_test_server};
 
-async fn import_fixture(server: &TestServer) -> support::TestResponse {
+async fn import_fixture(server: &TestServer) -> crate::support::TestResponse {
     server
         .post_bytes(
             "/dictionaries",

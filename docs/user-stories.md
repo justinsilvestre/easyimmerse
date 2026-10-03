@@ -23,7 +23,9 @@ Where mouse actions are specified, the actions should generally also be possible
 As a user:
 - when I am using the app:
   - [ ] I can resize the app window, and the app's layout adjusts accordingly
-  - [ ] I can switch between a light and dark theme for the app
+  - [ ] the app follows my system's light or dark theme
+  - [ ] I can switch between a light and dark theme with the toggle at the bottom of the screen, and the app follows my system again the next time the system theme changes
+  - [ ] I can choose in the settings to always use the light or the dark theme
   - [ ] *on desktop*, I can see a menu bar with options:
     - easyImmerse menu: About, Preferences, Quit
     - File menu: New project, Open project, Save project, Export flashcards, Import/export project, Exit
@@ -103,6 +105,12 @@ As a user:
   - [ ] the new media file is opened
 - when I save the project via the menu bar or keyboard shortcut:
   - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
+- while I am working in a project:
+  - [ ] my work is saved automatically at regular intervals, so an unexpected crash does not lose it
+- when I open the app after it closed unexpectedly:
+  - [ ] the last automatically saved state of my project is reloaded
+- when the last automatically saved state cannot be loaded:
+  - [ ] I am told about the problem, and the app falls back to the most recent earlier autosave that loads
 
 ---
 
@@ -165,6 +173,10 @@ As a user:
 - while a flashcard is open for editing:
   - [ ] I can move the endpoints of the flashcard's segment in the waveform visualization, and the flashcard's audio timings are updated accordingly
   - [ ] I can move the point in the waveform visualization corresponding to the flashcard's screenshot, and the flashcard's screenshot is updated accordingly
+- when the waveform visualization is at its closest or widest zoom level:
+  - [ ] the corresponding zoom button is disabled
+- *on desktop*, when I open the View menu:
+  - [ ] I can show or hide the waveform visualization
 
 ---
 
@@ -199,15 +211,15 @@ As a user:
   - [ ] I can click on a sentence/segment to play the matching audio
   - [ ] the sentence/segment currently being spoken is highlighted during playback
 - when a translation is opened:
-- [ ] I can switch between
-    - target language text only
-    - translation text only
+  - [ ] I can switch between
+      - target language text only
+      - translation text only
 - when the ebook or text file has been aligned with a translation, and the target-language text is open:
   - [ ] I can click on a sentence/segment to see the matching translation
 - when the ebook or text file has been aligned with a translation:
-- [ ] I can switch between the single-language views and two bilingual views:
-    - interlinear view
-    - parallel view
+  - [ ] I can switch between the single-language views and two bilingual views:
+      - interlinear view
+      - parallel view
 - when I have opened an ebook, and I also have a translation of it as a separate ebook or text file:
   - [ ] I can choose to combine the two into a bilingual ebook
 - when I choose to combine the two ebooks into a bilingual ebook:
@@ -238,13 +250,15 @@ As a user:
   - [ ] the corresponding segment of audio/video is looped
   - [ ] I can edit the text fields of the flashcard
   - [ ] I can toggle whether to include the screenshot in the flashcard
+  - [ ] fields excluded in my flashcard settings are hidden
+  - [ ] I can add a field excluded in my flashcard settings back to the flashcard
   - [ ] I can save the flashcard and close the form
   - [ ] I can delete the flashcard and close the form
 - when a flashcard is created from a word:
   - [ ] the fields are filled according to my flashcard settings, translation settings, and TTS settings
     - word (taken from the dictionary lemma)
-    - L1 definition (taken from the dictionary entries, if available, and narrowed to the selected one if a single entry was tapped/clicked to create the flashcard)
-    - L2 definition (taken from the dictionary entries, if available, and narrowed to the selected one if a single entry was tapped/clicked to create the flashcard)
+    - L1 definition (taken from the dictionary entries, if available)
+    - L2 definition (taken from the dictionary entries, if available)
     - word pronunciation
     - text context (taken from the subtitle cue or ebook/text segment containing the word)
     - text context translation (taken from the translation subtitles or machine translation of the ebook/text segment containing the word)
@@ -252,6 +266,10 @@ As a user:
     - audio context (taken from the audio clip of the subtitle cue or ebook/text segment containing the word)
     - screenshot (taken from a video frame within the timing of the subtitle cue containing the word)
     - tags
+- when I create a flashcard from a word, but not from a specific dictionary entry:
+  - [ ] the L1 and/or L2 fields are filled with the definitions from all matching dictionary entries
+- when I create a flashcard from a specific dictionary entry:
+  - [ ] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
 - when I press the lookup button or its keyboard shortcut:
   - [ ] the dictionary pop-up opens, with focus on a text input field where I can type a word to look up
 - while the dictionary pop-up is open but no dictionary is enabled for the project's language:
@@ -361,6 +379,13 @@ As a web/mobile app user:
 As a web app user:
   - [ ] I can install the app as a Progressive Web App
 
+As a web/mobile app user connected to my own server (self-hosted or on the local network):
+- when I add a media file from the browser:
+  - [ ] I can upload it to the server to make it available on other devices
+  - [ ] I can choose to delete the local copy of the file after it is uploaded, to save space on my device
+- when I add a media file from the browser, but it is in a format not widely supported:
+  - [ ] I am notified that the server will convert it to a widely supported format, and that the original file will not be kept if I choose to delete it after upload
+
 As a web/mobile app user who is not logged in:
 - when I add a resource (media file, subtitles file, dictionary file, etc.) to the app:
   - [ ] the file stays on my device and is not uploaded anywhere
@@ -387,6 +412,7 @@ As a privileged user (a subscriber or a self-hosted server account holder):
 - when I am logged in on a device:
   - [ ] my projects, flashcards, review history, and dictionaries are synchronized with the cloud
   - [ ] changes I make on one device appear on my other devices
+  - [ ] my preferences follow me to my other devices (except those that belong to one device, such as the theme)
   - [ ] I can choose which media files are uploaded to the cloud
 - when I open the cloud storage settings:
   - [ ] I see how much of my storage quota is used, and can delete files from the cloud
@@ -425,6 +451,13 @@ As a desktop app user:
 - when I use the CLI:
   - [ ] I can manage the server
   - [ ] I can configure my settings
+- when I visit the download page, install, or first open the desktop app on a computer without a hardware video encoder:
+  - [ ] I am told that converting unsupported video needs an ffmpeg build with a software H.264 encoder, and I am guided through installing one and choosing it in the settings
+- when a video cannot be converted because my computer has no usable video encoder:
+  - [ ] I am told how to install a suitable ffmpeg build and choose it in the settings
+- when I open the media conversion settings:
+  - [ ] I can choose my own ffmpeg build for media conversion
+  - [ ] I can choose the quality of converted video, trading picture quality against the disk space used by the conversion cache
 - when I am running an unauthenticated local server:
   - [ ] I am warned that anyone on the local network can access my projects, flashcards, and dictionaries, and that I should set up authentication if I want to keep them private
 - when I am running an authenticated local server:
@@ -546,3 +579,10 @@ As a browser extension user:
   - [ ] I can choose which project new flashcards are added to
   - [ ] I can use dictionaries stored in the extension without connecting to a server
   - [ ] I can connect the extension to the easyImmerse cloud or my own server to sync flashcards and dictionaries
+- when I install a dictionary in the extension without having set up sync:
+  - [ ] the dictionary is stored in the browser
+- when I set up sync with a local server while dictionaries are stored in the extension:
+  - [ ] I am offered to switch to the same dictionary on the server, to save space and speed up imports
+- when I accept switching a dictionary to the local server:
+  - [ ] the server gets the dictionary from its original source, or exported from the extension when the source is unavailable
+  - [ ] the extension's own copy is deleted once the server has the dictionary

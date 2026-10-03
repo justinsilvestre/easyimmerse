@@ -1,12 +1,14 @@
-mod support;
-
 use easyimmerse_plugins::{HelloPlugin, HostLimits, PluginPackage};
 
 fn load_looping_plugin() -> HelloPlugin {
-    let package =
-        PluginPackage::open(&support::built_plugin_dir("hello-loop")).expect("open the package");
-    HelloPlugin::load(&package, support::execution_mode(), HostLimits::default())
-        .expect("load the plugin")
+    let package = PluginPackage::open(&crate::support::built_plugin_dir("hello-loop"))
+        .expect("open the package");
+    HelloPlugin::load(
+        &package,
+        crate::support::execution_mode(),
+        HostLimits::default(),
+    )
+    .expect("load the plugin")
 }
 
 #[test]

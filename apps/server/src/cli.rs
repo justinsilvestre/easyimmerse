@@ -1,5 +1,4 @@
 use std::net::SocketAddr;
-use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand};
 
@@ -14,8 +13,6 @@ pub struct Cli {
 pub enum Command {
     /// Starts the HTTP server.
     Serve(ServeArgs),
-    /// Writes the OpenAPI document as JSON.
-    Openapi(OpenapiArgs),
 }
 
 #[derive(Debug, Args)]
@@ -41,11 +38,4 @@ pub struct ServeArgs {
     /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
     #[arg(long = "expected-host")]
     pub expected_hosts: Vec<String>,
-}
-
-#[derive(Debug, Args)]
-pub struct OpenapiArgs {
-    /// The file to write. Standard output when absent.
-    #[arg(long)]
-    pub out: Option<PathBuf>,
 }

@@ -2,8 +2,6 @@
 //! written in the text format whose `loop-forever` export keeps growing memory
 //! until the host refuses, and then traps.
 
-mod support;
-
 use easyimmerse_plugins::{HelloPlugin, HostLimits, PluginPackage};
 use wasmtime::Trap;
 
@@ -49,8 +47,12 @@ fn load_memory_hog(dir: &std::path::Path) -> HelloPlugin {
     std::fs::write(dir.join("plugin.wasm"), MEMORY_HOG).expect("write the component");
     std::fs::write(dir.join("plugin.toml"), MANIFEST).expect("write the manifest");
     let package = PluginPackage::open(dir).expect("open the package");
-    HelloPlugin::load(&package, support::execution_mode(), HostLimits::default())
-        .expect("load the plugin")
+    HelloPlugin::load(
+        &package,
+        crate::support::execution_mode(),
+        HostLimits::default(),
+    )
+    .expect("load the plugin")
 }
 
 #[test]

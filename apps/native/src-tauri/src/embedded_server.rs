@@ -1,8 +1,9 @@
 //! Starts the API server on the loopback interface with a database in the app data directory.
+//! A debug build opens the file named by `EASYIMMERSE_DATABASE` instead, when it is set.
 
 use std::io::ErrorKind;
 use std::net::Ipv4Addr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use easyimmerse_api::{ApiConfig, ServeError, ServerHandle, serve};
 use easyimmerse_storage::{Storage, StorageError};
@@ -12,6 +13,7 @@ use tokio::net::TcpListener;
 
 const DEFAULT_PORT: u16 = 8787;
 const DATABASE_FILE_NAME: &str = "easyimmerse.sqlite";
+const DATABASE_OVERRIDE_VARIABLE: &str = "EASYIMMERSE_DATABASE";
 
 /// The running server. Kept in the app's managed state so it lives as long as the app.
 pub struct EmbeddedServer {
@@ -26,7 +28,7 @@ pub struct EmbeddedServer {
 pub enum EmbeddedServerError {
     #[error("could not resolve the app data directory: {0}")]
     AppDataDir(#[from] tauri::Error),
-    #[error("could not create the app data directory {path}: {source}")]
+    #[error("could not create the database directory {path}: {source}")]
     CreateDataDir {
         path: PathBuf,
         source: std::io::Error,
@@ -77,12 +79,64 @@ async fn bind_loopback() -> Result<TcpListener, EmbeddedServerError> {
 }
 
 fn open_storage(app: &AppHandle) -> Result<Storage, EmbeddedServerError> {
-    let directory = app.path().app_data_dir()?;
-    std::fs::create_dir_all(&directory).map_err(|source| EmbeddedServerError::CreateDataDir {
-        path: directory.clone(),
-        source,
-    })?;
-    let storage = Storage::open(&directory.join(DATABASE_FILE_NAME))?;
+    let path = match read_database_override() {
+        Some(path) => path,
+        None => app.path().app_data_dir()?.join(DATABASE_FILE_NAME),
+    };
+    if let Some(directory) = path.parent() {
+        std::fs::create_dir_all(directory).map_err(|source| {
+            EmbeddedServerError::CreateDataDir {
+                path: directory.to_path_buf(),
+                source,
+            }
+        })?;
+    }
+    tracing::info!("opening the database at {}", path.display());
+    let storage = Storage::open(&path)?;
     storage.seed_placeholder_projects()?;
     Ok(storage)
+}
+
+/// Reads the database path a developer chose, which release builds ignore.
+fn read_database_override() -> Option<PathBuf> {
+    if !cfg!(debug_assertions) {
+        return None;
+    }
+    let value = std::env::var_os(DATABASE_OVERRIDE_VARIABLE)?;
+    let repository_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    resolve_database_override(&value, &repository_root)
+}
+
+/// Resolves a chosen database path, reading a relative path from the repository root.
+/// An empty value chooses nothing.
+fn resolve_database_override(value: &std::ffi::OsStr, repository_root: &Path) -> Option<PathBuf> {
+    if value.is_empty() {
+        return None;
+    }
+    Some(repository_root.join(value))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::OsStr;
+
+    use super::*;
+
+    #[test]
+    fn reads_a_relative_path_from_the_repository_root() {
+        let path = resolve_database_override(OsStr::new(".dev/a.sqlite"), Path::new("/repo"));
+        assert_eq!(path, Some(PathBuf::from("/repo/.dev/a.sqlite")));
+    }
+
+    #[test]
+    fn keeps_an_absolute_path() {
+        let path = resolve_database_override(OsStr::new("/tmp/a.sqlite"), Path::new("/repo"));
+        assert_eq!(path, Some(PathBuf::from("/tmp/a.sqlite")));
+    }
+
+    #[test]
+    fn chooses_nothing_for_an_empty_value() {
+        let path = resolve_database_override(OsStr::new(""), Path::new("/repo"));
+        assert_eq!(path, None);
+    }
 }

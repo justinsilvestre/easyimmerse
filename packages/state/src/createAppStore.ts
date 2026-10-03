@@ -1,7 +1,8 @@
-import type { Middleware, Reducer, Store } from "redux";
+import type { Middleware, Reducer, Store, StoreEnhancer } from "redux";
 import {
   applyMiddleware,
   combineReducers,
+  compose,
   legacy_createStore as createStore,
 } from "redux";
 import type { AppAction } from "./actions.ts";
@@ -26,9 +27,17 @@ export type AppStore = Store<RootState, AppAction>;
 
 export type AppDispatch = AppStore["dispatch"];
 
+/** Combines store enhancers into one, as Redux's `compose` does. */
+export type EnhancerComposer = (...enhancers: StoreEnhancer[]) => StoreEnhancer;
+
+/**
+ * Creates the app's store.
+ * A composer other than Redux's own `compose`, such as one that connects developer tools, may wrap the store's enhancers.
+ */
 export function createAppStore(
   effects: Effects,
   server: ServerStoreParts,
+  composeEnhancers: EnhancerComposer = compose,
 ): AppStore {
   const app = createEffectsReducer(update, initialAppState, isAppAction);
   const rootReducer: Reducer<RootState, AppAction> = combineReducers({
@@ -37,9 +46,11 @@ export function createAppStore(
   });
   return createStore(
     rootReducer,
-    applyMiddleware(
-      createEffectsMiddleware(effects, app.drainEffects),
-      server.middleware,
+    composeEnhancers(
+      applyMiddleware(
+        createEffectsMiddleware(effects, app.drainEffects),
+        server.middleware,
+      ),
     ),
   );
 }

@@ -1,4 +1,4 @@
-docs/*.tmp.md
+*.tmp.md
 
 # Local overrides
 .env
@@ -17,6 +17,10 @@ packages/wasm/pkg/
 plugins/*/dist/
 apps/native/src-tauri/binaries/
 apps/native/src-tauri/gen/
+packages/ui/storybook-static/
+
+# Local development data
+.dev/
 
 # Test output
 playwright-report/
@@ -27,3 +31,7 @@ test-results/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Agent worktrees
+.claude/worktrees/
+.claude/settings.local.json

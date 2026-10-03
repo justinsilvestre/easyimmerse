@@ -2,6 +2,7 @@ import type { AppAction } from "./actions.ts";
 import type { AppState, PreferenceKey } from "./appState.ts";
 import { preferenceKeys } from "./appState.ts";
 import type { Effect } from "./effect.ts";
+import { followSystemTheme, toggleTheme } from "./theme.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
 export type Update<S, A, E> = (
@@ -59,6 +60,13 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "externalLinkRequested":
       return [state, [{ type: "openExternalUrl", url: action.url }]];
+    case "systemThemeChanged":
+      return [
+        { ...state, theme: followSystemTheme(state.theme, action.theme) },
+        [],
+      ];
+    case "themeToggled":
+      return [{ ...state, theme: toggleTheme(state.theme) }, []];
   }
 };
 

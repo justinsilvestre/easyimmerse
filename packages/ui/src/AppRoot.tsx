@@ -1,6 +1,8 @@
 import type { AppStore, PlayerRegistry } from "@easyimmerse/state";
 import { useReducer } from "react";
 import { Provider } from "react-redux";
+import { useApplyTheme } from "./hooks/useApplyTheme.ts";
+import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
 import { initialNavigation, navigate } from "./navigation.ts";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
@@ -20,6 +22,7 @@ export function AppRoot({
   return (
     <Provider store={store}>
       <PlayerRegistryContext value={playerRegistry}>
+        <ThemeHandler />
         {navigation.screen === "home" ? (
           <HomeScreen
             onOpenProject={(projectId) =>
@@ -35,4 +38,11 @@ export function AppRoot({
       </PlayerRegistryContext>
     </Provider>
   );
+}
+
+/** Follows the operating system's theme unless the user has switched it, and shows the chosen theme. */
+function ThemeHandler() {
+  useTrackSystemTheme();
+  useApplyTheme();
+  return null;
 }

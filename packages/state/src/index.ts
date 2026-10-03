@@ -5,6 +5,7 @@ export { initialAppState, preferenceKeys } from "./appState.ts";
 export type {
   AppDispatch,
   AppStore,
+  EnhancerComposer,
   RootState,
   ServerStoreParts,
 } from "./createAppStore.ts";
@@ -20,6 +21,8 @@ export {
   selectPendingFilePick,
   selectPreference,
   selectSubtitleSource,
+  selectTheme,
 } from "./selectors.ts";
+export type { Theme } from "./theme.ts";
 export type { Update } from "./update.ts";
 export { update } from "./update.ts";

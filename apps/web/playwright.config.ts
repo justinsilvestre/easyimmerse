@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const serverUrl = "http://127.0.0.1:8787";
+// The port differs from the desktop app's 8787 and the extension tests' 8798, so a running server of either is never reused by mistake.
+const serverPort = 8797;
+const serverUrl = `http://127.0.0.1:${serverPort}`;
 const token = "e2e-token";
 const onlineUrl = "http://127.0.0.1:4173";
 const offlineUrl = "http://127.0.0.1:4174";
@@ -27,7 +29,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `cargo run -p easyimmerse-server -- serve --bind 127.0.0.1:8787 --token ${token} --seed-placeholders`,
+      command: `cargo run -p easyimmerse-server -- serve --bind 127.0.0.1:${serverPort} --token ${token} --seed-placeholders`,
       url: `${serverUrl}/health`,
       reuseExistingServer,
       timeout: 300_000,

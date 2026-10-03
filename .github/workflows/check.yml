@@ -55,6 +55,9 @@ jobs:
       - name: Typecheck
         run: pnpm -r typecheck
 
+      - name: Build Storybook
+        run: pnpm --filter @easyimmerse/ui build-storybook
+
       - name: Vitest
         run: pnpm -r --filter '!@easyimmerse/wasm' test
 

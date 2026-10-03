@@ -1,7 +1,5 @@
-mod support;
-
+use crate::support::{fixture_path, read_fixture, spawn_test_server};
 use serde_json::json;
-use support::{fixture_path, read_fixture, spawn_test_server};
 
 #[tokio::test(flavor = "multi_thread")]
 async fn parses_a_raw_epub_body_into_two_chapters() {
