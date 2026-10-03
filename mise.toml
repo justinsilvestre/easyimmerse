@@ -12,6 +12,8 @@ cargo.binstall = true
 
 [env]
 _.file = ".env"
+# Appium keeps its drivers here, so that each checkout pins its own driver versions.
+APPIUM_HOME = "{{config_root}}/apps/native/.appium"
 
 [tasks.check]
 description = "Lint, typecheck, and test every layer"
@@ -78,6 +80,14 @@ run = [
   "cargo build -p easyimmerse-server",
   "pnpm --filter @easyimmerse/web e2e",
   "pnpm --filter @easyimmerse/extension e2e",
+]
+
+# The drivers are pinned here rather than in package.json because Appium installs them itself.
+[tasks."appium:install"]
+description = "Install the Appium drivers for the mobile end-to-end tests into apps/native/.appium"
+run = [
+  "pnpm --filter @easyimmerse/native exec appium driver install uiautomator2@8.7.0",
+  "pnpm --filter @easyimmerse/native exec appium driver install xcuitest@12.14.0",
 ]
 
 [tasks."e2e:desktop"]
