@@ -36,7 +36,7 @@ mise run storybook      # UI component stories at http://localhost:6006
 
 `desktop` fetches the ffmpeg sidecars first if they are missing (`mise run fetch-ffmpeg`, described in the [app README](apps/native/README.md#ffmpeg-sidecars)), then starts Vite on port 1421 and the Rust app in debug mode, so the frontend reloads on change. The database lands in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS.
 
-`storybook` serves the stories of `packages/ui`, where screens are designed before they are wired to the store. The `storybook` workflow also publishes a built copy of every pull request's stories to GitHub Pages at `https://justinsilvestre.github.io/easyimmerse/storybook/<branch>/` and posts the link on the pull request; it can be run by hand from the Actions tab to preview a branch without one. The repository's Pages setting must serve the `gh-pages` branch.
+`storybook` serves the stories of `packages/ui`, where screens are designed before they are wired to the store. The `storybook` workflow also publishes a built copy of every pull request's stories to GitHub Pages at `https://justinsilvestre.github.io/easyimmerse/storybook/pr-<number>/` and posts the link on the pull request; it can be run by hand from the Actions tab to preview a branch without one, at `storybook/<branch>/`. The repository's Pages setting must serve the `gh-pages` branch.
 
 The browser extension has no dev task. Build it, then load it unpacked:
 
