@@ -17,8 +17,8 @@ path = "src/main.rs"
 
 [features]
 default = []
-# Embeds the built hello-rust plugin and exposes the `check_plugin_host` command, which the
-# end-to-end tests call to prove the plugin host runs on the platform under test.
+# Embeds the built hello-rust plugin and exposes the `check_plugin_host` command,
+# which the end-to-end tests call to prove the plugin host runs on the platform under test.
 plugin-check = []
 
 [build-dependencies]

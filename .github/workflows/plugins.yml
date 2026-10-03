@@ -89,9 +89,9 @@ jobs:
         env:
           EASYIMMERSE_PLUGIN_EXECUTION: interpreter
 
-  # Proves the host crate cross-compiles for the mobile targets. Nothing runs: the
-  # iOS target cannot run tests on the runner, and the Android check only needs the NDK
-  # compiler for the C dependencies' build scripts.
+  # Proves the host crate cross-compiles for the mobile targets.
+  # Nothing runs: the iOS target cannot run tests on the runner,
+  # and the Android check only needs the NDK compiler for the C dependencies' build scripts.
   mobile:
     needs: gate
     if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'plugins-ci-mobile-'))

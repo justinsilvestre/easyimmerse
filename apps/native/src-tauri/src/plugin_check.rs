@@ -1,8 +1,8 @@
-//! A self-check proving the plugin host runs on this platform: it loads the embedded
-//! `hello-rust` plugin and calls its `greet` export.
+//! A self-check proving the plugin host runs on this platform:
+//! it loads the embedded `hello-rust` plugin and calls its `greet` export.
 //!
-//! The `plugin-check` feature turns the check on. The end-to-end tests call it through
-//! the `check_plugin_host` command, and the smoke test runs it after the health check.
+//! The `plugin-check` feature turns the check on.
+//! The end-to-end tests call it through the `check_plugin_host` command, and the smoke test runs it after the health check.
 
 use tauri::{Builder, Wry};
 

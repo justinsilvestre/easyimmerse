@@ -1,5 +1,5 @@
-//! The built `hello-rust` plugin, compiled into the binary so the plugin check needs no
-//! files at run time. `mise run plugins:build-rust` writes the files this module embeds.
+//! The built `hello-rust` plugin, compiled into the binary so the plugin check needs no files at run time.
+//! `mise run plugins:build-rust` writes the files this module embeds.
 
 use std::path::Path;
 

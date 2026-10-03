@@ -1,11 +1,10 @@
 //! The health check CI runs after building the app.
 //!
-//! When `EASYIMMERSE_SMOKE_TEST=1` is set, the app starts its embedded server, requests
-//! `/health`, prints the result, and exits without creating a window, so no display is needed
-//! for the request itself. A build with the `plugin-check` feature also runs the plugin host
-//! check and prints what it found. On Linux, `tauri::Builder::run` still initializes GTK before
-//! `setup` runs, and GTK refuses to start without a display, which is why the CI job wraps the
-//! binary in `xvfb-run` there.
+//! When `EASYIMMERSE_SMOKE_TEST=1` is set, the app starts its embedded server, requests `/health`, prints the result,
+//! and exits without creating a window, so no display is needed for the request itself.
+//! A build with the `plugin-check` feature also runs the plugin host check and prints what it found.
+//! On Linux, `tauri::Builder::run` still initializes GTK before `setup` runs, and GTK refuses to start without a display,
+//! which is why the CI job wraps the binary in `xvfb-run` there.
 
 use tauri::AppHandle;
 use thiserror::Error;

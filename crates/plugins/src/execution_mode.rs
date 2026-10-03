@@ -6,17 +6,16 @@ pub enum ExecutionMode {
     Interpreter,
 }
 
-/// Whether this platform forbids just-in-time compilation, so that only the
-/// interpreter can run plugins. iOS refuses to execute memory an app has written.
+/// Whether this platform forbids just-in-time compilation, so that only the interpreter can run plugins.
+/// iOS refuses to execute memory an app has written.
 pub const PLATFORM_FORBIDS_JIT: bool = cfg!(target_os = "ios");
 
 const EXECUTION_ENV_VAR: &str = "EASYIMMERSE_PLUGIN_EXECUTION";
 
 impl ExecutionMode {
-    /// Reads `EASYIMMERSE_PLUGIN_EXECUTION`; `interpreter` selects the interpreter and
-    /// any other value or an unset variable selects native execution.
-    /// On a platform that forbids just-in-time compilation the variable is ignored
-    /// and the result is always the interpreter.
+    /// Reads `EASYIMMERSE_PLUGIN_EXECUTION`; `interpreter` selects the interpreter,
+    /// and any other value or an unset variable selects native execution.
+    /// On a platform that forbids just-in-time compilation, the variable is ignored and the result is always the interpreter.
     pub fn from_env() -> Self {
         Self::resolve(
             PLATFORM_FORBIDS_JIT,
