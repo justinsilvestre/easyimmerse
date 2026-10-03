@@ -64,6 +64,9 @@ jobs:
       - name: Script tests
         run: node --test 'scripts/**/*.test.ts'
 
+      - name: Fail when the ffmpeg license notices are stale or a build breaks the license policy
+        run: node scripts/ffmpeg-notices/index.ts --check
+
   record:
     needs: [gate, check]
     runs-on: ubuntu-24.04

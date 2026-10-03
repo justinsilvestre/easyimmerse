@@ -22,6 +22,7 @@ run = [
   "pnpm -r typecheck",
   "pnpm -r test",
   "node --test 'scripts/**/*.test.ts'",
+  "node scripts/ffmpeg-notices/index.ts --check",
   "cargo fmt --all --check",
   "cargo fmt --manifest-path plugins/Cargo.toml --all --check",
   "cargo clippy --workspace --exclude easyimmerse-native --all-targets -- -D warnings",
@@ -66,6 +67,14 @@ run = "pnpm --filter @easyimmerse/plugin-hello-js build"
 [tasks."fetch-ffmpeg"]
 description = "Download the ffmpeg sidecar binaries for the current platform"
 run = "node scripts/fetch-ffmpeg/index.ts"
+
+[tasks."ffmpeg-notices"]
+description = "Regenerate the license notices of the ffmpeg builds in the fetch-ffmpeg manifest"
+run = "node scripts/ffmpeg-notices/index.ts"
+
+[tasks."ffmpeg-notices:check"]
+description = "Fail when the committed ffmpeg license notices no longer match the manifest"
+run = "node scripts/ffmpeg-notices/index.ts --check"
 
 [tasks."fixtures:media"]
 description = "Regenerate the media fixtures with ffmpeg"
