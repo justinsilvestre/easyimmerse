@@ -16,9 +16,11 @@ export function Button({
       type={type}
       className={clsx(
         "rounded px-3 py-1 text-sm disabled:opacity-50",
-        variant === "primary" && "bg-blue-600 text-white hover:bg-blue-700",
-        variant === "secondary" && "border border-gray-400 hover:bg-gray-100",
-        variant === "subtle" && "text-gray-600 underline hover:text-gray-900",
+        variant === "primary" &&
+          "bg-accent text-on-accent hover:bg-accent-hover",
+        variant === "secondary" &&
+          "border border-line-strong hover:bg-surface-muted",
+        variant === "subtle" && "text-fg-muted underline hover:text-fg",
         className,
       )}
       {...rest}
