@@ -80,9 +80,6 @@ export function FlashcardEditor({
         )}
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2">
-        <Button variant="danger" onClick={onDelete}>
-          Delete
-        </Button>
         <MenuButton
           label="More fields"
           opensUpward
@@ -97,9 +94,14 @@ export function FlashcardEditor({
         >
           More fields
         </MenuButton>
-        <Button variant="primary" type="submit">
-          Save
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="danger" onClick={onDelete}>
+            Delete
+          </Button>
+          <Button variant="primary" type="submit">
+            Save
+          </Button>
+        </div>
       </div>
     </form>
   );
