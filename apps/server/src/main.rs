@@ -1,5 +1,4 @@
 mod cli;
-mod openapi_command;
 mod serve_command;
 
 use clap::Parser;
@@ -13,7 +12,6 @@ async fn main() -> anyhow::Result<()> {
         .init();
     match Cli::parse().command {
         Command::Serve(args) => serve_command::run(args).await,
-        Command::Openapi(args) => openapi_command::run(args),
     }
 }
 

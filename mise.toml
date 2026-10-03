@@ -32,7 +32,7 @@ run = [
 description = "Regenerate packages/types/src/generated from Rust with ts-rs"
 run = [
   "rm -rf packages/types/src/generated",
-  "cargo test -p easyimmerse-core -p easyimmerse-media -p easyimmerse-api export_bindings",
+  "cargo test -p easyimmerse-core -p easyimmerse-media -p easyimmerse-api --lib export_bindings",
   "node packages/types/scripts/writeGeneratedIndex.ts",
 ]
 sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
@@ -40,7 +40,7 @@ sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
 [tasks.openapi]
 description = "Regenerate crates/api/openapi.json and its TypeScript schema"
 run = [
-  "cargo run -p easyimmerse-server -- openapi --out crates/api/openapi.json",
+  "EASYIMMERSE_UPDATE_OPENAPI=1 cargo test -p easyimmerse-api --lib the_committed_document_is_current",
   "pnpm --filter @easyimmerse/types generate:openapi",
 ]
 sources = ["crates/**/*.rs", "apps/server/**/*.rs"]

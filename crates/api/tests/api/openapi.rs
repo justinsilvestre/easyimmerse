@@ -13,9 +13,3 @@ async fn the_served_document_equals_the_committed_file() {
     let response = server.get("/openapi.json").await;
     assert_eq!(response.json(), committed_document());
 }
-
-#[test]
-fn the_built_document_equals_the_committed_file() {
-    let built = serde_json::to_value(easyimmerse_api::openapi_document()).unwrap();
-    assert_eq!(built, committed_document());
-}

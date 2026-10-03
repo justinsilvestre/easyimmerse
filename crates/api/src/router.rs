@@ -107,4 +107,17 @@ mod tests {
         let components = openapi_document().components.unwrap_or_default();
         assert!(components.schemas.contains_key("ApiError"));
     }
+
+    /// Rewrites the committed document when `EASYIMMERSE_UPDATE_OPENAPI` is set,
+    /// and otherwise checks that the committed document is current.
+    #[test]
+    fn the_committed_document_is_current() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/openapi.json");
+        let built = format!("{}\n", openapi_document().to_pretty_json().unwrap());
+        if std::env::var_os("EASYIMMERSE_UPDATE_OPENAPI").is_some() {
+            std::fs::write(path, built).unwrap();
+        } else {
+            assert_eq!(std::fs::read_to_string(path).unwrap(), built);
+        }
+    }
 }
