@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, ZoomIn, ZoomOut } from "lucide-react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { formatTimestamp } from "./formatTimestamp.ts";
@@ -20,6 +20,8 @@ export type WaveformCallbacks = {
   onSegmentDoubleClick: (segmentId: string) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  /** Hides the waveform. The player offers a way to show it again. */
+  onHide: () => void;
 };
 
 /**
@@ -102,6 +104,13 @@ export function Waveform({
             onClick={callbacks.onZoomIn}
           >
             <ZoomIn className="size-3.5" />
+          </IconButton>
+          <IconButton
+            label="Hide the waveform"
+            className="size-6"
+            onClick={callbacks.onHide}
+          >
+            <ChevronDown className="size-3.5" />
           </IconButton>
         </span>
       </div>

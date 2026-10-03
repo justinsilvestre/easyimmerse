@@ -32,6 +32,7 @@ const meta = {
       onSegmentDoubleClick: fn(),
       onZoomIn: fn(),
       onZoomOut: fn(),
+      onHide: fn(),
     },
   },
 } satisfies Meta<typeof Waveform>;

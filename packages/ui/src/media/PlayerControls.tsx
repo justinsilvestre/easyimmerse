@@ -30,7 +30,7 @@ export type PlayerCallbacks = {
 
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-/** The bar under the player: the position, transport, volume, speed, and audio track, with the toggles for the panels around it. */
+/** The bar over the bottom of the player: the position, transport, volume, speed, and audio track, with the toggles for the panels around it. */
 export function PlayerControls({
   playback,
   tracks,
@@ -43,7 +43,7 @@ export function PlayerControls({
   callbacks: PlayerCallbacks;
 }) {
   return (
-    <div className="flex flex-col gap-1.5 border-t border-line bg-surface px-3 py-2">
+    <div className="flex flex-col gap-1.5 bg-surface/90 px-3 py-2">
       <div className="flex items-center gap-3 text-xs text-fg-muted tabular-nums">
         <span>{formatTimestamp(playback.currentMs)}</span>
         <input

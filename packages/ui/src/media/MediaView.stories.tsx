@@ -101,7 +101,7 @@ const meta = {
       language: "de",
     },
     playback: {
-      isPlaying: true,
+      isPlaying: false,
       currentMs: 6_200,
       durationMs: 24_000,
       volume: 0.8,
@@ -133,6 +133,7 @@ const meta = {
       onSegmentDoubleClick: fn(),
       onZoomIn: fn(),
       onZoomOut: fn(),
+      onHide: fn(),
     },
     onBack: fn(),
     onWordHover: fn(),
@@ -150,13 +151,6 @@ export const VideoWithDualSubtitles: Story = {};
 
 export const LookingUpAWord: Story = {
   args: {
-    playback: {
-      isPlaying: false,
-      currentMs: 6_200,
-      durationMs: 24_000,
-      volume: 0.8,
-      speed: 1,
-    },
     activeWord: "fressen",
     lookup: lookupPopup(
       { kind: "found", term: "fressen", entries: exampleEntries },
@@ -228,6 +222,22 @@ export const AudioWithTranscript: Story = {
     translationCues: [],
     sidePanel: subtitlesPanel(exampleCues, []),
   },
+};
+
+export const Playing: Story = {
+  args: {
+    playback: {
+      isPlaying: true,
+      currentMs: 6_200,
+      durationMs: 24_000,
+      volume: 0.8,
+      speed: 1,
+    },
+  },
+};
+
+export const WaveformHidden: Story = {
+  args: { panels: { cues: true, waveform: false, distractionFree: false } },
 };
 
 export const DistractionFree: Story = {

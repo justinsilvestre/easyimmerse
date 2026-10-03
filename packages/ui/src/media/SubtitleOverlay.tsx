@@ -1,4 +1,5 @@
 import type { Cue } from "@easyimmerse/types";
+import clsx from "clsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
 
 /** Which subtitles lie over the video: both with the target language on top, or one of them. */
@@ -9,6 +10,7 @@ export function SubtitleOverlay({
   targetCue,
   translationCue,
   display,
+  isRaised,
   activeWord,
   onWordHover,
   onWordClick,
@@ -16,6 +18,8 @@ export function SubtitleOverlay({
   targetCue: Cue | null;
   translationCue: Cue | null;
   display: SubtitleDisplay;
+  /** Whether the player controls are shown under the subtitles, which then move up out of their way. */
+  isRaised: boolean;
   activeWord?: string;
   onWordHover: (word: string) => void;
   onWordClick: (word: string) => void;
@@ -23,7 +27,12 @@ export function SubtitleOverlay({
   const showsTarget = display !== "translation" && targetCue !== null;
   const showsTranslation = display !== "target" && translationCue !== null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 px-14 pb-4 text-center">
+    <div
+      className={clsx(
+        "pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 px-14 text-center transition-[padding]",
+        isRaised ? "pb-24" : "pb-4",
+      )}
+    >
       {showsTarget && targetCue && (
         <p className="pointer-events-auto rounded bg-black/70 px-3 py-1 text-base font-medium text-white md:text-2xl">
           <ClickableText
