@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e){try{return new Intl.DisplayNames([`en`],{type:`language`}).of(e)??e}catch{return e}}var n;function r(){return(r=e((()=>{n=[`de`,`en`,`es`,`fr`,`it`,`ja`,`ko`,`pt`,`ru`,`zh`].map(e=>({value:e,label:t(e)}))})))()}export{t as n,n as r,r as t};
