@@ -28,7 +28,7 @@ export function DictionaryPopup({
   return (
     <section
       aria-label="Dictionary"
-      className="flex max-h-[24rem] w-[min(22rem,calc(100vw-1rem))] flex-col rounded-lg border border-line bg-surface text-fg shadow-xl"
+      className="flex max-h-[min(24rem,100%)] w-[min(22rem,calc(100vw-1rem))] flex-col rounded-lg border border-line bg-surface text-fg shadow-xl"
     >
       <header className="flex items-center gap-2 border-b border-line px-3 py-2">
         {mode === "search" ? (

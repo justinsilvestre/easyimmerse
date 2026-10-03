@@ -74,7 +74,7 @@ export function MediaView(props: MediaViewProps) {
       {!panels.distractionFree && <Header {...props} />}
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className="relative flex min-h-32 flex-1 items-center justify-center bg-black">
+          <div className="relative flex min-h-40 flex-1 items-center justify-center overflow-hidden bg-black">
             <Stage media={media} />
             <SubtitleOverlay
               targetCue={activeCue}
@@ -87,7 +87,7 @@ export function MediaView(props: MediaViewProps) {
               onWordClick={props.onWordClick}
             />
             {props.lookup && (
-              <div className="absolute bottom-24 left-1/2 -translate-x-1/2">
+              <div className="fixed inset-x-2 top-16 bottom-2 z-30 flex items-end justify-center md:absolute md:inset-x-auto md:top-auto md:bottom-24 md:left-1/2 md:-translate-x-1/2">
                 {props.lookup}
               </div>
             )}

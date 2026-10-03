@@ -17,7 +17,7 @@ export function SegmentedControl<Value extends string>({
 }) {
   const name = useId();
   return (
-    <fieldset className="inline-flex rounded-md border border-line-strong bg-surface p-0.5">
+    <fieldset className="inline-flex flex-wrap rounded-md border border-line-strong bg-surface p-0.5">
       <legend className="sr-only">{label}</legend>
       {options.map((option) => (
         <label

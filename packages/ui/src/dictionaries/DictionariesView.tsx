@@ -63,7 +63,7 @@ export function DictionariesView({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Dictionaries</h1>
         {dictionaries.length > 0 && (
-          <div className="flex gap-2">{addButtons}</div>
+          <div className="flex flex-wrap gap-2">{addButtons}</div>
         )}
       </div>
       {unsupportedFile && (

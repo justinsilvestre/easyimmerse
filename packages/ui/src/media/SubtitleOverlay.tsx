@@ -25,7 +25,7 @@ export function SubtitleOverlay({
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 px-14 pb-4 text-center">
       {showsTarget && targetCue && (
-        <p className="pointer-events-auto rounded bg-black/70 px-3 py-1 text-xl font-medium text-white md:text-2xl">
+        <p className="pointer-events-auto rounded bg-black/70 px-3 py-1 text-base font-medium text-white md:text-2xl">
           <ClickableText
             text={targetCue.text}
             activeWord={activeWord}
@@ -35,7 +35,7 @@ export function SubtitleOverlay({
         </p>
       )}
       {showsTranslation && translationCue && (
-        <p className="pointer-events-auto rounded bg-black/60 px-3 py-0.5 text-base whitespace-pre-line text-gray-200">
+        <p className="pointer-events-auto rounded bg-black/60 px-3 py-0.5 text-sm whitespace-pre-line text-gray-200 md:text-base">
           {stripMarkup(translationCue.text)}
         </p>
       )}

@@ -10,7 +10,7 @@ const meta = {
   component: FlashcardEditor,
   decorators: [
     (Story) => (
-      <div className="h-[36rem] w-96">
+      <div className="h-[36rem] w-full max-w-96">
         <Story />
       </div>
     ),

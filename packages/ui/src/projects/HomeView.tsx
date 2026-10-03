@@ -28,9 +28,13 @@ export function HomeView({
     <ScreenLayout
       headerActions={
         <>
-          <Button variant="subtle" onClick={onOpenDictionaries}>
+          <Button
+            variant="subtle"
+            aria-label="Dictionaries"
+            onClick={onOpenDictionaries}
+          >
             <BookOpen className="size-4" aria-hidden />
-            Dictionaries
+            <span className="hidden sm:inline">Dictionaries</span>
           </Button>
           <HelpLink />
         </>
