@@ -26,7 +26,7 @@ runs:
 
     - name: Look for a passed run with the same inputs
       id: lookup
-      if: github.run_attempt == '1'
+      if: github.run_attempt == '1' && github.ref_type != 'tag'
       uses: actions/cache/restore@v4
       with:
         path: .passed-run

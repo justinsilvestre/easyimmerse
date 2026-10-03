@@ -18,8 +18,10 @@ on:
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
       - "fixtures/**"
+  # A tag named native-ci-<job>-<stamp> runs that one job at the tagged commit, for one-off checks of a branch.
   push:
     branches: [main]
+    tags: ["native-ci-*"]
     paths:
       - ".github/workflows/native.yml"
       - ".github/actions/**"
@@ -147,7 +149,7 @@ jobs:
 
   ios:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-ios-'))
     runs-on: macos-15
     env:
       # Only the newest Xcode versions on the runner keep their simulator runtime installed.
