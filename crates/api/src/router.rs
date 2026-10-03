@@ -117,7 +117,8 @@ mod tests {
         if std::env::var_os("EASYIMMERSE_UPDATE_OPENAPI").is_some() {
             std::fs::write(path, built).unwrap();
         } else {
-            assert_eq!(std::fs::read_to_string(path).unwrap(), built);
+            let committed = std::fs::read_to_string(path).unwrap().replace("\r\n", "\n");
+            assert_eq!(committed, built);
         }
     }
 }
