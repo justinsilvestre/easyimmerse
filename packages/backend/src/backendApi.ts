@@ -1,11 +1,14 @@
 import type {
+  AddMediaFileRequest,
   DictionarySummary,
   Document,
   DocumentFormat,
   ImportLocalDictionaryRequest,
   ListDictionariesResponse,
+  ListMediaFilesResponse,
   ListProjectsResponse,
   LookupResponse,
+  MediaFile,
   ParseLocalDocumentRequest,
   ParseTimedTextRequest,
   PreferenceValue,
@@ -20,15 +23,47 @@ type ParseDocumentArgs = {
   contentType: string;
 };
 
+type AddMediaFileArgs = { projectId: string; request: AddMediaFileRequest };
+
+type MediaFileArgs = { projectId: string; mediaFileId: string };
+
 /** Every server operation, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
   reducerPath: "backend",
   baseQuery: injectedBaseQuery,
-  tagTypes: ["Projects", "Preferences", "Dictionaries"],
+  tagTypes: ["Projects", "MediaFiles", "Preferences", "Dictionaries"],
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
       query: () => ({ method: "GET", path: "/projects" }),
       providesTags: ["Projects"],
+    }),
+    listMediaFiles: build.query<ListMediaFilesResponse, string>({
+      query: (projectId) => ({
+        method: "GET",
+        path: `/projects/${projectId}/media`,
+      }),
+      providesTags: (_result, _error, projectId) => [
+        { type: "MediaFiles", id: projectId },
+      ],
+    }),
+    addMediaFile: build.mutation<MediaFile, AddMediaFileArgs>({
+      query: ({ projectId, request }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/media`,
+        body: { kind: "json", value: request },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+      ],
+    }),
+    removeMediaFile: build.mutation<void, MediaFileArgs>({
+      query: ({ projectId, mediaFileId }) => ({
+        method: "DELETE",
+        path: `/projects/${projectId}/media/${mediaFileId}`,
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+      ],
     }),
     getPreference: build.query<PreferenceValue, string>({
       query: (key) => ({ method: "GET", path: `/preferences/${key}` }),
@@ -109,6 +144,9 @@ export const backendApi = createApi({
 
 export const {
   useListProjectsQuery,
+  useListMediaFilesQuery,
+  useAddMediaFileMutation,
+  useRemoveMediaFileMutation,
   useGetPreferenceQuery,
   useSetPreferenceMutation,
   useParseTimedTextMutation,

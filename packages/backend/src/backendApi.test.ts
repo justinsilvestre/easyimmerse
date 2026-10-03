@@ -69,6 +69,48 @@ describe("backendApi", () => {
     });
   });
 
+  it("sends GET /projects/{id}/media for listMediaFiles", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.listMediaFiles.initiate("p1"),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/projects/p1/media" },
+    ]);
+  });
+
+  it("posts the name and source for addMediaFile", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    const request = {
+      name: "a.mp4",
+      source: { kind: "path", path: "/a.mp4" },
+    } as const;
+    await createStore().dispatch(
+      backendApi.endpoints.addMediaFile.initiate({ projectId: "p1", request }),
+    );
+    expect(client.requests[0]).toEqual({
+      method: "POST",
+      path: "/projects/p1/media",
+      body: { kind: "json", value: request },
+    });
+  });
+
+  it("sends DELETE /projects/{id}/media/{media_id} for removeMediaFile", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.removeMediaFile.initiate({
+        projectId: "p1",
+        mediaFileId: "m1",
+      }),
+    );
+    expect(client.requests).toEqual([
+      { method: "DELETE", path: "/projects/p1/media/m1" },
+    ]);
+  });
+
   it("sends a raw zip body for importDictionary", async () => {
     const client = createRecordingClient();
     configureBackend(client);
