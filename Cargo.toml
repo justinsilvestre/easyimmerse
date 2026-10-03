@@ -75,3 +75,62 @@ debug = false
 [profile.debugging]
 inherits = "dev"
 debug = true
+
+# Optimizes the dependencies that dictionary import spends its time in,
+# so that debug builds import large dictionaries in seconds.
+# Other dependencies stay unoptimized to keep builds fast.
+[profile.dev.package.serde_json]
+opt-level = 3
+
+[profile.dev.package.zip]
+opt-level = 3
+
+[profile.dev.package.flate2]
+opt-level = 3
+
+[profile.dev.package.zlib-rs]
+opt-level = 3
+
+[profile.dev.package.libsqlite3-sys]
+opt-level = 3
+
+[profile.dev.package.memchr]
+opt-level = 3
+
+# Optimizes the compiler that turns plugins into machine code,
+# so that debug builds load a plugin in seconds rather than minutes.
+[profile.dev.package.cranelift-codegen]
+opt-level = 3
+
+[profile.dev.package.cranelift-frontend]
+opt-level = 3
+
+[profile.dev.package.cranelift-entity]
+opt-level = 3
+
+[profile.dev.package.cranelift-bforest]
+opt-level = 3
+
+[profile.dev.package.cranelift-bitset]
+opt-level = 3
+
+[profile.dev.package.cranelift-assembler-x64]
+opt-level = 3
+
+[profile.dev.package.cranelift-control]
+opt-level = 3
+
+[profile.dev.package.regalloc2]
+opt-level = 3
+
+[profile.dev.package.wasmparser]
+opt-level = 3
+
+[profile.dev.package.wasmtime-internal-cranelift]
+opt-level = 3
+
+[profile.dev.package.gimli]
+opt-level = 3
+
+[profile.dev.package.hashbrown]
+opt-level = 3
