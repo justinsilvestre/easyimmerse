@@ -46,11 +46,11 @@ export const EditingSettings: Story = {
   args: {
     mode: "edit",
     initialValues: {
-      name: "Dark, season one",
+      name: "German",
       targetLanguage: "de",
       translationLanguage: "en",
       flashcardFields: fieldsOfPreset("advanced"),
-      defaultTags: ["tv", "dark"],
+      defaultTags: ["tv"],
       fillsAudioWithTts: false,
     },
   },

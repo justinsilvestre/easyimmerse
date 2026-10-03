@@ -8,8 +8,8 @@ function daysAgo(days: number): string {
 /** Projects for stories, ordered as the home screen lists them. */
 export const exampleProjects: readonly ProjectCardData[] = [
   {
-    id: "project-dark",
-    name: "Dark, season one",
+    id: "project-german",
+    name: "German",
     language: "de",
     created_at: daysAgo(40),
     last_opened_at: daysAgo(0),
@@ -17,8 +17,8 @@ export const exampleProjects: readonly ProjectCardData[] = [
     flashcard_count: 184,
   },
   {
-    id: "project-diner",
-    name: "Midnight Diner",
+    id: "project-japanese",
+    name: "Japanese",
     language: "ja",
     created_at: daysAgo(12),
     last_opened_at: daysAgo(1),
@@ -26,9 +26,9 @@ export const exampleProjects: readonly ProjectCardData[] = [
     flashcard_count: 42,
   },
   {
-    id: "project-verwandlung",
-    name: "Die Verwandlung",
-    language: "de",
+    id: "project-spanish",
+    name: "Intermediate Spanish",
+    language: "es",
     created_at: daysAgo(90),
     last_opened_at: daysAgo(45),
     media_count: 1,

@@ -7,7 +7,7 @@ const meta = {
   component: TextField,
   args: {
     label: "Project name",
-    placeholder: "Dark, season one",
+    placeholder: "German",
     onChange: fn(),
   },
 } satisfies Meta<typeof TextField>;
@@ -17,7 +17,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Empty: Story = {};
 
-export const Filled: Story = { args: { defaultValue: "Midnight Diner" } };
+export const Filled: Story = { args: { defaultValue: "Japanese" } };
 
 export const WithHint: Story = {
   args: { hint: "Shown in the project list and used as the Anki deck name." },

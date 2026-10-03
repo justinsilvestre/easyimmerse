@@ -55,7 +55,7 @@ const meta = {
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
-    name: "Dark, season one",
+    name: "German",
     media,
     dictionaries: [
       { language: "de", role: "target", dictionaryCount: 2 },

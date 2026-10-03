@@ -118,16 +118,24 @@ jobs:
           name: storybook
           path: packages/ui/storybook-static
 
-      # The branch name goes through an environment variable because it can contain
-      # characters that the shell would interpret.
-      - name: Derive the preview directory from the branch name
+      # A pull request's preview is named after its number, which cannot collide the way
+      # two branch names can once their characters are replaced. A manual run has no
+      # pull request, so its preview is named after the branch. The branch name goes
+      # through an environment variable because it can contain characters that the
+      # shell would interpret.
+      - name: Derive the preview directory from the pull request or branch
         id: slug
         env:
-          HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.ref_name }}
           OWNER: ${{ github.repository_owner }}
           REPOSITORY: ${{ github.event.repository.name }}
         run: |
-          slug="${HEAD_REF//[^A-Za-z0-9._-]/-}"
+          if [ -n "$PR_NUMBER" ]; then
+            slug="pr-$PR_NUMBER"
+          else
+            slug="${HEAD_REF//[^A-Za-z0-9._-]/-}"
+          fi
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
           echo "url=https://$OWNER.github.io/$REPOSITORY/storybook/$slug/" >> "$GITHUB_OUTPUT"
 
@@ -202,9 +210,9 @@ jobs:
       - name: Remove the preview directory
         if: steps.branch.outputs.exists == 'true'
         env:
-          HEAD_REF: ${{ github.head_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          slug="${HEAD_REF//[^A-Za-z0-9._-]/-}"
+          slug="pr-$PR_NUMBER"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           for attempt in 1 2 3 4 5; do

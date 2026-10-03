@@ -80,9 +80,9 @@ describe("ProjectForm", () => {
     const submitted: string[] = [];
     renderForm((values) => submitted.push(values.name));
     fireEvent.change(screen.getByLabelText("Project name"), {
-      target: { value: "Dark" },
+      target: { value: "German" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
-    expect(submitted).toEqual(["Dark"]);
+    expect(submitted).toEqual(["German"]);
   });
 });

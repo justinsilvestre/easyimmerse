@@ -79,7 +79,7 @@ export function ProjectForm({
           <TextField
             label="Project name"
             value={state.name}
-            placeholder="Dark, season one"
+            placeholder="German"
             required
             onChange={(event) =>
               dispatch({ type: "nameChanged", value: event.target.value })
