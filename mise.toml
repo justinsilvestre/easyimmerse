@@ -97,6 +97,19 @@ run = [
   "pnpm --filter @easyimmerse/native e2e",
 ]
 
+# The Rust target follows the machine: Apple silicon simulators run arm64 code, Intel ones x86_64.
+# The Xcode build phase runs cargo with only PATH and HOME, where the mise shim refuses mise.toml
+# as untrusted, so rustup's own cargo comes first on PATH there.
+[tasks."e2e:ios"]
+description = "Drive a debug build of the app on an iOS simulator through Appium"
+run = '''
+set -e
+case "$(uname -m)" in arm64) target=aarch64-sim ;; *) target=x86_64 ;; esac
+[ -d apps/native/src-tauri/gen/apple ] || pnpm --filter @easyimmerse/native exec tauri ios init --ci --skip-targets-install
+PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target "$target" --no-sign --ci --config e2e/tauri.conf.json
+pnpm --filter @easyimmerse/native e2e:ios
+'''
+
 [tasks.desktop]
 description = "Run the desktop app in development mode with its embedded server"
 depends = ["fetch-ffmpeg"]
