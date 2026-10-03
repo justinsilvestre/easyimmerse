@@ -39,17 +39,19 @@ export function FlashcardPreview({
       aria-label="Flashcard preview"
       className={clsx(
         "flex flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-sm",
-        compact ? "text-[0.7rem]" : "text-sm",
+        compact ? "text-[0.65rem]" : "text-sm",
       )}
     >
-      <section className="flex flex-col items-center gap-1 px-4 py-4 text-center">
+      <section
+        className={clsx(
+          "flex flex-col items-center gap-1 text-center",
+          compact ? "px-3 py-2" : "px-4 py-4",
+        )}
+      >
         <SideLabel>Front</SideLabel>
         {includes("word") && (
           <p
-            className={clsx(
-              "font-semibold",
-              compact ? "text-base" : "text-2xl",
-            )}
+            className={clsx("font-semibold", compact ? "text-sm" : "text-2xl")}
           >
             {textOf("word")}
           </p>
@@ -80,7 +82,12 @@ export function FlashcardPreview({
           </button>
         )}
       </section>
-      <section className="flex flex-col gap-2 border-t border-dashed border-line-strong bg-surface-muted px-4 py-3">
+      <section
+        className={clsx(
+          "flex flex-col border-t border-dashed border-line-strong bg-surface-muted",
+          compact ? "gap-1 px-3 py-2" : "gap-2 px-4 py-3",
+        )}
+      >
         <SideLabel>Back</SideLabel>
         {includes("l1Definition") && <p>{textOf("l1Definition")}</p>}
         {includes("l2Definition") && (
@@ -103,7 +110,7 @@ export function FlashcardPreview({
             alt="Screenshot from the video"
             className={clsx(
               "rounded-md object-cover",
-              compact ? "max-h-20" : "max-h-40",
+              compact ? "max-h-16" : "max-h-40",
             )}
           />
         )}
