@@ -1,7 +1,5 @@
-mod support;
-
+use crate::support::spawn_test_server;
 use serde_json::Value;
-use support::spawn_test_server;
 
 fn committed_document() -> Value {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/openapi.json");

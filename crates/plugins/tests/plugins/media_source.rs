@@ -1,11 +1,9 @@
-mod support;
-
 use std::path::Path;
 
+use crate::support::FixtureServer;
 use easyimmerse_plugins::{
     CapabilityGrants, HostLimits, MediaSourcePlugin, PluginErrorKind, PluginPackage,
 };
-use support::FixtureServer;
 
 struct Fixture {
     server: FixtureServer,
@@ -15,23 +13,24 @@ struct Fixture {
 
 impl Fixture {
     fn start() -> Self {
-        let server = support::start_fixture_http_server();
+        let server = crate::support::start_fixture_http_server();
         let output_dir = tempfile::tempdir().expect("create a temp dir");
-        let package = PluginPackage::open(&support::built_plugin_dir("fixture-media-source"))
-            .expect("open the package");
+        let package =
+            PluginPackage::open(&crate::support::built_plugin_dir("fixture-media-source"))
+                .expect("open the package");
         let grants = CapabilityGrants {
             allowed_hosts: package.manifest.allowed_hosts.clone(),
             granted_dirs: vec![output_dir.path().to_path_buf()],
             bundled_bin_dir: package
                 .bin_dir
                 .clone()
-                .or_else(|| support::source_bin_dir("fixture-media-source")),
+                .or_else(|| crate::support::source_bin_dir("fixture-media-source")),
             ..CapabilityGrants::default()
         };
         let plugin = MediaSourcePlugin::load(
             &package,
             grants,
-            support::execution_mode(),
+            crate::support::execution_mode(),
             HostLimits::default(),
         )
         .expect("load the plugin");
@@ -108,10 +107,10 @@ fn writes_the_media_and_subtitles_into_the_granted_dir() {
     assert!(
         files_match(
             &fixture.output_path("media.mp4"),
-            &support::fixtures_dir().join("sample.mp4")
+            &crate::support::fixtures_dir().join("sample.mp4")
         ) && files_match(
             &fixture.output_path("subtitles.srt"),
-            &support::fixtures_dir().join("sample.srt")
+            &crate::support::fixtures_dir().join("sample.srt")
         )
     );
 }

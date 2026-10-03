@@ -1,6 +1,4 @@
-mod support;
-
-use support::spawn_test_server;
+use crate::support::spawn_test_server;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn lists_the_two_seeded_projects() {

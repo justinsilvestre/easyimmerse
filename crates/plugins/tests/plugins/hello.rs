@@ -1,5 +1,3 @@
-mod support;
-
 use std::sync::OnceLock;
 
 use easyimmerse_plugins::{
@@ -12,8 +10,9 @@ use easyimmerse_plugins::{
 fn compiled_hello_plugin(name: &str, cache: &'static OnceLock<CompiledPlugin>) -> HelloPlugin {
     let compiled = cache.get_or_init(|| {
         let package =
-            PluginPackage::open(&support::built_plugin_dir(name)).expect("open the package");
-        CompiledPlugin::compile(&package, support::execution_mode()).expect("compile the plugin")
+            PluginPackage::open(&crate::support::built_plugin_dir(name)).expect("open the package");
+        CompiledPlugin::compile(&package, crate::support::execution_mode())
+            .expect("compile the plugin")
     });
     HelloPlugin::instantiate(compiled, HostLimits::default()).expect("instantiate the plugin")
 }
