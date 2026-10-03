@@ -125,19 +125,27 @@ run = "pnpm --filter @easyimmerse/native e2e:android"
 
 # The Rust target follows the machine: Apple silicon simulators run arm64 code, Intel ones x86_64.
 # On Intel, the generated project is restricted to the simulator platform; see the script.
+# `tauri ios init` needs CocoaPods. The task pins Ruby so that no other task installs it,
+# and installs CocoaPods as a gem because Mise's gem backend builds a task's gems with the system Ruby.
 # The Xcode build phase runs cargo with only PATH and HOME, where the mise shim refuses mise.toml
 # as untrusted, so rustup's own cargo comes first on PATH there.
-[tasks."e2e:ios"]
-description = "Drive a debug build of the app on an iOS simulator through Appium"
-depends = ["plugins:build-rust", "appium:install:ios"]
+[tasks."ios:build"]
+description = "Build a debug app for the iOS simulator, with the global Tauri object for the end-to-end tests"
+tools = { ruby = "3.4.11" }
+depends = ["plugins:build-rust"]
 run = '''
 set -e
+gem list --installed --exact cocoapods --version 1.17.0 > /dev/null || gem install cocoapods --version 1.17.0
 case "$(uname -m)" in arm64) target=aarch64-sim ;; *) target=x86_64 ;; esac
 [ -d apps/native/src-tauri/gen/apple ] || pnpm --filter @easyimmerse/native exec tauri ios init --ci --skip-targets-install
 [ "$target" = aarch64-sim ] || sh scripts/ios-project-simulator-only.sh
 PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target "$target" --no-sign --ci --config e2e/tauri.conf.json --features plugin-check
-pnpm --filter @easyimmerse/native e2e:ios
 '''
+
+[tasks."e2e:ios"]
+description = "Drive a debug build of the app on an iOS simulator through Appium"
+depends = ["ios:build", "appium:install:ios"]
+run = "pnpm --filter @easyimmerse/native e2e:ios"
 
 [tasks.desktop]
 description = "Run the desktop app in development mode with its embedded server"
