@@ -2,6 +2,7 @@ import { Download, GraduationCap, Plug, Send } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
+import { pluralize } from "../components/pluralize.ts";
 import { FlashcardPreview } from "../flashcards/FlashcardPreview.tsx";
 import type {
   FlashcardContent,
@@ -31,6 +32,7 @@ type Callbacks = {
   onSendToAnki: () => void;
 };
 
+/** Shows where the project's flashcards go, with the next card to review or send, and the action to take. */
 export function FlashcardSyncPanel({
   state,
   includedFields,
@@ -102,7 +104,7 @@ function Status({
           summary={
             state.dueCount === 0
               ? "Nothing due for review."
-              : `${state.dueCount} cards due for review.`
+              : `${pluralize(state.dueCount, "card")} due for review.`
           }
           action={
             <Button variant="primary" onClick={callbacks.onStartReview}>
@@ -118,7 +120,7 @@ function Status({
           summary={
             state.unexportedCount === 0
               ? "Every flashcard has been exported."
-              : `${state.unexportedCount} new flashcards since the last export.`
+              : `${pluralize(state.unexportedCount, "new flashcard")} since the last export.`
           }
           action={
             <Button
@@ -145,7 +147,7 @@ function Status({
           summary={
             state.unsentCount === 0
               ? "Every flashcard is in Anki."
-              : `${state.unsentCount} flashcards waiting to be sent.`
+              : `${pluralize(state.unsentCount, "flashcard")} waiting to be sent.`
           }
           hint={
             state.connection === "unreachable"

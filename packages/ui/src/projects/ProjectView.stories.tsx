@@ -50,7 +50,7 @@ const media: MediaItem[] = [
 ];
 
 const meta = {
-  title: "Screens/ProjectView",
+  title: "Projects/ProjectView",
   component: ProjectView,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },

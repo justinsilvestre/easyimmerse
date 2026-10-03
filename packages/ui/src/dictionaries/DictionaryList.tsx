@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { IconButton } from "../components/IconButton.tsx";
-import { languageName } from "../projects/languages.ts";
+import { formatLanguagePair, languageName } from "../projects/languages.ts";
 import {
   type DictionaryItem,
   dictionaryFormatLabels,
@@ -19,6 +19,7 @@ export function DictionaryList({
 }: {
   dictionaries: readonly DictionaryItem[];
   onToggle: (dictionaryId: string) => void;
+  /** Swaps the dictionary with its neighbour among the dictionaries of the same source language. */
   onMove: (dictionaryId: string, direction: "up" | "down") => void;
   onRemove: (dictionaryId: string) => void;
 }) {
@@ -42,7 +43,7 @@ export function DictionaryList({
                 <input
                   type="checkbox"
                   aria-label={`Enable ${dictionary.title}`}
-                  checked={dictionary.enabled}
+                  checked={dictionary.isEnabled}
                   onChange={() => onToggle(dictionary.id)}
                   className="size-4 accent-accent"
                 />
@@ -51,11 +52,12 @@ export function DictionaryList({
                     {dictionary.title}
                   </span>
                   <span className="text-xs text-fg-muted">
-                    {languageName(dictionary.sourceLanguage)}
-                    {dictionary.targetLanguage !== dictionary.sourceLanguage &&
-                      ` → ${languageName(dictionary.targetLanguage)}`}
+                    {formatLanguagePair(
+                      dictionary.sourceLanguage,
+                      dictionary.targetLanguage,
+                    )}
                     {" · "}
-                    {dictionary.entryCount.toLocaleString("en")} entries
+                    {dictionary.entry_count.toLocaleString("en")} entries
                   </span>
                 </span>
                 <Badge>{dictionaryFormatLabels[dictionary.format]}</Badge>

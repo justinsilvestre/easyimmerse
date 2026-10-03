@@ -4,6 +4,7 @@ import { Button } from "../components/Button.tsx";
 import { ClickableText } from "../components/ClickableText.tsx";
 import type { LookupEntry } from "./lookupState.ts";
 
+/** One dictionary entry in the pop-up, with its definitions ready to be looked up or made into a flashcard. */
 export function TermEntryCard({
   entry,
   onWordClick,
@@ -27,8 +28,10 @@ export function TermEntryCard({
         </span>
       </div>
       <ol className="flex list-decimal flex-col gap-0.5 pl-5 text-sm">
-        {entry.definitions.map((definition) => (
-          <li key={definition}>
+        {entry.definitions.map((definition, index) => (
+          // Definitions can repeat within an entry and never reorder.
+          // biome-ignore lint/suspicious/noArrayIndexKey: see above
+          <li key={index}>
             <ClickableText text={definition} onWordClick={onWordClick} />
           </li>
         ))}

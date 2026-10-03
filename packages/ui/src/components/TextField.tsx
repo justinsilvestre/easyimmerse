@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { type ComponentProps, useId } from "react";
+import { type ChangeEventHandler, useId } from "react";
 
 /** A labelled single-line or multi-line text input. */
 export function TextField({
@@ -7,11 +7,18 @@ export function TextField({
   hint,
   multiline = false,
   className,
-  ...rest
-}: Omit<ComponentProps<"input">, "id"> & {
+  ...inputProps
+}: {
   label: string;
   hint?: string;
   multiline?: boolean;
+  className?: string;
+  value?: string;
+  defaultValue?: string;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  onChange?: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
 }) {
   const id = useId();
   const inputClassName =
@@ -22,14 +29,9 @@ export function TextField({
         {label}
       </label>
       {multiline ? (
-        <textarea
-          id={id}
-          rows={2}
-          className={inputClassName}
-          {...(rest as ComponentProps<"textarea">)}
-        />
+        <textarea id={id} rows={2} className={inputClassName} {...inputProps} />
       ) : (
-        <input id={id} className={inputClassName} {...rest} />
+        <input id={id} className={inputClassName} {...inputProps} />
       )}
       {hint && <p className="text-xs text-fg-muted">{hint}</p>}
     </div>

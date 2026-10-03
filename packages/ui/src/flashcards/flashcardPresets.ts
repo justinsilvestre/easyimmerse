@@ -1,6 +1,6 @@
 import type { FlashcardFieldKey } from "./flashcardFields.ts";
 
-/** A named selection of fields suited to a stage of learning. `custom` means the user changed the selection by hand. */
+/** A named selection of fields suited to a stage of learning. */
 export type FlashcardPreset = "beginner" | "intermediate" | "advanced";
 
 export const flashcardPresetOptions: readonly {
@@ -44,6 +44,7 @@ const presetFields: Record<FlashcardPreset, readonly FlashcardFieldKey[]> = {
   ],
 };
 
+/** The fields a flashcard starts with under the preset. */
 export function fieldsOfPreset(
   preset: FlashcardPreset,
 ): readonly FlashcardFieldKey[] {

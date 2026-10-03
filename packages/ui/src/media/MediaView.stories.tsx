@@ -12,19 +12,19 @@ import { generateExamplePeaks } from "./examplePeaks.ts";
 import { MediaView } from "./MediaView.tsx";
 
 const meta = {
-  title: "Screens/MediaView",
+  title: "Media/MediaView",
   component: MediaView,
   parameters: { layout: "fullscreen" },
   args: {
     media: {
       kind: "video",
       title: "Dark S01E01 - Geheimnisse.mkv",
-      url: "/fixtures/sample.mp4",
+      url: "fixtures/sample.mp4",
       artworkUrl: null,
       language: "de",
     },
     playback: {
-      playing: true,
+      isPlaying: true,
       currentMs: 6_200,
       durationMs: 24_000,
       volume: 0.8,
@@ -103,7 +103,7 @@ export const VideoWithDualSubtitles: Story = {};
 export const LookingUpAWord: Story = {
   args: {
     playback: {
-      playing: false,
+      isPlaying: false,
       currentMs: 6_200,
       durationMs: 24_000,
       volume: 0.8,
@@ -129,6 +129,7 @@ export const SearchingForAWord: Story = {
 export const EditingAFlashcard: Story = {
   args: {
     editingFlashcard: {
+      id: "flashcard-3",
       content: exampleFlashcard,
       fields: fieldsOfPreset("intermediate"),
       segment: { segmentId: "3", screenshotMs: 6_800 },
@@ -157,7 +158,7 @@ export const AudioWithTranscript: Story = {
     media: {
       kind: "audio",
       title: "Die Verwandlung, Kapitel 1",
-      url: "/fixtures/sample.mp3",
+      url: "fixtures/sample.mp3",
       artworkUrl: null,
       language: "de",
     },

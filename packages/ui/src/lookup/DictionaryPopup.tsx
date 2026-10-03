@@ -118,7 +118,9 @@ function Body({
     case "found":
       return state.entries.map((entry, index) => (
         <TermEntryCard
-          key={`${entry.dictionaryTitle}-${entry.term}`}
+          // One dictionary can hold several entries for the same term, and the list never reorders within a lookup.
+          // biome-ignore lint/suspicious/noArrayIndexKey: see above
+          key={index}
           entry={entry}
           onWordClick={(word) => onCreateFlashcard(word, null)}
           onCreateFlashcard={() => onCreateFlashcard(state.term, index)}

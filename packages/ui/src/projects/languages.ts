@@ -12,6 +12,12 @@ export const languageOptions: readonly { value: string; label: string }[] = [
   "zh",
 ].map((code) => ({ value: code, label: languageName(code) }));
 
+/** Writes a dictionary's languages as `German → English`, or just the language of a monolingual dictionary. */
+export function formatLanguagePair(source: string, target: string): string {
+  if (source === target) return languageName(source);
+  return `${languageName(source)} → ${languageName(target)}`;
+}
+
 /** Names a language in English, falling back to the code itself when the browser does not know it. */
 export function languageName(code: string): string {
   try {

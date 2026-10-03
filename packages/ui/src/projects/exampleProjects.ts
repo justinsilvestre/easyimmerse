@@ -1,6 +1,5 @@
+import { dayMs } from "./formatRelativeDate.ts";
 import type { ProjectCardData } from "./ProjectCard.tsx";
-
-const dayMs = 24 * 60 * 60 * 1000;
 
 function daysAgo(days: number): string {
   return new Date(Date.now() - days * dayMs).toISOString();

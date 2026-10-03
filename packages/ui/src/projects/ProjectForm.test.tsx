@@ -56,6 +56,16 @@ describe("ProjectForm", () => {
     });
   });
 
+  it("keeps a trailing comma in the default tags field, so another tag can follow", () => {
+    renderForm();
+    fireEvent.change(screen.getByLabelText("Default tags"), {
+      target: { value: "tv," },
+    });
+    expect(
+      (screen.getByLabelText("Default tags") as HTMLInputElement).value,
+    ).toBe("tv,");
+  });
+
   it("shows the default tags on the example flashcard", () => {
     renderForm();
     fireEvent.change(screen.getByLabelText("Default tags"), {

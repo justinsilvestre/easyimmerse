@@ -4,7 +4,7 @@ import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 
 /** What happened to a flashcard after it was saved, depending on whether AnkiConnect is enabled and reachable. */
-export type FlashcardSaveOutcome =
+type FlashcardSaveOutcome =
   | "savedInProject"
   | "sentToAnki"
   | "queuedForAnki"
@@ -29,21 +29,21 @@ export function FlashcardSaveNotice({
   onRetry?: () => void;
   onDismiss: () => void;
 }) {
-  const failed = outcome === "rejectedByAnki";
-  const queued = outcome === "queuedForAnki";
+  const hasFailed = outcome === "rejectedByAnki";
+  const isQueued = outcome === "queuedForAnki";
   return (
     <div
       role="status"
       className={clsx(
         "flex max-w-md items-center gap-2 rounded-lg border px-3 py-2 text-sm shadow-md",
-        failed && "border-danger-line bg-danger-soft text-danger-fg",
-        queued && "border-warning-line bg-warning-soft text-warning-fg",
-        !failed && !queued && "border-line bg-surface text-fg",
+        hasFailed && "border-danger-line bg-danger-soft text-danger-fg",
+        isQueued && "border-warning-line bg-warning-soft text-warning-fg",
+        !hasFailed && !isQueued && "border-line bg-surface text-fg",
       )}
     >
       <OutcomeIcon outcome={outcome} />
       <span className="flex-1">{messages[outcome]}</span>
-      {failed && onRetry && (
+      {hasFailed && onRetry && (
         <Button size="sm" onClick={onRetry}>
           Retry
         </Button>

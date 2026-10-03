@@ -40,9 +40,13 @@ on:
       - "packages/**"
       - "fixtures/**"
 
+# The jobs that write to the gh-pages branch or the pull request ask for more below.
+permissions:
+  contents: read
+
 # A newer push to the same branch cancels the run still going for the older one.
-# The deploy and cleanup jobs add a second, repository-wide group below, because every
-# run pushes to the same gh-pages branch and concurrent pushes would reject each other.
+# The deploy job adds a second, repository-wide group below, because every run pushes to
+# the same gh-pages branch and concurrent pushes would reject each other.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -50,13 +54,18 @@ concurrency:
 jobs:
   # Skips the other jobs when an earlier run passed on the same inputs.
   # The gate keys on file content only, so a branch whose files are identical to an
-  # earlier passed run gets no fresh preview. That is accepted.
+  # earlier passed run gets no fresh preview. That is accepted, except for two events
+  # whose purpose is to publish: a manual run, and a reopened pull request, whose
+  # preview the cleanup job removed when it was closed.
   # Skipping this job on the closed event also skips every job that needs it.
   gate:
     if: github.event.action != 'closed'
     runs-on: ubuntu-24.04
     outputs:
-      passed: ${{ steps.find.outputs.passed }}
+      passed: >-
+        ${{ steps.find.outputs.passed == 'true'
+            && github.event_name != 'workflow_dispatch'
+            && github.event.action != 'reopened' }}
       key: ${{ steps.find.outputs.key }}
     steps:
       - uses: actions/checkout@v7
@@ -161,15 +170,16 @@ jobs:
   # Removes the closed pull request's preview from the gh-pages branch. This job does not
   # run the setup action: it only uses git and needs no toolchain. It is not gated and the
   # record job does not list it, because it changes nothing the gate hashes.
+  # It does not share the deploy job's concurrency group: GitHub keeps only one job waiting
+  # per group and cancels the rest, which could leave a directory behind for good.
+  # Instead the push is retried after a deploy lands in between.
   cleanup:
-    if: github.event.action == 'closed'
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-    # Shares the deploy jobs' group so that its push never races with a deploy.
-    concurrency:
-      group: storybook-gh-pages
-      cancel-in-progress: false
     steps:
       # The branch does not exist until the first deploy, so a pull request closed before
       # then has nothing to remove.
@@ -195,12 +205,21 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
         run: |
           slug="${HEAD_REF//[^A-Za-z0-9._-]/-}"
-          git rm -r --quiet --ignore-unmatch "storybook/$slug"
-          if git diff --cached --quiet; then
-            echo "No preview directory for $slug."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Remove the Storybook preview for $slug"
-          git push
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin gh-pages
+            git reset --quiet --hard origin/gh-pages
+            git rm -r --quiet --ignore-unmatch "storybook/$slug"
+            if git diff --cached --quiet; then
+              echo "No preview directory for $slug."
+              exit 0
+            fi
+            git commit --quiet -m "Remove the Storybook preview for $slug"
+            if git push origin HEAD:gh-pages; then
+              exit 0
+            fi
+            echo "Push attempt $attempt was rejected; another run pushed first. Retrying."
+            sleep 10
+          done
+          exit 1

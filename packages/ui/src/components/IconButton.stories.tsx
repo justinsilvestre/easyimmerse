@@ -18,6 +18,8 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const Active: Story = { args: { active: true } };
+export const PressedToggle: Story = { args: { pressed: true } };
+
+export const ReleasedToggle: Story = { args: { pressed: false } };
 
 export const Disabled: Story = { args: { disabled: true } };

@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { Volume2 } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
+import { splitIntoWords } from "../components/ClickableText.tsx";
 import {
   type FlashcardContent,
   type FlashcardFieldKey,
@@ -21,7 +22,7 @@ export function FlashcardPreview({
   includedFields: readonly FlashcardFieldKey[];
   compact?: boolean;
 }) {
-  const has = (key: FlashcardFieldKey) => includedFields.includes(key);
+  const includes = (key: FlashcardFieldKey) => includedFields.includes(key);
   return (
     <article
       aria-label="Flashcard preview"
@@ -32,14 +33,14 @@ export function FlashcardPreview({
     >
       <section className="flex flex-col items-center gap-1 px-4 py-5 text-center">
         <SideLabel>Front</SideLabel>
-        {has("word") && (
+        {includes("word") && (
           <p
             className={clsx("font-semibold", compact ? "text-lg" : "text-2xl")}
           >
             <Value value={content.word} fieldKey="word" />
           </p>
         )}
-        {has("wordPronunciation") && (
+        {includes("wordPronunciation") && (
           <p className="text-fg-muted">
             <Value
               value={content.wordPronunciation}
@@ -47,27 +48,27 @@ export function FlashcardPreview({
             />
           </p>
         )}
-        {has("audioContext") && content.audioContext && (
+        {includes("audioContext") && content.audioContext && (
           <AudioChip label={formatClipDuration(content.audioContext)} />
         )}
       </section>
       <section className="flex flex-col gap-3 border-t border-dashed border-line-strong bg-surface-muted px-4 py-4">
         <SideLabel>Back</SideLabel>
-        {has("l1Definition") && (
+        {includes("l1Definition") && (
           <p>
             <Value value={content.l1Definition} fieldKey="l1Definition" />
           </p>
         )}
-        {has("l2Definition") && (
+        {includes("l2Definition") && (
           <p className="text-fg-soft">
             <Value value={content.l2Definition} fieldKey="l2Definition" />
           </p>
         )}
-        {(has("textContext") ||
-          has("textContextPronunciation") ||
-          has("textContextTranslation")) && (
+        {(includes("textContext") ||
+          includes("textContextPronunciation") ||
+          includes("textContextTranslation")) && (
           <div className="flex flex-col gap-0.5 border-l-2 border-accent pl-3">
-            {has("textContext") && (
+            {includes("textContext") && (
               <p>
                 <HighlightedWord
                   text={content.textContext}
@@ -75,7 +76,7 @@ export function FlashcardPreview({
                 />
               </p>
             )}
-            {has("textContextPronunciation") && (
+            {includes("textContextPronunciation") && (
               <p className="text-fg-muted">
                 <Value
                   value={content.textContextPronunciation}
@@ -83,7 +84,7 @@ export function FlashcardPreview({
                 />
               </p>
             )}
-            {has("textContextTranslation") && (
+            {includes("textContextTranslation") && (
               <p className="text-fg-muted">
                 <Value
                   value={content.textContextTranslation}
@@ -93,7 +94,7 @@ export function FlashcardPreview({
             )}
           </div>
         )}
-        {has("screenshot") && content.screenshot && (
+        {includes("screenshot") && content.screenshot && (
           <img
             src={content.screenshot}
             alt="Screenshot from the video"
@@ -103,7 +104,7 @@ export function FlashcardPreview({
             )}
           />
         )}
-        {has("tags") && content.tags.length > 0 && (
+        {includes("tags") && content.tags.length > 0 && (
           <ul aria-label="Tags" className="flex flex-wrap gap-1">
             {content.tags.map((tag) => (
               <li key={tag}>
@@ -143,16 +144,17 @@ function Value({
 
 function HighlightedWord({ text, word }: { text: string; word: string }) {
   if (!text.trim()) return <Value value="" fieldKey="textContext" />;
-  if (!word.trim() || !text.includes(word)) return text;
-  const [before, ...after] = text.split(word);
-  return (
-    <>
-      {before}
-      <mark className="rounded bg-accent-soft px-0.5 text-accent-fg">
-        {word}
+  return splitIntoWords(text).map((part) =>
+    part.isWord && part.text === word ? (
+      <mark
+        key={part.start}
+        className="rounded bg-accent-soft px-0.5 text-accent-fg"
+      >
+        {part.text}
       </mark>
-      {after.join(word)}
-    </>
+    ) : (
+      part.text
+    ),
   );
 }
 

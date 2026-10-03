@@ -5,7 +5,7 @@ import { withAppStore } from "../storybook/withAppStore.tsx";
 import { ProjectSettingsView } from "./ProjectSettingsView.tsx";
 
 const meta = {
-  title: "Screens/ProjectSettingsView",
+  title: "Projects/ProjectSettingsView",
   component: ProjectSettingsView,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },

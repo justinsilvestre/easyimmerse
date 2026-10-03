@@ -85,6 +85,7 @@ export const flashcardFieldGroupLabels: Record<FlashcardFieldGroup, string> = {
   media: "Media and tags",
 };
 
+/** Whether the field holds text the user can type, rather than audio, an image, or tags. */
 export function isTextField(
   key: FlashcardFieldKey,
 ): key is FlashcardTextFieldKey {
@@ -97,4 +98,13 @@ export function findFlashcardField(
   const field = flashcardFields.find((candidate) => candidate.key === key);
   if (!field) throw new Error(`Unknown flashcard field: ${key}`);
   return field;
+}
+
+/** Adds the field to the selection, or removes it when it is already there. */
+export function toggleField(
+  fields: readonly FlashcardFieldKey[],
+  key: FlashcardFieldKey,
+): readonly FlashcardFieldKey[] {
+  if (!fields.includes(key)) return [...fields, key];
+  return fields.filter((field) => field !== key);
 }

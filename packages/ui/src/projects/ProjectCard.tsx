@@ -1,6 +1,7 @@
 import type { ProjectSummary } from "@easyimmerse/types";
 import { ChevronRight, Film, Layers } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
+import { pluralize } from "../components/pluralize.ts";
 import { formatRelativeDate } from "./formatRelativeDate.ts";
 import { languageName } from "./languages.ts";
 
@@ -11,6 +12,7 @@ export type ProjectCardData = ProjectSummary & {
   flashcard_count: number;
 };
 
+/** One project on the home screen, with its language, size, and when it was last opened. */
 export function ProjectCard({
   project,
   onOpen,
@@ -33,11 +35,11 @@ export function ProjectCard({
           <Badge>{languageName(project.language)}</Badge>
           <span className="flex items-center gap-1">
             <Film className="size-3" aria-hidden />
-            {project.media_count} media
+            {pluralize(project.media_count, "media file")}
           </span>
           <span className="flex items-center gap-1">
             <Layers className="size-3" aria-hidden />
-            {project.flashcard_count} flashcards
+            {pluralize(project.flashcard_count, "flashcard")}
           </span>
           <span>Opened {formatRelativeDate(project.last_opened_at)}</span>
         </span>

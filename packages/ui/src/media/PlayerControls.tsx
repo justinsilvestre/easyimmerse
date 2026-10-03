@@ -34,6 +34,7 @@ export type PlayerCallbacks = {
 
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
+/** The bar below the player: transport, volume, speed, track choices, and the toggles for the panels around it. */
 export function PlayerControls({
   playback,
   tracks,
@@ -68,10 +69,10 @@ export function PlayerControls({
           <SkipBack className="size-4" />
         </IconButton>
         <IconButton
-          label={playback.playing ? "Pause" : "Play"}
+          label={playback.isPlaying ? "Pause" : "Play"}
           onClick={callbacks.onTogglePlay}
         >
-          {playback.playing ? (
+          {playback.isPlaying ? (
             <Pause className="size-5" />
           ) : (
             <Play className="size-5" />
@@ -151,14 +152,14 @@ export function PlayerControls({
           <Kbd>L</Kbd>
           <IconButton
             label="Subtitles panel"
-            active={panels.cues}
+            pressed={panels.cues}
             onClick={callbacks.onToggleCuePanel}
           >
             <Captions className="size-4" />
           </IconButton>
           <IconButton
             label="Waveform"
-            active={panels.waveform}
+            pressed={panels.waveform}
             onClick={callbacks.onToggleWaveform}
           >
             <AudioWaveform className="size-4" />

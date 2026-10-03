@@ -1,6 +1,7 @@
 import { BookText, Captions, ChevronRight, Film, Music } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "../components/Badge.tsx";
+import { pluralize } from "../components/pluralize.ts";
 import { formatTimestamp } from "../media/formatTimestamp.ts";
 
 /** One media file of a project, as the project screen lists it. */
@@ -20,6 +21,7 @@ const kindIcons: Record<MediaItem["kind"], ReactNode> = {
   ebook: <BookText className="size-5" aria-label="Ebook" />,
 };
 
+/** Lists a project's media files with their kind, subtitles, flashcards, and length. */
 export function MediaList({
   media,
   onOpen,
@@ -43,7 +45,7 @@ export function MediaList({
             <SubtitlesBadge timedText={item.timedText} />
             {item.flashcardCount > 0 && (
               <span className="text-xs text-fg-muted">
-                {item.flashcardCount} cards
+                {pluralize(item.flashcardCount, "card")}
               </span>
             )}
             {item.durationMs !== null && (

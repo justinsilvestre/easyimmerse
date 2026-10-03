@@ -1,7 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { FilePlus, Layers, Sparkles } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Button } from "../components/Button.tsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
@@ -32,6 +32,14 @@ export function CuePanel({
   onAddSubtitlesFile: () => void;
   onGenerateSubtitles: () => void;
 }) {
+  const pairs = useMemo(
+    () =>
+      cues.map((cue) => ({
+        cue,
+        translation: findTranslationOf(cue, translationCues),
+      })),
+    [cues, translationCues],
+  );
   if (cues.length === 0) {
     return (
       <div className="p-3">
@@ -59,11 +67,11 @@ export function CuePanel({
       aria-label="Subtitles"
       className="flex flex-col gap-1 overflow-y-auto p-2"
     >
-      {cues.map((cue) => (
+      {pairs.map(({ cue, translation }) => (
         <CueCard
           key={cue.index}
           cue={cue}
-          translation={findTranslationOf(cue, translationCues)}
+          translation={translation}
           isActive={cue.index === activeCueIndex}
           hasFlashcard={flashcardCueIndexes.includes(cue.index)}
           activeWord={activeWord}

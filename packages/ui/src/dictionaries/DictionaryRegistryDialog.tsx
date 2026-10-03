@@ -3,7 +3,11 @@ import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { Dialog } from "../components/Dialog.tsx";
 import { SelectField } from "../components/SelectField.tsx";
-import { languageName, languageOptions } from "../projects/languages.ts";
+import {
+  formatLanguagePair,
+  languageName,
+  languageOptions,
+} from "../projects/languages.ts";
 import {
   type DictionaryFormat,
   dictionaryFormatLabels,
@@ -17,9 +21,10 @@ export type RegistryDictionary = {
   targetLanguage: string;
   format: DictionaryFormat;
   sizeBytes: number;
-  installed: boolean;
+  isInstalled: boolean;
 };
 
+/** Lists the dictionaries of the easyImmerse registry, filtered by language, with a button to add each one. */
 export function DictionaryRegistryDialog({
   entries,
   languageFilter,
@@ -61,15 +66,13 @@ export function DictionaryRegistryDialog({
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate font-medium">{entry.title}</span>
               <span className="text-xs text-fg-muted">
-                {languageName(entry.sourceLanguage)}
-                {entry.targetLanguage !== entry.sourceLanguage &&
-                  ` → ${languageName(entry.targetLanguage)}`}
+                {formatLanguagePair(entry.sourceLanguage, entry.targetLanguage)}
                 {" · "}
                 {formatSize(entry.sizeBytes)}
               </span>
             </span>
             <Badge>{dictionaryFormatLabels[entry.format]}</Badge>
-            {entry.installed ? (
+            {entry.isInstalled ? (
               <Badge tone="success">
                 <Check className="size-3" aria-hidden />
                 Added
@@ -84,7 +87,9 @@ export function DictionaryRegistryDialog({
         ))}
         {shown.length === 0 && (
           <li className="py-6 text-center text-sm text-fg-muted">
-            No dictionaries for {languageName(languageFilter)} yet.
+            {languageFilter
+              ? `No dictionaries for ${languageName(languageFilter)} yet.`
+              : "The registry has no dictionaries yet."}
           </li>
         )}
       </ul>

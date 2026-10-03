@@ -46,6 +46,22 @@ describe("FlashcardEditor", () => {
     expect(saved).toEqual(["Hunger"]);
   });
 
+  it("keeps a trailing comma in the tags field, so another tag can follow", () => {
+    renderEditor();
+    fireEvent.change(screen.getByLabelText("Tags"), {
+      target: { value: "sample," },
+    });
+    expect((screen.getByLabelText("Tags") as HTMLInputElement).value).toBe(
+      "sample,",
+    );
+  });
+
+  it("keeps the screenshot in view after it is unchecked", () => {
+    renderEditor();
+    fireEvent.click(screen.getByLabelText("Include the screenshot"));
+    expect(screen.getByLabelText("Include the screenshot")).not.toBeNull();
+  });
+
   it("drops the screenshot from the saved fields when it is unchecked", () => {
     const saved: (readonly string[])[] = [];
     renderEditor((_content, fields) => saved.push(fields));

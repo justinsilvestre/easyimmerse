@@ -25,11 +25,13 @@ export type WaveformCallbacks = {
 };
 
 /**
- * Draws the audio of the visible time range as peaks, with the cues over it.
+ * Draws the audio between the two view times as peaks, with the cues over it.
+ * The peaks cover the whole file; the part on view is cut out of them.
  * Clicking the background seeks; clicking a segment seeks to its start; double-clicking a flashcard segment opens the flashcard.
  */
 export function Waveform({
   peaks,
+  durationMs,
   viewStartMs,
   viewEndMs,
   currentMs,
@@ -40,6 +42,7 @@ export function Waveform({
   callbacks,
 }: {
   peaks: readonly number[];
+  durationMs: number;
   viewStartMs: number;
   viewEndMs: number;
   currentMs: number;
@@ -51,6 +54,11 @@ export function Waveform({
 }) {
   const span = viewEndMs - viewStartMs;
   const toPercent = (ms: number) => `${((ms - viewStartMs) / span) * 100}%`;
+  const toPercentWidth = (ms: number) => `${(ms / span) * 100}%`;
+  const visiblePeaks = peaks.slice(
+    Math.floor((peaks.length * viewStartMs) / durationMs),
+    Math.ceil((peaks.length * viewEndMs) / durationMs),
+  );
   const msAtClick = (event: React.MouseEvent<HTMLElement>) => {
     const { left, width } = event.currentTarget.getBoundingClientRect();
     return viewStartMs + ((event.clientX - left) / width) * span;
@@ -64,14 +72,14 @@ export function Waveform({
           className="absolute inset-0 w-full cursor-crosshair"
           onClick={(event) => callbacks.onSeek(msAtClick(event))}
         >
-          <Peaks peaks={peaks} />
+          <Peaks peaks={visiblePeaks} />
         </button>
         {segments.map((segment) => (
           <Segment
             key={segment.id}
             segment={segment}
             left={toPercent(segment.startMs)}
-            width={toPercent(segment.endMs + viewStartMs - segment.startMs)}
+            width={toPercentWidth(segment.endMs - segment.startMs)}
             isEditing={editing?.segmentId === segment.id}
             callbacks={callbacks}
           />

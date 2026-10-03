@@ -11,6 +11,7 @@ import {
   type FlashcardFieldKey,
   flashcardFieldGroupLabels,
   flashcardFields,
+  toggleField,
 } from "../flashcards/flashcardFields.ts";
 import {
   type FlashcardPreset,
@@ -18,6 +19,7 @@ import {
   flashcardPresetOptions,
   presetMatching,
 } from "../flashcards/flashcardPresets.ts";
+import { parseTags } from "../flashcards/parseTags.ts";
 import { languageOptions } from "./languages.ts";
 
 export type ProjectFormValues = {
@@ -29,13 +31,16 @@ export type ProjectFormValues = {
   fillsAudioWithTts: boolean;
 };
 
+/** The values plus the tags field's text, which keeps the comma the user is about to follow with another tag. */
+type FormState = ProjectFormValues & { defaultTagsText: string };
+
 type FormAction =
   | { type: "nameChanged"; value: string }
   | { type: "targetLanguageChanged"; value: string }
   | { type: "translationLanguageChanged"; value: string }
   | { type: "presetChosen"; preset: FlashcardPreset }
   | { type: "fieldToggled"; key: FlashcardFieldKey }
-  | { type: "defaultTagsChanged"; value: string }
+  | { type: "defaultTagsChanged"; text: string }
   | { type: "ttsToggled" };
 
 const presetOptions = [
@@ -57,20 +62,23 @@ export function ProjectForm({
   onSubmit: (values: ProjectFormValues) => void;
   onCancel: () => void;
 }) {
-  const [values, dispatch] = useReducer(reduceForm, initialValues);
+  const [state, dispatch] = useReducer(reduceForm, initialValues, (values) => ({
+    ...values,
+    defaultTagsText: values.defaultTags.join(", "),
+  }));
   return (
     <form
       className="grid gap-8 md:grid-cols-[1fr_20rem]"
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit(values);
+        onSubmit(valuesOf(state));
       }}
     >
       <div className="flex flex-col gap-8">
         <Section title="Project">
           <TextField
             label="Project name"
-            value={values.name}
+            value={state.name}
             placeholder="Dark, season one"
             required
             onChange={(event) =>
@@ -82,7 +90,7 @@ export function ProjectForm({
               label="Target language"
               hint="The language you are learning."
               options={languageOptions}
-              value={values.targetLanguage}
+              value={state.targetLanguage}
               onChange={(event) =>
                 dispatch({
                   type: "targetLanguageChanged",
@@ -94,7 +102,7 @@ export function ProjectForm({
               label="Translation language"
               hint="Translations and definitions in this language."
               options={languageOptions}
-              value={values.translationLanguage}
+              value={state.translationLanguage}
               onChange={(event) =>
                 dispatch({
                   type: "translationLanguageChanged",
@@ -111,7 +119,7 @@ export function ProjectForm({
           <SegmentedControl
             label="Flashcard preset"
             options={presetOptions}
-            value={presetMatching(values.flashcardFields)}
+            value={presetMatching(state.flashcardFields)}
             onChange={(preset) =>
               preset !== "custom" && dispatch({ type: "presetChosen", preset })
             }
@@ -128,7 +136,7 @@ export function ProjectForm({
                     <CheckboxField
                       key={field.key}
                       label={field.label}
-                      checked={values.flashcardFields.includes(field.key)}
+                      checked={state.flashcardFields.includes(field.key)}
                       onChange={() =>
                         dispatch({ type: "fieldToggled", key: field.key })
                       }
@@ -140,18 +148,15 @@ export function ProjectForm({
           <TextField
             label="Default tags"
             hint="Separate tags with commas. The media file's name is always added as a tag."
-            value={values.defaultTags.join(", ")}
+            value={state.defaultTagsText}
             onChange={(event) =>
-              dispatch({
-                type: "defaultTagsChanged",
-                value: event.target.value,
-              })
+              dispatch({ type: "defaultTagsChanged", text: event.target.value })
             }
           />
           <CheckboxField
             label="Fill the audio fields with text-to-speech when the media has no audio track"
             hint="Applies to ebooks and text files."
-            checked={values.fillsAudioWithTts}
+            checked={state.fillsAudioWithTts}
             onChange={() => dispatch({ type: "ttsToggled" })}
           />
         </Section>
@@ -167,9 +172,9 @@ export function ProjectForm({
         <FlashcardPreview
           content={{
             ...exampleFlashcard,
-            tags: [...values.defaultTags, "sample"],
+            tags: [...new Set([...state.defaultTags, "sample"])],
           }}
-          includedFields={values.flashcardFields}
+          includedFields={state.flashcardFields}
         />
       </aside>
     </form>
@@ -196,42 +201,35 @@ function Section({
   );
 }
 
-export function reduceForm(
-  values: ProjectFormValues,
-  action: FormAction,
-): ProjectFormValues {
+function valuesOf({
+  defaultTagsText: _,
+  ...values
+}: FormState): ProjectFormValues {
+  return values;
+}
+
+function reduceForm(state: FormState, action: FormAction): FormState {
   switch (action.type) {
     case "nameChanged":
-      return { ...values, name: action.value };
+      return { ...state, name: action.value };
     case "targetLanguageChanged":
-      return { ...values, targetLanguage: action.value };
+      return { ...state, targetLanguage: action.value };
     case "translationLanguageChanged":
-      return { ...values, translationLanguage: action.value };
+      return { ...state, translationLanguage: action.value };
     case "presetChosen":
-      return { ...values, flashcardFields: fieldsOfPreset(action.preset) };
+      return { ...state, flashcardFields: fieldsOfPreset(action.preset) };
     case "fieldToggled":
       return {
-        ...values,
-        flashcardFields: toggleField(values.flashcardFields, action.key),
+        ...state,
+        flashcardFields: toggleField(state.flashcardFields, action.key),
       };
     case "defaultTagsChanged":
-      return { ...values, defaultTags: parseTags(action.value) };
+      return {
+        ...state,
+        defaultTagsText: action.text,
+        defaultTags: parseTags(action.text),
+      };
     case "ttsToggled":
-      return { ...values, fillsAudioWithTts: !values.fillsAudioWithTts };
+      return { ...state, fillsAudioWithTts: !state.fillsAudioWithTts };
   }
-}
-
-function toggleField(
-  fields: readonly FlashcardFieldKey[],
-  key: FlashcardFieldKey,
-): readonly FlashcardFieldKey[] {
-  if (!fields.includes(key)) return [...fields, key];
-  return fields.filter((field) => field !== key);
-}
-
-function parseTags(value: string): string[] {
-  return value
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter((tag) => tag.length > 0);
 }

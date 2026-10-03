@@ -1,6 +1,6 @@
 /** The player's state as the controls show it. Volume is 0 to 1; speed is a multiplier. */
 export type PlaybackState = {
-  playing: boolean;
+  isPlaying: boolean;
   currentMs: number;
   durationMs: number;
   volume: number;

@@ -12,17 +12,21 @@ import {
   type FlashcardTextFieldKey,
   flashcardFields,
   isTextField,
+  toggleField,
 } from "./flashcardFields.ts";
 import { formatClipDuration } from "./formatClipDuration.ts";
+import { parseTags } from "./parseTags.ts";
 
+/** The flashcard being edited, plus the tags field's text, which keeps the comma the user is about to follow with another tag. */
 type EditorState = {
   content: FlashcardContent;
   includedFields: readonly FlashcardFieldKey[];
+  tagsText: string;
 };
 
 type EditorAction =
   | { type: "textChanged"; key: FlashcardTextFieldKey; value: string }
-  | { type: "tagsChanged"; value: string }
+  | { type: "tagsChanged"; text: string }
   | { type: "fieldAdded"; key: FlashcardFieldKey }
   | { type: "screenshotToggled" };
 
@@ -49,14 +53,15 @@ export function FlashcardEditor({
   const [state, dispatch] = useReducer(reduceEditor, {
     content: initialContent,
     includedFields: initialFields,
+    tagsText: initialContent.tags.join(", "),
   });
   const { content, includedFields } = state;
-  const shown = flashcardFields.filter((field) =>
-    includedFields.includes(field.key),
-  );
-  const hidden = flashcardFields.filter(
-    (field) => !includedFields.includes(field.key),
-  );
+  // The screenshot stays in view while the card has one, so that its checkbox can bring it back.
+  const isShown = (field: FlashcardFieldDefinition) =>
+    includedFields.includes(field.key) ||
+    (field.key === "screenshot" && content.screenshot !== null);
+  const shown = flashcardFields.filter(isShown);
+  const hidden = flashcardFields.filter((field) => !isShown(field));
   return (
     <form
       aria-label="Flashcard"
@@ -150,9 +155,9 @@ function EditorField({
       <TextField
         label={label}
         hint="Separate tags with commas."
-        value={content.tags.join(", ")}
+        value={state.tagsText}
         onChange={(event) =>
-          dispatch({ type: "tagsChanged", value: event.target.value })
+          dispatch({ type: "tagsChanged", text: event.target.value })
         }
       />
     );
@@ -192,10 +197,7 @@ function EditorField({
   );
 }
 
-export function reduceEditor(
-  state: EditorState,
-  action: EditorAction,
-): EditorState {
+function reduceEditor(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
     case "textChanged":
       return {
@@ -205,7 +207,8 @@ export function reduceEditor(
     case "tagsChanged":
       return {
         ...state,
-        content: { ...state.content, tags: parseTags(action.value) },
+        tagsText: action.text,
+        content: { ...state.content, tags: parseTags(action.text) },
       };
     case "fieldAdded":
       return {
@@ -215,23 +218,7 @@ export function reduceEditor(
     case "screenshotToggled":
       return {
         ...state,
-        includedFields: toggle(state.includedFields, "screenshot"),
+        includedFields: toggleField(state.includedFields, "screenshot"),
       };
   }
-}
-
-function parseTags(value: string): string[] {
-  return value
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter((tag) => tag.length > 0);
-}
-
-function toggle(
-  fields: readonly FlashcardFieldKey[],
-  key: FlashcardFieldKey,
-): readonly FlashcardFieldKey[] {
-  return fields.includes(key)
-    ? fields.filter((field) => field !== key)
-    : [...fields, key];
 }

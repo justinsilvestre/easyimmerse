@@ -5,7 +5,7 @@ import { DictionariesView } from "./DictionariesView.tsx";
 import { exampleDictionaries } from "./exampleDictionaries.ts";
 
 const meta = {
-  title: "Screens/DictionariesView",
+  title: "Dictionaries/DictionariesView",
   component: DictionariesView,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },

@@ -8,8 +8,8 @@ export const exampleDictionaries: readonly DictionaryItem[] = [
     sourceLanguage: "de",
     targetLanguage: "en",
     format: "yomitan",
-    entryCount: 412_380,
-    enabled: true,
+    entry_count: 412_380,
+    isEnabled: true,
   },
   {
     id: "d2",
@@ -17,8 +17,8 @@ export const exampleDictionaries: readonly DictionaryItem[] = [
     sourceLanguage: "de",
     targetLanguage: "de",
     format: "stardict",
-    entryCount: 48_120,
-    enabled: true,
+    entry_count: 48_120,
+    isEnabled: true,
   },
   {
     id: "d3",
@@ -26,8 +26,8 @@ export const exampleDictionaries: readonly DictionaryItem[] = [
     sourceLanguage: "ja",
     targetLanguage: "en",
     format: "yomitan",
-    entryCount: 203_015,
-    enabled: false,
+    entry_count: 203_015,
+    isEnabled: false,
   },
 ];
 
@@ -39,7 +39,7 @@ export const exampleRegistry: readonly RegistryDictionary[] = [
     targetLanguage: "en",
     format: "yomitan",
     sizeBytes: 38_000_000,
-    installed: true,
+    isInstalled: true,
   },
   {
     id: "r2",
@@ -48,7 +48,7 @@ export const exampleRegistry: readonly RegistryDictionary[] = [
     targetLanguage: "de",
     format: "yomitan",
     sizeBytes: 2_100_000,
-    installed: false,
+    isInstalled: false,
   },
   {
     id: "r3",
@@ -57,7 +57,7 @@ export const exampleRegistry: readonly RegistryDictionary[] = [
     targetLanguage: "en",
     format: "yomitan",
     sizeBytes: 54_000_000,
-    installed: false,
+    isInstalled: false,
   },
   {
     id: "r4",
@@ -66,7 +66,7 @@ export const exampleRegistry: readonly RegistryDictionary[] = [
     targetLanguage: "en",
     format: "yomitan",
     sizeBytes: 4_600_000,
-    installed: false,
+    isInstalled: false,
   },
   {
     id: "r5",
@@ -75,6 +75,6 @@ export const exampleRegistry: readonly RegistryDictionary[] = [
     targetLanguage: "en",
     format: "yomitan",
     sizeBytes: 29_000_000,
-    installed: false,
+    isInstalled: false,
   },
 ];

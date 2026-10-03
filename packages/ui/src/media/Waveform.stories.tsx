@@ -18,6 +18,7 @@ const meta = {
   ],
   args: {
     peaks: generateExamplePeaks(240),
+    durationMs: 24_000,
     viewStartMs: 0,
     viewEndMs: 24_000,
     currentMs: 6_200,
@@ -46,7 +47,6 @@ export const EditingAFlashcard: Story = {
 
 export const ZoomedIn: Story = {
   args: {
-    peaks: generateExamplePeaks(240, 3),
     viewStartMs: 4_000,
     viewEndMs: 10_000,
     canZoomIn: false,

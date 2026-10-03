@@ -1,5 +1,6 @@
 import type { Cue } from "@easyimmerse/types";
 import { ArrowLeft, Minimize, Music } from "lucide-react";
+import { useMemo } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
@@ -24,7 +25,7 @@ import {
   type WaveformCallbacks,
 } from "./Waveform.tsx";
 
-export type MediaSource = {
+type MediaSource = {
   kind: "video" | "audio";
   title: string;
   /** The URL the player loads. Null while the file is still being resolved or converted. */
@@ -35,19 +36,20 @@ export type MediaSource = {
 };
 
 /** The pop-up over the subtitles, in hover mode for a word under the pointer or in search mode after the lookup shortcut. */
-export type LookupPanel = {
+type LookupPanel = {
   state: LookupState | null;
   mode: "hover" | "search";
 };
 
 /** The flashcard open in the side panel, with the fields the project's settings include. */
-export type FlashcardEditing = {
+type FlashcardEditing = {
+  id: string;
   content: FlashcardContent;
   fields: readonly FlashcardFieldKey[];
   segment: SegmentEditing | null;
 };
 
-export type MediaViewProps = {
+type MediaViewProps = {
   media: MediaSource;
   playback: PlaybackState;
   tracks: TrackSelection;
@@ -102,8 +104,12 @@ export function MediaView(props: MediaViewProps) {
     lookup?.state && lookup.state.kind !== "noDictionary"
       ? lookup.state.term
       : undefined;
-  const sidePanel =
-    !panels.distractionFree && (editingFlashcard || panels.cues);
+  const showsSidePanel =
+    !panels.distractionFree && (editingFlashcard !== null || panels.cues);
+  const segments = useMemo(
+    () => segmentsFromCues(cues, props.flashcardCueIndexes),
+    [cues, props.flashcardCueIndexes],
+  );
   return (
     <div data-theme="dark" className="flex h-screen flex-col bg-canvas text-fg">
       {!panels.distractionFree && <Header {...props} />}
@@ -116,6 +122,7 @@ export function MediaView(props: MediaViewProps) {
               translationCue={
                 activeCue ? findTranslationOf(activeCue, translationCues) : null
               }
+              hasTranslation={translationCues.length > 0}
               display={props.subtitleDisplay}
               activeWord={activeWord}
               onWordHover={props.onWordHover}
@@ -150,8 +157,9 @@ export function MediaView(props: MediaViewProps) {
               peaks={props.waveform.peaks}
               viewStartMs={props.waveform.viewStartMs}
               viewEndMs={props.waveform.viewEndMs}
+              durationMs={playback.durationMs}
               currentMs={playback.currentMs}
-              segments={segmentsFromCues(cues, props.flashcardCueIndexes)}
+              segments={segments}
               editing={editingFlashcard?.segment ?? null}
               canZoomIn={
                 props.waveform.viewEndMs - props.waveform.viewStartMs > 5_000
@@ -172,11 +180,11 @@ export function MediaView(props: MediaViewProps) {
             />
           )}
         </main>
-        {sidePanel && (
+        {showsSidePanel && (
           <aside className="flex w-96 shrink-0 flex-col border-l border-line bg-canvas">
             {editingFlashcard ? (
               <FlashcardEditor
-                key={editingFlashcard.content.word}
+                key={editingFlashcard.id}
                 initialContent={editingFlashcard.content}
                 initialFields={editingFlashcard.fields}
                 onSave={props.onSaveFlashcard}
@@ -235,7 +243,6 @@ function Stage({ media }: { media: MediaSource }) {
       <video
         src={media.url ?? undefined}
         preload="metadata"
-        muted
         className="max-h-full max-w-full"
         aria-label={media.title}
       >

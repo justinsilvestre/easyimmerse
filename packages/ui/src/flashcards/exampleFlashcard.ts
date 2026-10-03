@@ -1,7 +1,7 @@
 import type { FlashcardContent } from "./flashcardFields.ts";
 
 /** A still frame drawn as an SVG, so previews can show a screenshot without a media file. */
-export const exampleScreenshotUrl = `data:image/svg+xml,${encodeURIComponent(
+const exampleScreenshotUrl = `data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
     <defs>
       <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">

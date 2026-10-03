@@ -1,22 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { formatRelativeDate } from "./formatRelativeDate.ts";
 
-const now = Date.parse("2026-10-03T12:00:00Z");
+// Local-time dates keep the expectations the same in every time zone.
+const localDate = (day: number, hour: number) =>
+  new Date(2026, 9, day, hour).toISOString();
+const now = new Date(2026, 9, 3, 1).getTime();
 
 describe("formatRelativeDate", () => {
-  it("says today for the same day", () => {
-    expect(formatRelativeDate("2026-10-03T08:00:00Z", now)).toBe("today");
+  it("says today for the same calendar day", () => {
+    expect(formatRelativeDate(localDate(3, 0), now)).toBe("today");
   });
 
-  it("says yesterday for the day before", () => {
-    expect(formatRelativeDate("2026-10-02T08:00:00Z", now)).toBe("yesterday");
+  it("says yesterday for the previous calendar day, even a few hours ago", () => {
+    expect(formatRelativeDate(localDate(2, 23), now)).toBe("yesterday");
   });
 
-  it("counts days within a month", () => {
-    expect(formatRelativeDate("2026-09-30T08:00:00Z", now)).toBe("3 days ago");
+  it("counts calendar days within a month", () => {
+    expect(formatRelativeDate(localDate(-27, 12), now)).toBe("30 days ago");
   });
 
   it("shows the date after a month", () => {
-    expect(formatRelativeDate("2026-08-01T08:00:00Z", now)).toBe("Aug 1, 2026");
+    expect(
+      formatRelativeDate(new Date(2026, 7, 1, 12).toISOString(), now),
+    ).toBe("Aug 1, 2026");
   });
 });
