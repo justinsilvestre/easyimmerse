@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 
 /** The simulator the iOS tests run on. It is created as an iPhone 16 on the runtime of the selected Xcode's SDK when missing. */
-export const simulatorName = "easyImmerse e2e";
+const simulatorName = "easyImmerse e2e";
 const deviceType = "iPhone 16";
 
 /** Creates the simulator when it is missing, boots it, and returns its identifier. */

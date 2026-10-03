@@ -206,12 +206,12 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: pnpm --filter @easyimmerse/native e2e:android
-      - name: Upload the Appium log
+      - name: Upload the Appium logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-android-log
-          path: apps/native/.appium/logs
+          name: appium-android-logs
+          path: apps/native/e2e/logs
           if-no-files-found: ignore
 
   ios:
