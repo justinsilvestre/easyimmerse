@@ -15,4 +15,8 @@ if grep -q 'SUPPORTED_PLATFORMS = iphonesimulator;' "$project"; then
 fi
 sed -i '' 's/^\([[:space:]]*\)SDKROOT = iphoneos;/\1SDKROOT = iphoneos;\
 \1SUPPORTED_PLATFORMS = iphonesimulator;/' "$project"
+if ! grep -q 'SUPPORTED_PLATFORMS = iphonesimulator;' "$project"; then
+  echo "found no iphoneos SDKROOT setting to restrict in $project" >&2
+  exit 1
+fi
 echo "restricted $project to the simulator platform"
