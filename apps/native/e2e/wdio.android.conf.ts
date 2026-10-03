@@ -36,6 +36,10 @@ export const config = createAppiumConfig(
     "appium:adbExecTimeout": 120_000,
     "appium:androidInstallTimeout": 180_000,
     "appium:uiautomator2ServerInstallTimeout": 180_000,
+    "appium:uiautomator2ServerLaunchTimeout": 180_000,
+    // The emulator has no lock screen. Skipping the unlock also makes the driver tolerate
+    // its Appium Settings helper app starting slowly, which it otherwise fails the session for after 30 s.
+    "appium:skipUnlock": true,
     "appium:newCommandTimeout": 300,
   },
   // Appium 3 only downloads chromedriver when this feature is allowed by name.
