@@ -1,5 +1,6 @@
 //! The JSON that `ffprobe -print_format json -show_format -show_streams` prints.
-//! Only the fields this application reads are declared.
+//! Only the fields this application reads are declared. ffprobe prints numbers that may
+//! exceed 32 bits, such as bit rates and durations, as strings.
 
 use serde::Deserialize;
 
@@ -16,6 +17,9 @@ pub struct FfprobeFormat {
     pub format_name: String,
     /// The duration in seconds as a decimal string.
     pub duration: Option<String>,
+    /// The start time in seconds as a decimal string.
+    pub start_time: Option<String>,
+    pub bit_rate: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -23,13 +27,42 @@ pub struct FfprobeStream {
     pub index: u32,
     pub codec_type: String,
     pub codec_name: Option<String>,
+    pub profile: Option<String>,
+    pub level: Option<i64>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub sample_rate: Option<String>,
+    pub channels: Option<u32>,
+    pub bit_rate: Option<String>,
+    /// `progressive`, or `tt`, `bb`, `tb`, `bt` for interlaced content.
+    pub field_order: Option<String>,
+    pub r_frame_rate: Option<String>,
+    pub avg_frame_rate: Option<String>,
+    pub start_time: Option<String>,
+    /// The container's own identifier for the stream, as a hex string such as `0x1`.
+    pub id: Option<String>,
+    #[serde(default)]
+    pub disposition: FfprobeDisposition,
     #[serde(default)]
     pub tags: FfprobeStreamTags,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Deserialize)]
+pub struct FfprobeDisposition {
+    #[serde(default)]
+    pub default: u8,
+}
+
+/// Matroska writes tag names in upper case, so the statistics and title tags take both spellings.
+#[derive(Debug, Clone, PartialEq, Default, Deserialize)]
 pub struct FfprobeStreamTags {
     pub language: Option<String>,
+    #[serde(alias = "TITLE")]
+    pub title: Option<String>,
+    #[serde(rename = "BPS")]
+    pub bps: Option<String>,
+    #[serde(rename = "BPS-eng")]
+    pub bps_eng: Option<String>,
 }
 
 pub fn parse_ffprobe_output(json: &str) -> Result<FfprobeOutput, serde_json::Error> {
@@ -56,6 +89,11 @@ mod tests {
     }
 
     #[test]
+    fn reads_the_format_bit_rate() {
+        assert_eq!(parse_sample().format.bit_rate.as_deref(), Some("78115"));
+    }
+
+    #[test]
     fn reads_three_streams() {
         assert_eq!(parse_sample().streams.len(), 3);
     }
@@ -71,9 +109,33 @@ mod tests {
     }
 
     #[test]
+    fn reads_the_video_level_and_field_order() {
+        let video = parse_sample().streams.remove(0);
+        assert_eq!(
+            (video.level, video.field_order.as_deref()),
+            (Some(12), Some("progressive"))
+        );
+    }
+
+    #[test]
     fn reads_the_subtitle_language() {
         let subtitle = parse_sample().streams.remove(2);
         assert_eq!(subtitle.tags.language.as_deref(), Some("eng"));
+    }
+
+    #[test]
+    fn reads_the_default_disposition() {
+        assert_eq!(parse_sample().streams[0].disposition.default, 1);
+    }
+
+    #[test]
+    fn reads_matroska_statistics_tags() {
+        let json = include_str!("../tests/data/ffprobe-matroska-tags.json");
+        let stream = parse_ffprobe_output(json).expect("parse").streams.remove(0);
+        assert_eq!(
+            (stream.tags.bps.as_deref(), stream.tags.title.as_deref()),
+            (Some("1500000"), Some("Director's commentary"))
+        );
     }
 
     #[test]

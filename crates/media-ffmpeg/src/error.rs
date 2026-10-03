@@ -25,4 +25,8 @@ pub enum FfmpegError {
     InvalidOutput(#[from] serde_json::Error),
     #[error("ffprobe reported a format this application does not handle: {0}")]
     UnsupportedFormat(String),
+    #[error("ffprobe listed no stream with index {0}")]
+    StreamNotFound(u32),
+    #[error("ffprobe reported a timebase that is not a positive ratio: {0}")]
+    InvalidTimebase(String),
 }
