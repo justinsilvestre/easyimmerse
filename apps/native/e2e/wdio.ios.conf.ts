@@ -1,12 +1,9 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import {
-  prepareSimulator,
-  simulatorName,
-  uninstallApp,
-} from "./iosSimulator.ts";
+import { prepareSimulator, uninstallApp } from "./iosSimulator.ts";
 
 const bundleId = "com.easyimmerse.app";
+const simulatorUdid = prepareSimulator();
 
 // `tauri ios build --target <arch>` leaves the simulator app under gen/apple/build/<arch>.
 const buildDirectory = process.arch === "arm64" ? "arm64-sim" : "x86_64";
@@ -34,7 +31,7 @@ export const config: WebdriverIO.Config = {
     {
       platformName: "iOS",
       "appium:automationName": "XCUITest",
-      "appium:deviceName": simulatorName,
+      "appium:udid": simulatorUdid,
       "appium:app": appPath,
       "appium:autoWebview": true,
       // A simulator that has just booted can take a while to expose the web inspector.
@@ -51,5 +48,5 @@ export const config: WebdriverIO.Config = {
   logLevel: "warn",
   waitforTimeout: 10_000,
   // Each run starts from a fresh install, so the app opens a new database with the placeholder projects.
-  onPrepare: () => uninstallApp(prepareSimulator(), bundleId),
+  onPrepare: () => uninstallApp(simulatorUdid, bundleId),
 };

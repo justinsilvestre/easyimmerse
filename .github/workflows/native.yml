@@ -168,7 +168,9 @@ jobs:
       - name: Simulator build without signing
         run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci --config e2e/tauri.conf.json
       # The cache holds the XCUITest driver and its WebDriverAgent build, which takes minutes.
-      - uses: actions/cache@v4
+      # It is saved at the end even when the tests fail, so a failing run still spares the next one that build.
+      - uses: actions/cache/restore@v4
+        id: appium-cache
         with:
           path: apps/native/.appium
           key: appium-ios-${{ runner.os }}-xcode16.4-${{ hashFiles('mise.toml', 'pnpm-lock.yaml') }}
@@ -179,6 +181,11 @@ jobs:
         run: xcrun simctl list runtimes
       - name: End-to-end tests through Appium
         run: pnpm --filter @easyimmerse/native e2e:ios
+      - uses: actions/cache/save@v4
+        if: always() && steps.appium-cache.outputs.cache-hit != 'true'
+        with:
+          path: apps/native/.appium
+          key: ${{ steps.appium-cache.outputs.cache-primary-key }}
 
   record:
     needs: [gate, desktop, android, ios]
