@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
-import { Button } from "../components/Button.tsx";
 import { ClickableText } from "../components/ClickableText.tsx";
+import { IconButton } from "../components/IconButton.tsx";
 import type { LookupEntry } from "./lookupState.ts";
 
 /** One dictionary entry in the pop-up, with its definitions ready to be looked up or made into a flashcard. */
@@ -38,10 +38,13 @@ export function TermEntryCard({
       </ol>
       <div className="flex items-center justify-between gap-2 text-xs text-fg-faint">
         <span>{entry.dictionaryTitle}</span>
-        <Button size="sm" variant="subtle" onClick={onCreateFlashcard}>
-          <Plus className="size-3" aria-hidden />
-          Flashcard from this entry
-        </Button>
+        <IconButton
+          label="Flashcard from this entry"
+          className="size-6"
+          onClick={onCreateFlashcard}
+        >
+          <Plus className="size-4" />
+        </IconButton>
       </div>
     </article>
   );

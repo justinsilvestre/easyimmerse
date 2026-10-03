@@ -3,6 +3,7 @@ import { ZoomIn, ZoomOut } from "lucide-react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { formatTimestamp } from "./formatTimestamp.ts";
+import { Peaks, peaksBetween } from "./Peaks.tsx";
 
 /** A time range drawn over the waveform: a subtitle cue, or a cue that has a flashcard. */
 export type WaveformSegment = {
@@ -53,16 +54,12 @@ export function Waveform({
   const span = viewEndMs - viewStartMs;
   const toPercent = (ms: number) => `${((ms - viewStartMs) / span) * 100}%`;
   const toPercentWidth = (ms: number) => `${(ms / span) * 100}%`;
-  const visiblePeaks = peaks.slice(
-    Math.floor((peaks.length * viewStartMs) / durationMs),
-    Math.ceil((peaks.length * viewEndMs) / durationMs),
-  );
   const msAtClick = (event: React.MouseEvent<HTMLElement>) => {
     const { left, width } = event.currentTarget.getBoundingClientRect();
     return viewStartMs + ((event.clientX - left) / width) * span;
   };
   return (
-    <div className="flex flex-col gap-1 border-t border-line bg-surface px-3 py-2">
+    <div className="border-t border-line bg-surface px-3 py-2">
       <div className="relative h-24 overflow-hidden rounded-md bg-surface-muted">
         <button
           type="button"
@@ -70,7 +67,9 @@ export function Waveform({
           className="absolute inset-0 w-full cursor-crosshair"
           onClick={(event) => callbacks.onSeek(msAtClick(event))}
         >
-          <Peaks peaks={visiblePeaks} />
+          <Peaks
+            peaks={peaksBetween(peaks, durationMs, viewStartMs, viewEndMs)}
+          />
         </button>
         {segments.map((segment) => (
           <Segment
@@ -87,52 +86,26 @@ export function Waveform({
           className="absolute inset-y-0 w-0.5 bg-fg"
           style={{ left: toPercent(currentMs) }}
         />
-      </div>
-      <div className="flex items-center justify-between text-xs text-fg-faint tabular-nums">
-        <span>{formatTimestamp(viewStartMs)}</span>
-        <span className="flex items-center gap-1">
+        <span className="absolute top-1 right-1 z-20 flex rounded-md bg-surface/80">
           <IconButton
             label="Zoom out"
+            className="size-6"
             disabled={!canZoomOut}
             onClick={callbacks.onZoomOut}
           >
-            <ZoomOut className="size-4" />
+            <ZoomOut className="size-3.5" />
           </IconButton>
           <IconButton
             label="Zoom in"
+            className="size-6"
             disabled={!canZoomIn}
             onClick={callbacks.onZoomIn}
           >
-            <ZoomIn className="size-4" />
+            <ZoomIn className="size-3.5" />
           </IconButton>
         </span>
-        <span>{formatTimestamp(viewEndMs)}</span>
       </div>
     </div>
-  );
-}
-
-function Peaks({ peaks }: { peaks: readonly number[] }) {
-  const barWidth = 1000 / peaks.length;
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 1000 100"
-      preserveAspectRatio="none"
-      className="h-full w-full text-fg-faint"
-    >
-      {peaks.map((peak, index) => (
-        <rect
-          // Peaks never reorder, so the position is the identity.
-          key={index.toString()}
-          x={index * barWidth}
-          y={50 - peak * 48}
-          width={barWidth * 0.7}
-          height={peak * 96}
-          fill="currentColor"
-        />
-      ))}
-    </svg>
   );
 }
 
@@ -165,10 +138,6 @@ function Segment({
       style={{ left, width }}
       onClick={() => callbacks.onSegmentClick(segment.id)}
       onDoubleClick={() => callbacks.onSegmentDoubleClick(segment.id)}
-    >
-      {isFlashcard && (
-        <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-accent" />
-      )}
-    </button>
+    />
   );
 }
