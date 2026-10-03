@@ -36,6 +36,7 @@ on:
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
       - "fixtures/**"
+  workflow_dispatch:
 
 # A newer push to the same branch cancels the run still going for the older one.
 concurrency:
@@ -77,8 +78,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      # The end-to-end tests need the global Tauri object, which the extra config file turns on.
       - name: Debug build without bundling
-        run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle
+        run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json
 
       - name: Embedded server health check
         shell: bash
@@ -88,6 +90,16 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run --auto-servernum "$binary"; else "$binary"; fi
         env:
           EASYIMMERSE_SMOKE_TEST: "1"
+
+      # The tests start the debug build, which serves WebDriver on a loopback port, so no browser driver is installed.
+      - name: End-to-end tests through WebDriver
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run --auto-servernum pnpm --filter @easyimmerse/native e2e
+          else
+            pnpm --filter @easyimmerse/native e2e
+          fi
 
   android:
     needs: gate
