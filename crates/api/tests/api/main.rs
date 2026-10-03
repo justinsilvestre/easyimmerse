@@ -1,6 +1,7 @@
 mod auth;
 mod dictionaries;
 mod documents;
+mod media;
 mod openapi;
 mod preferences;
 mod projects;

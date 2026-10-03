@@ -13,5 +13,5 @@ pub use auth::error_body::{ApiError, ApiFailure};
 pub use auth::token_kind::TokenKind;
 pub use config::ApiConfig;
 pub use router::{build_router, openapi_document};
-pub use serve::{ServeError, ServerHandle, serve};
+pub use serve::{ServeError, ServeOptions, ServerHandle, serve};
 pub use state::AppState;

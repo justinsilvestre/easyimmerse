@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::extract::DefaultBodyLimit;
 use axum::middleware::from_fn_with_state;
 use axum::{Extension, Router};
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowHeaders, CorsLayer};
 use tower_http::trace::TraceLayer;
 use utoipa::openapi::OpenApi;
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
@@ -13,7 +13,10 @@ use utoipa_axum::routes;
 
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
-use crate::routes::{dictionaries, documents, health, openapi, preferences, projects, timed_text};
+use crate::routes::{
+    dictionaries, documents, health, media, media_stream, openapi, preferences, projects,
+    timed_text,
+};
 use crate::state::AppState;
 
 /// Dictionaries can be hundreds of megabytes, so the default two-megabyte limit is raised.
@@ -36,11 +39,18 @@ pub fn build_router(state: AppState) -> (Router, OpenApi) {
     let router = protected
         .merge(public)
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY_BYTES))
-        .layer(CorsLayer::permissive())
+        .layer(cors_layer())
         .layer(from_fn_with_state(Arc::clone(&state.config), check_host))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
     (router, document)
+}
+
+/// Allows any origin, since the bearer token is what protects the API.
+/// The allowed headers mirror each preflight request because browsers do not let the
+/// `*` wildcard stand for the `Authorization` header.
+fn cors_layer() -> CorsLayer {
+    CorsLayer::permissive().allow_headers(AllowHeaders::mirror_request())
 }
 
 /// Builds the OpenAPI document without a running server.
@@ -55,6 +65,9 @@ fn protected_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::with_openapi(ApiDoc::openapi())
         .routes(routes!(openapi::get_openapi_document))
         .routes(routes!(projects::list_projects))
+        .routes(routes!(media::list_media_files, media::add_media_file))
+        .routes(routes!(media::remove_media_file))
+        .routes(routes!(media_stream::stream_media_file))
         .routes(routes!(
             preferences::get_preference,
             preferences::set_preference

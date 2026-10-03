@@ -66,3 +66,20 @@ async fn the_health_check_reports_ok() {
         .await;
     assert_eq!(response.json(), serde_json::json!({ "status": "ok" }));
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_preflight_request_allows_the_authorization_header() {
+    let server = spawn_test_server(false).await;
+    let response = server
+        .request("OPTIONS", "/projects")
+        .without_token()
+        .header("Origin", "http://localhost:5173")
+        .header("Access-Control-Request-Method", "GET")
+        .header("Access-Control-Request-Headers", "authorization")
+        .send()
+        .await;
+    assert_eq!(
+        response.header("access-control-allow-headers"),
+        Some("authorization")
+    );
+}

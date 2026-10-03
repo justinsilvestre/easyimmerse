@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use easyimmerse_storage::{Storage, StorageError};
@@ -9,13 +10,16 @@ use crate::config::ApiConfig;
 pub struct AppState {
     pub storage: Arc<Storage>,
     pub config: Arc<ApiConfig>,
+    /// Where converted media is cached. None when the server has nowhere to write.
+    pub cache_dir: Option<PathBuf>,
 }
 
 impl AppState {
-    pub fn new(storage: Storage, config: ApiConfig) -> Self {
+    pub fn new(storage: Storage, config: ApiConfig, cache_dir: Option<PathBuf>) -> Self {
         Self {
             storage: Arc::new(storage),
             config: Arc::new(config),
+            cache_dir,
         }
     }
 
