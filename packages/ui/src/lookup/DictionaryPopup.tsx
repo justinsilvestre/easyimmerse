@@ -1,7 +1,8 @@
-import { BookOpen, Plus, Search, X } from "lucide-react";
+import { BookOpen, Search, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
+import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { languageName } from "../projects/languages.ts";
 import type { LookupState } from "./lookupState.ts";
 import { TermEntryCard } from "./TermEntryCard.tsx";
@@ -42,7 +43,7 @@ export function DictionaryPopup({
             variant="primary"
             onClick={() => onCreateFlashcard(state.term, null)}
           >
-            <Plus className="size-3" aria-hidden />
+            <NewFlashcardIcon className="size-3.5" />
             Flashcard
           </Button>
         )}

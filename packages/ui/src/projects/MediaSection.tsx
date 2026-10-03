@@ -8,10 +8,12 @@ export function MediaSection({
   media,
   onAddMedia,
   onOpenMedia,
+  onDeleteMedia,
 }: {
   media: readonly MediaItem[];
   onAddMedia: () => void;
   onOpenMedia: (mediaId: string) => void;
+  onDeleteMedia: (mediaId: string) => void;
 }) {
   return (
     <section className="flex flex-col gap-3">
@@ -36,7 +38,11 @@ export function MediaSection({
           }
         />
       ) : (
-        <MediaList media={media} onOpen={onOpenMedia} />
+        <MediaList
+          media={media}
+          onOpen={onOpenMedia}
+          onDelete={onDeleteMedia}
+        />
       )}
     </section>
   );

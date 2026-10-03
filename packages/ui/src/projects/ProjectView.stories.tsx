@@ -23,40 +23,30 @@ const media: MediaItem[] = [
     id: "m1",
     name: "Dark S01E01 - Geheimnisse.mkv",
     kind: "video",
-    durationMs: 3_075_000,
-    timedText: ["target", "translation"],
     flashcardCount: 37,
   },
   {
     id: "m2",
     name: "Dark S01E02 - Lügen.mkv",
     kind: "video",
-    durationMs: 2_670_000,
-    timedText: ["target"],
     flashcardCount: 12,
   },
   {
     id: "m3",
     name: "Dark S01E03 - Gestern und Heute.mkv",
     kind: "video",
-    durationMs: 2_712_000,
-    timedText: [],
     flashcardCount: 0,
   },
   {
     id: "m4",
     name: "Die Verwandlung (Hörbuch).mp3",
     kind: "audio",
-    durationMs: 7_560_000,
-    timedText: ["target"],
     flashcardCount: 4,
   },
   {
     id: "m5",
     name: "Die Verwandlung.epub",
     kind: "ebook",
-    durationMs: null,
-    timedText: ["target", "translation"],
     flashcardCount: 9,
   },
 ];
@@ -74,7 +64,13 @@ function sections(
 ) {
   return (
     <>
-      <MediaSection media={mediaItems} onAddMedia={fn()} onOpenMedia={fn()} />
+      <DictionaryStatus statuses={dictionaries} onOpenDictionaries={fn()} />
+      <MediaSection
+        media={mediaItems}
+        onAddMedia={fn()}
+        onOpenMedia={fn()}
+        onDeleteMedia={fn()}
+      />
       <FlashcardSyncPanel
         state={flashcardSync}
         includedFields={fieldsOfPreset("intermediate")}
@@ -84,7 +80,6 @@ function sections(
         onStartReview={fn()}
         onSendToAnki={fn()}
       />
-      <DictionaryStatus statuses={dictionaries} onOpenDictionaries={fn()} />
     </>
   );
 }

@@ -1,10 +1,11 @@
 import type { Cue } from "@easyimmerse/types";
-import { ArrowLeft, Layers, Minimize, Music, Search } from "lucide-react";
+import { ArrowLeft, Minimize, Music, Search } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { Kbd } from "../components/Kbd.tsx";
+import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { languageName } from "../projects/languages.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
 import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
@@ -100,7 +101,7 @@ export function MediaView(props: MediaViewProps) {
                 label="New flashcard from this subtitle"
                 onClick={props.onAddFlashcard}
               >
-                <Layers className="size-4" />
+                <NewFlashcardIcon className="size-4" />
               </IconButton>
             </span>
             {panels.distractionFree && (
