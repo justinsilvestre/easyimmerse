@@ -34,14 +34,22 @@ export const config: WebdriverIO.Config = {
       "appium:udid": simulatorUdid,
       "appium:app": appPath,
       "appium:autoWebview": true,
-      // A simulator that has just booted can take a while to expose the web inspector.
+      // The web inspector lists an unsigned app by process name rather than bundle id,
+      // and the driver only inspects applications whose id it knows.
+      "appium:additionalWebviewBundleIds": ["process-easyImmerse"],
+      // The first launch after an install takes a while before the page has a URL.
+      // The driver retries every 500 ms, so these allow about a minute.
       "appium:webviewConnectTimeout": 30_000,
+      "appium:webviewConnectRetries": 120,
       "appium:derivedDataPath": derivedDataPath,
       "appium:usePrebuiltWDA": isWebDriverAgentBuilt,
       "appium:wdaLaunchTimeout": 120_000,
     },
   ],
-  services: [["appium", { args: { basePath: "/" } }]],
+  // Appium loads its driver slowly on a cold CI runner.
+  services: [
+    ["appium", { args: { basePath: "/" }, appiumStartTimeout: 120_000 }],
+  ],
   framework: "mocha",
   mochaOpts: { ui: "bdd", timeout: 120_000 },
   reporters: ["spec"],

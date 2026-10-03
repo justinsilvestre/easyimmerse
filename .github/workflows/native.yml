@@ -181,6 +181,17 @@ jobs:
         run: xcrun simctl list runtimes
       - name: End-to-end tests through Appium
         run: pnpm --filter @easyimmerse/native e2e:ios
+      - name: Collect the simulator's screen and the app's log
+        if: failure()
+        run: |
+          mkdir -p ios-diagnostics
+          xcrun simctl io booted screenshot ios-diagnostics/screen.png || true
+          xcrun simctl spawn booted log show --last 15m --predicate 'process == "easyImmerse"' --style compact > ios-diagnostics/app.log || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ios-diagnostics
+          path: ios-diagnostics
       - uses: actions/cache/save@v4
         if: always() && steps.appium-cache.outputs.cache-hit != 'true'
         with:
