@@ -29,6 +29,8 @@ export const config = createAppiumConfig(
     platformName: "Android",
     "appium:automationName": "UiAutomator2",
     "appium:app": apkPath,
+    // The version number never changes between builds, so a fresh APK must replace the installed one.
+    "appium:enforceAppInstall": true,
     "appium:autoWebview": true,
     "appium:autoWebviewTimeout": 60_000,
     "appium:chromedriverAutodownload": true,
