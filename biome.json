@@ -17,7 +17,8 @@
       "!**/gen",
       "!**/crates/api/openapi.json",
       "!**/fixtures/sample-yomitan",
-      "!**/fixtures/sample-epub"
+      "!**/fixtures/sample-epub",
+      "!**/fixtures/conversion-h264-aac.ts"
     ]
   },
   "formatter": {
