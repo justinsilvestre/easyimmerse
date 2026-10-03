@@ -128,12 +128,13 @@ run = "pnpm --filter @easyimmerse/native e2e:android"
 # as untrusted, so rustup's own cargo comes first on PATH there.
 [tasks."e2e:ios"]
 description = "Drive a debug build of the app on an iOS simulator through Appium"
+depends = ["plugins:build-rust"]
 run = '''
 set -e
 case "$(uname -m)" in arm64) target=aarch64-sim ;; *) target=x86_64 ;; esac
 [ -d apps/native/src-tauri/gen/apple ] || pnpm --filter @easyimmerse/native exec tauri ios init --ci --skip-targets-install
 [ "$target" = aarch64-sim ] || sh scripts/ios-project-simulator-only.sh
-PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target "$target" --no-sign --ci --config e2e/tauri.conf.json
+PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target "$target" --no-sign --ci --config e2e/tauri.conf.json --features plugin-check
 pnpm --filter @easyimmerse/native e2e:ios
 '''
 

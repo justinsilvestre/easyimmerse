@@ -18,6 +18,7 @@ on:
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
       - "scripts/install-appium-driver.sh"
+      - "scripts/ios-project-simulator-only.sh"
       - "fixtures/**"
       - "plugins/**"
   # A tag named native-ci-<job>-<stamp> runs that one job at the tagged commit, for one-off checks of a branch.
@@ -40,6 +41,7 @@ on:
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
       - "scripts/install-appium-driver.sh"
+      - "scripts/ios-project-simulator-only.sh"
       - "fixtures/**"
       - "plugins/**"
   workflow_dispatch:
@@ -230,8 +232,10 @@ jobs:
       # HOME, where the mise shim refuses mise.toml as untrusted. Putting rustup's own
       # cargo first keeps mise out of that phase; rust-toolchain.toml still picks the version.
       # The end-to-end tests need the global Tauri object, which the extra config file turns on.
+      - name: Build the hello-rust plugin
+        run: mise run plugins:build-rust
       - name: Simulator build without signing
-        run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci --config e2e/tauri.conf.json
+        run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci --config e2e/tauri.conf.json --features plugin-check
       # The cache holds the XCUITest driver and its WebDriverAgent build, which takes minutes.
       # It is saved at the end even when the tests fail, so a failing run still spares the next one that build.
       - uses: actions/cache/restore@v4
