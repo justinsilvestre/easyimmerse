@@ -2,10 +2,12 @@
 //!
 //! When `EASYIMMERSE_SMOKE_TEST=1` is set, the app starts its embedded server, requests
 //! `/health`, prints the result, and exits without creating a window, so no display is needed
-//! for the request itself. On Linux, `tauri::Builder::run` still initializes GTK before
+//! for the request itself. A build with the `plugin-check` feature also runs the plugin host
+//! check and prints what it found. On Linux, `tauri::Builder::run` still initializes GTK before
 //! `setup` runs, and GTK refuses to start without a display, which is why the CI job wraps the
 //! binary in `xvfb-run` there.
 
+use tauri::AppHandle;
 use thiserror::Error;
 
 use crate::embedded_server::EmbeddedServer;
@@ -19,21 +21,44 @@ enum SmokeTestError {
     Request(#[from] ureq::Error),
     #[error("unexpected health response: {status} {body}")]
     Unexpected { status: u16, body: String },
+    #[cfg(feature = "plugin-check")]
+    #[error("the plugin host check failed: {0}")]
+    PluginCheck(#[from] crate::plugin_check::PluginCheckError),
 }
 
 pub fn is_requested() -> bool {
     std::env::var(ENV_VAR).is_ok_and(|value| value == "1")
 }
 
-/// Checks the server's health and ends the process: exit code 0 on success, 1 otherwise.
-pub fn run_and_exit(server: &EmbeddedServer) -> ! {
-    match check_health(server) {
+/// Runs the checks and ends the process: exit code 0 on success, 1 otherwise.
+pub fn run_and_exit(app: &AppHandle, server: &EmbeddedServer) -> ! {
+    match run_checks(app, server) {
         Ok(()) => std::process::exit(0),
         Err(error) => {
             println!("smoke test failed: {error}");
             std::process::exit(1)
         }
     }
+}
+
+fn run_checks(app: &AppHandle, server: &EmbeddedServer) -> Result<(), SmokeTestError> {
+    check_health(server)?;
+    check_plugin_host(app)
+}
+
+#[cfg(feature = "plugin-check")]
+fn check_plugin_host(app: &AppHandle) -> Result<(), SmokeTestError> {
+    let found = crate::plugin_check::run(app)?;
+    println!(
+        "smoke test: the plugin host greeted {:?} in {} mode",
+        found.greeting, found.execution_mode
+    );
+    Ok(())
+}
+
+#[cfg(not(feature = "plugin-check"))]
+fn check_plugin_host(_app: &AppHandle) -> Result<(), SmokeTestError> {
+    Ok(())
 }
 
 fn check_health(server: &EmbeddedServer) -> Result<(), SmokeTestError> {

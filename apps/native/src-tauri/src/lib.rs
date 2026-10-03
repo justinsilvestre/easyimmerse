@@ -3,10 +3,13 @@
 
 #[cfg(desktop)]
 mod dev_server_file;
+#[cfg(feature = "plugin-check")]
+mod embedded_plugin;
 mod embedded_server;
 mod injected_config_script;
 mod main_window;
 mod navigation_guard;
+mod plugin_check;
 mod smoke_test;
 mod webdriver;
 
@@ -20,11 +23,12 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init());
-    let outcome = webdriver::add_plugins_when_requested(builder)
+    let builder = webdriver::add_plugins_when_requested(builder);
+    let outcome = plugin_check::register(builder)
         .setup(|app| {
             let server = embedded_server::start(app.handle())?;
             if smoke_test::is_requested() {
-                smoke_test::run_and_exit(&server);
+                smoke_test::run_and_exit(app.handle(), &server);
             }
             #[cfg(desktop)]
             dev_server_file::write_in_debug_builds(&server);

@@ -11,6 +11,6 @@ pub fn create(app: &AppHandle, server: &EmbeddedServer) -> tauri::Result<Webview
         .title("easyImmerse")
         .inner_size(1100.0, 720.0)
         .initialization_script(injected_config_script(&server.url, &server.token))
-        .on_navigation(|url| is_app_url(url))
+        .on_navigation(is_app_url)
         .build()
 }
