@@ -16,8 +16,10 @@ on:
       - "plugins/**"
       - "crates/**"
       - "fixtures/**"
+  # A tag named plugins-ci-<job>-<stamp> runs that one job at the tagged commit, for one-off checks of a branch.
   push:
     branches: [main]
+    tags: ["plugins-ci-*"]
     paths:
       - ".github/workflows/plugins.yml"
       - ".github/actions/**"
@@ -52,7 +54,7 @@ jobs:
 
   host:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && github.ref_type != 'tag'
     strategy:
       fail-fast: false
       matrix:
@@ -73,7 +75,7 @@ jobs:
 
   interpreter:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && github.ref_type != 'tag'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -92,7 +94,7 @@ jobs:
   # compiler for the C dependencies' build scripts.
   mobile:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'plugins-ci-mobile-'))
     strategy:
       fail-fast: false
       matrix:
