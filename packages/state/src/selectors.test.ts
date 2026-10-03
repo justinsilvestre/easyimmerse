@@ -6,6 +6,7 @@ import {
   selectPendingFilePick,
   selectPreference,
   selectSubtitleSource,
+  selectTextSize,
 } from "./selectors.ts";
 
 const rootState: RootState = {
@@ -36,5 +37,9 @@ describe("selectors", () => {
 
   it("selectPendingFilePick returns whether a file pick is pending", () => {
     expect(selectPendingFilePick(rootState)).toBe(true);
+  });
+
+  it("selectTextSize returns medium until a size is stored", () => {
+    expect(selectTextSize(rootState)).toBe("medium");
   });
 });

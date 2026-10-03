@@ -96,6 +96,7 @@ describe("update", () => {
     );
     expect(effects).toEqual([
       { type: "loadPreference", key: "showTranslations" },
+      { type: "loadPreference", key: "textSize" },
     ]);
   });
 
@@ -157,6 +158,21 @@ describe("update", () => {
     );
     expect(effects).toEqual([
       { type: "openExternalUrl", url: "https://example.com" },
+    ]);
+  });
+
+  it("stores the chosen size as a preference for textSizeChosen", () => {
+    const [state] = update(initialAppState, actions.textSizeChosen("large"));
+    expect(state.preferences.textSize).toBe("large");
+  });
+
+  it("returns a savePreference effect for textSizeChosen", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.textSizeChosen("large"),
+    );
+    expect(effects).toEqual([
+      { type: "savePreference", key: "textSize", value: "large" },
     ]);
   });
 });

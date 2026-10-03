@@ -1,6 +1,7 @@
 import type { Action } from "redux";
 import type { PreferenceKey } from "./appState.ts";
 import type { PickedFile } from "./effects.ts";
+import type { TextSize } from "./textSize.ts";
 import type { Theme } from "./theme.ts";
 
 export const actions = {
@@ -26,6 +27,8 @@ export const actions = {
   systemThemeChanged: (theme: Theme) =>
     ({ type: "systemThemeChanged", theme }) as const,
   themeToggled: () => ({ type: "themeToggled" }) as const,
+  textSizeChosen: (size: TextSize) =>
+    ({ type: "textSizeChosen", size }) as const,
 };
 
 export type AppAction = ReturnType<(typeof actions)[keyof typeof actions]>;

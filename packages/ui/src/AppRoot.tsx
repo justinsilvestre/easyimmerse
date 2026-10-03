@@ -1,6 +1,14 @@
 import type { AppStore, PlayerRegistry } from "@easyimmerse/state";
-import { useReducer } from "react";
+import { actions } from "@easyimmerse/state";
+import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
+import {
+  type AppFeatures,
+  AppFeaturesContext,
+  defaultAppFeatures,
+} from "./appFeaturesContext.ts";
+import { useAppDispatch } from "./hooks/useAppDispatch.ts";
+import { useApplyTextSize } from "./hooks/useApplyTextSize.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
 import { initialNavigation, navigate } from "./navigation.ts";
@@ -11,9 +19,11 @@ import { MediaScreen } from "./screens/MediaScreen.tsx";
 export function AppRoot({
   store,
   playerRegistry,
+  features = defaultAppFeatures,
 }: {
   store: AppStore;
   playerRegistry: PlayerRegistry;
+  features?: AppFeatures;
 }) {
   const [navigation, dispatchNavigation] = useReducer(
     navigate,
@@ -22,27 +32,34 @@ export function AppRoot({
   return (
     <Provider store={store}>
       <PlayerRegistryContext value={playerRegistry}>
-        <ThemeHandler />
-        {navigation.screen === "home" ? (
-          <HomeScreen
-            onOpenProject={(projectId) =>
-              dispatchNavigation({ type: "openProject", projectId })
-            }
-          />
-        ) : (
-          <MediaScreen
-            projectId={navigation.projectId}
-            onBack={() => dispatchNavigation({ type: "goHome" })}
-          />
-        )}
+        <AppFeaturesContext value={features}>
+          <AppearanceHandler />
+          {navigation.screen === "home" ? (
+            <HomeScreen
+              onOpenProject={(projectId) =>
+                dispatchNavigation({ type: "openProject", projectId })
+              }
+            />
+          ) : (
+            <MediaScreen
+              projectId={navigation.projectId}
+              onBack={() => dispatchNavigation({ type: "goHome" })}
+            />
+          )}
+        </AppFeaturesContext>
       </PlayerRegistryContext>
     </Provider>
   );
 }
 
-/** Follows the operating system's theme unless the user has switched it, and shows the chosen theme. */
-function ThemeHandler() {
+/** Follows the operating system's theme unless the user has switched it, and shows the chosen theme and text size. */
+function AppearanceHandler() {
+  const dispatch = useAppDispatch();
   useTrackSystemTheme();
   useApplyTheme();
+  useApplyTextSize();
+  useEffect(() => {
+    dispatch(actions.preferencesLoadRequested());
+  }, [dispatch]);
   return null;
 }
