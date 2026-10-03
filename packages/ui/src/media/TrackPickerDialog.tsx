@@ -5,7 +5,7 @@ import { Dialog } from "../components/Dialog.tsx";
 import { languageName } from "../projects/languages.ts";
 import type { TrackOption } from "./playback.ts";
 
-/** Asks which of several tracks to use when none is alone in the wanted language. */
+/** Asks which of several tracks to play or show when none is alone in the wanted language. */
 export function TrackPickerDialog({
   purpose,
   tracks,
@@ -22,10 +22,9 @@ export function TrackPickerDialog({
   const [chosenId, setChosenId] = useState<string | null>(
     tracks.find((track) => track.language === wantedLanguage)?.id ?? null,
   );
-  const noun = purpose === "audio" ? "audio track" : "subtitles";
   return (
     <Dialog
-      title={`Which ${noun} are in ${languageName(wantedLanguage)}?`}
+      title={titles[purpose]}
       description={descriptions[purpose]}
       onClose={onSkip}
       footer={
@@ -46,7 +45,7 @@ export function TrackPickerDialog({
         {tracks.map((track) => (
           <label
             key={track.id}
-            className="flex cursor-pointer items-center gap-3 rounded-md border border-line px-3 py-2 text-sm has-checked:border-accent has-checked:bg-accent-soft"
+            className="flex cursor-pointer items-start gap-3 rounded-md border border-line px-3 py-2 text-sm has-checked:border-accent has-checked:bg-accent-soft"
           >
             <input
               type="radio"
@@ -54,16 +53,27 @@ export function TrackPickerDialog({
               value={track.id}
               checked={chosenId === track.id}
               onChange={() => setChosenId(track.id)}
-              className="accent-accent"
+              className="mt-1 accent-accent"
             />
-            <span className="flex-1">{track.label}</span>
-            {track.language && (
-              <Badge
-                tone={track.language === wantedLanguage ? "accent" : "neutral"}
-              >
-                {languageName(track.language)}
-              </Badge>
-            )}
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex items-center gap-2">
+                <span className="flex-1">{track.label}</span>
+                {track.language && (
+                  <Badge
+                    tone={
+                      track.language === wantedLanguage ? "accent" : "neutral"
+                    }
+                  >
+                    {languageName(track.language)}
+                  </Badge>
+                )}
+              </span>
+              {track.sample && (
+                <span className="line-clamp-2 text-xs whitespace-pre-line text-fg-muted">
+                  {track.sample}
+                </span>
+              )}
+            </span>
           </label>
         ))}
       </fieldset>
@@ -71,11 +81,17 @@ export function TrackPickerDialog({
   );
 }
 
+const titles = {
+  audio: "Which audio track should play?",
+  targetSubtitles: "Which subtitles should be shown?",
+  translationSubtitles: "Which subtitles are the translation?",
+};
+
 const descriptions = {
   audio:
-    "The file has several audio tracks. Lookups and flashcard audio use the one you choose.",
+    "The file has several audio tracks. Lookups and flashcard audio use the one that plays.",
   targetSubtitles:
-    "The file has several subtitle tracks. Words in the chosen one can be looked up.",
+    "The file has several subtitle tracks. Words in the one you choose can be looked up.",
   translationSubtitles:
-    "Choose the subtitles to show as the translation, or skip to go without one.",
+    "Choose the subtitles to show under the ones you are learning from, or skip to go without a translation.",
 };

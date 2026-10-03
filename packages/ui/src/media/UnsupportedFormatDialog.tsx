@@ -18,21 +18,22 @@ export function UnsupportedFormatDialog({
   if (platform === "desktop") {
     return (
       <Dialog
-        title="Convert this file?"
+        title="Convert this file to play it?"
         onClose={onClose}
         footer={
           <>
             <Button onClick={onClose}>Not now</Button>
             <Button variant="primary" onClick={onConvert}>
-              Convert
+              Convert now
             </Button>
           </>
         }
       >
         <p className="text-sm">
-          <strong>{fileName}</strong> is in a format the player cannot play as
-          it is. The app can convert it to a supported format. The original file
-          is kept, and the converted copy uses extra disk space.
+          The player cannot open <strong>{fileName}</strong> in its current
+          format. Converting makes a playable copy and leaves the original as it
+          is. The copy takes up extra disk space, and you can start the
+          conversion later from the project instead.
         </p>
       </Dialog>
     );
@@ -45,15 +46,15 @@ export function UnsupportedFormatDialog({
         <>
           <Button onClick={onClose}>Close</Button>
           <Button variant="primary" onClick={onLearnAboutDesktopApp}>
-            About the desktop app
+            Get the desktop app
           </Button>
         </>
       }
     >
       <p className="text-sm">
-        <strong>{fileName}</strong> is in a format browsers do not play. The
-        easyImmerse desktop app plays it, and converts files when needed. Your
-        projects and flashcards carry over.
+        Browsers do not play the format of <strong>{fileName}</strong>. The
+        desktop app plays it, converting the file when needed, and opens your
+        projects and flashcards as they are here.
       </p>
     </Dialog>
   );
