@@ -85,10 +85,13 @@ run = [
 # The drivers are pinned here rather than in package.json because Appium installs them itself.
 [tasks."appium:install"]
 description = "Install the Appium drivers for the mobile end-to-end tests into apps/native/.appium"
-run = [
-  "pnpm --filter @easyimmerse/native exec appium driver install uiautomator2@8.7.0",
-  "pnpm --filter @easyimmerse/native exec appium driver install xcuitest@12.14.0",
-]
+depends = ["appium:install:android", "appium:install:ios"]
+
+[tasks."appium:install:android"]
+run = "sh scripts/install-appium-driver.sh uiautomator2 8.7.0"
+
+[tasks."appium:install:ios"]
+run = "sh scripts/install-appium-driver.sh xcuitest 12.14.0"
 
 [tasks."e2e:desktop"]
 description = "Drive a debug build of the desktop app through WebDriver"
