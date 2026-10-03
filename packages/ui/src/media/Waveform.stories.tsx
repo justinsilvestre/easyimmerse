@@ -23,7 +23,7 @@ const meta = {
     viewEndMs: 24_000,
     currentMs: 6_200,
     segments: segmentsFromCues(exampleCues, exampleFlashcardCueIndexes),
-    editing: null,
+    editingSegmentId: null,
     canZoomIn: true,
     canZoomOut: false,
     callbacks: {
@@ -42,7 +42,7 @@ type Story = StoryObj<typeof meta>;
 export const WithCues: Story = {};
 
 export const EditingAFlashcard: Story = {
-  args: { editing: { segmentId: "3", screenshotMs: 6_800 } },
+  args: { editingSegmentId: "3" },
 };
 
 export const ZoomedIn: Story = {

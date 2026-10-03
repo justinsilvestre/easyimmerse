@@ -1,9 +1,13 @@
+import { languageName } from "../projects/languages.ts";
+
 /** A time range within a media file's audio track, in milliseconds. */
 export type AudioClip = { startMs: number; endMs: number };
 
+/** A still frame of the video, as an image URL, with the time it was taken at. */
+export type Screenshot = { url: string; atMs: number };
+
 /**
  * Everything a flashcard can hold. L1 is the language the user already knows; L2 is the one they are learning.
- * The screenshot is an image URL.
  */
 export type FlashcardContent = {
   word: string;
@@ -14,7 +18,7 @@ export type FlashcardContent = {
   textContextTranslation: string;
   textContextPronunciation: string;
   audioContext: AudioClip | null;
-  screenshot: string | null;
+  screenshot: Screenshot | null;
   tags: string[];
 };
 
@@ -26,64 +30,87 @@ export type FlashcardTextFieldKey = {
     : never;
 }[FlashcardFieldKey];
 
-export type FlashcardFieldGroup = "word" | "context" | "media";
+/** The project's languages as BCP 47 codes: the one being learned and the one translations are in. */
+export type FlashcardLanguages = { target: string; translation: string };
+
+/** Fields are grouped by the language they are in, with the audio, screenshot, and tags apart. */
+export type FlashcardFieldGroup = "target" | "translation" | "media";
 
 export type FlashcardFieldDefinition = {
   key: FlashcardFieldKey;
-  label: string;
   group: FlashcardFieldGroup;
   multiline: boolean;
+  label: (languages: FlashcardLanguages) => string;
 };
 
 /** Every field, in the order forms and previews show them. */
 export const flashcardFields: readonly FlashcardFieldDefinition[] = [
-  { key: "word", label: "Word", group: "word", multiline: false },
+  { key: "word", group: "target", multiline: false, label: () => "Word" },
   {
     key: "wordPronunciation",
-    label: "Word pronunciation",
-    group: "word",
+    group: "target",
     multiline: false,
+    label: () => "Word pronunciation",
   },
   {
     key: "l1Definition",
-    label: "Definition in your language",
-    group: "word",
+    group: "translation",
     multiline: true,
+    label: ({ translation }) => `Definition (${translation})`,
   },
   {
     key: "l2Definition",
-    label: "Definition in the target language",
-    group: "word",
+    group: "target",
     multiline: true,
+    label: ({ target }) => `Definition (${target})`,
   },
-  { key: "textContext", label: "Sentence", group: "context", multiline: true },
+  {
+    key: "textContext",
+    group: "target",
+    multiline: true,
+    label: ({ target }) => `Sentence (${target})`,
+  },
   {
     key: "textContextTranslation",
-    label: "Sentence translation",
-    group: "context",
+    group: "translation",
     multiline: true,
+    label: ({ translation }) => `Sentence (${translation})`,
   },
   {
     key: "textContextPronunciation",
-    label: "Sentence pronunciation",
-    group: "context",
+    group: "target",
     multiline: true,
+    label: () => "Sentence pronunciation",
   },
   {
     key: "audioContext",
-    label: "Sentence audio",
     group: "media",
     multiline: false,
+    label: () => "Sentence audio",
   },
-  { key: "screenshot", label: "Screenshot", group: "media", multiline: false },
-  { key: "tags", label: "Tags", group: "media", multiline: false },
+  {
+    key: "screenshot",
+    group: "media",
+    multiline: false,
+    label: () => "Screenshot",
+  },
+  { key: "tags", group: "media", multiline: false, label: () => "Tags" },
 ];
 
-export const flashcardFieldGroupLabels: Record<FlashcardFieldGroup, string> = {
-  word: "Word",
-  context: "Sentence",
-  media: "Media and tags",
-};
+export const flashcardFieldGroups: readonly FlashcardFieldGroup[] = [
+  "target",
+  "translation",
+  "media",
+];
+
+/** Names a group after its language, for example `German`, or `Media and tags`. */
+export function labelOfFieldGroup(
+  group: FlashcardFieldGroup,
+  languages: FlashcardLanguages,
+): string {
+  if (group === "media") return "Media and tags";
+  return languageName(languages[group]);
+}
 
 /** Whether the field holds text the user can type, rather than audio, an image, or tags. */
 export function isTextField(

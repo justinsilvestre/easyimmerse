@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { exampleFlashcard } from "./exampleFlashcard.ts";
+import { exampleFlashcard, exampleLanguages } from "./exampleFlashcard.ts";
 import { FlashcardEditor } from "./FlashcardEditor.tsx";
 import type { FlashcardContent, FlashcardFieldKey } from "./flashcardFields.ts";
 import { fieldsOfPreset } from "./flashcardPresets.ts";
@@ -17,6 +17,8 @@ function renderEditor(onSave: OnSave = () => undefined) {
     <FlashcardEditor
       initialContent={exampleFlashcard}
       initialFields={fieldsOfPreset("intermediate")}
+      languages={exampleLanguages}
+      waveform={{ peaks: [0.1, 0.5, 0.9, 0.3], durationMs: 24_000 }}
       onSave={onSave}
       onDelete={() => undefined}
       onClose={() => undefined}
@@ -24,16 +26,32 @@ function renderEditor(onSave: OnSave = () => undefined) {
   );
 }
 
+const clickAddAField = () =>
+  fireEvent.click(screen.getByRole("button", { name: "Add a field" }));
+
 describe("FlashcardEditor", () => {
   it("hides the fields excluded by the flashcard settings", () => {
     renderEditor();
     expect(screen.queryByLabelText("Word pronunciation")).toBeNull();
   });
 
-  it("shows an excluded field once its add button is clicked", () => {
+  it("keeps the buttons for adding fields hidden at first", () => {
     renderEditor();
+    expect(
+      screen.queryByRole("button", { name: "Word pronunciation" }),
+    ).toBeNull();
+  });
+
+  it("shows an excluded field once it is added from the list", () => {
+    renderEditor();
+    clickAddAField();
     fireEvent.click(screen.getByRole("button", { name: "Word pronunciation" }));
     expect(screen.getByLabelText("Word pronunciation")).not.toBeNull();
+  });
+
+  it("labels a definition with its language", () => {
+    renderEditor();
+    expect(screen.getByLabelText("Definition (en)")).not.toBeNull();
   });
 
   it("saves the edited text", () => {
@@ -46,14 +64,34 @@ describe("FlashcardEditor", () => {
     expect(saved).toEqual(["Hunger"]);
   });
 
-  it("keeps a trailing comma in the tags field, so another tag can follow", () => {
-    renderEditor();
+  it("saves a tag typed with a comma after it", () => {
+    const saved: string[][] = [];
+    renderEditor((content) => saved.push(content.tags));
     fireEvent.change(screen.getByLabelText("Tags"), {
-      target: { value: "sample," },
+      target: { value: "hunger," },
     });
-    expect((screen.getByLabelText("Tags") as HTMLInputElement).value).toBe(
-      "sample,",
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(saved[0]).toContain("hunger");
+  });
+
+  it("saves the clip moved on the waveform", () => {
+    const saved: (number | undefined)[] = [];
+    renderEditor((content) => saved.push(content.audioContext?.startMs));
+    fireEvent.keyDown(screen.getByRole("slider", { name: "Clip start" }), {
+      key: "ArrowLeft",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(saved).toEqual([1650]);
+  });
+
+  it("saves the screenshot time moved on the waveform", () => {
+    const saved: (number | undefined)[] = [];
+    renderEditor((content) => saved.push(content.screenshot?.atMs));
+    fireEvent.keyDown(screen.getByRole("slider", { name: "Screenshot time" }), {
+      key: "ArrowRight",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(saved).toEqual([6900]);
   });
 
   it("keeps the screenshot in view after it is unchecked", () => {

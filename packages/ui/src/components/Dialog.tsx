@@ -28,6 +28,8 @@ export function Dialog({
       dialog.showModal();
   }, []);
   return (
+    // The keyboard closes the dialog with Escape, which the browser reports as the cancel event.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: see above
     <dialog
       ref={ref}
       aria-labelledby={titleId}

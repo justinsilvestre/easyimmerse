@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
+import {
+  exampleFlashcard,
+  exampleLanguages,
+} from "../flashcards/exampleFlashcard.ts";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { FlashcardSyncPanel } from "./FlashcardSyncPanel.tsx";
 
@@ -17,6 +20,7 @@ const meta = {
   args: {
     state: { kind: "notStarted" },
     includedFields: fieldsOfPreset("intermediate"),
+    languages: exampleLanguages,
     onExportPackage: fn(),
     onSetUpAnkiConnect: fn(),
     onStartReview: fn(),

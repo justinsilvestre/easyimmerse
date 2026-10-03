@@ -1,106 +1,109 @@
 import clsx from "clsx";
-import { Volume2 } from "lucide-react";
+import { Play } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { splitIntoWords } from "../components/ClickableText.tsx";
 import {
   type FlashcardContent,
   type FlashcardFieldKey,
+  type FlashcardLanguages,
+  type FlashcardTextFieldKey,
   findFlashcardField,
 } from "./flashcardFields.ts";
-import { formatClipDuration } from "./formatClipDuration.ts";
 
 /**
- * Shows a flashcard as it would look when reviewed, with the word side above the answer side.
+ * Shows a flashcard as it would look when reviewed: the word and its sentence on the front, the answers on the back.
  * Fields outside `includedFields` are left out.
  */
 export function FlashcardPreview({
   content,
   includedFields,
+  languages,
   compact = false,
+  onPlayAudio,
 }: {
   content: FlashcardContent;
   includedFields: readonly FlashcardFieldKey[];
+  languages: FlashcardLanguages;
   compact?: boolean;
+  onPlayAudio?: () => void;
 }) {
   const includes = (key: FlashcardFieldKey) => includedFields.includes(key);
+  const textOf = (fieldKey: FlashcardTextFieldKey) => (
+    <ValueOrLabel
+      value={content[fieldKey]}
+      label={findFlashcardField(fieldKey).label(languages)}
+    />
+  );
   return (
     <article
       aria-label="Flashcard preview"
       className={clsx(
         "flex flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-sm",
-        compact ? "text-xs" : "text-sm",
+        compact ? "text-[0.7rem]" : "text-sm",
       )}
     >
-      <section className="flex flex-col items-center gap-1 px-4 py-5 text-center">
+      <section className="flex flex-col items-center gap-1 px-4 py-4 text-center">
         <SideLabel>Front</SideLabel>
         {includes("word") && (
           <p
-            className={clsx("font-semibold", compact ? "text-lg" : "text-2xl")}
+            className={clsx(
+              "font-semibold",
+              compact ? "text-base" : "text-2xl",
+            )}
           >
-            <Value value={content.word} fieldKey="word" />
+            {textOf("word")}
           </p>
         )}
         {includes("wordPronunciation") && (
-          <p className="text-fg-muted">
-            <Value
-              value={content.wordPronunciation}
-              fieldKey="wordPronunciation"
+          <p className="text-fg-muted">{textOf("wordPronunciation")}</p>
+        )}
+        {includes("textContext") && (
+          <p className={clsx("mt-1", !compact && "text-base")}>
+            <HighlightedWord
+              text={content.textContext}
+              word={content.word}
+              label={findFlashcardField("textContext").label(languages)}
             />
           </p>
         )}
         {includes("audioContext") && content.audioContext && (
-          <AudioChip label={formatClipDuration(content.audioContext)} />
+          <button
+            type="button"
+            aria-label="Play the sentence audio"
+            onClick={onPlayAudio}
+            className={clsx(
+              "mt-1 flex items-center justify-center rounded-full border border-line-strong text-fg-muted hover:bg-surface-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+              compact ? "size-6" : "size-8",
+            )}
+          >
+            <Play className={compact ? "size-3" : "size-4"} aria-hidden />
+          </button>
         )}
       </section>
-      <section className="flex flex-col gap-3 border-t border-dashed border-line-strong bg-surface-muted px-4 py-4">
+      <section className="flex flex-col gap-2 border-t border-dashed border-line-strong bg-surface-muted px-4 py-3">
         <SideLabel>Back</SideLabel>
-        {includes("l1Definition") && (
-          <p>
-            <Value value={content.l1Definition} fieldKey="l1Definition" />
-          </p>
-        )}
+        {includes("l1Definition") && <p>{textOf("l1Definition")}</p>}
         {includes("l2Definition") && (
-          <p className="text-fg-soft">
-            <Value value={content.l2Definition} fieldKey="l2Definition" />
-          </p>
+          <p className="text-fg-soft">{textOf("l2Definition")}</p>
         )}
-        {(includes("textContext") ||
-          includes("textContextPronunciation") ||
-          includes("textContextTranslation")) && (
-          <div className="flex flex-col gap-0.5 border-l-2 border-accent pl-3">
-            {includes("textContext") && (
-              <p>
-                <HighlightedWord
-                  text={content.textContext}
-                  word={content.word}
-                />
-              </p>
+        {(includes("textContextTranslation") ||
+          includes("textContextPronunciation")) && (
+          <div className="flex flex-col gap-0.5 border-l-2 border-accent pl-3 text-fg-muted">
+            {includes("textContextTranslation") && (
+              <p>{textOf("textContextTranslation")}</p>
             )}
             {includes("textContextPronunciation") && (
-              <p className="text-fg-muted">
-                <Value
-                  value={content.textContextPronunciation}
-                  fieldKey="textContextPronunciation"
-                />
-              </p>
-            )}
-            {includes("textContextTranslation") && (
-              <p className="text-fg-muted">
-                <Value
-                  value={content.textContextTranslation}
-                  fieldKey="textContextTranslation"
-                />
-              </p>
+              <p>{textOf("textContextPronunciation")}</p>
             )}
           </div>
         )}
         {includes("screenshot") && content.screenshot && (
           <img
-            src={content.screenshot}
+            src={content.screenshot.url}
             alt="Screenshot from the video"
             className={clsx(
               "rounded-md object-cover",
-              compact ? "max-h-24" : "max-h-40",
+              compact ? "max-h-20" : "max-h-40",
             )}
           />
         )}
@@ -127,23 +130,21 @@ function SideLabel({ children }: { children: string }) {
 }
 
 /** Shows the value, or the field's name as a placeholder when it is empty. */
-function Value({
-  value,
-  fieldKey,
-}: {
-  value: string;
-  fieldKey: FlashcardFieldKey;
-}) {
+function ValueOrLabel({ value, label }: { value: string; label: string }) {
   if (value.trim()) return value;
-  return (
-    <span className="text-fg-faint italic">
-      {findFlashcardField(fieldKey).label}
-    </span>
-  );
+  return <span className="text-fg-faint italic">{label}</span>;
 }
 
-function HighlightedWord({ text, word }: { text: string; word: string }) {
-  if (!text.trim()) return <Value value="" fieldKey="textContext" />;
+function HighlightedWord({
+  text,
+  word,
+  label,
+}: {
+  text: string;
+  word: string;
+  label: string;
+}) {
+  if (!text.trim()) return <ValueOrLabel value="" label={label} />;
   return splitIntoWords(text).map((part) =>
     part.isWord && part.text === word ? (
       <mark
@@ -155,14 +156,5 @@ function HighlightedWord({ text, word }: { text: string; word: string }) {
     ) : (
       part.text
     ),
-  );
-}
-
-function AudioChip({ label }: { label: string }) {
-  return (
-    <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-xs text-fg-muted">
-      <Volume2 className="size-3" aria-hidden />
-      {label}
-    </span>
   );
 }

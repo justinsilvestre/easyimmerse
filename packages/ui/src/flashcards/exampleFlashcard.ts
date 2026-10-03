@@ -1,4 +1,7 @@
-import type { FlashcardContent } from "./flashcardFields.ts";
+import type {
+  FlashcardContent,
+  FlashcardLanguages,
+} from "./flashcardFields.ts";
 
 /** A still frame drawn as an SVG, so previews can show a screenshot without a media file. */
 const exampleScreenshotUrl = `data:image/svg+xml,${encodeURIComponent(
@@ -26,6 +29,12 @@ export const exampleFlashcard: FlashcardContent = {
   textContextTranslation: "The dog wants to eat. It is hungry.",
   textContextPronunciation: "[deːɐ̯ hʊnt vɪl ˈfʁɛsn̩ ‖ eːɐ̯ hat ˈhʊŋɐ]",
   audioContext: { startMs: 1750, endMs: 3000 },
-  screenshot: exampleScreenshotUrl,
+  screenshot: { url: exampleScreenshotUrl, atMs: 6800 },
   tags: ["sample", "dark-s01e01"],
+};
+
+/** The languages of the example flashcard's project. */
+export const exampleLanguages: FlashcardLanguages = {
+  target: "de",
+  translation: "en",
 };

@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
+import {
+  exampleFlashcard,
+  exampleLanguages,
+} from "../flashcards/exampleFlashcard.ts";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { exampleEntries } from "../lookup/exampleLookup.ts";
 import {
@@ -132,7 +135,8 @@ export const EditingAFlashcard: Story = {
       id: "flashcard-3",
       content: exampleFlashcard,
       fields: fieldsOfPreset("intermediate"),
-      segment: { segmentId: "3", screenshotMs: 6_800 },
+      languages: exampleLanguages,
+      segmentId: "3",
     },
     work: { hasUnsavedChanges: true, isBackedUp: false },
   },

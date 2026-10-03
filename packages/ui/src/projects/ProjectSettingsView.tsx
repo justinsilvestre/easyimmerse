@@ -1,6 +1,7 @@
 import { Button } from "../components/Button.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import { ProjectForm, type ProjectFormValues } from "./ProjectForm.tsx";
+import type { ProjectFormValues } from "./editProject.ts";
+import { ProjectForm } from "./ProjectForm.tsx";
 
 /** The screen for creating a project or editing an existing project's settings. */
 export function ProjectSettingsView({

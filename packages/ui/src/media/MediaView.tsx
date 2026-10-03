@@ -8,6 +8,7 @@ import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import type {
   FlashcardContent,
   FlashcardFieldKey,
+  FlashcardLanguages,
 } from "../flashcards/flashcardFields.ts";
 import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
@@ -19,11 +20,7 @@ import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import type { PlaybackState, TrackSelection } from "./playback.ts";
 import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import { segmentsFromCues } from "./segmentsFromCues.ts";
-import {
-  type SegmentEditing,
-  Waveform,
-  type WaveformCallbacks,
-} from "./Waveform.tsx";
+import { Waveform, type WaveformCallbacks } from "./Waveform.tsx";
 
 type MediaSource = {
   kind: "video" | "audio";
@@ -46,7 +43,9 @@ type FlashcardEditing = {
   id: string;
   content: FlashcardContent;
   fields: readonly FlashcardFieldKey[];
-  segment: SegmentEditing | null;
+  languages: FlashcardLanguages;
+  /** The id of the waveform segment the flashcard was made from, which the waveform emphasizes. */
+  segmentId: string | null;
 };
 
 type MediaViewProps = {
@@ -160,7 +159,7 @@ export function MediaView(props: MediaViewProps) {
               durationMs={playback.durationMs}
               currentMs={playback.currentMs}
               segments={segments}
-              editing={editingFlashcard?.segment ?? null}
+              editingSegmentId={editingFlashcard?.segmentId ?? null}
               canZoomIn={
                 props.waveform.viewEndMs - props.waveform.viewStartMs > 5_000
               }
@@ -187,6 +186,11 @@ export function MediaView(props: MediaViewProps) {
                 key={editingFlashcard.id}
                 initialContent={editingFlashcard.content}
                 initialFields={editingFlashcard.fields}
+                languages={editingFlashcard.languages}
+                waveform={{
+                  peaks: props.waveform.peaks,
+                  durationMs: playback.durationMs,
+                }}
                 onSave={props.onSaveFlashcard}
                 onDelete={props.onDeleteFlashcard}
                 onClose={props.onCloseFlashcard}

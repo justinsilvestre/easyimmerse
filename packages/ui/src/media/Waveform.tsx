@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Camera, ZoomIn, ZoomOut } from "lucide-react";
+import { ZoomIn, ZoomOut } from "lucide-react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { formatTimestamp } from "./formatTimestamp.ts";
@@ -12,9 +12,6 @@ export type WaveformSegment = {
   label: string;
   kind: "cue" | "flashcard";
 };
-
-/** The segment whose endpoints and screenshot time can be dragged while its flashcard is being edited. */
-export type SegmentEditing = { segmentId: string; screenshotMs: number };
 
 export type WaveformCallbacks = {
   onSeek: (ms: number) => void;
@@ -36,7 +33,7 @@ export function Waveform({
   viewEndMs,
   currentMs,
   segments,
-  editing,
+  editingSegmentId,
   canZoomIn,
   canZoomOut,
   callbacks,
@@ -47,7 +44,8 @@ export function Waveform({
   viewEndMs: number;
   currentMs: number;
   segments: readonly WaveformSegment[];
-  editing: SegmentEditing | null;
+  /** The segment whose flashcard is open in the editor, which is drawn emphasized. */
+  editingSegmentId: string | null;
   canZoomIn: boolean;
   canZoomOut: boolean;
   callbacks: WaveformCallbacks;
@@ -80,21 +78,10 @@ export function Waveform({
             segment={segment}
             left={toPercent(segment.startMs)}
             width={toPercentWidth(segment.endMs - segment.startMs)}
-            isEditing={editing?.segmentId === segment.id}
+            isEditing={editingSegmentId === segment.id}
             callbacks={callbacks}
           />
         ))}
-        {editing && (
-          <span
-            role="img"
-            aria-label="Screenshot time"
-            className="absolute top-1 flex -translate-x-1/2 cursor-ew-resize flex-col items-center text-accent"
-            style={{ left: toPercent(editing.screenshotMs) }}
-          >
-            <Camera className="size-3.5" aria-hidden />
-            <span className="h-3 w-px bg-accent" />
-          </span>
-        )}
         <span
           aria-hidden
           className="absolute inset-y-0 w-0.5 bg-fg"

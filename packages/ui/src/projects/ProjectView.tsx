@@ -2,7 +2,10 @@ import { ArrowLeft, Plus, Save, Settings } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import type { FlashcardFieldKey } from "../flashcards/flashcardFields.ts";
+import type {
+  FlashcardFieldKey,
+  FlashcardLanguages,
+} from "../flashcards/flashcardFields.ts";
 import {
   DictionaryStatus,
   type LanguageDictionaryStatus,
@@ -20,6 +23,7 @@ export function ProjectView({
   dictionaries,
   flashcardSync,
   includedFields,
+  languages,
   hasUnsavedChanges,
   onBack,
   onSave,
@@ -37,6 +41,7 @@ export function ProjectView({
   dictionaries: readonly LanguageDictionaryStatus[];
   flashcardSync: FlashcardSyncState;
   includedFields: readonly FlashcardFieldKey[];
+  languages: FlashcardLanguages;
   hasUnsavedChanges: boolean;
   onBack: () => void;
   onSave: () => void;
@@ -102,6 +107,7 @@ export function ProjectView({
       <FlashcardSyncPanel
         state={flashcardSync}
         includedFields={includedFields}
+        languages={languages}
         onExportPackage={onExportPackage}
         onSetUpAnkiConnect={onSetUpAnkiConnect}
         onStartReview={onStartReview}

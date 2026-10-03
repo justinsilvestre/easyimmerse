@@ -7,6 +7,7 @@ import { FlashcardPreview } from "../flashcards/FlashcardPreview.tsx";
 import type {
   FlashcardContent,
   FlashcardFieldKey,
+  FlashcardLanguages,
 } from "../flashcards/flashcardFields.ts";
 
 /** Where the project's flashcards last went: nowhere yet, the built-in review, an Anki package, or Anki itself. */
@@ -36,10 +37,12 @@ type Callbacks = {
 export function FlashcardSyncPanel({
   state,
   includedFields,
+  languages,
   ...callbacks
 }: {
   state: FlashcardSyncState;
   includedFields: readonly FlashcardFieldKey[];
+  languages: FlashcardLanguages;
 } & Callbacks) {
   return (
     <section
@@ -56,6 +59,7 @@ export function FlashcardSyncPanel({
             <FlashcardPreview
               content={state.nextCard}
               includedFields={includedFields}
+              languages={languages}
               compact
             />
           ) : (

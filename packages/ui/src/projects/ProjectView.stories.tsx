@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
+import {
+  exampleFlashcard,
+  exampleLanguages,
+} from "../flashcards/exampleFlashcard.ts";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import type { MediaItem } from "./MediaList.tsx";
@@ -63,6 +66,7 @@ const meta = {
     ],
     flashcardSync: { kind: "notStarted" },
     includedFields: fieldsOfPreset("intermediate"),
+    languages: exampleLanguages,
     hasUnsavedChanges: false,
     onBack: fn(),
     onSave: fn(),

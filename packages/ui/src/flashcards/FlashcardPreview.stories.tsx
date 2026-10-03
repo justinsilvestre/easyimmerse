@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { exampleFlashcard } from "./exampleFlashcard.ts";
+import { fn } from "storybook/test";
+import { exampleFlashcard, exampleLanguages } from "./exampleFlashcard.ts";
 import { FlashcardPreview } from "./FlashcardPreview.tsx";
 import { fieldsOfPreset } from "./flashcardPresets.ts";
 
@@ -16,6 +17,8 @@ const meta = {
   args: {
     content: exampleFlashcard,
     includedFields: fieldsOfPreset("beginner"),
+    languages: exampleLanguages,
+    onPlayAudio: fn(),
   },
 } satisfies Meta<typeof FlashcardPreview>;
 
