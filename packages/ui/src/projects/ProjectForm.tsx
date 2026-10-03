@@ -1,23 +1,14 @@
 import { type ReactNode, useReducer } from "react";
 import { Button } from "../components/Button.tsx";
 import { CheckboxField } from "../components/CheckboxField.tsx";
-import { SegmentedControl } from "../components/SegmentedControl.tsx";
 import { SelectField } from "../components/SelectField.tsx";
 import { TagsField } from "../components/TagsField.tsx";
 import { TextField } from "../components/TextField.tsx";
-import {
-  flashcardPresetOptions,
-  presetMatching,
-} from "../flashcards/flashcardPresets.ts";
 import { type ProjectFormValues, reduceProjectForm } from "./editProject.ts";
 import { languageOptions } from "./languages.ts";
+import { PresetPicker } from "./PresetPicker.tsx";
 import { ProjectFormFields } from "./ProjectFormFields.tsx";
 import { ProjectFormPreview } from "./ProjectFormPreview.tsx";
-
-const presetOptions = [
-  ...flashcardPresetOptions,
-  { value: "custom", label: "Custom" },
-] as const;
 
 /**
  * The settings of a new or existing project, with a preview of a flashcard made under them.
@@ -88,18 +79,17 @@ export function ProjectForm({
             back on any single flashcard.
           </p>
         </div>
-        <SegmentedControl
-          label="Flashcard preset"
-          options={presetOptions}
-          value={presetMatching(state.flashcardFields)}
-          onChange={(preset) =>
-            preset !== "custom" && dispatch({ type: "presetChosen", preset })
+        <PresetPicker
+          fields={state.flashcardFields}
+          onPresetChosen={(preset) =>
+            dispatch({ type: "presetChosen", preset })
           }
-        />
+        >
+          <ProjectFormFields values={state} dispatch={dispatch} />
+        </PresetPicker>
       </Column>
       <ProjectFormPreview values={state} />
       <Column>
-        <ProjectFormFields values={state} dispatch={dispatch} />
         <TagsField
           label="Default tags"
           tags={state.defaultTags}

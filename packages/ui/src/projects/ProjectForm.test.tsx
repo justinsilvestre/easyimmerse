@@ -1,10 +1,14 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
+import { createFakeMediaQueryList } from "../testSupport/createFakeMediaQueryList.ts";
 import type { ProjectFormValues } from "./editProject.ts";
 import { ProjectForm } from "./ProjectForm.tsx";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const initialValues: ProjectFormValues = {
   name: "",
@@ -26,6 +30,13 @@ function renderForm(
       onSubmit={onSubmit}
       onCancel={() => undefined}
     />,
+  );
+}
+
+/** Makes the form see a screen of the given roominess, since the test window counts as roomy by default. */
+function pretendScreenIsRoomy(isRoomy: boolean) {
+  vi.spyOn(window, "matchMedia").mockReturnValue(
+    createFakeMediaQueryList(isRoomy),
   );
 }
 
@@ -55,6 +66,38 @@ describe("ProjectForm", () => {
 
   describe("when a field of a preset is unchecked", () => {
     it("switches the preset to custom", () => {
+      renderForm();
+      fireEvent.click(screen.getByLabelText("Sentence (en)"));
+      expect(isChecked("Custom")).toBe(true);
+    });
+  });
+
+  describe("on a narrow screen", () => {
+    it("shows Custom as the preset once it is chosen", () => {
+      pretendScreenIsRoomy(false);
+      renderForm();
+      fireEvent.click(screen.getByLabelText("Custom"));
+      expect(isChecked("Custom")).toBe(true);
+    });
+
+    it("goes back to a preset chosen after Custom", () => {
+      pretendScreenIsRoomy(false);
+      renderForm();
+      fireEvent.click(screen.getByLabelText("Custom"));
+      fireEvent.click(screen.getByLabelText("Beginner"));
+      expect(isChecked("Beginner")).toBe(true);
+    });
+  });
+
+  describe("on a roomy screen", () => {
+    it("offers Custom only once the fields match no preset", () => {
+      pretendScreenIsRoomy(true);
+      renderForm();
+      expect(screen.queryByLabelText("Custom")).toBeNull();
+    });
+
+    it("offers Custom once a field of a preset is unchecked", () => {
+      pretendScreenIsRoomy(true);
       renderForm();
       fireEvent.click(screen.getByLabelText("Sentence (en)"));
       expect(isChecked("Custom")).toBe(true);
