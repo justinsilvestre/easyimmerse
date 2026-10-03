@@ -38,6 +38,8 @@ describe("the plugin host", () => {
   });
 
   it("reports the execution mode it ran the plugin in", async () => {
-    expect(typeof (await checkPluginHost()).executionMode).toBe("string");
+    expect(["native", "interpreter"]).toContain(
+      (await checkPluginHost()).executionMode,
+    );
   });
 });
