@@ -23,6 +23,18 @@ export function runEffect(
         )
         .catch(() => dispatch(actions.filePickCancelled()));
       return;
+    case "pickMediaFile":
+      effects
+        .pickMediaFile(effect.accept)
+        .then((file) =>
+          dispatch(
+            file
+              ? actions.mediaFileChosen(file)
+              : actions.mediaFilePickCancelled(),
+          ),
+        )
+        .catch(() => dispatch(actions.mediaFilePickCancelled()));
+      return;
     case "savePreference":
       effects.savePreference(effect.key, effect.value).catch(ignoreFailure);
       return;

@@ -1,11 +1,12 @@
-//! Starts the API server on the loopback interface with a database in the app data directory.
+//! Starts the API server on the loopback interface with a database in the app data directory
+//! and the conversion cache in the app cache directory.
 //! A debug build opens the file named by `EASYIMMERSE_DATABASE` instead, when it is set.
 
 use std::io::ErrorKind;
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 
-use easyimmerse_api::{ApiConfig, ServeError, ServerHandle, serve};
+use easyimmerse_api::{ApiConfig, ServeError, ServeOptions, ServerHandle, serve};
 use easyimmerse_storage::{Storage, StorageError};
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
@@ -33,6 +34,11 @@ pub enum EmbeddedServerError {
         path: PathBuf,
         source: std::io::Error,
     },
+    #[error("could not create the cache directory {path}: {source}")]
+    CreateCacheDir {
+        path: PathBuf,
+        source: std::io::Error,
+    },
     #[error("could not open the database: {0}")]
     Storage(#[from] StorageError),
     #[error("could not bind the loopback interface: {0}")]
@@ -44,12 +50,16 @@ pub enum EmbeddedServerError {
 /// Opens the database, binds a loopback port, and serves the API on the app's async runtime.
 pub fn start(app: &AppHandle) -> Result<EmbeddedServer, EmbeddedServerError> {
     let storage = open_storage(app)?;
+    let options = ServeOptions {
+        cache_dir: Some(create_cache_dir(app)?),
+    };
     let token = hex::encode(rand::random::<[u8; 32]>());
-    tauri::async_runtime::block_on(serve_on_loopback(storage, token))
+    tauri::async_runtime::block_on(serve_on_loopback(storage, options, token))
 }
 
 async fn serve_on_loopback(
     storage: Storage,
+    options: ServeOptions,
     token: String,
 ) -> Result<EmbeddedServer, EmbeddedServerError> {
     let listener = bind_loopback().await?;
@@ -58,7 +68,7 @@ async fn serve_on_loopback(
         .map_err(EmbeddedServerError::Bind)?
         .port();
     let config = ApiConfig::for_loopback(port, token.clone(), true);
-    let handle = serve(listener, config, storage).await?;
+    let handle = serve(listener, config, storage, options).await?;
     tracing::info!("embedded server listening on 127.0.0.1:{port}");
     Ok(EmbeddedServer {
         url: format!("http://127.0.0.1:{port}"),
@@ -95,6 +105,15 @@ fn open_storage(app: &AppHandle) -> Result<Storage, EmbeddedServerError> {
     let storage = Storage::open(&path)?;
     storage.seed_placeholder_projects()?;
     Ok(storage)
+}
+
+fn create_cache_dir(app: &AppHandle) -> Result<PathBuf, EmbeddedServerError> {
+    let path = app.path().app_cache_dir()?;
+    std::fs::create_dir_all(&path).map_err(|source| EmbeddedServerError::CreateCacheDir {
+        path: path.clone(),
+        source,
+    })?;
+    Ok(path)
 }
 
 /// Reads the database path a developer chose, which release builds ignore.

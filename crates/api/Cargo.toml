@@ -20,7 +20,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-tower-http = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true, features = ["fs"] }
 tracing = { workspace = true }
 ts-rs = { workspace = true }
 utoipa = { workspace = true }
@@ -29,5 +30,4 @@ utoipa-axum = { workspace = true }
 [dev-dependencies]
 hex = { workspace = true }
 rand = { workspace = true }
-tower = { workspace = true }
 ureq = { workspace = true }

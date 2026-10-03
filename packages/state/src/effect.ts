@@ -4,6 +4,7 @@ import type { PreferenceKey } from "./appState.ts";
 export type Effect =
   | { type: "seekPlayer"; seconds: number }
   | { type: "pickFile"; accept: readonly string[] }
+  | { type: "pickMediaFile"; accept: readonly string[] }
   | { type: "savePreference"; key: PreferenceKey; value: string }
   | { type: "loadPreference"; key: PreferenceKey }
   | { type: "showNotification"; message: string }

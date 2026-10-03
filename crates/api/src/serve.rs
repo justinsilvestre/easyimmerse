@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::path::PathBuf;
 
 use easyimmerse_storage::Storage;
 use thiserror::Error;
@@ -36,14 +37,22 @@ impl ServerHandle {
     }
 }
 
+/// Settings of a server beyond authentication.
+#[derive(Debug, Clone, Default)]
+pub struct ServeOptions {
+    /// Where converted media is cached. None disables conversion.
+    pub cache_dir: Option<PathBuf>,
+}
+
 /// Serves the API on an already bound listener, so that the caller knows the port.
 pub async fn serve(
     listener: TcpListener,
     config: ApiConfig,
     storage: Storage,
+    options: ServeOptions,
 ) -> Result<ServerHandle, ServeError> {
     let addr = listener.local_addr()?;
-    let (router, _) = build_router(AppState::new(storage, config));
+    let (router, _) = build_router(AppState::new(storage, config, options.cache_dir));
     let (shutdown, shutdown_requested) = oneshot::channel();
     let server = axum::serve(listener, router).with_graceful_shutdown(async {
         let _ = shutdown_requested.await;

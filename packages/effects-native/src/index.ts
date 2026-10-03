@@ -5,6 +5,7 @@ import { copyToClipboard } from "./copyToClipboard.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { sendOsNotification } from "./osNotification.ts";
 import { pickFile } from "./pickFile.ts";
+import { pickMediaFile } from "./pickMediaFile.ts";
 import { createServerPreferenceStore } from "./serverPreferenceStore.ts";
 import { createShowNotification } from "./showNotification.ts";
 
@@ -24,6 +25,7 @@ export function createNativeEffects(options: {
   return {
     ...webEffects,
     pickFile,
+    pickMediaFile,
     savePreference: preferences.save,
     loadPreference: preferences.load,
     showNotification: createShowNotification(

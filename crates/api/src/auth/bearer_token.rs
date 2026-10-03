@@ -1,15 +1,21 @@
 use std::sync::Arc;
 
-use axum::extract::{Request, State};
+use axum::extract::{MatchedPath, Query, Request, State};
 use axum::http::header::AUTHORIZATION;
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
+use serde::Deserialize;
 
 use crate::auth::error_body::unauthorized;
 use crate::auth::token_kind::TokenKind;
 use crate::config::ApiConfig;
+use crate::routes::media_stream::STREAM_ROUTE_PATH;
 
 /// Requires `Authorization: Bearer <token>` and records the token's kind on the request.
+///
+/// The media stream route alone also accepts the token as the `token` query parameter,
+/// because media elements cannot send headers. No other route does, since a token in a URL
+/// ends up in logs and browser history more easily than one in a header.
 pub async fn require_bearer_token(
     State(config): State<Arc<ApiConfig>>,
     mut request: Request,
@@ -24,13 +30,41 @@ pub async fn require_bearer_token(
     }
 }
 
-fn presented_token(request: &Request) -> Option<&str> {
+#[derive(Deserialize)]
+struct TokenQuery {
+    token: Option<String>,
+}
+
+fn presented_token(request: &Request) -> Option<String> {
+    header_token(request)
+        .map(str::to_string)
+        .or_else(|| query_token(request))
+}
+
+fn header_token(request: &Request) -> Option<&str> {
     request
         .headers()
         .get(AUTHORIZATION)?
         .to_str()
         .ok()?
         .strip_prefix("Bearer ")
+}
+
+fn query_token(request: &Request) -> Option<String> {
+    if !accepts_query_token(request) {
+        return None;
+    }
+    Query::<TokenQuery>::try_from_uri(request.uri())
+        .ok()?
+        .0
+        .token
+}
+
+fn accepts_query_token(request: &Request) -> bool {
+    request
+        .extensions()
+        .get::<MatchedPath>()
+        .is_some_and(|matched| matched.as_str() == STREAM_ROUTE_PATH)
 }
 
 /// Compares in time that depends only on the length of the input, so that a caller cannot
@@ -63,11 +97,17 @@ mod tests {
                 "/",
                 get(|Extension(kind): Extension<TokenKind>| async move { format!("{kind:?}") }),
             )
+            .route(STREAM_ROUTE_PATH, get(|| async { "streamed" }))
+            .route("/other/{id}", get(|| async { "other" }))
             .layer(from_fn_with_state(config, require_bearer_token))
     }
 
     fn request_with(header: Option<&str>) -> Request {
-        let builder = Request::builder().uri("/");
+        request_to("/", header)
+    }
+
+    fn request_to(uri: &str, header: Option<&str>) -> Request {
+        let builder = Request::builder().uri(uri);
         let builder = match header {
             Some(value) => builder.header(AUTHORIZATION, value),
             None => builder,
@@ -115,6 +155,33 @@ mod tests {
     async fn rejects_a_non_bearer_scheme() {
         let response = app()
             .oneshot(request_with(Some("Basic secret")))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn accepts_a_query_token_on_the_stream_route() {
+        let response = app()
+            .oneshot(request_to("/projects/p/media/m/stream?token=secret", None))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn rejects_a_wrong_query_token_on_the_stream_route() {
+        let response = app()
+            .oneshot(request_to("/projects/p/media/m/stream?token=other", None))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn ignores_a_query_token_on_other_routes() {
+        let response = app()
+            .oneshot(request_to("/other/x?token=secret", None))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);

@@ -1,6 +1,8 @@
 pub mod dictionaries;
 pub mod documents;
 pub mod health;
+pub mod media;
+pub mod media_stream;
 pub mod openapi;
 pub mod preferences;
 pub mod projects;

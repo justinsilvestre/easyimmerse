@@ -12,4 +12,8 @@ pub enum StorageError {
     LockPoisoned,
     #[error("no dictionary has the id {0:?}")]
     DictionaryNotFound(String),
+    #[error("no project has the id {0:?}")]
+    ProjectNotFound(String),
+    #[error("no media file has the id {0:?}")]
+    MediaFileNotFound(String),
 }

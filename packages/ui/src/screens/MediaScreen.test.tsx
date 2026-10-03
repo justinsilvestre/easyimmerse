@@ -42,7 +42,9 @@ describe("MediaScreen", () => {
       client,
     );
     await findSubtitles();
-    expect(client.requests[0]?.path).toBe("/timed-text/parse");
+    expect(client.requests.map((request) => request.path)).toContain(
+      "/timed-text/parse",
+    );
   });
 
   it("seeks the player to the cue's start when a cue is clicked", async () => {

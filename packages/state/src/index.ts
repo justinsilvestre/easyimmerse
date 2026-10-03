@@ -3,6 +3,11 @@ export { actions, isAppAction } from "./actions.ts";
 export type { AppState, PreferenceKey } from "./appState.ts";
 export { initialAppState, preferenceKeys } from "./appState.ts";
 export type {
+  BrowserFileRegistry,
+  HeldFile,
+} from "./browserFileRegistry.ts";
+export { createBrowserFileRegistry } from "./browserFileRegistry.ts";
+export type {
   AppDispatch,
   AppStore,
   EnhancerComposer,
@@ -11,14 +16,18 @@ export type {
 } from "./createAppStore.ts";
 export { createAppStore } from "./createAppStore.ts";
 export type { Effect } from "./effect.ts";
-export type { Effects, PickedFile } from "./effects.ts";
+export type { Effects, PickedFile, PickedMediaFile } from "./effects.ts";
+export { mediaFileExtensions } from "./mediaFileExtensions.ts";
 export type { PlayerHandle, PlayerRegistry } from "./playerRegistry.ts";
 export { createPlayerRegistry } from "./playerRegistry.ts";
 export type { EffectCall, RecordingEffects } from "./recordingEffects.ts";
 export { createRecordingEffects } from "./recordingEffects.ts";
 export {
+  selectChosenMediaFile,
+  selectCurrentMediaFileId,
   selectCurrentTime,
   selectPendingFilePick,
+  selectPendingMediaFilePick,
   selectPreference,
   selectSubtitleSource,
   selectTheme,

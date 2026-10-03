@@ -2,12 +2,18 @@ import { describe, expect, it } from "vitest";
 import { actions } from "./actions.ts";
 import type { AppState } from "./appState.ts";
 import { initialAppState } from "./appState.ts";
-import type { PickedFile } from "./effects.ts";
+import type { PickedFile, PickedMediaFile } from "./effects.ts";
+import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { update } from "./update.ts";
 
 const pickedFile: PickedFile = {
   name: "episode.srt",
   source: { kind: "inline", text: "1\n00:00:01,000 --> 00:00:02,000\nHello" },
+};
+
+const pickedMediaFile: PickedMediaFile = {
+  name: "episode.mkv",
+  source: { kind: "path", path: "/videos/episode.mkv" },
 };
 
 const withPreference = (value: string): AppState => ({
@@ -61,6 +67,85 @@ describe("update", () => {
     const pending = { ...initialAppState, pendingFilePick: true };
     const [state] = update(pending, actions.filePickCancelled());
     expect(state.pendingFilePick).toBe(false);
+  });
+
+  it("marks a media file pick as pending for mediaFilePickRequested", () => {
+    const [state] = update(initialAppState, actions.mediaFilePickRequested());
+    expect(state.pendingMediaFilePick).toBe(true);
+  });
+
+  it("returns a pickMediaFile effect accepting media files for mediaFilePickRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.mediaFilePickRequested(),
+    );
+    expect(effects).toEqual([
+      { type: "pickMediaFile", accept: mediaFileExtensions },
+    ]);
+  });
+
+  it("clears the pending media file pick for mediaFileChosen", () => {
+    const pending = { ...initialAppState, pendingMediaFilePick: true };
+    const [state] = update(pending, actions.mediaFileChosen(pickedMediaFile));
+    expect(state.pendingMediaFilePick).toBe(false);
+  });
+
+  it("keeps the chosen media file for mediaFileChosen", () => {
+    const [state] = update(
+      initialAppState,
+      actions.mediaFileChosen(pickedMediaFile),
+    );
+    expect(state.chosenMediaFile).toBe(pickedMediaFile);
+  });
+
+  it("clears the pending media file pick for mediaFilePickCancelled", () => {
+    const pending = { ...initialAppState, pendingMediaFilePick: true };
+    const [state] = update(pending, actions.mediaFilePickCancelled());
+    expect(state.pendingMediaFilePick).toBe(false);
+  });
+
+  it("opens the added media file for mediaFileAdded", () => {
+    const [state] = update(initialAppState, actions.mediaFileAdded("m1"));
+    expect(state.currentMediaFileId).toBe("m1");
+  });
+
+  it("forgets the chosen media file for mediaFileAdded", () => {
+    const chosen = { ...initialAppState, chosenMediaFile: pickedMediaFile };
+    const [state] = update(chosen, actions.mediaFileAdded("m1"));
+    expect(state.chosenMediaFile).toBeNull();
+  });
+
+  it("forgets the chosen media file for mediaFileAddFailed", () => {
+    const chosen = { ...initialAppState, chosenMediaFile: pickedMediaFile };
+    const [state] = update(chosen, actions.mediaFileAddFailed());
+    expect(state.chosenMediaFile).toBeNull();
+  });
+
+  it("returns a notification for mediaFileAddFailed", () => {
+    const [, effects] = update(initialAppState, actions.mediaFileAddFailed());
+    expect(effects).toEqual([
+      {
+        type: "showNotification",
+        message: "The media file could not be added",
+      },
+    ]);
+  });
+
+  it("closes the open media file for mediaFileRemoved when it is the removed one", () => {
+    const open = { ...initialAppState, currentMediaFileId: "m1" };
+    const [state] = update(open, actions.mediaFileRemoved("m1"));
+    expect(state.currentMediaFileId).toBeNull();
+  });
+
+  it("keeps the open media file for mediaFileRemoved when another is removed", () => {
+    const open = { ...initialAppState, currentMediaFileId: "m1" };
+    const [state] = update(open, actions.mediaFileRemoved("m2"));
+    expect(state.currentMediaFileId).toBe("m1");
+  });
+
+  it("stores the opened media file id for openMedia", () => {
+    const [state] = update(initialAppState, actions.openMedia("m2"));
+    expect(state.currentMediaFileId).toBe("m2");
   });
 
   it("turns an unset preference on for preferenceToggled", () => {

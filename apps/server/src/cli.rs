@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand};
 
@@ -34,6 +35,9 @@ pub struct ServeArgs {
     /// Inserts two example projects into an empty database.
     #[arg(long)]
     pub seed_placeholders: bool,
+    /// Where converted media is cached. Without it, media is never converted.
+    #[arg(long, env = "EASYIMMERSE_CACHE_DIR")]
+    pub cache_dir: Option<PathBuf>,
     /// A `Host` header value clients will send, such as `192.168.1.5:8787`. Needed when the
     /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
     #[arg(long = "expected-host")]

@@ -14,7 +14,7 @@ import "@easyimmerse/ui/styles.css";
 /** Connects to the embedded server the native shell injected, wires the effects and store, and mounts the app. */
 export function bootstrap(): void {
   const server = readInjectedServerConfig();
-  configureBackend(createHttpBackendClient(server));
+  configureBackend(createHttpBackendClient(server), server);
   const playerRegistry = createPlayerRegistry();
   const effects = createNativeEffects({ playerRegistry, server });
   const store = createAppStore(effects, backendStoreParts);
