@@ -3,8 +3,9 @@ import { useEffect, useId, useRef } from "react";
 import { focusInitialControl, keepFocusInside } from "./modalFocus.ts";
 
 /**
- * A dialog over the whole page. Focus starts inside and stays inside; Escape cancels.
- * The caller decides what cancelling means and renders the buttons.
+ * A dialog over the whole page. Focus starts inside, stays inside, and returns to where it
+ * was when the dialog closes; Escape cancels. The caller decides what cancelling means and
+ * renders the buttons.
  */
 export function ModalDialog({
   title,
@@ -18,7 +19,11 @@ export function ModalDialog({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    const opener = document.activeElement;
     if (panelRef.current) focusInitialControl(panelRef.current);
+    return () => {
+      if (opener instanceof HTMLElement) opener.focus();
+    };
   }, []);
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
@@ -29,8 +34,7 @@ export function ModalDialog({
     }
   };
   return (
-    // The key handler belongs on the dialog panel, which is the interactive region; the backdrop only dims the page.
-    // biome-ignore lint/a11y/noStaticElementInteractions: see above
+    // biome-ignore lint/a11y/noStaticElementInteractions: the backdrop only relays key presses from the dialog panel.
     <div
       className="fixed inset-0 z-20 flex items-center justify-center bg-black/50 p-4"
       onKeyDown={handleKeyDown}
