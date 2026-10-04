@@ -1,10 +1,13 @@
 //! The rule tables, one module per group of related inflections.
 
 mod adjective;
+mod imperative;
 mod negative;
 mod perfective;
 mod polite;
+mod provisional;
 mod stems;
+mod volitional;
 
 use super::rule::{Rule, Stem};
 use super::word_class::WordClasses as C;
@@ -19,6 +22,9 @@ pub const ALL: &[&[Rule]] = &[
     perfective::PERFECTIVE,
     negative::NEGATIVE,
     polite::POLITE,
+    volitional::VOLITIONAL,
+    imperative::IMPERATIVE,
+    provisional::PROVISIONAL,
     adjective::ADJECTIVE,
 ];
 
