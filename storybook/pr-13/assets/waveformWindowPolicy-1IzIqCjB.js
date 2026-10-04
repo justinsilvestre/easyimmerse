@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e){return Math.floor(e/n)*n}var n,r;function i(){return(i=e((()=>{n=3e4,r=10*n})))()}export{t as i,r as n,n as r,i as t};
