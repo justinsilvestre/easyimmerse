@@ -43,7 +43,7 @@ pub fn conversion_unavailable() -> ApiFailure {
     ApiFailure::new(
         StatusCode::SERVICE_UNAVAILABLE,
         CONVERSION_UNAVAILABLE,
-        "this server has no ffmpeg or no cache directory, so it cannot convert media",
+        "this server has no ffmpeg or no cache directory, so it cannot read the tracks of media files or convert them",
     )
 }
 
@@ -77,7 +77,9 @@ pub fn conversion_failure(error: ConversionError) -> ApiFailure {
             error.to_string(),
         ),
         ConversionError::Ffmpeg(FfmpegError::BinaryNotFound(_)) => conversion_unavailable(),
-        ConversionError::RunFailed { .. } | ConversionError::Ffmpeg(_) => ApiFailure::new(
+        ConversionError::RunFailed { .. }
+        | ConversionError::SegmentNotProduced { .. }
+        | ConversionError::Ffmpeg(_) => ApiFailure::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "conversion_failed",
             error.to_string(),
@@ -111,6 +113,17 @@ mod tests {
     fn maps_a_failed_run_to_an_internal_error_with_its_own_code() {
         let failure = conversion_failure(ConversionError::RunFailed {
             key: "k".to_owned(),
+            stderr: String::new(),
+        });
+        assert_eq!(failure.error.code, "conversion_failed");
+    }
+
+    #[test]
+    fn maps_a_segment_no_run_produced_to_the_failed_run_code() {
+        let failure = conversion_failure(ConversionError::SegmentNotProduced {
+            key: "k".to_owned(),
+            segment: "s00001.m4s".to_owned(),
+            runs: 3,
             stderr: String::new(),
         });
         assert_eq!(failure.error.code, "conversion_failed");

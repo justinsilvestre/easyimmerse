@@ -3,6 +3,7 @@
 
 mod accuracy;
 mod cache;
+mod restarts;
 mod runs;
 mod support;
 mod waveform;

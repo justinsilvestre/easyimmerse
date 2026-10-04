@@ -35,6 +35,15 @@ pub enum ConversionError {
     },
     #[error("ffmpeg failed while converting {key}: {stderr}")]
     RunFailed { key: String, stderr: String },
+    #[error(
+        "ffmpeg stopped {runs} times without producing {segment} of conversion {key}: {stderr}"
+    )]
+    SegmentNotProduced {
+        key: String,
+        segment: String,
+        runs: usize,
+        stderr: String,
+    },
     #[error("the segment plan of conversion {0} is empty")]
     EmptyPlan(String),
     #[error("the waveform window must start before it ends and span at most {0:?}")]
