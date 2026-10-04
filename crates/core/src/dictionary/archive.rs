@@ -1,10 +1,8 @@
 use std::io::{self, Read};
 
-use flate2::read::MultiGzDecoder;
-use lzma_rust2::XzReader;
-use ruzstd::decoding::{FrameDecoder, StreamingDecoder};
 use thiserror::Error;
 
+use super::archive_compression::{Compression, decompress, detect_compression, is_bzip2};
 use super::source::SourceFile;
 
 #[derive(Debug, Error)]
@@ -17,23 +15,6 @@ pub enum ArchiveError {
     Tar { name: String, source: io::Error },
 }
 
-#[derive(Clone, Copy)]
-enum Compression {
-    None,
-    Gzip,
-    Xz,
-    Zstd,
-}
-
-const GZIP_SIGNATURE: &[u8] = b"\x1f\x8b";
-const XZ_SIGNATURE: &[u8] = b"\xfd7zXZ\x00";
-const ZSTD_SIGNATURE: &[u8] = b"\x28\xb5\x2f\xfd";
-const BZIP2_SIGNATURE: &[u8] = b"BZh";
-/// The magic numbers that follow a bzip2 header: the start of a block, or the end of an empty stream.
-const BZIP2_BLOCK_SIGNATURES: [&[u8]; 2] = [
-    b"\x31\x41\x59\x26\x53\x59",
-    b"\x17\x72\x45\x38\x50\x90",
-];
 const TAR_HEADER_SIZE: usize = 512;
 const TAR_MAGIC_OFFSET: usize = 257;
 const TAR_MAGIC: &[u8] = b"ustar";
@@ -63,26 +44,6 @@ pub fn unpack_tar_archive(file: &SourceFile) -> Result<Option<Vec<SourceFile>>, 
         })
 }
 
-fn is_bzip2(bytes: &[u8]) -> bool {
-    bytes.starts_with(BZIP2_SIGNATURE)
-        && bytes.get(3).is_some_and(|level| (b'1'..=b'9').contains(level))
-        && BZIP2_BLOCK_SIGNATURES
-            .iter()
-            .any(|signature| bytes[4..].starts_with(signature))
-}
-
-fn detect_compression(bytes: &[u8]) -> Compression {
-    if bytes.starts_with(GZIP_SIGNATURE) {
-        Compression::Gzip
-    } else if bytes.starts_with(XZ_SIGNATURE) {
-        Compression::Xz
-    } else if bytes.starts_with(ZSTD_SIGNATURE) {
-        Compression::Zstd
-    } else {
-        Compression::None
-    }
-}
-
 fn read_tar_header(compression: Compression, bytes: &[u8]) -> io::Result<Vec<u8>> {
     let mut header = Vec::with_capacity(TAR_HEADER_SIZE);
     decompress(compression, bytes)?
@@ -93,15 +54,6 @@ fn read_tar_header(compression: Compression, bytes: &[u8]) -> io::Result<Vec<u8>
 
 fn is_tar_header(header: &[u8]) -> bool {
     header.len() == TAR_HEADER_SIZE && header[TAR_MAGIC_OFFSET..].starts_with(TAR_MAGIC)
-}
-
-fn decompress(compression: Compression, bytes: &[u8]) -> io::Result<Box<dyn Read + '_>> {
-    Ok(match compression {
-        Compression::None => Box::new(bytes),
-        Compression::Gzip => Box::new(MultiGzDecoder::new(bytes)),
-        Compression::Xz => Box::new(XzReader::new(bytes, true)),
-        Compression::Zstd => Box::new(ZstdFrames::new(bytes)?),
-    })
 }
 
 fn read_tar_members(reader: impl Read) -> io::Result<Vec<SourceFile>> {
@@ -124,31 +76,6 @@ fn member_name(path: &[u8]) -> String {
     name.trim_start_matches("./")
         .trim_start_matches('/')
         .to_string()
-}
-
-/// Reads every frame of a zstd stream in turn, since a compressor may split its output into several frames.
-struct ZstdFrames<'a> {
-    decoder: StreamingDecoder<&'a [u8], FrameDecoder>,
-}
-
-impl<'a> ZstdFrames<'a> {
-    fn new(bytes: &'a [u8]) -> io::Result<Self> {
-        let decoder = StreamingDecoder::new(bytes).map_err(io::Error::other)?;
-        Ok(Self { decoder })
-    }
-}
-
-impl Read for ZstdFrames<'_> {
-    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
-        loop {
-            let count = self.decoder.read(buffer)?;
-            let remaining: &[u8] = self.decoder.get_ref();
-            if count > 0 || buffer.is_empty() || remaining.is_empty() {
-                return Ok(count);
-            }
-            *self = Self::new(remaining)?;
-        }
-    }
 }
 
 #[cfg(test)]

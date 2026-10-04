@@ -4,6 +4,7 @@
 //! Storage implements the sink to write straight to its database; `parse_dictionary` collects everything in memory instead.
 
 mod archive;
+mod archive_compression;
 mod dictionary_media;
 mod error;
 mod format;
