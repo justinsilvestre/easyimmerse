@@ -14,6 +14,7 @@ export const featureLibraries: Record<string, LibraryKey[]> = {
   gmp: ["gmp"],
   iconv: ["libiconv"],
   "lib:gomp": ["gcc_gomp"],
+  "lib:iconv": ["libiconv"],
   libaom: ["aom", "vmaf"],
   libaribb24: ["aribb24", "libpng"],
   libaribcaption: ["aribcaption", "freetype", "fontconfig", "openssl"],
