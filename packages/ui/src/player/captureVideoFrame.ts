@@ -12,6 +12,8 @@ export type CaptureFrameOptions = {
   seekToSeconds?: number;
   /** How long to wait for the seek to finish before capturing anyway. */
   seekTimeoutMs?: number;
+  /** The widest image to return. A wider picture is scaled down to this width, keeping its proportions. */
+  maxWidthPx?: number;
   /** Replaces the document's canvas, for tests. */
   createCanvas?: () => HTMLCanvasElement;
 };
@@ -33,7 +35,11 @@ export async function captureVideoFrame(
       options.seekToSeconds,
       options.seekTimeoutMs ?? defaultSeekTimeoutMs,
     );
-  return drawFrame(video, options.createCanvas ?? createDocumentCanvas);
+  return drawFrame(
+    video,
+    options.maxWidthPx ?? video.videoWidth,
+    options.createCanvas ?? createDocumentCanvas,
+  );
 }
 
 function seekAndWait(
@@ -55,14 +61,22 @@ function seekAndWait(
 
 function drawFrame(
   video: FrameSource,
+  maxWidthPx: number,
   createCanvas: () => HTMLCanvasElement,
 ): string {
+  const scale = Math.min(1, maxWidthPx / video.videoWidth);
   const canvas = createCanvas();
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
   const context = canvas.getContext("2d");
   if (context === null) throw new Error("The canvas has no 2D context.");
-  context.drawImage(video as unknown as CanvasImageSource, 0, 0);
+  context.drawImage(
+    video as unknown as CanvasImageSource,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  );
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 

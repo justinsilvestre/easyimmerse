@@ -83,9 +83,15 @@ export function createFrameCapturer(
   };
 }
 
+/** The width the server's frame route scales screenshots down to, which browser captures match. */
+const screenshotMaxWidthPx = 640;
+
 /** The capturer for the files the web app holds, drawing frames from video elements outside the page. */
 export const browserFrameCapturer = createFrameCapturer({
   openVideo: (file) => openBrowserVideo(file),
   captureFrame: (video, seconds) =>
-    captureVideoFrame(video, { seekToSeconds: seconds }),
+    captureVideoFrame(video, {
+      seekToSeconds: seconds,
+      maxWidthPx: screenshotMaxWidthPx,
+    }),
 });
