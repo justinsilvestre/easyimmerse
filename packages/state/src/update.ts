@@ -81,17 +81,11 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         ],
       ];
     case "mediaFilePickRequested":
-      return [
-        { ...state, pendingMediaFilePick: true },
-        [{ type: "pickMediaFile", accept: mediaFileExtensions }],
-      ];
+      return [state, [{ type: "pickMediaFile", accept: mediaFileExtensions }]];
     case "mediaFileChosen":
-      return [
-        { ...state, pendingMediaFilePick: false, chosenMediaFile: action.file },
-        [],
-      ];
+      return [{ ...state, chosenMediaFile: action.file }, []];
     case "mediaFilePickCancelled":
-      return [{ ...state, pendingMediaFilePick: false }, []];
+      return [state, []];
     case "mediaFileAdded":
       return [
         {

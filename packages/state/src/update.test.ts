@@ -133,11 +133,6 @@ describe("update", () => {
     expect(state.pendingFilePick).toBe(false);
   });
 
-  it("marks a media file pick as pending for mediaFilePickRequested", () => {
-    const [state] = update(initialAppState, actions.mediaFilePickRequested());
-    expect(state.pendingMediaFilePick).toBe(true);
-  });
-
   it("returns a pickMediaFile effect accepting media files for mediaFilePickRequested", () => {
     const [, effects] = update(
       initialAppState,
@@ -148,24 +143,12 @@ describe("update", () => {
     ]);
   });
 
-  it("clears the pending media file pick for mediaFileChosen", () => {
-    const pending = { ...initialAppState, pendingMediaFilePick: true };
-    const [state] = update(pending, actions.mediaFileChosen(pickedMediaFile));
-    expect(state.pendingMediaFilePick).toBe(false);
-  });
-
   it("keeps the chosen media file for mediaFileChosen", () => {
     const [state] = update(
       initialAppState,
       actions.mediaFileChosen(pickedMediaFile),
     );
     expect(state.chosenMediaFile).toBe(pickedMediaFile);
-  });
-
-  it("clears the pending media file pick for mediaFilePickCancelled", () => {
-    const pending = { ...initialAppState, pendingMediaFilePick: true };
-    const [state] = update(pending, actions.mediaFilePickCancelled());
-    expect(state.pendingMediaFilePick).toBe(false);
   });
 
   it("opens the added media file for mediaFileAdded", () => {

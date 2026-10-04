@@ -6,7 +6,6 @@ import {
   selectCurrentMediaFileId,
   selectCurrentTime,
   selectPendingFilePick,
-  selectPendingMediaFilePick,
   selectPlayer,
   selectPlayerDuration,
   selectPreference,
@@ -27,7 +26,6 @@ const rootState: RootState = {
     preferencesLoaded: true,
     pendingFilePick: true,
     currentMediaFileId: "m1",
-    pendingMediaFilePick: true,
     chosenMediaFile: { name: "a.mp4", source: { kind: "path", path: "/a" } },
   },
 };
@@ -59,10 +57,6 @@ describe("selectors", () => {
 
   it("selectCurrentMediaFileId returns the open media file's id", () => {
     expect(selectCurrentMediaFileId(rootState)).toBe("m1");
-  });
-
-  it("selectPendingMediaFilePick returns whether a media file pick is pending", () => {
-    expect(selectPendingMediaFilePick(rootState)).toBe(true);
   });
 
   it("selectChosenMediaFile returns the media file waiting to be added", () => {

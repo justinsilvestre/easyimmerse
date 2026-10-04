@@ -43,7 +43,6 @@ export type AppState = {
   pendingFilePick: boolean;
   /** The media file the media screen shows. Null until one is opened. */
   currentMediaFileId: string | null;
-  pendingMediaFilePick: boolean;
   /** A picked media file waiting to be added to the project through the backend. */
   chosenMediaFile: PickedMediaFile | null;
   theme: ThemeState;
@@ -56,7 +55,6 @@ export const initialAppState: AppState = {
   preferencesLoaded: false,
   pendingFilePick: false,
   currentMediaFileId: null,
-  pendingMediaFilePick: false,
   chosenMediaFile: null,
   theme: initialThemeState,
 };

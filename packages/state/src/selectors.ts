@@ -26,9 +26,6 @@ export const selectPendingFilePick = (state: RootState) =>
 export const selectCurrentMediaFileId = (state: RootState) =>
   state.app.currentMediaFileId;
 
-export const selectPendingMediaFilePick = (state: RootState) =>
-  state.app.pendingMediaFilePick;
-
 export const selectChosenMediaFile = (state: RootState) =>
   state.app.chosenMediaFile;
 
