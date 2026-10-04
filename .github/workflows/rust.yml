@@ -16,8 +16,11 @@ on:
       - "crates/**"
       - "apps/server/**"
       - "fixtures/**"
+      - "scripts/fetch-ffmpeg/**"
+  # A tag named rust-ci-<stamp> runs the workflow at the tagged commit, for one-off checks of a branch.
   push:
     branches: [main]
+    tags: ["rust-ci-*"]
     paths:
       - ".github/workflows/rust.yml"
       - ".github/actions/**"
@@ -32,6 +35,7 @@ on:
       - "crates/**"
       - "apps/server/**"
       - "fixtures/**"
+      - "scripts/fetch-ffmpeg/**"
 
 # A newer push to the same branch cancels the run still going for the older one.
 concurrency:
@@ -56,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, windows-2025, windows-11-arm]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -68,10 +72,44 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --exclude easyimmerse-native --all-targets -- -D warnings
 
+      - name: Fetch the ffmpeg sidecar
+        run: mise run fetch-ffmpeg
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      # The tests find ffmpeg through EASYIMMERSE_FFMPEG_DIR under the binaries' plain names,
+      # while the sidecars carry the target triple in theirs.
+      - name: Put the sidecars under their plain names
+        shell: bash
+        run: |
+          triple=$(rustc -vV | sed -n 's/^host: //p')
+          extension=$([ "$RUNNER_OS" = Windows ] && echo .exe || true)
+          dir="$RUNNER_TEMP/ffmpeg"
+          mkdir -p "$dir"
+          for name in ffmpeg ffprobe; do
+            cp "apps/native/src-tauri/binaries/$name-$triple$extension" "$dir/$name$extension"
+          done
+          echo "EASYIMMERSE_FFMPEG_DIR=$dir" >> "$GITHUB_ENV"
+
       # The plugin host's tests load plugins built by `mise run plugins:build`; the plugins
       # workflow builds those and runs that crate's tests on every platform.
+      # Showing the output of passing tests reveals the ones that skipped their body.
       - name: Test
-        run: cargo test --workspace --exclude easyimmerse-native --exclude easyimmerse-plugins
+        shell: bash
+        run: cargo test --workspace --exclude easyimmerse-native --exclude easyimmerse-plugins -- --show-output 2>&1 | tee "$RUNNER_TEMP/test.log"
+
+      # A test that cannot find ffmpeg passes without testing anything, so it fails the job here.
+      # Runners have no GPU, so tests that need a hardware encoder may skip.
+      - name: Fail when a test skipped for want of ffmpeg
+        shell: bash
+        run: |
+          if grep -E 'skipped: (ffmpeg or )?ffprobe not found' "$RUNNER_TEMP/test.log"; then
+            echo "::error::Tests skipped because they could not find ffmpeg or ffprobe."
+            exit 1
+          fi
+          if grep -q 'skipped: no working hardware H.264 encoder' "$RUNNER_TEMP/test.log"; then
+            echo "::notice::Tests that need a hardware H.264 encoder skipped on ${{ matrix.os }}."
+          fi
 
   record:
     needs: [gate, rust]
