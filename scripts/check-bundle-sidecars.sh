@@ -26,7 +26,7 @@ main() {
 check_bundle() {
   local bundle=$1 dest=$2
   mkdir -p "$dest"
-  if ! unpack "$bundle" "$dest"; then
+  if ! unpack "$(realpath "$bundle")" "$dest"; then
     echo "Could not unpack $bundle." >&2
     return 1
   fi
@@ -39,7 +39,7 @@ unpack() {
     *.app) cp -R "$bundle" "$dest/" ;;
     *.dmg) unpack_dmg "$bundle" "$dest" ;;
     *.deb) dpkg-deb -x "$bundle" "$dest" ;;
-    *.rpm) (cd "$dest" && rpm2cpio "$(realpath "$bundle")" | cpio -idm --quiet) ;;
+    *.rpm) (cd "$dest" && rpm2cpio "$bundle" | cpio -idm --quiet) ;;
     *.AppImage) unpack_appimage "$bundle" "$dest" ;;
     *.msi) msiexec //a "$(cygpath -w "$bundle")" //qn "TARGETDIR=$(cygpath -w "$dest")" ;;
     *-setup.exe) 7z x -y -o"$dest" "$bundle" > /dev/null ;;
@@ -57,10 +57,8 @@ unpack_dmg() {
 
 # Extracting avoids mounting the AppImage, which needs FUSE.
 unpack_appimage() {
-  local bundle
-  bundle=$(realpath "$1")
-  chmod +x "$bundle"
-  (cd "$2" && "$bundle" --appimage-extract > /dev/null)
+  chmod +x "$1"
+  (cd "$2" && "$1" --appimage-extract > /dev/null)
 }
 
 check_sidecar() {
