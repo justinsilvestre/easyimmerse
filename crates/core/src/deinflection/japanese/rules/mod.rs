@@ -1,5 +1,7 @@
 //! The rule tables, one module per group of related inflections.
 
+mod adjective;
+mod negative;
 mod perfective;
 mod stems;
 
@@ -12,7 +14,10 @@ pub const ALL: &[&[Rule]] = &[
     stems::IRREALIS,
     stems::ONBIN_TA,
     stems::ONBIN_DA,
+    adjective::ADJECTIVE_STEM,
     perfective::PERFECTIVE,
+    negative::NEGATIVE,
+    adjective::ADJECTIVE,
 ];
 
 /// Gives every rule in `rules` the same accepted classes and undone inflections.
