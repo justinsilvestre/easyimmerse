@@ -1,3 +1,99 @@
+FFmpeg 8.1.3 for Linux (x86-64)
+===============================
+
+easyImmerse runs FFmpeg (https://ffmpeg.org) as the separate programs ffmpeg and ffprobe. FFmpeg is free software licensed under the GNU Lesser General Public License (LGPL) version 2.1 or later. This build is configured with --enable-version3, so it is distributed under the LGPL version 3 or later.
+
+Platform: Linux (x86-64), target x86_64-unknown-linux-gnu
+Version: 8.1.3
+Source code: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
+Build origin: Built by the ffmpeg-linux workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-linux.yml) for the tag ffmpeg-linux-8.1.3.
+Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-linux-8.1.3
+Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-linux-8.1.3/ffmpeg-8.1.3-x86_64-unknown-linux-gnu.tar.xz
+SHA-256 of the download: 45829c3567d7e40dcfdb3a32b9792ab4a0823d64fe5b9f9f44aa05609aeb40cd
+Third-party libraries linked: libdrm, libva, FFmpeg nv-codec-headers, zlib
+
+Configure flags:
+--disable-gpl
+--disable-nonfree
+--enable-version3
+--disable-shared
+--enable-static
+--disable-doc
+--disable-debug
+--disable-ffplay
+--disable-network
+--disable-autodetect
+--pkg-config-flags=--static
+--disable-everything
+--enable-demuxer=mov,matroska,mpegts,mpegps,avi,asf,mp3,aac,ogg,flac,wav,ac3,eac3,dts,truehd,srt,webvtt,ass
+--enable-decoder=h264,hevc,mpeg4,mpeg1video,mpeg2video,vp8,vp9,av1,wmv3,vc1,prores,dnxhd,mjpeg,aac,aac_latm,mp3,mp3float,mp2,mp2float,vorbis,opus,flac,ac3,eac3,dca,truehd,wmav2,wmapro,pcm_s16le,pcm_s16be,pcm_s24le,pcm_s24be,pcm_s32le,pcm_s32be,pcm_f32le,pcm_f32be,pcm_f64le,pcm_u8,pcm_alaw,pcm_mulaw,subrip,srt,ass,ssa,webvtt,movtext,text,pgssub,dvdsub,dvbsub,rawvideo,wrapped_avframe
+--enable-parser=h264,hevc,mpeg4video,mpegvideo,vp8,vp9,av1,vc1,mjpeg,aac,aac_latm,mpegaudio,vorbis,opus,flac,ac3,dca
+--enable-bsf=noise,aac_adtstoasc,extract_extradata,vp9_superframe,null
+--enable-filter=aresample,aformat,anull,format,null,scale,bwdif,color,crop,trim,atrim,transpose,hflip,vflip,rotate,hwupload,hwdownload
+--enable-encoder=aac,flac,pcm_s16le,pcm_f32le,rawvideo,wrapped_avframe
+--enable-muxer=hls,mp4,mov,segment,mpegts,webvtt,pcm_f32le,rawvideo,null
+--enable-protocol=file,pipe
+--enable-indev=lavfi
+--enable-zlib
+--enable-vaapi
+--enable-ffnvcodec
+--enable-nvenc
+--enable-v4l2-m2m
+--enable-encoder=h264_vaapi,hevc_vaapi,h264_nvenc,hevc_nvenc,h264_v4l2m2m
+--extra-cflags=-I/__w/easyimmerse/easyimmerse/deps/include
+--extra-ldflags=-L/__w/easyimmerse/easyimmerse/deps/lib
+--extra-ldflags=-static-libgcc
+--prefix=/__w/easyimmerse/easyimmerse/out/x86_64-unknown-linux-gnu/install
+
+
+FFmpeg 8.1.3 for Linux (ARM64)
+==============================
+
+easyImmerse runs FFmpeg (https://ffmpeg.org) as the separate programs ffmpeg and ffprobe. FFmpeg is free software licensed under the GNU Lesser General Public License (LGPL) version 2.1 or later. This build is configured with --enable-version3, so it is distributed under the LGPL version 3 or later.
+
+Platform: Linux (ARM64), target aarch64-unknown-linux-gnu
+Version: 8.1.3
+Source code: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
+Build origin: Built by the ffmpeg-linux workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-linux.yml) for the tag ffmpeg-linux-8.1.3.
+Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-linux-8.1.3
+Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-linux-8.1.3/ffmpeg-8.1.3-aarch64-unknown-linux-gnu.tar.xz
+SHA-256 of the download: 3395582cad36897d176781798a865edc95402f3c7635f93c103d66490e067229
+Third-party libraries linked: libdrm, libva, FFmpeg nv-codec-headers, zlib
+
+Configure flags:
+--disable-gpl
+--disable-nonfree
+--enable-version3
+--disable-shared
+--enable-static
+--disable-doc
+--disable-debug
+--disable-ffplay
+--disable-network
+--disable-autodetect
+--pkg-config-flags=--static
+--disable-everything
+--enable-demuxer=mov,matroska,mpegts,mpegps,avi,asf,mp3,aac,ogg,flac,wav,ac3,eac3,dts,truehd,srt,webvtt,ass
+--enable-decoder=h264,hevc,mpeg4,mpeg1video,mpeg2video,vp8,vp9,av1,wmv3,vc1,prores,dnxhd,mjpeg,aac,aac_latm,mp3,mp3float,mp2,mp2float,vorbis,opus,flac,ac3,eac3,dca,truehd,wmav2,wmapro,pcm_s16le,pcm_s16be,pcm_s24le,pcm_s24be,pcm_s32le,pcm_s32be,pcm_f32le,pcm_f32be,pcm_f64le,pcm_u8,pcm_alaw,pcm_mulaw,subrip,srt,ass,ssa,webvtt,movtext,text,pgssub,dvdsub,dvbsub,rawvideo,wrapped_avframe
+--enable-parser=h264,hevc,mpeg4video,mpegvideo,vp8,vp9,av1,vc1,mjpeg,aac,aac_latm,mpegaudio,vorbis,opus,flac,ac3,dca
+--enable-bsf=noise,aac_adtstoasc,extract_extradata,vp9_superframe,null
+--enable-filter=aresample,aformat,anull,format,null,scale,bwdif,color,crop,trim,atrim,transpose,hflip,vflip,rotate,hwupload,hwdownload
+--enable-encoder=aac,flac,pcm_s16le,pcm_f32le,rawvideo,wrapped_avframe
+--enable-muxer=hls,mp4,mov,segment,mpegts,webvtt,pcm_f32le,rawvideo,null
+--enable-protocol=file,pipe
+--enable-indev=lavfi
+--enable-zlib
+--enable-vaapi
+--enable-ffnvcodec
+--enable-nvenc
+--enable-v4l2-m2m
+--enable-encoder=h264_vaapi,hevc_vaapi,h264_nvenc,hevc_nvenc,h264_v4l2m2m
+--extra-cflags=-I/__w/easyimmerse/easyimmerse/deps/include
+--extra-ldflags=-L/__w/easyimmerse/easyimmerse/deps/lib
+--extra-ldflags=-static-libgcc
+--prefix=/__w/easyimmerse/easyimmerse/out/aarch64-unknown-linux-gnu/install
+
+
 FFmpeg 8.1.3 for macOS (Intel)
 ==============================
 
@@ -6,10 +102,10 @@ easyImmerse runs FFmpeg (https://ffmpeg.org) as the separate programs ffmpeg and
 Platform: macOS (Intel), target x86_64-apple-darwin
 Version: 8.1.3
 Source code: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
-Build origin: Built by the ffmpeg-macos workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-macos.yml) for the tag ffmpeg-macos-8.1.3-3.
-Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-macos-8.1.3-3
-Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-3/ffmpeg-8.1.3-x86_64-apple-darwin.tar.xz
-SHA-256 of the download: 8a6c7fa84f723498d815c779a9e234927659f09cd4ea406ee2d224b6f783a490
+Build origin: Built by the ffmpeg-macos workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-macos.yml) for the tag ffmpeg-macos-8.1.3-4.
+Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-macos-8.1.3-4
+Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-4/ffmpeg-8.1.3-x86_64-apple-darwin.tar.xz
+SHA-256 of the download: fb89ba2914370b3d886620c743a9768245097b8597cff77e28090fbc4eff15ff
 Third-party libraries linked: GNU libiconv, zlib
 
 Configure flags:
@@ -21,13 +117,25 @@ Configure flags:
 --disable-doc
 --disable-debug
 --disable-ffplay
---pkg-config-flags=--static
+--disable-network
 --disable-autodetect
+--pkg-config-flags=--static
+--disable-everything
+--enable-demuxer=mov,matroska,mpegts,mpegps,avi,asf,mp3,aac,ogg,flac,wav,ac3,eac3,dts,truehd,srt,webvtt,ass
+--enable-decoder=h264,hevc,mpeg4,mpeg1video,mpeg2video,vp8,vp9,av1,wmv3,vc1,prores,dnxhd,mjpeg,aac,aac_latm,mp3,mp3float,mp2,mp2float,vorbis,opus,flac,ac3,eac3,dca,truehd,wmav2,wmapro,pcm_s16le,pcm_s16be,pcm_s24le,pcm_s24be,pcm_s32le,pcm_s32be,pcm_f32le,pcm_f32be,pcm_f64le,pcm_u8,pcm_alaw,pcm_mulaw,subrip,srt,ass,ssa,webvtt,movtext,text,pgssub,dvdsub,dvbsub,rawvideo,wrapped_avframe
+--enable-parser=h264,hevc,mpeg4video,mpegvideo,vp8,vp9,av1,vc1,mjpeg,aac,aac_latm,mpegaudio,vorbis,opus,flac,ac3,dca
+--enable-bsf=noise,aac_adtstoasc,extract_extradata,vp9_superframe,null
+--enable-filter=aresample,aformat,anull,format,null,scale,bwdif,color,crop,trim,atrim,transpose,hflip,vflip,rotate,hwupload,hwdownload
+--enable-encoder=aac,flac,pcm_s16le,pcm_f32le,rawvideo,wrapped_avframe
+--enable-muxer=hls,mp4,mov,segment,mpegts,webvtt,pcm_f32le,rawvideo,null
+--enable-protocol=file,pipe
+--enable-indev=lavfi
 --enable-videotoolbox
 --enable-audiotoolbox
 --enable-zlib
 --enable-iconv
 --extra-libs=-liconv
+--enable-encoder=h264_videotoolbox,hevc_videotoolbox,aac_at
 --enable-cross-compile
 --arch=x86_64
 --target-os=darwin
@@ -43,10 +151,10 @@ easyImmerse runs FFmpeg (https://ffmpeg.org) as the separate programs ffmpeg and
 Platform: macOS (Apple silicon), target aarch64-apple-darwin
 Version: 8.1.3
 Source code: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
-Build origin: Built by the ffmpeg-macos workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-macos.yml) for the tag ffmpeg-macos-8.1.3-3.
-Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-macos-8.1.3-3
-Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-3/ffmpeg-8.1.3-aarch64-apple-darwin.tar.xz
-SHA-256 of the download: b6197ecb0629387e32ab77e7ffa539fee94fd74fc44d437cb0e846af8743fabf
+Build origin: Built by the ffmpeg-macos workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-macos.yml) for the tag ffmpeg-macos-8.1.3-4.
+Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-macos-8.1.3-4
+Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-4/ffmpeg-8.1.3-aarch64-apple-darwin.tar.xz
+SHA-256 of the download: e7d5075f2932fef0322cbbe80b0fc726a50ba349fb43fe57d45ac9ca747cde72
 Third-party libraries linked: GNU libiconv, zlib
 
 Configure flags:
@@ -58,13 +166,25 @@ Configure flags:
 --disable-doc
 --disable-debug
 --disable-ffplay
---pkg-config-flags=--static
+--disable-network
 --disable-autodetect
+--pkg-config-flags=--static
+--disable-everything
+--enable-demuxer=mov,matroska,mpegts,mpegps,avi,asf,mp3,aac,ogg,flac,wav,ac3,eac3,dts,truehd,srt,webvtt,ass
+--enable-decoder=h264,hevc,mpeg4,mpeg1video,mpeg2video,vp8,vp9,av1,wmv3,vc1,prores,dnxhd,mjpeg,aac,aac_latm,mp3,mp3float,mp2,mp2float,vorbis,opus,flac,ac3,eac3,dca,truehd,wmav2,wmapro,pcm_s16le,pcm_s16be,pcm_s24le,pcm_s24be,pcm_s32le,pcm_s32be,pcm_f32le,pcm_f32be,pcm_f64le,pcm_u8,pcm_alaw,pcm_mulaw,subrip,srt,ass,ssa,webvtt,movtext,text,pgssub,dvdsub,dvbsub,rawvideo,wrapped_avframe
+--enable-parser=h264,hevc,mpeg4video,mpegvideo,vp8,vp9,av1,vc1,mjpeg,aac,aac_latm,mpegaudio,vorbis,opus,flac,ac3,dca
+--enable-bsf=noise,aac_adtstoasc,extract_extradata,vp9_superframe,null
+--enable-filter=aresample,aformat,anull,format,null,scale,bwdif,color,crop,trim,atrim,transpose,hflip,vflip,rotate,hwupload,hwdownload
+--enable-encoder=aac,flac,pcm_s16le,pcm_f32le,rawvideo,wrapped_avframe
+--enable-muxer=hls,mp4,mov,segment,mpegts,webvtt,pcm_f32le,rawvideo,null
+--enable-protocol=file,pipe
+--enable-indev=lavfi
 --enable-videotoolbox
 --enable-audiotoolbox
 --enable-zlib
 --enable-iconv
 --extra-libs=-liconv
+--enable-encoder=h264_videotoolbox,hevc_videotoolbox,aac_at
 --prefix=/Users/runner/work/easyimmerse/easyimmerse/ffmpeg-8.1.3/../install-arm64
 
 
@@ -1432,6 +1552,41 @@ Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>.
 
 
+FFmpeg nv-codec-headers
+=======================
+
+FFmpeg nv-codec-headers is statically linked into FFmpeg for Linux (x86-64), Linux (ARM64).
+License: MIT
+License text: https://raw.githubusercontent.com/FFmpeg/nv-codec-headers/master/include/ffnvcodec/nvEncodeAPI.h
+
+/*
+ * This copyright notice applies to this header file only:
+ *
+ * Copyright (c) 2010-2026 NVIDIA Corporation
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the software, and to permit persons to whom the
+ * software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+
 GNU libiconv
 ============
 
@@ -1942,10 +2097,80 @@ necessary.  Here is a sample; alter the names:
 That's all there is to it!
 
 
+libdrm
+======
+
+libdrm is statically linked into FFmpeg for Linux (x86-64), Linux (ARM64).
+License: MIT
+License text: https://gitlab.freedesktop.org/mesa/libdrm/-/raw/libdrm-2.4.125/xf86drm.h
+
+/**
+ * \file xf86drm.h 
+ * OS-independent header for DRM user-level library interface.
+ *
+ * \author Rickard E. (Rik) Faith <faith@valinux.com>
+ */
+ 
+/*
+ * Copyright 1999, 2000 Precision Insight, Inc., Cedar Park, Texas.
+ * Copyright 2000 VA Linux Systems, Inc., Sunnyvale, California.
+ * All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * PRECISION INSIGHT AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ *
+ */
+
+
+
+libva
+=====
+
+libva is statically linked into FFmpeg for Linux (x86-64), Linux (ARM64).
+License: MIT
+License text: https://raw.githubusercontent.com/intel/libva/master/COPYING
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sub license, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
+
+    The above copyright notice and this permission notice (including the
+    next paragraph) shall be included in all copies or substantial portions
+    of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
+    IN NO EVENT SHALL PRECISION INSIGHT AND/OR ITS SUPPLIERS BE LIABLE FOR
+    ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
 zlib
 ====
 
-zlib is statically linked into FFmpeg for macOS (Intel), macOS (Apple silicon).
+zlib is statically linked into FFmpeg for Linux (x86-64), Linux (ARM64), macOS (Intel), macOS (Apple silicon).
 License: Zlib
 License text: https://raw.githubusercontent.com/madler/zlib/master/LICENSE
 
