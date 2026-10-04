@@ -3,7 +3,7 @@ import { Button } from "../components/Button.tsx";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
 import { LicensesPage } from "../components/LicensesPage.tsx";
-import { LosslessAudioToggle } from "../components/LosslessAudioToggle.tsx";
+import { PreferenceToggle } from "../components/PreferenceToggle.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 
 const unavailableConversionCache: ConversionCacheControls = {
@@ -34,7 +34,11 @@ export function SettingsScreen({
         <h2 id="settings-conversion" className="text-base font-semibold">
           Conversion
         </h2>
-        <LosslessAudioToggle />
+        <PreferenceToggle
+          preferenceKey="losslessAudio"
+          label="Keep audio lossless when converting"
+          hint="Converted audio keeps its full quality but takes more disk space."
+        />
       </section>
       <ConversionCacheSection {...conversionCache} />
       <LicensesPage notices={licenseNotices} />

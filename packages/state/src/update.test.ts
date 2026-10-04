@@ -203,15 +203,20 @@ describe("update", () => {
     ]);
   });
 
-  it("returns a loadPreference effect for every preference key for preferencesLoadRequested", () => {
+  it("returns one loadPreferences effect with every preference key for preferencesLoadRequested", () => {
     const [, effects] = update(
       initialAppState,
       actions.preferencesLoadRequested(),
     );
     expect(effects).toEqual([
-      { type: "loadPreference", key: "showTranslations" },
-      { type: "loadPreference", key: "losslessAudio" },
-      { type: "loadPreference", key: "conversionNoticeDismissed" },
+      {
+        type: "loadPreferences",
+        keys: [
+          "showTranslations",
+          "losslessAudio",
+          "conversionNoticeDismissed",
+        ],
+      },
     ]);
   });
 
@@ -237,20 +242,25 @@ describe("update", () => {
     ]);
   });
 
-  it("stores the loaded value for preferenceLoaded", () => {
+  it("stores the loaded values for preferencesLoaded", () => {
     const [state] = update(
       initialAppState,
-      actions.preferenceLoaded("showTranslations", "true"),
+      actions.preferencesLoaded({ showTranslations: "true" }),
     );
     expect(state.preferences.showTranslations).toBe("true");
   });
 
-  it("leaves state unchanged when preferenceLoaded carries null", () => {
+  it("keeps a preference that storage did not hold for preferencesLoaded", () => {
     const [state] = update(
-      initialAppState,
-      actions.preferenceLoaded("showTranslations", null),
+      withPreference("true"),
+      actions.preferencesLoaded({ losslessAudio: "true" }),
     );
-    expect(state).toBe(initialAppState);
+    expect(state.preferences.showTranslations).toBe("true");
+  });
+
+  it("marks the preferences as loaded for preferencesLoaded", () => {
+    const [state] = update(initialAppState, actions.preferencesLoaded({}));
+    expect(state.preferencesLoaded).toBe(true);
   });
 
   it("returns a showNotification effect for notificationRequested", () => {

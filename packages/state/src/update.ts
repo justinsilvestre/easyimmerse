@@ -116,15 +116,14 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         [{ type: "savePreference", key: action.key, value: action.value }],
       ];
     case "preferencesLoadRequested":
+      return [state, [{ type: "loadPreferences", keys: preferenceKeys }]];
+    case "preferencesLoaded":
       return [
-        state,
-        preferenceKeys.map((key) => ({ type: "loadPreference", key })),
-      ];
-    case "preferenceLoaded":
-      return [
-        action.value === null
-          ? state
-          : setPreference(state, action.key, action.value),
+        {
+          ...state,
+          preferences: { ...state.preferences, ...action.preferences },
+          preferencesLoaded: true,
+        },
         [],
       ];
     case "notificationRequested":

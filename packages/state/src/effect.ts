@@ -6,7 +6,7 @@ export type Effect =
   | { type: "pickFile"; accept: readonly string[] }
   | { type: "pickMediaFile"; accept: readonly string[] }
   | { type: "savePreference"; key: PreferenceKey; value: string }
-  | { type: "loadPreference"; key: PreferenceKey }
+  | { type: "loadPreferences"; keys: readonly PreferenceKey[] }
   | { type: "showNotification"; message: string }
   | { type: "copyToClipboard"; text: string }
   | { type: "openExternalUrl"; url: string };

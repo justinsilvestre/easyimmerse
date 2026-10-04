@@ -149,6 +149,14 @@ describe("AppRoot", () => {
     });
   });
 
+  it("loads the stored preferences at start-up", () => {
+    const { effects } = renderAppRoot();
+    expect(effects.calls).toContainEqual({
+      type: "loadPreference",
+      key: "losslessAudio",
+    });
+  });
+
   it("opens Settings when the platform asks for it", () => {
     const { effects } = renderAppRoot();
     act(() => effects.requestSettings());

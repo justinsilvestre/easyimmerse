@@ -16,6 +16,7 @@ export type AppStoreParameters = {
 
 /**
  * Renders a story inside a fresh app store with recording effects, a fake backend that answers with the fixture responses, and a player registry.
+ * The stored preferences load as they do when the app starts.
  * The toolbar's theme stands in for the system theme, so the theme toggle in a story switches the page as it does in the app.
  */
 export const withAppStore: Decorator = (Story, { globals, parameters }) => (
@@ -60,6 +61,7 @@ function createTestAppStoreFollowing(
 ) {
   const testAppStore = createTestAppStore(appStore.client, appStore.server);
   testAppStore.store.dispatch(actions.systemThemeChanged(systemTheme));
+  testAppStore.store.dispatch(actions.preferencesLoadRequested());
   return testAppStore;
 }
 
