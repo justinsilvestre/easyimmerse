@@ -1,7 +1,6 @@
 import type { AudioClip } from "@easyimmerse/types";
 import { Camera } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
-import { Peaks, peaksBetween } from "../media/Peaks.tsx";
 import {
   clamp,
   moveClipEnd,
@@ -13,6 +12,7 @@ import {
   viewIncludingAll,
 } from "./clipView.ts";
 import { formatClipTime } from "./formatClipTime.ts";
+import { Peaks, peaksBetween } from "./Peaks.tsx";
 import {
   type DraggableTime,
   type DragHandlers,

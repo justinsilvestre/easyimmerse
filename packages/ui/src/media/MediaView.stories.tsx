@@ -3,6 +3,12 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Music } from "lucide-react";
 import { fn } from "storybook/test";
 import {
+  exampleWaveformWindows,
+  windowStartsUpTo,
+} from "../components/waveform/exampleWaveformWindows.ts";
+import type { FlashcardSegment } from "../components/waveform/flashcardSegment.ts";
+import { WaveformStrip } from "../components/waveform/WaveformStrip.tsx";
+import {
   exampleFlashcard,
   exampleLanguages,
   exampleScreenshotUrl,
@@ -23,8 +29,6 @@ import { generateExamplePeaks } from "./examplePeaks.ts";
 import { MediaView } from "./MediaView.tsx";
 import type { TrackSelection } from "./playback.ts";
 import { SubtitleTrackBar } from "./SubtitleTrackBar.tsx";
-import { segmentsFromCues } from "./segmentsFromCues.ts";
-import { Waveform } from "./Waveform.tsx";
 
 const tracks: TrackSelection = {
   audio: [
@@ -50,7 +54,20 @@ const tracks: TrackSelection = {
   translationSubtitlesId: "s2",
 };
 
+const durationMs = 24_000;
+
 const peaks = generateExamplePeaks(240);
+
+const waveformWindows = exampleWaveformWindows(windowStartsUpTo(durationMs));
+
+const flashcardSegments: FlashcardSegment[] = exampleCues
+  .filter((cue) => exampleFlashcardCueIndexes.includes(cue.index))
+  .map((cue) => ({
+    id: String(cue.index),
+    startMs: cue.start_ms,
+    endMs: cue.end_ms,
+    screenshotMs: (cue.start_ms + cue.end_ms) / 2,
+  }));
 
 function videoStage() {
   return (
@@ -76,30 +93,24 @@ function audioStage(title: string) {
   );
 }
 
-function waveform(
-  cues: readonly Cue[] = exampleCues,
-  editingSegmentId: string | null = null,
-) {
+/** The strip as the media screen frames it, with synthetic peaks in place of the server's. */
+function waveform(cues: readonly Cue[] = exampleCues) {
   return (
-    <Waveform
-      peaks={peaks}
-      viewStartMs={0}
-      viewEndMs={24_000}
-      durationMs={24_000}
-      currentMs={6_200}
-      segments={segmentsFromCues(cues, exampleFlashcardCueIndexes)}
-      editingSegmentId={editingSegmentId}
-      canZoomIn
-      canZoomOut={false}
-      callbacks={{
-        onSeek: fn(),
-        onSegmentClick: fn(),
-        onSegmentDoubleClick: fn(),
-        onZoomIn: fn(),
-        onZoomOut: fn(),
-        onHide: fn(),
-      }}
-    />
+    <div className="border-t border-line bg-surface px-3 py-2">
+      <WaveformStrip
+        durationMs={durationMs}
+        currentTimeMs={6_200}
+        windows={waveformWindows}
+        cues={cues}
+        flashcardSegments={cues.length > 0 ? flashcardSegments : []}
+        visibleSpanMs={durationMs}
+        onSeek={fn()}
+        onOpenFlashcardSegment={fn()}
+        onClipEndpointMoved={fn()}
+        onScreenshotMarkerMoved={fn()}
+        onVisibleSpanChange={fn()}
+      />
+    </div>
   );
 }
 
@@ -153,7 +164,7 @@ const meta = {
     playback: {
       isPlaying: false,
       currentMs: 6_200,
-      durationMs: 24_000,
+      durationMs,
       volume: 0.8,
       speed: 1,
     },
@@ -211,7 +222,6 @@ export const SearchingForAWord: Story = {
 
 export const EditingAFlashcard: Story = {
   args: {
-    waveform: waveform(exampleCues, "3"),
     headerContent: (
       <UnsavedWorkBanner
         hasUnsavedChanges
@@ -228,7 +238,7 @@ export const EditingAFlashcard: Story = {
         }}
         dispatch={fn()}
         languages={exampleLanguages}
-        waveform={{ peaks, durationMs: 24_000 }}
+        waveform={{ peaks, durationMs }}
         screenshotUrl={exampleScreenshotUrl}
         onSave={fn()}
         onDelete={fn()}
@@ -268,7 +278,7 @@ export const Playing: Story = {
     playback: {
       isPlaying: true,
       currentMs: 6_200,
-      durationMs: 24_000,
+      durationMs,
       volume: 0.8,
       speed: 1,
     },
