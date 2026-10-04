@@ -20,6 +20,11 @@ const DATABASE_OVERRIDE_VARIABLE: &str = "EASYIMMERSE_DATABASE";
 pub struct EmbeddedServer {
     pub url: String,
     pub token: String,
+    /// Read only by the development file that desktop builds write.
+    #[cfg_attr(not(desktop), allow(dead_code))]
+    pub database_path: PathBuf,
+    #[cfg_attr(not(desktop), allow(dead_code))]
+    pub cache_dir: PathBuf,
     /// Unused after start-up, but the server keeps running while the handle exists.
     #[allow(dead_code)]
     handle: ServerHandle,
@@ -49,32 +54,38 @@ pub enum EmbeddedServerError {
 
 /// Opens the database, binds a loopback port, and serves the API on the app's async runtime.
 pub fn start(app: &AppHandle) -> Result<EmbeddedServer, EmbeddedServerError> {
-    let storage = open_storage(app)?;
-    let options = ServeOptions {
-        cache_dir: Some(create_cache_dir(app)?),
-    };
+    let database_path = database_path(app)?;
+    let storage = open_storage(&database_path)?;
+    let cache_dir = create_cache_dir(app)?;
     let token = hex::encode(rand::random::<[u8; 32]>());
-    tauri::async_runtime::block_on(serve_on_loopback(storage, options, token))
+    let serving = serve_on_loopback(storage, cache_dir.clone(), token.clone());
+    let (port, handle) = tauri::async_runtime::block_on(serving)?;
+    Ok(EmbeddedServer {
+        url: format!("http://127.0.0.1:{port}"),
+        token,
+        database_path,
+        cache_dir,
+        handle,
+    })
 }
 
 async fn serve_on_loopback(
     storage: Storage,
-    options: ServeOptions,
+    cache_dir: PathBuf,
     token: String,
-) -> Result<EmbeddedServer, EmbeddedServerError> {
+) -> Result<(u16, ServerHandle), EmbeddedServerError> {
     let listener = bind_loopback().await?;
     let port = listener
         .local_addr()
         .map_err(EmbeddedServerError::Bind)?
         .port();
-    let config = ApiConfig::for_loopback(port, token.clone(), true);
+    let config = ApiConfig::for_loopback(port, token, true);
+    let options = ServeOptions {
+        cache_dir: Some(cache_dir),
+    };
     let handle = serve(listener, config, storage, options).await?;
     tracing::info!("embedded server listening on 127.0.0.1:{port}");
-    Ok(EmbeddedServer {
-        url: format!("http://127.0.0.1:{port}"),
-        token,
-        handle,
-    })
+    Ok((port, handle))
 }
 
 /// Binds the default port, or any free port when the default is taken.
@@ -88,11 +99,14 @@ async fn bind_loopback() -> Result<TcpListener, EmbeddedServerError> {
     bound.map_err(EmbeddedServerError::Bind)
 }
 
-fn open_storage(app: &AppHandle) -> Result<Storage, EmbeddedServerError> {
-    let path = match read_database_override() {
-        Some(path) => path,
-        None => app.path().app_data_dir()?.join(DATABASE_FILE_NAME),
-    };
+fn database_path(app: &AppHandle) -> Result<PathBuf, EmbeddedServerError> {
+    match read_database_override() {
+        Some(path) => Ok(path),
+        None => Ok(app.path().app_data_dir()?.join(DATABASE_FILE_NAME)),
+    }
+}
+
+fn open_storage(path: &Path) -> Result<Storage, EmbeddedServerError> {
     if let Some(directory) = path.parent() {
         std::fs::create_dir_all(directory).map_err(|source| {
             EmbeddedServerError::CreateDataDir {
@@ -102,7 +116,7 @@ fn open_storage(app: &AppHandle) -> Result<Storage, EmbeddedServerError> {
         })?;
     }
     tracing::info!("opening the database at {}", path.display());
-    let storage = Storage::open(&path)?;
+    let storage = Storage::open(path)?;
     storage.seed_placeholder_projects()?;
     Ok(storage)
 }
