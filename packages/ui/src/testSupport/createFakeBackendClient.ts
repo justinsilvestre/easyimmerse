@@ -1,7 +1,24 @@
-import type { BackendClient, BackendRequest } from "@easyimmerse/backend";
+import type {
+  BackendClient,
+  BackendError,
+  BackendRequest,
+} from "@easyimmerse/backend";
 
 /** A canned response, or a function computing one from the request. */
 export type FakeResponse = unknown | ((request: BackendRequest) => unknown);
+
+const failureTag = Symbol("failure");
+
+type FakeFailure = { [failureTag]: BackendError };
+
+/** A canned response that the client reports as an error. */
+export function fakeFailure(error: BackendError): FakeFailure {
+  return { [failureTag]: error };
+}
+
+function isFakeFailure(value: unknown): value is FakeFailure {
+  return typeof value === "object" && value !== null && failureTag in value;
+}
 
 /** Answers requests with the method whose path matches the pattern, for paths that contain ids. */
 export type FakeRoute = [
@@ -28,7 +45,9 @@ export function createFakeBackendClient(
         return {
           error: { status: 404, message: `No canned ${describe(request)}` },
         };
-      return { data: respond(found.response, request) as T };
+      const answer = respond(found.response, request);
+      if (isFakeFailure(answer)) return { error: answer[failureTag] };
+      return { data: answer as T };
     },
   };
 }

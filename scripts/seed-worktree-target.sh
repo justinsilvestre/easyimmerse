@@ -9,6 +9,9 @@ set -eu
 
 worktree=${1:?usage: seed-worktree-target.sh <worktree> [<source checkout>]}
 source=${2:-$(cd "$(dirname "$0")/.." && pwd)}
+mkdir -p "$worktree"
+# Cargo records physical paths, so symbolic links such as /tmp are resolved first.
+worktree=$(cd "$worktree" && pwd -P)
 
 for profile in debug release; do
   from="$source/target/$profile"
@@ -20,6 +23,22 @@ for profile in debug release; do
   for part in deps build .fingerprint; do
     [ -e "$to/$part" ] && continue
     cp -c -R -p "$from/$part" "$to/$part" 2>&1 | grep -v 'No such file or directory' || true
+  done
+  # A build script's output directory records, in `root-output` and `output`, absolute paths
+  # into the checkout where the script ran, and some crates (Tauri's among them) fail to build
+  # against another checkout's paths. Removing the directory and its fingerprint makes cargo
+  # rerun just that build script here. Both files are checked, because Tauri's `output` names
+  # paths that its `root-output` does not.
+  for unit_dir in "$to"/build/*/; do
+    [ -d "$unit_dir" ] || continue
+    for record in root-output output; do
+      [ -f "$unit_dir$record" ] || continue
+      if grep -q '/target/' "$unit_dir$record" && ! grep -q "$to/" "$unit_dir$record"; then
+        unit=$(basename "$unit_dir")
+        rm -rf "$to/build/$unit" "$to/.fingerprint/$unit"
+        break
+      fi
+    done
   done
   echo "seeded $to from $from"
 done

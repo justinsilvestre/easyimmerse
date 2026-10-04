@@ -5,7 +5,7 @@ export type BackendRequestBody =
   | { kind: "bytes"; value: Uint8Array | Blob; contentType: string };
 
 export type BackendRequest = {
-  method: "GET" | "POST" | "PUT";
+  method: "GET" | "POST" | "PUT" | "DELETE";
   path: string;
   query?: Record<string, string>;
   body?: BackendRequestBody;

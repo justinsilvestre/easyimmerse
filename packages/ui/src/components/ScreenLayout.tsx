@@ -4,15 +4,17 @@ import { AppFooter } from "./AppFooter.tsx";
 
 /**
  * Frames a screen with the app's header and footer, and places the given actions, such as a Help link, in the header.
- * The wide layout suits forms with a side column.
+ * The wide layout suits forms with a side column. The Settings screen hides the footer's link to itself.
  */
 export function ScreenLayout({
   headerActions,
   wide = false,
+  showSettingsLink = true,
   children,
 }: {
   headerActions?: ReactNode;
   wide?: boolean;
+  showSettingsLink?: boolean;
   children: ReactNode;
 }) {
   const width = wide ? "max-w-5xl" : "max-w-3xl";
@@ -39,7 +41,10 @@ export function ScreenLayout({
       >
         {children}
       </main>
-      <AppFooter contentClassName={clsx("mx-auto", width)} />
+      <AppFooter
+        contentClassName={clsx("mx-auto", width)}
+        showSettingsLink={showSettingsLink}
+      />
     </div>
   );
 }

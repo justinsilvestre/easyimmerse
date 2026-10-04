@@ -78,7 +78,9 @@ pub fn internal(message: impl Into<String>) -> ApiFailure {
 impl From<StorageError> for ApiFailure {
     fn from(error: StorageError) -> Self {
         match error {
-            StorageError::DictionaryNotFound(_) => not_found(error.to_string()),
+            StorageError::DictionaryNotFound(_)
+            | StorageError::ProjectNotFound(_)
+            | StorageError::MediaFileNotFound(_) => not_found(error.to_string()),
             _ => internal(error.to_string()),
         }
     }

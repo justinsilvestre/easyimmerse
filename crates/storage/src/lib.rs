@@ -5,6 +5,7 @@
 
 mod dictionaries;
 mod error;
+mod media_files;
 mod migrations;
 mod preferences;
 mod projects;
@@ -16,7 +17,8 @@ use std::path::Path;
 use std::sync::Mutex;
 
 use easyimmerse_core::dictionary::{Dictionary, TermEntry};
-use easyimmerse_core::project::ProjectSummary;
+use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
+use easyimmerse_core::project::{ProjectId, ProjectSummary};
 use rusqlite::Connection;
 
 pub struct Storage {
@@ -58,6 +60,48 @@ impl Storage {
 
     pub fn seed_placeholder_projects(&self) -> Result<(), StorageError> {
         self.with_connection(|conn| projects::seed_placeholder_projects(conn))
+    }
+
+    /// Deletes a project together with everything that belongs to it.
+    pub fn delete_project(&self, project_id: &ProjectId) -> Result<(), StorageError> {
+        self.with_connection(|conn| media_files::delete_project(conn, project_id))
+    }
+
+    pub fn list_media_files(&self, project_id: &ProjectId) -> Result<Vec<MediaFile>, StorageError> {
+        self.with_connection(|conn| media_files::list_media_files(conn, project_id))
+    }
+
+    pub fn get_media_file(&self, id: &MediaFileId) -> Result<MediaFile, StorageError> {
+        self.with_connection(|conn| media_files::get_media_file(conn, id))
+    }
+
+    pub fn add_media_file(
+        &self,
+        project_id: &ProjectId,
+        name: &str,
+        source: &MediaFileSource,
+    ) -> Result<MediaFile, StorageError> {
+        self.with_connection(|conn| media_files::add_media_file(conn, project_id, name, source))
+    }
+
+    pub fn remove_media_file(&self, id: &MediaFileId) -> Result<(), StorageError> {
+        self.with_connection(|conn| media_files::remove_media_file(conn, id))
+    }
+
+    /// Stores the user's track choice for a media file; `None` clears it.
+    pub fn set_track_selection_json(
+        &self,
+        id: &MediaFileId,
+        track_selection_json: Option<&str>,
+    ) -> Result<(), StorageError> {
+        self.with_connection(|conn| {
+            media_files::set_track_selection_json(conn, id, track_selection_json)
+        })
+    }
+
+    /// Lists every distinct local path that some media file still points at.
+    pub fn list_referenced_source_paths(&self) -> Result<Vec<String>, StorageError> {
+        self.with_connection(|conn| media_files::list_referenced_source_paths(conn))
     }
 
     pub fn get_preference(&self, key: &str) -> Result<Option<String>, StorageError> {

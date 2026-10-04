@@ -1,72 +1,105 @@
-//! Container metadata read from the leading bytes of a media file.
+//! Container metadata, read from a file's bytes by the pure readers or mapped from ffprobe.
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+use utoipa::ToSchema;
 
+use crate::container_signature::detect_container_format;
 use crate::error::MediaError;
+use crate::rational::Rational;
 use crate::{mkv_container, mp3_container, mp4_container};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
 #[serde(rename_all = "snake_case")]
 #[ts(export)]
 pub enum ContainerFormat {
+    /// MP4 and QuickTime (`mov`) files.
     Mp4,
     Matroska,
     Mp3,
+    Ogg,
+    Wav,
+    Flac,
+    /// Raw AAC in an audio data transport stream.
+    Adts,
+    MpegTs,
+    Avi,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize, TS, ToSchema,
+)]
 #[serde(rename_all = "snake_case")]
 #[ts(export)]
 pub enum TrackKind {
     Video,
     Audio,
     Subtitle,
+    #[default]
     Other,
 }
 
-/// One stream inside a container. The codec string is the container's own name for
-/// the codec, so it differs between formats.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+/// One stream inside a container. Fields the source does not state are `None`.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct TrackInfo {
-    pub id: u32,
+    /// The stream's position counted over all stream kinds, as in ffmpeg's `0:N`.
+    pub index: u32,
+    /// The identifier the container itself uses for the track, such as the MP4 track id
+    /// or the Matroska track number, when known.
+    pub container_track_id: Option<u32>,
     pub kind: TrackKind,
+    /// ffmpeg's name for the codec, such as `h264`, `aac`, or `subrip`.
     pub codec: String,
+    /// ffmpeg's name for the codec profile, such as `High` or `LC`.
+    pub profile: Option<String>,
+    pub level: Option<i64>,
+    /// The RFC 6381 codec string in the spelling Media Source Extensions accept,
+    /// or `None` when the codec cannot be carried in fragmented MP4.
+    pub codec_string: Option<String>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub frame_rate: Option<Rational>,
+    pub interlaced: bool,
+    pub sample_rate: Option<u32>,
+    pub channels: Option<u32>,
+    pub bit_rate: Option<u64>,
+    pub is_default: bool,
     /// The language tag stored in the container, or `None` when it is undetermined.
     pub language: Option<String>,
+    pub title: Option<String>,
+    pub start_ms: Option<u64>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct ContainerInfo {
     pub format: ContainerFormat,
     pub duration_ms: Option<u64>,
+    pub start_ms: Option<u64>,
+    /// The overall bit rate of the file in bits per second.
+    pub bit_rate: Option<u64>,
     pub tracks: Vec<TrackInfo>,
 }
 
-const MP4_BOX_TYPE_OFFSET: usize = 4;
-const EBML_MAGIC: [u8; 4] = [0x1A, 0x45, 0xDF, 0xA3];
+impl ContainerInfo {
+    pub fn track(&self, index: u32) -> Option<&TrackInfo> {
+        self.tracks.iter().find(|track| track.index == index)
+    }
 
-/// Recognizes the container from its signature bytes.
-pub fn detect_container_format(bytes: &[u8]) -> Option<ContainerFormat> {
-    if bytes.get(MP4_BOX_TYPE_OFFSET..MP4_BOX_TYPE_OFFSET + 4) == Some(b"ftyp") {
-        Some(ContainerFormat::Mp4)
-    } else if bytes.starts_with(&EBML_MAGIC) {
-        Some(ContainerFormat::Matroska)
-    } else if has_mp3_signature(bytes) {
-        Some(ContainerFormat::Mp3)
-    } else {
-        None
+    pub fn tracks_of_kind(&self, kind: TrackKind) -> impl Iterator<Item = &TrackInfo> {
+        self.tracks.iter().filter(move |track| track.kind == kind)
     }
 }
 
-/// Reads the container format, duration, and track list from a complete media file.
+/// Reads the container format, timing, and track list from a complete media file.
+/// Formats without a pure reader fail with `MediaError::RequiresFfprobe`.
 pub fn probe_container(bytes: &[u8]) -> Result<ContainerInfo, MediaError> {
     match detect_container_format(bytes).ok_or(MediaError::UnknownContainerFormat)? {
         ContainerFormat::Mp4 => mp4_container::probe_mp4(bytes),
         ContainerFormat::Matroska => mkv_container::probe_mkv(bytes),
-        ContainerFormat::Mp3 => Ok(mp3_container::probe_mp3()),
+        ContainerFormat::Mp3 => Ok(mp3_container::probe_mp3(bytes)),
+        other => Err(MediaError::RequiresFfprobe(other)),
     }
 }
 
@@ -79,58 +112,10 @@ pub fn parse_language_tag(tag: &str) -> Option<String> {
     }
 }
 
-/// An MP3 file starts with an `ID3` tag or directly with a frame sync (11 set bits).
-fn has_mp3_signature(bytes: &[u8]) -> bool {
-    match bytes {
-        [b'I', b'D', b'3', ..] => true,
-        [0xFF, second, ..] => second & 0xE0 == 0xE0,
-        _ => false,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::test_support::read_fixture_bytes;
-
-    #[test]
-    fn detects_the_mp4_fixture() {
-        let format = detect_container_format(&read_fixture_bytes("sample.mp4"));
-        assert_eq!(format, Some(ContainerFormat::Mp4));
-    }
-
-    #[test]
-    fn detects_the_matroska_fixture() {
-        let format = detect_container_format(&read_fixture_bytes("sample.mkv"));
-        assert_eq!(format, Some(ContainerFormat::Matroska));
-    }
-
-    #[test]
-    fn detects_the_mp3_fixture() {
-        let format = detect_container_format(&read_fixture_bytes("sample.mp3"));
-        assert_eq!(format, Some(ContainerFormat::Mp3));
-    }
-
-    #[test]
-    fn detects_mp3_from_a_bare_frame_sync() {
-        assert_eq!(
-            detect_container_format(&[0xFF, 0xFB, 0x90, 0x00]),
-            Some(ContainerFormat::Mp3)
-        );
-    }
-
-    #[test]
-    fn detects_nothing_in_garbage() {
-        assert_eq!(
-            detect_container_format(b"hello world, this is not media"),
-            None
-        );
-    }
-
-    #[test]
-    fn detects_nothing_in_empty_input() {
-        assert_eq!(detect_container_format(&[]), None);
-    }
 
     #[test]
     fn probing_garbage_reports_an_unknown_format() {
@@ -145,6 +130,14 @@ mod tests {
             probe_container(bytes),
             Err(MediaError::InvalidMp4(_))
         ));
+    }
+
+    #[test]
+    fn probing_ogg_defers_to_ffprobe() {
+        assert_eq!(
+            probe_container(b"OggS\0\x02"),
+            Err(MediaError::RequiresFfprobe(ContainerFormat::Ogg))
+        );
     }
 
     #[test]
@@ -164,6 +157,15 @@ mod tests {
                 ContainerFormat::Matroska,
                 ContainerFormat::Mp3
             ]
+        );
+    }
+
+    #[test]
+    fn finds_a_track_by_stream_index() {
+        let info = probe_container(&read_fixture_bytes("sample.mp4")).expect("probe");
+        assert_eq!(
+            info.track(2).map(|track| track.kind),
+            Some(TrackKind::Subtitle)
         );
     }
 

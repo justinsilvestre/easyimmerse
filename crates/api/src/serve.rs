@@ -1,5 +1,8 @@
 use std::net::SocketAddr;
+use std::path::PathBuf;
 
+use easyimmerse_conversion::{ConversionService, ProbeCache};
+use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use easyimmerse_storage::Storage;
 use thiserror::Error;
 use tokio::net::TcpListener;
@@ -24,11 +27,16 @@ pub struct ServerHandle {
     pub addr: SocketAddr,
     shutdown: oneshot::Sender<()>,
     task: JoinHandle<std::io::Result<()>>,
+    conversion: Option<ConversionService>,
 }
 
 impl ServerHandle {
-    /// Stops accepting connections, waits for in-flight requests, and returns.
+    /// Stops the conversions, stops accepting connections, waits for in-flight requests,
+    /// and returns.
     pub async fn shutdown(self) -> Result<(), ServeError> {
+        if let Some(conversion) = &self.conversion {
+            conversion.shutdown().await;
+        }
         // The receiver is gone only if the server already stopped, which is fine.
         let _ = self.shutdown.send(());
         self.task.await??;
@@ -36,14 +44,27 @@ impl ServerHandle {
     }
 }
 
+/// Settings of a server beyond authentication.
+#[derive(Debug, Clone, Default)]
+pub struct ServeOptions {
+    /// Where converted media is cached. None disables conversion.
+    pub cache_dir: Option<PathBuf>,
+}
+
 /// Serves the API on an already bound listener, so that the caller knows the port.
 pub async fn serve(
     listener: TcpListener,
     config: ApiConfig,
     storage: Storage,
+    options: ServeOptions,
 ) -> Result<ServerHandle, ServeError> {
     let addr = listener.local_addr()?;
-    let (router, _) = build_router(AppState::new(storage, config));
+    let conversion = options.cache_dir.and_then(open_conversion_service);
+    if let Some(conversion) = &conversion {
+        start_background_work(conversion, &storage);
+    }
+    let state = AppState::new(storage, config, open_probe_cache(), conversion.clone());
+    let (router, _) = build_router(state);
     let (shutdown, shutdown_requested) = oneshot::channel();
     let server = axum::serve(listener, router).with_graceful_shutdown(async {
         let _ = shutdown_requested.await;
@@ -53,5 +74,39 @@ pub async fn serve(
         addr,
         shutdown,
         task,
+        conversion,
     })
+}
+
+/// The binaries are looked up through `EASYIMMERSE_FFMPEG_DIR`, next to the executable, and
+/// on `PATH`.
+fn open_probe_cache() -> Option<ProbeCache> {
+    let paths = FfmpegPaths::default();
+    match locate_binary(BinaryName::Ffprobe, &paths) {
+        Ok(_) => Some(ProbeCache::new(paths)),
+        Err(error) => {
+            tracing::warn!("media files cannot be probed: {error}");
+            None
+        }
+    }
+}
+
+fn open_conversion_service(cache_dir: PathBuf) -> Option<ConversionService> {
+    match ConversionService::open(cache_dir, FfmpegPaths::default()) {
+        Ok(service) => Some(service),
+        Err(error) => {
+            tracing::warn!("media conversion is unavailable: {error}");
+            None
+        }
+    }
+}
+
+/// Encoder discovery and cache cleanup run in the background, so that they never delay the
+/// first request.
+fn start_background_work(conversion: &ConversionService, storage: &Storage) {
+    conversion.start_encoder_discovery();
+    match storage.list_referenced_source_paths() {
+        Ok(paths) => conversion.start_cache_cleanup(paths.into_iter().map(PathBuf::from).collect()),
+        Err(error) => tracing::warn!("conversion cache cleanup skipped: {error}"),
+    }
 }

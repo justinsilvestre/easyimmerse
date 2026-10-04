@@ -2,12 +2,17 @@ import { describe, expect, it, vi } from "vitest";
 import { actions } from "./actions.ts";
 import { createAppStore } from "./createAppStore.ts";
 import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
-import type { PickedFile } from "./effects.ts";
+import type { PickedFile, PickedMediaFile } from "./effects.ts";
 import { createRecordingEffects } from "./recordingEffects.ts";
 
 const pickedFile: PickedFile = {
   name: "episode.srt",
   source: { kind: "inline", text: "1\n00:00:01,000 --> 00:00:02,000\nHello" },
+};
+
+const pickedMediaFile: PickedMediaFile = {
+  name: "episode.mkv",
+  source: { kind: "path", path: "/videos/episode.mkv" },
 };
 
 describe("effectsMiddleware", () => {
@@ -57,7 +62,46 @@ describe("effectsMiddleware", () => {
     });
   });
 
-  it("dispatches preferenceLoaded after preferencesLoadRequested", async () => {
+  it("dispatches mediaFileChosen once the media file pick resolves", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.mediaFilePickRequested());
+    effects.resolvePickMediaFile(pickedMediaFile);
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.mediaFileChosen(pickedMediaFile),
+      );
+    });
+  });
+
+  it("dispatches mediaFilePickCancelled once the media file pick resolves to null", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.mediaFilePickRequested());
+    effects.resolvePickMediaFile(null);
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.mediaFilePickCancelled(),
+      );
+    });
+  });
+
+  it("dispatches mediaFilePickCancelled once the media file pick fails", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.mediaFilePickRequested());
+    effects.rejectPickMediaFile(new Error("dialog unavailable"));
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.mediaFilePickCancelled(),
+      );
+    });
+  });
+
+  it("dispatches preferencesLoaded with the stored values after preferencesLoadRequested", async () => {
     const effects = createRecordingEffects();
     effects.preferences.set("showTranslations", "true");
     const server = createFakeServerStoreParts();
@@ -65,7 +109,20 @@ describe("effectsMiddleware", () => {
     store.dispatch(actions.preferencesLoadRequested());
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
-        actions.preferenceLoaded("showTranslations", "true"),
+        actions.preferencesLoaded({ showTranslations: "true" }),
+      );
+    });
+  });
+
+  it("dispatches preferencesLoaded even when a preference fails to load", async () => {
+    const effects = createRecordingEffects();
+    effects.loadPreference = () => Promise.reject(new Error("storage locked"));
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.preferencesLoadRequested());
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.preferencesLoaded({}),
       );
     });
   });

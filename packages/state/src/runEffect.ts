@@ -1,5 +1,6 @@
 import type { AppAction } from "./actions.ts";
 import { actions } from "./actions.ts";
+import type { AppState, PreferenceKey } from "./appState.ts";
 import type { Effect } from "./effect.ts";
 import type { Effects } from "./effects.ts";
 
@@ -23,14 +24,25 @@ export function runEffect(
         )
         .catch(() => dispatch(actions.filePickCancelled()));
       return;
+    case "pickMediaFile":
+      effects
+        .pickMediaFile(effect.accept)
+        .then((file) =>
+          dispatch(
+            file
+              ? actions.mediaFileChosen(file)
+              : actions.mediaFilePickCancelled(),
+          ),
+        )
+        .catch(() => dispatch(actions.mediaFilePickCancelled()));
+      return;
     case "savePreference":
       effects.savePreference(effect.key, effect.value).catch(ignoreFailure);
       return;
-    case "loadPreference":
-      effects
-        .loadPreference(effect.key)
-        .then((value) => dispatch(actions.preferenceLoaded(effect.key, value)))
-        .catch(ignoreFailure);
+    case "loadPreferences":
+      loadPreferences(effects, effect.keys).then((preferences) =>
+        dispatch(actions.preferencesLoaded(preferences)),
+      );
       return;
     case "showNotification":
       effects.showNotification(effect.message);
@@ -42,6 +54,22 @@ export function runEffect(
       effects.openExternalUrl(effect.url);
       return;
   }
+}
+
+/** Reads each stored preference, leaving out those that are unset or cannot be read. */
+async function loadPreferences(
+  effects: Effects,
+  keys: readonly PreferenceKey[],
+): Promise<AppState["preferences"]> {
+  const values = await Promise.all(
+    keys.map((key) => effects.loadPreference(key).catch(() => null)),
+  );
+  return Object.fromEntries(
+    keys.flatMap((key, index) => {
+      const value = values[index];
+      return value === null || value === undefined ? [] : [[key, value]];
+    }),
+  );
 }
 
 /** Rejections other than a failed file pick are dropped for now. Reporting errors to the user is a later effect. */

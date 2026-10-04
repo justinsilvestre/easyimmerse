@@ -19,7 +19,7 @@ export default defineConfig({
   },
   build: {
     target: isWindows ? "chrome105" : "safari13",
-    minify: isDebug ? false : "esbuild",
+    minify: !isDebug,
     sourcemap: isDebug,
   },
 });

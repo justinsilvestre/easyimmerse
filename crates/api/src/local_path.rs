@@ -32,7 +32,25 @@ pub async fn resolve_local_text(
         .map_err(|error| describe_read_error(path, error))
 }
 
-fn ensure_local_paths_allowed(token: TokenKind, config: &ApiConfig) -> Result<(), ApiFailure> {
+/// Checks that a file exists at `path` without reading it, when the request's token kind
+/// allows local paths.
+pub async fn ensure_local_file_exists(
+    token: TokenKind,
+    config: &ApiConfig,
+    path: &str,
+) -> Result<(), ApiFailure> {
+    ensure_local_paths_allowed(token, config)?;
+    let metadata = tokio::fs::metadata(path)
+        .await
+        .map_err(|error| describe_read_error(path, error))?;
+    if metadata.is_file() {
+        Ok(())
+    } else {
+        Err(not_found(format!("no file at {path:?}")))
+    }
+}
+
+pub fn ensure_local_paths_allowed(token: TokenKind, config: &ApiConfig) -> Result<(), ApiFailure> {
     if token.allows_local_paths(config) {
         Ok(())
     } else {
@@ -85,6 +103,22 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(failure.error.code, "local_paths_not_allowed");
+    }
+
+    #[tokio::test]
+    async fn confirms_an_existing_file_without_reading_it() {
+        let result =
+            ensure_local_file_exists(TokenKind::Launch, &config(true), &fixture("sample.mp4"))
+                .await;
+        assert_eq!(result, Ok(()));
+    }
+
+    #[tokio::test]
+    async fn reports_a_directory_as_not_found() {
+        let failure = ensure_local_file_exists(TokenKind::Launch, &config(true), &fixture(""))
+            .await
+            .unwrap_err();
+        assert_eq!(failure.status, StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
