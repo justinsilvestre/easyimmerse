@@ -19,7 +19,7 @@ windows_flags="--toolchain=msvc --arch=$arch --target-os=win64 --enable-zlib \
 
 cd "$source_dir"
 PKG_CONFIG_PATH="$(cygpath -u "$deps_windows")/lib/pkgconfig" ./configure $common_flags $windows_flags --prefix="$out/install" \
-  || { tail -50 ffbuild/config.log; exit 1; }
+  || { grep -n -A40 'check_lib zlib' ffbuild/config.log; tail -30 ffbuild/config.log; exit 1; }
 make -j"$(nproc)" > /dev/null
 make install > /dev/null
 cp "$out/install/bin/ffmpeg.exe" "$out/install/bin/ffprobe.exe" "$out/"

@@ -14,9 +14,10 @@ work="$(mktemp -d)"
 cd "$work"
 mkdir -p "$prefix/include" "$prefix/lib"
 
-# The MSVC toolchain in ffmpeg's configure turns -lz into zlib.lib.
+# The MSVC toolchain in ffmpeg's configure turns -lz into zlib.lib. The objects must use the
+# static C runtime like ffmpeg's, or the linker rejects the mix.
 git clone -q --depth 1 --branch "v$zlib_version" https://github.com/madler/zlib
-(cd zlib && nmake -nologo -f win32/Makefile.msc zlib.lib > /dev/null)
+(cd zlib && nmake -nologo -f win32/Makefile.msc zlib.lib LOC=-MT > /dev/null)
 cp zlib/zlib.h zlib/zconf.h "$prefix/include/"
 cp zlib/zlib.lib "$prefix/lib/zlib.lib"
 
@@ -29,3 +30,4 @@ git -C AMF sparse-checkout set amf/public/include > /dev/null
 cp -r AMF/amf/public/include "$prefix/include/AMF"
 
 rm -rf "$work"
+ls -l "$prefix/lib" "$prefix/include"

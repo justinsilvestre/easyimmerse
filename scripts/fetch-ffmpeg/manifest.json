@@ -1,20 +1,20 @@
 {
   "x86_64-unknown-linux-gnu": {
-    "url": "",
-    "sha256": "TODO: no bundled build for this platform yet. The BtbN builds break the licence policy; an own minimal LGPL build is planned (docs/bug-reports.md).",
+    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-linux-8.1.3/ffmpeg-8.1.3-x86_64-unknown-linux-gnu.tar.xz",
+    "sha256": "45829c3567d7e40dcfdb3a32b9792ab4a0823d64fe5b9f9f44aa05609aeb40cd",
     "archive": "tar.xz",
     "paths": {
-      "ffmpeg": "ffmpeg-n8.1.3-6-gff48edd8b2-linux64-lgpl-8.1/bin/ffmpeg",
-      "ffprobe": "ffmpeg-n8.1.3-6-gff48edd8b2-linux64-lgpl-8.1/bin/ffprobe"
+      "ffmpeg": "ffmpeg",
+      "ffprobe": "ffprobe"
     }
   },
   "aarch64-unknown-linux-gnu": {
-    "url": "",
-    "sha256": "TODO: no bundled build for this platform yet. The BtbN builds break the licence policy; an own minimal LGPL build is planned (docs/bug-reports.md).",
+    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-linux-8.1.3/ffmpeg-8.1.3-aarch64-unknown-linux-gnu.tar.xz",
+    "sha256": "3395582cad36897d176781798a865edc95402f3c7635f93c103d66490e067229",
     "archive": "tar.xz",
     "paths": {
-      "ffmpeg": "ffmpeg-n8.1.3-6-gff48edd8b2-linuxarm64-lgpl-8.1/bin/ffmpeg",
-      "ffprobe": "ffmpeg-n8.1.3-6-gff48edd8b2-linuxarm64-lgpl-8.1/bin/ffprobe"
+      "ffmpeg": "ffmpeg",
+      "ffprobe": "ffprobe"
     }
   },
   "x86_64-pc-windows-msvc": {
@@ -36,8 +36,8 @@
     }
   },
   "x86_64-apple-darwin": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-3/ffmpeg-8.1.3-x86_64-apple-darwin.tar.xz",
-    "sha256": "8a6c7fa84f723498d815c779a9e234927659f09cd4ea406ee2d224b6f783a490",
+    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-4/ffmpeg-8.1.3-x86_64-apple-darwin.tar.xz",
+    "sha256": "fb89ba2914370b3d886620c743a9768245097b8597cff77e28090fbc4eff15ff",
     "archive": "tar.xz",
     "paths": {
       "ffmpeg": "ffmpeg",
@@ -45,8 +45,8 @@
     }
   },
   "aarch64-apple-darwin": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-3/ffmpeg-8.1.3-aarch64-apple-darwin.tar.xz",
-    "sha256": "b6197ecb0629387e32ab77e7ffa539fee94fd74fc44d437cb0e846af8743fabf",
+    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-4/ffmpeg-8.1.3-aarch64-apple-darwin.tar.xz",
+    "sha256": "e7d5075f2932fef0322cbbe80b0fc726a50ba349fb43fe57d45ac9ca747cde72",
     "archive": "tar.xz",
     "paths": {
       "ffmpeg": "ffmpeg",
