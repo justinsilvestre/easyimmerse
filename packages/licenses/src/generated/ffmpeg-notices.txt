@@ -94,6 +94,109 @@ Configure flags:
 --prefix=/__w/easyimmerse/easyimmerse/out/aarch64-unknown-linux-gnu/install
 
 
+FFmpeg 8.1.3 for Windows (x86-64)
+=================================
+
+easyImmerse runs FFmpeg (https://ffmpeg.org) as the separate programs ffmpeg and ffprobe. FFmpeg is free software licensed under the GNU Lesser General Public License (LGPL) version 2.1 or later. This build is configured with --enable-version3, so it is distributed under the LGPL version 3 or later.
+
+Platform: Windows (x86-64), target x86_64-pc-windows-msvc
+Version: 8.1.3
+Source code: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
+Build origin: Built by the ffmpeg-windows workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-windows.yml) for the tag ffmpeg-windows-8.1.3.
+Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-windows-8.1.3
+Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-windows-8.1.3/ffmpeg-8.1.3-x86_64-pc-windows-msvc.zip
+SHA-256 of the download: 34155e43729dd8ef9fdd99b8e4c96ee7f126da8db9375fee4083311827b2c1fa
+Third-party libraries linked: AMF, FFmpeg nv-codec-headers, zlib
+
+Configure flags:
+--disable-gpl
+--disable-nonfree
+--enable-version3
+--disable-shared
+--enable-static
+--disable-doc
+--disable-debug
+--disable-ffplay
+--disable-network
+--disable-autodetect
+--pkg-config-flags=--static
+--disable-everything
+--enable-demuxer=mov,matroska,mpegts,mpegps,avi,asf,mp3,aac,ogg,flac,wav,ac3,eac3,dts,truehd,srt,webvtt,ass
+--enable-decoder=h264,hevc,mpeg4,mpeg1video,mpeg2video,vp8,vp9,av1,wmv3,vc1,prores,dnxhd,mjpeg,aac,aac_latm,mp3,mp3float,mp2,mp2float,vorbis,opus,flac,ac3,eac3,dca,truehd,wmav2,wmapro,pcm_s16le,pcm_s16be,pcm_s24le,pcm_s24be,pcm_s32le,pcm_s32be,pcm_f32le,pcm_f32be,pcm_f64le,pcm_u8,pcm_alaw,pcm_mulaw,subrip,srt,ass,ssa,webvtt,movtext,text,pgssub,dvdsub,dvbsub,rawvideo,wrapped_avframe
+--enable-parser=h264,hevc,mpeg4video,mpegvideo,vp8,vp9,av1,vc1,mjpeg,aac,aac_latm,mpegaudio,vorbis,opus,flac,ac3,dca
+--enable-bsf=noise,aac_adtstoasc,extract_extradata,vp9_superframe,null
+--enable-filter=aresample,aformat,anull,format,null,scale,bwdif,color,crop,trim,atrim,transpose,hflip,vflip,rotate,hwupload,hwdownload
+--enable-encoder=aac,flac,pcm_s16le,pcm_f32le,rawvideo,wrapped_avframe
+--enable-muxer=hls,mp4,mov,segment,mpegts,webvtt,pcm_f32le,rawvideo,null
+--enable-protocol=file,pipe
+--enable-indev=lavfi
+--toolchain=msvc
+--arch=x86_64
+--target-os=win64
+--enable-zlib
+--enable-mediafoundation
+--enable-d3d11va
+--enable-amf
+--enable-ffnvcodec
+--enable-nvenc
+--enable-encoder=h264_nvenc,hevc_nvenc
+--enable-encoder=h264_mf,hevc_mf,h264_amf,hevc_amf
+--extra-cflags=-MT
+--extra-cflags=-ID:/a/easyimmerse/easyimmerse/deps/include
+--extra-ldflags=-libpath:D:/a/easyimmerse/easyimmerse/deps/lib
+--prefix=/d/a/easyimmerse/easyimmerse/out/x86_64-pc-windows-msvc/install
+
+
+FFmpeg 8.1.3 for Windows (ARM64)
+================================
+
+easyImmerse runs FFmpeg (https://ffmpeg.org) as the separate programs ffmpeg and ffprobe. FFmpeg is free software licensed under the GNU Lesser General Public License (LGPL) version 2.1 or later. This build is configured with --enable-version3, so it is distributed under the LGPL version 3 or later.
+
+Platform: Windows (ARM64), target aarch64-pc-windows-msvc
+Version: 8.1.3
+Source code: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
+Build origin: Built by the ffmpeg-windows workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-windows.yml) for the tag ffmpeg-windows-8.1.3.
+Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-windows-8.1.3
+Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-windows-8.1.3/ffmpeg-8.1.3-aarch64-pc-windows-msvc.zip
+SHA-256 of the download: 1d9e2a81c7e0f5dcfb82da623e76a9cce429e02dc47717631f096996bd42e4fb
+Third-party libraries linked: AMF, zlib
+
+Configure flags:
+--disable-gpl
+--disable-nonfree
+--enable-version3
+--disable-shared
+--enable-static
+--disable-doc
+--disable-debug
+--disable-ffplay
+--disable-network
+--disable-autodetect
+--pkg-config-flags=--static
+--disable-everything
+--enable-demuxer=mov,matroska,mpegts,mpegps,avi,asf,mp3,aac,ogg,flac,wav,ac3,eac3,dts,truehd,srt,webvtt,ass
+--enable-decoder=h264,hevc,mpeg4,mpeg1video,mpeg2video,vp8,vp9,av1,wmv3,vc1,prores,dnxhd,mjpeg,aac,aac_latm,mp3,mp3float,mp2,mp2float,vorbis,opus,flac,ac3,eac3,dca,truehd,wmav2,wmapro,pcm_s16le,pcm_s16be,pcm_s24le,pcm_s24be,pcm_s32le,pcm_s32be,pcm_f32le,pcm_f32be,pcm_f64le,pcm_u8,pcm_alaw,pcm_mulaw,subrip,srt,ass,ssa,webvtt,movtext,text,pgssub,dvdsub,dvbsub,rawvideo,wrapped_avframe
+--enable-parser=h264,hevc,mpeg4video,mpegvideo,vp8,vp9,av1,vc1,mjpeg,aac,aac_latm,mpegaudio,vorbis,opus,flac,ac3,dca
+--enable-bsf=noise,aac_adtstoasc,extract_extradata,vp9_superframe,null
+--enable-filter=aresample,aformat,anull,format,null,scale,bwdif,color,crop,trim,atrim,transpose,hflip,vflip,rotate,hwupload,hwdownload
+--enable-encoder=aac,flac,pcm_s16le,pcm_f32le,rawvideo,wrapped_avframe
+--enable-muxer=hls,mp4,mov,segment,mpegts,webvtt,pcm_f32le,rawvideo,null
+--enable-protocol=file,pipe
+--enable-indev=lavfi
+--toolchain=msvc
+--arch=aarch64
+--target-os=win64
+--enable-zlib
+--enable-mediafoundation
+--enable-d3d11va
+--enable-amf
+--enable-encoder=h264_mf,hevc_mf,h264_amf,hevc_amf
+--extra-cflags=-MT
+--extra-cflags=-IC:/a/easyimmerse/easyimmerse/deps/include
+--extra-ldflags=-libpath:C:/a/easyimmerse/easyimmerse/deps/lib
+--prefix=/c/a/easyimmerse/easyimmerse/out/aarch64-pc-windows-msvc/install
+
+
 FFmpeg 8.1.3 for macOS (Intel)
 ==============================
 
@@ -1552,10 +1655,50 @@ Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>.
 
 
+AMF
+===
+
+AMF is statically linked into FFmpeg for Windows (x86-64), Windows (ARM64).
+License: MIT
+License text: https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/AMF/master/LICENSE.txt
+
+Notice Regarding Standards.  AMD does not provide a license or sublicense to
+any Intellectual Property Rights relating to any standards, including but not
+limited to any audio and/or video codec technologies such as MPEG-2, MPEG-4;
+AVC/H.264; HEVC/H.265; AAC decode/FFMPEG; AAC encode/FFMPEG; VC-1; and MP3
+(collectively, the "Media Technologies"). For clarity, you will pay any
+royalties due for such third party technologies, which may include the Media
+Technologies that are owed as a result of AMD providing the Software to you.
+
+This software uses libraries from the FFmpeg project under the LGPLv2.1.
+
+MIT license 
+
+Copyright (c) 2016 Advanced Micro Devices, Inc. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
 FFmpeg nv-codec-headers
 =======================
 
-FFmpeg nv-codec-headers is statically linked into FFmpeg for Linux (x86-64), Linux (ARM64).
+FFmpeg nv-codec-headers is statically linked into FFmpeg for Linux (x86-64), Linux (ARM64), Windows (x86-64).
 License: MIT
 License text: https://raw.githubusercontent.com/FFmpeg/nv-codec-headers/master/include/ffnvcodec/nvEncodeAPI.h
 
@@ -2170,7 +2313,7 @@ License text: https://raw.githubusercontent.com/intel/libva/master/COPYING
 zlib
 ====
 
-zlib is statically linked into FFmpeg for Linux (x86-64), Linux (ARM64), macOS (Intel), macOS (Apple silicon).
+zlib is statically linked into FFmpeg for Linux (x86-64), Linux (ARM64), Windows (x86-64), Windows (ARM64), macOS (Intel), macOS (Apple silicon).
 License: Zlib
 License text: https://raw.githubusercontent.com/madler/zlib/master/LICENSE
 
