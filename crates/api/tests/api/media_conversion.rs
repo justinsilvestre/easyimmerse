@@ -147,7 +147,9 @@ async fn tracks_need_local_path_permission() {
 #[tokio::test(flavor = "multi_thread")]
 async fn embedded_subtitles_need_local_path_permission() {
     let (server, media_id) = server_without_local_paths().await;
-    let response = server.get(&media_route(&media_id, "embedded-subtitles")).await;
+    let response = server
+        .get(&media_route(&media_id, "embedded-subtitles"))
+        .await;
     assert_eq!(response.status, 403);
 }
 
@@ -176,7 +178,9 @@ async fn embedded_subtitles_list_the_embedded_subtitle_track() {
     }
     let server = spawn_test_server(true).await;
     let media_id = add_path_media(&server, MKV).await;
-    let response = server.get(&media_route(&media_id, "embedded-subtitles")).await;
+    let response = server
+        .get(&media_route(&media_id, "embedded-subtitles"))
+        .await;
     let tracks = response.json()["tracks"]
         .as_array()
         .cloned()
@@ -529,7 +533,9 @@ async fn the_frame_is_a_jpeg_image() {
     }
     let server = spawn_test_server(true).await;
     let media_id = add_path_media(&server, MKV).await;
-    let response = server.get(&media_route(&media_id, "frame?at_ms=1000")).await;
+    let response = server
+        .get(&media_route(&media_id, "frame?at_ms=1000"))
+        .await;
     assert_eq!(response.status, 200, "{}", response.text());
     assert_eq!(response.header("content-type"), Some("image/jpeg"));
 }
@@ -544,7 +550,10 @@ async fn the_frame_accepts_the_token_as_a_query_parameter() {
     let response = server
         .request(
             "GET",
-            &media_route(&media_id, &format!("frame?at_ms=1000&token={}", server.token)),
+            &media_route(
+                &media_id,
+                &format!("frame?at_ms=1000&token={}", server.token),
+            ),
         )
         .without_token()
         .send()

@@ -10,9 +10,7 @@ use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE};
 use axum::response::{IntoResponse, Response};
 use easyimmerse_core::media_file::{MediaFile, MediaFileId};
 use easyimmerse_core::project::ProjectId;
-use easyimmerse_media::{
-    ContainerInfo, TrackInfo, TrackSelection, default_track_selection,
-};
+use easyimmerse_media::{ContainerInfo, TrackInfo, TrackSelection, default_track_selection};
 use easyimmerse_media_ffmpeg::{
     BinaryName, FfmpegError, FfmpegPaths, FrameGrab, background_command, frame_grab_args,
     locate_binary,

@@ -175,7 +175,10 @@ mod tests {
 
     #[test]
     fn lists_nothing_for_a_project_without_flashcards() {
-        assert_eq!(seeded_storage().list_flashcards(&project()).unwrap(), vec![]);
+        assert_eq!(
+            seeded_storage().list_flashcards(&project()).unwrap(),
+            vec![]
+        );
     }
 
     #[test]
@@ -216,8 +219,8 @@ mod tests {
 
     #[test]
     fn refuses_a_flashcard_for_an_unknown_project() {
-        let result = seeded_storage()
-            .create_flashcard(&ProjectId("missing".to_string()), &draft(None, "x"));
+        let result =
+            seeded_storage().create_flashcard(&ProjectId("missing".to_string()), &draft(None, "x"));
         assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 

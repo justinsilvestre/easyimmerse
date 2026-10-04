@@ -123,7 +123,10 @@ async fn reads_the_cues_of_an_inline_source() {
     let response = server
         .get(&subtitles_route(&media_id, &format!("/{id}/cues")))
         .await;
-    assert_eq!(response.json()["cues"][1]["text"], "The dog wants to eat.\nIt is hungry.");
+    assert_eq!(
+        response.json()["cues"][1]["text"],
+        "The dog wants to eat.\nIt is hungry."
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -132,13 +135,19 @@ async fn stores_the_selection() {
     let media_id = add_media(&server).await;
     let added = add_track(&server, &media_id, &inline_request(None)).await;
     let response = server
-        .request("PUT", &format!("/projects/{PROJECT}/media/{media_id}/subtitle-selection"))
+        .request(
+            "PUT",
+            &format!("/projects/{PROJECT}/media/{media_id}/subtitle-selection"),
+        )
         .json(&json!({ "target_track_id": null, "translation_track_id": added["id"] }))
         .send()
         .await;
     assert_eq!(response.status, 204);
     let listed = server.get(&subtitles_route(&media_id, "")).await;
-    assert_eq!(listed.json()["selection"]["translation_track_id"], added["id"]);
+    assert_eq!(
+        listed.json()["selection"]["translation_track_id"],
+        added["id"]
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -146,7 +155,10 @@ async fn refuses_a_selection_naming_an_unknown_track() {
     let server = spawn_test_server(false).await;
     let media_id = add_media(&server).await;
     let response = server
-        .request("PUT", &format!("/projects/{PROJECT}/media/{media_id}/subtitle-selection"))
+        .request(
+            "PUT",
+            &format!("/projects/{PROJECT}/media/{media_id}/subtitle-selection"),
+        )
         .json(&json!({ "target_track_id": "missing", "translation_track_id": null }))
         .send()
         .await;

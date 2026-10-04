@@ -80,7 +80,9 @@ async fn updates_the_settings() {
 #[tokio::test(flavor = "multi_thread")]
 async fn marking_a_project_opened_moves_it_to_the_front() {
     let server = spawn_test_server(false).await;
-    let response = server.post_json("/projects/placeholder-1/opened", &json!(null)).await;
+    let response = server
+        .post_json("/projects/placeholder-1/opened", &json!(null))
+        .await;
     assert_eq!(response.status, 204);
     let listed = server.get("/projects").await;
     assert_eq!(listed.json()["projects"][0]["id"], "placeholder-1");

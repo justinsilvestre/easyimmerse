@@ -38,9 +38,9 @@ test("clicking a cue's time seeks the player to its start", async ({
     .getByRole("list", { name: "Subtitles" })
     .getByRole("button", { name: "Play from 0:01" })
     .click();
-  await expect(page.getByRole("slider", { name: "Position" })).toHaveValue(
-    /^175/,
-  );
+  await expect(
+    page.getByRole("slider", { name: "Position", exact: true }),
+  ).toHaveValue(/^175/);
 });
 
 test("a word clicked in the subtitles becomes a saved flashcard", async ({

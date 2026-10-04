@@ -63,7 +63,9 @@ pub fn add_subtitle_track(
     ensure_media_file_exists(conn, media_file_id)?;
     let id = SubtitleTrackId(generate_id());
     conn.execute(
-        &format!("INSERT INTO subtitle_tracks ({TRACK_COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"),
+        &format!(
+            "INSERT INTO subtitle_tracks ({TRACK_COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)"
+        ),
         params![
             id.0,
             media_file_id.0,
@@ -229,14 +231,18 @@ mod tests {
     #[test]
     fn an_added_track_is_listed() {
         let (storage, media) = storage_with_media();
-        let added = storage.add_subtitle_track(&media, &new_track("a.srt")).unwrap();
+        let added = storage
+            .add_subtitle_track(&media, &new_track("a.srt"))
+            .unwrap();
         assert_eq!(storage.list_subtitle_tracks(&media).unwrap(), vec![added]);
     }
 
     #[test]
     fn an_added_track_keeps_its_source() {
         let (storage, media) = storage_with_media();
-        let added = storage.add_subtitle_track(&media, &new_track("a.srt")).unwrap();
+        let added = storage
+            .add_subtitle_track(&media, &new_track("a.srt"))
+            .unwrap();
         assert_eq!(
             storage.get_subtitle_track(&added.id).unwrap().source,
             new_track("a.srt").source
@@ -263,7 +269,9 @@ mod tests {
     #[test]
     fn stores_the_selection() {
         let (storage, media) = storage_with_media();
-        let added = storage.add_subtitle_track(&media, &new_track("a.srt")).unwrap();
+        let added = storage
+            .add_subtitle_track(&media, &new_track("a.srt"))
+            .unwrap();
         let selection = SubtitleSelection::default().with_role(SubtitleRole::Target, added.id);
         storage.set_subtitle_selection(&media, &selection).unwrap();
         assert_eq!(storage.get_subtitle_selection(&media).unwrap(), selection);
@@ -281,18 +289,25 @@ mod tests {
                 },
             )
             .unwrap();
-        let foreign = storage.add_subtitle_track(&other.id, &new_track("b.srt")).unwrap();
+        let foreign = storage
+            .add_subtitle_track(&other.id, &new_track("b.srt"))
+            .unwrap();
         let result = storage.set_subtitle_selection(
             &media,
             &SubtitleSelection::default().with_role(SubtitleRole::Target, foreign.id),
         );
-        assert!(matches!(result, Err(StorageError::SubtitleTrackNotFound(_))));
+        assert!(matches!(
+            result,
+            Err(StorageError::SubtitleTrackNotFound(_))
+        ));
     }
 
     #[test]
     fn removing_a_track_takes_it_out_of_the_selection() {
         let (storage, media) = storage_with_media();
-        let added = storage.add_subtitle_track(&media, &new_track("a.srt")).unwrap();
+        let added = storage
+            .add_subtitle_track(&media, &new_track("a.srt"))
+            .unwrap();
         storage
             .set_subtitle_selection(
                 &media,
@@ -310,13 +325,18 @@ mod tests {
     fn removing_an_unknown_track_fails() {
         let (storage, _) = storage_with_media();
         let result = storage.remove_subtitle_track(&SubtitleTrackId("missing".to_string()));
-        assert!(matches!(result, Err(StorageError::SubtitleTrackNotFound(_))));
+        assert!(matches!(
+            result,
+            Err(StorageError::SubtitleTrackNotFound(_))
+        ));
     }
 
     #[test]
     fn removing_the_media_file_removes_its_tracks() {
         let (storage, media) = storage_with_media();
-        let added = storage.add_subtitle_track(&media, &new_track("a.srt")).unwrap();
+        let added = storage
+            .add_subtitle_track(&media, &new_track("a.srt"))
+            .unwrap();
         storage.remove_media_file(&media).unwrap();
         assert!(matches!(
             storage.get_subtitle_track(&added.id),

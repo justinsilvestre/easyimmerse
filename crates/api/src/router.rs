@@ -14,9 +14,9 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    conversion_cache, conversions, dictionaries, documents, flashcards, health, media,
-    media_frame, media_playback, media_stream, media_tracks, media_waveform, openapi,
-    preferences, projects, subtitles, timed_text,
+    conversion_cache, conversions, dictionaries, documents, flashcards, health, media, media_frame,
+    media_playback, media_stream, media_tracks, media_waveform, openapi, preferences, projects,
+    subtitles, timed_text,
 };
 use crate::state::AppState;
 

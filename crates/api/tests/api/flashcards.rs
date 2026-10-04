@@ -26,7 +26,10 @@ fn draft(word: &str, media_file_id: Option<&str>) -> Value {
 
 async fn create(server: &TestServer, word: &str) -> Value {
     let response = server
-        .post_json(&format!("/projects/{PROJECT}/flashcards"), &draft(word, None))
+        .post_json(
+            &format!("/projects/{PROJECT}/flashcards"),
+            &draft(word, None),
+        )
         .await;
     assert_eq!(response.status, 201, "{}", response.text());
     response.json()
