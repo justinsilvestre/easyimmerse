@@ -64,10 +64,10 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
 fn commonness(term_meta: &[&FoundTermMeta]) -> Commonness {
     let mut commonness = Commonness::default();
     for found in term_meta {
-        if let TermMetaData::Frequency(frequency) = &found.meta.data {
-            if let Some(value) = frequency.value {
-                commonness.record(&found.dictionary, value);
-            }
+        if let TermMetaData::Frequency(frequency) = &found.meta.data
+            && let Some(value) = frequency.value
+        {
+            commonness.record(&found.dictionary, value);
         }
     }
     commonness

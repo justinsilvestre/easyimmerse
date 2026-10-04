@@ -1523,10 +1523,12 @@ name = "easyimmerse-storage"
 version = "0.1.0"
 dependencies = [
  "easyimmerse-core",
+ "flate2",
  "hex",
  "rand 0.10.3",
  "rusqlite",
  "rusqlite_migration",
+ "serde",
  "serde_json",
  "tempfile",
  "thiserror 2.0.21",
