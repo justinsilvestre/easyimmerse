@@ -19,7 +19,6 @@ import type {
   ParseTimedTextRequest,
   PlaybackRequest,
   PlaybackResponse,
-  PreferenceValue,
   Project,
   ProjectSettings,
   SubtitleSelection,
@@ -67,7 +66,7 @@ const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
 const subtitleTracksTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "SubtitleTracks", id: mediaFileId }] as const;
 
-/** Every server operation, one endpoint each. Bodies and paths follow the OpenAPI document. */
+/** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
   reducerPath: "backend",
   baseQuery: injectedBaseQuery,
@@ -76,7 +75,6 @@ export const backendApi = createApi({
     "MediaFiles",
     "Flashcards",
     "SubtitleTracks",
-    "Preferences",
     "Dictionaries",
     "ConversionCache",
   ],
@@ -112,13 +110,6 @@ export const backendApi = createApi({
         "Projects",
         { type: "Projects", id: projectId },
       ],
-    }),
-    deleteProject: build.mutation<void, string>({
-      query: (projectId) => ({
-        method: "DELETE",
-        path: `/projects/${projectId}`,
-      }),
-      invalidatesTags: ["Projects"],
     }),
     markProjectOpened: build.mutation<void, string>({
       query: (projectId) => ({
@@ -250,15 +241,6 @@ export const backendApi = createApi({
         { type: "MediaFiles", id: projectId },
       ],
     }),
-    clearTrackSelection: build.mutation<void, MediaFileArgs>({
-      query: (args) => ({
-        method: "DELETE",
-        path: `${mediaFilePath(args)}/track-selection`,
-      }),
-      invalidatesTags: (_result, _error, { projectId }) => [
-        { type: "MediaFiles", id: projectId },
-      ],
-    }),
     getWaveformWindow: build.query<WaveformResponse, WaveformWindowArgs>({
       query: ({ startMs, endMs, ...args }) => ({
         method: "GET",
@@ -287,13 +269,6 @@ export const backendApi = createApi({
         method: "POST",
         path: `${mediaFilePath(args)}/subtitles`,
         body: { kind: "json", value: request },
-      }),
-      invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
-    }),
-    removeSubtitleTrack: build.mutation<void, SubtitleTrackArgs>({
-      query: ({ trackId, ...args }) => ({
-        method: "DELETE",
-        path: `${mediaFilePath(args)}/subtitles/${trackId}`,
       }),
       invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
     }),
@@ -334,22 +309,6 @@ export const backendApi = createApi({
     clearConversionCache: build.mutation<ConversionCacheStatus, void>({
       query: () => ({ method: "POST", path: "/conversion-cache/clear" }),
       invalidatesTags: ["ConversionCache"],
-    }),
-    getPreference: build.query<PreferenceValue, string>({
-      query: (key) => ({ method: "GET", path: `/preferences/${key}` }),
-      providesTags: (_result, _error, key) => [
-        { type: "Preferences", id: key },
-      ],
-    }),
-    setPreference: build.mutation<void, { key: string; value: string | null }>({
-      query: ({ key, value }) => ({
-        method: "PUT",
-        path: `/preferences/${key}`,
-        body: { kind: "json", value: { value } satisfies PreferenceValue },
-      }),
-      invalidatesTags: (_result, _error, { key }) => [
-        { type: "Preferences", id: key },
-      ],
     }),
     parseTimedText: build.mutation<TimedTextTrack, ParseTimedTextRequest>({
       query: (request) => ({
@@ -417,7 +376,6 @@ export const {
   useGetProjectQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,
-  useDeleteProjectMutation,
   useMarkProjectOpenedMutation,
   useListFlashcardsQuery,
   useCreateFlashcardMutation,
@@ -429,18 +387,14 @@ export const {
   useGetMediaTracksQuery,
   usePlanPlaybackQuery,
   useSaveTrackSelectionMutation,
-  useClearTrackSelectionMutation,
   useLazyGetWaveformWindowQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
   useAddSubtitleTrackMutation,
-  useRemoveSubtitleTrackMutation,
   useGetSubtitleCuesQuery,
   useSetSubtitleSelectionMutation,
   useGetConversionCacheStatusQuery,
   useClearConversionCacheMutation,
-  useGetPreferenceQuery,
-  useSetPreferenceMutation,
   useParseTimedTextMutation,
   useParseDocumentMutation,
   useParseLocalDocumentMutation,

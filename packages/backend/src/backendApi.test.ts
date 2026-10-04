@@ -303,17 +303,6 @@ describe("backendApi", () => {
     });
   });
 
-  it("sends DELETE .../track-selection for clearTrackSelection", async () => {
-    const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
-      backendApi.endpoints.clearTrackSelection.initiate(mediaArgs),
-    );
-    expect(client.requests).toEqual([
-      { method: "DELETE", path: "/projects/p1/media/m1/track-selection" },
-    ]);
-  });
-
   it("puts the window bounds in the query string for getWaveformWindow", async () => {
     const client = createRecordingClient();
     configureBackend(client);
