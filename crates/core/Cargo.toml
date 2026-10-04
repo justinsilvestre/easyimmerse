@@ -8,11 +8,18 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+flate2 = { workspace = true }
+lzma-rust2 = { workspace = true }
 percent-encoding = { workspace = true }
 roxmltree = { workspace = true }
+ruzstd = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+tar = { workspace = true }
 thiserror = { workspace = true }
 ts-rs = { workspace = true }
 utoipa = { workspace = true }
 zip = { workspace = true }
+
+[dev-dependencies]
+lzma-rust2 = { workspace = true, features = ["encoder"] }
