@@ -27,7 +27,10 @@ export function MediaScreen({
       )}
       <div className="flex items-center gap-4">
         <PickFileButton />
-        <PreferenceToggle />
+        <PreferenceToggle
+          preferenceKey="showTranslations"
+          label="Show translations"
+        />
       </div>
       <SubtitlesPanel />
     </ScreenLayout>
