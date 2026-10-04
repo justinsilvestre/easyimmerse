@@ -50,6 +50,7 @@ export type * from "./Rational";
 export type * from "./ResolvedMedia";
 export type * from "./SpeechToTextRequest";
 export type * from "./SpeechToTextResponse";
+export type * from "./SubtitleTracksResponse";
 export type * from "./TermEntry";
 export type * from "./TextSource";
 export type * from "./TextToSpeechRequest";

@@ -2,6 +2,7 @@ mod auth;
 mod dictionaries;
 mod documents;
 mod media;
+mod media_conversion;
 mod openapi;
 mod preferences;
 mod projects;

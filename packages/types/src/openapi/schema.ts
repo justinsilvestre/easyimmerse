@@ -4,6 +4,87 @@
  */
 
 export interface paths {
+    "/conversion-cache": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getConversionCache"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversion-cache/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Removes every cached conversion that is not in use right now. */
+        post: operations["clearConversionCache"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversions/{key}/index.m3u8": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getConversionPlaylist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversions/{key}/init.mp4": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getConversionInitSegment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversions/{key}/{segment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getConversionSegment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dictionaries": {
         parameters: {
             query?: never;
@@ -194,6 +275,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/playback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Plans playback for the client's environment. A converting plan registers the conversion
+         *     and names its playlist. Without a conversion service, anything that would need conversion
+         *     comes back unsupported with the reason `conversion_unavailable`.
+         */
+        post: operations["planMediaPlayback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/{media_id}/stream": {
         parameters: {
             query?: never;
@@ -206,6 +308,74 @@ export interface paths {
          *     `Accept-Ranges: bytes`. The content type is guessed from the file extension.
          */
         get: operations["streamMediaFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/subtitle-tracks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMediaSubtitleTracks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/track-selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setMediaTrackSelection"];
+        post?: never;
+        delete: operations["clearMediaTrackSelection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/tracks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMediaTracks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/waveform": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns 100 peaks per second of the window, from the audio track the user chose for the
+         *     file, else its default audio track. A file without audio yields no peaks.
+         */
+        get: operations["getMediaWaveform"];
         put?: never;
         post?: never;
         delete?: never;
@@ -245,10 +415,73 @@ export interface components {
             code: string;
             message: string;
         };
+        AudioAction: {
+            /** @enum {string} */
+            action: "copy";
+            /** Format: int32 */
+            index: number;
+        } | {
+            /** @enum {string} */
+            action: "transcode";
+            /** Format: int32 */
+            index: number;
+            target: components["schemas"]["AudioTarget"];
+        };
+        /** @enum {string} */
+        AudioTarget: "aac" | "flac";
+        /**
+         * @description A media element's `canPlayType` answer. The empty string becomes `No`.
+         * @enum {string}
+         */
+        CanPlayAnswer: "probably" | "maybe" | "no";
         Chapter: {
             paragraphs: string[];
             title?: string | null;
         };
+        /** @enum {string} */
+        ContainerFormat: "mp4" | "matroska" | "mp3" | "ogg" | "wav" | "flac" | "adts" | "mpeg_ts" | "avi";
+        ContainerInfo: {
+            /**
+             * Format: int64
+             * @description The overall bit rate of the file in bits per second.
+             */
+            bit_rate?: number | null;
+            /** Format: int64 */
+            duration_ms?: number | null;
+            format: components["schemas"]["ContainerFormat"];
+            /** Format: int64 */
+            start_ms?: number | null;
+            tracks: components["schemas"]["TrackInfo"][];
+        };
+        /** @description Sizes are in bytes. */
+        ConversionCacheStatus: {
+            /**
+             * Format: int64
+             * @description The size the cache may grow to when disk space allows.
+             */
+            budget_bytes: number;
+            /** Format: int64 */
+            free_bytes: number;
+            /**
+             * Format: int64
+             * @description The size the cache may currently grow to: the budget, reduced when free space is short.
+             */
+            limit_bytes: number;
+            /** @description True when free disk space, not the budget, limits the cache. */
+            space_low: boolean;
+            /** Format: int64 */
+            usage_bytes: number;
+        };
+        ConversionPlan: {
+            audio?: components["schemas"]["AudioAction"] | null;
+            reasons: components["schemas"]["ConversionReason"][];
+            video?: components["schemas"]["VideoAction"] | null;
+        };
+        /**
+         * @description Why the file is converted rather than played directly.
+         * @enum {string}
+         */
+        ConversionReason: "container_unsupported" | "inaccurate_seeking" | "non_default_tracks" | "codec_unsupported";
         /**
          * @description One text segment with the time range during which it is shown.
          *
@@ -345,6 +578,45 @@ export interface components {
             format?: components["schemas"]["TimedTextFormat"] | null;
             source: components["schemas"]["TextSource"];
         };
+        PictureSize: {
+            /** Format: int32 */
+            height: number;
+            /** Format: int32 */
+            width: number;
+        };
+        /**
+         * @description The browser engine behind the media element, decided from the user agent.
+         * @enum {string}
+         */
+        PlaybackEngine: "webkit" | "chromium" | "gecko";
+        PlaybackEnvironment: {
+            /** @description The answer to `canPlayType` for the file's direct MIME type with codecs. */
+            can_play_type: components["schemas"]["CanPlayAnswer"];
+            engine: components["schemas"]["PlaybackEngine"];
+            /** @description The RFC 6381 codec strings that `MediaSource.isTypeSupported` accepts in fragmented MP4. */
+            mse_codec_strings: string[];
+        };
+        PlaybackPlan: {
+            /** @enum {string} */
+            kind: "direct";
+        } | (components["schemas"]["ConversionPlan"] & {
+            /** @enum {string} */
+            kind: "convert";
+        }) | {
+            /** @enum {string} */
+            kind: "unsupported";
+            reason: components["schemas"]["UnsupportedReason"];
+        };
+        PlaybackRequest: {
+            environment: components["schemas"]["PlaybackEnvironment"];
+            preferred_audio_target?: components["schemas"]["AudioTarget"] | null;
+            selection?: components["schemas"]["TrackSelection"] | null;
+        };
+        PlaybackResponse: {
+            plan: components["schemas"]["PlaybackPlan"];
+            /** @description The path of the HLS playlist, present only when the plan converts. */
+            playlist_path?: string | null;
+        };
         /** @description A preference value. `null` means the preference has not been set. */
         PreferenceValue: {
             value?: string | null;
@@ -356,6 +628,16 @@ export interface components {
             id: components["schemas"]["ProjectId"];
             language: string;
             name: string;
+        };
+        /** @description A positive ratio of two integers, such as a timebase of `1/90000` or a frame rate of `30000/1001`. */
+        Rational: {
+            /** Format: int64 */
+            den: number;
+            /** Format: int64 */
+            num: number;
+        };
+        SubtitleTracksResponse: {
+            tracks: components["schemas"]["TrackInfo"][];
         };
         TermEntry: {
             definitions: string[];
@@ -385,6 +667,94 @@ export interface components {
             cues: components["schemas"]["Cue"][];
             format: components["schemas"]["TimedTextFormat"];
         };
+        /** @description One stream inside a container. Fields the source does not state are `None`. */
+        TrackInfo: {
+            /** Format: int64 */
+            bit_rate?: number | null;
+            /** Format: int32 */
+            channels?: number | null;
+            /** @description ffmpeg's name for the codec, such as `h264`, `aac`, or `subrip`. */
+            codec: string;
+            /**
+             * @description The RFC 6381 codec string in the spelling Media Source Extensions accept,
+             *     or `None` when the codec cannot be carried in fragmented MP4.
+             */
+            codec_string?: string | null;
+            /**
+             * Format: int32
+             * @description The identifier the container itself uses for the track, such as the MP4 track id
+             *     or the Matroska track number, when known.
+             */
+            container_track_id?: number | null;
+            frame_rate?: components["schemas"]["Rational"] | null;
+            /** Format: int32 */
+            height?: number | null;
+            /**
+             * Format: int32
+             * @description The stream's position counted over all stream kinds, as in ffmpeg's `0:N`.
+             */
+            index: number;
+            interlaced: boolean;
+            is_default: boolean;
+            kind: components["schemas"]["TrackKind"];
+            /** @description The language tag stored in the container, or `None` when it is undetermined. */
+            language?: string | null;
+            /** Format: int64 */
+            level?: number | null;
+            /** @description ffmpeg's name for the codec profile, such as `High` or `LC`. */
+            profile?: string | null;
+            /** Format: int32 */
+            sample_rate?: number | null;
+            /** Format: int64 */
+            start_ms?: number | null;
+            title?: string | null;
+            /** Format: int32 */
+            width?: number | null;
+        };
+        /** @enum {string} */
+        TrackKind: "video" | "audio" | "subtitle" | "other";
+        TrackSelection: {
+            /** Format: int32 */
+            audio?: number | null;
+            /** Format: int32 */
+            video?: number | null;
+        };
+        TracksResponse: {
+            container: components["schemas"]["ContainerInfo"];
+            default_selection: components["schemas"]["TrackSelection"];
+            /**
+             * @description The MIME type with codecs to pass to `canPlayType`, or `None` when the file's own bytes
+             *     cannot play in a media element at all.
+             */
+            direct_mime_type?: string | null;
+        };
+        /** @enum {string} */
+        UnsupportedReason: "no_tracks" | "track_not_found" | "video_codec_unsupported" | "audio_codec_unsupported" | "conversion_unavailable" | "picture_too_tall";
+        VideoAction: {
+            /** @enum {string} */
+            action: "copy";
+            /** Format: int32 */
+            index: number;
+        } | {
+            /** @enum {string} */
+            action: "transcode";
+            /** Format: int64 */
+            bit_rate: number;
+            deinterlace: boolean;
+            encoder: string;
+            /** Format: int32 */
+            index: number;
+            scale_to?: components["schemas"]["PictureSize"] | null;
+        };
+        /**
+         * @description One window of waveform peaks: 100 per second from `start_ms`, each the loudest sample of the
+         *     loudest channel in its hundredth of a second, from 0 (silence) to 255 (full scale).
+         */
+        WaveformResponse: {
+            peaks: number[];
+            /** Format: int64 */
+            start_ms: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -394,6 +764,315 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getConversionCache: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cache's usage and limits */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversionCacheStatus"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server does not convert media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    clearConversionCache: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cache's usage and limits after clearing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversionCacheStatus"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server does not convert media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getConversionPlaylist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The conversion's cache key */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The on-demand HLS playlist */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.apple.mpegurl": string;
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No conversion has this key */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server does not convert media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getConversionInitSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The conversion's cache key */
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The fragmented MP4 init segment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "video/mp4": number[];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No conversion has this key */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description ffmpeg failed (code `conversion_failed`) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server does not convert media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The segment was not produced in time (code `segment_timeout`) */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getConversionSegment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The conversion's cache key */
+                key: string;
+                /** @description A segment file name from the playlist, such as `s00042.m4s` */
+                segment: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The fragmented MP4 media segment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "video/mp4": number[];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No conversion has this key, or the playlist has no such segment */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description ffmpeg failed (code `conversion_failed`) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server does not convert media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The segment was not produced in time (code `segment_timeout`) */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     listDictionaries: {
         parameters: {
             query?: never;
@@ -1083,6 +1762,89 @@ export interface operations {
             };
         };
     };
+    planMediaPlayback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaybackRequest"];
+            };
+        };
+        responses: {
+            /** @description The plan and, when converting, the playlist path */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaybackResponse"];
+                };
+            };
+            /** @description The file could not be probed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, no file at its path, or a browser-held file (code `not_resolvable`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server cannot probe media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     streamMediaFile: {
         parameters: {
             query?: {
@@ -1154,6 +1916,361 @@ export interface operations {
             };
             /** @description Unexpected Host header */
             421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getMediaSubtitleTracks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subtitle tracks embedded in the file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubtitleTracksResponse"];
+                };
+            };
+            /** @description The file could not be probed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, no file at its path, or a browser-held file (code `not_resolvable`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server cannot probe media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setMediaTrackSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrackSelection"];
+            };
+        };
+        responses: {
+            /** @description The choice was saved */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    clearMediaTrackSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The choice was cleared */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getMediaTracks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The probed container, the default track selection, and the MIME type for `canPlayType` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TracksResponse"];
+                };
+            };
+            /** @description The file could not be probed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, no file at its path, or a browser-held file (code `not_resolvable`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server cannot probe media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getMediaWaveform: {
+        parameters: {
+            query: {
+                /** @description The window start in player time, in milliseconds. */
+                start_ms: number;
+                /** @description The window end in player time, in milliseconds; at most five minutes after the start. */
+                end_ms: number;
+            };
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The window's peaks */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaveformResponse"];
+                };
+            };
+            /** @description The window is inverted or longer than five minutes, or the file could not be probed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file, no file at its path, or a browser-held file (code `not_resolvable`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Decoding failed (code `waveform_failed`) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server has no ffmpeg or no cache directory (code `waveform_unavailable`) */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

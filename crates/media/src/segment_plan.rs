@@ -6,7 +6,7 @@ use crate::rational::Rational;
 use crate::source_timing::SourceTiming;
 
 /// Audio-only sources have no keyframes, so they are cut into segments of this nominal length.
-const NOMINAL_SEGMENT_SECONDS: u64 = 4;
+pub const NOMINAL_SEGMENT_SECONDS: u64 = 4;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Segment {
