@@ -25,14 +25,15 @@ import {
  */
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 const serverFileName = ".dev/desktop-server.env";
-const startDesktopOnce = `Start the desktop app once with 'mise run desktop', which writes ${serverFileName}`;
 
 await main();
 
 async function main(): Promise<void> {
   const file =
     readDesktopServerFile(join(repositoryRoot, serverFileName)) ??
-    fail(`${startDesktopOnce}.`);
+    fail(
+      `Start the desktop app once with 'mise run desktop'. It writes ${serverFileName}, which this task reads.`,
+    );
   const probe = await probeServer(file.url, file.token);
   if (probe === "answering") return runAgainstDesktopServer(file);
   if (probe === "refusing") {
@@ -43,7 +44,7 @@ async function main(): Promise<void> {
   await runAgainstStandaloneServer(
     file.storage ??
       fail(
-        `${serverFileName} does not name the desktop app's database and cache. ${startDesktopOnce} again, then quit it.`,
+        `${serverFileName} was written by an older desktop build and does not name its database and cache. Start the desktop app with 'mise run desktop' to rewrite it, quit it, and rerun this task.`,
       ),
   );
 }
