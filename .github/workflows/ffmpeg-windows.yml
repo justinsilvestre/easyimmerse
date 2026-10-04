@@ -4,13 +4,16 @@ name: ffmpeg-windows
 # publishes it as a release, because the first-party LGPL builds link libraries the licence
 # policy rejects. scripts/fetch-ffmpeg/manifest.json pins the resulting assets by hash.
 
-# Push a tag such as `ffmpeg-windows-8.1.3` on any branch to build that ffmpeg version, or
+# Push a tag (or a branch) such as `ffmpeg-windows-8.1.3` on any branch to build that ffmpeg version, or
 # `ffmpeg-windows-8.1.3-2` to build the same version again with a changed workflow.
 # A tag push runs the workflow file at the tagged commit, so nothing needs to be on the
 # default branch first. Manual dispatch only works once the file is on the default branch.
 on:
   push:
     tags: ["ffmpeg-windows-*"]
+    # A branch of the same form triggers the same build, for sessions that cannot push tags.
+    # The release then creates the tag at the built commit.
+    branches: ["ffmpeg-windows-*"]
   workflow_dispatch:
     inputs:
       ffmpeg-version:
@@ -159,5 +162,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           v="${{ steps.version.outputs.version }}"
-          gh release create "${{ steps.version.outputs.tag }}" --repo "$GITHUB_REPOSITORY" --title "ffmpeg $v for Windows (LGPL)" \
+          gh release create "${{ steps.version.outputs.tag }}" --target "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY" --title "ffmpeg $v for Windows (LGPL)" \
             --notes-file out/BUILD.md out/*.zip out/SHA256SUMS out/BUILD.md

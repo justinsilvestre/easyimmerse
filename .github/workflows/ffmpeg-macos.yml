@@ -4,13 +4,16 @@ name: ffmpeg-macos
 # first-party LGPL macOS build exists. scripts/fetch-ffmpeg/manifest.json pins the
 # resulting assets by hash. The components come from scripts/ffmpeg-build/common-flags.txt.
 
-# Push a tag such as `ffmpeg-macos-8.1.2` on any branch to build that ffmpeg version, or
+# Push a tag (or a branch) such as `ffmpeg-macos-8.1.2` on any branch to build that ffmpeg version, or
 # `ffmpeg-macos-8.1.2-2` to build the same version again with a changed workflow.
 # A tag push runs the workflow file at the tagged commit, so nothing needs to be on the
 # default branch first. Manual dispatch only works once the file is on the default branch.
 on:
   push:
     tags: ["ffmpeg-macos-*"]
+    # A branch of the same form triggers the same build, for sessions that cannot push tags.
+    # The release then creates the tag at the built commit.
+    branches: ["ffmpeg-macos-*"]
   workflow_dispatch:
     inputs:
       ffmpeg-version:
@@ -114,5 +117,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           v="${{ steps.version.outputs.version }}"
-          gh release create "${{ steps.version.outputs.tag }}" --title "ffmpeg $v for macOS (LGPL)" --notes-file out/BUILD.md \
+          gh release create "${{ steps.version.outputs.tag }}" --target "$GITHUB_SHA" --title "ffmpeg $v for macOS (LGPL)" --notes-file out/BUILD.md \
             out/*.tar.xz out/SHA256SUMS out/BUILD.md
