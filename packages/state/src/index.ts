@@ -28,6 +28,7 @@ export {
   selectCurrentTime,
   selectPendingFilePick,
   selectPendingMediaFilePick,
+  selectPlayerDuration,
   selectPreference,
   selectSubtitleSource,
   selectTheme,

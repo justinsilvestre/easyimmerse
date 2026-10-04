@@ -1,0 +1,56 @@
+import type { MediaFile } from "@easyimmerse/types";
+import { useEffect, useMemo } from "react";
+import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
+import { isAudioFileName } from "./isAudioFileName.ts";
+import type { PlaybackState } from "./PlaybackState.ts";
+import { failedPlayback, loadingPlayback } from "./PlaybackState.ts";
+import { PlayerPanel } from "./PlayerPanel.tsx";
+
+/** Plays a file the browser holds from a blob URL. Such a file is never converted and has no waveform. */
+export function BrowserFilePlayer({ mediaFile }: { mediaFile: MediaFile }) {
+  const registry = useBrowserFileRegistry();
+  const file = registry?.find(mediaFile.name, mediaFile.source) ?? null;
+  const url = useObjectUrl(file);
+  return (
+    <PlayerPanel
+      name={mediaFile.name}
+      playback={browserPlayback(registry !== null, file, url, mediaFile.name)}
+    />
+  );
+}
+
+function browserPlayback(
+  hasRegistry: boolean,
+  file: File | null,
+  url: string | null,
+  name: string,
+): PlaybackState {
+  if (!hasRegistry)
+    return failedPlayback(
+      "This file was added in a web browser, and this app cannot reach it.",
+    );
+  if (file === null)
+    return failedPlayback(
+      "This file is no longer open in the browser. Add it again to play it.",
+    );
+  if (url === null) return loadingPlayback;
+  return {
+    status: "ready",
+    source: { kind: "direct", url },
+    frameRate: null,
+    hasVideo: !isAudioFileName(name),
+  };
+}
+
+/** A blob URL for the file, revoked when the file changes or the player unmounts. */
+function useObjectUrl(file: File | null): string | null {
+  const url = useMemo(
+    () => (file === null ? null : URL.createObjectURL(file)),
+    [file],
+  );
+  useEffect(() => {
+    if (url === null) return;
+    return () => URL.revokeObjectURL(url);
+  }, [url]);
+  return url;
+}

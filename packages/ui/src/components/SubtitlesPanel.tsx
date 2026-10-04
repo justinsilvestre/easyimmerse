@@ -7,10 +7,23 @@ import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { Button } from "./Button.tsx";
 
+/** Shares the parsed subtitles between the panel and the waveform, which draws the cues. */
+export const subtitlesCacheKey = "mediaScreenSubtitles";
+
+/** The cues of the subtitles the panel has parsed, or none yet. */
+export function useParsedCues(): readonly Cue[] {
+  const [, { data }] = useParseTimedTextMutation({
+    fixedCacheKey: subtitlesCacheKey,
+  });
+  return data?.cues ?? [];
+}
+
 /** Parses the chosen subtitle file, or the fixture until one is chosen, and lists its cues. */
 export function SubtitlesPanel() {
   const subtitleSource = useAppSelector(selectSubtitleSource);
-  const [parseTimedText, { data, error }] = useParseTimedTextMutation();
+  const [parseTimedText, { data, error }] = useParseTimedTextMutation({
+    fixedCacheKey: subtitlesCacheKey,
+  });
   useEffect(() => {
     parseTimedText({
       source: subtitleSource ?? { kind: "inline", text: fixtureSubtitleText },

@@ -1,7 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
 import type { KeyboardEvent } from "react";
 import { useEffect, useRef } from "react";
-import { formatPlayerTime } from "../StubPlayer.tsx";
+import { formatPlayerTime } from "../formatPlayerTime.ts";
 import { drawWaveform } from "./drawWaveform.ts";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import { useElementWidth } from "./useElementWidth.ts";

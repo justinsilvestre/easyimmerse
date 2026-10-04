@@ -8,6 +8,8 @@ export const actions = {
     ({ type: "seekRequested", seconds }) as const,
   playerTimeChanged: (seconds: number) =>
     ({ type: "playerTimeChanged", seconds }) as const,
+  playerDurationChanged: (seconds: number) =>
+    ({ type: "playerDurationChanged", seconds }) as const,
   filePickRequested: () => ({ type: "filePickRequested" }) as const,
   fileChosen: (file: PickedFile) => ({ type: "fileChosen", file }) as const,
   filePickCancelled: () => ({ type: "filePickCancelled" }) as const,
@@ -22,6 +24,7 @@ export const actions = {
     ({ type: "mediaFileRemoved", mediaFileId }) as const,
   openMedia: (mediaFileId: string) =>
     ({ type: "openMedia", mediaFileId }) as const,
+  closeMedia: () => ({ type: "closeMedia" }) as const,
   preferenceToggled: (key: PreferenceKey) =>
     ({ type: "preferenceToggled", key }) as const,
   preferenceSet: (key: PreferenceKey, value: string) =>

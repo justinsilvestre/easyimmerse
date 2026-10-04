@@ -5,6 +5,9 @@ import { chooseTheme } from "./theme.ts";
 export const selectCurrentTime = (state: RootState) =>
   state.app.player.currentTimeSeconds;
 
+export const selectPlayerDuration = (state: RootState) =>
+  state.app.player.durationSeconds;
+
 export const selectSubtitleSource = (state: RootState) =>
   state.app.subtitleSource;
 

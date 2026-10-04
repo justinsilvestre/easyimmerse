@@ -1,7 +1,15 @@
-import type { AppStore, Effects, PlayerRegistry } from "@easyimmerse/state";
+import { ffmpegNotices } from "@easyimmerse/licenses";
+import type {
+  AppStore,
+  BrowserFileRegistry,
+  Effects,
+  PlayerRegistry,
+} from "@easyimmerse/state";
 import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
+import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
+import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
 import type { MainNavigation, NavigationAction } from "./navigation.ts";
 import { initialNavigation, mainScreenOf, navigate } from "./navigation.ts";
@@ -15,10 +23,13 @@ export function AppRoot({
   store,
   playerRegistry,
   effects,
+  browserFileRegistry = null,
 }: {
   store: AppStore;
   playerRegistry: PlayerRegistry;
   effects: Effects;
+  /** Where the web app keeps the media files it picked. Absent on platforms that read files from disk. */
+  browserFileRegistry?: BrowserFileRegistry<File> | null;
 }) {
   const [navigation, dispatchNavigation] = useReducer(
     navigate,
@@ -36,22 +47,24 @@ export function AppRoot({
   return (
     <Provider store={store}>
       <PlayerRegistryContext value={playerRegistry}>
-        <NavigationActionsContext value={{ openSettings }}>
-          <ThemeHandler />
-          <div inert={settingsOpen}>
-            <MainScreen
-              navigation={mainScreenOf(navigation)}
-              dispatchNavigation={dispatchNavigation}
-            />
-          </div>
-          {settingsOpen && (
-            <SettingsOverlay>
-              <SettingsScreen
-                onBack={() => dispatchNavigation({ type: "closeSettings" })}
+        <BrowserFileRegistryContext value={browserFileRegistry}>
+          <NavigationActionsContext value={{ openSettings }}>
+            <ThemeHandler />
+            <div inert={settingsOpen}>
+              <MainScreen
+                navigation={mainScreenOf(navigation)}
+                dispatchNavigation={dispatchNavigation}
               />
-            </SettingsOverlay>
-          )}
-        </NavigationActionsContext>
+            </div>
+            {settingsOpen && (
+              <SettingsOverlay>
+                <ConnectedSettingsScreen
+                  onBack={() => dispatchNavigation({ type: "closeSettings" })}
+                />
+              </SettingsOverlay>
+            )}
+          </NavigationActionsContext>
+        </BrowserFileRegistryContext>
       </PlayerRegistryContext>
     </Provider>
   );
@@ -74,6 +87,17 @@ function MainScreen({
     <MediaScreen
       projectId={navigation.projectId}
       onBack={() => dispatchNavigation({ type: "goHome" })}
+    />
+  );
+}
+
+/** The Settings screen with the converted-videos status from the server and the bundled license notices. */
+function ConnectedSettingsScreen({ onBack }: { onBack: () => void }) {
+  return (
+    <SettingsScreen
+      onBack={onBack}
+      conversionCache={useConversionCacheControls()}
+      licenseNotices={ffmpegNotices}
     />
   );
 }

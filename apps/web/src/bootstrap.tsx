@@ -32,7 +32,12 @@ export async function bootstrap(): Promise<void> {
     findDevToolsComposer(),
   );
   createRoot(findRootElement()).render(
-    <AppRoot store={store} playerRegistry={playerRegistry} effects={effects} />,
+    <AppRoot
+      store={store}
+      playerRegistry={playerRegistry}
+      effects={effects}
+      browserFileRegistry={browserFileRegistry}
+    />,
   );
 }
 

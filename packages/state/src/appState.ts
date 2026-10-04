@@ -15,7 +15,8 @@ export const preferenceKeys: readonly PreferenceKey[] = [
 ];
 
 export type AppState = {
-  player: { currentTimeSeconds: number };
+  /** The duration is zero until the player has loaded a file. */
+  player: { currentTimeSeconds: number; durationSeconds: number };
   /** The text the subtitles panel parses. Null until a file is chosen. */
   subtitleSource: TextSource | null;
   preferences: Partial<Record<PreferenceKey, string>>;
@@ -29,7 +30,7 @@ export type AppState = {
 };
 
 export const initialAppState: AppState = {
-  player: { currentTimeSeconds: 0 },
+  player: { currentTimeSeconds: 0, durationSeconds: 0 },
   subtitleSource: null,
   preferences: {},
   pendingFilePick: false,

@@ -1,4 +1,5 @@
 import { resetBackend } from "@easyimmerse/backend";
+import { actions } from "@easyimmerse/state";
 import {
   act,
   cleanup,
@@ -66,13 +67,28 @@ describe("MediaScreen", () => {
     });
   });
 
-  it("shows the time the player was seeked to", async () => {
-    const { playerRegistry } = renderMediaScreen();
-    await findSubtitles();
-    act(() => playerRegistry.current()?.seek(61.75));
+  it("invites the user to open a media file until one is open", () => {
+    renderMediaScreen();
     expect(screen.getByRole("region", { name: "Player" }).textContent).toBe(
-      "1:01.8",
+      "Open a media file to play it.",
     );
+  });
+
+  it("shows the player's time once a media file is open", async () => {
+    const { store } = renderMediaScreen();
+    fireEvent.click(await screen.findByRole("button", { name: "episode.mkv" }));
+    act(() => store.dispatch(actions.playerTimeChanged(61.75)));
+    expect(
+      screen.getByRole("region", { name: "Player" }).textContent,
+    ).toContain("1:01.8");
+  });
+
+  it("shows the waveform strip once a media file is open", async () => {
+    renderMediaScreen();
+    fireEvent.click(await screen.findByRole("button", { name: "episode.mkv" }));
+    expect(
+      screen.getByRole("slider", { name: "Playback position" }),
+    ).toBeDefined();
   });
 
   it("requests a file pick when the pick button is clicked", async () => {

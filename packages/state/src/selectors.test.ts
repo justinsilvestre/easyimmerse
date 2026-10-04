@@ -7,6 +7,7 @@ import {
   selectCurrentTime,
   selectPendingFilePick,
   selectPendingMediaFilePick,
+  selectPlayerDuration,
   selectPreference,
   selectSubtitleSource,
 } from "./selectors.ts";
@@ -14,7 +15,7 @@ import {
 const rootState: RootState = {
   app: {
     ...initialAppState,
-    player: { currentTimeSeconds: 4 },
+    player: { currentTimeSeconds: 4, durationSeconds: 90 },
     subtitleSource: { kind: "inline", text: "Hello" },
     preferences: { showTranslations: "true" },
     pendingFilePick: true,
@@ -27,6 +28,10 @@ const rootState: RootState = {
 describe("selectors", () => {
   it("selectCurrentTime returns the player's current time", () => {
     expect(selectCurrentTime(rootState)).toBe(4);
+  });
+
+  it("selectPlayerDuration returns the loaded file's duration", () => {
+    expect(selectPlayerDuration(rootState)).toBe(90);
   });
 
   it("selectSubtitleSource returns the subtitle source", () => {

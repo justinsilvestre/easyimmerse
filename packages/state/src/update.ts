@@ -17,11 +17,28 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
   switch (action.type) {
     case "seekRequested":
       return [
-        { ...state, player: { currentTimeSeconds: action.seconds } },
+        {
+          ...state,
+          player: { ...state.player, currentTimeSeconds: action.seconds },
+        },
         [{ type: "seekPlayer", seconds: action.seconds }],
       ];
     case "playerTimeChanged":
-      return [{ ...state, player: { currentTimeSeconds: action.seconds } }, []];
+      return [
+        {
+          ...state,
+          player: { ...state.player, currentTimeSeconds: action.seconds },
+        },
+        [],
+      ];
+    case "playerDurationChanged":
+      return [
+        {
+          ...state,
+          player: { ...state.player, durationSeconds: action.seconds },
+        },
+        [],
+      ];
     case "filePickRequested":
       return [
         { ...state, pendingFilePick: true },
@@ -82,6 +99,15 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "openMedia":
       return [{ ...state, currentMediaFileId: action.mediaFileId }, []];
+    case "closeMedia":
+      return [
+        {
+          ...state,
+          currentMediaFileId: null,
+          player: { currentTimeSeconds: 0, durationSeconds: 0 },
+        },
+        [],
+      ];
     case "preferenceToggled":
       return togglePreference(state, action.key);
     case "preferenceSet":

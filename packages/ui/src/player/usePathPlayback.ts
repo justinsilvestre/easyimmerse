@@ -1,0 +1,136 @@
+import {
+  getServerConfig,
+  skipToken,
+  useGetMediaTracksQuery,
+  usePlanPlaybackQuery,
+  useSaveTrackSelectionMutation,
+} from "@easyimmerse/backend";
+import { actions, selectPreference } from "@easyimmerse/state";
+import type {
+  AudioTarget,
+  MediaFile,
+  TrackSelection,
+} from "@easyimmerse/types";
+import { useMemo, useState } from "react";
+import type { TrackChoice } from "../components/trackChoiceLabels.ts";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { derivePlaybackState } from "./derivePlaybackState.ts";
+import {
+  measurePlaybackEnvironment,
+  readPlaybackProbes,
+} from "./measurePlaybackEnvironment.ts";
+import type { PlaybackState } from "./PlaybackState.ts";
+import {
+  containerCodecStrings,
+  needsTrackChoice,
+  parseTrackSelection,
+  tracksOfKind,
+} from "./playbackPlanRules.ts";
+import { trackChoiceOf } from "./trackChoiceOf.ts";
+
+/** What the track choice dialog shows when it is open. */
+export type TrackChoicePrompt = {
+  videoTracks: TrackChoice[];
+  audioTracks: TrackChoice[];
+  initialSelection: TrackSelection | undefined;
+};
+
+/** Whether the dialog is yet to be decided for this file, opened by the user, or put away. */
+type TrackDialog = "undecided" | "open" | "closed";
+
+/**
+ * Resolves how a file on the server's disk plays: probes its tracks, measures the browser, asks the server
+ * for a plan with the saved track selection and the lossless-audio preference, and raises the track choice
+ * and conversion notice dialogs when they are due.
+ */
+export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
+  const dispatch = useAppDispatch();
+  const mediaFileId = mediaFile.id;
+  const tracks = useGetMediaTracksQuery({ projectId, mediaFileId });
+  const [selection, setSelection] = useState(() =>
+    parseTrackSelection(mediaFile.track_selection_json),
+  );
+  const [trackDialog, setTrackDialog] = useState<TrackDialog>("undecided");
+  const [noticeAccepted, setNoticeAccepted] = useState(false);
+  const preferredAudioTarget = usePreferredAudioTarget();
+  const noticeDismissed =
+    useAppSelector(selectPreference("conversionNoticeDismissed")) === "true";
+  const container = tracks.data?.container;
+  const choiceDue =
+    container !== undefined &&
+    trackDialog === "undecided" &&
+    needsTrackChoice(container, selection);
+  const environment = useMemo(
+    () =>
+      tracks.data === undefined
+        ? null
+        : measurePlaybackEnvironment(
+            tracks.data.direct_mime_type,
+            containerCodecStrings(tracks.data.container),
+            readPlaybackProbes(),
+          ),
+    [tracks.data],
+  );
+  const playback = usePlanPlaybackQuery(
+    environment === null || choiceDue
+      ? skipToken
+      : {
+          projectId,
+          mediaFileId,
+          request: {
+            environment,
+            selection,
+            preferred_audio_target: preferredAudioTarget,
+          },
+        },
+  );
+  const [saveSelection] = useSaveTrackSelectionMutation();
+
+  const playbackState: PlaybackState = derivePlaybackState({
+    server: getServerConfig(),
+    projectId,
+    mediaFileId,
+    tracks: tracks.data,
+    tracksError: tracks.error,
+    playback: playback.data,
+    playbackError: playback.error,
+    selection,
+    noticeSettled: noticeDismissed || noticeAccepted,
+  });
+  const chooseTracks = (chosen: TrackSelection) => {
+    setSelection(chosen);
+    setTrackDialog("closed");
+    saveSelection({ projectId, mediaFileId, selection: chosen })
+      .unwrap()
+      .catch(() =>
+        dispatch(
+          actions.notificationRequested("The track choice could not be saved"),
+        ),
+      );
+  };
+  return {
+    playback: playbackState,
+    trackChoice:
+      container !== undefined && (choiceDue || trackDialog === "open")
+        ? {
+            videoTracks: tracksOfKind(container, "video").map(trackChoiceOf),
+            audioTracks: tracksOfKind(container, "audio").map(trackChoiceOf),
+            initialSelection: selection ?? undefined,
+          }
+        : null,
+    canChooseTracks:
+      container !== undefined && needsTrackChoice(container, null),
+    chooseTracks,
+    cancelTrackChoice: () => setTrackDialog("closed"),
+    openTrackChoice: () => setTrackDialog("open"),
+    acceptNotice: () => setNoticeAccepted(true),
+  };
+}
+
+/** The lossless-audio preference as it stood when the file opened; a later change applies to the next file. */
+function usePreferredAudioTarget(): AudioTarget | null {
+  const lossless = useAppSelector(selectPreference("losslessAudio")) === "true";
+  const [target] = useState<AudioTarget | null>(lossless ? "flac" : null);
+  return target;
+}
