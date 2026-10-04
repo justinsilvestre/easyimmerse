@@ -3215,7 +3215,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The subtitle tracks embedded in the file */
+            /** @description The text subtitle tracks embedded in the file; image-based ones such as PGS are left out */
             200: {
                 headers: {
                     [name: string]: unknown;

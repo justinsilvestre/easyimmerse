@@ -94,13 +94,21 @@ function useSelection(projectId: string, mediaFile: MediaFile) {
   const [save] = useSaveSubtitleSelectionMutation();
   const [selection, setSelection] = useState(mediaFile.subtitle_selection);
   const latest = useRef(selection);
+  // Each save waits for the one before, so that the server keeps the last choice.
+  const saves = useRef<Promise<unknown>>(Promise.resolve());
   const choose = useCallback(
     (role: SubtitleRole, trackId: string | null) => {
       const next = { ...latest.current, [role]: trackId };
       latest.current = next;
       setSelection(next);
-      save({ projectId, mediaFileId: mediaFile.id, selection: next })
-        .unwrap()
+      saves.current = saves.current
+        .then(() =>
+          save({
+            projectId,
+            mediaFileId: mediaFile.id,
+            selection: next,
+          }).unwrap(),
+        )
         .catch(() =>
           dispatch(
             actions.notificationRequested(

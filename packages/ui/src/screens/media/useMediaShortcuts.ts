@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 
 /** What the media screen's keys do. */
 export type MediaShortcuts = {
@@ -11,12 +11,17 @@ export type MediaShortcuts = {
  * Space plays or pauses, L opens the lookup, and Escape closes what is open, unless a field, a button,
  * or another control that uses the key has focus.
  */
-export function useMediaShortcuts(shortcuts: MediaShortcuts): void {
+export function useMediaShortcuts(
+  shortcuts: MediaShortcuts,
+  /** An element of the screen; the keys do nothing while it is inert, as under the Settings overlay. */
+  screenRef: RefObject<HTMLElement | null>,
+): void {
   const latest = useRef(shortcuts);
   latest.current = shortcuts;
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || hasModifier(event)) return;
+      if (screenRef.current?.closest("[inert]")) return;
       const action = actionOf(event.key, event.target);
       if (action === null) return;
       event.preventDefault();
@@ -24,7 +29,7 @@ export function useMediaShortcuts(shortcuts: MediaShortcuts): void {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [screenRef]);
 }
 
 function actionOf(

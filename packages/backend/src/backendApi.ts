@@ -80,10 +80,14 @@ type LookupArgs = { language: string; term: string };
 const flashcardPath = ({ projectId, flashcardId }: FlashcardArgs) =>
   `/projects/${projectId}/flashcards/${flashcardId}`;
 
-/** The tags whose data a change to a project's flashcards makes stale. */
-const flashcardChangeTags = (projectId: string) => [
+/** The project list, whose counts and order change with any project's media, flashcards, or opening. */
+const projectList = { type: "Projects" as const, id: "LIST" };
+
+/** The tags whose data a change to a flashcard makes stale. */
+const flashcardChangeTags = ({ projectId, flashcardId }: FlashcardArgs) => [
   { type: "Flashcards" as const, id: projectId },
-  "Projects" as const,
+  { type: "FlashcardScreenshot" as const, id: flashcardId },
+  projectList,
 ];
 
 const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
@@ -97,6 +101,7 @@ export const backendApi = createApi({
     "Projects",
     "MediaFiles",
     "Flashcards",
+    "FlashcardScreenshot",
     "SubtitleFiles",
     "Preferences",
     "Dictionaries",
@@ -105,7 +110,7 @@ export const backendApi = createApi({
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
       query: () => ({ method: "GET", path: "/projects" }),
-      providesTags: ["Projects"],
+      providesTags: [projectList],
     }),
     getProject: build.query<Project, string>({
       query: (projectId) => ({ method: "GET", path: `/projects/${projectId}` }),
@@ -119,7 +124,7 @@ export const backendApi = createApi({
         path: "/projects",
         body: { kind: "json", value: request },
       }),
-      invalidatesTags: ["Projects"],
+      invalidatesTags: [projectList],
     }),
     updateProject: build.mutation<Project, SaveProjectArgs>({
       query: ({ projectId, request }) => ({
@@ -127,21 +132,27 @@ export const backendApi = createApi({
         path: `/projects/${projectId}`,
         body: { kind: "json", value: request },
       }),
-      invalidatesTags: ["Projects"],
+      invalidatesTags: (_result, _error, { projectId }) => [
+        projectList,
+        { type: "Projects", id: projectId },
+      ],
     }),
     deleteProject: build.mutation<void, string>({
       query: (projectId) => ({
         method: "DELETE",
         path: `/projects/${projectId}`,
       }),
-      invalidatesTags: ["Projects"],
+      invalidatesTags: (_result, _error, projectId) => [
+        projectList,
+        { type: "Projects", id: projectId },
+      ],
     }),
     markProjectOpened: build.mutation<void, string>({
       query: (projectId) => ({
         method: "POST",
         path: `/projects/${projectId}/opened`,
       }),
-      invalidatesTags: ["Projects"],
+      invalidatesTags: [projectList],
     }),
     listFlashcards: build.query<ListFlashcardsResponse, string>({
       query: (projectId) => ({
@@ -158,8 +169,8 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/flashcards`,
         body: { kind: "json", value: request },
       }),
-      invalidatesTags: (_result, _error, { projectId }) =>
-        flashcardChangeTags(projectId),
+      invalidatesTags: (result, _error, { projectId }) =>
+        flashcardChangeTags({ projectId, flashcardId: result?.id ?? "" }),
     }),
     updateFlashcard: build.mutation<Flashcard, UpdateFlashcardArgs>({
       query: ({ request, ...args }) => ({
@@ -167,21 +178,19 @@ export const backendApi = createApi({
         path: flashcardPath(args),
         body: { kind: "json", value: request },
       }),
-      invalidatesTags: (_result, _error, { projectId }) =>
-        flashcardChangeTags(projectId),
+      invalidatesTags: (_result, _error, args) => flashcardChangeTags(args),
     }),
     deleteFlashcard: build.mutation<void, FlashcardArgs>({
       query: (args) => ({ method: "DELETE", path: flashcardPath(args) }),
-      invalidatesTags: (_result, _error, { projectId }) =>
-        flashcardChangeTags(projectId),
+      invalidatesTags: (_result, _error, args) => flashcardChangeTags(args),
     }),
     getFlashcardScreenshot: build.query<FlashcardScreenshot, FlashcardArgs>({
       query: (args) => ({
         method: "GET",
         path: `${flashcardPath(args)}/screenshot`,
       }),
-      providesTags: (_result, _error, { projectId }) => [
-        { type: "Flashcards", id: projectId },
+      providesTags: (_result, _error, { flashcardId }) => [
+        { type: "FlashcardScreenshot", id: flashcardId },
       ],
     }),
     listMediaFiles: build.query<ListMediaFilesResponse, string>({
@@ -201,7 +210,7 @@ export const backendApi = createApi({
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "MediaFiles", id: projectId },
-        "Projects",
+        projectList,
       ],
     }),
     removeMediaFile: build.mutation<void, MediaFileArgs>({
@@ -212,7 +221,7 @@ export const backendApi = createApi({
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "MediaFiles", id: projectId },
         { type: "Flashcards", id: projectId },
-        "Projects",
+        projectList,
       ],
     }),
     getMediaTracks: build.query<TracksResponse, MediaFileArgs>({

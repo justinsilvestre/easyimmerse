@@ -28,7 +28,7 @@ use crate::state::AppState;
 
 /// The ffmpeg codec names of subtitle streams that hold text, which ffmpeg can convert to
 /// WebVTT. Image-based subtitles such as PGS and VobSub are left out.
-const TEXT_SUBTITLE_CODECS: [&str; 16] = [
+pub const TEXT_SUBTITLE_CODECS: [&str; 16] = [
     "subrip",
     "srt",
     "ass",

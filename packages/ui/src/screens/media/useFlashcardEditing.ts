@@ -6,7 +6,7 @@ import {
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardFieldKey, Project } from "@easyimmerse/types";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   type EditorAction,
   type EditorState,
@@ -44,17 +44,30 @@ export function useFlashcardEditing(project: Project, mediaFileId: string) {
   const [createFlashcard] = useCreateFlashcardMutation();
   const [updateFlashcard] = useUpdateFlashcardMutation();
   const [deleteFlashcard] = useDeleteFlashcardMutation();
+  // Counts the flashcards opened, so that a capture or save that finishes late cannot touch another flashcard.
+  const session = useRef(0);
+  const isSaving = useRef(false);
   const notify = (message: string) =>
     dispatchApp(actions.notificationRequested(message));
+  const open = (next: Editing | null) => {
+    session.current += 1;
+    isSaving.current = false;
+    setEditing(next);
+  };
   const dispatch = (action: EditorAction) => {
     setEditing(
       (current) =>
         current && { ...current, state: reduceEditor(current.state, action) },
     );
-    if (action.type === "screenshotMsChanged")
-      captureFrameAt(action.ms).then((screenshot) => {
-        if (screenshot) dispatch({ type: "screenshotCaptured", screenshot });
-      });
+    if (action.type === "screenshotMsChanged") captureInto(action.ms);
+  };
+  /** Captures the frame at the time and adds it to the flashcard open now, if it is still open when the frame arrives. */
+  const captureInto = (ms: number) => {
+    const capturedIn = session.current;
+    captureFrameAt(ms).then((screenshot) => {
+      if (screenshot && session.current === capturedIn)
+        dispatch({ type: "screenshotCaptured", screenshot });
+    });
   };
   const projectId = project.id;
   return {
@@ -63,10 +76,7 @@ export function useFlashcardEditing(project: Project, mediaFileId: string) {
     /** Opens a new flashcard at once; its screenshot is added once the frame has been captured. */
     startNew: ({ content, screenshotMs }: NewFlashcard) => {
       dispatchApp(actions.pauseRequested());
-      captureFrameAt(screenshotMs).then((screenshot) => {
-        if (screenshot) dispatch({ type: "screenshotCaptured", screenshot });
-      });
-      setEditing({
+      open({
         flashcardId: unsavedFlashcardId,
         storedScreenshotUrl: null,
         state: {
@@ -74,16 +84,20 @@ export function useFlashcardEditing(project: Project, mediaFileId: string) {
           includedFields: project.settings.flashcard_fields,
         },
       });
+      captureInto(screenshotMs);
     },
+    /** Opens a saved flashcard. Without its stored screenshot it is not opened, since saving it would remove the screenshot. */
     openSaved: async (flashcard: Flashcard) => {
       dispatchApp(actions.pauseRequested());
       const screenshotUrl = flashcard.has_screenshot_image
         ? await fetchScreenshot({ projectId, flashcardId: flashcard.id })
             .unwrap()
             .then((found) => found.data_url)
-            .catch(() => null)
+            .catch(() => undefined)
         : null;
-      setEditing({
+      if (screenshotUrl === undefined)
+        return notify("The flashcard's screenshot could not be loaded.");
+      open({
         flashcardId: flashcard.id,
         storedScreenshotUrl: screenshotUrl,
         state: {
@@ -93,7 +107,9 @@ export function useFlashcardEditing(project: Project, mediaFileId: string) {
       });
     },
     save: (content: FlashcardContent, fields: readonly FlashcardFieldKey[]) => {
-      if (editing === null) return;
+      if (editing === null || isSaving.current) return;
+      isSaving.current = true;
+      const savedIn = session.current;
       const request = saveRequestOf(
         content,
         fields,
@@ -111,20 +127,23 @@ export function useFlashcardEditing(project: Project, mediaFileId: string) {
       saved
         .unwrap()
         .then(() => {
-          setEditing(null);
+          if (session.current === savedIn) open(null);
           notify("Flashcard saved to the project.");
         })
-        .catch(() => notify("The flashcard could not be saved."));
+        .catch(() => {
+          isSaving.current = false;
+          notify("The flashcard could not be saved.");
+        });
     },
     remove: () => {
       if (editing === null) return;
-      setEditing(null);
+      open(null);
       if (editing.flashcardId === unsavedFlashcardId) return;
       deleteFlashcard({ projectId, flashcardId: editing.flashcardId })
         .unwrap()
         .catch(() => notify("The flashcard could not be deleted."));
     },
-    close: () => setEditing(null),
+    close: () => open(null),
   };
 }
 

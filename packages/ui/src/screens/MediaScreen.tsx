@@ -148,21 +148,26 @@ function LoadedMediaScreen({
     onTogglePanel: (panel) =>
       setPanels((current) => ({ ...current, [panel]: !current[panel] })),
   });
-  useMediaShortcuts({
-    onTogglePlay: () => dispatch(actions.playToggleRequested()),
-    onLookup: lookup.search,
-    onEscape: () => {
-      if (lookup.request) lookup.close();
-      else if (panels.distractionFree)
-        playerCallbacks.onToggleDistractionFree();
+  const screenRef = useRef<HTMLSpanElement>(null);
+  useMediaShortcuts(
+    {
+      onTogglePlay: () => dispatch(actions.playToggleRequested()),
+      onLookup: lookup.search,
+      onEscape: () => {
+        if (lookup.request) lookup.close();
+        else if (panels.distractionFree)
+          playerCallbacks.onToggleDistractionFree();
+      },
     },
-  });
+    screenRef,
+  );
   const popupRef = useRef<HTMLDivElement>(null);
   useDismissOnOutsidePointer(popupRef, lookup.close, lookup.request !== null);
   const lookupEntries =
     lookup.state?.kind === "found" ? lookup.state.entries : null;
   return (
     <>
+      <span ref={screenRef} hidden />
       <MediaView
         title={mediaFile.name}
         language={settings.target_language}
