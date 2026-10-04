@@ -7,6 +7,7 @@ mod perfective;
 mod polite;
 mod provisional;
 mod stems;
+mod voice;
 mod volitional;
 
 use super::rule::{Rule, Stem};
@@ -25,6 +26,10 @@ pub const ALL: &[&[Rule]] = &[
     volitional::VOLITIONAL,
     imperative::IMPERATIVE,
     provisional::PROVISIONAL,
+    voice::POTENTIAL,
+    voice::PASSIVE,
+    voice::CAUSATIVE,
+    voice::SHORT_CAUSATIVE,
     adjective::ADJECTIVE,
 ];
 
