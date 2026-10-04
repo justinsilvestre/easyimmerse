@@ -12,7 +12,9 @@ mod navigation_guard;
 mod smoke_test;
 mod webdriver;
 
-use tauri::Manager;
+use tauri::{AppHandle, Manager, RunEvent};
+
+use crate::embedded_server::EmbeddedServer;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,7 +24,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init());
-    let outcome = webdriver::add_plugins_when_requested(builder)
+    let built = webdriver::add_plugins_when_requested(builder)
         .setup(|app| {
             let server = embedded_server::start(app.handle())?;
             if smoke_test::is_requested() {
@@ -36,10 +38,20 @@ pub fn run() {
             app.manage(server);
             Ok(())
         })
-        .run(tauri::generate_context!());
-    if let Err(error) = outcome {
-        tracing::error!("the app could not run: {error}");
-        std::process::exit(1);
+        .build(tauri::generate_context!());
+    match built {
+        Ok(app) => app.run(stop_server_on_exit),
+        Err(error) => {
+            tracing::error!("the app could not run: {error}");
+            std::process::exit(1);
+        }
+    }
+}
+
+/// Quitting stops the embedded server, so that no ffmpeg process keeps converting afterwards.
+fn stop_server_on_exit(app: &AppHandle, event: RunEvent) {
+    if let RunEvent::Exit = event {
+        app.state::<EmbeddedServer>().shutdown();
     }
 }
 

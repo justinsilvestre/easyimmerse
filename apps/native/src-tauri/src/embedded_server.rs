@@ -5,6 +5,8 @@
 use std::io::ErrorKind;
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+use std::time::Duration;
 
 use easyimmerse_api::{ApiConfig, ServeError, ServeOptions, ServerHandle, serve};
 use easyimmerse_storage::{Storage, StorageError};
@@ -13,6 +15,8 @@ use thiserror::Error;
 use tokio::net::TcpListener;
 
 const DEFAULT_PORT: u16 = 8787;
+/// How long quitting waits for the server's in-flight requests before giving up on them.
+const SHUTDOWN_PATIENCE: Duration = Duration::from_secs(5);
 const DATABASE_FILE_NAME: &str = "easyimmerse.sqlite";
 const DATABASE_OVERRIDE_VARIABLE: &str = "EASYIMMERSE_DATABASE";
 
@@ -25,9 +29,30 @@ pub struct EmbeddedServer {
     pub database_path: PathBuf,
     #[cfg_attr(not(desktop), allow(dead_code))]
     pub cache_dir: PathBuf,
-    /// Unused after start-up, but the server keeps running while the handle exists.
-    #[allow(dead_code)]
-    handle: ServerHandle,
+    /// Taken when the app quits; the server keeps running while the handle exists.
+    handle: Mutex<Option<ServerHandle>>,
+}
+
+impl EmbeddedServer {
+    /// Stops the conversions, then the server. The ffmpeg processes of active conversions would
+    /// otherwise outlive the app. Does nothing after the first call.
+    pub fn shutdown(&self) {
+        let handle = self.handle.lock().ok().and_then(|mut slot| slot.take());
+        let Some(handle) = handle else {
+            return;
+        };
+        let stopped = tauri::async_runtime::block_on(tokio::time::timeout(
+            SHUTDOWN_PATIENCE,
+            handle.shutdown(),
+        ));
+        match stopped {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => tracing::warn!("the embedded server did not stop cleanly: {error}"),
+            Err(_) => {
+                tracing::warn!("the embedded server did not stop within {SHUTDOWN_PATIENCE:?}")
+            }
+        }
+    }
 }
 
 #[derive(Debug, Error)]
@@ -65,7 +90,7 @@ pub fn start(app: &AppHandle) -> Result<EmbeddedServer, EmbeddedServerError> {
         token,
         database_path,
         cache_dir,
-        handle,
+        handle: Mutex::new(Some(handle)),
     })
 }
 
