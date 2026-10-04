@@ -56,7 +56,7 @@ pub use playback_plan::{
 };
 pub use playback_planner::plan_playback;
 pub use rational::Rational;
-pub use segment_plan::{Segment, SegmentPlan, plan_segments};
+pub use segment_plan::{NOMINAL_SEGMENT_SECONDS, Segment, SegmentPlan, plan_segments};
 pub use source_timing::SourceTiming;
 pub use track_selection::{TrackSelection, default_track_selection};
 pub use transcode_video::PictureSize;
