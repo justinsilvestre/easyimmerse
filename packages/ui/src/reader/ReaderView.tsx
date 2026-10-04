@@ -14,11 +14,7 @@ import { AppearancePanel } from "./AppearancePanel.tsx";
 import { ChapterEnd } from "./ChapterEnd.tsx";
 import { ChapterText } from "./ChapterText.tsx";
 import { ContentsPanel } from "./ContentsPanel.tsx";
-import {
-  estimateChapterPage,
-  sectionIndexAt,
-  sectionsOf,
-} from "./chapterSections.ts";
+import { sectionIndexAt, sectionsOf } from "./chapterSections.ts";
 import { LookupAnchor } from "./LookupAnchor.tsx";
 import {
   PagedChapter,
@@ -88,8 +84,11 @@ type ReaderViewProps = {
 };
 
 const searchLimit = 500;
-/** The most text the paged layout lays out at once, since layout time grows with the text's length. */
-const sectionCharacterLimit = 30_000;
+/**
+ * The most text the paged layout lays out at once, about the length of a short novel.
+ * Layout time grows with the text's length, so a longer chapter is shown in sections.
+ */
+const sectionCharacterLimit = 250_000;
 
 /**
  * The screen for reading an ebook or a text file. The text fills the window, set like a
@@ -324,16 +323,7 @@ export function ReaderView(props: ReaderViewProps) {
       </div>
       <ReaderFooter
         progress={progress}
-        pageInfo={
-          isPaged && pageInfo
-            ? estimateChapterPage(
-                pageInfo,
-                chapter.paragraphs,
-                sections,
-                sectionIndex,
-              )
-            : null
-        }
+        pageInfo={isPaged && sections.length === 1 ? pageInfo : null}
         chapterTitle={chapterTitle}
         chapterStarts={chapterStarts}
         isVisible={state.isChromeVisible}

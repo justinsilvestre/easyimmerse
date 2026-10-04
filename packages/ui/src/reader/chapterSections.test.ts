@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  estimateChapterPage,
-  sectionIndexAt,
-  sectionsOf,
-} from "./chapterSections.ts";
+import { sectionIndexAt, sectionsOf } from "./chapterSections.ts";
 
 describe("sectionsOf", () => {
   it("keeps a chapter under the limit in one section", () => {
@@ -49,35 +45,5 @@ describe("sectionIndexAt", () => {
 
   it("finds the last section for a paragraph past the end", () => {
     expect(sectionIndexAt(sections, 9)).toBe(1);
-  });
-});
-
-describe("estimateChapterPage", () => {
-  const paragraphs = ["a".repeat(100), "b".repeat(100), "c".repeat(200)];
-
-  describe("when the chapter has one section", () => {
-    it("returns the section's page unchanged", () => {
-      expect(
-        estimateChapterPage(
-          { page: 3, pageCount: 8 },
-          paragraphs,
-          [{ start: 0, end: 3 }],
-          0,
-        ),
-      ).toEqual({ page: 3, pageCount: 8, isEstimate: false });
-    });
-  });
-
-  describe("when the chapter has several sections", () => {
-    const sections = [
-      { start: 0, end: 2 },
-      { start: 2, end: 3 },
-    ];
-
-    it("scales the pages by the chapter's characters", () => {
-      expect(
-        estimateChapterPage({ page: 1, pageCount: 4 }, paragraphs, sections, 1),
-      ).toEqual({ page: 5, pageCount: 8, isEstimate: true });
-    });
   });
 });

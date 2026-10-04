@@ -1,18 +1,13 @@
-import type { PageInfo } from "./PagedChapter.tsx";
-
 /**
  * A run of consecutive paragraphs in a chapter, from `start` up to but not including `end`.
  * The paged layout shows one section at a time, so that a long chapter is never laid out whole.
  */
 export type ChapterSection = { start: number; end: number };
 
-/** The page within a whole chapter, which is estimated when the chapter has several sections. */
-export type ChapterPage = PageInfo & { isEstimate: boolean };
-
 /**
  * Divides a chapter's paragraphs into sections of at most `maxCharacters`, breaking only
- * between paragraphs. The sections are kept close to one size, which steadies the page
- * estimate across them. A paragraph longer than the limit gets a section of its own.
+ * between paragraphs. The sections are kept close to one size, so that none is much
+ * shorter than the rest. A paragraph longer than the limit gets a section of its own.
  */
 export function sectionsOf(
   paragraphs: readonly string[],
@@ -51,32 +46,4 @@ export function sectionIndexAt(
 ): number {
   const index = sections.findIndex((section) => paragraphIndex < section.end);
   return index === -1 ? sections.length - 1 : index;
-}
-
-/**
- * Converts a page within a section to a page within the whole chapter, assuming every
- * section fills as many pages per character as the one on screen.
- */
-export function estimateChapterPage(
-  sectionPage: PageInfo,
-  paragraphs: readonly string[],
-  sections: readonly ChapterSection[],
-  sectionIndex: number,
-): ChapterPage {
-  const section = sections[sectionIndex];
-  if (sections.length === 1 || !section)
-    return { ...sectionPage, isEstimate: false };
-  const pagesPerCharacter =
-    sectionPage.pageCount /
-    Math.max(1, lengthOf(paragraphs.slice(section.start, section.end)));
-  const page =
-    Math.round(
-      lengthOf(paragraphs.slice(0, section.start)) * pagesPerCharacter,
-    ) + sectionPage.page;
-  const pageCount = Math.round(lengthOf(paragraphs) * pagesPerCharacter);
-  return { page, pageCount: Math.max(pageCount, page + 1), isEstimate: true };
-}
-
-function lengthOf(paragraphs: readonly string[]): number {
-  return paragraphs.reduce((sum, paragraph) => sum + paragraph.length, 0);
 }
