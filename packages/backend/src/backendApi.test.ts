@@ -1,3 +1,4 @@
+import type { PlaybackRequest } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
 import { afterEach, describe, expect, it } from "vitest";
 import { backendApi } from "./backendApi.ts";
@@ -23,6 +24,18 @@ function createStore() {
     middleware: (getDefault) => getDefault().concat(backendApi.middleware),
   });
 }
+
+const mediaArgs = { projectId: "p1", mediaFileId: "m1" };
+
+const playbackRequest: PlaybackRequest = {
+  environment: {
+    engine: "webkit",
+    can_play_type: "probably",
+    mse_codec_strings: ["avc1.640033", "mp4a.40.2"],
+  },
+  selection: null,
+  preferred_audio_target: null,
+};
 
 const srtRequest = {
   source: { kind: "inline", text: "1\n00:00:01,000 --> 00:00:02,000\nHi" },
@@ -136,5 +149,109 @@ describe("backendApi", () => {
       }),
     );
     expect(client.requests[0]?.query).toEqual({ format: "epub" });
+  });
+
+  it("sends GET .../tracks for getMediaTracks", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.getMediaTracks.initiate(mediaArgs),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/projects/p1/media/m1/tracks" },
+    ]);
+  });
+
+  it("posts the playback request for planPlayback", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.planPlayback.initiate({
+        ...mediaArgs,
+        request: playbackRequest,
+      }),
+    );
+    expect(client.requests[0]).toEqual({
+      method: "POST",
+      path: "/projects/p1/media/m1/playback",
+      body: { kind: "json", value: playbackRequest },
+    });
+  });
+
+  it("puts the selection for saveTrackSelection", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.saveTrackSelection.initiate({
+        ...mediaArgs,
+        selection: { video: 0, audio: 2 },
+      }),
+    );
+    expect(client.requests[0]).toEqual({
+      method: "PUT",
+      path: "/projects/p1/media/m1/track-selection",
+      body: { kind: "json", value: { video: 0, audio: 2 } },
+    });
+  });
+
+  it("sends DELETE .../track-selection for clearTrackSelection", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.clearTrackSelection.initiate(mediaArgs),
+    );
+    expect(client.requests).toEqual([
+      { method: "DELETE", path: "/projects/p1/media/m1/track-selection" },
+    ]);
+  });
+
+  it("puts the window bounds in the query string for getWaveformWindow", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.getWaveformWindow.initiate({
+        ...mediaArgs,
+        startMs: 30_000,
+        endMs: 60_000,
+      }),
+    );
+    expect(client.requests[0]).toEqual({
+      method: "GET",
+      path: "/projects/p1/media/m1/waveform",
+      query: { start_ms: "30000", end_ms: "60000" },
+    });
+  });
+
+  it("sends GET .../subtitle-tracks for listSubtitleTracks", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/projects/p1/media/m1/subtitle-tracks" },
+    ]);
+  });
+
+  it("sends GET /conversion-cache for getConversionCacheStatus", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.getConversionCacheStatus.initiate(),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/conversion-cache" },
+    ]);
+  });
+
+  it("sends POST /conversion-cache/clear for clearConversionCache", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.clearConversionCache.initiate(),
+    );
+    expect(client.requests).toEqual([
+      { method: "POST", path: "/conversion-cache/clear" },
+    ]);
   });
 });

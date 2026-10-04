@@ -6,6 +6,7 @@ import type {
   BackendRequestBody,
   BackendResult,
 } from "./backendClient.ts";
+import { buildAuthorizationHeader } from "./conversionFileUrl.ts";
 
 type HttpBackendOptions = {
   serverUrl: string;
@@ -23,7 +24,7 @@ export function createHttpBackendClient(
       try {
         const response = await fetchFn(buildUrl(options.serverUrl, request), {
           method: request.method,
-          headers: buildHeaders(options.token, request.body),
+          headers: buildHeaders(options, request.body),
           body: serializeBody(request.body),
         });
         return readResponse(response);
@@ -42,11 +43,11 @@ function buildUrl(serverUrl: string, request: BackendRequest): string {
 }
 
 function buildHeaders(
-  token: string,
+  server: HttpBackendOptions,
   body: BackendRequestBody | undefined,
 ): Record<string, string> {
   const headers: Record<string, string> = {
-    authorization: `Bearer ${token}`,
+    authorization: buildAuthorizationHeader(server),
   };
   if (body?.kind === "json") headers["content-type"] = "application/json";
   if (body?.kind === "bytes") headers["content-type"] = body.contentType;

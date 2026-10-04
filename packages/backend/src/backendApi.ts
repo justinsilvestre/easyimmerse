@@ -1,5 +1,6 @@
 import type {
   AddMediaFileRequest,
+  ConversionCacheStatus,
   DictionarySummary,
   Document,
   DocumentFormat,
@@ -11,8 +12,14 @@ import type {
   MediaFile,
   ParseLocalDocumentRequest,
   ParseTimedTextRequest,
+  PlaybackRequest,
+  PlaybackResponse,
   PreferenceValue,
   TimedTextTrack,
+  TrackInfo,
+  TrackSelection,
+  TracksResponse,
+  WaveformResponse,
 } from "@easyimmerse/types";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
@@ -27,11 +34,32 @@ type AddMediaFileArgs = { projectId: string; request: AddMediaFileRequest };
 
 type MediaFileArgs = { projectId: string; mediaFileId: string };
 
+type PlanPlaybackArgs = MediaFileArgs & { request: PlaybackRequest };
+
+type SaveTrackSelectionArgs = MediaFileArgs & { selection: TrackSelection };
+
+type WaveformWindowArgs = MediaFileArgs & { startMs: number; endMs: number };
+
+/**
+ * The subtitle tracks embedded in a media file.
+ * The api crate defines this type; replace this declaration with the generated one once it is exported.
+ */
+export type SubtitleTracksResponse = { tracks: TrackInfo[] };
+
+const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
+  `/projects/${projectId}/media/${mediaFileId}`;
+
 /** Every server operation, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
   reducerPath: "backend",
   baseQuery: injectedBaseQuery,
-  tagTypes: ["Projects", "MediaFiles", "Preferences", "Dictionaries"],
+  tagTypes: [
+    "Projects",
+    "MediaFiles",
+    "Preferences",
+    "Dictionaries",
+    "ConversionCache",
+  ],
   endpoints: (build) => ({
     listProjects: build.query<ListProjectsResponse, void>({
       query: () => ({ method: "GET", path: "/projects" }),
@@ -64,6 +92,59 @@ export const backendApi = createApi({
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "MediaFiles", id: projectId },
       ],
+    }),
+    getMediaTracks: build.query<TracksResponse, MediaFileArgs>({
+      query: (args) => ({
+        method: "GET",
+        path: `${mediaFilePath(args)}/tracks`,
+      }),
+    }),
+    planPlayback: build.query<PlaybackResponse, PlanPlaybackArgs>({
+      query: ({ request, ...args }) => ({
+        method: "POST",
+        path: `${mediaFilePath(args)}/playback`,
+        body: { kind: "json", value: request },
+      }),
+    }),
+    saveTrackSelection: build.mutation<void, SaveTrackSelectionArgs>({
+      query: ({ selection, ...args }) => ({
+        method: "PUT",
+        path: `${mediaFilePath(args)}/track-selection`,
+        body: { kind: "json", value: selection },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+      ],
+    }),
+    clearTrackSelection: build.mutation<void, MediaFileArgs>({
+      query: (args) => ({
+        method: "DELETE",
+        path: `${mediaFilePath(args)}/track-selection`,
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+      ],
+    }),
+    getWaveformWindow: build.query<WaveformResponse, WaveformWindowArgs>({
+      query: ({ startMs, endMs, ...args }) => ({
+        method: "GET",
+        path: `${mediaFilePath(args)}/waveform`,
+        query: { start_ms: String(startMs), end_ms: String(endMs) },
+      }),
+    }),
+    listSubtitleTracks: build.query<SubtitleTracksResponse, MediaFileArgs>({
+      query: (args) => ({
+        method: "GET",
+        path: `${mediaFilePath(args)}/subtitle-tracks`,
+      }),
+    }),
+    getConversionCacheStatus: build.query<ConversionCacheStatus, void>({
+      query: () => ({ method: "GET", path: "/conversion-cache" }),
+      providesTags: ["ConversionCache"],
+    }),
+    clearConversionCache: build.mutation<ConversionCacheStatus, void>({
+      query: () => ({ method: "POST", path: "/conversion-cache/clear" }),
+      invalidatesTags: ["ConversionCache"],
     }),
     getPreference: build.query<PreferenceValue, string>({
       query: (key) => ({ method: "GET", path: `/preferences/${key}` }),
@@ -147,6 +228,14 @@ export const {
   useListMediaFilesQuery,
   useAddMediaFileMutation,
   useRemoveMediaFileMutation,
+  useGetMediaTracksQuery,
+  usePlanPlaybackQuery,
+  useSaveTrackSelectionMutation,
+  useClearTrackSelectionMutation,
+  useLazyGetWaveformWindowQuery,
+  useListSubtitleTracksQuery,
+  useGetConversionCacheStatusQuery,
+  useClearConversionCacheMutation,
   useGetPreferenceQuery,
   useSetPreferenceMutation,
   useParseTimedTextMutation,
