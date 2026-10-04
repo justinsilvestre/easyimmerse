@@ -10,15 +10,15 @@ import {
   selectPlayerDuration,
   selectPreference,
   selectPreferencesLoaded,
-  selectSubtitleSource,
+  selectPlayer,
   selectTextScale,
 } from "./selectors.ts";
 
 const rootState: RootState = {
   app: {
     ...initialAppState,
-    player: { currentTimeSeconds: 4, durationSeconds: 90 },
-    subtitleSource: { kind: "inline", text: "Hello" },
+    player: { ...initialAppState.player, currentTimeSeconds: 4, durationSeconds: 90 },
+    chosenSubtitleFile: null,
     preferences: { showTranslations: "true" },
     preferencesLoaded: true,
     pendingFilePick: true,
@@ -37,11 +37,8 @@ describe("selectors", () => {
     expect(selectPlayerDuration(rootState)).toBe(90);
   });
 
-  it("selectSubtitleSource returns the subtitle source", () => {
-    expect(selectSubtitleSource(rootState)).toEqual({
-      kind: "inline",
-      text: "Hello",
-    });
+  it("selectPlayer returns the whole player state", () => {
+    expect(selectPlayer(rootState)).toEqual(rootState.app.player);
   });
 
   it("selectPreference returns the stored preference value", () => {

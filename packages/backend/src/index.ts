@@ -2,6 +2,20 @@ export { skipToken } from "@reduxjs/toolkit/query";
 export {
   backendApi,
   useAddMediaFileMutation,
+  useAddSubtitleTrackMutation,
+  useCreateFlashcardMutation,
+  useCreateProjectMutation,
+  useDeleteFlashcardMutation,
+  useDeleteProjectMutation,
+  useGetProjectQuery,
+  useGetSubtitleCuesQuery,
+  useListEmbeddedSubtitleTracksQuery,
+  useListFlashcardsQuery,
+  useMarkProjectOpenedMutation,
+  useRemoveSubtitleTrackMutation,
+  useSetSubtitleSelectionMutation,
+  useUpdateFlashcardMutation,
+  useUpdateProjectMutation,
   useClearConversionCacheMutation,
   useClearTrackSelectionMutation,
   useGetConversionCacheStatusQuery,
@@ -42,7 +56,7 @@ export {
   buildConversionFileUrl,
 } from "./conversionFileUrl.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
-export { buildMediaStreamUrl } from "./mediaStreamUrl.ts";
+export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
 export type { OfflineOperation } from "./offlineOperation.ts";
 export type { ServerConfig } from "./resolveServerConfig.ts";
 export { resolveServerConfig } from "./resolveServerConfig.ts";

@@ -222,14 +222,25 @@ describe("backendApi", () => {
     });
   });
 
-  it("sends GET .../subtitle-tracks for listSubtitleTracks", async () => {
+  it("sends GET .../embedded-subtitles for listEmbeddedSubtitleTracks", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.listEmbeddedSubtitleTracks.initiate(mediaArgs),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/projects/p1/media/m1/embedded-subtitles" },
+    ]);
+  });
+
+  it("sends GET .../subtitles for listSubtitleTracks", async () => {
     const client = createRecordingClient();
     configureBackend(client);
     await createStore().dispatch(
       backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
     );
     expect(client.requests).toEqual([
-      { method: "GET", path: "/projects/p1/media/m1/subtitle-tracks" },
+      { method: "GET", path: "/projects/p1/media/m1/subtitles" },
     ]);
   });
 

@@ -1,4 +1,11 @@
-export type PlayerHandle = { seek(seconds: number): void };
+/** What effects may ask of the mounted player. */
+export type PlayerHandle = {
+  seek(seconds: number): void;
+  /** Pauses the player when it plays, and plays it otherwise. */
+  togglePlay(): void;
+  setVolume(volume: number): void;
+  setSpeed(speed: number): void;
+};
 
 export type PlayerRegistry = {
   /** Makes the handle the current player and returns a function that unregisters it. */

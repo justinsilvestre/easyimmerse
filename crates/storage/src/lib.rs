@@ -5,20 +5,27 @@
 
 mod dictionaries;
 mod error;
+mod flashcards;
 mod media_files;
 mod migrations;
+mod new_row;
 mod preferences;
 mod projects;
+mod stored_integer;
+mod subtitle_tracks;
 
 pub use dictionaries::{DictionaryId, StoredDictionary};
 pub use error::StorageError;
+pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 
 use std::path::Path;
 use std::sync::Mutex;
 
 use easyimmerse_core::dictionary::{Dictionary, TermEntry};
+use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
-use easyimmerse_core::project::{ProjectId, ProjectSummary};
+use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
+use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
 
 pub struct Storage {
@@ -54,8 +61,30 @@ impl Storage {
         operation(&mut conn)
     }
 
-    pub fn list_projects(&self) -> Result<Vec<ProjectSummary>, StorageError> {
+    /// Lists every project, most recently opened first.
+    pub fn list_projects(&self) -> Result<Vec<Project>, StorageError> {
         self.with_connection(|conn| projects::list_projects(conn))
+    }
+
+    pub fn get_project(&self, id: &ProjectId) -> Result<Project, StorageError> {
+        self.with_connection(|conn| projects::get_project(conn, id))
+    }
+
+    pub fn create_project(&self, settings: &ProjectSettings) -> Result<Project, StorageError> {
+        self.with_connection(|conn| projects::create_project(conn, settings))
+    }
+
+    pub fn update_project(
+        &self,
+        id: &ProjectId,
+        settings: &ProjectSettings,
+    ) -> Result<Project, StorageError> {
+        self.with_connection(|conn| projects::update_project(conn, id, settings))
+    }
+
+    /// Records that the project was opened just now, which moves it to the front of the list.
+    pub fn mark_project_opened(&self, id: &ProjectId) -> Result<(), StorageError> {
+        self.with_connection(|conn| projects::mark_project_opened(conn, id))
     }
 
     pub fn seed_placeholder_projects(&self) -> Result<(), StorageError> {
@@ -64,7 +93,7 @@ impl Storage {
 
     /// Deletes a project together with everything that belongs to it.
     pub fn delete_project(&self, project_id: &ProjectId) -> Result<(), StorageError> {
-        self.with_connection(|conn| media_files::delete_project(conn, project_id))
+        self.with_connection(|conn| projects::delete_project(conn, project_id))
     }
 
     pub fn list_media_files(&self, project_id: &ProjectId) -> Result<Vec<MediaFile>, StorageError> {
@@ -102,6 +131,79 @@ impl Storage {
     /// Lists every distinct local path that some media file still points at.
     pub fn list_referenced_source_paths(&self) -> Result<Vec<String>, StorageError> {
         self.with_connection(|conn| media_files::list_referenced_source_paths(conn))
+    }
+
+    pub fn list_flashcards(&self, project_id: &ProjectId) -> Result<Vec<Flashcard>, StorageError> {
+        self.with_connection(|conn| flashcards::list_flashcards(conn, project_id))
+    }
+
+    pub fn get_flashcard(&self, id: &FlashcardId) -> Result<Flashcard, StorageError> {
+        self.with_connection(|conn| flashcards::get_flashcard(conn, id))
+    }
+
+    pub fn create_flashcard(
+        &self,
+        project_id: &ProjectId,
+        draft: &FlashcardDraft,
+    ) -> Result<Flashcard, StorageError> {
+        self.with_connection(|conn| flashcards::create_flashcard(conn, project_id, draft))
+    }
+
+    pub fn update_flashcard(
+        &self,
+        id: &FlashcardId,
+        draft: &FlashcardDraft,
+    ) -> Result<Flashcard, StorageError> {
+        self.with_connection(|conn| flashcards::update_flashcard(conn, id, draft))
+    }
+
+    pub fn delete_flashcard(&self, id: &FlashcardId) -> Result<(), StorageError> {
+        self.with_connection(|conn| flashcards::delete_flashcard(conn, id))
+    }
+
+    pub fn list_subtitle_tracks(
+        &self,
+        media_file_id: &MediaFileId,
+    ) -> Result<Vec<SubtitleTrack>, StorageError> {
+        self.with_connection(|conn| subtitle_tracks::list_subtitle_tracks(conn, media_file_id))
+    }
+
+    pub fn get_subtitle_track(
+        &self,
+        id: &SubtitleTrackId,
+    ) -> Result<StoredSubtitleTrack, StorageError> {
+        self.with_connection(|conn| subtitle_tracks::get_subtitle_track(conn, id))
+    }
+
+    pub fn add_subtitle_track(
+        &self,
+        media_file_id: &MediaFileId,
+        track: &NewSubtitleTrack,
+    ) -> Result<SubtitleTrack, StorageError> {
+        self.with_connection(|conn| subtitle_tracks::add_subtitle_track(conn, media_file_id, track))
+    }
+
+    /// Removes a track and takes it out of its media file's selection.
+    pub fn remove_subtitle_track(&self, id: &SubtitleTrackId) -> Result<(), StorageError> {
+        self.with_connection(|conn| subtitle_tracks::remove_subtitle_track(conn, id))
+    }
+
+    pub fn get_subtitle_selection(
+        &self,
+        media_file_id: &MediaFileId,
+    ) -> Result<SubtitleSelection, StorageError> {
+        self.with_connection(|conn| subtitle_tracks::get_subtitle_selection(conn, media_file_id))
+    }
+
+    /// Stores which tracks the media file shows. Each named track must belong to the media file.
+    pub fn set_subtitle_selection(
+        &self,
+        media_file_id: &MediaFileId,
+        selection: &SubtitleSelection,
+    ) -> Result<(), StorageError> {
+        self.with_connection(|conn| {
+            subtitle_tracks::set_subtitle_selection(conn, media_file_id, selection)
+        })
     }
 
     pub fn get_preference(&self, key: &str) -> Result<Option<String>, StorageError> {

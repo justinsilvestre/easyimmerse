@@ -9,7 +9,7 @@ pub struct DictionaryId(pub String);
 
 impl DictionaryId {
     pub fn generate() -> Self {
-        Self(hex::encode(rand::random::<[u8; 16]>()))
+        Self(crate::new_row::generate_id())
     }
 }
 
@@ -151,16 +151,6 @@ mod tests {
         let storage = Storage::open_in_memory().unwrap();
         let id = storage.insert_dictionary(&fixture_dictionary()).unwrap();
         (storage, id)
-    }
-
-    #[test]
-    fn generates_a_32_character_hex_id() {
-        assert_eq!(DictionaryId::generate().0.len(), 32);
-    }
-
-    #[test]
-    fn generates_distinct_ids() {
-        assert_ne!(DictionaryId::generate(), DictionaryId::generate());
     }
 
     #[test]

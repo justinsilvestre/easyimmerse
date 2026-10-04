@@ -80,7 +80,9 @@ impl From<StorageError> for ApiFailure {
         match error {
             StorageError::DictionaryNotFound(_)
             | StorageError::ProjectNotFound(_)
-            | StorageError::MediaFileNotFound(_) => not_found(error.to_string()),
+            | StorageError::MediaFileNotFound(_)
+            | StorageError::FlashcardNotFound(_)
+            | StorageError::SubtitleTrackNotFound(_) => not_found(error.to_string()),
             _ => internal(error.to_string()),
         }
     }

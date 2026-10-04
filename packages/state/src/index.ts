@@ -1,7 +1,11 @@
 export type { AppAction } from "./actions.ts";
 export { actions, isAppAction } from "./actions.ts";
-export type { AppState, PreferenceKey } from "./appState.ts";
-export { initialAppState, preferenceKeys } from "./appState.ts";
+export type { AppState, PlayerState, PreferenceKey } from "./appState.ts";
+export {
+  initialAppState,
+  initialPlayerState,
+  preferenceKeys,
+} from "./appState.ts";
 export type {
   BrowserFileRegistry,
   HeldFile,
@@ -24,14 +28,15 @@ export type { EffectCall, RecordingEffects } from "./recordingEffects.ts";
 export { createRecordingEffects } from "./recordingEffects.ts";
 export {
   selectChosenMediaFile,
+  selectChosenSubtitleFile,
   selectCurrentMediaFileId,
   selectCurrentTime,
   selectPendingFilePick,
   selectPendingMediaFilePick,
+  selectPlayer,
   selectPlayerDuration,
   selectPreference,
   selectPreferencesLoaded,
-  selectSubtitleSource,
   selectTextScale,
   selectTheme,
 } from "./selectors.ts";

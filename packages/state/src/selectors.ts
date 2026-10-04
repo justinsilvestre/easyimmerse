@@ -9,8 +9,10 @@ export const selectCurrentTime = (state: RootState) =>
 export const selectPlayerDuration = (state: RootState) =>
   state.app.player.durationSeconds;
 
-export const selectSubtitleSource = (state: RootState) =>
-  state.app.subtitleSource;
+export const selectPlayer = (state: RootState) => state.app.player;
+
+export const selectChosenSubtitleFile = (state: RootState) =>
+  state.app.chosenSubtitleFile;
 
 export const selectPreference = (key: PreferenceKey) => (state: RootState) =>
   state.app.preferences[key];

@@ -14,6 +14,15 @@ export function runEffect(
     case "seekPlayer":
       effects.seekPlayer(effect.seconds);
       return;
+    case "togglePlayer":
+      effects.togglePlayer();
+      return;
+    case "setPlayerVolume":
+      effects.setPlayerVolume(effect.volume);
+      return;
+    case "setPlayerSpeed":
+      effects.setPlayerSpeed(effect.speed);
+      return;
     case "pickFile":
       effects
         .pickFile(effect.accept)
