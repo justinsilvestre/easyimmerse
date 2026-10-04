@@ -18,7 +18,10 @@ mkdir -p "$prefix/include" "$prefix/lib"
 # static C runtime like ffmpeg's, or the linker rejects the mix.
 git clone -q --depth 1 --branch "v$zlib_version" https://github.com/madler/zlib
 (cd zlib && nmake -nologo -f win32/Makefile.msc zlib.lib LOC=-MT > /dev/null)
-cp zlib/zlib.h zlib/zconf.h "$prefix/include/"
+# ffmpeg's config.h defines HAVE_UNISTD_H as 0, which zconf.h mistakes for the header being
+# present; ffmpeg's platform notes say to drop that inclusion when building with MSVC.
+sed 's/^#ifdef HAVE_UNISTD_H/#if HAVE_UNISTD_H/' zlib/zconf.h > "$prefix/include/zconf.h"
+cp zlib/zlib.h "$prefix/include/"
 cp zlib/zlib.lib "$prefix/lib/zlib.lib"
 
 git clone -q --depth 1 --branch "$nv_codec_headers_version" https://github.com/FFmpeg/nv-codec-headers

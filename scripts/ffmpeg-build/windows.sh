@@ -11,10 +11,13 @@ arch="$3"
 out="$(mkdir -p "$4" && cd "$4" && pwd)"
 common_flags="$(sh "$(dirname "$0")/read-common-flags.sh")"
 # Media Foundation has a software H.264 encoder on every Windows 10 and 11 machine; the Nvidia
-# and AMD encoders load their drivers at run time. -MT links the C runtime statically.
+# and AMD encoders load their drivers at run time. ffmpeg supports NVENC on Windows only for
+# x86, so the ARM64 build leaves it out. -MT links the C runtime statically.
+nvenc_flags="--enable-ffnvcodec --enable-nvenc --enable-encoder=h264_nvenc,hevc_nvenc"
+[ "$arch" = x86_64 ] || nvenc_flags=""
 windows_flags="--toolchain=msvc --arch=$arch --target-os=win64 --enable-zlib \
-  --enable-mediafoundation --enable-ffnvcodec --enable-nvenc --enable-amf \
-  --enable-encoder=h264_mf,hevc_mf,h264_nvenc,hevc_nvenc,h264_amf,hevc_amf \
+  --enable-mediafoundation --enable-amf $nvenc_flags \
+  --enable-encoder=h264_mf,hevc_mf,h264_amf,hevc_amf \
   --extra-cflags=-MT --extra-cflags=-I$deps_windows/include --extra-ldflags=-libpath:$deps_windows/lib"
 
 report_configure_failure() {
