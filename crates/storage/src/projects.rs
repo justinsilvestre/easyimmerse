@@ -97,8 +97,8 @@ pub fn ensure_project_exists(conn: &Connection, id: &ProjectId) -> Result<(), St
     }
 }
 
-/// Inserts two example projects when the table is empty, so that a new installation has
-/// something to show. Does nothing otherwise.
+/// Inserts two example projects when the table is empty, so that a new installation has something to show.
+/// Does nothing otherwise.
 pub fn seed_placeholder_projects(conn: &Connection) -> Result<(), StorageError> {
     if count_projects(conn)? > 0 {
         return Ok(());

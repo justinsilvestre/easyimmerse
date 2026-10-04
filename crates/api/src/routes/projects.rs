@@ -113,8 +113,8 @@ pub async fn update_project(
     Ok(Json(project))
 }
 
-/// Deletes the project with its media files, flashcards, and subtitle tracks, and drops the
-/// cached conversions no other project's media files point at.
+/// Deletes the project with its media files, flashcards, and subtitle tracks,
+/// and drops the cached conversions no other project's media files point at.
 #[utoipa::path(
     delete,
     path = "/projects/{id}",

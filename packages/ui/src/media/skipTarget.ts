@@ -4,8 +4,9 @@ import type { Cue } from "@easyimmerse/types";
 export const skipStepMs = 5_000;
 
 /**
- * Where a skip lands: the start of the next cue, or of the previous one (the current cue's own start
- * once more than a second into it), else a few seconds either way, within the file.
+ * Where a skip lands: the start of the next cue,
+ * or of the previous one (the current cue's own start once more than a second into it),
+ * else a few seconds either way, within the file.
  */
 export function skipTarget(
   cues: readonly Cue[],

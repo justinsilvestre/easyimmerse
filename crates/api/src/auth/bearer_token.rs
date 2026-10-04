@@ -14,9 +14,9 @@ use crate::routes::media_stream::STREAM_ROUTE_PATH;
 
 /// Requires `Authorization: Bearer <token>` and records the token's kind on the request.
 ///
-/// The media stream and frame routes alone also accept the token as the `token` query
-/// parameter, because media and image elements cannot send headers. No other route does,
-/// since a token in a URL ends up in logs and browser history more easily than one in a header.
+/// The media stream and frame routes alone also accept the token as the `token` query parameter,
+/// because media and image elements cannot send headers.
+/// No other route does, since a token in a URL ends up in logs and browser history more easily than one in a header.
 pub async fn require_bearer_token(
     State(config): State<Arc<ApiConfig>>,
     mut request: Request,

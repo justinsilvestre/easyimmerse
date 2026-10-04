@@ -1,5 +1,5 @@
-//! Subtitle tracks a user has added to a media file from a file of their own, and which of
-//! them show as the target-language and translation subtitles.
+//! Subtitle tracks a user has added to a media file from a file of their own,
+//! and which of them show as the target-language and translation subtitles.
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;

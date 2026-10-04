@@ -11,9 +11,10 @@ import { seekTarget } from "./seekTarget.ts";
 type MediaEvent = SyntheticEvent<HTMLMediaElement>;
 
 /**
- * Makes the media element the app's current player: seeks from the store land on it, half a frame
- * after the wanted moment, play, volume, and speed requests reach it, and its time, duration,
- * and playing state flow back into the store. The element starts at the volume and speed the store holds.
+ * Makes the media element the app's current player.
+ * Seeks from the store land on it half a frame after the wanted moment, play, volume, and speed requests reach it,
+ * and its time, duration, and playing state flow back into the store.
+ * The element starts at the volume and speed the store holds.
  * Returns the event handlers to put on the element.
  */
 export function useRegisteredPlayer(

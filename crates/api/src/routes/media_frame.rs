@@ -25,8 +25,8 @@ use crate::routes::media::load_media_file;
 use crate::routes::media_support::{conversion_unavailable, probe_media, resolve_source_path};
 use crate::state::AppState;
 
-/// The matched path of the frame route, which the bearer middleware lets authenticate with
-/// a `token` query parameter.
+/// The matched path of the frame route,
+/// which the bearer middleware lets authenticate with a `token` query parameter.
 pub const FRAME_ROUTE_PATH: &str = "/projects/{id}/media/{media_id}/frame";
 
 /// Frames are scaled down to this width, which suits a flashcard.
@@ -42,8 +42,8 @@ pub struct FrameQuery {
     pub token: Option<String>,
 }
 
-/// Returns the frame of the chosen video track at the given time, else of the default video
-/// track, as a JPEG image at most 640 pixels wide.
+/// Returns the frame of the chosen video track at the given time, else of the default video track,
+/// as a JPEG image at most 640 pixels wide.
 #[utoipa::path(
     get,
     path = "/projects/{id}/media/{media_id}/frame",

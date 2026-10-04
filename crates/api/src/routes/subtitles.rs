@@ -52,8 +52,9 @@ pub async fn list_subtitle_tracks(
     Ok(Json(response))
 }
 
-/// Adds a subtitles file to the media file. The text is parsed once to check it and to take
-/// its first cue as the track's sample; a `path` source is read on the server's machine.
+/// Adds a subtitles file to the media file.
+/// The text is parsed once to check it and to take its first cue as the track's sample;
+/// a `path` source is read on the server's machine.
 #[utoipa::path(
     post,
     path = "/projects/{id}/media/{media_id}/subtitles",

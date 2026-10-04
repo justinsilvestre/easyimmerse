@@ -1273,7 +1273,7 @@
         "tags": [
           "projects"
         ],
-        "summary": "Deletes the project with its media files, flashcards, and subtitle tracks, and drops the\ncached conversions no other project's media files point at.",
+        "summary": "Deletes the project with its media files, flashcards, and subtitle tracks,\nand drops the cached conversions no other project's media files point at.",
         "operationId": "deleteProject",
         "parameters": [
           {
@@ -1939,7 +1939,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Returns the frame of the chosen video track at the given time, else of the default video\ntrack, as a JPEG image at most 640 pixels wide.",
+        "summary": "Returns the frame of the chosen video track at the given time, else of the default video track,\nas a JPEG image at most 640 pixels wide.",
         "operationId": "getMediaFrame",
         "parameters": [
           {
@@ -2465,7 +2465,7 @@
         "tags": [
           "subtitles"
         ],
-        "summary": "Adds a subtitles file to the media file. The text is parsed once to check it and to take\nits first cue as the track's sample; a `path` source is read on the server's machine.",
+        "summary": "Adds a subtitles file to the media file.\nThe text is parsed once to check it and to take its first cue as the track's sample;\na `path` source is read on the server's machine.",
         "operationId": "addSubtitleTrack",
         "parameters": [
           {

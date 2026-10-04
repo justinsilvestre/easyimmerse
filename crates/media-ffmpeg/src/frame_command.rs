@@ -1,5 +1,5 @@
-//! The ffmpeg argument list that writes one frame of a video track as a JPEG image to
-//! standard output, for flashcard screenshots.
+//! The ffmpeg argument list that writes one frame of a video track as a JPEG image to standard output,
+//! for flashcard screenshots.
 
 use std::ffi::OsString;
 use std::path::Path;
@@ -20,8 +20,8 @@ pub struct FrameGrab<'a> {
     pub max_width: u32,
 }
 
-/// Builds the complete argument list for `ffmpeg`, without the program name. The output is
-/// one JPEG image on standard output.
+/// Builds the complete argument list for `ffmpeg`, without the program name.
+/// The output is one JPEG image on standard output.
 pub fn frame_grab_args(grab: &FrameGrab) -> Vec<OsString> {
     let text = [
         "-hide_banner".to_owned(),

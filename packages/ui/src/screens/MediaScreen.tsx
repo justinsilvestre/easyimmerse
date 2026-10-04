@@ -25,8 +25,8 @@ import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
 import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
 
 /**
- * The screen for watching or listening to one of the project's media files: the player with its
- * subtitles and waveform, and the flashcard editor beside it while a card is open.
+ * The screen for watching or listening to one of the project's media files:
+ * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
  */
 export function MediaScreen({
   project,

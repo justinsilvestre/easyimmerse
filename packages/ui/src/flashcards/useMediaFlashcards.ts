@@ -23,8 +23,8 @@ export type EditedFlashcard =
 const noFlashcards: readonly Flashcard[] = [];
 
 /**
- * The flashcards made from one media file, with the one open in the editor and the ways to save,
- * delete, and retime them. Saving a new card creates it; saving an existing one replaces it.
+ * The flashcards made from one media file, with the one open in the editor and the ways to save, delete, and retime them.
+ * Saving a new card creates it; saving an existing one replaces it.
  */
 export function useMediaFlashcards(projectId: string, mediaFileId: string) {
   const dispatch = useAppDispatch();

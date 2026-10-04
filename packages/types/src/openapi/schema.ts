@@ -250,8 +250,8 @@ export interface paths {
         put: operations["updateProject"];
         post?: never;
         /**
-         * Deletes the project with its media files, flashcards, and subtitle tracks, and drops the
-         *     cached conversions no other project's media files point at.
+         * Deletes the project with its media files, flashcards, and subtitle tracks,
+         *     and drops the cached conversions no other project's media files point at.
          */
         delete: operations["deleteProject"];
         options?: never;
@@ -352,8 +352,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Returns the frame of the chosen video track at the given time, else of the default video
-         *     track, as a JPEG image at most 640 pixels wide.
+         * Returns the frame of the chosen video track at the given time, else of the default video track,
+         *     as a JPEG image at most 640 pixels wide.
          */
         get: operations["getMediaFrame"];
         put?: never;
@@ -431,8 +431,9 @@ export interface paths {
         get: operations["listSubtitleTracks"];
         put?: never;
         /**
-         * Adds a subtitles file to the media file. The text is parsed once to check it and to take
-         *     its first cue as the track's sample; a `path` source is read on the server's machine.
+         * Adds a subtitles file to the media file.
+         *     The text is parsed once to check it and to take its first cue as the track's sample;
+         *     a `path` source is read on the server's machine.
          */
         post: operations["addSubtitleTrack"];
         delete?: never;
