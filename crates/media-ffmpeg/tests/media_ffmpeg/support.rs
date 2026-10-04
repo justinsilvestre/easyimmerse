@@ -9,7 +9,7 @@ pub fn fixture_path(name: &str) -> PathBuf {
 }
 
 /// True when ffprobe can be found through `EASYIMMERSE_FFMPEG_DIR` or `PATH`. Tests that need
-/// it return early with a message when this is false, since CI runners have no ffmpeg.
+/// it return early with a message when this is false, so they pass on machines without ffmpeg.
 pub fn ffprobe_available() -> bool {
     let available = locate_binary(BinaryName::Ffprobe, &FfmpegPaths::default()).is_ok();
     if !available {
