@@ -108,11 +108,37 @@ pub async fn remove_media_file(
     State(state): State<AppState>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
 ) -> Result<StatusCode, ApiFailure> {
-    load_media_file(&state, project_id, media_id.clone()).await?;
+    let media_file = load_media_file(&state, project_id, media_id.clone()).await?;
     state
         .with_storage(move |storage| storage.remove_media_file(&media_id))
         .await?;
+    if let MediaFileSource::Path { path } = media_file.source {
+        remove_unreferenced_conversions(&state, vec![path]).await?;
+    }
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// Removes the cached conversions of the given source paths that no media file points at
+/// any more. Call it after deleting media files or a project.
+pub async fn remove_unreferenced_conversions(
+    state: &AppState,
+    paths: Vec<String>,
+) -> Result<(), ApiFailure> {
+    let Some(conversion) = &state.conversion else {
+        return Ok(());
+    };
+    let referenced = state
+        .with_storage(|storage| storage.list_referenced_source_paths())
+        .await?;
+    for path in paths.iter().filter(|path| !referenced.contains(path)) {
+        if let Err(error) = conversion
+            .remove_entries_for_source(std::path::Path::new(path))
+            .await
+        {
+            tracing::warn!("could not remove the conversions of {path}: {error}");
+        }
+    }
+    Ok(())
 }
 
 /// Loads a media file, answering 404 when it does not exist or belongs to another project.

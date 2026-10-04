@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use easyimmerse_api::{ApiConfig, ServeOptions, ServerHandle, serve};
 use easyimmerse_storage::Storage;
 use serde_json::Value;
+use tempfile::TempDir;
 use tokio::net::TcpListener;
 use ureq::Agent;
 use ureq::http::Request;
@@ -68,12 +69,31 @@ pub async fn spawn_test_server_with_storage(
     allow_local_paths: bool,
     storage: Storage,
 ) -> TestServer {
+    spawn_test_server_with_options(allow_local_paths, storage, ServeOptions::default()).await
+}
+
+/// A server with a fresh conversion cache directory, which lives as long as the returned
+/// `TempDir`.
+pub async fn spawn_test_server_with_cache(allow_local_paths: bool) -> (TestServer, TempDir) {
+    let cache_dir = TempDir::new().expect("a cache directory");
+    let options = ServeOptions {
+        cache_dir: Some(cache_dir.path().to_path_buf()),
+    };
+    let server = spawn_test_server_with_options(allow_local_paths, seeded_storage(), options).await;
+    (server, cache_dir)
+}
+
+pub async fn spawn_test_server_with_options(
+    allow_local_paths: bool,
+    storage: Storage,
+    options: ServeOptions,
+) -> TestServer {
     let listener = TcpListener::bind("127.0.0.1:0")
         .await
         .expect("a free loopback port");
     let port = listener.local_addr().expect("a bound address").port();
     let config = ApiConfig::for_loopback(port, TOKEN.to_string(), allow_local_paths);
-    let handle = serve(listener, config, storage, ServeOptions::default())
+    let handle = serve(listener, config, storage, options)
         .await
         .expect("the server to start");
     TestServer {

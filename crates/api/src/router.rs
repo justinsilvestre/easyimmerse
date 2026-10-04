@@ -14,8 +14,8 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    dictionaries, documents, health, media, media_stream, openapi, preferences, projects,
-    timed_text,
+    conversion_cache, conversions, dictionaries, documents, health, media, media_playback,
+    media_stream, media_tracks, media_waveform, openapi, preferences, projects, timed_text,
 };
 use crate::state::AppState;
 
@@ -68,6 +68,19 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(media::list_media_files, media::add_media_file))
         .routes(routes!(media::remove_media_file))
         .routes(routes!(media_stream::stream_media_file))
+        .routes(routes!(media_tracks::get_media_tracks))
+        .routes(routes!(media_tracks::get_media_subtitle_tracks))
+        .routes(routes!(
+            media_tracks::set_media_track_selection,
+            media_tracks::clear_media_track_selection
+        ))
+        .routes(routes!(media_playback::plan_media_playback))
+        .routes(routes!(media_waveform::get_media_waveform))
+        .routes(routes!(conversions::get_conversion_playlist))
+        .routes(routes!(conversions::get_conversion_init_segment))
+        .routes(routes!(conversions::get_conversion_segment))
+        .routes(routes!(conversion_cache::get_conversion_cache))
+        .routes(routes!(conversion_cache::clear_conversion_cache))
         .routes(routes!(
             preferences::get_preference,
             preferences::set_preference
