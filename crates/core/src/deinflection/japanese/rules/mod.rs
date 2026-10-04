@@ -1,6 +1,7 @@
 //! The rule tables, one module per group of related inflections.
 
 mod adjective;
+mod continuative;
 mod imperative;
 mod negative;
 mod perfective;
@@ -30,6 +31,8 @@ pub const ALL: &[&[Rule]] = &[
     voice::PASSIVE,
     voice::CAUSATIVE,
     voice::SHORT_CAUSATIVE,
+    continuative::CONTINUATIVE_SUFFIXES,
+    continuative::APPEARANCE,
     adjective::ADJECTIVE,
 ];
 
