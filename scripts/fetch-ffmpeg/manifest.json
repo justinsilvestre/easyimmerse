@@ -36,8 +36,8 @@
     }
   },
   "x86_64-apple-darwin": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.2/ffmpeg-8.1.2-x86_64-apple-darwin.tar.xz",
-    "sha256": "38a2d213500b0eae1c49c1a933758877fcf92bf3eca950afa37ec24756a357a5",
+    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3/ffmpeg-8.1.3-x86_64-apple-darwin.tar.xz",
+    "sha256": "f335bb6fa258f5cd169493a330542940827f053f60528899590e48293dcc7944",
     "archive": "tar.xz",
     "paths": {
       "ffmpeg": "ffmpeg",
@@ -45,8 +45,8 @@
     }
   },
   "aarch64-apple-darwin": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz",
-    "sha256": "a2517c6094e460983aef0d497b43a19eedbbeb317db26aa124a82c9437e58d4c",
+    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3/ffmpeg-8.1.3-aarch64-apple-darwin.tar.xz",
+    "sha256": "18c0586dece153d23498fdbc335f5c50a7ac45c9af8bcd6ca48c48691be258fe",
     "archive": "tar.xz",
     "paths": {
       "ffmpeg": "ffmpeg",

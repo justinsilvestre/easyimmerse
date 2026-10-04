@@ -1,15 +1,15 @@
-FFmpeg 8.1.2 for macOS (Intel)
+FFmpeg 8.1.3 for macOS (Intel)
 ==============================
 
 easyImmerse runs FFmpeg (https://ffmpeg.org) as the separate programs ffmpeg and ffprobe. FFmpeg is free software licensed under the GNU Lesser General Public License (LGPL) version 2.1 or later. This build is configured with --enable-version3, so it is distributed under the LGPL version 3 or later.
 
 Platform: macOS (Intel), target x86_64-apple-darwin
-Version: 8.1.2
-Source code: https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz
-Build origin: Built by the ffmpeg-macos workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-macos.yml) for the tag ffmpeg-macos-8.1.2.
-Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-macos-8.1.2
-Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.2/ffmpeg-8.1.2-x86_64-apple-darwin.tar.xz
-SHA-256 of the download: 38a2d213500b0eae1c49c1a933758877fcf92bf3eca950afa37ec24756a357a5
+Version: 8.1.3
+Source code: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
+Build origin: Built by the ffmpeg-macos workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-macos.yml) for the tag ffmpeg-macos-8.1.3.
+Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-macos-8.1.3
+Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3/ffmpeg-8.1.3-x86_64-apple-darwin.tar.xz
+SHA-256 of the download: f335bb6fa258f5cd169493a330542940827f053f60528899590e48293dcc7944
 Statically linked libraries: none
 
 Configure flags:
@@ -22,25 +22,30 @@ Configure flags:
 --disable-debug
 --disable-ffplay
 --pkg-config-flags=--static
+--disable-xlib
+--disable-libxcb
+--disable-libxcb-shm
+--disable-libxcb-shape
+--disable-libxcb-xfixes
 --enable-cross-compile
 --arch=x86_64
 --target-os=darwin
 --cc='clang -arch x86_64'
---prefix=/Users/runner/work/easyimmerse/easyimmerse/ffmpeg-8.1.2/../install-x86_64
+--prefix=/Users/runner/work/easyimmerse/easyimmerse/ffmpeg-8.1.3/../install-x86_64
 
 
-FFmpeg 8.1.2 for macOS (Apple silicon)
+FFmpeg 8.1.3 for macOS (Apple silicon)
 ======================================
 
 easyImmerse runs FFmpeg (https://ffmpeg.org) as the separate programs ffmpeg and ffprobe. FFmpeg is free software licensed under the GNU Lesser General Public License (LGPL) version 2.1 or later. This build is configured with --enable-version3, so it is distributed under the LGPL version 3 or later.
 
 Platform: macOS (Apple silicon), target aarch64-apple-darwin
-Version: 8.1.2
-Source code: https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz
-Build origin: Built by the ffmpeg-macos workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-macos.yml) for the tag ffmpeg-macos-8.1.2.
-Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-macos-8.1.2
-Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz
-SHA-256 of the download: a2517c6094e460983aef0d497b43a19eedbbeb317db26aa124a82c9437e58d4c
+Version: 8.1.3
+Source code: https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
+Build origin: Built by the ffmpeg-macos workflow of https://github.com/justinsilvestre/easyimmerse (.github/workflows/ffmpeg-macos.yml) for the tag ffmpeg-macos-8.1.3.
+Release: https://github.com/justinsilvestre/easyimmerse/releases/tag/ffmpeg-macos-8.1.3
+Download: https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3/ffmpeg-8.1.3-aarch64-apple-darwin.tar.xz
+SHA-256 of the download: 18c0586dece153d23498fdbc335f5c50a7ac45c9af8bcd6ca48c48691be258fe
 Statically linked libraries: none
 
 Configure flags:
@@ -53,14 +58,19 @@ Configure flags:
 --disable-debug
 --disable-ffplay
 --pkg-config-flags=--static
---prefix=/Users/runner/work/easyimmerse/easyimmerse/ffmpeg-8.1.2/../install-arm64
+--disable-xlib
+--disable-libxcb
+--disable-libxcb-shm
+--disable-libxcb-shape
+--disable-libxcb-xfixes
+--prefix=/Users/runner/work/easyimmerse/easyimmerse/ffmpeg-8.1.3/../install-arm64
 
 
 GNU Lesser General Public License v2.1
 ======================================
 
 The FFmpeg source code is available at:
-- https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz
+- https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
 
                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999
@@ -570,7 +580,7 @@ GNU Lesser General Public License v3.0
 ======================================
 
 The FFmpeg source code is available at:
-- https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz
+- https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz
 
                    GNU LESSER GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
