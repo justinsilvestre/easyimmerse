@@ -1,0 +1,1 @@
+import{t as e}from"./iframe-DM_WFe6_.js";e();
