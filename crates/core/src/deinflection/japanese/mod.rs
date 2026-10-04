@@ -31,3 +31,78 @@ pub(super) mod test_support {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::deinflect;
+    use super::test_support::yields;
+
+    #[test]
+    fn undoes_a_stack_of_inflections_outermost_first() {
+        assert!(yields(
+            "食べさせられなかった",
+            "食べる",
+            "v1",
+            &["past", "negative", "passive", "causative"]
+        ));
+    }
+
+    #[test]
+    fn undoes_a_polite_stack_of_inflections() {
+        assert!(yields(
+            "読ませられていませんでした",
+            "読む",
+            "v5",
+            &[
+                "past",
+                "negative",
+                "polite",
+                "progressive",
+                "passive",
+                "causative"
+            ]
+        ));
+    }
+
+    #[test]
+    fn deinflects_a_noun_ending_in_ta_to_itself_alone() {
+        assert_eq!(deinflect("かた").len(), 1);
+    }
+
+    #[test]
+    fn deinflects_a_kanji_noun_to_itself_alone() {
+        assert_eq!(deinflect("学生").len(), 1);
+    }
+
+    #[test]
+    fn lists_each_term_and_inflection_chain_once() {
+        let candidates = deinflect("食べられる");
+        let unique = candidates.iter().filter(|candidate| {
+            candidates
+                .iter()
+                .filter(|other| {
+                    other.term == candidate.term && other.inflections == candidate.inflections
+                })
+                .count()
+                == 1
+        });
+        assert_eq!(unique.count(), candidates.len());
+    }
+
+    #[test]
+    fn merges_the_classes_of_candidates_with_the_same_chain() {
+        let candidates = deinflect("帰れる");
+        let potential = candidates
+            .iter()
+            .find(|candidate| candidate.term == "帰る" && candidate.inflections == ["potential"]);
+        assert_eq!(
+            potential.map(|candidate| candidate.word_classes.clone()),
+            Some(vec!["v1".to_string(), "v5".to_string()])
+        );
+    }
+
+    #[test]
+    fn keeps_the_candidates_for_a_long_text_few() {
+        assert!(deinflect("食べさせられていなかったらしいです").len() < 100);
+    }
+}
