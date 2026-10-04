@@ -1,7 +1,10 @@
 [tools]
 node = "24.21.0"
 pnpm = "12.8.1"
-rust = "1.98.1"
+# The components and targets mirror rust-toolchain.toml. Installing them together with the
+# toolchain keeps rustup's proxies from installing them later, concurrently, when the cargo
+# tools below run, which has left a toolchain with unregistered clippy files on Windows.
+rust = { version = "1.98.1", profile = "minimal", components = ["clippy", "rustfmt"], targets = ["wasm32-unknown-unknown", "wasm32-wasip2"] }
 cargo-binstall = "1.24.0"
 "cargo:wasm-pack" = "0.15.0"
 "cargo:wasm-tools" = "1.259.0"

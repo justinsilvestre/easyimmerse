@@ -14,26 +14,6 @@ runs:
         cache: true
         install: true
 
-    # Mise installs the toolchain through rustup but does not add the components and
-    # targets that rust-toolchain.toml lists, so they are installed here.
-    # On Windows runners an interrupted install can leave clippy files in the toolchain's bin
-    # directory that rustup reports as a conflict, so they are removed and the install retried.
-    - name: Install the Rust components and cross-compilation targets
-      shell: bash
-      run: |
-        errors="$RUNNER_TEMP/rustup-component-add.err"
-        if ! rustup component add rustfmt clippy 2> "$errors"; then
-          cat "$errors" >&2
-          if [[ "$RUNNER_OS" != Windows ]] || ! grep -q "detected conflict" "$errors"; then
-            exit 1
-          fi
-          bin_dir=$(dirname "$(cygpath -u "$(rustup which rustc)")")
-          echo "Removing the stale clippy files in $bin_dir and retrying."
-          rm -f "$bin_dir"/cargo-clippy* "$bin_dir"/clippy-driver*
-          rustup component add rustfmt clippy
-        fi
-        rustup target add wasm32-unknown-unknown wasm32-wasip2
-
     - uses: Swatinem/rust-cache@v2
       if: inputs.rust-cache == 'true'
       with:
