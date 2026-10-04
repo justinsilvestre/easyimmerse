@@ -1,11 +1,16 @@
 //! The tracks, playback, conversion, cache, track-selection, waveform, and subtitle routes.
 //! Routes that probe or convert skip when ffmpeg and ffprobe are not found.
 
+use easyimmerse_core::media_file::MediaFileSource;
+use easyimmerse_core::project::ProjectId;
 use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use serde_json::{Value, json};
 use tempfile::TempDir;
 
-use crate::support::{TestServer, fixture_path, spawn_test_server, spawn_test_server_with_cache};
+use crate::support::{
+    TestServer, fixture_path, seeded_storage, spawn_test_server, spawn_test_server_with_cache,
+    spawn_test_server_with_storage,
+};
 
 const PROJECT: &str = "placeholder-1";
 const MKV: &str = "conversion-h264-aac.mkv";
@@ -116,11 +121,52 @@ async fn tracks_of_a_browser_file_are_not_resolvable() {
     );
 }
 
+/// A server that may not read local paths, holding a media file that names one anyway.
+async fn server_without_local_paths() -> (TestServer, String) {
+    let storage = seeded_storage();
+    let added = storage
+        .add_media_file(
+            &ProjectId(PROJECT.to_string()),
+            MKV,
+            &MediaFileSource::Path {
+                path: fixture_path(MKV).to_string_lossy().into_owned(),
+            },
+        )
+        .expect("a media file");
+    let server = spawn_test_server_with_storage(false, storage).await;
+    (server, added.id.0)
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn tracks_need_local_path_permission() {
-    let server = spawn_test_server(false).await;
-    let response = server.get(&media_route("missing", "tracks")).await;
-    assert_eq!(response.status, 404);
+    let (server, media_id) = server_without_local_paths().await;
+    let response = server.get(&media_route(&media_id, "tracks")).await;
+    assert_eq!(response.status, 403);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn subtitle_tracks_need_local_path_permission() {
+    let (server, media_id) = server_without_local_paths().await;
+    let response = server.get(&media_route(&media_id, "subtitle-tracks")).await;
+    assert_eq!(response.status, 403);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn playback_needs_local_path_permission() {
+    let (server, media_id) = server_without_local_paths().await;
+    let response = server
+        .post_json(&media_route(&media_id, "playback"), &chromium_request())
+        .await;
+    assert_eq!(response.status, 403);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_waveform_needs_local_path_permission() {
+    let (server, media_id) = server_without_local_paths().await;
+    let response = server
+        .get(&media_route(&media_id, "waveform?start_ms=0&end_ms=1000"))
+        .await;
+    assert_eq!(response.status, 403);
 }
 
 #[tokio::test(flavor = "multi_thread")]

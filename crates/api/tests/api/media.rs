@@ -235,6 +235,25 @@ async fn accepts_the_token_as_a_query_parameter() {
     assert_eq!(response.status, 200);
 }
 
+/// A media element with `crossOrigin="anonymous"` on another origin needs the CORS header on
+/// the stream response, or the page cannot draw its frames to a canvas.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_cross_origin_stream_request_is_allowed() {
+    let server = spawn_test_server(true).await;
+    let added = add(&server, "sample.mp4", path_source("sample.mp4")).await;
+    let response = server
+        .request(
+            "GET",
+            &format!("{}?token={}", stream_path(&added), server.token),
+        )
+        .without_token()
+        .header("Origin", "http://localhost:5173")
+        .header("Range", "bytes=0-3")
+        .send()
+        .await;
+    assert_eq!(response.header("access-control-allow-origin"), Some("*"));
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn rejects_a_wrong_query_token() {
     let server = spawn_test_server(true).await;
