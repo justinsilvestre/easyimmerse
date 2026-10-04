@@ -30,7 +30,8 @@ pkg_config_path="$(cygpath -u "$deps_windows")/lib/pkgconfig"
 cd "$source_dir"
 PKG_CONFIG_PATH="$pkg_config_path" ./configure $common_flags $windows_flags --prefix="$out/install" \
   || { report_configure_failure; exit 1; }
-make -j"$(nproc)" > /dev/null
+# cl.exe prints its diagnostics on standard output, so the whole log is kept for a failure.
+make -j"$(nproc)" > make.log 2>&1 || { grep -n -B2 -A12 'error' make.log | head -150; exit 1; }
 make install > /dev/null
 cp "$out/install/bin/ffmpeg.exe" "$out/install/bin/ffprobe.exe" "$out/"
 rm -rf "$out/install"
