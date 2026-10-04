@@ -142,7 +142,11 @@ fn open_storage(path: &Path) -> Result<Storage, EmbeddedServerError> {
     }
     tracing::info!("opening the database at {}", path.display());
     let storage = Storage::open(path)?;
-    storage.seed_placeholder_projects()?;
+    // Development builds seed an empty database, since the schema still changes often and a
+    // developer then deletes the database to start over. Release builds start empty.
+    if cfg!(debug_assertions) {
+        storage.seed_placeholder_projects()?;
+    }
     Ok(storage)
 }
 
