@@ -1,7 +1,7 @@
+import type { FlashcardFieldKey } from "@easyimmerse/types";
 import clsx from "clsx";
 import { type ReactNode, useState } from "react";
 import { SegmentedControl } from "../components/SegmentedControl.tsx";
-import type { FlashcardFieldKey } from "../flashcards/flashcardFields.ts";
 import {
   type FlashcardPreset,
   flashcardPresetOptions,

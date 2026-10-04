@@ -53,7 +53,9 @@ type SaveTrackSelectionArgs = MediaFileArgs & { selection: TrackSelection };
 
 type WaveformWindowArgs = MediaFileArgs & { startMs: number; endMs: number };
 
-type AddSubtitleTrackArgs = MediaFileArgs & { request: AddSubtitleTrackRequest };
+type AddSubtitleTrackArgs = MediaFileArgs & {
+  request: AddSubtitleTrackRequest;
+};
 
 type SubtitleTrackArgs = MediaFileArgs & { trackId: string };
 

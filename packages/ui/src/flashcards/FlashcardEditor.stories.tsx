@@ -1,7 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 import { generateExamplePeaks } from "../media/examplePeaks.ts";
-import { exampleFlashcard, exampleLanguages } from "./exampleFlashcard.ts";
+import {
+  exampleFlashcard,
+  exampleLanguages,
+  exampleScreenshotUrl,
+} from "./exampleFlashcard.ts";
 import { FlashcardEditor } from "./FlashcardEditor.tsx";
 import { fieldsOfPreset } from "./flashcardPresets.ts";
 
@@ -19,6 +23,7 @@ const meta = {
     initialContent: exampleFlashcard,
     initialFields: fieldsOfPreset("intermediate"),
     languages: exampleLanguages,
+    screenshotUrlOf: () => exampleScreenshotUrl,
     waveform: { peaks: generateExamplePeaks(240), durationMs: 24_000 },
     onSave: fn(),
     onDelete: fn(),
@@ -39,7 +44,7 @@ export const FromAnEbook: Story = {
   args: {
     initialContent: {
       ...exampleFlashcard,
-      audioContext: null,
+      audio_context: null,
       screenshot: null,
       tags: ["die-verwandlung"],
     },

@@ -1,3 +1,4 @@
+import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import { X } from "lucide-react";
 import { useReducer } from "react";
 import { Button } from "../components/Button.tsx";
@@ -8,14 +9,15 @@ import { reduceEditor } from "./editFlashcard.ts";
 import {
   MediaFields,
   type MediaWaveform,
+  type ScreenshotUrlOf,
   TextFieldBlocks,
 } from "./FlashcardEditorFields.tsx";
 import {
-  type FlashcardContent,
-  type FlashcardFieldKey,
   type FlashcardLanguages,
-  flashcardFields,
+  flashcardFieldDefinitions,
 } from "./flashcardFields.ts";
+
+const noScreenshotUrl: ScreenshotUrlOf = () => null;
 
 /**
  * The form for a flashcard that was just created or reopened.
@@ -26,6 +28,7 @@ export function FlashcardEditor({
   initialFields,
   languages,
   waveform,
+  screenshotUrlOf = noScreenshotUrl,
   onSave,
   onDelete,
   onClose,
@@ -35,6 +38,8 @@ export function FlashcardEditor({
   languages: FlashcardLanguages;
   /** The audio of the media file, for editing the clip. Null for media without audio, such as an ebook. */
   waveform: MediaWaveform | null;
+  /** Finds the image of the screenshot at a time. Without it, no screenshot is shown. */
+  screenshotUrlOf?: ScreenshotUrlOf;
   onSave: (
     content: FlashcardContent,
     fields: readonly FlashcardFieldKey[],
@@ -68,7 +73,12 @@ export function FlashcardEditor({
           languages={languages}
           dispatch={dispatch}
         />
-        <MediaFields state={state} waveform={waveform} dispatch={dispatch} />
+        <MediaFields
+          state={state}
+          waveform={waveform}
+          screenshotUrlOf={screenshotUrlOf}
+          dispatch={dispatch}
+        />
         {includedFields.includes("tags") && (
           <TagsField
             label="Tags"
@@ -83,7 +93,7 @@ export function FlashcardEditor({
         <MenuButton
           label="More fields"
           opensUpward
-          items={flashcardFields
+          items={flashcardFieldDefinitions
             .filter((field) => field.key !== "screenshot")
             .map((field) => ({
               label: field.label(languages),

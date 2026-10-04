@@ -1,52 +1,35 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
-import { ArrowLeft, ChevronUp, Minimize, Music, Search } from "lucide-react";
-import { type ReactNode, useMemo } from "react";
+import { ArrowLeft, ChevronUp, Minimize, Search, Settings } from "lucide-react";
+import type { ReactNode } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { Kbd } from "../components/Kbd.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
+import { useNavigationActions } from "../navigationContext.ts";
 import { languageName } from "../projects/languages.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
 import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import type { PlaybackState, TrackSelection } from "./playback.ts";
 import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
-import { segmentsFromCues } from "./segmentsFromCues.ts";
-import { Waveform, type WaveformCallbacks } from "./Waveform.tsx";
-
-type MediaSource = {
-  kind: "video" | "audio";
-  title: string;
-  /** The URL the player loads. Null while the file is still being resolved or converted. */
-  url: string | null;
-  /** The album art of an audio file, as a URL. */
-  artworkUrl: string | null;
-  language: string;
-};
 
 type MediaViewProps = {
-  media: MediaSource;
+  media: { title: string; language: string };
+  /** The player itself: the video, or the artwork of an audio file, with whatever precedes playback. */
+  stage: ReactNode;
   playback: PlaybackState;
   tracks: TrackSelection;
   cues: readonly Cue[];
   translationCues: readonly Cue[];
-  flashcardCueIndexes: readonly number[];
-  /** The peaks of the whole file. The waveform shows the part between the two times. */
-  waveform: {
-    peaks: readonly number[];
-    viewStartMs: number;
-    viewEndMs: number;
-  };
+  /** The waveform strip under the stage, shown while the waveform panel is open. */
+  waveform: ReactNode;
   panels: { cues: boolean; waveform: boolean; distractionFree: boolean };
   subtitleDisplay: SubtitleDisplay;
   /** The word the dictionary pop-up shows, which is highlighted in the subtitles. */
   activeWord?: string;
-  /** The waveform segment of the flashcard open in the side panel, which the waveform emphasizes. */
-  editingSegmentId: string | null;
   playerCallbacks: PlayerCallbacks;
-  waveformCallbacks: WaveformCallbacks;
   onBack: () => void;
   onWordHover: (word: string) => void;
   onWordClick: (word: string) => void;
@@ -66,12 +49,8 @@ type MediaViewProps = {
  * The panels around the stage come in as children, so that each can be wired to the store on its own.
  */
 export function MediaView(props: MediaViewProps) {
-  const { media, playback, cues, translationCues, panels } = props;
+  const { playback, cues, translationCues, panels } = props;
   const activeCue = findCueAt(cues, playback.currentMs);
-  const segments = useMemo(
-    () => segmentsFromCues(cues, props.flashcardCueIndexes),
-    [cues, props.flashcardCueIndexes],
-  );
   const pointer = usePointerActivity();
   const showsControls = !playback.isPlaying || pointer.isActive;
   const showsSidePanel = !panels.distractionFree && props.sidePanel != null;
@@ -90,7 +69,7 @@ export function MediaView(props: MediaViewProps) {
             </div>
           )}
           <div className="relative flex min-h-40 flex-1 items-center justify-center overflow-hidden bg-black">
-            <Stage media={media} />
+            {props.stage}
             <SubtitleOverlay
               targetCue={activeCue}
               translationCue={
@@ -148,25 +127,7 @@ export function MediaView(props: MediaViewProps) {
               />
             </div>
           </div>
-          {!panels.distractionFree && panels.waveform && (
-            <Waveform
-              peaks={props.waveform.peaks}
-              viewStartMs={props.waveform.viewStartMs}
-              viewEndMs={props.waveform.viewEndMs}
-              durationMs={playback.durationMs}
-              currentMs={playback.currentMs}
-              segments={segments}
-              editingSegmentId={props.editingSegmentId}
-              canZoomIn={
-                props.waveform.viewEndMs - props.waveform.viewStartMs > 5_000
-              }
-              canZoomOut={
-                props.waveform.viewEndMs - props.waveform.viewStartMs <
-                playback.durationMs
-              }
-              callbacks={props.waveformCallbacks}
-            />
-          )}
+          {!panels.distractionFree && panels.waveform && props.waveform}
           {!panels.distractionFree && !panels.waveform && (
             <button
               type="button"
@@ -189,7 +150,9 @@ export function MediaView(props: MediaViewProps) {
   );
 }
 
+/** The bar above the stage. The screen has no footer, so the way to Settings is here. */
 function Header({ media, onBack }: MediaViewProps) {
+  const { openSettings } = useNavigationActions();
   return (
     <header className="flex items-center gap-3 border-b border-line bg-surface px-3 py-2">
       <Button variant="subtle" onClick={onBack}>
@@ -198,38 +161,9 @@ function Header({ media, onBack }: MediaViewProps) {
       </Button>
       <h1 className="min-w-0 flex-1 truncate font-medium">{media.title}</h1>
       <Badge>{languageName(media.language)}</Badge>
+      <IconButton label="Settings" onClick={openSettings}>
+        <Settings className="size-4" />
+      </IconButton>
     </header>
-  );
-}
-
-function Stage({ media }: { media: MediaSource }) {
-  if (media.kind === "video") {
-    return (
-      <video
-        src={media.url ?? undefined}
-        preload="metadata"
-        className="max-h-full max-w-full"
-        aria-label={media.title}
-      >
-        {/* The subtitles are drawn by the overlay rather than by the browser, so a captions track would be a duplicate. */}
-        <track kind="captions" />
-      </video>
-    );
-  }
-  return (
-    <div className="flex flex-col items-center gap-4 p-8">
-      {media.artworkUrl ? (
-        <img
-          src={media.artworkUrl}
-          alt="Album art"
-          className="size-56 rounded-lg object-cover shadow-xl"
-        />
-      ) : (
-        <div className="flex size-56 items-center justify-center rounded-lg bg-gradient-to-br from-gray-700 to-gray-900 shadow-xl">
-          <Music className="size-20 text-gray-400" aria-hidden />
-        </div>
-      )}
-      <p className="text-lg text-fg-muted">{media.title}</p>
-    </div>
   );
 }

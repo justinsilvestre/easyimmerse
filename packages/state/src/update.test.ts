@@ -84,7 +84,10 @@ describe("update", () => {
   });
 
   it("returns a notification for subtitleFileAddFailed", () => {
-    const [, effects] = update(initialAppState, actions.subtitleFileAddFailed());
+    const [, effects] = update(
+      initialAppState,
+      actions.subtitleFileAddFailed(),
+    );
     expect(effects).toEqual([
       {
         type: "showNotification",
@@ -117,7 +120,10 @@ describe("update", () => {
   });
 
   it("returns a setPlayerSpeed effect for speedChangeRequested", () => {
-    const [, effects] = update(initialAppState, actions.speedChangeRequested(1.5));
+    const [, effects] = update(
+      initialAppState,
+      actions.speedChangeRequested(1.5),
+    );
     expect(effects).toEqual([{ type: "setPlayerSpeed", speed: 1.5 }]);
   });
 

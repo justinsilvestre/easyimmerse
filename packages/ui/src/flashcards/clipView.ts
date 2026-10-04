@@ -1,4 +1,4 @@
-import type { AudioClip } from "./flashcardFields.ts";
+import type { AudioClip } from "@easyimmerse/types";
 
 /** How far a handle moves for one arrow key press, and for one with Shift held. */
 export const keyStepMs = 100;
@@ -22,10 +22,10 @@ export function viewAroundClip(
   clip: AudioClip,
   durationMs: number,
 ): WaveformView {
-  const margin = Math.max(1000, (clip.endMs - clip.startMs) / 2);
+  const margin = Math.max(1000, (clip.end_ms - clip.start_ms) / 2);
   return {
-    startMs: Math.max(0, clip.startMs - margin),
-    endMs: Math.min(durationMs, clip.endMs + margin),
+    startMs: Math.max(0, clip.start_ms - margin),
+    endMs: Math.min(durationMs, clip.end_ms + margin),
   };
 }
 
@@ -153,7 +153,7 @@ export function peakSpan(
 
 /** Moves the clip's start, keeping it within the file and before the end. */
 export function moveClipStart(clip: AudioClip, startMs: number): AudioClip {
-  return { ...clip, startMs: clamp(startMs, 0, clip.endMs - minClipMs) };
+  return { ...clip, start_ms: clamp(startMs, 0, clip.end_ms - minClipMs) };
 }
 
 /** Moves the clip's end, keeping it after the start and within the file. */
@@ -162,7 +162,10 @@ export function moveClipEnd(
   endMs: number,
   durationMs: number,
 ): AudioClip {
-  return { ...clip, endMs: clamp(endMs, clip.startMs + minClipMs, durationMs) };
+  return {
+    ...clip,
+    end_ms: clamp(endMs, clip.start_ms + minClipMs, durationMs),
+  };
 }
 
 /** The time an arrow key moves a handle to, or null for a key that is not an arrow. */

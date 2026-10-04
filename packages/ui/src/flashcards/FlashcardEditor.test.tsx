@@ -1,8 +1,12 @@
+import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { exampleFlashcard, exampleLanguages } from "./exampleFlashcard.ts";
+import {
+  exampleFlashcard,
+  exampleLanguages,
+  exampleScreenshotUrl,
+} from "./exampleFlashcard.ts";
 import { FlashcardEditor } from "./FlashcardEditor.tsx";
-import type { FlashcardContent, FlashcardFieldKey } from "./flashcardFields.ts";
 import { fieldsOfPreset } from "./flashcardPresets.ts";
 
 afterEach(cleanup);
@@ -19,6 +23,7 @@ function renderEditor(onSave: OnSave = () => undefined) {
       initialFields={fieldsOfPreset("intermediate")}
       languages={exampleLanguages}
       waveform={{ peaks: [0.1, 0.5, 0.9, 0.3], durationMs: 24_000 }}
+      screenshotUrlOf={() => exampleScreenshotUrl}
       onSave={onSave}
       onDelete={() => undefined}
       onClose={() => undefined}
@@ -96,7 +101,7 @@ describe("FlashcardEditor", () => {
 
   it("saves the clip moved on the waveform", () => {
     const saved: (number | undefined)[] = [];
-    renderEditor((content) => saved.push(content.audioContext?.startMs));
+    renderEditor((content) => saved.push(content.audio_context?.start_ms));
     fireEvent.keyDown(screen.getByRole("slider", { name: "Clip start" }), {
       key: "ArrowLeft",
     });
@@ -106,7 +111,7 @@ describe("FlashcardEditor", () => {
 
   it("saves the screenshot time moved on the waveform", () => {
     const saved: (number | undefined)[] = [];
-    renderEditor((content) => saved.push(content.screenshot?.atMs));
+    renderEditor((content) => saved.push(content.screenshot?.at_ms));
     fireEvent.keyDown(screen.getByRole("slider", { name: "Screenshot time" }), {
       key: "ArrowRight",
     });

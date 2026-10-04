@@ -7,17 +7,21 @@ import {
   selectCurrentTime,
   selectPendingFilePick,
   selectPendingMediaFilePick,
+  selectPlayer,
   selectPlayerDuration,
   selectPreference,
   selectPreferencesLoaded,
-  selectPlayer,
   selectTextScale,
 } from "./selectors.ts";
 
 const rootState: RootState = {
   app: {
     ...initialAppState,
-    player: { ...initialAppState.player, currentTimeSeconds: 4, durationSeconds: 90 },
+    player: {
+      ...initialAppState.player,
+      currentTimeSeconds: 4,
+      durationSeconds: 90,
+    },
     chosenSubtitleFile: null,
     preferences: { showTranslations: "true" },
     preferencesLoaded: true,

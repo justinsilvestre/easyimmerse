@@ -1,29 +1,7 @@
+import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import { languageName } from "../projects/languages.ts";
 
-/** A time range within a media file's audio track, in milliseconds. */
-export type AudioClip = { startMs: number; endMs: number };
-
-/** A still frame of the video, as an image URL, with the time it was taken at. */
-export type Screenshot = { url: string; atMs: number };
-
-/**
- * Everything a flashcard can hold. L1 is the language the user already knows; L2 is the one they are learning.
- */
-export type FlashcardContent = {
-  word: string;
-  wordPronunciation: string;
-  l1Definition: string;
-  l2Definition: string;
-  textContext: string;
-  textContextTranslation: string;
-  textContextPronunciation: string;
-  audioContext: AudioClip | null;
-  screenshot: Screenshot | null;
-  tags: string[];
-};
-
-export type FlashcardFieldKey = keyof FlashcardContent;
-
+/** The keys of a flashcard's fields that hold text the user can type. */
 export type FlashcardTextFieldKey = {
   [Key in FlashcardFieldKey]: FlashcardContent[Key] extends string
     ? Key
@@ -44,7 +22,7 @@ export type FlashcardFieldDefinition = {
 };
 
 /** Every field, in the order forms and previews show them. */
-export const flashcardFields: readonly FlashcardFieldDefinition[] = [
+export const flashcardFieldDefinitions: readonly FlashcardFieldDefinition[] = [
   {
     key: "word",
     group: "target",
@@ -52,43 +30,43 @@ export const flashcardFields: readonly FlashcardFieldDefinition[] = [
     label: ({ target }) => `Word (${target})`,
   },
   {
-    key: "wordPronunciation",
+    key: "word_pronunciation",
     group: "target",
     multiline: false,
     label: () => "Word pronunciation",
   },
   {
-    key: "l1Definition",
+    key: "l1_definition",
     group: "translation",
     multiline: true,
     label: ({ translation }) => `Definition (${translation})`,
   },
   {
-    key: "l2Definition",
+    key: "l2_definition",
     group: "target",
     multiline: true,
     label: ({ target }) => `Definition (${target})`,
   },
   {
-    key: "textContext",
+    key: "text_context",
     group: "target",
     multiline: true,
     label: ({ target }) => `Sentence (${target})`,
   },
   {
-    key: "textContextTranslation",
+    key: "text_context_translation",
     group: "translation",
     multiline: true,
     label: ({ translation }) => `Sentence (${translation})`,
   },
   {
-    key: "textContextPronunciation",
+    key: "text_context_pronunciation",
     group: "target",
     multiline: true,
     label: () => "Sentence pronunciation",
   },
   {
-    key: "audioContext",
+    key: "audio_context",
     group: "media",
     multiline: false,
     label: () => "Sentence audio",
@@ -121,13 +99,15 @@ export function labelOfFieldGroup(
 export function isTextField(
   key: FlashcardFieldKey,
 ): key is FlashcardTextFieldKey {
-  return key !== "audioContext" && key !== "screenshot" && key !== "tags";
+  return key !== "audio_context" && key !== "screenshot" && key !== "tags";
 }
 
 export function findFlashcardField(
   key: FlashcardFieldKey,
 ): FlashcardFieldDefinition {
-  const field = flashcardFields.find((candidate) => candidate.key === key);
+  const field = flashcardFieldDefinitions.find(
+    (candidate) => candidate.key === key,
+  );
   if (!field) throw new Error(`Unknown flashcard field: ${key}`);
   return field;
 }
@@ -136,7 +116,7 @@ export function findFlashcardField(
 export function toggleField(
   fields: readonly FlashcardFieldKey[],
   key: FlashcardFieldKey,
-): readonly FlashcardFieldKey[] {
+): FlashcardFieldKey[] {
   if (!fields.includes(key)) return [...fields, key];
   return fields.filter((field) => field !== key);
 }

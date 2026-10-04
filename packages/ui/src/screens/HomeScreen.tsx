@@ -1,38 +1,42 @@
 import { useListProjectsQuery } from "@easyimmerse/backend";
-import { Button } from "../components/Button.tsx";
-import { HelpLink } from "../components/HelpLink.tsx";
-import { ProjectList } from "../components/ProjectList.tsx";
-import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { actions } from "@easyimmerse/state";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { HomeView, type ProjectListStatus } from "../projects/HomeView.tsx";
+import { isOfflineError } from "./isOfflineError.ts";
 
-/** The project id the media screen opens with when no server can list projects. */
-const offlineProjectId = "offline";
-
+/** The home screen with the projects the server lists, most recently opened first. */
 export function HomeScreen({
   onOpenProject,
+  onCreateProject,
+  onContinueOffline,
 }: {
   onOpenProject: (projectId: string) => void;
+  onCreateProject: () => void;
+  onContinueOffline: () => void;
 }) {
+  const dispatch = useAppDispatch();
   const { data, isLoading, error } = useListProjectsQuery();
   return (
-    <ScreenLayout headerActions={<HelpLink />}>
-      <h1 className="text-xl font-semibold">Projects</h1>
-      {isLoading && <p>Loading projects...</p>}
-      {error && <p role="alert">Could not load the projects.</p>}
-      {isOffline(error) && (
-        <Button onClick={() => onOpenProject(offlineProjectId)}>
-          Continue offline
-        </Button>
-      )}
-      {data && <ProjectList projects={data.projects} onOpen={onOpenProject} />}
-    </ScreenLayout>
+    <HomeView
+      status={statusOf(isLoading, error)}
+      projects={data?.projects ?? []}
+      onOpenProject={onOpenProject}
+      onCreateProject={onCreateProject}
+      onContinueOffline={onContinueOffline}
+      onOpenDictionaries={() =>
+        dispatch(
+          actions.notificationRequested(
+            "Managing dictionaries is not available yet.",
+          ),
+        )
+      }
+    />
   );
 }
 
-function isOffline(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    error.status === "OFFLINE"
-  );
+function statusOf(isLoading: boolean, error: unknown): ProjectListStatus {
+  if (isLoading) return "loading";
+  if (isOfflineError(error)) return "offline";
+  if (error) return "failed";
+  return "ready";
 }

@@ -1,6 +1,10 @@
 import type {
+  ListFlashcardsResponse,
   ListMediaFilesResponse,
   ListProjectsResponse,
+  Project,
+  ProjectSettings,
+  SubtitleTracksResponse,
   TimedTextTrack,
 } from "@easyimmerse/types";
 
@@ -25,21 +29,60 @@ export const fixtureTrack: TimedTextTrack = {
   ],
 };
 
+function fixtureSettings(
+  name: string,
+  targetLanguage: string,
+): ProjectSettings {
+  return {
+    name,
+    target_language: targetLanguage,
+    translation_language: "en",
+    flashcard_fields: ["word", "l1_definition", "text_context", "tags"],
+    default_tags: [],
+    tags_media_name: true,
+    fills_audio_with_tts: false,
+  };
+}
+
+/** A German project opened on 2026-01-03 and created on 2026-01-01. */
+export const fixtureProject: Project = {
+  id: "p1",
+  settings: fixtureSettings("Alpha", "de"),
+  created_at_ms: 1767225600000,
+  last_opened_at_ms: 1767398400000,
+  media_count: 2,
+  flashcard_count: 0,
+};
+
 export const fixtureProjects: ListProjectsResponse = {
   projects: [
-    {
-      id: "p1",
-      name: "Alpha",
-      language: "de",
-      created_at: "2026-01-01T00:00:00Z",
-    },
+    fixtureProject,
     {
       id: "p2",
-      name: "Beta",
-      language: "ja",
-      created_at: "2026-01-02T00:00:00Z",
+      settings: fixtureSettings("Beta", "ja"),
+      created_at_ms: 1767312000000,
+      last_opened_at_ms: 1767312000000,
+      media_count: 0,
+      flashcard_count: 0,
     },
   ],
+};
+
+export const noFlashcards: ListFlashcardsResponse = { flashcards: [] };
+
+/** One subtitles track on a media file, shown as the target-language subtitles. */
+export const fixtureSubtitleTracks: SubtitleTracksResponse = {
+  tracks: [
+    {
+      id: "s1",
+      media_file_id: "m1",
+      name: "sample.srt",
+      format: "srt",
+      sample: "The cat is sleeping.",
+      created_at_ms: 1767225600000,
+    },
+  ],
+  selection: { target_track_id: "s1", translation_track_id: null },
 };
 
 /** Two media files of project `p1`: one on the server's disk and one the browser holds. */
@@ -70,6 +113,15 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
 
 export const fixtureResponses = {
   "GET /projects": fixtureProjects,
+  "GET /projects/p1": fixtureProject,
+  "POST /projects/p1/opened": undefined,
   "GET /projects/p1/media": fixtureMediaFiles,
+  "GET /projects/p1/flashcards": noFlashcards,
+  "GET /projects/p1/media/m1/subtitles": fixtureSubtitleTracks,
+  "GET /projects/p1/media/m1/subtitles/s1/cues": fixtureTrack,
+  "GET /projects/p1/media/m2/subtitles": {
+    tracks: [],
+    selection: { target_track_id: null, translation_track_id: null },
+  } satisfies SubtitleTracksResponse,
   "POST /timed-text/parse": fixtureTrack,
 };

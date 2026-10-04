@@ -1,0 +1,65 @@
+import type {
+  Cue,
+  FlashcardDraft,
+  MediaFile,
+  ProjectSettings,
+} from "@easyimmerse/types";
+import { stripMarkup } from "../components/ClickableText.tsx";
+import { findCueAt } from "../media/findCue.ts";
+import { mediaNameTag } from "./mediaNameTag.ts";
+import { addTags } from "./parseTags.ts";
+
+/** The cue a new flashcard is made from: the one shown at the time, else the last one before it. */
+export function cueForFlashcard(cues: readonly Cue[], ms: number): Cue | null {
+  return (
+    findCueAt(cues, ms) ?? cues.filter((cue) => cue.end_ms <= ms).at(-1) ?? null
+  );
+}
+
+/**
+ * Starts a flashcard for a word from a subtitle cue under the project's flashcard settings: the cue is
+ * the sentence, its timing the audio clip, and its middle the moment of the screenshot of a video.
+ * Definitions are left empty for the user to fill in, since dictionaries are not consulted yet.
+ */
+export function draftFromCue({
+  word,
+  cue,
+  translationCue,
+  mediaFile,
+  settings,
+  hasVideo,
+}: {
+  word: string;
+  cue: Cue | null;
+  translationCue: Cue | null;
+  mediaFile: MediaFile;
+  settings: ProjectSettings;
+  hasVideo: boolean;
+}): FlashcardDraft {
+  return {
+    media_file_id: mediaFile.id,
+    cue_index: cue?.index ?? null,
+    content: {
+      word,
+      word_pronunciation: "",
+      l1_definition: "",
+      l2_definition: "",
+      text_context: cue ? stripMarkup(cue.text) : "",
+      text_context_translation: translationCue
+        ? stripMarkup(translationCue.text)
+        : "",
+      text_context_pronunciation: "",
+      audio_context: cue
+        ? { start_ms: cue.start_ms, end_ms: cue.end_ms }
+        : null,
+      screenshot:
+        cue && hasVideo
+          ? { at_ms: Math.round((cue.start_ms + cue.end_ms) / 2) }
+          : null,
+      tags: settings.tags_media_name
+        ? addTags(settings.default_tags, [mediaNameTag(mediaFile.name)])
+        : [...settings.default_tags],
+    },
+    included_fields: [...settings.flashcard_fields],
+  };
+}
