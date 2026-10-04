@@ -18,9 +18,6 @@ Each bug report is to be logged in this format:
 - HDR video converts washed out 2026-10-04
   - Open an HDR (10-bit, BT.2020) video that needs converting.
   - It is transcoded to 8-bit H.264 without tone mapping and looks washed out. Converted HDR video should be tone-mapped to look like the original.
-- Linux and Windows ship no ffmpeg 2026-10-04
-  - Install the desktop app on Linux or Windows from a build of this repository and open a file the webview cannot play.
-  - Conversion is unavailable unless an ffmpeg is on `PATH`, because `scripts/fetch-ffmpeg/manifest.json` has no bundled build for those platforms: the only first-party LGPL builds, BtbN's autobuilds, link FFTW (GPL), parts of ZVBI (GPL), SRT and libzmq (MPL), glslang (GPL with exception), and the excluded libmp3lame and libopenh264, so the licence policy rejects them. Planned: a workflow like `ffmpeg-macos` that builds a minimal LGPL ffmpeg (`--disable-autodetect --disable-everything` plus the components the Rust code uses, measured at 15 MB for the pair on macOS arm64, 2.5 MB compressed) for Linux x86_64 and arm64 and for Windows x86_64 and arm64 with the MSVC toolchain, then pins them in the manifest. The decision and the brief for that work are in `docs/ffmpeg-distribution.tmp.md` while it lasts.
 
 ## Desktop app
 

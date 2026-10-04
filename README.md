@@ -73,7 +73,7 @@ mise exec -- pnpm lint && mise exec -- pnpm format     # Biome lint, then format
 
 Each crate's integration tests form one binary named after the crate. Cargo builds are heavy on a shared machine, so build one crate at a time and run cold or workspace-wide jobs through `scripts/cargo-heavy.sh`, which lets one such job run at a time. Before the first build in a new git worktree, run `scripts/seed-worktree-target.sh <worktree>` from the main checkout; it clones the `target/` directory and removes build-script outputs that name paths into another checkout.
 
-Tests that run `ffmpeg` or `ffprobe` (in `crates/media-ffmpeg`, `crates/conversion`, and `crates/api`) skip with a message when the binaries are not on `PATH` or in `EASYIMMERSE_FFMPEG_DIR`. To run them against the bundled LGPL build, point `EASYIMMERSE_FFMPEG_DIR` at a directory holding `ffmpeg` and `ffprobe` (symbolic links to the sidecars in `apps/native/src-tauri/binaries/` work; `mise run web:desktop` creates such a directory at `.dev/ffmpeg/`).
+Tests that run `ffmpeg` or `ffprobe` (in `crates/media-ffmpeg`, `crates/conversion`, and `crates/api`) skip with a message when the binaries are not on `PATH` or in `EASYIMMERSE_FFMPEG_DIR`. To run them against the bundled LGPL build, point `EASYIMMERSE_FFMPEG_DIR` at a directory holding `ffmpeg` and `ffprobe` (symbolic links to the sidecars in `apps/native/src-tauri/binaries/` work; `mise run web:desktop` creates such a directory at `.dev/ffmpeg/`). The transcoding tests in `crates/conversion` also need a working H.264 encoder from the hardware list in `crates/media-ffmpeg/src/encoders.rs`, because the bundled builds include no software H.264 encoder of their own. They skip with a message on a machine where none works, which includes most Linux machines without a VA-API or NVENC capable GPU.
 
 #### End-to-end tests
 
@@ -164,9 +164,9 @@ The remaining directories are mostly for testing, scripts, and documentation.
 ```
 plugins/              example plugins, used only by tests; plugin-manifest.md describes their plugin.toml
 fixtures/ *           small sample files shared by every layer's tests
-scripts/              setup and build scripts, including the ffmpeg fetcher and the ffmpeg licence-notice generator
+scripts/              setup and build scripts, including the ffmpeg fetcher, the ffmpeg build scripts, and the ffmpeg licence-notice generator
 docs/                 product documentation: overview, user stories, UX refinements, bug reports
-.github/workflows/    CI, one workflow per layer, plus the macOS ffmpeg build
+.github/workflows/    CI, one workflow per layer, plus the ffmpeg builds for macOS, Linux, and Windows
 .claude/rules/        conventions that apply to a whole directory
 ```
 

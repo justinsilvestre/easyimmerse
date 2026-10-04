@@ -109,9 +109,10 @@ description = "Install the Appium driver for the iOS end-to-end tests"
 run = "scripts/install-appium-driver.sh xcuitest 12.14.0"
 
 # The plugin-check feature embeds the hello-rust plugin, so that plugin is built first.
+# Tauri refuses to build the desktop app while a declared ffmpeg sidecar is missing.
 [tasks."e2e:desktop"]
 description = "Drive a debug build of the desktop app through WebDriver"
-depends = ["plugins:build-rust"]
+depends = ["plugins:build-rust", "fetch-ffmpeg"]
 run = [
   "pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json --features plugin-check",
   "pnpm --filter @easyimmerse/native e2e",
