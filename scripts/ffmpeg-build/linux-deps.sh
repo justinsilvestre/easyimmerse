@@ -27,7 +27,9 @@ meson setup libdrm/build libdrm --prefix="$prefix" --libdir=lib --default-librar
   -Dcairo-tests=disabled -Dman-pages=disabled -Dvalgrind=disabled -Dtests=false -Dudev=false > /dev/null
 ninja -C libdrm/build install > /dev/null
 
+# libva declares its libraries as shared; `library` lets the static default apply.
 git clone -q --depth 1 --branch "$libva_version" https://github.com/intel/libva
+sed -i 's/shared_library(/library(/' libva/va/meson.build
 PKG_CONFIG_PATH="$prefix/lib/pkgconfig" meson setup libva/build libva --prefix="$prefix" --libdir=lib \
   --default-library=static --buildtype=release \
   -Dwith_x11=no -Dwith_glx=no -Dwith_wayland=no -Dwith_win32=no -Denable_docs=false > /dev/null

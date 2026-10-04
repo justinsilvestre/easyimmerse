@@ -15,7 +15,7 @@ common_flags="$(sh "$(dirname "$0")/read-common-flags.sh")"
 windows_flags="--toolchain=msvc --arch=$arch --target-os=win64 --enable-zlib \
   --enable-mediafoundation --enable-ffnvcodec --enable-nvenc --enable-amf \
   --enable-encoder=h264_mf,hevc_mf,h264_nvenc,hevc_nvenc,h264_amf,hevc_amf \
-  --extra-cflags=-MT --extra-cflags=-I$deps_windows/include --extra-ldflags=-LIBPATH:$deps_windows/lib"
+  --extra-cflags=-MT --extra-cflags=-I$deps_windows/include --extra-ldflags=-L$deps_windows/lib"
 
 cd "$source_dir"
 PKG_CONFIG_PATH="$(cygpath -u "$deps_windows")/lib/pkgconfig" ./configure $common_flags $windows_flags --prefix="$out/install" \

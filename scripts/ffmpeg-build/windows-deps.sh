@@ -14,11 +14,11 @@ work="$(mktemp -d)"
 cd "$work"
 mkdir -p "$prefix/include" "$prefix/lib"
 
-# The MSVC toolchain in ffmpeg's configure turns -lz into z.lib.
+# The MSVC toolchain in ffmpeg's configure turns -lz into zlib.lib.
 git clone -q --depth 1 --branch "v$zlib_version" https://github.com/madler/zlib
 (cd zlib && nmake -nologo -f win32/Makefile.msc zlib.lib > /dev/null)
 cp zlib/zlib.h zlib/zconf.h "$prefix/include/"
-cp zlib/zlib.lib "$prefix/lib/z.lib"
+cp zlib/zlib.lib "$prefix/lib/zlib.lib"
 
 git clone -q --depth 1 --branch "$nv_codec_headers_version" https://github.com/FFmpeg/nv-codec-headers
 make -C nv-codec-headers install PREFIX="$prefix_windows" > /dev/null
