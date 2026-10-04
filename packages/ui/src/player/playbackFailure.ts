@@ -20,6 +20,26 @@ export function describeUnsupportedReason(reason: UnsupportedReason): string {
   return unsupportedReasonSentences[reason];
 }
 
+/** A failed request to the tracks or playback route, as RTK Query reports it. */
+export type RequestError = { code?: string; message?: string } | undefined;
+
+const errorCodeSentences: Record<string, string> = {
+  conversion_unavailable:
+    "The server cannot read media files because ffmpeg is not installed there.",
+  local_paths_not_allowed:
+    "This server does not allow playing files from its own disk.",
+  not_resolvable: "The server does not hold this file.",
+  not_found: "The file was not found on the server's disk.",
+  bad_request: "The server could not read this file as a media file.",
+};
+
+/** A plain sentence for a tracks or playback request that failed. */
+export function describeRequestError(error: NonNullable<RequestError>): string {
+  if (error.code !== undefined && error.code in errorCodeSentences)
+    return errorCodeSentences[error.code] as string;
+  return error.message ?? "The server did not answer.";
+}
+
 /** Codes a media element's `error.code` can take, named as the platform names them. */
 const mediaErrorNames: Record<number, string> = {
   1: "MEDIA_ERR_ABORTED",
