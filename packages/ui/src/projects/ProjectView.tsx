@@ -44,7 +44,7 @@ export function ProjectView({
         <h1 className="min-w-0 truncate text-xl font-semibold">{name}</h1>
         <Button variant="subtle" onClick={onEditSettings}>
           <Settings className="size-4" aria-hidden />
-          Settings
+          Project settings
         </Button>
       </div>
       {children}

@@ -9,17 +9,19 @@ export const selectCurrentTime = (state: RootState) =>
 export const selectPlayerDuration = (state: RootState) =>
   state.app.player.durationSeconds;
 
-export const selectSubtitleSource = (state: RootState) =>
-  state.app.subtitleSource;
+export const selectPlayer = (state: RootState) => state.app.player;
+
+export const selectPendingSubtitlePick = (state: RootState) =>
+  state.app.pendingSubtitlePick;
+
+export const selectChosenSubtitleFile = (state: RootState) =>
+  state.app.chosenSubtitleFile;
 
 export const selectPreference = (key: PreferenceKey) => (state: RootState) =>
   state.app.preferences[key];
 
 export const selectPreferencesLoaded = (state: RootState) =>
   state.app.preferencesLoaded;
-
-export const selectPendingFilePick = (state: RootState) =>
-  state.app.pendingFilePick;
 
 export const selectCurrentMediaFileId = (state: RootState) =>
   state.app.currentMediaFileId;
@@ -29,6 +31,15 @@ export const selectPendingMediaFilePick = (state: RootState) =>
 
 export const selectChosenMediaFile = (state: RootState) =>
   state.app.chosenMediaFile;
+
+export const selectPendingDictionaryPick = (state: RootState) =>
+  state.app.pendingDictionaryPick;
+
+export const selectChosenDictionaryFile = (state: RootState) =>
+  state.app.chosenDictionaryFile;
+
+export const selectUnsupportedDictionaryFile = (state: RootState) =>
+  state.app.unsupportedDictionaryFile;
 
 /** Returns the theme the app shows: the one the user chose, or else the operating system's. */
 export const selectTheme = (state: RootState) => chooseTheme(state.app.theme);

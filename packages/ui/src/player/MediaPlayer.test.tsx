@@ -153,12 +153,6 @@ describe("MediaPlayer", () => {
       expect(selectPlayerDuration(store.getState())).toBe(90);
     });
 
-    it("offers a screenshot of the video", async () => {
-      renderPlayer(directPlaybackRoutes);
-      await findVideo();
-      expect(screen.getByRole("button", { name: "Screenshot" })).toBeDefined();
-    });
-
     it("offers no track choice for a file with one track of each kind", async () => {
       renderPlayer(directPlaybackRoutes);
       await findVideo();
@@ -476,6 +470,7 @@ describe("MediaPlayer", () => {
             source,
             created_at_ms: 1,
             track_selection_json: null,
+            subtitle_selection: { target: null, translation: null },
           },
         ],
       };

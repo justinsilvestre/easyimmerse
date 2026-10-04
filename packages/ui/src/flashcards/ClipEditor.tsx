@@ -1,11 +1,10 @@
 import { Camera } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
-import { Peaks, peaksBetween } from "../media/Peaks.tsx";
+import { Peaks } from "../media/Peaks.tsx";
 import {
   clamp,
   moveClipEnd,
   moveClipStart,
-  peakSpan,
   timeAfterKey,
   viewAroundClip,
   viewIncluding,
@@ -13,6 +12,7 @@ import {
 } from "./clipView.ts";
 import type { AudioClip } from "./flashcardFields.ts";
 import { formatClipTime } from "./formatClipTime.ts";
+import { peaksInView } from "./peaksInView.ts";
 import {
   type DraggableTime,
   type DragHandlers,
@@ -26,14 +26,15 @@ import {
  * and settles around the clip again once the handle is let go.
  */
 export function ClipEditor({
-  peaks,
+  windows,
   durationMs,
   clip,
   screenshotMs,
   onClipChange,
   onScreenshotMsChange,
 }: {
-  peaks: readonly number[];
+  /** The loaded waveform windows of the media's audio, by their start. */
+  windows: ReadonlyMap<number, Uint8Array>;
   durationMs: number;
   clip: AudioClip;
   screenshotMs: number | null;
@@ -47,8 +48,8 @@ export function ClipEditor({
   const view = viewIncludingAll(
     storedView,
     screenshotMs === null
-      ? [clip.startMs, clip.endMs]
-      : [clip.startMs, clip.endMs, screenshotMs],
+      ? [clip.start_ms, clip.end_ms]
+      : [clip.start_ms, clip.end_ms, screenshotMs],
     durationMs,
   );
   const latestClip = useRef(clip);
@@ -67,7 +68,7 @@ export function ClipEditor({
     left: `${percentOf(startMs)}%`,
     right: `${100 - percentOf(endMs)}%`,
   });
-  const peaksOnView = peakSpan(peaks.length, durationMs, view);
+  const peaksOnView = peaksInView(windows, view);
   const handleFor = (time: DraggableTime) => ({
     valueMs: time.valueMs,
     left: `${percentOf(time.valueMs)}%`,
@@ -89,22 +90,20 @@ export function ClipEditor({
             className="absolute inset-y-0"
             style={between(peaksOnView.startMs, peaksOnView.endMs)}
           >
-            <Peaks
-              peaks={peaksBetween(peaks, durationMs, view.startMs, view.endMs)}
-            />
+            <Peaks peaks={peaksOnView.peaks} />
           </div>
           <span
             aria-hidden
             className="absolute inset-y-0 bg-accent/20"
-            style={between(clip.startMs, clip.endMs)}
+            style={between(clip.start_ms, clip.end_ms)}
           />
         </div>
         <Handle
           label="Clip start"
           max={durationMs}
           {...handleFor({
-            valueMs: clip.startMs,
-            constrain: (ms) => moveClipStart(clip, ms).startMs,
+            valueMs: clip.start_ms,
+            constrain: (ms) => moveClipStart(clip, ms).start_ms,
             apply: (ms) => onClipChange(moveClipStart(clip, ms)),
           })}
         />
@@ -112,8 +111,8 @@ export function ClipEditor({
           label="Clip end"
           max={durationMs}
           {...handleFor({
-            valueMs: clip.endMs,
-            constrain: (ms) => moveClipEnd(clip, ms, durationMs).endMs,
+            valueMs: clip.end_ms,
+            constrain: (ms) => moveClipEnd(clip, ms, durationMs).end_ms,
             apply: (ms) => onClipChange(moveClipEnd(clip, ms, durationMs)),
           })}
         />
@@ -131,8 +130,8 @@ export function ClipEditor({
         )}
       </div>
       <div className="flex justify-between">
-        <span>{formatClipTime(clip.startMs)}</span>
-        <span>{formatClipTime(clip.endMs)}</span>
+        <span>{formatClipTime(clip.start_ms)}</span>
+        <span>{formatClipTime(clip.end_ms)}</span>
       </div>
     </div>
   );

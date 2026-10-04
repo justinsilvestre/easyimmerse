@@ -7,6 +7,7 @@ import { useRegisteredPlayer } from "./useRegisteredPlayer.ts";
 
 /**
  * The media element itself, registered as the app's player and attached to its source.
+ * The app draws its own controls over it; an audio file's element is present but not shown.
  * `crossOrigin="anonymous"` lets a canvas capture frames from a stream on another origin.
  */
 export function MediaElement({
@@ -22,7 +23,7 @@ export function MediaElement({
   elementRef: RefObject<HTMLVideoElement | null>;
   onFailure: (cause: string) => void;
 }) {
-  const handlers = useRegisteredPlayer(elementRef, frameRate);
+  const handlers = useRegisteredPlayer(elementRef, frameRate, hasVideo);
   usePlayerSource(elementRef, source, onFailure);
   // hls.js reports and recovers the element's own errors, so only a direct source reads them here.
   const onError = (event: SyntheticEvent<HTMLMediaElement>) => {
@@ -32,14 +33,11 @@ export function MediaElement({
   return (
     <video
       ref={elementRef}
-      controls
       playsInline
       crossOrigin="anonymous"
       preload="metadata"
       aria-label={hasVideo ? "Video" : "Audio"}
-      className={
-        hasVideo ? "aspect-video w-full rounded bg-black" : "h-12 w-full"
-      }
+      className={hasVideo ? "max-h-full max-w-full" : "sr-only"}
       onError={onError}
       {...handlers}
     />

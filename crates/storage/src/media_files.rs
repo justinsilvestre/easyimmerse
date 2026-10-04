@@ -1,13 +1,14 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
-use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
+use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, SubtitleSelection};
 use easyimmerse_core::project::ProjectId;
+use rusqlite::types::Type;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
+use crate::projects::ensure_project_exists;
+use crate::stored_values::{now_ms, random_id, read_unsigned, to_stored_integer};
 
 const MEDIA_FILE_COLUMNS: &str = "id, project_id, name, source_kind, source_path, browser_file_size, \
-     browser_file_last_modified_ms, created_at_ms, track_selection_json";
+     browser_file_last_modified_ms, created_at_ms, track_selection_json, subtitle_selection_json";
 
 /// Lists a project's media files, oldest first.
 pub fn list_media_files(
@@ -43,12 +44,13 @@ pub fn add_media_file(
 ) -> Result<MediaFile, StorageError> {
     ensure_project_exists(conn, project_id)?;
     let media_file = MediaFile {
-        id: generate_media_file_id(),
+        id: MediaFileId(random_id()),
         project_id: project_id.clone(),
         name: name.to_string(),
         source: source.clone(),
         created_at_ms: now_ms(),
         track_selection_json: None,
+        subtitle_selection: SubtitleSelection::default(),
     };
     insert_media_file(conn, &media_file)?;
     Ok(media_file)
@@ -72,6 +74,18 @@ pub fn set_track_selection_json(
     ensure_one_row_changed(updated, id)
 }
 
+pub fn set_subtitle_selection(
+    conn: &Connection,
+    id: &MediaFileId,
+    selection: &SubtitleSelection,
+) -> Result<(), StorageError> {
+    let updated = conn.execute(
+        "UPDATE media_files SET subtitle_selection_json = ?2 WHERE id = ?1",
+        params![id.0, serde_json::to_string(selection)?],
+    )?;
+    ensure_one_row_changed(updated, id)
+}
+
 /// Lists every distinct local path that some media file still points at.
 pub fn list_referenced_source_paths(conn: &Connection) -> Result<Vec<String>, StorageError> {
     let mut statement = conn.prepare(
@@ -84,21 +98,12 @@ pub fn list_referenced_source_paths(conn: &Connection) -> Result<Vec<String>, St
     Ok(paths)
 }
 
-/// Deletes a project together with its media files.
-pub fn delete_project(conn: &Connection, project_id: &ProjectId) -> Result<(), StorageError> {
-    let deleted = conn.execute("DELETE FROM projects WHERE id = ?1", params![project_id.0])?;
-    if deleted == 0 {
-        return Err(StorageError::ProjectNotFound(project_id.0.clone()));
-    }
-    Ok(())
-}
-
 fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), StorageError> {
     let (source_kind, source_path, size, last_modified_ms) = source_columns(&media_file.source);
     conn.execute(
         &format!(
             "INSERT INTO media_files ({MEDIA_FILE_COLUMNS}) \
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)"
         ),
         params![
             media_file.id.0,
@@ -110,12 +115,12 @@ fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), St
             last_modified_ms,
             to_stored_integer(media_file.created_at_ms),
             media_file.track_selection_json,
+            serde_json::to_string(&media_file.subtitle_selection)?,
         ],
     )?;
     Ok(())
 }
 
-/// SQLite stores only signed integers, so unsigned values are stored as `i64`.
 fn source_columns(
     source: &MediaFileSource,
 ) -> (&'static str, Option<&str>, Option<i64>, Option<i64>) {
@@ -133,15 +138,6 @@ fn source_columns(
     }
 }
 
-fn to_stored_integer(value: u64) -> i64 {
-    i64::try_from(value).unwrap_or(i64::MAX)
-}
-
-fn read_unsigned(row: &Row, index: usize) -> rusqlite::Result<u64> {
-    let value: i64 = row.get(index)?;
-    Ok(u64::try_from(value).unwrap_or(0))
-}
-
 fn read_media_file(row: &Row) -> rusqlite::Result<MediaFile> {
     Ok(MediaFile {
         id: MediaFileId(row.get(0)?),
@@ -150,6 +146,17 @@ fn read_media_file(row: &Row) -> rusqlite::Result<MediaFile> {
         source: read_source(row)?,
         created_at_ms: read_unsigned(row, 7)?,
         track_selection_json: row.get(8)?,
+        subtitle_selection: read_subtitle_selection(row, 9)?,
+    })
+}
+
+/// Reads the subtitle selection column, where null stands for no subtitles chosen.
+fn read_subtitle_selection(row: &Row, index: usize) -> rusqlite::Result<SubtitleSelection> {
+    let Some(json) = row.get::<_, Option<String>>(index)? else {
+        return Ok(SubtitleSelection::default());
+    };
+    serde_json::from_str(&json).map_err(|error| {
+        rusqlite::Error::FromSqlConversionFailure(index, Type::Text, Box::new(error))
     })
 }
 
@@ -169,38 +176,12 @@ fn read_source(row: &Row) -> rusqlite::Result<MediaFileSource> {
     }
 }
 
-fn ensure_project_exists(conn: &Connection, project_id: &ProjectId) -> Result<(), StorageError> {
-    let exists: bool = conn.query_row(
-        "SELECT EXISTS (SELECT 1 FROM projects WHERE id = ?1)",
-        params![project_id.0],
-        |row| row.get(0),
-    )?;
-    if exists {
-        Ok(())
-    } else {
-        Err(StorageError::ProjectNotFound(project_id.0.clone()))
-    }
-}
-
 fn ensure_one_row_changed(changed: usize, id: &MediaFileId) -> Result<(), StorageError> {
     if changed == 0 {
         Err(StorageError::MediaFileNotFound(id.0.clone()))
     } else {
         Ok(())
     }
-}
-
-/// Sixteen random bytes, hex encoded.
-fn generate_media_file_id() -> MediaFileId {
-    MediaFileId(hex::encode(rand::random::<[u8; 16]>()))
-}
-
-/// The clock is only ever behind the epoch on a misconfigured machine; such a time is stored as zero.
-fn now_ms() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|elapsed| u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX))
-        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -391,8 +372,39 @@ mod tests {
     }
 
     #[test]
-    fn deleting_an_unknown_project_fails() {
-        let result = seeded_storage().delete_project(&ProjectId("missing".to_string()));
-        assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
+    fn starts_without_a_subtitle_selection() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(&project(), "a", &path_source("/a.mp4"))
+            .unwrap();
+        assert_eq!(
+            storage
+                .get_media_file(&added.id)
+                .unwrap()
+                .subtitle_selection,
+            SubtitleSelection::default()
+        );
+    }
+
+    #[test]
+    fn stores_a_subtitle_selection() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(&project(), "a", &path_source("/a.mp4"))
+            .unwrap();
+        let selection = SubtitleSelection {
+            target: Some("embedded:3".to_string()),
+            translation: None,
+        };
+        storage
+            .set_subtitle_selection(&added.id, &selection)
+            .unwrap();
+        assert_eq!(
+            storage
+                .get_media_file(&added.id)
+                .unwrap()
+                .subtitle_selection,
+            selection
+        );
     }
 }

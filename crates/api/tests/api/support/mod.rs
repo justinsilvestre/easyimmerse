@@ -5,6 +5,7 @@
 use std::path::PathBuf;
 
 use easyimmerse_api::{ApiConfig, ServeOptions, ServerHandle, serve};
+use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use easyimmerse_storage::Storage;
 use serde_json::Value;
 use tempfile::TempDir;
@@ -103,6 +104,17 @@ pub async fn spawn_test_server_with_options(
     }
 }
 
+/// Reports whether ffmpeg and ffprobe are found. Tests that need them return early without.
+pub fn ffmpeg_available() -> bool {
+    let paths = FfmpegPaths::default();
+    let available = locate_binary(BinaryName::Ffmpeg, &paths).is_ok()
+        && locate_binary(BinaryName::Ffprobe, &paths).is_ok();
+    if !available {
+        eprintln!("skipped: ffmpeg or ffprobe not found");
+    }
+    available
+}
+
 pub fn fixture_path(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures")
@@ -132,6 +144,10 @@ impl TestServer {
 
     pub async fn post_json(&self, path: &str, body: &Value) -> TestResponse {
         self.request("POST", path).json(body).send().await
+    }
+
+    pub async fn put_json(&self, path: &str, body: &Value) -> TestResponse {
+        self.request("PUT", path).json(body).send().await
     }
 
     pub async fn delete(&self, path: &str) -> TestResponse {

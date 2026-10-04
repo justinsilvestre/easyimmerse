@@ -7,7 +7,7 @@ use zip::ZipArchive;
 
 use super::error::DictionaryError;
 use super::format::DictionaryFormat;
-use super::{Dictionary, TermEntry};
+use super::{Dictionary, DictionaryFileFormat, TermEntry};
 
 /// The Yomitan dictionary format, version 3: an `index.json` with the metadata and any
 /// number of `term_bank_N.json` files holding term entries as JSON arrays.
@@ -35,6 +35,9 @@ impl DictionaryFormat for YomitanFormat {
         Ok(Dictionary {
             title: index.title,
             revision: index.revision,
+            format: DictionaryFileFormat::Yomitan,
+            source_language: index.source_language,
+            target_language: index.target_language,
             entries,
         })
     }
@@ -47,6 +50,10 @@ struct Index {
     format: Option<u32>,
     /// Older dictionaries state the format version under this key instead of `format`.
     version: Option<u32>,
+    #[serde(rename = "sourceLanguage")]
+    source_language: Option<String>,
+    #[serde(rename = "targetLanguage")]
+    target_language: Option<String>,
 }
 
 const SUPPORTED_VERSION: u32 = 3;
@@ -174,6 +181,29 @@ mod tests {
         assert_eq!(
             YomitanFormat.parse(&mut open_fixture()).unwrap().revision,
             Some("2026-09-30".into())
+        );
+    }
+
+    #[test]
+    fn reads_no_languages_from_an_index_without_them() {
+        assert_eq!(
+            YomitanFormat
+                .parse(&mut open_fixture())
+                .unwrap()
+                .source_language,
+            None
+        );
+    }
+
+    #[test]
+    fn reads_the_languages_an_index_states() {
+        let index: Index = serde_json::from_value(json!({
+            "title": "t", "format": 3, "sourceLanguage": "ja", "targetLanguage": "en"
+        }))
+        .unwrap();
+        assert_eq!(
+            (index.source_language, index.target_language),
+            (Some("ja".into()), Some("en".into()))
         );
     }
 

@@ -1,7 +1,4 @@
-import type { TermEntry } from "@easyimmerse/types";
-
-/** A dictionary entry together with the dictionary it came from. */
-export type LookupEntry = TermEntry & { dictionaryTitle: string };
+import type { LookupEntry } from "@easyimmerse/types";
 
 /** What the dictionary pop-up shows for the word under the pointer or typed into its search field. */
 export type LookupState =

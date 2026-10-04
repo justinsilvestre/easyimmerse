@@ -129,7 +129,11 @@ describe("backendApi", () => {
     configureBackend(client);
     const bytes = new Uint8Array([80, 75]);
     await createStore().dispatch(
-      backendApi.endpoints.importDictionary.initiate({ bytes }),
+      backendApi.endpoints.importDictionary.initiate({
+        bytes,
+        sourceLanguage: null,
+        targetLanguage: null,
+      }),
     );
     expect(client.requests[0]?.body).toEqual({
       kind: "bytes",

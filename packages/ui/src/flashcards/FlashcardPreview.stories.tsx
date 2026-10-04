@@ -39,8 +39,8 @@ export const EmptyFields: Story = {
   args: {
     content: {
       ...exampleFlashcard,
-      l1Definition: "",
-      textContextTranslation: "",
+      l1_definition: "",
+      text_context_translation: "",
       screenshot: null,
       tags: [],
     },

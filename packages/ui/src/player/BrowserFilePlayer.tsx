@@ -7,7 +7,11 @@ import { failedPlayback, loadingPlayback } from "./PlaybackState.ts";
 import { PlayerPanel } from "./PlayerPanel.tsx";
 
 /** Plays a file the browser holds from a blob URL. Such a file is never converted and has no waveform. */
-export function BrowserFilePlayer({ mediaFile }: { mediaFile: MediaFile }) {
+export function BrowserFilePlayer({
+  mediaFile,
+}: {
+  mediaFile: Pick<MediaFile, "name" | "source">;
+}) {
   const registry = useBrowserFileRegistry();
   const file = registry?.find(mediaFile.name, mediaFile.source) ?? null;
   const url = useObjectUrl(file);

@@ -1,3 +1,4 @@
+import type { SaveProjectRequest } from "@easyimmerse/types";
 import {
   type FlashcardFieldKey,
   toggleField,
@@ -7,24 +8,18 @@ import {
   fieldsOfPreset,
 } from "../flashcards/flashcardPresets.ts";
 
-export type ProjectFormValues = {
+/** A project's name and settings as the form edits them. */
+export type ProjectFormValues = SaveProjectRequest["settings"] & {
   name: string;
-  targetLanguage: string;
-  translationLanguage: string;
-  flashcardFields: readonly FlashcardFieldKey[];
-  defaultTags: readonly string[];
-  /** Whether each new flashcard is tagged with the name of the media file it was made from. */
-  tagsMediaName: boolean;
-  fillsAudioWithTts: boolean;
 };
 
 export type ProjectFormAction =
   | { type: "nameChanged"; value: string }
-  | { type: "targetLanguageChanged"; value: string }
-  | { type: "translationLanguageChanged"; value: string }
+  | { type: "target_languageChanged"; value: string }
+  | { type: "translation_languageChanged"; value: string }
   | { type: "presetChosen"; preset: FlashcardPreset }
   | { type: "fieldToggled"; key: FlashcardFieldKey }
-  | { type: "defaultTagsChanged"; tags: readonly string[] }
+  | { type: "default_tagsChanged"; tags: readonly string[] }
   | { type: "mediaNameTagToggled" }
   | { type: "ttsToggled" };
 
@@ -35,22 +30,25 @@ export function reduceProjectForm(
   switch (action.type) {
     case "nameChanged":
       return { ...state, name: action.value };
-    case "targetLanguageChanged":
-      return { ...state, targetLanguage: action.value };
-    case "translationLanguageChanged":
-      return { ...state, translationLanguage: action.value };
+    case "target_languageChanged":
+      return { ...state, target_language: action.value };
+    case "translation_languageChanged":
+      return { ...state, translation_language: action.value };
     case "presetChosen":
-      return { ...state, flashcardFields: fieldsOfPreset(action.preset) };
+      return {
+        ...state,
+        flashcard_fields: [...fieldsOfPreset(action.preset)],
+      };
     case "fieldToggled":
       return {
         ...state,
-        flashcardFields: toggleField(state.flashcardFields, action.key),
+        flashcard_fields: [...toggleField(state.flashcard_fields, action.key)],
       };
-    case "defaultTagsChanged":
-      return { ...state, defaultTags: action.tags };
+    case "default_tagsChanged":
+      return { ...state, default_tags: [...action.tags] };
     case "mediaNameTagToggled":
-      return { ...state, tagsMediaName: !state.tagsMediaName };
+      return { ...state, tags_media_name: !state.tags_media_name };
     case "ttsToggled":
-      return { ...state, fillsAudioWithTts: !state.fillsAudioWithTts };
+      return { ...state, fills_audio_with_tts: !state.fills_audio_with_tts };
   }
 }

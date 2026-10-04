@@ -22,8 +22,8 @@ export function ProjectFormFields({
 }) {
   const [openGroup, setOpenGroup] = useState<FlashcardFieldGroup>("target");
   const languages = {
-    target: values.targetLanguage,
-    translation: values.translationLanguage,
+    target: values.target_language,
+    translation: values.translation_language,
   };
   return (
     <div className="flex flex-col gap-3">
@@ -68,7 +68,7 @@ export function ProjectFormFields({
                 <CheckboxField
                   key={field.key}
                   label={field.label(languages)}
-                  checked={values.flashcardFields.includes(field.key)}
+                  checked={values.flashcard_fields.includes(field.key)}
                   onChange={() =>
                     dispatch({ type: "fieldToggled", key: field.key })
                   }

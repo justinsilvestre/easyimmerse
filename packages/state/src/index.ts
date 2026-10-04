@@ -1,7 +1,17 @@
 export type { AppAction } from "./actions.ts";
 export { actions, isAppAction } from "./actions.ts";
-export type { AppState, PreferenceKey } from "./appState.ts";
-export { initialAppState, preferenceKeys } from "./appState.ts";
+export type {
+  AppState,
+  DictionaryLanguages,
+  PlayerState,
+  PreferenceKey,
+  SubtitleRole,
+} from "./appState.ts";
+export {
+  initialAppState,
+  initialPlayerState,
+  preferenceKeys,
+} from "./appState.ts";
 export type {
   BrowserFileRegistry,
   HeldFile,
@@ -16,24 +26,37 @@ export type {
 } from "./createAppStore.ts";
 export { createAppStore } from "./createAppStore.ts";
 export type { Effect } from "./effect.ts";
-export type { Effects, PickedFile, PickedMediaFile } from "./effects.ts";
+export type {
+  Effects,
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 export { mediaFileExtensions } from "./mediaFileExtensions.ts";
-export type { PlayerHandle, PlayerRegistry } from "./playerRegistry.ts";
+export type {
+  PlayerCommand,
+  PlayerHandle,
+  PlayerRegistry,
+} from "./playerRegistry.ts";
 export { createPlayerRegistry } from "./playerRegistry.ts";
 export type { EffectCall, RecordingEffects } from "./recordingEffects.ts";
 export { createRecordingEffects } from "./recordingEffects.ts";
 export {
+  selectChosenDictionaryFile,
   selectChosenMediaFile,
+  selectChosenSubtitleFile,
   selectCurrentMediaFileId,
   selectCurrentTime,
-  selectPendingFilePick,
+  selectPendingDictionaryPick,
   selectPendingMediaFilePick,
+  selectPendingSubtitlePick,
+  selectPlayer,
   selectPlayerDuration,
   selectPreference,
   selectPreferencesLoaded,
-  selectSubtitleSource,
   selectTextScale,
   selectTheme,
+  selectUnsupportedDictionaryFile,
 } from "./selectors.ts";
 export {
   defaultTextScale,

@@ -80,7 +80,9 @@ impl From<StorageError> for ApiFailure {
         match error {
             StorageError::DictionaryNotFound(_)
             | StorageError::ProjectNotFound(_)
-            | StorageError::MediaFileNotFound(_) => not_found(error.to_string()),
+            | StorageError::MediaFileNotFound(_)
+            | StorageError::FlashcardNotFound(_)
+            | StorageError::SubtitleFileNotFound(_) => not_found(error.to_string()),
             _ => internal(error.to_string()),
         }
     }
@@ -98,9 +100,19 @@ impl From<DocumentError> for ApiFailure {
     }
 }
 
+/// An archive no registered format reads answers with the code `unsupported_format`.
 impl From<DictionaryError> for ApiFailure {
     fn from(error: DictionaryError) -> Self {
-        bad_request(error.to_string())
+        match error {
+            DictionaryError::Archive(_)
+            | DictionaryError::UnrecognizedFormat
+            | DictionaryError::UnsupportedVersion(_) => ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "unsupported_format",
+                error.to_string(),
+            ),
+            _ => bad_request(error.to_string()),
+        }
     }
 }
 
@@ -112,6 +124,12 @@ mod tests {
     fn a_missing_dictionary_maps_to_not_found() {
         let failure = ApiFailure::from(StorageError::DictionaryNotFound("x".to_string()));
         assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn an_unrecognized_dictionary_names_the_unsupported_format_code() {
+        let failure = ApiFailure::from(DictionaryError::UnrecognizedFormat);
+        assert_eq!(failure.error.code, "unsupported_format");
     }
 
     #[test]

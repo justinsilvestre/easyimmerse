@@ -4,6 +4,7 @@ pub mod flashcard;
 pub mod media_file;
 pub mod project;
 pub mod providers;
+pub mod subtitle_file;
 pub mod text_source;
 pub mod timed_text;
 pub mod tokenize;

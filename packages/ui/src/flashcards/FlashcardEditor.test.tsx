@@ -18,7 +18,10 @@ function renderEditor(onSave: OnSave = () => undefined) {
       initialContent={exampleFlashcard}
       initialFields={fieldsOfPreset("intermediate")}
       languages={exampleLanguages}
-      waveform={{ peaks: [0.1, 0.5, 0.9, 0.3], durationMs: 24_000 }}
+      waveform={{
+        windows: new Map([[0, new Uint8Array(3000).fill(128)]]),
+        durationMs: 24_000,
+      }}
       onSave={onSave}
       onDelete={() => undefined}
       onClose={() => undefined}
@@ -96,7 +99,7 @@ describe("FlashcardEditor", () => {
 
   it("saves the clip moved on the waveform", () => {
     const saved: (number | undefined)[] = [];
-    renderEditor((content) => saved.push(content.audioContext?.startMs));
+    renderEditor((content) => saved.push(content.audio_context?.start_ms));
     fireEvent.keyDown(screen.getByRole("slider", { name: "Clip start" }), {
       key: "ArrowLeft",
     });
@@ -106,7 +109,7 @@ describe("FlashcardEditor", () => {
 
   it("saves the screenshot time moved on the waveform", () => {
     const saved: (number | undefined)[] = [];
-    renderEditor((content) => saved.push(content.screenshot?.atMs));
+    renderEditor((content) => saved.push(content.screenshot?.at_ms));
     fireEvent.keyDown(screen.getByRole("slider", { name: "Screenshot time" }), {
       key: "ArrowRight",
     });

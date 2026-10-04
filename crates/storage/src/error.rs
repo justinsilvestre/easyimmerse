@@ -16,4 +16,8 @@ pub enum StorageError {
     ProjectNotFound(String),
     #[error("no media file has the id {0:?}")]
     MediaFileNotFound(String),
+    #[error("no flashcard has the id {0:?}")]
+    FlashcardNotFound(String),
+    #[error("no subtitles file has the id {0:?}")]
+    SubtitleFileNotFound(String),
 }

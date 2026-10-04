@@ -1,31 +1,36 @@
 import { useListProjectsQuery } from "@easyimmerse/backend";
-import { Button } from "../components/Button.tsx";
-import { HelpLink } from "../components/HelpLink.tsx";
-import { ProjectList } from "../components/ProjectList.tsx";
-import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { useNavigationActions } from "../navigationContext.ts";
+import { HomeView, type ProjectListStatus } from "../projects/HomeView.tsx";
 
-/** The project id the media screen opens with when no server can list projects. */
-const offlineProjectId = "offline";
-
+/** The home screen with the projects the server lists. */
 export function HomeScreen({
   onOpenProject,
+  onCreateProject,
+  onContinueOffline,
 }: {
   onOpenProject: (projectId: string) => void;
+  onCreateProject: () => void;
+  onContinueOffline: () => void;
 }) {
   const { data, isLoading, error } = useListProjectsQuery();
+  const { openDictionaries } = useNavigationActions();
   return (
-    <ScreenLayout headerActions={<HelpLink />}>
-      <h1 className="text-xl font-semibold">Projects</h1>
-      {isLoading && <p>Loading projects...</p>}
-      {error && <p role="alert">Could not load the projects.</p>}
-      {isOffline(error) && (
-        <Button onClick={() => onOpenProject(offlineProjectId)}>
-          Continue offline
-        </Button>
-      )}
-      {data && <ProjectList projects={data.projects} onOpen={onOpenProject} />}
-    </ScreenLayout>
+    <HomeView
+      status={statusOf(isLoading, error)}
+      projects={data?.projects ?? []}
+      onOpenProject={onOpenProject}
+      onCreateProject={onCreateProject}
+      onContinueOffline={onContinueOffline}
+      onOpenDictionaries={openDictionaries}
+    />
   );
+}
+
+function statusOf(isLoading: boolean, error: unknown): ProjectListStatus {
+  if (isLoading) return "loading";
+  if (isOffline(error)) return "offline";
+  if (error) return "failed";
+  return "ready";
 }
 
 function isOffline(error: unknown): boolean {

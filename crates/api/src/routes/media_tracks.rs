@@ -16,6 +16,7 @@ use crate::auth::error_body::{ApiError, ApiFailure, internal};
 use crate::auth::token_kind::TokenKind;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{probe_media, resolve_source_path};
+use crate::routes::subtitle_files::TEXT_SUBTITLE_CODECS;
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -71,7 +72,7 @@ pub async fn get_media_tracks(
         ("media_id" = String, Path, description = "The media file id"),
     ),
     responses(
-        (status = 200, description = "The subtitle tracks embedded in the file", body = SubtitleTracksResponse),
+        (status = 200, description = "The text subtitle tracks embedded in the file; image-based ones such as PGS are left out", body = SubtitleTracksResponse),
         (status = 400, description = "The file could not be probed", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The token may not read local paths", body = ApiError),
@@ -91,6 +92,7 @@ pub async fn get_media_subtitle_tracks(
     Ok(Json(SubtitleTracksResponse {
         tracks: container
             .tracks_of_kind(TrackKind::Subtitle)
+            .filter(|track| TEXT_SUBTITLE_CODECS.contains(&track.codec.as_str()))
             .cloned()
             .collect(),
     }))

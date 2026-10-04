@@ -29,9 +29,18 @@ pub async fn parse_timed_text_route(
     Extension(token): Extension<TokenKind>,
     Json(request): Json<ParseTimedTextRequest>,
 ) -> Result<Json<TimedTextTrack>, ApiFailure> {
-    let text = match request.source {
-        TextSource::Inline { text } => text,
-        TextSource::Path { path } => resolve_local_text(token, &state.config, &path).await?,
-    };
+    let text = resolve_text_source(&state, token, request.source).await?;
     Ok(Json(parse_timed_text(&text, request.format)?))
+}
+
+/// The text of a source. A `path` source is read only for tokens that may read local paths.
+pub async fn resolve_text_source(
+    state: &AppState,
+    token: TokenKind,
+    source: TextSource,
+) -> Result<String, ApiFailure> {
+    match source {
+        TextSource::Inline { text } => Ok(text),
+        TextSource::Path { path } => resolve_local_text(token, &state.config, &path).await,
+    }
 }

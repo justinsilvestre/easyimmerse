@@ -4,7 +4,11 @@ import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
 import { TagsField } from "../components/TagsField.tsx";
-import { reduceEditor } from "./editFlashcard.ts";
+import {
+  type EditorAction,
+  type EditorState,
+  reduceEditor,
+} from "./editFlashcard.ts";
 import {
   MediaFields,
   type MediaWaveform,
@@ -17,21 +21,7 @@ import {
   flashcardFields,
 } from "./flashcardFields.ts";
 
-/**
- * The form for a flashcard that was just created or reopened.
- * Fields outside the project's flashcard settings stay hidden until checked in the "More fields" menu; the screenshot has its own checkbox.
- */
-export function FlashcardEditor({
-  initialContent,
-  initialFields,
-  languages,
-  waveform,
-  onSave,
-  onDelete,
-  onClose,
-}: {
-  initialContent: FlashcardContent;
-  initialFields: readonly FlashcardFieldKey[];
+type EditorCallbacks = {
   languages: FlashcardLanguages;
   /** The audio of the media file, for editing the clip. Null for media without audio, such as an ebook. */
   waveform: MediaWaveform | null;
@@ -41,11 +31,40 @@ export function FlashcardEditor({
   ) => void;
   onDelete: () => void;
   onClose: () => void;
+};
+
+/**
+ * The form for a flashcard that was just created or reopened, keeping its own state from the initial content.
+ * Fields outside the project's flashcard settings stay hidden until checked in the "More fields" menu; the screenshot has its own checkbox.
+ */
+export function FlashcardEditor({
+  initialContent,
+  initialFields,
+  ...props
+}: EditorCallbacks & {
+  initialContent: FlashcardContent;
+  initialFields: readonly FlashcardFieldKey[];
 }) {
   const [state, dispatch] = useReducer(reduceEditor, {
     content: initialContent,
     includedFields: initialFields,
   });
+  return <FlashcardEditorForm state={state} dispatch={dispatch} {...props} />;
+}
+
+/** The flashcard form with its state kept by the caller, so that other views, such as the waveform, can change the clip too. */
+export function FlashcardEditorForm({
+  state,
+  dispatch,
+  languages,
+  waveform,
+  onSave,
+  onDelete,
+  onClose,
+}: EditorCallbacks & {
+  state: EditorState;
+  dispatch: (action: EditorAction) => void;
+}) {
   const { content, includedFields } = state;
   return (
     <form

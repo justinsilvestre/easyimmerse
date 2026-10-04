@@ -27,8 +27,8 @@ export function CuePanel({
   flashcardCueIndexes: readonly number[];
   activeWord?: string;
   onSeek: (ms: number) => void;
-  onWordHover: (word: string) => void;
-  onWordClick: (word: string) => void;
+  onWordHover: (word: string, cue: Cue) => void;
+  onWordClick: (word: string, cue: Cue) => void;
   onAddSubtitlesFile: () => void;
   onGenerateSubtitles: () => void;
 }) {
@@ -100,8 +100,8 @@ function CueCard({
   hasFlashcard: boolean;
   activeWord?: string;
   onSeek: (ms: number) => void;
-  onWordHover: (word: string) => void;
-  onWordClick: (word: string) => void;
+  onWordHover: (word: string, cue: Cue) => void;
+  onWordClick: (word: string, cue: Cue) => void;
 }) {
   const ref = useRef<HTMLLIElement>(null);
   useEffect(() => {
@@ -138,8 +138,8 @@ function CueCard({
         <ClickableText
           text={cue.text}
           activeWord={activeWord}
-          onWordHover={onWordHover}
-          onWordClick={onWordClick}
+          onWordHover={(word) => onWordHover(word, cue)}
+          onWordClick={(word) => onWordClick(word, cue)}
         />
       </p>
       {translation && (

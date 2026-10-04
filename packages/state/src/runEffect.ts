@@ -14,6 +14,9 @@ export function runEffect(
     case "seekPlayer":
       effects.seekPlayer(effect.seconds);
       return;
+    case "controlPlayer":
+      effects.controlPlayer(effect.command);
+      return;
     case "pickFile":
       effects
         .pickFile(effect.accept)
@@ -35,6 +38,18 @@ export function runEffect(
           ),
         )
         .catch(() => dispatch(actions.mediaFilePickCancelled()));
+      return;
+    case "pickDictionaryFile":
+      effects
+        .pickDictionaryFile()
+        .then((file) =>
+          dispatch(
+            file
+              ? actions.dictionaryFileChosen(file)
+              : actions.dictionaryFilePickCancelled(),
+          ),
+        )
+        .catch(() => dispatch(actions.dictionaryFilePickCancelled()));
       return;
     case "savePreference":
       effects.savePreference(effect.key, effect.value).catch(ignoreFailure);

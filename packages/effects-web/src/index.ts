@@ -4,8 +4,10 @@ import type {
   PlayerRegistry,
 } from "@easyimmerse/state";
 import { createBrowserFileRegistry } from "@easyimmerse/state";
+import { createControlPlayer } from "./controlPlayer.ts";
 import { copyToClipboard } from "./copyToClipboard.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
+import { pickDictionaryFile } from "./pickDictionaryFile.ts";
 import { pickFile } from "./pickFile.ts";
 import { createPickMediaFile } from "./pickMediaFile.ts";
 import { createPreferenceStore } from "./preferenceStore.ts";
@@ -23,10 +25,12 @@ export function createWebEffects(options: {
   const preferences = createPreferenceStore();
   return {
     seekPlayer: createSeekPlayer(options.playerRegistry),
+    controlPlayer: createControlPlayer(options.playerRegistry),
     pickFile,
     pickMediaFile: createPickMediaFile(
       options.browserFileRegistry ?? createBrowserFileRegistry<File>(),
     ),
+    pickDictionaryFile,
     savePreference: preferences.save,
     loadPreference: preferences.load,
     showNotification: options.notify ?? showNotification,

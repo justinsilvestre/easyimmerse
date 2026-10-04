@@ -1,11 +1,9 @@
+import type { DictionarySummary } from "@easyimmerse/types";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { formatLanguagePair, languageName } from "../projects/languages.ts";
-import {
-  type DictionaryItem,
-  dictionaryFormatLabels,
-} from "./dictionaryItem.ts";
+import { dictionaryFormatLabels } from "./dictionaryFormatLabels.ts";
 
 /**
  * Lists dictionaries grouped by the language they are looked up in.
@@ -17,7 +15,7 @@ export function DictionaryList({
   onMove,
   onRemove,
 }: {
-  dictionaries: readonly DictionaryItem[];
+  dictionaries: readonly DictionarySummary[];
   onToggle: (dictionaryId: string) => void;
   /** Swaps the dictionary with its neighbour among the dictionaries of the same source language. */
   onMove: (dictionaryId: string, direction: "up" | "down") => void;
@@ -43,7 +41,7 @@ export function DictionaryList({
                 <input
                   type="checkbox"
                   aria-label={`Enable ${dictionary.title}`}
-                  checked={dictionary.isEnabled}
+                  checked={dictionary.is_enabled}
                   onChange={() => onToggle(dictionary.id)}
                   className="size-4 accent-accent"
                 />
@@ -53,8 +51,8 @@ export function DictionaryList({
                   </span>
                   <span className="text-xs text-fg-muted">
                     {formatLanguagePair(
-                      dictionary.sourceLanguage,
-                      dictionary.targetLanguage,
+                      dictionary.source_language,
+                      dictionary.target_language,
                     )}
                     {" · "}
                     {dictionary.entry_count.toLocaleString("en")} entries
@@ -95,12 +93,12 @@ export function DictionaryList({
 }
 
 function groupByLanguage(
-  dictionaries: readonly DictionaryItem[],
-): [string, DictionaryItem[]][] {
-  const groups = new Map<string, DictionaryItem[]>();
+  dictionaries: readonly DictionarySummary[],
+): [string, DictionarySummary[]][] {
+  const groups = new Map<string, DictionarySummary[]>();
   for (const dictionary of dictionaries) {
-    const group = groups.get(dictionary.sourceLanguage) ?? [];
-    groups.set(dictionary.sourceLanguage, [...group, dictionary]);
+    const group = groups.get(dictionary.source_language) ?? [];
+    groups.set(dictionary.source_language, [...group, dictionary]);
   }
   return [...groups.entries()];
 }

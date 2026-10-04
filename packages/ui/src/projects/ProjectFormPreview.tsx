@@ -17,9 +17,9 @@ const exampleMediaNameTag = "dark-s01e01";
 export function ProjectFormPreview({ values }: { values: ProjectFormValues }) {
   const isWide = useMediaQuery(wideScreenQuery);
   const [isExpanded, setExpanded] = useState(false);
-  const tags = values.tagsMediaName
-    ? addTags(values.defaultTags, [exampleMediaNameTag])
-    : [...values.defaultTags];
+  const tags = values.tags_media_name
+    ? addTags(values.default_tags, [exampleMediaNameTag])
+    : [...values.default_tags];
   return (
     <aside className="flex flex-col gap-2 md:col-start-2 md:row-span-4 md:row-start-1 md:sticky md:top-4 md:self-start">
       <div className="flex items-center justify-between">
@@ -40,10 +40,10 @@ export function ProjectFormPreview({ values }: { values: ProjectFormValues }) {
       </div>
       <FlashcardPreview
         content={{ ...exampleFlashcard, tags }}
-        includedFields={values.flashcardFields}
+        includedFields={values.flashcard_fields}
         languages={{
-          target: values.targetLanguage,
-          translation: values.translationLanguage,
+          target: values.target_language,
+          translation: values.translation_language,
         }}
         compact={!isWide && !isExpanded}
       />

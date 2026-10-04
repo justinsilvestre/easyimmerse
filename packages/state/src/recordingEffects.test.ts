@@ -59,6 +59,24 @@ describe("createRecordingEffects", () => {
     );
   });
 
+  it("settles a pending dictionary file pick with the given file", async () => {
+    const effects = createRecordingEffects();
+    const pick = effects.pickDictionaryFile();
+    const file = {
+      name: "jmdict.zip",
+      source: { kind: "path", path: "/jmdict.zip" },
+    } as const;
+    effects.resolvePickDictionaryFile(file);
+    expect(await pick).toBe(file);
+  });
+
+  it("throws when no dictionary file pick is pending", () => {
+    const effects = createRecordingEffects();
+    expect(() => effects.resolvePickDictionaryFile(null)).toThrow(
+      "No dictionary file pick is pending.",
+    );
+  });
+
   it("records a copyToClipboard call with its text", async () => {
     const effects = createRecordingEffects();
     await effects.copyToClipboard("Hello");

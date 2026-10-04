@@ -1,5 +1,6 @@
 //! Converts media files into HLS segments with ffmpeg while they play, keeps the converted
-//! segments in a bounded cache, discovers a hardware video encoder, and decodes waveform peaks.
+//! segments in a bounded cache, discovers a hardware video encoder, decodes waveform peaks, and
+//! extracts embedded text subtitles.
 //! Desktop and server only.
 
 pub mod cache_budget;
@@ -21,6 +22,7 @@ mod run_monitor;
 mod segment_files;
 mod service_cache;
 mod service_segments;
+mod subtitle_extraction;
 
 pub use error::ConversionError;
 pub use key::{CONVERTER_VERSION, ConversionKey};

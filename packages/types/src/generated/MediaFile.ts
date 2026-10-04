@@ -2,6 +2,7 @@
 import type { MediaFileId } from "./MediaFileId";
 import type { MediaFileSource } from "./MediaFileSource";
 import type { ProjectId } from "./ProjectId";
+import type { SubtitleSelection } from "./SubtitleSelection";
 
 /**
  * A video or audio file added to a project.
@@ -19,4 +20,4 @@ created_at_ms: number,
  * The user's saved choice of video and audio tracks, as the JSON the media crate
  * defines. Null until the user has chosen.
  */
-track_selection_json: string | null, };
+track_selection_json: string | null, subtitle_selection: SubtitleSelection, };
