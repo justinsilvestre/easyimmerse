@@ -48,8 +48,11 @@ jobs:
         run: |
           set -eu
           v="${{ steps.version.outputs.version }}"
+          # The X11 and XCB libraries are disabled because configure finds Homebrew's copies on the
+          # arm64 runner, and a binary linked against them does not start on a Mac without Homebrew.
           common="--disable-gpl --disable-nonfree --enable-version3 --disable-shared --enable-static \
-                  --disable-doc --disable-debug --disable-ffplay --pkg-config-flags=--static"
+                  --disable-doc --disable-debug --disable-ffplay --pkg-config-flags=--static \
+                  --disable-xlib --disable-libxcb --disable-libxcb-shm --disable-libxcb-shape --disable-libxcb-xfixes"
           mkdir -p out/aarch64-apple-darwin out/x86_64-apple-darwin
           (cd "ffmpeg-$v" && ./configure $common --prefix="$PWD/../install-arm64" && make -j"$(sysctl -n hw.ncpu)" && make install && make distclean)
           (cd "ffmpeg-$v" && ./configure $common --enable-cross-compile --arch=x86_64 --target-os=darwin \
@@ -60,6 +63,14 @@ jobs:
           done
           strip out/*/ffmpeg out/*/ffprobe
           echo "$common" > out/configure-flags.txt
+
+      - name: Check that the binaries link only system libraries
+        run: |
+          set -eu
+          if otool -L out/*/ffmpeg out/*/ffprobe | grep -v ':$' | grep -Ev '^[[:space:]]+(/System/Library/|/usr/lib/)'; then
+            echo "The binaries above link libraries that a Mac does not provide." >&2
+            exit 1
+          fi
 
       - name: Package
         run: |
