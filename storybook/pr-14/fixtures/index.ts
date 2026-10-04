@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+export { unpackFixtures } from "./unpackFixtures.ts";
+
 /** Returns the absolute path of the fixture file with the given name. */
 export function fixturePath(name: string): string {
   return fileURLToPath(new URL(name, import.meta.url));

@@ -28,14 +28,28 @@ To regenerate `sample.epub` after editing the tree (the `mimetype` entry must co
 cd fixtures/sample-epub && rm -f ../sample.epub && zip -X0 ../sample.epub mimetype && zip -Xr9D ../sample.epub META-INF OEBPS
 ```
 
-## die-verwandlung.txt, die-verwandlung-epub/, and die-verwandlung.epub
+## die-verwandlung.txt.gz and die-verwandlung.epub
 
 Franz Kafka's "Die Verwandlung" (1915, in the public domain), a whole novella in German for exercising the reader with a realistic book: long chapters, many pages, and words to look up. The text comes from Project Gutenberg eBook #22367, with Project Gutenberg's header, footer, and license removed.
 
-- `die-verwandlung.txt` keeps the plain-text layout: lines hard-wrapped at about 70 characters, paragraphs separated by blank lines, `--` for dashes, and the parts headed `I.`, `II.`, and `III.`. The plain-text parser reads it as one untitled chapter.
-- `die-verwandlung-epub/` is an EPUB 3 tree with one XHTML file per part, the paragraphs unwrapped, and the dashes written as `–`. Its metadata gives the title, the author, and the language `de`.
+Both files are compressed so that the book's text does not appear in diffs. Their unpacked forms, `die-verwandlung.txt` and `die-verwandlung-epub/`, are ignored by Git.
 
-To regenerate `die-verwandlung.epub` after editing the tree:
+- `die-verwandlung.txt.gz` holds the plain-text layout: lines hard-wrapped at about 70 characters, paragraphs separated by blank lines, `--` for dashes, and the parts headed `I.`, `II.`, and `III.`. The plain-text parser reads it as one untitled chapter. The Storybook and Vitest configs of `packages/ui` call `unpackFixtures` from `unpackFixtures.ts`, which writes every `.gz` file in this folder out as its uncompressed sibling, so `die-verwandlung.txt` is current whenever stories or tests import it. Run `node fixtures/unpackFixtures.ts` to unpack it by hand.
+- `die-verwandlung.epub` is an EPUB 3 book with one XHTML file per part, the paragraphs unwrapped, and the dashes written as `–`. Its metadata gives the title, the author, and the language `de`.
+
+To change the plain text, edit `die-verwandlung.txt` and compress it again (`-n` leaves out the file name and timestamp, so the same text always gives the same bytes):
+
+```sh
+cd fixtures && gzip -9nc die-verwandlung.txt > die-verwandlung.txt.gz
+```
+
+To change the EPUB, unzip it into its tree:
+
+```sh
+cd fixtures && unzip -o die-verwandlung.epub -d die-verwandlung-epub
+```
+
+Then edit the tree and package it again (the `mimetype` entry must come first and be stored uncompressed):
 
 ```sh
 cd fixtures/die-verwandlung-epub && rm -f ../die-verwandlung.epub && zip -X0 ../die-verwandlung.epub mimetype && zip -Xr9D ../die-verwandlung.epub META-INF OEBPS
