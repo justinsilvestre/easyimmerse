@@ -1,4 +1,5 @@
 use std::process::ExitStatus;
+use std::time::Duration;
 
 use thiserror::Error;
 
@@ -21,6 +22,8 @@ pub enum FfmpegError {
         status: ExitStatus,
         stderr: String,
     },
+    #[error("{binary} did not finish within {limit:?}")]
+    TimedOut { binary: BinaryName, limit: Duration },
     #[error("ffprobe printed output that could not be parsed: {0}")]
     InvalidOutput(#[from] serde_json::Error),
     #[error("ffprobe reported a format this application does not handle: {0}")]

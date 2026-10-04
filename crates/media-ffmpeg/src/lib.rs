@@ -15,6 +15,7 @@ mod ffmpeg_time;
 mod ffprobe_command;
 mod ffprobe_time;
 mod probe_track;
+mod timed_output;
 
 pub use background_command::background_command;
 pub use conversion_command::{

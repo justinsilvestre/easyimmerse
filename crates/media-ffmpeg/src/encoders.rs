@@ -2,10 +2,13 @@
 //! encode per candidate, since a listed encoder still fails on machines without the hardware.
 
 use std::ffi::OsString;
+use std::process::Output;
+use std::time::Duration;
 
 use crate::background_command::background_command;
 use crate::error::FfmpegError;
 use crate::locate::{BinaryName, FfmpegPaths, locate_binary};
+use crate::timed_output::output_within;
 
 /// Hardware H.264 encoders in order of preference. Only VideoToolbox has been evaluated.
 pub const H264_HARDWARE_ENCODERS: [&str; 6] = [
@@ -16,6 +19,10 @@ pub const H264_HARDWARE_ENCODERS: [&str; 6] = [
     "h264_mf",
     "h264_vaapi",
 ];
+
+/// A one-frame encode takes well under a second. A driver that hangs would otherwise stall
+/// discovery and leave the process running after the app quits.
+const TEST_ENCODE_LIMIT: Duration = Duration::from_secs(10);
 
 /// Returns the first candidate encoder that ffmpeg lists and that encodes a test frame.
 pub fn find_working_h264_encoder(paths: &FfmpegPaths) -> Result<Option<String>, FfmpegError> {
@@ -35,7 +42,14 @@ pub fn list_encoders(paths: &FfmpegPaths) -> Result<Vec<String>, FfmpegError> {
 
 /// Encodes one black frame with the encoder and discards the output.
 pub fn test_encode(encoder: &str, paths: &FfmpegPaths) -> Result<(), FfmpegError> {
-    run_ffmpeg(&test_encode_args(encoder), paths).map(|_| ())
+    let mut command = background_command(&locate_binary(BinaryName::Ffmpeg, paths)?);
+    command.args(test_encode_args(encoder));
+    let output = output_within(&mut command, TEST_ENCODE_LIMIT).map_err(spawn_error)?;
+    let output = output.ok_or(FfmpegError::TimedOut {
+        binary: BinaryName::Ffmpeg,
+        limit: TEST_ENCODE_LIMIT,
+    })?;
+    successful_stdout(output).map(|_| ())
 }
 
 /// The frame is 640x480 because the VideoToolbox encoder rejects smaller pictures.
@@ -88,10 +102,11 @@ fn run_ffmpeg<S: AsRef<std::ffi::OsStr>>(
     let output = background_command(&ffmpeg)
         .args(args)
         .output()
-        .map_err(|source| FfmpegError::Spawn {
-            binary: BinaryName::Ffmpeg,
-            source,
-        })?;
+        .map_err(spawn_error)?;
+    successful_stdout(output)
+}
+
+fn successful_stdout(output: Output) -> Result<String, FfmpegError> {
     if !output.status.success() {
         return Err(FfmpegError::Failed {
             binary: BinaryName::Ffmpeg,
@@ -100,6 +115,13 @@ fn run_ffmpeg<S: AsRef<std::ffi::OsStr>>(
         });
     }
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+fn spawn_error(source: std::io::Error) -> FfmpegError {
+    FfmpegError::Spawn {
+        binary: BinaryName::Ffmpeg,
+        source,
+    }
 }
 
 #[cfg(test)]
