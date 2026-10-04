@@ -16,24 +16,22 @@ runs:
 
     # Mise installs the toolchain through rustup but does not add the components and
     # targets that rust-toolchain.toml lists, so they are installed here.
-    # On Windows runners the cached toolchain sometimes holds stale clippy files, which rustup
-    # reports as a conflict, one file per attempt. Each conflicting file is removed and the
-    # install tried again. Rustup names the file relative to the toolchain directory, with
-    # backslashes, so the path is converted before it is joined.
+    # On Windows runners an interrupted install can leave clippy files in the toolchain's bin
+    # directory that rustup reports as a conflict, so they are removed and the install retried.
     - name: Install the Rust components and cross-compilation targets
       shell: bash
       run: |
-        attempts=0
-        until rustup component add rustfmt clippy 2> "$RUNNER_TEMP/rustup-component-add.err"; do
-          cat "$RUNNER_TEMP/rustup-component-add.err" >&2
-          conflict=$(sed -n "s/.*detected conflict: '\(.*\)'/\1/p" "$RUNNER_TEMP/rustup-component-add.err")
-          if [[ "$RUNNER_OS" != Windows || -z "$conflict" || $((attempts += 1)) -gt 5 ]]; then
+        errors="$RUNNER_TEMP/rustup-component-add.err"
+        if ! rustup component add rustfmt clippy 2> "$errors"; then
+          cat "$errors" >&2
+          if [[ "$RUNNER_OS" != Windows ]] || ! grep -q "detected conflict" "$errors"; then
             exit 1
           fi
-          toolchain_dir=$(dirname "$(dirname "$(cygpath -u "$(rustup which rustc)")")")
-          echo "Removing the conflicting file $conflict and retrying."
-          rm -f "$toolchain_dir/${conflict//\\//}"
-        done
+          bin_dir=$(dirname "$(cygpath -u "$(rustup which rustc)")")
+          echo "Removing the stale clippy files in $bin_dir and retrying."
+          rm -f "$bin_dir"/cargo-clippy* "$bin_dir"/clippy-driver*
+          rustup component add rustfmt clippy
+        fi
         rustup target add wasm32-unknown-unknown wasm32-wasip2
 
     - uses: Swatinem/rust-cache@v2
