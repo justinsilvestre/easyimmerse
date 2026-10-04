@@ -32,7 +32,7 @@ pub struct ServeArgs {
     /// Lets requests name files on this machine.
     #[arg(long)]
     pub allow_local_paths: bool,
-    /// Inserts two example projects into an empty database.
+    /// Inserts two example projects into an empty database, for development and tests.
     #[arg(long)]
     pub seed_placeholders: bool,
     /// Where converted media is cached. Without it, media is never converted.

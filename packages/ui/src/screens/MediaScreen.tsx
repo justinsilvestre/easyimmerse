@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { PlayerWaveform, useMediaFile } from "../components/PlayerWaveform.tsx";
+import { DiscardChangesDialog } from "../flashcards/DiscardChangesDialog.tsx";
 import { useAddChosenSubtitleFile } from "../hooks/useAddChosenSubtitleFile.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -135,10 +136,25 @@ function LoadedMediaScreen({
   const savedGestures = useSavedFlashcardGestures(project.id, flashcards);
   useClipLoop(editedContent?.audio_context ?? null, currentMs);
   const activeCue = findCueAt(subtitles.cues, currentMs);
-  const startFlashcard = (request: Parameters<typeof createContent>[0]) => {
-    lookup.closeWithoutResuming();
-    createContent(request).then(editing.startNew);
+  // Opening another flashcard over one the user has changed waits for them to confirm.
+  const [pendingSwitch, setPendingSwitch] = useState<(() => void) | null>(null);
+  const whenEditorFree = (next: () => void) => {
+    if (editing.editing?.hasChanges) setPendingSwitch(() => next);
+    else next();
   };
+  const startFlashcard = (request: Parameters<typeof createContent>[0]) =>
+    whenEditorFree(() => {
+      lookup.closeWithoutResuming();
+      createContent(request)
+        .then(editing.startNew)
+        .catch(() =>
+          dispatch(
+            actions.notificationRequested(
+              "The flashcard could not be started.",
+            ),
+          ),
+        );
+    });
   const playerCallbacks = usePlayerCallbacks({
     cues: subtitles.cues,
     currentMs,
@@ -199,7 +215,8 @@ function LoadedMediaScreen({
                 const flashcard = flashcards.find(
                   (candidate) => candidate.id === segmentId,
                 );
-                if (flashcard) editing.openSaved(flashcard);
+                if (flashcard)
+                  whenEditorFree(() => editing.openSaved(flashcard));
               },
               onClipEndpointMoved: (segmentId, endpoint, timeMs) => {
                 if (segmentId !== editing.editing?.flashcardId)
@@ -297,6 +314,15 @@ function LoadedMediaScreen({
           wantedLanguage={settings.target_language}
           onChoose={(trackId) => subtitles.choose("target", trackId)}
           onSkip={subtitles.dismissPrompt}
+        />
+      )}
+      {pendingSwitch && (
+        <DiscardChangesDialog
+          onDiscard={() => {
+            setPendingSwitch(null);
+            pendingSwitch();
+          }}
+          onKeepEditing={() => setPendingSwitch(null)}
         />
       )}
     </>

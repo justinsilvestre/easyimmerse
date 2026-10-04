@@ -30,6 +30,8 @@ export type Editing = {
   flashcardId: string;
   storedScreenshotUrl: string | null;
   state: EditorState;
+  /** Whether the user has changed the flashcard since it was opened. A captured screenshot is not a change of theirs. */
+  hasChanges: boolean;
 };
 
 /**
@@ -57,7 +59,12 @@ export function useFlashcardEditing(project: Project, mediaFileId: string) {
   const dispatch = (action: EditorAction) => {
     setEditing(
       (current) =>
-        current && { ...current, state: reduceEditor(current.state, action) },
+        current && {
+          ...current,
+          state: reduceEditor(current.state, action),
+          hasChanges:
+            current.hasChanges || action.type !== "screenshotCaptured",
+        },
     );
     if (action.type === "screenshotMsChanged") captureInto(action.ms);
   };
@@ -79,6 +86,7 @@ export function useFlashcardEditing(project: Project, mediaFileId: string) {
       open({
         flashcardId: unsavedFlashcardId,
         storedScreenshotUrl: null,
+        hasChanges: false,
         state: {
           content,
           includedFields: project.settings.flashcard_fields,
@@ -100,6 +108,7 @@ export function useFlashcardEditing(project: Project, mediaFileId: string) {
       open({
         flashcardId: flashcard.id,
         storedScreenshotUrl: screenshotUrl,
+        hasChanges: false,
         state: {
           content: contentOfFlashcard(flashcard, screenshotUrl),
           includedFields: flashcard.included_fields,

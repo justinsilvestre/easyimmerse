@@ -177,4 +177,36 @@ describe("MediaScreen", () => {
       ).toBe(true),
     );
   });
+
+  describe("when a changed flashcard is open", () => {
+    async function openChangedFlashcard() {
+      const rendered = renderMediaScreen();
+      const cue = await findCue("0:00");
+      fireEvent.click(within(cue).getByRole("button", { name: "cat" }));
+      fireEvent.change(await screen.findByLabelText("Sentence (de)"), {
+        target: { value: "Changed." },
+      });
+      // The editor takes the subtitles panel's place, so the next word is clicked in the subtitles over the video.
+      act(() => rendered.store.dispatch(actions.playerTimeChanged(1)));
+      fireEvent.click(screen.getByRole("button", { name: "sleeping" }));
+      return rendered;
+    }
+
+    it("asks before another flashcard replaces it", async () => {
+      await openChangedFlashcard();
+      expect(
+        await screen.findByText("Discard your changes to this flashcard?"),
+      ).toBeDefined();
+    });
+
+    it("keeps the changes when the user keeps editing", async () => {
+      await openChangedFlashcard();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Keep editing" }),
+      );
+      expect(
+        (screen.getByLabelText("Sentence (de)") as HTMLTextAreaElement).value,
+      ).toBe("Changed.");
+    });
+  });
 });
