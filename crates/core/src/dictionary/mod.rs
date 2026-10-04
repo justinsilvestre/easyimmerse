@@ -3,6 +3,7 @@
 //! A format reads a `DictionarySource` and passes what it finds to a `DictionarySink` one item at a time.
 //! Storage implements the sink to write straight to its database; `parse_dictionary` collects everything in memory instead.
 
+mod csv;
 mod dictionary_media;
 mod error;
 mod format;
@@ -16,6 +17,7 @@ mod term_entry;
 mod term_meta;
 mod yomitan;
 
+pub use csv::{CsvError, CsvFormat};
 pub use dictionary_media::DictionaryMedia;
 pub use error::DictionaryError;
 pub use format::DictionaryFormat;
@@ -60,7 +62,7 @@ pub fn parse_dictionary(source: &mut DictionarySource) -> Result<Dictionary, Dic
 }
 
 fn registered_formats() -> Vec<Box<dyn DictionaryFormat>> {
-    vec![Box::new(YomitanFormat)]
+    vec![Box::new(YomitanFormat), Box::new(CsvFormat)]
 }
 
 /// The whole contents of a dictionary, apart from its media files.
