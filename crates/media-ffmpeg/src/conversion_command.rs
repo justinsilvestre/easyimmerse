@@ -9,8 +9,9 @@ use easyimmerse_media::{AudioAction, AudioTarget, NOMINAL_SEGMENT_SECONDS, Video
 
 use crate::ffmpeg_time::format_micros_as_seconds;
 
-/// Added to every output timestamp so that no decode time can fall below zero when audio
-/// encoder priming pushes the first audio packet before the source start.
+/// Added to every output timestamp, so that no decode time can fall below zero when audio
+/// encoder priming pushes the first audio packet before the source start. The first decode
+/// time of every produced segment carries this offset.
 pub const OUTPUT_TS_OFFSET_SECONDS: u32 = 10;
 /// macOS has AudioToolbox's AAC encoder; every other platform uses ffmpeg's own.
 pub const AAC_ENCODER: &str = if cfg!(target_os = "macos") {
@@ -52,13 +53,15 @@ pub fn conversion_args(job: &ConversionJob) -> Vec<OsString> {
         "-loglevel",
         "warning",
     ]);
-    args.push_all(["-copyts", "-output_ts_offset"]);
-    args.push(OUTPUT_TS_OFFSET_SECONDS.to_string());
+    args.push("-copyts");
     if let Some(seek_micros) = job.seek_micros {
         args.push_all(["-ss", &format_micros_as_seconds(seek_micros)]);
     }
     args.push("-i");
     args.push(job.source.as_os_str().to_owned());
+    // An output option: placed before the input it counts as an input option and is ignored.
+    args.push("-output_ts_offset");
+    args.push(OUTPUT_TS_OFFSET_SECONDS.to_string());
     push_maps(&mut args, job);
     push_video_codec(&mut args, job);
     push_audio_codec(&mut args, job);
@@ -120,9 +123,11 @@ fn push_audio_codec(args: &mut Args, job: &ConversionJob) {
             ..
         }) => args.push_all(["-c:a", "flac", "-sample_fmt", "s16"]),
     }
-    // The comma inside the expression is escaped because ffmpeg splits a filter list on commas.
+    // Drops the encoder's priming packets, which lie before the timeline start, except the
+    // last of them: the first real packet needs it for overlap-add, or its first samples come
+    // out attenuated. The comma is escaped because ffmpeg splits a filter list on commas.
     let filter = format!(
-        "noise=drop=lt(pts*tb\\,{})",
+        "noise=drop=lt((pts+2*duration)*tb\\,{})",
         format_micros_as_seconds(job.timeline_start_micros)
     );
     args.push_all(["-bsf:a", &filter]);
@@ -239,10 +244,10 @@ mod tests {
                 "-loglevel",
                 "warning",
                 "-copyts",
-                "-output_ts_offset",
-                "10",
                 "-i",
                 "/videos/a.mkv",
+                "-output_ts_offset",
+                "10",
                 "-map",
                 "0:0",
                 "-map",
@@ -252,7 +257,7 @@ mod tests {
                 "-c:a",
                 "copy",
                 "-bsf:a",
-                "noise=drop=lt(pts*tb\\,0.000000)",
+                "noise=drop=lt((pts+2*duration)*tb\\,0.000000)",
                 "-avoid_negative_ts",
                 "disabled",
                 "-f",
@@ -282,7 +287,9 @@ mod tests {
             seek_micros: Some(4_000_000),
             ..job(Some(&COPY_VIDEO), Some(&COPY_AUDIO), Some("h264"))
         };
-        assert!(joined(&job).contains("-output_ts_offset 10 -ss 4.000000 -i /videos/a.mkv"));
+        assert!(
+            joined(&job).contains("-copyts -ss 4.000000 -i /videos/a.mkv -output_ts_offset 10")
+        );
     }
 
     #[test]
@@ -291,7 +298,7 @@ mod tests {
             timeline_start_micros: 1_458_667,
             ..job(Some(&COPY_VIDEO), Some(&COPY_AUDIO), Some("h264"))
         };
-        assert!(joined(&job).contains("-bsf:a noise=drop=lt(pts*tb\\,1.458667)"));
+        assert!(joined(&job).contains("-bsf:a noise=drop=lt((pts+2*duration)*tb\\,1.458667)"));
     }
 
     #[test]
@@ -343,7 +350,7 @@ mod tests {
     #[test]
     fn maps_only_the_audio_track_of_an_audio_only_source() {
         let job = job(None, Some(&AAC_AUDIO), None);
-        assert!(joined(&job).contains("-i /videos/a.mkv -map 0:1 -c:a"));
+        assert!(joined(&job).contains("-output_ts_offset 10 -map 0:1 -c:a"));
     }
 
     #[test]
