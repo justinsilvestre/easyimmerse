@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e){let t=Math.round(e*10);return`${Math.floor(t/600)}:${(t%600/10).toFixed(1).padStart(4,`0`)}`}function n(){return(n=e((()=>{})))()}export{n,t};
