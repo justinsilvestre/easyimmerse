@@ -95,3 +95,26 @@ describe("DictionaryPopup states", () => {
     expect(screen.getByRole("article", { name: "Kanji 食" })).toBeDefined();
   });
 });
+
+describe("DictionaryPopup links", () => {
+  it("looks up the target of a link in a definition", () => {
+    const searched: string[] = [];
+    render(
+      <DictionaryPopup
+        state={{
+          kind: "found",
+          term: "食べなかった",
+          results: [exampleInflectedResult],
+        }}
+        mode="hover"
+        resolveMediaUrl={() => null}
+        onSearch={(term) => searched.push(term)}
+        onCreateFlashcard={() => undefined}
+        onClose={() => undefined}
+        onSetUpDictionary={() => undefined}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "食う" }));
+    expect(searched).toEqual(["食う"]);
+  });
+});

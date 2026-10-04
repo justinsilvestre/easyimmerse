@@ -12,13 +12,13 @@ export function ContentLink({
   target: LinkTarget;
   children?: ReactNode;
 }) {
-  const { onWordClick } = useDefinitionContext();
+  const { onLookup } = useDefinitionContext();
   switch (target.kind) {
     case "lookup":
       return (
         <button
           type="button"
-          onClick={() => onWordClick(target.term)}
+          onClick={() => onLookup(target.term)}
           className="text-accent-fg underline decoration-dotted underline-offset-2 hover:decoration-solid focus-visible:outline-2 focus-visible:outline-accent"
         >
           <PlainTextScope>{children}</PlainTextScope>

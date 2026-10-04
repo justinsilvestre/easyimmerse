@@ -29,6 +29,7 @@ const meta = {
     result: exampleInflectedResult,
     resolveMediaUrl: resolveExampleMediaUrl,
     onWordClick: fn(),
+    onLookup: fn(),
     onCreateFlashcard: fn(),
   },
 } satisfies Meta<typeof LookupResultCard>;

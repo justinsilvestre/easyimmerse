@@ -88,7 +88,7 @@ describe("StructuredContentView", () => {
     const clicked: string[] = [];
     renderContent(
       { tag: "a", href: "?query=食う&wildcards=off", content: "食う" },
-      { onWordClick: (word) => clicked.push(word) },
+      { onLookup: (term) => clicked.push(term) },
     );
     fireEvent.click(screen.getByRole("button", { name: "食う" }));
     expect(clicked).toEqual(["食う"]);

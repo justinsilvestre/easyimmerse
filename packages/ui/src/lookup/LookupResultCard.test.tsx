@@ -17,6 +17,7 @@ function renderCard(
       result={result}
       resolveMediaUrl={() => null}
       onWordClick={onWordClick}
+      onLookup={() => undefined}
       onCreateFlashcard={() => undefined}
     />,
   );

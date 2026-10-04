@@ -10,6 +10,14 @@ describe("DefinitionView", () => {
     expect(container.textContent).toBe("one\ntwo");
   });
 
+  it("keeps angle-bracketed text in a text definition", () => {
+    const { container } = renderDefinition({
+      kind: "text",
+      text: "<colloq.> mate",
+    });
+    expect(container.textContent).toBe("<colloq.> mate");
+  });
+
   it("makes the words of a text definition clickable", () => {
     const clicked: string[] = [];
     renderDefinition(
@@ -24,7 +32,7 @@ describe("DefinitionView", () => {
     const clicked: string[] = [];
     renderDefinition(
       { kind: "formOf", base: "行く", inflections: ["negative"] },
-      { onWordClick: (word) => clicked.push(word) },
+      { onLookup: (term) => clicked.push(term) },
     );
     fireEvent.click(screen.getByRole("button", { name: "行く" }));
     expect(clicked).toEqual(["行く"]);

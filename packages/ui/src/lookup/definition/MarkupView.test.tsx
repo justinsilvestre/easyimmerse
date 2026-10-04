@@ -84,16 +84,30 @@ describe("MarkupView", () => {
     it("looks up the target of a bword link", () => {
       const clicked: string[] = [];
       renderDefinition(html('<a href="bword://bloom">bloom</a>'), {
-        onWordClick: (word) => clicked.push(word),
+        onLookup: (term) => clicked.push(term),
       });
       fireEvent.click(screen.getByRole("button", { name: "bloom" }));
       expect(clicked).toEqual(["bloom"]);
     });
 
+    it("does not start a flashcard from a lookup link", () => {
+      const clicked: string[] = [];
+      renderDefinition(html('<a href="bword://bloom">bloom</a>'), {
+        onWordClick: (word) => clicked.push(word),
+      });
+      fireEvent.click(screen.getByRole("button", { name: "bloom" }));
+      expect(clicked).toEqual([]);
+    });
+
+    it("keeps text written with escaped angle brackets", () => {
+      const { container } = renderDefinition(html("&lt;colloq.&gt; mate"));
+      expect(container.textContent).toBe("<colloq.> mate");
+    });
+
     it("looks up the target of an entry link", () => {
       const clicked: string[] = [];
       renderDefinition(html('<a href="entry://fruit">see</a>'), {
-        onWordClick: (word) => clicked.push(word),
+        onLookup: (term) => clicked.push(term),
       });
       fireEvent.click(screen.getByRole("button", { name: "see" }));
       expect(clicked).toEqual(["fruit"]);
@@ -169,7 +183,7 @@ describe("MarkupView", () => {
     it("looks up the target of a kref", () => {
       const clicked: string[] = [];
       renderDefinition(xdxf("see <kref>home</kref>"), {
-        onWordClick: (word) => clicked.push(word),
+        onLookup: (term) => clicked.push(term),
       });
       fireEvent.click(screen.getByRole("button", { name: "home" }));
       expect(clicked).toEqual(["home"]);

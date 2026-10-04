@@ -11,7 +11,7 @@ import type { LookupState } from "./lookupState.ts";
 
 /**
  * The dictionary pop-up. In `hover` mode it shows the word under the pointer; in `search` mode it opens with a field to type a word into.
- * Clicking a word inside the pop-up starts a flashcard for that word, as it does in the subtitles.
+ * Clicking a word inside the pop-up starts a flashcard for that word, as it does in the subtitles; following a link to another headword searches for it.
  * Images in definitions are found through `resolveMediaUrl`.
  */
 export function DictionaryPopup({
@@ -60,6 +60,7 @@ export function DictionaryPopup({
         <Body
           state={state}
           resolveMediaUrl={resolveMediaUrl}
+          onSearch={onSearch}
           onCreateFlashcard={onCreateFlashcard}
           onSetUpDictionary={onSetUpDictionary}
         />
@@ -100,11 +101,13 @@ function SearchField({ onSearch }: { onSearch: (term: string) => void }) {
 function Body({
   state,
   resolveMediaUrl,
+  onSearch,
   onCreateFlashcard,
   onSetUpDictionary,
 }: {
   state: LookupState | null;
   resolveMediaUrl: ResolveMediaUrl;
+  onSearch: (term: string) => void;
   onCreateFlashcard: (term: string, entryIndex: number | null) => void;
   onSetUpDictionary: () => void;
 }) {
@@ -135,6 +138,7 @@ function Body({
               result={result}
               resolveMediaUrl={resolveMediaUrl}
               onWordClick={(word) => onCreateFlashcard(word, null)}
+              onLookup={onSearch}
               onCreateFlashcard={() => onCreateFlashcard(state.term, index)}
             />
           ))}

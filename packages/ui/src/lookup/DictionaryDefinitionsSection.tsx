@@ -10,10 +10,12 @@ export function DictionaryDefinitionsSection({
   dictionaryDefinitions: { dictionaryId, dictionaryTitle, entry, tags },
   resolveMediaUrl,
   onWordClick,
+  onLookup,
 }: {
   dictionaryDefinitions: DictionaryDefinitions;
   resolveMediaUrl: ResolveMediaUrl;
   onWordClick: (word: string) => void;
+  onLookup: (term: string) => void;
 }) {
   return (
     <section aria-label={dictionaryTitle} className="flex flex-col gap-1">
@@ -38,6 +40,7 @@ export function DictionaryDefinitionsSection({
               dictionaryId={dictionaryId}
               resolveMediaUrl={resolveMediaUrl}
               onWordClick={onWordClick}
+              onLookup={onLookup}
             />
           </li>
         ))}

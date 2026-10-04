@@ -10,22 +10,30 @@ import { StructuredContentView } from "./StructuredContentView.tsx";
 
 /**
  * Renders one definition in the form its dictionary wrote it: plain text, Yomitan structured content, HTML, Pango or XDXF markup, or a pointer to a base form.
- * Words are clickable, links to other headwords look them up, and images come from `resolveMediaUrl`. Nothing in a definition can run code or load remote resources.
+ * Clicked words go to `onWordClick`, links to other headwords go to `onLookup`, and images come from `resolveMediaUrl`. Nothing in a definition can run code or load remote resources.
  */
 export function DefinitionView({
   definition,
   dictionaryId,
   resolveMediaUrl,
   onWordClick,
+  onLookup,
 }: {
   definition: Definition;
   dictionaryId: string;
   resolveMediaUrl: ResolveMediaUrl;
   onWordClick: (word: string) => void;
+  onLookup: (term: string) => void;
 }) {
   return (
     <DefinitionContext
-      value={{ dictionaryId, resolveMediaUrl, onWordClick, isPlainText: false }}
+      value={{
+        dictionaryId,
+        resolveMediaUrl,
+        onWordClick,
+        onLookup,
+        isPlainText: false,
+      }}
     >
       <DefinitionBody definition={definition} />
     </DefinitionContext>

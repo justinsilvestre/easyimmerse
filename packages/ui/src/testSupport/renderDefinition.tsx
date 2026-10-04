@@ -8,9 +8,11 @@ export function renderDefinition(
   definition: Definition,
   {
     onWordClick = () => undefined,
+    onLookup = () => undefined,
     resolveMediaUrl = () => null,
   }: {
     onWordClick?: (word: string) => void;
+    onLookup?: (term: string) => void;
     resolveMediaUrl?: ResolveMediaUrl;
   } = {},
 ) {
@@ -20,6 +22,7 @@ export function renderDefinition(
       dictionaryId="dict"
       resolveMediaUrl={resolveMediaUrl}
       onWordClick={onWordClick}
+      onLookup={onLookup}
     />,
   );
 }
