@@ -2,8 +2,8 @@
 //! encode per candidate, since a listed encoder still fails on machines without the hardware.
 
 use std::ffi::OsString;
-use std::process::Command;
 
+use crate::background_command::background_command;
 use crate::error::FfmpegError;
 use crate::locate::{BinaryName, FfmpegPaths, locate_binary};
 
@@ -85,7 +85,7 @@ fn run_ffmpeg<S: AsRef<std::ffi::OsStr>>(
     paths: &FfmpegPaths,
 ) -> Result<String, FfmpegError> {
     let ffmpeg = locate_binary(BinaryName::Ffmpeg, paths)?;
-    let output = Command::new(ffmpeg)
+    let output = background_command(&ffmpeg)
         .args(args)
         .output()
         .map_err(|source| FfmpegError::Spawn {

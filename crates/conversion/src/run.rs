@@ -6,7 +6,7 @@ use std::process::Stdio;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use easyimmerse_media_ffmpeg::{ConversionJob, conversion_args};
+use easyimmerse_media_ffmpeg::{ConversionJob, background_command, conversion_args};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child, Command};
 use tokio::sync::oneshot;
@@ -110,10 +110,9 @@ fn spawn_ffmpeg(
         timeline_start_micros: plan.timebase.ticks_to_micros(plan.start_ticks),
         seek_micros,
     };
-    Command::new(ffmpeg)
-        .args(conversion_args(&job))
-        .current_dir(run_dir)
-        .stdin(Stdio::null())
+    let mut command = background_command(&ffmpeg);
+    command.args(conversion_args(&job)).current_dir(run_dir);
+    Command::from(command)
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .kill_on_drop(true)

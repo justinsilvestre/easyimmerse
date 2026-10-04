@@ -2,8 +2,8 @@
 
 use std::ffi::OsStr;
 use std::path::Path;
-use std::process::Command;
 
+use crate::background_command::background_command;
 use crate::error::FfmpegError;
 use crate::locate::{BinaryName, FfmpegPaths, locate_binary};
 
@@ -15,7 +15,7 @@ pub(crate) fn run_ffprobe<S: AsRef<OsStr>>(
     paths: &FfmpegPaths,
 ) -> Result<String, FfmpegError> {
     let ffprobe = locate_binary(BinaryName::Ffprobe, paths)?;
-    let output = Command::new(ffprobe)
+    let output = background_command(&ffprobe)
         .args(["-v", "error", "-print_format", "json"])
         .args(args)
         .arg(file)
