@@ -40,7 +40,7 @@ export const libraries = {
   glib: { name: "GLib", license: "LGPL-2.1-or-later", licenseUrl: github("GNOME/glib", "main/COPYING") },
   glslang: { name: "glslang", license: "BSD-3-Clause AND BSD-2-Clause AND MIT AND Apache-2.0 AND GPL-3.0-or-later WITH Bison-exception-2.2", licenseUrl: github("KhronosGroup/glslang", "main/LICENSE.txt") },
   gme: { name: "Game_Music_Emu", license: "LGPL-2.1-or-later", licenseUrl: github("libgme/game-music-emu", "master/license.txt") },
-  gmp: { name: "GNU MP", license: "LGPL-3.0-or-later OR GPL-2.0-or-later", licenseUrl: github("FFmpeg/FFmpeg", "master/COPYING.LGPLv3") },
+  gmp: { name: "GNU MP", license: "LGPL-3.0-or-later OR GPL-2.0-or-later", licenseUrl: "https://www.gnu.org/licenses/lgpl-3.0.txt" },
   harfbuzz: { name: "HarfBuzz", license: "MIT-Modern-Variant", licenseUrl: github("harfbuzz/harfbuzz", "main/COPYING") },
   highway: { name: "Highway", license: "Apache-2.0 OR BSD-3-Clause", licenseUrl: github("google/highway", "master/LICENSE") },
   kvazaar: { name: "Kvazaar", license: "BSD-3-Clause", licenseUrl: github("ultravideo/kvazaar", "master/LICENSE") },

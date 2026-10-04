@@ -9,6 +9,8 @@ const btbnTagUrl =
   "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-29-13-10/ffmpeg-n8.1.3-linux64-lgpl-8.1.tar.xz";
 const ownUrl =
   "https://github.com/octo/repo/releases/download/ffmpeg-macos-8.1.2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz";
+const ownRebuildUrl =
+  "https://github.com/octo/repo/releases/download/ffmpeg-macos-8.1.2-2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz";
 
 describe("describeBuildOrigin", () => {
   describe("for a BtbN autobuild", () => {
@@ -58,6 +60,26 @@ describe("describeBuildOrigin", () => {
         describeBuildOrigin(ownUrl).releaseUrl,
         "https://github.com/octo/repo/releases/tag/ffmpeg-macos-8.1.2",
       );
+    });
+
+    describe("when the tag carries a rebuild number", () => {
+      it("reads the version without the rebuild number", () => {
+        assert.equal(describeBuildOrigin(ownRebuildUrl).version, "8.1.2");
+      });
+
+      it("links the release of the full tag", () => {
+        assert.equal(
+          describeBuildOrigin(ownRebuildUrl).releaseUrl,
+          "https://github.com/octo/repo/releases/tag/ffmpeg-macos-8.1.2-2",
+        );
+      });
+
+      it("names the full tag as the builder's tag", () => {
+        assert.match(
+          describeBuildOrigin(ownRebuildUrl).builder,
+          /for the tag ffmpeg-macos-8\.1\.2-2\.$/,
+        );
+      });
     });
   });
 

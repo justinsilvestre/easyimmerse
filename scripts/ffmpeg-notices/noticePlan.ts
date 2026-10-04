@@ -33,13 +33,12 @@ export function planNotices(builds: Record<string, RecordedBuild>): NoticePlan {
   const plan: NoticePlan = { acceptedBuilds: [], rejections: {} };
   for (const [triple, build] of Object.entries(builds)) {
     const configureArgs = parseConfigureLine(build.configuration);
-    const { libraryKeys, problems } = assessFeatures(
-      listEnabledFeatures(configureArgs),
-    );
+    const features = listEnabledFeatures(configureArgs);
+    const { libraryKeys, problems } = assessFeatures(features);
     if (problems.length > 0) plan.rejections[triple] = problems;
     else {
       const origin = describeBuildOrigin(build.url);
-      const isVersion3 = configureArgs.includes("--enable-version3");
+      const isVersion3 = features.includes("version3");
       plan.acceptedBuilds.push({
         triple,
         build,

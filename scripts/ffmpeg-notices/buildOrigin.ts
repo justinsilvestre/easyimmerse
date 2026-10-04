@@ -13,7 +13,7 @@ export interface BuildOrigin {
 const btbnRelease =
   /^https:\/\/github\.com\/BtbN\/FFmpeg-Builds\/releases\/download\/(autobuild-(\d{4}-\d\d-\d\d)-(\d\d)-(\d\d))\/ffmpeg-(n[\d.]+(?:-\d+-g([0-9a-f]+))?)-/;
 const ownRelease =
-  /^https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/download\/(ffmpeg-macos-([\d.]+))\//;
+  /^https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/download\/(ffmpeg-macos-([\d.]+)(?:-\d+)?)\//;
 
 export function describeBuildOrigin(url: string): BuildOrigin {
   const origin = describeBtbnBuild(url) ?? describeOwnBuild(url);

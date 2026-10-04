@@ -23,6 +23,37 @@ describe("isAllowedLicense", () => {
   it("judges a license with an exception by its base license", () => {
     assert.equal(isAllowedLicense("BSD-3-Clause WITH PCRE2-exception"), true);
   });
+
+  describe("when AND and OR are mixed without parentheses", () => {
+    it("accepts a disallowed combination followed by an allowed choice", () => {
+      assert.equal(isAllowedLicense("GPL-2.0-only AND MPL-2.0 OR MIT"), true);
+    });
+
+    it("accepts an allowed choice followed by a disallowed combination", () => {
+      assert.equal(isAllowedLicense("MIT OR GPL-2.0-only AND MPL-2.0"), true);
+    });
+
+    it("rejects an allowed choice combined with a disallowed term", () => {
+      assert.equal(isAllowedLicense("MPL-2.0 OR MIT AND GPL-2.0-only"), false);
+    });
+  });
+
+  describe("when parentheses group the terms", () => {
+    it("rejects a choice combined with a disallowed term", () => {
+      assert.equal(
+        isAllowedLicense("(MIT OR GPL-2.0-only) AND MPL-2.0"),
+        false,
+      );
+    });
+
+    it("accepts an allowed term combined with a choice", () => {
+      assert.equal(isAllowedLicense("MIT AND (GPL-2.0-only OR Zlib)"), true);
+    });
+  });
+
+  it("throws for a malformed expression", () => {
+    assert.throws(() => isAllowedLicense("MIT AND"));
+  });
 });
 
 describe("assessFeatures", () => {
