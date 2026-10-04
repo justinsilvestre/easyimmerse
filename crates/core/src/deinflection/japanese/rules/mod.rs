@@ -8,6 +8,7 @@ mod perfective;
 mod polite;
 mod provisional;
 mod stems;
+mod subsidiaries;
 mod voice;
 mod volitional;
 
@@ -34,6 +35,9 @@ pub const ALL: &[&[Rule]] = &[
     continuative::CONTINUATIVE_SUFFIXES,
     continuative::APPEARANCE,
     adjective::ADJECTIVE,
+    subsidiaries::PROGRESSIVE,
+    subsidiaries::PREPARATORY,
+    subsidiaries::COMPLETIVE,
 ];
 
 /// Gives every rule in `rules` the same accepted classes and undone inflections.
