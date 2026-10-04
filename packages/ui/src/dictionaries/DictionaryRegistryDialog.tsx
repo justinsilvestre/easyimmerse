@@ -1,3 +1,4 @@
+import type { DictionaryFormatKind } from "@easyimmerse/types";
 import { Check, Download } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
@@ -8,10 +9,7 @@ import {
   languageName,
   languageOptions,
 } from "../projects/languages.ts";
-import {
-  type DictionaryFormat,
-  dictionaryFormatLabels,
-} from "./dictionaryItem.ts";
+import { dictionaryFormatLabels } from "./dictionaryItem.ts";
 
 /** A dictionary offered by the easyImmerse registry. */
 export type RegistryDictionary = {
@@ -19,7 +17,7 @@ export type RegistryDictionary = {
   title: string;
   sourceLanguage: string;
   targetLanguage: string;
-  format: DictionaryFormat;
+  format: DictionaryFormatKind;
   sizeBytes: number;
   isInstalled: boolean;
 };
