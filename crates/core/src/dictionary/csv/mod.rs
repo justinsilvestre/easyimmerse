@@ -13,6 +13,9 @@ mod records;
 mod table;
 mod table_file;
 
+#[cfg(test)]
+mod fixture_tests;
+
 pub use error::CsvError;
 
 use super::error::DictionaryError;
