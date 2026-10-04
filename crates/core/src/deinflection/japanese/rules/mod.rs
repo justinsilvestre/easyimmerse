@@ -3,6 +3,7 @@
 mod adjective;
 mod negative;
 mod perfective;
+mod polite;
 mod stems;
 
 use super::rule::{Rule, Stem};
@@ -17,6 +18,7 @@ pub const ALL: &[&[Rule]] = &[
     adjective::ADJECTIVE_STEM,
     perfective::PERFECTIVE,
     negative::NEGATIVE,
+    polite::POLITE,
     adjective::ADJECTIVE,
 ];
 
