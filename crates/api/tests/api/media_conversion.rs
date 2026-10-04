@@ -270,7 +270,9 @@ async fn serves_the_init_segment() {
     let response = server.get(&path.replace("index.m3u8", "init.mp4")).await;
     assert_eq!(
         (response.status, &response.bytes[4..8]),
-        (200, &b"ftyp"[..])
+        (200, &b"ftyp"[..]),
+        "{}",
+        response.text()
     );
 }
 
@@ -284,7 +286,9 @@ async fn serves_a_media_segment() {
     let response = server.get(&path.replace("index.m3u8", "s00002.m4s")).await;
     assert_eq!(
         (response.status, response.header("content-type")),
-        (200, Some("video/mp4"))
+        (200, Some("video/mp4")),
+        "{}",
+        response.text()
     );
 }
 
