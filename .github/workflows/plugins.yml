@@ -16,8 +16,10 @@ on:
       - "plugins/**"
       - "crates/**"
       - "fixtures/**"
+  # A tag named plugins-ci-<job>-<stamp> runs that one job at the tagged commit, for one-off checks of a branch.
   push:
     branches: [main]
+    tags: ["plugins-ci-*"]
     paths:
       - ".github/workflows/plugins.yml"
       - ".github/actions/**"
@@ -52,7 +54,7 @@ jobs:
 
   host:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && github.ref_type != 'tag'
     strategy:
       fail-fast: false
       matrix:
@@ -73,7 +75,7 @@ jobs:
 
   interpreter:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && github.ref_type != 'tag'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -87,8 +89,45 @@ jobs:
         env:
           EASYIMMERSE_PLUGIN_EXECUTION: interpreter
 
+  # Proves the host crate cross-compiles for the mobile targets.
+  # Nothing runs: the iOS target cannot run tests on the runner,
+  # and the Android check only needs the NDK compiler for the C dependencies' build scripts.
+  mobile:
+    needs: gate
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'plugins-ci-mobile-'))
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: aarch64-apple-ios
+          - os: ubuntu-24.04
+            target: aarch64-linux-android
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - uses: nttld/setup-ndk@v1
+        if: matrix.target == 'aarch64-linux-android'
+        id: ndk
+        with:
+          ndk-version: r28c
+      - name: Point cargo at the NDK compiler
+        if: matrix.target == 'aarch64-linux-android'
+        run: |
+          toolchain="${{ steps.ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          {
+            echo "CC_aarch64_linux_android=$toolchain/aarch64-linux-android24-clang"
+            echo "AR_aarch64_linux_android=$toolchain/llvm-ar"
+            echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$toolchain/aarch64-linux-android24-clang"
+          } >> "$GITHUB_ENV"
+      - name: Rust target
+        run: rustup target add ${{ matrix.target }}
+      - name: Check the host with the interpreter
+        run: cargo check -p easyimmerse-plugins --features interpreter --target ${{ matrix.target }}
+
   record:
-    needs: [gate, host, interpreter]
+    needs: [gate, host, interpreter, mobile]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7

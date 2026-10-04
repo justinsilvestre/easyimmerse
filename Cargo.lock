@@ -1453,10 +1453,12 @@ name = "easyimmerse-native"
 version = "0.1.0"
 dependencies = [
  "easyimmerse-api",
+ "easyimmerse-plugins",
  "easyimmerse-storage",
  "hex",
  "paranoid-android",
  "rand 0.10.3",
+ "serde",
  "serde_json",
  "tauri",
  "tauri-build",

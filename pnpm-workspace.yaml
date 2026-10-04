@@ -17,3 +17,6 @@ allowBuilds:
 # Tauri tests drive the app through its embedded WebDriver server, so no browser driver is needed.
   edgedriver: false
   geckodriver: false
+# Appium's install script only prints a notice and installs drivers listed in the consuming
+# package's manifest, which this repository does not use; drivers go through `mise run appium:install`.
+  appium: false

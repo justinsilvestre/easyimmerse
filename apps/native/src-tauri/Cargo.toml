@@ -15,14 +15,22 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "easyimmerse-native"
 path = "src/main.rs"
 
+[features]
+default = []
+# Embeds the built hello-rust plugin and exposes the `check_plugin_host` command,
+# which the end-to-end tests call to prove the plugin host runs on the platform under test.
+plugin-check = []
+
 [build-dependencies]
 tauri-build = { workspace = true }
 
 [dependencies]
 easyimmerse-api = { workspace = true }
+easyimmerse-plugins = { workspace = true }
 easyimmerse-storage = { workspace = true }
 hex = { workspace = true }
 rand = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 tauri = { workspace = true }
 tauri-plugin-clipboard-manager = { workspace = true }
@@ -37,6 +45,10 @@ ureq = { workspace = true }
 
 [target.'cfg(target_os = "android")'.dependencies]
 paranoid-android = { workspace = true }
+
+# iOS forbids just-in-time compilation, so plugins run there only through the Pulley interpreter.
+[target.'cfg(target_os = "ios")'.dependencies]
+easyimmerse-plugins = { workspace = true, features = ["interpreter"] }
 
 # Debug builds register these plugins only when an end-to-end test asks for them; see webdriver.rs.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
