@@ -21,21 +21,12 @@ windows_flags="--toolchain=msvc --arch=$arch --target-os=win64 --enable-zlib \
   --enable-encoder=h264_mf,hevc_mf,h264_amf,hevc_amf \
   --extra-cflags=-MT --extra-cflags=-I$deps_windows/include --extra-ldflags=-libpath:$deps_windows/lib"
 
-report_configure_failure() {
-  echo "pkg-config: $(command -v pkg-config)"
-  PKG_CONFIG_PATH="$pkg_config_path" pkg-config --modversion ffnvcodec || true
-  cat "$pkg_config_path/ffnvcodec.pc" || true
-  grep -n -A40 'check_lib zlib' ffbuild/config.log || true
-  grep -n -A40 'check_pkg_config ffnvcodec' ffbuild/config.log | head -120 || true
-  tail -30 ffbuild/config.log
-}
-
-pkg_config_path="$(cygpath -u "$deps_windows")/lib/pkgconfig"
 cd "$source_dir"
-PKG_CONFIG_PATH="$pkg_config_path" ./configure $common_flags $windows_flags --prefix="$out/install" \
-  || { report_configure_failure; exit 1; }
-# cl.exe prints its diagnostics on standard output, so the whole log is kept for a failure.
-make -j"$(nproc)" > make.log 2>&1 || { grep -n -B2 -A12 'error' make.log | head -150; exit 1; }
+PKG_CONFIG_PATH="$(cygpath -u "$deps_windows")/lib/pkgconfig" ./configure $common_flags $windows_flags --prefix="$out/install" \
+  || { tail -50 ffbuild/config.log; exit 1; }
+# cl.exe prints its diagnostics on standard output, which the Linux build discards. A parallel
+# build keeps compiling other files after an error, so the log is searched rather than tailed.
+make -j"$(nproc)" > make.log 2>&1 || { grep -n -A12 'error' make.log | head -150; exit 1; }
 make install > /dev/null
 cp "$out/install/bin/ffmpeg.exe" "$out/install/bin/ffprobe.exe" "$out/"
 rm -rf "$out/install"

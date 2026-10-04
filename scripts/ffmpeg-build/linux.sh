@@ -15,7 +15,7 @@ linux_flags="--enable-zlib --enable-vaapi --enable-ffnvcodec --enable-nvenc --en
 
 cd "$source_dir"
 PKG_CONFIG_PATH="$deps/lib/pkgconfig" ./configure $common_flags $linux_flags --prefix="$out/install" \
-  || { cat ffbuild/config.log | tail -50; exit 1; }
+  || { tail -50 ffbuild/config.log; exit 1; }
 make -j"$(nproc)" > /dev/null
 make install > /dev/null
 for bin in ffmpeg ffprobe; do

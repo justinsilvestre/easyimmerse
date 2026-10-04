@@ -33,4 +33,3 @@ git -C AMF sparse-checkout set amf/public/include > /dev/null
 cp -r AMF/amf/public/include "$prefix/include/AMF"
 
 rm -rf "$work"
-ls -l "$prefix/lib" "$prefix/include"
