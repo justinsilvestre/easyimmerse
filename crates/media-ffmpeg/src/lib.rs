@@ -1,5 +1,6 @@
 //! Runs the ffmpeg and ffprobe binaries as subprocesses. Desktop and server only.
 
+pub mod background_command;
 pub mod conversion_command;
 pub mod encoders;
 pub mod error;
@@ -14,7 +15,9 @@ mod ffmpeg_time;
 mod ffprobe_command;
 mod ffprobe_time;
 mod probe_track;
+mod timed_output;
 
+pub use background_command::background_command;
 pub use conversion_command::{
     AAC_ENCODER, ConversionJob, INIT_SEGMENT_FILE_NAME, OUTPUT_TS_OFFSET_SECONDS,
     RUN_PLAYLIST_FILE_NAME, RUN_SEGMENT_FILE_PATTERN, conversion_args,

@@ -137,10 +137,13 @@ fn ensure_init_segment(entry: &ConversionEntry) -> std::io::Result<()> {
     std::fs::copy(run_init, destination).map(|_| ())
 }
 
-/// Records a failed exit in the entry's diagnostics; a kill is the normal way a run ends.
+/// Records a failed exit in the entry's diagnostics. A kill is the normal way a run ends, and
+/// Windows reports a killed process with an ordinary exit code, so `killed` says whether the
+/// supervisor killed it.
 pub fn remember_failure(
     entry: &ConversionEntry,
     status: std::io::Result<ExitStatus>,
+    killed: bool,
     progress: &Mutex<RunProgress>,
 ) {
     let placed_nothing = progress
@@ -148,6 +151,7 @@ pub fn remember_failure(
         .map(|progress| progress.latest_index.is_none())
         .unwrap_or(false);
     match status {
+        Ok(_) if killed => {}
         Ok(status) if status.success() => {}
         Ok(status) if status.code().is_none() => {}
         Ok(status) => {

@@ -6,7 +6,7 @@ use std::process::Stdio;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use easyimmerse_media_ffmpeg::{ConversionJob, conversion_args};
+use easyimmerse_media_ffmpeg::{ConversionJob, background_command, conversion_args};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child, Command};
 use tokio::sync::oneshot;
@@ -110,10 +110,9 @@ fn spawn_ffmpeg(
         timeline_start_micros: plan.timebase.ticks_to_micros(plan.start_ticks),
         seek_micros,
     };
-    Command::new(ffmpeg)
-        .args(conversion_args(&job))
-        .current_dir(run_dir)
-        .stdin(Stdio::null())
+    let mut command = background_command(&ffmpeg);
+    command.args(conversion_args(&job)).current_dir(run_dir);
+    Command::from(command)
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .kill_on_drop(true)
@@ -162,16 +161,17 @@ async fn supervise(
     // A completed oneshot receiver panics when polled again, so the branch is disabled once it
     // has fired.
     let mut stopping = false;
+    let mut killed = false;
     let exit_status = loop {
         tokio::select! {
             _ = ticks.tick() => {
                 if collect_output(&entry, &run_dir, &progress).await {
-                    let _ = child.start_kill();
+                    killed |= child.start_kill().is_ok();
                 }
             }
             _ = &mut stop_requested, if !stopping => {
                 stopping = true;
-                let _ = child.start_kill();
+                killed |= child.start_kill().is_ok();
             }
             status = child.wait() => break status,
         }
@@ -180,7 +180,7 @@ async fn supervise(
     if let Some(task) = stderr_task {
         let _ = task.await;
     }
-    remember_failure(&entry, exit_status, &progress);
+    remember_failure(&entry, exit_status, killed, &progress);
     if let Ok(mut progress) = progress.lock() {
         progress.finished = true;
     }
@@ -234,6 +234,27 @@ mod tests {
             .kill_on_drop(true)
             .spawn()
             .expect("sleep")
+    }
+
+    /// The status Windows reports for a process killed by `TerminateProcess`.
+    fn exit_code_one() -> std::io::Result<std::process::ExitStatus> {
+        Ok(std::os::unix::process::ExitStatusExt::from_raw(1 << 8))
+    }
+
+    #[test]
+    fn a_killed_run_has_not_failed_whatever_its_exit_code() {
+        let dir = TempDir::new().expect("temp dir");
+        let progress = Mutex::new(RunProgress::new(0, 0));
+        remember_failure(&entry(dir.path()), exit_code_one(), true, &progress);
+        assert!(!progress.lock().expect("lock").failed);
+    }
+
+    #[test]
+    fn a_run_that_exits_with_an_error_by_itself_has_failed() {
+        let dir = TempDir::new().expect("temp dir");
+        let progress = Mutex::new(RunProgress::new(0, 0));
+        remember_failure(&entry(dir.path()), exit_code_one(), false, &progress);
+        assert!(progress.lock().expect("lock").failed);
     }
 
     #[tokio::test]

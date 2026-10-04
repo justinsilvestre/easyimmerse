@@ -5,7 +5,9 @@ use std::process::Stdio;
 use std::time::Duration;
 
 use easyimmerse_media::{TrackInfo, WaveformResponse, compute_peaks};
-use easyimmerse_media_ffmpeg::{BinaryName, FfmpegError, WaveformDecode, waveform_decode_args};
+use easyimmerse_media_ffmpeg::{
+    BinaryName, FfmpegError, WaveformDecode, background_command, waveform_decode_args,
+};
 use tokio::process::Command;
 use tokio::sync::Semaphore;
 
@@ -51,9 +53,9 @@ impl WaveformDecoder {
             channels,
         });
         let _permit = self.decodes.acquire().await;
-        let output = Command::new(&self.ffmpeg)
-            .args(args)
-            .stdin(Stdio::null())
+        let mut command = background_command(&self.ffmpeg);
+        command.args(args);
+        let output = Command::from(command)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .kill_on_drop(true)
