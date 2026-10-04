@@ -14,12 +14,10 @@ const meta = {
   ],
   args: {
     tracks: {
-      audio: [],
       subtitles: [
         { id: "s1", label: "German", language: "de", sample: "Hallo." },
         { id: "s2", label: "English", language: "en", sample: "Hello." },
       ],
-      audioId: null,
       targetSubtitlesId: "s1",
       translationSubtitlesId: "s2",
     },
@@ -37,9 +35,7 @@ export const DualSubtitles: Story = {};
 export const NoTracks: Story = {
   args: {
     tracks: {
-      audio: [],
       subtitles: [],
-      audioId: null,
       targetSubtitlesId: null,
       translationSubtitlesId: null,
     },

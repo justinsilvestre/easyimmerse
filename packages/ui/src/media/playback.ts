@@ -16,11 +16,9 @@ export type TrackOption = {
   sample: string | null;
 };
 
-/** The tracks a media file offers and which of them are in use. */
+/** The subtitle tracks a media file offers and which of them are in use. */
 export type TrackSelection = {
-  audio: readonly TrackOption[];
   subtitles: readonly TrackOption[];
-  audioId: string | null;
   targetSubtitlesId: string | null;
   translationSubtitlesId: string | null;
 };

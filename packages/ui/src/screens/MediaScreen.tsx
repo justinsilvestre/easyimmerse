@@ -60,9 +60,7 @@ export function MediaScreen({
     editedContent?.screenshot?.at_ms ?? null,
   );
   const tracks: TrackSelection = {
-    audio: [],
     subtitles: subtitles.options,
-    audioId: null,
     targetSubtitlesId: subtitles.selection.target_track_id,
     translationSubtitlesId: subtitles.selection.translation_track_id,
   };
@@ -99,7 +97,6 @@ export function MediaScreen({
       ),
     onVolumeChange: (volume) => dispatch(actions.volumeChangeRequested(volume)),
     onSpeedChange: (speed) => dispatch(actions.speedChangeRequested(speed)),
-    onAudioTrackChange: () => undefined,
     onToggleSubtitleDisplay: () =>
       dispatchPanels({ type: "subtitleDisplayCycled" }),
     onToggleCuePanel: () => dispatchPanels({ type: "cuePanelToggled" }),

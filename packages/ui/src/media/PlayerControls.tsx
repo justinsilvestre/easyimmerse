@@ -20,7 +20,6 @@ export type PlayerCallbacks = {
   onSkip: (direction: "back" | "forward") => void;
   onVolumeChange: (volume: number) => void;
   onSpeedChange: (speed: number) => void;
-  onAudioTrackChange: (trackId: string) => void;
   /** Cycles which subtitles lie over the video: both, the target language, or the translation. */
   onToggleSubtitleDisplay: () => void;
   onToggleCuePanel: () => void;
@@ -30,7 +29,7 @@ export type PlayerCallbacks = {
 
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-/** The bar over the bottom of the player: the position, transport, volume, speed, and audio track, with the toggles for the panels around it. */
+/** The bar over the bottom of the player: the position, transport, volume, and speed, with the toggles for the panels around it. */
 export function PlayerControls({
   playback,
   tracks,
@@ -104,17 +103,6 @@ export function PlayerControls({
           }))}
           onChange={(value) => callbacks.onSpeedChange(Number(value))}
         />
-        {tracks.audio.length > 1 && (
-          <CompactSelect
-            label="Audio track"
-            value={tracks.audioId ?? ""}
-            options={tracks.audio.map((track) => ({
-              value: track.id,
-              label: track.label,
-            }))}
-            onChange={callbacks.onAudioTrackChange}
-          />
-        )}
         <span className="ml-auto flex items-center gap-1">
           {tracks.translationSubtitlesId !== null && (
             <IconButton

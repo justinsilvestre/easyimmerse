@@ -31,10 +31,6 @@ import type { TrackSelection } from "./playback.ts";
 import { SubtitleTrackBar } from "./SubtitleTrackBar.tsx";
 
 const tracks: TrackSelection = {
-  audio: [
-    { id: "a1", label: "German (5.1)", language: "de", sample: null },
-    { id: "a2", label: "English", language: "en", sample: null },
-  ],
   subtitles: [
     {
       id: "s1",
@@ -49,7 +45,6 @@ const tracks: TrackSelection = {
       sample: "Did you see the light?",
     },
   ],
-  audioId: "a1",
   targetSubtitlesId: "s1",
   translationSubtitlesId: "s2",
 };
@@ -180,7 +175,6 @@ const meta = {
       onSkip: fn(),
       onVolumeChange: fn(),
       onSpeedChange: fn(),
-      onAudioTrackChange: fn(),
       onToggleSubtitleDisplay: fn(),
       onToggleCuePanel: fn(),
       onToggleWaveform: fn(),
@@ -254,9 +248,7 @@ export const NoSubtitles: Story = {
     translationCues: [],
     waveform: waveform([]),
     tracks: {
-      audio: [{ id: "a1", label: "German", language: "de", sample: null }],
       subtitles: [],
-      audioId: "a1",
       targetSubtitlesId: null,
       translationSubtitlesId: null,
     },
