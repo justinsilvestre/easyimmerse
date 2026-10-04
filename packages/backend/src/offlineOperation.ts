@@ -4,4 +4,4 @@ import type { DocumentFormat, ParseTimedTextRequest } from "@easyimmerse/types";
 export type OfflineOperation =
   | { kind: "parseTimedText"; request: ParseTimedTextRequest }
   | { kind: "parseDocument"; bytes: Uint8Array; format: DocumentFormat | null }
-  | { kind: "parseDictionary"; bytes: Uint8Array };
+  | { kind: "parseDictionary"; fileName: string; bytes: Uint8Array };

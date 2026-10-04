@@ -6,7 +6,7 @@
 
 mod json_call;
 
-use easyimmerse_core::dictionary::{self, Dictionary};
+use easyimmerse_core::dictionary::{self, Dictionary, DictionaryError, DictionarySource};
 use easyimmerse_core::document::{self, DocumentFormat};
 use easyimmerse_core::text_source::TextSource;
 use easyimmerse_core::timed_text::{self, ParseTimedTextRequest};
@@ -28,10 +28,11 @@ pub fn parse_document(bytes: &[u8], format_json: &str) -> Result<String, JsError
     Ok(parse_document_json(bytes, format_json)?)
 }
 
-/// Parses a dictionary archive into a JSON-encoded `Dictionary`.
+/// Parses one dictionary file into a JSON-encoded `Dictionary`, leaving out its media.
+/// The file name's extension tells formats such as MDict and CSV apart.
 #[wasm_bindgen::prelude::wasm_bindgen]
-pub fn parse_dictionary(bytes: &[u8]) -> Result<String, JsError> {
-    Ok(parse_dictionary_json(bytes)?)
+pub fn parse_dictionary(file_name: &str, bytes: &[u8]) -> Result<String, JsError> {
+    Ok(parse_dictionary_json(file_name, bytes)?)
 }
 
 fn parse_timed_text_json(request_json: &str) -> Result<String, JsonCallError> {
@@ -45,8 +46,13 @@ fn parse_document_json(bytes: &[u8], format_json: &str) -> Result<String, JsonCa
     to_json_result(document::parse_document(bytes, format))
 }
 
-fn parse_dictionary_json(bytes: &[u8]) -> Result<String, JsonCallError> {
-    to_json_result::<Dictionary, _>(dictionary::parse_dictionary(bytes))
+fn parse_dictionary_json(file_name: &str, bytes: &[u8]) -> Result<String, JsonCallError> {
+    to_json_result::<Dictionary, _>(read_dictionary(file_name, bytes))
+}
+
+fn read_dictionary(file_name: &str, bytes: &[u8]) -> Result<Dictionary, DictionaryError> {
+    let mut source = DictionarySource::single(file_name, bytes.to_vec())?;
+    dictionary::parse_dictionary(&mut source)
 }
 
 fn inline_text(source: TextSource) -> Result<String, JsonCallError> {
@@ -110,10 +116,13 @@ mod tests {
 
     #[test]
     fn parses_the_yomitan_fixture_with_its_title() {
-        let dictionary: serde_json::Value = serde_json::from_str(
-            &parse_dictionary_json(&read_fixture("sample-yomitan.zip")).unwrap(),
-        )
-        .unwrap();
-        assert_eq!(dictionary["title"], "Sample Dictionary");
+        let json = parse_dictionary_json("sample-yomitan.zip", &read_fixture("sample-yomitan.zip"));
+        let dictionary: serde_json::Value = serde_json::from_str(&json.unwrap()).unwrap();
+        assert_eq!(dictionary["metadata"]["title"], "Sample Dictionary");
+    }
+
+    #[test]
+    fn rejects_a_file_that_no_format_recognizes() {
+        assert!(parse_dictionary_json("notes.txt", b"hello").is_err());
     }
 }

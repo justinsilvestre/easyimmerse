@@ -3,6 +3,7 @@
 
 pub mod auth;
 pub mod config;
+pub mod local_dictionary_files;
 pub mod local_path;
 pub mod router;
 pub mod routes;

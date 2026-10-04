@@ -79,8 +79,10 @@ impl From<StorageError> for ApiFailure {
     fn from(error: StorageError) -> Self {
         match error {
             StorageError::DictionaryNotFound(_)
+            | StorageError::DictionaryMediaNotFound { .. }
             | StorageError::ProjectNotFound(_)
             | StorageError::MediaFileNotFound(_) => not_found(error.to_string()),
+            StorageError::Dictionary(_) => bad_request(error.to_string()),
             _ => internal(error.to_string()),
         }
     }

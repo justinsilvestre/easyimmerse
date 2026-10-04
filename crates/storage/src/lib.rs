@@ -10,13 +10,15 @@ mod migrations;
 mod preferences;
 mod projects;
 
-pub use dictionaries::{DictionaryId, StoredDictionary};
+pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use error::StorageError;
 
 use std::path::Path;
 use std::sync::Mutex;
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use easyimmerse_core::dictionary::{Dictionary, TermEntry};
+use easyimmerse_core::dictionary::{DictionaryMedia, DictionarySource};
+use easyimmerse_core::lookup::{FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta};
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
 use easyimmerse_core::project::{ProjectId, ProjectSummary};
 use rusqlite::Connection;
@@ -112,21 +114,69 @@ impl Storage {
         self.with_connection(|conn| preferences::set_preference(conn, key, value))
     }
 
-    pub fn insert_dictionary(&self, dictionary: &Dictionary) -> Result<DictionaryId, StorageError> {
-        self.with_connection(|conn| dictionaries::insert_dictionary(conn, dictionary))
+    /// Imports a dictionary from its files in one transaction and returns its new id.
+    /// The connection stays locked until the import finishes.
+    pub fn import_dictionary(
+        &self,
+        source: &mut DictionarySource,
+    ) -> Result<DictionaryId, StorageError> {
+        let imported_at = milliseconds_since_epoch();
+        self.with_connection(|conn| dictionaries::import_dictionary(conn, source, imported_at))
     }
 
+    /// Lists every stored dictionary in the order they were imported.
     pub fn list_dictionaries(&self) -> Result<Vec<StoredDictionary>, StorageError> {
         self.with_connection(|conn| dictionaries::list_dictionaries(conn))
     }
 
-    pub fn lookup_term(
+    pub fn get_dictionary(&self, id: &DictionaryId) -> Result<StoredDictionary, StorageError> {
+        self.with_connection(|conn| dictionaries::get_dictionary(conn, id))
+    }
+
+    /// Deletes a dictionary together with everything it stored.
+    pub fn delete_dictionary(&self, id: &DictionaryId) -> Result<(), StorageError> {
+        self.with_connection(|conn| dictionaries::delete_dictionary(conn, id))
+    }
+
+    /// Finds the entries of every dictionary stored under any of the headwords, ignoring ASCII case.
+    pub fn find_dictionary_entries(
+        &self,
+        headwords: &[String],
+    ) -> Result<Vec<FoundEntry>, StorageError> {
+        self.with_connection(|conn| dictionaries::find_entries(conn, headwords))
+    }
+
+    /// Finds the frequencies and pronunciations that every dictionary stores for any of the terms.
+    pub fn find_term_meta(&self, terms: &[String]) -> Result<Vec<FoundTermMeta>, StorageError> {
+        self.with_connection(|conn| dictionaries::find_term_meta(conn, terms))
+    }
+
+    pub fn find_kanji(&self, characters: &[String]) -> Result<Vec<FoundKanji>, StorageError> {
+        self.with_connection(|conn| dictionaries::find_kanji(conn, characters))
+    }
+
+    pub fn find_kanji_meta(
+        &self,
+        characters: &[String],
+    ) -> Result<Vec<FoundKanjiMeta>, StorageError> {
+        self.with_connection(|conn| dictionaries::find_kanji_meta(conn, characters))
+    }
+
+    /// Returns a file stored with a dictionary, by the path its definitions use.
+    pub fn get_dictionary_media(
         &self,
         id: &DictionaryId,
-        term: &str,
-    ) -> Result<Vec<TermEntry>, StorageError> {
-        self.with_connection(|conn| dictionaries::lookup_term(conn, id, term))
+        path: &str,
+    ) -> Result<DictionaryMedia, StorageError> {
+        self.with_connection(|conn| dictionaries::get_media(conn, id, path))
     }
+}
+
+fn milliseconds_since_epoch() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|elapsed| u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX))
+        .unwrap_or(0)
 }
 
 #[cfg(test)]

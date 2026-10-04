@@ -2,6 +2,10 @@
 
 export type LookupQuery = { 
 /**
- * The exact term or reading to find.
+ * The text from the looked-up character onwards. Lookup reads at most 20 characters of it.
  */
-term: string, };
+text: string, 
+/**
+ * The language of the text, as a BCP 47 tag, which decides how inflections are undone.
+ */
+language: string, };

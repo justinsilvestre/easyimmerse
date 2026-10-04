@@ -54,7 +54,11 @@ describe("createWasmBackendClient", () => {
     const result = await client.send({
       method: "POST",
       path: "/dictionaries",
-      offlineOperation: { kind: "parseDictionary", bytes: new Uint8Array() },
+      offlineOperation: {
+        kind: "parseDictionary",
+        fileName: "a.zip",
+        bytes: new Uint8Array(),
+      },
     });
     expect(result).toEqual({
       error: { status: 400, code: "bad_request", message: "not a zip archive" },

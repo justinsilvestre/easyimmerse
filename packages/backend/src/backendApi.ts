@@ -8,6 +8,7 @@ import type {
   ListDictionariesResponse,
   ListMediaFilesResponse,
   ListProjectsResponse,
+  LookupQuery,
   LookupResponse,
   MediaFile,
   ParseLocalDocumentRequest,
@@ -29,6 +30,8 @@ type ParseDocumentArgs = {
   format: DocumentFormat | null;
   contentType: string;
 };
+
+type ImportDictionaryArgs = { fileName: string; bytes: Uint8Array | Blob };
 
 type AddMediaFileArgs = { projectId: string; request: AddMediaFileRequest };
 
@@ -183,12 +186,20 @@ export const backendApi = createApi({
         body: { kind: "json", value: request },
       }),
     }),
-    importDictionary: build.mutation<DictionarySummary, { bytes: Uint8Array }>({
-      query: ({ bytes }) => ({
+    importDictionary: build.mutation<DictionarySummary, ImportDictionaryArgs>({
+      query: ({ fileName, bytes }) => ({
         method: "POST",
         path: "/dictionaries",
-        body: { kind: "bytes", value: bytes, contentType: "application/zip" },
-        offlineOperation: { kind: "parseDictionary", bytes },
+        query: { fileName },
+        body: {
+          kind: "bytes",
+          value: bytes,
+          contentType: "application/octet-stream",
+        },
+        offlineOperation:
+          bytes instanceof Uint8Array
+            ? { kind: "parseDictionary", fileName, bytes }
+            : undefined,
       }),
       invalidatesTags: ["Dictionaries"],
     }),
@@ -207,12 +218,20 @@ export const backendApi = createApi({
       query: () => ({ method: "GET", path: "/dictionaries" }),
       providesTags: ["Dictionaries"],
     }),
-    lookupTerm: build.query<LookupResponse, { id: string; term: string }>({
-      query: ({ id, term }) => ({
-        method: "GET",
-        path: `/dictionaries/${id}/lookup`,
-        query: { term },
+    deleteDictionary: build.mutation<void, string>({
+      query: (id) => ({
+        method: "DELETE",
+        path: `/dictionaries/${encodeURIComponent(id)}`,
       }),
+      invalidatesTags: ["Dictionaries"],
+    }),
+    lookupText: build.query<LookupResponse, LookupQuery>({
+      query: ({ text, language }) => ({
+        method: "GET",
+        path: "/dictionaries/lookup",
+        query: { text, language },
+      }),
+      providesTags: ["Dictionaries"],
     }),
   }),
 });
@@ -238,5 +257,7 @@ export const {
   useImportDictionaryMutation,
   useImportLocalDictionaryMutation,
   useListDictionariesQuery,
-  useLookupTermQuery,
+  useDeleteDictionaryMutation,
+  useLookupTextQuery,
+  useLazyLookupTextQuery,
 } = backendApi;

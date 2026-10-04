@@ -10,7 +10,7 @@ import type {
 export type OfflineWasm = {
   parseTimedText(request: ParseTimedTextRequest): TimedTextTrack;
   parseDocument(bytes: Uint8Array, format: DocumentFormat | null): Document;
-  parseDictionary(bytes: Uint8Array): Dictionary;
+  parseDictionary(fileName: string, bytes: Uint8Array): Dictionary;
 };
 
 type WasmExports = Pick<
@@ -25,6 +25,7 @@ export function createOfflineWasm(module: WasmExports): OfflineWasm {
       JSON.parse(module.parse_timed_text(JSON.stringify(request))),
     parseDocument: (bytes, format) =>
       JSON.parse(module.parse_document(bytes, JSON.stringify(format))),
-    parseDictionary: (bytes) => JSON.parse(module.parse_dictionary(bytes)),
+    parseDictionary: (fileName, bytes) =>
+      JSON.parse(module.parse_dictionary(fileName, bytes)),
   };
 }
