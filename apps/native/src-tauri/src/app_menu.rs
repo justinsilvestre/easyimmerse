@@ -21,10 +21,10 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     }
     app.set_menu(menu)?;
     app.on_menu_event(|app, event| {
-        if event.id() == PREFERENCES_ITEM_ID {
-            if let Err(error) = app.emit(OPEN_SETTINGS_EVENT, ()) {
-                tracing::warn!("could not ask the page to open Settings: {error}");
-            }
+        if event.id() == PREFERENCES_ITEM_ID
+            && let Err(error) = app.emit(OPEN_SETTINGS_EVENT, ())
+        {
+            tracing::warn!("could not ask the page to open Settings: {error}");
         }
     });
     Ok(())
