@@ -1,5 +1,19 @@
 [
   ["猫","ねこ","n","",1,["cat"],1,""],
   ["犬","いぬ","n","",1,["dog"],2,""],
-  ["食べる","たべる","v1","",1,["to eat"],3,""]
+  ["食べる","たべる","v1","v1",1,["to eat"],3,""],
+  ["本","ほん","n","",2,[
+    {"type":"structured-content","content":[
+      {"tag":"ruby","content":["本",{"tag":"rp","content":"("},{"tag":"rt","content":"ほん"},{"tag":"rp","content":")"}]},
+      {"tag":"ul","data":{"content":"glossary"},"content":[
+        {"tag":"li","content":"book"},
+        {"tag":"li","style":{"fontStyle":"italic"},"content":"volume"}
+      ]},
+      {"tag":"a","href":"?query=%E6%9B%B8%E7%B1%8D","content":"see 書籍"},
+      {"tag":"img","path":"images/cat.png","width":2,"height":2,"sizeUnits":"px","alt":"a grey square"}
+    ]},
+    {"type":"text","text":"origin"},
+    {"type":"image","path":"images/cat.png","width":2,"height":2,"title":"a grey square"}
+  ],4,"P"],
+  ["食べた","たべた","","",0,[["食べる",["past"]]],5,""]
 ]

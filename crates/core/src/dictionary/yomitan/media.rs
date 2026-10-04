@@ -60,6 +60,58 @@ fn media_type(name: &str) -> Option<&'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dictionary::sink::SinkResult;
+    use crate::dictionary::{
+        DictionaryMetadata, KanjiEntry, KanjiMeta, TagDefinition, TermEntry, TermMeta,
+    };
+    use crate::test_support::read_fixture_bytes;
+
+    #[derive(Default)]
+    struct MediaCollector {
+        media: Vec<DictionaryMedia>,
+    }
+
+    impl DictionarySink for MediaCollector {
+        fn begin(&mut self, _: DictionaryMetadata) -> SinkResult {
+            Ok(())
+        }
+        fn term_entry(&mut self, _: TermEntry) -> SinkResult {
+            Ok(())
+        }
+        fn term_meta(&mut self, _: TermMeta) -> SinkResult {
+            Ok(())
+        }
+        fn tag(&mut self, _: TagDefinition) -> SinkResult {
+            Ok(())
+        }
+        fn kanji_entry(&mut self, _: KanjiEntry) -> SinkResult {
+            Ok(())
+        }
+        fn kanji_meta(&mut self, _: KanjiMeta) -> SinkResult {
+            Ok(())
+        }
+        fn media(&mut self, media: DictionaryMedia) -> SinkResult {
+            self.media.push(media);
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn sends_the_media_of_the_fixture() {
+        let mut collector = MediaCollector::default();
+        let mut source = DictionarySource::single(
+            "sample-yomitan.zip",
+            read_fixture_bytes("sample-yomitan.zip"),
+        )
+        .unwrap();
+        import_media(&mut source, &mut collector).unwrap();
+        let media: Vec<_> = collector
+            .media
+            .iter()
+            .map(|media| (media.path.as_str(), media.media_type.as_str()))
+            .collect();
+        assert_eq!(media, vec![("images/cat.png", "image/png")]);
+    }
 
     #[test]
     fn recognizes_an_image() {
