@@ -124,12 +124,12 @@ describe("WaveformStrip", () => {
     expect(calls).toEqual([["screenshot", "f1", 17_000]]);
   });
 
-  it("keeps a dragged clip start before the clip's end", () => {
+  it("stops a dragged clip start at the screenshot marker", () => {
     const { calls, canvas } = renderStrip();
     pointer(canvas, "pointerDown", 100);
     pointer(canvas, "pointerMove", 260);
     pointer(canvas, "pointerUp", 260);
-    expect(calls).toEqual([["clip", "f1", "start", 19_900]]);
+    expect(calls).toEqual([["clip", "f1", "start", 15_000]]);
   });
 
   it("doubles the span from the zoom-out button", () => {

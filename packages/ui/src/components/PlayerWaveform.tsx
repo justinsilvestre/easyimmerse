@@ -39,6 +39,8 @@ export function PlayerWaveform({
   const mediaFile = useMediaFile(projectId, mediaFileId);
   const currentTimeMs = useAppSelector(selectCurrentTime) * 1000;
   const durationMs = useDurationMs(projectId, mediaFile);
+  const fetchWindow = useWaveformFetch(projectId, mediaFile);
+  const cues = useParsedCues();
   const [requestedSpanMs, setRequestedSpanMs] = useState(initialVisibleSpanMs);
   const visibleSpanMs = clampVisibleSpan(requestedSpanMs, durationMs);
   const viewStartMs = computeViewStart(
@@ -46,7 +48,7 @@ export function PlayerWaveform({
     visibleSpanMs,
     durationMs,
   );
-  const windows = useWaveformWindows(useWaveformFetch(projectId, mediaFile), {
+  const windows = useWaveformWindows(fetchWindow, {
     viewStartMs,
     viewEndMs: viewStartMs + visibleSpanMs,
     focusMs: currentTimeMs,
@@ -57,7 +59,7 @@ export function PlayerWaveform({
       durationMs={durationMs}
       currentTimeMs={currentTimeMs}
       windows={windows}
-      cues={useParsedCues()}
+      cues={cues}
       flashcardSegments={[]}
       visibleSpanMs={visibleSpanMs}
       onVisibleSpanChange={setRequestedSpanMs}

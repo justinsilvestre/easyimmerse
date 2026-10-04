@@ -57,26 +57,32 @@ describe("wantedWindows", () => {
 
 describe("planWindowRequests", () => {
   it("requests the three most urgent windows when none are held", () => {
-    expect(planWindowRequests(view, none, none)).toEqual([
+    expect(planWindowRequests(view, none, none, none)).toEqual([
       90_000, 30_000, 60_000,
     ]);
   });
 
   it("skips windows already loaded", () => {
-    expect(planWindowRequests(view, new Set([90_000]), none)).toEqual([
+    expect(planWindowRequests(view, new Set([90_000]), none, none)).toEqual([
       30_000, 60_000, 120_000,
     ]);
   });
 
   it("skips windows already in flight", () => {
-    expect(planWindowRequests(view, none, new Set([90_000]))).toEqual([
+    expect(planWindowRequests(view, none, new Set([90_000]), none)).toEqual([
       30_000, 60_000,
+    ]);
+  });
+
+  it("skips windows waiting to retry", () => {
+    expect(planWindowRequests(view, none, none, new Set([90_000]))).toEqual([
+      30_000, 60_000, 120_000,
     ]);
   });
 
   it("requests nothing while three are in flight", () => {
     expect(
-      planWindowRequests(view, none, new Set([0, 150_000, 180_000])),
+      planWindowRequests(view, none, new Set([0, 150_000, 180_000]), none),
     ).toEqual([]);
   });
 });

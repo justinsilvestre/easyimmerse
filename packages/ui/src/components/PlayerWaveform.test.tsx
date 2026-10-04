@@ -43,12 +43,11 @@ describe("PlayerWaveform", () => {
   it("asks for the first window up to the probed duration", async () => {
     const { client } = renderWaveform("m1");
     await vi.waitFor(() =>
-      expect(waveformRequests(client).length).toBeGreaterThan(0),
+      expect(waveformRequests(client)[0]?.query).toEqual({
+        start_ms: "0",
+        end_ms: "10000",
+      }),
     );
-    expect(waveformRequests(client)[0]?.query).toEqual({
-      start_ms: "0",
-      end_ms: "10000",
-    });
   });
 
   it("spans the probed duration until the player reports one", async () => {

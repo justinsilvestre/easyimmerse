@@ -10,7 +10,10 @@ export type WaveformDrag = {
 /** The shortest clip a drag may leave. */
 const minClipMs = 100;
 
-/** Moves the dragged handle to the time, keeping the clip in order and the screenshot inside it. */
+/**
+ * Moves the dragged handle to the time, keeping the clip in order and the screenshot inside it:
+ * a clip edge stops at the screenshot marker, and the marker stops at the clip's edges.
+ */
 export function constrainDrag(
   drag: WaveformDrag,
   segments: readonly FlashcardSegment[],
@@ -29,9 +32,12 @@ function dragBounds(
 ): [number, number] {
   switch (kind) {
     case "clipStart":
-      return [0, segment.endMs - minClipMs];
+      return [0, Math.min(segment.endMs - minClipMs, segment.screenshotMs)];
     case "clipEnd":
-      return [segment.startMs + minClipMs, durationMs];
+      return [
+        Math.max(segment.startMs + minClipMs, segment.screenshotMs),
+        durationMs,
+      ];
     case "screenshot":
       return [segment.startMs, segment.endMs];
   }
