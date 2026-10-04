@@ -18,3 +18,6 @@ Each bug report is to be logged in this format:
 - HDR video converts washed out 2026-10-04
   - Open an HDR (10-bit, BT.2020) video that needs converting.
   - It is transcoded to 8-bit H.264 without tone mapping and looks washed out. Converted HDR video should be tone-mapped to look like the original.
+- Transcoding test drops frames once 2026-10-04
+  - Run the `rust` workflow's macOS job; in run 37219960258 `accuracy::transcoded_frames_present_at_their_source_times` in `crates/conversion` produced 236 frames instead of 250 with the VideoToolbox encoder, after passing in the six runs before and the run after it.
+  - A converted file should hold every source frame on every run. Until the cause is known (the encoder on a virtual Mac, or a run stopped before its last segment), a repeat failure should be investigated rather than rerun.

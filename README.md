@@ -32,11 +32,11 @@ mise run web:desktop    # web app with hot reloading, against the desktop app's 
 mise run storybook      # UI component stories at http://localhost:6006
 ```
 
-`web-dev` starts the server at `http://127.0.0.1:8788` with the token `dev`. The server keeps its data in `.dev/server.sqlite` and seeds two placeholder projects when that file is new. Delete `.dev/` to start over. The server takes `--cache-dir` (or `EASYIMMERSE_CACHE_DIR`) for the directory where converted media is cached; without it, and without `ffmpeg` and `ffprobe` on `PATH`, next to the executable, or in `EASYIMMERSE_FFMPEG_DIR`, it plays only files the browser plays directly. `web-dev` does not set it yet.
+`web-dev` starts the server at `http://127.0.0.1:8788` with the token `dev`. The server keeps its data in `.dev/server.sqlite` and seeds two placeholder projects when that file is new. Delete `.dev/` to start over. The server takes `--cache-dir` (or `EASYIMMERSE_CACHE_DIR`) for the directory where converted media is cached; without it, and without ffmpeg and ffprobe in `EASYIMMERSE_FFMPEG_DIR`, next to the executable, or on `PATH`, it plays only files the browser plays directly. `web-dev` does not set it yet.
 
 `desktop` fetches the ffmpeg sidecars first if they are missing (`mise run fetch-ffmpeg`, described in the [app README](apps/native/README.md#ffmpeg-sidecars)), then starts Vite on port 1421 and the Rust app in debug mode, so the frontend reloads on change. The database lands in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS, and converted media in the app cache directory, for example `~/Library/Caches/com.easyimmerse.app`. Each time it starts, it writes its server's address, a new token, and those two paths to `.dev/desktop-server.env`. It refuses to start while the standalone server of `web:desktop` is running, because both would convert into the same cache.
 
-`web:desktop` reads `.dev/desktop-server.env`, so run `mise run desktop` once before using it. While the desktop app is running, the web app talks to its embedded server. Otherwise the task starts a standalone server at `http://127.0.0.1:8789` on the desktop app's database and cache, with ffmpeg linked from the sidecars into `.dev/ffmpeg/`, and points the web app at it. Quit the task before starting the desktop app again. Vite reads the server address only at start-up, so restart the task after starting or quitting the desktop app.
+`web:desktop` reads `.dev/desktop-server.env`, so run `mise run desktop` once before using it. While the desktop app is running, the web app talks to its embedded server. Otherwise the task starts a standalone server at `http://127.0.0.1:8789` on the desktop app's database and cache, with `EASYIMMERSE_FFMPEG_DIR` pointing at the sidecars in `apps/native/src-tauri/binaries/`, and points the web app at it. Quit the task before starting the desktop app again. Vite reads the server address only at start-up, so restart the task after starting or quitting the desktop app.
 
 The browser extension has no dev task. Build it, then load it unpacked:
 
@@ -73,7 +73,7 @@ mise exec -- pnpm lint && mise exec -- pnpm format     # Biome lint, then format
 
 Each crate's integration tests form one binary named after the crate. Cargo builds are heavy on a shared machine, so build one crate at a time and run cold or workspace-wide jobs through `scripts/cargo-heavy.sh`, which lets one such job run at a time. Before the first build in a new git worktree, run `scripts/seed-worktree-target.sh <worktree>` from the main checkout; it clones the `target/` directory and removes build-script outputs that name paths into another checkout.
 
-Tests that run `ffmpeg` or `ffprobe` (in `crates/media-ffmpeg`, `crates/conversion`, and `crates/api`) skip with a message when the binaries are not on `PATH` or in `EASYIMMERSE_FFMPEG_DIR`. To run them against the bundled LGPL build, point `EASYIMMERSE_FFMPEG_DIR` at a directory holding `ffmpeg` and `ffprobe` (symbolic links to the sidecars in `apps/native/src-tauri/binaries/` work; `mise run web:desktop` creates such a directory at `.dev/ffmpeg/`). The transcoding tests in `crates/conversion` also need a working H.264 encoder from the hardware list in `crates/media-ffmpeg/src/encoders.rs`, because the bundled builds include no software H.264 encoder of their own. They skip with a message on a machine where none works, which includes most Linux machines without a VA-API or NVENC capable GPU.
+Tests that run `ffmpeg` or `ffprobe` (in `crates/media-ffmpeg`, `crates/conversion`, and `crates/api`) skip with a message when the binaries are found neither in `EASYIMMERSE_FFMPEG_DIR` nor on `PATH`. To run them against the bundled LGPL build, run `mise run fetch-ffmpeg` and set `EASYIMMERSE_FFMPEG_DIR` to the absolute path of `apps/native/src-tauri/binaries/`, for example `EASYIMMERSE_FFMPEG_DIR=$PWD/apps/native/src-tauri/binaries cargo test -p easyimmerse-conversion`. The transcoding tests in `crates/conversion` also need a working H.264 encoder from the hardware list in `crates/media-ffmpeg/src/encoders.rs`, because the bundled builds include no software H.264 encoder of their own. They skip with a message on a machine where none works, which includes most Linux machines without a VA-API or NVENC capable GPU.
 
 #### End-to-end tests
 
@@ -166,7 +166,7 @@ plugins/              example plugins, used only by tests; plugin-manifest.md de
 fixtures/ *           small sample files shared by every layer's tests
 scripts/              setup and build scripts, including the ffmpeg fetcher, the ffmpeg build scripts, and the ffmpeg licence-notice generator
 docs/                 product documentation: overview, user stories, UX refinements, bug reports
-.github/workflows/    CI, one workflow per layer, plus the ffmpeg builds for macOS, Linux, and Windows
+.github/workflows/    CI, one workflow per layer, plus the ffmpeg workflow that builds the desktop sidecars
 .claude/rules/        conventions that apply to a whole directory
 ```
 
