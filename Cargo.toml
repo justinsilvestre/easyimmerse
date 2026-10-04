@@ -24,7 +24,10 @@ easyimmerse-api = { path = "crates/api" }
 anyhow = "1.0"
 axum = "0.8"
 base64 = "0.22"
+chardetng = "0.1"
 clap = { version = "4.6", features = ["derive", "env"] }
+csv = "1.4"
+encoding_rs = "0.8"
 fs4 = "1.1"
 hex = "0.4"
 matroska = "0.30"
