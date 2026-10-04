@@ -35,6 +35,7 @@ export type * from "./Frequency";
 export type * from "./FrequencyMode";
 export type * from "./HealthResponse";
 export type * from "./ImageElement";
+export type * from "./ImportDictionaryQuery";
 export type * from "./ImportLocalDictionaryRequest";
 export type * from "./IpaTranscription";
 export type * from "./KanjiEntry";
