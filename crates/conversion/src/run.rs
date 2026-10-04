@@ -152,6 +152,9 @@ async fn supervise(
         })
     });
     let mut ticks = tokio::time::interval(POLL_INTERVAL);
+    // A completed oneshot receiver panics when polled again, so the branch is disabled once it
+    // has fired.
+    let mut stopping = false;
     let exit_status = loop {
         tokio::select! {
             _ = ticks.tick() => {
@@ -159,7 +162,8 @@ async fn supervise(
                     let _ = child.start_kill();
                 }
             }
-            _ = &mut stop_requested => {
+            _ = &mut stop_requested, if !stopping => {
+                stopping = true;
                 let _ = child.start_kill();
             }
             status = child.wait() => break status,
@@ -174,4 +178,71 @@ async fn supervise(
         progress.finished = true;
     }
     entry.notify_produced();
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use easyimmerse_media::{
+        AudioAction, ConversionPlan, Rational, Segment, SegmentPlan, TrackSelection,
+    };
+    use tempfile::TempDir;
+
+    use super::*;
+    use crate::key::ConversionKey;
+    use crate::manifest::Manifest;
+    use crate::source_identity::SourceIdentity;
+
+    fn entry(dir: &Path) -> Arc<ConversionEntry> {
+        let manifest = Manifest {
+            converter_version: 1,
+            source: SourceIdentity {
+                path: PathBuf::from("/videos/a.mkv"),
+                size: 1,
+                modified_ms: 2,
+            },
+            selection: TrackSelection::default(),
+            plan: ConversionPlan {
+                video: None,
+                audio: Some(AudioAction::Copy { index: 0 }),
+                reasons: vec![],
+            },
+            segment_plan: SegmentPlan {
+                timebase: Rational::new(1, 1000),
+                start_ticks: 0,
+                segments: vec![Segment {
+                    start_ticks: 0,
+                    end_ticks: 4000,
+                }],
+            },
+            video_codec: None,
+        };
+        let key = ConversionKey::parse(&"a".repeat(64)).expect("key");
+        Arc::new(ConversionEntry::new(key, dir.to_path_buf(), manifest))
+    }
+
+    /// A process that lives until it is killed stands in for ffmpeg.
+    fn sleeping_child() -> Child {
+        Command::new("sleep")
+            .arg("30")
+            .kill_on_drop(true)
+            .spawn()
+            .expect("sleep")
+    }
+
+    #[tokio::test]
+    async fn a_stop_request_lets_the_supervisor_finish() {
+        let dir = TempDir::new().expect("temp dir");
+        let progress = Arc::new(Mutex::new(RunProgress::new(0, 0)));
+        let (stop, stop_requested) = oneshot::channel();
+        let supervisor = tokio::spawn(supervise(
+            sleeping_child(),
+            entry(dir.path()),
+            dir.path().join("run"),
+            Arc::clone(&progress),
+            stop_requested,
+        ));
+        stop.send(()).expect("the supervisor should be listening");
+        supervisor.await.expect("the supervisor should not panic");
+        assert!(progress.lock().expect("lock").finished);
+    }
 }

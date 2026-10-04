@@ -11,15 +11,16 @@ import type {
 } from "@easyimmerse/types";
 import type { PlaybackState } from "./PlaybackState.ts";
 import { failedPlayback, loadingPlayback } from "./PlaybackState.ts";
-import { describeUnsupportedReason } from "./playbackFailure.ts";
+import type { RequestError } from "./playbackFailure.ts";
+import {
+  describeRequestError,
+  describeUnsupportedReason,
+} from "./playbackFailure.ts";
 import {
   copiesChosenTracksOnly,
   selectedFrameRate,
   tracksOfKind,
 } from "./playbackPlanRules.ts";
-
-/** A failed request, as RTK Query reports it: a backend error or a serialized exception. */
-type RequestError = { message?: string } | undefined;
 
 export type PlaybackInputs = {
   server: ServerConfig | null;
@@ -41,9 +42,9 @@ export function derivePlaybackState(inputs: PlaybackInputs): PlaybackState {
       "This file is on a server's disk, and no server is connected.",
     );
   if (inputs.tracksError)
-    return failedPlayback(describeError(inputs.tracksError));
+    return failedPlayback(describeRequestError(inputs.tracksError));
   if (inputs.playbackError)
-    return failedPlayback(describeError(inputs.playbackError));
+    return failedPlayback(describeRequestError(inputs.playbackError));
   if (inputs.tracks === undefined || inputs.playback === undefined)
     return loadingPlayback;
   return planState(inputs, inputs.server, inputs.tracks, inputs.playback);
@@ -86,8 +87,4 @@ function planState(
       authorization: buildAuthorizationHeader(server),
     },
   };
-}
-
-function describeError(error: NonNullable<RequestError>): string {
-  return error.message ?? "The server did not answer.";
 }

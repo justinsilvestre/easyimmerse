@@ -39,7 +39,8 @@ export function PlayerWaveform({
   const mediaFile = useMediaFile(projectId, mediaFileId);
   const currentTimeMs = useAppSelector(selectCurrentTime) * 1000;
   const durationMs = useDurationMs(projectId, mediaFile);
-  const [visibleSpanMs, setVisibleSpanMs] = useState(initialVisibleSpanMs);
+  const [requestedSpanMs, setRequestedSpanMs] = useState(initialVisibleSpanMs);
+  const visibleSpanMs = clampVisibleSpan(requestedSpanMs, durationMs);
   const viewStartMs = computeViewStart(
     currentTimeMs,
     visibleSpanMs,
@@ -59,9 +60,7 @@ export function PlayerWaveform({
       cues={useParsedCues()}
       flashcardSegments={[]}
       visibleSpanMs={visibleSpanMs}
-      onVisibleSpanChange={(spanMs) =>
-        setVisibleSpanMs(clampVisibleSpan(spanMs, durationMs))
-      }
+      onVisibleSpanChange={setRequestedSpanMs}
       onSeek={(timeMs) => dispatch(actions.seekRequested(timeMs / 1000))}
       onOpenFlashcardSegment={() => undefined}
       onClipEndpointMoved={() => undefined}

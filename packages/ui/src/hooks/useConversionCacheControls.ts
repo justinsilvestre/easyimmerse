@@ -1,18 +1,18 @@
+import type { BackendError } from "@easyimmerse/backend";
 import {
   useClearConversionCacheMutation,
   useGetConversionCacheStatusQuery,
 } from "@easyimmerse/backend";
-import type { ConversionCacheStatus as ServerCacheStatus } from "@easyimmerse/types";
+import type { ConversionCacheStatus } from "@easyimmerse/types";
 import { useState } from "react";
-import type { ConversionCacheStatus } from "../components/ConversionCacheSection.tsx";
-import type { ConversionCacheControls } from "../screens/SettingsScreen.tsx";
+import type {
+  ConversionCacheControls,
+  ConversionCacheView,
+} from "../components/ConversionCacheSection.tsx";
 
-/**
- * Reads the converted videos' disk usage and clears them on request.
- * Without a server, or when the server has no conversion service, the status is null.
- */
+/** Reads the converted videos' disk usage and clears them on request. */
 export function useConversionCacheControls(): ConversionCacheControls {
-  const { data } = useGetConversionCacheStatusQuery();
+  const { data, error } = useGetConversionCacheStatusQuery();
   const [clearCache] = useClearConversionCacheMutation();
   const [clearStatus, setClearStatus] = useState("");
   const onClear = () => {
@@ -26,19 +26,23 @@ export function useConversionCacheControls(): ConversionCacheControls {
         ),
       );
   };
-  return {
-    status: data === undefined ? null : toSectionStatus(data),
-    onClear,
-    clearStatus,
-  };
+  return { cache: toCacheView(data, error), onClear, clearStatus };
 }
 
-function toSectionStatus(status: ServerCacheStatus): ConversionCacheStatus {
+/**
+ * An app without a server, or a server without a conversion service, has no cache to show.
+ * The error is a backend error, or the serialized exception RTK Query reports instead.
+ */
+function toCacheView(
+  status: ConversionCacheStatus | undefined,
+  error: Partial<BackendError> | undefined,
+): ConversionCacheView {
+  if (status !== undefined) return { kind: "available", status };
+  if (error === undefined) return { kind: "loading" };
+  if (error.status === "OFFLINE" || error.code === "conversion_unavailable")
+    return { kind: "unavailable" };
   return {
-    usageBytes: status.usage_bytes,
-    limitBytes: status.limit_bytes,
-    budgetBytes: status.budget_bytes,
-    freeBytes: status.free_bytes,
-    spaceLow: status.space_low,
+    kind: "failed",
+    message: error.message ?? "The server did not answer.",
   };
 }

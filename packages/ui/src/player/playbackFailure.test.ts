@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   describeMediaElementError,
+  describeRequestError,
   describeUnsupportedReason,
 } from "./playbackFailure.ts";
 
@@ -41,5 +42,32 @@ describe("describeMediaElementError", () => {
     expect(describeMediaElementError({ code: 4 }, () => undefined)).not.toMatch(
       /\d/,
     );
+  });
+});
+
+describe("describeRequestError", () => {
+  it("explains a server without ffmpeg in plain words", () => {
+    expect(
+      describeRequestError({
+        code: "conversion_unavailable",
+        message: "this server has no ffmpeg or no cache directory",
+      }),
+    ).toBe(
+      "The server cannot read media files because ffmpeg is not installed there.",
+    );
+  });
+
+  it("explains a refused local path", () => {
+    expect(describeRequestError({ code: "local_paths_not_allowed" })).toBe(
+      "This server does not allow playing files from its own disk.",
+    );
+  });
+
+  it("falls back to the server's message for an unknown code", () => {
+    expect(describeRequestError({ code: "odd", message: "Odd." })).toBe("Odd.");
+  });
+
+  it("falls back to a plain sentence without a message", () => {
+    expect(describeRequestError({})).toBe("The server did not answer.");
   });
 });

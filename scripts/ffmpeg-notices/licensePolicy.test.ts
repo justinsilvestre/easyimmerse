@@ -52,6 +52,23 @@ describe("assessFeatures", () => {
 
   it("reports a GPL build", () => {
     const { problems } = assessFeatures(["gpl"]);
-    assert.deepEqual(problems, ["--enable-gpl is not allowed"]);
+    assert.deepEqual(problems, [
+      "--enable-gpl is not allowed: it makes the whole build GPL",
+    ]);
+  });
+
+  it("reports an MP3 encoder even though LAME is LGPL", () => {
+    const { problems } = assessFeatures(["libmp3lame"]);
+    assert.equal(problems.length, 1);
+  });
+
+  it("reports OpenH264 even though it is BSD", () => {
+    const { problems } = assessFeatures(["libopenh264"]);
+    assert.equal(problems.length, 1);
+  });
+
+  it("reports libx264", () => {
+    const { problems } = assessFeatures(["libx264"]);
+    assert.equal(problems.length, 1);
   });
 });

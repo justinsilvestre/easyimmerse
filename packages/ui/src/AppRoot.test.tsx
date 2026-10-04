@@ -19,7 +19,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { AppRoot } from "./AppRoot.tsx";
-import { createFakeBackendClient } from "./testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  fakeFailure,
+} from "./testSupport/createFakeBackendClient.ts";
 import { fixtureResponses } from "./testSupport/fixtureResponses.ts";
 
 afterEach(() => {
@@ -27,8 +30,18 @@ afterEach(() => {
   resetBackend();
 });
 
+/** The fixture server answers every route except the conversion cache, which it lacks like a server without ffmpeg. */
+const responses = {
+  ...fixtureResponses,
+  "GET /conversion-cache": fakeFailure({
+    status: 503,
+    code: "conversion_unavailable",
+    message: "this server has no ffmpeg or no cache directory",
+  }),
+};
+
 function renderAppRoot() {
-  configureBackend(createFakeBackendClient(fixtureResponses));
+  configureBackend(createFakeBackendClient(responses));
   const effects = createRecordingEffects();
   const playerRegistry = createPlayerRegistry();
   const store = createAppStore(effects, backendStoreParts);
@@ -117,7 +130,7 @@ describe("AppRoot", () => {
       expect(screen.getByText(first)).toBeDefined();
     });
 
-    it("reports conversion as unavailable when the server has no cache route", async () => {
+    it("reports conversion as unavailable when the server cannot convert", async () => {
       renderAppRoot();
       openSettingsFromFooter();
       expect(

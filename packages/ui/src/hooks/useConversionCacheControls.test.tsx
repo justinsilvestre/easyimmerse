@@ -3,7 +3,10 @@ import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
 import type { FakeResponse } from "../testSupport/createFakeBackendClient.ts";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  fakeFailure,
+} from "../testSupport/createFakeBackendClient.ts";
 import { fixtureConversionCacheStatus } from "../testSupport/mediaFixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { useConversionCacheControls } from "./useConversionCacheControls.ts";
@@ -34,9 +37,37 @@ describe("useConversionCacheControls", () => {
     ).toBeDefined();
   });
 
-  it("treats conversion as unavailable when the status route fails", async () => {
-    renderProbe({});
+  it("shows nothing while the status loads", () => {
+    renderProbe(statusRoute);
+    expect(screen.queryByText(unavailableText)).toBeNull();
+  });
+
+  it("treats conversion as unavailable when the server says so", async () => {
+    renderProbe({
+      "GET /conversion-cache": fakeFailure({
+        status: 503,
+        code: "conversion_unavailable",
+        message: "this server has no ffmpeg",
+      }),
+    });
     expect(await screen.findByText(unavailableText)).toBeDefined();
+  });
+
+  it("treats conversion as unavailable without a server", async () => {
+    renderProbe({
+      "GET /conversion-cache": fakeFailure({
+        status: "OFFLINE",
+        message: "needs a server",
+      }),
+    });
+    expect(await screen.findByText(unavailableText)).toBeDefined();
+  });
+
+  it("reports any other failure to read the status", async () => {
+    renderProbe({});
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "No canned GET /conversion-cache",
+    );
   });
 
   it("reports a clearing that succeeded", async () => {

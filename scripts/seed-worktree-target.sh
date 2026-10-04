@@ -27,14 +27,18 @@ for profile in debug release; do
   # A build script's output directory records, in `root-output` and `output`, absolute paths
   # into the checkout where the script ran, and some crates (Tauri's among them) fail to build
   # against another checkout's paths. Removing the directory and its fingerprint makes cargo
-  # rerun just that build script here.
-  for root_output in "$to"/build/*/root-output; do
-    [ -f "$root_output" ] || continue
-    case $(cat "$root_output") in
-      "$to"/*) continue ;;
-    esac
-    unit=$(basename "$(dirname "$root_output")")
-    rm -rf "$to/build/$unit" "$to/.fingerprint/$unit"
+  # rerun just that build script here. Both files are checked, because Tauri's `output` names
+  # paths that its `root-output` does not.
+  for unit_dir in "$to"/build/*/; do
+    [ -d "$unit_dir" ] || continue
+    for record in root-output output; do
+      [ -f "$unit_dir$record" ] || continue
+      if grep -q '/target/' "$unit_dir$record" && ! grep -q "$to/" "$unit_dir$record"; then
+        unit=$(basename "$unit_dir")
+        rm -rf "$to/build/$unit" "$to/.fingerprint/$unit"
+        break
+      fi
+    done
   done
   echo "seeded $to from $from"
 done

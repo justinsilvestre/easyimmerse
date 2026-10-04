@@ -1,50 +1,66 @@
+import type { ConversionCacheStatus } from "@easyimmerse/types";
 import { useId } from "react";
 import { Button } from "./Button.tsx";
 import { formatByteSize } from "./formatByteSize.ts";
 
-/**
- * How much disk the converted videos take and may take.
- * Stands in for the server's cache status type until it is generated from Rust.
- */
-export type ConversionCacheStatus = {
-  usageBytes: number;
-  limitBytes: number;
-  budgetBytes: number;
-  freeBytes: number;
-  /** True when the free-space reserve, not the budget, limits the cache. */
-  spaceLow: boolean;
-};
+/** What is known about the converted videos' disk usage. */
+export type ConversionCacheView =
+  | { kind: "loading" }
+  /** No server, or a server without a conversion service. */
+  | { kind: "unavailable" }
+  | { kind: "failed"; message: string }
+  | { kind: "available"; status: ConversionCacheStatus };
 
-/** Shows the converted videos' disk usage and lets the user clear them. A null status means conversion is unavailable. */
-export function ConversionCacheSection({
-  status,
-  onClear,
-  clearStatus,
-}: {
-  status: ConversionCacheStatus | null;
+/** What the Settings screen shows about converted videos, and how it clears them. */
+export type ConversionCacheControls = {
+  cache: ConversionCacheView;
   onClear: () => void;
   /** What the last clearing did, shown beside the button. Empty before any clearing. */
   clearStatus: string;
-}) {
+};
+
+/** Shows the converted videos' disk usage and lets the user clear them. */
+export function ConversionCacheSection({
+  cache,
+  onClear,
+  clearStatus,
+}: ConversionCacheControls) {
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
       <h2 id={headingId} className="text-base font-semibold">
         Converted videos
       </h2>
-      {status === null ? (
+      <CacheBody cache={cache} onClear={onClear} clearStatus={clearStatus} />
+    </section>
+  );
+}
+
+function CacheBody({ cache, onClear, clearStatus }: ConversionCacheControls) {
+  switch (cache.kind) {
+    case "loading":
+      return null;
+    case "unavailable":
+      return (
         <p className="text-sm text-fg-muted">
           Video conversion is unavailable, so no converted videos are stored.
         </p>
-      ) : (
+      );
+    case "failed":
+      return (
+        <p role="alert" className="text-sm text-danger-fg">
+          The converted videos could not be checked: {cache.message}
+        </p>
+      );
+    case "available":
+      return (
         <CacheDetails
-          status={status}
+          status={cache.status}
           onClear={onClear}
           clearStatus={clearStatus}
         />
-      )}
-    </section>
-  );
+      );
+  }
 }
 
 function CacheDetails({
@@ -59,8 +75,11 @@ function CacheDetails({
   return (
     <>
       <p className="text-sm">{describeUsage(status)}</p>
-      <UsageBar usageBytes={status.usageBytes} limitBytes={status.limitBytes} />
-      {status.spaceLow && <LowSpaceWarning />}
+      <UsageBar
+        usageBytes={status.usage_bytes}
+        limitBytes={status.limit_bytes}
+      />
+      {status.space_low && <LowSpaceWarning />}
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={onClear}>Clear converted videos</Button>
         <p role="status" className="text-sm text-fg-muted">
@@ -72,8 +91,8 @@ function CacheDetails({
 }
 
 function describeUsage(status: ConversionCacheStatus): string {
-  const usage = formatByteSize(status.usageBytes);
-  const limit = formatByteSize(status.limitBytes);
+  const usage = formatByteSize(status.usage_bytes);
+  const limit = formatByteSize(status.limit_bytes);
   return `Converted videos use ${usage} of ${limit}.`;
 }
 

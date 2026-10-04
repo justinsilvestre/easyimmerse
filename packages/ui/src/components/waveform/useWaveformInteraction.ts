@@ -54,6 +54,7 @@ export function useWaveformInteraction({
 
   const onPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const point = pointAt(event);
+    event.currentTarget.setPointerCapture(event.pointerId);
     pointers.current.set(event.pointerId, point.x);
     if (pointers.current.size === 2) {
       pinch.current = {
@@ -70,7 +71,6 @@ export function useWaveformInteraction({
       hit.kind === "clipEnd" ||
       hit.kind === "screenshot"
     ) {
-      event.currentTarget.setPointerCapture(event.pointerId);
       setDrag({ hit, timeMs: timeAtX(view, point.x) });
     } else {
       press.current = { pointerId: event.pointerId, x: point.x };
@@ -114,6 +114,14 @@ export function useWaveformInteraction({
     press.current = null;
   };
 
+  /** A pointer the browser took away, as when a touch turns into a scroll, ends every gesture it was part of. */
+  const onPointerCancel = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    pointers.current.delete(event.pointerId);
+    pinch.current = null;
+    press.current = null;
+    setDrag(null);
+  };
+
   const onDoubleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const hit = hitTest(view, segments, {
@@ -123,7 +131,14 @@ export function useWaveformInteraction({
     if (hit.kind !== "none") handlers.onOpenFlashcardSegment(hit.segmentId);
   };
 
-  return { drag, onPointerDown, onPointerMove, onPointerUp, onDoubleClick };
+  return {
+    drag,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+    onDoubleClick,
+  };
 }
 
 function finishDrag(drag: WaveformDrag, handlers: WaveformGestureHandlers) {
