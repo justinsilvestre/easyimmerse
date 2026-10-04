@@ -92,5 +92,17 @@ export const featuresWithoutLibraries = new Set([
   "videotoolbox",
 ]);
 
-/** Features that make the whole build GPL or non-redistributable. */
-export const forbiddenFeatures = new Set(["gpl", "nonfree"]);
+/**
+ * Features a bundled build may never enable, with the reason: the GPL and nonfree switches
+ * change the licence of the whole build, and the named libraries are excluded by the media
+ * compatibility constraints even where their own licence would allow them.
+ */
+export const forbiddenFeatures: Record<string, string> = {
+  gpl: "it makes the whole build GPL",
+  nonfree: "it makes the build non-redistributable",
+  libx264: "it is GPL",
+  libx265: "it is GPL",
+  libxvid: "it is GPL",
+  libmp3lame: "the bundled ffmpeg must not include an MP3 encoder",
+  libopenh264: "compiling an H.264 encoder brings patent exposure",
+};

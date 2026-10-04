@@ -51,8 +51,9 @@ export function assessFeatures(features: string[]): LibraryAssessment {
   const keys = new Set<LibraryKey>();
   const problems: string[] = [];
   for (const feature of features) {
-    if (forbiddenFeatures.has(feature)) {
-      problems.push(`--enable-${feature} is not allowed`);
+    const reason = forbiddenFeatures[feature];
+    if (reason !== undefined) {
+      problems.push(`--enable-${feature} is not allowed: ${reason}`);
     } else if (featureLibraries[feature]) {
       for (const key of featureLibraries[feature]) keys.add(key);
     } else if (!featuresWithoutLibraries.has(feature)) {
