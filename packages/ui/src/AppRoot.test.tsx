@@ -3,7 +3,9 @@ import {
   configureBackend,
   resetBackend,
 } from "@easyimmerse/backend";
+import { ffmpegNotices } from "@easyimmerse/licenses";
 import {
+  actions,
   createAppStore,
   createPlayerRegistry,
   createRecordingEffects,
@@ -33,11 +35,15 @@ function renderAppRoot() {
   render(
     <AppRoot store={store} playerRegistry={playerRegistry} effects={effects} />,
   );
-  return { effects, playerRegistry };
+  return { effects, playerRegistry, store };
 }
 
 async function openProject() {
   fireEvent.click(await screen.findByRole("button", { name: "Alpha" }));
+}
+
+async function openMediaFile() {
+  fireEvent.click(await screen.findByRole("button", { name: "episode.mkv" }));
 }
 
 function openSettingsFromFooter() {
@@ -95,12 +101,30 @@ describe("AppRoot", () => {
     });
 
     it("restores the player's state when Back is clicked", async () => {
-      const { playerRegistry } = renderAppRoot();
+      const { store } = renderAppRoot();
       await openProject();
-      act(() => playerRegistry.current()?.seek(61.75));
+      await openMediaFile();
+      act(() => store.dispatch(actions.playerTimeChanged(61.75)));
       openSettingsFromFooter();
       clickUsableBack();
-      expect(findPlayer().textContent).toBe("1:01.8");
+      expect(findPlayer().textContent).toContain("1:01.8");
+    });
+
+    it("lists the ffmpeg license notices", () => {
+      renderAppRoot();
+      openSettingsFromFooter();
+      const first = ffmpegNotices[0]?.title ?? "";
+      expect(screen.getByText(first)).toBeDefined();
+    });
+
+    it("reports conversion as unavailable when the server has no cache route", async () => {
+      renderAppRoot();
+      openSettingsFromFooter();
+      expect(
+        await screen.findByText(
+          "Video conversion is unavailable, so no converted videos are stored.",
+        ),
+      ).toBeDefined();
     });
 
     it("lets the media screen be used again after Back is clicked", async () => {

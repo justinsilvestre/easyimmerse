@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPlayerTime } from "./StubPlayer.tsx";
+import { formatPlayerTime } from "./formatPlayerTime.ts";
 
 describe("formatPlayerTime", () => {
   it("formats zero as 0:00.0", () => {

@@ -1,3 +1,4 @@
+import type { BackendRequest } from "@easyimmerse/backend";
 import type {
   ConversionCacheStatus,
   PlaybackResponse,
@@ -134,6 +135,9 @@ export function fixtureWaveformWindow(startMs: number): WaveformResponse {
   return { start_ms: startMs, peaks };
 }
 
+const waveformWindowFor = (request: BackendRequest) =>
+  fixtureWaveformWindow(Number(request.query?.start_ms ?? 0));
+
 export const trackRoutes = {
   tracks: /^\/projects\/[^/]+\/media\/[^/]+\/tracks$/,
   playback: /^\/projects\/[^/]+\/media\/[^/]+\/playback$/,
@@ -146,11 +150,7 @@ export const directPlaybackRoutes: readonly FakeRoute[] = [
   ["GET", trackRoutes.tracks, fixtureTracksDirect],
   ["POST", trackRoutes.playback, fixtureDirectPlayback],
   ["PUT", trackRoutes.trackSelection, undefined],
-  [
-    "GET",
-    trackRoutes.waveform,
-    (request) => fixtureWaveformWindow(Number(request.query?.start_ms ?? 0)),
-  ],
+  ["GET", trackRoutes.waveform, waveformWindowFor],
 ];
 
 /** Routes for a two-audio file whose chosen tracks are copied into HLS. */
@@ -158,11 +158,7 @@ export const copyPlaybackRoutes: readonly FakeRoute[] = [
   ["GET", trackRoutes.tracks, fixtureTracksWithTwoAudio],
   ["POST", trackRoutes.playback, fixtureCopyPlayback],
   ["PUT", trackRoutes.trackSelection, undefined],
-  [
-    "GET",
-    trackRoutes.waveform,
-    (request) => fixtureWaveformWindow(Number(request.query?.start_ms ?? 0)),
-  ],
+  ["GET", trackRoutes.waveform, waveformWindowFor],
 ];
 
 /** Routes for a two-audio file whose audio must be re-encoded. */

@@ -1,3 +1,4 @@
+import { ffmpegNotices } from "@easyimmerse/licenses";
 import type {
   AppStore,
   BrowserFileRegistry,
@@ -8,6 +9,7 @@ import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
+import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
 import type { MainNavigation, NavigationAction } from "./navigation.ts";
 import { initialNavigation, mainScreenOf, navigate } from "./navigation.ts";
@@ -56,7 +58,7 @@ export function AppRoot({
             </div>
             {settingsOpen && (
               <SettingsOverlay>
-                <SettingsScreen
+                <ConnectedSettingsScreen
                   onBack={() => dispatchNavigation({ type: "closeSettings" })}
                 />
               </SettingsOverlay>
@@ -85,6 +87,17 @@ function MainScreen({
     <MediaScreen
       projectId={navigation.projectId}
       onBack={() => dispatchNavigation({ type: "goHome" })}
+    />
+  );
+}
+
+/** The Settings screen with the converted-videos status from the server and the bundled license notices. */
+function ConnectedSettingsScreen({ onBack }: { onBack: () => void }) {
+  return (
+    <SettingsScreen
+      onBack={onBack}
+      conversionCache={useConversionCacheControls()}
+      licenseNotices={ffmpegNotices}
     />
   );
 }
