@@ -3,13 +3,11 @@ import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { hostTriple } from "../fetch-ffmpeg/manifest.ts";
 import {
   type DesktopServerFile,
   type DesktopStorage,
   readDesktopServerFile,
 } from "./desktopServerFile.ts";
-import { linkFfmpegSidecars } from "./ffmpegLinks.ts";
 import { probeServer } from "./probeServer.ts";
 import { type ChildCommand, runTogether } from "./runTogether.ts";
 import {
@@ -25,6 +23,7 @@ import {
  */
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 const serverFileName = ".dev/desktop-server.env";
+const ffmpegDir = join(repositoryRoot, "apps/native/src-tauri/binaries");
 
 await main();
 
@@ -62,7 +61,6 @@ async function runAgainstStandaloneServer(
       `A server already answers at ${standaloneServerUrl}, probably from another 'mise run web:desktop'. Stop it first.`,
     );
   }
-  const ffmpegDir = linkFfmpeg();
   buildServer();
   const token = randomBytes(32).toString("hex");
   console.log(
@@ -81,18 +79,6 @@ async function runAgainstStandaloneServer(
     [server, viteCommand(standaloneServerUrl, token)],
     repositoryRoot,
   );
-}
-
-function linkFfmpeg(): string {
-  const sidecarDir = join(repositoryRoot, "apps/native/src-tauri/binaries");
-  const linkDir = join(repositoryRoot, ".dev/ffmpeg");
-  const missing = linkFfmpegSidecars(sidecarDir, linkDir, hostTriple());
-  if (missing.length > 0) {
-    fail(
-      `ffmpeg is missing (${missing.join(", ")}). Run 'mise run fetch-ffmpeg'.`,
-    );
-  }
-  return linkDir;
 }
 
 /** Builds before Vite starts, so that a compile error stops the task. */
