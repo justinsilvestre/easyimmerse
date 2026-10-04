@@ -9,6 +9,8 @@ mod entry_conversion;
 mod error;
 mod header;
 mod header_attributes;
+#[cfg(test)]
+mod import_tests;
 mod key_info;
 mod key_info_cipher;
 mod key_section;
