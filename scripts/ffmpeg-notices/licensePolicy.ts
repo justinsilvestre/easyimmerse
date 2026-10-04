@@ -4,40 +4,36 @@ import {
   forbiddenFeatures,
 } from "./featureLibraries.ts";
 import { type LibraryKey, libraries } from "./libraries.ts";
+import { evaluateSpdxExpression } from "./spdxExpression.ts";
 
 /**
- * SPDX identifiers the bundled ffmpeg may contain: MIT and its variants, the BSD family,
- * ISC, Zlib, Apache-2.0, and the LGPL. Anything else needs an explicit decision first.
+ * SPDX identifiers the bundled ffmpeg may contain: MIT, the BSD family, ISC, Zlib,
+ * Apache-2.0, and the LGPL. Anything else needs an explicit decision first.
  */
 const allowedLicenses = new Set([
-  "0BSD",
   "Apache-2.0",
   "BSD-2-Clause",
-  "BSD-2-Clause-Patent",
   "BSD-3-Clause",
-  "BSD-3-Clause-Clear",
-  "HPND-sell-variant",
   "ISC",
   "LGPL-2.0-or-later",
   "LGPL-2.1-only",
   "LGPL-2.1-or-later",
   "LGPL-3.0-or-later",
   "MIT",
+  "Zlib",
+  // Variants of the MIT or BSD licenses under their own SPDX identifiers.
+  "0BSD",
+  "BSD-2-Clause-Patent",
+  "BSD-3-Clause-Clear",
+  "HPND-sell-variant",
   "MIT-Modern-Variant",
   "X11",
-  "Zlib",
 ]);
 
-/**
- * Accepts an SPDX expression when every `AND` term offers at least one allowed `OR`
- * choice. An exception added with `WITH` only grants permissions, so the base license decides.
- */
+/** Accepts an SPDX expression when its allowed licenses alone satisfy it. */
 export function isAllowedLicense(expression: string): boolean {
-  return expression.split(" AND ").every((term) =>
-    term
-      .replace(/[()]/g, "")
-      .split(" OR ")
-      .some((choice) => allowedLicenses.has(choice.split(" WITH ")[0] ?? "")),
+  return evaluateSpdxExpression(expression, (license) =>
+    allowedLicenses.has(license),
   );
 }
 
