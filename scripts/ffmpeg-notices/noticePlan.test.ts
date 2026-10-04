@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { gnuLicenseUrls, listLicenseUrls, planNotices } from "./noticePlan.ts";
 
 const url =
-  "https://github.com/octo/repo/releases/download/ffmpeg-macos-8.1.2/ffmpeg-8.1.2-x86_64-apple-darwin.tar.xz";
+  "https://github.com/octo/repo/releases/download/ffmpeg-8.1.2/ffmpeg-8.1.2-x86_64-apple-darwin.tar.xz";
 
 describe("planNotices", () => {
   it("rejects a build that links a disallowed library", () => {

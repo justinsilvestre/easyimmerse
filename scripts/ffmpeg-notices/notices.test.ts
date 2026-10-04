@@ -5,7 +5,7 @@ import { gnuLicenseUrls, planNotices } from "./noticePlan.ts";
 import { renderNotices, renderNoticesText } from "./notices.ts";
 
 const macUrl =
-  "https://github.com/octo/repo/releases/download/ffmpeg-macos-8.1.2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz";
+  "https://github.com/octo/repo/releases/download/ffmpeg-8.1.2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz";
 
 function planFor(configuration: string) {
   return planNotices({

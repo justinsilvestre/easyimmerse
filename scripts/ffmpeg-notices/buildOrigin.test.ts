@@ -3,124 +3,65 @@ import { describe, it } from "node:test";
 
 import { describeBuildOrigin } from "./buildOrigin.ts";
 
-const btbnUrl =
-  "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-29-13-10/ffmpeg-n8.1.3-6-gff48edd8b2-linux64-lgpl-8.1.tar.xz";
-const btbnTagUrl =
-  "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-29-13-10/ffmpeg-n8.1.3-linux64-lgpl-8.1.tar.xz";
-const ownUrl =
-  "https://github.com/octo/repo/releases/download/ffmpeg-macos-8.1.2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz";
-const ownRebuildUrl =
-  "https://github.com/octo/repo/releases/download/ffmpeg-macos-8.1.2-2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz";
-const ownLinuxUrl =
-  "https://github.com/octo/repo/releases/download/ffmpeg-linux-8.1.3/ffmpeg-8.1.3-x86_64-unknown-linux-gnu.tar.xz";
-const ownWindowsUrl =
-  "https://github.com/octo/repo/releases/download/ffmpeg-windows-8.1.3-2/ffmpeg-8.1.3-x86_64-pc-windows-msvc.zip";
+const url =
+  "https://github.com/octo/repo/releases/download/ffmpeg-8.1.2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz";
+const rebuildUrl =
+  "https://github.com/octo/repo/releases/download/ffmpeg-8.1.2-2/ffmpeg-8.1.2-x86_64-pc-windows-msvc.zip";
 
 describe("describeBuildOrigin", () => {
-  describe("for a BtbN autobuild", () => {
-    it("reads the git describe version", () => {
-      assert.equal(
-        describeBuildOrigin(btbnUrl).version,
-        "n8.1.3-6-gff48edd8b2",
-      );
-    });
-
-    it("links the FFmpeg commit as the source", () => {
-      assert.equal(
-        describeBuildOrigin(btbnUrl).sourceUrl,
-        "https://github.com/FFmpeg/FFmpeg/commit/ff48edd8b2",
-      );
-    });
-
-    it("links the release tarball when the build is a tagged release", () => {
-      assert.equal(
-        describeBuildOrigin(btbnTagUrl).sourceUrl,
-        "https://ffmpeg.org/releases/ffmpeg-8.1.3.tar.xz",
-      );
-    });
-
-    it("names the autobuild date", () => {
-      assert.match(
-        describeBuildOrigin(btbnUrl).builder,
-        /autobuild of 2026-09-29 13:10 UTC/,
-      );
-    });
-  });
-
-  describe("for this repository's macOS build", () => {
+  describe("for a build of the ffmpeg workflow", () => {
     it("reads the version from the tag", () => {
-      assert.equal(describeBuildOrigin(ownUrl).version, "8.1.2");
+      assert.equal(describeBuildOrigin(url).version, "8.1.2");
     });
 
     it("links the release tarball as the source", () => {
       assert.equal(
-        describeBuildOrigin(ownUrl).sourceUrl,
+        describeBuildOrigin(url).sourceUrl,
         "https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz",
       );
     });
 
-    it("links the release", () => {
+    it("names the workflow and the tag as the builder", () => {
       assert.equal(
-        describeBuildOrigin(ownUrl).releaseUrl,
-        "https://github.com/octo/repo/releases/tag/ffmpeg-macos-8.1.2",
-      );
-    });
-
-    describe("when the tag carries a rebuild number", () => {
-      it("reads the version without the rebuild number", () => {
-        assert.equal(describeBuildOrigin(ownRebuildUrl).version, "8.1.2");
-      });
-
-      it("links the release of the full tag", () => {
-        assert.equal(
-          describeBuildOrigin(ownRebuildUrl).releaseUrl,
-          "https://github.com/octo/repo/releases/tag/ffmpeg-macos-8.1.2-2",
-        );
-      });
-
-      it("names the full tag as the builder's tag", () => {
-        assert.match(
-          describeBuildOrigin(ownRebuildUrl).builder,
-          /for the tag ffmpeg-macos-8\.1\.2-2\.$/,
-        );
-      });
-    });
-  });
-
-  describe("for this repository's Linux build", () => {
-    it("reads the version from the tag", () => {
-      assert.equal(describeBuildOrigin(ownLinuxUrl).version, "8.1.3");
-    });
-
-    it("names the ffmpeg-linux workflow", () => {
-      assert.match(
-        describeBuildOrigin(ownLinuxUrl).builder,
-        /^Built by the ffmpeg-linux workflow .*ffmpeg-linux\.yml/,
+        describeBuildOrigin(url).builder,
+        "Built by the ffmpeg workflow of https://github.com/octo/repo (.github/workflows/ffmpeg.yml) for the tag ffmpeg-8.1.2.",
       );
     });
 
     it("links the release", () => {
       assert.equal(
-        describeBuildOrigin(ownLinuxUrl).releaseUrl,
-        "https://github.com/octo/repo/releases/tag/ffmpeg-linux-8.1.3",
+        describeBuildOrigin(url).releaseUrl,
+        "https://github.com/octo/repo/releases/tag/ffmpeg-8.1.2",
       );
     });
   });
 
-  describe("for this repository's Windows build", () => {
-    it("names the ffmpeg-windows workflow", () => {
-      assert.match(
-        describeBuildOrigin(ownWindowsUrl).builder,
-        /^Built by the ffmpeg-windows workflow .*ffmpeg-windows\.yml/,
-      );
+  describe("when the tag carries a rebuild number", () => {
+    it("reads the version without the rebuild number", () => {
+      assert.equal(describeBuildOrigin(rebuildUrl).version, "8.1.2");
     });
 
     it("links the release of the full tag", () => {
       assert.equal(
-        describeBuildOrigin(ownWindowsUrl).releaseUrl,
-        "https://github.com/octo/repo/releases/tag/ffmpeg-windows-8.1.3-2",
+        describeBuildOrigin(rebuildUrl).releaseUrl,
+        "https://github.com/octo/repo/releases/tag/ffmpeg-8.1.2-2",
       );
     });
+
+    it("names the full tag as the builder's tag", () => {
+      assert.match(
+        describeBuildOrigin(rebuildUrl).builder,
+        /for the tag ffmpeg-8\.1\.2-2\.$/,
+      );
+    });
+  });
+
+  it("throws for a URL of an older per-platform tag", () => {
+    assert.throws(() =>
+      describeBuildOrigin(
+        "https://github.com/octo/repo/releases/download/ffmpeg-linux-8.1.3/ffmpeg-8.1.3-x86_64-unknown-linux-gnu.tar.xz",
+      ),
+    );
   });
 
   it("throws for a URL of unknown origin", () => {

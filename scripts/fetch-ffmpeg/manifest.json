@@ -1,56 +1,12 @@
 {
-  "x86_64-unknown-linux-gnu": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-linux-8.1.3/ffmpeg-8.1.3-x86_64-unknown-linux-gnu.tar.xz",
-    "sha256": "45829c3567d7e40dcfdb3a32b9792ab4a0823d64fe5b9f9f44aa05609aeb40cd",
-    "archive": "tar.xz",
-    "paths": {
-      "ffmpeg": "ffmpeg",
-      "ffprobe": "ffprobe"
-    }
-  },
-  "aarch64-unknown-linux-gnu": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-linux-8.1.3/ffmpeg-8.1.3-aarch64-unknown-linux-gnu.tar.xz",
-    "sha256": "3395582cad36897d176781798a865edc95402f3c7635f93c103d66490e067229",
-    "archive": "tar.xz",
-    "paths": {
-      "ffmpeg": "ffmpeg",
-      "ffprobe": "ffprobe"
-    }
-  },
-  "x86_64-pc-windows-msvc": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-windows-8.1.3/ffmpeg-8.1.3-x86_64-pc-windows-msvc.zip",
-    "sha256": "34155e43729dd8ef9fdd99b8e4c96ee7f126da8db9375fee4083311827b2c1fa",
-    "archive": "zip",
-    "paths": {
-      "ffmpeg": "ffmpeg.exe",
-      "ffprobe": "ffprobe.exe"
-    }
-  },
-  "aarch64-pc-windows-msvc": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-windows-8.1.3/ffmpeg-8.1.3-aarch64-pc-windows-msvc.zip",
-    "sha256": "1d9e2a81c7e0f5dcfb82da623e76a9cce429e02dc47717631f096996bd42e4fb",
-    "archive": "zip",
-    "paths": {
-      "ffmpeg": "ffmpeg.exe",
-      "ffprobe": "ffprobe.exe"
-    }
-  },
-  "x86_64-apple-darwin": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-4/ffmpeg-8.1.3-x86_64-apple-darwin.tar.xz",
-    "sha256": "fb89ba2914370b3d886620c743a9768245097b8597cff77e28090fbc4eff15ff",
-    "archive": "tar.xz",
-    "paths": {
-      "ffmpeg": "ffmpeg",
-      "ffprobe": "ffprobe"
-    }
-  },
-  "aarch64-apple-darwin": {
-    "url": "https://github.com/justinsilvestre/easyimmerse/releases/download/ffmpeg-macos-8.1.3-4/ffmpeg-8.1.3-aarch64-apple-darwin.tar.xz",
-    "sha256": "e7d5075f2932fef0322cbbe80b0fc726a50ba349fb43fe57d45ac9ca747cde72",
-    "archive": "tar.xz",
-    "paths": {
-      "ffmpeg": "ffmpeg",
-      "ffprobe": "ffprobe"
-    }
+  "repository": "justinsilvestre/easyimmerse",
+  "release": "ffmpeg-8.1.3-2",
+  "sha256": {
+    "x86_64-unknown-linux-gnu": "013cf306f5755e7d8cdf868d7fc7dfd789da6d54ab3826033be32ce6979c29b9",
+    "aarch64-unknown-linux-gnu": "b2c71edfaa6dfcda07795270cd49f406552648797e778cbbb84be264b35433f7",
+    "x86_64-pc-windows-msvc": "523e3b244c1f94fadc3600823a7f2ce4e7a74bcc9b420816ff0dfdd1fa9a167a",
+    "aarch64-pc-windows-msvc": "37b84a62718b70ce7d0ed12cbe166687967aa500a0e2ba9eebb8c3294b9524ae",
+    "x86_64-apple-darwin": "85fe549030bb3a13a4b7a5330de24b5c7b7fe85e26d872e4887ae63c289292e5",
+    "aarch64-apple-darwin": "cefe16075864d7f079cdda06d86a6f9034012a5084f192c8facfcd5d98faacdb"
   }
 }

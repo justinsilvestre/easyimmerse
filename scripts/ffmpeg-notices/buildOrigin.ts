@@ -1,8 +1,8 @@
 /** Where an ffmpeg build in the manifest came from, derived from its download URL. */
 export interface BuildOrigin {
-  /** The FFmpeg version, as a release number or `git describe` output. */
+  /** The FFmpeg release number. */
   version: string;
-  /** The FFmpeg source release tarball or git commit the build was made from. */
+  /** The FFmpeg source release tarball the build was made from. */
   sourceUrl: string;
   /** Who built it, in a sentence. */
   builder: string;
@@ -10,42 +10,19 @@ export interface BuildOrigin {
   releaseUrl: string;
 }
 
-const btbnRelease =
-  /^https:\/\/github\.com\/BtbN\/FFmpeg-Builds\/releases\/download\/(autobuild-(\d{4}-\d\d-\d\d)-(\d\d)-(\d\d))\/ffmpeg-(n[\d.]+(?:-\d+-g([0-9a-f]+))?)-/;
 const ownRelease =
-  /^https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/download\/(ffmpeg-(macos|linux|windows)-([\d.]+)(?:-\d+)?)\//;
+  /^https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/download\/(ffmpeg-([\d.]+)(?:-\d+)?)\//;
 
+/** Describes a build that this repository's ffmpeg workflow published. */
 export function describeBuildOrigin(url: string): BuildOrigin {
-  const origin = describeBtbnBuild(url) ?? describeOwnBuild(url);
-  if (!origin)
-    throw new Error(`cannot tell where the build at ${url} came from`);
-  return origin;
-}
-
-function describeBtbnBuild(url: string): BuildOrigin | null {
-  const match = btbnRelease.exec(url);
-  if (!match) return null;
-  const [, tag = "", date, hour, minute, version = "", commit] = match;
-  return {
-    version,
-    sourceUrl: commit
-      ? `https://github.com/FFmpeg/FFmpeg/commit/${commit}`
-      : `https://ffmpeg.org/releases/ffmpeg-${version.slice(1)}.tar.xz`,
-    builder: `Built by the BtbN/FFmpeg-Builds autobuild of ${date} ${hour}:${minute} UTC (build scripts: https://github.com/BtbN/FFmpeg-Builds).`,
-    releaseUrl: `https://github.com/BtbN/FFmpeg-Builds/releases/tag/${tag}`,
-  };
-}
-
-/** This repository's own builds come from one workflow per platform, named after its tags. */
-function describeOwnBuild(url: string): BuildOrigin | null {
   const match = ownRelease.exec(url);
-  if (!match) return null;
-  const [, repo, tag = "", platform = "", version = ""] = match;
-  const workflow = `ffmpeg-${platform}`;
+  if (!match)
+    throw new Error(`cannot tell where the build at ${url} came from`);
+  const [, repo, tag = "", version = ""] = match;
   return {
     version,
     sourceUrl: `https://ffmpeg.org/releases/ffmpeg-${version}.tar.xz`,
-    builder: `Built by the ${workflow} workflow of https://github.com/${repo} (.github/workflows/${workflow}.yml) for the tag ${tag}.`,
+    builder: `Built by the ffmpeg workflow of https://github.com/${repo} (.github/workflows/ffmpeg.yml) for the tag ${tag}.`,
     releaseUrl: `https://github.com/${repo}/releases/tag/${tag}`,
   };
 }

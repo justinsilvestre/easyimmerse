@@ -2,11 +2,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 
-import {
-  hasVerifiedHash,
-  type ManifestEntry,
-  readManifest,
-} from "../fetch-ffmpeg/manifest.ts";
+import { type ManifestEntry, readManifest } from "../fetch-ffmpeg/manifest.ts";
 import { readBuildConfiguration } from "./buildConfiguration.ts";
 import { collectLicenseTexts } from "./licenseTexts.ts";
 import {
@@ -45,7 +41,7 @@ function check(): number {
   const plan = planNotices(inputs.builds);
   const expected = renderOutputs(renderNotices(plan, inputs.licenseTexts));
   const problems = [
-    ...findManifestChanges(verifiedManifest(), inputs.builds),
+    ...findManifestChanges(readManifest(), inputs.builds),
     ...findStaleOutputs(expected, readOutputs(Object.keys(expected))),
   ];
   for (const problem of problems) console.error(problem);
@@ -57,7 +53,7 @@ function check(): number {
 async function generate(refresh: boolean, cacheDir: string): Promise<number> {
   const previous = readNoticeInputs();
   const builds: Record<string, RecordedBuild> = {};
-  for (const [triple, entry] of Object.entries(verifiedManifest())) {
+  for (const [triple, entry] of Object.entries(readManifest())) {
     const known = previous.builds[triple];
     const isCurrent = known?.sha256 === entry.sha256 && known.url === entry.url;
     builds[triple] =
@@ -82,15 +78,6 @@ async function recordBuild(
 ): Promise<RecordedBuild> {
   const configuration = await readBuildConfiguration(entry, cacheDir);
   return { url: entry.url, sha256: entry.sha256, configuration };
-}
-
-/** Entries whose hash is still a TODO cannot be fetched, so they have no notices yet. */
-function verifiedManifest(): Record<string, ManifestEntry> {
-  return Object.fromEntries(
-    Object.entries(readManifest()).filter(([, entry]) =>
-      hasVerifiedHash(entry),
-    ),
-  );
 }
 
 /** Prints why each rejected build may not be shipped, and returns whether any was rejected. */
