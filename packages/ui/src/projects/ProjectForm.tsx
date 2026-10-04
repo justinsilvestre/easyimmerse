@@ -49,10 +49,10 @@ export function ProjectForm({
             label="Target language"
             hint="The language you are learning."
             options={languageOptions}
-            value={state.targetLanguage}
+            value={state.target_language}
             onChange={(event) =>
               dispatch({
-                type: "targetLanguageChanged",
+                type: "target_languageChanged",
                 value: event.target.value,
               })
             }
@@ -61,10 +61,10 @@ export function ProjectForm({
             label="Translation language"
             hint="Translations and definitions in this language."
             options={languageOptions}
-            value={state.translationLanguage}
+            value={state.translation_language}
             onChange={(event) =>
               dispatch({
-                type: "translationLanguageChanged",
+                type: "translation_languageChanged",
                 value: event.target.value,
               })
             }
@@ -80,7 +80,7 @@ export function ProjectForm({
           </p>
         </div>
         <PresetPicker
-          fields={state.flashcardFields}
+          fields={state.flashcard_fields}
           onPresetChosen={(preset) =>
             dispatch({ type: "presetChosen", preset })
           }
@@ -92,18 +92,18 @@ export function ProjectForm({
       <Column>
         <TagsField
           label="Default tags"
-          tags={state.defaultTags}
-          onChange={(tags) => dispatch({ type: "defaultTagsChanged", tags })}
+          tags={state.default_tags}
+          onChange={(tags) => dispatch({ type: "default_tagsChanged", tags })}
         />
         <CheckboxField
           label="Tag each flashcard with the name of its media file"
-          checked={state.tagsMediaName}
+          checked={state.tags_media_name}
           onChange={() => dispatch({ type: "mediaNameTagToggled" })}
         />
         <CheckboxField
           label="Fill the audio fields with text-to-speech when the media has no audio track"
           hint="Applies to ebooks and text files."
-          checked={state.fillsAudioWithTts}
+          checked={state.fills_audio_with_tts}
           onChange={() => dispatch({ type: "ttsToggled" })}
         />
       </Column>

@@ -56,19 +56,19 @@ export function FlashcardPreview({
             {textOf("word")}
           </p>
         )}
-        {includes("wordPronunciation") && (
-          <p className="text-fg-muted">{textOf("wordPronunciation")}</p>
+        {includes("word_pronunciation") && (
+          <p className="text-fg-muted">{textOf("word_pronunciation")}</p>
         )}
-        {includes("textContext") && (
+        {includes("text_context") && (
           <p className={clsx("mt-1", !compact && "text-base")}>
             <HighlightedWord
-              text={content.textContext}
+              text={content.text_context}
               word={content.word}
-              label={findFlashcardField("textContext").label(languages)}
+              label={findFlashcardField("text_context").label(languages)}
             />
           </p>
         )}
-        {includes("audioContext") && content.audioContext && (
+        {includes("audio_context") && content.audio_context && (
           <button
             type="button"
             aria-label="Play the sentence audio"
@@ -89,18 +89,18 @@ export function FlashcardPreview({
         )}
       >
         <SideLabel>Back</SideLabel>
-        {includes("l1Definition") && <p>{textOf("l1Definition")}</p>}
-        {includes("l2Definition") && (
-          <p className="text-fg-soft">{textOf("l2Definition")}</p>
+        {includes("l1_definition") && <p>{textOf("l1_definition")}</p>}
+        {includes("l2_definition") && (
+          <p className="text-fg-soft">{textOf("l2_definition")}</p>
         )}
-        {(includes("textContextTranslation") ||
-          includes("textContextPronunciation")) && (
+        {(includes("text_context_translation") ||
+          includes("text_context_pronunciation")) && (
           <div className="flex flex-col gap-0.5 border-l-2 border-accent pl-3 text-fg-muted">
-            {includes("textContextTranslation") && (
-              <p>{textOf("textContextTranslation")}</p>
+            {includes("text_context_translation") && (
+              <p>{textOf("text_context_translation")}</p>
             )}
-            {includes("textContextPronunciation") && (
-              <p>{textOf("textContextPronunciation")}</p>
+            {includes("text_context_pronunciation") && (
+              <p>{textOf("text_context_pronunciation")}</p>
             )}
           </div>
         )}

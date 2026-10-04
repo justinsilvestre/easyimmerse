@@ -25,6 +25,18 @@ pub struct MediaFile {
     /// The user's saved choice of video and audio tracks, as the JSON the media crate
     /// defines. Null until the user has chosen.
     pub track_selection_json: Option<String>,
+    pub subtitle_selection: SubtitleSelection,
+}
+
+/// The subtitles shown for a media file: one track in the language being learned and one
+/// with its translation. Each is named by a subtitle track id, either `embedded:<index>`
+/// for a track inside the media file, with the stream index ffmpeg uses, or `file:<id>`
+/// for a subtitles file added to the media file.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct SubtitleSelection {
+    pub target: Option<String>,
+    pub translation: Option<String>,
 }
 
 /// Where the bytes of a media file come from.

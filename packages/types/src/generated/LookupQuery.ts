@@ -2,6 +2,10 @@
 
 export type LookupQuery = { 
 /**
+ * The BCP 47 code of the language of the term.
+ */
+language: string, 
+/**
  * The exact term or reading to find.
  */
 term: string, };

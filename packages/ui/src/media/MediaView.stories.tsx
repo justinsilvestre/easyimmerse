@@ -1,6 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { WaveformStrip } from "../components/waveform/WaveformStrip.tsx";
 import {
   exampleFlashcard,
   exampleLanguages,
@@ -17,7 +18,7 @@ import {
   exampleFlashcardCueIndexes,
   exampleTranslationCues,
 } from "./exampleCues.ts";
-import { generateExamplePeaks } from "./examplePeaks.ts";
+import { exampleWaveformWindows } from "./exampleWaveformWindows.ts";
 import { MediaView } from "./MediaView.tsx";
 import type { TrackSelection } from "./playback.ts";
 import { SubtitleTrackBar } from "./SubtitleTrackBar.tsx";
@@ -46,7 +47,58 @@ const tracks: TrackSelection = {
   translationSubtitlesId: "s2",
 };
 
-const peaks = generateExamplePeaks(240);
+const waveformWindows = exampleWaveformWindows(24_000);
+
+/** The waveform strip as the media screen draws it, over the example audio. */
+function waveformStrip(currentTimeMs: number) {
+  return (
+    <WaveformStrip
+      durationMs={24_000}
+      currentTimeMs={currentTimeMs}
+      windows={waveformWindows}
+      cues={exampleCues}
+      flashcardSegments={exampleFlashcardCueIndexes.flatMap((index) => {
+        const cue = exampleCues.find((candidate) => candidate.index === index);
+        return cue
+          ? [
+              {
+                id: String(index),
+                startMs: cue.start_ms,
+                endMs: cue.end_ms,
+                screenshotMs: (cue.start_ms + cue.end_ms) / 2,
+              },
+            ]
+          : [];
+      })}
+      visibleSpanMs={24_000}
+      onSeek={fn()}
+      onOpenFlashcardSegment={fn()}
+      onClipEndpointMoved={fn()}
+      onScreenshotMarkerMoved={fn()}
+      onVisibleSpanChange={fn()}
+    />
+  );
+}
+
+/** A stand-in for the player: the sample video, or the placeholder an audio file shows. */
+function stage(kind: "video" | "audio") {
+  return kind === "video" ? (
+    <video
+      src="fixtures/sample.mp4"
+      preload="metadata"
+      aria-label="Video"
+      className="max-h-full max-w-full"
+    >
+      {/* The subtitles are drawn by the overlay rather than by the browser. */}
+      <track kind="captions" />
+    </video>
+  ) : (
+    <div className="flex flex-col items-center gap-4 p-8">
+      <div className="flex size-56 items-center justify-center rounded-lg bg-gradient-to-br from-gray-700 to-gray-900 shadow-xl" />
+      <p className="text-lg text-gray-300">Die Verwandlung, Kapitel 1</p>
+    </div>
+  );
+}
 
 function subtitlesPanel(
   cues: readonly Cue[] = exampleCues,
@@ -93,13 +145,9 @@ const meta = {
   component: MediaView,
   parameters: { layout: "fullscreen" },
   args: {
-    media: {
-      kind: "video",
-      title: "Dark S01E01 - Geheimnisse.mkv",
-      url: "fixtures/sample.mp4",
-      artworkUrl: null,
-      language: "de",
-    },
+    title: "Dark S01E01 - Geheimnisse.mkv",
+    language: "de",
+    stage: stage("video"),
     playback: {
       isPlaying: false,
       currentMs: 6_200,
@@ -110,11 +158,9 @@ const meta = {
     tracks,
     cues: exampleCues,
     translationCues: exampleTranslationCues,
-    flashcardCueIndexes: exampleFlashcardCueIndexes,
-    waveform: { peaks, viewStartMs: 0, viewEndMs: 24_000 },
+    waveform: waveformStrip(6_200),
     panels: { cues: true, waveform: true, distractionFree: false },
     subtitleDisplay: "both",
-    editingSegmentId: null,
     playerCallbacks: {
       onTogglePlay: fn(),
       onSeek: fn(),
@@ -126,14 +172,6 @@ const meta = {
       onToggleCuePanel: fn(),
       onToggleWaveform: fn(),
       onToggleDistractionFree: fn(),
-    },
-    waveformCallbacks: {
-      onSeek: fn(),
-      onSegmentClick: fn(),
-      onSegmentDoubleClick: fn(),
-      onZoomIn: fn(),
-      onZoomOut: fn(),
-      onHide: fn(),
     },
     onBack: fn(),
     onWordHover: fn(),
@@ -171,7 +209,6 @@ export const SearchingForAWord: Story = {
 
 export const EditingAFlashcard: Story = {
   args: {
-    editingSegmentId: "3",
     headerContent: (
       <UnsavedWorkBanner
         hasUnsavedChanges
@@ -185,7 +222,7 @@ export const EditingAFlashcard: Story = {
         initialContent={exampleFlashcard}
         initialFields={fieldsOfPreset("intermediate")}
         languages={exampleLanguages}
-        waveform={{ peaks, durationMs: 24_000 }}
+        waveform={{ windows: waveformWindows, durationMs: 24_000 }}
         onSave={fn()}
         onDelete={fn()}
         onClose={fn()}
@@ -198,7 +235,6 @@ export const NoSubtitles: Story = {
   args: {
     cues: [],
     translationCues: [],
-    flashcardCueIndexes: [],
     tracks: {
       audio: [{ id: "a1", label: "German", language: "de", sample: null }],
       subtitles: [],
@@ -212,13 +248,8 @@ export const NoSubtitles: Story = {
 
 export const AudioWithTranscript: Story = {
   args: {
-    media: {
-      kind: "audio",
-      title: "Die Verwandlung, Kapitel 1",
-      url: "fixtures/sample.mp3",
-      artworkUrl: null,
-      language: "de",
-    },
+    title: "Die Verwandlung, Kapitel 1",
+    stage: stage("audio"),
     translationCues: [],
     sidePanel: subtitlesPanel(exampleCues, []),
   },

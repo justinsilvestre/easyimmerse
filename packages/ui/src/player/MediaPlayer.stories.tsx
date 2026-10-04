@@ -79,6 +79,7 @@ const browserFileClient = createFakeBackendClient({
         source: heldSource,
         created_at_ms: 0,
         track_selection_json: null,
+        subtitle_selection: { target: null, translation: null },
       },
     ],
   }),
@@ -105,10 +106,21 @@ const withFixtureFile: Decorator = (Story) => (
   </FixtureFileLoader>
 );
 
+/** The black stage of the media screen, which the player fills. */
+const onStage: Decorator = (Story) => (
+  <div className="flex aspect-video max-w-3xl items-center justify-center bg-black">
+    <Story />
+  </div>
+);
+
 const meta = {
   title: "Player/MediaPlayer",
   component: MediaPlayer,
-  decorators: [withDispatchedActions(actions.openMedia("m1")), withAppStore],
+  decorators: [
+    onStage,
+    withDispatchedActions(actions.openMedia("m1")),
+    withAppStore,
+  ],
   parameters: { layout: "padded" },
   args: { projectId: "p1" },
 } satisfies Meta<typeof MediaPlayer>;

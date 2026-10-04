@@ -6,7 +6,7 @@ import { PathMediaPlayer } from "./PathMediaPlayer.tsx";
 import { failedPlayback, loadingPlayback } from "./PlaybackState.ts";
 import { PlayerPanel } from "./PlayerPanel.tsx";
 
-/** The player for the project's open media file, or an invitation to open one. */
+/** The player for the project's open media file, which fills the media screen's stage, or an invitation to open one. */
 export function MediaPlayer({ projectId }: { projectId: string }) {
   const mediaFileId = useAppSelector(selectCurrentMediaFileId);
   const { data } = useListMediaFilesQuery(projectId);
@@ -36,10 +36,7 @@ export function MediaPlayer({ projectId }: { projectId: string }) {
 
 function EmptyPlayer() {
   return (
-    <section
-      aria-label="Player"
-      className="rounded bg-gray-900 p-6 text-sm text-gray-400"
-    >
+    <section aria-label="Player" className="p-6 text-sm text-gray-400">
       Open a media file to play it.
     </section>
   );

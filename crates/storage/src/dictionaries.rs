@@ -1,17 +1,16 @@
-use easyimmerse_core::dictionary::{Dictionary, TermEntry};
-use rusqlite::{Connection, OptionalExtension, Transaction, params};
+use easyimmerse_core::dictionary::{Dictionary, DictionaryFileFormat, TermEntry};
+use rusqlite::{Connection, OptionalExtension, Row, Transaction, params};
 
 use crate::error::StorageError;
+use crate::stored_values::{enum_from_text, enum_to_text, random_id, read_unsigned};
+
+const DICTIONARY_COLUMNS: &str = "d.id, d.title, \
+     (SELECT COUNT(*) FROM dictionary_entries e WHERE e.dictionary_id = d.id), \
+     d.format, d.source_language, d.target_language, d.is_enabled";
 
 /// The identifier of a stored dictionary: 16 random bytes, hex encoded.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DictionaryId(pub String);
-
-impl DictionaryId {
-    pub fn generate() -> Self {
-        Self(hex::encode(rand::random::<[u8; 16]>()))
-    }
-}
 
 /// A dictionary as listed, without its entries.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -19,22 +18,52 @@ pub struct StoredDictionary {
     pub id: DictionaryId,
     pub title: String,
     pub entry_count: u64,
+    pub format: DictionaryFileFormat,
+    pub source_language: String,
+    pub target_language: String,
+    pub is_enabled: bool,
 }
 
-/// Stores a parsed dictionary and all of its entries in one transaction.
+/// The languages a dictionary is stored under, which the file or the user states.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DictionaryLanguages {
+    pub source_language: String,
+    pub target_language: String,
+}
+
+/// Which neighbour a dictionary trades places with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MoveDirection {
+    Up,
+    Down,
+}
+
+/// Stores a parsed dictionary and all of its entries in one transaction, enabled and placed
+/// after the other dictionaries of its source language.
 pub fn insert_dictionary(
     conn: &mut Connection,
     dictionary: &Dictionary,
-) -> Result<DictionaryId, StorageError> {
-    let id = DictionaryId::generate();
+    languages: &DictionaryLanguages,
+) -> Result<StoredDictionary, StorageError> {
+    let id = DictionaryId(random_id());
     let transaction = conn.transaction()?;
     transaction.execute(
-        "INSERT INTO dictionaries (id, title, revision) VALUES (?1, ?2, ?3)",
-        params![id.0, dictionary.title, dictionary.revision],
+        "INSERT INTO dictionaries (id, title, revision, format, source_language, target_language, position) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, \
+             (SELECT COALESCE(MAX(position) + 1, 0) FROM dictionaries WHERE source_language = ?5))",
+        params![
+            id.0,
+            dictionary.title,
+            dictionary.revision,
+            enum_to_text(&dictionary.format)?,
+            languages.source_language,
+            languages.target_language,
+        ],
     )?;
     insert_entries(&transaction, &id, &dictionary.entries)?;
+    let stored = get_dictionary(&transaction, &id)?;
     transaction.commit()?;
-    Ok(id)
+    Ok(stored)
 }
 
 fn insert_entries(
@@ -54,82 +83,150 @@ fn insert_entries(
     Ok(())
 }
 
-/// Lists every stored dictionary in the order they were imported.
+/// Lists every stored dictionary by source language, then by position.
 pub fn list_dictionaries(conn: &Connection) -> Result<Vec<StoredDictionary>, StorageError> {
-    let mut statement = conn.prepare(
-        "SELECT d.id, d.title, COUNT(e.id)
-         FROM dictionaries d LEFT JOIN dictionary_entries e ON e.dictionary_id = d.id
-         GROUP BY d.id ORDER BY d.rowid",
-    )?;
-    let dictionaries = statement
-        .query_map([], |row| {
-            Ok(StoredDictionary {
-                id: DictionaryId(row.get(0)?),
-                title: row.get(1)?,
-                entry_count: count_from_row(row.get(2)?),
-            })
-        })?
-        .collect::<Result<_, _>>()?;
-    Ok(dictionaries)
+    let mut statement = conn.prepare(&format!(
+        "SELECT {DICTIONARY_COLUMNS} FROM dictionaries d ORDER BY d.source_language, d.position"
+    ))?;
+    let rows = statement.query_map([], read_dictionary_row)?;
+    rows.map(|row| row?.into_stored_dictionary()).collect()
 }
 
-/// SQLite counts are signed; a count is never negative, so the conversion cannot fail.
-fn count_from_row(count: i64) -> u64 {
-    u64::try_from(count).unwrap_or(0)
-}
-
-/// Returns the entries of one dictionary whose term or reading equals `term` exactly.
-/// Fails with `DictionaryNotFound` when no dictionary has the id.
-pub fn lookup_term(
+pub fn get_dictionary(
     conn: &Connection,
     id: &DictionaryId,
-    term: &str,
-) -> Result<Vec<TermEntry>, StorageError> {
-    ensure_dictionary_exists(conn, id)?;
-    let mut statement = conn.prepare(
-        "SELECT term, reading, definitions_json, tags_json FROM dictionary_entries
-         WHERE dictionary_id = ?1 AND (term = ?2 OR reading = ?2) ORDER BY id",
-    )?;
-    let rows = statement.query_map(params![id.0, term], read_entry_row)?;
-    rows.map(|row| row?.into_term_entry()).collect()
+) -> Result<StoredDictionary, StorageError> {
+    conn.query_row(
+        &format!("SELECT {DICTIONARY_COLUMNS} FROM dictionaries d WHERE d.id = ?1"),
+        params![id.0],
+        read_dictionary_row,
+    )
+    .optional()?
+    .ok_or_else(|| StorageError::DictionaryNotFound(id.0.clone()))?
+    .into_stored_dictionary()
 }
 
-fn ensure_dictionary_exists(conn: &Connection, id: &DictionaryId) -> Result<(), StorageError> {
+pub fn set_dictionary_enabled(
+    conn: &Connection,
+    id: &DictionaryId,
+    is_enabled: bool,
+) -> Result<StoredDictionary, StorageError> {
+    let updated = conn.execute(
+        "UPDATE dictionaries SET is_enabled = ?2 WHERE id = ?1",
+        params![id.0, is_enabled],
+    )?;
+    ensure_one_row_changed(updated, id)?;
+    get_dictionary(conn, id)
+}
+
+/// Swaps a dictionary's position with that of its nearest neighbour of the same source
+/// language in the given direction. Does nothing when there is no such neighbour.
+pub fn move_dictionary(
+    conn: &mut Connection,
+    id: &DictionaryId,
+    direction: MoveDirection,
+) -> Result<(), StorageError> {
+    let transaction = conn.transaction()?;
+    let (language, position) = read_position(&transaction, id)?;
+    if let Some((neighbour_id, neighbour_position)) =
+        find_neighbour(&transaction, &language, position, direction)?
+    {
+        set_position(&transaction, &neighbour_id, position)?;
+        set_position(&transaction, &id.0, neighbour_position)?;
+    }
+    transaction.commit()?;
+    Ok(())
+}
+
+fn read_position(conn: &Connection, id: &DictionaryId) -> Result<(String, i64), StorageError> {
     conn.query_row(
-        "SELECT 1 FROM dictionaries WHERE id = ?1",
+        "SELECT source_language, position FROM dictionaries WHERE id = ?1",
         params![id.0],
-        |_| Ok(()),
+        |row| Ok((row.get(0)?, row.get(1)?)),
     )
     .optional()?
     .ok_or_else(|| StorageError::DictionaryNotFound(id.0.clone()))
 }
 
-/// One entry row with its JSON columns still unparsed, so that the row callback stays
-/// within rusqlite's error type.
-struct EntryRow {
-    term: String,
-    reading: Option<String>,
-    definitions_json: String,
-    tags_json: String,
+fn find_neighbour(
+    conn: &Connection,
+    language: &str,
+    position: i64,
+    direction: MoveDirection,
+) -> Result<Option<(String, i64)>, StorageError> {
+    let sql = match direction {
+        MoveDirection::Up => {
+            "SELECT id, position FROM dictionaries WHERE source_language = ?1 AND position < ?2 \
+             ORDER BY position DESC LIMIT 1"
+        }
+        MoveDirection::Down => {
+            "SELECT id, position FROM dictionaries WHERE source_language = ?1 AND position > ?2 \
+             ORDER BY position LIMIT 1"
+        }
+    };
+    Ok(conn
+        .query_row(sql, params![language, position], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })
+        .optional()?)
 }
 
-impl EntryRow {
-    fn into_term_entry(self) -> Result<TermEntry, StorageError> {
-        Ok(TermEntry {
-            term: self.term,
-            reading: self.reading,
-            definitions: serde_json::from_str(&self.definitions_json)?,
-            tags: serde_json::from_str(&self.tags_json)?,
+fn set_position(conn: &Connection, id: &str, position: i64) -> Result<(), StorageError> {
+    conn.execute(
+        "UPDATE dictionaries SET position = ?2 WHERE id = ?1",
+        params![id, position],
+    )?;
+    Ok(())
+}
+
+pub fn delete_dictionary(conn: &Connection, id: &DictionaryId) -> Result<(), StorageError> {
+    let deleted = conn.execute("DELETE FROM dictionaries WHERE id = ?1", params![id.0])?;
+    ensure_one_row_changed(deleted, id)
+}
+
+fn ensure_one_row_changed(changed: usize, id: &DictionaryId) -> Result<(), StorageError> {
+    if changed == 0 {
+        Err(StorageError::DictionaryNotFound(id.0.clone()))
+    } else {
+        Ok(())
+    }
+}
+
+/// One dictionary row with its format still unparsed, so that the row callback stays within
+/// rusqlite's error type.
+struct DictionaryRow {
+    id: String,
+    title: String,
+    entry_count: u64,
+    format: String,
+    source_language: String,
+    target_language: String,
+    is_enabled: bool,
+}
+
+impl DictionaryRow {
+    fn into_stored_dictionary(self) -> Result<StoredDictionary, StorageError> {
+        Ok(StoredDictionary {
+            id: DictionaryId(self.id),
+            title: self.title,
+            entry_count: self.entry_count,
+            format: enum_from_text(self.format)?,
+            source_language: self.source_language,
+            target_language: self.target_language,
+            is_enabled: self.is_enabled,
         })
     }
 }
 
-fn read_entry_row(row: &rusqlite::Row) -> rusqlite::Result<EntryRow> {
-    Ok(EntryRow {
-        term: row.get(0)?,
-        reading: row.get(1)?,
-        definitions_json: row.get(2)?,
-        tags_json: row.get(3)?,
+fn read_dictionary_row(row: &Row) -> rusqlite::Result<DictionaryRow> {
+    Ok(DictionaryRow {
+        id: row.get(0)?,
+        title: row.get(1)?,
+        entry_count: read_unsigned(row, 2)?,
+        format: row.get(3)?,
+        source_language: row.get(4)?,
+        target_language: row.get(5)?,
+        is_enabled: row.get(6)?,
     })
 }
 
@@ -147,66 +244,121 @@ mod tests {
         parse_dictionary(&std::fs::read(path).unwrap()).unwrap()
     }
 
-    fn storage_with_fixture() -> (Storage, DictionaryId) {
-        let storage = Storage::open_in_memory().unwrap();
-        let id = storage.insert_dictionary(&fixture_dictionary()).unwrap();
-        (storage, id)
+    fn languages(source_language: &str) -> DictionaryLanguages {
+        DictionaryLanguages {
+            source_language: source_language.to_string(),
+            target_language: "en".to_string(),
+        }
     }
 
-    #[test]
-    fn generates_a_32_character_hex_id() {
-        assert_eq!(DictionaryId::generate().0.len(), 32);
+    fn insert(storage: &Storage, source_language: &str) -> DictionaryId {
+        storage
+            .insert_dictionary(&fixture_dictionary(), &languages(source_language))
+            .unwrap()
+            .id
     }
 
-    #[test]
-    fn generates_distinct_ids() {
-        assert_ne!(DictionaryId::generate(), DictionaryId::generate());
+    fn listed_ids(storage: &Storage) -> Vec<DictionaryId> {
+        storage
+            .list_dictionaries()
+            .unwrap()
+            .into_iter()
+            .map(|dictionary| dictionary.id)
+            .collect()
     }
 
     #[test]
     fn lists_the_imported_dictionary_with_its_entry_count() {
-        let (storage, id) = storage_with_fixture();
+        let storage = Storage::open_in_memory().unwrap();
+        let id = insert(&storage, "ja");
         assert_eq!(
             storage.list_dictionaries().unwrap(),
             vec![StoredDictionary {
                 id,
                 title: "Sample Dictionary".to_string(),
                 entry_count: 3,
+                format: DictionaryFileFormat::Yomitan,
+                source_language: "ja".to_string(),
+                target_language: "en".to_string(),
+                is_enabled: true,
             }]
         );
     }
 
     #[test]
-    fn finds_an_entry_by_term() {
-        let (storage, id) = storage_with_fixture();
-        let entries = storage.lookup_term(&id, "猫").unwrap();
-        assert_eq!(entries[0].definitions, vec!["cat".to_string()]);
+    fn lists_by_source_language_then_position() {
+        let storage = Storage::open_in_memory().unwrap();
+        let first_ja = insert(&storage, "ja");
+        let es = insert(&storage, "es");
+        let second_ja = insert(&storage, "ja");
+        assert_eq!(listed_ids(&storage), vec![es, first_ja, second_ja]);
     }
 
     #[test]
-    fn finds_an_entry_by_reading() {
-        let (storage, id) = storage_with_fixture();
-        let entries = storage.lookup_term(&id, "たべる").unwrap();
-        assert_eq!(entries[0].term, "食べる");
+    fn disables_a_dictionary() {
+        let storage = Storage::open_in_memory().unwrap();
+        let id = insert(&storage, "ja");
+        let updated = storage.set_dictionary_enabled(&id, false).unwrap();
+        assert!(!updated.is_enabled);
     }
 
     #[test]
-    fn finds_nothing_for_an_unknown_term() {
-        let (storage, id) = storage_with_fixture();
-        assert!(storage.lookup_term(&id, "鳥").unwrap().is_empty());
+    fn moves_a_dictionary_up_past_its_neighbour() {
+        let storage = Storage::open_in_memory().unwrap();
+        let first = insert(&storage, "ja");
+        let second = insert(&storage, "ja");
+        storage.move_dictionary(&second, MoveDirection::Up).unwrap();
+        assert_eq!(listed_ids(&storage), vec![second, first]);
     }
 
     #[test]
-    fn fails_for_an_unknown_dictionary() {
-        let (storage, _) = storage_with_fixture();
-        let result = storage.lookup_term(&DictionaryId("missing".to_string()), "猫");
+    fn moves_past_dictionaries_of_other_languages() {
+        let storage = Storage::open_in_memory().unwrap();
+        let first = insert(&storage, "ja");
+        insert(&storage, "es");
+        let second = insert(&storage, "ja");
+        storage
+            .move_dictionary(&first, MoveDirection::Down)
+            .unwrap();
+        let japanese: Vec<_> = storage
+            .list_dictionaries()
+            .unwrap()
+            .into_iter()
+            .filter(|dictionary| dictionary.source_language == "ja")
+            .map(|dictionary| dictionary.id)
+            .collect();
+        assert_eq!(japanese, vec![second, first]);
+    }
+
+    #[test]
+    fn moving_the_first_dictionary_up_does_nothing() {
+        let storage = Storage::open_in_memory().unwrap();
+        let first = insert(&storage, "ja");
+        let second = insert(&storage, "ja");
+        storage.move_dictionary(&first, MoveDirection::Up).unwrap();
+        assert_eq!(listed_ids(&storage), vec![first, second]);
+    }
+
+    #[test]
+    fn moving_an_unknown_dictionary_fails() {
+        let storage = Storage::open_in_memory().unwrap();
+        let result =
+            storage.move_dictionary(&DictionaryId("missing".to_string()), MoveDirection::Up);
         assert!(matches!(result, Err(StorageError::DictionaryNotFound(_))));
     }
 
     #[test]
-    fn round_trips_the_tags() {
-        let (storage, id) = storage_with_fixture();
-        let entries = storage.lookup_term(&id, "猫").unwrap();
-        assert_eq!(entries[0].tags, fixture_dictionary().entries[0].tags);
+    fn deletes_a_dictionary() {
+        let storage = Storage::open_in_memory().unwrap();
+        let id = insert(&storage, "ja");
+        storage.delete_dictionary(&id).unwrap();
+        assert_eq!(listed_ids(&storage), vec![]);
+    }
+
+    #[test]
+    fn deleting_an_unknown_dictionary_fails() {
+        let storage = Storage::open_in_memory().unwrap();
+        let result = storage.delete_dictionary(&DictionaryId("missing".to_string()));
+        assert!(matches!(result, Err(StorageError::DictionaryNotFound(_))));
     }
 }

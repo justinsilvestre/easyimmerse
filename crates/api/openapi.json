@@ -416,7 +416,7 @@
         "operationId": "listDictionaries",
         "responses": {
           "200": {
-            "description": "Every imported dictionary",
+            "description": "Every imported dictionary, by source language and then position",
             "content": {
               "application/json": {
                 "schema": {
@@ -457,6 +457,24 @@
           "dictionaries"
         ],
         "operationId": "importDictionary",
+        "parameters": [
+          {
+            "name": "source_language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "description": "The dictionary archive",
           "content": {
@@ -475,7 +493,7 @@
             }
           },
           "400": {
-            "description": "The archive could not be parsed",
+            "description": "The archive could not be parsed (code `unsupported_format` when no format reads it), or neither the file nor the query gives both languages (code `language_required`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -540,7 +558,7 @@
             }
           },
           "400": {
-            "description": "The archive could not be parsed",
+            "description": "The archive could not be parsed (code `unsupported_format` when no format reads it), or neither the file nor the request gives both languages (code `language_required`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -597,12 +615,12 @@
         ]
       }
     },
-    "/dictionaries/{id}/lookup": {
-      "get": {
+    "/dictionaries/{id}": {
+      "put": {
         "tags": [
           "dictionaries"
         ],
-        "operationId": "lookupTerm",
+        "operationId": "updateDictionary",
         "parameters": [
           {
             "name": "id",
@@ -612,11 +630,76 @@
             "schema": {
               "type": "string"
             }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDictionaryRequest"
+              }
+            }
           },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The changed dictionary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictionarySummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No dictionary has the id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
           {
-            "name": "term",
-            "in": "query",
-            "description": "The exact term or reading to find.",
+            "bearer_token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "dictionaries"
+        ],
+        "operationId": "deleteDictionary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
             "required": true,
             "schema": {
               "type": "string"
@@ -624,12 +707,82 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "The entries matching the term exactly",
+          "204": {
+            "description": "The dictionary was deleted"
+          },
+          "401": {
+            "description": "Missing or invalid token",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LookupResponse"
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No dictionary has the id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/{id}/move": {
+      "post": {
+        "tags": [
+          "dictionaries"
+        ],
+        "summary": "Swaps the dictionary's position with its neighbour of the same source language. Does\nnothing at either end.",
+        "operationId": "moveDictionary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveDictionaryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Every dictionary in its new order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDictionariesResponse"
                 }
               }
             }
@@ -863,6 +1016,72 @@
         }
       }
     },
+    "/lookup": {
+      "get": {
+        "tags": [
+          "dictionaries"
+        ],
+        "summary": "Finds the entries whose term or reading equals the term exactly, in every enabled\ndictionary of the language, in the dictionaries' order. When nothing matches a term with\nuppercase letters, its lowercase form is tried.",
+        "operationId": "lookupTerm",
+        "parameters": [
+          {
+            "name": "language",
+            "in": "query",
+            "description": "The BCP 47 code of the language of the term.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "description": "The exact term or reading to find.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The matching entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/openapi.json": {
       "get": {
         "tags": [
@@ -1040,7 +1259,7 @@
         "operationId": "listProjects",
         "responses": {
           "200": {
-            "description": "Every project, oldest first",
+            "description": "Every project, most recently opened first",
             "content": {
               "application/json": {
                 "schema": {
@@ -1051,6 +1270,672 @@
           },
           "401": {
             "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "operationId": "createProject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The created project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The name or a language is blank",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}": {
+      "get": {
+        "tags": [
+          "projects"
+        ],
+        "operationId": "getProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The project with its settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "projects"
+        ],
+        "operationId": "updateProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The changed project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The name or a language is blank",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "projects"
+        ],
+        "summary": "Deletes a project with its media files, flashcards, and subtitles files, and then the\ncached conversions no other media file needs.",
+        "operationId": "deleteProject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The project was deleted"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/flashcards": {
+      "get": {
+        "tags": [
+          "flashcards"
+        ],
+        "operationId": "listFlashcards",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "query",
+            "description": "Narrows the list to the flashcards made from this media file.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/MediaFileId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The project's flashcards, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListFlashcardsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "flashcards"
+        ],
+        "operationId": "createFlashcard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveFlashcardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The created flashcard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flashcard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The screenshot is not an image data URL or exceeds 5 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no such media file in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/flashcards/{flashcard_id}": {
+      "put": {
+        "tags": [
+          "flashcards"
+        ],
+        "operationId": "updateFlashcard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The flashcard id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveFlashcardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The changed flashcard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flashcard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The screenshot is not an image data URL or exceeds 5 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such flashcard or media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "flashcards"
+        ],
+        "operationId": "deleteFlashcard",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The flashcard id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The flashcard was deleted"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such flashcard in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/flashcards/{flashcard_id}/screenshot": {
+      "get": {
+        "tags": [
+          "flashcards"
+        ],
+        "operationId": "getFlashcardScreenshot",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The flashcard id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The screenshot image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlashcardScreenshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such flashcard in the project, or it has no screenshot",
             "content": {
               "application/json": {
                 "schema": {
@@ -1520,6 +2405,351 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/subtitle-files": {
+      "get": {
+        "tags": [
+          "subtitles"
+        ],
+        "operationId": "listSubtitleFiles",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The media file's subtitles files with their cues, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSubtitleFilesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "subtitles"
+        ],
+        "summary": "Adds a subtitles file to a media file. A `path` source names a file on the server's\nmachine, which only a token allowed to read local paths may do.",
+        "operationId": "addSubtitleFile",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddSubtitleFileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The added subtitles file with its cues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubtitleFile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The text could not be parsed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token may not read local paths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project, or no file at the given path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/{media_id}/subtitle-files/{file_id}": {
+      "delete": {
+        "tags": [
+          "subtitles"
+        ],
+        "operationId": "removeSubtitleFile",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "description": "The subtitles file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The file was removed, and the subtitle selection no longer names it"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such subtitles file of the media file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/{media_id}/subtitle-selection": {
+      "put": {
+        "tags": [
+          "subtitles"
+        ],
+        "summary": "Saves which subtitles are shown. Each id is `embedded:<stream index>` or\n`file:<subtitles file id>`.",
+        "operationId": "setSubtitleSelection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubtitleSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The choice was saved"
+          },
+          "400": {
+            "description": "An id names no embedded track or subtitles file of the media file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/subtitle-tracks": {
       "get": {
         "tags": [
@@ -1609,6 +2839,133 @@
           },
           "503": {
             "description": "This server cannot probe media (code `conversion_unavailable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/{media_id}/subtitle-tracks/{index}/cues": {
+      "get": {
+        "tags": [
+          "subtitles"
+        ],
+        "summary": "Converts an embedded subtitle stream to cues with ffmpeg.",
+        "operationId": "getEmbeddedSubtitleCues",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "in": "path",
+            "description": "The stream index of the subtitle track, as ffmpeg counts it",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The track's cues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimedTextTrack"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The index names no text subtitle stream, or the file could not be probed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token may not read local paths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file, no file at its path, or a browser-held file (code `not_resolvable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ffmpeg failed (code `conversion_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server has no ffmpeg (code `conversion_unavailable`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2012,6 +3369,65 @@
         ]
       }
     },
+    "/projects/{id}/opened": {
+      "post": {
+        "tags": [
+          "projects"
+        ],
+        "operationId": "markProjectOpened",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The project counts as opened just now"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/timed-text/parse": {
       "post": {
         "tags": [
@@ -2116,6 +3532,40 @@
           }
         }
       },
+      "AddSubtitleFileRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "source"
+        ],
+        "properties": {
+          "format": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TimedTextFormat",
+                "description": "The format of the text. Detected from the text when absent."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The BCP 47 code of the subtitles' language, when known."
+          },
+          "name": {
+            "type": "string",
+            "description": "The name shown when choosing subtitles, usually the file name."
+          },
+          "source": {
+            "$ref": "#/components/schemas/TextSource"
+          }
+        }
+      },
       "ApiError": {
         "type": "object",
         "description": "The body of every error response.",
@@ -2180,6 +3630,26 @@
             }
           }
         ]
+      },
+      "AudioClip": {
+        "type": "object",
+        "description": "A time range within a media file's audio track.",
+        "required": [
+          "start_ms",
+          "end_ms"
+        ],
+        "properties": {
+          "end_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "start_ms": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
       },
       "AudioTarget": {
         "type": "string",
@@ -2387,12 +3857,23 @@
           }
         }
       },
+      "DictionaryFileFormat": {
+        "type": "string",
+        "description": "The file formats the app reads dictionaries from.",
+        "enum": [
+          "yomitan"
+        ]
+      },
       "DictionarySummary": {
         "type": "object",
         "required": [
           "id",
           "title",
-          "entry_count"
+          "entry_count",
+          "format",
+          "source_language",
+          "target_language",
+          "is_enabled"
         ],
         "properties": {
           "entry_count": {
@@ -2400,8 +3881,22 @@
             "format": "int64",
             "minimum": 0
           },
+          "format": {
+            "$ref": "#/components/schemas/DictionaryFileFormat"
+          },
           "id": {
             "type": "string"
+          },
+          "is_enabled": {
+            "type": "boolean"
+          },
+          "source_language": {
+            "type": "string",
+            "description": "The BCP 47 code of the language of the terms."
+          },
+          "target_language": {
+            "type": "string",
+            "description": "The BCP 47 code of the language of the definitions."
           },
           "title": {
             "type": "string"
@@ -2439,6 +3934,157 @@
           "plain_text"
         ]
       },
+      "Flashcard": {
+        "type": "object",
+        "description": "A flashcard saved in a project.",
+        "required": [
+          "id",
+          "project_id",
+          "fields",
+          "included_fields",
+          "has_screenshot_image",
+          "created_at_ms",
+          "updated_at_ms"
+        ],
+        "properties": {
+          "created_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "fields": {
+            "$ref": "#/components/schemas/FlashcardFields"
+          },
+          "has_screenshot_image": {
+            "type": "boolean",
+            "description": "Whether a screenshot image is stored for the flashcard."
+          },
+          "id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "included_fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardFieldKey"
+            },
+            "description": "The fields shown on this flashcard, in no particular order."
+          },
+          "media_file_id": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MediaFileId",
+                "description": "The media file the flashcard was made from. Null when it was made without one, or\nwhen that file has since been removed from the project."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "project_id": {
+            "$ref": "#/components/schemas/ProjectId"
+          },
+          "updated_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          }
+        }
+      },
+      "FlashcardFieldKey": {
+        "type": "string",
+        "description": "Names one field of a flashcard. L1 is the language the user already knows; L2 is the one\nthey are learning.",
+        "enum": [
+          "word",
+          "word_pronunciation",
+          "l1_definition",
+          "l2_definition",
+          "text_context",
+          "text_context_translation",
+          "text_context_pronunciation",
+          "audio_context",
+          "screenshot",
+          "tags"
+        ]
+      },
+      "FlashcardFields": {
+        "type": "object",
+        "description": "Everything a flashcard can hold. The screenshot's image is stored apart from the\nfields; only the time it was taken at is kept here.",
+        "required": [
+          "word",
+          "word_pronunciation",
+          "l1_definition",
+          "l2_definition",
+          "text_context",
+          "text_context_translation",
+          "text_context_pronunciation",
+          "tags"
+        ],
+        "properties": {
+          "audio_context": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AudioClip"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "l1_definition": {
+            "type": "string"
+          },
+          "l2_definition": {
+            "type": "string"
+          },
+          "screenshot_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The media time the screenshot was taken at.",
+            "minimum": 0
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "text_context": {
+            "type": "string"
+          },
+          "text_context_pronunciation": {
+            "type": "string"
+          },
+          "text_context_translation": {
+            "type": "string"
+          },
+          "word": {
+            "type": "string"
+          },
+          "word_pronunciation": {
+            "type": "string"
+          }
+        }
+      },
+      "FlashcardId": {
+        "type": "string"
+      },
+      "FlashcardScreenshot": {
+        "type": "object",
+        "required": [
+          "data_url"
+        ],
+        "properties": {
+          "data_url": {
+            "type": "string",
+            "description": "A `data:image/...;base64,` URL."
+          }
+        }
+      },
       "HealthResponse": {
         "type": "object",
         "required": [
@@ -2458,6 +4104,20 @@
         "properties": {
           "path": {
             "type": "string"
+          },
+          "source_language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Overrides the language of the terms that the file states."
+          },
+          "target_language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Overrides the language of the definitions that the file states."
           }
         }
       },
@@ -2471,6 +4131,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DictionarySummary"
+            }
+          }
+        }
+      },
+      "ListFlashcardsResponse": {
+        "type": "object",
+        "required": [
+          "flashcards"
+        ],
+        "properties": {
+          "flashcards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Flashcard"
             }
           }
         }
@@ -2503,16 +4177,57 @@
           }
         }
       },
+      "ListSubtitleFilesResponse": {
+        "type": "object",
+        "required": [
+          "subtitle_files"
+        ],
+        "properties": {
+          "subtitle_files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubtitleFile"
+            }
+          }
+        }
+      },
+      "LookupEntry": {
+        "type": "object",
+        "description": "An entry found for a term, with the dictionary it came from.",
+        "required": [
+          "dictionary_id",
+          "dictionary_title",
+          "entry"
+        ],
+        "properties": {
+          "dictionary_id": {
+            "type": "string"
+          },
+          "dictionary_title": {
+            "type": "string"
+          },
+          "entry": {
+            "$ref": "#/components/schemas/TermEntry"
+          }
+        }
+      },
       "LookupResponse": {
         "type": "object",
         "required": [
+          "dictionary_count",
           "entries"
         ],
         "properties": {
+          "dictionary_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "How many enabled dictionaries the language has, whether or not they matched.",
+            "minimum": 0
+          },
           "entries": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TermEntry"
+              "$ref": "#/components/schemas/LookupEntry"
             }
           }
         }
@@ -2525,7 +4240,8 @@
           "project_id",
           "name",
           "source",
-          "created_at_ms"
+          "created_at_ms",
+          "subtitle_selection"
         ],
         "properties": {
           "created_at_ms": {
@@ -2546,6 +4262,9 @@
           },
           "source": {
             "$ref": "#/components/schemas/MediaFileSource"
+          },
+          "subtitle_selection": {
+            "$ref": "#/components/schemas/SubtitleSelection"
           },
           "track_selection_json": {
             "type": [
@@ -2608,6 +4327,24 @@
           }
         ],
         "description": "Where the bytes of a media file come from.\n\nThe `path` variant names a file on the machine running the server. The `browser_file`\nvariant describes a file the web app holds in memory; the server never sees its bytes,\nso it records only what identifies the file when the user picks it again."
+      },
+      "MoveDictionaryRequest": {
+        "type": "object",
+        "required": [
+          "direction"
+        ],
+        "properties": {
+          "direction": {
+            "$ref": "#/components/schemas/MoveDirection"
+          }
+        }
+      },
+      "MoveDirection": {
+        "type": "string",
+        "enum": [
+          "up",
+          "down"
+        ]
       },
       "ParseLocalDocumentRequest": {
         "type": "object",
@@ -2828,30 +4565,136 @@
           }
         }
       },
-      "ProjectId": {
-        "type": "string"
-      },
-      "ProjectSummary": {
+      "Project": {
         "type": "object",
+        "description": "A project with all of its settings.",
         "required": [
           "id",
           "name",
-          "language",
-          "created_at"
+          "settings",
+          "created_at_ms",
+          "last_opened_at_ms"
         ],
         "properties": {
-          "created_at": {
-            "type": "string",
-            "description": "An RFC 3339 timestamp."
+          "created_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
           },
           "id": {
             "$ref": "#/components/schemas/ProjectId"
           },
-          "language": {
-            "type": "string"
+          "last_opened_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
           },
           "name": {
             "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/ProjectSettings"
+          }
+        }
+      },
+      "ProjectId": {
+        "type": "string"
+      },
+      "ProjectSettings": {
+        "type": "object",
+        "description": "The settings the user chooses when creating a project and can change later.",
+        "required": [
+          "target_language",
+          "translation_language",
+          "flashcard_fields",
+          "default_tags",
+          "tags_media_name",
+          "fills_audio_with_tts"
+        ],
+        "properties": {
+          "default_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The tags every new flashcard starts with."
+          },
+          "fills_audio_with_tts": {
+            "type": "boolean",
+            "description": "Whether the audio fields are filled with text-to-speech when the media has no audio."
+          },
+          "flashcard_fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardFieldKey"
+            },
+            "description": "The fields a new flashcard starts with, in no particular order."
+          },
+          "tags_media_name": {
+            "type": "boolean",
+            "description": "Whether each new flashcard is also tagged with the name of its media file."
+          },
+          "target_language": {
+            "type": "string",
+            "description": "The BCP 47 code of the language being learned."
+          },
+          "translation_language": {
+            "type": "string",
+            "description": "The BCP 47 code of the language translations and definitions are in."
+          }
+        }
+      },
+      "ProjectSummary": {
+        "type": "object",
+        "description": "A project as the home screen lists it.",
+        "required": [
+          "id",
+          "name",
+          "target_language",
+          "translation_language",
+          "created_at_ms",
+          "last_opened_at_ms",
+          "media_count",
+          "flashcard_count"
+        ],
+        "properties": {
+          "created_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "flashcard_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "id": {
+            "$ref": "#/components/schemas/ProjectId"
+          },
+          "last_opened_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch. Equal to the creation time until the project is\nfirst opened.",
+            "minimum": 0
+          },
+          "media_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "target_language": {
+            "type": "string",
+            "description": "The BCP 47 code of the language being learned."
+          },
+          "translation_language": {
+            "type": "string",
+            "description": "The BCP 47 code of the language translations and definitions are in."
           }
         }
       },
@@ -2872,6 +4715,114 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          }
+        }
+      },
+      "SaveFlashcardRequest": {
+        "type": "object",
+        "description": "The body that creates a flashcard or replaces its contents.",
+        "required": [
+          "fields",
+          "included_fields"
+        ],
+        "properties": {
+          "fields": {
+            "$ref": "#/components/schemas/FlashcardFields"
+          },
+          "included_fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardFieldKey"
+            }
+          },
+          "media_file_id": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MediaFileId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "screenshot_data_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A `data:image/...;base64,` URL that replaces the stored screenshot. Absent keeps the\nstored one. A `fields.screenshot_at_ms` of null removes it."
+          }
+        }
+      },
+      "SaveProjectRequest": {
+        "type": "object",
+        "description": "The body that creates a project or replaces its name and settings.",
+        "required": [
+          "name",
+          "settings"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/ProjectSettings"
+          }
+        }
+      },
+      "SubtitleFile": {
+        "type": "object",
+        "description": "A subtitles file added to a media file, with its parsed cues.",
+        "required": [
+          "id",
+          "media_file_id",
+          "name",
+          "cues"
+        ],
+        "properties": {
+          "cues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Cue"
+            }
+          },
+          "id": {
+            "$ref": "#/components/schemas/SubtitleFileId"
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The BCP 47 code of the subtitles' language, when known."
+          },
+          "media_file_id": {
+            "$ref": "#/components/schemas/MediaFileId"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name shown when choosing subtitles, usually the file name."
+          }
+        }
+      },
+      "SubtitleFileId": {
+        "type": "string"
+      },
+      "SubtitleSelection": {
+        "type": "object",
+        "description": "The subtitles shown for a media file: one track in the language being learned and one\nwith its translation. Each is named by a subtitle track id, either `embedded:<index>`\nfor a track inside the media file, with the stream index ffmpeg uses, or `file:<id>`\nfor a subtitles file added to the media file.",
+        "properties": {
+          "target": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "translation": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -3181,6 +5132,17 @@
           "conversion_unavailable",
           "picture_too_tall"
         ]
+      },
+      "UpdateDictionaryRequest": {
+        "type": "object",
+        "required": [
+          "is_enabled"
+        ],
+        "properties": {
+          "is_enabled": {
+            "type": "boolean"
+          }
+        }
       },
       "VideoAction": {
         "oneOf": [

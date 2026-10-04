@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { actions } from "./actions.ts";
 import { createAppStore } from "./createAppStore.ts";
 import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
-import type { PickedFile, PickedMediaFile } from "./effects.ts";
+import type {
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 import { createRecordingEffects } from "./recordingEffects.ts";
 
 const pickedFile: PickedFile = {
@@ -14,6 +18,13 @@ const pickedMediaFile: PickedMediaFile = {
   name: "episode.mkv",
   source: { kind: "path", path: "/videos/episode.mkv" },
 };
+
+const pickedDictionaryFile: PickedDictionaryFile = {
+  name: "jmdict.zip",
+  source: { kind: "bytes", bytes: new Uint8Array([80, 75]) },
+};
+
+const dictionaryLanguages = { sourceLanguage: "ja", targetLanguage: "en" };
 
 describe("effectsMiddleware", () => {
   it("calls seekPlayer after seekRequested is dispatched", () => {
@@ -27,7 +38,7 @@ describe("effectsMiddleware", () => {
     const effects = createRecordingEffects();
     const server = createFakeServerStoreParts();
     const store = createAppStore(effects, server);
-    store.dispatch(actions.filePickRequested());
+    store.dispatch(actions.subtitleFilePickRequested("target"));
     effects.resolvePickFile(pickedFile);
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
@@ -40,7 +51,7 @@ describe("effectsMiddleware", () => {
     const effects = createRecordingEffects();
     const server = createFakeServerStoreParts();
     const store = createAppStore(effects, server);
-    store.dispatch(actions.filePickRequested());
+    store.dispatch(actions.subtitleFilePickRequested("target"));
     effects.resolvePickFile(null);
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
@@ -53,7 +64,7 @@ describe("effectsMiddleware", () => {
     const effects = createRecordingEffects();
     const server = createFakeServerStoreParts();
     const store = createAppStore(effects, server);
-    store.dispatch(actions.filePickRequested());
+    store.dispatch(actions.subtitleFilePickRequested("target"));
     effects.rejectPickFile(new Error("dialog unavailable"));
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
@@ -97,6 +108,32 @@ describe("effectsMiddleware", () => {
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
         actions.mediaFilePickCancelled(),
+      );
+    });
+  });
+
+  it("dispatches dictionaryFileChosen once the dictionary file pick resolves", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.dictionaryFilePickRequested(dictionaryLanguages));
+    effects.resolvePickDictionaryFile(pickedDictionaryFile);
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.dictionaryFileChosen(pickedDictionaryFile),
+      );
+    });
+  });
+
+  it("dispatches dictionaryFilePickCancelled once the dictionary file pick fails", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.dictionaryFilePickRequested(dictionaryLanguages));
+    effects.rejectPickDictionaryFile(new Error("denied"));
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.dictionaryFilePickCancelled(),
       );
     });
   });

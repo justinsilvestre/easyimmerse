@@ -3,28 +3,17 @@
 
 use easyimmerse_core::media_file::MediaFileSource;
 use easyimmerse_core::project::ProjectId;
-use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use serde_json::{Value, json};
 use tempfile::TempDir;
 
 use crate::support::{
-    TestServer, fixture_path, seeded_storage, spawn_test_server, spawn_test_server_with_cache,
-    spawn_test_server_with_storage,
+    TestServer, ffmpeg_available, fixture_path, seeded_storage, spawn_test_server,
+    spawn_test_server_with_cache, spawn_test_server_with_storage,
 };
 
 const PROJECT: &str = "placeholder-1";
 const MKV: &str = "conversion-h264-aac.mkv";
 const TONE_WAV: &str = "conversion-tone.wav";
-
-fn ffmpeg_available() -> bool {
-    let paths = FfmpegPaths::default();
-    let available = locate_binary(BinaryName::Ffmpeg, &paths).is_ok()
-        && locate_binary(BinaryName::Ffprobe, &paths).is_ok();
-    if !available {
-        eprintln!("skipped: ffmpeg or ffprobe not found");
-    }
-    available
-}
 
 async fn add_path_media(server: &TestServer, name: &str) -> String {
     let response = server

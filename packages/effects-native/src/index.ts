@@ -4,6 +4,7 @@ import type { Effects, PlayerRegistry } from "@easyimmerse/state";
 import { copyToClipboard } from "./copyToClipboard.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { sendOsNotification } from "./osNotification.ts";
+import { pickDictionaryFile } from "./pickDictionaryFile.ts";
 import { pickFile } from "./pickFile.ts";
 import { pickMediaFile } from "./pickMediaFile.ts";
 import { createServerPreferenceStore } from "./serverPreferenceStore.ts";
@@ -27,6 +28,7 @@ export function createNativeEffects(options: {
     ...webEffects,
     pickFile,
     pickMediaFile,
+    pickDictionaryFile,
     savePreference: preferences.save,
     loadPreference: preferences.load,
     showNotification: createShowNotification(

@@ -9,14 +9,11 @@ test("the side panel lists the two placeholder projects", async ({ page }) => {
   await expect(projects.getByRole("listitem")).toHaveCount(2);
 });
 
-test("opening a project shows the cues of the fixture subtitles", async ({
-  page,
-}) => {
+test("opening a project shows its media section", async ({ page }) => {
   await page
     .getByRole("list", { name: "Projects" })
     .getByRole("button")
     .first()
     .click();
-  const subtitles = page.getByRole("list", { name: "Subtitles" });
-  await expect(subtitles).toContainText("The cat is sleeping.");
+  await expect(page.getByRole("heading", { name: "Media" })).toBeVisible();
 });

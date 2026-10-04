@@ -1,55 +1,48 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
-import { ArrowLeft, ChevronUp, Minimize, Music, Search } from "lucide-react";
-import { type ReactNode, useMemo } from "react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Minimize,
+  Search,
+  Settings,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { Kbd } from "../components/Kbd.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
+import { useNavigationActions } from "../navigationContext.ts";
 import { languageName } from "../projects/languages.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
 import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import type { PlaybackState, TrackSelection } from "./playback.ts";
 import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
-import { segmentsFromCues } from "./segmentsFromCues.ts";
-import { Waveform, type WaveformCallbacks } from "./Waveform.tsx";
-
-type MediaSource = {
-  kind: "video" | "audio";
-  title: string;
-  /** The URL the player loads. Null while the file is still being resolved or converted. */
-  url: string | null;
-  /** The album art of an audio file, as a URL. */
-  artworkUrl: string | null;
-  language: string;
-};
 
 type MediaViewProps = {
-  media: MediaSource;
+  title: string;
+  /** The BCP 47 code of the media's language, or null when it is not known. */
+  language: string | null;
+  /** The player, drawn centered on the black stage. */
+  stage: ReactNode;
   playback: PlaybackState;
   tracks: TrackSelection;
   cues: readonly Cue[];
   translationCues: readonly Cue[];
-  flashcardCueIndexes: readonly number[];
-  /** The peaks of the whole file. The waveform shows the part between the two times. */
-  waveform: {
-    peaks: readonly number[];
-    viewStartMs: number;
-    viewEndMs: number;
-  };
+  /** The waveform strip, drawn under the stage while the waveform panel is shown. Null for media without a waveform. */
+  waveform: ReactNode | null;
   panels: { cues: boolean; waveform: boolean; distractionFree: boolean };
   subtitleDisplay: SubtitleDisplay;
   /** The word the dictionary pop-up shows, which is highlighted in the subtitles. */
   activeWord?: string;
-  /** The waveform segment of the flashcard open in the side panel, which the waveform emphasizes. */
-  editingSegmentId: string | null;
   playerCallbacks: PlayerCallbacks;
-  waveformCallbacks: WaveformCallbacks;
   onBack: () => void;
-  onWordHover: (word: string) => void;
-  onWordClick: (word: string) => void;
+  /** Called with the word and the cue it is in. */
+  onWordHover: (word: string, cue: Cue) => void;
+  onWordClick: (word: string, cue: Cue) => void;
   onLookup: () => void;
   onAddFlashcard: () => void;
   /** Notices to show above the stage, such as the unsaved-work banner. */
@@ -66,12 +59,8 @@ type MediaViewProps = {
  * The panels around the stage come in as children, so that each can be wired to the store on its own.
  */
 export function MediaView(props: MediaViewProps) {
-  const { media, playback, cues, translationCues, panels } = props;
+  const { playback, cues, translationCues, panels } = props;
   const activeCue = findCueAt(cues, playback.currentMs);
-  const segments = useMemo(
-    () => segmentsFromCues(cues, props.flashcardCueIndexes),
-    [cues, props.flashcardCueIndexes],
-  );
   const pointer = usePointerActivity();
   const showsControls = !playback.isPlaying || pointer.isActive;
   const showsSidePanel = !panels.distractionFree && props.sidePanel != null;
@@ -90,7 +79,7 @@ export function MediaView(props: MediaViewProps) {
             </div>
           )}
           <div className="relative flex min-h-40 flex-1 items-center justify-center overflow-hidden bg-black">
-            <Stage media={media} />
+            {props.stage}
             <SubtitleOverlay
               targetCue={activeCue}
               translationCue={
@@ -99,8 +88,12 @@ export function MediaView(props: MediaViewProps) {
               display={props.subtitleDisplay}
               isRaised={showsControls}
               activeWord={props.activeWord}
-              onWordHover={props.onWordHover}
-              onWordClick={props.onWordClick}
+              onWordHover={(word) =>
+                activeCue && props.onWordHover(word, activeCue)
+              }
+              onWordClick={(word) =>
+                activeCue && props.onWordClick(word, activeCue)
+              }
             />
             {props.lookup && (
               <div className="fixed inset-x-2 top-16 bottom-2 z-30 flex items-end justify-center md:absolute md:inset-x-auto md:top-auto md:bottom-28 md:left-1/2 md:-translate-x-1/2">
@@ -148,26 +141,21 @@ export function MediaView(props: MediaViewProps) {
               />
             </div>
           </div>
-          {!panels.distractionFree && panels.waveform && (
-            <Waveform
-              peaks={props.waveform.peaks}
-              viewStartMs={props.waveform.viewStartMs}
-              viewEndMs={props.waveform.viewEndMs}
-              durationMs={playback.durationMs}
-              currentMs={playback.currentMs}
-              segments={segments}
-              editingSegmentId={props.editingSegmentId}
-              canZoomIn={
-                props.waveform.viewEndMs - props.waveform.viewStartMs > 5_000
-              }
-              canZoomOut={
-                props.waveform.viewEndMs - props.waveform.viewStartMs <
-                playback.durationMs
-              }
-              callbacks={props.waveformCallbacks}
-            />
+          {!panels.distractionFree && panels.waveform && props.waveform && (
+            <div className="relative border-t border-line bg-surface px-3 py-2">
+              {props.waveform}
+              <span className="absolute right-4 bottom-3">
+                <IconButton
+                  label="Hide the waveform"
+                  className="size-6 bg-black/50"
+                  onClick={props.playerCallbacks.onToggleWaveform}
+                >
+                  <ChevronDown className="size-3.5" />
+                </IconButton>
+              </span>
+            </div>
           )}
-          {!panels.distractionFree && !panels.waveform && (
+          {!panels.distractionFree && !panels.waveform && props.waveform && (
             <button
               type="button"
               aria-label="Show the waveform"
@@ -189,47 +177,19 @@ export function MediaView(props: MediaViewProps) {
   );
 }
 
-function Header({ media, onBack }: MediaViewProps) {
+function Header({ title, language, onBack }: MediaViewProps) {
+  const { openSettings } = useNavigationActions();
   return (
     <header className="flex items-center gap-3 border-b border-line bg-surface px-3 py-2">
       <Button variant="subtle" onClick={onBack}>
         <ArrowLeft className="size-4" aria-hidden />
         Project
       </Button>
-      <h1 className="min-w-0 flex-1 truncate font-medium">{media.title}</h1>
-      <Badge>{languageName(media.language)}</Badge>
+      <h1 className="min-w-0 flex-1 truncate font-medium">{title}</h1>
+      {language && <Badge>{languageName(language)}</Badge>}
+      <IconButton label="Settings" onClick={openSettings}>
+        <Settings className="size-4" />
+      </IconButton>
     </header>
-  );
-}
-
-function Stage({ media }: { media: MediaSource }) {
-  if (media.kind === "video") {
-    return (
-      <video
-        src={media.url ?? undefined}
-        preload="metadata"
-        className="max-h-full max-w-full"
-        aria-label={media.title}
-      >
-        {/* The subtitles are drawn by the overlay rather than by the browser, so a captions track would be a duplicate. */}
-        <track kind="captions" />
-      </video>
-    );
-  }
-  return (
-    <div className="flex flex-col items-center gap-4 p-8">
-      {media.artworkUrl ? (
-        <img
-          src={media.artworkUrl}
-          alt="Album art"
-          className="size-56 rounded-lg object-cover shadow-xl"
-        />
-      ) : (
-        <div className="flex size-56 items-center justify-center rounded-lg bg-gradient-to-br from-gray-700 to-gray-900 shadow-xl">
-          <Music className="size-20 text-gray-400" aria-hidden />
-        </div>
-      )}
-      <p className="text-lg text-fg-muted">{media.title}</p>
-    </div>
   );
 }

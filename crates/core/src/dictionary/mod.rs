@@ -43,7 +43,20 @@ fn registered_formats() -> Vec<Box<dyn DictionaryFormat>> {
 pub struct Dictionary {
     pub title: String,
     pub revision: Option<String>,
+    pub format: DictionaryFileFormat,
+    /// The BCP 47 code of the language of the terms, when the file states it.
+    pub source_language: Option<String>,
+    /// The BCP 47 code of the language of the definitions, when the file states it.
+    pub target_language: Option<String>,
     pub entries: Vec<TermEntry>,
+}
+
+/// The file formats the app reads dictionaries from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum DictionaryFileFormat {
+    Yomitan,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]

@@ -1,6 +1,6 @@
 import type { AppAction } from "./actions.ts";
-import type { AppState, PreferenceKey } from "./appState.ts";
-import { preferenceKeys } from "./appState.ts";
+import type { AppState, PlayerState, PreferenceKey } from "./appState.ts";
+import { initialPlayerState, preferenceKeys } from "./appState.ts";
 import type { Effect } from "./effect.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { followSystemTheme, toggleTheme } from "./theme.ts";
@@ -24,37 +24,80 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         [{ type: "seekPlayer", seconds: action.seconds }],
       ];
     case "playerTimeChanged":
-      return [
-        {
-          ...state,
-          player: { ...state.player, currentTimeSeconds: action.seconds },
-        },
-        [],
-      ];
+      return [withPlayer(state, { currentTimeSeconds: action.seconds }), []];
     case "playerDurationChanged":
+      return [withPlayer(state, { durationSeconds: action.seconds }), []];
+    case "playerPlayingChanged":
+      return [withPlayer(state, { isPlaying: action.isPlaying }), []];
+    case "playerVolumeChanged":
+      return [withPlayer(state, { volume: action.volume }), []];
+    case "playerRateChanged":
+      return [withPlayer(state, { rate: action.rate }), []];
+    case "playToggleRequested":
       return [
-        {
-          ...state,
-          player: { ...state.player, durationSeconds: action.seconds },
-        },
-        [],
+        state,
+        [
+          {
+            type: "controlPlayer",
+            command: { kind: state.player.isPlaying ? "pause" : "play" },
+          },
+        ],
       ];
-    case "filePickRequested":
+    case "playRequested":
+      return [state, [{ type: "controlPlayer", command: { kind: "play" } }]];
+    case "pauseRequested":
+      return [state, [{ type: "controlPlayer", command: { kind: "pause" } }]];
+    case "volumeChosen":
       return [
-        { ...state, pendingFilePick: true },
+        state,
+        [
+          {
+            type: "controlPlayer",
+            command: { kind: "setVolume", volume: action.volume },
+          },
+        ],
+      ];
+    case "rateChosen":
+      return [
+        state,
+        [
+          {
+            type: "controlPlayer",
+            command: { kind: "setRate", rate: action.rate },
+          },
+        ],
+      ];
+    case "subtitleFilePickRequested":
+      return [
+        { ...state, pendingSubtitlePick: action.role },
         [{ type: "pickFile", accept: subtitleFileExtensions }],
       ];
     case "fileChosen":
       return [
         {
           ...state,
-          pendingFilePick: false,
-          subtitleSource: action.file.source,
+          pendingSubtitlePick: null,
+          chosenSubtitleFile:
+            state.pendingSubtitlePick === null
+              ? null
+              : { file: action.file, role: state.pendingSubtitlePick },
         },
         [],
       ];
     case "filePickCancelled":
-      return [{ ...state, pendingFilePick: false }, []];
+      return [{ ...state, pendingSubtitlePick: null }, []];
+    case "subtitleFileAdded":
+      return [{ ...state, chosenSubtitleFile: null }, []];
+    case "subtitleFileAddFailed":
+      return [
+        { ...state, chosenSubtitleFile: null },
+        [
+          {
+            type: "showNotification",
+            message: "The subtitles file could not be added",
+          },
+        ],
+      ];
     case "mediaFilePickRequested":
       return [
         { ...state, pendingMediaFilePick: true },
@@ -76,6 +119,8 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         },
         [],
       ];
+    case "chosenMediaFileTaken":
+      return [{ ...state, chosenMediaFile: null }, []];
     case "mediaFileAddFailed":
       return [
         { ...state, chosenMediaFile: null },
@@ -97,6 +142,52 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         },
         [],
       ];
+    case "dictionaryFilePickRequested":
+      return [
+        {
+          ...state,
+          pendingDictionaryPick: action.languages,
+          unsupportedDictionaryFile: null,
+        },
+        [{ type: "pickDictionaryFile" }],
+      ];
+    case "dictionaryFileChosen":
+      return [
+        {
+          ...state,
+          pendingDictionaryPick: null,
+          chosenDictionaryFile:
+            state.pendingDictionaryPick === null
+              ? null
+              : { file: action.file, languages: state.pendingDictionaryPick },
+        },
+        [],
+      ];
+    case "dictionaryFilePickCancelled":
+      return [{ ...state, pendingDictionaryPick: null }, []];
+    case "dictionaryFileImported":
+      return [{ ...state, chosenDictionaryFile: null }, []];
+    case "dictionaryFileUnsupported":
+      return [
+        {
+          ...state,
+          chosenDictionaryFile: null,
+          unsupportedDictionaryFile: action.fileName,
+        },
+        [],
+      ];
+    case "dictionaryFileImportFailed":
+      return [
+        { ...state, chosenDictionaryFile: null },
+        [
+          {
+            type: "showNotification",
+            message: "The dictionary could not be added",
+          },
+        ],
+      ];
+    case "unsupportedDictionaryFileDismissed":
+      return [{ ...state, unsupportedDictionaryFile: null }, []];
     case "openMedia":
       return [{ ...state, currentMediaFileId: action.mediaFileId }, []];
     case "closeMedia":
@@ -104,7 +195,7 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         {
           ...state,
           currentMediaFileId: null,
-          player: { currentTimeSeconds: 0, durationSeconds: 0 },
+          player: initialPlayerState,
         },
         [],
       ];
@@ -158,6 +249,10 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
   }
 };
+
+function withPlayer(state: AppState, changes: Partial<PlayerState>): AppState {
+  return { ...state, player: { ...state.player, ...changes } };
+}
 
 function togglePreference(
   state: AppState,

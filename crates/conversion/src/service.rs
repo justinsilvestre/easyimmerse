@@ -191,6 +191,16 @@ impl ConversionService {
             .await
     }
 
+    /// The embedded text subtitle stream at `stream_index`, converted to WebVTT.
+    pub async fn subtitle_vtt(
+        &self,
+        source: &Path,
+        stream_index: u32,
+    ) -> Result<String, ConversionError> {
+        crate::subtitle_extraction::extract_subtitle_vtt(&self.inner.ffmpeg, source, stream_index)
+            .await
+    }
+
     /// Stops every ffmpeg process. Call this before the server stops accepting requests.
     pub async fn shutdown(&self) {
         let entries: Vec<Arc<ConversionEntry>> =

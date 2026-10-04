@@ -1,3 +1,4 @@
+import type { DictionarySummary } from "@easyimmerse/types";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -11,10 +12,7 @@ import { EmptyState } from "../components/EmptyState.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { DictionaryList } from "./DictionaryList.tsx";
-import {
-  type DictionaryItem,
-  dictionaryFormatLabels,
-} from "./dictionaryItem.ts";
+import { dictionaryFormatLabels } from "./dictionaryFormatLabels.ts";
 
 /** The dictionaries settings: every dictionary the user has added, and the ways to add one. */
 export function DictionariesView({
@@ -28,7 +26,7 @@ export function DictionariesView({
   onRemove,
   onDismissUnsupportedFile,
 }: {
-  dictionaries: readonly DictionaryItem[];
+  dictionaries: readonly DictionarySummary[];
   /** The file the user last tried to add in a format the app cannot read, until dismissed. */
   unsupportedFile: string | null;
   onBack: () => void;

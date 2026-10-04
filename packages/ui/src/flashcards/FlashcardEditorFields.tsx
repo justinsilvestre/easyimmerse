@@ -10,8 +10,11 @@ import {
   findFlashcardField,
 } from "./flashcardFields.ts";
 
-/** The peaks of a media file's audio, each between 0 and 1, and the file's length. */
-export type MediaWaveform = { peaks: readonly number[]; durationMs: number };
+/** The loaded waveform windows of a media file's audio, by their start, and the file's length. */
+export type MediaWaveform = {
+  windows: ReadonlyMap<number, Uint8Array>;
+  durationMs: number;
+};
 
 type FieldsProps = {
   state: EditorState;
@@ -28,16 +31,16 @@ export function TextFieldBlocks(props: FieldsProps) {
     props.state.includedFields.includes(key);
   const cell = (key: FlashcardTextFieldKey) =>
     isIncluded(key) && <Cell key={key} fieldKey={key} {...props} />;
-  const wordKeys: FlashcardTextFieldKey[] = ["word", "wordPronunciation"];
+  const wordKeys: FlashcardTextFieldKey[] = ["word", "word_pronunciation"];
   return (
     <>
       <Block
         label="Word and definition"
         isShown={
           isIncluded("word") ||
-          isIncluded("l1Definition") ||
-          isIncluded("l2Definition") ||
-          isIncluded("wordPronunciation")
+          isIncluded("l1_definition") ||
+          isIncluded("l2_definition") ||
+          isIncluded("word_pronunciation")
         }
       >
         <div
@@ -48,20 +51,20 @@ export function TextFieldBlocks(props: FieldsProps) {
         >
           {wordKeys.map(cell)}
         </div>
-        {cell("l1Definition")}
-        {cell("l2Definition")}
+        {cell("l1_definition")}
+        {cell("l2_definition")}
       </Block>
       <Block
         label="Sentence"
         isShown={
-          isIncluded("textContext") ||
-          isIncluded("textContextTranslation") ||
-          isIncluded("textContextPronunciation")
+          isIncluded("text_context") ||
+          isIncluded("text_context_translation") ||
+          isIncluded("text_context_pronunciation")
         }
       >
-        {cell("textContext")}
-        {cell("textContextTranslation")}
-        {cell("textContextPronunciation")}
+        {cell("text_context")}
+        {cell("text_context_translation")}
+        {cell("text_context_pronunciation")}
       </Block>
     </>
   );
@@ -132,19 +135,19 @@ export function MediaFields({
 }) {
   const { content } = state;
   const showsClip =
-    state.includedFields.includes("audioContext") &&
-    content.audioContext !== null &&
+    state.includedFields.includes("audio_context") &&
+    content.audio_context !== null &&
     waveform !== null;
   if (!showsClip && content.screenshot === null) return null;
   return (
     <div className="flex shrink-0 items-start gap-2">
-      {showsClip && content.audioContext && waveform && (
+      {showsClip && content.audio_context && waveform && (
         <fieldset aria-label="Sentence audio" className="min-w-0 flex-1">
           <ClipEditor
-            peaks={waveform.peaks}
+            windows={waveform.windows}
             durationMs={waveform.durationMs}
-            clip={content.audioContext}
-            screenshotMs={content.screenshot?.atMs ?? null}
+            clip={content.audio_context}
+            screenshotMs={content.screenshot?.at_ms ?? null}
             onClipChange={(clip) => dispatch({ type: "clipChanged", clip })}
             onScreenshotMsChange={(ms) =>
               dispatch({ type: "screenshotMsChanged", ms })

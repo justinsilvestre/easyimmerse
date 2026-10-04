@@ -1,20 +1,31 @@
 import type {
   AddMediaFileRequest,
+  AddSubtitleFileRequest,
   ConversionCacheStatus,
   DictionarySummary,
   Document,
   DocumentFormat,
+  Flashcard,
+  FlashcardScreenshot,
   ImportLocalDictionaryRequest,
   ListDictionariesResponse,
+  ListFlashcardsResponse,
   ListMediaFilesResponse,
   ListProjectsResponse,
+  ListSubtitleFilesResponse,
   LookupResponse,
   MediaFile,
+  MoveDirection,
   ParseLocalDocumentRequest,
   ParseTimedTextRequest,
   PlaybackRequest,
   PlaybackResponse,
   PreferenceValue,
+  Project,
+  SaveFlashcardRequest,
+  SaveProjectRequest,
+  SubtitleFile,
+  SubtitleSelection,
   SubtitleTracksResponse,
   TimedTextTrack,
   TrackSelection,
@@ -40,6 +51,41 @@ type SaveTrackSelectionArgs = MediaFileArgs & { selection: TrackSelection };
 
 type WaveformWindowArgs = MediaFileArgs & { startMs: number; endMs: number };
 
+type SaveProjectArgs = { projectId: string; request: SaveProjectRequest };
+
+type FlashcardArgs = { projectId: string; flashcardId: string };
+
+type CreateFlashcardArgs = { projectId: string; request: SaveFlashcardRequest };
+
+type UpdateFlashcardArgs = FlashcardArgs & { request: SaveFlashcardRequest };
+
+type AddSubtitleFileArgs = MediaFileArgs & { request: AddSubtitleFileRequest };
+
+type SubtitleFileArgs = MediaFileArgs & { subtitleFileId: string };
+
+type SaveSubtitleSelectionArgs = MediaFileArgs & {
+  selection: SubtitleSelection;
+};
+
+type EmbeddedSubtitlesArgs = MediaFileArgs & { streamIndex: number };
+
+type ImportDictionaryArgs = {
+  bytes: Uint8Array;
+  sourceLanguage: string | null;
+  targetLanguage: string | null;
+};
+
+type LookupArgs = { language: string; term: string };
+
+const flashcardPath = ({ projectId, flashcardId }: FlashcardArgs) =>
+  `/projects/${projectId}/flashcards/${flashcardId}`;
+
+/** The tags whose data a change to a project's flashcards makes stale. */
+const flashcardChangeTags = (projectId: string) => [
+  { type: "Flashcards" as const, id: projectId },
+  "Projects" as const,
+];
+
 const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
   `/projects/${projectId}/media/${mediaFileId}`;
 
@@ -50,6 +96,8 @@ export const backendApi = createApi({
   tagTypes: [
     "Projects",
     "MediaFiles",
+    "Flashcards",
+    "SubtitleFiles",
     "Preferences",
     "Dictionaries",
     "ConversionCache",
@@ -58,6 +106,83 @@ export const backendApi = createApi({
     listProjects: build.query<ListProjectsResponse, void>({
       query: () => ({ method: "GET", path: "/projects" }),
       providesTags: ["Projects"],
+    }),
+    getProject: build.query<Project, string>({
+      query: (projectId) => ({ method: "GET", path: `/projects/${projectId}` }),
+      providesTags: (_result, _error, projectId) => [
+        { type: "Projects", id: projectId },
+      ],
+    }),
+    createProject: build.mutation<Project, SaveProjectRequest>({
+      query: (request) => ({
+        method: "POST",
+        path: "/projects",
+        body: { kind: "json", value: request },
+      }),
+      invalidatesTags: ["Projects"],
+    }),
+    updateProject: build.mutation<Project, SaveProjectArgs>({
+      query: ({ projectId, request }) => ({
+        method: "PUT",
+        path: `/projects/${projectId}`,
+        body: { kind: "json", value: request },
+      }),
+      invalidatesTags: ["Projects"],
+    }),
+    deleteProject: build.mutation<void, string>({
+      query: (projectId) => ({
+        method: "DELETE",
+        path: `/projects/${projectId}`,
+      }),
+      invalidatesTags: ["Projects"],
+    }),
+    markProjectOpened: build.mutation<void, string>({
+      query: (projectId) => ({
+        method: "POST",
+        path: `/projects/${projectId}/opened`,
+      }),
+      invalidatesTags: ["Projects"],
+    }),
+    listFlashcards: build.query<ListFlashcardsResponse, string>({
+      query: (projectId) => ({
+        method: "GET",
+        path: `/projects/${projectId}/flashcards`,
+      }),
+      providesTags: (_result, _error, projectId) => [
+        { type: "Flashcards", id: projectId },
+      ],
+    }),
+    createFlashcard: build.mutation<Flashcard, CreateFlashcardArgs>({
+      query: ({ projectId, request }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/flashcards`,
+        body: { kind: "json", value: request },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardChangeTags(projectId),
+    }),
+    updateFlashcard: build.mutation<Flashcard, UpdateFlashcardArgs>({
+      query: ({ request, ...args }) => ({
+        method: "PUT",
+        path: flashcardPath(args),
+        body: { kind: "json", value: request },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardChangeTags(projectId),
+    }),
+    deleteFlashcard: build.mutation<void, FlashcardArgs>({
+      query: (args) => ({ method: "DELETE", path: flashcardPath(args) }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardChangeTags(projectId),
+    }),
+    getFlashcardScreenshot: build.query<FlashcardScreenshot, FlashcardArgs>({
+      query: (args) => ({
+        method: "GET",
+        path: `${flashcardPath(args)}/screenshot`,
+      }),
+      providesTags: (_result, _error, { projectId }) => [
+        { type: "Flashcards", id: projectId },
+      ],
     }),
     listMediaFiles: build.query<ListMediaFilesResponse, string>({
       query: (projectId) => ({
@@ -76,6 +201,7 @@ export const backendApi = createApi({
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "MediaFiles", id: projectId },
+        "Projects",
       ],
     }),
     removeMediaFile: build.mutation<void, MediaFileArgs>({
@@ -85,6 +211,8 @@ export const backendApi = createApi({
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "MediaFiles", id: projectId },
+        { type: "Flashcards", id: projectId },
+        "Projects",
       ],
     }),
     getMediaTracks: build.query<TracksResponse, MediaFileArgs>({
@@ -131,6 +259,51 @@ export const backendApi = createApi({
         method: "GET",
         path: `${mediaFilePath(args)}/subtitle-tracks`,
       }),
+    }),
+    getEmbeddedSubtitles: build.query<TimedTextTrack, EmbeddedSubtitlesArgs>({
+      query: ({ streamIndex, ...args }) => ({
+        method: "GET",
+        path: `${mediaFilePath(args)}/subtitle-tracks/${streamIndex}/cues`,
+      }),
+    }),
+    listSubtitleFiles: build.query<ListSubtitleFilesResponse, MediaFileArgs>({
+      query: (args) => ({
+        method: "GET",
+        path: `${mediaFilePath(args)}/subtitle-files`,
+      }),
+      providesTags: (_result, _error, { mediaFileId }) => [
+        { type: "SubtitleFiles", id: mediaFileId },
+      ],
+    }),
+    addSubtitleFile: build.mutation<SubtitleFile, AddSubtitleFileArgs>({
+      query: ({ request, ...args }) => ({
+        method: "POST",
+        path: `${mediaFilePath(args)}/subtitle-files`,
+        body: { kind: "json", value: request },
+      }),
+      invalidatesTags: (_result, _error, { mediaFileId }) => [
+        { type: "SubtitleFiles", id: mediaFileId },
+      ],
+    }),
+    deleteSubtitleFile: build.mutation<void, SubtitleFileArgs>({
+      query: ({ subtitleFileId, ...args }) => ({
+        method: "DELETE",
+        path: `${mediaFilePath(args)}/subtitle-files/${subtitleFileId}`,
+      }),
+      invalidatesTags: (_result, _error, { projectId, mediaFileId }) => [
+        { type: "SubtitleFiles", id: mediaFileId },
+        { type: "MediaFiles", id: projectId },
+      ],
+    }),
+    saveSubtitleSelection: build.mutation<void, SaveSubtitleSelectionArgs>({
+      query: ({ selection, ...args }) => ({
+        method: "PUT",
+        path: `${mediaFilePath(args)}/subtitle-selection`,
+        body: { kind: "json", value: selection },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+      ],
     }),
     getConversionCacheStatus: build.query<ConversionCacheStatus, void>({
       query: () => ({ method: "GET", path: "/conversion-cache" }),
@@ -183,10 +356,11 @@ export const backendApi = createApi({
         body: { kind: "json", value: request },
       }),
     }),
-    importDictionary: build.mutation<DictionarySummary, { bytes: Uint8Array }>({
-      query: ({ bytes }) => ({
+    importDictionary: build.mutation<DictionarySummary, ImportDictionaryArgs>({
+      query: ({ bytes, sourceLanguage, targetLanguage }) => ({
         method: "POST",
         path: "/dictionaries",
+        query: languageQuery(sourceLanguage, targetLanguage),
         body: { kind: "bytes", value: bytes, contentType: "application/zip" },
         offlineOperation: { kind: "parseDictionary", bytes },
       }),
@@ -207,18 +381,69 @@ export const backendApi = createApi({
       query: () => ({ method: "GET", path: "/dictionaries" }),
       providesTags: ["Dictionaries"],
     }),
-    lookupTerm: build.query<LookupResponse, { id: string; term: string }>({
-      query: ({ id, term }) => ({
-        method: "GET",
-        path: `/dictionaries/${id}/lookup`,
-        query: { term },
+    setDictionaryEnabled: build.mutation<
+      DictionarySummary,
+      { dictionaryId: string; isEnabled: boolean }
+    >({
+      query: ({ dictionaryId, isEnabled }) => ({
+        method: "PUT",
+        path: `/dictionaries/${dictionaryId}`,
+        body: { kind: "json", value: { is_enabled: isEnabled } },
       }),
+      invalidatesTags: ["Dictionaries"],
+    }),
+    moveDictionary: build.mutation<
+      ListDictionariesResponse,
+      { dictionaryId: string; direction: MoveDirection }
+    >({
+      query: ({ dictionaryId, direction }) => ({
+        method: "POST",
+        path: `/dictionaries/${dictionaryId}/move`,
+        body: { kind: "json", value: { direction } },
+      }),
+      invalidatesTags: ["Dictionaries"],
+    }),
+    deleteDictionary: build.mutation<void, string>({
+      query: (dictionaryId) => ({
+        method: "DELETE",
+        path: `/dictionaries/${dictionaryId}`,
+      }),
+      invalidatesTags: ["Dictionaries"],
+    }),
+    lookup: build.query<LookupResponse, LookupArgs>({
+      query: ({ language, term }) => ({
+        method: "GET",
+        path: "/lookup",
+        query: { language, term },
+      }),
+      providesTags: ["Dictionaries"],
     }),
   }),
 });
 
+/** The languages an imported dictionary is filed under, for those the caller knows. */
+function languageQuery(
+  sourceLanguage: string | null,
+  targetLanguage: string | null,
+): Record<string, string> {
+  return {
+    ...(sourceLanguage === null ? {} : { source_language: sourceLanguage }),
+    ...(targetLanguage === null ? {} : { target_language: targetLanguage }),
+  };
+}
+
 export const {
   useListProjectsQuery,
+  useGetProjectQuery,
+  useCreateProjectMutation,
+  useUpdateProjectMutation,
+  useDeleteProjectMutation,
+  useMarkProjectOpenedMutation,
+  useListFlashcardsQuery,
+  useCreateFlashcardMutation,
+  useUpdateFlashcardMutation,
+  useDeleteFlashcardMutation,
+  useLazyGetFlashcardScreenshotQuery,
   useListMediaFilesQuery,
   useAddMediaFileMutation,
   useRemoveMediaFileMutation,
@@ -228,6 +453,11 @@ export const {
   useClearTrackSelectionMutation,
   useLazyGetWaveformWindowQuery,
   useListSubtitleTracksQuery,
+  useGetEmbeddedSubtitlesQuery,
+  useListSubtitleFilesQuery,
+  useAddSubtitleFileMutation,
+  useDeleteSubtitleFileMutation,
+  useSaveSubtitleSelectionMutation,
   useGetConversionCacheStatusQuery,
   useClearConversionCacheMutation,
   useGetPreferenceQuery,
@@ -238,5 +468,9 @@ export const {
   useImportDictionaryMutation,
   useImportLocalDictionaryMutation,
   useListDictionariesQuery,
-  useLookupTermQuery,
+  useSetDictionaryEnabledMutation,
+  useMoveDictionaryMutation,
+  useDeleteDictionaryMutation,
+  useLookupQuery,
+  useLazyLookupQuery,
 } = backendApi;

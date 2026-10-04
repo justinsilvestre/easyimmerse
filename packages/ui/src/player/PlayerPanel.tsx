@@ -1,19 +1,15 @@
-import { actions, selectCurrentTime } from "@easyimmerse/state";
 import type { Rational } from "@easyimmerse/types";
+import { ListVideo, Music } from "lucide-react";
 import { useRef, useState } from "react";
-import { Button } from "../components/Button.tsx";
-import { formatPlayerTime } from "../components/formatPlayerTime.ts";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { captureVideoFrame } from "./captureVideoFrame.ts";
+import { IconButton } from "../components/IconButton.tsx";
 import { MediaElement } from "./MediaElement.tsx";
 import type { PlaybackState } from "./PlaybackState.ts";
 import { PlayerFailure } from "./PlayerFailure.tsx";
 import type { PlayerSource } from "./PlayerSource.ts";
 
 /**
- * The dark panel the player lives in: the file's name and position, then the media element,
- * a loading line, or the failure. It is dark in both themes, so it uses palette colors.
+ * Fills the media screen's black stage: the media element, a loading line, or the failure.
+ * An audio file shows a placeholder for its artwork in place of a picture.
  */
 export function PlayerPanel({
   name,
@@ -25,27 +21,29 @@ export function PlayerPanel({
   /** Opens the track choice dialog. Absent when the file offers nothing to choose. */
   onOpenTracks?: () => void;
 }) {
-  const currentTime = useAppSelector(selectCurrentTime);
   return (
     <section
       aria-label="Player"
-      className="flex flex-col gap-3 rounded bg-gray-900 p-4 text-white"
+      className="relative flex size-full items-center justify-center text-white"
     >
-      <div className="flex items-center justify-between gap-4 text-sm text-gray-300">
-        <span className="truncate">{name}</span>
-        <span className="font-mono">{formatPlayerTime(currentTime)}</span>
-      </div>
-      <PlayerBody playback={playback} onOpenTracks={onOpenTracks} />
+      <PlayerBody name={name} playback={playback} />
+      {onOpenTracks && playback.status === "ready" && (
+        <span className="absolute top-2 left-2 rounded-md bg-black/50">
+          <IconButton label="Tracks" onClick={onOpenTracks}>
+            <ListVideo className="size-4" />
+          </IconButton>
+        </span>
+      )}
     </section>
   );
 }
 
 function PlayerBody({
+  name,
   playback,
-  onOpenTracks,
 }: {
+  name: string;
   playback: PlaybackState;
-  onOpenTracks?: () => void;
 }) {
   switch (playback.status) {
     case "loading":
@@ -60,10 +58,10 @@ function PlayerBody({
     case "ready":
       return (
         <PlayerMedia
+          name={name}
           source={playback.source}
           frameRate={playback.frameRate}
           hasVideo={playback.hasVideo}
-          onOpenTracks={onOpenTracks}
         />
       );
   }
@@ -73,31 +71,21 @@ function PlayerBody({
 type SourceFailure = { url: string; cause: string };
 
 function PlayerMedia({
+  name,
   source,
   frameRate,
   hasVideo,
-  onOpenTracks,
 }: {
+  name: string;
   source: PlayerSource;
   frameRate: Rational | null;
   hasVideo: boolean;
-  onOpenTracks?: () => void;
 }) {
   const elementRef = useRef<HTMLVideoElement>(null);
   const [failure, setFailure] = useState<SourceFailure | null>(null);
-  const [screenshot, setScreenshot] = useState<string | null>(null);
-  const dispatch = useAppDispatch();
-  const takeScreenshot = () => {
-    const video = elementRef.current;
-    if (video === null) return;
-    captureVideoFrame(video).then(setScreenshot, () =>
-      dispatch(
-        actions.notificationRequested("The screenshot could not be taken"),
-      ),
-    );
-  };
   return (
     <>
+      {!hasVideo && <ArtworkPlaceholder name={name} />}
       <MediaElement
         source={source}
         frameRate={frameRate}
@@ -106,49 +94,21 @@ function PlayerMedia({
         onFailure={(cause) => setFailure({ url: source.url, cause })}
       />
       {failure !== null && failure.url === source.url && (
-        <PlayerFailure cause={failure.cause} />
-      )}
-      <PlayerControls
-        onOpenTracks={onOpenTracks}
-        onScreenshot={hasVideo ? takeScreenshot : undefined}
-      />
-      {screenshot !== null && (
-        <img
-          src={screenshot}
-          alt="Screenshot of the current frame"
-          className="max-h-24 self-start rounded"
-        />
+        <div className="absolute inset-x-4 top-4">
+          <PlayerFailure cause={failure.cause} />
+        </div>
       )}
     </>
   );
 }
 
-function PlayerControls({
-  onOpenTracks,
-  onScreenshot,
-}: {
-  onOpenTracks?: () => void;
-  onScreenshot?: () => void;
-}) {
-  if (onOpenTracks === undefined && onScreenshot === undefined) return null;
+function ArtworkPlaceholder({ name }: { name: string }) {
   return (
-    <div className="flex gap-2">
-      {onOpenTracks && (
-        <Button
-          className="border-gray-600 hover:bg-gray-800"
-          onClick={onOpenTracks}
-        >
-          Tracks
-        </Button>
-      )}
-      {onScreenshot && (
-        <Button
-          className="border-gray-600 hover:bg-gray-800"
-          onClick={onScreenshot}
-        >
-          Screenshot
-        </Button>
-      )}
+    <div className="flex flex-col items-center gap-4 p-8">
+      <div className="flex size-56 max-h-[40dvh] max-w-[40dvh] items-center justify-center rounded-lg bg-gradient-to-br from-gray-700 to-gray-900 shadow-xl">
+        <Music className="size-20 text-gray-400" aria-hidden />
+      </div>
+      <p className="text-lg text-gray-300">{name}</p>
     </div>
   );
 }

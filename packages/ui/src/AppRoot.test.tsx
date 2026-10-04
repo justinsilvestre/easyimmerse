@@ -52,7 +52,8 @@ function renderAppRoot() {
 }
 
 async function openProject() {
-  fireEvent.click(await screen.findByRole("button", { name: "Alpha" }));
+  fireEvent.click(await screen.findByRole("button", { name: /Alpha/ }));
+  await screen.findByRole("heading", { name: "Alpha" });
 }
 
 async function openMediaFile() {
@@ -63,7 +64,7 @@ function openSettingsFromFooter() {
   fireEvent.click(screen.getByRole("button", { name: "Settings" }));
 }
 
-const findPlayer = () => screen.getByRole("region", { name: "Player" });
+const findMediaList = () => screen.getByRole("list", { name: "Media" });
 
 /** The Back button a person can use: the one outside any inert screen beneath Settings. */
 function clickUsableBack() {
@@ -79,17 +80,32 @@ describe("AppRoot", () => {
     expect(screen.getByRole("heading", { name: "Projects" })).toBeDefined();
   });
 
-  it("shows the media screen after a project is opened", async () => {
+  it("lists the project's media after a project is opened", async () => {
     renderAppRoot();
     await openProject();
-    expect(findPlayer()).toBeDefined();
+    expect(await screen.findByRole("list", { name: "Media" })).toBeDefined();
   });
 
-  it("returns to the home screen when Back is clicked", async () => {
+  it("shows the media screen after a media file is opened", async () => {
     renderAppRoot();
     await openProject();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    await openMediaFile();
+    expect(await screen.findByRole("region", { name: "Player" })).toBeDefined();
+  });
+
+  it("returns to the home screen when Projects is clicked", async () => {
+    renderAppRoot();
+    await openProject();
+    fireEvent.click(screen.getByRole("button", { name: "Projects" }));
     expect(screen.getByRole("heading", { name: "Projects" })).toBeDefined();
+  });
+
+  it("opens the dictionaries over the home screen", async () => {
+    renderAppRoot();
+    fireEvent.click(screen.getByRole("button", { name: "Dictionaries" }));
+    expect(
+      await screen.findByRole("heading", { name: "Dictionaries" }),
+    ).toBeDefined();
   });
 
   describe("when Settings opens from the footer", () => {
@@ -99,28 +115,33 @@ describe("AppRoot", () => {
       expect(screen.getByRole("heading", { name: "Settings" })).toBeDefined();
     });
 
-    it("keeps the media screen mounted beneath", async () => {
+    it("keeps the project screen mounted beneath", async () => {
       renderAppRoot();
       await openProject();
       openSettingsFromFooter();
-      expect(findPlayer()).toBeDefined();
+      expect(findMediaList()).toBeDefined();
     });
 
-    it("makes the media screen inert", async () => {
+    it("makes the project screen inert", async () => {
       renderAppRoot();
       await openProject();
       openSettingsFromFooter();
-      expect(findPlayer().closest("[inert]")).not.toBeNull();
+      expect(findMediaList().closest("[inert]")).not.toBeNull();
     });
 
-    it("restores the player's state when Back is clicked", async () => {
+    it("restores the player's position when Back is clicked", async () => {
       const { store } = renderAppRoot();
       await openProject();
       await openMediaFile();
+      await screen.findByRole("region", { name: "Player" });
       act(() => store.dispatch(actions.playerTimeChanged(61.75)));
-      openSettingsFromFooter();
+      act(() => store.dispatch(actions.playerDurationChanged(120)));
+      fireEvent.click(screen.getByRole("button", { name: "Settings" }));
       clickUsableBack();
-      expect(findPlayer().textContent).toContain("1:01.8");
+      expect(
+        (screen.getByRole("slider", { name: "Position" }) as HTMLInputElement)
+          .value,
+      ).toBe("61750");
     });
 
     it("lists the ffmpeg license notices", () => {
@@ -140,12 +161,12 @@ describe("AppRoot", () => {
       ).toBeDefined();
     });
 
-    it("lets the media screen be used again after Back is clicked", async () => {
+    it("lets the project screen be used again after Back is clicked", async () => {
       renderAppRoot();
       await openProject();
       openSettingsFromFooter();
       clickUsableBack();
-      expect(findPlayer().closest("[inert]")).toBeNull();
+      expect(findMediaList().closest("[inert]")).toBeNull();
     });
   });
 

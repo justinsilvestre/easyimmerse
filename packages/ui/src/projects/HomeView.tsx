@@ -1,9 +1,10 @@
+import type { ProjectSummary } from "@easyimmerse/types";
 import { BookOpen, FolderOpen, Plus } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { HelpLink } from "../components/HelpLink.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import { ProjectCard, type ProjectCardData } from "./ProjectCard.tsx";
+import { ProjectCard } from "./ProjectCard.tsx";
 
 /** How the project list is coming along: `offline` means no server answers, so only local work can continue. */
 export type ProjectListStatus = "loading" | "ready" | "failed" | "offline";
@@ -18,7 +19,7 @@ export function HomeView({
   onOpenDictionaries,
 }: {
   status: ProjectListStatus;
-  projects: readonly ProjectCardData[];
+  projects: readonly ProjectSummary[];
   onOpenProject: (projectId: string) => void;
   onCreateProject: () => void;
   onContinueOffline: () => void;
@@ -68,7 +69,7 @@ function Projects({
   onContinueOffline,
 }: {
   status: ProjectListStatus;
-  projects: readonly ProjectCardData[];
+  projects: readonly ProjectSummary[];
   onOpenProject: (projectId: string) => void;
   onCreateProject: () => void;
   onContinueOffline: () => void;

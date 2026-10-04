@@ -3,6 +3,7 @@ import {
   type FlashcardContent,
   type FlashcardFieldKey,
   type FlashcardTextFieldKey,
+  type Screenshot,
   toggleField,
 } from "./flashcardFields.ts";
 
@@ -17,6 +18,8 @@ export type EditorAction =
   | { type: "tagsChanged"; tags: readonly string[] }
   | { type: "clipChanged"; clip: AudioClip }
   | { type: "screenshotMsChanged"; ms: number }
+  /** A new image arrived for the screenshot, taken at the time it names. It is kept unless the screenshot has since moved to another time. */
+  | { type: "screenshotCaptured"; screenshot: Screenshot }
   | { type: "fieldToggled"; key: FlashcardFieldKey }
   | { type: "screenshotToggled" };
 
@@ -30,13 +33,17 @@ export function reduceEditor(
     case "tagsChanged":
       return withContent(state, { tags: [...action.tags] });
     case "clipChanged":
-      return withContent(state, { audioContext: action.clip });
+      return withContent(state, { audio_context: action.clip });
     case "screenshotMsChanged":
       return state.content.screenshot === null
         ? state
         : withContent(state, {
-            screenshot: { ...state.content.screenshot, atMs: action.ms },
+            screenshot: { ...state.content.screenshot, at_ms: action.ms },
           });
+    case "screenshotCaptured":
+      return isScreenshotAwaited(state, action.screenshot.at_ms)
+        ? withContent(state, { screenshot: action.screenshot })
+        : state;
     case "fieldToggled":
       return {
         ...state,
@@ -55,4 +62,10 @@ function withContent(
   changes: Partial<FlashcardContent>,
 ): EditorState {
   return { ...state, content: { ...state.content, ...changes } };
+}
+
+/** Whether a screenshot taken at the time belongs on the flashcard: there is none yet, or the current one was taken at that time. */
+function isScreenshotAwaited(state: EditorState, atMs: number): boolean {
+  const current = state.content.screenshot;
+  return current === null || current.at_ms === atMs;
 }

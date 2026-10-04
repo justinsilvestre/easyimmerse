@@ -14,8 +14,9 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    conversion_cache, conversions, dictionaries, documents, health, media, media_playback,
-    media_stream, media_tracks, media_waveform, openapi, preferences, projects, timed_text,
+    conversion_cache, conversions, dictionaries, documents, flashcards, health, lookup, media,
+    media_playback, media_stream, media_tracks, media_waveform, openapi, preferences, projects,
+    subtitle_files, timed_text,
 };
 use crate::state::AppState;
 
@@ -64,7 +65,22 @@ pub fn openapi_document() -> OpenApi {
 fn protected_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::with_openapi(ApiDoc::openapi())
         .routes(routes!(openapi::get_openapi_document))
-        .routes(routes!(projects::list_projects))
+        .routes(routes!(projects::list_projects, projects::create_project))
+        .routes(routes!(
+            projects::get_project,
+            projects::update_project,
+            projects::delete_project
+        ))
+        .routes(routes!(projects::mark_project_opened))
+        .routes(routes!(
+            flashcards::list_flashcards,
+            flashcards::create_flashcard
+        ))
+        .routes(routes!(
+            flashcards::update_flashcard,
+            flashcards::delete_flashcard
+        ))
+        .routes(routes!(flashcards::get_flashcard_screenshot))
         .routes(routes!(media::list_media_files, media::add_media_file))
         .routes(routes!(media::remove_media_file))
         .routes(routes!(media_stream::stream_media_file))
@@ -74,6 +90,13 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             media_tracks::set_media_track_selection,
             media_tracks::clear_media_track_selection
         ))
+        .routes(routes!(
+            subtitle_files::list_subtitle_files,
+            subtitle_files::add_subtitle_file
+        ))
+        .routes(routes!(subtitle_files::remove_subtitle_file))
+        .routes(routes!(subtitle_files::set_subtitle_selection))
+        .routes(routes!(subtitle_files::get_embedded_subtitle_cues))
         .routes(routes!(media_playback::plan_media_playback))
         .routes(routes!(media_waveform::get_media_waveform))
         .routes(routes!(conversions::get_conversion_playlist))
@@ -93,7 +116,12 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             dictionaries::list_dictionaries
         ))
         .routes(routes!(dictionaries::import_local_dictionary))
-        .routes(routes!(dictionaries::lookup_term))
+        .routes(routes!(
+            dictionaries::update_dictionary,
+            dictionaries::delete_dictionary
+        ))
+        .routes(routes!(dictionaries::move_dictionary))
+        .routes(routes!(lookup::lookup_term))
 }
 
 fn public_routes() -> OpenApiRouter<AppState> {

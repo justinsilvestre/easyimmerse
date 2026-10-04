@@ -9,6 +9,7 @@ pub mod ffprobe_timing_output;
 pub mod keyframes;
 pub mod locate;
 pub mod probe;
+pub mod subtitle_command;
 pub mod waveform_command;
 
 mod ffmpeg_time;
@@ -27,4 +28,5 @@ pub use error::FfmpegError;
 pub use keyframes::list_keyframes;
 pub use locate::{BinaryName, FfmpegPaths, locate_binary};
 pub use probe::probe_file;
+pub use subtitle_command::subtitle_extract_args;
 pub use waveform_command::{WaveformDecode, waveform_decode_args};

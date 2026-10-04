@@ -12,12 +12,12 @@ afterEach(() => {
 
 const initialValues: ProjectFormValues = {
   name: "",
-  targetLanguage: "de",
-  translationLanguage: "en",
-  flashcardFields: fieldsOfPreset("intermediate"),
-  defaultTags: [],
-  tagsMediaName: true,
-  fillsAudioWithTts: false,
+  target_language: "de",
+  translation_language: "en",
+  flashcard_fields: [...fieldsOfPreset("intermediate")],
+  default_tags: [],
+  tags_media_name: true,
+  fills_audio_with_tts: false,
 };
 
 function renderForm(

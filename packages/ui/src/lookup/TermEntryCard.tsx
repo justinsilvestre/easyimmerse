@@ -1,12 +1,12 @@
+import type { LookupEntry } from "@easyimmerse/types";
 import { Badge } from "../components/Badge.tsx";
 import { ClickableText } from "../components/ClickableText.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
-import type { LookupEntry } from "./lookupState.ts";
 
 /** One dictionary entry in the pop-up, with its definitions ready to be looked up or made into a flashcard. */
 export function TermEntryCard({
-  entry,
+  entry: { entry, dictionary_title },
   onWordClick,
   onCreateFlashcard,
 }: {
@@ -37,7 +37,7 @@ export function TermEntryCard({
         ))}
       </ol>
       <div className="flex items-center justify-between gap-2 text-xs text-fg-faint">
-        <span>{entry.dictionaryTitle}</span>
+        <span>{dictionary_title}</span>
         <IconButton
           label="Flashcard from this entry"
           className="size-6"

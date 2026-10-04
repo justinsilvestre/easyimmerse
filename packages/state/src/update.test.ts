@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "./actions.ts";
 import type { AppState } from "./appState.ts";
-import { initialAppState } from "./appState.ts";
-import type { PickedFile, PickedMediaFile } from "./effects.ts";
+import { initialAppState, initialPlayerState } from "./appState.ts";
+import type {
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { update } from "./update.ts";
 
@@ -14,6 +18,21 @@ const pickedFile: PickedFile = {
 const pickedMediaFile: PickedMediaFile = {
   name: "episode.mkv",
   source: { kind: "path", path: "/videos/episode.mkv" },
+};
+
+const pickedDictionaryFile: PickedDictionaryFile = {
+  name: "jmdict.zip",
+  source: { kind: "path", path: "/dictionaries/jmdict.zip" },
+};
+
+const dictionaryLanguages = { sourceLanguage: "ja", targetLanguage: "en" };
+
+const withChosenDictionaryFile: AppState = {
+  ...initialAppState,
+  chosenDictionaryFile: {
+    file: pickedDictionaryFile,
+    languages: dictionaryLanguages,
+  },
 };
 
 const withPreference = (value: string): AppState => ({
@@ -40,7 +59,7 @@ describe("update", () => {
   it("keeps the duration for playerTimeChanged", () => {
     const loaded = {
       ...initialAppState,
-      player: { currentTimeSeconds: 0, durationSeconds: 60 },
+      player: { ...initialPlayerState, durationSeconds: 60 },
     };
     const [state] = update(loaded, actions.playerTimeChanged(3));
     expect(state.player.durationSeconds).toBe(60);
@@ -56,31 +75,102 @@ describe("update", () => {
     expect(effects).toEqual([]);
   });
 
-  it("marks a file pick as pending for filePickRequested", () => {
-    const [state] = update(initialAppState, actions.filePickRequested());
-    expect(state.pendingFilePick).toBe(true);
+  it("stores whether the player plays for playerPlayingChanged", () => {
+    const [state] = update(initialAppState, actions.playerPlayingChanged(true));
+    expect(state.player.isPlaying).toBe(true);
   });
 
-  it("returns a pickFile effect accepting subtitle files for filePickRequested", () => {
-    const [, effects] = update(initialAppState, actions.filePickRequested());
+  it("returns a play command for playToggleRequested while paused", () => {
+    const [, effects] = update(initialAppState, actions.playToggleRequested());
+    expect(effects).toEqual([
+      { type: "controlPlayer", command: { kind: "play" } },
+    ]);
+  });
+
+  it("returns a pause command for playToggleRequested while playing", () => {
+    const playing = {
+      ...initialAppState,
+      player: { ...initialPlayerState, isPlaying: true },
+    };
+    const [, effects] = update(playing, actions.playToggleRequested());
+    expect(effects).toEqual([
+      { type: "controlPlayer", command: { kind: "pause" } },
+    ]);
+  });
+
+  it("returns a setVolume command for volumeChosen", () => {
+    const [, effects] = update(initialAppState, actions.volumeChosen(0.4));
+    expect(effects).toEqual([
+      { type: "controlPlayer", command: { kind: "setVolume", volume: 0.4 } },
+    ]);
+  });
+
+  it("returns a setRate command for rateChosen", () => {
+    const [, effects] = update(initialAppState, actions.rateChosen(1.5));
+    expect(effects).toEqual([
+      { type: "controlPlayer", command: { kind: "setRate", rate: 1.5 } },
+    ]);
+  });
+
+  it("stores the role being picked for subtitleFilePickRequested", () => {
+    const [state] = update(
+      initialAppState,
+      actions.subtitleFilePickRequested("translation"),
+    );
+    expect(state.pendingSubtitlePick).toBe("translation");
+  });
+
+  it("returns a pickFile effect accepting subtitle files for subtitleFilePickRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.subtitleFilePickRequested("target"),
+    );
     expect(effects).toEqual([{ type: "pickFile", accept: [".srt", ".vtt"] }]);
   });
 
-  it("clears the pending file pick for fileChosen", () => {
-    const pending = { ...initialAppState, pendingFilePick: true };
+  it("keeps the chosen file with the pending role for fileChosen", () => {
+    const pending: AppState = {
+      ...initialAppState,
+      pendingSubtitlePick: "target",
+    };
     const [state] = update(pending, actions.fileChosen(pickedFile));
-    expect(state.pendingFilePick).toBe(false);
+    expect(state.chosenSubtitleFile).toEqual({
+      file: pickedFile,
+      role: "target",
+    });
   });
 
-  it("stores the chosen file's source as the subtitle source for fileChosen", () => {
-    const [state] = update(initialAppState, actions.fileChosen(pickedFile));
-    expect(state.subtitleSource).toEqual(pickedFile.source);
+  it("clears the pending subtitle pick for fileChosen", () => {
+    const pending: AppState = {
+      ...initialAppState,
+      pendingSubtitlePick: "target",
+    };
+    const [state] = update(pending, actions.fileChosen(pickedFile));
+    expect(state.pendingSubtitlePick).toBeNull();
   });
 
-  it("clears the pending file pick for filePickCancelled", () => {
-    const pending = { ...initialAppState, pendingFilePick: true };
+  it("clears the pending subtitle pick for filePickCancelled", () => {
+    const pending: AppState = {
+      ...initialAppState,
+      pendingSubtitlePick: "target",
+    };
     const [state] = update(pending, actions.filePickCancelled());
-    expect(state.pendingFilePick).toBe(false);
+    expect(state.pendingSubtitlePick).toBeNull();
+  });
+
+  it("forgets the chosen subtitles file for subtitleFileAdded", () => {
+    const chosen: AppState = {
+      ...initialAppState,
+      chosenSubtitleFile: { file: pickedFile, role: "target" },
+    };
+    const [state] = update(chosen, actions.subtitleFileAdded());
+    expect(state.chosenSubtitleFile).toBeNull();
+  });
+
+  it("forgets the chosen media file for chosenMediaFileTaken", () => {
+    const chosen = { ...initialAppState, chosenMediaFile: pickedMediaFile };
+    const [state] = update(chosen, actions.chosenMediaFileTaken());
+    expect(state.chosenMediaFile).toBeNull();
   });
 
   it("marks a media file pick as pending for mediaFilePickRequested", () => {
@@ -171,10 +261,14 @@ describe("update", () => {
   it("resets the player's position and duration for closeMedia", () => {
     const playing = {
       ...initialAppState,
-      player: { currentTimeSeconds: 5, durationSeconds: 60 },
+      player: {
+        ...initialPlayerState,
+        currentTimeSeconds: 5,
+        durationSeconds: 60,
+      },
     };
     const [state] = update(playing, actions.closeMedia());
-    expect(state.player).toEqual({ currentTimeSeconds: 0, durationSeconds: 0 });
+    expect(state.player).toEqual(initialPlayerState);
   });
 
   it("turns an unset preference on for preferenceToggled", () => {
@@ -319,5 +413,135 @@ describe("update", () => {
     expect(effects).toEqual([
       { type: "savePreference", key: "textScale", value: "125" },
     ]);
+  });
+  describe("when importing a dictionary file", () => {
+    it("keeps the chosen languages for dictionaryFilePickRequested", () => {
+      const [state] = update(
+        initialAppState,
+        actions.dictionaryFilePickRequested(dictionaryLanguages),
+      );
+      expect(state.pendingDictionaryPick).toEqual(dictionaryLanguages);
+    });
+
+    it("returns a pickDictionaryFile effect for dictionaryFilePickRequested", () => {
+      const [, effects] = update(
+        initialAppState,
+        actions.dictionaryFilePickRequested(dictionaryLanguages),
+      );
+      expect(effects).toEqual([{ type: "pickDictionaryFile" }]);
+    });
+
+    it("clears the unsupported file notice for dictionaryFilePickRequested", () => {
+      const noticed = {
+        ...initialAppState,
+        unsupportedDictionaryFile: "a.zip",
+      };
+      const [state] = update(
+        noticed,
+        actions.dictionaryFilePickRequested(dictionaryLanguages),
+      );
+      expect(state.unsupportedDictionaryFile).toBeNull();
+    });
+
+    it("pairs the chosen file with the pending languages for dictionaryFileChosen", () => {
+      const pending = {
+        ...initialAppState,
+        pendingDictionaryPick: dictionaryLanguages,
+      };
+      const [state] = update(
+        pending,
+        actions.dictionaryFileChosen(pickedDictionaryFile),
+      );
+      expect(state.chosenDictionaryFile).toEqual({
+        file: pickedDictionaryFile,
+        languages: dictionaryLanguages,
+      });
+    });
+
+    it("clears the pending pick for dictionaryFileChosen", () => {
+      const pending = {
+        ...initialAppState,
+        pendingDictionaryPick: dictionaryLanguages,
+      };
+      const [state] = update(
+        pending,
+        actions.dictionaryFileChosen(pickedDictionaryFile),
+      );
+      expect(state.pendingDictionaryPick).toBeNull();
+    });
+
+    it("ignores a chosen file without a pending pick for dictionaryFileChosen", () => {
+      const [state] = update(
+        initialAppState,
+        actions.dictionaryFileChosen(pickedDictionaryFile),
+      );
+      expect(state.chosenDictionaryFile).toBeNull();
+    });
+
+    it("clears the pending pick for dictionaryFilePickCancelled", () => {
+      const pending = {
+        ...initialAppState,
+        pendingDictionaryPick: dictionaryLanguages,
+      };
+      const [state] = update(pending, actions.dictionaryFilePickCancelled());
+      expect(state.pendingDictionaryPick).toBeNull();
+    });
+
+    it("forgets the chosen file for dictionaryFileImported", () => {
+      const [state] = update(
+        withChosenDictionaryFile,
+        actions.dictionaryFileImported(),
+      );
+      expect(state.chosenDictionaryFile).toBeNull();
+    });
+
+    it("forgets the chosen file for dictionaryFileUnsupported", () => {
+      const [state] = update(
+        withChosenDictionaryFile,
+        actions.dictionaryFileUnsupported("jmdict.zip"),
+      );
+      expect(state.chosenDictionaryFile).toBeNull();
+    });
+
+    it("keeps the unsupported file's name for dictionaryFileUnsupported", () => {
+      const [state] = update(
+        withChosenDictionaryFile,
+        actions.dictionaryFileUnsupported("jmdict.zip"),
+      );
+      expect(state.unsupportedDictionaryFile).toBe("jmdict.zip");
+    });
+
+    it("forgets the chosen file for dictionaryFileImportFailed", () => {
+      const [state] = update(
+        withChosenDictionaryFile,
+        actions.dictionaryFileImportFailed(),
+      );
+      expect(state.chosenDictionaryFile).toBeNull();
+    });
+
+    it("returns a notification for dictionaryFileImportFailed", () => {
+      const [, effects] = update(
+        withChosenDictionaryFile,
+        actions.dictionaryFileImportFailed(),
+      );
+      expect(effects).toEqual([
+        {
+          type: "showNotification",
+          message: "The dictionary could not be added",
+        },
+      ]);
+    });
+
+    it("clears the notice for unsupportedDictionaryFileDismissed", () => {
+      const noticed = {
+        ...initialAppState,
+        unsupportedDictionaryFile: "a.zip",
+      };
+      const [state] = update(
+        noticed,
+        actions.unsupportedDictionaryFileDismissed(),
+      );
+      expect(state.unsupportedDictionaryFile).toBeNull();
+    });
   });
 });

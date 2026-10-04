@@ -1,3 +1,4 @@
+import type { DictionaryFileFormat } from "@easyimmerse/types";
 import { Check, Download } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
@@ -8,18 +9,15 @@ import {
   languageName,
   languageOptions,
 } from "../projects/languages.ts";
-import {
-  type DictionaryFormat,
-  dictionaryFormatLabels,
-} from "./dictionaryItem.ts";
+import { dictionaryFormatLabels } from "./dictionaryFormatLabels.ts";
 
 /** A dictionary offered by the easyImmerse registry. */
 export type RegistryDictionary = {
   id: string;
   title: string;
-  sourceLanguage: string;
-  targetLanguage: string;
-  format: DictionaryFormat;
+  source_language: string;
+  target_language: string;
+  format: DictionaryFileFormat;
   sizeBytes: number;
   isInstalled: boolean;
 };
@@ -40,7 +38,8 @@ export function DictionaryRegistryDialog({
   onClose: () => void;
 }) {
   const shown = entries.filter(
-    (entry) => languageFilter === "" || entry.sourceLanguage === languageFilter,
+    (entry) =>
+      languageFilter === "" || entry.source_language === languageFilter,
   );
   return (
     <Dialog
@@ -66,7 +65,10 @@ export function DictionaryRegistryDialog({
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate font-medium">{entry.title}</span>
               <span className="text-xs text-fg-muted">
-                {formatLanguagePair(entry.sourceLanguage, entry.targetLanguage)}
+                {formatLanguagePair(
+                  entry.source_language,
+                  entry.target_language,
+                )}
                 {" · "}
                 {formatSize(entry.sizeBytes)}
               </span>
