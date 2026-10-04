@@ -15,8 +15,8 @@ import type {
   PlaybackRequest,
   PlaybackResponse,
   PreferenceValue,
+  SubtitleTracksResponse,
   TimedTextTrack,
-  TrackInfo,
   TrackSelection,
   TracksResponse,
   WaveformResponse,
@@ -39,12 +39,6 @@ type PlanPlaybackArgs = MediaFileArgs & { request: PlaybackRequest };
 type SaveTrackSelectionArgs = MediaFileArgs & { selection: TrackSelection };
 
 type WaveformWindowArgs = MediaFileArgs & { startMs: number; endMs: number };
-
-/**
- * The subtitle tracks embedded in a media file.
- * The api crate defines this type; replace this declaration with the generated one once it is exported.
- */
-export type SubtitleTracksResponse = { tracks: TrackInfo[] };
 
 const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
   `/projects/${projectId}/media/${mediaFileId}`;
