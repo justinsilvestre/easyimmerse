@@ -47,15 +47,15 @@ As a user:
 
 As a user:
 - when I am on the home screen:
-  - [ ] I see a list of my recent projects (if I have any), most recently opened first
-  - [ ] I see a button to create a new project
+  - [x] I see a list of my recent projects (if I have any), most recently opened first
+  - [x] I see a button to create a new project
 - when I click on a project in the list:
-  - [ ] I am taken to the project's screen
+  - [x] I am taken to the project's screen
 - when I click on the "Create new project" button:
-  - [ ] the new project form opens
+  - [x] the new project form opens
 - when I open the new project form:
-  - [ ] my last created project's language and settings are pre-filled in the form
-  - [ ] I can enter the project settings:
+  - [x] my last created project's language and settings are pre-filled in the form
+  - [x] I can enter the project settings:
     - project name
     - target language
     - translation language (defaulting to my interface language)
@@ -63,17 +63,17 @@ As a user:
       - which fields to include by default in new flashcards (with presets for beginner, intermediate, and advanced learners)
       - default tags for new flashcards, and whether each flashcard is also tagged with its media file's name (on by default)
       - whether to try filling in the audio fields with TTS in the absence of an audio track
-  - [ ] I see a preview of an example flashcard with the current settings, which updates as I change the settings
-  - [ ] on a narrow screen, the example flashcard stays in view under the preset as a small card that I can expand
+  - [x] I see a preview of an example flashcard with the current settings, which updates as I change the settings
+  - [x] on a narrow screen, the example flashcard stays in view under the preset as a small card that I can expand
 - when I select the *beginner* flashcard preset in the new project form:
-  - [ ] the pronunciation fields are included by default
+  - [x] the pronunciation fields are included by default
 - when I select the *intermediate* flashcard preset in the new project form:
-  - [ ] the pronunciation fields are excluded by default
+  - [x] the pronunciation fields are excluded by default
 - when I select the *advanced* flashcard preset in the new project form:
-  - [ ] the L1 translation field is excluded by default
-  - [ ] the L2 definition field is included by default
+  - [x] the L1 translation field is excluded by default
+  - [x] the L2 definition field is included by default
 - when I submit the new project form:
-  - [ ] I am taken to the new project's screen
+  - [x] I am taken to the new project's screen
 
 ---
 
@@ -81,12 +81,12 @@ As a user:
 
 As a user:
 - when I am on the project screen:
-  - [ ] I see the open project's name
+  - [x] I see the open project's name
   - [x] I see a list of the project's media files
   - [x] I can click on a media file to open it
-  - [ ] I can remove a media file from the project through the menu on its row
+  - [x] I can remove a media file from the project through the menu on its row
   - [ ] the menu bar has an option to save the project
-  - [ ] I see a button to edit the project's settings
+  - [x] I see a button to edit the project's settings
   - [ ] the status of dictionaries is indicated, according to the languages of my project flashcard settings
 - when I have not yet exported flashcards from this project or used the easyImmerse SRS for this project:
   - [ ] I see a button to export an Anki deck package for the project
@@ -128,11 +128,11 @@ As a user:
   - [x] I can seek to a different time in the video via the playback bar
   - [ ] I can skip forward or backward by a small amount (or to the next/previous cue, if any subtitles tracks are open) via player controls or keyboard shortcuts
   - [x] I can adjust the volume of the audio track
-  - [ ] I can adjust the playback speed of the video
+  - [x] I can adjust the playback speed of the video
   - [x] I can switch between different audio tracks, when multiple are present
   - [ ] I can choose among the embedded subtitle tracks and any external subtitles files, for the target language and for the translation
-  - [ ] I can add a subtitles file from disk as the target-language or translation subtitles
-  - [ ] the player controls lie over the bottom of the video and hide while it plays and the pointer rests; they reappear when the pointer moves or playback pauses
+  - [x] I can add a subtitles file from disk as the target-language or translation subtitles
+  - [x] the player controls lie over the bottom of the video and hide while it plays and the pointer rests; they reappear when the pointer moves or playback pauses
   - [ ] the lookup and new-flashcard buttons stay available over the video, also in distraction-free mode
   - [ ] I can enter a distraction-free fullscreen mode, in which only the video and subtitles are shown
 - when I open a video for the first time:
@@ -152,11 +152,11 @@ As a user:
 - when a file cannot be played:
   - [x] I see "The media could not be played." followed by one plain sentence saying why, for example "This video's picture is too tall to convert."
 - when a subtitles track is opened:
-  - [ ] I see the subtitles displayed on top of the video
-  - [ ] I see indications of the cue timings in the waveform visualization, and can click on them to seek the video to that cue
+  - [x] I see the subtitles displayed on top of the video
+  - [x] I see indications of the cue timings in the waveform visualization, and can click on them to seek the video to that cue
 - when both a target-language subtitles track and a translation subtitles track are opened:
-  - [ ] I see the target-language subtitles above the translation subtitles
-  - [ ] I can toggle between displaying the target-language and translation subtitles on top of the video, with the button in the player controls
+  - [x] I see the target-language subtitles above the translation subtitles
+  - [x] I can toggle between displaying the target-language and translation subtitles on top of the video, with the button in the player controls
 
 ---
 
@@ -181,17 +181,17 @@ As a user:
   - [x] I see a waveform visualization of the audio track around the current time; parts not yet loaded show a quiet line
 - when a subtitles track/timing-enhanced transcript is opened:
   - [x] I see indications of the cue/segment timings in the waveform visualization, and can click on them to seek the audio to that cue/segment
-  - [ ] I can distinguish those segments corresponding to flashcards from those that do not
+  - [x] I can distinguish those segments corresponding to flashcards from those that do not
 - when I click on a point in the waveform visualization:
   - [x] the audio seeks to that point
 - when I click on a segment in the waveform visualization:
   - [ ] the audio seeks to the start of that segment
 - when I double-click/double-tap on a segment in the waveform visualization corresponding to a flashcard:
-  - [ ] the flashcard is opened for editing
+  - [x] the flashcard is opened for editing
 - while a flashcard is open for editing:
   - [ ] the flashcard's segment is emphasized in the waveform visualization
-  - [ ] I can move the endpoints of the flashcard's segment in the waveform visualization, and the flashcard's audio timings are updated accordingly
-  - [ ] I can move the point in the waveform visualization corresponding to the flashcard's screenshot, and the flashcard's screenshot is updated accordingly
+  - [x] I can move the endpoints of the flashcard's segment in the waveform visualization, and the flashcard's audio timings are updated accordingly
+  - [x] I can move the point in the waveform visualization corresponding to the flashcard's screenshot, and the flashcard's screenshot is updated accordingly
 - when I turn the mouse wheel over the waveform visualization, pinch it, or use the zoom control in its corner:
   - [x] the view zooms between two seconds and five minutes, or the whole file when it is shorter
 - when the waveform visualization has keyboard focus:
@@ -199,7 +199,7 @@ As a user:
 - when the waveform visualization is at its closest or widest zoom level:
   - [x] the corresponding zoom button is disabled
 - when the waveform visualization is shown:
-  - [ ] I can hide it with the button in its corner, and show it again with the strip under the player
+  - [x] I can hide it with the button in its corner, and show it again with the strip under the player
 - *on desktop*, when I open the View menu:
   - [ ] I can show or hide the waveform visualization
 
@@ -209,14 +209,14 @@ As a user:
 
 As a user:
 - when a subtitles track is opened:
-  - [ ] I can access the collapsible subtitles panel
+  - [x] I can access the collapsible subtitles panel
 - while the subtitles panel is open:
-  - [ ] I see the subtitles displayed in the panel, with one card per cue
+  - [x] I see the subtitles displayed in the panel, with one card per cue
   - [ ] it is docked to the side of the video player, or at the top of the audio player
-  - [ ] the card for the cue currently being spoken is highlighted, and the panel scrolls to keep it in view
+  - [x] the card for the cue currently being spoken is highlighted, and the panel scrolls to keep it in view
   - [ ] I can click on a card to seek the media to the start of that cue
 - when the open media file has no subtitles:
-  - [ ] I see a button to add a subtitles file from disk
+  - [x] I see a button to add a subtitles file from disk
   - [ ] I see a button to generate subtitles automatically
 
 ---
@@ -268,19 +268,19 @@ As a user:
   - [ ] the dictionary pop-up is closed
   - [ ] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
 - when I click or double-tap on a word in the target-language subtitles or text:
-  - [ ] a flashcard is created for the word
-  - [ ] the fields are shown according to my flashcard settings
-  - [ ] the flashcard-editing form is opened
+  - [x] a flashcard is created for the word
+  - [x] the fields are shown according to my flashcard settings
+  - [x] the flashcard-editing form is opened
 - when the flashcard-editing form is open:
   - [ ] the corresponding segment of audio/video is looped
-  - [ ] I can edit the text fields of the flashcard
-  - [ ] I see the waveform of the flashcard's audio clip in the form, where I can move the clip's edges and the time of its screenshot as in the waveform visualization
-  - [ ] I can toggle whether to include the screenshot by clicking it or its checkbox; an excluded screenshot is shown faded
-  - [ ] I enter tags as chips, separated by commas or Enter
-  - [ ] fields excluded in my flashcard settings are hidden
-  - [ ] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
-  - [ ] I can save the flashcard and close the form
-  - [ ] I can delete the flashcard and close the form
+  - [x] I can edit the text fields of the flashcard
+  - [x] I see the waveform of the flashcard's audio clip in the form, where I can move the clip's edges and the time of its screenshot as in the waveform visualization
+  - [x] I can toggle whether to include the screenshot by clicking it or its checkbox; an excluded screenshot is shown faded
+  - [x] I enter tags as chips, separated by commas or Enter
+  - [x] fields excluded in my flashcard settings are hidden
+  - [x] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
+  - [x] I can save the flashcard and close the form
+  - [x] I can delete the flashcard and close the form
 - when a flashcard is created from a word:
   - [ ] the fields are filled according to my flashcard settings, translation settings, and TTS settings
     - word (taken from the dictionary lemma)
@@ -311,7 +311,7 @@ As a user:
   - [ ] the flashcard is queued to be sent to Anki, and I see an indication of that
   - [ ] the flashcard is sent to Anki the next time AnkiConnect is reachable, and I see an indication of whether it was successful
 - when a flashcard is created and AnkiConnect is not enabled:
-  - [ ] the flashcard is saved in the project
+  - [x] the flashcard is saved in the project
 
 ---
 
