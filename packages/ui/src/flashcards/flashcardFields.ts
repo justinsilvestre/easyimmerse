@@ -95,13 +95,6 @@ export function labelOfFieldGroup(
   return languageName(languages[group]);
 }
 
-/** Whether the field holds text the user can type, rather than audio, an image, or tags. */
-export function isTextField(
-  key: FlashcardFieldKey,
-): key is FlashcardTextFieldKey {
-  return key !== "audio_context" && key !== "screenshot" && key !== "tags";
-}
-
 export function findFlashcardField(
   key: FlashcardFieldKey,
 ): FlashcardFieldDefinition {

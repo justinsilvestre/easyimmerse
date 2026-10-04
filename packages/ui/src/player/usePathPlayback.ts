@@ -16,7 +16,6 @@ import type {
   TrackSelection,
 } from "@easyimmerse/types";
 import { useMemo, useState } from "react";
-import type { TrackChoice } from "../components/trackChoiceLabels.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { derivePlaybackState } from "./derivePlaybackState.ts";
@@ -32,13 +31,6 @@ import {
   tracksOfKind,
 } from "./playbackPlanRules.ts";
 import { trackChoiceOf } from "./trackChoiceOf.ts";
-
-/** What the track choice dialog shows when it is open. */
-export type TrackChoicePrompt = {
-  videoTracks: TrackChoice[];
-  audioTracks: TrackChoice[];
-  initialSelection: TrackSelection | undefined;
-};
 
 /** Whether the dialog is yet to be decided for this file, opened by the user, or put away. */
 type TrackDialog = "undecided" | "open" | "closed";
