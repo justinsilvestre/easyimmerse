@@ -14,6 +14,11 @@ import { AppearancePanel } from "./AppearancePanel.tsx";
 import { ChapterEnd } from "./ChapterEnd.tsx";
 import { ChapterText } from "./ChapterText.tsx";
 import { ContentsPanel } from "./ContentsPanel.tsx";
+import {
+  estimateChapterPage,
+  sectionIndexAt,
+  sectionsOf,
+} from "./chapterSections.ts";
 import { LookupAnchor } from "./LookupAnchor.tsx";
 import {
   PagedChapter,
@@ -83,6 +88,8 @@ type ReaderViewProps = {
 };
 
 const searchLimit = 500;
+/** The most text the paged layout lays out at once, since layout time grows with the text's length. */
+const sectionCharacterLimit = 30_000;
 
 /**
  * The screen for reading an ebook or a text file. The text fills the window, set like a
@@ -120,6 +127,11 @@ export function ReaderView(props: ReaderViewProps) {
     title: null,
     paragraphs: [],
   };
+  const sections = useMemo(
+    () => sectionsOf(chapter.paragraphs, sectionCharacterLimit),
+    [chapter],
+  );
+  const sectionIndex = sectionIndexAt(sections, state.location.paragraphIndex);
   const marks = useMemo(
     () =>
       matches.flatMap((match, index) =>
@@ -155,6 +167,20 @@ export function ReaderView(props: ReaderViewProps) {
             chapterIndex: index,
             paragraphIndex: Math.max(0, last),
             offset: paragraphs[last]?.length ?? 0,
+          },
+    );
+  };
+  const goToSection = (index: number, edge: "start" | "end") => {
+    const section = sections[index];
+    if (!section) return goToChapter(chapterIndex + Math.sign(index), edge);
+    const last = section.end - 1;
+    jumpTo(
+      edge === "start"
+        ? { chapterIndex, paragraphIndex: section.start, offset: 0 }
+        : {
+            chapterIndex,
+            paragraphIndex: last,
+            offset: chapter.paragraphs[last]?.length ?? 0,
           },
     );
   };
@@ -199,8 +225,10 @@ export function ReaderView(props: ReaderViewProps) {
   const text = (
     <ChapterText
       chapter={chapter}
+      section={isPaged ? sections[sectionIndex] : undefined}
       language={props.language}
       isJustified={preferences.isJustified}
+      skipsOffscreenLayout={!isPaged}
       marks={marks}
     />
   );
@@ -248,6 +276,7 @@ export function ReaderView(props: ReaderViewProps) {
             <PagedChapter
               ref={turner}
               chapterIndex={chapterIndex}
+              initialLocation={state.location}
               jump={state.jump}
               layoutKey={layoutKey}
               maxColumnWidthEm={lineLengthsEm[preferences.lineLength]}
@@ -256,8 +285,8 @@ export function ReaderView(props: ReaderViewProps) {
                 dispatch({ type: "chromeHidden" });
               }}
               onPageChange={setPageInfo}
-              onPastEnd={() => goToChapter(chapterIndex + 1, "start")}
-              onBeforeStart={() => goToChapter(chapterIndex - 1, "end")}
+              onPastEnd={() => goToSection(sectionIndex + 1, "start")}
+              onBeforeStart={() => goToSection(sectionIndex - 1, "end")}
             >
               {text}
             </PagedChapter>
@@ -265,6 +294,7 @@ export function ReaderView(props: ReaderViewProps) {
         ) : (
           <ScrolledChapter
             chapterIndex={chapterIndex}
+            initialLocation={state.location}
             jump={state.jump}
             layoutKey={layoutKey}
             maxColumnWidthEm={lineLengthsEm[preferences.lineLength]}
@@ -294,7 +324,16 @@ export function ReaderView(props: ReaderViewProps) {
       </div>
       <ReaderFooter
         progress={progress}
-        pageInfo={isPaged ? pageInfo : null}
+        pageInfo={
+          isPaged && pageInfo
+            ? estimateChapterPage(
+                pageInfo,
+                chapter.paragraphs,
+                sections,
+                sectionIndex,
+              )
+            : null
+        }
         chapterTitle={chapterTitle}
         chapterStarts={chapterStarts}
         isVisible={state.isChromeVisible}

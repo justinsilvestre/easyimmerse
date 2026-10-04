@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
 import { firstIndexWhere } from "./firstIndexWhere.ts";
-import { paragraphsOf } from "./pagePositions.ts";
+import { paragraphAt, paragraphsOf } from "./pagePositions.ts";
 import type { ReaderLocation } from "./readingProgress.ts";
 import { characterRect } from "./textOffsets.ts";
 
@@ -13,6 +13,7 @@ const directionThresholdPx = 6;
  */
 export function ScrolledChapter({
   chapterIndex,
+  initialLocation,
   jump,
   layoutKey,
   maxColumnWidthEm,
@@ -22,6 +23,8 @@ export function ScrolledChapter({
   footer,
 }: {
   chapterIndex: number;
+  /** The reader's place when the text first appears. */
+  initialLocation: ReaderLocation;
   jump: { location: ReaderLocation; id: number };
   layoutKey: string;
   maxColumnWidthEm: number;
@@ -33,11 +36,7 @@ export function ScrolledChapter({
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
-  const anchor = useRef(
-    jump.location.chapterIndex === chapterIndex
-      ? jump.location
-      : { chapterIndex, paragraphIndex: 0, offset: 0 },
-  );
+  const anchor = useRef(initialLocation);
   const appliedJumpId = useRef(jump.id);
   const lastScrollTop = useRef(0);
   const frame = useRef(0);
@@ -97,7 +96,8 @@ function scrollTo(
   content: HTMLElement,
   location: ReaderLocation,
 ) {
-  const paragraph = paragraphsOf(content)[location.paragraphIndex];
+  const paragraph = paragraphAt(content, location.paragraphIndex);
+  if (paragraph) layOutNow(paragraph);
   const rect = paragraph && characterRect(paragraph, location.offset);
   if (!rect) {
     view.scrollTop = 0;
@@ -107,6 +107,17 @@ function scrollTo(
   view.scrollTop = isStart
     ? 0
     : view.scrollTop + rect.top - view.getBoundingClientRect().top - topInsetPx;
+}
+
+/**
+ * Lays out the paragraph and the one before it, even where the browser would skip them as off
+ * screen. The browser gives no positions for characters it has not laid out, and the text above
+ * the reader's place must keep its height once the view moves there.
+ */
+function layOutNow(paragraph: HTMLElement) {
+  for (const element of [paragraph, paragraph.previousElementSibling])
+    if (element instanceof HTMLElement)
+      element.style.contentVisibility = "visible";
 }
 
 function locationAtTop(

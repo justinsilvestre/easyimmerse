@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { useState } from "react";
-import type { PageInfo } from "./PagedChapter.tsx";
+import type { ChapterPage } from "./chapterSections.ts";
 
 /** The steps of the progress slider. */
 const sliderSteps = 1000;
@@ -21,7 +21,7 @@ export function ReaderFooter({
 }: {
   progress: number;
   /** The page within the chapter, in the paged layout. */
-  pageInfo: PageInfo | null;
+  pageInfo: ChapterPage | null;
   chapterTitle: string | null;
   /** Where each chapter starts, from 0 to 1. */
   chapterStarts: readonly number[];
@@ -79,7 +79,7 @@ export function ReaderFooter({
       <div className="flex justify-between px-5 pb-2 text-xs text-fg-faint tabular-nums md:px-16">
         <span>
           {pageInfo
-            ? `Page ${pageInfo.page + 1} of ${pageInfo.pageCount}`
+            ? `${pageInfo.isEstimate ? "About page" : "Page"} ${pageInfo.page + 1} of ${pageInfo.pageCount}`
             : chapterTitle}
         </span>
         <span>{Math.round(progress * 100)}%</span>

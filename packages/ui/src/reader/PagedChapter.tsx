@@ -29,13 +29,14 @@ export type PageInfo = { page: number; pageCount: number };
 const gapEm = 3;
 
 /**
- * Lays a chapter out in pages of one or two columns, which the reader turns by keyboard,
+ * Lays a chapter, or a section of a long one, out in pages of one or two columns, which the reader turns by keyboard,
  * swipe, scroll wheel, or the arrows beside the page. The page is found again from the
  * reading location whenever the layout changes, so resizing the window or the text keeps
  * the reader's place.
  */
 export function PagedChapter({
   chapterIndex,
+  initialLocation,
   jump,
   layoutKey,
   maxColumnWidthEm,
@@ -47,6 +48,8 @@ export function PagedChapter({
   children,
 }: {
   chapterIndex: number;
+  /** The reader's place when the text first appears. */
+  initialLocation: ReaderLocation;
   /** A location to show, applied once per id. */
   jump: { location: ReaderLocation; id: number };
   /** Changes whenever a preference that moves the text changes, such as the font size. */
@@ -66,11 +69,7 @@ export function PagedChapter({
   const fontsLoaded = useFontsLoaded();
   const [layout, setLayout] = useState<PageLayout | null>(null);
   const [view, setView] = useState({ page: 0, pageCount: 1, animates: false });
-  const anchor = useRef(
-    jump.location.chapterIndex === chapterIndex
-      ? jump.location
-      : { chapterIndex, paragraphIndex: 0, offset: 0 },
-  );
+  const anchor = useRef(initialLocation);
   const appliedJumpId = useRef(jump.id);
   const reportsLocation = useRef(false);
 
