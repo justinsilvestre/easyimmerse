@@ -9,7 +9,8 @@ import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
-import { exampleEntries } from "../lookup/exampleLookup.ts";
+import { exampleResults } from "../lookup/exampleLookup.ts";
+import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
 import type { LookupState } from "../lookup/lookupState.ts";
 import { CuePanel } from "./CuePanel.tsx";
 import {
@@ -80,6 +81,7 @@ function lookupPopup(state: LookupState | null, mode: "hover" | "search") {
     <DictionaryPopup
       state={state}
       mode={mode}
+      resolveMediaUrl={resolveExampleMediaUrl}
       onSearch={fn()}
       onCreateFlashcard={fn()}
       onClose={fn()}
@@ -153,7 +155,7 @@ export const LookingUpAWord: Story = {
   args: {
     activeWord: "fressen",
     lookup: lookupPopup(
-      { kind: "found", term: "fressen", entries: exampleEntries },
+      { kind: "found", term: "fressen", results: exampleResults },
       "hover",
     ),
   },

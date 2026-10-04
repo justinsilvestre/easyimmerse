@@ -4,16 +4,20 @@ import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { languageName } from "../projects/languages.ts";
+import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
+import { KanjiCard } from "./KanjiCard.tsx";
+import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupState } from "./lookupState.ts";
-import { TermEntryCard } from "./TermEntryCard.tsx";
 
 /**
  * The dictionary pop-up. In `hover` mode it shows the word under the pointer; in `search` mode it opens with a field to type a word into.
  * Clicking a word inside the pop-up starts a flashcard for that word, as it does in the subtitles.
+ * Images in definitions are found through `resolveMediaUrl`.
  */
 export function DictionaryPopup({
   state,
   mode,
+  resolveMediaUrl,
   onSearch,
   onCreateFlashcard,
   onClose,
@@ -21,6 +25,7 @@ export function DictionaryPopup({
 }: {
   state: LookupState | null;
   mode: "hover" | "search";
+  resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
   onCreateFlashcard: (term: string, entryIndex: number | null) => void;
   onClose: () => void;
@@ -29,7 +34,7 @@ export function DictionaryPopup({
   return (
     <section
       aria-label="Dictionary"
-      className="flex max-h-[min(24rem,100%)] w-[min(22rem,calc(100vw-1rem))] flex-col rounded-lg border border-line bg-surface text-fg shadow-xl"
+      className="flex max-h-[min(24rem,100%)] w-[min(26rem,calc(100vw-1rem))] flex-col rounded-lg border border-line bg-surface text-fg shadow-xl"
     >
       <header className="flex items-center gap-2 border-b border-line px-3 py-2">
         {mode === "search" ? (
@@ -54,6 +59,7 @@ export function DictionaryPopup({
       <div className="flex-1 overflow-y-auto px-3 py-2">
         <Body
           state={state}
+          resolveMediaUrl={resolveMediaUrl}
           onCreateFlashcard={onCreateFlashcard}
           onSetUpDictionary={onSetUpDictionary}
         />
@@ -93,10 +99,12 @@ function SearchField({ onSearch }: { onSearch: (term: string) => void }) {
 
 function Body({
   state,
+  resolveMediaUrl,
   onCreateFlashcard,
   onSetUpDictionary,
 }: {
   state: LookupState | null;
+  resolveMediaUrl: ResolveMediaUrl;
   onCreateFlashcard: (term: string, entryIndex: number | null) => void;
   onSetUpDictionary: () => void;
 }) {
@@ -117,16 +125,28 @@ function Body({
         </div>
       );
     case "found":
-      return state.entries.map((entry, index) => (
-        <TermEntryCard
-          // One dictionary can hold several entries for the same term, and the list never reorders within a lookup.
-          // biome-ignore lint/suspicious/noArrayIndexKey: see above
-          key={index}
-          entry={entry}
-          onWordClick={(word) => onCreateFlashcard(word, null)}
-          onCreateFlashcard={() => onCreateFlashcard(state.term, index)}
-        />
-      ));
+      return (
+        <>
+          {state.results.map((result, index) => (
+            <LookupResultCard
+              // Results never reorder within a lookup, and two results can share a term.
+              // biome-ignore lint/suspicious/noArrayIndexKey: see above
+              key={index}
+              result={result}
+              resolveMediaUrl={resolveMediaUrl}
+              onWordClick={(word) => onCreateFlashcard(word, null)}
+              onCreateFlashcard={() => onCreateFlashcard(state.term, index)}
+            />
+          ))}
+          {state.kanji?.map((kanji) => (
+            <KanjiCard
+              key={`${kanji.dictionaryId}-${kanji.entry.character}`}
+              result={kanji}
+              onWordClick={(word) => onCreateFlashcard(word, null)}
+            />
+          ))}
+        </>
+      );
   }
 }
 
