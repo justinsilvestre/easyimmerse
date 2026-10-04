@@ -54,17 +54,26 @@ export function parseConfigureLine(line: string): string[] {
  * Lists the features a configure line leaves enabled, in the vocabulary of the library
  * table: `--enable-<name>` gives `<name>` unless a later `--disable-<name>` revokes it,
  * `-l<name>` in `--extra-libs` gives `lib:<name>`, and `--target-os=<os>` gives
- * `target-os:<os>`.
+ * `target-os:<os>`. Component selections such as `--enable-decoder=h264` are not features:
+ * a component links nothing beyond what its feature dependencies do.
  */
 export function listEnabledFeatures(args: string[]): string[] {
   const enabled = new Set<string>();
   for (const arg of args) {
     const toggle = /^--(enable|disable)-(.+)$/.exec(arg);
+    if (toggle && isComponentSelection(toggle[2] ?? "")) continue;
     if (toggle?.[1] === "enable") enabled.add(toggle[2] ?? "");
     else if (toggle) enabled.delete(toggle[2] ?? "");
     for (const feature of featuresOfOption(arg)) enabled.add(feature);
   }
   return [...enabled].sort();
+}
+
+const componentKinds =
+  /^(decoder|encoder|demuxer|muxer|parser|bsf|filter|protocol|indev|outdev|hwaccel)=/;
+
+function isComponentSelection(name: string): boolean {
+  return componentKinds.test(name);
 }
 
 function featuresOfOption(arg: string): string[] {

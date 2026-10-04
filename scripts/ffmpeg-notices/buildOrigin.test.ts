@@ -11,6 +11,10 @@ const ownUrl =
   "https://github.com/octo/repo/releases/download/ffmpeg-macos-8.1.2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz";
 const ownRebuildUrl =
   "https://github.com/octo/repo/releases/download/ffmpeg-macos-8.1.2-2/ffmpeg-8.1.2-aarch64-apple-darwin.tar.xz";
+const ownLinuxUrl =
+  "https://github.com/octo/repo/releases/download/ffmpeg-linux-8.1.3/ffmpeg-8.1.3-x86_64-unknown-linux-gnu.tar.xz";
+const ownWindowsUrl =
+  "https://github.com/octo/repo/releases/download/ffmpeg-windows-8.1.3-2/ffmpeg-8.1.3-x86_64-pc-windows-msvc.zip";
 
 describe("describeBuildOrigin", () => {
   describe("for a BtbN autobuild", () => {
@@ -80,6 +84,42 @@ describe("describeBuildOrigin", () => {
           /for the tag ffmpeg-macos-8\.1\.2-2\.$/,
         );
       });
+    });
+  });
+
+  describe("for this repository's Linux build", () => {
+    it("reads the version from the tag", () => {
+      assert.equal(describeBuildOrigin(ownLinuxUrl).version, "8.1.3");
+    });
+
+    it("names the ffmpeg-linux workflow", () => {
+      assert.match(
+        describeBuildOrigin(ownLinuxUrl).builder,
+        /^Built by the ffmpeg-linux workflow .*ffmpeg-linux\.yml/,
+      );
+    });
+
+    it("links the release", () => {
+      assert.equal(
+        describeBuildOrigin(ownLinuxUrl).releaseUrl,
+        "https://github.com/octo/repo/releases/tag/ffmpeg-linux-8.1.3",
+      );
+    });
+  });
+
+  describe("for this repository's Windows build", () => {
+    it("names the ffmpeg-windows workflow", () => {
+      assert.match(
+        describeBuildOrigin(ownWindowsUrl).builder,
+        /^Built by the ffmpeg-windows workflow .*ffmpeg-windows\.yml/,
+      );
+    });
+
+    it("links the release of the full tag", () => {
+      assert.equal(
+        describeBuildOrigin(ownWindowsUrl).releaseUrl,
+        "https://github.com/octo/repo/releases/tag/ffmpeg-windows-8.1.3-2",
+      );
     });
   });
 

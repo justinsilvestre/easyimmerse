@@ -75,4 +75,14 @@ describe("listEnabledFeatures", () => {
     const features = listEnabledFeatures(["--target-os=mingw32"]);
     assert.deepEqual(features, ["target-os:mingw32"]);
   });
+
+  it("ignores component selections", () => {
+    const features = listEnabledFeatures([
+      "--disable-everything",
+      "--enable-decoder=h264,aac",
+      "--enable-encoder=h264_nvenc",
+      "--enable-filter=scale",
+    ]);
+    assert.deepEqual(features, []);
+  });
 });

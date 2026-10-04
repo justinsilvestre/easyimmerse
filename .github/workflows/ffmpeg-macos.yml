@@ -1,8 +1,8 @@
 name: ffmpeg-macos
 
-# Builds an LGPL-only ffmpeg for macOS and publishes it as a release, because no
+# Builds a minimal LGPL ffmpeg for macOS and publishes it as a release, because no
 # first-party LGPL macOS build exists. scripts/fetch-ffmpeg/manifest.json pins the
-# resulting assets by hash.
+# resulting assets by hash. The components come from scripts/ffmpeg-build/common-flags.txt.
 
 # Push a tag such as `ffmpeg-macos-8.1.2` on any branch to build that ffmpeg version, or
 # `ffmpeg-macos-8.1.2-2` to build the same version again with a changed workflow.
@@ -53,16 +53,15 @@ jobs:
         run: |
           set -eu
           v="${{ steps.version.outputs.version }}"
-          # Autodetection is off so that the configure line names every library the binaries link,
-          # which the licence-notice generator reads, and so that configure cannot pick up Homebrew's
-          # X11 and XCB libraries on the arm64 runner, which a Mac without Homebrew lacks. The enabled
-          # features are the hardware codecs and the system zlib and iconv. With autodetection off,
-          # configure probes only the C library for iconv and never adds the separate system
-          # libiconv that macOS has, so it is linked through --extra-libs.
-          common="--disable-gpl --disable-nonfree --enable-version3 --disable-shared --enable-static \
-                  --disable-doc --disable-debug --disable-ffplay --pkg-config-flags=--static \
-                  --disable-autodetect --enable-videotoolbox --enable-audiotoolbox --enable-zlib --enable-iconv \
-                  --extra-libs=-liconv"
+          # The shared flags turn autodetection off, so that the configure line names every library
+          # the binaries link, which the licence-notice generator reads, and so that configure cannot
+          # pick up Homebrew's X11 and XCB libraries on the arm64 runner, which a Mac without Homebrew
+          # lacks. The macOS flags add the hardware codecs and the system zlib and iconv. With
+          # autodetection off, configure probes only the C library for iconv and never adds the
+          # separate system libiconv that macOS has, so it is linked through --extra-libs.
+          common="$(sh scripts/ffmpeg-build/read-common-flags.sh) \
+                  --enable-videotoolbox --enable-audiotoolbox --enable-zlib --enable-iconv --extra-libs=-liconv \
+                  --enable-encoder=h264_videotoolbox,hevc_videotoolbox,aac_at"
           mkdir -p out/aarch64-apple-darwin out/x86_64-apple-darwin
           (cd "ffmpeg-$v" && ./configure $common --prefix="$PWD/../install-arm64" && make -j"$(sysctl -n hw.ncpu)" && make install && make distclean)
           (cd "ffmpeg-$v" && ./configure $common --enable-cross-compile --arch=x86_64 --target-os=darwin \
@@ -81,6 +80,13 @@ jobs:
             echo "The binaries above link libraries that a Mac does not provide." >&2
             exit 1
           fi
+
+      - name: Show the build
+        run: |
+          set -eu
+          out/aarch64-apple-darwin/ffmpeg -version
+          out/aarch64-apple-darwin/ffmpeg -hide_banner -encoders
+          ls -l out/*/ffmpeg out/*/ffprobe
 
       - name: Package
         run: |

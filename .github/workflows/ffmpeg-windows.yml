@@ -1,0 +1,163 @@
+name: ffmpeg-windows
+
+# Builds a minimal LGPL ffmpeg for Windows on x86-64 and ARM64 with the MSVC toolchain and
+# publishes it as a release, because the first-party LGPL builds link libraries the licence
+# policy rejects. scripts/fetch-ffmpeg/manifest.json pins the resulting assets by hash.
+
+# Push a tag such as `ffmpeg-windows-8.1.3` on any branch to build that ffmpeg version, or
+# `ffmpeg-windows-8.1.3-2` to build the same version again with a changed workflow.
+# A tag push runs the workflow file at the tagged commit, so nothing needs to be on the
+# default branch first. Manual dispatch only works once the file is on the default branch.
+on:
+  push:
+    tags: ["ffmpeg-windows-*"]
+  workflow_dispatch:
+    inputs:
+      ffmpeg-version:
+        description: ffmpeg release to build, for example 8.1.3
+        required: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - runner: windows-2022
+            triple: x86_64-pc-windows-msvc
+            arch: x86_64
+            msvc-arch: amd64
+          - runner: windows-11-arm
+            triple: aarch64-pc-windows-msvc
+            arch: aarch64
+            msvc-arch: arm64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+
+      # The MSVC compiler and linker come from the Developer Command Prompt environment, and
+      # MSYS2 provides the shell and tools that ffmpeg's configure and Makefiles need.
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc-arch }}
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          path-type: inherit
+          install: make pkgconf nasm diffutils git gnupg xz zip
+
+      - name: Read the ffmpeg version and the release tag from the input or the tag
+        id: version
+        run: |
+          v="${{ inputs.ffmpeg-version }}"
+          tag="${v:+ffmpeg-windows-$v}"
+          tag="${tag:-$GITHUB_REF_NAME}"
+          suffixed="${tag#ffmpeg-windows-}"
+          echo "version=${suffixed%%-*}" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Download and verify the source
+        run: |
+          set -eu
+          v="${{ steps.version.outputs.version }}"
+          curl -fsSLO "https://ffmpeg.org/releases/ffmpeg-$v.tar.xz"
+          curl -fsSLO "https://ffmpeg.org/releases/ffmpeg-$v.tar.xz.asc"
+          curl -fsSL https://ffmpeg.org/ffmpeg-devel.asc | gpg --import
+          gpg --verify "ffmpeg-$v.tar.xz.asc" "ffmpeg-$v.tar.xz"
+          sha256sum "ffmpeg-$v.tar.xz" > source-sha256.txt
+          tar xf "ffmpeg-$v.tar.xz"
+
+      # The ARM64 assembly is written for the GNU assembler; gas-preprocessor translates it for armasm64.
+      - name: Install gas-preprocessor
+        if: matrix.arch == 'aarch64'
+        run: |
+          set -eu
+          mkdir -p /usr/local/bin
+          curl -fsSLo /usr/local/bin/gas-preprocessor.pl https://raw.githubusercontent.com/FFmpeg/gas-preprocessor/master/gas-preprocessor.pl
+          chmod +x /usr/local/bin/gas-preprocessor.pl
+
+      - name: Build the dependencies and ffmpeg
+        run: |
+          set -eu
+          sh scripts/ffmpeg-build/windows-deps.sh "$PWD/deps"
+          sh scripts/ffmpeg-build/windows.sh "ffmpeg-${{ steps.version.outputs.version }}" deps ${{ matrix.arch }} "out/${{ matrix.triple }}"
+
+      - name: Check that the binaries import only system DLLs
+        run: sh scripts/ffmpeg-build/check-windows-links.sh out/${{ matrix.triple }}/ffmpeg.exe out/${{ matrix.triple }}/ffprobe.exe
+
+      - name: Show the build
+        run: |
+          set -eu
+          cd "out/${{ matrix.triple }}"
+          ./ffmpeg.exe -version
+          ./ffmpeg.exe -hide_banner -encoders
+          ls -l ffmpeg.exe ffprobe.exe
+
+      - name: Package
+        run: |
+          set -eu
+          v="${{ steps.version.outputs.version }}"
+          (cd "out/${{ matrix.triple }}" && zip -q "../ffmpeg-$v-${{ matrix.triple }}.zip" ffmpeg.exe ffprobe.exe)
+          mv "out/${{ matrix.triple }}/configure-flags.txt" out/
+          cp source-sha256.txt out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.triple }}
+          path: |
+            out/*.zip
+            out/configure-flags.txt
+            out/source-sha256.txt
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Read the ffmpeg version and the release tag from the input or the tag
+        id: version
+        run: |
+          v="${{ inputs.ffmpeg-version }}"
+          tag="${v:+ffmpeg-windows-$v}"
+          tag="${tag:-$GITHUB_REF_NAME}"
+          suffixed="${tag#ffmpeg-windows-}"
+          echo "version=${suffixed%%-*}" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Write the build notes and checksums
+        run: |
+          set -eu
+          v="${{ steps.version.outputs.version }}"
+          cd out
+          {
+            echo "# ffmpeg $v for Windows (LGPL)"
+            echo
+            echo "Source: https://ffmpeg.org/releases/ffmpeg-$v.tar.xz"
+            echo "Source SHA-256: $(cut -d' ' -f1 source-sha256.txt)"
+            echo
+            echo "Built with the MSVC toolchain and a static C runtime, with zlib linked statically."
+            echo
+            echo "Configure flags:"
+            echo '```'
+            cat configure-flags.txt
+            echo '```'
+          } > BUILD.md
+          sha256sum *.zip > SHA256SUMS
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ steps.version.outputs.version }}"
+          gh release create "${{ steps.version.outputs.tag }}" --repo "$GITHUB_REPOSITORY" --title "ffmpeg $v for Windows (LGPL)" \
+            --notes-file out/BUILD.md out/*.zip out/SHA256SUMS out/BUILD.md

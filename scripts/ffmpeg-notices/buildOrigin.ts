@@ -13,7 +13,7 @@ export interface BuildOrigin {
 const btbnRelease =
   /^https:\/\/github\.com\/BtbN\/FFmpeg-Builds\/releases\/download\/(autobuild-(\d{4}-\d\d-\d\d)-(\d\d)-(\d\d))\/ffmpeg-(n[\d.]+(?:-\d+-g([0-9a-f]+))?)-/;
 const ownRelease =
-  /^https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/download\/(ffmpeg-macos-([\d.]+)(?:-\d+)?)\//;
+  /^https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/download\/(ffmpeg-(macos|linux|windows)-([\d.]+)(?:-\d+)?)\//;
 
 export function describeBuildOrigin(url: string): BuildOrigin {
   const origin = describeBtbnBuild(url) ?? describeOwnBuild(url);
@@ -36,14 +36,16 @@ function describeBtbnBuild(url: string): BuildOrigin | null {
   };
 }
 
+/** This repository's own builds come from one workflow per platform, named after its tags. */
 function describeOwnBuild(url: string): BuildOrigin | null {
   const match = ownRelease.exec(url);
   if (!match) return null;
-  const [, repo, tag = "", version = ""] = match;
+  const [, repo, tag = "", platform = "", version = ""] = match;
+  const workflow = `ffmpeg-${platform}`;
   return {
     version,
     sourceUrl: `https://ffmpeg.org/releases/ffmpeg-${version}.tar.xz`,
-    builder: `Built by the ffmpeg-macos workflow of https://github.com/${repo} (.github/workflows/ffmpeg-macos.yml) for the tag ${tag}.`,
+    builder: `Built by the ${workflow} workflow of https://github.com/${repo} (.github/workflows/${workflow}.yml) for the tag ${tag}.`,
     releaseUrl: `https://github.com/${repo}/releases/tag/${tag}`,
   };
 }

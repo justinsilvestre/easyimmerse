@@ -1,0 +1,28 @@
+# Configure flags shared by the macOS, Linux and Windows ffmpeg builds. Each workflow adds
+# its own platform flags: the toolchain, the hardware encoders and the system libraries.
+# The flags embed in the binaries, where the licence-notice generator reads them.
+#
+# --disable-everything removes every component, and the --enable-* lines below add back the
+# containers, codecs, filters and protocols the Rust code uses, plus decoders for formats common
+# in personal libraries (MPEG-2, DTS, TrueHD, WMV and WMA, ProRes and DNxHD, bitmap subtitles).
+--disable-gpl
+--disable-nonfree
+--enable-version3
+--disable-shared
+--enable-static
+--disable-doc
+--disable-debug
+--disable-ffplay
+--disable-network
+--disable-autodetect
+--pkg-config-flags=--static
+--disable-everything
+--enable-demuxer=mov,matroska,mpegts,mpegps,avi,asf,mp3,aac,ogg,flac,wav,ac3,eac3,dts,truehd,srt,webvtt,ass
+--enable-decoder=h264,hevc,mpeg4,mpeg1video,mpeg2video,vp8,vp9,av1,wmv3,vc1,prores,dnxhd,mjpeg,aac,aac_latm,mp3,mp3float,mp2,mp2float,vorbis,opus,flac,ac3,eac3,dca,truehd,wmav2,wmapro,pcm_s16le,pcm_s16be,pcm_s24le,pcm_s24be,pcm_s32le,pcm_s32be,pcm_f32le,pcm_f32be,pcm_f64le,pcm_u8,pcm_alaw,pcm_mulaw,subrip,srt,ass,ssa,webvtt,movtext,text,pgssub,dvdsub,dvbsub,rawvideo,wrapped_avframe
+--enable-parser=h264,hevc,mpeg4video,mpegvideo,vp8,vp9,av1,vc1,mjpeg,aac,aac_latm,mpegaudio,vorbis,opus,flac,ac3,dca
+--enable-bsf=noise,aac_adtstoasc,extract_extradata,vp9_superframe,null
+--enable-filter=aresample,aformat,anull,format,null,scale,bwdif,color,crop,trim,atrim,transpose,hflip,vflip,rotate,hwupload,hwdownload
+--enable-encoder=aac,flac,pcm_s16le,pcm_f32le,rawvideo,wrapped_avframe
+--enable-muxer=hls,mp4,mov,segment,mpegts,webvtt,pcm_f32le,rawvideo,null
+--enable-protocol=file,pipe
+--enable-indev=lavfi
