@@ -232,9 +232,19 @@ mod tests {
         }
     }
 
+    /// The output paths are joined by the platform, so the expected ones are joined the same way.
+    fn output_path(file_name: &str) -> String {
+        Path::new("/cache/run")
+            .join(file_name)
+            .to_string_lossy()
+            .into_owned()
+    }
+
     #[test]
     fn builds_the_copy_command_exactly() {
         let job = job(Some(&COPY_VIDEO), Some(&COPY_AUDIO), Some("h264"));
+        let segment_path = output_path(RUN_SEGMENT_FILE_PATTERN);
+        let playlist_path = output_path(RUN_PLAYLIST_FILE_NAME);
         assert_eq!(
             strings(conversion_args(&job)),
             [
@@ -275,8 +285,8 @@ mod tests {
                 "-hls_flags",
                 "temp_file",
                 "-hls_segment_filename",
-                "/cache/run/s%05d.m4s",
-                "/cache/run/index.m3u8",
+                segment_path.as_str(),
+                playlist_path.as_str(),
             ]
         );
     }
