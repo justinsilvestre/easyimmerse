@@ -201,8 +201,18 @@ mod tests {
             video_codec,
             timeline_start_micros: 0,
             seek_micros: None,
-            output_dir: Path::new("/cache/run"),
+            output_dir: Path::new(OUTPUT_DIR),
         }
+    }
+
+    const OUTPUT_DIR: &str = "/cache/run";
+
+    /// Joins with the platform's separator, as the command does.
+    fn output_path(file_name: &str) -> String {
+        Path::new(OUTPUT_DIR)
+            .join(file_name)
+            .to_string_lossy()
+            .into_owned()
     }
 
     fn strings(args: Vec<OsString>) -> Vec<String> {
@@ -235,6 +245,8 @@ mod tests {
     #[test]
     fn builds_the_copy_command_exactly() {
         let job = job(Some(&COPY_VIDEO), Some(&COPY_AUDIO), Some("h264"));
+        let segments = output_path("s%05d.m4s");
+        let playlist = output_path("index.m3u8");
         assert_eq!(
             strings(conversion_args(&job)),
             [
@@ -275,8 +287,8 @@ mod tests {
                 "-hls_flags",
                 "temp_file",
                 "-hls_segment_filename",
-                "/cache/run/s%05d.m4s",
-                "/cache/run/index.m3u8",
+                segments.as_str(),
+                playlist.as_str(),
             ]
         );
     }
