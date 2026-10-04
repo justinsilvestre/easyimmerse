@@ -2,6 +2,7 @@ use thiserror::Error;
 
 use super::archive::ArchiveError;
 use super::sink::SinkError;
+use super::stardict::StardictError;
 use super::yomitan::YomitanError;
 
 #[derive(Debug, Error)]
@@ -20,4 +21,6 @@ pub enum DictionaryError {
     Sink(#[from] SinkError),
     #[error(transparent)]
     Yomitan(#[from] YomitanError),
+    #[error(transparent)]
+    Stardict(#[from] StardictError),
 }

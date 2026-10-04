@@ -12,6 +12,7 @@ mod kanji_entry;
 mod metadata;
 mod sink;
 mod source;
+mod stardict;
 mod structured_content;
 mod tag_definition;
 mod term_entry;
@@ -26,6 +27,7 @@ pub use kanji_entry::{KanjiEntry, KanjiMeta};
 pub use metadata::{DictionaryFormatKind, DictionaryMetadata, FrequencyMode};
 pub use sink::{DictionarySink, SinkError, SinkResult};
 pub use source::{DictionarySource, SourceFile, file_name};
+pub use stardict::{StardictError, StardictFormat};
 pub use structured_content::{
     ContainerElement, DetailsElement, ElementData, ElementStyle, EmptyElement, ImageElement,
     LinkElement, StructuredContent, StructuredElement, StyleValue, TableCellElement,
@@ -63,7 +65,7 @@ pub fn parse_dictionary(source: &mut DictionarySource) -> Result<Dictionary, Dic
 }
 
 fn registered_formats() -> Vec<Box<dyn DictionaryFormat>> {
-    vec![Box::new(YomitanFormat)]
+    vec![Box::new(YomitanFormat), Box::new(StardictFormat)]
 }
 
 /// The whole contents of a dictionary, apart from its media files.
