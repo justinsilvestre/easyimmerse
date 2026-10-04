@@ -129,12 +129,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
 
-      # rpm2cpio and cpio unpack the RPM package for the sidecar check.
+      # bsdtar, from libarchive-tools, unpacks the RPM package for the sidecar check.
       - name: Linux webview and packaging dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf rpm2cpio cpio
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libarchive-tools
 
       - name: Fetch the ffmpeg sidecar
         run: mise run fetch-ffmpeg

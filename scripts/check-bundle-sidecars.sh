@@ -39,7 +39,7 @@ unpack() {
     *.app) cp -R "$bundle" "$dest/" ;;
     *.dmg) unpack_dmg "$bundle" "$dest" ;;
     *.deb) dpkg-deb -x "$bundle" "$dest" ;;
-    *.rpm) (cd "$dest" && rpm2cpio "$bundle" | cpio -idm --quiet) ;;
+    *.rpm) bsdtar -xf "$bundle" -C "$dest" ;;
     *.AppImage) unpack_appimage "$bundle" "$dest" ;;
     *.msi) msiexec //a "$(cygpath -w "$bundle")" //qn "TARGETDIR=$(cygpath -w "$dest")" ;;
     *-setup.exe) 7z x -y -o"$dest" "$bundle" > /dev/null ;;
