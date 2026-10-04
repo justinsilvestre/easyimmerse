@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@easyimmerse/backend": "workspace:*",
-    "@easyimmerse/fixtures": "workspace:*",
     "@easyimmerse/licenses": "workspace:*",
     "@easyimmerse/state": "workspace:*",
     "@easyimmerse/types": "workspace:*",
