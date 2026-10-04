@@ -1,28 +1,45 @@
 import type { Document } from "@easyimmerse/types";
 
-/** The shortest line that counts as filling the width of a hard-wrapped text. */
-const minWrappedLineLength = 50;
+/** The share of the text's usual line length that a line must reach to count as wrapped rather than deliberately short. */
+const wrappedLineShare = 0.75;
+/** The fewest wrapped lines from which the text's usual line length can be judged. */
+const minLinesToJudge = 10;
 
 /**
- * Replaces the line breaks inside each paragraph with spaces where the paragraph looks
- * hard-wrapped to a fixed width, as plain-text books usually are, so that the reader can
- * flow it to the screen. Short lines, as in verse, keep their breaks.
+ * Removes the line breaks that plain-text books put at a fixed width, so that the text can
+ * flow to fit the screen. Breaks that look deliberate stay: those in paragraphs with lines
+ * much shorter than the rest of the text, as in verse, and those before an indented line.
  * Each break becomes one space, so offsets into the paragraphs stay the same.
  */
 export function unwrapHardLineBreaks(document: Document): Document {
+  const width = usualLineLength(document);
+  if (width === null) return document;
   return {
     ...document,
     chapters: document.chapters.map((chapter) => ({
       ...chapter,
-      paragraphs: chapter.paragraphs.map(unwrapParagraph),
+      paragraphs: chapter.paragraphs.map((paragraph) =>
+        unwrapParagraph(paragraph, width * wrappedLineShare),
+      ),
     })),
   };
 }
 
-function unwrapParagraph(paragraph: string): string {
+function unwrapParagraph(paragraph: string, minLength: number): string {
   const lines = paragraph.split("\n");
-  const isWrapped = lines
-    .slice(0, -1)
-    .every((line) => line.length >= minWrappedLineLength);
+  const isWrapped =
+    lines.slice(0, -1).every((line) => line.trim().length >= minLength) &&
+    lines.slice(1).every((line) => !/^\s/.test(line));
   return isWrapped ? lines.join(" ") : paragraph;
+}
+
+/** The median length of the lines that end in a break, or null when there are too few to tell. */
+function usualLineLength(document: Document): number | null {
+  const lengths = document.chapters
+    .flatMap((chapter) => chapter.paragraphs)
+    .flatMap((paragraph) => paragraph.split("\n").slice(0, -1))
+    .map((line) => line.trim().length)
+    .sort((a, b) => a - b);
+  if (lengths.length < minLinesToJudge) return null;
+  return lengths[Math.floor(lengths.length / 2)] ?? null;
 }
