@@ -17,6 +17,8 @@ use crate::service::ConversionService;
 /// How long a request waits for its segment before answering with a timeout.
 pub const SEGMENT_WAIT_TIMEOUT: Duration = Duration::from_secs(60);
 const INIT_WAIT_TIMEOUT: Duration = Duration::from_secs(30);
+/// How many runs one request may start before it gives up on a segment ffmpeg never produces.
+const MAX_RUN_STARTS_PER_REQUEST: usize = 3;
 
 enum Outcome {
     Ready(PathBuf),
@@ -31,13 +33,14 @@ impl ConversionService {
         let path = entry.init_segment_path();
         let _waiting = entry.waiting();
         let deadline = Instant::now() + INIT_WAIT_TIMEOUT;
+        let mut starts = 0;
         loop {
             let mut produced = entry.produced.subscribe();
             produced.borrow_and_update();
             if path.is_file() {
                 return Ok(path);
             }
-            self.ensure_some_run(&entry).await?;
+            self.ensure_some_run(&entry, &path, &mut starts).await?;
             self.await_change(&entry, 0, &mut produced, deadline, INIT_WAIT_TIMEOUT)
                 .await?;
         }
@@ -60,10 +63,14 @@ impl ConversionService {
         let path = entry.segment_path(index);
         let _waiting = entry.waiting();
         let deadline = Instant::now() + SEGMENT_WAIT_TIMEOUT;
+        let mut starts = 0;
         loop {
             let mut produced = entry.produced.subscribe();
             produced.borrow_and_update();
-            if let Outcome::Ready(path) = self.check_segment(&entry, &path, index).await? {
+            if let Outcome::Ready(path) = self
+                .check_segment(&entry, &path, index, &mut starts)
+                .await?
+            {
                 return Ok(path);
             }
             self.await_change(&entry, index, &mut produced, deadline, SEGMENT_WAIT_TIMEOUT)
@@ -76,6 +83,7 @@ impl ConversionService {
         entry: &Arc<ConversionEntry>,
         path: &Path,
         index: usize,
+        starts: &mut usize,
     ) -> Result<Outcome, ConversionError> {
         if path.is_file() {
             self.schedule_eviction();
@@ -90,6 +98,7 @@ impl ConversionService {
                 }
             }
             RequestDecision::Restart { start_index } => {
+                count_start(entry, path, starts)?;
                 if let Some(previous) = run.take() {
                     previous.stop().await;
                 }
@@ -102,11 +111,17 @@ impl ConversionService {
         Ok(Outcome::Pending)
     }
 
-    async fn ensure_some_run(&self, entry: &Arc<ConversionEntry>) -> Result<(), ConversionError> {
+    async fn ensure_some_run(
+        &self,
+        entry: &Arc<ConversionEntry>,
+        path: &Path,
+        starts: &mut usize,
+    ) -> Result<(), ConversionError> {
         let mut run = entry.run.lock().await;
         if run.as_ref().is_some_and(|run| !run.is_finished()) {
             return Ok(());
         }
+        count_start(entry, path, starts)?;
         *run = Some(ConversionRun::start(&self.inner.ffmpeg, Arc::clone(entry), 0, 0).await?);
         Ok(())
     }
@@ -142,4 +157,26 @@ impl ConversionService {
         }
         Ok(())
     }
+}
+
+/// Counts a run a request is about to start, and fails the request once its earlier runs have
+/// all ended without producing the file it waits for.
+fn count_start(
+    entry: &ConversionEntry,
+    path: &Path,
+    starts: &mut usize,
+) -> Result<(), ConversionError> {
+    if *starts == MAX_RUN_STARTS_PER_REQUEST {
+        return Err(ConversionError::SegmentNotProduced {
+            key: entry.key.to_string(),
+            segment: path
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_default(),
+            runs: *starts,
+            stderr: entry.stderr_text(),
+        });
+    }
+    *starts += 1;
+    Ok(())
 }
