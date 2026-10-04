@@ -20,6 +20,24 @@ describe("planNotices", () => {
     });
     assert.equal(plan.acceptedBuilds.length, 1);
   });
+
+  it("marks a build as version 3 when it enables version3", () => {
+    const plan = planNotices({
+      t: { url, sha256: "", configuration: "--enable-version3" },
+    });
+    assert.equal(plan.acceptedBuilds[0]?.isVersion3, true);
+  });
+
+  it("does not mark a build as version 3 when it disables version3 later", () => {
+    const plan = planNotices({
+      t: {
+        url,
+        sha256: "",
+        configuration: "--enable-version3 --disable-version3",
+      },
+    });
+    assert.equal(plan.acceptedBuilds[0]?.isVersion3, false);
+  });
 });
 
 describe("listLicenseUrls", () => {
