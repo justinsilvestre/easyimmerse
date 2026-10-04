@@ -218,10 +218,14 @@ jobs:
       - name: Write the build notes and checksums
         run: sh scripts/ffmpeg-build/release-notes.sh "$VERSION" dist
 
+      # A tag push already made the tag. Naming the commit as the target as well makes GitHub
+      # refuse the release, because the workflow token may not point a ref at a commit that
+      # changes workflow files.
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$TAG" --target "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY" \
+          if [ "$GITHUB_REF_TYPE" = branch ]; then set -- --target "$GITHUB_SHA"; fi
+          gh release create "$TAG" "$@" --repo "$GITHUB_REPOSITORY" \
             --title "ffmpeg $VERSION (LGPL)" --notes-file dist/BUILD.md \
             dist/*.tar.xz dist/*.zip dist/SHA256SUMS dist/BUILD.md
