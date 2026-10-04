@@ -36,7 +36,9 @@ jobs:
       - name: Install the build tools
         run: |
           set -eu
-          apt-get update
+          # Debian 11 reached the end of its support, so its packages now live on the archive.
+          sed -i 's|http://deb.debian.org/debian-security|http://archive.debian.org/debian-security|; s|http://deb.debian.org/debian|http://archive.debian.org/debian|' /etc/apt/sources.list
+          apt-get -o Acquire::Check-Valid-Until=false update
           apt-get install -y --no-install-recommends build-essential ca-certificates curl git gnupg \
             linux-libc-dev nasm ninja-build pkg-config python3-pip xz-utils zlib1g-dev
           pip3 install meson
