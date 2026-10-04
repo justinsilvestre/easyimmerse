@@ -160,6 +160,25 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/flashcards/${flashcardId}`,
         body: { kind: "json", value: draft },
       }),
+      // The list shows the change at once, so that a dragged clip does not jump back while the request runs.
+      async onQueryStarted(
+        { projectId, flashcardId, draft },
+        { dispatch, queryFulfilled },
+      ) {
+        const patch = dispatch(
+          backendApi.util.updateQueryData(
+            "listFlashcards",
+            projectId,
+            (list) => {
+              const flashcard = list.flashcards.find(
+                ({ id }) => id === flashcardId,
+              );
+              if (flashcard) Object.assign(flashcard, draft);
+            },
+          ),
+        );
+        await queryFulfilled.catch(patch.undo);
+      },
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
       ],
@@ -290,6 +309,22 @@ export const backendApi = createApi({
         path: `${mediaFilePath(args)}/subtitle-selection`,
         body: { kind: "json", value: selection },
       }),
+      // The track menus show the choice at once instead of the old one until the list is fetched again.
+      async onQueryStarted(
+        { selection, ...args },
+        { dispatch, queryFulfilled },
+      ) {
+        const patch = dispatch(
+          backendApi.util.updateQueryData(
+            "listSubtitleTracks",
+            args,
+            (list) => {
+              list.selection = selection;
+            },
+          ),
+        );
+        await queryFulfilled.catch(patch.undo);
+      },
       invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
     }),
     getConversionCacheStatus: build.query<ConversionCacheStatus, void>({
