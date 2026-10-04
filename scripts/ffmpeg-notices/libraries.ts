@@ -49,7 +49,7 @@ export const libraries = {
   lcms2: { name: "Little CMS", license: "MIT", licenseUrl: github("mm2/Little-CMS", "master/LICENSE") },
   libass: { name: "libass", license: "ISC", licenseUrl: github("libass/libass", "master/COPYING") },
   libbluray: { name: "libbluray", license: "LGPL-2.1-or-later", licenseUrl: videolan("videolan/libbluray", "master/COPYING") },
-  libdrm: { name: "libdrm", license: "MIT", licenseUrl: freedesktop("mesa/libdrm", "main/LICENSES/MIT.txt") },
+  libdrm: { name: "libdrm", license: "MIT", licenseUrl: freedesktop("mesa/libdrm", "libdrm-2.4.125/xf86drm.h"), licenseLineCount: 33 },
   libffi: { name: "libffi", license: "MIT", licenseUrl: github("libffi/libffi", "master/LICENSE") },
   libiconv: { name: "GNU libiconv", license: "LGPL-2.1-or-later", licenseUrl: "https://git.savannah.gnu.org/cgit/libiconv.git/plain/COPYING.LIB" },
   libjxl: { name: "libjxl", license: "BSD-3-Clause", licenseUrl: github("libjxl/libjxl", "main/LICENSE") },

@@ -15,11 +15,21 @@ common_flags="$(sh "$(dirname "$0")/read-common-flags.sh")"
 windows_flags="--toolchain=msvc --arch=$arch --target-os=win64 --enable-zlib \
   --enable-mediafoundation --enable-ffnvcodec --enable-nvenc --enable-amf \
   --enable-encoder=h264_mf,hevc_mf,h264_nvenc,hevc_nvenc,h264_amf,hevc_amf \
-  --extra-cflags=-MT --extra-cflags=-I$deps_windows/include --extra-ldflags=-L$deps_windows/lib"
+  --extra-cflags=-MT --extra-cflags=-I$deps_windows/include --extra-ldflags=-libpath:$deps_windows/lib"
 
+report_configure_failure() {
+  echo "pkg-config: $(command -v pkg-config)"
+  PKG_CONFIG_PATH="$pkg_config_path" pkg-config --modversion ffnvcodec || true
+  cat "$pkg_config_path/ffnvcodec.pc" || true
+  grep -n -A40 'check_lib zlib' ffbuild/config.log || true
+  grep -n -A40 'check_pkg_config ffnvcodec' ffbuild/config.log | head -120 || true
+  tail -30 ffbuild/config.log
+}
+
+pkg_config_path="$(cygpath -u "$deps_windows")/lib/pkgconfig"
 cd "$source_dir"
-PKG_CONFIG_PATH="$(cygpath -u "$deps_windows")/lib/pkgconfig" ./configure $common_flags $windows_flags --prefix="$out/install" \
-  || { grep -n -A40 'check_lib zlib' ffbuild/config.log; tail -30 ffbuild/config.log; exit 1; }
+PKG_CONFIG_PATH="$pkg_config_path" ./configure $common_flags $windows_flags --prefix="$out/install" \
+  || { report_configure_failure; exit 1; }
 make -j"$(nproc)" > /dev/null
 make install > /dev/null
 cp "$out/install/bin/ffmpeg.exe" "$out/install/bin/ffprobe.exe" "$out/"
