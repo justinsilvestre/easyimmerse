@@ -2,6 +2,7 @@ use thiserror::Error;
 
 use super::archive::ArchiveError;
 use super::csv::CsvError;
+use super::mdict::MdictError;
 use super::sink::SinkError;
 use super::stardict::StardictError;
 use super::yomitan::YomitanError;
@@ -26,4 +27,6 @@ pub enum DictionaryError {
     Csv(#[from] CsvError),
     #[error(transparent)]
     Stardict(#[from] StardictError),
+    #[error(transparent)]
+    Mdict(#[from] MdictError),
 }

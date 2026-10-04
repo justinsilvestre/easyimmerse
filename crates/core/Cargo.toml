@@ -8,12 +8,15 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+adler2 = { workspace = true }
 chardetng = { workspace = true }
 csv = { workspace = true }
 encoding_rs = { workspace = true }
 flate2 = { workspace = true }
 lzma-rust2 = { workspace = true }
+lzokay = { workspace = true }
 percent-encoding = { workspace = true }
+ripemd = { workspace = true }
 roxmltree = { workspace = true }
 ruzstd = { workspace = true }
 serde = { workspace = true }
@@ -26,3 +29,4 @@ zip = { workspace = true }
 
 [dev-dependencies]
 lzma-rust2 = { workspace = true, features = ["encoder"] }
+lzokay = { workspace = true, features = ["compress", "std"] }

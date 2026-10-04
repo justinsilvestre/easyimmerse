@@ -1445,12 +1445,15 @@ dependencies = [
 name = "easyimmerse-core"
 version = "0.1.0"
 dependencies = [
+ "adler2",
  "chardetng",
  "csv",
  "encoding_rs",
  "flate2",
  "lzma-rust2",
+ "lzokay",
  "percent-encoding",
+ "ripemd",
  "roxmltree",
  "ruzstd",
  "serde",
@@ -3099,6 +3102,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lzokay"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "953d350dc065718bb00b61ea2118274ffe2fdf6488f32f720422bcd1c9d6025f"
+dependencies = [
+ "zerocopy",
+]
+
+[[package]]
 name = "mac-notification-sys"
 version = "0.6.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4376,6 +4388,15 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "ripemd"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4dd4211456b4172d7e44261920c25acf07367c4f04bb5f5d54fc21b090d9b159"
+dependencies = [
+ "digest 0.11.3",
 ]
 
 [[package]]

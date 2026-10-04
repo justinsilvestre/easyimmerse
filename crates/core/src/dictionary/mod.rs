@@ -10,6 +10,7 @@ mod dictionary_media;
 mod error;
 mod format;
 mod kanji_entry;
+mod mdict;
 mod metadata;
 mod sink;
 mod source;
@@ -26,6 +27,7 @@ pub use dictionary_media::DictionaryMedia;
 pub use error::DictionaryError;
 pub use format::DictionaryFormat;
 pub use kanji_entry::{KanjiEntry, KanjiMeta};
+pub use mdict::{MdictError, MdictFormat};
 pub use metadata::{DictionaryFormatKind, DictionaryMetadata, FrequencyMode};
 pub use sink::{DictionarySink, SinkError, SinkResult};
 pub use source::{DictionarySource, SourceFile, file_name};
@@ -70,6 +72,7 @@ fn registered_formats() -> Vec<Box<dyn DictionaryFormat>> {
     vec![
         Box::new(YomitanFormat),
         Box::new(StardictFormat),
+        Box::new(MdictFormat),
         Box::new(CsvFormat),
     ]
 }
