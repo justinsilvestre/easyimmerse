@@ -88,7 +88,7 @@ Results list inflections outermost first, so 食べさせられなかった give
 
 These were left out because none of the sources above states them:
 
-- The negative imperative な (as in するな). WP-main shows it only inside example sentences, without describing the form.
+- The negative imperative な (as in するな). The Wikipedia articles show it only inside example sentences, without describing the form.
 - The representative かったり of i-adjectives in general. Only なかったり, from the paradigm of ない in WKT-verbs, is included.
 - Colloquial contractions beyond those listed: なきゃ, なくちゃ, ちゃ and じゃ for ては and では, and ば-contractions such as 書きゃ. The research report points to IPADIC `Verb.csv` for the last; it has not been checked yet.
 - Kansai and other dialect forms, such as へん, and the classical nidan classes.
