@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "plugin-check",
+  "description": "Lets the main window run the plugin host self-check, which the end-to-end tests call. Builds without the plugin-check feature have no such command.",
+  "windows": ["main"],
+  "permissions": ["allow-check-plugin-host"]
+}

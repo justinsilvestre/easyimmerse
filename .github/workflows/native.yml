@@ -17,9 +17,14 @@ on:
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
+      - "scripts/install-appium-driver.sh"
+      - "scripts/ios-project-simulator-only.sh"
       - "fixtures/**"
+      - "plugins/**"
+  # A tag named native-ci-<job>-<stamp> runs that one job at the tagged commit, for one-off checks of a branch.
   push:
     branches: [main]
+    tags: ["native-ci-*"]
     paths:
       - ".github/workflows/native.yml"
       - ".github/actions/**"
@@ -35,7 +40,10 @@ on:
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
+      - "scripts/install-appium-driver.sh"
+      - "scripts/ios-project-simulator-only.sh"
       - "fixtures/**"
+      - "plugins/**"
   workflow_dispatch:
 
 # A newer push to the same branch cancels the run still going for the older one.
@@ -57,7 +65,7 @@ jobs:
 
   desktop:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-desktop-'))
     strategy:
       fail-fast: false
       matrix:
@@ -78,9 +86,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      # The plugin-check feature embeds this plugin, so the end-to-end tests can prove the plugin host runs.
+      - name: Build the hello-rust plugin
+        run: mise run plugins:build-rust
+
       # The end-to-end tests need the global Tauri object, which the extra config file turns on.
       - name: Debug build without bundling
-        run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json
+        run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json --features plugin-check
 
       - name: Embedded server health check
         shell: bash
@@ -103,7 +115,7 @@ jobs:
 
   android:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-android-'))
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -119,22 +131,26 @@ jobs:
           ndk-version: r28c
       # The debug link for Android fills the runner's disk, and the NDK linker dies with a bus error instead of a clear message.
       # Removing unused preinstalled toolchains frees over ten gigabytes.
-      # The last step reports what the build used.
+      # The build sizes step reports what the build used.
       - name: Free disk space
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/.ghcup /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/powershell \
             /usr/share/swift /usr/local/julia* /usr/local/share/chromium /opt/az
           df -h /
+      # Only the emulator's architecture is built: the emulator needs x86_64, and a second target would strain the disk.
       - name: Rust Android target
-        run: rustup target add aarch64-linux-android
+        run: rustup target add x86_64-linux-android
       - name: Initialize the Android project
         run: pnpm --filter @easyimmerse/native exec tauri android init --ci --skip-targets-install
         env:
           NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+      - name: Build the hello-rust plugin
+        run: mise run plugins:build-rust
       # Keeping only line tables in the debug information roughly halves the build's disk use.
       # Backtraces still show file and line numbers.
+      # The extra config file turns on the global Tauri object, as for the desktop end-to-end tests.
       - name: Debug APK
-        run: pnpm --filter @easyimmerse/native exec tauri android build --debug --target aarch64 --apk --ci
+        run: pnpm --filter @easyimmerse/native exec tauri android build --debug --target x86_64 --apk --ci --config e2e/tauri.conf.json --features plugin-check
         env:
           NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
           CARGO_PROFILE_DEV_DEBUG: line-tables-only
@@ -145,22 +161,118 @@ jobs:
           du -sh target apps/native/src-tauri/gen/android || true
           find apps/native/src-tauri/gen/android -name '*.apk' -exec ls -l {} + || true
 
+      # Without KVM the emulator falls back to software virtualization and takes several minutes to boot.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      # The directory holds the Appium driver and the chromedriver binaries it downloads to match the emulator's WebView.
+      - name: Cache the Appium driver and chromedriver
+        uses: actions/cache@v4
+        with:
+          path: apps/native/.appium
+          key: appium-android-${{ runner.os }}-${{ hashFiles('mise.toml', 'pnpm-lock.yaml') }}
+      - name: Install the Appium driver
+        run: mise run appium:install:android
+      # The AVD boots from a cached snapshot. A `default` image rather than `google_apis` keeps the Google app,
+      # whose frozen DevTools sockets can stall Appium's WebView detection, off the emulator.
+      - name: Cache the emulator snapshot
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api34-x86_64-default
+      - name: Create the emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+      - name: End-to-end tests through Appium
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: pnpm --filter @easyimmerse/native e2e:android
+      - name: Upload the Appium logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appium-android-logs
+          path: apps/native/e2e/logs
+          if-no-files-found: ignore
+
   ios:
     needs: gate
-    if: needs.gate.outputs.passed != 'true'
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-ios-'))
     runs-on: macos-15
+    env:
+      # Only the newest Xcode versions on the runner keep their simulator runtime installed.
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
+      # Creating and booting the simulator takes minutes on the runner, so it happens in the background while the app builds.
+      # The tests wait for the boot to finish.
+      - name: Start booting the simulator
+        run: nohup node --input-type=module -e 'import("./apps/native/e2e/iosSimulator.ts").then((simulator) => simulator.prepareSimulator())' > simulator-boot.log 2>&1 &
       - name: Rust iOS simulator target
         run: rustup target add aarch64-apple-ios-sim
       - name: Initialize the Xcode project
         run: pnpm --filter @easyimmerse/native exec tauri ios init --ci --skip-targets-install
-      # Xcode's build phase runs cargo in a rebuilt environment that keeps only PATH and
-      # HOME, where the mise shim refuses mise.toml as untrusted. Putting rustup's own
-      # cargo first keeps mise out of that phase; rust-toolchain.toml still picks the version.
+      - name: Build the hello-rust plugin
+        run: mise run plugins:build-rust
+      # Xcode's build phase runs cargo in a rebuilt environment that keeps only PATH and HOME,
+      # where the mise shim refuses mise.toml as untrusted.
+      # Putting rustup's own cargo first keeps mise out of that phase,
+      # and rust-toolchain.toml still picks the version.
+      # The end-to-end tests need the global Tauri object, which the extra config file turns on.
       - name: Simulator build without signing
-        run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci
+        run: PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target aarch64-sim --no-sign --ci --config e2e/tauri.conf.json --features plugin-check
+      # The cache holds the XCUITest driver and the prebuilt WebDriverAgent the tests download.
+      # It is saved at the end even when the tests fail.
+      - uses: actions/cache/restore@v4
+        id: appium-cache
+        with:
+          path: apps/native/.appium
+          key: appium-ios-${{ runner.os }}-xcode16.4-${{ hashFiles('mise.toml', 'pnpm-lock.yaml') }}
+          restore-keys: appium-ios-${{ runner.os }}-xcode16.4-
+      - name: Install the Appium XCUITest driver
+        run: mise run appium:install:ios
+      - name: Simulator runtimes
+        run: xcrun simctl list runtimes
+      - name: End-to-end tests through Appium
+        run: pnpm --filter @easyimmerse/native e2e:ios
+      - name: Collect the simulator's screen, the app's log, and the Appium logs
+        if: failure()
+        run: |
+          mkdir -p ios-diagnostics
+          xcrun simctl io booted screenshot ios-diagnostics/screen.png || true
+          xcrun simctl spawn booted log show --last 15m --predicate 'process == "easyImmerse"' --style compact > ios-diagnostics/app.log || true
+          cp apps/native/e2e/logs/* ios-diagnostics/ || true
+          cp simulator-boot.log ios-diagnostics/ || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ios-diagnostics
+          path: ios-diagnostics
+      - uses: actions/cache/save@v4
+        if: always() && steps.appium-cache.outputs.cache-hit != 'true'
+        with:
+          path: apps/native/.appium
+          key: ${{ steps.appium-cache.outputs.cache-primary-key }}
 
   record:
     needs: [gate, desktop, android, ios]

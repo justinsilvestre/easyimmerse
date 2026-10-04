@@ -25,6 +25,10 @@ pub enum PluginError {
         "the interpreter execution mode needs the `interpreter` feature of easyimmerse-plugins"
     )]
     InterpreterUnavailable,
+    #[error(
+        "this platform forbids just-in-time compilation, so plugins run only in the interpreter execution mode"
+    )]
+    NativeUnavailable,
 }
 
 /// An error a plugin returns to the host through the `plugin-error` WIT variant.

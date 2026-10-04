@@ -3,7 +3,7 @@
 A free, cross-platform suite for learning languages through native media: videos, audiobooks, and ebooks become learning material with instant word lookups and rich flashcards. See [docs/overview.md](docs/overview.md) for what the product does.
 
 The suite consists of:
-- a desktop app (Mac, Windows, iOS) built with Rust/Tauri
+- a desktop app (macOS, Windows, Linux) built with Rust/Tauri
 - a mobile app (Android and iOS) built with Rust/Tauri
 - a web frontend built with TypeScript/React/Vite
 - a backend API server built with Rust/Axum
@@ -34,7 +34,7 @@ mise run storybook      # UI component stories at http://localhost:6006
 
 `web-dev` starts the server at `http://127.0.0.1:8788` with the token `dev`. The server keeps its data in `.dev/server.sqlite` and seeds two placeholder projects when that file is new. Delete `.dev/` to start over.
 
-`desktop` fetches the ffmpeg sidecar first if it is missing, then starts Vite on port 1421 and the Rust app in debug mode, so the frontend reloads on change. The database lands in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS.
+`desktop` fetches the ffmpeg sidecars first if they are missing (`mise run fetch-ffmpeg`, described in the [app README](apps/native/README.md#ffmpeg-sidecars)), then starts Vite on port 1421 and the Rust app in debug mode, so the frontend reloads on change. The database lands in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS.
 
 The browser extension has no dev task. Build it, then load it unpacked:
 
@@ -76,15 +76,24 @@ Each crate's integration tests form one binary named after the crate. Cargo buil
 ```sh
 mise run e2e            # web app and extension, through Playwright
 mise run e2e:desktop    # desktop app, through WebDriver
+mise run e2e:android    # the app on a running Android emulator, through Appium
+mise run e2e:ios        # the app on an iOS simulator, through Appium
 ```
 
 `e2e` builds the server, runs the web app's Playwright specs against it, then builds the Chrome extension against the same server, loads it into Chromium, and opens the side panel page directly. Playwright cannot load Firefox extensions, so Firefox is covered in CI by a build and `web-ext lint` only.
 
-`e2e:desktop` builds the desktop app in debug mode and runs the WebdriverIO specs in `apps/native/e2e/` against it on Linux, macOS, and Windows. Debug builds register an embedded WebDriver server plugin when the test runner sets `TAURI_WEBDRIVER_PORT`, so no browser driver is needed and an ordinary development run exposes no automation server. The build merges `e2e/tauri.conf.json`, which exposes the global Tauri object that the test service uses to inspect windows. Each run opens an empty database in a temporary directory through `EASYIMMERSE_DATABASE`. CI runs the same specs in the `desktop` job, under `xvfb-run` on Linux.
+`e2e:desktop` builds the desktop app in debug mode and drives it through an embedded WebDriver server, so it needs no browser driver. `e2e:android` and `e2e:ios` drive the same specs on mobile through [Appium](https://appium.io). Each mobile task installs the Appium driver it needs; `mise run appium:install` installs both ahead of time. The native tests build the example `hello-rust` plugin first, to check that the plugin host runs on each platform.
+
+The mobile tests need more setup than the rest of the repository:
+
+- Android: Android Studio's SDK and NDK, and a running x86_64 emulator. `mise run android:build` builds the debug APK on its own. The [app README](apps/native/README.md#android) gives the commands that create and start a dedicated emulator.
+- iOS: Xcode with a simulator runtime. `mise run ios:build` builds the simulator app on its own; it pins Ruby through Mise and installs CocoaPods when it is missing. The test task creates and boots its own simulator.
+
+The [app README](apps/native/README.md#end-to-end-tests) describes how the native tests work and how CI runs them.
 
 #### Desktop smoke test
 
-CI also builds the desktop app and runs it with `EASYIMMERSE_SMOKE_TEST=1`. The app then requests its own `/health` route, prints `smoke test: 200 {"status":"ok"}`, and exits before any window is created.
+CI also builds the desktop app and runs it with `EASYIMMERSE_SMOKE_TEST=1`. The app then requests its own `/health` route, prints `smoke test: 200 {"status":"ok"}`, and exits before any window is created. A build with the `plugin-check` feature also runs the [plugin host check](crates/plugins/README.md#checking-the-host-inside-the-app) and prints the greeting and the execution mode.
 
 ```sh
 mise exec -- pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle
@@ -93,18 +102,19 @@ EASYIMMERSE_SMOKE_TEST=1 target/debug/easyimmerse-native
 
 On Linux the Tauri runtime initializes GTK before the check runs, so the command needs a display; CI wraps it in `xvfb-run`.
 
+#### One-off CI runs
 
+To run one job of the `native` or `plugins` workflow at any commit, push a tag named `<workflow>-ci-<job>-<stamp>`, for example `git tag native-ci-ios-1 && git push origin native-ci-ios-1`. The jobs that can be named this way are `desktop`, `android`, and `ios` in `native`, and `mobile` in `plugins`. A tag run never skips its job because of an earlier pass, and it records no pass of its own.
 
 ## Repository structure
 
-
-Each independent platform has its own entrypoint under `apps/`. 
+Each independent platform has its own entrypoint under `apps/`. Directories marked with an asterisk have a README of their own, listed under [Further documentation](#further-documentation).
 
 ```
-apps/ 
+apps/
 ├── web/              web app, built with Vite
 │   ├── e2e/            Playwright specs
-├── native/           Tauri desktop and mobile app
+├── native/ *         Tauri desktop and mobile app
 │   ├── src/            frontend entry point
 │   ├── src-tauri/      the Rust shell
 │   └── e2e/            WebdriverIO specs
@@ -114,7 +124,7 @@ apps/
 └── server/           the standalone API server (a command-line wrapper around crates/api)
 ```
 
-The core logic and shared code for the Rust layer lives in `crates/`. 
+The core logic and shared code for the Rust layer lives in `crates/`.
 
 ```
 crates/               the Rust workspace
@@ -124,7 +134,7 @@ crates/               the Rust workspace
 ├── storage/          persistence
 ├── api/              the HTTP API; routes in src/routes/, generated document in openapi.json
 ├── plugin-api/       the plugin interfaces, written in WIT under wit/ (MIT licensed)
-├── plugins/          the plugin host, which loads and runs plugins
+├── plugins/ *        the plugin host, which loads and runs plugins
 └── wasm/             the WebAssembly facade over core, used for offline mode
 ```
 
@@ -139,73 +149,31 @@ packages/             the TypeScript workspace
 ├── effects-web/      each platform's implementation of the Effects interface
 ├── effects-native/
 ├── effects-extension/
-├── wasm/             the typed wrapper around the offline WebAssembly module
+├── wasm/ *           the typed wrapper around the offline WebAssembly module
 └── config/           shared TypeScript configuration
 ```
-
 
 The remaining directories are mostly for testing, scripts, and documentation.
 
 ```
 plugins/              example plugins, used only by tests; plugin-manifest.md describes their plugin.toml
-fixtures/             small sample files shared by every layer's tests; see its README.md
+fixtures/ *           small sample files shared by every layer's tests
 scripts/              setup and build scripts, including the ffmpeg fetcher
 docs/                 product documentation: overview, user stories, UX refinements, bug reports
 .github/workflows/    CI, one workflow per layer, plus the macOS ffmpeg build
 .claude/rules/        conventions that apply to a whole directory
 ```
 
+## Further documentation
 
+Notes on the internals of individual parts live beside them:
 
-## Platform notes
-
-### Desktop and mobile app
-
-`apps/native/src-tauri` is the Tauri shell. On start-up it opens the SQLite database in the app data directory, binds the API server to `127.0.0.1:8787` (or a free port when that one is taken), and creates the main window with `window.__EASYIMMERSE__ = { serverUrl, token }` injected before the page runs. The page then talks to the server over plain HTTP; Tauri IPC carries only the dialog, notification, clipboard, and opener plugins.
-
-#### ffmpeg sidecars
-
-The media routes will call `ffmpeg` and `ffprobe` sidecar binaries. `mise run fetch-ffmpeg` downloads the LGPL build for one target triple, checks its SHA-256, and copies the binaries into `apps/native/src-tauri/binaries/` (gitignored) under the names Tauri expects (`ffmpeg-<triple>` and `ffprobe-<triple>`, with `.exe` for Windows targets).
-
-```sh
-mise run fetch-ffmpeg                      # the triple of this machine, from rustc
-mise run fetch-ffmpeg x86_64-pc-windows-msvc
-mise run fetch-ffmpeg -- --force           # refetch even when the binaries exist
-```
-
-The script in `scripts/fetch-ffmpeg/` has no dependencies and is run directly by Node. Extraction uses the system `tar` for `.tar.xz` and `unzip` (or `Expand-Archive` on Windows) for `.zip`. Its `manifest.json` has one entry per Rust target triple:
-
-- `url`: the archive to download.
-- `sha256`: hex SHA-256 of the archive. A value starting with `TODO` makes the script skip that triple with a warning.
-- `archive`: `tar.xz` or `zip`.
-- `paths.ffmpeg` and `paths.ffprobe`: where each binary sits inside the archive.
-
-Linux and Windows entries point at a dated `autobuild-*` release of [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds/releases) rather than the `latest` release, whose assets are replaced daily and would no longer match the pinned hashes. To update, pick a newer dated release, download its four `*-lgpl-8.1` assets, and record their `shasum -a 256` output and inner paths (`tar tJf` or `unzip -l`).
-
-No first-party LGPL macOS build exists, so the `*-apple-darwin` entries point at this repository's own release produced by the `ffmpeg-macos` workflow (`.github/workflows/ffmpeg-macos.yml`). To build a version, push a tag named `ffmpeg-macos-<version>` on any branch (`git tag ffmpeg-macos-8.1.2 && git push origin ffmpeg-macos-8.1.2`), wait for the release with that tag, then copy the two hashes from its `SHA256SUMS` asset into the `sha256` fields. While this repository is private, those assets are only reachable through the GitHub API with a token: the script uses `GITHUB_TOKEN` or `GH_TOKEN` when set, and otherwise the token of the logged-in `gh` CLI. While a hash is `TODO`, the desktop app on macOS finds ffmpeg on `PATH` or not at all.
-
-`tauri.conf.json` does not declare the sidecars yet, because Tauri fails the build when a declared sidecar file is missing. Once `mise run fetch-ffmpeg` is part of every developer's setup, add this to `bundle` (the CI job already runs the fetch task):
-
-```json
-"externalBin": ["binaries/ffmpeg", "binaries/ffprobe"]
-```
-
-#### Mobile
-
-`gen/android` and `gen/apple` are gitignored for now. CI creates them with `tauri android init --ci` and `tauri ios init --ci`, builds a debug APK, and builds an unsigned iOS simulator app with `tauri ios build --no-sign`. Building through the Tauri CLI is required: the generated Xcode project's build phase asks a server started by `tauri ios build` for its options, so a direct `xcodebuild` fails.
-
-Building proves the projects compile. Loading the app at runtime needs plain HTTP to the embedded server at 127.0.0.1, which both platforms restrict:
-
-- Android allows cleartext traffic in debug builds already; the generated Gradle file sets the `usesCleartextTraffic` placeholder to true for debug and false for release. Release builds need a network security config that permits cleartext for 127.0.0.1 only. That file lives inside `gen/android`, so commit `gen/android` when adding it.
-- iOS App Transport Security blocks `http://127.0.0.1` inside WKWebView, and an IP address cannot be an exception domain. Add the exception to `apps/native/src-tauri/Info.ios.plist`, which Tauri merges into the generated project on every build, so `gen/apple` can stay uncommitted. Either allow web content loads with `NSAllowsArbitraryLoadsInWebContent`, or set `NSAllowsLocalNetworking` and have the app use `http://localhost:<port>` with `localhost` added to the server's expected hosts.
-
-Neither change has been tried on a device or simulator yet.
-
-On Android, log output at the info level and above goes to logcat under the tag `easyimmerse`; `adb logcat -s easyimmerse` shows it.
-
-### WebAssembly package
-
-`packages/wasm` is the typed wrapper around the offline WebAssembly build of `easyimmerse-core`. Its `pkg/` directory is generated and not committed, and `src/` imports from it, so run `mise run wasm:build` before the package's typecheck or tests. `loadOfflineWasm(source)` takes the bytes of `pkg/easyimmerse_wasm_bg.wasm` in Node and the `?url` import of that file under Vite.
+- [apps/native/README.md](apps/native/README.md): the Tauri shell, the ffmpeg sidecars, and the Android and iOS builds and end-to-end tests.
+- [crates/plugins/README.md](crates/plugins/README.md): the plugin host's execution modes, its iOS and Android constraints, and the `plugin-check` feature.
+- [packages/wasm/README.md](packages/wasm/README.md): the offline WebAssembly package and its build.
+- [fixtures/README.md](fixtures/README.md): the sample files shared by every layer's tests.
+- [plugins/plugin-manifest.md](plugins/plugin-manifest.md): the `plugin.toml` format of the example plugins.
+- [docs/](docs/): the product documentation: overview, user stories, UX refinements, and bug reports.
 
 ## License
 

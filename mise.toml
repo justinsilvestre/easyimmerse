@@ -12,6 +12,11 @@ cargo.binstall = true
 
 [env]
 _.file = ".env"
+# Appium keeps its drivers here, so that each checkout pins its own driver versions.
+APPIUM_HOME = "{{config_root}}/apps/native/.appium"
+# The Android SDK and NDK the Tauri CLI builds with. A value already in the environment, such as the one CI sets, wins over these defaults for Android Studio's install location.
+ANDROID_HOME = "{{ env.ANDROID_HOME | default(value=env.HOME ~ '/Library/Android/sdk') }}"
+NDK_HOME = "{{ env.NDK_HOME | default(value=env.ANDROID_HOME ~ '/ndk/28.2.13676358') }}"
 
 [tasks.check]
 description = "Lint, typecheck, and test every layer"
@@ -80,12 +85,67 @@ run = [
   "pnpm --filter @easyimmerse/extension e2e",
 ]
 
+# The drivers are pinned here rather than in package.json because Appium installs them itself.
+# The script skips a driver already at its pinned version, so the tasks can run before every test run.
+[tasks."appium:install"]
+description = "Install the Appium drivers for the mobile end-to-end tests into apps/native/.appium"
+depends = ["appium:install:android", "appium:install:ios"]
+
+[tasks."appium:install:android"]
+description = "Install the Appium driver for the Android end-to-end tests"
+run = "scripts/install-appium-driver.sh uiautomator2 8.7.0"
+
+[tasks."appium:install:ios"]
+description = "Install the Appium driver for the iOS end-to-end tests"
+run = "scripts/install-appium-driver.sh xcuitest 12.14.0"
+
+# The plugin-check feature embeds the hello-rust plugin, so that plugin is built first.
 [tasks."e2e:desktop"]
 description = "Drive a debug build of the desktop app through WebDriver"
+depends = ["plugins:build-rust"]
 run = [
-  "pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json",
+  "pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json --features plugin-check",
   "pnpm --filter @easyimmerse/native e2e",
 ]
+
+# The emulator runs x86_64. The Android build needs JDK 17 or newer but fails on the newest releases, so the task pins Temurin 17, as CI does.
+[tasks."android:build"]
+description = "Build a debug APK of the app for the x86_64 emulator, with the global Tauri object for the end-to-end tests"
+tools = { java = "temurin-17" }
+depends = ["plugins:build-rust"]
+run = [
+  "[ -d apps/native/src-tauri/gen/android ] || pnpm --filter @easyimmerse/native exec tauri android init --ci --skip-targets-install",
+  "pnpm --filter @easyimmerse/native exec tauri android build --debug --target x86_64 --apk --ci --config e2e/tauri.conf.json --features plugin-check",
+]
+
+[tasks."e2e:android"]
+description = "Drive a debug build of the app on a running Android emulator through Appium"
+depends = ["android:build", "appium:install:android"]
+run = "pnpm --filter @easyimmerse/native e2e:android"
+
+# The Rust target follows the machine: Apple silicon simulators run arm64 code, Intel ones x86_64.
+# On Intel, the generated project is restricted to the simulator platform; see the script.
+# `tauri ios init` needs CocoaPods. The task pins Ruby so that no other task installs it,
+# and installs CocoaPods as a gem because Mise's gem backend builds a task's gems with the system Ruby.
+# The Xcode build phase runs cargo with only PATH and HOME, where the mise shim refuses mise.toml
+# as untrusted, so rustup's own cargo comes first on PATH there.
+[tasks."ios:build"]
+description = "Build a debug app for the iOS simulator, with the global Tauri object for the end-to-end tests"
+tools = { ruby = "3.4.11" }
+depends = ["plugins:build-rust"]
+run = '''
+set -e
+gem list --installed --exact cocoapods --version 1.17.0 > /dev/null || gem install cocoapods --version 1.17.0
+case "$(uname -m)" in arm64) target=aarch64-sim ;; *) target=x86_64 ;; esac
+[ -d apps/native/src-tauri/gen/apple ] || pnpm --filter @easyimmerse/native exec tauri ios init --ci --skip-targets-install
+[ "$target" = aarch64-sim ] || sh scripts/ios-project-simulator-only.sh
+PATH="$HOME/.cargo/bin:$PATH" pnpm --filter @easyimmerse/native exec tauri ios build --debug --target "$target" --no-sign --ci --config e2e/tauri.conf.json --features plugin-check
+'''
+
+[tasks."e2e:ios"]
+description = "Drive a debug build of the app on an iOS simulator through Appium"
+depends = ["ios:build", "appium:install:ios"]
+run = "pnpm --filter @easyimmerse/native e2e:ios"
 
 [tasks.desktop]
 description = "Run the desktop app in development mode with its embedded server"
