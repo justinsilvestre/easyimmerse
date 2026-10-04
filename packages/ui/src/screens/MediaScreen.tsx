@@ -1,6 +1,5 @@
-import { buildMediaFrameUrl, getServerConfig } from "@easyimmerse/backend";
 import { actions, selectPlayer } from "@easyimmerse/state";
-import type { MediaFile, Project } from "@easyimmerse/types";
+import type { Project } from "@easyimmerse/types";
 import { useReducer } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
@@ -8,6 +7,8 @@ import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
+import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
+import { useScreenshotUrl } from "../flashcards/useScreenshotUrl.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { findTranslationOf } from "../media/findCue.ts";
@@ -17,7 +18,6 @@ import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { TrackSelection } from "../media/playback.ts";
 import { skipTarget } from "../media/skipTarget.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
-import { useHasVideo } from "../player/useHasVideo.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
@@ -41,7 +41,7 @@ export function MediaScreen({
   const player = useAppSelector(selectPlayer);
   const currentMs = player.currentTimeSeconds * 1000;
   const durationMs = useMediaDurationMs(projectId, mediaFile);
-  const hasVideo = useHasVideo(projectId, mediaFile);
+  const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
   const flashcards = useMediaFlashcards(projectId, mediaFileId);
   const [panels, dispatchPanels] = useReducer(
@@ -54,6 +54,10 @@ export function MediaScreen({
     mediaFile,
     durationMs,
     editedContent?.audio_context ?? null,
+  );
+  const screenshotUrl = useScreenshotUrl(
+    screenshotSource,
+    editedContent?.screenshot?.at_ms ?? null,
   );
   const tracks: TrackSelection = {
     audio: [],
@@ -76,7 +80,7 @@ export function MediaScreen({
           : null,
         mediaFile,
         settings,
-        hasVideo,
+        hasScreenshots: screenshotSource !== null,
       }),
     );
   };
@@ -168,12 +172,7 @@ export function MediaScreen({
             dispatch={flashcards.edit}
             languages={languages}
             waveform={clipWaveform}
-            screenshotUrl={screenshotUrlOf(
-              projectId,
-              mediaFile,
-              hasVideo,
-              flashcards.edited.editor.content.screenshot?.at_ms ?? null,
-            )}
+            screenshotUrl={screenshotUrl}
             onSave={flashcards.save}
             onDelete={flashcards.remove}
             onClose={flashcards.close}
@@ -190,22 +189,4 @@ export function MediaScreen({
       }
     />
   );
-}
-
-/** Screenshots come from the server's frame route, so only a video on the server's disk has them. */
-function screenshotUrlOf(
-  projectId: string,
-  mediaFile: MediaFile | null,
-  hasVideo: boolean,
-  atMs: number | null,
-): string | null {
-  const server = getServerConfig();
-  if (
-    server === null ||
-    mediaFile?.source.kind !== "path" ||
-    !hasVideo ||
-    atMs === null
-  )
-    return null;
-  return buildMediaFrameUrl(server, projectId, mediaFile.id, atMs);
 }

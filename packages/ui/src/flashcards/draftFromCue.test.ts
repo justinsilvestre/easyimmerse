@@ -15,14 +15,17 @@ const mediaFile: MediaFile = {
 
 const cue = exampleCues[2] ?? null;
 
-function draft(settings: ProjectSettings = defaultProjectSettings) {
+function draft(
+  settings: ProjectSettings = defaultProjectSettings,
+  hasScreenshots = true,
+) {
   return draftFromCue({
     word: "fressen",
     cue,
     translationCue: exampleTranslationCues[2] ?? null,
     mediaFile,
     settings,
-    hasVideo: true,
+    hasScreenshots,
   });
 }
 
@@ -62,6 +65,10 @@ describe("draftFromCue", () => {
 
   it("takes the screenshot from the middle of the cue", () => {
     expect(draft().content.screenshot).toEqual({ at_ms: 6800 });
+  });
+
+  it("leaves the screenshot out when the media file has no screenshots", () => {
+    expect(draft(defaultProjectSettings, false).content.screenshot).toBeNull();
   });
 
   it("tags the card with the media file's name when the settings say so", () => {

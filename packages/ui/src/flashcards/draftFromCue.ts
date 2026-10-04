@@ -18,7 +18,7 @@ export function cueForFlashcard(cues: readonly Cue[], ms: number): Cue | null {
 
 /**
  * Starts a flashcard for a word from a subtitle cue under the project's flashcard settings:
- * the cue is the sentence, its timing the audio clip, and its middle the moment of the screenshot of a video.
+ * the cue is the sentence, its timing the audio clip, and its middle the moment of the screenshot when the media file has screenshots.
  * Definitions are left empty for the user to fill in, since dictionaries are not consulted yet.
  */
 export function draftFromCue({
@@ -27,14 +27,14 @@ export function draftFromCue({
   translationCue,
   mediaFile,
   settings,
-  hasVideo,
+  hasScreenshots,
 }: {
   word: string;
   cue: Cue | null;
   translationCue: Cue | null;
   mediaFile: MediaFile;
   settings: ProjectSettings;
-  hasVideo: boolean;
+  hasScreenshots: boolean;
 }): FlashcardDraft {
   return {
     media_file_id: mediaFile.id,
@@ -53,7 +53,7 @@ export function draftFromCue({
         ? { start_ms: cue.start_ms, end_ms: cue.end_ms }
         : null,
       screenshot:
-        cue && hasVideo
+        cue && hasScreenshots
           ? { at_ms: Math.round((cue.start_ms + cue.end_ms) / 2) }
           : null,
       tags: settings.tags_media_name

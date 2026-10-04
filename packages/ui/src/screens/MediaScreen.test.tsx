@@ -1,7 +1,11 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
-import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
-import type { Flashcard } from "@easyimmerse/types";
+import {
+  actions,
+  createBrowserFileRegistry,
+  selectCurrentMediaFileId,
+} from "@easyimmerse/state";
+import type { Flashcard, MediaFile } from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -15,6 +19,8 @@ import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.
 import {
   fixtureProject,
   fixtureResponses,
+  fixtureSubtitleTracks,
+  fixtureTrack,
 } from "../testSupport/fixtureResponses.ts";
 import {
   directPlaybackRoutes,
@@ -62,6 +68,58 @@ function renderMediaScreen(flashcards: Flashcard[] = []) {
     rendered.store.dispatch(actions.openMedia("m1"));
   });
   return { ...rendered, client };
+}
+
+/**
+ * Renders the screen on a video the browser added, with the sample subtitles.
+ * The browser's registry holds the given file, or nothing when it is null.
+ */
+function renderBrowserVideoScreen(file: File | null) {
+  const registry = createBrowserFileRegistry<File>();
+  const mediaFile: MediaFile = {
+    id: "m3",
+    project_id: "p1",
+    name: "clip.mp4",
+    source:
+      file === null
+        ? { kind: "browser_file", size: 1, last_modified_ms: 1 }
+        : registry.register(file),
+    created_at_ms: 1,
+    track_selection_json: null,
+  };
+  const client = createFakeBackendClient({
+    ...fixtureResponses,
+    "GET /projects/p1/media": { media_files: [mediaFile] },
+    "GET /projects/p1/media/m3/subtitles": fixtureSubtitleTracks,
+    "GET /projects/p1/media/m3/subtitles/s1/cues": fixtureTrack,
+    "POST /projects/p1/flashcards": savedFlashcard,
+  });
+  const rendered = renderWithAppStore(
+    <MediaScreen project={fixtureProject} mediaFileId="m3" />,
+    client,
+    { server: fakeServer, browserFileRegistry: registry },
+  );
+  act(() => {
+    rendered.store.dispatch(actions.preferencesLoaded({}));
+    rendered.store.dispatch(actions.openMedia("m3"));
+  });
+  return { ...rendered, client };
+}
+
+const browserVideo = () =>
+  new File([new Uint8Array([1, 2, 3])], "clip.mp4", { lastModified: 5 });
+
+async function savedScreenshotOfNewFlashcard(
+  client: ReturnType<typeof createFakeBackendClient>,
+) {
+  const list = await findSubtitles();
+  fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+  await screen.findByText("Flashcard saved to the project.");
+  const body = bodyOf(
+    requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
+  ) as Partial<Flashcard> | undefined;
+  return body?.content?.screenshot;
 }
 
 const stripRect = {
@@ -330,6 +388,20 @@ describe("MediaScreen", () => {
           ),
         ).toMatchObject({ content: { audio_context: { start_ms: 250 } } }),
       );
+    });
+  });
+
+  describe("with a video the browser added", () => {
+    it("takes a new flashcard's screenshot while the browser holds the file", async () => {
+      const { client } = renderBrowserVideoScreen(browserVideo());
+      expect(await savedScreenshotOfNewFlashcard(client)).toEqual({
+        at_ms: 1000,
+      });
+    });
+
+    it("leaves the screenshot out of a new flashcard once the browser no longer holds the file", async () => {
+      const { client } = renderBrowserVideoScreen(null);
+      expect(await savedScreenshotOfNewFlashcard(client)).toBeNull();
     });
   });
 });
