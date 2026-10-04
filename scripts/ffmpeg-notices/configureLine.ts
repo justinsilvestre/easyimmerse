@@ -1,11 +1,9 @@
-const configurationMarker = "configuration: --";
-const prefixOption = "--prefix=";
+const configureMarker = "--prefix=";
 
 /**
- * Finds the configure line that ffmpeg embeds in its binaries (printed by `ffmpeg -version`
- * after `configuration: `). Without that marker, the longest printable string containing
- * `--prefix=` is taken from its first `--`, since statically linked libraries may embed
- * configure lines of their own.
+ * Finds the configure line that ffmpeg embeds in its binaries (printed by `ffmpeg -version`).
+ * Statically linked libraries may embed configure lines of their own, so the longest
+ * printable string containing `--prefix=` is taken, starting at its first `--`.
  */
 export function findConfigureLine(binary: Uint8Array): string | null {
   const bytes = Buffer.from(
@@ -13,43 +11,23 @@ export function findConfigureLine(binary: Uint8Array): string | null {
     binary.byteOffset,
     binary.byteLength,
   );
-  return (
-    findLongest(bytes, configurationMarker, printableStringAfterMarker) ??
-    findLongest(bytes, prefixOption, printableStringAround)
-  );
-}
-
-function findLongest(
-  bytes: Buffer,
-  marker: string,
-  extract: (bytes: Buffer, index: number) => string,
-): string | null {
   let longest: string | null = null;
-  let from = bytes.indexOf(marker);
+  let from = bytes.indexOf(configureMarker);
   while (from !== -1) {
-    const candidate = extract(bytes, from);
+    const candidate = printableStringAround(bytes, from);
     if (!longest || candidate.length > longest.length) longest = candidate;
-    from = bytes.indexOf(marker, from + marker.length);
+    from = bytes.indexOf(configureMarker, from + configureMarker.length);
   }
   return longest;
-}
-
-function printableStringAfterMarker(bytes: Buffer, index: number): string {
-  const start = index + configurationMarker.indexOf("--");
-  return bytes.toString("latin1", start, printableEnd(bytes, start));
 }
 
 function printableStringAround(bytes: Buffer, index: number): string {
   let start = index;
   while (start > 0 && isPrintable(bytes[start - 1] ?? 0)) start--;
-  const text = bytes.toString("latin1", start, printableEnd(bytes, index));
-  return text.slice(text.indexOf("--"));
-}
-
-function printableEnd(bytes: Buffer, index: number): number {
   let end = index;
   while (end < bytes.length && isPrintable(bytes[end] ?? 0)) end++;
-  return end;
+  const text = bytes.toString("latin1", start, end);
+  return text.slice(text.indexOf("--"));
 }
 
 function isPrintable(byte: number): boolean {
