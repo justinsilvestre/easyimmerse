@@ -7,7 +7,7 @@ use crate::locate::BinaryName;
 #[derive(Debug, Error)]
 pub enum FfmpegError {
     #[error(
-        "{0} was not found: set EASYIMMERSE_FFMPEG_DIR, place it next to the executable, or add it to PATH"
+        "{0} was not found: set EASYIMMERSE_FFMPEG_DIR to a directory holding easyimmerse-{0}, easyimmerse-{0}-<target triple>, or {0}; place one of those next to the executable; or add {0} to PATH"
     )]
     BinaryNotFound(BinaryName),
     #[error("failed to start {binary}: {source}")]

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fails unless every desktop bundle under a directory contains the ffmpeg and ffprobe sidecars and both start.
+# Fails unless every desktop bundle under a directory contains the easyimmerse-ffmpeg and easyimmerse-ffprobe sidecars and both start.
 # Each bundle is unpacked the way its installer would place the files, and the sidecars run from there.
 # Expects to run on the platform the bundles were built for.
 #
@@ -30,7 +30,7 @@ check_bundle() {
     echo "Could not unpack $bundle." >&2
     return 1
   fi
-  check_sidecar "$bundle" "$dest" ffmpeg && check_sidecar "$bundle" "$dest" ffprobe
+  check_sidecar "$bundle" "$dest" easyimmerse-ffmpeg && check_sidecar "$bundle" "$dest" easyimmerse-ffprobe
 }
 
 unpack() {
