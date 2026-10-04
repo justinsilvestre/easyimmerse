@@ -29,6 +29,11 @@ As a user:
 - when I create flashcards with a dictionary from the easyImmerse registry:
   - [ ] each flashcard stores a reference to the dictionary entry rather than the entry's full text, so it takes less space on my device and in the cloud
 
+## Ebook/text reader
+
+- [x] Words are found under the pointer from the browser's caret position rather than by wrapping each word in an element, so that a long chapter lays out quickly. The word is highlighted with the CSS Custom Highlight API, which leaves the text's markup alone.
+- [x] The mouse must rest on a word for about a tenth of a second before it is looked up, so that moving across the text does not flash the dictionary pop-up.
+
 ## Settings
 
 - [x] Settings does not replace the screen beneath it. The media screen stays mounted and inert under the Settings overlay, so that Back restores the player exactly, including the position it had reached.

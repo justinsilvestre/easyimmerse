@@ -225,13 +225,20 @@ As a user:
 
 As a user:
 - when an ebook or text file is opened:
-  - [ ] I can read the text in the ebook/text reader
-  - [ ] I can navigate through the pages and chapters of the ebook
-  - [ ] I can search for specific words or phrases in the text
-  - [ ] I can open the table of contents via a button
-  - [ ] I can change the font size and style of the text
+  - [x] I can read the text in the ebook/text reader, laid out in pages (two side by side on a wide screen) or as one scrolling column
+  - [x] I can navigate through the pages and chapters of the ebook with the arrow keys, a swipe, the scroll wheel, a tap at either side of the page, or the progress slider
+  - [x] I can search for specific words or phrases in the text, ignoring capitals and accents, and jump to each result
+  - [x] I can open the table of contents via a button
+  - [x] I can change the font size and style of the text, the line spacing and length, the justification, and the theme (light, sepia, or dark)
+  - [x] I can look up a word by resting the pointer on it or tapping it, and create a flashcard by clicking or double-tapping it
+  - [x] I can search with Ctrl+F or Cmd+F, which searches the whole book rather than only the page on screen
+- while I am reading:
+  - [x] the toolbar and progress bar get out of the way when I turn a page or scroll down
+  - [x] the toolbar and progress bar come back when I move the mouse near the top or bottom edge, scroll up, or tap the middle of the page
+  - [x] showing or hiding the toolbar and progress bar does not move the text
 - when I close and reopen an ebook or text file:
   - [ ] I am returned to my last reading position
+  - [ ] the text looks as I last set it: theme, font, size, spacing, and layout
 - when the ebook or text file has been aligned with an audio file:
   - [ ] I can click on a sentence/segment to play the matching audio
   - [ ] the sentence/segment currently being spoken is highlighted during playback
