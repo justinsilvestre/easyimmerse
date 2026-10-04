@@ -134,10 +134,15 @@ mod tests {
     #[test]
     fn round_trips_a_value_deflated_after_a_longer_one() {
         let mut deflater = JsonDeflater::new();
-        deflater.deflate(&vec![Definition::text("x".repeat(5_000))]).unwrap();
+        deflater
+            .deflate(&vec![Definition::text("x".repeat(5_000))])
+            .unwrap();
         let definitions = vec![Definition::text("cat")];
         let bytes = deflater.deflate(&definitions).unwrap();
-        assert_eq!(inflate_json::<Vec<Definition>>(&bytes).unwrap(), definitions);
+        assert_eq!(
+            inflate_json::<Vec<Definition>>(&bytes).unwrap(),
+            definitions
+        );
     }
 
     #[test]
@@ -171,4 +176,3 @@ mod tests {
         assert!(split_words("").is_empty());
     }
 }
-
