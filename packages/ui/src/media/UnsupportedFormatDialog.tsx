@@ -1,43 +1,16 @@
 import { Button } from "../components/Button.tsx";
 import { Dialog } from "../components/Dialog.tsx";
 
-/** Tells the user a media file cannot be played as it is, and what can be done about it on this platform. */
+/** Tells the user that the browser cannot play a media file, and that the desktop app can. */
 export function UnsupportedFormatDialog({
   fileName,
-  platform,
-  onConvert,
   onLearnAboutDesktopApp,
   onClose,
 }: {
   fileName: string;
-  platform: "desktop" | "web";
-  onConvert: () => void;
   onLearnAboutDesktopApp: () => void;
   onClose: () => void;
 }) {
-  if (platform === "desktop") {
-    return (
-      <Dialog
-        title="Convert this file to play it?"
-        onClose={onClose}
-        footer={
-          <>
-            <Button onClick={onClose}>Not now</Button>
-            <Button variant="primary" onClick={onConvert}>
-              Convert now
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm">
-          The player cannot open <strong>{fileName}</strong> in its current
-          format. Converting makes a playable copy and leaves the original as it
-          is. The copy takes up extra disk space, and you can start the
-          conversion later from the project instead.
-        </p>
-      </Dialog>
-    );
-  }
   return (
     <Dialog
       title="This browser cannot play the file"
