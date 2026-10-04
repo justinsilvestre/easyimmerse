@@ -1,6 +1,11 @@
 //! The ffmpeg argument list of one conversion run, which writes fragmented MP4 HLS segments.
 //! The flag sets are the result of extensive trial; change them only when a test proves an
 //! alternative.
+//!
+//! The output files are named without a directory, so the process must start in the directory
+//! the run writes into. ffmpeg's HLS muxer finds the directory of the init segment by searching
+//! the playlist path for a forward slash, so a Windows path with backslashes would make it
+//! write the init segment into the working directory instead.
 
 use std::ffi::OsString;
 use std::path::Path;
@@ -39,11 +44,10 @@ pub struct ConversionJob<'a> {
     pub timeline_start_micros: i64,
     /// Where the run begins, or `None` to begin at the start of the file.
     pub seek_micros: Option<i64>,
-    /// The directory the run writes its init segment, media segments and playlist into.
-    pub output_dir: &'a Path,
 }
 
 /// Builds the complete argument list for `ffmpeg`, without the program name.
+/// The output files are relative to the process's working directory.
 pub fn conversion_args(job: &ConversionJob) -> Vec<OsString> {
     let mut args = Args::default();
     args.push_all([
@@ -150,12 +154,7 @@ fn push_output(args: &mut Args, job: &ConversionJob) {
         "movflags=+frag_discont+negative_cts_offsets",
     ]);
     args.push_all(["-hls_flags", "temp_file", "-hls_segment_filename"]);
-    args.push(
-        job.output_dir
-            .join(RUN_SEGMENT_FILE_PATTERN)
-            .into_os_string(),
-    );
-    args.push(job.output_dir.join(RUN_PLAYLIST_FILE_NAME).into_os_string());
+    args.push_all([RUN_SEGMENT_FILE_PATTERN, RUN_PLAYLIST_FILE_NAME]);
 }
 
 fn video_index(action: &VideoAction) -> u32 {
@@ -201,7 +200,6 @@ mod tests {
             video_codec,
             timeline_start_micros: 0,
             seek_micros: None,
-            output_dir: Path::new("/cache/run"),
         }
     }
 
@@ -232,19 +230,9 @@ mod tests {
         }
     }
 
-    /// The output paths are joined by the platform, so the expected ones are joined the same way.
-    fn output_path(file_name: &str) -> String {
-        Path::new("/cache/run")
-            .join(file_name)
-            .to_string_lossy()
-            .into_owned()
-    }
-
     #[test]
     fn builds_the_copy_command_exactly() {
         let job = job(Some(&COPY_VIDEO), Some(&COPY_AUDIO), Some("h264"));
-        let segment_path = output_path(RUN_SEGMENT_FILE_PATTERN);
-        let playlist_path = output_path(RUN_PLAYLIST_FILE_NAME);
         assert_eq!(
             strings(conversion_args(&job)),
             [
@@ -285,8 +273,8 @@ mod tests {
                 "-hls_flags",
                 "temp_file",
                 "-hls_segment_filename",
-                segment_path.as_str(),
-                playlist_path.as_str(),
+                "s%05d.m4s",
+                "index.m3u8",
             ]
         );
     }

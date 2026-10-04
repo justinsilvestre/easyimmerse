@@ -97,29 +97,36 @@ fn spawn_ffmpeg(
         .then(|| plan.segments.get(start_index))
         .flatten()
         .map(|segment| plan.timebase.ticks_to_micros(segment.start_ticks));
+    // The process runs in the run directory and names its output files without a directory.
+    // The source path must therefore be absolute, and so must ffmpeg's own, since a relative
+    // program path would be looked up from the new working directory too.
+    let source = std::path::absolute(&entry.manifest.source.path).map_err(spawn_error)?;
+    let ffmpeg = std::path::absolute(ffmpeg).map_err(spawn_error)?;
     let job = ConversionJob {
-        source: &entry.manifest.source.path,
+        source: &source,
         video: entry.manifest.plan.video.as_ref(),
         audio: entry.manifest.plan.audio.as_ref(),
         video_codec: entry.manifest.video_codec.as_deref(),
         timeline_start_micros: plan.timebase.ticks_to_micros(plan.start_ticks),
         seek_micros,
-        output_dir: run_dir,
     };
     Command::new(ffmpeg)
         .args(conversion_args(&job))
+        .current_dir(run_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .kill_on_drop(true)
         .spawn()
-        .map_err(|source| {
-            easyimmerse_media_ffmpeg::FfmpegError::Spawn {
-                binary: easyimmerse_media_ffmpeg::BinaryName::Ffmpeg,
-                source,
-            }
-            .into()
-        })
+        .map_err(spawn_error)
+}
+
+fn spawn_error(source: std::io::Error) -> ConversionError {
+    easyimmerse_media_ffmpeg::FfmpegError::Spawn {
+        binary: easyimmerse_media_ffmpeg::BinaryName::Ffmpeg,
+        source,
+    }
+    .into()
 }
 
 async fn reset_run_dir(run_dir: &PathBuf) -> Result<(), ConversionError> {
