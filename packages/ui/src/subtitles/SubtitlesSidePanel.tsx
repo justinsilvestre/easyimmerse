@@ -19,7 +19,7 @@ export function SubtitlesSidePanel({
   tracks: TrackSelection;
   currentMs: number;
   flashcardCueIndexes: readonly number[];
-  onWordClick: (word: string) => void;
+  onWordClick: (word: string, cue: Cue) => void;
 }) {
   const dispatch = useAppDispatch();
   const activeCue: Cue | null = findCueAt(subtitles.cues, currentMs);

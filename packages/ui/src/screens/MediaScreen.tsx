@@ -66,9 +66,11 @@ export function MediaScreen({
     targetSubtitlesId: subtitles.selection.target_track_id,
     translationSubtitlesId: subtitles.selection.translation_track_id,
   };
-  const startFlashcard = (word: string) => {
+  const startFlashcard = (
+    word: string,
+    cue = cueForFlashcard(subtitles.cues, currentMs),
+  ) => {
     if (mediaFile === null) return;
-    const cue = cueForFlashcard(subtitles.cues, currentMs);
     flashcards.start(
       draftFromCue({
         word,
@@ -141,7 +143,7 @@ export function MediaScreen({
       playerCallbacks={playerCallbacks}
       onBack={() => dispatch(actions.closeMedia())}
       onWordHover={() => undefined}
-      onWordClick={startFlashcard}
+      onWordClick={(word) => startFlashcard(word)}
       onLookup={() =>
         dispatch(
           actions.notificationRequested(

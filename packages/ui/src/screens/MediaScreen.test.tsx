@@ -143,6 +143,15 @@ describe("MediaScreen", () => {
     ).toBe("cat");
   });
 
+  it("takes a new flashcard's sentence from the cue whose word was clicked", async () => {
+    renderMediaScreen();
+    const list = await findSubtitles();
+    fireEvent.click(within(list).getByRole("button", { name: "dog" }));
+    expect(
+      (screen.getByLabelText("Sentence (de)") as HTMLTextAreaElement).value,
+    ).toBe("The dog wants to eat.\nIt is hungry.");
+  });
+
   it("saves a new flashcard in the project", async () => {
     const { client } = renderMediaScreen();
     const list = await findSubtitles();
