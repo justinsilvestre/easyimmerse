@@ -46,7 +46,7 @@ type RenderOptions = {
   mediaFileId?: string;
   offline?: boolean;
   browserFileRegistry?: BrowserFileRegistry<File>;
-  /** Actions dispatched before the file opens, such as loaded preferences. */
+  /** Actions dispatched before the file opens. By default, the stored preferences arrive empty. */
   before?: ReturnType<(typeof actions)[keyof typeof actions]>[];
 };
 
@@ -73,7 +73,8 @@ function renderPlayer(
     },
   );
   act(() => {
-    for (const action of options.before ?? []) rendered.store.dispatch(action);
+    for (const action of options.before ?? [actions.preferencesLoaded({})])
+      rendered.store.dispatch(action);
     rendered.store.dispatch(actions.openMedia(options.mediaFileId ?? "m1"));
   });
   return { ...rendered, client, hls: fakeHls.instances };
@@ -91,6 +92,20 @@ function playbackRequests(requests: BackendRequest[]) {
 
 function requestBody(request: BackendRequest | undefined): unknown {
   return request?.body?.kind === "json" ? request.body.value : undefined;
+}
+
+/** Lets the fake backend answer whatever has been asked so far. */
+async function settleRequests() {
+  await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
+}
+
+async function settleTracks(requests: BackendRequest[]) {
+  await vi.waitFor(() =>
+    expect(requests.some((request) => request.path.endsWith("/tracks"))).toBe(
+      true,
+    ),
+  );
+  await settleRequests();
 }
 
 /** The fixture's video runs at 24 fps, so a seek lands half of a 24th of a second late. */
@@ -235,7 +250,9 @@ describe("MediaPlayer", () => {
     it("stays closed once the preference dismisses it", async () => {
       const { hls } = renderPlayer(transcodePlaybackRoutes, {
         mediaFiles: withSavedSelection,
-        before: [actions.preferenceLoaded("conversionNoticeDismissed", "true")],
+        before: [
+          actions.preferencesLoaded({ conversionNoticeDismissed: "true" }),
+        ],
       });
       await vi.waitFor(() => expect(hls[0]).toBeDefined());
       expect(screen.queryByRole("dialog")).toBeNull();
@@ -369,12 +386,36 @@ describe("MediaPlayer", () => {
   describe("preferences", () => {
     it("asks for FLAC when lossless audio is preferred", async () => {
       const { client } = renderPlayer(directPlaybackRoutes, {
-        before: [actions.preferenceLoaded("losslessAudio", "true")],
+        before: [actions.preferencesLoaded({ losslessAudio: "true" })],
       });
       await findVideo();
       expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
         preferred_audio_target: "flac",
       });
+    });
+
+    it("asks for FLAC when the preference loads after the file opens", async () => {
+      const { client, store } = renderPlayer(directPlaybackRoutes, {
+        before: [],
+      });
+      await settleTracks(client.requests);
+      act(() => {
+        store.dispatch(actions.preferencesLoaded({ losslessAudio: "true" }));
+      });
+      await findVideo();
+      expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
+        preferred_audio_target: "flac",
+      });
+    });
+
+    it("keeps the playing file's plan when the preference changes", async () => {
+      const { client, store } = renderPlayer(directPlaybackRoutes);
+      await findVideo();
+      act(() => {
+        store.dispatch(actions.preferenceSet("losslessAudio", "true"));
+      });
+      await settleRequests();
+      expect(playbackRequests(client.requests)).toHaveLength(1);
     });
 
     it("leaves the audio target to the server otherwise", async () => {

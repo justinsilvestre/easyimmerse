@@ -5,7 +5,11 @@ import {
   usePlanPlaybackQuery,
   useSaveTrackSelectionMutation,
 } from "@easyimmerse/backend";
-import { actions, selectPreference } from "@easyimmerse/state";
+import {
+  actions,
+  selectPreference,
+  selectPreferencesLoaded,
+} from "@easyimmerse/state";
 import type {
   AudioTarget,
   MediaFile,
@@ -73,7 +77,7 @@ export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
     [tracks.data],
   );
   const playback = usePlanPlaybackQuery(
-    environment === null || choiceDue
+    environment === null || choiceDue || preferredAudioTarget === undefined
       ? skipToken
       : {
           projectId,
@@ -128,9 +132,14 @@ export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
   };
 }
 
-/** The lossless-audio preference as it stood when the file opened; a later change applies to the next file. */
-function usePreferredAudioTarget(): AudioTarget | null {
+/**
+ * The lossless-audio preference as it stood once the stored preferences had loaded, or undefined until then.
+ * A later change applies to the next file.
+ */
+function usePreferredAudioTarget(): AudioTarget | null | undefined {
+  const loaded = useAppSelector(selectPreferencesLoaded);
   const lossless = useAppSelector(selectPreference("losslessAudio")) === "true";
-  const [target] = useState<AudioTarget | null>(lossless ? "flac" : null);
+  const [target, setTarget] = useState<AudioTarget | null | undefined>();
+  if (loaded && target === undefined) setTarget(lossless ? "flac" : null);
   return target;
 }
