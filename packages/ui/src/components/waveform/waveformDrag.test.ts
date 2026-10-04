@@ -15,7 +15,24 @@ describe("constrainDrag", () => {
       hit: { kind: "clipStart", segmentId: "f1" },
       timeMs: 25_000,
     } as const;
-    expect(constrainDrag(drag, [segment], 60_000).timeMs).toBe(19_900);
+    const markerAtEnd = { ...segment, screenshotMs: 20_000 };
+    expect(constrainDrag(drag, [markerAtEnd], 60_000).timeMs).toBe(19_900);
+  });
+
+  it("stops the clip start at the screenshot marker", () => {
+    const drag = {
+      hit: { kind: "clipStart", segmentId: "f1" },
+      timeMs: 17_000,
+    } as const;
+    expect(constrainDrag(drag, [segment], 60_000).timeMs).toBe(15_000);
+  });
+
+  it("stops the clip end at the screenshot marker", () => {
+    const drag = {
+      hit: { kind: "clipEnd", segmentId: "f1" },
+      timeMs: 12_000,
+    } as const;
+    expect(constrainDrag(drag, [segment], 60_000).timeMs).toBe(15_000);
   });
 
   it("keeps the clip end within the media", () => {
