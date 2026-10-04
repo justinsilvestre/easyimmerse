@@ -108,7 +108,7 @@ On Linux the Tauri runtime initializes GTK before the check runs, so the command
 
 #### One-off CI runs
 
-To run one job of the `native` or `plugins` workflow at any commit, push a tag named `<workflow>-ci-<job>-<stamp>`, for example `git tag native-ci-ios-1 && git push origin native-ci-ios-1`. The jobs that can be named this way are `desktop`, `android`, and `ios` in `native`, and `mobile` in `plugins`. A tag run never skips its job because of an earlier pass, and it records no pass of its own.
+To run one job of the `native` or `plugins` workflow at any commit, push a tag named `<workflow>-ci-<job>-<stamp>`, for example `git tag native-ci-ios-1 && git push origin native-ci-ios-1`. The jobs that can be named this way are `desktop`, `bundle`, `android`, and `ios` in `native`, and `mobile` in `plugins`. A tag named `rust-ci-<stamp>` runs the whole `rust` workflow. A tag run never skips its job because of an earlier pass, and it records no pass of its own.
 
 ## Repository structure
 
