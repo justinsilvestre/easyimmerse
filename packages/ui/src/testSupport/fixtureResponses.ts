@@ -54,7 +54,7 @@ export const fixtureProject: Project = {
   flashcard_count: 0,
 };
 
-export const fixtureProjects: ListProjectsResponse = {
+const fixtureProjects: ListProjectsResponse = {
   projects: [
     fixtureProject,
     {
@@ -68,7 +68,7 @@ export const fixtureProjects: ListProjectsResponse = {
   ],
 };
 
-export const noFlashcards: ListFlashcardsResponse = { flashcards: [] };
+const noFlashcards: ListFlashcardsResponse = { flashcards: [] };
 
 /** One subtitles track on a media file, shown as the target-language subtitles. */
 export const fixtureSubtitleTracks: SubtitleTracksResponse = {

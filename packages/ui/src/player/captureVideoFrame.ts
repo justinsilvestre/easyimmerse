@@ -18,7 +18,7 @@ export type CaptureFrameOptions = {
   createCanvas?: () => HTMLCanvasElement;
 };
 
-export const defaultSeekTimeoutMs = 3000;
+const defaultSeekTimeoutMs = 3000;
 
 /**
  * Draws the video's frame to a canvas and returns it as a JPEG data URL.

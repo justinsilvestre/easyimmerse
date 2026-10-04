@@ -1,6 +1,6 @@
 import type { Effects, PickedFile, PickedMediaFile } from "./effects.ts";
 
-export type EffectCall =
+type EffectCall =
   | { type: "seekPlayer"; seconds: number }
   | { type: "togglePlayer" }
   | { type: "setPlayerVolume"; volume: number }

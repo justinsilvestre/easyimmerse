@@ -1,5 +1,5 @@
 /** Downloads a license text, decoding the base64 that googlesource serves for `?format=TEXT`. */
-export async function fetchLicenseText(url: string): Promise<string> {
+async function fetchLicenseText(url: string): Promise<string> {
   const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
   if (!response.ok)
     throw new Error(`could not fetch ${url}: ${response.status}`);

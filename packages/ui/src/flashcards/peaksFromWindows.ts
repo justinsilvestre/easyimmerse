@@ -1,7 +1,7 @@
 import { waveformPeaksPerSecond } from "../components/waveform/waveformWindowPolicy.ts";
 
 /** How many peaks per second the clip editor draws, fewer than the windows hold so a long file stays light. */
-export const clipPeaksPerSecond = 20;
+const clipPeaksPerSecond = 20;
 
 /**
  * Spreads the peaks windows loaded so far over a whole file, scaled from 0–255 to 0–1, at the clip editor's resolution.

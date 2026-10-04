@@ -1,7 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
 
 /** How far a skip goes when there are no cues to skip to. */
-export const skipStepMs = 5_000;
+const skipStepMs = 5_000;
 
 /**
  * Where a skip lands: the start of the next cue,

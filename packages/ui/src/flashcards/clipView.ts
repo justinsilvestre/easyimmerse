@@ -1,15 +1,15 @@
 import type { AudioClip } from "@easyimmerse/types";
 
 /** How far a handle moves for one arrow key press, and for one with Shift held. */
-export const keyStepMs = 100;
-export const largeKeyStepMs = 1000;
+const keyStepMs = 100;
+const largeKeyStepMs = 1000;
 
 /** The shortest clip a handle can be dragged to. */
-export const minClipMs = 200;
+const minClipMs = 200;
 
 /** How far past an edge a handle is held for the view to widen at full speed, and that speed in view spans per second. */
-export const fullSpeedOvershootPx = 60;
-export const fullSpeedSpansPerSecond = 2;
+const fullSpeedOvershootPx = 60;
+const fullSpeedSpansPerSecond = 2;
 
 /** The part of the file on view, from one time to another. */
 export type WaveformView = { startMs: number; endMs: number };
