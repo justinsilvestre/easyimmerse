@@ -80,6 +80,7 @@ export const featuresWithoutLibraries = new Set([
   "audiotoolbox",
   "cross-compile",
   "cuda-llvm",
+  "d3d11va",
   "lib:dl",
   "lib:m",
   "lib:pthread",
