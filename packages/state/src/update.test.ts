@@ -37,6 +37,20 @@ describe("update", () => {
     expect(state.player.currentTimeSeconds).toBe(3);
   });
 
+  it("keeps the duration for playerTimeChanged", () => {
+    const loaded = {
+      ...initialAppState,
+      player: { currentTimeSeconds: 0, durationSeconds: 60 },
+    };
+    const [state] = update(loaded, actions.playerTimeChanged(3));
+    expect(state.player.durationSeconds).toBe(60);
+  });
+
+  it("stores the duration for playerDurationChanged", () => {
+    const [state] = update(initialAppState, actions.playerDurationChanged(90));
+    expect(state.player.durationSeconds).toBe(90);
+  });
+
   it("returns no effects for playerTimeChanged", () => {
     const [, effects] = update(initialAppState, actions.playerTimeChanged(3));
     expect(effects).toEqual([]);
@@ -146,6 +160,21 @@ describe("update", () => {
   it("stores the opened media file id for openMedia", () => {
     const [state] = update(initialAppState, actions.openMedia("m2"));
     expect(state.currentMediaFileId).toBe("m2");
+  });
+
+  it("clears the open media file for closeMedia", () => {
+    const open = { ...initialAppState, currentMediaFileId: "m1" };
+    const [state] = update(open, actions.closeMedia());
+    expect(state.currentMediaFileId).toBeNull();
+  });
+
+  it("resets the player's position and duration for closeMedia", () => {
+    const playing = {
+      ...initialAppState,
+      player: { currentTimeSeconds: 5, durationSeconds: 60 },
+    };
+    const [state] = update(playing, actions.closeMedia());
+    expect(state.player).toEqual({ currentTimeSeconds: 0, durationSeconds: 0 });
   });
 
   it("turns an unset preference on for preferenceToggled", () => {
