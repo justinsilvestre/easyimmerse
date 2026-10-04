@@ -5,7 +5,7 @@ import { Dialog } from "../components/Dialog.tsx";
 import { languageName } from "../projects/languages.ts";
 import type { TrackOption } from "./playback.ts";
 
-/** Asks which of several tracks to play or show when none is alone in the wanted language. */
+/** Asks which of several subtitle tracks to show when none is alone in the wanted language. */
 export function TrackPickerDialog({
   purpose,
   tracks,
@@ -13,7 +13,7 @@ export function TrackPickerDialog({
   onChoose,
   onSkip,
 }: {
-  purpose: "audio" | "targetSubtitles" | "translationSubtitles";
+  purpose: "targetSubtitles" | "translationSubtitles";
   tracks: readonly TrackOption[];
   wantedLanguage: string;
   onChoose: (trackId: string) => void;
@@ -82,14 +82,11 @@ export function TrackPickerDialog({
 }
 
 const titles = {
-  audio: "Which audio track should play?",
   targetSubtitles: "Which subtitles should be shown?",
   translationSubtitles: "Which subtitles are the translation?",
 };
 
 const descriptions = {
-  audio:
-    "The file has several audio tracks. Lookups and flashcard audio use the one that plays.",
   targetSubtitles:
     "The file has several subtitle tracks. Words in the one you choose can be looked up.",
   translationSubtitles:

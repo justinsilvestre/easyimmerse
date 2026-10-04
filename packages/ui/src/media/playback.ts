@@ -7,12 +7,12 @@ export type PlaybackState = {
   speed: number;
 };
 
-/** An audio or subtitle track the user can switch to. */
+/** A subtitle track the user can switch to. */
 export type TrackOption = {
   id: string;
   label: string;
   language: string | null;
-  /** The first lines of a subtitles track, for telling tracks apart. Null for an audio track. */
+  /** The first lines of the track, for telling tracks apart. Null when the track has no cues. */
   sample: string | null;
 };
 
