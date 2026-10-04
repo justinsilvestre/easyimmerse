@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+use super::mdict::MdictError;
 use super::sink::SinkError;
 use super::yomitan::YomitanError;
 
@@ -17,4 +18,6 @@ pub enum DictionaryError {
     Sink(#[from] SinkError),
     #[error(transparent)]
     Yomitan(#[from] YomitanError),
+    #[error(transparent)]
+    Mdict(#[from] MdictError),
 }

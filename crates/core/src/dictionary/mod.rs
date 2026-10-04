@@ -7,6 +7,7 @@ mod dictionary_media;
 mod error;
 mod format;
 mod kanji_entry;
+mod mdict;
 mod metadata;
 mod sink;
 mod source;
@@ -20,6 +21,7 @@ pub use dictionary_media::DictionaryMedia;
 pub use error::DictionaryError;
 pub use format::DictionaryFormat;
 pub use kanji_entry::{KanjiEntry, KanjiMeta};
+pub use mdict::{MdictError, MdictFormat};
 pub use metadata::{DictionaryFormatKind, DictionaryMetadata, FrequencyMode};
 pub use sink::{DictionarySink, SinkError, SinkResult};
 pub use source::{DictionarySource, SourceFile, file_name};
@@ -60,7 +62,7 @@ pub fn parse_dictionary(source: &mut DictionarySource) -> Result<Dictionary, Dic
 }
 
 fn registered_formats() -> Vec<Box<dyn DictionaryFormat>> {
-    vec![Box::new(YomitanFormat)]
+    vec![Box::new(YomitanFormat), Box::new(MdictFormat)]
 }
 
 /// The whole contents of a dictionary, apart from its media files.
