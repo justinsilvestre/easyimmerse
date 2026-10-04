@@ -2,12 +2,15 @@ use std::io::{Cursor, Read};
 
 use zip::ZipArchive;
 
+use super::archive::unpack_tar_archive;
 use super::error::DictionaryError;
 
 /// The files of a dictionary as the user supplied them.
 ///
 /// Archives among the files are opened, and their members are listed alongside the loose files.
 /// Zip members stay compressed until a format reads them, so that a large archive is never unpacked whole.
+/// Tar archives, plain or compressed with gzip, xz, or zstd, are unpacked into loose files when the source is created.
+/// Archives are recognized by their contents rather than their names.
 pub struct DictionarySource {
     loose_files: Vec<SourceFile>,
     zip_archives: Vec<ZipArchive<Cursor<Vec<u8>>>>,
@@ -50,11 +53,15 @@ impl DictionarySource {
 
     fn add(&mut self, file: SourceFile) -> Result<(), DictionaryError> {
         if file.bytes.starts_with(ZIP_SIGNATURE) {
-            self.add_zip_archive(file.bytes)
-        } else {
-            self.add_loose_file(file);
-            Ok(())
+            return self.add_zip_archive(file.bytes);
         }
+        match unpack_tar_archive(&file)? {
+            Some(members) => members
+                .into_iter()
+                .for_each(|member| self.add_loose_file(member)),
+            None => self.add_loose_file(file),
+        }
+        Ok(())
     }
 
     fn add_loose_file(&mut self, file: SourceFile) {
@@ -136,6 +143,20 @@ mod tests {
     #[test]
     fn lists_the_members_of_a_zip_archive() {
         assert!(fixture_source().names().any(|name| name == "index.json"));
+    }
+
+    #[test]
+    fn lists_the_members_of_a_gzip_compressed_tar_archive() {
+        let source = DictionarySource::single(
+            "sample-stardict.tar.gz",
+            read_fixture_bytes("sample-stardict.tar.gz"),
+        )
+        .unwrap();
+        assert!(
+            source
+                .names()
+                .any(|name| name == "sample-stardict/sample.ifo")
+        );
     }
 
     #[test]

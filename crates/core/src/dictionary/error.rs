@@ -1,13 +1,17 @@
 use thiserror::Error;
 
+use super::archive::ArchiveError;
 use super::csv::CsvError;
 use super::sink::SinkError;
+use super::stardict::StardictError;
 use super::yomitan::YomitanError;
 
 #[derive(Debug, Error)]
 pub enum DictionaryError {
     #[error("could not open the dictionary archive: {0}")]
     Archive(#[from] zip::result::ZipError),
+    #[error(transparent)]
+    Unpack(#[from] ArchiveError),
     #[error("the dictionary has no file named {0:?}")]
     MissingFile(String),
     #[error("could not read {0:?} from the dictionary: {1}")]
@@ -20,4 +24,6 @@ pub enum DictionaryError {
     Yomitan(#[from] YomitanError),
     #[error(transparent)]
     Csv(#[from] CsvError),
+    #[error(transparent)]
+    Stardict(#[from] StardictError),
 }

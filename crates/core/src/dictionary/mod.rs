@@ -3,6 +3,8 @@
 //! A format reads a `DictionarySource` and passes what it finds to a `DictionarySink` one item at a time.
 //! Storage implements the sink to write straight to its database; `parse_dictionary` collects everything in memory instead.
 
+mod archive;
+mod archive_compression;
 mod csv;
 mod dictionary_media;
 mod error;
@@ -11,12 +13,14 @@ mod kanji_entry;
 mod metadata;
 mod sink;
 mod source;
+mod stardict;
 mod structured_content;
 mod tag_definition;
 mod term_entry;
 mod term_meta;
 mod yomitan;
 
+pub use archive::ArchiveError;
 pub use csv::{CsvError, CsvFormat};
 pub use dictionary_media::DictionaryMedia;
 pub use error::DictionaryError;
@@ -25,6 +29,7 @@ pub use kanji_entry::{KanjiEntry, KanjiMeta};
 pub use metadata::{DictionaryFormatKind, DictionaryMetadata, FrequencyMode};
 pub use sink::{DictionarySink, SinkError, SinkResult};
 pub use source::{DictionarySource, SourceFile, file_name};
+pub use stardict::{StardictError, StardictFormat};
 pub use structured_content::{
     ContainerElement, DetailsElement, ElementData, ElementStyle, EmptyElement, ImageElement,
     LinkElement, StructuredContent, StructuredElement, StyleValue, TableCellElement,
@@ -62,7 +67,11 @@ pub fn parse_dictionary(source: &mut DictionarySource) -> Result<Dictionary, Dic
 }
 
 fn registered_formats() -> Vec<Box<dyn DictionaryFormat>> {
-    vec![Box::new(YomitanFormat), Box::new(CsvFormat)]
+    vec![
+        Box::new(YomitanFormat),
+        Box::new(StardictFormat),
+        Box::new(CsvFormat),
+    ]
 }
 
 /// The whole contents of a dictionary, apart from its media files.
