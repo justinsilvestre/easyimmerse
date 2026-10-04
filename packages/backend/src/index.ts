@@ -4,17 +4,19 @@ export {
   useAddMediaFileMutation,
   useClearConversionCacheMutation,
   useClearTrackSelectionMutation,
+  useDeleteDictionaryMutation,
   useGetConversionCacheStatusQuery,
   useGetMediaTracksQuery,
   useGetPreferenceQuery,
   useImportDictionaryMutation,
   useImportLocalDictionaryMutation,
   useLazyGetWaveformWindowQuery,
+  useLazyLookupTextQuery,
   useListDictionariesQuery,
   useListMediaFilesQuery,
   useListProjectsQuery,
   useListSubtitleTracksQuery,
-  useLookupTermQuery,
+  useLookupTextQuery,
   useParseDocumentMutation,
   useParseLocalDocumentMutation,
   useParseTimedTextMutation,
@@ -41,6 +43,7 @@ export {
   buildAuthorizationHeader,
   buildConversionFileUrl,
 } from "./conversionFileUrl.ts";
+export { buildDictionaryMediaUrl } from "./dictionaryMediaUrl.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
 export { buildMediaStreamUrl } from "./mediaStreamUrl.ts";
 export type { OfflineOperation } from "./offlineOperation.ts";

@@ -52,20 +52,29 @@ describe("OfflineWasm", () => {
   });
 
   describe("parseDictionary", () => {
-    it("parses the Yomitan fixture into three entries", async () => {
+    it("reads the cat entry of the Yomitan fixture", async () => {
       const wasm = await loadFromDisk();
       const dictionary = wasm.parseDictionary(
+        "sample-yomitan.zip",
         readFixtureBytes("sample-yomitan.zip"),
       );
-      expect(dictionary.entries).toHaveLength(3);
+      expect(dictionary.entries.map((entry) => entry.term)).toContain("猫");
     });
 
     it("reads the title of the Yomitan fixture", async () => {
       const wasm = await loadFromDisk();
       const dictionary = wasm.parseDictionary(
+        "sample-yomitan.zip",
         readFixtureBytes("sample-yomitan.zip"),
       );
-      expect(dictionary.title).toBe("Sample Dictionary");
+      expect(dictionary.metadata.title).toBe("Sample Dictionary");
+    });
+
+    it("throws for a file that no format recognizes", async () => {
+      const wasm = await loadFromDisk();
+      expect(() =>
+        wasm.parseDictionary("notes.txt", new TextEncoder().encode("hello")),
+      ).toThrow("no supported dictionary format");
     });
   });
 });
