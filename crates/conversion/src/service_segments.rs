@@ -1,7 +1,7 @@
 //! Serving the init segment and media segments of a conversion, starting and replacing ffmpeg
 //! runs as requests demand.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -74,12 +74,12 @@ impl ConversionService {
     async fn check_segment(
         &self,
         entry: &Arc<ConversionEntry>,
-        path: &PathBuf,
+        path: &Path,
         index: usize,
     ) -> Result<Outcome, ConversionError> {
         if path.is_file() {
             self.schedule_eviction();
-            return Ok(Outcome::Ready(path.clone()));
+            return Ok(Outcome::Ready(path.to_path_buf()));
         }
         let mut run = entry.run.lock().await;
         let progress = run.as_ref().map(ConversionRun::progress);
