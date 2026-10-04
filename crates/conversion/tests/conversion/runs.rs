@@ -48,7 +48,7 @@ async fn a_request_for_an_interior_segment_starts_one_segment_earlier_and_discar
     }
     let test = open_service();
     let (key, _) = register(&test.service, MKV, copy_plan()).await;
-    fetch_segments(&test.service, &key, [3]).await;
+    fetch_segments(&test.service, &key, [3, 4]).await;
     let entry_dir = test.cache_dir.path().join("conversions").join(key.as_str());
     let present = (0..5).map(|index| entry_dir.join(format!("s{index:05}.m4s")).is_file());
     assert_eq!(
