@@ -101,7 +101,7 @@ describe("effectsMiddleware", () => {
     });
   });
 
-  it("dispatches preferenceLoaded after preferencesLoadRequested", async () => {
+  it("dispatches preferencesLoaded with the stored values after preferencesLoadRequested", async () => {
     const effects = createRecordingEffects();
     effects.preferences.set("showTranslations", "true");
     const server = createFakeServerStoreParts();
@@ -109,7 +109,20 @@ describe("effectsMiddleware", () => {
     store.dispatch(actions.preferencesLoadRequested());
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
-        actions.preferenceLoaded("showTranslations", "true"),
+        actions.preferencesLoaded({ showTranslations: "true" }),
+      );
+    });
+  });
+
+  it("dispatches preferencesLoaded even when a preference fails to load", async () => {
+    const effects = createRecordingEffects();
+    effects.loadPreference = () => Promise.reject(new Error("storage locked"));
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.preferencesLoadRequested());
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.preferencesLoaded({}),
       );
     });
   });

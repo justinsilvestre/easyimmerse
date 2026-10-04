@@ -9,6 +9,7 @@ import {
   selectPendingMediaFilePick,
   selectPlayerDuration,
   selectPreference,
+  selectPreferencesLoaded,
   selectSubtitleSource,
 } from "./selectors.ts";
 
@@ -18,6 +19,7 @@ const rootState: RootState = {
     player: { currentTimeSeconds: 4, durationSeconds: 90 },
     subtitleSource: { kind: "inline", text: "Hello" },
     preferences: { showTranslations: "true" },
+    preferencesLoaded: true,
     pendingFilePick: true,
     currentMediaFileId: "m1",
     pendingMediaFilePick: true,
@@ -43,6 +45,10 @@ describe("selectors", () => {
 
   it("selectPreference returns the stored preference value", () => {
     expect(selectPreference("showTranslations")(rootState)).toBe("true");
+  });
+
+  it("selectPreferencesLoaded returns whether the stored preferences have arrived", () => {
+    expect(selectPreferencesLoaded(rootState)).toBe(true);
   });
 
   it("selectPendingFilePick returns whether a file pick is pending", () => {

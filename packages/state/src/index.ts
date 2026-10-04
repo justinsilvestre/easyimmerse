@@ -30,6 +30,7 @@ export {
   selectPendingMediaFilePick,
   selectPlayerDuration,
   selectPreference,
+  selectPreferencesLoaded,
   selectSubtitleSource,
   selectTheme,
 } from "./selectors.ts";

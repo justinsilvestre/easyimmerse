@@ -1,5 +1,5 @@
 import type { Action } from "redux";
-import type { PreferenceKey } from "./appState.ts";
+import type { AppState, PreferenceKey } from "./appState.ts";
 import type { PickedFile, PickedMediaFile } from "./effects.ts";
 import type { Theme } from "./theme.ts";
 
@@ -31,8 +31,8 @@ export const actions = {
     ({ type: "preferenceSet", key, value }) as const,
   preferencesLoadRequested: () =>
     ({ type: "preferencesLoadRequested" }) as const,
-  preferenceLoaded: (key: PreferenceKey, value: string | null) =>
-    ({ type: "preferenceLoaded", key, value }) as const,
+  preferencesLoaded: (preferences: AppState["preferences"]) =>
+    ({ type: "preferencesLoaded", preferences }) as const,
   notificationRequested: (message: string) =>
     ({ type: "notificationRequested", message }) as const,
   cueCopyRequested: (text: string) =>

@@ -20,6 +20,8 @@ export type AppState = {
   /** The text the subtitles panel parses. Null until a file is chosen. */
   subtitleSource: TextSource | null;
   preferences: Partial<Record<PreferenceKey, string>>;
+  /** False until the preferences stored on the device have been read once. */
+  preferencesLoaded: boolean;
   pendingFilePick: boolean;
   /** The media file the media screen shows. Null until one is opened. */
   currentMediaFileId: string | null;
@@ -33,6 +35,7 @@ export const initialAppState: AppState = {
   player: { currentTimeSeconds: 0, durationSeconds: 0 },
   subtitleSource: null,
   preferences: {},
+  preferencesLoaded: false,
   pendingFilePick: false,
   currentMediaFileId: null,
   pendingMediaFilePick: false,

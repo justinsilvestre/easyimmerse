@@ -14,6 +14,9 @@ export const selectSubtitleSource = (state: RootState) =>
 export const selectPreference = (key: PreferenceKey) => (state: RootState) =>
   state.app.preferences[key];
 
+export const selectPreferencesLoaded = (state: RootState) =>
+  state.app.preferencesLoaded;
+
 export const selectPendingFilePick = (state: RootState) =>
   state.app.pendingFilePick;
 
