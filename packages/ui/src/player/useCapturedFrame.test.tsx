@@ -1,6 +1,7 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { FrameCapturer } from "./browserFrameCapturer.ts";
+import { FrameCapturerContext } from "./frameCapturerContext.ts";
 import { useCapturedFrame } from "./useCapturedFrame.ts";
 
 afterEach(cleanup);
@@ -22,6 +23,8 @@ function createControlledCapturer(answered = new Map<number, string | null>()) {
           },
         }),
       ),
+    peekPictures: () => true,
+    probe: async () => true,
   };
   const answer = async (atMs: number, frame: string | null) => {
     await act(async () => {
@@ -32,13 +35,24 @@ function createControlledCapturer(answered = new Map<number, string | null>()) {
   return { capturer, pending, answer };
 }
 
-function Frame(props: {
+function ShownFrame(props: { file: Blob | null; atMs: number | null }) {
+  const url = useCapturedFrame(props.file, props.atMs);
+  return <output>{url ?? "none"}</output>;
+}
+
+function Frame({
+  capturer,
+  ...props
+}: {
   file: Blob | null;
   atMs: number | null;
   capturer: FrameCapturer;
 }) {
-  const url = useCapturedFrame(props.file, props.atMs, props.capturer);
-  return <output>{url ?? "none"}</output>;
+  return (
+    <FrameCapturerContext value={capturer}>
+      <ShownFrame {...props} />
+    </FrameCapturerContext>
+  );
 }
 
 const shownFrame = () => screen.getByRole("status").textContent;

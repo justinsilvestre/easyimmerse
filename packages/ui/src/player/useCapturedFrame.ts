@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  browserFrameCapturer,
-  type FrameCapturer,
-} from "./browserFrameCapturer.ts";
+import { useFrameCapturer } from "./frameCapturerContext.ts";
 
 /**
  * The frame of a file the browser holds at a time, as an image URL, captured in the background.
@@ -12,8 +9,8 @@ import {
 export function useCapturedFrame(
   file: Blob | null,
   atMs: number | null,
-  capturer: FrameCapturer = browserFrameCapturer,
 ): string | null {
+  const capturer = useFrameCapturer();
   const [latest, setLatest] = useState<{
     file: Blob;
     frame: string | null;

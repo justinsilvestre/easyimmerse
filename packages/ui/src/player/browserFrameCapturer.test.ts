@@ -132,4 +132,52 @@ describe("createFrameCapturer", () => {
       await capturer.capture(videoFile(), 2000, controller.signal),
     ).toBeUndefined();
   });
+
+  describe("when probing a file for pictures", () => {
+    it("finds pictures in a video", async () => {
+      const capturer = createFrameCapturer(createFakePlatform());
+      expect(await capturer.probe(videoFile())).toBe(true);
+    });
+
+    it("finds no pictures in a file without them", async () => {
+      const capturer = createFrameCapturer(createFakePlatform());
+      expect(await capturer.probe(new Blob([]))).toBe(false);
+    });
+
+    it("knows nothing about a file before probing it", () => {
+      const capturer = createFrameCapturer(createFakePlatform());
+      expect(capturer.peekPictures(videoFile())).toBeUndefined();
+    });
+
+    it("remembers what it found", async () => {
+      const capturer = createFrameCapturer(createFakePlatform());
+      const file = new Blob([]);
+      await capturer.probe(file);
+      expect(capturer.peekPictures(file)).toBe(false);
+    });
+
+    it("learns it from a capture too", async () => {
+      const capturer = createFrameCapturer(createFakePlatform());
+      const file = videoFile();
+      await capturer.capture(file, 1000);
+      expect(capturer.peekPictures(file)).toBe(true);
+    });
+
+    it("opens a probed file only once for a capture asked for together", async () => {
+      const platform = createFakePlatform();
+      const capturer = createFrameCapturer(platform);
+      const file = videoFile();
+      await Promise.all([capturer.probe(file), capturer.capture(file, 1000)]);
+      expect(platform.opened).toHaveLength(1);
+    });
+
+    it("skips a probe whose signal aborted before its turn", async () => {
+      const capturer = createFrameCapturer(createFakePlatform());
+      const controller = new AbortController();
+      controller.abort();
+      expect(
+        await capturer.probe(videoFile(), controller.signal),
+      ).toBeUndefined();
+    });
+  });
 });
