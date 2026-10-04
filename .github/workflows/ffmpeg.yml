@@ -1,0 +1,227 @@
+name: ffmpeg
+
+# Builds minimal LGPL ffmpeg binaries for the six desktop targets and publishes them as one
+# release, because no first-party LGPL build passes the licence policy of
+# scripts/ffmpeg-notices. scripts/fetch-ffmpeg/manifest.json pins the release and the archive
+# hashes. The build steps are the scripts in scripts/ffmpeg-build/.
+#
+# Push a tag such as `ffmpeg-8.1.3` on any branch to build that ffmpeg version, or
+# `ffmpeg-8.1.3-2` to build the same version again after a change. A tag push runs the
+# workflow file at the tagged commit, so nothing needs to be on the default branch first.
+on:
+  push:
+    tags: ["ffmpeg-[0-9]*"]
+    # A branch of the same form triggers the same build, for sessions that cannot push tags.
+    # The release then creates the tag at the built commit.
+    branches: ["ffmpeg-[0-9]*"]
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      tag: ${{ steps.parse.outputs.tag }}
+    steps:
+      - name: Read the ffmpeg version from the tag
+        id: parse
+        run: |
+          rest="${GITHUB_REF_NAME#ffmpeg-}"
+          echo "version=${rest%%-*}" >> "$GITHUB_OUTPUT"
+          echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+
+  macos:
+    needs: version
+    runs-on: macos-15
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download and verify the source
+        run: sh scripts/ffmpeg-build/fetch-source.sh "$VERSION"
+
+      - name: Install the x86_64 assembler
+        run: brew install nasm
+
+      - name: Build for both architectures
+        run: sh scripts/ffmpeg-build/macos.sh "ffmpeg-$VERSION" out
+
+      - name: Check that the binaries link only system libraries
+        run: sh scripts/ffmpeg-build/check-macos-links.sh out/*/ffmpeg out/*/ffprobe
+
+      - name: Show the build
+        run: |
+          out/aarch64-apple-darwin/ffmpeg -version
+          out/aarch64-apple-darwin/ffmpeg -hide_banner -encoders
+          ls -l out/*
+
+      - name: Package
+        run: |
+          sh scripts/ffmpeg-build/package.sh "$VERSION" aarch64-apple-darwin out/aarch64-apple-darwin dist
+          sh scripts/ffmpeg-build/package.sh "$VERSION" x86_64-apple-darwin out/x86_64-apple-darwin dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apple-darwin
+          path: dist/
+          if-no-files-found: error
+
+  linux:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            triple: x86_64-unknown-linux-gnu
+          - runner: ubuntu-22.04-arm
+            triple: aarch64-unknown-linux-gnu
+    runs-on: ${{ matrix.runner }}
+    # Debian 11 has glibc 2.31, so the binaries start on distributions from 2020 onwards.
+    container: debian:bullseye
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      TRIPLE: ${{ matrix.triple }}
+    steps:
+      # This runs before the checkout so that the checkout finds git.
+      - name: Install the build tools
+        run: |
+          set -eu
+          # Debian 11 reached the end of its support, so its packages now live on the archive.
+          sed -i 's|http://deb.debian.org/debian-security|http://archive.debian.org/debian-security|; s|http://deb.debian.org/debian|http://archive.debian.org/debian|' /etc/apt/sources.list
+          apt-get -o Acquire::Check-Valid-Until=false update
+          apt-get install -y --no-install-recommends build-essential ca-certificates curl git gnupg \
+            linux-libc-dev nasm ninja-build pkg-config python3-pip xz-utils zlib1g-dev
+          pip3 install meson
+
+      - uses: actions/checkout@v7
+
+      - name: Download and verify the source
+        run: sh scripts/ffmpeg-build/fetch-source.sh "$VERSION"
+
+      - name: Build the dependencies
+        run: sh scripts/ffmpeg-build/linux-deps.sh deps
+
+      - name: Build ffmpeg
+        run: sh scripts/ffmpeg-build/linux.sh "ffmpeg-$VERSION" deps "out/$TRIPLE"
+
+      - name: Check that the binaries link only glibc
+        run: sh scripts/ffmpeg-build/check-linux-links.sh "out/$TRIPLE/ffmpeg" "out/$TRIPLE/ffprobe"
+
+      - name: Show the build
+        run: |
+          "out/$TRIPLE/ffmpeg" -version
+          "out/$TRIPLE/ffmpeg" -hide_banner -encoders
+          ls -l "out/$TRIPLE"
+
+      - name: Package
+        run: sh scripts/ffmpeg-build/package.sh "$VERSION" "$TRIPLE" "out/$TRIPLE" dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.triple }}
+          path: dist/
+          if-no-files-found: error
+
+  windows:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2022
+            triple: x86_64-pc-windows-msvc
+            arch: x86_64
+            msvc-arch: amd64
+          - runner: windows-11-arm
+            triple: aarch64-pc-windows-msvc
+            arch: aarch64
+            msvc-arch: arm64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      TRIPLE: ${{ matrix.triple }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # The MSVC compiler and linker come from the Developer Command Prompt environment, and
+      # MSYS2 provides the shell and tools that ffmpeg's configure and Makefiles need.
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc-arch }}
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          path-type: inherit
+          install: make pkgconf nasm diffutils git gnupg xz zip
+
+      - name: Download and verify the source
+        run: sh scripts/ffmpeg-build/fetch-source.sh "$VERSION"
+
+      # The ARM64 assembly is written for the GNU assembler; gas-preprocessor translates it for
+      # armasm64. The commit is pinned so that a change upstream cannot alter the build.
+      - name: Install gas-preprocessor
+        if: matrix.arch == 'aarch64'
+        run: |
+          set -eu
+          mkdir -p /usr/local/bin
+          curl -fsSLo /usr/local/bin/gas-preprocessor.pl https://raw.githubusercontent.com/FFmpeg/gas-preprocessor/ac1836309c2e77023c228b7184485597286289d3/gas-preprocessor.pl
+          chmod +x /usr/local/bin/gas-preprocessor.pl
+
+      - name: Build the dependencies
+        run: sh scripts/ffmpeg-build/windows-deps.sh deps
+
+      - name: Build ffmpeg
+        run: sh scripts/ffmpeg-build/windows.sh "ffmpeg-$VERSION" deps ${{ matrix.arch }} "out/$TRIPLE"
+
+      - name: Check that the binaries import only system DLLs
+        run: sh scripts/ffmpeg-build/check-windows-links.sh "out/$TRIPLE/ffmpeg.exe" "out/$TRIPLE/ffprobe.exe"
+
+      - name: Show the build
+        run: |
+          "out/$TRIPLE/ffmpeg.exe" -version
+          "out/$TRIPLE/ffmpeg.exe" -hide_banner -encoders
+          ls -l "out/$TRIPLE"
+
+      - name: Package
+        run: sh scripts/ffmpeg-build/package.sh "$VERSION" "$TRIPLE" "out/$TRIPLE" dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.triple }}
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    needs: [version, macos, linux, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      TAG: ${{ needs.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Write the build notes and checksums
+        run: sh scripts/ffmpeg-build/release-notes.sh "$VERSION" dist
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" --target "$GITHUB_SHA" --repo "$GITHUB_REPOSITORY" \
+            --title "ffmpeg $VERSION (LGPL)" --notes-file dist/BUILD.md \
+            dist/*.tar.xz dist/*.zip dist/SHA256SUMS dist/BUILD.md
