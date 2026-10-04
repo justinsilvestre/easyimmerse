@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { splitIntoWords, stripMarkup } from "./ClickableText.tsx";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  ClickableText,
+  splitIntoWords,
+  stripMarkup,
+} from "./ClickableText.tsx";
+
+afterEach(cleanup);
 
 describe("splitIntoWords", () => {
   it("keeps the punctuation and spaces between words", () => {
@@ -25,5 +32,12 @@ describe("stripMarkup", () => {
     expect(stripMarkup("<i>Everything</i> is quiet.")).toBe(
       "Everything is quiet.",
     );
+  });
+});
+
+describe("ClickableText", () => {
+  it("renders angle-bracketed text as it is", () => {
+    const { container } = render(<ClickableText text="<colloq.> mate" />);
+    expect(container.textContent).toBe("<colloq.> mate");
   });
 });

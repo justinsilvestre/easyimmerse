@@ -28,7 +28,10 @@ export function stripMarkup(text: string): string {
   return text.replace(/<[^>]+>/g, "");
 }
 
-/** Renders text with each word as a button, so a word can be looked up on hover or focus and turned into a flashcard on click. */
+/**
+ * Renders text with each word as a button, so a word can be looked up on hover or focus and turned into a flashcard on click.
+ * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
+ */
 export function ClickableText({
   text,
   activeWord,
@@ -42,7 +45,7 @@ export function ClickableText({
 }) {
   return (
     <span className="whitespace-pre-line">
-      {splitIntoWords(stripMarkup(text)).map((part) =>
+      {splitIntoWords(text).map((part) =>
         part.isWord ? (
           <button
             key={part.start}

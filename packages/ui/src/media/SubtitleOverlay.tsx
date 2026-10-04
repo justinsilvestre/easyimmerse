@@ -36,7 +36,7 @@ export function SubtitleOverlay({
       {showsTarget && targetCue && (
         <p className="pointer-events-auto rounded bg-black/70 px-3 py-1 text-base font-medium text-white md:text-2xl">
           <ClickableText
-            text={targetCue.text}
+            text={stripMarkup(targetCue.text)}
             activeWord={activeWord}
             onWordHover={onWordHover}
             onWordClick={onWordClick}

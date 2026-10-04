@@ -136,7 +136,7 @@ function CueCard({
       </div>
       <p className="text-base">
         <ClickableText
-          text={cue.text}
+          text={stripMarkup(cue.text)}
           activeWord={activeWord}
           onWordHover={onWordHover}
           onWordClick={onWordClick}
