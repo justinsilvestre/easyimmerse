@@ -5,12 +5,12 @@ import { formatPlayerTime } from "../formatPlayerTime.ts";
 import { drawWaveform } from "./drawWaveform.ts";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import { useElementWidth } from "./useElementWidth.ts";
-import type { WaveformGestureHandlers } from "./useWaveformInteraction.ts";
 import { useWaveformInteraction } from "./useWaveformInteraction.ts";
 import { WaveformZoomControl } from "./WaveformZoomControl.tsx";
 import { applyDrag } from "./waveformDrag.ts";
 import type { WaveformView } from "./waveformGeometry.ts";
 import { canZoom, computeViewStart, zoomedSpan } from "./waveformGeometry.ts";
+import type { WaveformGestureHandlers } from "./waveformGestureHandlers.ts";
 
 export const waveformStripHeightPx = 72;
 
