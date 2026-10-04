@@ -63,7 +63,7 @@ pub enum Definition {
     Text { text: String },
     /// A tree of elements from an allowlisted set, as Yomitan dictionaries supply.
     Structured {
-        #[schema(value_type = Object)]
+        #[schema(value_type = Value)]
         content: StructuredContent,
     },
     /// HTML as MDict and StarDict dictionaries supply it. It is unsanitized and must be sanitized for display.
