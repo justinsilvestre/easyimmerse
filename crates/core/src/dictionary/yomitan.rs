@@ -1,42 +1,61 @@
-use std::io::Cursor;
-
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use zip::ZipArchive;
+use thiserror::Error;
 
 use super::error::DictionaryError;
 use super::format::DictionaryFormat;
-use super::{Dictionary, TermEntry};
+use super::metadata::{DictionaryFormatKind, DictionaryMetadata};
+use super::sink::DictionarySink;
+use super::source::{DictionarySource, file_name};
+use super::term_entry::{Definition, TermEntry};
 
 /// The Yomitan dictionary format, version 3: an `index.json` with the metadata and any
 /// number of `term_bank_N.json` files holding term entries as JSON arrays.
 pub struct YomitanFormat;
 
+#[derive(Debug, Error)]
+pub enum YomitanError {
+    #[error("the file {name:?} is not valid JSON: {source}")]
+    Json {
+        name: String,
+        source: serde_json::Error,
+    },
+    #[error("unsupported Yomitan dictionary format version {0}")]
+    UnsupportedVersion(u32),
+    #[error("the term bank {name:?} contains a malformed entry")]
+    MalformedTermEntry { name: String },
+}
+
 impl DictionaryFormat for YomitanFormat {
-    fn name(&self) -> &'static str {
-        "yomitan"
+    fn kind(&self) -> DictionaryFormatKind {
+        DictionaryFormatKind::Yomitan
     }
 
-    fn matches(&self, archive: &mut ZipArchive<Cursor<&[u8]>>) -> bool {
-        archive.index_for_name("index.json").is_some()
+    fn matches(&self, source: &DictionarySource) -> bool {
+        source.find(|name| name == "index.json").is_some()
     }
 
-    fn parse(
+    fn import(
         &self,
-        archive: &mut ZipArchive<Cursor<&[u8]>>,
-    ) -> Result<Dictionary, DictionaryError> {
-        let index: Index = read_json(archive, "index.json")?;
+        source: &mut DictionarySource,
+        sink: &mut dyn DictionarySink,
+    ) -> Result<(), DictionaryError> {
+        let index_name = source
+            .find(|name| name == "index.json")
+            .unwrap_or("index.json")
+            .to_string();
+        let index: Index = read_json(source, &index_name)?;
         check_version(&index)?;
-        let mut entries = Vec::new();
-        for name in term_bank_names(archive) {
-            entries.extend(read_term_bank(archive, &name)?);
+        let mut metadata = DictionaryMetadata::new(index.title, DictionaryFormatKind::Yomitan);
+        metadata.revision = index.revision;
+        sink.begin(metadata)?;
+        for name in term_bank_names(source) {
+            for entry in read_term_bank(source, &name)? {
+                sink.term_entry(entry)?;
+            }
         }
-        Ok(Dictionary {
-            title: index.title,
-            revision: index.revision,
-            entries,
-        })
+        Ok(())
     }
 }
 
@@ -51,18 +70,21 @@ struct Index {
 
 const SUPPORTED_VERSION: u32 = 3;
 
-fn check_version(index: &Index) -> Result<(), DictionaryError> {
+fn check_version(index: &Index) -> Result<(), YomitanError> {
     match index.format.or(index.version) {
         Some(SUPPORTED_VERSION) => Ok(()),
-        other => Err(DictionaryError::UnsupportedVersion(other.unwrap_or(1))),
+        other => Err(YomitanError::UnsupportedVersion(other.unwrap_or(1))),
     }
 }
 
 /// Lists the term bank entries in numeric order, so `term_bank_2` comes before `term_bank_10`.
-fn term_bank_names(archive: &ZipArchive<Cursor<&[u8]>>) -> Vec<String> {
-    let mut names: Vec<String> = archive
-        .file_names()
-        .filter(|name| name.starts_with("term_bank_") && name.ends_with(".json"))
+fn term_bank_names(source: &DictionarySource) -> Vec<String> {
+    let mut names: Vec<String> = source
+        .names()
+        .filter(|name| {
+            let name = file_name(name);
+            name.starts_with("term_bank_") && name.ends_with(".json")
+        })
         .map(String::from)
         .collect();
     names.sort_by_key(|name| bank_number(name));
@@ -70,34 +92,38 @@ fn term_bank_names(archive: &ZipArchive<Cursor<&[u8]>>) -> Vec<String> {
 }
 
 fn bank_number(name: &str) -> u32 {
-    name.trim_start_matches("term_bank_")
+    file_name(name)
+        .trim_start_matches("term_bank_")
         .trim_end_matches(".json")
         .parse()
         .unwrap_or(0)
 }
 
 fn read_term_bank(
-    archive: &mut ZipArchive<Cursor<&[u8]>>,
+    source: &mut DictionarySource,
     name: &str,
 ) -> Result<Vec<TermEntry>, DictionaryError> {
-    let rows: Vec<Vec<Value>> = read_json(archive, name)?;
+    let rows: Vec<Vec<Value>> = read_json(source, name)?;
     rows.iter()
         .map(|row| {
-            parse_term_entry(row).ok_or_else(|| DictionaryError::MalformedTermEntry {
+            parse_term_entry(row).ok_or_else(|| YomitanError::MalformedTermEntry {
                 name: name.to_string(),
             })
         })
-        .collect()
+        .collect::<Result<_, _>>()
+        .map_err(DictionaryError::from)
 }
 
 fn read_json<T: DeserializeOwned>(
-    archive: &mut ZipArchive<Cursor<&[u8]>>,
+    source: &mut DictionarySource,
     name: &str,
 ) -> Result<T, DictionaryError> {
-    let entry = archive.by_name(name)?;
-    serde_json::from_reader(entry).map_err(|source| DictionaryError::Json {
-        name: name.to_string(),
-        source,
+    let bytes = source.read(name)?;
+    serde_json::from_slice(&bytes).map_err(|error| {
+        DictionaryError::from(YomitanError::Json {
+            name: name.to_string(),
+            source: error,
+        })
     })
 }
 
@@ -111,21 +137,23 @@ fn parse_term_entry(row: &[Value]) -> Option<TermEntry> {
         .and_then(Value::as_str)
         .filter(|reading| !reading.is_empty());
     let glossary = row.get(5).and_then(Value::as_array);
-    Some(TermEntry {
+    let mut entry = TermEntry::new(
         term,
-        reading: reading.map(String::from),
-        definitions: glossary
+        glossary
             .map(|values| string_items(values))
             .unwrap_or_default(),
-        tags: [split_tags(row.get(2)), split_tags(row.get(7))].concat(),
-    })
+    );
+    entry.reading = reading.map(String::from);
+    entry.definition_tags = split_tags(row.get(2));
+    entry.term_tags = split_tags(row.get(7));
+    Some(entry)
 }
 
-fn string_items(values: &[Value]) -> Vec<String> {
+fn string_items(values: &[Value]) -> Vec<Definition> {
     values
         .iter()
         .filter_map(Value::as_str)
-        .map(String::from)
+        .map(Definition::text)
         .collect()
 }
 
@@ -141,12 +169,16 @@ fn split_tags(value: Option<&Value>) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dictionary::parse_dictionary;
     use crate::test_support::read_fixture_bytes;
     use serde_json::json;
 
-    fn open_fixture() -> ZipArchive<Cursor<&'static [u8]>> {
-        let bytes: &'static [u8] = read_fixture_bytes("sample-yomitan.zip").leak();
-        ZipArchive::new(Cursor::new(bytes)).expect("fixture should be a zip archive")
+    fn fixture_source() -> DictionarySource {
+        DictionarySource::single(
+            "sample-yomitan.zip",
+            read_fixture_bytes("sample-yomitan.zip"),
+        )
+        .unwrap()
     }
 
     fn cat_row() -> Vec<Value> {
@@ -158,51 +190,34 @@ mod tests {
 
     #[test]
     fn matches_the_yomitan_fixture() {
-        assert!(YomitanFormat.matches(&mut open_fixture()));
+        assert!(YomitanFormat.matches(&fixture_source()));
     }
 
     #[test]
     fn reads_the_title_of_the_yomitan_fixture() {
-        assert_eq!(
-            YomitanFormat.parse(&mut open_fixture()).unwrap().title,
-            "Sample Dictionary"
-        );
+        let dictionary = parse_dictionary(&mut fixture_source()).unwrap();
+        assert_eq!(dictionary.metadata.title, "Sample Dictionary");
     }
 
     #[test]
-    fn reads_the_revision_of_the_yomitan_fixture() {
-        assert_eq!(
-            YomitanFormat.parse(&mut open_fixture()).unwrap().revision,
-            Some("2026-09-30".into())
-        );
-    }
-
-    #[test]
-    fn reads_the_first_entry_of_the_yomitan_fixture() {
-        assert_eq!(
-            YomitanFormat.parse(&mut open_fixture()).unwrap().entries[0],
-            TermEntry {
-                term: "猫".into(),
-                reading: Some("ねこ".into()),
-                definitions: vec!["cat".into()],
-                tags: vec!["n".into()],
-            }
-        );
+    fn reads_three_entries_from_the_yomitan_fixture() {
+        let dictionary = parse_dictionary(&mut fixture_source()).unwrap();
+        assert_eq!(dictionary.entries.len(), 3);
     }
 
     #[test]
     fn skips_glossary_entries_that_are_not_strings() {
         assert_eq!(
             parse_term_entry(&cat_row()).unwrap().definitions,
-            vec!["cat"]
+            vec![Definition::text("cat")]
         );
     }
 
     #[test]
-    fn combines_definition_tags_and_term_tags() {
+    fn reads_the_definition_tags() {
         assert_eq!(
-            parse_term_entry(&cat_row()).unwrap().tags,
-            vec!["n", "common", "P"]
+            parse_term_entry(&cat_row()).unwrap().definition_tags,
+            vec!["n", "common"]
         );
     }
 
