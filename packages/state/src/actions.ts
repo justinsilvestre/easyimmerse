@@ -1,6 +1,6 @@
 import type { Action } from "redux";
-import type { PreferenceKey } from "./appState.ts";
-import type { PickedFile } from "./effects.ts";
+import type { AppState, PreferenceKey } from "./appState.ts";
+import type { PickedFile, PickedMediaFile } from "./effects.ts";
 import type { Theme } from "./theme.ts";
 
 export const actions = {
@@ -8,15 +8,31 @@ export const actions = {
     ({ type: "seekRequested", seconds }) as const,
   playerTimeChanged: (seconds: number) =>
     ({ type: "playerTimeChanged", seconds }) as const,
+  playerDurationChanged: (seconds: number) =>
+    ({ type: "playerDurationChanged", seconds }) as const,
   filePickRequested: () => ({ type: "filePickRequested" }) as const,
   fileChosen: (file: PickedFile) => ({ type: "fileChosen", file }) as const,
   filePickCancelled: () => ({ type: "filePickCancelled" }) as const,
+  mediaFilePickRequested: () => ({ type: "mediaFilePickRequested" }) as const,
+  mediaFileChosen: (file: PickedMediaFile) =>
+    ({ type: "mediaFileChosen", file }) as const,
+  mediaFilePickCancelled: () => ({ type: "mediaFilePickCancelled" }) as const,
+  mediaFileAdded: (mediaFileId: string) =>
+    ({ type: "mediaFileAdded", mediaFileId }) as const,
+  mediaFileAddFailed: () => ({ type: "mediaFileAddFailed" }) as const,
+  mediaFileRemoved: (mediaFileId: string) =>
+    ({ type: "mediaFileRemoved", mediaFileId }) as const,
+  openMedia: (mediaFileId: string) =>
+    ({ type: "openMedia", mediaFileId }) as const,
+  closeMedia: () => ({ type: "closeMedia" }) as const,
   preferenceToggled: (key: PreferenceKey) =>
     ({ type: "preferenceToggled", key }) as const,
+  preferenceSet: (key: PreferenceKey, value: string) =>
+    ({ type: "preferenceSet", key, value }) as const,
   preferencesLoadRequested: () =>
     ({ type: "preferencesLoadRequested" }) as const,
-  preferenceLoaded: (key: PreferenceKey, value: string | null) =>
-    ({ type: "preferenceLoaded", key, value }) as const,
+  preferencesLoaded: (preferences: AppState["preferences"]) =>
+    ({ type: "preferencesLoaded", preferences }) as const,
   notificationRequested: (message: string) =>
     ({ type: "notificationRequested", message }) as const,
   cueCopyRequested: (text: string) =>

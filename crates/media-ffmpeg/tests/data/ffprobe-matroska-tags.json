@@ -1,0 +1,30 @@
+{
+  "streams": [
+    {
+      "index": 1,
+      "codec_name": "ac3",
+      "codec_type": "audio",
+      "sample_rate": "48000",
+      "channels": 6,
+      "time_base": "1/1000",
+      "start_pts": 0,
+      "start_time": "0.000000",
+      "disposition": {
+        "default": 0
+      },
+      "tags": {
+        "language": "eng",
+        "TITLE": "Director's commentary",
+        "BPS": "1500000",
+        "BPS-eng": "1500000",
+        "DURATION": "00:42:10.123000000"
+      }
+    }
+  ],
+  "format": {
+    "format_name": "matroska,webm",
+    "start_time": "0.000000",
+    "duration": "2530.123000",
+    "bit_rate": "4890123"
+  }
+}

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use easyimmerse_conversion::{ConversionService, ProbeCache};
 use easyimmerse_storage::{Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
@@ -9,13 +10,24 @@ use crate::config::ApiConfig;
 pub struct AppState {
     pub storage: Arc<Storage>,
     pub config: Arc<ApiConfig>,
+    /// Probes media files through ffprobe. None when ffprobe was not found.
+    pub probes: Option<Arc<ProbeCache>>,
+    /// Converts media while it plays. None without ffmpeg or a cache directory.
+    pub conversion: Option<ConversionService>,
 }
 
 impl AppState {
-    pub fn new(storage: Storage, config: ApiConfig) -> Self {
+    pub fn new(
+        storage: Storage,
+        config: ApiConfig,
+        probes: Option<ProbeCache>,
+        conversion: Option<ConversionService>,
+    ) -> Self {
         Self {
             storage: Arc::new(storage),
             config: Arc::new(config),
+            probes: probes.map(Arc::new),
+            conversion,
         }
     }
 

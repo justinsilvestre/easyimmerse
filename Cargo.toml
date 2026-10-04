@@ -12,6 +12,7 @@ repository = "https://github.com/justinsilvestre/easyimmerse"
 rust-version = "1.98"
 
 [workspace.dependencies]
+easyimmerse-conversion = { path = "crates/conversion" }
 easyimmerse-core = { path = "crates/core" }
 easyimmerse-media = { path = "crates/media" }
 easyimmerse-media-ffmpeg = { path = "crates/media-ffmpeg" }
@@ -24,6 +25,7 @@ anyhow = "1.0"
 axum = "0.8"
 base64 = "0.22"
 clap = { version = "4.6", features = ["derive", "env"] }
+fs4 = "1.1"
 hex = "0.4"
 matroska = "0.30"
 mp4 = "0.14"

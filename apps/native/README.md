@@ -4,11 +4,13 @@ The Tauri app for macOS, Windows, Linux, Android, and iOS. `src/` holds the fron
 
 ## The shell
 
-On start-up, the shell opens the SQLite database in the app data directory, binds the API server to `127.0.0.1:8787` (or a free port when that one is taken), and creates the main window with `window.__EASYIMMERSE__ = { serverUrl, token }` injected before the page runs. The page then talks to the server over plain HTTP. Tauri IPC carries only the dialog, notification, clipboard, and opener plugins, plus the `check_plugin_host` command in builds with the `plugin-check` feature, which the [plugin host README](../../crates/plugins/README.md) describes.
+On start-up, the shell opens the SQLite database in the app data directory, creates the app cache directory for converted media, binds the API server to `127.0.0.1:8787` (or a free port when that one is taken), and creates the main window with `window.__EASYIMMERSE__ = { serverUrl, token }` injected before the page runs. The page then talks to the server over plain HTTP. Tauri IPC carries only the dialog, notification, clipboard, and opener plugins, plus the `check_plugin_host` command in builds with the `plugin-check` feature, which the [plugin host README](../../crates/plugins/README.md) describes.
 
 ## ffmpeg sidecars
 
-The media routes will call `ffmpeg` and `ffprobe` sidecar binaries. `mise run fetch-ffmpeg` downloads the LGPL build for one target triple, checks its SHA-256, and copies the binaries into `src-tauri/binaries/` (gitignored) under the names Tauri expects (`ffmpeg-<triple>` and `ffprobe-<triple>`, with `.exe` for Windows targets).
+The media routes call ffmpeg and ffprobe, which the desktop app bundles as the sidecars `easyimmerse-ffmpeg` and `easyimmerse-ffprobe`. `mise run fetch-ffmpeg` downloads the LGPL build for one target triple, checks its SHA-256, and copies the binaries into `src-tauri/binaries/` (gitignored) under the names Tauri expects (`easyimmerse-ffmpeg-<triple>` and `easyimmerse-ffprobe-<triple>`, with `.exe` for Windows targets). Tauri drops the triple when it bundles them. The prefix matters on Linux: the deb and rpm packages install every sidecar into `/usr/bin`, where a file named `ffmpeg` would conflict with the distribution's ffmpeg package and shadow it on `PATH`. With the prefix, the packages install `/usr/bin/easyimmerse-ffmpeg` and `/usr/bin/easyimmerse-ffprobe`; the macOS app keeps them in `Contents/MacOS/` and the Windows installers next to the app's executable.
+
+The Rust code (`crates/media-ffmpeg/src/locate.rs`) looks for each binary first at an explicit path, then in `EASYIMMERSE_FFMPEG_DIR` and in the executable's directory under `easyimmerse-<name>`, `easyimmerse-<name>-<triple>`, and `<name>` in that order, and finally as `<name>` on `PATH`. The bundled app finds the first name next to its executable; a development build finds the second in `target/debug/`, where Tauri copies the sidecars; and `EASYIMMERSE_FFMPEG_DIR` can point straight at `src-tauri/binaries/`.
 
 ```sh
 mise run fetch-ffmpeg                      # the triple of this machine, from rustc
@@ -16,22 +18,32 @@ mise run fetch-ffmpeg x86_64-pc-windows-msvc
 mise run fetch-ffmpeg -- --force           # refetch even when the binaries exist
 ```
 
-The script in `scripts/fetch-ffmpeg/` has no dependencies and is run directly by Node. Extraction uses the system `tar` for `.tar.xz` and `unzip` (or `Expand-Archive` on Windows) for `.zip`. Its `manifest.json` has one entry per Rust target triple:
+The script in `scripts/fetch-ffmpeg/` has no dependencies and is run directly by Node. Extraction uses the system `tar` for `.tar.xz` and `unzip` (or `Expand-Archive` on Windows) for `.zip`. Its `manifest.json` names one release of this repository's ffmpeg workflow and the hash of each archive in it:
 
-- `url`: the archive to download.
-- `sha256`: hex SHA-256 of the archive. A value starting with `TODO` makes the script skip that triple with a warning.
-- `archive`: `tar.xz` or `zip`.
-- `paths.ffmpeg` and `paths.ffprobe`: where each binary sits inside the archive.
+- `repository`: the GitHub repository that publishes the release, as `owner/name`.
+- `release`: the release tag, `ffmpeg-<version>` or `ffmpeg-<version>-<n>`.
+- `sha256`: the hex SHA-256 of each target's archive, keyed by Rust target triple.
 
-Linux and Windows entries point at a dated `autobuild-*` release of [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds/releases) rather than the `latest` release, whose assets are replaced daily and would no longer match the pinned hashes. To update, pick a newer dated release, download its four LGPL assets, and record their `shasum -a 256` output and inner paths (`tar tJf` or `unzip -l`).
+The script derives the rest from the workflow's asset names: the archive is `ffmpeg-<version>-<triple>.zip` for Windows triples and `ffmpeg-<version>-<triple>.tar.xz` otherwise, and the binaries sit at its top level as `ffmpeg` and `ffprobe`, with `.exe` on Windows.
 
-No first-party LGPL macOS build exists, so the `*-apple-darwin` entries point at this repository's own release produced by the `ffmpeg-macos` workflow (`.github/workflows/ffmpeg-macos.yml`). To build a version, push a tag named `ffmpeg-macos-<version>` on any branch (for example `git tag ffmpeg-macos-8.1.2 && git push origin ffmpeg-macos-8.1.2`), wait for the release with that tag, then copy the two hashes from its `SHA256SUMS` asset into the `sha256` fields. While this repository is private, those assets are only reachable through the GitHub API with a token: the script uses `GITHUB_TOKEN` or `GH_TOKEN` when set, and otherwise the token of the logged-in `gh` CLI. While a hash is `TODO`, the desktop app on macOS finds ffmpeg on `PATH` or not at all.
+No first-party LGPL build passes the licence policy below on any platform, so the manifest points at a release of this repository produced by the `ffmpeg` workflow (`.github/workflows/ffmpeg.yml`). It builds both Mac architectures in one macOS job, x86-64 and ARM64 Linux in a Debian 11 container (so the binaries run on distributions with glibc 2.31 or newer), and x86-64 and ARM64 Windows with the MSVC toolchain and a static C runtime (so no Visual C++ redistributable is needed), then publishes all six archives in one release. Every build configures ffmpeg with the flags in `scripts/ffmpeg-build/common-flags.txt`, which disable every component and enable only the containers, codecs, filters, and protocols the Rust code uses, plus decoders for formats common in personal libraries (MPEG-1 and MPEG-2, MP2, DTS, TrueHD, WMV and WMA, ProRes, DNxHD, and PGS, DVD, and DVB subtitles). Each platform adds its hardware encoders: VideoToolbox and the AudioToolbox AAC encoder on macOS; VA-API, NVENC, and V4L2 on Linux; Media Foundation, NVENC, and AMF on Windows. ffmpeg supports NVENC on Windows only for x86-64, so the Windows ARM64 build has no NVENC encoder. Every step of the workflow is a shell script in `scripts/ffmpeg-build/` (`fetch-source.sh`, `macos.sh`, `linux-deps.sh` and `linux.sh`, `windows-deps.sh` and `windows.sh`, the `check-*-links.sh` checks, `package.sh`, and `release-notes.sh`), so a build can be reproduced outside CI.
 
-`tauri.conf.json` does not declare the sidecars yet, because Tauri fails the build when a declared sidecar file is missing. Once `mise run fetch-ffmpeg` is part of every developer's setup, add this to `bundle` (the CI job already runs the fetch task):
+To build a version, push a tag named `ffmpeg-<version>` on any branch (for example `git tag ffmpeg-8.1.3 && git push origin refs/tags/ffmpeg-8.1.3`), or `ffmpeg-<version>-<n>` to build the same version again after a change. Pushing a branch of the same name triggers the same build, for environments that cannot push tags; the release then creates the tag at the built commit, and the branch can be deleted afterwards. Wait for the release with that tag, then set `release` in the manifest to the tag and copy the hashes from its `SHA256SUMS` asset into `sha256`. The release notes (`BUILD.md`) record the source tarball's SHA-256 and each target's configure flags. Every build runs with autodetection off and only the wanted system features enabled, and fails when a binary links a library the operating system does not provide: `otool -L` on macOS allows only `/System/Library` and `/usr/lib`, `ldd` on Linux allows only glibc, and `dumpbin /dependents` on Windows allows only system DLLs. The fetch script sends a GitHub token when one is available (`GITHUB_TOKEN`, `GH_TOKEN`, or the logged-in `gh` CLI), which release assets of a private repository require.
 
-```json
-"externalBin": ["binaries/ffmpeg", "binaries/ffprobe"]
-```
+The sidecars of ffmpeg 8.1.3 add the following to the app, measured on the binaries of the pinned release (stripped on macOS and Linux; the MSVC linker writes no symbols) and on the archive the fetch script downloads:
+
+| Platform | `ffmpeg` | `ffprobe` | Archive |
+| --- | ---: | ---: | ---: |
+| macOS (Apple silicon) | 8.6 MB | 8.5 MB | 5.1 MB |
+| macOS (Intel) | 11.0 MB | 10.8 MB | 6.3 MB |
+| Linux (x86-64) | 10.7 MB | 10.5 MB | 6.5 MB |
+| Linux (ARM64) | 8.5 MB | 8.3 MB | 5.1 MB |
+| Windows (x86-64) | 10.0 MB | 9.9 MB | 7.6 MB |
+| Windows (ARM64) | 7.8 MB | 7.6 MB | 6.4 MB |
+
+The desktop builds declare the sidecars in `tauri.macos.conf.json`, `tauri.linux.conf.json`, and `tauri.windows.conf.json`, which Tauri merges over `tauri.conf.json` for the matching target. They are not declared in the shared file because the mobile builds have no sidecars. Tauri refuses to build the desktop app while a declared sidecar file is missing, so `mise run fetch-ffmpeg` must run before every desktop build; the `desktop`, `web:desktop`, and `e2e:desktop` tasks and the CI native job do so. The `bundle` job of the native workflow builds the release bundles for all six desktop targets and fails unless each one contains `easyimmerse-ffmpeg` and `easyimmerse-ffprobe` sidecars that start (`scripts/check-bundle-sidecars.sh`, which prints where each sidecar sits in the unpacked bundle).
+
+The licence notices for these builds are generated by `mise run ffmpeg-notices` (`scripts/ffmpeg-notices/`). For each manifest entry it downloads the archive (cached in the system temporary directory, or the directory given with `--cache-dir`), reads the configure line embedded in the `ffmpeg` binary, and maps each enabled feature to the libraries it links through the table in `featureLibraries.ts` and `libraries.ts`. Every library must be under MIT, a BSD licence, ISC, Zlib, Apache-2.0, or the LGPL; a build that links anything else, enables `gpl` or `nonfree`, or uses a feature missing from the table is rejected, gets no notices, and makes the task fail with the list of problems. The task writes `packages/licenses/src/generated/ffmpegNotices.json` (exported as `ffmpegNotices` by `@easyimmerse/licenses` for the licenses page in Settings) and `ffmpeg-notices.txt` (bundled by Tauri as `licenses/ffmpeg-notices.txt`), and records what it read, including the fetched licence texts, in `scripts/ffmpeg-notices/noticeInputs.json`. Commit all three after changing the manifest. `mise run ffmpeg-notices:check`, which CI runs, works offline: it fails when the manifest's hashes differ from the recorded ones, when rendering the recorded inputs would change the committed files, or when a recorded build breaks the licence policy. Pass `--refresh` to download the archives and licence texts again.
 
 ## End-to-end tests
 

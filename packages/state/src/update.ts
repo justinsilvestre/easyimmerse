@@ -2,6 +2,7 @@ import type { AppAction } from "./actions.ts";
 import type { AppState, PreferenceKey } from "./appState.ts";
 import { preferenceKeys } from "./appState.ts";
 import type { Effect } from "./effect.ts";
+import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { followSystemTheme, toggleTheme } from "./theme.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
@@ -15,9 +16,29 @@ const subtitleFileExtensions: readonly string[] = [".srt", ".vtt"];
 export const update: Update<AppState, AppAction, Effect> = (state, action) => {
   switch (action.type) {
     case "seekRequested":
-      return [state, [{ type: "seekPlayer", seconds: action.seconds }]];
+      return [
+        {
+          ...state,
+          player: { ...state.player, currentTimeSeconds: action.seconds },
+        },
+        [{ type: "seekPlayer", seconds: action.seconds }],
+      ];
     case "playerTimeChanged":
-      return [{ ...state, player: { currentTimeSeconds: action.seconds } }, []];
+      return [
+        {
+          ...state,
+          player: { ...state.player, currentTimeSeconds: action.seconds },
+        },
+        [],
+      ];
+    case "playerDurationChanged":
+      return [
+        {
+          ...state,
+          player: { ...state.player, durationSeconds: action.seconds },
+        },
+        [],
+      ];
     case "filePickRequested":
       return [
         { ...state, pendingFilePick: true },
@@ -34,18 +55,75 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "filePickCancelled":
       return [{ ...state, pendingFilePick: false }, []];
+    case "mediaFilePickRequested":
+      return [
+        { ...state, pendingMediaFilePick: true },
+        [{ type: "pickMediaFile", accept: mediaFileExtensions }],
+      ];
+    case "mediaFileChosen":
+      return [
+        { ...state, pendingMediaFilePick: false, chosenMediaFile: action.file },
+        [],
+      ];
+    case "mediaFilePickCancelled":
+      return [{ ...state, pendingMediaFilePick: false }, []];
+    case "mediaFileAdded":
+      return [
+        {
+          ...state,
+          chosenMediaFile: null,
+          currentMediaFileId: action.mediaFileId,
+        },
+        [],
+      ];
+    case "mediaFileAddFailed":
+      return [
+        { ...state, chosenMediaFile: null },
+        [
+          {
+            type: "showNotification",
+            message: "The media file could not be added",
+          },
+        ],
+      ];
+    case "mediaFileRemoved":
+      return [
+        {
+          ...state,
+          currentMediaFileId:
+            state.currentMediaFileId === action.mediaFileId
+              ? null
+              : state.currentMediaFileId,
+        },
+        [],
+      ];
+    case "openMedia":
+      return [{ ...state, currentMediaFileId: action.mediaFileId }, []];
+    case "closeMedia":
+      return [
+        {
+          ...state,
+          currentMediaFileId: null,
+          player: { currentTimeSeconds: 0, durationSeconds: 0 },
+        },
+        [],
+      ];
     case "preferenceToggled":
       return togglePreference(state, action.key);
-    case "preferencesLoadRequested":
+    case "preferenceSet":
       return [
-        state,
-        preferenceKeys.map((key) => ({ type: "loadPreference", key })),
+        setPreference(state, action.key, action.value),
+        [{ type: "savePreference", key: action.key, value: action.value }],
       ];
-    case "preferenceLoaded":
+    case "preferencesLoadRequested":
+      return [state, [{ type: "loadPreferences", keys: preferenceKeys }]];
+    case "preferencesLoaded":
       return [
-        action.value === null
-          ? state
-          : setPreference(state, action.key, action.value),
+        {
+          ...state,
+          preferences: { ...state.preferences, ...action.preferences },
+          preferencesLoaded: true,
+        },
         [],
       ];
     case "notificationRequested":

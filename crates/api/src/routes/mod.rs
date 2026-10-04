@@ -1,6 +1,14 @@
+pub mod conversion_cache;
+pub mod conversions;
 pub mod dictionaries;
 pub mod documents;
 pub mod health;
+pub mod media;
+pub mod media_playback;
+pub mod media_stream;
+pub mod media_support;
+pub mod media_tracks;
+pub mod media_waveform;
 pub mod openapi;
 pub mod preferences;
 pub mod projects;

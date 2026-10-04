@@ -10,7 +10,7 @@ export async function pickFile(
   const path = await open({
     multiple: false,
     directory: false,
-    filters: [buildDialogFilter(accept)],
+    filters: [buildDialogFilter("Subtitles", accept)],
   });
   if (path === null) return null;
   return { name: basename(path), source: { kind: "path", path } };

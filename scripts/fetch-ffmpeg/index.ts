@@ -13,14 +13,13 @@ import { fileURLToPath } from "node:url";
 import { downloadToFile, verifySha256 } from "./download.ts";
 import { extractArchive } from "./extract.ts";
 import {
-  hasVerifiedHash,
   hostTriple,
   type ManifestEntry,
   readManifestEntry,
 } from "./manifest.ts";
 
 /**
- * Downloads the pinned ffmpeg build for a target triple and places `ffmpeg` and
+ * Downloads the pinned ffmpeg build for a target triple and places its `ffmpeg` and
  * `ffprobe` where Tauri looks for sidecar binaries.
  *
  * Usage: `node scripts/fetch-ffmpeg/index.ts [triple] [--force]`
@@ -43,12 +42,7 @@ async function main(args: string[]): Promise<void> {
     printPaths(outputs);
     return;
   }
-  const entry = readManifestEntry(triple);
-  if (!hasVerifiedHash(entry)) {
-    console.warn(`skipping ffmpeg for ${triple}: ${entry.sha256}`);
-    return;
-  }
-  await fetchIntoOutputDir(entry, triple);
+  await fetchIntoOutputDir(readManifestEntry(triple), triple);
   printPaths(outputs);
 }
 
@@ -80,10 +74,14 @@ function installBinary(source: string, destination: string): void {
   chmodSync(destination, 0o755);
 }
 
-/** Tauri names sidecars `<name>-<triple>`, with `.exe` appended for Windows targets. */
+/**
+ * Tauri expects sidecars named `<name>-<triple>`, with `.exe` appended for Windows targets.
+ * The `easyimmerse-` prefix keeps the installed binaries from colliding with a system ffmpeg,
+ * since the Linux packages install sidecars into `/usr/bin`.
+ */
 function sidecarPath(name: string, triple: string): string {
   const suffix = triple.includes("windows") ? ".exe" : "";
-  return join(outputDir, `${name}-${triple}${suffix}`);
+  return join(outputDir, `easyimmerse-${name}-${triple}${suffix}`);
 }
 
 function printPaths(paths: string[]): void {

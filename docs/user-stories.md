@@ -82,8 +82,8 @@ As a user:
 As a user:
 - when I am on the project screen:
   - [ ] I see the open project's name
-  - [ ] I see a list of the project's media files
-  - [ ] I can click on a media file to open it
+  - [x] I see a list of the project's media files
+  - [x] I can click on a media file to open it
   - [ ] I can remove a media file from the project through the menu on its row
   - [ ] the menu bar has an option to save the project
   - [ ] I see a button to edit the project's settings
@@ -102,10 +102,12 @@ As a user:
   - [ ] I see an indication of whether/how many cards have yet to be sent to Anki, and a preview of the first-created unsent flashcard
   - [ ] I see a button to send new flashcards to Anki via AnkiConnect
 - when I click on the "Add media" button:
-  - [ ] I am prompted to select a media file to add to the project
+  - [x] I am prompted to select a media file to add to the project
 - when I add a media file to the project:
-  - [ ] I see the new media file in the list of media files
-  - [ ] the new media file is opened
+  - [x] I see the new media file in the list of media files
+  - [x] the new media file is opened
+- when I click "Remove" next to a media file:
+  - [x] the media file is removed from the project's list; the file itself is left alone
 - when I save the project via the menu bar or keyboard shortcut:
   - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
 - while I am working in a project:
@@ -121,13 +123,13 @@ As a user:
 
 As a user:
 - when a video has been opened:
-  - [ ] I see a video player
-  - [ ] I can pause and resume playback through player controls or keyboard shortcuts
-  - [ ] I can seek to a different time in the video via the playback bar
+  - [x] I see a video player
+  - [x] I can pause and resume playback through player controls or keyboard shortcuts
+  - [x] I can seek to a different time in the video via the playback bar
   - [ ] I can skip forward or backward by a small amount (or to the next/previous cue, if any subtitles tracks are open) via player controls or keyboard shortcuts
-  - [ ] I can adjust the volume of the audio track
+  - [x] I can adjust the volume of the audio track
   - [ ] I can adjust the playback speed of the video
-  - [ ] I can switch between different audio tracks, when multiple are present
+  - [x] I can switch between different audio tracks, when multiple are present
   - [ ] I can choose among the embedded subtitle tracks and any external subtitles files, for the target language and for the translation
   - [ ] I can add a subtitles file from disk as the target-language or translation subtitles
   - [ ] the player controls lie over the bottom of the video and hide while it plays and the pointer rests; they reappear when the pointer moves or playback pauses
@@ -137,7 +139,18 @@ As a user:
   - [ ] given multiple audio tracks, a lone track in the language of the project is automatically selected, or else I am prompted to select a track
   - [ ] given embedded subtitles or automatically found subtitles resources, a lone track in the language of the project is automatically selected as the target language subtitles, or else I am prompted to select a track, with the first lines of each track shown so I can tell them apart
   - [ ] given embedded subtitles or automatically found subtitles resources, a lone track in my language is automatically selected as the translation subtitles, or else I am prompted to select a track
-  - [ ] given an unsupported video or audio format, I am prompted to allow the file to be converted to a supported format
+  - [x] given an unsupported video or audio format, I am prompted to allow the file to be converted to a supported format
+- when I open a video or audio file my system cannot play directly:
+  - [x] the first time, I see a notice that the file will be converted as it plays, with a "Don't show this again" box; Cancel returns me to the project's media list
+  - [x] playback starts within a few seconds, and I can jump to any point before the conversion has finished
+  - [x] the converted file is kept on disk, so it plays at once the next time
+- when a video or audio file has several video or audio tracks:
+  - [x] I choose which tracks to play before the first play, and my choice is remembered for that file
+  - [x] a "Tracks" button in the player lets me change the choice later, and the player continues from the same position
+- when a video is playing:
+  - [x] a "Screenshot" button captures the current frame
+- when a file cannot be played:
+  - [x] I see "The media could not be played." followed by one plain sentence saying why, for example "This video's picture is too tall to convert."
 - when a subtitles track is opened:
   - [ ] I see the subtitles displayed on top of the video
   - [ ] I see indications of the cue timings in the waveform visualization, and can click on them to seek the video to that cue
@@ -151,26 +164,26 @@ As a user:
 
 As a user:
 - when an audio file has been opened:
-  - [ ] I see an audio player
+  - [x] I see an audio player
   - [ ] I see a visualization of the album art, if present in the audio file
-  - [ ] I can control the audio in the same ways as a video
+  - [x] I can control the audio in the same ways as a video
 - when I open an audio file for the first time:
   - [ ] given multiple audio tracks, a lone track in the language of the project is automatically selected, or else I am prompted to select a track
   - [ ] given embedded subtitles or automatically found subtitles/timing-enhanced transcript resources, a lone track in the language of the project is automatically selected as the target language subtitles/timing-enhanced transcript, or else I am prompted to select a track
   - [ ] given embedded subtitles or automatically found subtitles/timing-enhanced transcript resources, a lone track in my language is automatically selected as the translation subtitles/timing-enhanced transcript, or else I am prompted to select a track
-  - [ ] given an unsupported audio format, I am prompted to allow the file to be converted to a supported format
+  - [x] given an unsupported audio format, I am prompted to allow the file to be converted to a supported format
 
 ---
 
 ### Waveform visualization
 
 - when a video or audio file is opened:
-  - [ ] I see a waveform visualization of the audio track
+  - [x] I see a waveform visualization of the audio track around the current time; parts not yet loaded show a quiet line
 - when a subtitles track/timing-enhanced transcript is opened:
-  - [ ] I see indications of the cue/segment timings in the waveform visualization, and can click on them to seek the audio to that cue/segment
+  - [x] I see indications of the cue/segment timings in the waveform visualization, and can click on them to seek the audio to that cue/segment
   - [ ] I can distinguish those segments corresponding to flashcards from those that do not
 - when I click on a point in the waveform visualization:
-  - [ ] the audio seeks to that point
+  - [x] the audio seeks to that point
 - when I click on a segment in the waveform visualization:
   - [ ] the audio seeks to the start of that segment
 - when I double-click/double-tap on a segment in the waveform visualization corresponding to a flashcard:
@@ -179,8 +192,12 @@ As a user:
   - [ ] the flashcard's segment is emphasized in the waveform visualization
   - [ ] I can move the endpoints of the flashcard's segment in the waveform visualization, and the flashcard's audio timings are updated accordingly
   - [ ] I can move the point in the waveform visualization corresponding to the flashcard's screenshot, and the flashcard's screenshot is updated accordingly
+- when I turn the mouse wheel over the waveform visualization, pinch it, or use the zoom control in its corner:
+  - [x] the view zooms between two seconds and five minutes, or the whole file when it is shorter
+- when the waveform visualization has keyboard focus:
+  - [x] the arrow keys move the view by a second (ten with Shift), and Home and End jump to the ends of the file
 - when the waveform visualization is at its closest or widest zoom level:
-  - [ ] the corresponding zoom button is disabled
+  - [x] the corresponding zoom button is disabled
 - when the waveform visualization is shown:
   - [ ] I can hide it with the button in its corner, and show it again with the strip under the player
 - *on desktop*, when I open the View menu:
@@ -385,6 +402,8 @@ As a web/mobile app user:
   - [ ] the app loads, and I can use my previously added local files and dictionaries
 - when I open a media file the browser cannot play:
   - [ ] I am told the format is not supported in the browser, and that the desktop app can play it
+- when I open a media file from my computer in the web app:
+  - [x] it plays from the browser's memory; it is never converted and has no waveform visualization
 
 As a web app user:
   - [ ] I can install the app as a Progressive Web App
@@ -566,7 +585,13 @@ As a user:
 ### App settings
 
 As a user:
+- when I open the settings screen:
+  - [x] it opens over the current screen, from a Settings link in the footer; Back returns me to the screen as it was, so a video keeps playing while I change a setting
+  - [x] *on macOS*, Preferences in the app menu (Cmd+,) opens it too
 - when I am on the settings screen:
+  - [x] I can turn on "Keep audio lossless when converting", so later conversions keep the audio at full quality at the cost of more disk space
+  - [x] I see how much disk the converted videos use of what they may use, and a "Clear converted videos" button; without a server that can convert, the section is one line saying so
+  - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices
   - [ ] I can change the app's theme between light and dark
   - [ ] I can set whether to honor the system's light/dark theme preference
   - [ ] I can change the language of the app's interface

@@ -11,13 +11,16 @@
       "!**/packages/types/src/generated",
       "!**/packages/types/src/openapi/schema.ts",
       "!**/packages/wasm/pkg",
+      "!**/packages/licenses/src/generated",
+      "!**/scripts/ffmpeg-notices/noticeInputs.json",
       "!**/.wxt",
       "!**/.output",
       "!**/dist",
       "!**/gen",
       "!**/crates/api/openapi.json",
       "!**/fixtures/sample-yomitan",
-      "!**/fixtures/sample-epub"
+      "!**/fixtures/sample-epub",
+      "!**/fixtures/conversion-h264-aac.ts"
     ]
   },
   "formatter": {

@@ -81,7 +81,8 @@ mod tests {
             .into_iter()
             .find(|track| track.kind == TrackKind::Subtitle)
             .expect("the fixture has a subtitle track")
-            .id
+            .container_track_id
+            .expect("MP4 tracks carry their track id")
     }
 
     #[test]

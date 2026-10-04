@@ -1,8 +1,20 @@
 import clsx from "clsx";
+import { useNavigationActions } from "../navigationContext.ts";
+import { Button } from "./Button.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
 
-/** Shows the theme switch at the bottom of a screen. `contentClassName` lets it line up with the screen's content. */
-export function AppFooter({ contentClassName }: { contentClassName?: string }) {
+/**
+ * Shows the Settings link and the theme switch at the bottom of a screen.
+ * `contentClassName` lets it line up with the screen's content.
+ */
+export function AppFooter({
+  contentClassName,
+  showSettingsLink = true,
+}: {
+  contentClassName?: string;
+  showSettingsLink?: boolean;
+}) {
+  const { openSettings } = useNavigationActions();
   return (
     <footer className="border-t border-line">
       <div
@@ -11,6 +23,11 @@ export function AppFooter({ contentClassName }: { contentClassName?: string }) {
           contentClassName,
         )}
       >
+        {showSettingsLink && (
+          <Button variant="subtle" onClick={openSettings}>
+            Settings
+          </Button>
+        )}
         <ThemeToggle />
       </div>
     </footer>

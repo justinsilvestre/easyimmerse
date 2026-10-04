@@ -2,4 +2,8 @@
 import type { ContainerFormat } from "./ContainerFormat";
 import type { TrackInfo } from "./TrackInfo";
 
-export type ContainerInfo = { format: ContainerFormat, duration_ms: number | null, tracks: Array<TrackInfo>, };
+export type ContainerInfo = { format: ContainerFormat, duration_ms: number | null, start_ms: number | null, 
+/**
+ * The overall bit rate of the file in bits per second.
+ */
+bit_rate: number | null, tracks: Array<TrackInfo>, };
