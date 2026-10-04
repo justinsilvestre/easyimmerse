@@ -15,7 +15,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
+import type { FrameCapturer } from "../player/browserFrameCapturer.ts";
+import { FrameCapturerContext } from "../player/frameCapturerContext.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import { createFakeFrameCapturer } from "../testSupport/createFakeFrameCapturer.ts";
 import {
   fixtureProject,
   fixtureResponses,
@@ -72,9 +75,12 @@ function renderMediaScreen(flashcards: Flashcard[] = []) {
 
 /**
  * Renders the screen on a video the browser added, with the sample subtitles.
- * The browser's registry holds the given file, or nothing when it is null.
+ * The browser's registry holds the given file, or nothing when it is null, and frames are captured with the given capturer.
  */
-function renderBrowserVideoScreen(file: File | null) {
+function renderBrowserVideoScreen(
+  file: File | null,
+  capturer: FrameCapturer = createFakeFrameCapturer(true),
+) {
   const registry = createBrowserFileRegistry<File>();
   const mediaFile: MediaFile = {
     id: "m3",
@@ -95,7 +101,9 @@ function renderBrowserVideoScreen(file: File | null) {
     "POST /projects/p1/flashcards": savedFlashcard,
   });
   const rendered = renderWithAppStore(
-    <MediaScreen project={fixtureProject} mediaFileId="m3" />,
+    <FrameCapturerContext value={capturer}>
+      <MediaScreen project={fixtureProject} mediaFileId="m3" />
+    </FrameCapturerContext>,
     client,
     { server: fakeServer, browserFileRegistry: registry },
   );
@@ -397,6 +405,22 @@ describe("MediaScreen", () => {
       expect(await savedScreenshotOfNewFlashcard(client)).toEqual({
         at_ms: 1000,
       });
+    });
+
+    it("shows the screenshot captured from the file", async () => {
+      renderBrowserVideoScreen(browserVideo());
+      const list = await findSubtitles();
+      fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+      const thumbnail = await screen.findByAltText("Screenshot from the video");
+      expect(thumbnail.getAttribute("src")).toBe("frame-at-1");
+    });
+
+    it("leaves the screenshot out of a new flashcard once the file turns out to have no pictures", async () => {
+      const file = browserVideo();
+      const capturer = createFakeFrameCapturer(false);
+      const { client } = renderBrowserVideoScreen(file, capturer);
+      await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(false));
+      expect(await savedScreenshotOfNewFlashcard(client)).toBeNull();
     });
 
     it("leaves the screenshot out of a new flashcard once the browser no longer holds the file", async () => {

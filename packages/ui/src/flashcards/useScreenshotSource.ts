@@ -1,6 +1,7 @@
 import { getServerConfig, type ServerConfig } from "@easyimmerse/backend";
 import type { MediaFile } from "@easyimmerse/types";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
+import { useHasPictures } from "../player/useHasPictures.ts";
 import { useHasVideo } from "../player/useHasVideo.ts";
 
 /**
@@ -16,20 +17,27 @@ export type ScreenshotSource =
     }
   | { kind: "browser"; file: Blob };
 
-/** The source of the media file's screenshots, or null when the file has no pictures or none can be reached. */
+/**
+ * The source of the media file's screenshots, or null when the file has no pictures or none can be reached.
+ * A file the browser holds is opened in the background to learn whether it has pictures; until then, a video file name is trusted.
+ */
 export function useScreenshotSource(
   projectId: string,
   mediaFile: MediaFile | null,
 ): ScreenshotSource | null {
   const hasVideo = useHasVideo(projectId, mediaFile);
   const registry = useBrowserFileRegistry();
+  const browserFile =
+    mediaFile?.source.kind === "browser_file" && hasVideo
+      ? (registry?.find(mediaFile.name, mediaFile.source) ?? null)
+      : null;
+  const hasPictures = useHasPictures(browserFile);
   if (mediaFile === null || !hasVideo) return null;
-  const { source } = mediaFile;
-  if (source.kind === "browser_file") {
-    const file = registry?.find(mediaFile.name, source) ?? null;
-    return file && { kind: "browser", file };
-  }
+  if (mediaFile.source.kind === "browser_file")
+    return browserFile !== null && hasPictures !== false
+      ? { kind: "browser", file: browserFile }
+      : null;
   const server = getServerConfig();
-  if (source.kind !== "path" || server === null) return null;
+  if (mediaFile.source.kind !== "path" || server === null) return null;
   return { kind: "server", server, projectId, mediaFileId: mediaFile.id };
 }
