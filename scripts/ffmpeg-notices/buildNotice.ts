@@ -17,7 +17,7 @@ export function renderBuildNotice(accepted: AcceptedBuild): LicenseNotice {
     `Release: ${origin.releaseUrl}`,
     `Download: ${build.url}`,
     `SHA-256 of the download: ${build.sha256}`,
-    `Statically linked libraries: ${linked || "none"}`,
+    `Third-party libraries linked: ${linked || "none"}`,
     "",
     "Configure flags:",
     ...configureArgs.map(quoteConfigureArg),
