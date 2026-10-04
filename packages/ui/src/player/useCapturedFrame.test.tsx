@@ -8,9 +8,8 @@ afterEach(cleanup);
 type Pending = { atMs: number; resolve: (frame: string | null) => void };
 
 /** A capturer whose captures wait until the test answers them, and which remembers what it answered. */
-function createControlledCapturer() {
+function createControlledCapturer(answered = new Map<number, string | null>()) {
   const pending: Pending[] = [];
-  const answered = new Map<number, string | null>();
   const capturer: FrameCapturer = {
     peek: (_file, atMs) => answered.get(atMs),
     capture: (_file, atMs) =>
@@ -89,6 +88,15 @@ describe("useCapturedFrame", () => {
       <Frame file={file} atMs={1000} capturer={capturer} />,
     );
     await answer(1000, "frame-1");
+    rerender(<Frame file={file} atMs={2000} capturer={capturer} />);
+    expect(shownFrame()).toBe("frame-1");
+  });
+
+  it("keeps a frame shown from earlier captures while the next one is captured", () => {
+    const { capturer } = createControlledCapturer(new Map([[1000, "frame-1"]]));
+    const { rerender } = render(
+      <Frame file={file} atMs={1000} capturer={capturer} />,
+    );
     rerender(<Frame file={file} atMs={2000} capturer={capturer} />);
     expect(shownFrame()).toBe("frame-1");
   });

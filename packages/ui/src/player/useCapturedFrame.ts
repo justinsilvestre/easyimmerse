@@ -6,7 +6,7 @@ import {
 
 /**
  * The frame of a file the browser holds at a time, as an image URL, captured in the background.
- * While the frame at a new time is captured, the last frame captured from the same file stays shown.
+ * While the frame at a new time is captured, the last frame shown from the same file stays shown.
  * Null without a file or a time, before the first frame arrives, or when the file has no pictures.
  */
 export function useCapturedFrame(
@@ -30,6 +30,9 @@ export function useCapturedFrame(
   }, [file, atMs, capturer]);
   if (file === null || atMs === null) return null;
   const known = capturer.peek(file, atMs);
-  if (known !== undefined) return known;
-  return latest?.file === file ? latest.frame : null;
+  if (known === undefined) return latest?.file === file ? latest.frame : null;
+  // Remembers a frame found already captured, so that it stays shown while the frame at the next time is captured.
+  if (latest?.file !== file || latest.frame !== known)
+    setLatest({ file, frame: known });
+  return known;
 }
