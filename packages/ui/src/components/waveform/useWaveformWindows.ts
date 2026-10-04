@@ -1,7 +1,13 @@
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { WaveformWindowView } from "./waveformWindowPolicy.ts";
-import type { FetchWaveformWindow } from "./waveformWindowStore.ts";
+import type {
+  FetchWaveformWindow,
+  WaveformWindowStore,
+} from "./waveformWindowStore.ts";
 import { createWaveformWindowStore } from "./waveformWindowStore.ts";
+
+const noWindows: ReadonlyMap<number, Uint8Array> = new Map();
+const subscribeToNothing = () => () => undefined;
 
 /**
  * Keeps the peaks windows the view needs loaded, requesting them through `fetchWindow`
@@ -11,14 +17,18 @@ export function useWaveformWindows(
   fetchWindow: FetchWaveformWindow,
   view: WaveformWindowView,
 ): ReadonlyMap<number, Uint8Array> {
-  const store = useMemo(
-    () => createWaveformWindowStore(fetchWindow),
-    [fetchWindow],
-  );
-  useEffect(() => () => store.dispose(), [store]);
+  const [store, setStore] = useState<WaveformWindowStore | null>(null);
+  useEffect(() => {
+    const created = createWaveformWindowStore(fetchWindow);
+    setStore(created);
+    return () => created.dispose();
+  }, [fetchWindow]);
   const { viewStartMs, viewEndMs, focusMs, durationMs } = view;
   useEffect(() => {
-    store.update({ viewStartMs, viewEndMs, focusMs, durationMs });
+    store?.update({ viewStartMs, viewEndMs, focusMs, durationMs });
   }, [store, viewStartMs, viewEndMs, focusMs, durationMs]);
-  return useSyncExternalStore(store.subscribe, store.getWindows);
+  return useSyncExternalStore(
+    store?.subscribe ?? subscribeToNothing,
+    store?.getWindows ?? (() => noWindows),
+  );
 }
