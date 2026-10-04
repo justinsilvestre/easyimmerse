@@ -43,7 +43,7 @@ pub fn conversion_unavailable() -> ApiFailure {
     ApiFailure::new(
         StatusCode::SERVICE_UNAVAILABLE,
         CONVERSION_UNAVAILABLE,
-        "this server has no ffmpeg or no cache directory, so it cannot convert media",
+        "this server has no ffmpeg or no cache directory, so it cannot read the tracks of media files or convert them",
     )
 }
 
