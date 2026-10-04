@@ -59,12 +59,6 @@ describe("createRecordingEffects", () => {
     );
   });
 
-  it("records a copyToClipboard call with its text", async () => {
-    const effects = createRecordingEffects();
-    await effects.copyToClipboard("Hello");
-    expect(effects.calls).toEqual([{ type: "copyToClipboard", text: "Hello" }]);
-  });
-
   it("calls a settings listener when settings are requested", () => {
     const effects = createRecordingEffects();
     let callCount = 0;

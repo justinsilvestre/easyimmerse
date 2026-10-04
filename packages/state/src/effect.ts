@@ -11,5 +11,4 @@ export type Effect =
   | { type: "savePreference"; key: PreferenceKey; value: string }
   | { type: "loadPreferences"; keys: readonly PreferenceKey[] }
   | { type: "showNotification"; message: string }
-  | { type: "copyToClipboard"; text: string }
   | { type: "openExternalUrl"; url: string };

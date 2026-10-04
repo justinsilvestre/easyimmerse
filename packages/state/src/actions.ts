@@ -44,8 +44,6 @@ export const actions = {
     ({ type: "preferencesLoaded", preferences }) as const,
   notificationRequested: (message: string) =>
     ({ type: "notificationRequested", message }) as const,
-  cueCopyRequested: (text: string) =>
-    ({ type: "cueCopyRequested", text }) as const,
   externalLinkRequested: (url: string) =>
     ({ type: "externalLinkRequested", url }) as const,
   systemThemeChanged: (theme: Theme) =>

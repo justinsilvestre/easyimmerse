@@ -17,7 +17,6 @@ export interface Effects {
   savePreference(key: string, value: string): Promise<void>;
   loadPreference(key: string): Promise<string | null>;
   showNotification(message: string): void;
-  copyToClipboard(text: string): Promise<void>;
   openExternalUrl(url: string): void;
   /**
    * Calls the listener whenever the platform asks for the Settings screen, as a desktop menu item does.

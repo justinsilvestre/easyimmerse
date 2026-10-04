@@ -4,7 +4,6 @@ import type {
   PlayerRegistry,
 } from "@easyimmerse/state";
 import { createBrowserFileRegistry } from "@easyimmerse/state";
-import { copyToClipboard } from "./copyToClipboard.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { pickFile } from "./pickFile.ts";
 import { createPickMediaFile } from "./pickMediaFile.ts";
@@ -30,7 +29,6 @@ export function createWebEffects(options: {
     savePreference: preferences.save,
     loadPreference: preferences.load,
     showNotification: options.notify ?? showNotification,
-    copyToClipboard,
     openExternalUrl,
     subscribeToSettingsRequests: ignoreSettingsRequests,
   };

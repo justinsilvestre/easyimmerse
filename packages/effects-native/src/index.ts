@@ -1,7 +1,6 @@
 import type { ServerConfig } from "@easyimmerse/backend";
 import { createWebEffects } from "@easyimmerse/effects-web";
 import type { Effects, PlayerRegistry } from "@easyimmerse/state";
-import { copyToClipboard } from "./copyToClipboard.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { sendOsNotification } from "./osNotification.ts";
 import { pickFile } from "./pickFile.ts";
@@ -11,9 +10,9 @@ import { createShowNotification } from "./showNotification.ts";
 import { subscribeToSettingsRequests } from "./subscribeToSettingsRequests.ts";
 
 /**
- * Builds the Tauri implementation of the app's side effects. Native dialogs, notifications,
- * the clipboard, and external links go through Tauri plugins; preferences are stored by the
- * embedded server; the Settings menu item reaches the page as a Tauri event.
+ * Builds the Tauri implementation of the app's side effects.
+ * Native dialogs, notifications, and external links go through Tauri plugins;
+ * preferences are stored by the embedded server; the Settings menu item reaches the page as a Tauri event.
  */
 export function createNativeEffects(options: {
   playerRegistry: PlayerRegistry;
@@ -33,7 +32,6 @@ export function createNativeEffects(options: {
       sendOsNotification,
       webEffects.showNotification,
     ),
-    copyToClipboard,
     openExternalUrl,
     subscribeToSettingsRequests,
   };

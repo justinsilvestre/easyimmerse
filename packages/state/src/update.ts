@@ -158,14 +158,6 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "notificationRequested":
       return [state, [{ type: "showNotification", message: action.message }]];
-    case "cueCopyRequested":
-      return [
-        state,
-        [
-          { type: "copyToClipboard", text: action.text },
-          { type: "showNotification", message: "Copied to clipboard" },
-        ],
-      ];
     case "externalLinkRequested":
       return [state, [{ type: "openExternalUrl", url: action.url }]];
     case "systemThemeChanged":

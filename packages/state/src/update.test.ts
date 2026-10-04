@@ -336,33 +336,6 @@ describe("update", () => {
     expect(effects).toEqual([{ type: "showNotification", message: "Saved" }]);
   });
 
-  it("returns two effects for cueCopyRequested", () => {
-    const [, effects] = update(
-      initialAppState,
-      actions.cueCopyRequested("Hello"),
-    );
-    expect(effects).toHaveLength(2);
-  });
-
-  it("returns a copyToClipboard effect first for cueCopyRequested", () => {
-    const [, effects] = update(
-      initialAppState,
-      actions.cueCopyRequested("Hello"),
-    );
-    expect(effects[0]).toEqual({ type: "copyToClipboard", text: "Hello" });
-  });
-
-  it("returns a confirmation notification second for cueCopyRequested", () => {
-    const [, effects] = update(
-      initialAppState,
-      actions.cueCopyRequested("Hello"),
-    );
-    expect(effects[1]).toEqual({
-      type: "showNotification",
-      message: "Copied to clipboard",
-    });
-  });
-
   it("returns an openExternalUrl effect for externalLinkRequested", () => {
     const [, effects] = update(
       initialAppState,

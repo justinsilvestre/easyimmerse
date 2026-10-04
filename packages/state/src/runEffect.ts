@@ -56,9 +56,6 @@ export function runEffect(
     case "showNotification":
       effects.showNotification(effect.message);
       return;
-    case "copyToClipboard":
-      effects.copyToClipboard(effect.text).catch(ignoreFailure);
-      return;
     case "openExternalUrl":
       effects.openExternalUrl(effect.url);
       return;

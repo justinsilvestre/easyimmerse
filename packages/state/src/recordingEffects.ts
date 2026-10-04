@@ -10,7 +10,6 @@ export type EffectCall =
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
   | { type: "showNotification"; message: string }
-  | { type: "copyToClipboard"; text: string }
   | { type: "openExternalUrl"; url: string }
   | { type: "subscribeToSettingsRequests" };
 
@@ -93,9 +92,6 @@ export function createRecordingEffects(): RecordingEffects {
     },
     showNotification: (message) => {
       calls.push({ type: "showNotification", message });
-    },
-    copyToClipboard: async (text) => {
-      calls.push({ type: "copyToClipboard", text });
     },
     openExternalUrl: (url) => {
       calls.push({ type: "openExternalUrl", url });

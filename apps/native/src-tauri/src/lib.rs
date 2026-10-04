@@ -25,7 +25,6 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init());
     let builder = webdriver::add_plugins_when_requested(builder);
     let built = plugin_check::register(builder)
