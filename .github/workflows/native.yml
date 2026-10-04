@@ -17,6 +17,7 @@ on:
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
+      - "scripts/check-bundle-sidecars.sh"
       - "scripts/install-appium-driver.sh"
       - "scripts/ios-project-simulator-only.sh"
       - "fixtures/**"
@@ -40,6 +41,7 @@ on:
       - "packages/**"
       - "crates/**"
       - "scripts/fetch-ffmpeg/**"
+      - "scripts/check-bundle-sidecars.sh"
       - "scripts/install-appium-driver.sh"
       - "scripts/ios-project-simulator-only.sh"
       - "fixtures/**"
@@ -112,6 +114,39 @@ jobs:
           else
             pnpm --filter @easyimmerse/native e2e
           fi
+
+  # Builds the release installers that users download, and checks that each one carries working ffmpeg sidecars.
+  # Every target has a runner of its own architecture, so the sidecars run from inside each bundle.
+  bundle:
+    needs: gate
+    if: needs.gate.outputs.passed != 'true' && (github.ref_type != 'tag' || startsWith(github.ref_name, 'native-ci-bundle-'))
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, ubuntu-24.04, ubuntu-24.04-arm, windows-2025, windows-11-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      # rpm2cpio and cpio unpack the RPM package for the sidecar check.
+      - name: Linux webview and packaging dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf rpm2cpio cpio
+
+      - name: Fetch the ffmpeg sidecar
+        run: mise run fetch-ffmpeg
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Release build with every bundle for the platform
+        run: pnpm --filter @easyimmerse/native exec tauri build --ci
+
+      - name: Check the ffmpeg sidecars in each bundle
+        shell: bash
+        run: scripts/check-bundle-sidecars.sh target/release/bundle
 
   android:
     needs: gate
@@ -275,7 +310,7 @@ jobs:
           key: ${{ steps.appium-cache.outputs.cache-primary-key }}
 
   record:
-    needs: [gate, desktop, android, ios]
+    needs: [gate, desktop, bundle, android, ios]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
