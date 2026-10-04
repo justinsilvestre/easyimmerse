@@ -5,7 +5,7 @@ use easyimmerse_core::dictionary::{
 use rusqlite::{Connection, Transaction, params};
 
 use super::DictionaryId;
-use super::columns::{deflate_json, enum_text, join_words};
+use super::columns::{JsonDeflater, enum_text, join_words};
 use crate::error::StorageError;
 
 /// Reads a dictionary from its files into the database in one transaction, and returns its new id.
@@ -31,6 +31,7 @@ pub fn import_with(
         transaction: &transaction,
         imported_at,
         started: None,
+        deflater: JsonDeflater::new(),
     };
     read(&mut importer)?;
     let (number, id) = importer.started.ok_or(StorageError::ImportOutOfOrder)?;
@@ -45,6 +46,7 @@ struct DictionaryImporter<'a> {
     imported_at: u64,
     /// The number and id of the dictionary row, once `begin` has written it.
     started: Option<(i64, DictionaryId)>,
+    deflater: JsonDeflater,
 }
 
 impl DictionaryImporter<'_> {
@@ -88,8 +90,9 @@ impl DictionaryImporter<'_> {
         Ok((self.transaction.last_insert_rowid(), id))
     }
 
-    fn insert_entry(&self, entry: &TermEntry) -> Result<(), StorageError> {
+    fn insert_entry(&mut self, entry: &TermEntry) -> Result<(), StorageError> {
         let number = self.number()?;
+        let definitions = self.deflater.deflate(&entry.definitions)?;
         self.transaction
             .prepare_cached(
                 "INSERT INTO dictionary_entries (dictionary_number, term, reading, alternates,
@@ -106,7 +109,7 @@ impl DictionaryImporter<'_> {
                 entry.sequence,
                 join_words(&entry.term_tags),
                 join_words(&entry.definition_tags),
-                deflate_json(&entry.definitions)?,
+                definitions,
             ])?;
         let entry_id = self.transaction.last_insert_rowid();
         let mut statement = self.transaction.prepare_cached(

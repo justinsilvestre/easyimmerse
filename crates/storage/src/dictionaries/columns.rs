@@ -2,9 +2,8 @@
 
 use std::io::Read;
 
-use flate2::Compression;
 use flate2::read::DeflateDecoder;
-use flate2::write::DeflateEncoder;
+use flate2::{Compress, Compression, FlushCompress, Status};
 use rusqlite::Row;
 use rusqlite::types::Type;
 use serde::Serialize;
@@ -12,11 +11,39 @@ use serde::de::DeserializeOwned;
 
 use crate::error::StorageError;
 
-/// Serializes a value to JSON and compresses it with raw deflate.
-pub fn deflate_json<T: Serialize>(value: &T) -> Result<Vec<u8>, StorageError> {
-    let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
-    serde_json::to_writer(&mut encoder, value)?;
-    Ok(encoder.finish()?)
+/// Serializes values to JSON and compresses each with raw deflate.
+/// One deflater serves a whole import, since setting up compression costs more than compressing a short entry.
+pub struct JsonDeflater {
+    compress: Compress,
+    json: Vec<u8>,
+}
+
+impl JsonDeflater {
+    pub fn new() -> Self {
+        Self {
+            compress: Compress::new(Compression::default(), false),
+            json: Vec::new(),
+        }
+    }
+
+    pub fn deflate<T: Serialize>(&mut self, value: &T) -> Result<Vec<u8>, StorageError> {
+        self.json.clear();
+        serde_json::to_writer(&mut self.json, value)?;
+        self.compress.reset();
+        let mut output = Vec::with_capacity(self.json.len() / 2 + 64);
+        loop {
+            let consumed = usize::try_from(self.compress.total_in()).unwrap_or(usize::MAX);
+            let input = self.json.get(consumed..).unwrap_or_default();
+            let status = self
+                .compress
+                .compress_vec(input, &mut output, FlushCompress::Finish)
+                .map_err(std::io::Error::other)?;
+            if status == Status::StreamEnd {
+                return Ok(output);
+            }
+            output.reserve(output.capacity().max(64));
+        }
+    }
 }
 
 /// Decompresses raw deflate and parses the JSON within.
@@ -97,7 +124,7 @@ mod tests {
     #[test]
     fn round_trips_definitions_through_deflate() {
         let definitions = vec![Definition::text("cat"), Definition::text("a small feline")];
-        let bytes = deflate_json(&definitions).unwrap();
+        let bytes = JsonDeflater::new().deflate(&definitions).unwrap();
         assert_eq!(
             inflate_json::<Vec<Definition>>(&bytes).unwrap(),
             definitions
@@ -105,10 +132,20 @@ mod tests {
     }
 
     #[test]
+    fn round_trips_a_value_deflated_after_a_longer_one() {
+        let mut deflater = JsonDeflater::new();
+        deflater.deflate(&vec![Definition::text("x".repeat(5_000))]).unwrap();
+        let definitions = vec![Definition::text("cat")];
+        let bytes = deflater.deflate(&definitions).unwrap();
+        assert_eq!(inflate_json::<Vec<Definition>>(&bytes).unwrap(), definitions);
+    }
+
+    #[test]
     fn compresses_repetitive_json() {
         let definitions = vec![Definition::text("cat ".repeat(100))];
         let json_length = serde_json::to_vec(&definitions).unwrap().len();
-        assert!(deflate_json(&definitions).unwrap().len() < json_length / 4);
+        let bytes = JsonDeflater::new().deflate(&definitions).unwrap();
+        assert!(bytes.len() < json_length / 4);
     }
 
     #[test]
@@ -134,3 +171,4 @@ mod tests {
         assert!(split_words("").is_empty());
     }
 }
+
