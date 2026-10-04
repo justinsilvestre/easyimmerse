@@ -42,6 +42,8 @@ export const actions = {
   systemThemeChanged: (theme: Theme) =>
     ({ type: "systemThemeChanged", theme }) as const,
   themeToggled: () => ({ type: "themeToggled" }) as const,
+  textScaleChosen: (scale: number) =>
+    ({ type: "textScaleChosen", scale }) as const,
 };
 
 export type AppAction = ReturnType<(typeof actions)[keyof typeof actions]>;

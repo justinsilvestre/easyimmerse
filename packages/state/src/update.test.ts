@@ -213,6 +213,7 @@ describe("update", () => {
         type: "loadPreferences",
         keys: [
           "showTranslations",
+          "textScale",
           "losslessAudio",
           "conversionNoticeDismissed",
         ],
@@ -305,6 +306,18 @@ describe("update", () => {
     );
     expect(effects).toEqual([
       { type: "openExternalUrl", url: "https://example.com" },
+    ]);
+  });
+
+  it("stores the chosen scale as a preference for textScaleChosen", () => {
+    const [state] = update(initialAppState, actions.textScaleChosen(125));
+    expect(state.preferences.textScale).toBe("125");
+  });
+
+  it("returns a savePreference effect for textScaleChosen", () => {
+    const [, effects] = update(initialAppState, actions.textScaleChosen(125));
+    expect(effects).toEqual([
+      { type: "savePreference", key: "textScale", value: "125" },
     ]);
   });
 });

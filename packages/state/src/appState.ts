@@ -5,11 +5,13 @@ import { initialThemeState } from "./theme.ts";
 
 export type PreferenceKey =
   | "showTranslations"
+  | "textScale"
   | "losslessAudio"
   | "conversionNoticeDismissed";
 
 export const preferenceKeys: readonly PreferenceKey[] = [
   "showTranslations",
+  "textScale",
   "losslessAudio",
   "conversionNoticeDismissed",
 ];

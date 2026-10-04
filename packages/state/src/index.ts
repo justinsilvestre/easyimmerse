@@ -32,8 +32,15 @@ export {
   selectPreference,
   selectPreferencesLoaded,
   selectSubtitleSource,
+  selectTextScale,
   selectTheme,
 } from "./selectors.ts";
+export {
+  defaultTextScale,
+  largerTextScale,
+  smallerTextScale,
+  textScales,
+} from "./textScale.ts";
 export type { Theme } from "./theme.ts";
 export type { Update } from "./update.ts";
 export { update } from "./update.ts";

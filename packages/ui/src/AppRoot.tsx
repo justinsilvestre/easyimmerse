@@ -10,6 +10,7 @@ import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
 import { useAppDispatch } from "./hooks/useAppDispatch.ts";
+import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
@@ -51,7 +52,7 @@ export function AppRoot({
       <PlayerRegistryContext value={playerRegistry}>
         <BrowserFileRegistryContext value={browserFileRegistry}>
           <NavigationActionsContext value={{ openSettings }}>
-            <ThemeHandler />
+            <AppearanceHandler />
             <PreferencesLoader />
             <div inert={settingsOpen}>
               <MainScreen
@@ -123,9 +124,10 @@ function PreferencesLoader() {
   return null;
 }
 
-/** Follows the operating system's theme unless the user has switched it, and shows the chosen theme. */
-function ThemeHandler() {
+/** Follows the operating system's theme unless the user has switched it, and shows the chosen theme and text size. */
+function AppearanceHandler() {
   useTrackSystemTheme();
   useApplyTheme();
+  useApplyTextScale();
   return null;
 }

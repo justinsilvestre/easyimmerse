@@ -11,6 +11,7 @@ import {
   selectPreference,
   selectPreferencesLoaded,
   selectSubtitleSource,
+  selectTextScale,
 } from "./selectors.ts";
 
 const rootState: RootState = {
@@ -65,5 +66,9 @@ describe("selectors", () => {
 
   it("selectChosenMediaFile returns the media file waiting to be added", () => {
     expect(selectChosenMediaFile(rootState)?.name).toBe("a.mp4");
+  });
+
+  it("selectTextScale returns 100 until a scale is stored", () => {
+    expect(selectTextScale(rootState)).toBe(100);
   });
 });

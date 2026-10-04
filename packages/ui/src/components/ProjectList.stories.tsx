@@ -6,13 +6,13 @@ import { ProjectList } from "./ProjectList.tsx";
 const twoProjects: ProjectSummary[] = [
   {
     id: "project-1",
-    name: "Dark, season one",
+    name: "German",
     language: "de",
     created_at: "2026-09-01T09:00:00Z",
   },
   {
     id: "project-2",
-    name: "Midnight Diner",
+    name: "Japanese",
     language: "ja",
     created_at: "2026-09-10T12:00:00Z",
   },

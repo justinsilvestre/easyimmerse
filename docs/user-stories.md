@@ -26,6 +26,7 @@ As a user:
   - [ ] the app follows my system's light or dark theme
   - [ ] I can switch between a light and dark theme with the toggle at the bottom of the screen, and the app follows my system again the next time the system theme changes
   - [ ] I can choose in the settings to always use the light or the dark theme
+  - [ ] I can change the size of the app's text from the "Text size" menu at the bottom of the screen, in steps from 75% to 175%, and return to 100% (not in the browser, where the browser's own zoom applies)
   - [ ] *on desktop*, I can see a menu bar with options:
     - easyImmerse menu: About, Preferences, Quit
     - File menu: New project, Open project, Save project, Export flashcards, Import/export project, Exit
@@ -60,9 +61,10 @@ As a user:
     - translation language (defaulting to my interface language)
     - flashcard settings:
       - which fields to include by default in new flashcards (with presets for beginner, intermediate, and advanced learners)
-      - default tags for new flashcards (defaulting to just a tag for the media file name)
+      - default tags for new flashcards, and whether each flashcard is also tagged with its media file's name (on by default)
       - whether to try filling in the audio fields with TTS in the absence of an audio track
   - [ ] I see a preview of an example flashcard with the current settings, which updates as I change the settings
+  - [ ] on a narrow screen, the example flashcard stays in view under the preset as a small card that I can expand
 - when I select the *beginner* flashcard preset in the new project form:
   - [ ] the pronunciation fields are included by default
 - when I select the *intermediate* flashcard preset in the new project form:
@@ -82,6 +84,7 @@ As a user:
   - [ ] I see the open project's name
   - [x] I see a list of the project's media files
   - [x] I can click on a media file to open it
+  - [ ] I can remove a media file from the project through the menu on its row
   - [ ] the menu bar has an option to save the project
   - [ ] I see a button to edit the project's settings
   - [ ] the status of dictionaries is indicated, according to the languages of my project flashcard settings
@@ -127,12 +130,14 @@ As a user:
   - [x] I can adjust the volume of the audio track
   - [ ] I can adjust the playback speed of the video
   - [x] I can switch between different audio tracks, when multiple are present
-  - [ ] I can switch between different subtitle tracks, when multiple are present
+  - [ ] I can choose among the embedded subtitle tracks and any external subtitles files, for the target language and for the translation
   - [ ] I can add a subtitles file from disk as the target-language or translation subtitles
+  - [ ] the player controls lie over the bottom of the video and hide while it plays and the pointer rests; they reappear when the pointer moves or playback pauses
+  - [ ] the lookup and new-flashcard buttons stay available over the video, also in distraction-free mode
   - [ ] I can enter a distraction-free fullscreen mode, in which only the video and subtitles are shown
 - when I open a video for the first time:
   - [ ] given multiple audio tracks, a lone track in the language of the project is automatically selected, or else I am prompted to select a track
-  - [ ] given embedded subtitles or automatically found subtitles resources, a lone track in the language of the project is automatically selected as the target language subtitles, or else I am prompted to select a track
+  - [ ] given embedded subtitles or automatically found subtitles resources, a lone track in the language of the project is automatically selected as the target language subtitles, or else I am prompted to select a track, with the first lines of each track shown so I can tell them apart
   - [ ] given embedded subtitles or automatically found subtitles resources, a lone track in my language is automatically selected as the translation subtitles, or else I am prompted to select a track
   - [x] given an unsupported video or audio format, I am prompted to allow the file to be converted to a supported format
 - when I open a video or audio file my system cannot play directly:
@@ -151,7 +156,7 @@ As a user:
   - [ ] I see indications of the cue timings in the waveform visualization, and can click on them to seek the video to that cue
 - when both a target-language subtitles track and a translation subtitles track are opened:
   - [ ] I see the target-language subtitles above the translation subtitles
-  - [ ] I can toggle between displaying the target-language and translation subtitles on top of the video
+  - [ ] I can toggle between displaying the target-language and translation subtitles on top of the video, with the button in the player controls
 
 ---
 
@@ -184,6 +189,7 @@ As a user:
 - when I double-click/double-tap on a segment in the waveform visualization corresponding to a flashcard:
   - [ ] the flashcard is opened for editing
 - while a flashcard is open for editing:
+  - [ ] the flashcard's segment is emphasized in the waveform visualization
   - [ ] I can move the endpoints of the flashcard's segment in the waveform visualization, and the flashcard's audio timings are updated accordingly
   - [ ] I can move the point in the waveform visualization corresponding to the flashcard's screenshot, and the flashcard's screenshot is updated accordingly
 - when I turn the mouse wheel over the waveform visualization, pinch it, or use the zoom control in its corner:
@@ -192,6 +198,8 @@ As a user:
   - [x] the arrow keys move the view by a second (ten with Shift), and Home and End jump to the ends of the file
 - when the waveform visualization is at its closest or widest zoom level:
   - [x] the corresponding zoom button is disabled
+- when the waveform visualization is shown:
+  - [ ] I can hide it with the button in its corner, and show it again with the strip under the player
 - *on desktop*, when I open the View menu:
   - [ ] I can show or hide the waveform visualization
 
@@ -266,9 +274,11 @@ As a user:
 - when the flashcard-editing form is open:
   - [ ] the corresponding segment of audio/video is looped
   - [ ] I can edit the text fields of the flashcard
-  - [ ] I can toggle whether to include the screenshot in the flashcard
+  - [ ] I see the waveform of the flashcard's audio clip in the form, where I can move the clip's edges and the time of its screenshot as in the waveform visualization
+  - [ ] I can toggle whether to include the screenshot by clicking it or its checkbox; an excluded screenshot is shown faded
+  - [ ] I enter tags as chips, separated by commas or Enter
   - [ ] fields excluded in my flashcard settings are hidden
-  - [ ] I can add a field excluded in my flashcard settings back to the flashcard
+  - [ ] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
   - [ ] I can save the flashcard and close the form
   - [ ] I can delete the flashcard and close the form
 - when a flashcard is created from a word:

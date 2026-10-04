@@ -9,8 +9,9 @@ const meta = {
   argTypes: {
     variant: {
       control: "inline-radio",
-      options: ["primary", "secondary", "subtle"],
+      options: ["primary", "secondary", "subtle", "danger"],
     },
+    size: { control: "inline-radio", options: ["sm", "md"] },
   },
 } satisfies Meta<typeof Button>;
 
@@ -22,5 +23,11 @@ export const Primary: Story = { args: { variant: "primary" } };
 export const Secondary: Story = { args: { variant: "secondary" } };
 
 export const Subtle: Story = { args: { variant: "subtle" } };
+
+export const Danger: Story = {
+  args: { variant: "danger", children: "Delete" },
+};
+
+export const Small: Story = { args: { variant: "primary", size: "sm" } };
 
 export const Disabled: Story = { args: { variant: "primary", disabled: true } };

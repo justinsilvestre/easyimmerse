@@ -38,6 +38,8 @@ mise run storybook      # UI component stories at http://localhost:6006
 
 `web:desktop` reads `.dev/desktop-server.env`, so run `mise run desktop` once before using it. While the desktop app is running, the web app talks to its embedded server. Otherwise the task starts a standalone server at `http://127.0.0.1:8789` on the desktop app's database and cache, with `EASYIMMERSE_FFMPEG_DIR` pointing at the sidecars in `apps/native/src-tauri/binaries/`, and points the web app at it. Quit the task before starting the desktop app again. Vite reads the server address only at start-up, so restart the task after starting or quitting the desktop app.
 
+`storybook` serves the stories of `packages/ui`, where screens are designed before they are wired to the store. The `storybook` workflow also publishes a built copy of every pull request's stories to GitHub Pages at `https://justinsilvestre.github.io/easyimmerse/storybook/pr-<number>/` and posts the link on the pull request; it can be run by hand from the Actions tab to preview a branch without one, at `storybook/<branch>/`. The repository's Pages setting must serve the `gh-pages` branch.
+
 The browser extension has no dev task. Build it, then load it unpacked:
 
 ```sh
