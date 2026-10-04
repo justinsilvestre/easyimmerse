@@ -16,6 +16,23 @@ import { xdxfRule } from "./xdxfRule.ts";
 
 const rules = { html: htmlRule, pango: pangoRule, xdxf: xdxfRule };
 
+/** Kinds that start a new line, so that a line break in the text beside them would add an empty line. */
+const blockKinds = new Set<RichKind>([
+  "p",
+  "heading",
+  "div",
+  "center",
+  "blockquote",
+  "pre",
+  "ul",
+  "ol",
+  "dl",
+  "table",
+  "hr",
+  "details",
+  "sense",
+]);
+
 /** Elements whose whitespace-only text children are layout, not content, and are invalid in the DOM. */
 const whitespaceFreeKinds = new Set<RichKind>([
   "table",
@@ -87,6 +104,7 @@ function MarkupNode({
     node.nodeType === Node.TEXT_NODE ||
     node.nodeType === Node.CDATA_SECTION_NODE
   ) {
+    if (isSpacingBesideBlock(node, language)) return null;
     const text = node.textContent ?? "";
     return (
       <ContentText
@@ -132,6 +150,19 @@ function MarkupNode({
 function ruleFor(element: Element, language: MarkupLanguage): MarkupRule {
   const tag = element.localName.toLowerCase();
   return droppedTags.has(tag) ? drop : rules[language](element, tag);
+}
+
+/** Whether a node is only whitespace beside an element that is dropped or starts its own line, where it would show as an empty line. */
+function isSpacingBesideBlock(node: Node, language: MarkupLanguage): boolean {
+  if (node.textContent?.trim()) return false;
+  return [node.previousSibling, node.nextSibling].some((sibling) => {
+    if (sibling?.nodeType !== Node.ELEMENT_NODE) return false;
+    const rule = ruleFor(sibling as Element, language);
+    return (
+      rule.action === "drop" ||
+      (rule.action === "element" && blockKinds.has(rule.kind))
+    );
+  });
 }
 
 function childNodes(element: Element, rule: MarkupRule): Node[] {

@@ -180,6 +180,20 @@ describe("MarkupView", () => {
       expect(container.textContent).toBe("дом");
     });
 
+    it("drops the line break left by the hidden headword", () => {
+      const { container } = renderDefinition(
+        xdxf("<k>house</k>\n<tr>haʊs</tr>"),
+      );
+      expect(container.textContent).toBe("haʊs");
+    });
+
+    it("drops a line break between senses, which start their own lines", () => {
+      const { container } = renderDefinition(
+        xdxf("<def>a</def>\n<def>b</def>"),
+      );
+      expect(container.textContent).toBe("ab");
+    });
+
     it("keeps a transcription, which an HTML parser would drop outside a table", () => {
       const { container } = renderDefinition(xdxf("<tr>haʊs</tr>"));
       expect(container.textContent).toBe("haʊs");
