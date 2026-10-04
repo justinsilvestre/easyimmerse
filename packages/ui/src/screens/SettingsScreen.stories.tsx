@@ -19,12 +19,15 @@ export const WithoutConversion: Story = {};
 export const WithConvertedVideos: Story = {
   args: {
     conversionCache: {
-      status: {
-        usageBytes: 1_230_000_000,
-        limitBytes: 5_000_000_000,
-        budgetBytes: 5_000_000_000,
-        freeBytes: 40_000_000_000,
-        spaceLow: false,
+      cache: {
+        kind: "available",
+        status: {
+          usage_bytes: 1_230_000_000,
+          limit_bytes: 5_000_000_000,
+          budget_bytes: 5_000_000_000,
+          free_bytes: 40_000_000_000,
+          space_low: false,
+        },
       },
       onClear: fn(),
       clearStatus: "",
@@ -38,12 +41,15 @@ export const WithConvertedVideos: Story = {
 export const LowDiskSpace: Story = {
   args: {
     conversionCache: {
-      status: {
-        usageBytes: 1_900_000_000,
-        limitBytes: 2_000_000_000,
-        budgetBytes: 5_000_000_000,
-        freeBytes: 2_200_000_000,
-        spaceLow: true,
+      cache: {
+        kind: "available",
+        status: {
+          usage_bytes: 1_900_000_000,
+          limit_bytes: 2_000_000_000,
+          budget_bytes: 5_000_000_000,
+          free_bytes: 2_200_000_000,
+          space_low: true,
+        },
       },
       onClear: fn(),
       clearStatus: "Cleared 300 MB.",

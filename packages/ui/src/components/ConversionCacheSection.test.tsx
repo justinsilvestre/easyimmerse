@@ -1,33 +1,39 @@
+import type { ConversionCacheStatus } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { ConversionCacheStatus } from "./ConversionCacheSection.tsx";
+import type { ConversionCacheView } from "./ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "./ConversionCacheSection.tsx";
 
 afterEach(cleanup);
 
 const status: ConversionCacheStatus = {
-  usageBytes: 1_230_000_000,
-  limitBytes: 5_000_000_000,
-  budgetBytes: 5_000_000_000,
-  freeBytes: 40_000_000_000,
-  spaceLow: false,
+  usage_bytes: 1_230_000_000,
+  limit_bytes: 5_000_000_000,
+  budget_bytes: 5_000_000_000,
+  free_bytes: 40_000_000_000,
+  space_low: false,
 };
 
-const lowSpace: ConversionCacheStatus = {
-  ...status,
-  limitBytes: 2_000_000_000,
-  freeBytes: 2_800_000_000,
-  spaceLow: true,
+const available: ConversionCacheView = { kind: "available", status };
+
+const lowSpace: ConversionCacheView = {
+  kind: "available",
+  status: {
+    ...status,
+    limit_bytes: 2_000_000_000,
+    free_bytes: 2_800_000_000,
+    space_low: true,
+  },
 };
 
 function renderSection(
-  cacheStatus: ConversionCacheStatus | null,
+  cache: ConversionCacheView,
   onClear: () => void = () => undefined,
   clearStatus = "",
 ) {
   render(
     <ConversionCacheSection
-      status={cacheStatus}
+      cache={cache}
       onClear={onClear}
       clearStatus={clearStatus}
     />,
@@ -35,9 +41,18 @@ function renderSection(
 }
 
 describe("ConversionCacheSection", () => {
+  describe("while the status loads", () => {
+    it("shows only the heading", () => {
+      renderSection({ kind: "loading" });
+      expect(
+        screen.queryByText(/converted videos/i, { selector: "p" }),
+      ).toBeNull();
+    });
+  });
+
   describe("when conversion is unavailable", () => {
     it("says so in one line", () => {
-      renderSection(null);
+      renderSection({ kind: "unavailable" });
       expect(
         screen.getByText(
           "Video conversion is unavailable, so no converted videos are stored.",
@@ -46,28 +61,37 @@ describe("ConversionCacheSection", () => {
     });
 
     it("offers no clearing", () => {
-      renderSection(null);
+      renderSection({ kind: "unavailable" });
       expect(screen.queryByRole("button")).toBeNull();
+    });
+  });
+
+  describe("when the status could not be read", () => {
+    it("shows the failure", () => {
+      renderSection({ kind: "failed", message: "Internal Server Error" });
+      expect(screen.getByRole("alert").textContent).toBe(
+        "The converted videos could not be checked: Internal Server Error",
+      );
     });
   });
 
   describe("with a status", () => {
     it("states the usage and the limit", () => {
-      renderSection(status);
+      renderSection(available);
       expect(
         screen.getByText("Converted videos use 1.2 GB of 5 GB."),
       ).toBeDefined();
     });
 
     it("shows the usage on a meter", () => {
-      renderSection(status);
+      renderSection(available);
       expect(screen.getByRole("meter").getAttribute("value")).toBe(
         "1230000000",
       );
     });
 
     it("shows no warning while space is not low", () => {
-      renderSection(status);
+      renderSection(available);
       expect(screen.queryByRole("note")).toBeNull();
     });
 
@@ -80,7 +104,7 @@ describe("ConversionCacheSection", () => {
 
     it("calls onClear when the clear button is clicked", () => {
       let cleared = 0;
-      renderSection(status, () => {
+      renderSection(available, () => {
         cleared += 1;
       });
       fireEvent.click(
@@ -90,7 +114,7 @@ describe("ConversionCacheSection", () => {
     });
 
     it("shows the clear status beside the button", () => {
-      renderSection(status, undefined, "Cleared 1.2 GB.");
+      renderSection(available, undefined, "Cleared 1.2 GB.");
       expect(screen.getByRole("status").textContent).toBe("Cleared 1.2 GB.");
     });
   });

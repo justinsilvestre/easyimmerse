@@ -1,20 +1,13 @@
+import type { LicenseNotice } from "@easyimmerse/licenses";
 import { Button } from "../components/Button.tsx";
-import type { ConversionCacheStatus } from "../components/ConversionCacheSection.tsx";
+import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
-import type { LicenseNotice } from "../components/LicensesPage.tsx";
 import { LicensesPage } from "../components/LicensesPage.tsx";
 import { LosslessAudioToggle } from "../components/LosslessAudioToggle.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 
-/** What the Settings screen shows about converted videos, and how it clears them. */
-export type ConversionCacheControls = {
-  status: ConversionCacheStatus | null;
-  onClear: () => void;
-  clearStatus: string;
-};
-
 const unavailableConversionCache: ConversionCacheControls = {
-  status: null,
+  cache: { kind: "unavailable" },
   onClear: () => undefined,
   clearStatus: "",
 };
@@ -43,11 +36,7 @@ export function SettingsScreen({
         </h2>
         <LosslessAudioToggle />
       </section>
-      <ConversionCacheSection
-        status={conversionCache.status}
-        onClear={conversionCache.onClear}
-        clearStatus={conversionCache.clearStatus}
-      />
+      <ConversionCacheSection {...conversionCache} />
       <LicensesPage notices={licenseNotices} />
     </ScreenLayout>
   );
