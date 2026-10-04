@@ -40,4 +40,3 @@ function ignoreSettingsRequests(): () => void {
 }
 
 export type { PreferenceStore } from "./preferenceStore.ts";
-export { createPreferenceStore } from "./preferenceStore.ts";

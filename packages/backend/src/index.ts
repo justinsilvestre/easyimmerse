@@ -1,6 +1,5 @@
 export { skipToken } from "@reduxjs/toolkit/query";
 export {
-  backendApi,
   useAddMediaFileMutation,
   useAddSubtitleTrackMutation,
   useClearConversionCacheMutation,
@@ -36,13 +35,10 @@ export type {
   BackendClient,
   BackendError,
   BackendRequest,
-  BackendRequestBody,
-  BackendResult,
 } from "./backendClient.ts";
 export { backendStoreParts } from "./backendStoreParts.ts";
 export {
   configureBackend,
-  getBackendClient,
   getServerConfig,
   resetBackend,
 } from "./configureBackend.ts";
@@ -52,7 +48,6 @@ export {
 } from "./conversionFileUrl.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
-export type { OfflineOperation } from "./offlineOperation.ts";
 export type { ServerConfig } from "./resolveServerConfig.ts";
 export { resolveServerConfig } from "./resolveServerConfig.ts";
 export { createWasmBackendClient } from "./wasmBackendClient.ts";
