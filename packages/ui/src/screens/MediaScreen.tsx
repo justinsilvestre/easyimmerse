@@ -5,7 +5,6 @@ import { useReducer } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
-import type { ScreenshotUrlOf } from "../flashcards/FlashcardEditorFields.tsx";
 import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
@@ -49,10 +48,7 @@ export function MediaScreen({
     reduceMediaPanels,
     initialMediaPanels,
   );
-  const editedContent =
-    flashcards.edited?.kind === "new"
-      ? flashcards.edited.draft.content
-      : flashcards.edited?.flashcard.content;
+  const editedContent = flashcards.edited?.editor.content;
   const clipWaveform = useClipWaveform(
     projectId,
     mediaFile,
@@ -161,22 +157,23 @@ export function MediaScreen({
         ) : undefined
       }
       sidePanel={
-        flashcards.edited !== null && editedContent !== undefined ? (
+        flashcards.edited !== null ? (
           <FlashcardEditor
             key={
               flashcards.edited.kind === "new"
                 ? "new"
                 : flashcards.edited.flashcard.id
             }
-            initialContent={editedContent}
-            initialFields={
-              flashcards.edited.kind === "new"
-                ? flashcards.edited.draft.included_fields
-                : flashcards.edited.flashcard.included_fields
-            }
+            state={flashcards.edited.editor}
+            dispatch={flashcards.edit}
             languages={languages}
             waveform={clipWaveform}
-            screenshotUrlOf={screenshotUrlOf(projectId, mediaFile, hasVideo)}
+            screenshotUrl={screenshotUrlOf(
+              projectId,
+              mediaFile,
+              hasVideo,
+              flashcards.edited.editor.content.screenshot?.at_ms ?? null,
+            )}
             onSave={flashcards.save}
             onDelete={flashcards.remove}
             onClose={flashcards.close}
@@ -200,9 +197,15 @@ function screenshotUrlOf(
   projectId: string,
   mediaFile: MediaFile | null,
   hasVideo: boolean,
-): ScreenshotUrlOf {
+  atMs: number | null,
+): string | null {
   const server = getServerConfig();
-  if (server === null || mediaFile?.source.kind !== "path" || !hasVideo)
-    return () => null;
-  return (atMs) => buildMediaFrameUrl(server, projectId, mediaFile.id, atMs);
+  if (
+    server === null ||
+    mediaFile?.source.kind !== "path" ||
+    !hasVideo ||
+    atMs === null
+  )
+    return null;
+  return buildMediaFrameUrl(server, projectId, mediaFile.id, atMs);
 }

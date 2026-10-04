@@ -26,6 +26,7 @@ import { MediaScreen } from "./MediaScreen.tsx";
 afterEach(() => {
   cleanup();
   resetBackend();
+  vi.restoreAllMocks();
 });
 
 const savedFlashcard: Flashcard = {
@@ -33,16 +34,18 @@ const savedFlashcard: Flashcard = {
   project_id: "p1",
   media_file_id: "m1",
   cue_index: null,
-  content: exampleFlashcard,
-  included_fields: ["word"],
+  content: { ...exampleFlashcard, screenshot: { at_ms: 2400 } },
+  included_fields: ["word", "audio_context", "screenshot"],
   created_at_ms: 0,
   updated_at_ms: 0,
 };
 
-function renderMediaScreen() {
+function renderMediaScreen(flashcards: Flashcard[] = []) {
   const client = createFakeBackendClient(
     {
       ...fixtureResponses,
+      "GET /projects/p1/flashcards": { flashcards },
+      "PUT /projects/p1/flashcards/f1": savedFlashcard,
       "POST /projects/p1/media/m1/subtitles":
         fixtureResponses["GET /projects/p1/media/m1/subtitles"].tracks[0],
       "POST /projects/p1/flashcards": savedFlashcard,
@@ -59,6 +62,55 @@ function renderMediaScreen() {
     rendered.store.dispatch(actions.openMedia("m1"));
   });
   return { ...rendered, client };
+}
+
+const stripRect = {
+  x: 0,
+  y: 0,
+  top: 0,
+  left: 0,
+  right: 600,
+  bottom: 72,
+  width: 600,
+  height: 72,
+  toJSON: () => undefined,
+};
+
+/**
+ * Renders the screen with a saved flashcard and a ten-second file on a 600 px waveform strip, so one pixel is a sixtieth of a second.
+ * The saved card's clip starts at 105 px and its screenshot marker sits at 144 px.
+ */
+async function renderWithWaveform() {
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+    stripRect,
+  );
+  const rendered = renderMediaScreen([savedFlashcard]);
+  act(() => rendered.store.dispatch(actions.playerDurationChanged(10)));
+  await findSubtitles();
+  return rendered;
+}
+
+const findStrip = () =>
+  screen.getByRole("slider", { name: "Playback position" });
+
+function dragOnStrip(fromX: number, toX: number, clientY = 36) {
+  const strip = findStrip();
+  const at = (clientX: number) => ({
+    clientX,
+    clientY,
+    pointerId: 1,
+    isPrimary: true,
+  });
+  fireEvent.pointerDown(strip, at(fromX));
+  fireEvent.pointerMove(strip, at(toX));
+  fireEvent.pointerUp(strip, at(toX));
+}
+
+async function openSavedFlashcardFromStrip() {
+  await vi.waitFor(() =>
+    fireEvent.doubleClick(findStrip(), { clientX: 140, clientY: 36 }),
+  );
+  await screen.findByRole("form", { name: "Flashcard" });
 }
 
 async function findSubtitles() {
@@ -193,5 +245,91 @@ describe("MediaScreen", () => {
     const { store } = renderMediaScreen();
     fireEvent.click(screen.getByRole("button", { name: "Project" }));
     expect(selectCurrentMediaFileId(store.getState())).toBeNull();
+  });
+
+  describe("when a flashcard's segment is dragged on the waveform", () => {
+    it("saves the moved clip at once while the flashcard is closed", async () => {
+      const { client } = await renderWithWaveform();
+      await vi.waitFor(() => {
+        dragOnStrip(105, 90);
+        expect(
+          requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1"),
+        ).toHaveLength(1);
+      });
+      expect(
+        bodyOf(
+          requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1")[0],
+        ),
+      ).toMatchObject({ content: { audio_context: { start_ms: 1500 } } });
+    });
+
+    it("leaves the moved clip unsaved while the flashcard is open", async () => {
+      const { client } = await renderWithWaveform();
+      await openSavedFlashcardFromStrip();
+      dragOnStrip(105, 90);
+      await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
+      expect(
+        requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1"),
+      ).toHaveLength(0);
+    });
+
+    it("shows the moved clip in the open flashcard's editor", async () => {
+      await renderWithWaveform();
+      await openSavedFlashcardFromStrip();
+      dragOnStrip(105, 90);
+      const clipStart = await screen.findByRole("slider", {
+        name: "Clip start",
+      });
+      expect(clipStart.getAttribute("aria-valuenow")).toBe("1500");
+    });
+
+    it("saves the moved clip with the open flashcard", async () => {
+      const { client } = await renderWithWaveform();
+      await openSavedFlashcardFromStrip();
+      dragOnStrip(105, 90);
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      await screen.findByText("Flashcard saved to the project.");
+      expect(
+        bodyOf(
+          requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1").at(
+            -1,
+          ),
+        ),
+      ).toMatchObject({ content: { audio_context: { start_ms: 1500 } } });
+    });
+
+    it("saves the moved screenshot time with the open flashcard", async () => {
+      const { client } = await renderWithWaveform();
+      await openSavedFlashcardFromStrip();
+      dragOnStrip(144, 156, 5);
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      await screen.findByText("Flashcard saved to the project.");
+      expect(
+        bodyOf(
+          requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1").at(
+            -1,
+          ),
+        ),
+      ).toMatchObject({ content: { screenshot: { at_ms: 2600 } } });
+    });
+
+    it("moves the clip of a new flashcard that is not saved yet", async () => {
+      const { client } = await renderWithWaveform();
+      fireEvent.click(
+        within(screen.getByRole("list", { name: "Subtitles" })).getByRole(
+          "button",
+          { name: "cat" },
+        ),
+      );
+      dragOnStrip(30, 15);
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      await vi.waitFor(() =>
+        expect(
+          bodyOf(
+            requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
+          ),
+        ).toMatchObject({ content: { audio_context: { start_ms: 250 } } }),
+      );
+    });
   });
 });

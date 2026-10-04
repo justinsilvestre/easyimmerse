@@ -1,6 +1,8 @@
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { useReducer } from "react";
 import { afterEach, describe, expect, it } from "vitest";
+import { reduceEditor } from "./editFlashcard.ts";
 import {
   exampleFlashcard,
   exampleLanguages,
@@ -16,19 +18,28 @@ type OnSave = (
   fields: readonly FlashcardFieldKey[],
 ) => void;
 
-function renderEditor(onSave: OnSave = () => undefined) {
-  render(
+/** Holds the editor's state as its caller would, and reports that state on save. */
+function EditorWithState({ onSave }: { onSave: OnSave }) {
+  const [state, dispatch] = useReducer(reduceEditor, {
+    content: exampleFlashcard,
+    includedFields: fieldsOfPreset("intermediate"),
+  });
+  return (
     <FlashcardEditor
-      initialContent={exampleFlashcard}
-      initialFields={fieldsOfPreset("intermediate")}
+      state={state}
+      dispatch={dispatch}
       languages={exampleLanguages}
       waveform={{ peaks: [0.1, 0.5, 0.9, 0.3], durationMs: 24_000 }}
-      screenshotUrlOf={() => exampleScreenshotUrl}
-      onSave={onSave}
+      screenshotUrl={exampleScreenshotUrl}
+      onSave={() => onSave(state.content, state.includedFields)}
       onDelete={() => undefined}
       onClose={() => undefined}
-    />,
+    />
   );
+}
+
+function renderEditor(onSave: OnSave = () => undefined) {
+  render(<EditorWithState onSave={onSave} />);
 }
 
 const openMoreFields = () =>

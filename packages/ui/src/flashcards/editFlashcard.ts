@@ -55,3 +55,14 @@ function withContent(
 ): EditorState {
   return { ...state, content: { ...state.content, ...changes } };
 }
+
+/** Moves one end of a clip to a time, rounded to a millisecond, without passing the other end. */
+export function moveClipEndpoint(
+  clip: AudioClip,
+  endpoint: "start" | "end",
+  ms: number,
+): AudioClip {
+  return endpoint === "start"
+    ? { ...clip, start_ms: Math.round(Math.min(ms, clip.end_ms)) }
+    : { ...clip, end_ms: Math.round(Math.max(ms, clip.start_ms)) };
+}

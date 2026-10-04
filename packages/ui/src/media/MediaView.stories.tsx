@@ -222,11 +222,14 @@ export const EditingAFlashcard: Story = {
     ),
     sidePanel: (
       <FlashcardEditor
-        initialContent={exampleFlashcard}
-        initialFields={fieldsOfPreset("intermediate")}
+        state={{
+          content: exampleFlashcard,
+          includedFields: fieldsOfPreset("intermediate"),
+        }}
+        dispatch={fn()}
         languages={exampleLanguages}
         waveform={{ peaks, durationMs: 24_000 }}
-        screenshotUrlOf={() => exampleScreenshotUrl}
+        screenshotUrl={exampleScreenshotUrl}
         onSave={fn()}
         onDelete={fn()}
         onClose={fn()}

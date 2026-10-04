@@ -10,9 +10,6 @@ import {
   findFlashcardField,
 } from "./flashcardFields.ts";
 
-/** Resolves the image of a screenshot taken at a time, or null when no image can be shown for it. */
-export type ScreenshotUrlOf = (atMs: number) => string | null;
-
 /** The peaks of a media file's audio, each between 0 and 1, and the file's length. */
 export type MediaWaveform = { peaks: readonly number[]; durationMs: number };
 
@@ -127,24 +124,22 @@ function Cell({
 export function MediaFields({
   state,
   waveform,
-  screenshotUrlOf,
+  screenshotUrl,
   dispatch,
 }: {
   state: EditorState;
   waveform: MediaWaveform | null;
-  screenshotUrlOf: ScreenshotUrlOf;
+  /** The image of the screenshot at its current time, or null when none can be shown. */
+  screenshotUrl: string | null;
   dispatch: (action: EditorAction) => void;
 }) {
   const { content } = state;
-  const screenshotUrl =
-    content.screenshot === null
-      ? null
-      : screenshotUrlOf(content.screenshot.at_ms);
+  const thumbnailUrl = content.screenshot === null ? null : screenshotUrl;
   const showsClip =
     state.includedFields.includes("audio_context") &&
     content.audio_context !== null &&
     waveform !== null;
-  if (!showsClip && screenshotUrl === null) return null;
+  if (!showsClip && thumbnailUrl === null) return null;
   return (
     <div className="flex shrink-0 items-start gap-2">
       {showsClip && content.audio_context && waveform && (
@@ -161,9 +156,9 @@ export function MediaFields({
           />
         </fieldset>
       )}
-      {screenshotUrl !== null && (
+      {thumbnailUrl !== null && (
         <ScreenshotThumbnail
-          url={screenshotUrl}
+          url={thumbnailUrl}
           isIncluded={state.includedFields.includes("screenshot")}
           onToggle={() => dispatch({ type: "screenshotToggled" })}
         />

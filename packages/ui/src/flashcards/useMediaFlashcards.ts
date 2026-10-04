@@ -5,26 +5,23 @@ import {
   useUpdateFlashcardMutation,
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
-import type {
-  Flashcard,
-  FlashcardContent,
-  FlashcardDraft,
-  FlashcardFieldKey,
-} from "@easyimmerse/types";
-import { useState } from "react";
+import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
+import { useReducer, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import {
+  flashcardsOnWaveform,
+  reduceEditedFlashcard,
+  segmentIdOf,
+} from "./editedFlashcard.ts";
+import { type EditorAction, moveClipEndpoint } from "./editFlashcard.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
-
-/** The flashcard open in the editor: one not saved yet, or one the project holds. */
-export type EditedFlashcard =
-  | { kind: "new"; draft: FlashcardDraft }
-  | { kind: "existing"; flashcard: Flashcard };
 
 const noFlashcards: readonly Flashcard[] = [];
 
 /**
  * The flashcards made from one media file, with the one open in the editor and the ways to save, delete, and retime them.
  * Saving a new card creates it; saving an existing one replaces it.
+ * Retiming the open card changes only the editor's copy, which is saved with the rest of the editor; any other card is saved at once.
  */
 export function useMediaFlashcards(projectId: string, mediaFileId: string) {
   const dispatch = useAppDispatch();
@@ -34,7 +31,7 @@ export function useMediaFlashcards(projectId: string, mediaFileId: string) {
   const flashcards = (data?.flashcards ?? noFlashcards).filter(
     (flashcard) => flashcard.media_file_id === mediaFileId,
   );
-  const [edited, setEdited] = useState<EditedFlashcard | null>(null);
+  const [edited, dispatchEdited] = useReducer(reduceEditedFlashcard, null);
   const [isSaved, setSaved] = useState(false);
   const [createFlashcard] = useCreateFlashcardMutation();
   const [updateFlashcard] = useUpdateFlashcardMutation();
@@ -44,81 +41,85 @@ export function useMediaFlashcards(projectId: string, mediaFileId: string) {
       projectId,
       flashcardId: flashcard.id,
       draft: { ...draftOf(flashcard), ...changes },
-    })
-      .unwrap()
-      .catch(() => notify("The flashcard could not be saved"));
-  const save = (
-    content: FlashcardContent,
-    fields: readonly FlashcardFieldKey[],
-  ) => {
+    }).unwrap();
+  const replaceNow = (flashcard: Flashcard, changes: Partial<FlashcardDraft>) =>
+    replace(flashcard, changes).catch(() =>
+      notify("The flashcard could not be saved"),
+    );
+  const close = () => dispatchEdited({ type: "closed" });
+  const edit = (action: EditorAction) =>
+    dispatchEdited({ type: "edited", action });
+  const save = () => {
     if (edited === null) return;
-    const changes = { content, included_fields: [...fields] };
+    const changes = {
+      content: edited.editor.content,
+      included_fields: [...edited.editor.includedFields],
+    };
     const saving =
       edited.kind === "new"
-        ? createFlashcard({ projectId, draft: { ...edited.draft, ...changes } })
-        : updateFlashcard({
+        ? createFlashcard({
             projectId,
-            flashcardId: edited.flashcard.id,
-            draft: { ...draftOf(edited.flashcard), ...changes },
-          });
+            draft: { ...edited.draft, ...changes },
+          }).unwrap()
+        : replace(edited.flashcard, changes);
     saving
-      .unwrap()
       .then(() => {
-        setEdited(null);
+        close();
         setSaved(true);
       })
       .catch(() => notify("The flashcard could not be saved"));
   };
   const remove = () => {
-    if (edited?.kind !== "existing") return setEdited(null);
+    if (edited?.kind !== "existing") return close();
     deleteFlashcard({ projectId, flashcardId: edited.flashcard.id })
       .unwrap()
-      .then(() => setEdited(null))
+      .then(close)
       .catch(() => notify("The flashcard could not be deleted"));
   };
   const find = (id: string) =>
     flashcards.find((flashcard) => flashcard.id === id);
+  const isOpen = (id: string) => edited !== null && segmentIdOf(edited) === id;
   return {
     flashcards,
-    segments: flashcardSegmentsOf(flashcards),
+    segments: flashcardSegmentsOf(flashcardsOnWaveform(flashcards, edited)),
     cueIndexes: flashcards.flatMap((flashcard) =>
       flashcard.cue_index === null ? [] : [flashcard.cue_index],
     ),
     edited,
+    edit,
     isSaved,
     dismissSaved: () => setSaved(false),
     start: (draft: FlashcardDraft) => {
       setSaved(false);
-      setEdited({ kind: "new", draft });
+      dispatchEdited({ type: "started", draft });
     },
     open: (id: string) => {
       const flashcard = find(id);
-      if (flashcard) setEdited({ kind: "existing", flashcard });
+      if (flashcard) dispatchEdited({ type: "opened", flashcard });
     },
-    close: () => setEdited(null),
+    close,
     save,
     remove,
     moveClipEndpoint: (id: string, endpoint: "start" | "end", ms: number) => {
+      const content = isOpen(id) ? edited?.editor.content : find(id)?.content;
+      const clip = content?.audio_context;
+      if (!clip) return;
+      const moved = moveClipEndpoint(clip, endpoint, ms);
+      if (isOpen(id)) return edit({ type: "clipChanged", clip: moved });
       const flashcard = find(id);
-      const clip = flashcard?.content.audio_context;
-      if (!flashcard || !clip) return;
-      const moved =
-        endpoint === "start"
-          ? { ...clip, start_ms: Math.round(Math.min(ms, clip.end_ms)) }
-          : { ...clip, end_ms: Math.round(Math.max(ms, clip.start_ms)) };
-      replace(flashcard, {
-        content: { ...flashcard.content, audio_context: moved },
-      });
+      if (flashcard)
+        replaceNow(flashcard, {
+          content: { ...flashcard.content, audio_context: moved },
+        });
     },
     moveScreenshot: (id: string, ms: number) => {
+      const atMs = Math.round(ms);
+      if (isOpen(id)) return edit({ type: "screenshotMsChanged", ms: atMs });
       const flashcard = find(id);
-      if (!flashcard) return;
-      replace(flashcard, {
-        content: {
-          ...flashcard.content,
-          screenshot: { at_ms: Math.round(ms) },
-        },
-      });
+      if (flashcard)
+        replaceNow(flashcard, {
+          content: { ...flashcard.content, screenshot: { at_ms: atMs } },
+        });
     },
   };
 }

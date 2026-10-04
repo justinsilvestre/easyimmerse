@@ -3,7 +3,7 @@ import type { FlashcardSegment } from "../components/waveform/flashcardSegment.t
 
 /** The waveform segments of the flashcards that have an audio clip. A card without a screenshot marks the clip's start. */
 export function flashcardSegmentsOf(
-  flashcards: readonly Flashcard[],
+  flashcards: readonly Pick<Flashcard, "id" | "content">[],
 ): FlashcardSegment[] {
   return flashcards.flatMap(({ id, content }) =>
     content.audio_context === null
