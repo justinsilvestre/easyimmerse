@@ -1,7 +1,4 @@
-/**
- * One video or audio track a user may choose.
- * Stands in for the server's track type until it is generated from Rust.
- */
+/** One video or audio track as the track choice dialog shows it, derived from the probed track. */
 export type TrackChoice = {
   /** The stream's index counted over every stream in the file, as ffmpeg numbers them. */
   streamIndex: number;

@@ -1,7 +1,5 @@
+import type { LicenseNotice } from "@easyimmerse/licenses";
 import { useId } from "react";
-
-/** One open-source notice: the component it covers and its license text. */
-export type LicenseNotice = { title: string; text: string };
 
 /** Lists the open-source notices the app ships with, each folded under its title. */
 export function LicensesPage({
