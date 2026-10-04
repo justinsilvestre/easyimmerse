@@ -21,15 +21,19 @@ export function windowStartOf(timeMs: number): number {
 /**
  * The window starts to request now, in priority order, never putting more than
  * `maxWindowRequestsInFlight` requests in flight at once.
+ * Windows already loaded, in flight, or waiting to retry after a failed fetch are skipped.
  */
 export function planWindowRequests(
   view: WaveformWindowView,
   loaded: ReadonlySet<number>,
   inFlight: ReadonlySet<number>,
+  awaitingRetry: ReadonlySet<number>,
 ): number[] {
   const slots = Math.max(0, maxWindowRequestsInFlight - inFlight.size);
+  const isSkipped = (start: number) =>
+    loaded.has(start) || inFlight.has(start) || awaitingRetry.has(start);
   return wantedWindows(view)
-    .filter((start) => !loaded.has(start) && !inFlight.has(start))
+    .filter((start) => !isSkipped(start))
     .slice(0, slots);
 }
 
