@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { DictionaryPopup } from "./DictionaryPopup.tsx";
 import {
@@ -74,27 +75,78 @@ describe("DictionaryPopup dismissal", () => {
     expect(closeCount).toBe(1);
   });
 
-  it("closes when the pointer goes down outside it", () => {
+  it("closes on a click outside it", () => {
     let closeCount = 0;
     renderPopup({ onClose: () => (closeCount += 1) });
-    fireEvent.pointerDown(document.body);
+    fireEvent.click(document.body);
     expect(closeCount).toBe(1);
   });
 
-  it("stays open when the pointer goes down on a word that opens it", () => {
+  it("stays open on a click on a word that opens it", () => {
     let closeCount = 0;
     renderPopup({ onClose: () => (closeCount += 1) });
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Hund" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hund" }));
     expect(closeCount).toBe(0);
   });
 
-  it("stays open when the pointer goes down inside it", () => {
+  it("stays open on a click inside it", () => {
     let closeCount = 0;
     renderPopup({ onClose: () => (closeCount += 1) });
-    fireEvent.pointerDown(screen.getByRole("button", { name: "devour" }));
+    fireEvent.click(screen.getByRole("button", { name: "devour" }));
     expect(closeCount).toBe(0);
   });
+
+  it("ignores Escape while its screen is inert beneath another", () => {
+    let closeCount = 0;
+    render(
+      <div inert>
+        <DictionaryPopup
+          state={null}
+          mode="hover"
+          resolveMediaUrl={() => null}
+          onSearch={() => undefined}
+          onCreateFlashcard={() => undefined}
+          onClose={() => (closeCount += 1)}
+          onSetUpDictionary={() => undefined}
+        />
+      </div>,
+    );
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(closeCount).toBe(0);
+  });
+
+  it("returns focus to the control that opened it in search mode", () => {
+    render(<SearchOpener />);
+    const opener = screen.getByRole("button", { name: "Look up" });
+    opener.focus();
+    fireEvent.click(opener);
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
+    expect(document.activeElement).toBe(opener);
+  });
 });
+
+/** A lookup button that opens the pop-up on its search field, as the media screen does. */
+function SearchOpener() {
+  const [isOpen, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Look up
+      </button>
+      {isOpen && (
+        <DictionaryPopup
+          state={null}
+          mode="search"
+          resolveMediaUrl={() => null}
+          onSearch={() => undefined}
+          onCreateFlashcard={() => undefined}
+          onClose={() => setOpen(false)}
+          onSetUpDictionary={() => undefined}
+        />
+      )}
+    </>
+  );
+}
 
 function renderState(state: LookupState) {
   render(
@@ -126,6 +178,11 @@ describe("DictionaryPopup states", () => {
     expect(
       screen.getByText("The dictionaries could not be searched for “fressen”."),
     ).toBeDefined();
+  });
+
+  it("names the chosen word in its header when no dictionary is set up", () => {
+    renderState({ kind: "noDictionary", language: "de", term: "Hund" });
+    expect(screen.getByText("Hund")).toBeDefined();
   });
 
   it("offers to add a dictionary when none is set up", () => {

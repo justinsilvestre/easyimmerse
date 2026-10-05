@@ -1,6 +1,6 @@
 import { actions, selectPlayer } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
-import { useReducer } from "react";
+import { useReducer, useRef } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
@@ -11,8 +11,9 @@ import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
 import { useScreenshotUrl } from "../flashcards/useScreenshotUrl.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
-import { useSubtitleLookup } from "../lookup/useSubtitleLookup.tsx";
+import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
 import { findTranslationOf } from "../media/findCue.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
@@ -95,7 +96,8 @@ export function MediaScreen({
     target: settings.target_language,
     translation: settings.translation_language,
   };
-  const lookup = useSubtitleLookup(languages, startFlashcard);
+  const screenRef = useRef<HTMLDivElement>(null);
+  const lookup = useSubtitleLookup(languages, startFlashcard, screenRef);
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
     onSeek: (ms) => dispatch(actions.seekRequested(ms / 1000)),
@@ -116,6 +118,7 @@ export function MediaScreen({
   };
   return (
     <MediaView
+      ref={screenRef}
       media={{
         title: mediaFile?.name ?? "",
         language: settings.target_language,
@@ -155,7 +158,7 @@ export function MediaScreen({
       onWordDoubleClick={lookup.startFlashcardFromWord}
       onLookup={lookup.openSearch}
       onAddFlashcard={() => startFlashcard("")}
-      lookup={lookup.popup}
+      lookup={lookup.popupProps && <DictionaryPopup {...lookup.popupProps} />}
       headerContent={
         flashcards.isSaved ? (
           <FlashcardSaveNotice

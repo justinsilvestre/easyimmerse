@@ -1,14 +1,14 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ArrowLeft, ChevronUp, Minimize, Search, Settings } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { Kbd } from "../components/Kbd.tsx";
+import { lookupTriggerAttribute } from "../components/lookupTrigger.ts";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
-import { lookupTriggerAttribute } from "../lookup/usePopupDismissal.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import { languageName } from "../projects/languages.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
@@ -18,6 +18,8 @@ import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 
 type MediaViewProps = {
+  /** The screen's root element, which keyboard shortcuts check to tell whether the screen is in reach. */
+  ref?: Ref<HTMLDivElement>;
   media: { title: string; language: string };
   /** The player itself: the video, or the artwork of an audio file, with whatever precedes playback. */
   stage: ReactNode;
@@ -60,6 +62,7 @@ export function MediaView(props: MediaViewProps) {
   const showsSidePanel = !panels.distractionFree && props.sidePanel != null;
   return (
     <div
+      ref={props.ref}
       data-theme="dark"
       className="flex h-dvh flex-col bg-canvas text-fg"
       onPointerMove={pointer.onPointerMove}

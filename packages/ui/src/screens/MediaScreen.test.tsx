@@ -21,6 +21,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
+import { NavigationActionsContext } from "../navigationContext.ts";
 import {
   createFrameCapturer,
   type FrameCapturer,
@@ -107,8 +108,18 @@ function renderMediaScreen(
     },
     directPlaybackRoutes,
   );
+  const navigation = { dictionariesOpenCount: 0 };
   const rendered = renderWithAppStore(
-    <MediaScreen project={fixtureProject} mediaFileId="m1" />,
+    <NavigationActionsContext
+      value={{
+        openSettings: () => undefined,
+        openDictionaries: () => {
+          navigation.dictionariesOpenCount += 1;
+        },
+      }}
+    >
+      <MediaScreen project={fixtureProject} mediaFileId="m1" />
+    </NavigationActionsContext>,
     client,
     { server: fakeServer },
   );
@@ -116,7 +127,7 @@ function renderMediaScreen(
     rendered.store.dispatch(actions.preferencesLoaded({}));
     rendered.store.dispatch(actions.openMedia("m1"));
   });
-  return { ...rendered, client };
+  return { ...rendered, client, navigation };
 }
 
 /**
@@ -355,6 +366,63 @@ describe("MediaScreen lookup", () => {
     act(() => store.dispatch(actions.playerPlayingChanged(false)));
     fireEvent.keyDown(document.body, { key: "Escape" });
     expect(playbackCalls(effects)).toEqual(["pausePlayer", "playPlayer"]);
+  });
+
+  it("closes the pop-up on a click outside it", async () => {
+    renderMediaScreen();
+    await lookUpInPanel("cat");
+    fireEvent.click(screen.getByRole("heading", { name: "episode.mkv" }));
+    expect(screen.queryByRole("region", { name: "Dictionary" })).toBeNull();
+  });
+
+  it("keeps playback paused once a flashcard is started from the pop-up", async () => {
+    const { effects, store } = renderMediaScreen();
+    act(() => store.dispatch(actions.playerPlayingChanged(true)));
+    const popup = await lookUpInPanel("cat");
+    act(() => store.dispatch(actions.playerPlayingChanged(false)));
+    fireEvent.click(
+      await within(popup).findByRole("button", { name: "Flashcard" }),
+    );
+    fireEvent.click(screen.getByRole("heading", { name: "episode.mkv" }));
+    expect(playbackCalls(effects)).toEqual(["pausePlayer"]);
+  });
+
+  it("does not search the dictionaries when none covers the project's language", async () => {
+    const { client } = renderMediaScreen(
+      [],
+      [dictionarySummary("jmdict", "ja", "en")],
+    );
+    const popup = await lookUpInPanel("cat");
+    await within(popup).findByRole("button", { name: "Add a dictionary" });
+    expect(requestsTo(client.requests, "GET", "/dictionaries/lookup")).toEqual(
+      [],
+    );
+  });
+
+  describe("when Add a dictionary is pressed in the pop-up", () => {
+    async function pressAddDictionary() {
+      const rendered = renderMediaScreen(
+        [],
+        [dictionarySummary("jmdict", "ja", "en")],
+      );
+      act(() => rendered.store.dispatch(actions.playerPlayingChanged(true)));
+      const popup = await lookUpInPanel("cat");
+      act(() => rendered.store.dispatch(actions.playerPlayingChanged(false)));
+      fireEvent.click(
+        await within(popup).findByRole("button", { name: "Add a dictionary" }),
+      );
+      return rendered;
+    }
+
+    it("opens the dictionaries settings", async () => {
+      const { navigation } = await pressAddDictionary();
+      expect(navigation.dictionariesOpenCount).toBe(1);
+    });
+
+    it("keeps playback paused behind them", async () => {
+      const { effects } = await pressAddDictionary();
+      expect(playbackCalls(effects)).toEqual(["pausePlayer"]);
+    });
   });
 
   it("asks for a dictionary when none covers the project's language", async () => {

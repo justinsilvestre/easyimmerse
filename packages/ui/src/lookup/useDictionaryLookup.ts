@@ -10,7 +10,6 @@ import { useReducer } from "react";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import { type LookupRequest, reduceLookupPopup } from "./lookupPopup.ts";
-import type { LookupState } from "./lookupState.ts";
 import { type LookupOutcome, lookupStateOf } from "./lookupStateOf.ts";
 
 const noDictionaries: readonly DictionarySummary[] = [];
@@ -24,15 +23,22 @@ export function useDictionaryLookup(language: string) {
   const request = popup?.request ?? null;
   const listed = useListDictionariesQuery().data?.dictionaries;
   const dictionaries = listed ?? noDictionaries;
+  // Until the list arrives, the lookup goes ahead, so that the pop-up does not ask for a dictionary the user may have.
+  const isMissingDictionary =
+    listed !== undefined && !listed.some((d) => coversLanguage(d, language));
   const query = useLookupTextQuery(
-    request ? lookupQueryOf(request, language) : skipToken,
+    request && !isMissingDictionary
+      ? lookupQueryOf(request, language)
+      : skipToken,
   );
   return {
     popup,
     request,
     dictionaries,
     results: query.data?.results ?? [],
-    state: popupState(request, outcomeOf(query), language, listed),
+    state: isMissingDictionary
+      ? { kind: "noDictionary" as const, language, term: request?.term }
+      : request && lookupStateOf(request.term, outcomeOf(query)),
     resolveMediaUrl,
     chooseWord: (chosen: LookupRequest) =>
       dispatch({ type: "wordChosen", request: chosen }),
@@ -40,18 +46,6 @@ export function useDictionaryLookup(language: string) {
     search: (term: string) => dispatch({ type: "termSearched", term }),
     close: () => dispatch({ type: "closed" }),
   };
-}
-
-function popupState(
-  request: LookupRequest | null,
-  outcome: LookupOutcome,
-  language: string,
-  /** Undefined until the list arrives, so that the pop-up does not ask for a dictionary the user may have. */
-  dictionaries: readonly DictionarySummary[] | undefined,
-): LookupState | null {
-  if (dictionaries && !dictionaries.some((d) => coversLanguage(d, language)))
-    return { kind: "noDictionary", language };
-  return request && lookupStateOf(request.term, outcome);
 }
 
 function lookupQueryOf(request: LookupRequest, language: string): LookupQuery {

@@ -78,7 +78,8 @@ export function DictionaryPopup({
 }
 
 function termOf(state: LookupState | null): string {
-  return state && state.kind !== "noDictionary" ? state.term : "";
+  if (state?.kind === "noDictionary") return state.term ?? "Dictionary";
+  return state?.term ?? "";
 }
 
 function SearchField({ onSearch }: { onSearch: (term: string) => void }) {
