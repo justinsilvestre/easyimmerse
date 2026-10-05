@@ -84,7 +84,11 @@ export type CardSession = symbol;
 
 /** Creates the id a new flashcard is saved under, in the form of the ids the backend makes: 32 lowercase hexadecimal digits. */
 export function createFlashcardId(): string {
-  return crypto.randomUUID().replaceAll("-", "");
+  // crypto.getRandomValues works outside secure contexts too, unlike crypto.randomUUID.
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 /** Creates the session of a new opening, to be carried by the action that opens the card. */

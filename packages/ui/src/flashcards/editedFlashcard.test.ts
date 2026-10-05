@@ -1,5 +1,5 @@
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createCardSession,
   createFlashcardId,
@@ -606,5 +606,16 @@ describe("reduceEditedFlashcard on restored", () => {
     expect(
       reduceAll(null, { type: "restored", card: changed, session })?.session,
     ).toBe(session);
+  });
+});
+
+describe("createFlashcardId", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("makes 32 lowercase hexadecimal digits without crypto.randomUUID, which needs a secure context", () => {
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => {
+      throw new Error("crypto.randomUUID needs a secure context");
+    });
+    expect(createFlashcardId()).toMatch(/^[0-9a-f]{32}$/);
   });
 });
