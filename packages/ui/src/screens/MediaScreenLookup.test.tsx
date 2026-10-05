@@ -312,14 +312,20 @@ describe("MediaScreen lookup gestures", () => {
           return rendered;
         }
 
-        const savedWord = (
+        const savedContent = (
           client: ReturnType<typeof createFakeBackendClient>,
         ) =>
           (
             bodyOf(
               requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
-            ) as { content?: { word?: string } } | undefined
-          )?.content?.word;
+            ) as
+              | { content?: { word?: string; l1_definition?: string } }
+              | undefined
+          )?.content;
+
+        const savedWord = (
+          client: ReturnType<typeof createFakeBackendClient>,
+        ) => savedContent(client)?.word;
 
         it("says that it waits for the definitions", async () => {
           await pressSaveBeforeAnswer();
@@ -362,15 +368,20 @@ describe("MediaScreen lookup gestures", () => {
           await vi.waitFor(() => expect(savedWord(client)).toBe("Kater"));
         });
 
-        it("saves a field typed in before Save as typed", async () => {
+        it("saves a definition typed in before Save as typed, with the word from the answer", async () => {
           const { client } = await doubleClickCat(lateLookup);
           await advance(1500);
-          fireEvent.change(screen.getByLabelText("Word (de)"), {
-            target: { value: "Kater" },
+          fireEvent.change(screen.getByLabelText("Definition (en)"), {
+            target: { value: "a small pet" },
           });
           fireEvent.click(screen.getByRole("button", { name: "Save" }));
           await advance(1500);
-          await vi.waitFor(() => expect(savedWord(client)).toBe("Kater"));
+          await vi.waitFor(() =>
+            expect(savedContent(client)).toMatchObject({
+              word: "fressen",
+              l1_definition: "a small pet",
+            }),
+          );
         });
 
         it("saves the flashcard as it is once the lookup fails", async () => {

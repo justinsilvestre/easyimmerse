@@ -189,14 +189,23 @@ function awaiting(draft: FlashcardDraft) {
   });
 }
 
-describe("reduceEditedFlashcard on lookupAnswered", () => {
-  const fields = {
-    word: "Katze",
-    word_pronunciation: "ˈkat͡sə",
-    l1_definition: "cat",
-    l2_definition: "Haustier",
-  };
+/** The fields of a lookup that answered late. */
+const fields = {
+  word: "Katze",
+  word_pronunciation: "ˈkat͡sə",
+  l1_definition: "cat",
+  l2_definition: "Haustier",
+};
 
+/** Applies the actions in turn. */
+function reduceAll(
+  edited: EditedFlashcard | null,
+  ...actions: EditedFlashcardAction[]
+) {
+  return actions.reduce(reduceEditedFlashcard, edited);
+}
+
+describe("reduceEditedFlashcard on lookupAnswered", () => {
   it("fills the fields of the new flashcard it was made for", () => {
     const draft = createDraft();
     const edited = reduceEditedFlashcard(awaiting(draft), {
@@ -261,20 +270,6 @@ describe("reduceEditedFlashcard on lookupAnswered", () => {
 });
 
 describe("reduceEditedFlashcard on its way to being saved", () => {
-  const fields = {
-    word: "食べる",
-    word_pronunciation: "たべる",
-    l1_definition: "to eat",
-    l2_definition: "",
-  };
-
-  function reduceAll(
-    edited: EditedFlashcard | null,
-    ...actions: EditedFlashcardAction[]
-  ) {
-    return actions.reduce(reduceEditedFlashcard, edited);
-  }
-
   it("readies a card to send when Save is pressed", () => {
     const edited = reduceAll(startedFrom(createDraft()), {
       type: "saveRequested",
@@ -403,24 +398,10 @@ describe("reduceEditedFlashcard on its way to being saved", () => {
 });
 
 describe("reduceEditedFlashcard when the word is changed before its lookup answers", () => {
-  const fields = {
-    word: "食べる",
-    word_pronunciation: "たべる",
-    l1_definition: "to eat",
-    l2_definition: "",
-  };
-
   const typeWord = (word: string): EditedFlashcardAction => ({
     type: "edited",
     action: { type: "textChanged", key: "word", value: word },
   });
-
-  function reduceAll(
-    edited: EditedFlashcard | null,
-    ...actions: EditedFlashcardAction[]
-  ) {
-    return actions.reduce(reduceEditedFlashcard, edited);
-  }
 
   it("stops awaiting the lookup", () => {
     const edited = reduceAll(awaiting(createDraft()), typeWord("飲む"));
