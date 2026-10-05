@@ -138,3 +138,13 @@ fn reports_a_missing_fixtures_directory() {
     let result = seed_sample_content(&placeholder_storage(), Path::new("/missing"));
     assert!(matches!(result, Err(SampleContentError::Fixture { .. })));
 }
+
+#[test]
+fn stores_the_video_under_a_path_without_parent_steps() {
+    let storage = seeded_storage();
+    let media = &storage.list_media_files(&spanish_project()).unwrap()[0];
+    let MediaFileSource::Path { path } = &media.source else {
+        panic!("the sample video is stored by its path");
+    };
+    assert!(!path.contains(".."));
+}
