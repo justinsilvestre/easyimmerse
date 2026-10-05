@@ -1,5 +1,5 @@
 use easyimmerse_core::dictionary::{TermEntry, TermMeta};
-use easyimmerse_core::lookup::{FoundEntry, FoundTermMeta};
+use easyimmerse_core::lookup::{FoundEntry, FoundTermMeta, fold_case};
 use rusqlite::{Connection, Row, params_from_iter};
 
 use super::columns::{get_deflated_json, get_json, split_words};
@@ -8,27 +8,28 @@ use super::origin::{
 };
 use crate::error::StorageError;
 
-/// Finds the entries of every dictionary stored under any of the headwords, ignoring ASCII case,
+/// Finds the entries of every dictionary stored under any of the headwords, ignoring case,
 /// with the definitions of the tags they use.
 pub fn find_entries(
     conn: &Connection,
     headwords: &[String],
 ) -> Result<Vec<FoundEntry>, StorageError> {
-    if headwords.is_empty() {
+    let folded_headwords = fold_distinct(headwords);
+    if folded_headwords.is_empty() {
         return Ok(Vec::new());
     }
     let mut statement = conn.prepare(&format!(
-        "SELECT {ORIGIN_COLUMNS}, h.headword, e.id, e.term, e.reading, e.alternates, e.word_classes, e.score,
+        "SELECT {ORIGIN_COLUMNS}, h.folded_headword, e.id, e.term, e.reading, e.alternates, e.word_classes, e.score,
              e.sequence, e.term_tags, e.definition_tags, e.definitions
          FROM dictionary_headwords h
          JOIN dictionary_entries e ON e.id = h.entry_id
          JOIN dictionaries d ON d.number = h.dictionary_number
-         WHERE h.headword IN ({})
+         WHERE h.folded_headword IN ({})
          ORDER BY d.number, e.id",
-        placeholders(headwords.len())
+        placeholders(folded_headwords.len())
     ))?;
     let found: Vec<FoundEntry> = statement
-        .query_map(params_from_iter(headwords), read_found_entry)?
+        .query_map(params_from_iter(&folded_headwords), read_found_entry)?
         .collect::<Result<_, _>>()?;
     attach_tags(conn, found)
 }
@@ -62,11 +63,21 @@ pub fn find_term_meta(
     Ok(rows.collect::<Result<_, _>>()?)
 }
 
+fn fold_distinct(headwords: &[String]) -> Vec<String> {
+    let mut folded_headwords: Vec<String> = Vec::new();
+    for folded in headwords.iter().map(|headword| fold_case(headword)) {
+        if !folded_headwords.contains(&folded) {
+            folded_headwords.push(folded);
+        }
+    }
+    folded_headwords
+}
+
 fn read_found_entry(row: &Row) -> rusqlite::Result<FoundEntry> {
     let column = |offset: usize| AFTER_ORIGIN + offset;
     Ok(FoundEntry {
         dictionary: read_origin(row)?,
-        headword: row.get(column(0))?,
+        folded_headword: row.get(column(0))?,
         entry_id: row.get(column(1))?,
         entry: TermEntry {
             term: row.get(column(2))?,

@@ -42,14 +42,15 @@ CREATE TABLE dictionary_entries (
 
 CREATE INDEX dictionary_entries_by_dictionary ON dictionary_entries (dictionary_number);
 
--- One row for each distinct term, reading and alternate of an entry.
+-- One row for each distinct term, reading and alternate of an entry, with its case folded so that lookup ignores case.
+-- The case is folded in Rust for all of Unicode, since SQLite's NOCASE folds only ASCII letters.
+-- The entry keeps the headword as the dictionary writes it, for display.
 -- The key leads with the headword alone, so that one lookup spans every dictionary.
--- NOCASE folds only ASCII letters, as StarDict lookup does.
 CREATE TABLE dictionary_headwords (
-    headword TEXT NOT NULL COLLATE NOCASE,
+    folded_headword TEXT NOT NULL,
     entry_id INTEGER NOT NULL,
     dictionary_number INTEGER NOT NULL REFERENCES dictionaries(number) ON DELETE CASCADE,
-    PRIMARY KEY (headword, entry_id)
+    PRIMARY KEY (folded_headword, entry_id)
 ) WITHOUT ROWID;
 
 CREATE INDEX dictionary_headwords_by_dictionary ON dictionary_headwords (dictionary_number);

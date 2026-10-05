@@ -3,6 +3,8 @@
 // as rows of [inflected form, dictionary form, word class].
 // kamiya-codec only serves as an oracle for test cases; the rules cite their own sources.
 // It treats する compounds such as 勉強する as godan verbs, so only する itself is included.
+// Forms that the deinflector leaves to lookup are left out: the full subsidiary verbs ている, ておく and てしまう
+// (their contractions てる, とく and ちゃう stay), で after ない, and the nominal さ of adjectives.
 //
 // Install kamiya-codec outside the repository, then run this script from the repository root:
 //   mise exec -- npm install --prefix /tmp/kamiya-codec kamiya-codec@4.16.1
@@ -51,8 +53,8 @@ const auxiliaryChains = [
   ["Potential"],
   ["ReruRareru"],
   ["SeruSaseru"],
-  ["ShortenedCausative"],
   ["CausativePassive"],
+  ["ShortenedCausative"],
   ["ShortenedCausativePassive"],
   ["TeIru"],
   ["Oku"],
@@ -81,21 +83,23 @@ const adjectiveConjugations = [
   "Adverbial",
   "Conditional",
   "TaraConditional",
-  "Noun",
   "StemSou",
   "StemNegativeSou",
 ];
 
 /**
  * Leaves out the potentials that kamiya-codec gives as すれる and くれる where the sources give できる and こ(ら)れる,
- * and the negative of ない, which kamiya-codec gives as なくはない, with the particle は.
+ * the negative of ない, which kamiya-codec gives as なくはない, with the particle は,
+ * and the short causative さす of する on its own, which the deinflector leaves to the verbs 刺す, 差す and 指す.
  */
 function isSupported([term], auxiliaries, conjugation) {
   const isMisformedPotential =
     ["する", "くる"].includes(term) && auxiliaries.includes("Potential");
   const isNegatedNai =
     auxiliaries.at(-1) === "Nai" && conjugation === "Negative";
-  return !isMisformedPotential && !isNegatedNai;
+  const isBareShortCausativeOfSuru =
+    term === "する" && auxiliaries[0].startsWith("ShortenedCausative");
+  return !isMisformedPotential && !isNegatedNai && !isBareShortCausativeOfSuru;
 }
 
 function verbCases() {
@@ -143,7 +147,7 @@ function adjectiveCases() {
 /**
  * Drops the bare stems that kamiya-codec lists beside some forms (書か beside 書かない),
  * the doubled endings it produces for some irregular forms (しようう), its ぢまう where the sources give じまう,
- * and the copula after そう.
+ * the copula after そう, the full subsidiary verbs after the te-form, and the particle で after ない.
  */
 function completeForms(forms) {
   return forms
@@ -152,6 +156,9 @@ function completeForms(forms) {
         !forms.some((other) => other !== form && other.startsWith(form)),
     )
     .filter((form) => !/(うう|ずず|ぬぬ)$/.test(form) && !form.includes("ぢま"))
+    .filter(
+      (form) => !/[てで](い|お|しま)/.test(form) && !form.endsWith("ないで"),
+    )
     .map((form) => form.replace(/そうだ$/, "そう"));
 }
 

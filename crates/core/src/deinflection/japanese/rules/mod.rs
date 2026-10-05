@@ -1,43 +1,64 @@
 //! The rule tables, one module per group of related inflections.
 
 mod adjective;
+mod classical;
+mod colloquial;
 mod continuative;
+mod contractions;
+mod godan_suru;
 mod imperative;
 mod negative;
 mod perfective;
 mod polite;
 mod provisional;
 mod stems;
-mod subsidiaries;
 mod voice;
 mod volitional;
 
 use super::rule::{Rule, Stem};
 use super::word_class::WordClasses as C;
 
-/// Every rule group.
+/// Every rule group. Where two chains reach the same term, the group listed first names the result.
 pub const ALL: &[&[Rule]] = &[
+    stems::BARE,
     stems::CONTINUATIVE,
     stems::IRREALIS,
     stems::ONBIN_TA,
     stems::ONBIN_DA,
+    stems::U_ONBIN,
     adjective::ADJECTIVE_STEM,
     perfective::PERFECTIVE,
     negative::NEGATIVE,
+    negative::WESTERN_NEGATIVE,
+    negative::WESTERN_NEGATIVE_STEMS,
     polite::POLITE,
     volitional::VOLITIONAL,
+    volitional::SHORT_VOLITIONAL,
+    volitional::NEGATIVE_VOLITIONAL,
     imperative::IMPERATIVE,
     provisional::PROVISIONAL,
+    provisional::FUSED_PROVISIONAL,
     voice::POTENTIAL,
     voice::PASSIVE,
     voice::CAUSATIVE,
     voice::SHORT_CAUSATIVE,
-    continuative::CONTINUATIVE_SUFFIXES,
+    continuative::CONTINUATIVE_AUXILIARIES,
+    continuative::WESTERN_HONORIFIC,
     continuative::APPEARANCE,
     adjective::ADJECTIVE,
-    subsidiaries::PROGRESSIVE,
-    subsidiaries::PREPARATORY,
-    subsidiaries::COMPLETIVE,
+    adjective::ADJECTIVE_CONTINUATIVE_SUFFIXES,
+    adjective::ADJECTIVE_CONTINUATIVE,
+    contractions::PROGRESSIVE,
+    contractions::PREPARATORY,
+    contractions::CONTINUING,
+    contractions::COMPLETIVE,
+    contractions::BENEFACTIVE,
+    contractions::HONORIFIC_PROGRESSIVE,
+    godan_suru::GODAN_SURU,
+    classical::CONJECTURE,
+    classical::ATTRIBUTIVE,
+    colloquial::CONTRACTED,
+    colloquial::VOWEL_FUSION,
 ];
 
 /// Gives every rule in `rules` the same accepted classes and undone inflections.

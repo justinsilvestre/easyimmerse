@@ -8,8 +8,8 @@ use crate::deinflection::japanese::word_class::WordClasses as C;
 /// 来る becomes こい, する becomes しろ or せよ and ずる becomes じろ or ぜよ.
 /// The honorific verbs いらっしゃる, おっしゃる, くださる, なさる and ござる end in い, and くれる becomes くれ.
 ///
-/// Sources: <https://en.wikipedia.org/w/index.php?title=Japanese_conjugation&oldid=1377029019#Imperative:_Conjugation_table>
-/// and <https://en.wiktionary.org/w/index.php?title=Appendix:Japanese_verbs&oldid=92311215#Irregular_conjugation_related_to_polite_speech>.
+/// Sources: UniDic manual §5.2.1, p. 17 (五段-ラ行-アル: 命令形 in い; 下一段-ラ行-呉レル: 命令形 くれ);
+/// UniDic 2025.12, 命令形 of each 活用型.
 pub const IMPERATIVE: &[Rule] = &sharing(
     [
         godan("け", "く"),
@@ -29,7 +29,7 @@ pub const IMPERATIVE: &[Rule] = &sharing(
         suru("せよ", "する"),
         zuru("じろ", "ずる"),
         zuru("ぜよ", "ずる"),
-        godan("いらっしゃい", "いらっしゃる"),
+        godan("らっしゃい", "らっしゃる"),
         godan("おっしゃい", "おっしゃる"),
         godan("仰い", "仰る"),
         godan("ください", "くださる"),
@@ -97,6 +97,26 @@ mod tests {
     #[test]
     fn undoes_the_imperative_of_an_honorific_verb() {
         assert!(yields("ください", "くださる", "v5", &["imperative"]));
+    }
+
+    #[test]
+    fn undoes_the_imperative_of_irassharu() {
+        assert!(yields(
+            "いらっしゃい",
+            "いらっしゃる",
+            "v5",
+            &["imperative"]
+        ));
+    }
+
+    #[test]
+    fn undoes_the_imperative_of_ossharu() {
+        assert!(yields("おっしゃい", "おっしゃる", "v5", &["imperative"]));
+    }
+
+    #[test]
+    fn undoes_the_imperative_of_nasaru() {
+        assert!(yields("なさい", "なさる", "v5", &["imperative"]));
     }
 
     #[test]

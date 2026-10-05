@@ -2,6 +2,7 @@ use easyimmerse_core::dictionary::{
     self, DictionaryError, DictionaryMedia, DictionaryMetadata, DictionarySink, DictionarySource,
     KanjiEntry, KanjiMeta, SinkError, SinkResult, TagDefinition, TermEntry, TermMeta, TermMetaData,
 };
+use easyimmerse_core::lookup::fold_case;
 use rusqlite::{Connection, Transaction, params};
 
 use super::DictionaryId;
@@ -113,11 +114,11 @@ impl DictionaryImporter<'_> {
             ])?;
         let entry_id = self.transaction.last_insert_rowid();
         let mut statement = self.transaction.prepare_cached(
-            "INSERT OR IGNORE INTO dictionary_headwords (headword, entry_id, dictionary_number)
+            "INSERT OR IGNORE INTO dictionary_headwords (folded_headword, entry_id, dictionary_number)
              VALUES (?1, ?2, ?3)",
         )?;
         for headword in entry.headwords() {
-            statement.execute(params![headword, entry_id, number])?;
+            statement.execute(params![fold_case(headword), entry_id, number])?;
         }
         Ok(())
     }

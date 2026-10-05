@@ -1,12 +1,18 @@
-//! Suffixes on the euphonic stem: past た, te-form て, conditional たら and representative たり.
+//! Suffixes on the euphonic stem: past た, te-form て, conditional たら, representative たり,
+//! and ちゃ, the fused form of て and the particle は.
 
 use crate::deinflection::japanese::rule::Rule;
 use crate::deinflection::japanese::word_class::WordClasses as C;
 
-/// た, て, たら and たり, voiced to だ, で, だら and だり after the voiced euphonic stems.
+/// The auxiliary た with its forms たら (also before ば) and たろう (also たろ and たろっ), the particles て and たり,
+/// and ちゃ for ては, voiced to だ, だら, だろう, で, だり and じゃ after the voiced euphonic stems.
+/// The euphonic stem cannot stand alone, so these must be undone for lookup to reach the verb.
+/// ちゃ ends a word, so it is undone only as the outermost layer.
 ///
-/// Sources: <https://en.wiktionary.org/w/index.php?title=Appendix:Japanese_verbs&oldid=92311215#Complex_forms>
-/// and <https://en.wikipedia.org/w/index.php?title=Japanese_conjugation_(ren%27y%C5%8Dkei_base)&oldid=1378034543#Perfective:_Conjugation_table>.
+/// Sources: 規程集 下, 資料「要注意語」助動詞 タ, p. (32), and 助詞 テ, p. (27);
+/// 規程集 下, 最小単位認定規程 1.1, p. 2 (fused forms are kept whole);
+/// UniDic 2025.12, 助動詞-タ (仮定形 たら, 意志推量形 たろう, たろ and たろっ),
+/// and 助詞-接続助詞 て with the spellings ちゃ and じゃ.
 pub const PERFECTIVE: &[Rule] = &[
     voiceless("た", &["past"]),
     voiced("だ", &["past"]),
@@ -14,8 +20,18 @@ pub const PERFECTIVE: &[Rule] = &[
     voiced("で", &["te-form"]),
     voiceless("たら", &["conditional"]),
     voiced("だら", &["conditional"]),
+    voiceless("たらば", &["conditional"]),
+    voiced("だらば", &["conditional"]),
+    voiceless("たろう", &["volitional", "past"]),
+    voiced("だろう", &["volitional", "past"]),
+    voiceless("たろ", &["volitional", "past"]),
+    voiced("だろ", &["volitional", "past"]),
+    voiceless("たろっ", &["volitional", "past"]),
+    voiced("だろっ", &["volitional", "past"]),
     voiceless("たり", &["representative"]),
     voiced("だり", &["representative"]),
+    voiceless("ちゃ", &["te-wa"]),
+    voiced("じゃ", &["te-wa"]),
 ];
 
 const fn voiceless(inflected: &'static str, inflections: &'static [&'static str]) -> Rule {
@@ -158,6 +174,39 @@ mod tests {
         #[test]
         fn undoes_a_voiced_godan_conditional() {
             assert!(yields("泳いだら", "泳ぐ", "v5", &["conditional"]));
+        }
+    }
+
+    mod past_volitional {
+        use super::yields;
+
+        #[test]
+        fn undoes_tarou() {
+            assert!(yields("書いたろう", "書く", "v5", &["volitional", "past"]));
+        }
+    }
+
+    mod te_wa {
+        use super::yields;
+
+        #[test]
+        fn undoes_cha() {
+            assert!(yields("見ちゃ", "見る", "v1", &["te-wa"]));
+        }
+
+        #[test]
+        fn undoes_a_voiced_ja() {
+            assert!(yields("飲んじゃ", "飲む", "v5", &["te-wa"]));
+        }
+
+        #[test]
+        fn undoes_cha_after_a_causative() {
+            assert!(yields("書かせちゃ", "書く", "v5", &["te-wa", "causative"]));
+        }
+
+        #[test]
+        fn does_not_undo_cha_inside_a_longer_word() {
+            assert!(!yields("見ちゃった", "見る", "v1", &["past", "te-wa"]));
         }
     }
 

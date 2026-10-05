@@ -111,6 +111,17 @@ fn english_dictionary() -> Reader {
     })
 }
 
+fn european_dictionary() -> Reader {
+    Box::new(|sink| {
+        sink.begin(metadata("European", DictionaryFormatKind::Stardict))?;
+        sink.term_entry(entry("über", None, "over"))?;
+        sink.term_entry(entry("Ärger", None, "anger"))?;
+        sink.term_entry(entry("Straße", None, "street"))?;
+        sink.term_entry(entry("Москва", None, "Moscow"))?;
+        Ok(())
+    })
+}
+
 fn storage_with(readers: Vec<Reader>) -> (Storage, Vec<DictionaryId>) {
     let storage = Storage::open_in_memory().unwrap();
     let ids = readers
@@ -273,12 +284,52 @@ fn finds_an_entry_ignoring_ascii_case() {
 }
 
 #[test]
-fn reports_the_stored_headword_that_matched() {
+fn finds_a_lowercase_entry_for_a_capitalized_umlaut() {
+    let (storage, _) = storage_with(vec![european_dictionary()]);
+    assert_eq!(found_terms(&storage, "Über"), vec!["über"]);
+}
+
+#[test]
+fn finds_a_capitalized_entry_for_a_lowercase_umlaut() {
+    let (storage, _) = storage_with(vec![european_dictionary()]);
+    assert_eq!(found_terms(&storage, "ärger"), vec!["Ärger"]);
+}
+
+#[test]
+fn finds_an_entry_with_eszett_for_capitals() {
+    let (storage, _) = storage_with(vec![european_dictionary()]);
+    assert_eq!(found_terms(&storage, "STRASSE"), vec!["Straße"]);
+}
+
+#[test]
+fn finds_a_cyrillic_entry_ignoring_case() {
+    let (storage, _) = storage_with(vec![european_dictionary()]);
+    assert_eq!(found_terms(&storage, "москва"), vec!["Москва"]);
+}
+
+#[test]
+fn finds_a_japanese_entry_only_by_its_exact_kana() {
+    let (storage, _) = storage_with(vec![japanese_dictionary()]);
+    assert!(found_terms(&storage, "タベル").is_empty());
+}
+
+#[test]
+fn reports_the_folded_headword_that_matched() {
     let (storage, _) = storage_with(vec![english_dictionary()]);
     let found = storage
-        .find_dictionary_entries(&["cat".to_string()])
+        .find_dictionary_entries(&["CAT".to_string()])
         .unwrap();
-    assert_eq!(found[0].headword, "Cat");
+    assert_eq!(found[0].folded_headword, "cat");
+}
+
+#[test]
+fn searches_for_headwords_that_fold_alike_once() {
+    let (storage, _) = storage_with(vec![english_dictionary()]);
+    let headwords = vec!["Cat".to_string(), "cat".to_string()];
+    assert_eq!(
+        storage.find_dictionary_entries(&headwords).unwrap().len(),
+        1
+    );
 }
 
 #[test]

@@ -1,40 +1,58 @@
-//! Suffixes on the continuative stem of a verb, some of which also follow an adjective stem.
+//! Auxiliaries on the continuative stem of a verb, and appearance そう, which also follows an adjective stem.
 
-use crate::deinflection::japanese::rule::Rule;
+use crate::deinflection::japanese::rule::{Rule, Stem};
 use crate::deinflection::japanese::word_class::WordClasses as C;
 
-/// Desiderative たい (which inflects as an i-adjective), ながら ("while"), なさい (a polite imperative),
-/// and excessive すぎる (which inflects as an ichidan verb and also follows adjective stems).
+/// Desiderative たい, which inflects as an i-adjective; たがる, "show signs of wanting to", which inflects as a godan verb;
+/// and the contemptuous やがる, which inflects as a godan verb.
 ///
-/// Sources: <https://en.wikipedia.org/w/index.php?title=Japanese_conjugation_(ren%27y%C5%8Dkei_base)&oldid=1378034543#Infinitive:_Grammatical_compatibility>
-/// and <https://en.wiktionary.org/w/index.php?title=Appendix:Japanese_verbs&oldid=92311215#Suffixes_to_the_continuative_(-i)_form>;
-/// for すぎる after adjectives, <https://en.wiktionary.org/w/index.php?title=Appendix:Japanese_adjectives&oldid=91406689#Inflection>.
-pub const CONTINUATIVE_SUFFIXES: &[Rule] = &[
+/// Sources: 規程集 下, 資料「要注意語」助動詞 タイ and タガル, p. (33) (接続: 連用形);
+/// UniDic 2025.12, 助動詞 たい (助動詞-タイ), たがる and やがる (五段-ラ行).
+/// The 規程集 lists やがる among the suffixes (資料「要注意語」接尾的要素 ヤガル, p. (53)); UniDic 2025.12 classes it as an auxiliary.
+pub const CONTINUATIVE_AUXILIARIES: &[Rule] = &[
     Rule::replace("たい", "")
         .from(C::ADJ_I)
         .to(C::CONTINUATIVE)
         .named(&["desiderative"]),
-    Rule::replace("ながら", "")
+    Rule::replace("たがる", "")
+        .from(C::V5)
         .to(C::CONTINUATIVE)
-        .named(&["while"]),
-    Rule::replace("なさい", "")
+        .named(&["third-person desiderative"]),
+    Rule::replace("やがる", "")
+        .from(C::V5)
         .to(C::CONTINUATIVE)
-        .named(&["polite imperative"]),
-    Rule::replace("すぎる", "")
-        .from(C::V1)
-        .to(C::CONTINUATIVE.or(C::ADJECTIVE_STEM))
-        .named(&["excessive"]),
+        .named(&["contemptuous"]),
 ];
 
-/// そう ("looks like") after a verb's continuative stem or an adjective's stem.
-/// いい and ない take さ before it: よさそう and なさそう.
+/// The western honorific はる, which follows the irrealis or the continuative stem (行かはる, 行きはる)
+/// and inflects as a godan verb.
 ///
-/// Source: <https://en.wiktionary.org/w/index.php?title=%E3%81%9D%E3%81%86&oldid=92159732#Etymology_2>.
+/// Sources: 規程集 下, 資料「要注意語」助動詞 ハル, p. (35) (接続: 未然形, 連用形); UniDic 2025.12, はる (五段-ラ行).
+pub const WESTERN_HONORIFIC: &[Rule] = &[Rule::replace("はる", "")
+    .from(C::V5)
+    .to(C::IRREALIS.or(C::CONTINUATIVE))
+    .named(&["honorific"])
+    .stem(Stem::NonEmpty)];
+
+/// そう ("looks like") after a verb's continuative stem or an adjective's stem.
+/// いい and ない take さ before it (語幹-サ): よさそう and なさそう.
+///
+/// School grammar counts そうだ as an auxiliary. UniDic instead splits off そう as the stem of a nominal auxiliary,
+/// which would leave the bare stem to lookup.
+///
+/// Sources: 日本大百科全書 (ニッポニカ) 助動詞 (青木伶子) and 百科事典マイペディア 助動詞 on Kotobank (様態 そうだ);
+/// UniDic manual §5.3, p. 19 (語幹-サ); 規程集 下, 資料「要注意語」接尾的要素 ソウ (ID 72), p. (45).
 pub const APPEARANCE: &[Rule] = &[
     Rule::replace("そう", "")
         .to(C::CONTINUATIVE.or(C::ADJECTIVE_STEM))
         .named(&["appearance"]),
     Rule::replace("よさそう", "よい")
+        .to(C::ADJ_I)
+        .named(&["appearance"]),
+    Rule::replace("良さそう", "良い")
+        .to(C::ADJ_I)
+        .named(&["appearance"]),
+    Rule::replace("無さそう", "無い")
         .to(C::ADJ_I)
         .named(&["appearance"]),
     Rule::replace("なさそう", "ない")
@@ -73,42 +91,58 @@ mod tests {
                 &["past", "desiderative"]
             ));
         }
-    }
-
-    mod nagara {
-        use super::yields;
 
         #[test]
-        fn undoes_nagara() {
-            assert!(yields("書きながら", "書く", "v5", &["while"]));
+        fn undoes_tagaru() {
+            assert!(yields(
+                "行きたがる",
+                "行く",
+                "v5",
+                &["third-person desiderative"]
+            ));
+        }
+
+        #[test]
+        fn undoes_a_past_tagaru() {
+            assert!(yields(
+                "見たがった",
+                "見る",
+                "v1",
+                &["past", "third-person desiderative"]
+            ));
         }
     }
 
-    mod nasai {
+    mod contemptuous {
         use super::yields;
 
         #[test]
-        fn undoes_nasai() {
-            assert!(yields("読みなさい", "読む", "v5", &["polite imperative"]));
+        fn undoes_yagaru() {
+            assert!(yields("言いやがる", "言う", "v5", &["contemptuous"]));
+        }
+
+        #[test]
+        fn undoes_a_past_yagaru() {
+            assert!(yields(
+                "来やがった",
+                "来る",
+                "vk",
+                &["past", "contemptuous"]
+            ));
         }
     }
 
-    mod sugiru {
+    mod western_honorific {
         use super::yields;
 
         #[test]
-        fn undoes_sugiru_after_a_verb() {
-            assert!(yields("食べすぎる", "食べる", "v1", &["excessive"]));
+        fn undoes_haru_after_the_irrealis() {
+            assert!(yields("行かはる", "行く", "v5", &["honorific"]));
         }
 
         #[test]
-        fn undoes_sugiru_after_an_adjective() {
-            assert!(yields("高すぎる", "高い", "adj-i", &["excessive"]));
-        }
-
-        #[test]
-        fn undoes_a_past_sugiru() {
-            assert!(yields("飲みすぎた", "飲む", "v5", &["past", "excessive"]));
+        fn undoes_haru_after_the_continuative() {
+            assert!(yields("行きはった", "行く", "v5", &["past", "honorific"]));
         }
     }
 
@@ -121,18 +155,38 @@ mod tests {
         }
 
         #[test]
+        fn undoes_sou_after_an_ichidan_verb() {
+            assert!(yields("食べそう", "食べる", "v1", &["appearance"]));
+        }
+
+        #[test]
         fn undoes_sou_after_suru() {
             assert!(yields("しそう", "する", "vs", &["appearance"]));
         }
 
         #[test]
         fn undoes_sou_after_an_adjective() {
-            assert!(yields("美味しそう", "美味しい", "adj-i", &["appearance"]));
+            assert!(yields("高そう", "高い", "adj-i", &["appearance"]));
+        }
+
+        #[test]
+        fn undoes_sou_after_a_potential() {
+            assert!(yields(
+                "読めそう",
+                "読む",
+                "v5",
+                &["appearance", "potential"]
+            ));
         }
 
         #[test]
         fn traces_yosasou_to_yoi() {
             assert!(yields("よさそう", "よい", "adj-i", &["appearance"]));
+        }
+
+        #[test]
+        fn traces_nasasou_to_nai() {
+            assert!(yields("なさそう", "ない", "adj-i", &["appearance"]));
         }
 
         #[test]

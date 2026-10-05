@@ -31,6 +31,11 @@ impl WordClasses {
     pub const ADJECTIVE_STEM: Self = Self(1 << 10);
     /// Text as given, before any rule is applied. It may also have any dictionary class.
     pub const INPUT: Self = Self(1 << 11);
+    /// The continuative form of an i-adjective, such as 高く in 高くて or 高う in 高うない.
+    pub const ADJECTIVE_CONTINUATIVE: Self = Self(1 << 12);
+    /// An i-adjective reached from its bare stem, as 高い is from 高. No rule undoes it further,
+    /// so that the stems of the auxiliaries ない and たい do not lead on to a verb.
+    pub const BARE_ADJECTIVE: Self = Self(1 << 13);
 
     /// The classes that dictionary entries carry.
     pub const DICTIONARY: Self = Self::V1
@@ -41,6 +46,8 @@ impl WordClasses {
         .or(Self::ADJ_I);
     /// The classes of text that no rule has been applied to yet.
     pub const UNDEINFLECTED: Self = Self::INPUT.or(Self::DICTIONARY);
+    /// The classes that a reported result may have.
+    pub const RESULT: Self = Self::DICTIONARY.or(Self::BARE_ADJECTIVE);
 
     /// Combines two sets.
     pub const fn or(self, other: Self) -> Self {
@@ -68,7 +75,7 @@ const DICTIONARY_NAMES: [(WordClasses, &str); 6] = [
     (WordClasses::VK, "vk"),
     (WordClasses::VS, "vs"),
     (WordClasses::VZ, "vz"),
-    (WordClasses::ADJ_I, "adj-i"),
+    (WordClasses::ADJ_I.or(WordClasses::BARE_ADJECTIVE), "adj-i"),
 ];
 
 #[cfg(test)]
@@ -81,6 +88,11 @@ mod tests {
             .or(WordClasses::ADJ_I)
             .or(WordClasses::IRREALIS);
         assert_eq!(classes.dictionary_names(), ["v5", "adj-i"]);
+    }
+
+    #[test]
+    fn dictionary_names_gives_a_bare_adjective_as_an_i_adjective() {
+        assert_eq!(WordClasses::BARE_ADJECTIVE.dictionary_names(), ["adj-i"]);
     }
 
     #[test]
