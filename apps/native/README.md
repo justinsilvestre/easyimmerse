@@ -69,7 +69,7 @@ $sdk/cmdline-tools/latest/bin/avdmanager create avd -n easyimmerse-e2e -k "syste
 $sdk/emulator/emulator -avd easyimmerse-e2e -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
 ```
 
-On its first run, Appium downloads the chromedriver that matches the emulator's WebView into `.appium/chromedriver`. Each run reinstalls the APK and clears the app's data, so the app seeds its placeholder projects as on a fresh install. Starting a session can take a minute or two, most of it in Appium's own setup; the specs themselves take well under a minute.
+On its first run, Appium downloads the chromedriver that matches the emulator's WebView into `.appium/chromedriver`. Each run reinstalls the APK and clears the app's data, so the debug build seeds its placeholder projects into the new database, as it does on any first run. Starting a session can take a minute or two, most of it in Appium's own setup; the specs themselves take well under a minute.
 
 CI's `android` job builds the same APK, enables KVM, and runs the specs on an x86_64 emulator through `reactivecircus/android-emulator-runner`, booting from a cached snapshot. It uses a `default` image rather than `google_apis`, because the Google app's frozen DevTools sockets can stall Appium's WebView detection. The Appium driver and chromedriver are cached between runs.
 
