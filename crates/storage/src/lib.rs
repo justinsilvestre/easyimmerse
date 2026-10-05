@@ -12,11 +12,13 @@ mod migrations;
 mod new_row;
 mod preferences;
 mod projects;
+mod sample_content;
 mod stored_integer;
 mod subtitle_tracks;
 
 pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use error::StorageError;
+pub use sample_content::SampleContentError;
 pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 
 use std::path::Path;
@@ -95,6 +97,13 @@ impl Storage {
 
     pub fn seed_placeholder_projects(&self) -> Result<(), StorageError> {
         self.write(|conn| projects::seed_placeholder_projects(conn))
+    }
+
+    /// Gives each placeholder project that has no media a video with subtitles,
+    /// and imports small Spanish and Japanese dictionaries, once per database.
+    /// The video and the English subtitles are read from `fixtures_dir`.
+    pub fn seed_sample_content(&self, fixtures_dir: &Path) -> Result<(), SampleContentError> {
+        sample_content::seed_sample_content(self, fixtures_dir)
     }
 
     /// Deletes a project together with everything that belongs to it.
