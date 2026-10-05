@@ -111,6 +111,12 @@ opt-level = 3
 [profile.dev.package.memchr]
 opt-level = 3
 
+# Optimizes the storage crate, which serializes and compresses each entry during import.
+# Generic serde code is compiled in the crate that uses it, so optimizing serde_json alone does not speed up this work.
+# The core crate stays unoptimized, since optimizing it would slow the incremental build of its tests about fourfold.
+[profile.dev.package.easyimmerse-storage]
+opt-level = 2
+
 # Optimizes the compiler that turns plugins into machine code,
 # so that debug builds load a plugin in seconds rather than minutes.
 [profile.dev.package.cranelift-codegen]
