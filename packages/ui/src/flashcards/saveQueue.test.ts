@@ -66,4 +66,17 @@ describe("createSaveQueue", () => {
     await settle();
     expect([sentBefore, sent]).toEqual([["first"], ["first", "second"]]);
   });
+
+  it("holds other work on a flashcard until an earlier save of it settles", async () => {
+    const queue = createSaveQueue();
+    const sent: string[] = [];
+    const first = heldSave(sent, "save");
+    queue.add(opening(), first.send);
+    queue.addFor(flashcard.id, heldSave(sent, "undo").send);
+    await settle();
+    const sentBefore = [...sent];
+    first.finish();
+    await settle();
+    expect([sentBefore, sent]).toEqual([["save"], ["save", "undo"]]);
+  });
 });
