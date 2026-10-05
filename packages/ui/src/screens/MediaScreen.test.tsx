@@ -185,6 +185,8 @@ async function startFlashcardBeforeProbe(hasPictures: boolean) {
   fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
   answer(hasPictures);
   await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(hasPictures));
+  // The screen learns the answer only after the probe's own callback, which may run after the check above.
+  await act(async () => undefined);
   return rendered;
 }
 
