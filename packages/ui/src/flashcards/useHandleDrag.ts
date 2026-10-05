@@ -6,9 +6,9 @@ import {
   useRef,
 } from "react";
 import {
+  type ClipEditorView,
   draggedHandle,
   type WaveformFrame,
-  type ClipEditorView,
   xOfTime,
 } from "./clipView.ts";
 
