@@ -67,8 +67,12 @@ fn accepts_query_token(request: &Request) -> bool {
         .extensions()
         .get::<MatchedPath>()
         .is_some_and(|matched| {
-            [STREAM_ROUTE_PATH, FRAME_ROUTE_PATH, DICTIONARY_MEDIA_ROUTE_PATH]
-                .contains(&matched.as_str())
+            [
+                STREAM_ROUTE_PATH,
+                FRAME_ROUTE_PATH,
+                DICTIONARY_MEDIA_ROUTE_PATH,
+            ]
+            .contains(&matched.as_str())
         })
 }
 

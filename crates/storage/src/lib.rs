@@ -205,9 +205,7 @@ impl Storage {
         media_file_id: &MediaFileId,
         selection: &SubtitleSelection,
     ) -> Result<(), StorageError> {
-        self.write(|conn| {
-            subtitle_tracks::set_subtitle_selection(conn, media_file_id, selection)
-        })
+        self.write(|conn| subtitle_tracks::set_subtitle_selection(conn, media_file_id, selection))
     }
 
     pub fn get_preference(&self, key: &str) -> Result<Option<String>, StorageError> {
@@ -283,7 +281,6 @@ impl Storage {
         self.read(|conn| dictionaries::get_media(conn, id, path))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
