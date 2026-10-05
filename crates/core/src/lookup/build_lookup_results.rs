@@ -156,6 +156,64 @@ mod tests {
         found
     }
 
+    fn classed(word_class: &str, mut found: FoundEntry) -> FoundEntry {
+        found.entry.word_classes = vec![word_class.to_string()];
+        found
+    }
+
+    fn terms(results: &[LookupResult]) -> Vec<&str> {
+        results.iter().map(|result| result.term.as_str()).collect()
+    }
+
+    /// The noun 書き and the verb 書く, either of which 書きながら may begin with.
+    fn kaki_entries() -> Vec<FoundEntry> {
+        vec![
+            classed("n", found(1, "書き", "かき")),
+            classed("v5", found(1, "書く", "かく")),
+        ]
+    }
+
+    #[test]
+    fn ranks_the_more_common_of_two_matches_of_equal_length_first() {
+        let candidates = lookup_candidates("書きながら", "ja");
+        let meta = vec![
+            frequency(9, "書き", "かき", 20_000.0),
+            frequency(9, "書く", "かく", 800.0),
+        ];
+        let results = build_lookup_results(&candidates, kaki_entries(), &meta);
+        assert_eq!(terms(&results), vec!["書く", "書き"]);
+    }
+
+    #[test]
+    fn ranks_fewer_inflections_first_without_frequencies() {
+        let candidates = lookup_candidates("書きながら", "ja");
+        let results = build_lookup_results(&candidates, kaki_entries(), &[]);
+        assert_eq!(terms(&results), vec!["書き", "書く"]);
+    }
+
+    #[test]
+    fn ranks_fewer_inflections_first_when_only_one_match_has_a_frequency() {
+        let candidates = lookup_candidates("書きながら", "ja");
+        let meta = vec![frequency(9, "書く", "かく", 800.0)];
+        let results = build_lookup_results(&candidates, kaki_entries(), &meta);
+        assert_eq!(terms(&results), vec!["書き", "書く"]);
+    }
+
+    #[test]
+    fn ranks_an_unchanged_character_before_a_more_common_one_character_stem() {
+        let candidates = lookup_candidates("し", "ja");
+        let entries = vec![
+            classed("vs", found(1, "する", "する")),
+            classed("prt", found(1, "し", "し")),
+        ];
+        let meta = vec![
+            frequency(9, "する", "する", 10.0),
+            frequency(9, "し", "し", 5_000.0),
+        ];
+        let results = build_lookup_results(&candidates, entries, &meta);
+        assert_eq!(terms(&results), vec!["し", "する"]);
+    }
+
     #[test]
     fn ranks_the_longest_match_first() {
         let candidates = lookup_candidates("猫舌だ", "ja");
