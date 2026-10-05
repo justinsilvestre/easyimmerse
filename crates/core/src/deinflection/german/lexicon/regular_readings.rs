@@ -8,24 +8,11 @@ use std::sync::LazyLock;
 
 use super::irregular_verbs::{IRREGULAR_VERBS, IrregularVerb};
 use super::suppletive_forms::{MODAL_AND_AUXILIARY_PRESENT, N_INFINITIVE_FORMS};
+use super::weak_verbs::{VERBS_WITH_WEAK_FORMS, WEAK_HOMONYMS, WEAK_LOOKALIKES};
 use crate::deinflection::german::inflection::{
     PAST_PARTICIPLE, Paradigm, Persons, finite_form, finite_name,
 };
-use crate::deinflection::german::opening::particle_splits;
-
-/// Verbs with both strong (or mixed) and weak forms, whose regular forms all stay possible.
-///
-/// Sources: grammis, Propädeutische Grammatik, unit 4074, the two tables of verbs with strong and weak forms
-/// (erschallen as formed from schallen); dingen from Wikidata lexeme L883783 (abdingen: dingte, abgedingt), CC0.
-#[rustfmt::skip]
-const VERBS_WITH_WEAK_FORMS: [&str; 46] = [
-    "dingen",
-    "dünken", "erkiesen", "fragen", "gleiten", "glimmen", "hauen", "klimmen", "kreischen", "küren", "löschen",
-    "mahlen", "melken", "salzen", "saugen", "schallen", "erschallen", "schinden", "schleißen", "schmeißen",
-    "schnauben", "sieden", "spalten", "stieben", "triefen", "wägen", "winken", "backen", "bewegen", "bleichen",
-    "erschrecken", "gären", "hängen", "pflegen", "quellen", "schaffen", "scheren", "schleifen", "schmelzen",
-    "schwellen", "senden", "stecken", "weben", "weichen", "wenden", "wiegen",
-];
+use crate::deinflection::german::opening::{INSEPARABLE_PREFIXES, particle_splits};
 
 /// The forms that the lexicon gives a verb instead of the regular ones.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -40,7 +27,7 @@ static EXCEPTIONS: LazyLock<HashMap<&'static str, Exceptions>> = LazyLock::new(b
 
 /// The reading that a regular verb rule may keep for `term`, given that it names `reading`:
 /// the reading itself, a narrower one without the persons that the lexicon gives other forms, or none.
-/// Verbs formed with an inseparable prefix are left alone, because weak verbs such as bereiten share their shape.
+/// The verb may follow particles and an inseparable prefix (verlauft), unless it is a weak verb of the same shape (bereitet).
 pub(in crate::deinflection::german) fn legitimate_reading(
     term: &str,
     reading: &'static str,
@@ -66,15 +53,27 @@ pub(in crate::deinflection::german) fn legitimate_reading(
 
 fn exceptions_for(term: &str) -> Option<Exceptions> {
     let after_particles = particle_splits(term).into_iter().map(|split| split.rest);
-    std::iter::once(term)
-        .chain(after_particles)
-        .find_map(|verb| EXCEPTIONS.get(verb).copied())
+    let verbs: Vec<&str> = std::iter::once(term).chain(after_particles).collect();
+    if verbs.iter().any(|verb| WEAK_LOOKALIKES.contains(verb)) {
+        return None;
+    }
+    verbs
+        .iter()
+        .find_map(|verb| EXCEPTIONS.get(verb).copied().or_else(|| after_prefix(verb)))
+}
+
+fn after_prefix(verb: &str) -> Option<Exceptions> {
+    INSEPARABLE_PREFIXES
+        .iter()
+        .filter_map(|prefix| verb.strip_prefix(prefix))
+        .find_map(|rest| EXCEPTIONS.get(rest).copied())
 }
 
 fn build_exceptions() -> HashMap<&'static str, Exceptions> {
     let mut exceptions: HashMap<&'static str, Exceptions> = IRREGULAR_VERBS
         .iter()
         .filter(|verb| !VERBS_WITH_WEAK_FORMS.contains(&verb.infinitive))
+        .filter(|verb| !WEAK_HOMONYMS.contains(&verb.infinitive))
         .map(|verb| (verb.infinitive, listed_exceptions(verb)))
         .collect();
     for &(_, infinitive, readings) in MODAL_AND_AUXILIARY_PRESENT

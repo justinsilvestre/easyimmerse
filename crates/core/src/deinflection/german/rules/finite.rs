@@ -168,8 +168,77 @@ mod tests {
         }
 
         #[test]
+        fn narrows_the_readings_of_a_verb_with_an_inseparable_prefix() {
+            assert!(yields("verlauft", "verlaufen", "v", &["present 2pl"]));
+        }
+
+        #[test]
+        fn leaves_out_the_combined_reading_of_a_verb_with_an_inseparable_prefix() {
+            assert!(!yields("verlauft", "verlaufen", "v", &["present 3sg/2pl"]));
+        }
+
+        #[test]
+        fn keeps_the_readings_of_a_weak_homonym() {
+            assert!(yields("wachste", "wachsen", "v", &["past 1sg/3sg"]));
+        }
+
+        #[test]
+        fn keeps_the_present_of_a_weak_homonym() {
+            assert!(yields("wachst", "wachsen", "v", &["present 3sg/2pl"]));
+        }
+
+        #[test]
         fn narrows_the_readings_of_a_particle_verb() {
             assert!(yields("anlauft", "anlaufen", "v", &["present 2pl"]));
+        }
+    }
+
+    mod for_a_weak_verb_shaped_like_a_prefix_and_a_strong_verb {
+        use crate::deinflection::german::test_support::yields;
+
+        #[test]
+        fn keeps_the_present_of_begleiten() {
+            assert!(yields("begleitet", "begleiten", "v", &["present 3sg/2pl"]));
+        }
+
+        #[test]
+        fn keeps_the_present_of_bereiten() {
+            assert!(yields("bereitet", "bereiten", "v", &["present 3sg/2pl"]));
+        }
+
+        #[test]
+        fn keeps_the_past_of_bereiten() {
+            assert!(yields("bereitete", "bereiten", "v", &["past 1sg/3sg"]));
+        }
+
+        #[test]
+        fn keeps_the_present_of_beinhalten() {
+            assert!(yields(
+                "beinhaltet",
+                "beinhalten",
+                "v",
+                &["present 3sg/2pl"]
+            ));
+        }
+
+        #[test]
+        fn keeps_the_present_of_beerdigen() {
+            assert!(yields("beerdigt", "beerdigen", "v", &["present 3sg/2pl"]));
+        }
+
+        #[test]
+        fn keeps_the_past_of_veranlassen() {
+            assert!(yields("veranlasste", "veranlassen", "v", &["past 1sg/3sg"]));
+        }
+
+        #[test]
+        fn keeps_the_present_of_verkoerpern() {
+            assert!(yields(
+                "verkörpert",
+                "verkörpern",
+                "v",
+                &["present 3sg/2pl"]
+            ));
         }
     }
 
