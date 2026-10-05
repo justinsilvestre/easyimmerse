@@ -53,9 +53,10 @@ export function ReaderFooter({
         onFocus={onReveal}
       >
         <div className="relative flex h-5 items-center">
-          {chapterStarts.slice(1).map((start) => (
+          {chapterStarts.slice(1).map((start, index) => (
             <span
-              key={start}
+              // biome-ignore lint/suspicious/noArrayIndexKey: chapters never move, and empty ones share their start with the next.
+              key={index}
               className="absolute top-1/2 h-2 w-px -translate-y-1/2 bg-line-strong"
               style={{ left: `${start * 100}%` }}
             />
@@ -79,7 +80,9 @@ export function ReaderFooter({
         <p className="truncate text-center text-xs text-fg-muted">
           {preview === null
             ? chapterTitle
-            : `${chapterTitleAt(preview) ?? ""} · ${Math.round(preview * 100)}%`}
+            : [chapterTitleAt(preview), `${Math.round(preview * 100)}%`]
+                .filter(Boolean)
+                .join(" · ")}
         </p>
       </div>
       <div className="flex justify-between px-5 pb-2 text-xs text-fg-faint tabular-nums md:px-16">

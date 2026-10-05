@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Fragment, type RefObject } from "react";
 import { IconButton } from "../components/IconButton.tsx";
 import { pluralize } from "../components/pluralize.ts";
+import { chapterLabelOf } from "./chapterTitles.ts";
 import { ReaderSheet } from "./ReaderSheet.tsx";
 import { excerptAround, type SearchMatch } from "./searchDocument.ts";
 
@@ -95,7 +96,7 @@ export function SearchPanel({
             >
               {isNewChapter && (
                 <li className="sticky top-0 bg-surface px-4 pt-3 pb-1 text-xs font-semibold tracking-wide text-fg-faint uppercase">
-                  {chapter?.title ?? `Chapter ${match.chapterIndex + 1}`}
+                  {chapterLabelOf(document, match.chapterIndex)}
                 </li>
               )}
               <li>

@@ -1,5 +1,6 @@
 import type { Document } from "@easyimmerse/types";
 import clsx from "clsx";
+import { chapterLabelOf } from "./chapterTitles.ts";
 import { ReaderSheet } from "./ReaderSheet.tsx";
 import { chapterStartProgresses } from "./readingProgress.ts";
 
@@ -38,7 +39,7 @@ export function ContentsPanel({
         </div>
       </div>
       <ol className="flex-1 overflow-y-auto py-2">
-        {document.chapters.map((chapter, index) => {
+        {document.chapters.map((_, index) => {
           const isCurrent = index === currentChapterIndex;
           return (
             // biome-ignore lint/suspicious/noArrayIndexKey: chapters never move within a document.
@@ -55,7 +56,7 @@ export function ContentsPanel({
                 )}
               >
                 <span className="flex-1">
-                  {chapter.title ?? `Chapter ${index + 1}`}
+                  {chapterLabelOf(document, index)}
                 </span>
                 <span className="text-xs text-fg-faint tabular-nums">
                   {Math.round((starts[index] ?? 0) * 100)}%

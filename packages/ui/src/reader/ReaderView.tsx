@@ -15,6 +15,7 @@ import { ChapterEnd } from "./ChapterEnd.tsx";
 import { ChapterText } from "./ChapterText.tsx";
 import { ContentsPanel } from "./ContentsPanel.tsx";
 import { sectionIndexAt, sectionsOf } from "./chapterSections.ts";
+import { chapterLabelOf, chapterTitleOf } from "./chapterTitles.ts";
 import { LookupAnchor } from "./LookupAnchor.tsx";
 import {
   PagedChapter,
@@ -236,9 +237,7 @@ export function ReaderView(props: ReaderViewProps) {
       marks={marks}
     />
   );
-  const chapterTitle =
-    chapter.title ??
-    (document.chapters.length > 1 ? `Chapter ${chapterIndex + 1}` : null);
+  const chapterTitle = chapterTitleOf(document, chapterIndex);
   const showChrome = () => dispatch({ type: "chromeShown" });
   const closePanelOnPhone = () => {
     if (!isWide) dispatch({ type: "panelClosed" });
@@ -314,9 +313,8 @@ export function ReaderView(props: ReaderViewProps) {
             footer={
               <ChapterEnd
                 nextTitle={
-                  document.chapters[chapterIndex + 1]
-                    ? (document.chapters[chapterIndex + 1]?.title ??
-                      `Chapter ${chapterIndex + 2}`)
+                  chapterIndex + 1 < document.chapters.length
+                    ? chapterLabelOf(document, chapterIndex + 1)
                     : null
                 }
                 onNext={() => goToChapter(chapterIndex + 1, "start")}
@@ -333,10 +331,12 @@ export function ReaderView(props: ReaderViewProps) {
         chapterTitle={chapterTitle}
         chapterStarts={chapterStarts}
         isVisible={state.isChromeVisible}
-        chapterTitleAt={(at) => {
-          const index = locationAtProgress(document, at).chapterIndex;
-          return document.chapters[index]?.title ?? null;
-        }}
+        chapterTitleAt={(at) =>
+          chapterTitleOf(
+            document,
+            locationAtProgress(document, at).chapterIndex,
+          )
+        }
         onScrub={(at) => jumpTo(locationAtProgress(document, at))}
         onReveal={showChrome}
       />
