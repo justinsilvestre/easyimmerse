@@ -122,6 +122,16 @@ mod tests {
     }
 
     #[test]
+    fn parses_the_yomitan_fixture_with_its_stylesheet() {
+        let json = parse_dictionary_json("sample-yomitan.zip", &read_fixture("sample-yomitan.zip"));
+        let dictionary: serde_json::Value = serde_json::from_str(&json.unwrap()).unwrap();
+        assert_eq!(
+            dictionary["metadata"]["stylesheet"],
+            "[data-sc-content=\"glossary\"] {\n  list-style-type: square;\n}\n"
+        );
+    }
+
+    #[test]
     fn rejects_a_file_that_no_format_recognizes() {
         assert!(parse_dictionary_json("notes.txt", b"hello").is_err());
     }

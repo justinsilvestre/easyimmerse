@@ -24,6 +24,7 @@ export type * from "./DictionaryFormatKind";
 export type * from "./DictionaryFrequency";
 export type * from "./DictionaryMetadata";
 export type * from "./DictionaryPronunciation";
+export type * from "./DictionaryStylesheet";
 export type * from "./DictionarySummary";
 export type * from "./Document";
 export type * from "./DocumentFormat";

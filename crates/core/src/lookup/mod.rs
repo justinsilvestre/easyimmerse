@@ -20,5 +20,6 @@ pub use found_rows::{DictionaryOrigin, FoundEntry, FoundKanji, FoundKanjiMeta, F
 pub use kanji_results::{build_kanji_results, is_kanji};
 pub use lookup_candidate::{LookupCandidate, candidate_headwords, lookup_candidates};
 pub use lookup_result::{
-    DictionaryDefinitions, DictionaryFrequency, DictionaryPronunciation, KanjiResult, LookupResult,
+    DictionaryDefinitions, DictionaryFrequency, DictionaryPronunciation, DictionaryStylesheet,
+    KanjiResult, LookupResult,
 };

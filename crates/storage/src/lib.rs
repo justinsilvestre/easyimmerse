@@ -18,7 +18,9 @@ use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use easyimmerse_core::dictionary::{DictionaryMedia, DictionarySource};
-use easyimmerse_core::lookup::{FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta};
+use easyimmerse_core::lookup::{
+    DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
+};
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
 use easyimmerse_core::project::{ProjectId, ProjectSummary};
 use rusqlite::Connection;
@@ -160,6 +162,14 @@ impl Storage {
         characters: &[String],
     ) -> Result<Vec<FoundKanjiMeta>, StorageError> {
         self.with_connection(|conn| dictionaries::find_kanji_meta(conn, characters))
+    }
+
+    /// Returns the stylesheets of the given dictionaries in import order, leaving out dictionaries that have none.
+    pub fn find_dictionary_stylesheets(
+        &self,
+        dictionary_ids: &[String],
+    ) -> Result<Vec<DictionaryStylesheet>, StorageError> {
+        self.with_connection(|conn| dictionaries::find_stylesheets(conn, dictionary_ids))
     }
 
     /// Returns a file stored with a dictionary, by the path its definitions use.

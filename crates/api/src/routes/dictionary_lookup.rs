@@ -1,8 +1,8 @@
 use axum::Json;
 use axum::extract::{Query, State};
 use easyimmerse_core::lookup::{
-    KanjiResult, LookupResult, build_kanji_results, build_lookup_results, candidate_headwords,
-    is_kanji, lookup_candidates,
+    DictionaryStylesheet, KanjiResult, LookupResult, build_kanji_results, build_lookup_results,
+    candidate_headwords, is_kanji, lookup_candidates,
 };
 use easyimmerse_storage::{Storage, StorageError};
 use serde::{Deserialize, Serialize};
@@ -29,6 +29,8 @@ pub struct LookupResponse {
     pub results: Vec<LookupResult>,
     /// The kanji dictionary entries for the first character, when it is a kanji.
     pub kanji: Vec<KanjiResult>,
+    /// The stylesheets of the dictionaries whose definitions appear in `results`, each once.
+    pub stylesheets: Vec<DictionaryStylesheet>,
 }
 
 #[utoipa::path(
@@ -64,10 +66,24 @@ fn look_up(storage: &Storage, text: &str, language: &str) -> Result<LookupRespon
     terms.sort();
     terms.dedup();
     let term_meta = storage.find_term_meta(&terms)?;
+    let results = build_lookup_results(&candidates, found_entries, &term_meta);
+    // Stylesheets come with each lookup rather than from a route of their own, so that entries never show unstyled first.
     Ok(LookupResponse {
-        results: build_lookup_results(&candidates, found_entries, &term_meta),
+        stylesheets: storage.find_dictionary_stylesheets(&defining_dictionary_ids(&results))?,
+        results,
         kanji: look_up_kanji(storage, text)?,
     })
+}
+
+fn defining_dictionary_ids(results: &[LookupResult]) -> Vec<String> {
+    let mut ids: Vec<String> = results
+        .iter()
+        .flat_map(|result| &result.definitions)
+        .map(|definitions| definitions.dictionary_id.clone())
+        .collect();
+    ids.sort();
+    ids.dedup();
+    ids
 }
 
 fn look_up_kanji(storage: &Storage, text: &str) -> Result<Vec<KanjiResult>, StorageError> {

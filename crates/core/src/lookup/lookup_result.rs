@@ -63,3 +63,13 @@ pub struct KanjiResult {
     pub tags: Vec<TagDefinition>,
     pub frequencies: Vec<DictionaryFrequency>,
 }
+
+/// The CSS that a dictionary ships for its own entries, unsanitized.
+/// Displays must sanitize it and confine it to that dictionary's entries before applying it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct DictionaryStylesheet {
+    pub dictionary_id: String,
+    pub css: String,
+}
