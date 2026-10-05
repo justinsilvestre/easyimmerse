@@ -125,6 +125,54 @@ mod tests {
         assert!(yields("lach", "lachen", "v", &["imperative sg"]));
     }
 
+    mod for_an_irregular_verb {
+        use crate::deinflection::german::deinflect;
+        use crate::deinflection::german::test_support::yields;
+
+        #[test]
+        fn names_only_the_2nd_plural_where_the_3rd_singular_is_irregular() {
+            assert!(yields("lauft", "laufen", "v", &["present 2pl"]));
+        }
+
+        #[test]
+        fn leaves_out_the_combined_reading() {
+            assert!(!yields("lauft", "laufen", "v", &["present 3sg/2pl"]));
+        }
+
+        #[test]
+        fn names_the_2nd_plural_of_fahren() {
+            assert!(yields("fahrt", "fahren", "v", &["present 2pl"]));
+        }
+
+        #[test]
+        fn keeps_the_imperative_plural() {
+            assert!(yields("nehmt", "nehmen", "v", &["imperative pl"]));
+        }
+
+        #[test]
+        fn drops_a_regular_2nd_singular() {
+            assert!(
+                !deinflect("laufst")
+                    .iter()
+                    .any(|candidate| candidate.term == "laufen")
+            );
+        }
+
+        #[test]
+        fn drops_a_regular_past() {
+            assert!(
+                !deinflect("gehte")
+                    .iter()
+                    .any(|candidate| candidate.term == "gehen")
+            );
+        }
+
+        #[test]
+        fn narrows_the_readings_of_a_particle_verb() {
+            assert!(yields("anlauft", "anlaufen", "v", &["present 2pl"]));
+        }
+    }
+
     #[test]
     fn undoes_the_weak_past() {
         assert!(yields("lachte", "lachen", "v", &["past 1sg/3sg"]));

@@ -7,6 +7,7 @@
 mod inflection;
 mod lexicon;
 mod opening;
+mod particles;
 mod rule;
 mod rules;
 mod search;
@@ -36,7 +37,7 @@ pub fn deinflect(text: &str) -> Vec<Deinflection> {
 /// (rufe, rief, ruft), or an imperative. Participles, infinitives and declined forms are not finite.
 pub fn is_finite_verb(deinflection: &Deinflection) -> bool {
     deinflection.word_classes.iter().any(|class| class == "v")
-        && matches!(deinflection.inflections.as_slice(), [only] if inflection::FINITE.contains(&only.as_str()))
+        && matches!(deinflection.inflections.as_slice(), [only] if inflection::finite_form(only).is_some())
 }
 
 /// Whether `deinflection` is an imperative singular, which lookup ranks below other readings,
@@ -130,6 +131,36 @@ mod tests {
     #[test]
     fn deinflects_a_swiss_spelling() {
         assert!(yields("Strassen", "Straße", "n", &["plural"]));
+    }
+
+    #[test]
+    fn deinflects_the_participle_of_a_verb_with_a_word_list_particle() {
+        assert!(yields("losgegangen", "losgehen", "v", &["past participle"]));
+    }
+
+    #[test]
+    fn deinflects_the_participle_of_a_verb_with_an_adjective_first_part() {
+        assert!(yields(
+            "festgehalten",
+            "festhalten",
+            "v",
+            &["past participle"]
+        ));
+    }
+
+    #[test]
+    fn deinflects_the_participle_of_a_verb_with_a_colloquial_particle() {
+        assert!(yields(
+            "reingekommen",
+            "reinkommen",
+            "v",
+            &["past participle"]
+        ));
+    }
+
+    #[test]
+    fn deinflects_a_joined_past_of_a_verb_with_a_noun_first_part() {
+        assert!(yields("teilnahm", "teilnehmen", "v", &["past 1sg/3sg"]));
     }
 
     #[test]

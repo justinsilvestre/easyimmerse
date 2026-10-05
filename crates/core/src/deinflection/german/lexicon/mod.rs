@@ -3,6 +3,7 @@
 pub mod comparison;
 mod determiners;
 mod irregular_verbs;
+mod regular_readings;
 mod suppletive_forms;
 mod verb_forms;
 
@@ -13,6 +14,7 @@ use super::inflection::DECLINED;
 use super::opening::Opening;
 use super::rule::Rule;
 use super::word_class::WordClasses as C;
+pub(super) use regular_readings::legitimate_reading;
 use suppletive_forms::SuppletiveForm;
 use verb_forms::{lexical, verb_rules};
 

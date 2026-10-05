@@ -11,7 +11,7 @@ const WIKIDATA_CASES: &str = include_str!(concat!(
 ));
 
 /// Lexemes with forms that Wikidata lists but the deinflector does not trace back, by reason.
-const EXPECTED_FAILURES: [&[&str]; 6] = [
+const EXPECTED_FAILURES: [&[&str]; 5] = [
     // Errors in Wikidata: misspelled forms (Commitmentents, Zauberspüche, weitergegeschert, kucktenm, Schad).
     &[
         "Commitment",
@@ -88,8 +88,6 @@ const EXPECTED_FAILURES: [&[&str]; 6] = [
         "Triumphbau",
         "Kasernenbau",
     ],
-    // Verbs whose first part is not a particle of the Amtliches Regelwerk, § 34 (1), or is used as one (voll-).
-    &["aneinanderreihen", "übereinandertürmen", "vollpfropfen"],
     // A consonant doubled before the comparative ending (hip, hipper), which no source describes.
     &["hip"],
 ];
