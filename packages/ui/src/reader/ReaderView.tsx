@@ -14,7 +14,11 @@ import { AppearancePanel } from "./AppearancePanel.tsx";
 import { ChapterEnd } from "./ChapterEnd.tsx";
 import { ChapterText } from "./ChapterText.tsx";
 import { ContentsPanel } from "./ContentsPanel.tsx";
-import { sectionIndexAt, sectionsOf } from "./chapterSections.ts";
+import {
+  locationAtSectionEdge,
+  sectionIndexAt,
+  sectionsOf,
+} from "./chapterSections.ts";
 import { chapterLabelOf, chapterTitleOf } from "./chapterTitles.ts";
 import { LookupAnchor } from "./LookupAnchor.tsx";
 import {
@@ -160,30 +164,17 @@ export function ReaderView(props: ReaderViewProps) {
   const goToChapter = (index: number, edge: "start" | "end") => {
     const paragraphs = document.chapters[index]?.paragraphs;
     if (!paragraphs) return;
-    const last = paragraphs.length - 1;
-    jumpTo(
-      edge === "start"
-        ? { chapterIndex: index, paragraphIndex: 0, offset: 0 }
-        : {
-            chapterIndex: index,
-            paragraphIndex: Math.max(0, last),
-            offset: paragraphs[last]?.length ?? 0,
-          },
-    );
+    const whole = { start: 0, end: paragraphs.length };
+    jumpTo(locationAtSectionEdge(index, paragraphs, whole, edge));
   };
+  /** Moves to a section of the chapter, or on to the neighbouring chapter past either end. */
   const goToSection = (index: number, edge: "start" | "end") => {
     const section = sections[index];
-    if (!section) return goToChapter(chapterIndex + Math.sign(index), edge);
-    const last = section.end - 1;
-    jumpTo(
-      edge === "start"
-        ? { chapterIndex, paragraphIndex: section.start, offset: 0 }
-        : {
-            chapterIndex,
-            paragraphIndex: last,
-            offset: chapter.paragraphs[last]?.length ?? 0,
-          },
-    );
+    if (section)
+      jumpTo(
+        locationAtSectionEdge(chapterIndex, chapter.paragraphs, section, edge),
+      );
+    else goToChapter(index < 0 ? chapterIndex - 1 : chapterIndex + 1, edge);
   };
   const turn = (direction: "next" | "previous") => {
     if (isPaged) turner.current?.[direction]();

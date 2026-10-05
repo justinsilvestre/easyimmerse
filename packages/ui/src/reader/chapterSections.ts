@@ -1,3 +1,5 @@
+import type { ReaderLocation } from "./readingProgress.ts";
+
 /**
  * A run of consecutive paragraphs in a chapter, from `start` up to but not including `end`.
  * The paged layout shows one section at a time, so that a long chapter is never laid out whole.
@@ -46,4 +48,21 @@ export function sectionIndexAt(
 ): number {
   const index = sections.findIndex((section) => paragraphIndex < section.end);
   return index === -1 ? sections.length - 1 : index;
+}
+
+/** The location at the start of the section's first paragraph, or at the end of its last. */
+export function locationAtSectionEdge(
+  chapterIndex: number,
+  paragraphs: readonly string[],
+  section: ChapterSection,
+  edge: "start" | "end",
+): ReaderLocation {
+  if (edge === "start" || section.end <= section.start)
+    return { chapterIndex, paragraphIndex: section.start, offset: 0 };
+  const last = section.end - 1;
+  return {
+    chapterIndex,
+    paragraphIndex: last,
+    offset: paragraphs[last]?.length ?? 0,
+  };
 }

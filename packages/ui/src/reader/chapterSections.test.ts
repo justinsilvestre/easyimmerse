@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { sectionIndexAt, sectionsOf } from "./chapterSections.ts";
+import {
+  locationAtSectionEdge,
+  sectionIndexAt,
+  sectionsOf,
+} from "./chapterSections.ts";
 
 describe("sectionsOf", () => {
   it("keeps a chapter under the limit in one section", () => {
@@ -45,5 +49,29 @@ describe("sectionIndexAt", () => {
 
   it("finds the last section for a paragraph past the end", () => {
     expect(sectionIndexAt(sections, 9)).toBe(1);
+  });
+});
+
+describe("locationAtSectionEdge", () => {
+  const paragraphs = ["ab", "cde", "fghi"];
+
+  it("finds the start of the section's first paragraph", () => {
+    expect(
+      locationAtSectionEdge(3, paragraphs, { start: 1, end: 3 }, "start"),
+    ).toEqual({ chapterIndex: 3, paragraphIndex: 1, offset: 0 });
+  });
+
+  it("finds the end of the section's last paragraph", () => {
+    expect(
+      locationAtSectionEdge(3, paragraphs, { start: 0, end: 2 }, "end"),
+    ).toEqual({ chapterIndex: 3, paragraphIndex: 1, offset: 3 });
+  });
+
+  it("finds the start of an empty section for either edge", () => {
+    expect(locationAtSectionEdge(3, [], { start: 0, end: 0 }, "end")).toEqual({
+      chapterIndex: 3,
+      paragraphIndex: 0,
+      offset: 0,
+    });
   });
 });
