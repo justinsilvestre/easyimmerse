@@ -71,6 +71,10 @@ pub fn not_found(message: impl Into<String>) -> ApiFailure {
     ApiFailure::new(StatusCode::NOT_FOUND, "not_found", message)
 }
 
+pub fn conflict(message: impl Into<String>) -> ApiFailure {
+    ApiFailure::new(StatusCode::CONFLICT, "conflict", message)
+}
+
 pub fn internal(message: impl Into<String>) -> ApiFailure {
     ApiFailure::new(StatusCode::INTERNAL_SERVER_ERROR, "internal", message)
 }
@@ -84,6 +88,7 @@ impl From<StorageError> for ApiFailure {
             | StorageError::MediaFileNotFound(_)
             | StorageError::FlashcardNotFound(_)
             | StorageError::SubtitleTrackNotFound(_) => not_found(error.to_string()),
+            StorageError::FlashcardIdTaken(_) => conflict(error.to_string()),
             StorageError::Dictionary(error) => error.into(),
             _ => internal(error.to_string()),
         }

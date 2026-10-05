@@ -340,7 +340,10 @@ export interface paths {
         };
         get: operations["listFlashcards"];
         put?: never;
-        /** Saves a new flashcard. Its media file, when named, must belong to the project. */
+        /**
+         * Saves a new flashcard under the id the client chose for it. Sending the same id again replaces that flashcard,
+         *     so that a retried request cannot create a second one. Its media file, when named, must belong to the project.
+         */
         post: operations["createFlashcard"];
         delete?: never;
         options?: never;
@@ -1015,6 +1018,15 @@ export interface components {
             last_modified_ms: number;
             /** Format: int64 */
             size: number;
+        };
+        /**
+         * @description What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.
+         *     Sending the same id again replaces that flashcard, so that a retried request cannot create a second one.
+         */
+        NewFlashcard: {
+            draft: components["schemas"]["FlashcardDraft"];
+            /** @description Thirty-two lowercase hexadecimal digits, as in the ids the app makes. */
+            id: components["schemas"]["FlashcardId"];
         };
         ParseLocalDocumentRequest: {
             format?: components["schemas"]["DocumentFormat"] | null;
@@ -2680,7 +2692,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["FlashcardDraft"];
+                "application/json": components["schemas"]["NewFlashcard"];
             };
         };
         responses: {
@@ -2691,6 +2703,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Flashcard"];
+                };
+            };
+            /** @description The id is not 32 lowercase hexadecimal digits */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Missing or invalid token */
@@ -2704,6 +2725,15 @@ export interface operations {
             };
             /** @description No such project, or no such media file in it */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The id belongs to a flashcard of another project */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

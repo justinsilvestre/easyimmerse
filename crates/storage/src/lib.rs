@@ -148,9 +148,10 @@ impl Storage {
     pub fn create_flashcard(
         &self,
         project_id: &ProjectId,
+        id: &FlashcardId,
         draft: &FlashcardDraft,
     ) -> Result<Flashcard, StorageError> {
-        self.write(|conn| flashcards::create_flashcard(conn, project_id, draft))
+        self.write(|conn| flashcards::create_flashcard(conn, project_id, id, draft))
     }
 
     pub fn update_flashcard(

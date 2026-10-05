@@ -1742,7 +1742,7 @@
         "tags": [
           "flashcards"
         ],
-        "summary": "Saves a new flashcard. Its media file, when named, must belong to the project.",
+        "summary": "Saves a new flashcard under the id the client chose for it. Sending the same id again replaces that flashcard,\nso that a retried request cannot create a second one. Its media file, when named, must belong to the project.",
         "operationId": "createFlashcard",
         "parameters": [
           {
@@ -1759,7 +1759,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FlashcardDraft"
+                "$ref": "#/components/schemas/NewFlashcard"
               }
             }
           },
@@ -1776,6 +1776,16 @@
               }
             }
           },
+          "400": {
+            "description": "The id is not 32 lowercase hexadecimal digits",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing or invalid token",
             "content": {
@@ -1788,6 +1798,16 @@
           },
           "404": {
             "description": "No such project, or no such media file in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The id belongs to a flashcard of another project",
             "content": {
               "application/json": {
                 "schema": {
@@ -4922,6 +4942,23 @@
           }
         ],
         "description": "Where the bytes of a media file come from.\n\nThe `path` variant names a file on the machine running the server. The `browser_file`\nvariant describes a file the web app holds in memory; the server never sees its bytes,\nso it records only what identifies the file when the user picks it again."
+      },
+      "NewFlashcard": {
+        "type": "object",
+        "description": "What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.\nSending the same id again replaces that flashcard, so that a retried request cannot create a second one.",
+        "required": [
+          "id",
+          "draft"
+        ],
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/FlashcardDraft"
+          },
+          "id": {
+            "$ref": "#/components/schemas/FlashcardId",
+            "description": "Thirty-two lowercase hexadecimal digits, as in the ids the app makes."
+          }
+        }
       },
       "ParseLocalDocumentRequest": {
         "type": "object",

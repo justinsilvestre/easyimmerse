@@ -28,6 +28,8 @@ pub enum StorageError {
     MediaFileNotFound(String),
     #[error("no flashcard has the id {0:?}")]
     FlashcardNotFound(String),
+    #[error("the flashcard id {0:?} belongs to another project")]
+    FlashcardIdTaken(String),
     #[error("no subtitle track has the id {0:?}")]
     SubtitleTrackNotFound(String),
 }
