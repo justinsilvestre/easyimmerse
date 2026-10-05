@@ -48,10 +48,14 @@ function renderStatus(...cards: UnsavedCard[]) {
   return { unsavedCardStore, noticeStore, openedMediaFiles };
 }
 
-const status = () =>
-  within(screen.getByRole("region", { name: "Notifications" })).getByRole(
-    "status",
-  );
+/** The status line's count, the live paragraph of the notice region. */
+const status = () => {
+  const count = screen
+    .getByRole("region", { name: "Notifications" })
+    .querySelector("p[aria-live]");
+  if (count === null) throw new Error("The status line has no count.");
+  return count;
+};
 
 const expand = () =>
   fireEvent.click(screen.getByRole("button", { name: "Show" }));
@@ -60,6 +64,11 @@ describe("UnsavedCardsStatus", () => {
   it("counts the flashcards not saved", () => {
     renderStatus(exampleUnsavedCard("Hund"), exampleUnsavedCard("Katze"));
     expect(status().textContent).toBe("2 flashcards not saved");
+  });
+
+  it("announces its count politely", () => {
+    renderStatus(exampleUnsavedCard("Hund"));
+    expect(status().getAttribute("aria-live")).toBe("polite");
   });
 
   it("counts one flashcard in the singular", () => {

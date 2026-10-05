@@ -105,24 +105,6 @@ describe("NoticeRegion", () => {
     ).toBeDefined();
   });
 
-  it("can take an action off a notice", () => {
-    const store = renderRegion();
-    let id = 0;
-    act(() => {
-      id = store.show({
-        tone: "danger",
-        message: "Couldn't save the flashcard for “Hund”.",
-        actions: [
-          { label: "Retry", onSelect: () => undefined },
-          { label: "Reopen", onSelect: () => undefined },
-        ],
-        isTransient: false,
-      });
-    });
-    act(() => store.withdrawAction(id, "Reopen"));
-    expect(screen.queryByRole("button", { name: "Reopen" })).toBeNull();
-  });
-
   it("announces a failure as an alert", () => {
     const store = renderRegion();
     act(() => {

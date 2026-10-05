@@ -27,8 +27,12 @@ export function UnsavedCardsStatus() {
       }
     >
       <div className="flex items-center gap-2">
-        {/* Always present, so that its text is announced when it appears. */}
-        <p role="status" className={hasCards ? "flex-1" : "sr-only"}>
+        {/* Always present, so that its text is announced when it appears. Not a status role, which the screens' own statuses keep. */}
+        <p
+          aria-live="polite"
+          aria-atomic
+          className={hasCards ? "flex-1" : "sr-only"}
+        >
           {countText(cards.length)}
         </p>
         {hasCards && canRetry && (

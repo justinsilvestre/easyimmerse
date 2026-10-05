@@ -12,6 +12,7 @@ import {
 import type { EditorAction } from "./editFlashcard.ts";
 import { flashcardRetiming } from "./flashcardRetiming.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
+import { useOpeningOfUnsavedCards } from "./unsaved/useOpeningOfUnsavedCards.ts";
 import { useEditedFlashcard } from "./useEditedFlashcard.ts";
 import { useFlashcardRequests } from "./useFlashcardRequests.ts";
 import { useFlashcardSaving } from "./useFlashcardSaving.ts";
@@ -53,6 +54,7 @@ export function useMediaFlashcards(
     openSession,
   );
   const { replaceOpenCard } = saving;
+  useOpeningOfUnsavedCards(mediaFileId, saving.reopen);
   return {
     flashcards,
     segments: flashcardSegmentsOf(flashcardsOnWaveform(flashcards, edited)),

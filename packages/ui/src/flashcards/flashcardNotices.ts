@@ -10,25 +10,22 @@ export const flashcardNotices = {
     isTransient: true,
   }),
   /**
-   * A save off screen failed; the card's edits wait in the notice until it is retried or, while the editor is there, reopened.
-   * Dismissing the notice discards them.
+   * The server refused a card's save, so that sending it again cannot succeed. The card stays in the list of unsaved flashcards;
+   * dismissing the notice only hides it.
    */
-  saveFailed: (
+  saveRejected: (
     word: string,
-    retry: () => void,
-    discard: () => void,
-    reopen?: () => void,
+    { open, discard }: { open: () => void; discard: () => void },
   ): NoticeContent => ({
     tone: "danger",
-    message: `Couldn't save the flashcard for “${word}”.`,
+    message: `The server refused the flashcard for “${word}”.`,
     actions: [
-      { label: "Retry", onSelect: retry },
-      ...(reopen ? [{ label: "Reopen", onSelect: reopen }] : []),
+      { label: "Open", onSelect: open },
+      { label: "Discard", onSelect: discard },
     ],
     isTransient: false,
-    onDismiss: discard,
   }),
-  /** A changed card was closed without saving, or its failure notice dismissed; Undo brings its edits back. */
+  /** A changed card was closed without saving, or an unsaved one discarded; Undo brings its edits back. */
   discarded: (word: string, undo: () => void): NoticeContent => ({
     tone: "info",
     message: `Discarded your changes to the flashcard for “${word}”.`,

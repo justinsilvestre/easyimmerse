@@ -26,7 +26,7 @@ export function useOffScreenSaving(
   reopen: (card: EditedFlashcard) => void,
 ) {
   const [queue] = useState(createSaveQueue);
-  const leftCards = useLeftCardNotices(reopen);
+  const leftCards = useLeftCardNotices(requests.projectId, reopen);
   const { track } = useUnsavedWorkTracking();
   const undo = useSaveUndo(queue, requests);
   const timedOut = useTimedOutSaves(queue, requests);
@@ -50,12 +50,12 @@ export function useOffScreenSaving(
     );
     return saving && timedOut.watch(flashcardId, before, saving);
   };
-  const showFailure = (card: EditedFlashcard) =>
-    leftCards.showFailure(
-      card,
-      () => saveOffScreen(card, false),
-      () => timedOut.cleanUpAfterDiscard(card),
-    );
+  /** Lists a card whose save failed with `error` among the unsaved flashcards. */
+  const showFailure = (card: EditedFlashcard, error: unknown) =>
+    leftCards.listFailure(card, error, {
+      retry: () => saveOffScreen(card, false),
+      discard: () => timedOut.cleanUpAfterDiscard(card),
+    });
   /** A saved flashcard as the latest work on it left it, which the list of flashcards may not show yet. */
   const latestOf = (flashcard: Flashcard) => queue.latestOf(flashcard);
   /** What a card's flashcard holds before its save: the draft last sent for a saved one, or nothing for a new one. */
@@ -69,8 +69,11 @@ export function useOffScreenSaving(
     if (!saving) return;
     track(
       saving.then(
-        (saved) => offersUndo && undo.offer(card, saved, before),
-        () => showFailure(card),
+        (saved) => {
+          leftCards.listSaved(card);
+          if (offersUndo) undo.offer(card, saved, before);
+        },
+        (error: unknown) => showFailure(card, error),
       ),
     );
   }

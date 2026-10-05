@@ -35,11 +35,12 @@ export function useFlashcardSaving(
   openSession: RefObject<CardSession | null>,
 ) {
   const dispatch = useAppDispatch();
-  const offScreen = useOffScreenSaving(requests, (card) =>
+  /** Brings a card back to the editor, dealing with the card open there as it leaves. */
+  const reopen = (card: EditedFlashcard) =>
     replaceOpenCard(() =>
       dispatchEdited({ type: "restored", card, session: createCardSession() }),
-    ),
-  );
+    );
+  const offScreen = useOffScreenSaving(requests, reopen);
   const [isSaved, setSaved] = useState(false);
   const isOnScreen = (card: EditedFlashcard) =>
     offScreen.isScreenMounted() && openSession.current === card.session;
@@ -96,10 +97,10 @@ export function useFlashcardSaving(
           dispatchEdited({ type: "saved", session: card.session });
           if (wasOnScreen) setSaved(true);
         },
-        () => {
+        (error: unknown) => {
           const wasOnScreen = isOnScreen(card);
           dispatchEdited({ type: "saveFailed", session: card.session });
-          if (!wasOnScreen) return offScreen.showFailure(card);
+          if (!wasOnScreen) return offScreen.showFailure(card, error);
           dispatch(
             actions.notificationRequested("The flashcard could not be saved"),
           );
@@ -127,6 +128,7 @@ export function useFlashcardSaving(
     isSaved,
     dismissSaved: () => setSaved(false),
     replaceOpenCard,
+    reopen,
     /** Closes a card without saving it; a changed one can be brought back with Undo. */
     discard: (card: EditedFlashcard) => {
       dispatchEdited({ type: "closed" });

@@ -24,6 +24,7 @@ export function useFlashcardRequests(projectId: string) {
   const replace = (flashcard: Flashcard, changes: Partial<FlashcardDraft>) =>
     requestReplace(flashcard, changes).unwrap();
   return {
+    projectId,
     replace,
     /**
      * Sends a card as the editor holds it: a new card is created under its own id, a saved one replaced.

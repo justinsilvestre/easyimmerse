@@ -22,28 +22,6 @@ describe("createUnsavedCardStore", () => {
     expect(store.list().map((listed) => listed.isRejected)).toEqual([true]);
   });
 
-  it("holds a listed card as unsaved work once, however often it is put", () => {
-    const held: string[] = [];
-    const store = createUnsavedCardStore({
-      onHeld: () => held.push("held"),
-      onReleased: () => held.push("released"),
-    });
-    store.put(unsavedCard());
-    store.put(unsavedCard());
-    expect(held).toEqual(["held"]);
-  });
-
-  it("releases a card once it is removed", () => {
-    const held: string[] = [];
-    const store = createUnsavedCardStore({
-      onHeld: () => held.push("held"),
-      onReleased: () => held.push("released"),
-    });
-    store.put(unsavedCard());
-    store.remove("c1");
-    expect(held).toEqual(["held", "released"]);
-  });
-
   describe("on retry", () => {
     it("sends the card again", () => {
       const store = createUnsavedCardStore();

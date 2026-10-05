@@ -19,6 +19,8 @@ import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { savedFlashcard } from "../testSupport/renderMediaScreen.tsx";
 import { exampleFlashcard } from "./exampleFlashcard.ts";
+import { createUnsavedCardStore } from "./unsaved/unsavedCardStore.ts";
+import { useUnsavedCardActions } from "./unsaved/useUnsavedCardActions.ts";
 import { useMediaFlashcards } from "./useMediaFlashcards.ts";
 
 afterEach(() => {
@@ -77,10 +79,14 @@ function createDraft(word: string): FlashcardDraft {
 }
 
 /** A backend that answers flashcard saves with success or, when `savesFail`, with failure. */
-function createFlashcardBackend(savesFail: boolean) {
-  const saveAnswer = savesFail
-    ? fakeFailure({ status: 500, message: "The disk is full" })
-    : savedFlashcard;
+type SaveOutcome = "succeed" | "fail" | "reject";
+
+function createFlashcardBackend(outcome: SaveOutcome) {
+  const saveAnswer = {
+    succeed: savedFlashcard,
+    fail: fakeFailure({ status: 500, message: "The disk is full" }),
+    reject: fakeFailure({ status: 422, message: "The word is too long" }),
+  }[outcome];
   return createFakeBackendClient({
     ...fixtureResponses,
     "GET /projects/p1/flashcards": { flashcards: [savedFlashcard] },
@@ -92,14 +98,15 @@ function createFlashcardBackend(savesFail: boolean) {
 
 /**
  * Renders the hook over a backend whose flashcard saves wait until the test lets them through,
- * and then succeed or, while `savesFail`, fail.
+ * and then succeed, or, while `savesFail`, fail, or, while `savesRejected`, are refused.
  */
-function renderFlashcards({ savesFail = false } = {}) {
-  const backends = {
-    failing: createFlashcardBackend(true),
-    succeeding: createFlashcardBackend(false),
-  };
-  let backend = savesFail ? backends.failing : backends.succeeding;
+function renderFlashcards({ savesFail = false, savesRejected = false } = {}) {
+  const outcome: SaveOutcome = savesRejected
+    ? "reject"
+    : savesFail
+      ? "fail"
+      : "succeed";
+  let backend = createFlashcardBackend(outcome);
   const requests: BackendRequest[] = [];
   const held: (() => void)[] = [];
   const holdingClient = {
@@ -112,24 +119,44 @@ function renderFlashcards({ savesFail = false } = {}) {
   };
   const { store, playerRegistry, effects } = createTestAppStore(holdingClient);
   const noticeStore = createNoticeStore();
+  const unsavedCardStore = createUnsavedCardStore();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <AppStoreProviders
       store={store}
       playerRegistry={playerRegistry}
       noticeStore={noticeStore}
+      unsavedCardStore={unsavedCardStore}
     >
       {children}
     </AppStoreProviders>
   );
-  const rendered = renderHook(() => useMediaFlashcards("p1", "m1", false), {
-    wrapper,
-  });
+  const renderScreen = () =>
+    renderHook(
+      () => ({
+        ...useMediaFlashcards("p1", "m1", false),
+        unsavedCardActions: useUnsavedCardActions(),
+      }),
+      { wrapper },
+    );
+  const rendered = renderScreen();
   const posts = () => requests.filter((request) => request.method === "POST");
   const puts = () => requests.filter((request) => request.method === "PUT");
   /** Makes the saves let through from now on succeed. */
   const letSavesSucceed = () => {
-    backend = backends.succeeding;
+    backend = createFlashcardBackend("succeed");
   };
+  /** The words of the flashcards listed as not saved. */
+  const unsavedWords = () =>
+    unsavedCardStore.list().map((listed) => listed.card.editor.content.word);
+  /** Retries, opens or discards the listed unsaved flashcard for `word`, as its buttons in the status line do. */
+  const actOnUnsaved = (word: string, action: "retry" | "open" | "discard") =>
+    act(() => {
+      const listed = unsavedCardStore
+        .list()
+        .find((unsaved) => unsaved.card.editor.content.word === word);
+      if (listed)
+        rendered.result.current.unsavedCardActions[action](listed.flashcardId);
+    });
   /** Lets the save held at `index` reach the backend, leaving the others held. */
   const letSaveThrough = (index: number) =>
     act(async () => {
@@ -144,11 +171,6 @@ function renderFlashcards({ savesFail = false } = {}) {
         ?.actions?.find((action) => action.label === label)
         ?.onSelect(),
     );
-  /** Dismisses the notice at `index` as the user would. */
-  const dismissNoticeAt = (index: number) => {
-    const notice = noticeStore.list()[index];
-    if (notice) noticeStore.dismissByUser(notice.id);
-  };
   /** Dismisses the latest notice as the user would. */
   const dismissNotice = () =>
     act(() => {
@@ -197,8 +219,10 @@ function renderFlashcards({ savesFail = false } = {}) {
     chooseFor,
     letSaveThrough,
     dismissNotice,
-    dismissNoticeAt,
     effects,
+    unsavedWords,
+    actOnUnsaved,
+    renderScreen,
   };
 }
 
@@ -340,23 +364,51 @@ describe("useMediaFlashcards", () => {
       act(() => result.current.start(createDraft("Katze")));
       await vi.waitFor(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      await vi.waitFor(() => expect(rendered.notices()).toHaveLength(1));
+      await vi.waitFor(() => expect(rendered.unsavedWords()).toHaveLength(1));
       return rendered;
     }
 
-    it("leaves a notice naming the card, with Retry and Reopen", async () => {
+    /** Retries the listed card for “Hündin” and lets the retry through. */
+    async function retryHündin(rendered: ReturnType<typeof renderFlashcards>) {
+      rendered.actOnUnsaved("Hündin", "retry");
+      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await rendered.letSavesThrough();
+      await flushPendingWork();
+    }
+
+    it("lists the card among the flashcards not saved", async () => {
+      const { unsavedWords } = await failOffScreen();
+      expect(unsavedWords()).toEqual(["Hündin"]);
+    });
+
+    it("gives the card no notice of its own, since a retry may still succeed", async () => {
       const { notices } = await failOffScreen();
-      expect(notices()).toEqual([
-        ["Couldn't save the flashcard for “Hündin”.", "Retry", "Reopen"],
-      ]);
+      expect(notices()).toEqual([]);
+    });
+
+    it("sends nothing again until a retry is asked for", async () => {
+      const { held } = await failOffScreen();
+      await flushPendingWork();
+      expect(held).toHaveLength(0);
     });
 
     it("sends the card again on Retry", async () => {
-      const { held, letSavesThrough, posts, choose } = await failOffScreen();
-      choose("Retry");
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-      await letSavesThrough();
-      expect(sentWord(posts()[1])).toBe("Hündin");
+      const rendered = await failOffScreen();
+      await retryHündin(rendered);
+      expect(sentWord(rendered.posts()[1])).toBe("Hündin");
+    });
+
+    it("keeps the card listed when the retry fails too", async () => {
+      const rendered = await failOffScreen();
+      await retryHündin(rendered);
+      expect(rendered.unsavedWords()).toEqual(["Hündin"]);
+    });
+
+    it("takes the card off the list once a retry succeeds", async () => {
+      const rendered = await failOffScreen();
+      rendered.letSavesSucceed();
+      await retryHündin(rendered);
+      expect(rendered.unsavedWords()).toEqual([]);
     });
 
     it("creates the card under an id it chose, of 32 lowercase hexadecimal digits", async () => {
@@ -365,19 +417,17 @@ describe("useMediaFlashcards", () => {
     });
 
     it("sends the card again on Retry under the id of its first try, so that it cannot be created twice", async () => {
-      const { held, letSavesThrough, posts, choose } = await failOffScreen();
-      choose("Retry");
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-      await letSavesThrough();
-      expect(sentId(posts()[1])).toBe(sentId(posts()[0]));
+      const rendered = await failOffScreen();
+      await retryHündin(rendered);
+      expect(sentId(rendered.posts()[1])).toBe(sentId(rendered.posts()[0]));
     });
 
-    it("saves a reopened card under the id of its first try", async () => {
-      const { result, held, letSavesThrough, posts, choose } =
+    it("saves an opened card under the id of its first try", async () => {
+      const { result, held, letSavesThrough, posts, actOnUnsaved } =
         await failOffScreen();
-      choose("Reopen");
+      actOnUnsaved("Hündin", "open");
       act(() => result.current.save());
-      // The untouched card the reopened one replaces is saved in the background too.
+      // The untouched card the opened one replaces is saved in the background too.
       await vi.waitFor(() => expect(held).toHaveLength(2));
       await letSavesThrough();
       const [first, again] = posts().filter(
@@ -386,17 +436,23 @@ describe("useMediaFlashcards", () => {
       expect(sentId(again)).toBe(sentId(first));
     });
 
-    it("puts the card back in the editor with its edits on Reopen", async () => {
-      const { result, choose } = await failOffScreen();
-      choose("Reopen");
+    it("puts the card back in the editor with its edits on Open", async () => {
+      const { result, actOnUnsaved } = await failOffScreen();
+      actOnUnsaved("Hündin", "open");
       expect(result.current.edited?.editor.content.word).toBe("Hündin");
     });
 
-    it("saves the card open in the editor when another is reopened", async () => {
-      const { result, held, letSavesThrough, posts, choose } =
+    it("takes the card off the list on Open", async () => {
+      const { actOnUnsaved, unsavedWords } = await failOffScreen();
+      actOnUnsaved("Hündin", "open");
+      expect(unsavedWords()).toEqual([]);
+    });
+
+    it("saves the card open in the editor when another is opened", async () => {
+      const { result, held, letSavesThrough, posts, actOnUnsaved } =
         await failOffScreen();
       act(() => result.current.edit(typeWord("Kater")));
-      choose("Reopen");
+      actOnUnsaved("Hündin", "open");
       await vi.waitFor(() => expect(held).toHaveLength(1));
       await letSavesThrough();
       expect(sentWord(posts()[1])).toBe("Kater");
@@ -406,7 +462,7 @@ describe("useMediaFlashcards", () => {
       effects: ReturnType<typeof renderFlashcards>["effects"],
     ) => effects.calls.filter((call) => call.type === "guardClose");
 
-    it("keeps the close guard up while the notice holds the edits", async () => {
+    it("keeps the close guard up while the card is listed", async () => {
       const { effects } = await failOffScreen();
       expect(guardCalls(effects)).toEqual([
         { type: "guardClose", isActive: true },
@@ -414,47 +470,81 @@ describe("useMediaFlashcards", () => {
     });
 
     it("lifts the close guard once a retry succeeds", async () => {
-      const { choose, held, letSavesSucceed, letSavesThrough, effects } =
-        await failOffScreen();
-      letSavesSucceed();
-      choose("Retry");
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-      await letSavesThrough();
-      await vi.waitFor(() =>
-        expect(guardCalls(effects).at(-1)).toEqual({
-          type: "guardClose",
-          isActive: false,
-        }),
-      );
-    });
-
-    it("lifts the close guard once the notice is dismissed", async () => {
-      const { dismissNotice, effects } = await failOffScreen();
-      dismissNotice();
-      expect(guardCalls(effects).at(-1)).toEqual({
+      const rendered = await failOffScreen();
+      rendered.letSavesSucceed();
+      await retryHündin(rendered);
+      expect(guardCalls(rendered.effects).at(-1)).toEqual({
         type: "guardClose",
         isActive: false,
       });
     });
 
-    it("offers Undo once the notice is dismissed, since the edits are discarded", async () => {
-      const { dismissNotice, notices } = await failOffScreen();
-      dismissNotice();
-      expect(notices()).toEqual([
-        ["Discarded your changes to the flashcard for “Hündin”.", "Undo"],
-      ]);
+    describe("on Discard", () => {
+      async function discardHündin() {
+        const rendered = await failOffScreen();
+        rendered.actOnUnsaved("Hündin", "discard");
+        return rendered;
+      }
+
+      it("takes the card off the list", async () => {
+        const { unsavedWords } = await discardHündin();
+        expect(unsavedWords()).toEqual([]);
+      });
+
+      it("lifts the close guard", async () => {
+        const { effects } = await discardHündin();
+        expect(guardCalls(effects).at(-1)).toEqual({
+          type: "guardClose",
+          isActive: false,
+        });
+      });
+
+      it("offers Undo", async () => {
+        const { notices } = await discardHündin();
+        expect(notices()).toEqual([
+          ["Discarded your changes to the flashcard for “Hündin”.", "Undo"],
+        ]);
+      });
+
+      it("lists the card again on Undo", async () => {
+        const { choose, unsavedWords } = await discardHündin();
+        choose("Undo");
+        expect(unsavedWords()).toEqual(["Hündin"]);
+      });
     });
 
-    it("brings the failure notice back on Undo", async () => {
-      const { dismissNotice, choose, notices } = await failOffScreen();
-      dismissNotice();
-      choose("Undo");
-      expect(notices()).toEqual([
-        ["Couldn't save the flashcard for “Hündin”.", "Retry", "Reopen"],
-      ]);
+    describe("once the screen has closed", () => {
+      async function failAndClose() {
+        const rendered = await failOffScreen();
+        rendered.unmount();
+        return rendered;
+      }
+
+      it("keeps the card listed", async () => {
+        const { unsavedWords } = await failAndClose();
+        expect(unsavedWords()).toEqual(["Hündin"]);
+      });
+
+      it("still sends the card again on Retry", async () => {
+        const rendered = await failAndClose();
+        rendered.actOnUnsaved("Hündin", "retry");
+        // The untouched card that was open when the screen closed is saved in the background too.
+        await vi.waitFor(() => expect(rendered.held).toHaveLength(2));
+        await rendered.letSavesThrough();
+        expect(
+          rendered.posts().filter((request) => sentWord(request) === "Hündin"),
+        ).toHaveLength(2);
+      });
+
+      it("opens the card on Open once its screen shows again", async () => {
+        const { actOnUnsaved, renderScreen } = await failAndClose();
+        actOnUnsaved("Hündin", "open");
+        const { result } = renderScreen();
+        expect(result.current.edited?.editor.content.word).toBe("Hündin");
+      });
     });
 
-    it("offers only Retry when the failure comes after the screen has closed", async () => {
+    it("lists a card whose save fails after the screen has closed", async () => {
       const rendered = renderFlashcards({ savesFail: true });
       act(() => rendered.result.current.start(createDraft("Hund")));
       act(() => rendered.result.current.edit(typeWord("Hündin")));
@@ -462,17 +552,53 @@ describe("useMediaFlashcards", () => {
       await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
       await rendered.letSavesThrough();
       await vi.waitFor(() =>
-        expect(rendered.notices()).toEqual([
-          ["Couldn't save the flashcard for “Hündin”.", "Retry"],
-        ]),
+        expect(rendered.unsavedWords()).toEqual(["Hündin"]),
       );
     });
+  });
 
-    it("keeps Retry once the screen closes", async () => {
-      const { unmount, notices } = await failOffScreen();
-      unmount();
+  describe("when the server refuses the save of a card that has left the editor", () => {
+    async function rejectOffScreen() {
+      const rendered = renderFlashcards({ savesRejected: true });
+      const { result, held, letSavesThrough } = rendered;
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.start(createDraft("Katze")));
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      await vi.waitFor(() => expect(rendered.unsavedWords()).toHaveLength(1));
+      return rendered;
+    }
+
+    it("gives the card a notice of its own, with Open and Discard but no Retry", async () => {
+      const { notices } = await rejectOffScreen();
       expect(notices()).toEqual([
-        ["Couldn't save the flashcard for “Hündin”.", "Retry"],
+        ["The server refused the flashcard for “Hündin”.", "Open", "Discard"],
+      ]);
+    });
+
+    it("lists the card as refused", async () => {
+      const { unsavedWords } = await rejectOffScreen();
+      expect(unsavedWords()).toEqual(["Hündin"]);
+    });
+
+    it("keeps the card listed once its notice is dismissed", async () => {
+      const { dismissNotice, unsavedWords } = await rejectOffScreen();
+      dismissNotice();
+      expect(unsavedWords()).toEqual(["Hündin"]);
+    });
+
+    it("opens the card from its notice", async () => {
+      const { result, choose } = await rejectOffScreen();
+      choose("Open");
+      expect(result.current.edited?.editor.content.word).toBe("Hündin");
+    });
+
+    it("withdraws its notice once the card is discarded from the list", async () => {
+      const { actOnUnsaved, notices } = await rejectOffScreen();
+      actOnUnsaved("Hündin", "discard");
+      expect(notices()).toEqual([
+        ["Discarded your changes to the flashcard for “Hündin”.", "Undo"],
       ]);
     });
   });
@@ -496,13 +622,9 @@ describe("useMediaFlashcards", () => {
       expect(result.current.isSaved).toBe(false);
     });
 
-    it("leaves a failure notice naming the card", async () => {
-      const { notices } = await leaveWhileSending({ savesFail: true });
-      await vi.waitFor(() =>
-        expect(notices()).toEqual([
-          ["Couldn't save the flashcard for “Hund”.", "Retry", "Reopen"],
-        ]),
-      );
+    it("lists the card among the flashcards not saved when it fails", async () => {
+      const { unsavedWords } = await leaveWhileSending({ savesFail: true });
+      await vi.waitFor(() => expect(unsavedWords()).toEqual(["Hund"]));
     });
   });
 
@@ -931,9 +1053,9 @@ describe("useMediaFlashcards", () => {
         return rendered;
       }
 
-      it("deletes a new card once its failure notice is dismissed", async () => {
-        const { dismissNotice, deletes } = await hangBackgroundSave();
-        dismissNotice();
+      it("deletes a new card once it is discarded", async () => {
+        const { actOnUnsaved, deletes } = await hangBackgroundSave();
+        actOnUnsaved("Hündin", "discard");
         await act(() => vi.advanceTimersByTimeAsync(0));
         expect(deletes()).toHaveLength(1);
       });
@@ -946,12 +1068,12 @@ describe("useMediaFlashcards", () => {
         await act(() => vi.advanceTimersByTimeAsync(0));
         await rendered.letSavesThrough();
         await act(() => vi.advanceTimersByTimeAsync(0));
-        rendered.dismissNotice();
+        rendered.actOnUnsaved("Hündin", "discard");
         await act(() => vi.advanceTimersByTimeAsync(0));
         expect(rendered.deletes()).toHaveLength(0);
       });
 
-      it("leaves alone a flashcard whose later work succeeded, once its failure notice is dismissed", async () => {
+      it("leaves alone a flashcard whose later work succeeded, once it is discarded", async () => {
         const rendered = renderFlashcards();
         const { result } = rendered;
         await act(() => vi.advanceTimersByTimeAsync(0));
@@ -966,12 +1088,7 @@ describe("useMediaFlashcards", () => {
         await rendered.letSavesThrough();
         await act(() => vi.advanceTimersByTimeAsync(0));
         const putsBefore = rendered.puts().length;
-        act(() => {
-          const notice = rendered
-            .notices()
-            .findIndex(([message]) => message?.startsWith("Couldn't save"));
-          if (notice >= 0) rendered.dismissNoticeAt(notice);
-        });
+        rendered.actOnUnsaved(savedFlashcard.content.word, "discard");
         await act(() => vi.advanceTimersByTimeAsync(0));
         await rendered.letSavesThrough();
         expect(rendered.puts()).toHaveLength(putsBefore);
@@ -1026,15 +1143,13 @@ describe("useMediaFlashcards", () => {
       expect(notifications()).toEqual([]);
     });
 
-    it("leaves a failure notice with Retry when its card has left the editor", async () => {
-      const { result, notices } = renderFlashcards();
+    it("lists the card among the flashcards not saved when it has left the editor", async () => {
+      const { result, unsavedWords } = renderFlashcards();
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.edit(typeWord("Hündin")));
       act(() => result.current.start(createDraft("Katze")));
       await act(() => vi.advanceTimersByTimeAsync(saveRequestLimitMs));
-      expect(notices()).toEqual([
-        ["Couldn't save the flashcard for “Hündin”.", "Retry", "Reopen"],
-      ]);
+      expect(unsavedWords()).toEqual(["Hündin"]);
     });
   });
 

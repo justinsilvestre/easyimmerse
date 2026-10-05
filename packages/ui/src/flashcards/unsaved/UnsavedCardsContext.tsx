@@ -1,5 +1,11 @@
 import { actions } from "@easyimmerse/state";
-import { createContext, type ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useAppDispatch } from "../../hooks/useAppDispatch.ts";
 import {
   createUnsavedCardStore,
@@ -20,15 +26,8 @@ export function UnsavedCardsProvider({
   store?: UnsavedCardStore;
   children: ReactNode;
 }) {
-  const dispatch = useAppDispatch();
-  const [store] = useState(
-    () =>
-      given ??
-      createUnsavedCardStore({
-        onHeld: () => dispatch(actions.unsavedWorkBegan()),
-        onReleased: () => dispatch(actions.unsavedWorkEnded()),
-      }),
-  );
+  const [store] = useState(() => given ?? createUnsavedCardStore());
+  useCountAsUnsavedWork(store);
   return <UnsavedCardsContext value={store}>{children}</UnsavedCardsContext>;
 }
 
@@ -37,4 +36,23 @@ export function useUnsavedCards(): UnsavedCardStore {
   const shared = useContext(UnsavedCardsContext);
   const [own] = useState(() => createUnsavedCardStore());
   return shared ?? own;
+}
+
+/** Counts each listed card as unsaved work, so that the app warns before closing while any is listed. */
+function useCountAsUnsavedWork(store: UnsavedCardStore) {
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    let counted = 0;
+    const countListed = () => {
+      const listed = store.list().length;
+      for (; counted < listed; counted++) dispatch(actions.unsavedWorkBegan());
+      for (; counted > listed; counted--) dispatch(actions.unsavedWorkEnded());
+    };
+    countListed();
+    const unsubscribe = store.subscribe(countListed);
+    return () => {
+      unsubscribe();
+      for (; counted > 0; counted--) dispatch(actions.unsavedWorkEnded());
+    };
+  }, [store, dispatch]);
 }

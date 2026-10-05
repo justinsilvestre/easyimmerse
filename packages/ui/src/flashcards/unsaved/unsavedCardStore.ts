@@ -25,16 +25,9 @@ export type ListedUnsavedCard = UnsavedCard & {
 
 /**
  * Keeps the cards that could not be saved until the user retries, opens or discards them.
- * Each listed card counts as unsaved work, through `onHeld` and `onReleased`, so that the app warns before closing.
  * Retrying happens only when asked for.
  */
-export function createUnsavedCardStore({
-  onHeld = () => undefined,
-  onReleased = () => undefined,
-}: {
-  onHeld?: () => void;
-  onReleased?: () => void;
-} = {}) {
+export function createUnsavedCardStore() {
   let cards: readonly ListedUnsavedCard[] = [];
   let opening: UnsavedCard | null = null;
   const listeners = new Set<() => void>();
@@ -48,7 +41,6 @@ export function createUnsavedCardStore({
     const listed = find(flashcardId);
     if (!listed) return undefined;
     set(cards.filter((other) => other !== listed));
-    onReleased();
     return listed;
   };
   const retry = (flashcardId: string) => {
@@ -72,10 +64,7 @@ export function createUnsavedCardStore({
     /** Lists a card, in place of any listed under the same flashcard id. */
     put(card: UnsavedCard) {
       const listed = { ...card, isRetrying: false };
-      if (find(card.flashcardId) === undefined) {
-        onHeld();
-        return set([...cards, listed]);
-      }
+      if (find(card.flashcardId) === undefined) return set([...cards, listed]);
       set(
         cards.map((other) =>
           other.flashcardId === card.flashcardId ? listed : other,
