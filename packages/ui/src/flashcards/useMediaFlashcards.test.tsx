@@ -52,10 +52,20 @@ const lookedUp: LookupFlashcardFields = {
 const typeWord = (word: string) =>
   ({ type: "textChanged", key: "word", value: word }) as const;
 
-/** The word a save request sent. */
-const sentWord = (request: BackendRequest | undefined) =>
-  (request?.body?.value as { content?: { word?: string } } | undefined)?.content
-    ?.word;
+type SentFlashcard = {
+  id?: string;
+  draft?: FlashcardDraft;
+} & Partial<FlashcardDraft>;
+
+/** The word a save request sent, whether it created a flashcard or replaced one. */
+const sentWord = (request: BackendRequest | undefined) => {
+  const sent = request?.body?.value as SentFlashcard | undefined;
+  return (sent?.draft ?? sent)?.content?.word;
+};
+
+/** The id a request that creates a flashcard sent. */
+const sentId = (request: BackendRequest | undefined) =>
+  (request?.body?.value as SentFlashcard | undefined)?.id;
 
 function createDraft(word: string): FlashcardDraft {
   return {
@@ -320,6 +330,33 @@ describe("useMediaFlashcards", () => {
       await vi.waitFor(() => expect(held).toHaveLength(1));
       await letSavesThrough();
       expect(sentWord(posts()[1])).toBe("Hündin");
+    });
+
+    it("creates the card under an id it chose, of 32 lowercase hexadecimal digits", async () => {
+      const { posts } = await failOffScreen();
+      expect(sentId(posts()[0])).toMatch(/^[0-9a-f]{32}$/);
+    });
+
+    it("sends the card again on Retry under the id of its first try, so that it cannot be created twice", async () => {
+      const { held, letSavesThrough, posts, choose } = await failOffScreen();
+      choose("Retry");
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(sentId(posts()[1])).toBe(sentId(posts()[0]));
+    });
+
+    it("saves a reopened card under the id of its first try", async () => {
+      const { result, held, letSavesThrough, posts, choose } =
+        await failOffScreen();
+      choose("Reopen");
+      act(() => result.current.save());
+      // The untouched card the reopened one replaces is saved in the background too.
+      await vi.waitFor(() => expect(held).toHaveLength(2));
+      await letSavesThrough();
+      const [first, again] = posts().filter(
+        (request) => sentWord(request) === "Hündin",
+      );
+      expect(sentId(again)).toBe(sentId(first));
     });
 
     it("puts the card back in the editor with its edits on Reopen", async () => {

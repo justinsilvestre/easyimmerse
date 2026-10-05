@@ -4,7 +4,11 @@ import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { useEffect } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
-import { createCardSession, flashcardsOnWaveform } from "./editedFlashcard.ts";
+import {
+  createCardSession,
+  createFlashcardId,
+  flashcardsOnWaveform,
+} from "./editedFlashcard.ts";
 import type { EditorAction } from "./editFlashcard.ts";
 import { flashcardRetiming } from "./flashcardRetiming.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
@@ -75,6 +79,7 @@ export function useMediaFlashcards(
           type: "started",
           draft,
           awaitsLookup: !!lateFields,
+          flashcardId: createFlashcardId(),
           session: createCardSession(),
         }),
       );

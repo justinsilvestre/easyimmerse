@@ -30,6 +30,7 @@ import {
 import { fakeServer } from "../testSupport/mediaFixtureResponses.ts";
 import {
   bodyOf,
+  createdDraftOf,
   doubleClickWord,
   findSubtitles,
   renderMediaScreen,
@@ -121,7 +122,7 @@ async function saveOpenFlashcard(
 ) {
   fireEvent.click(screen.getByRole("button", { name: "Save" }));
   await screen.findByText("Flashcard saved to the project.");
-  const body = bodyOf(
+  const body = createdDraftOf(
     requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
   ) as Partial<Flashcard> | undefined;
   return body?.content?.screenshot;
@@ -270,7 +271,7 @@ describe("MediaScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await vi.waitFor(() =>
       expect(
-        bodyOf(
+        createdDraftOf(
           requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
         ),
       ).toMatchObject({ media_file_id: "m1", content: { word: "fressen" } }),
@@ -384,7 +385,7 @@ describe("MediaScreen", () => {
       fireEvent.click(screen.getByRole("button", { name: "Save" }));
       await vi.waitFor(() =>
         expect(
-          bodyOf(
+          createdDraftOf(
             requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
           ),
         ).toMatchObject({ content: { audio_context: { start_ms: 250 } } }),

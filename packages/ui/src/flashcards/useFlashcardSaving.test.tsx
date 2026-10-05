@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 import { savedFlashcard } from "../testSupport/renderMediaScreen.tsx";
-import { createCardSession } from "./editedFlashcard.ts";
+import { createCardSession, createFlashcardId } from "./editedFlashcard.ts";
 import { exampleFlashcard } from "./exampleFlashcard.ts";
 import { useEditedFlashcard } from "./useEditedFlashcard.ts";
 import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
@@ -64,7 +64,12 @@ function withoutActEnvironment(work: () => void) {
 }
 
 const start = () =>
-  ({ type: "started", draft, session: createCardSession() }) as const;
+  ({
+    type: "started",
+    draft,
+    flashcardId: createFlashcardId(),
+    session: createCardSession(),
+  }) as const;
 
 describe("useFlashcardSaving", () => {
   it("says nothing of a save that finishes after another card was started but before React rendered it", async () => {

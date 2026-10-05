@@ -26,6 +26,8 @@ export const newFlashcardSegmentId = "new";
 export type EditedFlashcard =
   | {
       kind: "new";
+      /** The id the flashcard is created under, so that sending it again replaces it rather than creating another. */
+      flashcardId: string;
       draft: FlashcardDraft;
       editor: EditorState;
       /** The text fields the user has typed in, which a late lookup leaves alone. */
@@ -49,6 +51,7 @@ export type EditedFlashcardAction =
   | {
       type: "started";
       draft: FlashcardDraft;
+      flashcardId: string;
       awaitsLookup?: boolean;
       session: CardSession;
     }
@@ -79,6 +82,11 @@ export type EditedFlashcardAction =
  */
 export type CardSession = symbol;
 
+/** Creates the id a new flashcard is saved under, in the form of the ids the backend makes: 32 lowercase hexadecimal digits. */
+export function createFlashcardId(): string {
+  return crypto.randomUUID().replaceAll("-", "");
+}
+
 /** Creates the session of a new opening, to be carried by the action that opens the card. */
 export function createCardSession(): CardSession {
   return Symbol("flashcard opening");
@@ -92,6 +100,7 @@ export function reduceEditedFlashcard(
     case "started":
       return {
         kind: "new",
+        flashcardId: action.flashcardId,
         draft: action.draft,
         editor: editorStateOf(action.draft),
         typedFields: [],

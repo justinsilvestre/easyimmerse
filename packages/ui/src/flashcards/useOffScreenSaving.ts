@@ -64,9 +64,14 @@ export function useOffScreenSaving(
    * A request left unanswered for `saveRequestLimitMs` counts as failed.
    */
   const send = (card: EditedFlashcard) => {
-    if (card.kind === "existing") undo.withdraw(card.flashcard.id);
+    undo.withdraw(
+      card.kind === "existing" ? card.flashcard.id : card.flashcardId,
+    );
     return queue.add(card, () =>
-      withTimeLimit(requests.send(card), saveRequestLimitMs),
+      withTimeLimit(
+        (signal) => requests.send(card, signal),
+        saveRequestLimitMs,
+      ),
     );
   };
   /** Leaves a notice holding a failed card's edits, which count as unsaved work until the card is retried, reopened or discarded. */

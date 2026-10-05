@@ -10,7 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
-  bodyOf,
+  createdDraftOf,
   dictionarySummary,
   doubleClick,
   findSubtitles,
@@ -330,7 +330,7 @@ describe("MediaScreen lookup gestures", () => {
           client: ReturnType<typeof createFakeBackendClient>,
         ) =>
           (
-            bodyOf(
+            createdDraftOf(
               requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
             ) as
               | { content?: { word?: string; l1_definition?: string } }

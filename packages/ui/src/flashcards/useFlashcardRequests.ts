@@ -11,26 +11,40 @@ export function useFlashcardRequests(projectId: string) {
   const [createFlashcard] = useCreateFlashcardMutation();
   const [updateFlashcard] = useUpdateFlashcardMutation();
   const [deleteFlashcard] = useDeleteFlashcardMutation();
-  const replace = (flashcard: Flashcard, changes: Partial<FlashcardDraft>) =>
+  const requestReplace = (
+    flashcard: Flashcard,
+    changes: Partial<FlashcardDraft>,
+  ) =>
     updateFlashcard({
       projectId,
       flashcardId: flashcard.id,
       draft: { ...draftOf(flashcard), ...changes },
-    }).unwrap();
+    });
+  const replace = (flashcard: Flashcard, changes: Partial<FlashcardDraft>) =>
+    requestReplace(flashcard, changes).unwrap();
   return {
     replace,
-    /** Sends a card as the editor holds it: a new card is created, a saved one replaced. Resolves the flashcard as saved. */
-    send: (card: EditedFlashcard): Promise<Flashcard> => {
+    /**
+     * Sends a card as the editor holds it: a new card is created under its own id, a saved one replaced.
+     * Resolves the flashcard as saved. The request stops once `signal` aborts.
+     */
+    send: (card: EditedFlashcard, signal?: AbortSignal): Promise<Flashcard> => {
       const changes = {
         content: card.editor.content,
         included_fields: [...card.editor.includedFields],
       };
-      return card.kind === "new"
-        ? createFlashcard({
-            projectId,
-            draft: { ...card.draft, ...changes },
-          }).unwrap()
-        : replace(card.flashcard, changes);
+      const pending =
+        card.kind === "new"
+          ? createFlashcard({
+              projectId,
+              flashcard: {
+                id: card.flashcardId,
+                draft: { ...card.draft, ...changes },
+              },
+            })
+          : requestReplace(card.flashcard, changes);
+      signal?.addEventListener("abort", () => pending.abort(), { once: true });
+      return pending.unwrap();
     },
     remove: (flashcard: Flashcard) =>
       deleteFlashcard({ projectId, flashcardId: flashcard.id }).unwrap(),

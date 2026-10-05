@@ -33,7 +33,8 @@ export function createSaveQueue() {
     ): Promise<T> | undefined {
       if (inFlight.has(card.session)) return undefined;
       inFlight.add(card.session);
-      const flashcardId = card.kind === "existing" ? card.flashcard.id : null;
+      const flashcardId =
+        card.kind === "existing" ? card.flashcard.id : card.flashcardId;
       return enqueue(flashcardId, send).finally(() =>
         inFlight.delete(card.session),
       );

@@ -3,7 +3,9 @@ import { actions } from "@easyimmerse/state";
 import type {
   DictionarySummary,
   Flashcard,
+  FlashcardDraft,
   LookupResponse,
+  NewFlashcard,
 } from "@easyimmerse/types";
 import { act, fireEvent, screen } from "@testing-library/react";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
@@ -175,6 +177,13 @@ export function requestsTo(
 
 export function bodyOf(request: BackendRequest | undefined): unknown {
   return request?.body?.kind === "json" ? request.body.value : undefined;
+}
+
+/** The draft a request that creates a flashcard sent. */
+export function createdDraftOf(
+  request: BackendRequest | undefined,
+): FlashcardDraft | undefined {
+  return (bodyOf(request) as NewFlashcard | undefined)?.draft;
 }
 
 /** Fires what a browser fires for a double-click: two clicks counting up, then dblclick. */

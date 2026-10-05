@@ -2,6 +2,7 @@ import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import {
   createCardSession,
+  createFlashcardId,
   type EditedFlashcard,
   type EditedFlashcardAction,
   flashcardsOnWaveform,
@@ -51,6 +52,7 @@ describe("reduceEditedFlashcard", () => {
     expect(
       reduceEditedFlashcard(null, {
         type: "started",
+        flashcardId: createFlashcardId(),
         draft: createDraft(),
         session,
       })?.session,
@@ -71,6 +73,7 @@ describe("reduceEditedFlashcard", () => {
   it("starts editing a draft with its content", () => {
     const edited = reduceEditedFlashcard(null, {
       type: "started",
+      flashcardId: createFlashcardId(),
       session: createCardSession(),
       draft: createDraft(),
     });
@@ -80,6 +83,7 @@ describe("reduceEditedFlashcard", () => {
   it("starts editing a draft with its included fields", () => {
     const edited = reduceEditedFlashcard(null, {
       type: "started",
+      flashcardId: createFlashcardId(),
       session: createCardSession(),
       draft: createDraft(),
     });
@@ -121,6 +125,7 @@ describe("segmentIdOf", () => {
   it("gives a new flashcard the id reserved for it", () => {
     const edited = reduceEditedFlashcard(null, {
       type: "started",
+      flashcardId: createFlashcardId(),
       session: createCardSession(),
       draft: createDraft(),
     });
@@ -151,6 +156,7 @@ describe("flashcardsOnWaveform", () => {
   it("draws a new flashcard after the saved ones", () => {
     const edited = reduceEditedFlashcard(null, {
       type: "started",
+      flashcardId: createFlashcardId(),
       session: createCardSession(),
       draft: createDraft(),
     });
@@ -164,6 +170,7 @@ describe("reduceEditedFlashcard on screenshotsAvailable", () => {
   const startDraft = (content: Partial<FlashcardDraft["content"]>) =>
     reduceEditedFlashcard(null, {
       type: "started",
+      flashcardId: createFlashcardId(),
       session: createCardSession(),
       draft: {
         ...createDraft(),
@@ -212,6 +219,7 @@ describe("reduceEditedFlashcard on screenshotsAvailable", () => {
 function startedFrom(draft: FlashcardDraft) {
   return reduceEditedFlashcard(null, {
     type: "started",
+    flashcardId: createFlashcardId(),
     draft,
     session: createCardSession(),
   });
@@ -220,6 +228,7 @@ function startedFrom(draft: FlashcardDraft) {
 function awaiting(draft: FlashcardDraft) {
   return reduceEditedFlashcard(null, {
     type: "started",
+    flashcardId: createFlashcardId(),
     session: createCardSession(),
     draft,
     awaitsLookup: true,
@@ -411,6 +420,7 @@ describe("reduceEditedFlashcard on its way to being saved", () => {
     const sending = sendingFrom(startedFrom(createDraft()));
     const later = reduceAll(sending, {
       type: "started",
+      flashcardId: createFlashcardId(),
       draft: createDraft(),
       session: createCardSession(),
     });
