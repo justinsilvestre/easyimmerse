@@ -93,11 +93,10 @@ describe("MediaScreen lookup gestures", () => {
     flushDue = setInterval(() => vi.advanceTimersByTime(0), 5);
   });
 
+  // Unmounting saves any card still waiting for its lookup after a delay,
+  // so the screen must unmount while that delay is still on the fake clock.
   afterEach(() => {
-    // Unmounting saves the open card in the background, which may wait on timeouts. Unmounting while they are fake,
-    // and dropping them, keeps that work from running in real time during a later test, against that test's backend.
     cleanup();
-    vi.clearAllTimers();
     clearInterval(flushDue);
     vi.useRealTimers();
   });

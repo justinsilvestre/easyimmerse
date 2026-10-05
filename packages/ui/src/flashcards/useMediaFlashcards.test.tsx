@@ -23,8 +23,11 @@ import { createUnsavedCardStore } from "./unsaved/unsavedCardStore.ts";
 import { useUnsavedCardActions } from "./unsaved/useUnsavedCardActions.ts";
 import { useMediaFlashcards } from "./useMediaFlashcards.ts";
 
+// Unmounting saves any card still waiting for its lookup after a delay,
+// so timers stay fake until the hook has unmounted.
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   resetBackend();
 });
 
@@ -324,13 +327,6 @@ describe("useMediaFlashcards", () => {
     beforeEach(() =>
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] }),
     );
-
-    afterEach(() => {
-      // Unmounting saves the open card in the background; dropping its fake timeouts keeps it out of later tests.
-      cleanup();
-      vi.clearAllTimers();
-      vi.useRealTimers();
-    });
 
     it("saves the card as it is once the limit from pressing Save has passed", async () => {
       const { result, held } = renderFlashcards();
@@ -1027,13 +1023,6 @@ describe("useMediaFlashcards", () => {
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }),
     );
 
-    afterEach(() => {
-      // Unmounting saves the open card in the background; dropping its fake timeouts keeps it out of later tests.
-      cleanup();
-      vi.clearAllTimers();
-      vi.useRealTimers();
-    });
-
     async function hangSave() {
       const rendered = renderFlashcards();
       act(() => rendered.result.current.start(createDraft("Hund")));
@@ -1157,13 +1146,6 @@ describe("useMediaFlashcards", () => {
     beforeEach(() =>
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }),
     );
-
-    afterEach(() => {
-      // Unmounting saves the open card in the background; dropping its fake timeouts keeps it out of later tests.
-      cleanup();
-      vi.clearAllTimers();
-      vi.useRealTimers();
-    });
 
     it("saves the card as it is once the save has waited its limit", async () => {
       const { result, held } = renderFlashcards();
