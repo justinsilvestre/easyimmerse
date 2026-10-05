@@ -51,7 +51,9 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
     ResultSortKey {
         matched_length: group.candidate.matched_length(),
         inflection_count: group.candidate.inflection_count(),
+        undoes_only_a_bare_stem: group.candidate.undoes_only_a_bare_stem(),
         commonness: commonness(term_meta),
+        matches_exactly: matches_exactly(group),
         first_dictionary_rank: entries
             .clone()
             .map(|found| found.dictionary.rank)
@@ -59,6 +61,14 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
             .unwrap_or(0),
         best_score: entries.map(|found| found.entry.score).max().unwrap_or(0),
     }
+}
+
+fn matches_exactly(group: &ResultGroup) -> bool {
+    let searched = group.candidate.deinflection.term.as_str();
+    group
+        .entries
+        .iter()
+        .any(|found| found.entry.headwords().contains(&searched))
 }
 
 fn commonness(term_meta: &[&FoundTermMeta]) -> Commonness {
@@ -87,6 +97,7 @@ mod tests {
     use super::*;
     use crate::deinflection::Deinflection;
     use crate::dictionary::{DictionaryFormatKind, Frequency, FrequencyMode, TermEntry, TermMeta};
+    use crate::lookup::fold_case;
     use crate::lookup::found_rows::DictionaryOrigin;
     use crate::lookup::lookup_candidate::lookup_candidates;
 
@@ -106,7 +117,7 @@ mod tests {
         FoundEntry {
             dictionary: dictionary(rank),
             entry_id: rank,
-            folded_headword: term.to_string(),
+            folded_headword: fold_case(term),
             entry,
             tags: Vec::new(),
         }
@@ -200,7 +211,62 @@ mod tests {
     }
 
     #[test]
-    fn ranks_an_unchanged_character_before_a_more_common_one_character_stem() {
+    fn ranks_a_listed_verb_before_the_more_common_verb_it_may_be_the_causative_of() {
+        let candidates = lookup_candidates("動かす", "ja");
+        let entries = vec![
+            classed("v5", found(1, "動く", "うごく")),
+            classed("v5", found(1, "動かす", "うごかす")),
+        ];
+        let meta = vec![
+            frequency(9, "動く", "うごく", 300.0),
+            frequency(9, "動かす", "うごかす", 2_000.0),
+        ];
+        let results = build_lookup_results(&candidates, entries, &meta);
+        assert_eq!(terms(&results), vec!["動かす", "動く"]);
+    }
+
+    #[test]
+    fn ranks_a_listed_verb_before_the_more_common_verb_it_may_be_the_potential_of() {
+        let candidates = lookup_candidates("切れる", "ja");
+        let entries = vec![
+            classed("v5", found(1, "切る", "きる")),
+            classed("v1", found(1, "切れる", "きれる")),
+        ];
+        let meta = vec![
+            frequency(9, "切る", "きる", 400.0),
+            frequency(9, "切れる", "きれる", 3_000.0),
+        ];
+        let results = build_lookup_results(&candidates, entries, &meta);
+        assert_eq!(terms(&results), vec!["切れる", "切る"]);
+    }
+
+    /// Two entries that fold to the same headword, as ß folds to ss.
+    fn masse_entries() -> Vec<FoundEntry> {
+        vec![
+            scored(found(1, "Masse", "Masse"), 1, 0),
+            scored(found(1, "Maße", "Maße"), 2, 0),
+        ]
+    }
+
+    #[test]
+    fn ranks_the_exact_spelling_first_for_eszett() {
+        let candidates = lookup_candidates("Maße", "de");
+        let results = build_lookup_results(&candidates, masse_entries(), &[]);
+        assert_eq!(terms(&results), vec!["Maße", "Masse"]);
+    }
+
+    #[test]
+    fn ranks_the_exact_spelling_first_for_double_s() {
+        let candidates = lookup_candidates("Masse", "de");
+        let mut entries = masse_entries();
+        entries.reverse();
+        let results = build_lookup_results(&candidates, entries, &[]);
+        assert_eq!(terms(&results), vec!["Masse", "Maße"]);
+    }
+
+    /// The pointer on し in 雨だし looks up the text し.
+    #[test]
+    fn ranks_the_particle_shi_in_ame_da_shi_before_the_more_common_suru() {
         let candidates = lookup_candidates("し", "ja");
         let entries = vec![
             classed("vs", found(1, "する", "する")),

@@ -9,7 +9,11 @@ use crate::dictionary::FrequencyMode;
 pub struct ResultSortKey {
     pub matched_length: usize,
     pub inflection_count: usize,
+    /// Whether the only inflection undone is the step from a bare stem to its dictionary form, as from 書き to 書く.
+    pub undoes_only_a_bare_stem: bool,
     pub commonness: Commonness,
+    /// Whether an entry in the result has the searched headword as written, without folding its case.
+    pub matches_exactly: bool,
     /// The import position of the earliest imported dictionary with an entry in the result.
     pub first_dictionary_rank: i64,
     /// The highest score that a dictionary gives an entry in the result.
@@ -17,13 +21,15 @@ pub struct ResultSortKey {
 }
 
 impl ResultSortKey {
-    /// Orders keys from the best result to the worst: longer matches first,
-    /// then the more common result where one frequency dictionary lists both,
-    /// then fewer inflections, then a result that a frequency dictionary lists before one it does not,
-    /// then earlier imported dictionaries, then higher scores.
+    /// Orders keys from the best result to the worst. Among matches of the same length:
     ///
-    /// A one-character match with inflections undone, such as し reached from する,
-    /// ranks below an unchanged match of the same length however common it is.
+    /// 1. A one-character match with inflections undone, such as し reached from する, ranks last.
+    /// 2. Unchanged matches and bare stems rank above every other inflected match,
+    ///    so that 動かす as listed ranks above 動く, which it may also be a causative of.
+    /// 3. Within each of those two groups, the more common result comes first where one frequency dictionary lists both,
+    ///    so that a common verb's stem 書き (書く) can outrank a rarer noun 書き. Fewer inflections come next.
+    /// 4. Then an exact match comes before one found only by folding case, as Maße does before Masse.
+    /// 5. Then a result that a frequency dictionary lists, then earlier imported dictionaries, then higher scores.
     pub fn compare(&self, other: &Self) -> Ordering {
         other
             .matched_length
@@ -32,8 +38,13 @@ impl ResultSortKey {
                 self.is_one_character_stem()
                     .cmp(&other.is_one_character_stem())
             })
+            .then_with(|| {
+                self.is_inflected_beyond_a_stem()
+                    .cmp(&other.is_inflected_beyond_a_stem())
+            })
             .then_with(|| self.commonness.compare_shared(&other.commonness))
             .then_with(|| self.inflection_count.cmp(&other.inflection_count))
+            .then_with(|| other.matches_exactly.cmp(&self.matches_exactly))
             .then_with(|| self.commonness.compare_coverage(&other.commonness))
             .then_with(|| self.first_dictionary_rank.cmp(&other.first_dictionary_rank))
             .then_with(|| other.best_score.cmp(&self.best_score))
@@ -41,6 +52,10 @@ impl ResultSortKey {
 
     fn is_one_character_stem(&self) -> bool {
         self.matched_length == 1 && self.inflection_count > 0
+    }
+
+    fn is_inflected_beyond_a_stem(&self) -> bool {
+        self.inflection_count > 0 && !self.undoes_only_a_bare_stem
     }
 }
 
@@ -209,12 +224,66 @@ mod tests {
             );
         }
 
+        fn bare_stem(matched_length: usize, frequency: Option<f64>) -> ResultSortKey {
+            ResultSortKey {
+                undoes_only_a_bare_stem: true,
+                ..key(matched_length, 1, frequency)
+            }
+        }
+
         #[test]
-        fn ranks_a_more_common_result_before_one_with_fewer_inflections() {
+        fn ranks_a_more_common_bare_stem_before_an_unchanged_match() {
             assert_eq!(
-                key(2, 1, Some(1.0)).compare(&key(2, 0, Some(900.0))),
+                bare_stem(2, Some(1.0)).compare(&key(2, 0, Some(900.0))),
                 Ordering::Less
             );
+        }
+
+        #[test]
+        fn ranks_an_unchanged_match_before_a_more_common_inflected_one() {
+            assert_eq!(
+                key(3, 0, Some(900.0)).compare(&key(3, 1, Some(1.0))),
+                Ordering::Less
+            );
+        }
+
+        #[test]
+        fn ranks_a_bare_stem_before_a_more_common_inflected_match() {
+            assert_eq!(
+                bare_stem(2, Some(900.0)).compare(&key(2, 1, Some(1.0))),
+                Ordering::Less
+            );
+        }
+
+        #[test]
+        fn ranks_the_more_common_of_two_inflected_matches_first() {
+            assert_eq!(
+                key(3, 2, Some(1.0)).compare(&key(3, 1, Some(900.0))),
+                Ordering::Less
+            );
+        }
+
+        #[test]
+        fn ranks_an_exact_match_before_a_folded_one() {
+            let exact = ResultSortKey {
+                matches_exactly: true,
+                first_dictionary_rank: 2,
+                ..key(4, 0, None)
+            };
+            let folded = ResultSortKey {
+                first_dictionary_rank: 1,
+                ..key(4, 0, None)
+            };
+            assert_eq!(exact.compare(&folded), Ordering::Less);
+        }
+
+        #[test]
+        fn ranks_fewer_inflections_before_an_exact_match() {
+            let exact = ResultSortKey {
+                matches_exactly: true,
+                ..key(4, 2, None)
+            };
+            assert_eq!(key(4, 1, None).compare(&exact), Ordering::Less);
         }
 
         #[test]
@@ -228,7 +297,7 @@ mod tests {
         #[test]
         fn ranks_an_unchanged_character_before_a_more_common_stem() {
             assert_eq!(
-                key(1, 0, Some(900.0)).compare(&key(1, 1, Some(1.0))),
+                key(1, 0, Some(900.0)).compare(&bare_stem(1, Some(1.0))),
                 Ordering::Less
             );
         }

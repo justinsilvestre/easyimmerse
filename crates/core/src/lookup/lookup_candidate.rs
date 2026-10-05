@@ -6,6 +6,9 @@ use crate::deinflection::{Deinflection, deinflect};
 /// The most characters of the looked-up text that lookup considers.
 const MAX_MATCHED_CHARACTERS: usize = 20;
 
+/// The names that the Japanese deinflector gives a bare stem taken as a word: a verb's continuative and an adjective's stem.
+const BARE_STEM_INFLECTIONS: [&str; 2] = ["continuative", "stem"];
+
 /// A dictionary form that the beginning of the looked-up text may stand for.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LookupCandidate {
@@ -25,6 +28,15 @@ impl LookupCandidate {
 
     pub fn inflection_count(&self) -> usize {
         self.deinflection.inflections.len()
+    }
+
+    /// Whether the only inflection undone is the step from a bare stem to its dictionary form,
+    /// as from the continuative 書き to 書く or the adjective stem 高 to 高い.
+    pub fn undoes_only_a_bare_stem(&self) -> bool {
+        matches!(
+            self.deinflection.inflections.as_slice(),
+            [only] if BARE_STEM_INFLECTIONS.contains(&only.as_str())
+        )
     }
 
     /// Orders candidates from the most to the least preferred:
@@ -140,6 +152,21 @@ mod tests {
     fn lists_each_headword_once() {
         let candidates = vec![candidate("ab", &[]), candidate("ab", &["past"])];
         assert_eq!(candidate_headwords(&candidates), vec!["ab"]);
+    }
+
+    #[test]
+    fn counts_a_bare_continuative_as_a_bare_stem() {
+        assert!(candidate("書き", &["continuative"]).undoes_only_a_bare_stem());
+    }
+
+    #[test]
+    fn does_not_count_a_stem_under_other_inflections_as_a_bare_stem() {
+        assert!(!candidate("書かせ", &["continuative", "causative"]).undoes_only_a_bare_stem());
+    }
+
+    #[test]
+    fn does_not_count_an_unchanged_word_as_a_bare_stem() {
+        assert!(!candidate("書き", &[]).undoes_only_a_bare_stem());
     }
 
     #[test]
