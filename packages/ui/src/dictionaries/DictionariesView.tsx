@@ -18,9 +18,14 @@ import {
 } from "./dictionaryItem.ts";
 import { TableColumnsDialog } from "./TableColumnsDialog.tsx";
 
-/** The dictionaries settings: every dictionary the user has added, and the ways to add one. */
+/**
+ * The dictionaries settings: every dictionary the user has added, and the ways to add one.
+ * The registry button, the checkboxes and the order arrows show only when their handlers are given.
+ */
 export function DictionariesView({
   dictionaries,
+  loadFailed = false,
+  addingFile = null,
   unsupportedFile,
   pendingTable,
   onBack,
@@ -34,27 +39,42 @@ export function DictionariesView({
   onCancelTable,
 }: {
   dictionaries: readonly DictionaryItem[];
+  /** Whether the list could not be loaded, as when no server is connected. */
+  loadFailed?: boolean;
+  /** The file being added, until it is imported or fails. */
+  addingFile?: string | null;
   /** The file the user last tried to add in a format the app cannot read, until dismissed. */
   unsupportedFile: string | null;
   /** The table file the user is adding, with its first rows and detected columns, until imported or cancelled. */
   pendingTable: { fileName: string; preview: TablePreview } | null;
   onBack: () => void;
-  onAddFromRegistry: () => void;
+  onAddFromRegistry?: () => void;
   onAddFromFile: () => void;
-  onToggle: (dictionaryId: string) => void;
-  onMove: (dictionaryId: string, direction: "up" | "down") => void;
+  onToggle?: (dictionaryId: string) => void;
+  onMove?: (dictionaryId: string, direction: "up" | "down") => void;
   onRemove: (dictionaryId: string) => void;
   onDismissUnsupportedFile: () => void;
   onImportTable: (layout: TableLayout) => void;
   onCancelTable: () => void;
 }) {
+  const isAdding = addingFile !== null;
   const addButtons = (
     <>
-      <Button variant="primary" onClick={onAddFromRegistry}>
-        <Globe className="size-4" aria-hidden />
-        Add from the registry
-      </Button>
-      <Button onClick={onAddFromFile}>
+      {onAddFromRegistry && (
+        <Button
+          variant="primary"
+          disabled={isAdding}
+          onClick={onAddFromRegistry}
+        >
+          <Globe className="size-4" aria-hidden />
+          Add from the registry
+        </Button>
+      )}
+      <Button
+        variant={onAddFromRegistry ? "secondary" : "primary"}
+        disabled={isAdding}
+        onClick={onAddFromFile}
+      >
         <FolderOpen className="size-4" aria-hidden />
         Add from a file
       </Button>
@@ -75,13 +95,23 @@ export function DictionariesView({
           <div className="flex flex-wrap gap-2">{addButtons}</div>
         )}
       </div>
+      {addingFile && (
+        <p role="status" className="text-sm text-fg-muted">
+          Adding {addingFile}…
+        </p>
+      )}
       {unsupportedFile && (
         <UnsupportedFileNotice
           fileName={unsupportedFile}
           onDismiss={onDismissUnsupportedFile}
         />
       )}
-      {dictionaries.length === 0 ? (
+      {loadFailed ? (
+        <p role="alert" className="text-sm text-danger-fg">
+          The dictionaries could not be loaded. They are kept by the easyImmerse
+          server, so connect to one to use them.
+        </p>
+      ) : dictionaries.length === 0 ? (
         <EmptyState
           icon={<BookOpen className="size-8" />}
           title="No dictionaries yet"
@@ -96,10 +126,12 @@ export function DictionariesView({
           onRemove={onRemove}
         />
       )}
-      <p className="text-xs text-fg-faint">
-        When more than one dictionary is enabled for a language, the pop-up
-        shows their entries in the order listed.
-      </p>
+      {onMove && (
+        <p className="text-xs text-fg-faint">
+          When more than one dictionary is enabled for a language, the pop-up
+          shows their entries in the order listed.
+        </p>
+      )}
       {pendingTable && (
         <TableColumnsDialog
           fileName={pendingTable.fileName}

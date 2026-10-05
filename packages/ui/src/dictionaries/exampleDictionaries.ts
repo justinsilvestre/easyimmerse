@@ -5,8 +5,8 @@ export const exampleDictionaries: readonly DictionaryItem[] = [
   {
     id: "d1",
     title: "German-English Wiktionary",
-    sourceLanguage: "de",
-    targetLanguage: "en",
+    source_language: "de",
+    target_language: "en",
     format: "yomitan",
     entry_count: 412_380,
     term_meta_count: 0,
@@ -19,8 +19,8 @@ export const exampleDictionaries: readonly DictionaryItem[] = [
   {
     id: "d2",
     title: "DWDS Kernwortschatz",
-    sourceLanguage: "de",
-    targetLanguage: "de",
+    source_language: "de",
+    target_language: "de",
     format: "stardict",
     entry_count: 48_120,
     term_meta_count: 0,
@@ -33,8 +33,8 @@ export const exampleDictionaries: readonly DictionaryItem[] = [
   {
     id: "d3",
     title: "JMdict (Japanese-English)",
-    sourceLanguage: "ja",
-    targetLanguage: "en",
+    source_language: "ja",
+    target_language: "en",
     format: "yomitan",
     entry_count: 203_015,
     term_meta_count: 0,
@@ -43,6 +43,20 @@ export const exampleDictionaries: readonly DictionaryItem[] = [
     kanji_meta_count: 0,
     media_count: 0,
     isEnabled: false,
+  },
+  {
+    id: "d4",
+    title: "Oxford Advanced Learner's",
+    source_language: null,
+    target_language: null,
+    format: "mdict",
+    entry_count: 185_000,
+    term_meta_count: 0,
+    tag_count: 0,
+    kanji_count: 0,
+    kanji_meta_count: 0,
+    media_count: 2_400,
+    isEnabled: true,
   },
 ];
 

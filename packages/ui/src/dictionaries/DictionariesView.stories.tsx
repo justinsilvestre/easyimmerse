@@ -30,6 +30,23 @@ type Story = StoryObj<typeof meta>;
 
 export const SeveralDictionaries: Story = {};
 
+/** As the app shows them today: without a registry, and without switching dictionaries off or reordering them. */
+export const WithoutRegistryOrOrdering: Story = {
+  args: {
+    onAddFromRegistry: undefined,
+    onToggle: undefined,
+    onMove: undefined,
+  },
+};
+
+export const Adding: Story = {
+  args: { addingFile: "jmdict_english.zip" },
+};
+
+export const NoServer: Story = {
+  args: { dictionaries: [], loadFailed: true },
+};
+
 export const Empty: Story = { args: { dictionaries: [] } };
 
 export const UnsupportedFile: Story = {
