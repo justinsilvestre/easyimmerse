@@ -43,6 +43,10 @@ export const Adding: Story = {
   args: { addingFile: "jmdict_english.zip" },
 };
 
+export const Loading: Story = {
+  args: { dictionaries: [], isLoading: true },
+};
+
 export const NoServer: Story = {
   args: { dictionaries: [], loadFailed: true },
 };

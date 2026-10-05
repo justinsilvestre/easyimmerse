@@ -24,6 +24,7 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
   return (
     <DictionariesView
       dictionaries={list.data?.dictionaries ?? []}
+      isLoading={list.isLoading}
       loadFailed={list.isError}
       addingFile={imports.addingFile}
       unsupportedFile={imports.unsupportedFile}

@@ -24,6 +24,7 @@ import { TableColumnsDialog } from "./TableColumnsDialog.tsx";
  */
 export function DictionariesView({
   dictionaries,
+  isLoading = false,
   loadFailed = false,
   addingFile = null,
   unsupportedFile,
@@ -39,6 +40,8 @@ export function DictionariesView({
   onCancelTable,
 }: {
   dictionaries: readonly DictionaryItem[];
+  /** Whether the list has yet to arrive. */
+  isLoading?: boolean;
   /** Whether the list could not be loaded, as when no server is connected. */
   loadFailed?: boolean;
   /** The file being added, until it is imported or fails. */
@@ -106,7 +109,11 @@ export function DictionariesView({
           onDismiss={onDismissUnsupportedFile}
         />
       )}
-      {loadFailed ? (
+      {isLoading ? (
+        <p role="status" className="text-sm text-fg-muted">
+          Loading the dictionaries…
+        </p>
+      ) : loadFailed ? (
         <p role="alert" className="text-sm text-danger-fg">
           The dictionaries could not be loaded. They are kept by the easyImmerse
           server, so connect to one to use them.
@@ -115,7 +122,7 @@ export function DictionariesView({
         <EmptyState
           icon={<BookOpen className="size-8" />}
           title="No dictionaries yet"
-          description="Dictionaries make words in subtitles and texts look-up-able, and fill in the definitions on your flashcards."
+          description="With a dictionary, you can look up the words in subtitles and texts, and the definitions on your flashcards are filled in for you."
           actions={addButtons}
         />
       ) : (
