@@ -2,7 +2,7 @@ import type { HlsClass } from "./loadHls.ts";
 
 type ErrorListener = (event: string, data: FakeErrorData) => void;
 
-export type FakeErrorData = {
+type FakeErrorData = {
   type: string;
   details: string;
   fatal: boolean;

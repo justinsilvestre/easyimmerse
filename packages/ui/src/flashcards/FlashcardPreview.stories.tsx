@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { exampleFlashcard, exampleLanguages } from "./exampleFlashcard.ts";
+import {
+  exampleFlashcard,
+  exampleLanguages,
+  exampleScreenshotUrl,
+} from "./exampleFlashcard.ts";
 import { FlashcardPreview } from "./FlashcardPreview.tsx";
 import { fieldsOfPreset } from "./flashcardPresets.ts";
 
@@ -18,6 +22,7 @@ const meta = {
     content: exampleFlashcard,
     includedFields: fieldsOfPreset("beginner"),
     languages: exampleLanguages,
+    screenshotUrl: exampleScreenshotUrl,
     onPlayAudio: fn(),
   },
 } satisfies Meta<typeof FlashcardPreview>;
@@ -39,8 +44,8 @@ export const EmptyFields: Story = {
   args: {
     content: {
       ...exampleFlashcard,
-      l1Definition: "",
-      textContextTranslation: "",
+      l1_definition: "",
+      text_context_translation: "",
       screenshot: null,
       tags: [],
     },

@@ -1,18 +1,18 @@
-import type { AudioClip } from "./flashcardFields.ts";
+import type { AudioClip } from "@easyimmerse/types";
 
 /** How far a handle moves for one arrow key press, and for one with Shift held. */
-export const keyStepMs = 100;
-export const largeKeyStepMs = 1000;
+const keyStepMs = 100;
+const largeKeyStepMs = 1000;
 
-/** The shortest clip a handle can be dragged to. */
-export const minClipMs = 200;
+/** The shortest a flashcard's audio clip can be made by moving either of its ends. */
+export const shortestClipMs = 200;
 
 /** How far past an edge a handle is held for the view to widen at full speed, and that speed in view spans per second. */
-export const fullSpeedOvershootPx = 60;
-export const fullSpeedSpansPerSecond = 2;
+const fullSpeedOvershootPx = 60;
+const fullSpeedSpansPerSecond = 2;
 
-/** The part of the file on view, from one time to another. */
-export type WaveformView = { startMs: number; endMs: number };
+/** The part of the file the clip editor shows, from one time to another. */
+export type ClipEditorView = { startMs: number; endMs: number };
 
 /** Where the waveform sits on the screen, in client pixels. */
 export type WaveformFrame = { left: number; width: number };
@@ -21,20 +21,20 @@ export type WaveformFrame = { left: number; width: number };
 export function viewAroundClip(
   clip: AudioClip,
   durationMs: number,
-): WaveformView {
-  const margin = Math.max(1000, (clip.endMs - clip.startMs) / 2);
+): ClipEditorView {
+  const margin = Math.max(1000, (clip.end_ms - clip.start_ms) / 2);
   return {
-    startMs: Math.max(0, clip.startMs - margin),
-    endMs: Math.min(durationMs, clip.endMs + margin),
+    startMs: Math.max(0, clip.start_ms - margin),
+    endMs: Math.min(durationMs, clip.end_ms + margin),
   };
 }
 
 /** Widens the view so that the time is on it, when a handle is dragged past its edge. */
 export function viewIncluding(
-  view: WaveformView,
+  view: ClipEditorView,
   ms: number,
   durationMs: number,
-): WaveformView {
+): ClipEditorView {
   if (ms < view.startMs) return { ...view, startMs: Math.max(0, ms - 500) };
   if (ms > view.endMs)
     return { ...view, endMs: Math.min(durationMs, ms + 500) };
@@ -43,10 +43,10 @@ export function viewIncluding(
 
 /** Widens the view so that every one of the times is on it. */
 export function viewIncludingAll(
-  view: WaveformView,
+  view: ClipEditorView,
   times: readonly number[],
   durationMs: number,
-): WaveformView {
+): ClipEditorView {
   return times.reduce(
     (widened, ms) => viewIncluding(widened, ms, durationMs),
     view,
@@ -56,7 +56,7 @@ export function viewIncludingAll(
 /** The time under a horizontal position on the waveform, which may lie beyond the view. */
 export function timeAtX(
   frame: WaveformFrame,
-  view: WaveformView,
+  view: ClipEditorView,
   x: number,
 ): number {
   return (
@@ -68,7 +68,7 @@ export function timeAtX(
 /** The horizontal position of a time on the waveform. */
 export function xOfTime(
   frame: WaveformFrame,
-  view: WaveformView,
+  view: ClipEditorView,
   ms: number,
 ): number {
   return (
@@ -89,11 +89,11 @@ export function overshootPx(frame: WaveformFrame, x: number): number {
  * for the time it has been held there.
  */
 export function viewWidened(
-  view: WaveformView,
+  view: ClipEditorView,
   overshoot: number,
   elapsedMs: number,
   durationMs: number,
-): WaveformView {
+): ClipEditorView {
   const speed =
     (Math.min(Math.abs(overshoot), fullSpeedOvershootPx) /
       fullSpeedOvershootPx) *
@@ -119,13 +119,13 @@ export function draggedHandle({
   durationMs,
   constrain,
 }: {
-  view: WaveformView;
+  view: ClipEditorView;
   frame: WaveformFrame;
   x: number;
   elapsedMs: number;
   durationMs: number;
   constrain: (ms: number) => number;
-}): { view: WaveformView; ms: number } {
+}): { view: ClipEditorView; ms: number } {
   const overshoot = overshootPx(frame, x);
   if (overshoot === 0) return { view, ms: constrain(timeAtX(frame, view, x)) };
   const widened = viewWidened(view, overshoot, elapsedMs, durationMs);
@@ -141,8 +141,8 @@ export function draggedHandle({
 export function peakSpan(
   peakCount: number,
   durationMs: number,
-  view: WaveformView,
-): WaveformView {
+  view: ClipEditorView,
+): ClipEditorView {
   if (peakCount === 0) return view;
   const peakMs = durationMs / peakCount;
   return {
@@ -153,7 +153,7 @@ export function peakSpan(
 
 /** Moves the clip's start, keeping it within the file and before the end. */
 export function moveClipStart(clip: AudioClip, startMs: number): AudioClip {
-  return { ...clip, startMs: clamp(startMs, 0, clip.endMs - minClipMs) };
+  return { ...clip, start_ms: clamp(startMs, 0, clip.end_ms - shortestClipMs) };
 }
 
 /** Moves the clip's end, keeping it after the start and within the file. */
@@ -162,7 +162,10 @@ export function moveClipEnd(
   endMs: number,
   durationMs: number,
 ): AudioClip {
-  return { ...clip, endMs: clamp(endMs, clip.startMs + minClipMs, durationMs) };
+  return {
+    ...clip,
+    end_ms: clamp(endMs, clip.start_ms + shortestClipMs, durationMs),
+  };
 }
 
 /** The time an arrow key moves a handle to, or null for a key that is not an arrow. */

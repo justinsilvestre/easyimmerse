@@ -6,6 +6,7 @@ pub mod encoders;
 pub mod error;
 pub mod ffprobe_output;
 pub mod ffprobe_timing_output;
+pub mod frame_command;
 pub mod keyframes;
 pub mod locate;
 pub mod probe;
@@ -24,6 +25,7 @@ pub use conversion_command::{
 };
 pub use encoders::{H264_HARDWARE_ENCODERS, find_working_h264_encoder, list_encoders};
 pub use error::FfmpegError;
+pub use frame_command::{FrameGrab, frame_grab_args};
 pub use keyframes::list_keyframes;
 pub use locate::{BinaryName, FfmpegPaths, locate_binary};
 pub use probe::probe_file;

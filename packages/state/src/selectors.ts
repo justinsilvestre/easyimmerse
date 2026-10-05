@@ -9,8 +9,10 @@ export const selectCurrentTime = (state: RootState) =>
 export const selectPlayerDuration = (state: RootState) =>
   state.app.player.durationSeconds;
 
-export const selectSubtitleSource = (state: RootState) =>
-  state.app.subtitleSource;
+export const selectPlayer = (state: RootState) => state.app.player;
+
+export const selectChosenSubtitleFile = (state: RootState) =>
+  state.app.chosenSubtitleFile;
 
 export const selectPreference = (key: PreferenceKey) => (state: RootState) =>
   state.app.preferences[key];
@@ -23,9 +25,6 @@ export const selectPendingFilePick = (state: RootState) =>
 
 export const selectCurrentMediaFileId = (state: RootState) =>
   state.app.currentMediaFileId;
-
-export const selectPendingMediaFilePick = (state: RootState) =>
-  state.app.pendingMediaFilePick;
 
 export const selectChosenMediaFile = (state: RootState) =>
   state.app.chosenMediaFile;

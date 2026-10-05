@@ -81,7 +81,9 @@ impl From<StorageError> for ApiFailure {
             StorageError::DictionaryNotFound(_)
             | StorageError::DictionaryMediaNotFound { .. }
             | StorageError::ProjectNotFound(_)
-            | StorageError::MediaFileNotFound(_) => not_found(error.to_string()),
+            | StorageError::MediaFileNotFound(_)
+            | StorageError::FlashcardNotFound(_)
+            | StorageError::SubtitleTrackNotFound(_) => not_found(error.to_string()),
             StorageError::Dictionary(_) => bad_request(error.to_string()),
             _ => internal(error.to_string()),
         }

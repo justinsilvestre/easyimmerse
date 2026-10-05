@@ -7,12 +7,12 @@ type FakeVideo = FrameSource & {
   seekedListeners: number;
 };
 
-function createFakeVideo(): FakeVideo {
+function createFakeVideo(videoWidth = 320, videoHeight = 180): FakeVideo {
   const listeners = new Set<() => void>();
   return {
     currentTime: 0,
-    videoWidth: 320,
-    videoHeight: 180,
+    videoWidth,
+    videoHeight,
     addEventListener: (_type, listener) => void listeners.add(listener),
     removeEventListener: (_type, listener) => void listeners.delete(listener),
     fireSeeked: () => {
@@ -49,6 +49,41 @@ describe("captureVideoFrame", () => {
       createCanvas: () => canvas,
     });
     expect(dataUrl).toBe("data:image/jpeg;base64,320x180");
+  });
+
+  it("scales a picture wider than the widest allowed down to that width", async () => {
+    const { canvas } = createFakeCanvas();
+    const dataUrl = await captureVideoFrame(createFakeVideo(1280, 720), {
+      maxWidthPx: 640,
+      createCanvas: () => canvas,
+    });
+    expect(dataUrl).toBe("data:image/jpeg;base64,640x360");
+  });
+
+  it("keeps a picture narrower than the widest allowed at its own size", async () => {
+    const { canvas } = createFakeCanvas();
+    const dataUrl = await captureVideoFrame(createFakeVideo(), {
+      maxWidthPx: 640,
+      createCanvas: () => canvas,
+    });
+    expect(dataUrl).toBe("data:image/jpeg;base64,320x180");
+  });
+
+  it("draws the frame across the scaled canvas", async () => {
+    const drawCalls: unknown[][] = [];
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: () => ({
+        drawImage: (...args: unknown[]) => drawCalls.push(args.slice(1)),
+      }),
+      toDataURL: () => "data:image/jpeg;base64,",
+    } as unknown as HTMLCanvasElement;
+    await captureVideoFrame(createFakeVideo(1280, 720), {
+      maxWidthPx: 640,
+      createCanvas: () => canvas,
+    });
+    expect(drawCalls).toEqual([[0, 0, 640, 360]]);
   });
 
   it("seeks the video to the asked time", async () => {

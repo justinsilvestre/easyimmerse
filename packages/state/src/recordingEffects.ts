@@ -1,13 +1,15 @@
 import type { Effects, PickedFile, PickedMediaFile } from "./effects.ts";
 
-export type EffectCall =
+type EffectCall =
   | { type: "seekPlayer"; seconds: number }
+  | { type: "togglePlayer" }
+  | { type: "setPlayerVolume"; volume: number }
+  | { type: "setPlayerSpeed"; speed: number }
   | { type: "pickFile"; accept: readonly string[] }
   | { type: "pickMediaFile"; accept: readonly string[] }
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
   | { type: "showNotification"; message: string }
-  | { type: "copyToClipboard"; text: string }
   | { type: "openExternalUrl"; url: string }
   | { type: "subscribeToSettingsRequests" };
 
@@ -63,6 +65,15 @@ export function createRecordingEffects(): RecordingEffects {
     seekPlayer: (seconds) => {
       calls.push({ type: "seekPlayer", seconds });
     },
+    togglePlayer: () => {
+      calls.push({ type: "togglePlayer" });
+    },
+    setPlayerVolume: (volume) => {
+      calls.push({ type: "setPlayerVolume", volume });
+    },
+    setPlayerSpeed: (speed) => {
+      calls.push({ type: "setPlayerSpeed", speed });
+    },
     pickFile: (accept) => {
       calls.push({ type: "pickFile", accept });
       return filePick.start();
@@ -81,9 +92,6 @@ export function createRecordingEffects(): RecordingEffects {
     },
     showNotification: (message) => {
       calls.push({ type: "showNotification", message });
-    },
-    copyToClipboard: async (text) => {
-      calls.push({ type: "copyToClipboard", text });
     },
     openExternalUrl: (url) => {
       calls.push({ type: "openExternalUrl", url });

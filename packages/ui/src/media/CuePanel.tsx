@@ -28,7 +28,8 @@ export function CuePanel({
   activeWord?: string;
   onSeek: (ms: number) => void;
   onWordHover: (word: string) => void;
-  onWordClick: (word: string) => void;
+  /** Receives the clicked word with the cue it was clicked in. */
+  onWordClick: (word: string, cue: Cue) => void;
   onAddSubtitlesFile: () => void;
   onGenerateSubtitles: () => void;
 }) {
@@ -101,7 +102,7 @@ function CueCard({
   activeWord?: string;
   onSeek: (ms: number) => void;
   onWordHover: (word: string) => void;
-  onWordClick: (word: string) => void;
+  onWordClick: (word: string, cue: Cue) => void;
 }) {
   const ref = useRef<HTMLLIElement>(null);
   useEffect(() => {
@@ -139,7 +140,7 @@ function CueCard({
           text={stripMarkup(cue.text)}
           activeWord={activeWord}
           onWordHover={onWordHover}
-          onWordClick={onWordClick}
+          onWordClick={(word) => onWordClick(word, cue)}
         />
       </p>
       {translation && (

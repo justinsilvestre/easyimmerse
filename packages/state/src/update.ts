@@ -1,6 +1,6 @@
 import type { AppAction } from "./actions.ts";
 import type { AppState, PreferenceKey } from "./appState.ts";
-import { preferenceKeys } from "./appState.ts";
+import { initialPlayerState, preferenceKeys } from "./appState.ts";
 import type { Effect } from "./effect.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { followSystemTheme, toggleTheme } from "./theme.ts";
@@ -39,6 +39,23 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         },
         [],
       ];
+    case "playToggleRequested":
+      return [state, [{ type: "togglePlayer" }]];
+    case "playerPlayingChanged":
+      return [
+        { ...state, player: { ...state.player, isPlaying: action.isPlaying } },
+        [],
+      ];
+    case "volumeChangeRequested":
+      return [
+        { ...state, player: { ...state.player, volume: action.volume } },
+        [{ type: "setPlayerVolume", volume: action.volume }],
+      ];
+    case "speedChangeRequested":
+      return [
+        { ...state, player: { ...state.player, speed: action.speed } },
+        [{ type: "setPlayerSpeed", speed: action.speed }],
+      ];
     case "filePickRequested":
       return [
         { ...state, pendingFilePick: true },
@@ -46,27 +63,29 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "fileChosen":
       return [
-        {
-          ...state,
-          pendingFilePick: false,
-          subtitleSource: action.file.source,
-        },
+        { ...state, pendingFilePick: false, chosenSubtitleFile: action.file },
         [],
       ];
     case "filePickCancelled":
       return [{ ...state, pendingFilePick: false }, []];
+    case "subtitleFileAdded":
+      return [{ ...state, chosenSubtitleFile: null }, []];
+    case "subtitleFileAddFailed":
+      return [
+        { ...state, chosenSubtitleFile: null },
+        [
+          {
+            type: "showNotification",
+            message: "The subtitles file could not be added",
+          },
+        ],
+      ];
     case "mediaFilePickRequested":
-      return [
-        { ...state, pendingMediaFilePick: true },
-        [{ type: "pickMediaFile", accept: mediaFileExtensions }],
-      ];
+      return [state, [{ type: "pickMediaFile", accept: mediaFileExtensions }]];
     case "mediaFileChosen":
-      return [
-        { ...state, pendingMediaFilePick: false, chosenMediaFile: action.file },
-        [],
-      ];
+      return [{ ...state, chosenMediaFile: action.file }, []];
     case "mediaFilePickCancelled":
-      return [{ ...state, pendingMediaFilePick: false }, []];
+      return [state, []];
     case "mediaFileAdded":
       return [
         {
@@ -104,7 +123,12 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         {
           ...state,
           currentMediaFileId: null,
-          player: { currentTimeSeconds: 0, durationSeconds: 0 },
+          chosenSubtitleFile: null,
+          player: {
+            ...initialPlayerState,
+            volume: state.player.volume,
+            speed: state.player.speed,
+          },
         },
         [],
       ];
@@ -128,14 +152,6 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "notificationRequested":
       return [state, [{ type: "showNotification", message: action.message }]];
-    case "cueCopyRequested":
-      return [
-        state,
-        [
-          { type: "copyToClipboard", text: action.text },
-          { type: "showNotification", message: "Copied to clipboard" },
-        ],
-      ];
     case "externalLinkRequested":
       return [state, [{ type: "openExternalUrl", url: action.url }]];
     case "systemThemeChanged":

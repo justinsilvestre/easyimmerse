@@ -45,7 +45,7 @@ const audioTrack: TrackInfo = {
 };
 
 /** The tracks of `fixtures/conversion-h264-aac.mkv`: one video and two audio tracks, Japanese by default. */
-export const fixtureTracksWithTwoAudio: TracksResponse = {
+const fixtureTracksWithTwoAudio: TracksResponse = {
   container: {
     format: "matroska",
     duration_ms: 10_021,
@@ -89,7 +89,7 @@ export const fixtureTracksDirect: TracksResponse = {
   direct_mime_type: 'video/mp4; codecs="avc1.4D000C, mp4a.40.2"',
 };
 
-export const fixtureDirectPlayback: PlaybackResponse = {
+const fixtureDirectPlayback: PlaybackResponse = {
   plan: { kind: "direct" },
   playlist_path: null,
 };
@@ -104,7 +104,7 @@ export const fixtureCopyPlayback: PlaybackResponse = {
   playlist_path: "/conversions/copy0001/index.m3u8",
 };
 
-export const fixtureTranscodePlayback: PlaybackResponse = {
+const fixtureTranscodePlayback: PlaybackResponse = {
   plan: {
     kind: "convert",
     video: { action: "copy", index: 0 },
@@ -114,7 +114,7 @@ export const fixtureTranscodePlayback: PlaybackResponse = {
   playlist_path: "/conversions/transcode01/index.m3u8",
 };
 
-export const fixtureUnsupportedPlayback: PlaybackResponse = {
+const fixtureUnsupportedPlayback: PlaybackResponse = {
   plan: { kind: "unsupported", reason: "picture_too_tall" },
   playlist_path: null,
 };
@@ -128,7 +128,7 @@ export const fixtureConversionCacheStatus: ConversionCacheStatus = {
 };
 
 /** A quiet window with one loud click per second, as the conversion fixtures' audio has. */
-export function fixtureWaveformWindow(startMs: number): WaveformResponse {
+function fixtureWaveformWindow(startMs: number): WaveformResponse {
   const peaks = Array.from({ length: 3000 }, (_, index) =>
     index % 100 === 0 ? 255 : 40 + ((index * 7) % 50),
   );
@@ -138,7 +138,7 @@ export function fixtureWaveformWindow(startMs: number): WaveformResponse {
 const waveformWindowFor = (request: BackendRequest) =>
   fixtureWaveformWindow(Number(request.query?.start_ms ?? 0));
 
-export const trackRoutes = {
+const trackRoutes = {
   tracks: /^\/projects\/[^/]+\/media\/[^/]+\/tracks$/,
   playback: /^\/projects\/[^/]+\/media\/[^/]+\/playback$/,
   trackSelection: /^\/projects\/[^/]+\/media\/[^/]+\/track-selection$/,

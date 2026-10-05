@@ -1,4 +1,10 @@
-import type { LookupResponse, PlaybackRequest } from "@easyimmerse/types";
+import type {
+  Flashcard,
+  FlashcardDraft,
+  LookupResponse,
+  PlaybackRequest,
+  SubtitleTracksResponse,
+} from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
 import { afterEach, describe, expect, it } from "vitest";
 import { backendApi } from "./backendApi.ts";
@@ -41,6 +47,110 @@ const srtRequest = {
   source: { kind: "inline", text: "1\n00:00:01,000 --> 00:00:02,000\nHi" },
   format: null,
 } as const;
+
+const savedFlashcard: Flashcard = {
+  id: "f1",
+  project_id: "p1",
+  media_file_id: "m1",
+  cue_index: null,
+  content: {
+    word: "Hund",
+    word_pronunciation: "",
+    l1_definition: "",
+    l2_definition: "",
+    text_context: "",
+    text_context_translation: "",
+    text_context_pronunciation: "",
+    audio_context: { start_ms: 1000, end_ms: 2000 },
+    screenshot: null,
+    tags: [],
+  },
+  included_fields: ["word"],
+  created_at_ms: 0,
+  updated_at_ms: 0,
+};
+
+const movedClipDraft: FlashcardDraft = {
+  media_file_id: "m1",
+  cue_index: null,
+  content: {
+    ...savedFlashcard.content,
+    audio_context: { start_ms: 500, end_ms: 2000 },
+  },
+  included_fields: ["word"],
+};
+
+const subtitleTracks: SubtitleTracksResponse = {
+  tracks: [],
+  selection: { target_track_id: "s1", translation_track_id: null },
+};
+
+/** Answers GET requests from the responses, and leaves every other request pending, or fails it when `failsWrites` is set. */
+function createStubbedClient(
+  responses: Record<string, unknown>,
+  failsWrites = false,
+): BackendClient {
+  return {
+    send: <T>(request: BackendRequest) => {
+      if (request.method === "GET")
+        return Promise.resolve({
+          data: responses[`GET ${request.path}`] as T,
+        });
+      if (failsWrites)
+        return Promise.resolve({
+          error: { status: 500, message: "failed" },
+        });
+      return new Promise<never>(() => undefined);
+    },
+  };
+}
+
+async function storeWithFlashcards(failsWrites = false) {
+  configureBackend(
+    createStubbedClient(
+      { "GET /projects/p1/flashcards": { flashcards: [savedFlashcard] } },
+      failsWrites,
+    ),
+  );
+  const store = createStore();
+  await store.dispatch(backendApi.endpoints.listFlashcards.initiate("p1"));
+  return store;
+}
+
+async function storeWithSubtitleTracks(failsWrites = false) {
+  configureBackend(
+    createStubbedClient(
+      { "GET /projects/p1/media/m1/subtitles": subtitleTracks },
+      failsWrites,
+    ),
+  );
+  const store = createStore();
+  await store.dispatch(
+    backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
+  );
+  return store;
+}
+
+const updateMovedClip = () =>
+  backendApi.endpoints.updateFlashcard.initiate({
+    projectId: "p1",
+    flashcardId: "f1",
+    draft: movedClipDraft,
+  });
+
+const chooseTranslation = () =>
+  backendApi.endpoints.setSubtitleSelection.initiate({
+    ...mediaArgs,
+    selection: { target_track_id: "s1", translation_track_id: "s2" },
+  });
+
+const listedClip = (store: ReturnType<typeof createStore>) =>
+  backendApi.endpoints.listFlashcards.select("p1")(store.getState()).data
+    ?.flashcards[0]?.content.audio_context;
+
+const listedSelection = (store: ReturnType<typeof createStore>) =>
+  backendApi.endpoints.listSubtitleTracks.select(mediaArgs)(store.getState())
+    .data?.selection;
 
 afterEach(resetBackend);
 
@@ -319,17 +429,6 @@ describe("backendApi", () => {
     });
   });
 
-  it("sends DELETE .../track-selection for clearTrackSelection", async () => {
-    const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
-      backendApi.endpoints.clearTrackSelection.initiate(mediaArgs),
-    );
-    expect(client.requests).toEqual([
-      { method: "DELETE", path: "/projects/p1/media/m1/track-selection" },
-    ]);
-  });
-
   it("puts the window bounds in the query string for getWaveformWindow", async () => {
     const client = createRecordingClient();
     configureBackend(client);
@@ -347,14 +446,25 @@ describe("backendApi", () => {
     });
   });
 
-  it("sends GET .../subtitle-tracks for listSubtitleTracks", async () => {
+  it("sends GET .../embedded-subtitles for listEmbeddedSubtitleTracks", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.listEmbeddedSubtitleTracks.initiate(mediaArgs),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/projects/p1/media/m1/embedded-subtitles" },
+    ]);
+  });
+
+  it("sends GET .../subtitles for listSubtitleTracks", async () => {
     const client = createRecordingClient();
     configureBackend(client);
     await createStore().dispatch(
       backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
     );
     expect(client.requests).toEqual([
-      { method: "GET", path: "/projects/p1/media/m1/subtitle-tracks" },
+      { method: "GET", path: "/projects/p1/media/m1/subtitles" },
     ]);
   });
 
@@ -378,5 +488,31 @@ describe("backendApi", () => {
     expect(client.requests).toEqual([
       { method: "POST", path: "/conversion-cache/clear" },
     ]);
+  });
+
+  describe("while a change is being saved", () => {
+    it("shows an updated flashcard in the cached list at once", async () => {
+      const store = await storeWithFlashcards();
+      store.dispatch(updateMovedClip());
+      expect(listedClip(store)).toEqual({ start_ms: 500, end_ms: 2000 });
+    });
+
+    it("restores the cached flashcard when the update fails", async () => {
+      const store = await storeWithFlashcards(true);
+      await store.dispatch(updateMovedClip());
+      expect(listedClip(store)).toEqual({ start_ms: 1000, end_ms: 2000 });
+    });
+
+    it("shows a chosen subtitle selection in the cached list at once", async () => {
+      const store = await storeWithSubtitleTracks();
+      store.dispatch(chooseTranslation());
+      expect(listedSelection(store)?.translation_track_id).toBe("s2");
+    });
+
+    it("restores the cached subtitle selection when saving it fails", async () => {
+      const store = await storeWithSubtitleTracks(true);
+      await store.dispatch(chooseTranslation());
+      expect(listedSelection(store)?.translation_track_id).toBeNull();
+    });
   });
 });

@@ -33,7 +33,7 @@ pub struct DictionaryId(pub String);
 
 impl DictionaryId {
     pub fn generate() -> Self {
-        Self(hex::encode(rand::random::<[u8; 16]>()))
+        Self(crate::new_row::generate_id())
     }
 }
 

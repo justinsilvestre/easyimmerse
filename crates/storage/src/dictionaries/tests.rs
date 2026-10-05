@@ -149,16 +149,6 @@ fn fixture_source() -> DictionarySource {
 }
 
 #[test]
-fn generates_a_32_character_hex_id() {
-    assert_eq!(DictionaryId::generate().0.len(), 32);
-}
-
-#[test]
-fn generates_distinct_ids() {
-    assert_ne!(DictionaryId::generate(), DictionaryId::generate());
-}
-
-#[test]
 fn imports_the_yomitan_fixture_with_its_title() {
     let storage = Storage::open_in_memory().unwrap();
     let id = storage.import_dictionary(&mut fixture_source()).unwrap();

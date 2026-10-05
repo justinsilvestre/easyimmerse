@@ -1,6 +1,6 @@
+import type { TrackSelection } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { TrackSelection } from "./TrackChoiceDialog.tsx";
 import { TrackChoiceDialog } from "./TrackChoiceDialog.tsx";
 import type { TrackChoice } from "./trackChoiceLabels.ts";
 

@@ -3,7 +3,7 @@ import { formatRelativeDate } from "./formatRelativeDate.ts";
 
 // Local-time dates keep the expectations the same in every time zone.
 const localDate = (day: number, hour: number) =>
-  new Date(2026, 9, day, hour).toISOString();
+  new Date(2026, 9, day, hour).getTime();
 const now = new Date(2026, 9, 3, 1).getTime();
 
 describe("formatRelativeDate", () => {
@@ -20,8 +20,8 @@ describe("formatRelativeDate", () => {
   });
 
   it("shows the date after a month", () => {
-    expect(
-      formatRelativeDate(new Date(2026, 7, 1, 12).toISOString(), now),
-    ).toBe("Aug 1, 2026");
+    expect(formatRelativeDate(new Date(2026, 7, 1, 12).getTime(), now)).toBe(
+      "Aug 1, 2026",
+    );
   });
 });

@@ -6,23 +6,29 @@
 mod connections;
 mod dictionaries;
 mod error;
+mod flashcards;
 mod media_files;
 mod migrations;
+mod new_row;
 mod preferences;
 mod projects;
+mod stored_integer;
+mod subtitle_tracks;
 
 pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use error::StorageError;
+pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 
 use std::path::Path;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use easyimmerse_core::dictionary::{DictionaryMedia, DictionarySource};
+use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
 };
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
-use easyimmerse_core::project::{ProjectId, ProjectSummary};
+use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
+use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
 
 use connections::Connections;
@@ -61,8 +67,30 @@ impl Storage {
         self.connections.read(operation)
     }
 
-    pub fn list_projects(&self) -> Result<Vec<ProjectSummary>, StorageError> {
+    /// Lists every project, most recently opened first.
+    pub fn list_projects(&self) -> Result<Vec<Project>, StorageError> {
         self.read(projects::list_projects)
+    }
+
+    pub fn get_project(&self, id: &ProjectId) -> Result<Project, StorageError> {
+        self.read(|conn| projects::get_project(conn, id))
+    }
+
+    pub fn create_project(&self, settings: &ProjectSettings) -> Result<Project, StorageError> {
+        self.write(|conn| projects::create_project(conn, settings))
+    }
+
+    pub fn update_project(
+        &self,
+        id: &ProjectId,
+        settings: &ProjectSettings,
+    ) -> Result<Project, StorageError> {
+        self.write(|conn| projects::update_project(conn, id, settings))
+    }
+
+    /// Records that the project was opened just now, which moves it to the front of the list.
+    pub fn mark_project_opened(&self, id: &ProjectId) -> Result<(), StorageError> {
+        self.write(|conn| projects::mark_project_opened(conn, id))
     }
 
     pub fn seed_placeholder_projects(&self) -> Result<(), StorageError> {
@@ -71,7 +99,7 @@ impl Storage {
 
     /// Deletes a project together with everything that belongs to it.
     pub fn delete_project(&self, project_id: &ProjectId) -> Result<(), StorageError> {
-        self.write(|conn| media_files::delete_project(conn, project_id))
+        self.write(|conn| projects::delete_project(conn, project_id))
     }
 
     pub fn list_media_files(&self, project_id: &ProjectId) -> Result<Vec<MediaFile>, StorageError> {
@@ -109,6 +137,79 @@ impl Storage {
         self.read(media_files::list_referenced_source_paths)
     }
 
+    pub fn list_flashcards(&self, project_id: &ProjectId) -> Result<Vec<Flashcard>, StorageError> {
+        self.read(|conn| flashcards::list_flashcards(conn, project_id))
+    }
+
+    pub fn get_flashcard(&self, id: &FlashcardId) -> Result<Flashcard, StorageError> {
+        self.read(|conn| flashcards::get_flashcard(conn, id))
+    }
+
+    pub fn create_flashcard(
+        &self,
+        project_id: &ProjectId,
+        draft: &FlashcardDraft,
+    ) -> Result<Flashcard, StorageError> {
+        self.write(|conn| flashcards::create_flashcard(conn, project_id, draft))
+    }
+
+    pub fn update_flashcard(
+        &self,
+        id: &FlashcardId,
+        draft: &FlashcardDraft,
+    ) -> Result<Flashcard, StorageError> {
+        self.write(|conn| flashcards::update_flashcard(conn, id, draft))
+    }
+
+    pub fn delete_flashcard(&self, id: &FlashcardId) -> Result<(), StorageError> {
+        self.write(|conn| flashcards::delete_flashcard(conn, id))
+    }
+
+    pub fn list_subtitle_tracks(
+        &self,
+        media_file_id: &MediaFileId,
+    ) -> Result<Vec<SubtitleTrack>, StorageError> {
+        self.read(|conn| subtitle_tracks::list_subtitle_tracks(conn, media_file_id))
+    }
+
+    pub fn get_subtitle_track(
+        &self,
+        id: &SubtitleTrackId,
+    ) -> Result<StoredSubtitleTrack, StorageError> {
+        self.read(|conn| subtitle_tracks::get_subtitle_track(conn, id))
+    }
+
+    pub fn add_subtitle_track(
+        &self,
+        media_file_id: &MediaFileId,
+        track: &NewSubtitleTrack,
+    ) -> Result<SubtitleTrack, StorageError> {
+        self.write(|conn| subtitle_tracks::add_subtitle_track(conn, media_file_id, track))
+    }
+
+    /// Removes a track and takes it out of its media file's selection.
+    pub fn remove_subtitle_track(&self, id: &SubtitleTrackId) -> Result<(), StorageError> {
+        self.write(|conn| subtitle_tracks::remove_subtitle_track(conn, id))
+    }
+
+    pub fn get_subtitle_selection(
+        &self,
+        media_file_id: &MediaFileId,
+    ) -> Result<SubtitleSelection, StorageError> {
+        self.read(|conn| subtitle_tracks::get_subtitle_selection(conn, media_file_id))
+    }
+
+    /// Stores which tracks the media file shows. Each named track must belong to the media file.
+    pub fn set_subtitle_selection(
+        &self,
+        media_file_id: &MediaFileId,
+        selection: &SubtitleSelection,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            subtitle_tracks::set_subtitle_selection(conn, media_file_id, selection)
+        })
+    }
+
     pub fn get_preference(&self, key: &str) -> Result<Option<String>, StorageError> {
         self.read(|conn| preferences::get_preference(conn, key))
     }
@@ -123,7 +224,7 @@ impl Storage {
         &self,
         source: &mut DictionarySource,
     ) -> Result<DictionaryId, StorageError> {
-        let imported_at = milliseconds_since_epoch();
+        let imported_at = new_row::now_ms();
         self.write(|conn| dictionaries::import_dictionary(conn, source, imported_at))
     }
 
@@ -183,12 +284,6 @@ impl Storage {
     }
 }
 
-fn milliseconds_since_epoch() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|elapsed| u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX))
-        .unwrap_or(0)
-}
 
 #[cfg(test)]
 mod tests {

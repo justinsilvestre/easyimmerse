@@ -1,7 +1,7 @@
 /** Peaks arrive in aligned windows of this length. */
 export const waveformWindowMs = 30_000;
 export const waveformPeaksPerSecond = 100;
-export const maxWindowRequestsInFlight = 3;
+const maxWindowRequestsInFlight = 3;
 /** The widest visible span: as many windows as can be kept arriving while the view moves. */
 export const maxVisibleSpanMs = 10 * waveformWindowMs;
 

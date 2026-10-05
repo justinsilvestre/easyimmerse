@@ -28,16 +28,16 @@ export function TextFieldBlocks(props: FieldsProps) {
     props.state.includedFields.includes(key);
   const cell = (key: FlashcardTextFieldKey) =>
     isIncluded(key) && <Cell key={key} fieldKey={key} {...props} />;
-  const wordKeys: FlashcardTextFieldKey[] = ["word", "wordPronunciation"];
+  const wordKeys: FlashcardTextFieldKey[] = ["word", "word_pronunciation"];
   return (
     <>
       <Block
         label="Word and definition"
         isShown={
           isIncluded("word") ||
-          isIncluded("l1Definition") ||
-          isIncluded("l2Definition") ||
-          isIncluded("wordPronunciation")
+          isIncluded("l1_definition") ||
+          isIncluded("l2_definition") ||
+          isIncluded("word_pronunciation")
         }
       >
         <div
@@ -48,20 +48,20 @@ export function TextFieldBlocks(props: FieldsProps) {
         >
           {wordKeys.map(cell)}
         </div>
-        {cell("l1Definition")}
-        {cell("l2Definition")}
+        {cell("l1_definition")}
+        {cell("l2_definition")}
       </Block>
       <Block
         label="Sentence"
         isShown={
-          isIncluded("textContext") ||
-          isIncluded("textContextTranslation") ||
-          isIncluded("textContextPronunciation")
+          isIncluded("text_context") ||
+          isIncluded("text_context_translation") ||
+          isIncluded("text_context_pronunciation")
         }
       >
-        {cell("textContext")}
-        {cell("textContextTranslation")}
-        {cell("textContextPronunciation")}
+        {cell("text_context")}
+        {cell("text_context_translation")}
+        {cell("text_context_pronunciation")}
       </Block>
     </>
   );
@@ -124,27 +124,31 @@ function Cell({
 export function MediaFields({
   state,
   waveform,
+  screenshotUrl,
   dispatch,
 }: {
   state: EditorState;
   waveform: MediaWaveform | null;
+  /** The image of the screenshot at its current time, or null when none can be shown. */
+  screenshotUrl: string | null;
   dispatch: (action: EditorAction) => void;
 }) {
   const { content } = state;
+  const thumbnailUrl = content.screenshot === null ? null : screenshotUrl;
   const showsClip =
-    state.includedFields.includes("audioContext") &&
-    content.audioContext !== null &&
+    state.includedFields.includes("audio_context") &&
+    content.audio_context !== null &&
     waveform !== null;
-  if (!showsClip && content.screenshot === null) return null;
+  if (!showsClip && thumbnailUrl === null) return null;
   return (
     <div className="flex shrink-0 items-start gap-2">
-      {showsClip && content.audioContext && waveform && (
+      {showsClip && content.audio_context && waveform && (
         <fieldset aria-label="Sentence audio" className="min-w-0 flex-1">
           <ClipEditor
             peaks={waveform.peaks}
             durationMs={waveform.durationMs}
-            clip={content.audioContext}
-            screenshotMs={content.screenshot?.atMs ?? null}
+            clip={content.audio_context}
+            screenshotMs={content.screenshot?.at_ms ?? null}
             onClipChange={(clip) => dispatch({ type: "clipChanged", clip })}
             onScreenshotMsChange={(ms) =>
               dispatch({ type: "screenshotMsChanged", ms })
@@ -152,9 +156,9 @@ export function MediaFields({
           />
         </fieldset>
       )}
-      {content.screenshot && (
+      {thumbnailUrl !== null && (
         <ScreenshotThumbnail
-          url={content.screenshot.url}
+          url={thumbnailUrl}
           isIncluded={state.includedFields.includes("screenshot")}
           onToggle={() => dispatch({ type: "screenshotToggled" })}
         />

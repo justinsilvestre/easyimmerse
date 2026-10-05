@@ -133,14 +133,4 @@ describe("effectsMiddleware", () => {
     store.dispatch(actions.preferenceToggled("showTranslations"));
     expect(effects.preferences.get("showTranslations")).toBe("true");
   });
-
-  it("calls showNotification with a confirmation after cueCopyRequested is dispatched", () => {
-    const effects = createRecordingEffects();
-    const store = createAppStore(effects, createFakeServerStoreParts());
-    store.dispatch(actions.cueCopyRequested("Hello"));
-    expect(effects.calls).toContainEqual({
-      type: "showNotification",
-      message: "Copied to clipboard",
-    });
-  });
 });

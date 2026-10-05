@@ -1,7 +1,10 @@
-/** A screen that fills the window on its own. */
+/** A screen that fills the window on its own. A project's open media file is kept in the store, not here. */
 export type MainNavigation =
   | { screen: "home" }
-  | { screen: "media"; projectId: string };
+  | { screen: "offline" }
+  | { screen: "newProject" }
+  | { screen: "project"; projectId: string }
+  | { screen: "projectSettings"; projectId: string };
 
 /**
  * Where the app is. Settings opens over a main screen, which stays mounted beneath it
@@ -13,6 +16,9 @@ export type Navigation =
 
 export type NavigationAction =
   | { type: "openProject"; projectId: string }
+  | { type: "openProjectSettings"; projectId: string }
+  | { type: "createProject" }
+  | { type: "continueOffline" }
   | { type: "goHome" }
   | { type: "openSettings" }
   | { type: "closeSettings" };
@@ -25,7 +31,13 @@ export function navigate(
 ): Navigation {
   switch (action.type) {
     case "openProject":
-      return { screen: "media", projectId: action.projectId };
+      return { screen: "project", projectId: action.projectId };
+    case "openProjectSettings":
+      return { screen: "projectSettings", projectId: action.projectId };
+    case "createProject":
+      return { screen: "newProject" };
+    case "continueOffline":
+      return { screen: "offline" };
     case "goHome":
       return { screen: "home" };
     case "openSettings":

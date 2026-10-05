@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { useId, useReducer } from "react";
 import { Button } from "../components/Button.tsx";
 import { CheckboxField } from "../components/CheckboxField.tsx";
-import { Dialog } from "../components/Dialog.tsx";
+import { ModalDialog } from "../components/ModalDialog.tsx";
 
 const columnRoleLabels: Record<ColumnRole, string> = {
   term: "Term",
@@ -55,10 +55,10 @@ export function TableColumnsDialog({
   const termCount = layout.columns.filter((role) => role === "term").length;
   const hint = termHint(termCount);
   return (
-    <Dialog
+    <ModalDialog
       title={`Import ${fileName}`}
       description="Check what each column holds. Only the first rows are shown."
-      onClose={onCancel}
+      onCancel={onCancel}
       isWide
       footer={
         <>
@@ -149,7 +149,7 @@ export function TableColumnsDialog({
           {hint}
         </p>
       )}
-    </Dialog>
+    </ModalDialog>
   );
 }
 
