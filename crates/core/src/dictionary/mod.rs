@@ -23,7 +23,7 @@ mod yomitan;
 
 pub use archive::ArchiveError;
 pub use csv::{CsvError, CsvFormat};
-pub use dictionary_media::DictionaryMedia;
+pub use dictionary_media::{DictionaryMedia, media_key};
 pub use error::DictionaryError;
 pub use format::DictionaryFormat;
 pub use kanji_entry::{KanjiEntry, KanjiMeta};

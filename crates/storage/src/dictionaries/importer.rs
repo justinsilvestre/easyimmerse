@@ -1,6 +1,7 @@
 use easyimmerse_core::dictionary::{
-    self, DictionaryError, DictionaryMedia, DictionaryMetadata, DictionarySink, DictionarySource,
-    KanjiEntry, KanjiMeta, SinkError, SinkResult, TagDefinition, TermEntry, TermMeta, TermMetaData,
+    self, DictionaryError, DictionaryFormatKind, DictionaryMedia, DictionaryMetadata,
+    DictionarySink, DictionarySource, KanjiEntry, KanjiMeta, SinkError, SinkResult, TagDefinition,
+    TermEntry, TermMeta, TermMetaData, media_key,
 };
 use easyimmerse_core::lookup::fold_case;
 use rusqlite::{Connection, Transaction, params};
@@ -35,33 +36,40 @@ pub fn import_with(
         deflater: JsonDeflater::new(),
     };
     read(&mut importer)?;
-    let (number, id) = importer.started.ok_or(StorageError::ImportOutOfOrder)?;
-    record_counts(&transaction, number)?;
+    let started = importer.started.ok_or(StorageError::ImportOutOfOrder)?;
+    record_counts(&transaction, started.number)?;
     transaction.commit()?;
-    Ok(id)
+    Ok(started.id)
 }
 
 /// Writes each item a format reads straight to the database through cached prepared statements.
 struct DictionaryImporter<'a> {
     transaction: &'a Transaction<'a>,
     imported_at: u64,
-    /// The number and id of the dictionary row, once `begin` has written it.
-    started: Option<(i64, DictionaryId)>,
+    /// The dictionary row, once `begin` has written it.
+    started: Option<StartedDictionary>,
     deflater: JsonDeflater,
 }
 
+struct StartedDictionary {
+    number: i64,
+    id: DictionaryId,
+    format: DictionaryFormatKind,
+}
+
 impl DictionaryImporter<'_> {
+    fn started(&self) -> Result<&StartedDictionary, StorageError> {
+        self.started.as_ref().ok_or(StorageError::ImportOutOfOrder)
+    }
+
     fn number(&self) -> Result<i64, StorageError> {
-        self.started
-            .as_ref()
-            .map(|(number, _)| *number)
-            .ok_or(StorageError::ImportOutOfOrder)
+        Ok(self.started()?.number)
     }
 
     fn insert_metadata(
         &self,
         metadata: &DictionaryMetadata,
-    ) -> Result<(i64, DictionaryId), StorageError> {
+    ) -> Result<StartedDictionary, StorageError> {
         let id = DictionaryId::generate();
         let frequency_mode = metadata
             .frequency_mode
@@ -88,7 +96,11 @@ impl DictionaryImporter<'_> {
                 i64::try_from(self.imported_at).unwrap_or(i64::MAX),
             ],
         )?;
-        Ok((self.transaction.last_insert_rowid(), id))
+        Ok(StartedDictionary {
+            number: self.transaction.last_insert_rowid(),
+            id,
+            format: metadata.format,
+        })
     }
 
     fn insert_entry(&mut self, entry: &TermEntry) -> Result<(), StorageError> {
@@ -177,15 +189,17 @@ impl DictionaryImporter<'_> {
         Ok(())
     }
 
+    /// Stores a file under its media key. When two files share a key, the first one stored is kept.
     fn insert_media(&self, media: &DictionaryMedia) -> Result<(), StorageError> {
+        let started = self.started()?;
         self.transaction
             .prepare_cached(
-                "INSERT OR REPLACE INTO dictionary_media (dictionary_number, path, media_type, bytes)
+                "INSERT OR IGNORE INTO dictionary_media (dictionary_number, path, media_type, bytes)
                  VALUES (?1, ?2, ?3, ?4)",
             )?
             .execute(params![
-                self.number()?,
-                media.path,
+                started.number,
+                media_key(started.format, &media.path),
                 media.media_type,
                 media.bytes
             ])?;

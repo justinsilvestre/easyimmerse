@@ -50,11 +50,11 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
     let entries = group.entries.iter();
     ResultSortKey {
         matched_length: group.candidate.matched_length(),
+        matches_exactly: matches_exactly(group),
         inflection_count: group.candidate.inflection_count(),
-        undoes_only_a_bare_stem: group.candidate.undoes_only_a_bare_stem(),
+        is_bare_form: group.candidate.is_bare_form,
         is_fallback: group.candidate.is_fallback(),
         commonness: commonness(term_meta),
-        matches_exactly: matches_exactly(group),
         first_dictionary_rank: entries
             .clone()
             .map(|found| found.dictionary.rank)
@@ -159,6 +159,7 @@ mod tests {
                 word_classes: vec!["v1".to_string()],
                 inflections: vec!["past".to_string()],
             },
+            is_bare_form: false,
         }
     }
 
@@ -241,6 +242,50 @@ mod tests {
         assert_eq!(terms(&results), vec!["切れる", "切る"]);
     }
 
+    /// The verbs 行く and 行ける, whose imperative and continuative are both 行け.
+    fn ike_entries(iku_rank: i64, ikeru_rank: i64) -> Vec<FoundEntry> {
+        vec![
+            classed("v1", scored(found(ikeru_rank, "行ける", "いける"), 1, 0)),
+            classed("v5", scored(found(iku_rank, "行く", "いく"), 2, 0)),
+        ]
+    }
+
+    #[test]
+    fn ranks_the_more_common_of_an_imperative_and_a_continuative_first() {
+        let candidates = lookup_candidates("行け", "ja");
+        let meta = vec![
+            frequency(9, "行く", "いく", 50.0),
+            frequency(9, "行ける", "いける", 3_000.0),
+        ];
+        let results = build_lookup_results(&candidates, ike_entries(1, 1), &meta);
+        assert_eq!(terms(&results), vec!["行く", "行ける"]);
+    }
+
+    #[test]
+    fn reports_the_imperative_of_iku_for_ike() {
+        let candidates = lookup_candidates("行け", "ja");
+        let meta = vec![
+            frequency(9, "行く", "いく", 50.0),
+            frequency(9, "行ける", "いける", 3_000.0),
+        ];
+        let results = build_lookup_results(&candidates, ike_entries(1, 1), &meta);
+        assert_eq!(results[0].inflections, vec!["imperative"]);
+    }
+
+    #[test]
+    fn ranks_an_imperative_and_a_continuative_by_dictionary_order_without_frequencies() {
+        let candidates = lookup_candidates("行け", "ja");
+        let results = build_lookup_results(&candidates, ike_entries(1, 2), &[]);
+        assert_eq!(terms(&results), vec!["行く", "行ける"]);
+    }
+
+    #[test]
+    fn ranks_a_continuative_from_an_earlier_dictionary_first_without_frequencies() {
+        let candidates = lookup_candidates("行け", "ja");
+        let results = build_lookup_results(&candidates, ike_entries(2, 1), &[]);
+        assert_eq!(terms(&results), vec!["行ける", "行く"]);
+    }
+
     /// Two entries that fold to the same headword, as ß folds to ss.
     fn masse_entries() -> Vec<FoundEntry> {
         vec![
@@ -265,6 +310,47 @@ mod tests {
         assert_eq!(terms(&results), vec!["Masse", "Maße"]);
     }
 
+    #[test]
+    fn ranks_the_exact_spelling_before_a_more_common_folded_one() {
+        let candidates = lookup_candidates("Maße", "de");
+        let meta = vec![
+            frequency(9, "Masse", "Masse", 10.0),
+            frequency(9, "Maße", "Maße", 5_000.0),
+        ];
+        let results = build_lookup_results(&candidates, masse_entries(), &meta);
+        assert_eq!(terms(&results), vec!["Maße", "Masse"]);
+    }
+
+    /// The noun Essen and the verb essen, which differ only in case.
+    fn essen_entries() -> Vec<FoundEntry> {
+        vec![
+            scored(found(1, "essen", "essen"), 1, 0),
+            scored(found(1, "Essen", "Essen"), 2, 0),
+        ]
+    }
+
+    #[test]
+    fn ranks_the_noun_spelled_as_matched_before_the_verb() {
+        let candidates = lookup_candidates("Essen", "de");
+        let results = build_lookup_results(&candidates, essen_entries(), &[]);
+        assert_eq!(terms(&results), vec!["Essen", "essen"]);
+    }
+
+    #[test]
+    fn finds_a_capitalized_noun_from_a_lowercase_sentence_start() {
+        let candidates = lookup_candidates("hund", "de");
+        let entries = vec![found(1, "Hund", "Hund")];
+        let results = build_lookup_results(&candidates, entries, &[]);
+        assert_eq!(terms(&results), vec!["Hund"]);
+    }
+
+    #[test]
+    fn ranks_the_verb_spelled_as_matched_before_the_noun() {
+        let candidates = lookup_candidates("essen", "de");
+        let results = build_lookup_results(&candidates, essen_entries(), &[]);
+        assert_eq!(terms(&results), vec!["essen", "Essen"]);
+    }
+
     /// The pointer on し in 雨だし looks up the text し.
     #[test]
     fn ranks_the_particle_shi_in_ame_da_shi_before_the_more_common_suru() {
@@ -287,6 +373,61 @@ mod tests {
         let entries = vec![found(1, "猫", "ねこ"), found(1, "猫舌", "ねこじた")];
         let results = build_lookup_results(&candidates, entries, &[]);
         assert_eq!(results[0].term, "猫舌");
+    }
+
+    /// 日本 read にほん and にっぽん, with a frequency and a pitch accent for each reading.
+    fn nihon_results() -> Vec<LookupResult> {
+        let candidates = lookup_candidates("日本", "ja");
+        let entries = vec![
+            scored(found(1, "日本", "にっぽん"), 1, 0),
+            scored(found(1, "日本", "にほん"), 2, 0),
+        ];
+        let mut pitch = frequency(8, "日本", "にっぽん", 0.0);
+        pitch.meta.data = TermMetaData::Pitch {
+            pitches: Vec::new(),
+        };
+        let meta = vec![
+            frequency(9, "日本", "にっぽん", 9_000.0),
+            frequency(9, "日本", "にほん", 40.0),
+            pitch,
+        ];
+        build_lookup_results(&candidates, entries, &meta)
+    }
+
+    fn frequency_values(result: &LookupResult) -> Vec<Option<f64>> {
+        result
+            .frequencies
+            .iter()
+            .map(|found| found.frequency.value)
+            .collect()
+    }
+
+    #[test]
+    fn ranks_the_more_common_reading_of_a_term_first() {
+        assert_eq!(
+            readings(&nihon_results()),
+            vec![Some("にほん".to_string()), Some("にっぽん".to_string())]
+        );
+    }
+
+    #[test]
+    fn attaches_only_the_frequency_of_the_first_reading() {
+        assert_eq!(frequency_values(&nihon_results()[0]), vec![Some(40.0)]);
+    }
+
+    #[test]
+    fn attaches_only_the_frequency_of_the_second_reading() {
+        assert_eq!(frequency_values(&nihon_results()[1]), vec![Some(9_000.0)]);
+    }
+
+    #[test]
+    fn leaves_out_the_pitch_accent_of_another_reading() {
+        assert!(nihon_results()[0].pronunciations.is_empty());
+    }
+
+    #[test]
+    fn attaches_the_pitch_accent_of_the_reading() {
+        assert_eq!(nihon_results()[1].pronunciations.len(), 1);
     }
 
     #[test]

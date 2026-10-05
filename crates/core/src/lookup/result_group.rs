@@ -98,6 +98,7 @@ mod tests {
         LookupCandidate {
             matched_text: text.to_string(),
             deinflection: Deinflection::unchanged(text),
+            is_bare_form: false,
         }
     }
 

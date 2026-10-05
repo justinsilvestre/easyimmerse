@@ -96,6 +96,7 @@ CREATE TABLE dictionary_kanji_meta (
 CREATE INDEX dictionary_kanji_meta_by_character ON dictionary_kanji_meta (character);
 CREATE INDEX dictionary_kanji_meta_by_dictionary ON dictionary_kanji_meta (dictionary_number);
 
+-- `path` is the file's media key, which normalizes the spellings that definitions may use for it.
 CREATE TABLE dictionary_media (
     dictionary_number INTEGER NOT NULL REFERENCES dictionaries(number) ON DELETE CASCADE,
     path TEXT NOT NULL,

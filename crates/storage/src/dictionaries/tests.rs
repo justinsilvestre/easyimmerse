@@ -15,7 +15,7 @@ use crate::{Storage, StorageError};
 type Reader = Box<dyn FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>>;
 
 fn import(storage: &Storage, read: Reader) -> Result<DictionaryId, StorageError> {
-    storage.with_connection(|conn| import_with(conn, 1_000, read))
+    storage.write(|conn| import_with(conn, 1_000, read))
 }
 
 fn metadata(title: &str, format: DictionaryFormatKind) -> DictionaryMetadata {
@@ -458,7 +458,7 @@ fn deleting_a_dictionary_removes_its_headwords() {
     let (storage, ids) = storage_with(vec![japanese_dictionary()]);
     storage.delete_dictionary(&ids[0]).unwrap();
     let remaining: i64 = storage
-        .with_connection(|conn| {
+        .write(|conn| {
             Ok(
                 conn.query_row("SELECT COUNT(*) FROM dictionary_headwords", [], |row| {
                     row.get(0)

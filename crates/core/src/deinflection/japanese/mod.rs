@@ -19,6 +19,19 @@ pub fn deinflect(text: &str) -> Vec<Deinflection> {
     search::search(text, rules::ALL)
 }
 
+/// The names of the inflections whose one step returns a bare stem: the continuative (書き) and the adjective stem (高).
+const BARE_STEM_INFLECTIONS: [&str; 2] = ["continuative", "stem"];
+
+/// Whether the deinflection is one step back from a bare stem used as a word:
+/// the continuative (食べ, 書き), the adjective stem (高), or the godan imperative, which is the bare e-stem (行け, 書け).
+pub fn is_bare_form(deinflection: &Deinflection) -> bool {
+    let [only] = deinflection.inflections.as_slice() else {
+        return false;
+    };
+    BARE_STEM_INFLECTIONS.contains(&only.as_str())
+        || (only == "imperative" && deinflection.word_classes.iter().any(|class| class == "v5"))
+}
+
 #[cfg(test)]
 pub(super) mod test_support {
     /// Whether deinflecting `text` yields `term` in `word_class` through exactly `inflections`.
@@ -36,8 +49,61 @@ pub(super) mod test_support {
 
 #[cfg(test)]
 mod tests {
-    use super::deinflect;
     use super::test_support::yields;
+    use super::{Deinflection, deinflect, is_bare_form};
+
+    /// Whether deinflecting `text` to `term` through `inflections` counts as a bare form.
+    fn is_bare(text: &str, term: &str, inflections: &[&str]) -> bool {
+        let found: Vec<Deinflection> = deinflect(text)
+            .into_iter()
+            .filter(|candidate| candidate.term == term && candidate.inflections == inflections)
+            .collect();
+        is_bare_form(&found[0])
+    }
+
+    mod is_bare_form {
+        use super::is_bare;
+
+        #[test]
+        fn counts_a_verb_continuative() {
+            assert!(is_bare("書き", "書く", &["continuative"]));
+        }
+
+        #[test]
+        fn counts_an_ichidan_continuative() {
+            assert!(is_bare("食べ", "食べる", &["continuative"]));
+        }
+
+        #[test]
+        fn counts_an_adjective_stem() {
+            assert!(is_bare("高", "高い", &["stem"]));
+        }
+
+        #[test]
+        fn counts_a_godan_imperative() {
+            assert!(is_bare("行け", "行く", &["imperative"]));
+        }
+
+        #[test]
+        fn does_not_count_an_ichidan_imperative() {
+            assert!(!is_bare("食べろ", "食べる", &["imperative"]));
+        }
+
+        #[test]
+        fn does_not_count_a_stem_under_another_inflection() {
+            assert!(!is_bare("書かせ", "書く", &["continuative", "causative"]));
+        }
+
+        #[test]
+        fn does_not_count_an_unchanged_word() {
+            assert!(!is_bare("書き", "書き", &[]));
+        }
+
+        #[test]
+        fn does_not_count_a_past() {
+            assert!(!is_bare("書いた", "書く", &["past"]));
+        }
+    }
 
     #[test]
     fn undoes_a_stack_of_inflections_outermost_first() {

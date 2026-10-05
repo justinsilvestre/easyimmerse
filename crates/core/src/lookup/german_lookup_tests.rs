@@ -130,3 +130,9 @@ fn ranks_a_comparative_above_a_bare_imperative() {
     let entries = vec![found("bessern", &["v"], 1), found("gut", &["adj"], 2)];
     assert_eq!(look_up("besser", entries)[0].term, "gut");
 }
+
+#[test]
+fn ranks_the_noun_of_a_sentence_initial_word_above_a_bare_imperative() {
+    let entries = vec![found("laufen", &["v"], 1), found("Lauf", &["n"], 2)];
+    assert_eq!(look_up("Lauf", entries)[0].term, "Lauf");
+}

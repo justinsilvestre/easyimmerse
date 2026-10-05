@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 use crate::dictionary::{
-    DictionaryError, DictionaryMedia, DictionarySink, DictionarySource, file_name,
+    DictionaryError, DictionaryFormatKind, DictionaryMedia, DictionarySink, DictionarySource,
+    file_name, media_key,
 };
 
 use super::mdict_file::{FileKind, MdictFile};
@@ -9,7 +10,7 @@ use super::mdict_file::{FileKind, MdictFile};
 /// Reads every `.mdd` resource file of the source into the sink.
 ///
 /// Volumes are read in order (`name.mdd`, then `name.1.mdd`, `name.2.mdd`, and so on),
-/// and when two volumes hold the same path, the first wins.
+/// and when two volumes hold the same path, ignoring case, the first wins.
 pub fn import_media(
     source: &mut DictionarySource,
     sink: &mut dyn DictionarySink,
@@ -19,7 +20,7 @@ pub fn import_media(
         let file = MdictFile::open(source.open(&name)?, FileKind::Resources)?;
         file.for_each_record(|group, bytes| {
             for key in &group.keys {
-                let path = media_path(key);
+                let path = media_key(DictionaryFormatKind::Mdict, key);
                 if seen_paths.insert(path.clone()) {
                     sink.media(DictionaryMedia {
                         media_type: media_type(&path).to_string(),
@@ -50,11 +51,6 @@ fn volume_number(name: &str) -> u32 {
     stem.rsplit_once('.')
         .and_then(|(_, number)| number.parse().ok())
         .unwrap_or(0)
-}
-
-/// Turns a resource key such as `\images\a.png` into the relative path `images/a.png` that entries use.
-pub fn media_path(key: &str) -> String {
-    key.replace('\\', "/").trim_start_matches('/').to_string()
 }
 
 fn media_type(path: &str) -> &'static str {
@@ -89,11 +85,6 @@ fn media_type(path: &str) -> &'static str {
 mod tests {
     use super::*;
     use crate::dictionary::SourceFile;
-
-    #[test]
-    fn turns_a_resource_key_into_a_relative_path() {
-        assert_eq!(media_path(r"\images\cat.png"), "images/cat.png");
-    }
 
     #[test]
     fn names_the_type_of_an_image() {
