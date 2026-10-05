@@ -164,6 +164,21 @@ mod tests {
     }
 
     #[test]
+    fn reads_ging_only_as_a_past() {
+        let readings: Vec<_> = deinflect("ging")
+            .into_iter()
+            .filter(|candidate| candidate.term == "gehen")
+            .map(|candidate| candidate.inflections)
+            .collect();
+        assert_eq!(readings, [["past 1sg/3sg"]]);
+    }
+
+    #[test]
+    fn reads_waer_as_a_subjunctive_ii() {
+        assert!(yields("wär", "sein", "v", &["subjunctive II 1sg/3sg"]));
+    }
+
+    #[test]
     fn deinflects_a_declined_determiner() {
         assert!(yields("meinem", "mein", "det", &["declined"]));
     }

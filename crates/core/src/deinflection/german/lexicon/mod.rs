@@ -6,6 +6,7 @@ mod irregular_verbs;
 mod regular_readings;
 mod suppletive_forms;
 mod verb_forms;
+mod weak_verbs;
 
 use std::collections::HashMap;
 use std::sync::LazyLock;
