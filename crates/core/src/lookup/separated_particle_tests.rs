@@ -4,7 +4,7 @@
 
 use super::build_lookup_results::build_lookup_results;
 use super::found_rows::{DictionaryOrigin, FoundEntry};
-use super::lookup_candidate::{candidate_headwords, lookup_candidates};
+use super::lookup_candidate::{LookupCandidate, candidate_headwords, lookup_candidates};
 use super::lookup_result::LookupResult;
 use super::separated_particles::separated_verb_candidates;
 use crate::dictionary::{DictionaryFormatKind, TermEntry};
@@ -12,12 +12,12 @@ use crate::lookup::fold_case;
 
 #[rustfmt::skip]
 const VERBS: &[&str] = &[
-    "abnehmen", "absagen", "anarbeiten", "anfangen", "anhalten", "anrufen", "ansehen", "arbeiten", "auffallen",
-    "aufstehen", "aufwarten", "durchfallen", "einladen", "ernennen", "fallen", "fangen", "festhalten", "finden",
-    "geben", "gehen", "haben", "halten", "hinzukommen", "hören", "innehaben", "klarstellen", "kommen", "laden",
-    "loswerden", "nehmen", "nennen", "rufen", "sagen", "schlafen", "sehen", "sein", "setzen", "stattfinden", "stehen",
-    "stellen", "übersetzen", "vorhaben", "warten", "werden", "wiederkommen", "wiedersehen", "zuhören", "zunehmen",
-    "zurückgeben", "zurückhaben", "zurufen",
+    "abnehmen", "absagen", "anarbeiten", "anfangen", "anhalten", "ankommen", "anrufen", "ansehen", "arbeiten",
+    "auffallen", "aufstehen", "aufwarten", "durchfallen", "einladen", "ernennen", "fallen", "fangen", "festhalten",
+    "finden", "geben", "gehen", "haben", "halten", "hinzukommen", "hören", "innehaben", "klarstellen", "kommen",
+    "laden", "loswerden", "nehmen", "nennen", "rufen", "sagen", "schlafen", "sehen", "sein", "setzen",
+    "stattfinden", "stehen", "stellen", "übersetzen", "vorhaben", "warten", "werden", "wiederkommen", "wiedersehen",
+    "zuhören", "zunehmen", "zurückgeben", "zurückhaben", "zurufen",
 ];
 
 const OTHER_WORDS: &[&str] = &["an", "auf", "zu", "vor", "klar", "wieder"];
@@ -451,6 +451,52 @@ fn s37_finds_the_particle_in_cues_that_the_client_joined() {
 #[test]
 fn s37_finds_no_particle_in_the_first_cue_alone() {
     assert!(!finds_separated_verb("Ich rufe dich", "rufe"));
+}
+
+fn separated_verb_candidates_at(sentence: &str, word: &str) -> Vec<LookupCandidate> {
+    let offset = sentence[..sentence.find(word).unwrap()].chars().count();
+    separated_verb_candidates(sentence, offset, "de")
+}
+
+const SODASS_SENTENCE: &str = "Er stand früh auf, sodass er den Zug erreichte.";
+
+#[test]
+fn finds_the_particle_before_a_sodass_clause() {
+    assert_eq!(first_term(SODASS_SENTENCE, "stand"), "aufstehen");
+}
+
+#[test]
+fn finds_no_particle_for_the_verb_at_the_end_of_a_sodass_clause() {
+    assert!(!finds_separated_verb(SODASS_SENTENCE, "erreichte"));
+}
+
+#[test]
+fn ends_the_clause_at_sodass_when_its_verb_is_sein() {
+    let sentence = "Er stand früh auf, sodass er pünktlich war.";
+    assert!(separated_verb_candidates_at(sentence, "war").is_empty());
+}
+
+#[test]
+fn ends_the_clause_at_so_dass_written_apart() {
+    let sentence = "Er stand früh auf, so dass er pünktlich war.";
+    assert!(separated_verb_candidates_at(sentence, "war").is_empty());
+}
+
+const DEREN_SENTENCE: &str = "Ich rufe die Frau, deren Sohn morgen kommt, heute an.";
+
+#[test]
+fn skips_a_relative_clause_with_deren_from_the_verb() {
+    assert_eq!(first_term(DEREN_SENTENCE, "rufe"), "anrufen");
+}
+
+#[test]
+fn finds_no_particle_for_the_verb_of_a_relative_clause_with_deren() {
+    assert!(!finds_separated_verb(DEREN_SENTENCE, "kommt"));
+}
+
+#[test]
+fn skips_a_relative_clause_with_deren_from_the_particle() {
+    assert_eq!(first_term(DEREN_SENTENCE, "an"), "anrufen");
 }
 
 fn finds_separated_verb_in(sentence: &str, word: &str, stored: Vec<FoundEntry>) -> bool {
