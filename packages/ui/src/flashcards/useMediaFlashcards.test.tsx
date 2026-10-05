@@ -905,6 +905,54 @@ describe("useMediaFlashcards", () => {
       return rendered;
     }
 
+    describe("and the card is then discarded, since the save may have landed after all", () => {
+      async function hangBackgroundSave() {
+        const rendered = renderFlashcards();
+        act(() => rendered.result.current.start(createDraft("Hund")));
+        act(() => rendered.result.current.edit(typeWord("Hündin")));
+        act(() => rendered.result.current.start(createDraft("Katze")));
+        await act(() => vi.advanceTimersByTimeAsync(saveRequestLimitMs));
+        return rendered;
+      }
+
+      it("deletes a new card once its failure notice is dismissed", async () => {
+        const { dismissNotice, deletes } = await hangBackgroundSave();
+        dismissNotice();
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        expect(deletes()).toHaveLength(1);
+      });
+
+      it("deletes nothing when the save was refused rather than unanswered", async () => {
+        const rendered = renderFlashcards({ savesFail: true });
+        act(() => rendered.result.current.start(createDraft("Hund")));
+        act(() => rendered.result.current.edit(typeWord("Hündin")));
+        act(() => rendered.result.current.start(createDraft("Katze")));
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        await rendered.letSavesThrough();
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        rendered.dismissNotice();
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        expect(rendered.deletes()).toHaveLength(0);
+      });
+
+      it("puts back a saved card's earlier content once Close without saving is pressed", async () => {
+        const rendered = renderFlashcards();
+        const { result } = rendered;
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        act(() => result.current.open(savedFlashcard.id));
+        act(() => result.current.edit(typeWord("Hündin")));
+        act(() => result.current.save());
+        await act(() => vi.advanceTimersByTimeAsync(saveRequestLimitMs));
+        act(() => result.current.close());
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        await rendered.letSavesThrough();
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        expect(sentWord(rendered.puts().at(-1))).toBe(
+          savedFlashcard.content.word,
+        );
+      });
+    });
+
     it("tells that the save failed once its limit has passed", async () => {
       const { notifications } = await hangSave();
       expect(notifications()).toEqual(["The flashcard could not be saved"]);

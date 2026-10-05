@@ -130,6 +130,7 @@ export function useFlashcardSaving(
     /** Closes a card without saving it; a changed one can be brought back with Undo. */
     discard: (card: EditedFlashcard) => {
       dispatchEdited({ type: "closed" });
+      offScreen.cleanUpAfterDiscard(card);
       if (card.isChanged) offScreen.showDiscarded(card);
     },
     rememberLookup: offScreen.rememberLookup,

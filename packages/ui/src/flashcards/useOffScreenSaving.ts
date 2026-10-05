@@ -13,6 +13,7 @@ import { isSaveAsked } from "./saveStage.ts";
 import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
 import { useLeftCardNotices } from "./useLeftCardNotices.ts";
 import { useSaveUndo } from "./useSaveUndo.ts";
+import { flashcardIdOf, useTimedOutSaves } from "./useTimedOutSaves.ts";
 import { useUnsavedWorkTracking } from "./useUnsavedWorkTracking.ts";
 import { withTimeLimit } from "./withTimeLimit.ts";
 
@@ -35,38 +36,42 @@ export function useOffScreenSaving(
   const leftCards = useLeftCardNotices(reopen);
   const { track } = useUnsavedWorkTracking();
   const undo = useSaveUndo(queue, requests);
+  const timedOut = useTimedOutSaves(queue, requests);
   /**
    * Sends a card's save, or returns undefined when this opening's save is already under way.
    * The caller counts the save, with what it does on settling, as unsaved work through `track`.
    * A request left unanswered for `saveRequestLimitMs` counts as failed.
    */
   const send = (card: EditedFlashcard) => {
-    undo.withdraw(
-      card.kind === "existing" ? card.flashcard.id : card.flashcardId,
-    );
-    return queue.add(card, () =>
+    const flashcardId = flashcardIdOf(card);
+    const before = beforeOf(card);
+    undo.withdraw(flashcardId);
+    const saving = queue.add(card, () =>
       withTimeLimit(
         (signal) => requests.send(card, signal),
         saveRequestLimitMs,
       ),
     );
+    return saving && timedOut.watch(flashcardId, before, saving);
   };
   const showFailure = (card: EditedFlashcard) =>
     leftCards.showFailure(
       card,
       () => saveOffScreen(card, false),
-      () => undefined,
+      () => timedOut.cleanUpAfterDiscard(card),
     );
   /** A saved flashcard as last sent, which the list of flashcards may not show yet while work on it is under way. */
   const latestOf = (flashcard: Flashcard): Flashcard => {
     const latest = queue.latest(flashcard.id);
     return latest ? withDraft(flashcard, latest) : flashcard;
   };
+  /** What a card's flashcard holds before its save: the draft last sent for a saved one, or nothing for a new one. */
+  const beforeOf = (card: EditedFlashcard) =>
+    card.kind === "existing"
+      ? draftOfFlashcard(latestOf(card.flashcard))
+      : null;
   function saveOffScreen(card: EditedFlashcard, offersUndo: boolean) {
-    const before =
-      card.kind === "existing"
-        ? draftOfFlashcard(latestOf(card.flashcard))
-        : null;
+    const before = beforeOf(card);
     const saving = send(card);
     if (!saving) return;
     track(
@@ -122,6 +127,7 @@ export function useOffScreenSaving(
       });
     },
     showDiscarded: leftCards.showDiscarded,
+    cleanUpAfterDiscard: timedOut.cleanUpAfterDiscard,
     /** Remembers the lookup a new card's late fields come from, for waiting on it once the card has left the editor. */
     rememberLookup: (
       draft: FlashcardDraft,

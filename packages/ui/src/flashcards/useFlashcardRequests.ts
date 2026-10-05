@@ -43,6 +43,13 @@ export function useFlashcardRequests(projectId: string) {
     },
     remove: (flashcard: Flashcard) =>
       deleteFlashcard({ projectId, flashcardId: flashcard.id }).unwrap(),
+    /** Deletes the flashcard with this id if there is one. */
+    removeIfThere: (flashcardId: string) =>
+      deleteFlashcard({ projectId, flashcardId })
+        .unwrap()
+        .catch((error: { status?: unknown }) => {
+          if (error.status !== 404) throw error;
+        }),
     /** Takes back a save of the card: deletes a card it created, or puts back `before`, what a saved card held before the save. */
     undoSave: (
       card: EditedFlashcard,
