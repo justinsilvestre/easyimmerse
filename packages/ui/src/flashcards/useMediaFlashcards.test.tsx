@@ -5,7 +5,10 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
-import { saveLookupWaitMs } from "../lookup/lookupTiming.ts";
+import {
+  saveLookupWaitMs,
+  saveRequestLimitMs,
+} from "../lookup/lookupTiming.ts";
 import { createNoticeStore } from "../notices/noticeStore.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import {
@@ -659,6 +662,65 @@ describe("useMediaFlashcards", () => {
           { type: "guardClose", isActive: false },
         ]),
       );
+    });
+  });
+
+  describe("when a save request never settles", () => {
+    beforeEach(() =>
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }),
+    );
+
+    afterEach(() => vi.useRealTimers());
+
+    async function hangSave() {
+      const rendered = renderFlashcards();
+      act(() => rendered.result.current.start(createDraft("Hund")));
+      act(() => rendered.result.current.edit(typeWord("Hündin")));
+      act(() => rendered.result.current.save());
+      await act(() => vi.advanceTimersByTimeAsync(saveRequestLimitMs));
+      return rendered;
+    }
+
+    it("tells that the save failed once its limit has passed", async () => {
+      const { notifications } = await hangSave();
+      expect(notifications()).toEqual(["The flashcard could not be saved"]);
+    });
+
+    it("keeps the edits open for another try", async () => {
+      const { result } = await hangSave();
+      expect(result.current.edited?.stage).toBe("editing");
+    });
+
+    it("lifts the close guard it raised", async () => {
+      const { result, effects } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.save());
+      await act(() => vi.advanceTimersByTimeAsync(saveRequestLimitMs));
+      expect(
+        effects.calls.filter((call) => call.type === "guardClose"),
+      ).toEqual([
+        { type: "guardClose", isActive: true },
+        { type: "guardClose", isActive: false },
+      ]);
+    });
+
+    it("says nothing short of its limit", async () => {
+      const { result, notifications } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.save());
+      await act(() => vi.advanceTimersByTimeAsync(saveRequestLimitMs - 100));
+      expect(notifications()).toEqual([]);
+    });
+
+    it("leaves a failure notice with Retry when its card has left the editor", async () => {
+      const { result, notices } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.start(createDraft("Katze")));
+      await act(() => vi.advanceTimersByTimeAsync(saveRequestLimitMs));
+      expect(notices()).toEqual([
+        ["Couldn't save the flashcard for “Hündin”.", "Retry", "Reopen"],
+      ]);
     });
   });
 

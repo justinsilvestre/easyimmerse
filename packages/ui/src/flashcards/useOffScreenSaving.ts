@@ -3,6 +3,7 @@ import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
+import { saveRequestLimitMs } from "../lookup/lookupTiming.ts";
 import { withinTime } from "../lookup/withinTime.ts";
 import { useNotices } from "../notices/NoticesContext.tsx";
 import {
@@ -13,6 +14,7 @@ import { flashcardNotices } from "./flashcardNotices.ts";
 import { createSaveQueue } from "./saveQueue.ts";
 import { isSaveAsked } from "./saveStage.ts";
 import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
+import { withTimeLimit } from "./withTimeLimit.ts";
 
 type FlashcardRequests = ReturnType<typeof useFlashcardRequests>;
 
@@ -59,9 +61,14 @@ export function useOffScreenSaving(
     dispatch(actions.unsavedWorkBegan());
     return work.finally(() => dispatch(actions.unsavedWorkEnded()));
   };
-  /** Sends a card's save, or returns undefined when this opening's save is already under way. */
+  /**
+   * Sends a card's save, or returns undefined when this opening's save is already under way.
+   * A request left unanswered for `saveRequestLimitMs` counts as failed.
+   */
   const send = (card: EditedFlashcard) => {
-    const saving = queue.add(card, () => requests.send(card));
+    const saving = queue.add(card, () =>
+      withTimeLimit(requests.send(card), saveRequestLimitMs),
+    );
     return saving && track(saving);
   };
   const showFailure = (card: EditedFlashcard) => {
