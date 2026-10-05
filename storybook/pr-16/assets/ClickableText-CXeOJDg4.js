@@ -1,0 +1,52 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{n as t}from"./iframe-CSUgBR0z.js";import{n,t as r}from"./clsx-CTwy9ux-.js";import{t as i}from"./jsx-runtime-DeHZSEgm.js";var a;function o(){return(o=e((()=>{a=`data-lookup-trigger`})))()}function s(){let e,t=()=>{clearTimeout(e),e=void 0};return{restart:(n,r)=>{t(),e=setTimeout(()=>{e=void 0,r()},n)},cancel:t,isPending:()=>e!==void 0}}function c(){let[e]=(0,l.useState)(s);return(0,l.useEffect)(()=>e.cancel,[e]),e}var l;function u(){return(u=e((()=>{l=t()})))()}function d(){let e=s(),t={x:0,y:0,isTouch:!1,isHeld:!1};return{start(n,r){t={x:n.clientX,y:n.clientY,isTouch:n.pointerType!==`mouse`,isHeld:!1},t.isTouch&&e.restart(500,()=>{t.isHeld=!0,r()})},move(n){Math.hypot(n.clientX-t.x,n.clientY-t.y)>f&&e.cancel()},cancelHold:e.cancel,isTouch:()=>t.isTouch,takeHeld(){let e=t.isHeld;return t.isHeld=!1,e}}}var f;function p(){return(p=e((()=>{f=10})))()}function m(e){g=e}function h(){let e=g;return g=null,e}var g;function _(){return(_=e((()=>{g=null})))()}function v(e){let t=(0,y.useRef)(e);t.current=e;let n=c(),r=c(),[i]=(0,y.useState)(d);(0,y.useEffect)(()=>i.cancelHold,[i]);let a=(e,n)=>{let{onWordClick:i,onWordDoubleClick:a,defersClick:o}=t.current;if(n.input===`keyboard`)return(e.shiftKey&&a?a:i)?.(n);if(e.detail>=2){let t=e.detail===2?h():null;return t?.cancel(),t?.onDoubleClick?.(t.hit)}if(m({hit:n,onDoubleClick:a??i,cancel:r.cancel}),!o)return i?.(n);t.current.onWordClickStarted?.(n),r.restart(500,()=>t.current.onWordClick?.(n))};return(e,r)=>{let o=(t,n)=>({word:e,start:r,element:t,input:n});return{onPointerEnter:e=>{if(e.pointerType!==`mouse`)return;let r=o(e.currentTarget,`mouse`);n.restart(150,()=>{r.element.isConnected&&t.current.onWordHoverIntent?.(r)})},onPointerLeave:()=>{n.cancel(),i.cancelHold()},onPointerDown:e=>{let n=o(e.currentTarget,`touch`);i.start(e,()=>{n.element.isConnected&&t.current.onWordHold?.(n)})},onPointerMove:e=>i.move(e),onPointerUp:i.cancelHold,onPointerCancel:i.cancelHold,onContextMenu:e=>{i.isTouch()&&e.preventDefault()},onClick:e=>{let t=e.detail===0;if(!t&&i.takeHeld())return;let n=t?`keyboard`:i.isTouch()?`touch`:`mouse`;a(e,o(e.currentTarget,n))}}}}var y;function b(){return(b=e((()=>{y=t(),u(),p(),_()})))()}function x(e){let t=[],n=0;for(let r of e.matchAll(T))r.index>n&&t.push({text:e.slice(n,r.index),isWord:!1,start:n}),t.push({text:r[0],isWord:!0,start:r.index}),n=r.index+r[0].length;return n<e.length&&t.push({text:e.slice(n),isWord:!1,start:n}),t}function S(e){return e.replace(/<[^>]+>/g,``)}function C({text:e,activeWord:t,gestures:n=E}){let i=v(n);return(0,w.jsx)(`span`,{className:`whitespace-pre-line`,children:x(e).map(e=>e.isWord?(0,w.jsx)(`button`,{type:`button`,"aria-haspopup":`dialog`,"aria-expanded":e.start===t?.start||void 0,"aria-controls":e.start===t?.start?t.popupId:void 0,[a]:``,...i(e.text,e.start),className:r(`touch-manipulation rounded-sm px-px decoration-dotted underline-offset-4 hover:bg-accent-soft hover:underline focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]`,e.start===t?.start&&`bg-accent-soft text-accent-fg`),children:e.text},e.start):e.text)})}var w,T,E;function D(){return(D=e((()=>{n(),o(),b(),w=i(),T=/\p{L}[\p{L}\p{M}\p{N}'’-]*/gu,E={},C.__docgenInfo={description:"Renders text with each word as a button, so that a word can be looked up or turned into a flashcard.\n`gestures` receives what the user does to each word: click, double-click, hover or a held tap.\nThe words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.\nThe text is shown as it is; strip subtitle markup with `stripMarkup` first.",methods:[],displayName:`ClickableText`,props:{text:{required:!0,tsType:{name:`string`},description:``},activeWord:{required:!1,tsType:{name:`signature`,type:`object`,raw:`{ start: number; popupId: string }`,signature:{properties:[{key:`start`,value:{name:`number`,required:!0}},{key:`popupId`,value:{name:`string`,required:!0}}]}},description:`The word the dictionary pop-up shows, by its offset in the text, and the pop-up's id.`},gestures:{required:!1,tsType:{name:`signature`,type:`object`,raw:`{
+  /** A single click or tap, or Enter or Space on the focused word. */
+  onWordClick?: (hit: WordHit) => void;
+  /**
+   * The second click of a double-click, reported for the word of the first click; or Shift+Enter or Shift+Space on the focused word.
+   * Without this handler a double-click counts as another click.
+   */
+  onWordDoubleClick?: (hit: WordHit) => void;
+  /** A mouse pointer resting on the word for a moment. Passing over it reports nothing. */
+  onWordHoverIntent?: (hit: WordHit) => void;
+  /** A touch held on the word. The click that ends it is not reported. */
+  onWordHold?: (hit: WordHit) => void;
+  /**
+   * Holds a pointer click back until the double-click interval has passed, and drops it when a double-click follows.
+   * Use it where a click changes the text under the pointer, so that the second click of a double-click still lands on the word.
+   */
+  defersClick?: boolean;
+  /** A click that \`defersClick\` holds back, reported at once, so that work such as a lookup can begin. */
+  onWordClickStarted?: (hit: WordHit) => void;
+}`,signature:{properties:[{key:`onWordClick`,value:{name:`signature`,type:`function`,raw:`(hit: WordHit) => void`,signature:{arguments:[{type:{name:`signature`,type:`object`,raw:`{
+  word: string;
+  /** The word's offset in its text, in UTF-16 code units. */
+  start: number;
+  element: HTMLElement;
+  input: "mouse" | "touch" | "keyboard";
+}`,signature:{properties:[{key:`word`,value:{name:`string`,required:!0}},{key:`start`,value:{name:`number`,required:!0},description:`The word's offset in its text, in UTF-16 code units.`},{key:`element`,value:{name:`HTMLElement`,required:!0}},{key:`input`,value:{name:`union`,raw:`"mouse" | "touch" | "keyboard"`,elements:[{name:`literal`,value:`"mouse"`},{name:`literal`,value:`"touch"`},{name:`literal`,value:`"keyboard"`}],required:!0}}]}},name:`hit`}],return:{name:`void`}},required:!1},description:`A single click or tap, or Enter or Space on the focused word.`},{key:`onWordDoubleClick`,value:{name:`signature`,type:`function`,raw:`(hit: WordHit) => void`,signature:{arguments:[{type:{name:`signature`,type:`object`,raw:`{
+  word: string;
+  /** The word's offset in its text, in UTF-16 code units. */
+  start: number;
+  element: HTMLElement;
+  input: "mouse" | "touch" | "keyboard";
+}`,signature:{properties:[{key:`word`,value:{name:`string`,required:!0}},{key:`start`,value:{name:`number`,required:!0},description:`The word's offset in its text, in UTF-16 code units.`},{key:`element`,value:{name:`HTMLElement`,required:!0}},{key:`input`,value:{name:`union`,raw:`"mouse" | "touch" | "keyboard"`,elements:[{name:`literal`,value:`"mouse"`},{name:`literal`,value:`"touch"`},{name:`literal`,value:`"keyboard"`}],required:!0}}]}},name:`hit`}],return:{name:`void`}},required:!1},description:`The second click of a double-click, reported for the word of the first click; or Shift+Enter or Shift+Space on the focused word.
+Without this handler a double-click counts as another click.`},{key:`onWordHoverIntent`,value:{name:`signature`,type:`function`,raw:`(hit: WordHit) => void`,signature:{arguments:[{type:{name:`signature`,type:`object`,raw:`{
+  word: string;
+  /** The word's offset in its text, in UTF-16 code units. */
+  start: number;
+  element: HTMLElement;
+  input: "mouse" | "touch" | "keyboard";
+}`,signature:{properties:[{key:`word`,value:{name:`string`,required:!0}},{key:`start`,value:{name:`number`,required:!0},description:`The word's offset in its text, in UTF-16 code units.`},{key:`element`,value:{name:`HTMLElement`,required:!0}},{key:`input`,value:{name:`union`,raw:`"mouse" | "touch" | "keyboard"`,elements:[{name:`literal`,value:`"mouse"`},{name:`literal`,value:`"touch"`},{name:`literal`,value:`"keyboard"`}],required:!0}}]}},name:`hit`}],return:{name:`void`}},required:!1},description:`A mouse pointer resting on the word for a moment. Passing over it reports nothing.`},{key:`onWordHold`,value:{name:`signature`,type:`function`,raw:`(hit: WordHit) => void`,signature:{arguments:[{type:{name:`signature`,type:`object`,raw:`{
+  word: string;
+  /** The word's offset in its text, in UTF-16 code units. */
+  start: number;
+  element: HTMLElement;
+  input: "mouse" | "touch" | "keyboard";
+}`,signature:{properties:[{key:`word`,value:{name:`string`,required:!0}},{key:`start`,value:{name:`number`,required:!0},description:`The word's offset in its text, in UTF-16 code units.`},{key:`element`,value:{name:`HTMLElement`,required:!0}},{key:`input`,value:{name:`union`,raw:`"mouse" | "touch" | "keyboard"`,elements:[{name:`literal`,value:`"mouse"`},{name:`literal`,value:`"touch"`},{name:`literal`,value:`"keyboard"`}],required:!0}}]}},name:`hit`}],return:{name:`void`}},required:!1},description:`A touch held on the word. The click that ends it is not reported.`},{key:`defersClick`,value:{name:`boolean`,required:!1},description:`Holds a pointer click back until the double-click interval has passed, and drops it when a double-click follows.
+Use it where a click changes the text under the pointer, so that the second click of a double-click still lands on the word.`},{key:`onWordClickStarted`,value:{name:`signature`,type:`function`,raw:`(hit: WordHit) => void`,signature:{arguments:[{type:{name:`signature`,type:`object`,raw:`{
+  word: string;
+  /** The word's offset in its text, in UTF-16 code units. */
+  start: number;
+  element: HTMLElement;
+  input: "mouse" | "touch" | "keyboard";
+}`,signature:{properties:[{key:`word`,value:{name:`string`,required:!0}},{key:`start`,value:{name:`number`,required:!0},description:`The word's offset in its text, in UTF-16 code units.`},{key:`element`,value:{name:`HTMLElement`,required:!0}},{key:`input`,value:{name:`union`,raw:`"mouse" | "touch" | "keyboard"`,elements:[{name:`literal`,value:`"mouse"`},{name:`literal`,value:`"touch"`},{name:`literal`,value:`"keyboard"`}],required:!0}}]}},name:`hit`}],return:{name:`void`}},required:!1},description:"A click that `defersClick` holds back, reported at once, so that work such as a lookup can begin."}]}},description:``,defaultValue:{value:`{}`,computed:!1}}}}})))()}export{o as a,S as i,D as n,a as o,x as r,C as t};
