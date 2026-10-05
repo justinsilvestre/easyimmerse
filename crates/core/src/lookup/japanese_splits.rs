@@ -305,6 +305,15 @@ mod separate_verbs {
             result("待たされる", "待たす", &["passive"])
         );
     }
+
+    #[test]
+    fn finds_the_verb_of_a_short_causative_that_the_dictionary_does_not_list() {
+        let dictionary = [("書く", "v5")];
+        assert_eq!(
+            best_result("書かされる", &dictionary),
+            result("書かされる", "書く", &["passive", "causative"])
+        );
+    }
 }
 
 mod classical_n {

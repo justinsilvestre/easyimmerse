@@ -97,23 +97,37 @@ pub const CAUSATIVE: &[Rule] = &sharing(
     &["causative"],
 );
 
-/// The short continuative of the causative: し in place of せ after a godan irrealis stem (膨らまして),
-/// and さし in place of させ (掛けさして). They are rewritten to the full continuative, which [`CAUSATIVE`] then undoes.
-/// UniDic analyses the other short causative forms, such as 書かす and 書かされる, as separate verbs (lemma 書かす),
-/// so they are not traced back to the verb they come from.
+/// The short causative: godan verbs shift their final kana to the あ row (わ for verbs in う) and add す (書かす, 待たす),
+/// ichidan verbs add さす (見さす, 着さす), 来る becomes こさす and a する verb ends in さす (勉強さす).
+/// The short causative inflects as a godan verb in す, so 書かされる, 待たして and 掛けさして are traced to it first.
 ///
-/// Sources: 規程集 下, 資料「要注意語」助動詞 セル and サセル, p. (32) (examples 膨らま【し】て and 掛け【さし】て);
-/// UniDic 2025.12, させる in 連用形-一般 さし, and 書かす, 待たす and 食べさす as lemmas of their own (五段-サ行).
-pub const SHORT_CAUSATIVE: &[Rule] = &[
-    Rule::replace("し", "せ")
-        .from(C::CONTINUATIVE.or(C::ONBIN_TA))
-        .to(C::CONTINUATIVE)
-        .stem(Stem::ARow),
-    Rule::replace("さし", "させ")
-        .from(C::CONTINUATIVE.or(C::ONBIN_TA))
-        .to(C::CONTINUATIVE)
-        .stem(Stem::Ichidan),
-];
+/// UniDic lists 書かす, 待たす and 食べさす under lemmas of their own, and lookup still finds them where a dictionary lists them.
+/// Descriptive grammars treat them as causatives of the verb they come from, formed with a contracted suffix -(s)as-u.
+/// さす on its own is not traced to する, so that the verbs 刺す, 差す and 指す keep their place.
+///
+/// Sources: 阿部 2021, p. 124 (歩かす, 着さす, 歩かされる, 読まして and 書かす, after 日本語記述文法研究会 2009 and 湯澤 1953),
+/// and pp. 125–126 (the short causative of する, 持つ, 感じる and 食べる); 村木 1980, p. 46 (よます, かかす, きかす);
+/// 規程集 下, 資料「要注意語」助動詞 セル and サセル, p. (32) (膨らま【し】て, 掛け【さし】て);
+/// デジタル大辞泉「さす」補説 (四段型にも活用する); 精選版 日本国語大辞典「させる」語誌 (2) (連用形 さし).
+pub const SHORT_CAUSATIVE: &[Rule] = &sharing(
+    [
+        godan("かす", "く").stem(Stem::NonEmpty),
+        godan("がす", "ぐ").stem(Stem::NonEmpty),
+        godan("さす", "す").stem(Stem::NonEmpty),
+        godan("たす", "つ").stem(Stem::NonEmpty),
+        godan("なす", "ぬ").stem(Stem::NonEmpty),
+        godan("ばす", "ぶ").stem(Stem::NonEmpty),
+        godan("ます", "む").stem(Stem::NonEmpty),
+        godan("らす", "る").stem(Stem::NonEmpty),
+        godan("わす", "う").stem(Stem::NonEmpty),
+        ichidan("さす", "る"),
+        kuru("こさす", "くる"),
+        kuru("来さす", "来る"),
+        suru("さす", "する").stem(Stem::NonEmpty),
+    ],
+    C::V5,
+    &["causative"],
+);
 
 #[cfg(test)]
 mod tests {
@@ -236,8 +250,38 @@ mod tests {
         }
 
         #[test]
-        fn does_not_trace_a_short_causative_verb_to_its_source() {
-            assert!(!yields("書かす", "書く", "v5", &["causative"]));
+        fn undoes_a_short_godan_causative() {
+            assert!(yields("書かす", "書く", "v5", &["causative"]));
+        }
+
+        #[test]
+        fn undoes_a_short_godan_causative_in_u() {
+            assert!(yields("言わす", "言う", "v5", &["causative"]));
+        }
+
+        #[test]
+        fn undoes_a_short_ichidan_causative() {
+            assert!(yields("見さす", "見る", "v1", &["causative"]));
+        }
+
+        #[test]
+        fn undoes_the_short_causative_of_kuru() {
+            assert!(yields("来さす", "来る", "vk", &["causative"]));
+        }
+
+        #[test]
+        fn undoes_the_short_causative_of_a_suru_verb() {
+            assert!(yields("勉強さす", "勉強する", "vs", &["causative"]));
+        }
+
+        #[test]
+        fn does_not_trace_sasu_alone_to_suru() {
+            assert!(!yields("さす", "する", "vs", &["causative"]));
+        }
+
+        #[test]
+        fn undoes_a_past_short_causative() {
+            assert!(yields("待たした", "待つ", "v5", &["past", "causative"]));
         }
     }
 
@@ -267,6 +311,26 @@ mod tests {
         #[test]
         fn traces_a_contracted_causative_passive_to_the_short_causative_verb() {
             assert!(yields("待たされる", "待たす", "v5", &["passive"]));
+        }
+
+        #[test]
+        fn undoes_a_contracted_causative_passive() {
+            assert!(yields(
+                "待たされる",
+                "待つ",
+                "v5",
+                &["passive", "causative"]
+            ));
+        }
+
+        #[test]
+        fn undoes_a_contracted_ichidan_causative_passive() {
+            assert!(yields(
+                "見さされた",
+                "見る",
+                "v1",
+                &["past", "passive", "causative"]
+            ));
         }
 
         #[test]

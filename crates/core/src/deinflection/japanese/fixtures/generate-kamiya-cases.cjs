@@ -4,7 +4,7 @@
 // kamiya-codec only serves as an oracle for test cases; the rules cite their own sources.
 // It treats する compounds such as 勉強する as godan verbs, so only する itself is included.
 // Forms that the deinflector leaves to lookup are left out: the full subsidiary verbs ている, ておく and てしまう
-// (their contractions てる, とく and ちゃう stay), で after ない, the short causative, and the nominal さ of adjectives.
+// (their contractions てる, とく and ちゃう stay), で after ない, and the nominal さ of adjectives.
 //
 // Install kamiya-codec outside the repository, then run this script from the repository root:
 //   mise exec -- npm install --prefix /tmp/kamiya-codec kamiya-codec@4.16.1
@@ -54,6 +54,8 @@ const auxiliaryChains = [
   ["ReruRareru"],
   ["SeruSaseru"],
   ["CausativePassive"],
+  ["ShortenedCausative"],
+  ["ShortenedCausativePassive"],
   ["TeIru"],
   ["Oku"],
   ["Shimau"],
@@ -87,14 +89,17 @@ const adjectiveConjugations = [
 
 /**
  * Leaves out the potentials that kamiya-codec gives as すれる and くれる where the sources give できる and こ(ら)れる,
- * and the negative of ない, which kamiya-codec gives as なくはない, with the particle は.
+ * the negative of ない, which kamiya-codec gives as なくはない, with the particle は,
+ * and the short causative さす of する on its own, which the deinflector leaves to the verbs 刺す, 差す and 指す.
  */
 function isSupported([term], auxiliaries, conjugation) {
   const isMisformedPotential =
     ["する", "くる"].includes(term) && auxiliaries.includes("Potential");
   const isNegatedNai =
     auxiliaries.at(-1) === "Nai" && conjugation === "Negative";
-  return !isMisformedPotential && !isNegatedNai;
+  const isBareShortCausativeOfSuru =
+    term === "する" && auxiliaries[0].startsWith("ShortenedCausative");
+  return !isMisformedPotential && !isNegatedNai && !isBareShortCausativeOfSuru;
 }
 
 function verbCases() {
