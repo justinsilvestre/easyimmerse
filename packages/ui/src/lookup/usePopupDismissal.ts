@@ -1,32 +1,37 @@
 import { type RefObject, useEffect, useRef } from "react";
-
-/** Marks an element that opens the pop-up, such as a word in the subtitles, so that pressing it does not also close the pop-up. */
-export const lookupTriggerAttribute = "data-lookup-trigger";
+import { lookupTriggerAttribute } from "../components/lookupTrigger.ts";
+import { isOutOfReach } from "../hooks/isOutOfReach.ts";
 
 /**
- * Closes a pop-up on Escape, or when the pointer goes down outside it and not on an element that opens it.
+ * Closes a pop-up on Escape, or on a click outside it and not on an element that opens it.
+ * A click closes it only after the clicked control has acted, so that pressing Play while the pop-up is open plays.
+ * Keys and clicks are ignored while the pop-up's screen lies beneath another or under a modal dialog.
  * When the pop-up closes, focus returns to where it was when the pop-up opened, if it was inside the pop-up.
  */
 export function usePopupDismissal(
   popupRef: RefObject<HTMLElement | null>,
   onClose: () => void,
 ): void {
+  // Read before the first commit, since a search field's autoFocus moves focus during the commit.
+  const openerRef = useRef<Element | null>(null);
+  openerRef.current ??= document.activeElement;
   // The listeners stay attached while the pop-up is open, so that focus is restored only once, when it closes.
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   useEffect(() => {
-    const opener = document.activeElement;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!isInsideOrTrigger(popupRef.current, event.target))
+    const opener = openerRef.current;
+    const isActive = () => !isOutOfReach(popupRef.current);
+    const onClick = (event: MouseEvent) => {
+      if (isActive() && !isInsideOrTrigger(popupRef.current, event.target))
         onCloseRef.current();
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCloseRef.current();
+      if (event.key === "Escape" && isActive()) onCloseRef.current();
     };
-    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("click", onClick);
       document.removeEventListener("keydown", onKeyDown);
       restoreFocus(popupRef.current, opener);
     };

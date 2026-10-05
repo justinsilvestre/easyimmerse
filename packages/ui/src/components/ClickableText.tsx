@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { lookupTriggerAttribute } from "../lookup/usePopupDismissal.ts";
+import { lookupTriggerAttribute } from "./lookupTrigger.ts";
 
 const wordPattern = /\p{L}[\p{L}\p{M}\p{N}'’-]*/gu;
 
