@@ -22,6 +22,7 @@ import { WordFlashcardContext } from "./wordFlashcardContext.ts";
  * Images in definitions are found through `resolveMediaUrl`.
  */
 export function DictionaryPopup({
+  id,
   state,
   mode,
   resolveMediaUrl,
@@ -31,6 +32,8 @@ export function DictionaryPopup({
   onClose,
   onSetUpDictionary,
 }: {
+  /** Lets the word the pop-up shows name it as the element it controls. */
+  id?: string;
   state: LookupState | null;
   mode: "word" | "search";
   resolveMediaUrl: ResolveMediaUrl;
@@ -45,6 +48,9 @@ export function DictionaryPopup({
   return (
     <section
       ref={ref}
+      id={id}
+      // Not modal: the rest of the page stays usable, and words there move it to themselves.
+      role="dialog"
       aria-label="Dictionary"
       className="flex max-h-[min(24rem,100%)] w-[min(26rem,calc(100vw-1rem))] flex-col rounded-lg border border-line bg-surface text-fg shadow-xl"
     >

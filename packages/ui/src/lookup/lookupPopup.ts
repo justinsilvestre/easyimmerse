@@ -8,11 +8,29 @@ export type LookupRequest<S> = {
   term: string;
   lookup: Pick<LookupText, "text"> & Partial<LookupText>;
   source: S | null;
-  /** Names this occurrence of the word in the text, so that clicking it again can close the pop-up. Null for a typed or linked term. */
-  occurrence: string | null;
+  /**
+   * Where this occurrence of the word lies: its passage, named, and its offset there in UTF-16 code units.
+   * Clicking the same occurrence again closes the pop-up. Null for a typed or linked term.
+   */
+  occurrence: WordOccurrence | null;
   /** The element that shows the word, for the pop-up to stand at. Null when the pop-up opens on its search field. */
   anchor: Element | null;
 };
+
+export type WordOccurrence = { passage: string; start: number };
+
+/** Tells whether two occurrences are the same place in the same passage. */
+export function isSameOccurrence(
+  first: WordOccurrence | null | undefined,
+  second: WordOccurrence | null | undefined,
+): boolean {
+  return (
+    first != null &&
+    second != null &&
+    first.passage === second.passage &&
+    first.start === second.start
+  );
+}
 
 /** The dictionary pop-up: closed, or open on a word or on its search field. */
 export type LookupPopup<S> = {

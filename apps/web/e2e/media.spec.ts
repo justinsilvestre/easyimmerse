@@ -50,7 +50,7 @@ test("a word clicked in the subtitles opens the dictionary pop-up", async ({
     .getByRole("list", { name: "Subtitles" })
     .getByRole("button", { name: "cat" })
     .click();
-  await expect(page.getByRole("region", { name: "Dictionary" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Dictionary" })).toBeVisible();
 });
 
 test("clicking the word the pop-up shows closes it", async ({ page }) => {
@@ -58,7 +58,7 @@ test("clicking the word the pop-up shows closes it", async ({ page }) => {
     .getByRole("list", { name: "Subtitles" })
     .getByRole("button", { name: "cat" });
   await word.click();
-  const popup = page.getByRole("region", { name: "Dictionary" });
+  const popup = page.getByRole("dialog", { name: "Dictionary" });
   await expect(popup).toBeVisible();
   await word.click();
   await expect(popup).toBeHidden();
@@ -72,7 +72,7 @@ test("a word double-clicked in the subtitles opens the flashcard editor in place
     .getByRole("button", { name: "cat" })
     .dblclick();
   await expect(page.getByRole("form", { name: "Flashcard" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Dictionary" })).toBeHidden();
+  await expect(page.getByRole("dialog", { name: "Dictionary" })).toBeHidden();
 });
 
 test("a word double-clicked in the subtitles becomes a saved flashcard", async ({

@@ -5,7 +5,12 @@ import { useEffect, useMemo, useRef } from "react";
 import { Button } from "../components/Button.tsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
-import { type CueWordGestures, gesturesForCue } from "./cueWordGestures.ts";
+import {
+  type ActiveCueWord,
+  activeWordIn,
+  type CueWordGestures,
+  gesturesForCue,
+} from "./cueWordGestures.ts";
 import { findTranslationOf } from "./findCue.ts";
 import { formatTimestamp } from "./formatTimestamp.ts";
 
@@ -25,7 +30,7 @@ export function CuePanel({
   translationCues: readonly Cue[];
   activeCueIndex: number | null;
   flashcardCueIndexes: readonly number[];
-  activeWord?: string;
+  activeWord?: ActiveCueWord;
   onSeek: (ms: number) => void;
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
@@ -96,7 +101,7 @@ function CueCard({
   translation: Cue | null;
   isActive: boolean;
   hasFlashcard: boolean;
-  activeWord?: string;
+  activeWord?: ActiveCueWord;
   onSeek: (ms: number) => void;
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
@@ -135,7 +140,7 @@ function CueCard({
       <p className="text-base">
         <ClickableText
           text={stripMarkup(cue.text)}
-          activeWord={activeWord}
+          activeWord={activeWordIn(activeWord, cue)}
           gestures={gesturesForCue(wordGestures, cue)}
         />
       </p>

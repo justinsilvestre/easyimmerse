@@ -4,7 +4,10 @@ import { stripMarkup } from "../components/ClickableText.tsx";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { usePlaybackPause } from "../hooks/usePlaybackPause.ts";
-import type { CueWordGestures } from "../media/cueWordGestures.ts";
+import type {
+  ActiveCueWord,
+  CueWordGestures,
+} from "../media/cueWordGestures.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import type { LookupRequest } from "./lookupPopup.ts";
@@ -49,11 +52,19 @@ export function useSubtitleLookup(
     onWordHold: (hit, cue) => lookup.startFlashcardFor(requestFor(hit, cue)),
   };
   return {
-    activeWord: lookup.activeWord,
+    activeWord: activeCueWordOf(lookup.activeOccurrence),
     popup,
     openSearch: lookup.openSearch,
     wordGestures,
   };
+}
+
+function activeCueWordOf(
+  occurrence: ReturnType<typeof useWordLookup<Cue>>["activeOccurrence"],
+): ActiveCueWord | undefined {
+  if (!occurrence?.source) return undefined;
+  const { source, start, popupId } = occurrence;
+  return { cueIndex: source.index, start, popupId };
 }
 
 function requestFor(hit: WordHit, cue: Cue): LookupRequest<Cue> {
@@ -61,7 +72,7 @@ function requestFor(hit: WordHit, cue: Cue): LookupRequest<Cue> {
     term: hit.word,
     lookup: lookupTextAt(stripMarkup(cue.text), hit.start),
     source: cue,
-    occurrence: `${cue.index}:${hit.start}`,
+    occurrence: { passage: String(cue.index), start: hit.start },
     anchor: hit.element,
   };
 }

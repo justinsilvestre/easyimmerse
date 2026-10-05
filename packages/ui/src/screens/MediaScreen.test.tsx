@@ -304,7 +304,7 @@ function bodyOf(request: BackendRequest | undefined): unknown {
 async function lookUpInPanel(word: string) {
   const list = await findSubtitles();
   fireEvent.click(within(list).getByRole("button", { name: word }));
-  return screen.findByRole("region", { name: "Dictionary" });
+  return screen.findByRole("dialog", { name: "Dictionary" });
 }
 
 const playbackCalls = (effects: { calls: { type: string }[] }) =>
@@ -312,9 +312,9 @@ const playbackCalls = (effects: { calls: { type: string }[] }) =>
     .map((call) => call.type)
     .filter((type) => type === "playPlayer" || type === "pausePlayer");
 
-const findPopup = () => screen.findByRole("region", { name: "Dictionary" });
+const findPopup = () => screen.findByRole("dialog", { name: "Dictionary" });
 
-const queryPopup = () => screen.queryByRole("region", { name: "Dictionary" });
+const queryPopup = () => screen.queryByRole("dialog", { name: "Dictionary" });
 
 /** Waits for the pop-up to show the word in its header. */
 const findPopupShowing = async (word: string) =>
@@ -522,7 +522,7 @@ describe("MediaScreen lookup", () => {
     renderMediaScreen();
     await lookUpInPanel("cat");
     fireEvent.keyDown(document.body, { key: "Escape" });
-    expect(screen.queryByRole("region", { name: "Dictionary" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Dictionary" })).toBeNull();
   });
 
   it("pauses playback while the pop-up is open", async () => {
@@ -545,7 +545,7 @@ describe("MediaScreen lookup", () => {
     renderMediaScreen();
     await lookUpInPanel("cat");
     fireEvent.click(screen.getByRole("heading", { name: "episode.mkv" }));
-    expect(screen.queryByRole("region", { name: "Dictionary" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Dictionary" })).toBeNull();
   });
 
   it("keeps playback paused once a flashcard is started from the pop-up", async () => {

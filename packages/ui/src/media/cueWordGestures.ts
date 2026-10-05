@@ -25,3 +25,18 @@ export function gesturesForCue(
     onWordHold: bind(gestures.onWordHold),
   };
 }
+
+/** The word of a subtitle cue that the dictionary pop-up shows, and the pop-up's id. */
+export type ActiveCueWord = {
+  cueIndex: number;
+  start: number;
+  popupId: string;
+};
+
+/** The active word within one cue's text, if it lies there. */
+export function activeWordIn(
+  activeWord: ActiveCueWord | undefined,
+  cue: Cue,
+): { start: number; popupId: string } | undefined {
+  return activeWord?.cueIndex === cue.index ? activeWord : undefined;
+}

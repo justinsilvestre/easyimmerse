@@ -8,7 +8,7 @@ const request: LookupRequest<Cue> = {
   term: "rufe",
   lookup: { text: "rufe an.", context: "Ich rufe an.", offset: 4 },
   source: cue,
-  occurrence: "3:4",
+  occurrence: { passage: "3", start: 4 },
   anchor: document.createElement("button"),
 };
 

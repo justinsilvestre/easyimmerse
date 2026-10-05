@@ -44,6 +44,8 @@ export const DualSubtitles: Story = {};
 
 export const TargetOnly: Story = { args: { translationCues: [] } };
 
-export const WordUnderPointer: Story = { args: { activeWord: "fressen" } };
+export const WordInPopup: Story = {
+  args: { activeWord: { cueIndex: 3, start: 13, popupId: "dictionary" } },
+};
 
 export const NoSubtitles: Story = { args: { cues: [] } };

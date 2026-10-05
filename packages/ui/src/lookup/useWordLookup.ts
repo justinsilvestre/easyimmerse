@@ -1,12 +1,12 @@
 import type { DictionarySummary } from "@easyimmerse/types";
-import { type ComponentProps, useEffect, useRef } from "react";
+import { type ComponentProps, useEffect, useId, useRef } from "react";
 import type { AnchoredPopup } from "./AnchoredPopup.tsx";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import {
   flashcardFieldsFromLookup,
   type LookupFlashcardFields,
 } from "./flashcardFieldsFromLookup.ts";
-import type { LookupRequest } from "./lookupPopup.ts";
+import { isSameOccurrence, type LookupRequest } from "./lookupPopup.ts";
 import { useDictionaryLookup } from "./useDictionaryLookup.ts";
 
 /** Starts a flashcard for a word from its passage, with fields filled from its lookup when one answered. */
@@ -56,10 +56,10 @@ export function useWordLookup<S>({
   /** Counts what the user has done since, so that a flashcard waiting for its lookup can tell it was overtaken. */
   const version = useRef(0);
   useEffect(() => () => clearTimeout(closeTimer.current), []);
+  const popupId = useId();
   const showsOccurrence = (request: LookupRequest<S>) =>
     lookup.popup !== null &&
-    request.occurrence !== null &&
-    lookup.request?.occurrence === request.occurrence;
+    isSameOccurrence(lookup.request?.occurrence, request.occurrence);
   const open = (request: LookupRequest<S>) => {
     clearTimeout(closeTimer.current);
     version.current += 1;
@@ -139,6 +139,7 @@ export function useWordLookup<S>({
       },
     },
     props: {
+      id: popupId,
       state: lookup.state,
       mode: lookup.popup.mode,
       resolveMediaUrl: lookup.resolveMediaUrl,
@@ -155,7 +156,12 @@ export function useWordLookup<S>({
   };
   return {
     popup,
-    activeWord: lookup.request?.term,
+    /** The occurrence the pop-up shows, if it shows a word from the text, with the pop-up's id. */
+    activeOccurrence: lookup.request?.occurrence && {
+      ...lookup.request.occurrence,
+      source: lookup.request.source,
+      popupId,
+    },
     clickWord,
     hoverWord,
     startFlashcardFor,

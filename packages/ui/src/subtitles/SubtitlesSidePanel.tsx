@@ -2,7 +2,10 @@ import { actions } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { CuePanel } from "../media/CuePanel.tsx";
-import type { CueWordGestures } from "../media/cueWordGestures.ts";
+import type {
+  ActiveCueWord,
+  CueWordGestures,
+} from "../media/cueWordGestures.ts";
 import { findCueAt } from "../media/findCue.ts";
 import { SubtitleTrackBar } from "../media/SubtitleTrackBar.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
@@ -22,7 +25,7 @@ export function SubtitlesSidePanel({
   currentMs: number;
   flashcardCueIndexes: readonly number[];
   /** The word the dictionary pop-up shows. */
-  activeWord?: string;
+  activeWord?: ActiveCueWord;
   wordGestures: CueWordGestures;
 }) {
   const dispatch = useAppDispatch();

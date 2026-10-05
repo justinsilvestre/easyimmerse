@@ -11,7 +11,7 @@ import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import { languageName } from "../projects/languages.ts";
-import type { CueWordGestures } from "./cueWordGestures.ts";
+import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
 import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
@@ -33,7 +33,7 @@ type MediaViewProps = {
   panels: { cues: boolean; waveform: boolean; distractionFree: boolean };
   subtitleDisplay: SubtitleDisplay;
   /** The word the dictionary pop-up shows, which is highlighted in the subtitles. */
-  activeWord?: string;
+  activeWord?: ActiveCueWord;
   playerCallbacks: PlayerCallbacks;
   onBack: () => void;
   /** What the user does to the words of the subtitles over the stage. */

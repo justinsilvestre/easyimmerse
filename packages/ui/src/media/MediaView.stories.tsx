@@ -204,7 +204,7 @@ export const VideoWithDualSubtitles: Story = {};
 
 export const LookingUpAWord: Story = {
   args: {
-    activeWord: "fressen",
+    activeWord: { cueIndex: 3, start: 13, popupId: "dictionary" },
     lookup: lookupPopup(
       { kind: "found", term: "fressen", results: exampleResults },
       "word",
