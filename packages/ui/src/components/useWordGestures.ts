@@ -8,7 +8,12 @@ import {
 import { useTimer } from "../hooks/useTimer.ts";
 import { doubleClickMs, hoverIntentMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
-import { rememberFirstClick, takeFirstClick } from "./wordClickMemory.ts";
+import {
+  type ClickPoint,
+  rememberFirstClick,
+  takeDoubleTap,
+  takeFirstClick,
+} from "./wordClickMemory.ts";
 
 /** A word the user acted on, with the element that shows it, so that a pop-up can be placed at it. */
 export type WordHit = {
@@ -24,7 +29,8 @@ export type WordGestures = {
   /** A single click or tap, or Enter or Space on the focused word. */
   onWordClick?: (hit: WordHit) => void;
   /**
-   * The second click of a double-click, reported for the word of the first click; or Shift+Enter or Shift+Space on the focused word.
+   * The second click of a double-click or the second tap of a double tap, reported for the word of the first;
+   * or Shift+Enter or Shift+Space on the focused word.
    * Without this handler a double-click counts as another click.
    */
   onWordDoubleClick?: (hit: WordHit) => void;
@@ -58,13 +64,16 @@ export function useWordGestures(gestures: WordGestures) {
       return (
         event.shiftKey && onWordDoubleClick ? onWordDoubleClick : onWordClick
       )?.(hit);
-    if (event.detail >= 2) {
-      const first = event.detail === 2 ? takeFirstClick() : null;
-      first?.cancel();
-      return first?.onDoubleClick?.(first.hit);
+    const point = { x: event.clientX, y: event.clientY };
+    const first = firstClickCompletedBy(event, hit, point);
+    if (first) {
+      first.cancel();
+      return first.onDoubleClick?.(first.hit);
     }
+    if (event.detail > 1 && hit.input === "mouse") return;
     rememberFirstClick({
       hit,
+      point,
       onDoubleClick: onWordDoubleClick ?? onWordClick,
       cancel: clickTimer.cancel,
     });
@@ -117,4 +126,17 @@ export function useWordGestures(gestures: WordGestures) {
       },
     };
   };
+}
+
+/**
+ * The first click that this click makes a double-click, if any.
+ * The browser's count decides for a mouse; a tap counts by its time and place, since browsers count taps unreliably.
+ */
+function firstClickCompletedBy(
+  event: MouseEvent<HTMLElement>,
+  hit: WordHit,
+  point: ClickPoint,
+) {
+  if (hit.input === "touch") return takeDoubleTap(point);
+  return event.detail === 2 ? takeFirstClick() : null;
 }

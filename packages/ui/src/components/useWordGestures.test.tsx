@@ -60,6 +60,13 @@ function holdTouch(element: HTMLElement, ms: number) {
   fireEvent.click(element, { detail: 1 });
 }
 
+/** Taps an element with a finger at a horizontal position, as the browser counts the tap. */
+function tap(element: HTMLElement, clientX: number, detail = 1) {
+  fireEvent.pointerDown(element, { pointerType: "touch", clientX });
+  fireEvent.pointerUp(element, { pointerType: "touch", clientX });
+  fireEvent.click(element, { detail, clientX });
+}
+
 describe("useWordGestures", () => {
   it("reports a click at once", () => {
     const gestures = renderSentence();
@@ -152,6 +159,38 @@ describe("useWordGestures", () => {
     fireEvent.pointerLeave(word("rufe"), { pointerType: "mouse" });
     act(() => vi.advanceTimersByTime(200));
     expect(gestures).toEqual([]);
+  });
+
+  describe("on a touch screen", () => {
+    it("reports two quick taps on a word as a double-click", () => {
+      const gestures = renderSentence();
+      tap(word("rufe"), 40);
+      act(() => vi.advanceTimersByTime(250));
+      tap(word("rufe"), 42);
+      expect(gestures).toEqual(["click rufe", "doubleClick rufe"]);
+    });
+
+    it("reports a double tap the browser counts as one once", () => {
+      const gestures = renderSentence();
+      tap(word("rufe"), 40);
+      tap(word("rufe"), 42, 2);
+      expect(gestures).toEqual(["click rufe", "doubleClick rufe"]);
+    });
+
+    it("reports taps further apart in time than the double-click interval as two clicks", () => {
+      const gestures = renderSentence();
+      tap(word("rufe"), 40);
+      act(() => vi.advanceTimersByTime(600));
+      tap(word("rufe"), 40);
+      expect(gestures).toEqual(["click rufe", "click rufe"]);
+    });
+
+    it("reports quick taps on two words apart from each other as two clicks", () => {
+      const gestures = renderSentence();
+      tap(word("rufe"), 40);
+      tap(word("an"), 120);
+      expect(gestures).toEqual(["click rufe", "click an"]);
+    });
   });
 
   it("reports a held tap and swallows the click that ends it", () => {

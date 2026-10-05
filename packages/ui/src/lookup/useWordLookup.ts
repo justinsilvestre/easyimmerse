@@ -120,9 +120,9 @@ export function useWordLookup<S>({
     /** A word clicked or tapped in the text. */
     clickWord: (request: LookupRequest<S>, input: WordHit["input"]) => {
       if (!control.showsOccurrence(request)) return control.open(request);
-      // A mouse click may begin a double-click, whose second click must find the pop-up still open.
-      if (input === "mouse") control.closeSoon();
-      else control.close();
+      // A click or tap may begin a double-click or double tap, whose second half must find the pop-up still open.
+      if (input === "keyboard") control.close();
+      else control.closeSoon();
     },
     /** A word the mouse rests on in the text. */
     hoverWord: (request: LookupRequest<S>) => {
