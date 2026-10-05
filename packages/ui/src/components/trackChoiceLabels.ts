@@ -1,3 +1,5 @@
+import { languageName } from "../projects/languages.ts";
+
 /** One video or audio track as the track choice dialog shows it, derived from the probed track. */
 export type TrackChoice = {
   /** The stream's index counted over every stream in the file, as ffmpeg numbers them. */
@@ -30,17 +32,4 @@ function baseLabel(track: TrackChoice, position: number): string {
     (part): part is string => typeof part === "string" && part.length > 0,
   );
   return parts.length > 0 ? parts.join(" · ") : `Track ${position}`;
-}
-
-/** The language's name in English, such as `Japanese` for `ja` or `jpn`, or the tag itself when it is unknown. */
-export function languageName(tag: string): string {
-  try {
-    const names = new Intl.DisplayNames(["en"], {
-      type: "language",
-      fallback: "none",
-    });
-    return names.of(tag) ?? tag;
-  } catch {
-    return tag;
-  }
 }

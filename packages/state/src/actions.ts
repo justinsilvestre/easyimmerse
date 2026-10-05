@@ -10,9 +10,18 @@ export const actions = {
     ({ type: "playerTimeChanged", seconds }) as const,
   playerDurationChanged: (seconds: number) =>
     ({ type: "playerDurationChanged", seconds }) as const,
+  playToggleRequested: () => ({ type: "playToggleRequested" }) as const,
+  playerPlayingChanged: (isPlaying: boolean) =>
+    ({ type: "playerPlayingChanged", isPlaying }) as const,
+  volumeChangeRequested: (volume: number) =>
+    ({ type: "volumeChangeRequested", volume }) as const,
+  speedChangeRequested: (speed: number) =>
+    ({ type: "speedChangeRequested", speed }) as const,
   filePickRequested: () => ({ type: "filePickRequested" }) as const,
   fileChosen: (file: PickedFile) => ({ type: "fileChosen", file }) as const,
   filePickCancelled: () => ({ type: "filePickCancelled" }) as const,
+  subtitleFileAdded: () => ({ type: "subtitleFileAdded" }) as const,
+  subtitleFileAddFailed: () => ({ type: "subtitleFileAddFailed" }) as const,
   mediaFilePickRequested: () => ({ type: "mediaFilePickRequested" }) as const,
   mediaFileChosen: (file: PickedMediaFile) =>
     ({ type: "mediaFileChosen", file }) as const,
@@ -35,8 +44,6 @@ export const actions = {
     ({ type: "preferencesLoaded", preferences }) as const,
   notificationRequested: (message: string) =>
     ({ type: "notificationRequested", message }) as const,
-  cueCopyRequested: (text: string) =>
-    ({ type: "cueCopyRequested", text }) as const,
   externalLinkRequested: (url: string) =>
     ({ type: "externalLinkRequested", url }) as const,
   systemThemeChanged: (theme: Theme) =>

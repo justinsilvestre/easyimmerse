@@ -19,13 +19,11 @@
     "@easyimmerse/state": "workspace:*",
     "@easyimmerse/ui": "workspace:*",
     "@tauri-apps/api": "^2.12.0",
-    "@tauri-apps/plugin-clipboard-manager": "^2.4.0",
     "@tauri-apps/plugin-dialog": "^2.8.0",
     "@tauri-apps/plugin-notification": "^2.5.0",
     "@tauri-apps/plugin-opener": "^2.7.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "react-redux": "^9.3.0"
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@easyimmerse/config": "workspace:*",

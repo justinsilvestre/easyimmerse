@@ -1,10 +1,9 @@
-import {
-  type AudioClip,
-  type FlashcardContent,
-  type FlashcardFieldKey,
-  type FlashcardTextFieldKey,
-  toggleField,
-} from "./flashcardFields.ts";
+import type {
+  AudioClip,
+  FlashcardContent,
+  FlashcardFieldKey,
+} from "@easyimmerse/types";
+import { type FlashcardTextFieldKey, toggleField } from "./flashcardFields.ts";
 
 /** The flashcard being edited. */
 export type EditorState = {
@@ -30,12 +29,12 @@ export function reduceEditor(
     case "tagsChanged":
       return withContent(state, { tags: [...action.tags] });
     case "clipChanged":
-      return withContent(state, { audioContext: action.clip });
+      return withContent(state, { audio_context: action.clip });
     case "screenshotMsChanged":
       return state.content.screenshot === null
         ? state
         : withContent(state, {
-            screenshot: { ...state.content.screenshot, atMs: action.ms },
+            screenshot: { at_ms: action.ms },
           });
     case "fieldToggled":
       return {
@@ -55,4 +54,15 @@ function withContent(
   changes: Partial<FlashcardContent>,
 ): EditorState {
   return { ...state, content: { ...state.content, ...changes } };
+}
+
+/** Moves one end of a clip to a time, rounded to a millisecond, without passing the other end. */
+export function moveClipEndpoint(
+  clip: AudioClip,
+  endpoint: "start" | "end",
+  ms: number,
+): AudioClip {
+  return endpoint === "start"
+    ? { ...clip, start_ms: Math.round(Math.min(ms, clip.end_ms)) }
+    : { ...clip, end_ms: Math.round(Math.max(ms, clip.start_ms)) };
 }

@@ -5,13 +5,15 @@ export const dayMs = 24 * 60 * 60 * 1000;
  * Days are calendar days in the local time zone.
  */
 export function formatRelativeDate(
-  iso: string,
+  timestampMs: number,
   now: number = Date.now(),
 ): string {
-  const days = countCalendarDays(new Date(iso), new Date(now));
+  const days = countCalendarDays(new Date(timestampMs), new Date(now));
   if (days <= 0) return "today";
   if (days > 30)
-    return new Date(iso).toLocaleDateString("en", { dateStyle: "medium" });
+    return new Date(timestampMs).toLocaleDateString("en", {
+      dateStyle: "medium",
+    });
   return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
     -days,
     "day",

@@ -5,6 +5,7 @@ import {
   moveClipStart,
   overshootPx,
   peakSpan,
+  shortestClipMs,
   timeAfterKey,
   timeAtX,
   viewAroundClip,
@@ -19,21 +20,23 @@ const view = { startMs: 1000, endMs: 5000 };
 
 describe("viewAroundClip", () => {
   it("leaves at least a second of room on each side of a short clip", () => {
-    expect(viewAroundClip({ startMs: 3000, endMs: 4000 }, 60_000)).toEqual({
+    expect(viewAroundClip({ start_ms: 3000, end_ms: 4000 }, 60_000)).toEqual({
       startMs: 2000,
       endMs: 5000,
     });
   });
 
   it("leaves room in proportion to a long clip", () => {
-    expect(viewAroundClip({ startMs: 10_000, endMs: 20_000 }, 60_000)).toEqual({
+    expect(
+      viewAroundClip({ start_ms: 10_000, end_ms: 20_000 }, 60_000),
+    ).toEqual({
       startMs: 5000,
       endMs: 25_000,
     });
   });
 
   it("stays within the file", () => {
-    expect(viewAroundClip({ startMs: 200, endMs: 9800 }, 10_000)).toEqual({
+    expect(viewAroundClip({ start_ms: 200, end_ms: 9800 }, 10_000)).toEqual({
       startMs: 0,
       endMs: 10_000,
     });
@@ -189,21 +192,23 @@ describe("peakSpan", () => {
 
 describe("moveClipStart", () => {
   it("keeps the start before the end", () => {
-    expect(moveClipStart({ startMs: 1000, endMs: 2000 }, 1950).startMs).toBe(
-      1800,
+    expect(moveClipStart({ start_ms: 1000, end_ms: 2000 }, 1950).start_ms).toBe(
+      2000 - shortestClipMs,
     );
   });
 
   it("keeps the start at or after the beginning of the file", () => {
-    expect(moveClipStart({ startMs: 1000, endMs: 2000 }, -50).startMs).toBe(0);
+    expect(moveClipStart({ start_ms: 1000, end_ms: 2000 }, -50).start_ms).toBe(
+      0,
+    );
   });
 });
 
 describe("moveClipEnd", () => {
   it("keeps the end within the file", () => {
-    expect(moveClipEnd({ startMs: 1000, endMs: 2000 }, 2500, 2200).endMs).toBe(
-      2200,
-    );
+    expect(
+      moveClipEnd({ start_ms: 1000, end_ms: 2000 }, 2500, 2200).end_ms,
+    ).toBe(2200);
   });
 });
 

@@ -1,8 +1,8 @@
+import type { ProjectSettings } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { createFakeMediaQueryList } from "../testSupport/createFakeMediaQueryList.ts";
-import type { ProjectFormValues } from "./editProject.ts";
 import { ProjectForm } from "./ProjectForm.tsx";
 
 afterEach(() => {
@@ -10,18 +10,18 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const initialValues: ProjectFormValues = {
+const initialValues: ProjectSettings = {
   name: "",
-  targetLanguage: "de",
-  translationLanguage: "en",
-  flashcardFields: fieldsOfPreset("intermediate"),
-  defaultTags: [],
-  tagsMediaName: true,
-  fillsAudioWithTts: false,
+  target_language: "de",
+  translation_language: "en",
+  flashcard_fields: fieldsOfPreset("intermediate"),
+  default_tags: [],
+  tags_media_name: true,
+  fills_audio_with_tts: false,
 };
 
 function renderForm(
-  onSubmit: (values: ProjectFormValues) => void = () => undefined,
+  onSubmit: (values: ProjectSettings) => void = () => undefined,
 ) {
   render(
     <ProjectForm

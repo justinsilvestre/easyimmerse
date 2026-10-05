@@ -1,3 +1,4 @@
+import { shortestClipMs } from "../../flashcards/clipView.ts";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import type { WaveformHit } from "./waveformHitTest.ts";
 
@@ -6,9 +7,6 @@ export type WaveformDrag = {
   hit: Extract<WaveformHit, { kind: "clipStart" | "clipEnd" | "screenshot" }>;
   timeMs: number;
 };
-
-/** The shortest clip a drag may leave. */
-const minClipMs = 100;
 
 /**
  * Moves the dragged handle to the time, keeping the clip in order and the screenshot inside it:
@@ -32,10 +30,13 @@ function dragBounds(
 ): [number, number] {
   switch (kind) {
     case "clipStart":
-      return [0, Math.min(segment.endMs - minClipMs, segment.screenshotMs)];
+      return [
+        0,
+        Math.min(segment.endMs - shortestClipMs, segment.screenshotMs),
+      ];
     case "clipEnd":
       return [
-        Math.max(segment.startMs + minClipMs, segment.screenshotMs),
+        Math.max(segment.startMs + shortestClipMs, segment.screenshotMs),
         durationMs,
       ];
     case "screenshot":

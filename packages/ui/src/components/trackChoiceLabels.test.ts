@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TrackChoice } from "./trackChoiceLabels.ts";
-import { languageName, trackLabels } from "./trackChoiceLabels.ts";
+import { trackLabels } from "./trackChoiceLabels.ts";
 
 const track = (overrides: Partial<TrackChoice>): TrackChoice => ({
   streamIndex: 1,
@@ -9,24 +9,6 @@ const track = (overrides: Partial<TrackChoice>): TrackChoice => ({
   format: "AAC stereo",
   isDefault: false,
   ...overrides,
-});
-
-describe("languageName", () => {
-  it("names a two-letter tag", () => {
-    expect(languageName("ja")).toBe("Japanese");
-  });
-
-  it("names a three-letter tag", () => {
-    expect(languageName("jpn")).toBe("Japanese");
-  });
-
-  it("returns an unknown tag as it is", () => {
-    expect(languageName("qaa")).toBe("qaa");
-  });
-
-  it("returns a malformed tag as it is", () => {
-    expect(languageName("not a tag")).toBe("not a tag");
-  });
 });
 
 describe("trackLabels", () => {

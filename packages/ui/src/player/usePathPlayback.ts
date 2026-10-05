@@ -16,15 +16,14 @@ import type {
   TrackSelection,
 } from "@easyimmerse/types";
 import { useMemo, useState } from "react";
-import type { TrackChoice } from "../components/trackChoiceLabels.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { derivePlaybackState } from "./derivePlaybackState.ts";
+import { derivePlayerStatus } from "./derivePlayerStatus.ts";
 import {
   measurePlaybackEnvironment,
   readPlaybackProbes,
 } from "./measurePlaybackEnvironment.ts";
-import type { PlaybackState } from "./PlaybackState.ts";
+import type { PlayerStatus } from "./PlayerStatus.ts";
 import {
   containerCodecStrings,
   needsTrackChoice,
@@ -32,13 +31,6 @@ import {
   tracksOfKind,
 } from "./playbackPlanRules.ts";
 import { trackChoiceOf } from "./trackChoiceOf.ts";
-
-/** What the track choice dialog shows when it is open. */
-export type TrackChoicePrompt = {
-  videoTracks: TrackChoice[];
-  audioTracks: TrackChoice[];
-  initialSelection: TrackSelection | undefined;
-};
 
 /** Whether the dialog is yet to be decided for this file, opened by the user, or put away. */
 type TrackDialog = "undecided" | "open" | "closed";
@@ -91,7 +83,7 @@ export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
   );
   const [saveSelection] = useSaveTrackSelectionMutation();
 
-  const playbackState: PlaybackState = derivePlaybackState({
+  const playerStatus: PlayerStatus = derivePlayerStatus({
     server: getServerConfig(),
     projectId,
     mediaFileId,
@@ -114,7 +106,7 @@ export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
       );
   };
   return {
-    playback: playbackState,
+    playback: playerStatus,
     trackChoice:
       container !== undefined && (choiceDue || trackDialog === "open")
         ? {

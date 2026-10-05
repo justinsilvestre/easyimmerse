@@ -8,12 +8,15 @@ export type PickedMediaFile = { name: string; source: MediaFileSource };
 /** Every side effect the app can perform. Each platform implements it; tests use a recording fake. */
 export interface Effects {
   seekPlayer(seconds: number): void;
+  /** Pauses the player when it plays, and plays it otherwise. */
+  togglePlayer(): void;
+  setPlayerVolume(volume: number): void;
+  setPlayerSpeed(speed: number): void;
   pickFile(accept: readonly string[]): Promise<PickedFile | null>;
   pickMediaFile(accept: readonly string[]): Promise<PickedMediaFile | null>;
   savePreference(key: string, value: string): Promise<void>;
   loadPreference(key: string): Promise<string | null>;
   showNotification(message: string): void;
-  copyToClipboard(text: string): Promise<void>;
   openExternalUrl(url: string): void;
   /**
    * Calls the listener whenever the platform asks for the Settings screen, as a desktop menu item does.

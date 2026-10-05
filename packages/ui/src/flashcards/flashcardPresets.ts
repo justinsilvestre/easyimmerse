@@ -1,4 +1,4 @@
-import type { FlashcardFieldKey } from "./flashcardFields.ts";
+import type { FlashcardFieldKey } from "@easyimmerse/types";
 
 /** A named selection of fields suited to a stage of learning. */
 export type FlashcardPreset = "beginner" | "intermediate" | "advanced";
@@ -15,40 +15,38 @@ export const flashcardPresetOptions: readonly {
 const presetFields: Record<FlashcardPreset, readonly FlashcardFieldKey[]> = {
   beginner: [
     "word",
-    "wordPronunciation",
-    "l1Definition",
-    "textContext",
-    "textContextTranslation",
-    "textContextPronunciation",
-    "audioContext",
+    "word_pronunciation",
+    "l1_definition",
+    "text_context",
+    "text_context_translation",
+    "text_context_pronunciation",
+    "audio_context",
     "screenshot",
     "tags",
   ],
   intermediate: [
     "word",
-    "l1Definition",
-    "textContext",
-    "textContextTranslation",
-    "audioContext",
+    "l1_definition",
+    "text_context",
+    "text_context_translation",
+    "audio_context",
     "screenshot",
     "tags",
   ],
   advanced: [
     "word",
-    "l2Definition",
-    "textContext",
-    "textContextTranslation",
-    "audioContext",
+    "l2_definition",
+    "text_context",
+    "text_context_translation",
+    "audio_context",
     "screenshot",
     "tags",
   ],
 };
 
 /** The fields a flashcard starts with under the preset. */
-export function fieldsOfPreset(
-  preset: FlashcardPreset,
-): readonly FlashcardFieldKey[] {
-  return presetFields[preset];
+export function fieldsOfPreset(preset: FlashcardPreset): FlashcardFieldKey[] {
+  return [...presetFields[preset]];
 }
 
 /** Names the preset whose fields match the selection exactly, or `custom` when none does. */

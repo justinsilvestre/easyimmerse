@@ -14,7 +14,7 @@ export type PlaybackProbes = {
 };
 
 /** The codec strings of the server's conversion targets: AAC-LC, FLAC, and H.264 High level 5.1. */
-export const conversionTargetCodecStrings: readonly string[] = [
+const conversionTargetCodecStrings: readonly string[] = [
   "mp4a.40.2",
   "fLaC",
   "avc1.640033",

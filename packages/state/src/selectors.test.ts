@@ -6,24 +6,26 @@ import {
   selectCurrentMediaFileId,
   selectCurrentTime,
   selectPendingFilePick,
-  selectPendingMediaFilePick,
+  selectPlayer,
   selectPlayerDuration,
   selectPreference,
   selectPreferencesLoaded,
-  selectSubtitleSource,
   selectTextScale,
 } from "./selectors.ts";
 
 const rootState: RootState = {
   app: {
     ...initialAppState,
-    player: { currentTimeSeconds: 4, durationSeconds: 90 },
-    subtitleSource: { kind: "inline", text: "Hello" },
+    player: {
+      ...initialAppState.player,
+      currentTimeSeconds: 4,
+      durationSeconds: 90,
+    },
+    chosenSubtitleFile: null,
     preferences: { showTranslations: "true" },
     preferencesLoaded: true,
     pendingFilePick: true,
     currentMediaFileId: "m1",
-    pendingMediaFilePick: true,
     chosenMediaFile: { name: "a.mp4", source: { kind: "path", path: "/a" } },
   },
 };
@@ -37,11 +39,8 @@ describe("selectors", () => {
     expect(selectPlayerDuration(rootState)).toBe(90);
   });
 
-  it("selectSubtitleSource returns the subtitle source", () => {
-    expect(selectSubtitleSource(rootState)).toEqual({
-      kind: "inline",
-      text: "Hello",
-    });
+  it("selectPlayer returns the whole player state", () => {
+    expect(selectPlayer(rootState)).toEqual(rootState.app.player);
   });
 
   it("selectPreference returns the stored preference value", () => {
@@ -58,10 +57,6 @@ describe("selectors", () => {
 
   it("selectCurrentMediaFileId returns the open media file's id", () => {
     expect(selectCurrentMediaFileId(rootState)).toBe("m1");
-  });
-
-  it("selectPendingMediaFilePick returns whether a media file pick is pending", () => {
-    expect(selectPendingMediaFilePick(rootState)).toBe(true);
   });
 
   it("selectChosenMediaFile returns the media file waiting to be added", () => {

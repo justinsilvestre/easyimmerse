@@ -19,7 +19,10 @@ import { initialNavigation, mainScreenOf, navigate } from "./navigation.ts";
 import { NavigationActionsContext } from "./navigationContext.ts";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
-import { MediaScreen } from "./screens/MediaScreen.tsx";
+import { NewProjectScreen } from "./screens/NewProjectScreen.tsx";
+import { OfflineScreen } from "./screens/OfflineScreen.tsx";
+import { ProjectScreen } from "./screens/ProjectScreen.tsx";
+import { ProjectSettingsScreen } from "./screens/ProjectSettingsScreen.tsx";
 import { SettingsScreen } from "./screens/SettingsScreen.tsx";
 
 export function AppRoot({
@@ -81,18 +84,45 @@ function MainScreen({
   navigation: MainNavigation;
   dispatchNavigation: (action: NavigationAction) => void;
 }) {
-  return navigation.screen === "home" ? (
-    <HomeScreen
-      onOpenProject={(projectId) =>
-        dispatchNavigation({ type: "openProject", projectId })
-      }
-    />
-  ) : (
-    <MediaScreen
-      projectId={navigation.projectId}
-      onBack={() => dispatchNavigation({ type: "goHome" })}
-    />
-  );
+  const openProject = (projectId: string) =>
+    dispatchNavigation({ type: "openProject", projectId });
+  const goHome = () => dispatchNavigation({ type: "goHome" });
+  switch (navigation.screen) {
+    case "home":
+      return (
+        <HomeScreen
+          onOpenProject={openProject}
+          onCreateProject={() => dispatchNavigation({ type: "createProject" })}
+          onContinueOffline={() =>
+            dispatchNavigation({ type: "continueOffline" })
+          }
+        />
+      );
+    case "offline":
+      return <OfflineScreen onBack={goHome} />;
+    case "newProject":
+      return <NewProjectScreen onCreated={openProject} onCancel={goHome} />;
+    case "project":
+      return (
+        <ProjectScreen
+          projectId={navigation.projectId}
+          onBack={goHome}
+          onEditSettings={() =>
+            dispatchNavigation({
+              type: "openProjectSettings",
+              projectId: navigation.projectId,
+            })
+          }
+        />
+      );
+    case "projectSettings":
+      return (
+        <ProjectSettingsScreen
+          projectId={navigation.projectId}
+          onDone={() => openProject(navigation.projectId)}
+        />
+      );
+  }
 }
 
 /** The Settings screen with the converted-videos status from the server and the bundled license notices. */

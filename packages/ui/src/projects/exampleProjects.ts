@@ -1,36 +1,46 @@
+import type { Project, ProjectSettings } from "@easyimmerse/types";
+import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { dayMs } from "./formatRelativeDate.ts";
-import type { ProjectCardData } from "./ProjectCard.tsx";
 
-function daysAgo(days: number): string {
-  return new Date(Date.now() - days * dayMs).toISOString();
+function daysAgo(days: number): number {
+  return Date.now() - days * dayMs;
+}
+
+function settings(name: string, targetLanguage: string): ProjectSettings {
+  return {
+    name,
+    target_language: targetLanguage,
+    translation_language: "en",
+    flashcard_fields: fieldsOfPreset("intermediate"),
+    default_tags: [],
+    tags_media_name: true,
+    fills_audio_with_tts: false,
+  };
 }
 
 /** Projects for stories, ordered as the home screen lists them. */
-export const exampleProjects: readonly ProjectCardData[] = [
+export const exampleProjects: readonly Project[] = [
   {
     id: "project-german",
-    name: "German",
-    language: "de",
-    created_at: daysAgo(40),
-    last_opened_at: daysAgo(0),
+    settings: settings("German", "de"),
+    created_at_ms: daysAgo(40),
+    last_opened_at_ms: daysAgo(0),
     media_count: 10,
     flashcard_count: 184,
   },
   {
     id: "project-japanese",
-    name: "Japanese",
-    language: "ja",
-    created_at: daysAgo(12),
-    last_opened_at: daysAgo(1),
+    settings: settings("Japanese", "ja"),
+    created_at_ms: daysAgo(12),
+    last_opened_at_ms: daysAgo(1),
     media_count: 3,
     flashcard_count: 42,
   },
   {
     id: "project-spanish",
-    name: "Intermediate Spanish",
-    language: "es",
-    created_at: daysAgo(90),
-    last_opened_at: daysAgo(45),
+    settings: settings("Intermediate Spanish", "es"),
+    created_at_ms: daysAgo(90),
+    last_opened_at_ms: daysAgo(45),
     media_count: 1,
     flashcard_count: 7,
   },

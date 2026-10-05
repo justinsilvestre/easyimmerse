@@ -24,6 +24,10 @@ import {
   fakeFailure,
 } from "./testSupport/createFakeBackendClient.ts";
 import { fixtureResponses } from "./testSupport/fixtureResponses.ts";
+import {
+  directPlaybackRoutes,
+  fakeServer,
+} from "./testSupport/mediaFixtureResponses.ts";
 
 afterEach(() => {
   cleanup();
@@ -41,7 +45,10 @@ const responses = {
 };
 
 function renderAppRoot() {
-  configureBackend(createFakeBackendClient(responses));
+  configureBackend(
+    createFakeBackendClient(responses, directPlaybackRoutes),
+    fakeServer,
+  );
   const effects = createRecordingEffects();
   const playerRegistry = createPlayerRegistry();
   const store = createAppStore(effects, backendStoreParts);
@@ -52,15 +59,21 @@ function renderAppRoot() {
 }
 
 async function openProject() {
-  fireEvent.click(await screen.findByRole("button", { name: "Alpha" }));
+  fireEvent.click(await screen.findByRole("button", { name: /Alpha/ }));
 }
 
 async function openMediaFile() {
-  fireEvent.click(await screen.findByRole("button", { name: "episode.mkv" }));
+  await openProject();
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Video episode.mkv" }),
+  );
+  await screen.findByRole("region", { name: "Player" });
 }
 
+/** The app's Settings button: the footer's, or the media screen's header button. A project screen has a Settings button of its own before it. */
 function openSettingsFromFooter() {
-  fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+  const buttons = screen.getAllByRole("button", { name: "Settings" });
+  fireEvent.click(buttons.at(-1) as HTMLElement);
 }
 
 const findPlayer = () => screen.getByRole("region", { name: "Player" });
@@ -79,17 +92,33 @@ describe("AppRoot", () => {
     expect(screen.getByRole("heading", { name: "Projects" })).toBeDefined();
   });
 
-  it("shows the media screen after a project is opened", async () => {
+  it("shows the project screen after a project is opened", async () => {
     renderAppRoot();
     await openProject();
+    expect(await screen.findByRole("heading", { name: "Alpha" })).toBeDefined();
+  });
+
+  it("returns to the home screen when Projects is clicked", async () => {
+    renderAppRoot();
+    await openProject();
+    fireEvent.click(await screen.findByRole("button", { name: "Projects" }));
+    expect(
+      await screen.findByRole("heading", { name: "Projects" }),
+    ).toBeDefined();
+  });
+
+  it("shows the media screen once a media file is opened", async () => {
+    renderAppRoot();
+    await openMediaFile();
     expect(findPlayer()).toBeDefined();
   });
 
-  it("returns to the home screen when Back is clicked", async () => {
+  it("opens the new project form from the home screen", async () => {
     renderAppRoot();
-    await openProject();
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(screen.getByRole("heading", { name: "Projects" })).toBeDefined();
+    fireEvent.click(await screen.findByRole("button", { name: "New project" }));
+    expect(
+      await screen.findByRole("heading", { name: "New project" }),
+    ).toBeDefined();
   });
 
   describe("when Settings opens from the footer", () => {
@@ -101,26 +130,28 @@ describe("AppRoot", () => {
 
     it("keeps the media screen mounted beneath", async () => {
       renderAppRoot();
-      await openProject();
+      await openMediaFile();
       openSettingsFromFooter();
       expect(findPlayer()).toBeDefined();
     });
 
     it("makes the media screen inert", async () => {
       renderAppRoot();
-      await openProject();
+      await openMediaFile();
       openSettingsFromFooter();
       expect(findPlayer().closest("[inert]")).not.toBeNull();
     });
 
     it("restores the player's state when Back is clicked", async () => {
       const { store } = renderAppRoot();
-      await openProject();
       await openMediaFile();
-      act(() => store.dispatch(actions.playerTimeChanged(61.75)));
+      act(() => store.dispatch(actions.playerTimeChanged(6.5)));
       openSettingsFromFooter();
       clickUsableBack();
-      expect(findPlayer().textContent).toContain("1:01.8");
+      expect(
+        (screen.getByRole("slider", { name: "Position" }) as HTMLInputElement)
+          .value,
+      ).toBe("6500");
     });
 
     it("lists the ffmpeg license notices", () => {
@@ -142,7 +173,7 @@ describe("AppRoot", () => {
 
     it("lets the media screen be used again after Back is clicked", async () => {
       renderAppRoot();
-      await openProject();
+      await openMediaFile();
       openSettingsFromFooter();
       clickUsableBack();
       expect(findPlayer().closest("[inert]")).toBeNull();

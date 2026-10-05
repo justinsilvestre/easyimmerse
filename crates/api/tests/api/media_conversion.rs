@@ -145,9 +145,11 @@ async fn tracks_need_local_path_permission() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn subtitle_tracks_need_local_path_permission() {
+async fn embedded_subtitles_need_local_path_permission() {
     let (server, media_id) = server_without_local_paths().await;
-    let response = server.get(&media_route(&media_id, "subtitle-tracks")).await;
+    let response = server
+        .get(&media_route(&media_id, "embedded-subtitles"))
+        .await;
     assert_eq!(response.status, 403);
 }
 
@@ -170,13 +172,15 @@ async fn the_waveform_needs_local_path_permission() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn subtitle_tracks_list_the_embedded_subtitle() {
+async fn embedded_subtitles_list_the_embedded_subtitle_track() {
     if !ffmpeg_available() {
         return;
     }
     let server = spawn_test_server(true).await;
     let media_id = add_path_media(&server, MKV).await;
-    let response = server.get(&media_route(&media_id, "subtitle-tracks")).await;
+    let response = server
+        .get(&media_route(&media_id, "embedded-subtitles"))
+        .await;
     let tracks = response.json()["tracks"]
         .as_array()
         .cloned()
@@ -513,4 +517,46 @@ async fn the_waveform_yields_one_hundred_peaks_per_second() {
         ),
         (Some(1000), Some(200))
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_frame_needs_local_path_permission() {
+    let (server, media_id) = server_without_local_paths().await;
+    let response = server.get(&media_route(&media_id, "frame?at_ms=0")).await;
+    assert_eq!(response.status, 403);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_frame_is_a_jpeg_image() {
+    if !ffmpeg_available() {
+        return;
+    }
+    let server = spawn_test_server(true).await;
+    let media_id = add_path_media(&server, MKV).await;
+    let response = server
+        .get(&media_route(&media_id, "frame?at_ms=1000"))
+        .await;
+    assert_eq!(response.status, 200, "{}", response.text());
+    assert_eq!(response.header("content-type"), Some("image/jpeg"));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_frame_accepts_the_token_as_a_query_parameter() {
+    if !ffmpeg_available() {
+        return;
+    }
+    let server = spawn_test_server(true).await;
+    let media_id = add_path_media(&server, MKV).await;
+    let response = server
+        .request(
+            "GET",
+            &media_route(
+                &media_id,
+                &format!("frame?at_ms=1000&token={}", server.token),
+            ),
+        )
+        .without_token()
+        .send()
+        .await;
+    assert_eq!(response.status, 200);
 }

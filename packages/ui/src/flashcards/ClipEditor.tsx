@@ -1,6 +1,6 @@
+import type { AudioClip } from "@easyimmerse/types";
 import { Camera } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
-import { Peaks, peaksBetween } from "../media/Peaks.tsx";
 import {
   clamp,
   moveClipEnd,
@@ -11,8 +11,8 @@ import {
   viewIncluding,
   viewIncludingAll,
 } from "./clipView.ts";
-import type { AudioClip } from "./flashcardFields.ts";
 import { formatClipTime } from "./formatClipTime.ts";
+import { Peaks, peaksBetween } from "./Peaks.tsx";
 import {
   type DraggableTime,
   type DragHandlers,
@@ -47,8 +47,8 @@ export function ClipEditor({
   const view = viewIncludingAll(
     storedView,
     screenshotMs === null
-      ? [clip.startMs, clip.endMs]
-      : [clip.startMs, clip.endMs, screenshotMs],
+      ? [clip.start_ms, clip.end_ms]
+      : [clip.start_ms, clip.end_ms, screenshotMs],
     durationMs,
   );
   const latestClip = useRef(clip);
@@ -96,15 +96,15 @@ export function ClipEditor({
           <span
             aria-hidden
             className="absolute inset-y-0 bg-accent/20"
-            style={between(clip.startMs, clip.endMs)}
+            style={between(clip.start_ms, clip.end_ms)}
           />
         </div>
         <Handle
           label="Clip start"
           max={durationMs}
           {...handleFor({
-            valueMs: clip.startMs,
-            constrain: (ms) => moveClipStart(clip, ms).startMs,
+            valueMs: clip.start_ms,
+            constrain: (ms) => moveClipStart(clip, ms).start_ms,
             apply: (ms) => onClipChange(moveClipStart(clip, ms)),
           })}
         />
@@ -112,8 +112,8 @@ export function ClipEditor({
           label="Clip end"
           max={durationMs}
           {...handleFor({
-            valueMs: clip.endMs,
-            constrain: (ms) => moveClipEnd(clip, ms, durationMs).endMs,
+            valueMs: clip.end_ms,
+            constrain: (ms) => moveClipEnd(clip, ms, durationMs).end_ms,
             apply: (ms) => onClipChange(moveClipEnd(clip, ms, durationMs)),
           })}
         />
@@ -131,8 +131,8 @@ export function ClipEditor({
         )}
       </div>
       <div className="flex justify-between">
-        <span>{formatClipTime(clip.startMs)}</span>
-        <span>{formatClipTime(clip.endMs)}</span>
+        <span>{formatClipTime(clip.start_ms)}</span>
+        <span>{formatClipTime(clip.end_ms)}</span>
       </div>
     </div>
   );

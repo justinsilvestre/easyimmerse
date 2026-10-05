@@ -9,13 +9,13 @@ const languages = { target: "de", translation: "en" };
 
 describe("findFlashcardField", () => {
   it("labels a definition with the code of its language", () => {
-    expect(findFlashcardField("l1Definition").label(languages)).toBe(
+    expect(findFlashcardField("l1_definition").label(languages)).toBe(
       "Definition (en)",
     );
   });
 
   it("labels the sentence with the code of the target language", () => {
-    expect(findFlashcardField("textContext").label(languages)).toBe(
+    expect(findFlashcardField("text_context").label(languages)).toBe(
       "Sentence (de)",
     );
   });

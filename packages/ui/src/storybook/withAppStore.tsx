@@ -9,7 +9,7 @@ import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 
 /** Set under `parameters.appStore` to replace the fixture backend or to connect a browser file registry. */
-export type AppStoreParameters = {
+type AppStoreParameters = {
   client?: BackendClient;
   server?: ServerConfig;
   browserFileRegistry?: BrowserFileRegistry<File>;

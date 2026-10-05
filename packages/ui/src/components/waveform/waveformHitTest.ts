@@ -9,7 +9,7 @@ export type WaveformHit =
   | { kind: "none" };
 
 /** How far from a handle, in pixels, a pointer still grabs it. */
-export const handleGrabPx = 6;
+const handleGrabPx = 6;
 /** The screenshot marker hangs from the top edge down to this height. */
 export const screenshotMarkerHeightPx = 14;
 

@@ -1,7 +1,7 @@
 import { maxVisibleSpanMs } from "./waveformWindowPolicy.ts";
 
 /** The narrowest visible span. */
-export const minVisibleSpanMs = 2_000;
+const minVisibleSpanMs = 2_000;
 
 /** The span of media the strip shows and the width it is drawn at. */
 export type WaveformView = {

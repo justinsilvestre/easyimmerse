@@ -1,10 +1,11 @@
+import type { ProjectSettings } from "@easyimmerse/types";
 import { type ReactNode, useReducer } from "react";
 import { Button } from "../components/Button.tsx";
 import { CheckboxField } from "../components/CheckboxField.tsx";
 import { SelectField } from "../components/SelectField.tsx";
 import { TagsField } from "../components/TagsField.tsx";
 import { TextField } from "../components/TextField.tsx";
-import { type ProjectFormValues, reduceProjectForm } from "./editProject.ts";
+import { reduceProjectForm } from "./editProject.ts";
 import { languageOptions } from "./languages.ts";
 import { PresetPicker } from "./PresetPicker.tsx";
 import { ProjectFormFields } from "./ProjectFormFields.tsx";
@@ -20,9 +21,9 @@ export function ProjectForm({
   onSubmit,
   onCancel,
 }: {
-  initialValues: ProjectFormValues;
+  initialValues: ProjectSettings;
   submitLabel: string;
-  onSubmit: (values: ProjectFormValues) => void;
+  onSubmit: (values: ProjectSettings) => void;
   onCancel: () => void;
 }) {
   const [state, dispatch] = useReducer(reduceProjectForm, initialValues);
@@ -49,7 +50,7 @@ export function ProjectForm({
             label="Target language"
             hint="The language you are learning."
             options={languageOptions}
-            value={state.targetLanguage}
+            value={state.target_language}
             onChange={(event) =>
               dispatch({
                 type: "targetLanguageChanged",
@@ -61,7 +62,7 @@ export function ProjectForm({
             label="Translation language"
             hint="Translations and definitions in this language."
             options={languageOptions}
-            value={state.translationLanguage}
+            value={state.translation_language}
             onChange={(event) =>
               dispatch({
                 type: "translationLanguageChanged",
@@ -80,7 +81,7 @@ export function ProjectForm({
           </p>
         </div>
         <PresetPicker
-          fields={state.flashcardFields}
+          fields={state.flashcard_fields}
           onPresetChosen={(preset) =>
             dispatch({ type: "presetChosen", preset })
           }
@@ -92,18 +93,18 @@ export function ProjectForm({
       <Column>
         <TagsField
           label="Default tags"
-          tags={state.defaultTags}
+          tags={state.default_tags}
           onChange={(tags) => dispatch({ type: "defaultTagsChanged", tags })}
         />
         <CheckboxField
           label="Tag each flashcard with the name of its media file"
-          checked={state.tagsMediaName}
+          checked={state.tags_media_name}
           onChange={() => dispatch({ type: "mediaNameTagToggled" })}
         />
         <CheckboxField
           label="Fill the audio fields with text-to-speech when the media has no audio track"
           hint="Applies to ebooks and text files."
-          checked={state.fillsAudioWithTts}
+          checked={state.fills_audio_with_tts}
           onChange={() => dispatch({ type: "ttsToggled" })}
         />
       </Column>

@@ -1,10 +1,12 @@
 mod auth;
 mod dictionaries;
 mod documents;
+mod flashcards;
 mod media;
 mod media_conversion;
 mod openapi;
 mod preferences;
 mod projects;
+mod subtitles;
 mod support;
 mod timed_text;

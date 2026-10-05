@@ -1,7 +1,7 @@
+import type { AudioClip } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClipEditor } from "./ClipEditor.tsx";
-import type { AudioClip } from "./flashcardFields.ts";
 
 afterEach(cleanup);
 
@@ -14,7 +14,7 @@ function renderEditor(
     <ClipEditor
       peaks={[0.2, 0.5, 0.8, 0.4]}
       durationMs={10_000}
-      clip={{ startMs: 2000, endMs: 4000 }}
+      clip={{ start_ms: 2000, end_ms: 4000 }}
       screenshotMs={screenshotMs}
       onClipChange={onClipChange}
       onScreenshotMsChange={onScreenshotMsChange}
@@ -39,7 +39,7 @@ describe("ClipEditor", () => {
     layOutWaveform(start);
     fireEvent.pointerDown(start, { pointerId: 1, button: 0, clientX: 254 });
     fireEvent.pointerMove(start, { pointerId: 1, buttons: 1, clientX: 504 });
-    expect(clips).toEqual([{ startMs: 3000, endMs: 4000 }]);
+    expect(clips).toEqual([{ start_ms: 3000, end_ms: 4000 }]);
   });
 
   it("holds a handle dragged past the waveform at its edge", () => {
@@ -49,7 +49,7 @@ describe("ClipEditor", () => {
     layOutWaveform(end);
     fireEvent.pointerDown(end, { pointerId: 1, button: 0, clientX: 750 });
     fireEvent.pointerMove(end, { pointerId: 1, buttons: 1, clientX: 1100 });
-    expect(clips).toEqual([{ startMs: 2000, endMs: 5000 }]);
+    expect(clips).toEqual([{ start_ms: 2000, end_ms: 5000 }]);
   });
 
   it("stops following the pointer once it is released", () => {
@@ -78,7 +78,7 @@ describe("ClipEditor", () => {
     fireEvent.keyDown(screen.getByRole("slider", { name: "Clip start" }), {
       key: "ArrowRight",
     });
-    expect(clips).toEqual([{ startMs: 2100, endMs: 4000 }]);
+    expect(clips).toEqual([{ start_ms: 2100, end_ms: 4000 }]);
   });
 
   it("moves the clip's end by a second with Shift and an arrow key", () => {
@@ -88,7 +88,7 @@ describe("ClipEditor", () => {
       key: "ArrowLeft",
       shiftKey: true,
     });
-    expect(clips).toEqual([{ startMs: 2000, endMs: 3000 }]);
+    expect(clips).toEqual([{ start_ms: 2000, end_ms: 3000 }]);
   });
 
   it("moves the screenshot time with the arrow keys", () => {

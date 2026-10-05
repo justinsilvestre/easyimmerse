@@ -1,14 +1,11 @@
+import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import { Download, GraduationCap, Plug, Send } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { pluralize } from "../components/pluralize.ts";
 import { FlashcardPreview } from "../flashcards/FlashcardPreview.tsx";
-import type {
-  FlashcardContent,
-  FlashcardFieldKey,
-  FlashcardLanguages,
-} from "../flashcards/flashcardFields.ts";
+import type { FlashcardLanguages } from "../flashcards/flashcardFields.ts";
 
 /** Where the project's flashcards last went: nowhere yet, the built-in review, an Anki package, or Anki itself. */
 export type FlashcardSyncState =

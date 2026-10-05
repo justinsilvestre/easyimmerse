@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { PlayerHandle } from "./playerRegistry.ts";
 import { createPlayerRegistry } from "./playerRegistry.ts";
 
-const createHandle = (): PlayerHandle => ({ seek: () => undefined });
+const createHandle = (): PlayerHandle => ({
+  seek: () => undefined,
+  togglePlay: () => undefined,
+  setVolume: () => undefined,
+  setSpeed: () => undefined,
+});
 
 describe("createPlayerRegistry", () => {
   it("has no current player before one is registered", () => {

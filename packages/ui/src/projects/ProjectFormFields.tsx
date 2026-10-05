@@ -1,13 +1,14 @@
+import type { ProjectSettings } from "@easyimmerse/types";
 import clsx from "clsx";
 import { useState } from "react";
 import { CheckboxField } from "../components/CheckboxField.tsx";
 import {
   type FlashcardFieldGroup,
+  flashcardFieldDefinitions,
   flashcardFieldGroups,
-  flashcardFields,
   labelOfFieldGroup,
 } from "../flashcards/flashcardFields.ts";
-import type { ProjectFormAction, ProjectFormValues } from "./editProject.ts";
+import type { ProjectFormAction } from "./editProject.ts";
 
 /**
  * The checkboxes for the fields a new flashcard starts with, grouped by language.
@@ -17,13 +18,13 @@ export function ProjectFormFields({
   values,
   dispatch,
 }: {
-  values: ProjectFormValues;
+  values: ProjectSettings;
   dispatch: (action: ProjectFormAction) => void;
 }) {
   const [openGroup, setOpenGroup] = useState<FlashcardFieldGroup>("target");
   const languages = {
-    target: values.targetLanguage,
-    translation: values.translationLanguage,
+    target: values.target_language,
+    translation: values.translation_language,
   };
   return (
     <div className="flex flex-col gap-3">
@@ -62,13 +63,13 @@ export function ProjectFormFields({
             <legend className="mb-2 hidden text-xs font-medium text-fg-muted sm:block">
               {labelOfFieldGroup(group, languages)}
             </legend>
-            {flashcardFields
+            {flashcardFieldDefinitions
               .filter((field) => field.group === group)
               .map((field) => (
                 <CheckboxField
                   key={field.key}
                   label={field.label(languages)}
-                  checked={values.flashcardFields.includes(field.key)}
+                  checked={values.flashcard_fields.includes(field.key)}
                   onChange={() =>
                     dispatch({ type: "fieldToggled", key: field.key })
                   }

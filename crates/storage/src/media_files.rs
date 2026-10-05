@@ -1,10 +1,11 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
 use easyimmerse_core::project::ProjectId;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
+use crate::new_row::{generate_id, now_ms};
+use crate::projects::ensure_project_exists;
+use crate::stored_integer::{read_unsigned, to_stored_integer};
 
 const MEDIA_FILE_COLUMNS: &str = "id, project_id, name, source_kind, source_path, browser_file_size, \
      browser_file_last_modified_ms, created_at_ms, track_selection_json";
@@ -43,7 +44,7 @@ pub fn add_media_file(
 ) -> Result<MediaFile, StorageError> {
     ensure_project_exists(conn, project_id)?;
     let media_file = MediaFile {
-        id: generate_media_file_id(),
+        id: MediaFileId(generate_id()),
         project_id: project_id.clone(),
         name: name.to_string(),
         source: source.clone(),
@@ -84,13 +85,21 @@ pub fn list_referenced_source_paths(conn: &Connection) -> Result<Vec<String>, St
     Ok(paths)
 }
 
-/// Deletes a project together with its media files.
-pub fn delete_project(conn: &Connection, project_id: &ProjectId) -> Result<(), StorageError> {
-    let deleted = conn.execute("DELETE FROM projects WHERE id = ?1", params![project_id.0])?;
-    if deleted == 0 {
-        return Err(StorageError::ProjectNotFound(project_id.0.clone()));
+pub fn ensure_media_file_exists(conn: &Connection, id: &MediaFileId) -> Result<(), StorageError> {
+    get_media_file(conn, id).map(|_| ())
+}
+
+/// Fails with `MediaFileNotFound` when the media file does not exist or belongs to another project.
+pub fn ensure_media_file_in_project(
+    conn: &Connection,
+    project_id: &ProjectId,
+    id: &MediaFileId,
+) -> Result<(), StorageError> {
+    if get_media_file(conn, id)?.project_id == *project_id {
+        Ok(())
+    } else {
+        Err(StorageError::MediaFileNotFound(id.0.clone()))
     }
-    Ok(())
 }
 
 fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), StorageError> {
@@ -115,7 +124,6 @@ fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), St
     Ok(())
 }
 
-/// SQLite stores only signed integers, so unsigned values are stored as `i64`.
 fn source_columns(
     source: &MediaFileSource,
 ) -> (&'static str, Option<&str>, Option<i64>, Option<i64>) {
@@ -131,15 +139,6 @@ fn source_columns(
             Some(to_stored_integer(*last_modified_ms)),
         ),
     }
-}
-
-fn to_stored_integer(value: u64) -> i64 {
-    i64::try_from(value).unwrap_or(i64::MAX)
-}
-
-fn read_unsigned(row: &Row, index: usize) -> rusqlite::Result<u64> {
-    let value: i64 = row.get(index)?;
-    Ok(u64::try_from(value).unwrap_or(0))
 }
 
 fn read_media_file(row: &Row) -> rusqlite::Result<MediaFile> {
@@ -169,38 +168,12 @@ fn read_source(row: &Row) -> rusqlite::Result<MediaFileSource> {
     }
 }
 
-fn ensure_project_exists(conn: &Connection, project_id: &ProjectId) -> Result<(), StorageError> {
-    let exists: bool = conn.query_row(
-        "SELECT EXISTS (SELECT 1 FROM projects WHERE id = ?1)",
-        params![project_id.0],
-        |row| row.get(0),
-    )?;
-    if exists {
-        Ok(())
-    } else {
-        Err(StorageError::ProjectNotFound(project_id.0.clone()))
-    }
-}
-
 fn ensure_one_row_changed(changed: usize, id: &MediaFileId) -> Result<(), StorageError> {
     if changed == 0 {
         Err(StorageError::MediaFileNotFound(id.0.clone()))
     } else {
         Ok(())
     }
-}
-
-/// Sixteen random bytes, hex encoded.
-fn generate_media_file_id() -> MediaFileId {
-    MediaFileId(hex::encode(rand::random::<[u8; 16]>()))
-}
-
-/// The clock is only ever behind the epoch on a misconfigured machine; such a time is stored as zero.
-fn now_ms() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|elapsed| u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX))
-        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -388,11 +361,5 @@ mod tests {
             storage.get_media_file(&added.id),
             Err(StorageError::MediaFileNotFound(_))
         ));
-    }
-
-    #[test]
-    fn deleting_an_unknown_project_fails() {
-        let result = seeded_storage().delete_project(&ProjectId("missing".to_string()));
-        assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 }

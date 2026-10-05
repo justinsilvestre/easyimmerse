@@ -16,6 +16,8 @@ export interface Manifest {
 
 /** One downloadable ffmpeg build, keyed in the manifest by its Rust target triple. */
 export interface ManifestEntry {
+  /** The release tag the build comes from. */
+  release: string;
   url: string;
   /** Hex SHA-256 of the archive. */
   sha256: string;
@@ -56,6 +58,7 @@ export function deriveManifestEntries(
       const archive: ArchiveKind = isWindows ? "zip" : "tar.xz";
       const extension = isWindows ? ".exe" : "";
       const entry: ManifestEntry = {
+        release: manifest.release,
         url: `${releaseUrl}/ffmpeg-${version}-${triple}.${archive}`,
         sha256,
         archive,

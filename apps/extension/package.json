@@ -19,11 +19,9 @@
     "@easyimmerse/ui": "workspace:*",
     "@easyimmerse/wasm": "workspace:*",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "react-redux": "^9.3.0"
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@easyimmerse/config": "workspace:*",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24",
