@@ -87,7 +87,7 @@ As a user:
   - [x] I can remove a media file from the project through the menu on its row
   - [ ] the menu bar has an option to save the project
   - [x] I see a button to edit the project's settings
-  - [ ] the status of dictionaries is indicated, according to the languages of my project flashcard settings
+  - [x] the status of dictionaries is indicated, according to the languages of my project flashcard settings
 - when I have not yet exported flashcards from this project or used the easyImmerse SRS for this project:
   - [ ] I see a button to export an Anki deck package for the project
   - [ ] I see a button to set up AnkiConnect for direct export to Anki
@@ -265,9 +265,9 @@ As a user:
 - while the dictionary pop-up is open:
   - [ ] I can click or double-tap on a word in the dictionary pop-up to create a flashcard for the word
 - when I click or tap outside the pop-up and not on a word in the target-language subtitles or text:
-  - [ ] the dictionary pop-up is closed
-  - [ ] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
-- when I click or double-tap on a word in the target-language subtitles or text:
+  - [x] the dictionary pop-up is closed
+  - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
+- when I double-click or double-tap on a word in the target-language subtitles or text:
   - [x] a flashcard is created for the word
   - [x] the fields are shown according to my flashcard settings
   - [x] the flashcard-editing form is opened
@@ -294,13 +294,13 @@ As a user:
     - screenshot (taken from a video frame within the timing of the subtitle cue containing the word)
     - tags
 - when I create a flashcard from a word, but not from a specific dictionary entry:
-  - [ ] the L1 and/or L2 fields are filled with the definitions from all matching dictionary entries
+  - [x] the L1 and/or L2 fields are filled with the definitions from all matching dictionary entries
 - when I create a flashcard from a specific dictionary entry:
-  - [ ] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
+  - [x] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
 - when I press the lookup button or its keyboard shortcut:
-  - [ ] the dictionary pop-up opens, with focus on a text input field where I can type a word to look up
+  - [x] the dictionary pop-up opens, with focus on a text input field where I can type a word to look up
 - while the dictionary pop-up is open but no dictionary is enabled for the project's language:
-  - [ ] the dictionary pop-up prompts me to set up a dictionary
+  - [x] the dictionary pop-up prompts me to set up a dictionary
 - when I have made flashcards without having saved my work:
   - [ ] I see an indication that my work is unsaved, and a button to save it
 - when I have made flashcards without having logged in:
@@ -319,17 +319,17 @@ As a user:
 
 As a user:
 - when I open the dictionaries settings:
-  - [ ] I see a list of my dictionaries, with each one's language(s) and format
+  - [x] I see a list of my dictionaries, with each one's language(s) and format
   - [ ] I can add a dictionary from the easyImmerse registry
-  - [ ] I can add a dictionary from a file
-  - [ ] I can remove a dictionary
+  - [x] I can add a dictionary from a file
+  - [x] I can remove a dictionary
 - when I have more than one dictionary enabled for a language:
   - [ ] I can set the order in which their entries appear in the dictionary pop-up
 - when I add a dictionary from a table file (CSV, TSV or Tabfile):
   - [ ] I see a preview of its first rows, with what each column holds
   - [ ] I can change what a column holds, and whether the first row is a header, before importing
 - when I add a dictionary in a format the app does not support:
-  - [ ] I am told which formats are supported, and that a plugin may add support for others
+  - [x] I am told which formats are supported, and that a plugin may add support for others
 
 As a web app user:
 - when I add a dictionary from a file:
