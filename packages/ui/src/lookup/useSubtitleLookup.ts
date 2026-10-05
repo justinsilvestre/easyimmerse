@@ -9,7 +9,6 @@ import { useNavigationActions } from "../navigationContext.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import type { LookupRequest } from "./lookupPopup.ts";
 import { lookupTextAt } from "./lookupTextAt.ts";
-import { anchorOf } from "./placeAtAnchor.ts";
 import {
   type StartFlashcardFromLookup,
   useWordLookup,
@@ -63,6 +62,6 @@ function requestFor(hit: WordHit, cue: Cue): LookupRequest<Cue> {
     lookup: lookupTextAt(stripMarkup(cue.text), hit.start),
     source: cue,
     occurrence: `${cue.index}:${hit.start}`,
-    anchor: anchorOf(hit.element),
+    anchor: hit.element,
   };
 }

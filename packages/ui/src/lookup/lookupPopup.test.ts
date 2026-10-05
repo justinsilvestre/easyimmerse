@@ -9,7 +9,7 @@ const request: LookupRequest<Cue> = {
   lookup: { text: "rufe an.", context: "Ich rufe an.", offset: 4 },
   source: cue,
   occurrence: "3:4",
-  anchor: { top: 700, bottom: 720, left: 100, right: 140 },
+  anchor: document.createElement("button"),
 };
 
 describe("reduceLookupPopup", () => {

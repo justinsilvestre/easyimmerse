@@ -1,5 +1,4 @@
 import type { LookupText } from "./lookupTextAt.ts";
-import type { AnchorRect } from "./placeAtAnchor.ts";
 
 /**
  * One word to look up: the word as shown, the text sent to the dictionaries,
@@ -11,8 +10,8 @@ export type LookupRequest<S> = {
   source: S | null;
   /** Names this occurrence of the word in the text, so that clicking it again can close the pop-up. Null for a typed or linked term. */
   occurrence: string | null;
-  /** Where the word lies on screen, for the pop-up to be placed at it. Null when the pop-up opens on its search field. */
-  anchor: AnchorRect | null;
+  /** The element that shows the word, for the pop-up to stand at. Null when the pop-up opens on its search field. */
+  anchor: Element | null;
 };
 
 /** The dictionary pop-up: closed, or open on a word or on its search field. */
