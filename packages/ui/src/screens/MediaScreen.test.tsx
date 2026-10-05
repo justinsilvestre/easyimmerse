@@ -15,7 +15,11 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
-import type { FrameCapturer } from "../player/browserFrameCapturer.ts";
+import {
+  createFrameCapturer,
+  type FrameCapturer,
+} from "../player/browserFrameCapturer.ts";
+import type { FrameSource } from "../player/captureVideoFrame.ts";
 import { FrameCapturerContext } from "../player/frameCapturerContext.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { createFakeFrameCapturer } from "../testSupport/createFakeFrameCapturer.ts";
@@ -114,6 +118,45 @@ function renderBrowserVideoScreen(
   return { ...rendered, client };
 }
 
+/** A capturer whose probes wait until the test answers whether the file shows pictures. */
+function createWaitingFrameCapturer() {
+  let answer: (hasPictures: boolean) => void = () => undefined;
+  const answered = new Promise<boolean>((resolve) => {
+    answer = resolve;
+  });
+  const capturer = createFrameCapturer({
+    openVideo: async () =>
+      (await answered)
+        ? { element: {} as FrameSource, close: () => undefined }
+        : null,
+    captureFrame: async (_video, seconds) => `frame-at-${seconds}`,
+  });
+  return { capturer, answer };
+}
+
+/** Starts a new flashcard from a word in the subtitles before the probe answers, then lets it answer. */
+async function startFlashcardBeforeProbe(hasPictures: boolean) {
+  const file = browserVideo();
+  const { capturer, answer } = createWaitingFrameCapturer();
+  const rendered = renderBrowserVideoScreen(file, capturer);
+  const list = await findSubtitles();
+  fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+  answer(hasPictures);
+  await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(hasPictures));
+  return rendered;
+}
+
+async function saveOpenFlashcard(
+  client: ReturnType<typeof createFakeBackendClient>,
+) {
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+  await screen.findByText("Flashcard saved to the project.");
+  const body = bodyOf(
+    requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
+  ) as Partial<Flashcard> | undefined;
+  return body?.content?.screenshot;
+}
+
 const browserVideo = () =>
   new File([new Uint8Array([1, 2, 3])], "clip.mp4", { lastModified: 5 });
 
@@ -122,12 +165,7 @@ async function savedScreenshotOfNewFlashcard(
 ) {
   const list = await findSubtitles();
   fireEvent.click(within(list).getByRole("button", { name: "cat" }));
-  fireEvent.click(screen.getByRole("button", { name: "Save" }));
-  await screen.findByText("Flashcard saved to the project.");
-  const body = bodyOf(
-    requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
-  ) as Partial<Flashcard> | undefined;
-  return body?.content?.screenshot;
+  return saveOpenFlashcard(client);
 }
 
 const stripRect = {
@@ -421,6 +459,24 @@ describe("MediaScreen", () => {
       const { client } = renderBrowserVideoScreen(file, capturer);
       await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(false));
       expect(await savedScreenshotOfNewFlashcard(client)).toBeNull();
+    });
+
+    it("gives a new flashcard started before the probe a screenshot once the file shows pictures", async () => {
+      const { client } = await startFlashcardBeforeProbe(true);
+      expect(await saveOpenFlashcard(client)).toEqual({ at_ms: 1000 });
+    });
+
+    it("leaves the screenshot out of a new flashcard started before the probe finds no pictures", async () => {
+      const { client } = await startFlashcardBeforeProbe(false);
+      expect(await saveOpenFlashcard(client)).toBeNull();
+    });
+
+    it("shows no screenshot field before the probe answers", async () => {
+      const { capturer } = createWaitingFrameCapturer();
+      renderBrowserVideoScreen(browserVideo(), capturer);
+      const list = await findSubtitles();
+      fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+      expect(screen.queryByLabelText("Include the screenshot")).toBeNull();
     });
 
     it("leaves the screenshot out of a new flashcard once the browser no longer holds the file", async () => {

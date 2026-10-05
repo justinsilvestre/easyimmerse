@@ -1,8 +1,10 @@
 import type {
+  AudioClip,
   Cue,
   FlashcardDraft,
   MediaFile,
   ProjectSettings,
+  Screenshot,
 } from "@easyimmerse/types";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import { findCueAt } from "../media/findCue.ts";
@@ -18,7 +20,7 @@ export function cueForFlashcard(cues: readonly Cue[], ms: number): Cue | null {
 
 /**
  * Starts a flashcard for a word from a subtitle cue under the project's flashcard settings:
- * the cue is the sentence, its timing the audio clip, and its middle the moment of the screenshot when the media file has screenshots.
+ * the cue is the sentence, its timing the audio clip, and its middle the moment of the screenshot when the media file is known to show pictures.
  * Definitions are left empty for the user to fill in, since dictionaries are not consulted yet.
  */
 export function draftFromCue({
@@ -52,14 +54,16 @@ export function draftFromCue({
       audio_context: cue
         ? { start_ms: cue.start_ms, end_ms: cue.end_ms }
         : null,
-      screenshot:
-        cue && hasScreenshots
-          ? { at_ms: Math.round((cue.start_ms + cue.end_ms) / 2) }
-          : null,
+      screenshot: cue && hasScreenshots ? screenshotForClip(cue) : null,
       tags: settings.tags_media_name
         ? addTags(settings.default_tags, [mediaNameTag(mediaFile.name)])
         : [...settings.default_tags],
     },
     included_fields: [...settings.flashcard_fields],
   };
+}
+
+/** The screenshot a new flashcard starts with: the frame in the middle of its clip. */
+export function screenshotForClip(clip: AudioClip): Screenshot {
+  return { at_ms: Math.round((clip.start_ms + clip.end_ms) / 2) };
 }

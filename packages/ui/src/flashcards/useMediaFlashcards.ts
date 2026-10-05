@@ -6,7 +6,7 @@ import {
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import {
   flashcardsOnWaveform,
@@ -22,8 +22,13 @@ const noFlashcards: readonly Flashcard[] = [];
  * The flashcards made from one media file, with the one open in the editor and the ways to save, delete, and retime them.
  * Saving a new card creates it; saving an existing one replaces it.
  * Retiming the open card changes only the editor's copy, which is saved with the rest of the editor; any other card is saved at once.
+ * A new card started before the media file is known to show pictures gains a screenshot once it is.
  */
-export function useMediaFlashcards(projectId: string, mediaFileId: string) {
+export function useMediaFlashcards(
+  projectId: string,
+  mediaFileId: string,
+  hasScreenshots: boolean,
+) {
   const dispatch = useAppDispatch();
   const notify = (message: string) =>
     dispatch(actions.notificationRequested(message));
@@ -32,6 +37,9 @@ export function useMediaFlashcards(projectId: string, mediaFileId: string) {
     (flashcard) => flashcard.media_file_id === mediaFileId,
   );
   const [edited, dispatchEdited] = useReducer(reduceEditedFlashcard, null);
+  useEffect(() => {
+    if (hasScreenshots) dispatchEdited({ type: "screenshotsAvailable" });
+  }, [hasScreenshots]);
   const [isSaved, setSaved] = useState(false);
   const [createFlashcard] = useCreateFlashcardMutation();
   const [updateFlashcard] = useUpdateFlashcardMutation();

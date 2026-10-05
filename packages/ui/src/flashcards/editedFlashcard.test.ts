@@ -127,3 +127,51 @@ describe("flashcardsOnWaveform", () => {
     ).toEqual(["f1", newFlashcardSegmentId]);
   });
 });
+
+describe("reduceEditedFlashcard on screenshotsAvailable", () => {
+  const startDraft = (content: Partial<FlashcardDraft["content"]>) =>
+    reduceEditedFlashcard(null, {
+      type: "started",
+      draft: {
+        ...createDraft(),
+        content: { ...createDraft().content, ...content },
+      },
+    });
+
+  it("gives a new flashcard without a screenshot one from the middle of its clip", () => {
+    const started = startDraft({ audio_context: movedClip, screenshot: null });
+    const edited = reduceEditedFlashcard(started, {
+      type: "screenshotsAvailable",
+    });
+    expect(edited?.editor.content.screenshot).toEqual({ at_ms: 2000 });
+  });
+
+  it("keeps a new flashcard's screenshot where it is", () => {
+    const started = startDraft({
+      audio_context: movedClip,
+      screenshot: { at_ms: 2900 },
+    });
+    const edited = reduceEditedFlashcard(started, {
+      type: "screenshotsAvailable",
+    });
+    expect(edited?.editor.content.screenshot).toEqual({ at_ms: 2900 });
+  });
+
+  it("gives no screenshot to a new flashcard without a clip", () => {
+    const started = startDraft({ audio_context: null, screenshot: null });
+    const edited = reduceEditedFlashcard(started, {
+      type: "screenshotsAvailable",
+    });
+    expect(edited?.editor.content.screenshot).toBeNull();
+  });
+
+  it("leaves a saved flashcard as it is", () => {
+    const opened = openedFlashcard({
+      ...createFlashcard("f1"),
+      content: { ...exampleFlashcard, screenshot: null },
+    });
+    expect(
+      reduceEditedFlashcard(opened, { type: "screenshotsAvailable" }),
+    ).toBe(opened);
+  });
+});

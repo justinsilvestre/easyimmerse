@@ -1,4 +1,5 @@
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
+import { screenshotForClip } from "./draftFromCue.ts";
 import {
   type EditorAction,
   type EditorState,
@@ -17,6 +18,8 @@ export type EditedFlashcardAction =
   | { type: "started"; draft: FlashcardDraft }
   | { type: "opened"; flashcard: Flashcard }
   | { type: "edited"; action: EditorAction }
+  /** The media file has turned out to show pictures, so a new flashcard started before then can have a screenshot. */
+  | { type: "screenshotsAvailable" }
   | { type: "closed" };
 
 export function reduceEditedFlashcard(
@@ -43,9 +46,24 @@ export function reduceEditedFlashcard(
           editor: reduceEditor(edited.editor, action.action),
         }
       );
+    case "screenshotsAvailable":
+      return edited?.kind === "new" ? withScreenshot(edited) : edited;
     case "closed":
       return null;
   }
+}
+
+function withScreenshot(
+  edited: Extract<EditedFlashcard, { kind: "new" }>,
+): EditedFlashcard {
+  const { content } = edited.editor;
+  if (content.screenshot !== null || content.audio_context === null)
+    return edited;
+  const screenshot = screenshotForClip(content.audio_context);
+  return {
+    ...edited,
+    editor: { ...edited.editor, content: { ...content, screenshot } },
+  };
 }
 
 export function segmentIdOf(edited: EditedFlashcard): string {

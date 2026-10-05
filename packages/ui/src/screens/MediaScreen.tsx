@@ -43,7 +43,8 @@ export function MediaScreen({
   const durationMs = useMediaDurationMs(projectId, mediaFile);
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
-  const flashcards = useMediaFlashcards(projectId, mediaFileId);
+  const hasScreenshots = screenshotSource !== null;
+  const flashcards = useMediaFlashcards(projectId, mediaFileId, hasScreenshots);
   const [panels, dispatchPanels] = useReducer(
     reduceMediaPanels,
     initialMediaPanels,
@@ -78,7 +79,7 @@ export function MediaScreen({
           : null,
         mediaFile,
         settings,
-        hasScreenshots: screenshotSource !== null,
+        hasScreenshots,
       }),
     );
   };
