@@ -1,6 +1,12 @@
 import clsx from "clsx";
 import { X } from "lucide-react";
-import { type ReactNode, useEffect, useId, useRef } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useId,
+  useRef,
+} from "react";
 import { IconButton } from "../components/IconButton.tsx";
 import {
   focusInitialControl,
@@ -16,11 +22,14 @@ import {
 export function ReaderSheet({
   title,
   placement,
+  initialFocus,
   onClose,
   children,
 }: {
   title: string;
   placement: "left" | "right" | "card";
+  /** The control to focus on opening. The first control when absent. */
+  initialFocus?: RefObject<HTMLElement | null>;
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -28,11 +37,12 @@ export function ReaderSheet({
   const panel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const opener = document.activeElement;
-    if (panel.current) focusInitialControl(panel.current);
+    if (initialFocus?.current) initialFocus.current.focus();
+    else if (panel.current) focusInitialControl(panel.current);
     return () => {
       if (opener instanceof HTMLElement) opener.focus();
     };
-  }, []);
+  }, [initialFocus]);
   return (
     <div className="fixed inset-0 z-30 flex items-end md:items-stretch">
       <button

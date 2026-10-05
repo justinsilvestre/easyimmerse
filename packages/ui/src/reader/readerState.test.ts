@@ -34,6 +34,16 @@ describe("updateReader", () => {
     ).toBeNull();
   });
 
+  it("keeps a panel open when it is opened again", () => {
+    const open = updateReader(initialReaderState(start), {
+      type: "panelOpened",
+      panel: "search",
+    });
+    expect(
+      updateReader(open, { type: "panelOpened", panel: "search" }).panel,
+    ).toBe("search");
+  });
+
   it("keeps the chrome while a panel is open", () => {
     const open = updateReader(initialReaderState(start), {
       type: "panelToggled",

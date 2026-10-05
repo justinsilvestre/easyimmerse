@@ -113,6 +113,7 @@ export function ReaderView(props: ReaderViewProps) {
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
   const [wordRect, setWordRect] = useState<DOMRect | null>(null);
   const turner = useRef<PageTurner>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
   const isWide = useMediaQuery(wideScreenQuery);
   const isPaged = preferences.layout === "pages";
 
@@ -191,7 +192,11 @@ export function ReaderView(props: ReaderViewProps) {
     isPaged,
     isPanelOpen: state.panel !== null,
     onTurn: turn,
-    onOpenSearch: () => dispatch({ type: "panelToggled", panel: "search" }),
+    onOpenSearch: () => {
+      dispatch({ type: "panelOpened", panel: "search" });
+      searchInput.current?.focus();
+      searchInput.current?.select();
+    },
     onLookup: callbacks.onLookup,
     onEscape: callbacks.onDismissLookup,
   });
@@ -358,6 +363,7 @@ export function ReaderView(props: ReaderViewProps) {
           matches={matches}
           isTruncated={matches.length >= searchLimit}
           activeMatchIndex={state.search.activeMatchIndex}
+          inputRef={searchInput}
           onQueryChange={(value) =>
             dispatch({ type: "searchChanged", query: value })
           }

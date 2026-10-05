@@ -21,6 +21,7 @@ const ignore = () => undefined;
 function renderReader(
   overrides: {
     initialLocation?: ReaderLocation;
+    layout?: ReaderPreferences["layout"];
     onPreferencesChange?: (preferences: ReaderPreferences) => void;
   } = {},
 ) {
@@ -29,7 +30,10 @@ function renderReader(
       document={exampleShortBook}
       title="Sample Book"
       language="en"
-      preferences={{ ...defaultReaderPreferences, layout: "scroll" }}
+      preferences={{
+        ...defaultReaderPreferences,
+        layout: overrides.layout ?? "scroll",
+      }}
       initialLocation={overrides.initialLocation}
       callbacks={{
         onBack: ignore,
@@ -82,5 +86,41 @@ describe("ReaderView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
     fireEvent.click(screen.getByRole("radio", { name: "Sepia" }));
     expect(changes.map((change) => change.theme)).toEqual(["sepia"]);
+  });
+
+  describe("in the paged layout", () => {
+    // Without a layout engine every chapter fills one page, so turning the page moves to the next chapter.
+    it("turns the page with the right arrow key", () => {
+      renderReader({ layout: "pages" });
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
+        "Chapter Two",
+      );
+    });
+
+    it("leaves Space to a focused button rather than turning the page", () => {
+      renderReader({ layout: "pages" });
+      const button = screen.getByRole("button", { name: "Contents" });
+      button.focus();
+      fireEvent.keyDown(button, { key: " " });
+      expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
+        "Chapter One",
+      );
+    });
+  });
+
+  describe("when Ctrl+F is pressed", () => {
+    it("puts the cursor in the search field", () => {
+      renderReader();
+      fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
+      expect(document.activeElement).toBe(screen.getByRole("searchbox"));
+    });
+
+    it("keeps the search open when it is already open", () => {
+      renderReader();
+      fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
+      fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
+      expect(screen.queryByRole("searchbox")).not.toBeNull();
+    });
   });
 });

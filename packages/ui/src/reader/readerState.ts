@@ -17,6 +17,7 @@ export type ReaderState = {
 export type ReaderAction =
   | { type: "jumped"; location: ReaderLocation }
   | { type: "locationReported"; location: ReaderLocation }
+  | { type: "panelOpened"; panel: ReaderPanel }
   | { type: "panelToggled"; panel: ReaderPanel }
   | { type: "panelClosed" }
   | { type: "chromeToggled" }
@@ -48,6 +49,8 @@ export function updateReader(
       };
     case "locationReported":
       return { ...state, location: action.location };
+    case "panelOpened":
+      return { ...state, panel: action.panel };
     case "panelToggled":
       return {
         ...state,

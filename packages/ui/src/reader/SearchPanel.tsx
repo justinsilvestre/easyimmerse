@@ -1,7 +1,7 @@
 import type { Document } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
-import { Fragment } from "react";
+import { Fragment, type RefObject } from "react";
 import { IconButton } from "../components/IconButton.tsx";
 import { pluralize } from "../components/pluralize.ts";
 import { ReaderSheet } from "./ReaderSheet.tsx";
@@ -18,11 +18,14 @@ export function SearchPanel({
   isTruncated,
   activeMatchIndex,
   onQueryChange,
+  inputRef,
   onChooseMatch,
   onClose,
 }: {
   document: Document;
   query: string;
+  /** The search field, which takes the focus when the panel opens. */
+  inputRef: RefObject<HTMLInputElement | null>;
   matches: readonly SearchMatch[];
   /** Whether the search stopped before finding every match. */
   isTruncated: boolean;
@@ -37,11 +40,17 @@ export function SearchPanel({
     onChooseMatch((from + direction + matches.length) % matches.length);
   };
   return (
-    <ReaderSheet title="Search" placement="right" onClose={onClose}>
+    <ReaderSheet
+      title="Search"
+      placement="right"
+      initialFocus={inputRef}
+      onClose={onClose}
+    >
       <div className="flex items-center gap-1 border-b border-line px-4 pb-3">
         <label className="flex flex-1 items-center gap-2 rounded-md border border-line-strong bg-canvas px-2 focus-within:outline-2 focus-within:outline-accent">
           <Search className="size-4 text-fg-faint" aria-hidden />
           <input
+            ref={inputRef}
             type="search"
             value={query}
             placeholder="Search the book"
