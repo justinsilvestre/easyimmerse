@@ -48,7 +48,7 @@ describe("LookupResultCard", () => {
   it("shows equally good chains that differ in one step as alternatives on one line", () => {
     renderCard(exampleAmbiguousInflectionResult);
     expect(
-      screen.getByText("causative ‹ potential or passive ‹ negative ‹ past"),
+      screen.getByText("causative ‹ passive or potential ‹ negative ‹ past"),
     ).toBeDefined();
   });
 

@@ -15,10 +15,10 @@ describe("formatInflectionChains", () => {
   it("joins the alternatives of chains that differ in one step", () => {
     expect(
       formatInflectionChains([
-        ["past", "negative", "potential", "causative"],
         ["past", "negative", "passive", "causative"],
+        ["past", "negative", "potential", "causative"],
       ]),
-    ).toEqual(["causative ‹ potential or passive ‹ negative ‹ past"]);
+    ).toEqual(["causative ‹ passive or potential ‹ negative ‹ past"]);
   });
 
   it("joins the alternatives of one-step chains", () => {

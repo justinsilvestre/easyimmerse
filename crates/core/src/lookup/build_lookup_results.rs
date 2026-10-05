@@ -484,14 +484,14 @@ mod tests {
     }
 
     #[test]
-    fn reports_both_the_potential_and_the_passive_after_a_causative() {
+    fn reports_both_the_passive_and_the_potential_after_a_causative() {
         let candidates = lookup_candidates("食べさせられなかった", "ja");
         let results = build_lookup_results(&candidates, vec![verb("v1")], &[]);
         assert_eq!(
             results[0].inflection_chains,
             vec![
-                vec!["past", "negative", "potential", "causative"],
                 vec!["past", "negative", "passive", "causative"],
+                vec!["past", "negative", "potential", "causative"],
             ]
         );
     }

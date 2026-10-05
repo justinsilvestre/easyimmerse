@@ -174,7 +174,7 @@ mod tests {
             .filter(|candidate| candidate.term == "食べる")
             .map(|candidate| candidate.inflections)
             .collect();
-        assert_eq!(chains, [["potential"], ["passive"]]);
+        assert_eq!(chains, [["passive"], ["potential"]]);
     }
 
     #[test]

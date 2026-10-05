@@ -152,13 +152,13 @@ export const exampleInflectedResult: LookupResult = {
   ],
 };
 
-/** A verb form with two equally good analyses: the causative of 食べる made potential or passive by られる. */
+/** A verb form with two equally good analyses: the causative of 食べる made passive or potential by られる. */
 export const exampleAmbiguousInflectionResult: LookupResult = {
   ...exampleInflectedResult,
   matchedText: "食べさせられなかった",
   inflectionChains: [
-    ["past", "negative", "potential", "causative"],
     ["past", "negative", "passive", "causative"],
+    ["past", "negative", "potential", "causative"],
   ],
 };
 
