@@ -1,8 +1,10 @@
-import type { LicenseNotice } from "@easyimmerse/licenses";
 import { Button } from "../components/Button.tsx";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
-import { LicensesPage } from "../components/LicensesPage.tsx";
+import {
+  type LicenseNoticesState,
+  LicensesPage,
+} from "../components/LicensesPage.tsx";
 import { PreferenceToggle } from "../components/PreferenceToggle.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 
@@ -15,11 +17,11 @@ const unavailableConversionCache: ConversionCacheControls = {
 export function SettingsScreen({
   onBack,
   conversionCache = unavailableConversionCache,
-  licenseNotices = [],
+  licenseNotices = { status: "loaded", groups: [] },
 }: {
   onBack: () => void;
   conversionCache?: ConversionCacheControls;
-  licenseNotices?: readonly LicenseNotice[];
+  licenseNotices?: LicenseNoticesState;
 }) {
   return (
     <ScreenLayout

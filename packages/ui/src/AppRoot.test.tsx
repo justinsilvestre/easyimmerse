@@ -3,7 +3,6 @@ import {
   configureBackend,
   resetBackend,
 } from "@easyimmerse/backend";
-import { ffmpegNotices } from "@easyimmerse/licenses";
 import {
   actions,
   createAppStore,
@@ -123,11 +122,10 @@ describe("AppRoot", () => {
       expect(findPlayer().textContent).toContain("1:01.8");
     });
 
-    it("lists the ffmpeg license notices", () => {
+    it("lists the groups of license notices once they load", async () => {
       renderAppRoot();
       openSettingsFromFooter();
-      const first = ffmpegNotices[0]?.title ?? "";
-      expect(screen.getByText(first)).toBeDefined();
+      expect(await screen.findByText("Rust crates")).toBeDefined();
     });
 
     it("reports conversion as unavailable when the server cannot convert", async () => {
