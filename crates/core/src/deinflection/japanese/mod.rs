@@ -168,6 +168,16 @@ mod tests {
     }
 
     #[test]
+    fn keeps_the_potential_and_the_passive_of_an_ichidan_verb_as_separate_chains() {
+        let chains: Vec<_> = deinflect("食べられる")
+            .into_iter()
+            .filter(|candidate| candidate.term == "食べる")
+            .map(|candidate| candidate.inflections)
+            .collect();
+        assert_eq!(chains, [["potential"], ["passive"]]);
+    }
+
+    #[test]
     fn merges_the_classes_of_candidates_with_the_same_chain() {
         let candidates = deinflect("帰れる");
         let potential = candidates
