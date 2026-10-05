@@ -164,7 +164,7 @@ export interface paths {
         put?: never;
         /**
          * Detects what each column of a table at a local path holds and returns that layout with the table's first rows,
-         *     so that the user can check it before importing the same path.
+         *     so that the user can check it before importing the same path. Of a table file, only the start is read.
          */
         post: operations["previewLocalDictionaryTable"];
         delete?: never;

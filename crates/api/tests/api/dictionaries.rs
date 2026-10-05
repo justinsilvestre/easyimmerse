@@ -415,3 +415,41 @@ async fn importing_a_local_table_with_chosen_columns_skips_the_header_the_user_m
         .await;
     assert_eq!(response.json()["entry_count"], 2);
 }
+
+/// Writes two tables that share a stem: `words.csv` with two columns and `words.txt` with three.
+fn tables_sharing_a_stem() -> tempfile::TempDir {
+    let directory = tempfile::tempdir().unwrap();
+    std::fs::write(directory.path().join("words.csv"), GERMAN_TABLE).unwrap();
+    std::fs::write(
+        directory.path().join("words.txt"),
+        "Hund\thʊnt\tdog\nKatze\tˈkatsə\tcat\nMaus\tmaʊs\tmouse\n",
+    )
+    .unwrap();
+    directory
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn previewing_a_local_table_previews_the_picked_file_and_not_a_sibling() {
+    let server = spawn_test_server(true).await;
+    let directory = tables_sharing_a_stem();
+    let path = directory.path().join("words.txt");
+    let response = preview_local(&server, path.to_str().unwrap()).await;
+    assert_eq!(response.json()["rows"][0][0], "Hund");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn importing_a_local_table_with_chosen_columns_imports_the_picked_file_and_not_a_sibling() {
+    let server = spawn_test_server(true).await;
+    let directory = tables_sharing_a_stem();
+    let path = directory.path().join("words.txt");
+    let response = server
+        .post_json(
+            "/dictionaries/import-local",
+            &json!({
+                "path": path.to_str().unwrap(),
+                "tableLayout": { "columns": ["term", "reading", "definition"], "hasHeader": false },
+            }),
+        )
+        .await;
+    assert_eq!(response.json()["entry_count"], 3);
+}
