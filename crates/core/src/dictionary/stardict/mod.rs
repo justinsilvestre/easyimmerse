@@ -4,7 +4,9 @@
 
 mod byte_cursor;
 mod conversion;
+mod dict_data;
 mod dictzip;
+mod dictzip_chunks;
 mod entries;
 mod error;
 mod fields;

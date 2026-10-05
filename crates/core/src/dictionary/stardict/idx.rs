@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use super::byte_cursor::{ByteCursor, decode_text};
 
 /// One record of a `.idx` file: a headword and where its entry lies in the `.dict` data.
@@ -6,6 +8,15 @@ pub struct IdxRecord {
     pub word: String,
     pub offset: u64,
     pub size: u32,
+}
+
+impl IdxRecord {
+    /// Returns where the record's data lies, or nothing when its offset does not fit in memory.
+    pub fn range(&self) -> Option<Range<usize>> {
+        let start = usize::try_from(self.offset).ok()?;
+        let end = start.checked_add(usize::try_from(self.size).ok()?)?;
+        Some(start..end)
+    }
 }
 
 /// The width of the offsets in a `.idx` file, set by the `idxoffsetbits` key of the `.ifo`.
