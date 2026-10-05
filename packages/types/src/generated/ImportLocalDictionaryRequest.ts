@@ -4,6 +4,7 @@ import type { TableLayout } from "./TableLayout";
 export type ImportLocalDictionaryRequest = { 
 /**
  * A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files.
+ * A CSV, TSV or Tabfile table file is imported on its own.
  */
 path: string, 
 /**

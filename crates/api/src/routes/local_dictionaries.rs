@@ -24,6 +24,7 @@ use crate::state::AppState;
 #[ts(export)]
 pub struct ImportLocalDictionaryRequest {
     /// A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files.
+    /// A CSV, TSV or Tabfile table file is imported on its own.
     pub path: String,
     /// Replaces the detected layout of a CSV, TSV or Tabfile table.
     #[serde(
@@ -64,11 +65,8 @@ pub async fn import_local_dictionary(
     Json(request): Json<ImportLocalDictionaryRequest>,
 ) -> Result<(StatusCode, Json<DictionarySummary>), ApiFailure> {
     ensure_local_paths_allowed(token, &state.config)?;
-    // A table imported with chosen columns is the file the user picked and previewed, never a sibling of the same stem.
-    let files = match request.table_layout {
-        Some(_) => read_local_table(request.path, None).await?,
-        None => read_local_files(request.path).await?,
-    };
+    // A table file is the file the user picked, never a sibling of the same stem, whether or not its columns were chosen.
+    let files = read_local_table(request.path, None).await?;
     import_files(&state, files, request.table_layout).await
 }
 

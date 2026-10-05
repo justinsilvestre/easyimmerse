@@ -904,7 +904,10 @@ export interface components {
             status: string;
         };
         ImportLocalDictionaryRequest: {
-            /** @description A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files. */
+            /**
+             * @description A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files.
+             *     A CSV, TSV or Tabfile table file is imported on its own.
+             */
             path: string;
             tableLayout?: components["schemas"]["TableLayout"] | null;
         };

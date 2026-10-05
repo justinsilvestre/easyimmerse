@@ -453,3 +453,16 @@ async fn importing_a_local_table_with_chosen_columns_imports_the_picked_file_and
         .await;
     assert_eq!(response.json()["entry_count"], 3);
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn importing_a_local_table_without_chosen_columns_imports_the_picked_file_and_not_a_sibling()
+{
+    let server = spawn_test_server(true).await;
+    let directory = tables_sharing_a_stem();
+    let path = directory.path().join("words.txt");
+    import_local(&server, path.to_str().unwrap()).await;
+    let response = server
+        .get("/dictionaries/lookup?text=Maus&language=de")
+        .await;
+    assert_eq!(response.json()["results"][0]["term"], "Maus");
+}
