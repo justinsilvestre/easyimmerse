@@ -10,10 +10,14 @@ use crate::dictionary::{
 use crate::test_support::{fixture_path, read_fixture_bytes};
 
 /// Reads a fixture directory as loose files, named by their paths relative to the fixtures directory.
-fn directory_source(directory: &str) -> DictionarySource {
+fn directory_files(directory: &str) -> Vec<SourceFile> {
     let mut files = Vec::new();
     collect_files(&fixture_path(directory), directory, &mut files);
-    DictionarySource::new(files).unwrap()
+    files
+}
+
+fn directory_source(directory: &str) -> DictionarySource {
+    DictionarySource::new(directory_files(directory)).unwrap()
 }
 
 fn collect_files(path: &Path, name: &str, files: &mut Vec<SourceFile>) {
@@ -169,4 +173,34 @@ fn imports_the_files_under_res_as_media() {
         sink.described(),
         [("cat.png".to_string(), "image/png".to_string())]
     );
+}
+
+fn imported_media(source: &mut DictionarySource) -> MediaCollector {
+    let mut sink = MediaCollector::default();
+    import_dictionary(source, &mut sink).unwrap();
+    sink
+}
+
+#[test]
+fn imports_the_files_of_a_packed_resource_database_as_media() {
+    let mut source = directory_source("sample-stardict-sametypesequence");
+    assert_eq!(
+        imported_media(&mut source).described(),
+        [
+            ("hello.wav".to_string(), "audio/wav".to_string()),
+            ("images/world.png".to_string(), "image/png".to_string()),
+        ]
+    );
+}
+
+#[test]
+fn prefers_the_resource_database_to_a_file_of_the_same_path_under_res() {
+    let mut files = directory_files("sample-stardict-sametypesequence");
+    files.push(SourceFile {
+        name: "sample-stardict-sametypesequence/res/hello.wav".to_string(),
+        bytes: b"another sound".to_vec(),
+    });
+    let sink = imported_media(&mut DictionarySource::new(files).unwrap());
+    let sound = sink.media.iter().find(|media| media.path == "hello.wav");
+    assert_eq!(sound.unwrap().bytes, b"RIFF\0\0\0\0WAVE");
 }

@@ -8,6 +8,8 @@ pub enum StardictError {
     MissingIfo,
     #[error("the .ifo file does not begin with the StarDict header")]
     NotAnIfo,
+    #[error("the res.rifo file does not begin with the StarDict resource database header")]
+    NotAStorageIfo,
     #[error("StarDict tree dictionaries (.tdx) are not supported")]
     TreeDictionary,
     #[error("StarDict version {0:?} is not supported")]

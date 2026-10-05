@@ -1,6 +1,7 @@
 use crate::dictionary::{DictionarySource, file_name};
 
 use super::error::StardictError;
+use super::resource_database::ResourceDatabase;
 
 /// The full names of the files that make up one StarDict dictionary within a source.
 #[derive(Debug, PartialEq, Eq)]
@@ -12,11 +13,15 @@ pub struct StardictFiles {
     pub stylesheet: Option<String>,
     /// The prefix of the names of files in the `res/` directory beside the `.ifo`.
     pub resource_prefix: String,
+    /// The packed resource database beside the `.ifo`, which StarDict prefers to the `res/` directory.
+    pub resource_database: Option<ResourceDatabase>,
 }
 
 const IDX_EXTENSIONS: [&str; 3] = [".idx", ".idx.gz", ".idx.dz"];
 const DICT_EXTENSIONS: [&str; 3] = [".dict", ".dict.dz", ".dict.gz"];
 const SYN_EXTENSIONS: [&str; 3] = [".syn", ".syn.gz", ".syn.dz"];
+const RIDX_EXTENSIONS: [&str; 2] = [".ridx", ".ridx.gz"];
+const RDIC_EXTENSIONS: [&str; 2] = [".rdic", ".rdic.dz"];
 
 /// Reports whether a file name, without its directories, is that of a StarDict `.ifo` file.
 pub fn is_ifo_name(name: &str) -> bool {
@@ -43,6 +48,7 @@ impl StardictFiles {
             syn: find_companion(source, base, &SYN_EXTENSIONS),
             stylesheet: find_companion(source, base, &[".css"]),
             resource_prefix: format!("{}res/", directory_of(ifo)),
+            resource_database: find_resource_database(source, directory_of(ifo))?,
             ifo: ifo.to_string(),
         })
     }
@@ -51,6 +57,28 @@ impl StardictFiles {
     pub fn base_name(&self) -> &str {
         file_name(&self.ifo).trim_end_matches(".ifo")
     }
+}
+
+/// Finds the files of a resource database in the directory, requiring all three once `res.rifo` is present.
+fn find_resource_database(
+    source: &DictionarySource,
+    directory: &str,
+) -> Result<Option<ResourceDatabase>, StardictError> {
+    let base = format!("{directory}res");
+    let Some(rifo) = find_companion(source, &base, &[".rifo"]) else {
+        return Ok(None);
+    };
+    let missing = |kind| StardictError::MissingCompanion {
+        ifo: rifo.clone(),
+        kind,
+    };
+    Ok(Some(ResourceDatabase {
+        ridx: find_companion(source, &base, &RIDX_EXTENSIONS)
+            .ok_or_else(|| missing("resource index (res.ridx)"))?,
+        rdic: find_companion(source, &base, &RDIC_EXTENSIONS)
+            .ok_or_else(|| missing("resource data (res.rdic)"))?,
+        rifo,
+    }))
 }
 
 fn find_companion(source: &DictionarySource, base: &str, extensions: &[&str]) -> Option<String> {
@@ -113,6 +141,32 @@ mod tests {
     fn names_the_dictionary_after_the_ifo() {
         let files = locate(&["d/a.ifo", "d/a.idx", "d/a.dict"]).unwrap();
         assert_eq!(files.base_name(), "a");
+    }
+
+    #[test]
+    fn finds_a_resource_database_beside_the_ifo() {
+        let names = [
+            "d/a.ifo",
+            "d/a.idx",
+            "d/a.dict",
+            "d/res.rifo",
+            "d/res.ridx.gz",
+            "d/res.rdic.dz",
+        ];
+        let expected = ResourceDatabase {
+            rifo: "d/res.rifo".into(),
+            ridx: "d/res.ridx.gz".into(),
+            rdic: "d/res.rdic.dz".into(),
+        };
+        assert_eq!(locate(&names).unwrap().resource_database, Some(expected));
+    }
+
+    #[test]
+    fn requires_every_file_of_a_resource_database() {
+        assert!(matches!(
+            locate(&["a.ifo", "a.idx", "a.dict", "res.rifo", "res.ridx"]),
+            Err(StardictError::MissingCompanion { .. })
+        ));
     }
 
     #[test]
