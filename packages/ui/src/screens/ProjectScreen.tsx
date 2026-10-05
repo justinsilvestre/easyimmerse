@@ -1,16 +1,22 @@
 import {
   useGetProjectQuery,
+  useListMediaFilesQuery,
   useMarkProjectOpenedMutation,
 } from "@easyimmerse/backend";
-import { selectCurrentMediaFileId } from "@easyimmerse/state";
+import {
+  isDocumentFileName,
+  selectCurrentMediaFileId,
+} from "@easyimmerse/state";
+import type { Project } from "@easyimmerse/types";
 import { useEffect } from "react";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { useAddChosenMediaFile } from "../hooks/useAddChosenMediaFile.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { MediaScreen } from "./MediaScreen.tsx";
 import { ProjectOverview } from "./ProjectOverview.tsx";
+import { ReaderScreen } from "./ReaderScreen.tsx";
 
-/** A project: its overview, or the media screen while one of its media files is open. */
+/** A project: its overview, or the media screen or the reader while one of its files is open. */
 export function ProjectScreen({
   projectId,
   onBack,
@@ -38,7 +44,7 @@ export function ProjectScreen({
     );
   if (mediaFileId !== null)
     return (
-      <MediaScreen
+      <OpenFileScreen
         key={mediaFileId}
         project={project}
         mediaFileId={mediaFileId}
@@ -51,6 +57,30 @@ export function ProjectScreen({
       onEditSettings={onEditSettings}
     />
   );
+}
+
+/**
+ * The reader for an ebook or a text file, and the media screen for anything else.
+ * A file added a moment ago may be missing from the list until it is fetched again, and waits for it.
+ */
+function OpenFileScreen({
+  project,
+  mediaFileId,
+}: {
+  project: Project;
+  mediaFileId: string;
+}) {
+  const { data, isFetching } = useListMediaFilesQuery(project.id);
+  const mediaFile = data?.media_files.find((file) => file.id === mediaFileId);
+  if (mediaFile && isDocumentFileName(mediaFile.name))
+    return <ReaderScreen project={project} mediaFileId={mediaFileId} />;
+  if (!mediaFile && isFetching)
+    return (
+      <ScreenLayout>
+        <p className="text-sm text-fg-muted">Opening the file…</p>
+      </ScreenLayout>
+    );
+  return <MediaScreen project={project} mediaFileId={mediaFileId} />;
 }
 
 /** Records once per project that it was opened, which moves it to the front of the home screen. */

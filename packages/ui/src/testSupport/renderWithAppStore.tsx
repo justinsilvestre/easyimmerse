@@ -8,6 +8,8 @@ import { createTestAppStore } from "./createTestAppStore.ts";
 export type RenderOptions = {
   server?: ServerConfig;
   browserFileRegistry?: BrowserFileRegistry<File>;
+  /** Values the device's preference store holds before the element renders. */
+  storedPreferences?: Record<string, string>;
 };
 
 /** Builds a fresh store, recording effects, and fake backend, then renders the element inside them. */
@@ -20,6 +22,8 @@ export function renderWithAppStore(
     client,
     options.server ?? null,
   );
+  for (const [key, value] of Object.entries(options.storedPreferences ?? {}))
+    effects.preferences.set(key, value);
   render(
     <AppStoreProviders
       store={store}

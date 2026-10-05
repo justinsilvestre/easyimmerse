@@ -1,8 +1,10 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
 import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
+import type { MediaFile } from "@easyimmerse/types";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
   fixtureMediaFiles,
@@ -80,6 +82,38 @@ describe("ProjectScreen", () => {
     act(() => store.dispatch(actions.openMedia("m1")));
     expect(
       await screen.findByRole("heading", { name: "episode.mkv" }),
+    ).toBeDefined();
+  });
+
+  it("shows the reader while an ebook is open", async () => {
+    const book: MediaFile = {
+      id: "b1",
+      project_id: "p1",
+      name: "sample.epub",
+      source: { kind: "path", path: "/books/sample.epub" },
+      created_at_ms: 0,
+      track_selection_json: null,
+    };
+    const client = createFakeBackendClient({
+      ...fixtureResponses,
+      "GET /projects/p1/media": { media_files: [book] },
+      "POST /documents/parse-local": exampleShortBook,
+    });
+    const { store } = renderWithAppStore(
+      <ProjectScreen
+        projectId="p1"
+        onBack={() => undefined}
+        onEditSettings={() => undefined}
+      />,
+      client,
+    );
+    await screen.findByRole("heading", { name: "Alpha" });
+    act(() => {
+      store.dispatch(actions.preferencesLoaded({}));
+      store.dispatch(actions.openMedia("b1"));
+    });
+    expect(
+      await screen.findByRole("heading", { name: "Sample Book" }),
     ).toBeDefined();
   });
 
