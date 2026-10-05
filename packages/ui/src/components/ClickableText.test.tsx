@@ -41,27 +41,43 @@ describe("ClickableText", () => {
     expect(container.textContent).toBe("<colloq.> mate");
   });
 
+  it("marks the word the pop-up shows as expanded", () => {
+    render(
+      <ClickableText
+        text="Ich rufe an."
+        activeWord={{ start: 4, popupId: "dictionary" }}
+      />,
+    );
+    expect(
+      screen
+        .getByRole("button", { name: "rufe" })
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
+  });
+
+  it("names the pop-up that the word the pop-up shows controls", () => {
+    render(
+      <ClickableText
+        text="Ich rufe an."
+        activeWord={{ start: 4, popupId: "dictionary" }}
+      />,
+    );
+    expect(
+      screen
+        .getByRole("button", { name: "rufe" })
+        .getAttribute("aria-controls"),
+    ).toBe("dictionary");
+  });
+
   it("passes a clicked word's offset in the text", () => {
     const clicks: [string, number][] = [];
     render(
       <ClickableText
         text="Ich rufe an."
-        onWordClick={(word, start) => clicks.push([word, start])}
+        gestures={{ onWordClick: (hit) => clicks.push([hit.word, hit.start]) }}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "rufe" }));
     expect(clicks).toEqual([["rufe", 4]]);
-  });
-
-  it("passes a double-clicked word", () => {
-    const doubleClicks: string[] = [];
-    render(
-      <ClickableText
-        text="Ich rufe an."
-        onWordDoubleClick={(word) => doubleClicks.push(word)}
-      />,
-    );
-    fireEvent.doubleClick(screen.getByRole("button", { name: "an" }));
-    expect(doubleClicks).toEqual(["an"]);
   });
 });

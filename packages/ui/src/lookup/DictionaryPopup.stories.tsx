@@ -19,10 +19,11 @@ const meta = {
   component: DictionaryPopup,
   args: {
     state: { kind: "found", term: "fressen", results: exampleResults },
-    mode: "hover",
+    mode: "word",
     resolveMediaUrl: resolveExampleMediaUrl,
     onSearch: fn(),
     onCreateFlashcard: fn(),
+    wordActions: { onFlashcard: fn(), onLookupStarted: fn() },
     onClose: fn(),
     onSetUpDictionary: fn(),
   },
@@ -66,6 +67,10 @@ export const Loading: Story = {
 
 export const NothingFound: Story = {
   args: { state: { kind: "notFound", term: "Hundi" } },
+};
+
+export const MakingFlashcard: Story = {
+  args: { pendingFlashcard: "devour" },
 };
 
 export const LookupFailed: Story = {

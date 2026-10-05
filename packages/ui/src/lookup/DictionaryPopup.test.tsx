@@ -30,7 +30,7 @@ function renderPopup({
       <DictionaryPopup
         state={{ kind: "found", term: "fressen", results: exampleResults }}
         resolveMediaUrl={() => null}
-        mode="hover"
+        mode="word"
         onSearch={onSearch}
         onCreateFlashcard={onCreateFlashcard}
         onClose={onClose}
@@ -89,6 +89,16 @@ describe("DictionaryPopup dismissal", () => {
     expect(closeCount).toBe(0);
   });
 
+  it("stays open on a click inside it that removes the clicked element before the click reaches the page", () => {
+    let closeCount = 0;
+    renderPopup({ onClose: () => (closeCount += 1) });
+    const button = screen.getByRole("button", { name: "Flashcard" });
+    // A browser re-renders between the element's own handler and the page's, as when a link inside is followed.
+    button.addEventListener("click", () => button.remove());
+    fireEvent.click(button);
+    expect(closeCount).toBe(0);
+  });
+
   it("stays open on a click inside it", () => {
     let closeCount = 0;
     renderPopup({ onClose: () => (closeCount += 1) });
@@ -102,7 +112,7 @@ describe("DictionaryPopup dismissal", () => {
       <div inert>
         <DictionaryPopup
           state={null}
-          mode="hover"
+          mode="word"
           resolveMediaUrl={() => null}
           onSearch={() => undefined}
           onCreateFlashcard={() => undefined}
@@ -152,7 +162,7 @@ function renderState(state: LookupState) {
   render(
     <DictionaryPopup
       state={state}
-      mode="hover"
+      mode="word"
       resolveMediaUrl={() => null}
       onSearch={() => undefined}
       onCreateFlashcard={() => undefined}
@@ -204,6 +214,29 @@ describe("DictionaryPopup states", () => {
 });
 
 describe("DictionaryPopup links", () => {
+  it("stays open when a followed link re-renders it before the click reaches the page", () => {
+    let closeCount = 0;
+    render(
+      <DictionaryPopup
+        state={{
+          kind: "found",
+          term: "食べなかった",
+          results: [exampleInflectedResult],
+        }}
+        mode="word"
+        resolveMediaUrl={() => null}
+        onSearch={() => undefined}
+        onCreateFlashcard={() => undefined}
+        onClose={() => (closeCount += 1)}
+        onSetUpDictionary={() => undefined}
+      />,
+    );
+    const link = screen.getByRole("button", { name: "食う" });
+    link.addEventListener("click", () => link.remove());
+    fireEvent.click(link);
+    expect(closeCount).toBe(0);
+  });
+
   it("looks up the target of a link in a definition", () => {
     const searched: string[] = [];
     render(
@@ -213,7 +246,7 @@ describe("DictionaryPopup links", () => {
           term: "食べなかった",
           results: [exampleInflectedResult],
         }}
-        mode="hover"
+        mode="word"
         resolveMediaUrl={() => null}
         onSearch={(term) => searched.push(term)}
         onCreateFlashcard={() => undefined}

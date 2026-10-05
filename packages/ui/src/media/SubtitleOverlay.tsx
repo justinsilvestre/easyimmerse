@@ -1,6 +1,12 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
+import {
+  type ActiveCueWord,
+  activeWordIn,
+  type CueWordGestures,
+  gesturesForCue,
+} from "./cueWordGestures.ts";
 
 /** Which subtitles lie over the video: both with the target language on top, or one of them. */
 export type SubtitleDisplay = "both" | "target" | "translation";
@@ -12,20 +18,15 @@ export function SubtitleOverlay({
   display,
   isRaised,
   activeWord,
-  onWordHover,
-  onWordClick,
-  onWordDoubleClick,
+  wordGestures,
 }: {
   targetCue: Cue | null;
   translationCue: Cue | null;
   display: SubtitleDisplay;
   /** Whether the player controls are shown under the subtitles, which then move up out of their way. */
   isRaised: boolean;
-  activeWord?: string;
-  onWordHover: (word: string) => void;
-  /** Receives the clicked word with the cue it was clicked in and its offset in the cue's text without markup. */
-  onWordClick: (word: string, cue: Cue, start: number) => void;
-  onWordDoubleClick?: (word: string, cue: Cue, start: number) => void;
+  activeWord?: ActiveCueWord;
+  wordGestures: CueWordGestures;
 }) {
   const showsTarget = display !== "translation" && targetCue !== null;
   const showsTranslation = display !== "target" && translationCue !== null;
@@ -40,12 +41,8 @@ export function SubtitleOverlay({
         <p className="pointer-events-auto rounded bg-black/70 px-3 py-1 text-base font-medium text-white md:text-2xl">
           <ClickableText
             text={stripMarkup(targetCue.text)}
-            activeWord={activeWord}
-            onWordHover={onWordHover}
-            onWordClick={(word, start) => onWordClick(word, targetCue, start)}
-            onWordDoubleClick={(word, start) =>
-              onWordDoubleClick?.(word, targetCue, start)
-            }
+            activeWord={activeWordIn(activeWord, targetCue)}
+            gestures={gesturesForCue(wordGestures, targetCue)}
           />
         </p>
       )}

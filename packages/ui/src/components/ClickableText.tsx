@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { lookupTriggerAttribute } from "./lookupTrigger.ts";
+import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
 
 const wordPattern = /\p{L}[\p{L}\p{M}\p{N}'’-]*/gu;
 
@@ -31,23 +32,21 @@ export function stripMarkup(text: string): string {
 
 /**
  * Renders text with each word as a button, so that a word can be looked up or turned into a flashcard.
- * The handlers receive each word with its offset in the text, in UTF-16 code units.
+ * `gestures` receives what the user does to each word: click, double-click, hover or a held tap.
  * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
  * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
  */
 export function ClickableText({
   text,
   activeWord,
-  onWordHover,
-  onWordClick,
-  onWordDoubleClick,
+  gestures = noGestures,
 }: {
   text: string;
-  activeWord?: string;
-  onWordHover?: (word: string) => void;
-  onWordClick?: (word: string, start: number) => void;
-  onWordDoubleClick?: (word: string, start: number) => void;
+  /** The word the dictionary pop-up shows, by its offset in the text, and the pop-up's id. */
+  activeWord?: { start: number; popupId: string };
+  gestures?: WordGestures;
 }) {
+  const handlersFor = useWordGestures(gestures);
   return (
     <span className="whitespace-pre-line">
       {splitIntoWords(text).map((part) =>
@@ -55,14 +54,19 @@ export function ClickableText({
           <button
             key={part.start}
             type="button"
+            aria-haspopup="dialog"
+            aria-expanded={part.start === activeWord?.start || undefined}
+            aria-controls={
+              part.start === activeWord?.start ? activeWord.popupId : undefined
+            }
             {...{ [lookupTriggerAttribute]: "" }}
-            onMouseEnter={() => onWordHover?.(part.text)}
-            onFocus={() => onWordHover?.(part.text)}
-            onClick={() => onWordClick?.(part.text, part.start)}
-            onDoubleClick={() => onWordDoubleClick?.(part.text, part.start)}
+            {...handlersFor(part.text, part.start)}
             className={clsx(
-              "rounded-sm px-px decoration-dotted underline-offset-4 hover:bg-accent-soft hover:underline focus-visible:outline-2 focus-visible:outline-accent",
-              part.text === activeWord && "bg-accent-soft text-accent-fg",
+              // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu,
+              // and a double tap must not zoom the page.
+              "touch-manipulation rounded-sm px-px decoration-dotted underline-offset-4 hover:bg-accent-soft hover:underline focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
+              part.start === activeWord?.start &&
+                "bg-accent-soft text-accent-fg",
             )}
           >
             {part.text}
@@ -74,3 +78,5 @@ export function ClickableText({
     </span>
   );
 }
+
+const noGestures: WordGestures = {};

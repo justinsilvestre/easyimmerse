@@ -1,0 +1,169 @@
+import type { DictionarySummary, LookupResult } from "@easyimmerse/types";
+import { type ComponentProps, useId } from "react";
+import type { WordHit } from "../components/useWordGestures.ts";
+import type { AnchoredPopup } from "./AnchoredPopup.tsx";
+import type { DictionaryPopup } from "./DictionaryPopup.tsx";
+import {
+  flashcardFieldsFromLookup,
+  type LookupFlashcardFields,
+} from "./flashcardFieldsFromLookup.ts";
+import type { LookupRequest } from "./lookupPopup.ts";
+import {
+  type PopupHold,
+  useLookupPopupControl,
+} from "./useLookupPopupControl.ts";
+
+export type { PopupHold } from "./useLookupPopupControl.ts";
+
+/** Starts a flashcard for a word from its passage, with fields filled from its lookup when one answered. */
+export type StartFlashcardFromLookup<S> = (
+  word: string,
+  source: S | null,
+  lookupFields: LookupFlashcardFields | null,
+) => void;
+
+/** How long a flashcard waits for its word's lookup before it opens with what has arrived. */
+export const flashcardLookupWaitMs = 1500;
+
+type Languages = { target: string; translation: string };
+
+/**
+ * Drives the dictionary pop-up for words in a text, such as subtitles or an ebook:
+ * a click opens it at the word, or closes it when it shows that word already;
+ * hover intent moves it to another word, unless the pointer is inside it;
+ * and a double-click or held tap turns the word into a flashcard filled from its lookup.
+ * Words inside the pop-up are looked up in it, or turned into flashcards the same way.
+ * `S` is the kind of passage words come from, such as a subtitle cue.
+ */
+export function useWordLookup<S>({
+  languages,
+  hold,
+  startFlashcard,
+}: {
+  languages: Languages;
+  hold: PopupHold;
+  startFlashcard: StartFlashcardFromLookup<S>;
+}) {
+  const control = useLookupPopupControl<S>(languages.target, hold);
+  const { lookup } = control;
+  const popupId = useId();
+  const fieldsFrom = (
+    results: readonly LookupResult[],
+    entryIndex: number | null,
+    dictionaries: readonly DictionarySummary[],
+  ) => flashcardFieldsFromLookup(results, entryIndex, languages, dictionaries);
+  const endInFlashcard = (
+    word: string,
+    source: S | null,
+    lookupFields: LookupFlashcardFields | null,
+  ) =>
+    control.leaveFor(() =>
+      startFlashcard(lookupFields?.word ?? word, source, lookupFields),
+    );
+  /** Turns a word into a flashcard once its lookup answers, showing the word in the pop-up meanwhile when it comes from the text. */
+  const startFlashcardFor = (request: LookupRequest<S>) => {
+    control.keepOpen();
+    if (request.occurrence !== null && !control.showsOccurrence(request))
+      control.open(request);
+    const { dictionaries } = lookup;
+    control.pending.start(
+      request.term,
+      lookup.lookUpNow(request, flashcardLookupWaitMs),
+      (results) =>
+        endInFlashcard(
+          request.term,
+          request.source,
+          fieldsFrom(results, null, dictionaries),
+        ),
+    );
+  };
+  return {
+    popup: popupOf(control, popupId, {
+      onWordFlashcard: (term) => startFlashcardFor(wordInPopup(control, term)),
+      onCreateFlashcard: (entryIndex) =>
+        endInFlashcard(
+          lookup.request?.term ?? "",
+          lookup.request?.source ?? null,
+          fieldsFrom(lookup.results, entryIndex, lookup.dictionaries),
+        ),
+    }),
+    /** The occurrence the pop-up shows, if it shows a word from the text, with the pop-up's id. */
+    activeOccurrence: lookup.request?.occurrence && {
+      ...lookup.request.occurrence,
+      source: lookup.request.source,
+      popupId,
+    },
+    /** A word clicked or tapped in the text. */
+    clickWord: (request: LookupRequest<S>, input: WordHit["input"]) => {
+      if (!control.showsOccurrence(request)) return control.open(request);
+      // A mouse click may begin a double-click, whose second click must find the pop-up still open.
+      if (input === "mouse") control.closeSoon();
+      else control.close();
+    },
+    /** A word the mouse rests on in the text. */
+    hoverWord: (request: LookupRequest<S>) => {
+      const followsPointer =
+        lookup.popup?.mode === "word" &&
+        !control.isPointerInside.current &&
+        !control.pending.isPending();
+      if (followsPointer && !control.showsOccurrence(request))
+        control.show(request);
+    },
+    startFlashcardFor,
+    openSearch: control.openSearch,
+    leaveFor: control.leaveFor,
+  };
+}
+
+type Control<S> = ReturnType<typeof useLookupPopupControl<S>>;
+
+/** A word inside the pop-up, looked up from its passage and shown at the same place. */
+function wordInPopup<S>(control: Control<S>, term: string): LookupRequest<S> {
+  const shown = control.lookup.request;
+  return {
+    term,
+    lookup: { text: term },
+    source: shown?.source ?? null,
+    occurrence: null,
+    anchor: shown?.anchor ?? null,
+  };
+}
+
+/** The props of the pop-up and of the wrapper that places it, or null while it is closed. */
+function popupOf<S>(
+  control: Control<S>,
+  popupId: string,
+  flashcards: {
+    onWordFlashcard: (term: string) => void;
+    onCreateFlashcard: (entryIndex: number | null) => void;
+  },
+): {
+  anchored: Omit<ComponentProps<typeof AnchoredPopup>, "children">;
+  props: Omit<ComponentProps<typeof DictionaryPopup>, "onSetUpDictionary">;
+} | null {
+  const { lookup, pending } = control;
+  if (lookup.popup === null) return null;
+  return {
+    anchored: {
+      anchor:
+        lookup.popup.mode === "word" ? (lookup.request?.anchor ?? null) : null,
+      onPointerInsideChange: (isInside) => {
+        control.isPointerInside.current = isInside;
+      },
+    },
+    props: {
+      id: popupId,
+      state: lookup.state,
+      mode: lookup.popup.mode,
+      resolveMediaUrl: lookup.resolveMediaUrl,
+      pendingFlashcard: pending.term,
+      onSearch: control.search,
+      wordActions: {
+        onFlashcard: flashcards.onWordFlashcard,
+        onLookupStarted: (term) => lookup.prefetch(wordInPopup(control, term)),
+      },
+      onCreateFlashcard: flashcards.onCreateFlashcard,
+      onClose: control.close,
+    },
+  };
+}

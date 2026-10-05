@@ -2,24 +2,38 @@ import {
   buildDictionaryMediaUrl,
   getServerConfig,
   skipToken,
+  useLazyLookupTextQuery,
   useListDictionariesQuery,
   useLookupTextQuery,
 } from "@easyimmerse/backend";
-import type { DictionarySummary, LookupQuery } from "@easyimmerse/types";
+import type {
+  DictionarySummary,
+  LookupQuery,
+  LookupResult,
+} from "@easyimmerse/types";
 import { useReducer } from "react";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
-import { type LookupRequest, reduceLookupPopup } from "./lookupPopup.ts";
+import {
+  type LookupPopup,
+  type LookupRequest,
+  reduceLookupPopup,
+} from "./lookupPopup.ts";
 import { type LookupOutcome, lookupStateOf } from "./lookupStateOf.ts";
+import { withinTime } from "./withinTime.ts";
 
 const noDictionaries: readonly DictionarySummary[] = [];
 
 /**
  * Looks words up in the dictionaries for a language and keeps the dictionary pop-up's state.
  * The pop-up asks for a dictionary instead when none covers the language.
+ * `S` is the kind of passage words come from, such as a subtitle cue.
  */
-export function useDictionaryLookup(language: string) {
-  const [popup, dispatch] = useReducer(reduceLookupPopup, null);
+export function useDictionaryLookup<S>(language: string) {
+  const [popup, dispatch] = useReducer(
+    reduceLookupPopup<S>,
+    null as LookupPopup<S>,
+  );
   const request = popup?.request ?? null;
   const listed = useListDictionariesQuery().data?.dictionaries;
   const dictionaries = listed ?? noDictionaries;
@@ -31,6 +45,8 @@ export function useDictionaryLookup(language: string) {
       ? lookupQueryOf(request, language)
       : skipToken,
   );
+  const [lookUpLazily] = useLazyLookupTextQuery();
+  const [prefetchLazily] = useLazyLookupTextQuery();
   return {
     popup,
     request,
@@ -40,7 +56,29 @@ export function useDictionaryLookup(language: string) {
       ? { kind: "noDictionary" as const, language, term: request?.term }
       : request && lookupStateOf(request.term, outcomeOf(query)),
     resolveMediaUrl,
-    chooseWord: (chosen: LookupRequest) =>
+    /**
+     * Looks a word up without showing it, and resolves its results, or none once `waitMs` has passed.
+     * A lookup the pop-up already made or is making for the same word is reused.
+     */
+    lookUpNow: (
+      wanted: LookupRequest<S>,
+      waitMs: number,
+    ): Promise<readonly LookupResult[]> =>
+      isMissingDictionary
+        ? Promise.resolve([])
+        : withinTime(
+            lookUpLazily(lookupQueryOf(wanted, language), true)
+              .unwrap()
+              .then((response) => response.results),
+            waitMs,
+            [],
+          ),
+    /** Starts looking a word up, so that its results are at hand when the pop-up shows it. */
+    prefetch: (wanted: LookupRequest<S>) => {
+      if (!isMissingDictionary)
+        prefetchLazily(lookupQueryOf(wanted, language), true);
+    },
+    chooseWord: (chosen: LookupRequest<S>) =>
       dispatch({ type: "wordChosen", request: chosen }),
     openSearch: () => dispatch({ type: "searchOpened" }),
     search: (term: string) => dispatch({ type: "termSearched", term }),
@@ -48,7 +86,10 @@ export function useDictionaryLookup(language: string) {
   };
 }
 
-function lookupQueryOf(request: LookupRequest, language: string): LookupQuery {
+function lookupQueryOf<S>(
+  request: LookupRequest<S>,
+  language: string,
+): LookupQuery {
   const { text, context, offset } = request.lookup;
   return context === undefined || offset === undefined
     ? { text, language }

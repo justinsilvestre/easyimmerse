@@ -1,33 +1,57 @@
-import type { Cue } from "@easyimmerse/types";
 import type { LookupText } from "./lookupTextAt.ts";
 
-/** One word to look up: the word as shown, the text sent to the dictionaries, and the cue a flashcard made from it takes its sentence from. */
-export type LookupRequest = {
+/**
+ * One word to look up: the word as shown, the text sent to the dictionaries,
+ * and the passage it comes from, such as a subtitle cue, which a flashcard made from it takes its sentence from.
+ */
+export type LookupRequest<S> = {
   term: string;
   lookup: Pick<LookupText, "text"> & Partial<LookupText>;
-  cue: Cue | null;
+  source: S | null;
+  /**
+   * Where this occurrence of the word lies: its passage, named, and its offset there in UTF-16 code units.
+   * Clicking the same occurrence again closes the pop-up. Null for a typed or linked term.
+   */
+  occurrence: WordOccurrence | null;
+  /** The element that shows the word, for the pop-up to stand at. Null when the pop-up opens on its search field. */
+  anchor: Element | null;
 };
 
+export type WordOccurrence = { passage: string; start: number };
+
+/** Tells whether two occurrences are the same place in the same passage. */
+export function isSameOccurrence(
+  first: WordOccurrence | null | undefined,
+  second: WordOccurrence | null | undefined,
+): boolean {
+  return (
+    first != null &&
+    second != null &&
+    first.passage === second.passage &&
+    first.start === second.start
+  );
+}
+
 /** The dictionary pop-up: closed, or open on a word or on its search field. */
-export type LookupPopup = {
-  mode: "hover" | "search";
-  request: LookupRequest | null;
+export type LookupPopup<S> = {
+  mode: "word" | "search";
+  request: LookupRequest<S> | null;
 } | null;
 
-export type LookupPopupAction =
-  | { type: "wordChosen"; request: LookupRequest }
+export type LookupPopupAction<S> =
+  | { type: "wordChosen"; request: LookupRequest<S> }
   | { type: "searchOpened" }
   | { type: "termSearched"; term: string }
   | { type: "closed" };
 
 /** Opens, changes and closes the dictionary pop-up. */
-export function reduceLookupPopup(
-  popup: LookupPopup,
-  action: LookupPopupAction,
-): LookupPopup {
+export function reduceLookupPopup<S>(
+  popup: LookupPopup<S>,
+  action: LookupPopupAction<S>,
+): LookupPopup<S> {
   switch (action.type) {
     case "wordChosen":
-      return { mode: "hover", request: action.request };
+      return { mode: "word", request: action.request };
     case "searchOpened":
       return { mode: "search", request: null };
     case "termSearched":
@@ -37,15 +61,17 @@ export function reduceLookupPopup(
   }
 }
 
-/** Looks up a typed or clicked term in the open pop-up, keeping the cue its first word came from. */
-function searchTerm(popup: LookupPopup, term: string): LookupPopup {
+/** Looks up a typed or clicked term in the open pop-up, keeping the passage and place of the word it first opened on. */
+function searchTerm<S>(popup: LookupPopup<S>, term: string): LookupPopup<S> {
   if (term === "") return popup;
   return {
     mode: popup?.mode ?? "search",
     request: {
       term,
       lookup: { text: term },
-      cue: popup?.request?.cue ?? null,
+      source: popup?.request?.source ?? null,
+      occurrence: null,
+      anchor: popup?.request?.anchor ?? null,
     },
   };
 }

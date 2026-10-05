@@ -26,9 +26,12 @@ const meta = {
     activeCueIndex: 3,
     flashcardCueIndexes: exampleFlashcardCueIndexes,
     onSeek: fn(),
-    onWordHover: fn(),
-    onWordClick: fn(),
-    onWordDoubleClick: fn(),
+    wordGestures: {
+      onWordClick: fn(),
+      onWordDoubleClick: fn(),
+      onWordHoverIntent: fn(),
+      onWordHold: fn(),
+    },
     onAddSubtitlesFile: fn(),
     onGenerateSubtitles: fn(),
   },
@@ -41,6 +44,8 @@ export const DualSubtitles: Story = {};
 
 export const TargetOnly: Story = { args: { translationCues: [] } };
 
-export const WordUnderPointer: Story = { args: { activeWord: "fressen" } };
+export const WordInPopup: Story = {
+  args: { activeWord: { cueIndex: 3, start: 13, popupId: "dictionary" } },
+};
 
 export const NoSubtitles: Story = { args: { cues: [] } };

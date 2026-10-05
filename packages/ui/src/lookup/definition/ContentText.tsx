@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { ClickableText } from "../../components/ClickableText.tsx";
+import { usePopupWordActions } from "../popupWordContext.ts";
+import { popupWordGestures } from "../popupWordGestures.ts";
 import {
   DefinitionContext,
   useDefinitionContext,
@@ -8,8 +10,14 @@ import {
 /** Renders a run of definition text, with each word clickable unless the text sits inside a `PlainTextScope`. */
 export function ContentText({ text }: { text: string }) {
   const { isPlainText, onWordClick } = useDefinitionContext();
+  const popupWordActions = usePopupWordActions();
   if (isPlainText) return text;
-  return <ClickableText text={text} onWordClick={onWordClick} />;
+  return (
+    <ClickableText
+      text={text}
+      gestures={popupWordGestures(onWordClick, popupWordActions)}
+    />
+  );
 }
 
 /** Renders definition content whose words are not clickable, such as a link's text or a reading above a word. */

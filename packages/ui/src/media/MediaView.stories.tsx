@@ -16,6 +16,7 @@ import {
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
+import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
@@ -128,8 +129,7 @@ function subtitlesPanel(
         activeCueIndex={3}
         flashcardCueIndexes={exampleFlashcardCueIndexes}
         onSeek={fn()}
-        onWordHover={fn()}
-        onWordClick={fn()}
+        wordGestures={{ onWordClick: fn(), onWordDoubleClick: fn() }}
         onAddSubtitlesFile={fn()}
         onGenerateSubtitles={fn()}
       />
@@ -137,17 +137,19 @@ function subtitlesPanel(
   );
 }
 
-function lookupPopup(state: LookupState | null, mode: "hover" | "search") {
+function lookupPopup(state: LookupState | null, mode: "word" | "search") {
   return (
-    <DictionaryPopup
-      state={state}
-      mode={mode}
-      resolveMediaUrl={resolveExampleMediaUrl}
-      onSearch={fn()}
-      onCreateFlashcard={fn()}
-      onClose={fn()}
-      onSetUpDictionary={fn()}
-    />
+    <AnchoredPopup anchor={null}>
+      <DictionaryPopup
+        state={state}
+        mode={mode}
+        resolveMediaUrl={resolveExampleMediaUrl}
+        onSearch={fn()}
+        onCreateFlashcard={fn()}
+        onClose={fn()}
+        onSetUpDictionary={fn()}
+      />
+    </AnchoredPopup>
   );
 }
 
@@ -183,9 +185,12 @@ const meta = {
       onToggleDistractionFree: fn(),
     },
     onBack: fn(),
-    onWordHover: fn(),
-    onWordClick: fn(),
-    onWordDoubleClick: fn(),
+    wordGestures: {
+      onWordClick: fn(),
+      onWordDoubleClick: fn(),
+      onWordHoverIntent: fn(),
+      onWordHold: fn(),
+    },
     onLookup: fn(),
     onAddFlashcard: fn(),
     sidePanel: subtitlesPanel(),
@@ -199,17 +204,17 @@ export const VideoWithDualSubtitles: Story = {};
 
 export const LookingUpAWord: Story = {
   args: {
-    activeWord: "fressen",
+    activeWord: { cueIndex: 3, start: 13, popupId: "dictionary" },
     lookup: lookupPopup(
       { kind: "found", term: "fressen", results: exampleResults },
-      "hover",
+      "word",
     ),
   },
 };
 
 export const LookupWithoutDictionary: Story = {
   args: {
-    lookup: lookupPopup({ kind: "noDictionary", language: "de" }, "hover"),
+    lookup: lookupPopup({ kind: "noDictionary", language: "de" }, "word"),
   },
 };
 
