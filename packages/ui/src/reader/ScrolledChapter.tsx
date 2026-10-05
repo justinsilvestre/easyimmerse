@@ -41,6 +41,12 @@ export function ScrolledChapter({
   const lastScrollTop = useRef(0);
   const frame = useRef(0);
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  // Without focus, the arrow, Page and Space keys would not scroll the text until it was clicked.
+  // A control that has focus, such as an open panel's, keeps it.
+  useEffect(() => {
+    if (document.activeElement === document.body)
+      scroller.current?.focus({ preventScroll: true });
+  }, []);
 
   // Scroll back to the reader's place whenever the text moves. The key is what moves it.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
@@ -72,7 +78,8 @@ export function ScrolledChapter({
   return (
     <div
       ref={scroller}
-      className="h-full overflow-y-auto overscroll-contain"
+      tabIndex={-1}
+      className="h-full overflow-y-auto overscroll-contain outline-none"
       onScroll={onScroll}
     >
       <div

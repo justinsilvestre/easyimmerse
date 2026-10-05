@@ -24,6 +24,13 @@ describe("updateReader", () => {
     ).toEqual(start);
   });
 
+  it("keeps the same state when the reported location has not moved", () => {
+    const state = initialReaderState(later);
+    expect(
+      updateReader(state, { type: "locationReported", location: { ...later } }),
+    ).toBe(state);
+  });
+
   it("closes a panel when it is toggled again", () => {
     const open = updateReader(initialReaderState(start), {
       type: "panelToggled",

@@ -48,7 +48,9 @@ export function updateReader(
         jump: { location: action.location, id: state.jump.id + 1 },
       };
     case "locationReported":
-      return { ...state, location: action.location };
+      return isSameLocation(state.location, action.location)
+        ? state
+        : { ...state, location: action.location };
     case "panelOpened":
       return { ...state, panel: action.panel };
     case "panelToggled":
@@ -77,4 +79,12 @@ export function updateReader(
         search: { ...state.search, activeMatchIndex: action.index },
       };
   }
+}
+
+function isSameLocation(a: ReaderLocation, b: ReaderLocation): boolean {
+  return (
+    a.chapterIndex === b.chapterIndex &&
+    a.paragraphIndex === b.paragraphIndex &&
+    a.offset === b.offset
+  );
 }

@@ -42,6 +42,7 @@ import {
 } from "./readerState.ts";
 import {
   chapterStartProgresses,
+  clampToBook,
   locationAtProgress,
   progressAt,
   type ReaderLocation,
@@ -77,6 +78,7 @@ type ReaderViewProps = {
   /** The language of the text, which sets its word boundaries and hyphenation. */
   language: string;
   preferences: ReaderPreferences;
+  /** Where to open the book. A place past the end of the book opens at the end. */
   initialLocation?: ReaderLocation;
   /** The panel open at first, for showing a panel in a story. */
   initialPanel?: ReaderPanel;
@@ -86,6 +88,8 @@ type ReaderViewProps = {
   lookup?: ReactNode;
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
+  /** A panel laid over the text at the side, such as the flashcard editor. The reader's keys leave it alone. */
+  sidePanel?: ReactNode;
 };
 
 const searchLimit = 500;
@@ -110,7 +114,7 @@ export function ReaderView(props: ReaderViewProps) {
     updateReader,
     props.initialLocation ?? startOfBook,
     (location) => ({
-      ...initialReaderState(location),
+      ...initialReaderState(clampToBook(document, location)),
       panel: props.initialPanel ?? null,
       search: { query: props.initialSearchQuery ?? "", activeMatchIndex: null },
     }),
@@ -182,7 +186,7 @@ export function ReaderView(props: ReaderViewProps) {
   };
   useReaderKeys({
     isPaged,
-    isPanelOpen: state.panel !== null,
+    isPanelOpen: state.panel !== null || props.sidePanel != null,
     onTurn: turn,
     onOpenSearch: () => {
       dispatch({ type: "panelOpened", panel: "search" });
@@ -335,6 +339,11 @@ export function ReaderView(props: ReaderViewProps) {
         <LookupAnchor wordRect={wordRect} isWide={isWide}>
           {props.lookup}
         </LookupAnchor>
+      )}
+      {props.sidePanel && (
+        <aside className="fixed inset-x-0 bottom-0 z-30 flex h-[70dvh] flex-col p-2 md:inset-y-0 md:left-auto md:h-auto md:w-96">
+          {props.sidePanel}
+        </aside>
       )}
       {state.panel === "contents" && (
         <ContentsPanel

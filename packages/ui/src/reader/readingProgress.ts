@@ -1,11 +1,7 @@
+import type { ReaderLocation } from "@easyimmerse/state";
 import type { Document } from "@easyimmerse/types";
 
-/** A place in a document: a character offset within a paragraph of a chapter. */
-export type ReaderLocation = {
-  chapterIndex: number;
-  paragraphIndex: number;
-  offset: number;
-};
+export type { ReaderLocation };
 
 export const startOfBook: ReaderLocation = {
   chapterIndex: 0,
@@ -43,9 +39,38 @@ export function chapterStartProgresses(document: Document): number[] {
   );
 }
 
+/**
+ * The nearest location within the document.
+ * A saved place can lie past the end of the book, for example when the file has changed since.
+ */
+export function clampToBook(
+  document: Document,
+  location: ReaderLocation,
+): ReaderLocation {
+  const { chapterIndex, paragraphIndex, offset } = location;
+  const paragraphs = document.chapters[chapterIndex]?.paragraphs;
+  if (paragraphs === undefined) return endOfBook(document);
+  const paragraph = paragraphs[paragraphIndex];
+  if (paragraph === undefined) return endOfChapter(chapterIndex, paragraphs);
+  return {
+    chapterIndex,
+    paragraphIndex,
+    offset: Math.min(offset, paragraph.length),
+  };
+}
+
 function endOfBook(document: Document): ReaderLocation {
   const chapterIndex = Math.max(0, document.chapters.length - 1);
-  const paragraphs = document.chapters[chapterIndex]?.paragraphs ?? [];
+  return endOfChapter(
+    chapterIndex,
+    document.chapters[chapterIndex]?.paragraphs ?? [],
+  );
+}
+
+function endOfChapter(
+  chapterIndex: number,
+  paragraphs: readonly string[],
+): ReaderLocation {
   const paragraphIndex = Math.max(0, paragraphs.length - 1);
   return {
     chapterIndex,

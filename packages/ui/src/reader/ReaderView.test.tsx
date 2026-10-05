@@ -5,6 +5,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { exampleShortBook } from "./exampleDocuments.ts";
 import { ReaderView } from "./ReaderView.tsx";
@@ -23,6 +24,7 @@ function renderReader(
     initialLocation?: ReaderLocation;
     layout?: ReaderPreferences["layout"];
     onPreferencesChange?: (preferences: ReaderPreferences) => void;
+    sidePanel?: ReactNode;
   } = {},
 ) {
   render(
@@ -35,6 +37,7 @@ function renderReader(
         layout: overrides.layout ?? "scroll",
       }}
       initialLocation={overrides.initialLocation}
+      sidePanel={overrides.sidePanel}
       callbacks={{
         onBack: ignore,
         onLookup: ignore,
@@ -52,6 +55,15 @@ describe("ReaderView", () => {
   it("shows the chapter at the initial location", () => {
     renderReader({
       initialLocation: { chapterIndex: 1, paragraphIndex: 0, offset: 0 },
+    });
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
+      "Chapter Two",
+    );
+  });
+
+  it("opens a place saved past the end of the book in the last chapter", () => {
+    renderReader({
+      initialLocation: { chapterIndex: 9, paragraphIndex: 0, offset: 0 },
     });
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
       "Chapter Two",
@@ -109,6 +121,15 @@ describe("ReaderView", () => {
     });
   });
 
+  describe("in the scrolling layout", () => {
+    it("gives the text the keyboard on opening, so that the scrolling keys work at once", () => {
+      renderReader();
+      expect(document.activeElement).toBe(
+        screen.getByRole("main").firstElementChild,
+      );
+    });
+  });
+
   describe("in the paged layout", () => {
     // Without a layout engine every chapter fills one page, so turning the page moves to the next chapter.
     it("turns the page with the right arrow key", () => {
@@ -116,6 +137,14 @@ describe("ReaderView", () => {
       fireEvent.keyDown(document.body, { key: "ArrowRight" });
       expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
         "Chapter Two",
+      );
+    });
+
+    it("leaves the arrow keys alone while a side panel is open", () => {
+      renderReader({ layout: "pages", sidePanel: <p>Flashcard</p> });
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
+        "Chapter One",
       );
     });
 
