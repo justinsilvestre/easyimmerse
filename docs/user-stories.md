@@ -112,7 +112,7 @@ As a user:
   - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
 - while I am working in a project:
   - [ ] my work is saved automatically at regular intervals, so an unexpected crash does not lose it
-- when I try to close the app while a flashcard is still being saved:
+- when I try to close the app while a flashcard has unsaved changes or is still being saved:
   - [x] I am warned and can keep the app open, on desktop, on the web and in the browser extension
 - when I open the app after it closed unexpectedly:
   - [ ] the last automatically saved state of my project is reloaded

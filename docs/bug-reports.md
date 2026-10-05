@@ -24,9 +24,3 @@ Each bug report is to be logged in this format:
 - Cache clearing test drops connection 2026-10-05
   - Run the `rust` workflow's `windows-11-arm` job; in runs 37225462574, 37241200447, and 37310370925, `media_conversion::clearing_the_cache_answers_with_the_status` in `crates/api` panicked because the connection was aborted (Windows error 10053) before the response arrived. Other runs of the same job pass, and it has not been reproduced on macOS. The test posts a `{}` body to a route that never reads a body, which may be related.
   - The request should get its response on every run, so the test passes on every platform.
-
-## Flashcards
-
-- Save never settles 2026-10-05
-  - Save a flashcard while the server accepts the request but never answers, as when the connection hangs. The editor stays read-only under "Saving…" and Save stays unavailable, with no way out but closing the card. Backend requests have no time limit in general.
-  - A save that has not settled within a reasonable time should fail with a message, and leave the card editable so that it can be saved again.
