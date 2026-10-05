@@ -153,6 +153,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dictionaries/preview-local": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Detects what each column of a table at a local path holds and returns that layout with the table's first rows,
+         *     so that the user can check it before importing the same path.
+         */
+        post: operations["previewLocalDictionaryTable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dictionaries/{id}": {
         parameters: {
             query?: never;
@@ -886,6 +906,7 @@ export interface components {
         ImportLocalDictionaryRequest: {
             /** @description A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files. */
             path: string;
+            tableLayout?: components["schemas"]["TableLayout"] | null;
         };
         IpaTranscription: {
             ipa: string;
@@ -1053,6 +1074,10 @@ export interface components {
         /** @description A preference value. `null` means the preference has not been set. */
         PreferenceValue: {
             value?: string | null;
+        };
+        PreviewLocalDictionaryTableRequest: {
+            /** @description A CSV, TSV or Tabfile table, or a directory holding one, read as an import of the same path would read it. */
+            path: string;
         };
         /** @description A project with its settings and the counts the home screen shows. */
         Project: {
@@ -1883,6 +1908,75 @@ export interface operations {
             };
             /** @description Missing or invalid token */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    previewLocalDictionaryTable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewLocalDictionaryTableRequest"];
+            };
+        };
+        responses: {
+            /** @description The detected layout and the first rows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TablePreview"];
+                };
+            };
+            /** @description The files could not be read as a table */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Nothing at the given path */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

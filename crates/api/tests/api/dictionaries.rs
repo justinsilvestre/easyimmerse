@@ -357,3 +357,61 @@ async fn looking_up_a_verb_in_context_finds_its_separated_particle_verb() {
         .json();
     assert_eq!(response["results"][0]["term"], "anrufen");
 }
+
+/// Writes the German table into a new directory, as `words.csv`.
+fn local_table() -> tempfile::TempDir {
+    let directory = tempfile::tempdir().unwrap();
+    std::fs::write(directory.path().join("words.csv"), GERMAN_TABLE).unwrap();
+    directory
+}
+
+async fn preview_local(server: &TestServer, path: &str) -> TestResponse {
+    server
+        .post_json("/dictionaries/preview-local", &json!({ "path": path }))
+        .await
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn previewing_a_local_table_returns_its_detected_columns() {
+    let server = spawn_test_server(true).await;
+    let directory = local_table();
+    let path = directory.path().join("words.csv");
+    let response = preview_local(&server, path.to_str().unwrap()).await;
+    assert_eq!(
+        response.json()["layout"],
+        json!({ "columns": ["term", "definition"], "hasHeader": false })
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn previewing_a_local_table_is_refused_when_not_allowed() {
+    let server = spawn_test_server(false).await;
+    let directory = local_table();
+    let path = directory.path().join("words.csv");
+    let response = preview_local(&server, path.to_str().unwrap()).await;
+    assert_eq!(response.status, 403);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn previewing_a_missing_local_table_is_not_found() {
+    let server = spawn_test_server(true).await;
+    let response = preview_local(&server, "/no/such/words.csv").await;
+    assert_eq!(response.status, 404);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn importing_a_local_table_with_chosen_columns_skips_the_header_the_user_marks() {
+    let server = spawn_test_server(true).await;
+    let directory = local_table();
+    let path = directory.path().join("words.csv");
+    let response = server
+        .post_json(
+            "/dictionaries/import-local",
+            &json!({
+                "path": path.to_str().unwrap(),
+                "tableLayout": { "columns": ["term", "definition"], "hasHeader": true },
+            }),
+        )
+        .await;
+    assert_eq!(response.json()["entry_count"], 2);
+}

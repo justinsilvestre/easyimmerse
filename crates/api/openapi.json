@@ -783,6 +783,92 @@
         ]
       }
     },
+    "/dictionaries/preview-local": {
+      "post": {
+        "tags": [
+          "dictionaries"
+        ],
+        "summary": "Detects what each column of a table at a local path holds and returns that layout with the table's first rows,\nso that the user can check it before importing the same path.",
+        "operationId": "previewLocalDictionaryTable",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewLocalDictionaryTableRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The detected layout and the first rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The files could not be read as a table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token may not read local paths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing at the given path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/dictionaries/{id}": {
       "delete": {
         "tags": [
@@ -4466,6 +4552,17 @@
           "path": {
             "type": "string",
             "description": "A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files."
+          },
+          "tableLayout": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TableLayout",
+                "description": "Replaces the detected layout of a CSV, TSV or Tabfile table."
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -5095,6 +5192,18 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "PreviewLocalDictionaryTableRequest": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "A CSV, TSV or Tabfile table, or a directory holding one, read as an import of the same path would read it."
           }
         }
       },
