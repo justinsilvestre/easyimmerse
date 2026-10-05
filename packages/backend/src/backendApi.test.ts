@@ -1,6 +1,7 @@
 import type {
   Flashcard,
   FlashcardDraft,
+  MediaFile,
   PlaybackRequest,
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
@@ -126,6 +127,39 @@ async function storeWithSubtitleTracks(failsWrites = false) {
   const store = createStore();
   await store.dispatch(
     backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
+  );
+  return store;
+}
+
+const addedBook: MediaFile = {
+  id: "b1",
+  project_id: "p1",
+  name: "book.epub",
+  source: { kind: "path", path: "/book.epub" },
+  created_at_ms: 0,
+  track_selection_json: null,
+};
+
+/** Lists no media files at first, adds a book, and leaves the list's refetch pending. */
+async function storeAfterAddingBook() {
+  let listCount = 0;
+  configureBackend({
+    send: <T>(request: BackendRequest) => {
+      if (request.method === "POST")
+        return Promise.resolve({ data: addedBook as T });
+      listCount += 1;
+      return listCount === 1
+        ? Promise.resolve({ data: { media_files: [] } as T })
+        : new Promise<never>(() => undefined);
+    },
+  });
+  const store = createStore();
+  await store.dispatch(backendApi.endpoints.listMediaFiles.initiate("p1"));
+  await store.dispatch(
+    backendApi.endpoints.addMediaFile.initiate({
+      projectId: "p1",
+      request: { name: addedBook.name, source: addedBook.source },
+    }),
   );
   return store;
 }
@@ -362,6 +396,14 @@ describe("backendApi", () => {
     expect(client.requests).toEqual([
       { method: "POST", path: "/conversion-cache/clear" },
     ]);
+  });
+
+  it("lists an added media file before the list is fetched again", async () => {
+    const store = await storeAfterAddingBook();
+    expect(
+      backendApi.endpoints.listMediaFiles.select("p1")(store.getState()).data
+        ?.media_files,
+    ).toEqual([addedBook]);
   });
 
   describe("while a change is being saved", () => {

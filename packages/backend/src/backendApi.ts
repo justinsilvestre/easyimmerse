@@ -200,6 +200,23 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/media`,
         body: { kind: "json", value: request },
       }),
+      // The new file's entry decides which screen opens it, so it joins the list at once.
+      // The refetch that the invalidation starts can wait for other requests to finish.
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        const result = await queryFulfilled.catch(() => null);
+        if (result === null) return;
+        const added = result.data;
+        dispatch(
+          backendApi.util.updateQueryData(
+            "listMediaFiles",
+            projectId,
+            (list) => {
+              if (!list.media_files.some(({ id }) => id === added.id))
+                list.media_files.push(added);
+            },
+          ),
+        );
+      },
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "MediaFiles", id: projectId },
         { type: "Projects", id: projectId },

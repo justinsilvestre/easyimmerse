@@ -61,7 +61,7 @@ export function ProjectScreen({
 
 /**
  * The reader for an ebook or a text file, and the media screen for anything else.
- * A file added a moment ago may be missing from the list until it is fetched again, and waits for it.
+ * The file's name decides which, so while the list is being fetched without the file in it, the screen waits.
  */
 function OpenFileScreen({
   project,
