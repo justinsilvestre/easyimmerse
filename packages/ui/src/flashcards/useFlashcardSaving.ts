@@ -17,7 +17,6 @@ import {
   type EditedFlashcardAction,
 } from "./editedFlashcard.ts";
 import { isAwaitingLookup, isSaveAsked } from "./saveStage.ts";
-import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
 import { useOffScreenSaving } from "./useOffScreenSaving.ts";
 
 /**
@@ -31,7 +30,7 @@ import { useOffScreenSaving } from "./useOffScreenSaving.ts";
 export function useFlashcardSaving(
   edited: EditedFlashcard | null,
   dispatchEdited: Dispatch<EditedFlashcardAction>,
-  requests: ReturnType<typeof useFlashcardRequests>,
+  projectId: string,
   openSession: RefObject<CardSession | null>,
 ) {
   const dispatch = useAppDispatch();
@@ -40,7 +39,7 @@ export function useFlashcardSaving(
     replaceOpenCard(() =>
       dispatchEdited({ type: "restored", card, session: createCardSession() }),
     );
-  const offScreen = useOffScreenSaving(requests, reopen);
+  const offScreen = useOffScreenSaving(projectId, reopen);
   const [isSaved, setSaved] = useState(false);
   const isOnScreen = (card: EditedFlashcard) =>
     offScreen.isScreenMounted() && openSession.current === card.session;
@@ -94,13 +93,14 @@ export function useFlashcardSaving(
       saving.then(
         () => {
           const wasOnScreen = isOnScreen(card);
+          offScreen.unlistSaved(card);
           dispatchEdited({ type: "saved", session: card.session });
           if (wasOnScreen) setSaved(true);
         },
         (error: unknown) => {
           const wasOnScreen = isOnScreen(card);
           dispatchEdited({ type: "saveFailed", session: card.session });
-          if (!wasOnScreen) return offScreen.showFailure(card, error);
+          if (!wasOnScreen) return offScreen.listFailure(card, error);
           dispatch(
             actions.notificationRequested("The flashcard could not be saved"),
           );
@@ -133,7 +133,7 @@ export function useFlashcardSaving(
     discard: (card: EditedFlashcard) => {
       dispatchEdited({ type: "closed" });
       offScreen.cleanUpAfterDiscard(card);
-      if (card.isChanged) offScreen.showDiscarded(card);
+      if (card.isChanged) offScreen.showClosed(card);
     },
     rememberLookup: offScreen.rememberLookup,
     replace: offScreen.replace,

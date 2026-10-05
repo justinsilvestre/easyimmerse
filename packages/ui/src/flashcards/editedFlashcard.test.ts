@@ -589,6 +589,10 @@ describe("reduceEditedFlashcard on restored", () => {
     expect(restore(changed)?.editor.content.l1_definition).toBe("a pet");
   });
 
+  it("counts the card as changed, since its edits are saved nowhere", () => {
+    expect(restore(startedFrom(createDraft()))?.isChanged).toBe(true);
+  });
+
   it("opens the card for editing again", () => {
     const sending = reduceAll(
       startedFrom(createDraft()),

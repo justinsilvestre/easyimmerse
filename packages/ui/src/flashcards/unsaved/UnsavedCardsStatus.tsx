@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { useId, useState, useSyncExternalStore } from "react";
 import { Button } from "../../components/Button.tsx";
 import { IconButton } from "../../components/IconButton.tsx";
-import { useUnsavedCards } from "./UnsavedCardsContext.tsx";
+import { useUnsavedCards } from "../SharedSavingContext.tsx";
 import type { ListedUnsavedCard } from "./unsavedCardStore.ts";
 import { useUnsavedCardActions } from "./useUnsavedCardActions.ts";
 
@@ -102,7 +102,10 @@ function UnsavedCardItem({ card }: { card: ListedUnsavedCard }) {
         <Button
           size="sm"
           aria-label={`Open “${word}”`}
-          onClick={() => actions.open(card.flashcardId)}
+          aria-disabled={card.isRetrying || undefined}
+          onClick={() => {
+            if (!card.isRetrying) actions.open(card.flashcardId);
+          }}
         >
           Open
         </Button>
@@ -111,7 +114,10 @@ function UnsavedCardItem({ card }: { card: ListedUnsavedCard }) {
         size="sm"
         variant="danger"
         aria-label={`Discard “${word}”`}
-        onClick={() => actions.discard(card.flashcardId)}
+        aria-disabled={card.isRetrying || undefined}
+        onClick={() => {
+          if (!card.isRetrying) actions.discard(card.flashcardId);
+        }}
       >
         Discard
       </Button>

@@ -122,9 +122,11 @@ export function reduceEditedFlashcard(
         session: action.session,
       };
     case "restored":
+      // A restored card holds edits that are saved nowhere, which closing it would lose.
       return {
         ...action.card,
         stage: "editing",
+        isChanged: true,
         session: action.session,
       };
     case "edited":
@@ -230,6 +232,11 @@ function withScreenshot(edited: NewFlashcard): EditedFlashcard {
     ...edited,
     editor: { ...edited.editor, content: { ...content, screenshot } },
   };
+}
+
+/** The id a card's flashcard has, or will be created under. */
+export function flashcardIdOf(card: EditedFlashcard): string {
+  return card.kind === "existing" ? card.flashcard.id : card.flashcardId;
 }
 
 export function segmentIdOf(edited: EditedFlashcard): string {

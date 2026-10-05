@@ -1,26 +1,12 @@
+import type { FlashcardContent } from "@easyimmerse/types";
 import type { EditedFlashcard } from "../editedFlashcard.ts";
-
-/** A card that left the editor and could not be saved, with its edits. */
-export type UnsavedCard = {
-  /** The id the flashcard has, or will be created under. */
-  flashcardId: string;
-  card: EditedFlashcard;
-  projectId: string;
-  /** The media file whose screen edits the card, or null when the card has none. */
-  mediaFileId: string | null;
-  /** Whether the server refused the save, so that sending it again cannot succeed. */
-  isRejected: boolean;
-  /** Sends the card again. */
-  retry: () => void;
-  /** Takes back whatever a save of the card may have left on the server, once the user discards it. */
-  discard: () => void;
-  /** The notice that tells of the card on its own, as a rejected save has, which goes once the card leaves the list. */
-  noticeId?: number;
-};
+import type { UnsavedCard } from "./unsavedCard.ts";
 
 export type ListedUnsavedCard = UnsavedCard & {
   /** Whether a retry the user asked for is under way. */
-  isRetrying: boolean;
+  readonly isRetrying: boolean;
+  /** Whether the user asked to open the card, which stays listed until the editor of its media file takes it. */
+  readonly isOpening: boolean;
 };
 
 /**
@@ -29,7 +15,6 @@ export type ListedUnsavedCard = UnsavedCard & {
  */
 export function createUnsavedCardStore() {
   let cards: readonly ListedUnsavedCard[] = [];
-  let opening: UnsavedCard | null = null;
   const listeners = new Set<() => void>();
   const set = (next: readonly ListedUnsavedCard[]) => {
     cards = next;
@@ -37,21 +22,30 @@ export function createUnsavedCardStore() {
   };
   const find = (flashcardId: string) =>
     cards.find((listed) => listed.flashcardId === flashcardId);
-  const remove = (flashcardId: string) => {
-    const listed = find(flashcardId);
-    if (!listed) return undefined;
-    set(cards.filter((other) => other !== listed));
-    return listed;
-  };
-  const retry = (flashcardId: string) => {
-    const listed = find(flashcardId);
-    if (!listed || listed.isRejected) return;
+  const change = (
+    flashcardId: string,
+    changed: (listed: ListedUnsavedCard) => ListedUnsavedCard,
+  ) =>
     set(
-      cards.map((other) =>
-        other === listed ? { ...listed, isRetrying: true } : other,
+      cards.map((listed) =>
+        listed.flashcardId === flashcardId ? changed(listed) : listed,
       ),
     );
-    listed.retry();
+  const remove = (flashcardId: string) => {
+    const listed = find(flashcardId);
+    if (listed) set(cards.filter((other) => other !== listed));
+    return listed;
+  };
+  /** Sends a card again through `send`, which tells whether it sent anything, and marks the card as being saved if it did. */
+  const retry = (flashcardId: string, send: (card: UnsavedCard) => boolean) => {
+    const listed = find(flashcardId);
+    if (!listed || listed.isRejected || listed.isRetrying) return;
+    if (!send(listed)) return;
+    change(flashcardId, (sent) => ({
+      ...sent,
+      isRetrying: true,
+      isOpening: false,
+    }));
   };
   return {
     list: () => cards,
@@ -61,38 +55,61 @@ export function createUnsavedCardStore() {
         listeners.delete(listener);
       };
     },
+    find,
     /** Lists a card, in place of any listed under the same flashcard id. */
     put(card: UnsavedCard) {
-      const listed = { ...card, isRetrying: false };
+      const listed = { ...card, isRetrying: false, isOpening: false };
       if (find(card.flashcardId) === undefined) return set([...cards, listed]);
-      set(
-        cards.map((other) =>
-          other.flashcardId === card.flashcardId ? listed : other,
-        ),
-      );
+      change(card.flashcardId, () => listed);
     },
     /** Takes a card off the list, as once it is saved or discarded, and returns it. */
     remove,
     retry,
-    retryAll() {
-      for (const listed of cards) retry(listed.flashcardId);
+    retryAll(send: (card: UnsavedCard) => boolean) {
+      for (const listed of cards) retry(listed.flashcardId, send);
     },
-    /** Takes a card off the list to be opened in the editor of its media file, which takes it with `takeOpening`. */
+    /** Changes the content of a listed card's edits, as a retiming from the waveform does. */
+    editContent(
+      flashcardId: string,
+      edit: (content: FlashcardContent) => FlashcardContent,
+    ) {
+      if (find(flashcardId))
+        change(flashcardId, (listed) => withContent(listed, edit));
+    },
+    /**
+     * Marks a card to be opened in the editor of its media file, which takes it with `takeOpening`, and returns it.
+     * A media file's editor has at most one card waiting to open. A card being saved again, or without a media file, cannot be opened.
+     */
     requestOpen(flashcardId: string) {
-      const listed = remove(flashcardId);
-      if (!listed) return undefined;
-      opening = listed;
-      for (const listener of listeners) listener();
+      const listed = find(flashcardId);
+      if (!listed || listed.isRetrying || listed.mediaFileId === null)
+        return undefined;
+      set(
+        cards.map((other) =>
+          other.mediaFileId === listed.mediaFileId
+            ? { ...other, isOpening: other === listed }
+            : other,
+        ),
+      );
       return listed;
     },
-    /** Hands the editor of a media file the card waiting to be opened there, if there is one. */
+    /** Takes off the list, and hands to the editor of a media file, the card waiting to be opened there, if there is one. */
     takeOpening(mediaFileId: string): EditedFlashcard | undefined {
-      if (opening?.mediaFileId !== mediaFileId) return undefined;
-      const { card } = opening;
-      opening = null;
-      return card;
+      const opening = cards.find(
+        (listed) => listed.isOpening && listed.mediaFileId === mediaFileId,
+      );
+      return opening && remove(opening.flashcardId)?.card;
     },
   };
 }
 
 export type UnsavedCardStore = ReturnType<typeof createUnsavedCardStore>;
+
+function withContent(
+  listed: ListedUnsavedCard,
+  edit: (content: FlashcardContent) => FlashcardContent,
+): ListedUnsavedCard {
+  const { card } = listed;
+  const editor = { ...card.editor, content: edit(card.editor.content) };
+  return { ...listed, card: { ...card, editor, isChanged: true } };
+}

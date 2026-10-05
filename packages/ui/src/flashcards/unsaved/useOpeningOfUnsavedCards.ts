@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { EditedFlashcard } from "../editedFlashcard.ts";
-import { useUnsavedCards } from "./UnsavedCardsContext.tsx";
+import { useUnsavedCards } from "../SharedSavingContext.tsx";
 
 /**
  * Opens in this media file's editor an unsaved card the user chose to open from the list,

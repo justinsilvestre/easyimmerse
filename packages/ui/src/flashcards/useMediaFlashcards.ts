@@ -10,11 +10,12 @@ import {
   flashcardsOnWaveform,
 } from "./editedFlashcard.ts";
 import type { EditorAction } from "./editFlashcard.ts";
-import { flashcardRetiming } from "./flashcardRetiming.ts";
+import { flashcardRetiming, type Retiming } from "./flashcardRetiming.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
+import { useUnsavedCards } from "./SharedSavingContext.tsx";
 import { useOpeningOfUnsavedCards } from "./unsaved/useOpeningOfUnsavedCards.ts";
+import { useUnsavedCardActions } from "./unsaved/useUnsavedCardActions.ts";
 import { useEditedFlashcard } from "./useEditedFlashcard.ts";
-import { useFlashcardRequests } from "./useFlashcardRequests.ts";
 import { useFlashcardSaving } from "./useFlashcardSaving.ts";
 
 const noFlashcards: readonly Flashcard[] = [];
@@ -44,17 +45,30 @@ export function useMediaFlashcards(
   useEffect(() => {
     if (hasScreenshots) dispatchEdited({ type: "screenshotsAvailable" });
   }, [hasScreenshots, dispatchEdited]);
-  const requests = useFlashcardRequests(projectId);
+  const unsavedCards = useUnsavedCards();
+  const unsavedCardActions = useUnsavedCardActions();
   const edit = (action: EditorAction) =>
     dispatchEdited({ type: "edited", action });
   const saving = useFlashcardSaving(
     edited,
     dispatchEdited,
-    requests,
+    projectId,
     openSession,
   );
   const { replaceOpenCard } = saving;
   useOpeningOfUnsavedCards(mediaFileId, saving.reopen);
+  /** Retimes a card that is not open: its saved content at once, after any earlier work on it, and its edits if it is listed as not saved. */
+  const retimeNow = (id: string, retiming: Retiming) => {
+    unsavedCards.editContent(id, retiming);
+    const flashcard = flashcards.find((listed) => listed.id === id);
+    if (!flashcard) return;
+    const { content } = saving.latestOf(flashcard);
+    const retimed = retiming(content);
+    if (retimed === content) return;
+    saving
+      .replace(flashcard, { content: retimed })
+      .catch(() => notify("The flashcard could not be saved"));
+  };
   return {
     flashcards,
     segments: flashcardSegmentsOf(flashcardsOnWaveform(flashcards, edited)),
@@ -96,8 +110,10 @@ export function useMediaFlashcards(
     },
     /**
      * Opens a saved card as last sent, withdrawing the Undo of its last save. The card it replaces is saved as it leaves.
+     * A card listed as not saved opens with its edits, as its Open in the list does.
      */
     open: (id: string) => {
+      if (unsavedCards.find(id)) return unsavedCardActions.open(id);
       const listed = flashcards.find((card) => card.id === id);
       if (!listed) return;
       // Undoing the save now would change the card under the editor, so only saving it again from there remains.
@@ -125,10 +141,6 @@ export function useMediaFlashcards(
         .then(close)
         .catch(() => notify("The flashcard could not be deleted"));
     },
-    ...flashcardRetiming(flashcards, edited, edit, (flashcard, changes) =>
-      saving
-        .replace(flashcard, changes)
-        .catch(() => notify("The flashcard could not be saved")),
-    ),
+    ...flashcardRetiming(edited, edit, retimeNow),
   };
 }

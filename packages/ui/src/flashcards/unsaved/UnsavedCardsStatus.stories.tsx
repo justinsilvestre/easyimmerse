@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect } from "react";
 import { withAppStore } from "../../storybook/withAppStore.tsx";
+import { useUnsavedCards } from "../SharedSavingContext.tsx";
 import { exampleUnsavedCard } from "./exampleUnsavedCard.ts";
-import { useUnsavedCards } from "./UnsavedCardsContext.tsx";
-import type { UnsavedCard } from "./unsavedCardStore.ts";
+import type { UnsavedCard } from "./unsavedCard.ts";
 
 /** Lists the given cards as not saved; the app's notice region then shows the status line. */
 function ListedCards({ cards }: { cards: UnsavedCard[] }) {

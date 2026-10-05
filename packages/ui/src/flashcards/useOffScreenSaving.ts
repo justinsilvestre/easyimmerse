@@ -1,115 +1,45 @@
-import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
-import { useState } from "react";
-import { saveRequestLimitMs } from "../lookup/lookupTiming.ts";
 import type { EditedFlashcard } from "./editedFlashcard.ts";
-import { draftOfFlashcard } from "./flashcardDrafts.ts";
-import { createSaveQueue } from "./saveQueue.ts";
 import { isSaveAsked } from "./saveStage.ts";
-import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
+import { useUnsavedCardActions } from "./unsaved/useUnsavedCardActions.ts";
+import { useClosedCardNotices } from "./useClosedCardNotices.ts";
 import { useLateLookupSaves } from "./useLateLookupSaves.ts";
-import { useLeftCardNotices } from "./useLeftCardNotices.ts";
-import { useSaveUndo } from "./useSaveUndo.ts";
-import { flashcardIdOf, useTimedOutSaves } from "./useTimedOutSaves.ts";
-import { useUnsavedWorkTracking } from "./useUnsavedWorkTracking.ts";
-import { withTimeLimit } from "./withTimeLimit.ts";
-
-type FlashcardRequests = ReturnType<typeof useFlashcardRequests>;
+import { useQueuedSaving } from "./useQueuedSaving.ts";
 
 /**
- * Sends flashcard saves through one queue, and saves the cards that leave the editor.
+ * Saves the cards that leave a media screen's editor, through the app's save queue, for the project `projectId`.
  * A card saved without the user pressing Save gains an Undo notice, as `useSaveUndo` describes;
- * a failed save and a discarded card leave the notices `useLeftCardNotices` describes.
+ * a failed save is listed, as `useUnsavedCardActions` describes; a card closed without saving gains the notice `useClosedCardNotices` describes.
  * `reopen` brings a card back to the editor.
  */
 export function useOffScreenSaving(
-  requests: FlashcardRequests,
+  projectId: string,
   reopen: (card: EditedFlashcard) => void,
 ) {
-  const [queue] = useState(createSaveQueue);
-  const leftCards = useLeftCardNotices(requests.projectId, reopen);
-  const { track } = useUnsavedWorkTracking();
-  const undo = useSaveUndo(queue, requests);
-  const timedOut = useTimedOutSaves(queue, requests);
-  const lateLookups = useLateLookupSaves((card) =>
-    saveOffScreen(card, !isSaveAsked(card.stage)),
-  );
-  /**
-   * Sends a card's save, or returns undefined when this opening's save is already under way.
-   * The caller counts the save, with what it does on settling, as unsaved work through `track`.
-   * A request left unanswered for `saveRequestLimitMs` counts as failed.
-   */
-  const send = (card: EditedFlashcard) => {
-    const flashcardId = flashcardIdOf(card);
-    const before = beforeOf(card);
-    undo.withdraw(flashcardId);
-    const saving = queue.add(card, () =>
-      withTimeLimit(
-        (signal) => requests.send(card, signal),
-        saveRequestLimitMs,
-      ),
-    );
-    return saving && timedOut.watch(flashcardId, before, saving);
+  const queued = useQueuedSaving();
+  const unsaved = useUnsavedCardActions();
+  const closedCards = useClosedCardNotices(reopen);
+  /** Saves a card that has left the editor, with an Undo notice when the user did not ask for the save. */
+  const save = (card: EditedFlashcard) => {
+    unsaved.saveInBackground(card, projectId, !isSaveAsked(card.stage));
   };
-  /** Lists a card whose save failed with `error` among the unsaved flashcards. */
-  const showFailure = (card: EditedFlashcard, error: unknown) =>
-    leftCards.listFailure(card, error, {
-      retry: () => saveOffScreen(card, false),
-      discard: () => timedOut.cleanUpAfterDiscard(card),
-    });
-  /** A saved flashcard as the latest work on it left it, which the list of flashcards may not show yet. */
-  const latestOf = (flashcard: Flashcard) => queue.latestOf(flashcard);
-  /** What a card's flashcard holds before its save: the draft last sent for a saved one, or nothing for a new one. */
-  const beforeOf = (card: EditedFlashcard) =>
-    card.kind === "existing"
-      ? draftOfFlashcard(latestOf(card.flashcard))
-      : null;
-  function saveOffScreen(card: EditedFlashcard, offersUndo: boolean) {
-    const before = beforeOf(card);
-    const saving = send(card);
-    if (!saving) return;
-    track(
-      saving.then(
-        (saved) => {
-          leftCards.listSaved(card);
-          if (offersUndo) undo.offer(card, saved, before);
-        },
-        (error: unknown) => showFailure(card, error),
-      ),
-    );
-  }
+  const lateLookups = useLateLookupSaves(save);
   return {
-    isScreenMounted: leftCards.isScreenMounted,
-    withdrawUndo: undo.withdraw,
-    /** Deletes a saved flashcard after any earlier work on it. */
-    remove: (flashcard: Flashcard) => {
-      undo.withdraw(flashcard.id);
-      return track(
-        queue.addFor(flashcard.id, () => requests.remove(flashcard)),
-      );
-    },
-    /** Saves changes to a flashcard that is not open in the editor, after any earlier work on it. */
-    replace: (flashcard: Flashcard, changes: Partial<FlashcardDraft>) => {
-      undo.withdraw(flashcard.id);
-      const latest = latestOf(flashcard);
-      const draft = { ...draftOfFlashcard(latest), ...changes };
-      return track(
-        queue.addFor(
-          flashcard.id,
-          () => requests.replace(latest, changes),
-          draft,
-        ),
-      );
-    },
-    latestOf,
-    send,
-    track,
-    showFailure,
-    /** Saves a card that has left the editor, with an Undo notice when the user did not ask for the save. */
-    save: (card: EditedFlashcard) =>
-      saveOffScreen(card, !isSaveAsked(card.stage)),
+    isScreenMounted: closedCards.isScreenMounted,
+    withdrawUndo: queued.undo.withdraw,
+    remove: queued.remove,
+    replace: queued.replace,
+    latestOf: queued.latestOf,
+    track: queued.track,
+    /** Sends a card's save, or returns undefined when this opening's save is already under way. */
+    send: (card: EditedFlashcard) => queued.send(card, projectId),
+    listFailure: (card: EditedFlashcard, error: unknown) =>
+      unsaved.listFailure(card, projectId, error),
+    unlistSaved: unsaved.unlistSaved,
+    save,
     saveAfterLookup: lateLookups.saveAfterLookup,
     rememberLookup: lateLookups.rememberLookup,
-    showDiscarded: leftCards.showDiscarded,
-    cleanUpAfterDiscard: timedOut.cleanUpAfterDiscard,
+    showClosed: closedCards.showClosed,
+    cleanUpAfterDiscard: (card: EditedFlashcard) =>
+      queued.cleanUpAfterDiscard(card, projectId),
   };
 }

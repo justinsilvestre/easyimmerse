@@ -1,3 +1,6 @@
+import type { BackendRequest } from "@easyimmerse/backend";
+import { resetBackend } from "@easyimmerse/backend";
+import type { NewFlashcard } from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -6,23 +9,45 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { NavigationActionsContext } from "../../navigationContext.ts";
 import { createNoticeStore } from "../../notices/noticeStore.ts";
 import { AppStoreProviders } from "../../testSupport/AppStoreProviders.tsx";
+import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
 import { createTestAppStore } from "../../testSupport/createTestAppStore.ts";
+import { fixtureResponses } from "../../testSupport/fixtureResponses.ts";
+import { savedFlashcard } from "../../testSupport/renderMediaScreen.tsx";
+import { createSharedSaving } from "../sharedSaving.ts";
 import { exampleUnsavedCard } from "./exampleUnsavedCard.ts";
-import {
-  createUnsavedCardStore,
-  type UnsavedCard,
-} from "./unsavedCardStore.ts";
+import type { UnsavedCard } from "./unsavedCard.ts";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  resetBackend();
+});
+
+/** A backend that records flashcard saves and answers them with success, or, when `savesHang`, never. */
+function createSavingBackend(savesHang: boolean) {
+  const backend = createFakeBackendClient({
+    ...fixtureResponses,
+    "POST /projects/p1/flashcards": savedFlashcard,
+  });
+  const saves: BackendRequest[] = [];
+  const send = <T,>(request: BackendRequest) => {
+    if (request.method !== "POST") return backend.send<T>(request);
+    saves.push(request);
+    if (savesHang) return new Promise<never>(() => undefined);
+    return backend.send<T>(request);
+  };
+  return { saves, send };
+}
 
 /** Renders the app's providers, whose notice region shows the status line, over the given unsaved cards. */
-function renderStatus(...cards: UnsavedCard[]) {
-  const { store, playerRegistry } = createTestAppStore();
-  const unsavedCardStore = createUnsavedCardStore();
+function renderStatusOver(cards: UnsavedCard[], savesHang: boolean) {
+  const backend = createSavingBackend(savesHang);
+  const { store, playerRegistry } = createTestAppStore(backend);
+  const sharedSaving = createSharedSaving();
+  const unsavedCardStore = sharedSaving.unsavedCards;
   const noticeStore = createNoticeStore();
   const openedMediaFiles: string[] = [];
   for (const card of cards) unsavedCardStore.put(card);
@@ -39,14 +64,25 @@ function renderStatus(...cards: UnsavedCard[]) {
         store={store}
         playerRegistry={playerRegistry}
         noticeStore={noticeStore}
-        unsavedCardStore={unsavedCardStore}
+        sharedSaving={sharedSaving}
       >
         <p>Screen</p>
       </AppStoreProviders>
     </NavigationActionsContext>,
   );
-  return { unsavedCardStore, noticeStore, openedMediaFiles };
+  return { unsavedCardStore, openedMediaFiles, saves: backend.saves };
 }
+
+/** Renders the status line over the given cards, with saves that succeed. */
+const renderStatus = (...cards: UnsavedCard[]) =>
+  renderStatusOver(cards, false);
+
+/** The word each save request sent. */
+const savedWords = (saves: BackendRequest[]) =>
+  saves.map(
+    (request) =>
+      (request.body?.value as NewFlashcard | undefined)?.draft.content.word,
+  );
 
 /** The status line's count, the live paragraph of the notice region. */
 const status = () => {
@@ -113,30 +149,74 @@ describe("UnsavedCardsStatus", () => {
     expect(status().textContent).toBe("1 flashcard not saved");
   });
 
-  it("sends a flashcard again on its Retry", () => {
-    const retries: string[] = [];
-    renderStatus(
-      exampleUnsavedCard("Hund", { retry: () => retries.push("Hund") }),
-    );
+  it("sends a flashcard again on its Retry", async () => {
+    const { saves } = renderStatus(exampleUnsavedCard("Hund"));
     expand();
     fireEvent.click(screen.getByRole("button", { name: "Retry “Hund”" }));
-    expect(retries).toEqual(["Hund"]);
+    await vi.waitFor(() => expect(savedWords(saves)).toEqual(["Hund"]));
   });
 
-  it("sends every flashcard again on Retry all", () => {
-    const retries: string[] = [];
-    renderStatus(
-      exampleUnsavedCard("Hund", { retry: () => retries.push("Hund") }),
-      exampleUnsavedCard("Katze", { retry: () => retries.push("Katze") }),
+  it("sends every flashcard again on Retry all", async () => {
+    const { saves } = renderStatus(
+      exampleUnsavedCard("Hund"),
+      exampleUnsavedCard("Katze"),
     );
     fireEvent.click(screen.getByRole("button", { name: "Retry all" }));
-    expect(retries).toEqual(["Hund", "Katze"]);
+    await vi.waitFor(() =>
+      expect(savedWords(saves)).toEqual(["Hund", "Katze"]),
+    );
+  });
+
+  it("takes a flashcard off the list once its retry succeeds", async () => {
+    renderStatus(exampleUnsavedCard("Hund"));
+    expand();
+    fireEvent.click(screen.getByRole("button", { name: "Retry “Hund”" }));
+    await vi.waitFor(() => expect(status().textContent).toBe(""));
   });
 
   it("offers no Retry for a flashcard the server refused", () => {
     renderStatus(exampleUnsavedCard("Hund", { isRejected: true }));
     expand();
     expect(screen.queryByRole("button", { name: "Retry “Hund”" })).toBeNull();
+  });
+
+  describe("while a retry is under way", () => {
+    function retryHund() {
+      const rendered = renderStatusOver([exampleUnsavedCard("Hund")], true);
+      expand();
+      fireEvent.click(screen.getByRole("button", { name: "Retry “Hund”" }));
+      return rendered;
+    }
+
+    const disabledOf = (name: string) =>
+      screen.getByRole("button", { name }).getAttribute("aria-disabled");
+
+    it("shows the flashcard as being saved", () => {
+      retryHund();
+      expect(screen.getByText("Hund (saving…)")).toBeDefined();
+    });
+
+    it("marks Discard unavailable", () => {
+      retryHund();
+      expect(disabledOf("Discard “Hund”")).toBe("true");
+    });
+
+    it("keeps the flashcard listed on Discard", () => {
+      retryHund();
+      fireEvent.click(screen.getByRole("button", { name: "Discard “Hund”" }));
+      expect(status().textContent).toBe("1 flashcard not saved");
+    });
+
+    it("marks Open unavailable", () => {
+      retryHund();
+      expect(disabledOf("Open “Hund”")).toBe("true");
+    });
+
+    it("opens nothing on Open", () => {
+      const { openedMediaFiles } = retryHund();
+      fireEvent.click(screen.getByRole("button", { name: "Open “Hund”" }));
+      expect(openedMediaFiles).toEqual([]);
+    });
   });
 
   it("opens a flashcard's media file on its Open", () => {
@@ -146,25 +226,30 @@ describe("UnsavedCardsStatus", () => {
     expect(openedMediaFiles).toEqual(["p1/m1"]);
   });
 
+  it("keeps a flashcard listed on Open until its screen takes it", () => {
+    renderStatus(exampleUnsavedCard("Hund"));
+    expand();
+    fireEvent.click(screen.getByRole("button", { name: "Open “Hund”" }));
+    expect(status().textContent).toBe("1 flashcard not saved");
+  });
+
+  it("offers no Open for a flashcard without a media file", () => {
+    renderStatus(exampleUnsavedCard("Hund", { mediaFileId: null }));
+    expand();
+    expect(screen.queryByRole("button", { name: "Open “Hund”" })).toBeNull();
+  });
+
   describe("on Discard", () => {
     function discardHund() {
-      const discards: string[] = [];
-      const rendered = renderStatus(
-        exampleUnsavedCard("Hund", { discard: () => discards.push("Hund") }),
-      );
+      const rendered = renderStatus(exampleUnsavedCard("Hund"));
       expand();
       fireEvent.click(screen.getByRole("button", { name: "Discard “Hund”" }));
-      return { ...rendered, discards };
+      return rendered;
     }
 
     it("takes the flashcard off the list", () => {
       discardHund();
       expect(status().textContent).toBe("");
-    });
-
-    it("takes back what a save of it may have left", () => {
-      const { discards } = discardHund();
-      expect(discards).toEqual(["Hund"]);
     });
 
     it("offers Undo in a notice", () => {

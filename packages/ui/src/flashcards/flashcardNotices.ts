@@ -11,16 +11,16 @@ export const flashcardNotices = {
   }),
   /**
    * The server refused a card's save, so that sending it again cannot succeed. The card stays in the list of unsaved flashcards;
-   * dismissing the notice only hides it.
+   * dismissing the notice only hides it. A card without a media file has no editor to open in, so it has no Open.
    */
   saveRejected: (
     word: string,
-    { open, discard }: { open: () => void; discard: () => void },
+    { open, discard }: { open?: () => void; discard: () => void },
   ): NoticeContent => ({
     tone: "danger",
     message: `The server refused the flashcard for “${word}”.`,
     actions: [
-      { label: "Open", onSelect: open },
+      ...(open ? [{ label: "Open", onSelect: open }] : []),
       { label: "Discard", onSelect: discard },
     ],
     isTransient: false,

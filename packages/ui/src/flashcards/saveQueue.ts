@@ -91,6 +91,8 @@ export function createSaveQueue() {
   };
 }
 
+export type SaveQueue = ReturnType<typeof createSaveQueue>;
+
 function isFlashcard(result: unknown, id: string): result is Flashcard {
   return (
     typeof result === "object" &&
