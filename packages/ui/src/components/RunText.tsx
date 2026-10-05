@@ -6,7 +6,7 @@ export type Range = { from: number; to: number };
 
 /**
  * The text of a run written without spaces, with the characters a lookup matched highlighted,
- * and, while the run has keyboard focus, the character a lookup from the keyboard would start from marked and announced.
+ * and, while the run has keyboard focus, the character a lookup from the keyboard would start from marked.
  */
 export function RunText({
   text,
@@ -41,12 +41,6 @@ export function RunText({
           {text.slice(from, to)}
         </span>
       ))}
-      {marked && (
-        // Mounted as the run gains focus, so that what it holds then goes unannounced, and each move after is announced.
-        <span aria-live="polite" className="sr-only">
-          Looks up from {text.slice(marked.from, marked.to)}
-        </span>
-      )}
     </>
   );
 }

@@ -143,7 +143,7 @@ export function useWordGestures(gestures: WordGestures) {
       const isKeyboard = event.detail === 0;
       if (!isKeyboard && press.takeHeld()) return;
       if (isKeyboard) {
-        const offset = keyboardStart.offsetIn(part.start) ?? 0;
+        const offset = keyboardStart.offsetIn(part) ?? 0;
         return reportClick(
           event,
           hitAt(part, event.currentTarget, offset, "keyboard"),
@@ -155,15 +155,14 @@ export function useWordGestures(gestures: WordGestures) {
       reportClick(event, pointerHit(part, event.currentTarget, point, input));
     },
     ...(part.isUnspaced && {
-      onFocus: () => keyboardStart.focus(part.start),
-      onBlur: () => keyboardStart.blur(part.start),
+      onFocus: () => keyboardStart.focus(part),
+      onBlur: () => keyboardStart.blur(part),
       onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
-        if (keyboardStart.move(part.start, part.text, event))
-          event.preventDefault();
+        if (keyboardStart.move(part, event)) event.preventDefault();
       },
     }),
   });
-  return { handlersFor, keyboardStartIn: keyboardStart.offsetIn };
+  return { handlersFor, keyboardStart };
 }
 
 /** A word of clickable text, as `splitIntoWords` finds it. */

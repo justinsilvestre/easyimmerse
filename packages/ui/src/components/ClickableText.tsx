@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { useEffect } from "react";
 import {
   clickableWordAttribute,
   lookupTriggerAttribute,
@@ -90,22 +91,28 @@ export function ClickableText({
   activeWord?: ActiveWord;
   gestures?: WordGestures;
 }) {
-  const { handlersFor, keyboardStartIn } = useWordGestures(gestures);
+  const { handlersFor, keyboardStart } = useWordGestures(gestures);
+  const parts = splitIntoWords(text);
+  const { keepWithin } = keyboardStart;
+  useEffect(() => {
+    keepWithin(splitIntoWords(text).filter((part) => part.isUnspaced));
+  }, [text, keepWithin]);
   return (
     <span className="whitespace-pre-line">
-      {splitIntoWords(text).map((part) => {
+      {parts.map((part) => {
         if (!part.isWord) return part.text;
         const isActive =
           activeWord !== undefined && contains(part, activeWord.start);
-        const keyboardStart = part.isUnspaced
-          ? keyboardStartIn(part.start)
-          : null;
+        const runStart = part.isUnspaced ? keyboardStart.offsetIn(part) : null;
         return (
           <button
             key={part.start}
             type="button"
             // The highlight splits a run into pieces, which must not split its name.
             aria-label={part.isUnspaced ? part.text : undefined}
+            aria-keyshortcuts={
+              part.isUnspaced ? "ArrowLeft ArrowRight" : undefined
+            }
             aria-haspopup="dialog"
             aria-expanded={isActive || undefined}
             aria-controls={isActive ? activeWord?.popupId : undefined}
@@ -124,7 +131,7 @@ export function ClickableText({
                 matched={
                   isActive && activeWord ? matchedRange(part, activeWord) : null
                 }
-                keyboardStart={keyboardStart}
+                keyboardStart={runStart}
               />
             ) : (
               part.text
@@ -132,6 +139,10 @@ export function ClickableText({
           </button>
         );
       })}
+      {/* One region for the whole text, outside the buttons, where screen readers announce reliably. */}
+      <span aria-live="polite" className="sr-only">
+        {keyboardStart.announcement()}
+      </span>
     </span>
   );
 }
