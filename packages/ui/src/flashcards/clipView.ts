@@ -4,8 +4,8 @@ import type { AudioClip } from "@easyimmerse/types";
 const keyStepMs = 100;
 const largeKeyStepMs = 1000;
 
-/** The shortest clip a handle can be dragged to. */
-const minClipMs = 200;
+/** The shortest a flashcard's audio clip can be made by moving either of its ends. */
+export const shortestClipMs = 200;
 
 /** How far past an edge a handle is held for the view to widen at full speed, and that speed in view spans per second. */
 const fullSpeedOvershootPx = 60;
@@ -153,7 +153,7 @@ export function peakSpan(
 
 /** Moves the clip's start, keeping it within the file and before the end. */
 export function moveClipStart(clip: AudioClip, startMs: number): AudioClip {
-  return { ...clip, start_ms: clamp(startMs, 0, clip.end_ms - minClipMs) };
+  return { ...clip, start_ms: clamp(startMs, 0, clip.end_ms - shortestClipMs) };
 }
 
 /** Moves the clip's end, keeping it after the start and within the file. */
@@ -164,7 +164,7 @@ export function moveClipEnd(
 ): AudioClip {
   return {
     ...clip,
-    end_ms: clamp(endMs, clip.start_ms + minClipMs, durationMs),
+    end_ms: clamp(endMs, clip.start_ms + shortestClipMs, durationMs),
   };
 }
 

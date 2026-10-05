@@ -5,6 +5,7 @@ import {
   moveClipStart,
   overshootPx,
   peakSpan,
+  shortestClipMs,
   timeAfterKey,
   timeAtX,
   viewAroundClip,
@@ -192,7 +193,7 @@ describe("peakSpan", () => {
 describe("moveClipStart", () => {
   it("keeps the start before the end", () => {
     expect(moveClipStart({ start_ms: 1000, end_ms: 2000 }, 1950).start_ms).toBe(
-      1800,
+      2000 - shortestClipMs,
     );
   });
 
