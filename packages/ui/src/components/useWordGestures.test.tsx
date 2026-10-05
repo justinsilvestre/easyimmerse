@@ -317,6 +317,89 @@ describe("useWordGestures", () => {
     });
   });
 
+  describe("with the keyboard in a run of Japanese", () => {
+    function focusRun(text: string) {
+      const run = word(text);
+      fireEvent.focus(run);
+      return run;
+    }
+
+    const press = (run: HTMLElement, key: string, times = 1) => {
+      for (let count = 0; count < times; count += 1)
+        fireEvent.keyDown(run, { key });
+    };
+
+    it("looks up from the character Right has moved to", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      const run = focusRun("映画を見る");
+      press(run, "ArrowRight", 3);
+      fireEvent.click(run, { detail: 0 });
+      expect(gestures).toEqual(["click 見る"]);
+    });
+
+    it("moves back with Left", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      const run = focusRun("映画を見る");
+      press(run, "ArrowRight", 3);
+      press(run, "ArrowLeft");
+      fireEvent.click(run, { detail: 0 });
+      expect(gestures).toEqual(["click を見る"]);
+    });
+
+    it("starts a flashcard from that character with Shift+Enter", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      const run = focusRun("映画を見る");
+      press(run, "ArrowRight", 3);
+      fireEvent.click(run, { detail: 0, shiftKey: true });
+      expect(gestures).toEqual(["doubleClick 見る"]);
+    });
+
+    it("steps over a character outside the Basic Multilingual Plane whole", () => {
+      const gestures = renderSentence({}, "𠮷野家");
+      const run = focusRun("𠮷野家");
+      press(run, "ArrowRight");
+      fireEvent.click(run, { detail: 0 });
+      expect(gestures).toEqual(["click 野家"]);
+    });
+
+    it("stops at the last character", () => {
+      const gestures = renderSentence({}, "見る");
+      const run = focusRun("見る");
+      press(run, "ArrowRight", 5);
+      fireEvent.click(run, { detail: 0 });
+      expect(gestures).toEqual(["click る"]);
+    });
+
+    it("stops at the first character", () => {
+      const gestures = renderSentence({}, "見る");
+      const run = focusRun("見る");
+      press(run, "ArrowLeft");
+      fireEvent.click(run, { detail: 0 });
+      expect(gestures).toEqual(["click 見る"]);
+    });
+
+    it("starts from the first character again once focus has left", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      const run = focusRun("映画を見る");
+      press(run, "ArrowRight", 3);
+      fireEvent.blur(run);
+      fireEvent.focus(run);
+      fireEvent.click(run, { detail: 0 });
+      expect(gestures).toEqual(["click 映画を見る"]);
+    });
+
+    it("leaves the arrow keys alone in a word of a spaced script", () => {
+      renderSentence();
+      const event = new KeyboardEvent("keydown", {
+        key: "ArrowRight",
+        bubbles: true,
+        cancelable: true,
+      });
+      word("rufe").dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+    });
+  });
+
   describe("on a touch screen", () => {
     it("reports two quick taps on a word as a double-click", () => {
       const gestures = renderSentence();

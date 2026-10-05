@@ -172,6 +172,34 @@ describe("ClickableText", () => {
     });
   });
 
+  describe("with the keyboard in a run of Japanese", () => {
+    function focusAndMoveRight(times: number) {
+      const { container } = render(<ClickableText text="映画を見る" />);
+      const run = screen.getByRole("button", { name: "映画を見る" });
+      fireEvent.focus(run);
+      for (let count = 0; count < times; count += 1)
+        fireEvent.keyDown(run, { key: "ArrowRight" });
+      return container;
+    }
+
+    it("marks the character a lookup would start from", () => {
+      const container = focusAndMoveRight(3);
+      expect(
+        container.querySelector("[data-keyboard-start]")?.textContent,
+      ).toBe("見");
+    });
+
+    it("announces the character a lookup would start from", () => {
+      focusAndMoveRight(3);
+      expect(screen.getByText("Looks up from 見")).toBeDefined();
+    });
+
+    it("keeps the run's name whole while a character is marked", () => {
+      focusAndMoveRight(3);
+      expect(screen.getByRole("button", { name: "映画を見る" })).toBeDefined();
+    });
+  });
+
   it("passes a clicked word's offset in the text", () => {
     const clicks: [string, number][] = [];
     render(
