@@ -38,7 +38,10 @@ export function FlashcardEditor({
   waveform: MediaWaveform | null;
   /** The image of the screenshot at its current time. Without it, no screenshot is shown. */
   screenshotUrl?: string | null;
-  /** Whether a save the user asked for waits for definitions still on their way, or is under way; Save does nothing meanwhile. */
+  /**
+   * Whether a save the user asked for waits for definitions still on their way, or is under way.
+   * Meanwhile Save does nothing and the fields are read-only, so that what is saved is what is shown.
+   */
   saveStatus?: "idle" | "waitingForDefinitions" | "saving";
   onSave: () => void;
   onDelete: () => void;
@@ -67,7 +70,7 @@ export function FlashcardEditor({
           state={state}
           languages={languages}
           dispatch={dispatch}
-          isReadOnly={saveStatus === "saving"}
+          isReadOnly={isSaveInert}
         />
         <MediaFields
           state={state}
@@ -79,7 +82,7 @@ export function FlashcardEditor({
           <TagsField
             label="Tags"
             isLabelBeside
-            isReadOnly={saveStatus === "saving"}
+            isReadOnly={isSaveInert}
             className="shrink-0"
             tags={content.tags}
             onChange={(tags) => dispatch({ type: "tagsChanged", tags })}

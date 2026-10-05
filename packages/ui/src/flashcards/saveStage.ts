@@ -18,7 +18,16 @@ export function isAwaitingLookup(stage: SaveStage): boolean {
   return stage === "awaitingLookup" || stage === "awaitingLookupToSave";
 }
 
-/** Tells whether a save is under way, during which the editor is read-only. */
+/** Tells whether the user has pressed Save, from when on the editor is read-only, so that what is saved is what was shown. */
+export function isLocked(stage: SaveStage): boolean {
+  return (
+    stage === "awaitingLookupToSave" ||
+    stage === "readyToSend" ||
+    stage === "sending"
+  );
+}
+
+/** Tells whether a save is under way, after which nothing may change the card it sent. */
 export function isSending(stage: SaveStage): boolean {
   return stage === "readyToSend" || stage === "sending";
 }

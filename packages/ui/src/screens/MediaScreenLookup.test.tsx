@@ -292,6 +292,20 @@ describe("MediaScreen lookup gestures", () => {
         expect(fieldValue("Definition (en)")).toBe("a small pet");
       });
 
+      it("saves at once once the word has been changed before Save", async () => {
+        const { client } = await doubleClickCat(lateLookup);
+        await advance(1500);
+        fireEvent.change(screen.getByLabelText("Word (de)"), {
+          target: { value: "Kater" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Save" }));
+        await vi.waitFor(() =>
+          expect(
+            requestsTo(client.requests, "POST", "/projects/p1/flashcards"),
+          ).toHaveLength(1),
+        );
+      });
+
       it("fills nothing once the word has been changed before the answer", async () => {
         await doubleClickCat(lateLookup);
         await advance(1500);
@@ -360,12 +374,12 @@ describe("MediaScreen lookup gestures", () => {
           ).toEqual([]);
         });
 
-        it("saves at once, as typed, once the word is changed", async () => {
-          const { client } = await pressSaveBeforeAnswer();
+        it("keeps the word as it was once Save is pressed", async () => {
+          await pressSaveBeforeAnswer();
           fireEvent.change(screen.getByLabelText("Word (de)"), {
             target: { value: "Kater" },
           });
-          await vi.waitFor(() => expect(savedWord(client)).toBe("Kater"));
+          expect(fieldValue("Word (de)")).toBe("cat");
         });
 
         it("saves a definition typed in before Save as typed, with the word from the answer", async () => {

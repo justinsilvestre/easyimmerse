@@ -12,6 +12,7 @@ import {
 } from "./editFlashcard.ts";
 import {
   isAwaitingLookup,
+  isLocked,
   isSending,
   type SaveStage,
   stageAfterLookup,
@@ -84,8 +85,8 @@ export function reduceEditedFlashcard(
         stage: "editing",
       };
     case "edited":
-      // The editor is read-only from then on, so that nothing typed is lost to the save under way.
-      return edited && !isSending(edited.stage)
+      // The editor is read-only once Save is pressed, so that what is saved is what the user saw.
+      return edited && !isLocked(edited.stage)
         ? withEdit(edited, action.action)
         : edited;
     case "lookupAnswered":
@@ -109,7 +110,10 @@ export function reduceEditedFlashcard(
         ? withStage(edited, "editing")
         : edited;
     case "screenshotsAvailable":
-      return edited?.kind === "new" ? withScreenshot(edited) : edited;
+      // A save under way would not hold a screenshot added now.
+      return edited?.kind === "new" && !isSending(edited.stage)
+        ? withScreenshot(edited)
+        : edited;
     case "closed":
       return null;
   }

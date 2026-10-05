@@ -190,8 +190,17 @@ describe("FlashcardEditor's save status", () => {
     ).toBe(true);
   });
 
-  it("leaves the text fields editable while the save waits for definitions", () => {
+  it("makes the text fields read-only while the save waits for definitions", () => {
     renderWithSaveStatus("waitingForDefinitions");
+    expect(
+      screen
+        .getAllByRole("textbox")
+        .every((field) => field.hasAttribute("readonly")),
+    ).toBe(true);
+  });
+
+  it("leaves the text fields editable until Save is pressed", () => {
+    renderWithSaveStatus("idle");
     expect(
       screen
         .getAllByRole("textbox")

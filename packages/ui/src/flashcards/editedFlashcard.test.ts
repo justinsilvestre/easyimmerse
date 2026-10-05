@@ -371,6 +371,35 @@ describe("reduceEditedFlashcard on its way to being saved", () => {
     expect(reduceAll(later, { type: "saved", source: saved })).toBe(later);
   });
 
+  it("ignores edits while a save waits for the lookup", () => {
+    const waiting = reduceAll(awaiting(createDraft()), {
+      type: "saveRequested",
+    });
+    expect(
+      reduceAll(waiting, {
+        type: "edited",
+        action: { type: "textChanged", key: "word", value: "飲む" },
+      }),
+    ).toBe(waiting);
+  });
+
+  it("adds no screenshot while the card is being sent, since the save under way would not hold it", () => {
+    const draft = {
+      ...createDraft(),
+      content: {
+        ...createDraft().content,
+        screenshot: null,
+        audio_context: { start_ms: 0, end_ms: 1000 },
+      },
+    };
+    const sending = reduceAll(
+      startedFrom(draft),
+      { type: "saveRequested" },
+      { type: "sendStarted" },
+    );
+    expect(reduceAll(sending, { type: "screenshotsAvailable" })).toBe(sending);
+  });
+
   it("ignores edits while the card is being sent", () => {
     const sending = reduceAll(
       startedFrom(createDraft()),
@@ -408,12 +437,10 @@ describe("reduceEditedFlashcard when the word is changed before its lookup answe
     expect(edited?.stage).toBe("editing");
   });
 
-  it("sends a waiting save at once", () => {
-    const edited = reduceAll(
-      awaiting(createDraft()),
-      { type: "saveRequested" },
-      typeWord("飲む"),
-    );
+  it("lets Save send at once afterwards", () => {
+    const edited = reduceAll(awaiting(createDraft()), typeWord("飲む"), {
+      type: "saveRequested",
+    });
     expect(edited?.stage).toBe("readyToSend");
   });
 
