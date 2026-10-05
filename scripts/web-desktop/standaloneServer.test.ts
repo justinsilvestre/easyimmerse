@@ -17,6 +17,7 @@ describe("standaloneServerCargoArgs", () => {
         "/cache",
         "--allow-local-paths",
         "--seed-placeholders",
+        "--seed-sample-content",
       ],
     ]);
   });

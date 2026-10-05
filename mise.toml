@@ -184,6 +184,7 @@ depends = ["web-dev:server", "web-dev:vite"]
 run = "cargo build -p easyimmerse-server"
 
 # The server keeps its data in .dev/ and seeds the placeholder projects only into a new database.
+# It gives them sample media and dictionaries once per database, so an older database receives them too.
 # Port 8788 leaves 8787 to the desktop app's embedded server.
 [tasks."web-dev:server"]
 depends = ["web-dev:build"]
@@ -191,7 +192,7 @@ env = { EASYIMMERSE_TOKEN = "dev" }
 run = '''
 mkdir -p .dev
 seed=$([ -e .dev/server.sqlite ] || echo --seed-placeholders)
-exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed
+exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed --seed-sample-content
 '''
 
 # Waits for the server build so that a compile error stops the task before Vite starts.
