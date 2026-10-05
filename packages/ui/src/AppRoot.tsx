@@ -1,4 +1,3 @@
-import { licenseNotices } from "@easyimmerse/licenses";
 import type {
   AppStore,
   BrowserFileRegistry,
@@ -13,6 +12,7 @@ import { useAppDispatch } from "./hooks/useAppDispatch.ts";
 import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
+import { useLicenseNotices } from "./hooks/useLicenseNotices.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
 import type { MainNavigation, NavigationAction } from "./navigation.ts";
 import { initialNavigation, mainScreenOf, navigate } from "./navigation.ts";
@@ -101,7 +101,7 @@ function ConnectedSettingsScreen({ onBack }: { onBack: () => void }) {
     <SettingsScreen
       onBack={onBack}
       conversionCache={useConversionCacheControls()}
-      licenseNotices={licenseNotices}
+      licenseNotices={useLicenseNotices()}
     />
   );
 }

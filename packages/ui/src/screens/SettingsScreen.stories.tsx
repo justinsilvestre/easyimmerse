@@ -32,9 +32,20 @@ export const WithConvertedVideos: Story = {
       onClear: fn(),
       clearStatus: "",
     },
-    licenseNotices: [
-      { title: "ffmpeg (LGPL build) — notice", text: "Version and origin." },
-    ],
+    licenseNotices: {
+      status: "loaded",
+      groups: [
+        {
+          title: "FFmpeg",
+          notices: [
+            {
+              title: "ffmpeg (LGPL build) — notice",
+              text: "Version and origin.",
+            },
+          ],
+        },
+      ],
+    },
   },
 };
 

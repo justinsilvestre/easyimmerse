@@ -13,6 +13,7 @@
       "!**/packages/wasm/pkg",
       "!**/packages/licenses/src/generated",
       "!**/scripts/ffmpeg-notices/noticeInputs.json",
+      "!**/scripts/dependency-notices/inputs.json",
       "!**/.wxt",
       "!**/.output",
       "!**/dist",
