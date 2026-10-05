@@ -32,7 +32,9 @@ pub(super) fn verb_rules(verb: &IrregularVerb) -> Vec<Rule> {
     }
     for subjunctive in alternatives(verb.subjunctive_ii) {
         add_person_forms(&mut add, subjunctive, SUBJUNCTIVE_II);
-        add_apocopated_subjunctive(&mut add, subjunctive);
+        if can_drop_schwa(subjunctive, verb.past) {
+            add_apocopated_subjunctive(&mut add, subjunctive);
+        }
     }
     for participle in alternatives(verb.past_participle) {
         rules.extend(participle_rules(participle, infinitive));
@@ -88,9 +90,23 @@ fn add_person_forms(
     add(format!("{form}et"), second_plural);
 }
 
-/// The subjunctive II may drop the schwa before its ending, or at the end of the word (hätt(e)st, wär(e)).
+/// Whether the subjunctive II `form` may drop its schwa: only when something else, such as the umlaut of hätte, käme
+/// or wäre, still tells it from the past. The schwa of ginge or sollte is the only mark of the mood, so it stays.
 ///
-/// Sources: grammis, unit 4119 (hätt(e)st, läg(e)); Schäfer (2018), Tab. 10.20, p. 314 (wär(-e)-st).
+/// Source: grammis, unit 4119 („Nicht-Setzung von Schwa in der gesprochenen Sprache": the schwa may drop when it
+/// marks no inflection, and *riefst for riefest is impossible because it would equal the past).
+fn can_drop_schwa(form: &str, past: &'static str) -> bool {
+    let Some(stem) = form.strip_suffix('e') else {
+        return false;
+    };
+    alternatives(past).all(|past| past != form && past != stem && !past.starts_with(stem))
+}
+
+/// The subjunctive II may drop the schwa before its ending, or at the end of the word (hätt(e)st, wär(e)),
+/// mostly in speech.
+///
+/// Sources: grammis, unit 4119 (hätt(e)st, läg(e)); Schäfer (2018), Tab. 10.20, p. 314 (wär(-e)-st);
+/// Amtliches Regelwerk (2024), § 80 (3), p. 150 (müsst’ ich, as written speech).
 fn add_apocopated_subjunctive(add: &mut impl FnMut(String, &'static [&'static str]), form: &str) {
     let Some(stem) = form.strip_suffix('e') else {
         return;
@@ -129,7 +145,22 @@ fn augmented_core<'a>(participle: &'a str, infinitive: &str) -> Option<&'a str> 
 
 #[cfg(test)]
 mod tests {
-    use super::augmented_core;
+    use super::{augmented_core, can_drop_schwa};
+
+    #[test]
+    fn can_drop_schwa_from_a_subjunctive_with_umlaut() {
+        assert!(can_drop_schwa("wäre", "war"));
+    }
+
+    #[test]
+    fn keeps_the_schwa_of_a_subjunctive_shaped_like_the_past() {
+        assert!(!can_drop_schwa("ginge", "ging"));
+    }
+
+    #[test]
+    fn keeps_the_schwa_of_a_subjunctive_equal_to_the_past() {
+        assert!(!can_drop_schwa("sollte", "sollte"));
+    }
 
     #[test]
     fn augmented_core_removes_ge() {
