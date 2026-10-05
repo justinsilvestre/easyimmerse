@@ -22,6 +22,10 @@ afterEach(() => {
   resetBackend();
 });
 
+/** Lets every request and promise already under way run, without waiting on the clock. */
+const flushPendingWork = () =>
+  act(() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
+
 function createDraft(word: string): FlashcardDraft {
   return {
     media_file_id: "m1",
@@ -350,7 +354,7 @@ describe("useMediaFlashcards", () => {
       const { result, held } = renderFlashcards();
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.start(createDraft("Katze")));
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await flushPendingWork();
       expect(held).toHaveLength(0);
     });
 
@@ -391,7 +395,7 @@ describe("useMediaFlashcards", () => {
     const { result, held, unmount } = renderFlashcards();
     act(() => result.current.start(createDraft("Hund")));
     unmount();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await flushPendingWork();
     expect(held).toHaveLength(0);
   });
 

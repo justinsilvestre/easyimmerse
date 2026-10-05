@@ -27,7 +27,7 @@ export function useKeyboardStart() {
     [],
   );
   const offsetIn = (run: Run): number | null => {
-    if (!isSameRun(start, run) || start === null) return null;
+    if (start === null || !isSameRun(start, run)) return null;
     return Math.min(start.offset, lastCharacterStart(run.text));
   };
   return {
