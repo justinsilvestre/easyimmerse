@@ -1,4 +1,8 @@
-import type { KanjiResult, LookupResult } from "@easyimmerse/types";
+import type {
+  DictionaryStylesheet,
+  KanjiResult,
+  LookupResult,
+} from "@easyimmerse/types";
 
 /** What the dictionary pop-up shows for the word under the pointer or typed into its search field. */
 export type LookupState =
@@ -8,6 +12,8 @@ export type LookupState =
       term: string;
       results: readonly LookupResult[];
       kanji?: readonly KanjiResult[];
+      /** The stylesheets of the dictionaries whose definitions `results` shows. */
+      stylesheets?: readonly DictionaryStylesheet[];
     }
   | { kind: "notFound"; term: string }
   | { kind: "noDictionary"; language: string };

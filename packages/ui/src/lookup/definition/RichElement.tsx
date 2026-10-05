@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { type ComponentProps, createElement, type ElementType } from "react";
 
 /** The element and default classes for each kind of element that dictionary content may contain. */
@@ -57,15 +58,16 @@ const elements = {
 /** A kind of element in dictionary content: an HTML element, or a part of an entry such as an example or a grammatical label. */
 export type RichKind = keyof typeof elements;
 
-/** Renders one element of dictionary content with the app's default look for its kind. */
+/** Renders one element of dictionary content with the app's default look for its kind, and the dictionary's own classes after it. */
 export function RichElement({
   kind,
+  className,
   ...attributes
 }: { kind: RichKind } & ComponentProps<"td"> &
   Pick<ComponentProps<"details">, "open">) {
-  const [tag, className] = elements[kind];
+  const [tag, defaultClassName] = elements[kind];
   return createElement(tag, {
-    className: className || undefined,
+    className: clsx(defaultClassName, className) || undefined,
     ...attributes,
   });
 }

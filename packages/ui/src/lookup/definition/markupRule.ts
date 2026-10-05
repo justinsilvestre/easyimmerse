@@ -9,6 +9,8 @@ export type MarkupLanguage = "html" | MarkupDialect;
 
 /** The attributes kept on an element of dictionary markup, all of them already checked. */
 export type ElementAttributes = {
+  /** The dictionary's class names, prefixed so that they cannot match the app's own classes. */
+  className?: string;
   style?: CSSProperties;
   title?: string;
   lang?: string;

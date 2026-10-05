@@ -5,6 +5,13 @@ import { renderDefinition } from "../../testSupport/renderDefinition.tsx";
 afterEach(cleanup);
 
 describe("DefinitionView", () => {
+  it("renders the definition inside its dictionary's scope", () => {
+    const { container } = renderDefinition({ kind: "text", text: "cat" });
+    expect(
+      container.querySelector('[data-dictionary-scope="dict"]')?.textContent,
+    ).toBe("cat");
+  });
+
   it("keeps the line breaks of a text definition", () => {
     const { container } = renderDefinition({ kind: "text", text: "one\ntwo" });
     expect(container.textContent).toBe("one\ntwo");

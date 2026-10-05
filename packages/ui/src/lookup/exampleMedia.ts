@@ -6,11 +6,14 @@ const flower = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><cir
 
 const apple = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="23" r="14" fill="#e53935"/><path d="M20 10q2-6 8-7" stroke="#5d4037" stroke-width="2" fill="none"/></svg>`;
 
+const greySquare = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 2 2"><rect width="2" height="2" fill="#888"/></svg>`;
+
 const examplePictures: Readonly<Record<string, string>> = {
   "jitendex/glyphs/taberu.svg": glyph,
   "jitendex/graphics/taberu.svg": bowl,
   "res/flower.png": flower,
   "images/apple.png": apple,
+  "cat.png": greySquare,
 };
 
 /** Resolves the example dictionaries' image paths to small inline pictures. */

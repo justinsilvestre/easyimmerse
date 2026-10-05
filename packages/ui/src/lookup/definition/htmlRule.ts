@@ -1,3 +1,4 @@
+import { dictionaryClassName } from "../stylesheet/dictionaryScope.ts";
 import { classifyHref } from "./classifyHref.ts";
 import {
   type ElementAttributes,
@@ -105,6 +106,7 @@ function htmlAttributes(element: Element): ElementAttributes {
     ...parseStyleAttribute(element.getAttribute("style") ?? ""),
   };
   return {
+    className: dictionaryClassName(element.getAttribute("class")),
     style: sanitizeStyle(style),
     title: element.getAttribute("title") ?? undefined,
     lang: languageTag(element.getAttribute("lang")),

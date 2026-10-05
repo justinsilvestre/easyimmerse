@@ -1,4 +1,5 @@
 import type { Definition } from "@easyimmerse/types";
+import { DictionaryScope } from "../stylesheet/DictionaryScope.tsx";
 import { ContentText } from "./ContentText.tsx";
 import {
   DefinitionContext,
@@ -11,6 +12,7 @@ import { StructuredContentView } from "./StructuredContentView.tsx";
 /**
  * Renders one definition in the form its dictionary wrote it: plain text, Yomitan structured content, HTML, Pango or XDXF markup, or a pointer to a base form.
  * Clicked words go to `onWordClick`, links to other headwords go to `onLookup`, and images come from `resolveMediaUrl`. Nothing in a definition can run code or load remote resources.
+ * The definition sits in its dictionary's scope, where `DictionaryStylesheets` applies the dictionary's own stylesheet.
  */
 export function DefinitionView({
   definition,
@@ -35,7 +37,9 @@ export function DefinitionView({
         isPlainText: false,
       }}
     >
-      <DefinitionBody definition={definition} />
+      <DictionaryScope dictionaryId={dictionaryId}>
+        <DefinitionBody definition={definition} />
+      </DictionaryScope>
     </DefinitionContext>
   );
 }

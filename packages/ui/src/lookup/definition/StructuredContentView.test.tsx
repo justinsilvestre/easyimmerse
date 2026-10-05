@@ -72,7 +72,7 @@ describe("StructuredContentView", () => {
       data: { "a b": "c" },
       content: "x",
     });
-    expect(container.firstElementChild?.attributes).toHaveLength(0);
+    expect(container.querySelector("span")?.attributes).toHaveLength(0);
   });
 
   it("drops a lang that is not a language tag", () => {

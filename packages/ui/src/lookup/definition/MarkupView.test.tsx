@@ -81,6 +81,25 @@ describe("MarkupView", () => {
       ).toBe("color: red;");
     });
 
+    it("keeps the dictionary's class names with a prefix", () => {
+      const { container } = renderDefinition(
+        html('<span class="pos noun">noun</span>'),
+      );
+      expect(
+        container.querySelector("span.dict-pos.dict-noun")?.textContent,
+      ).toBe("noun");
+    });
+
+    it("keeps the app's own classes beside the dictionary's", () => {
+      const { container } = renderDefinition(html('<i class="pos">noun</i>'));
+      expect(container.querySelector("i")?.className).toBe("italic dict-pos");
+    });
+
+    it("does not let a dictionary class name match an app class", () => {
+      const { container } = renderDefinition(html('<b class="fixed">x</b>'));
+      expect(container.querySelector(".fixed")).toBeNull();
+    });
+
     it("looks up the target of a bword link", () => {
       const clicked: string[] = [];
       renderDefinition(html('<a href="bword://bloom">bloom</a>'), {

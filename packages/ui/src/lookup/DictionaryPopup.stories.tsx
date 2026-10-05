@@ -7,6 +7,11 @@ import {
 } from "./exampleJapaneseLookup.ts";
 import { exampleResults } from "./exampleLookup.ts";
 import { resolveExampleMediaUrl } from "./exampleMedia.ts";
+import {
+  exampleStyledMDictResult,
+  exampleStyledYomitanResult,
+  exampleStylesheets,
+} from "./exampleStyledLookup.ts";
 
 const meta = {
   title: "Lookup/DictionaryPopup",
@@ -34,6 +39,18 @@ export const JapaneseWithKanji: Story = {
       term: "食べなかった",
       results: [exampleInflectedResult],
       kanji: [exampleKanjiResult],
+    },
+  },
+};
+
+/** Entries from the Yomitan and MDict fixtures, each styled by its own dictionary's stylesheet. */
+export const DictionaryStylesheets: Story = {
+  args: {
+    state: {
+      kind: "found",
+      term: "本",
+      results: [exampleStyledYomitanResult, exampleStyledMDictResult],
+      stylesheets: exampleStylesheets,
     },
   },
 };
