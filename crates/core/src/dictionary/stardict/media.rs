@@ -1,14 +1,21 @@
+use std::collections::HashSet;
+
 use crate::dictionary::{DictionaryError, DictionaryMedia, DictionarySink, DictionarySource};
 
-/// Passes every file under the dictionary's `res/` directory to the sink, with its path relative to `res/`.
+/// Passes every file under the dictionary's `res/` directory to the sink, with its path relative to `res/`,
+/// except those whose paths were already sent.
 pub fn import_media(
     source: &mut DictionarySource,
     resource_prefix: &str,
+    sent_paths: &HashSet<String>,
     sink: &mut dyn DictionarySink,
 ) -> Result<(), DictionaryError> {
     for name in resource_names(source, resource_prefix) {
-        let bytes = source.read(&name)?;
         let path = name[resource_prefix.len()..].to_string();
+        if sent_paths.contains(&path) {
+            continue;
+        }
+        let bytes = source.read(&name)?;
         let media_type = media_type(&path).to_string();
         sink.media(DictionaryMedia {
             path,

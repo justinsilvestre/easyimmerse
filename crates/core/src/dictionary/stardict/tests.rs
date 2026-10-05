@@ -2,17 +2,22 @@ use std::fs;
 use std::path::Path;
 
 use super::*;
+use crate::dictionary::media_collector::MediaCollector;
 use crate::dictionary::{
-    Definition, Dictionary, DictionaryMedia, KanjiEntry, KanjiMeta, MarkupDialect, SinkResult,
-    SourceFile, TagDefinition, TermEntry, TermMeta, import_dictionary, parse_dictionary,
+    Definition, Dictionary, MarkupDialect, SourceFile, TermEntry, import_dictionary,
+    parse_dictionary,
 };
 use crate::test_support::{fixture_path, read_fixture_bytes};
 
 /// Reads a fixture directory as loose files, named by their paths relative to the fixtures directory.
-fn directory_source(directory: &str) -> DictionarySource {
+fn directory_files(directory: &str) -> Vec<SourceFile> {
     let mut files = Vec::new();
     collect_files(&fixture_path(directory), directory, &mut files);
-    DictionarySource::new(files).unwrap()
+    files
+}
+
+fn directory_source(directory: &str) -> DictionarySource {
+    DictionarySource::new(directory_files(directory)).unwrap()
 }
 
 fn collect_files(path: &Path, name: &str, files: &mut Vec<SourceFile>) {
@@ -52,7 +57,7 @@ fn matches_a_source_with_an_ifo_file() {
 fn imports_the_sample_as_a_stardict_dictionary() {
     let kind = import_dictionary(
         &mut directory_source("sample-stardict"),
-        &mut MediaSink::default(),
+        &mut MediaCollector::default(),
     );
     assert_eq!(kind.unwrap(), DictionaryFormatKind::Stardict);
 }
@@ -135,13 +140,19 @@ fn reads_xdxf_markup() {
     );
 }
 
+fn archive_source(name: &str) -> DictionarySource {
+    DictionarySource::single(name, read_fixture_bytes(name)).unwrap()
+}
+
 #[test]
 fn reads_the_same_dictionary_from_a_gzip_compressed_tar_archive() {
-    let mut source = DictionarySource::single(
-        "sample-stardict.tar.gz",
-        read_fixture_bytes("sample-stardict.tar.gz"),
-    )
-    .unwrap();
+    let mut source = archive_source("sample-stardict.tar.gz");
+    assert_eq!(parse_dictionary(&mut source).unwrap(), sample());
+}
+
+#[test]
+fn reads_the_same_dictionary_from_a_bzip2_compressed_tar_archive() {
+    let mut source = archive_source("sample-stardict.tar.bz2");
     assert_eq!(parse_dictionary(&mut source).unwrap(), sample());
 }
 
@@ -156,49 +167,40 @@ fn reads_entries_laid_out_by_a_same_type_sequence() {
 
 #[test]
 fn imports_the_files_under_res_as_media() {
-    let mut sink = MediaSink::default();
+    let mut sink = MediaCollector::default();
     import_dictionary(&mut directory_source("sample-stardict"), &mut sink).unwrap();
-    let described: Vec<_> = sink
-        .media
-        .iter()
-        .map(|media| (media.path.as_str(), media.media_type.as_str()))
-        .collect();
-    assert_eq!(described, vec![("cat.png", "image/png")]);
+    assert_eq!(
+        sink.described(),
+        [("cat.png".to_string(), "image/png".to_string())]
+    );
 }
 
-/// A sink that keeps only the media it receives.
-#[derive(Default)]
-struct MediaSink {
-    media: Vec<DictionaryMedia>,
+fn imported_media(source: &mut DictionarySource) -> MediaCollector {
+    let mut sink = MediaCollector::default();
+    import_dictionary(source, &mut sink).unwrap();
+    sink
 }
 
-impl DictionarySink for MediaSink {
-    fn begin(&mut self, _metadata: DictionaryMetadata) -> SinkResult {
-        Ok(())
-    }
+#[test]
+fn imports_the_files_of_a_packed_resource_database_as_media() {
+    let mut source = directory_source("sample-stardict-sametypesequence");
+    assert_eq!(
+        imported_media(&mut source).described(),
+        [
+            ("hello.wav".to_string(), "audio/wav".to_string()),
+            ("images/world.png".to_string(), "image/png".to_string()),
+        ]
+    );
+}
 
-    fn term_entry(&mut self, _entry: TermEntry) -> SinkResult {
-        Ok(())
-    }
-
-    fn term_meta(&mut self, _meta: TermMeta) -> SinkResult {
-        Ok(())
-    }
-
-    fn tag(&mut self, _tag: TagDefinition) -> SinkResult {
-        Ok(())
-    }
-
-    fn kanji_entry(&mut self, _entry: KanjiEntry) -> SinkResult {
-        Ok(())
-    }
-
-    fn kanji_meta(&mut self, _meta: KanjiMeta) -> SinkResult {
-        Ok(())
-    }
-
-    fn media(&mut self, media: DictionaryMedia) -> SinkResult {
-        self.media.push(media);
-        Ok(())
-    }
+#[test]
+fn prefers_the_resource_database_to_a_file_of_the_same_path_under_res() {
+    let mut files = directory_files("sample-stardict-sametypesequence");
+    files.push(SourceFile {
+        name: "sample-stardict-sametypesequence/res/hello.wav".to_string(),
+        bytes: b"another sound".to_vec(),
+    });
+    let sink = imported_media(&mut DictionarySource::new(files).unwrap());
+    let sound = sink.media.iter().find(|media| media.path == "hello.wav");
+    assert_eq!(sound.unwrap().bytes, b"RIFF\0\0\0\0WAVE");
 }

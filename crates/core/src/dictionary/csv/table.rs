@@ -1,6 +1,6 @@
 use super::super::metadata::{DictionaryFormatKind, DictionaryMetadata};
 use super::delimiter::{SAMPLE_SIZE, choose_delimiter};
-use super::directives::{Directives, TableKind, read_directives};
+use super::directives::{Directives, read_directives};
 use super::error::CsvError;
 use super::layout::{Layout, detect_layout};
 use super::records::read_rows;
@@ -54,10 +54,7 @@ impl<'text> Table<'text> {
         metadata.author = directives.author.clone();
         metadata.source_language = directives.source_language.clone();
         metadata.target_language = directives.target_language.clone();
-        metadata.frequency_mode = self
-            .layout
-            .frequency_mode()
-            .filter(|_| self.layout.kind == TableKind::Frequency);
+        metadata.frequency_mode = self.layout.frequency_mode();
         metadata
     }
 }

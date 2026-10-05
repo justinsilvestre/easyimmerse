@@ -1,5 +1,7 @@
 //! Dictionaries imported into SQLite, and the queries that lookup runs against them.
 
+#[cfg(test)]
+mod added_alternates_tests;
 mod columns;
 #[cfg(test)]
 mod concurrent_import_tests;

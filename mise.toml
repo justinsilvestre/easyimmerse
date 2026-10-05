@@ -31,6 +31,7 @@ run = [
   "pnpm -r test",
   "node --test 'scripts/**/*.test.ts'",
   "node scripts/ffmpeg-notices/index.ts --check",
+  "node scripts/crate-notices/index.ts --check",
   "cargo fmt --all --check",
   "cargo fmt --manifest-path plugins/Cargo.toml --all --check",
   "cargo clippy --workspace --exclude easyimmerse-native --all-targets -- -D warnings",
@@ -83,6 +84,14 @@ run = "node scripts/ffmpeg-notices/index.ts"
 [tasks."ffmpeg-notices:check"]
 description = "Fail when the committed ffmpeg license notices no longer match the manifest"
 run = "node scripts/ffmpeg-notices/index.ts --check"
+
+[tasks."crate-notices"]
+description = "Regenerate the license notices of the Rust crates listed in scripts/crate-notices/crates.json"
+run = "node scripts/crate-notices/index.ts"
+
+[tasks."crate-notices:check"]
+description = "Fail when the committed crate license notices no longer match Cargo.lock"
+run = "node scripts/crate-notices/index.ts --check"
 
 [tasks."fixtures:media"]
 description = "Regenerate the media fixtures with ffmpeg"

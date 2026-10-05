@@ -1,4 +1,5 @@
 use super::super::metadata::FrequencyMode;
+use super::super::term_entry::TermEntry;
 use super::super::term_meta::{Frequency, TermMeta, TermMetaData};
 use super::columns::Column;
 use super::layout::Layout;
@@ -23,19 +24,42 @@ pub fn guess_frequency_mode(values: impl IntoIterator<Item = f64>) -> FrequencyM
 
 /// Builds the frequency of the term on one row of a frequency list.
 pub fn row_frequency(row: &[String], layout: &Layout) -> Option<TermMeta> {
-    let cell_of = |wanted: fn(&Column) -> bool| {
-        let index = layout.columns.iter().position(wanted)?;
-        row.get(index).filter(|cell| !cell.is_empty())
-    };
-    let term = cell_of(|column| *column == Column::Term)?;
-    let value = cell_of(|column| matches!(column, Column::Frequency(_)))?;
+    let term = cell_of(row, layout, |column| *column == Column::Term)?;
     Some(TermMeta {
         term: term.clone(),
-        reading: cell_of(|column| *column == Column::Reading).cloned(),
-        data: TermMetaData::Frequency(Frequency {
-            value: parse_number(value),
-            display: parse_number(value).is_none().then(|| value.clone()),
-        }),
+        reading: cell_of(row, layout, |column| *column == Column::Reading).cloned(),
+        data: frequency_data(frequency_cell(row, layout)?),
+    })
+}
+
+/// Builds the frequency that one row of a table of definitions gives the term and reading of its entry.
+pub fn entry_frequency(row: &[String], layout: &Layout, entry: &TermEntry) -> Option<TermMeta> {
+    Some(TermMeta {
+        term: entry.term.clone(),
+        reading: entry.reading.clone(),
+        data: frequency_data(frequency_cell(row, layout)?),
+    })
+}
+
+fn frequency_cell<'a>(row: &'a [String], layout: &Layout) -> Option<&'a String> {
+    cell_of(row, layout, |column| matches!(column, Column::Frequency(_)))
+}
+
+/// Returns the row's cell in the first column that satisfies `wanted`, unless it is empty.
+fn cell_of<'a>(
+    row: &'a [String],
+    layout: &Layout,
+    wanted: impl Fn(&Column) -> bool,
+) -> Option<&'a String> {
+    let index = layout.columns.iter().position(wanted)?;
+    row.get(index).filter(|cell| !cell.is_empty())
+}
+
+/// Reads a frequency cell as a number, keeping a value that is not one for display.
+fn frequency_data(value: &str) -> TermMetaData {
+    TermMetaData::Frequency(Frequency {
+        value: parse_number(value),
+        display: parse_number(value).is_none().then(|| value.to_string()),
     })
 }
 
@@ -110,6 +134,18 @@ mod tests {
                 value: None,
                 display: Some("very common".into()),
             })
+        );
+    }
+
+    #[test]
+    fn gives_the_frequency_to_the_term_and_reading_of_an_entry() {
+        let mut entry = TermEntry::new("猫", Vec::new());
+        entry.reading = Some("ねこ".into());
+        let row = row(&["猫|ネコ", "ねこ", "1532"]);
+        let meta = entry_frequency(&row, &rank_layout(), &entry).unwrap();
+        assert_eq!(
+            (meta.term, meta.reading),
+            ("猫".to_string(), Some("ねこ".to_string()))
         );
     }
 

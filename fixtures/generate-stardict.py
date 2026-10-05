@@ -4,12 +4,15 @@
 - sample-stardict/: typed fields (m, t, h, r, g, W, y, x), a dictzip data file,
   synonyms, an idx record sharing another's data, a stylesheet, and an image under res/.
 - sample-stardict-sametypesequence/: version 3.0.0 with sametypesequence=tm,
-  64-bit offsets, a gzipped index, and an uncompressed data file.
+  64-bit offsets, a gzipped index, an uncompressed data file, and a packed resource database
+  (res.rifo, res.ridx, and a dictzip res.rdic.dz) holding a sound and an image.
 - sample-stardict.tar.gz: sample-stardict/ packed as a gzip-compressed tar archive.
+- sample-stardict.tar.bz2: the same tar archive compressed with bzip2.
 
 Run it from anywhere with `python3 fixtures/generate-stardict.py`. The output is deterministic.
 """
 
+import bz2
 import gzip
 import io
 import shutil
@@ -153,6 +156,22 @@ def write_sample():
     )
 
 
+def resource_database(resources):
+    """Packs files as a StarDict resource database: an index of paths, offsets and sizes, and the joined data."""
+    data = b""
+    records = []
+    for path, content in resources:
+        records.append((path.encode(), len(data), len(content)))
+        data += content
+    records.sort()
+    index = b"".join(path + b"\0" + struct.pack(">II", offset, size) for path, offset, size in records)
+    rifo = (
+        "StarDict's storage ifo file\n"
+        f"version=3.0.0\nfilecount={len(records)}\nridxfilesize={len(index)}\n"
+    ).encode()
+    return {"res.rifo": rifo, "res.ridx": index, "res.rdic.dz": dictzip(data)}
+
+
 def write_sametype_sample():
     data, index, positions = build_index(SAMETYPE_ENTRIES, ">QI")
     metadata = [
@@ -169,6 +188,7 @@ def write_sametype_sample():
             "phonetic.ifo": ifo(metadata),
             "phonetic.idx.gz": gzip.compress(index, mtime=0),
             "phonetic.dict": data,
+            **resource_database([("hello.wav", b"RIFF\0\0\0\0WAVE"), ("images/world.png", tiny_png())]),
         },
     )
 
@@ -184,8 +204,8 @@ def write_sample_archive():
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w", format=tarfile.USTAR_FORMAT) as archive:
         archive.add(FIXTURES / "sample-stardict", arcname="sample-stardict", filter=normalize)
-    archive_path = FIXTURES / "sample-stardict.tar.gz"
-    archive_path.write_bytes(gzip.compress(buffer.getvalue(), mtime=0))
+    (FIXTURES / "sample-stardict.tar.gz").write_bytes(gzip.compress(buffer.getvalue(), mtime=0))
+    (FIXTURES / "sample-stardict.tar.bz2").write_bytes(bz2.compress(buffer.getvalue(), 9))
 
 
 write_sample()

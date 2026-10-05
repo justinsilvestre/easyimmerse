@@ -13,6 +13,7 @@ pub struct Ifo {
 
 const DICT_MAGIC: &str = "StarDict's dict ifo file";
 const TREEDICT_MAGIC: &str = "StarDict's treedict ifo file";
+const STORAGE_MAGIC: &str = "StarDict's storage ifo file";
 const SUPPORTED_MAJOR_VERSIONS: [&str; 2] = ["2.", "3."];
 
 impl Ifo {
@@ -63,6 +64,17 @@ impl Ifo {
             None => Ok(()),
         }
     }
+}
+
+/// Reads the width of the offsets in a resource database's index from its `res.rifo` file.
+pub fn read_storage_offset_bits(bytes: &[u8]) -> Result<OffsetBits, StardictError> {
+    let text = decode_text(bytes);
+    let mut lines = text.trim_start_matches('\u{feff}').lines();
+    if lines.next().unwrap_or_default().trim() != STORAGE_MAGIC {
+        return Err(StardictError::NotAStorageIfo);
+    }
+    let values: HashMap<_, _> = lines.filter_map(parse_line).collect();
+    parse_offset_bits(values.get("idxoffsetbits"))
 }
 
 fn check_magic(first_line: &str) -> Result<(), StardictError> {
@@ -161,6 +173,23 @@ mod tests {
         assert!(matches!(
             Ifo::parse(bytes.as_bytes()),
             Err(StardictError::TreeDictionary)
+        ));
+    }
+
+    #[test]
+    fn reads_the_offset_width_of_a_resource_database() {
+        let bytes = format!("{STORAGE_MAGIC}\nversion=3.0.0\nidxoffsetbits=64\n");
+        assert_eq!(
+            read_storage_offset_bits(bytes.as_bytes()).unwrap(),
+            OffsetBits::SixtyFour
+        );
+    }
+
+    #[test]
+    fn rejects_a_resource_database_without_the_header() {
+        assert!(matches!(
+            read_storage_offset_bits(format!("{DICT_MAGIC}\n").as_bytes()),
+            Err(StardictError::NotAStorageIfo)
         ));
     }
 

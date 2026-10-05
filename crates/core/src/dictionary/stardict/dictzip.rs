@@ -10,21 +10,29 @@ const GZIP_SIGNATURE: &[u8] = b"\x1f\x8b";
 
 /// Reads a file whole, decompressing it when it is gzip-compressed.
 ///
-/// This covers `.idx.gz` files and dictzip `.dict.dz` files: dictzip is gzip with a chunk table for random access,
+/// This covers `.idx.gz` files, and dictzip files such as `.idx.dz`: dictzip is gzip with a chunk table for random access,
 /// so any gzip decoder reads it whole.
 pub fn read_decompressed(
     source: &mut DictionarySource,
     name: &str,
 ) -> Result<Vec<u8>, DictionaryError> {
     let bytes = source.read(name)?;
-    if !bytes.starts_with(GZIP_SIGNATURE) {
-        return Ok(bytes);
+    if is_gzip(&bytes) {
+        Ok(decompressed(name, bytes)?)
+    } else {
+        Ok(bytes)
     }
-    gunzip(&bytes).map_err(|error| {
-        DictionaryError::from(StardictError::Decompress {
-            name: name.to_string(),
-            source: error,
-        })
+}
+
+pub fn is_gzip(bytes: &[u8]) -> bool {
+    bytes.starts_with(GZIP_SIGNATURE)
+}
+
+/// Decompresses a gzip file whole.
+pub fn decompressed(name: &str, bytes: Vec<u8>) -> Result<Vec<u8>, StardictError> {
+    gunzip(&bytes).map_err(|source| StardictError::Decompress {
+        name: name.to_string(),
+        source,
     })
 }
 

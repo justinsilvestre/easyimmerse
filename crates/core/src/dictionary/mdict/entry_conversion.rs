@@ -1,42 +1,47 @@
 use crate::dictionary::{Definition, TermEntry};
 
 use super::header::Header;
+use super::key_comparison::KeyComparison;
 use super::mdict_file::RecordGroup;
 use super::record_text::record_text;
-use super::redirects::{Redirects, link_target};
 use super::stylesheet::StyleSheet;
 use super::text_encoding::TextEncoding;
 
 /// Turns the records of an `.mdx` file into term entries.
-pub struct EntryConversion<'a> {
+pub struct EntryConversion {
     encoding: TextEncoding,
     is_html: bool,
     stylesheet: StyleSheet,
-    redirects: &'a Redirects,
+    comparison: KeyComparison,
 }
 
-impl<'a> EntryConversion<'a> {
-    pub fn new(header: &Header, encoding: TextEncoding, redirects: &'a Redirects) -> Self {
+impl EntryConversion {
+    pub fn new(header: &Header, encoding: TextEncoding) -> Self {
         let format = header.attributes.get("Format").unwrap_or("").trim();
         Self {
             encoding,
             is_html: format.eq_ignore_ascii_case("html"),
             stylesheet: StyleSheet::parse(header.attributes.get("StyleSheet").unwrap_or("")),
-            redirects,
+            comparison: KeyComparison::from_header(header),
         }
     }
 
-    /// Converts one record and the keys that share it into an entry.
-    /// Returns nothing for a redirect, whose keys become alternates of the target entry instead.
+    /// Converts a record that is not a redirect, and the keys that share it, into an entry.
     pub fn convert(&self, group: &RecordGroup, record: &[u8]) -> Option<TermEntry> {
         let text = record_text(self.encoding, record);
-        if link_target(&text).is_some() {
-            return None;
-        }
-        let (term, other_keys) = group.keys.split_first()?;
+        let term = group.keys.first()?;
         let mut entry = TermEntry::new(term.clone(), vec![self.definition(&text)]);
-        entry.alternates = self.alternates(term, other_keys, &group.keys);
+        entry.add_alternates(self.spellings(&group.keys));
         Some(entry)
+    }
+
+    /// Lists the keys with, when the dictionary ignores punctuation in keys, their spellings without it,
+    /// so that lookup finds them under either.
+    pub fn spellings(&self, keys: &[String]) -> Vec<String> {
+        keys.iter()
+            .flat_map(|key| [Some(key.clone()), self.comparison.stripped_spelling(key)])
+            .flatten()
+            .collect()
     }
 
     fn definition(&self, text: &str) -> Definition {
@@ -47,18 +52,6 @@ impl<'a> EntryConversion<'a> {
             Definition::text(text)
         }
     }
-
-    /// Lists the other keys of the record and every key that redirects to one of its keys, once each.
-    fn alternates(&self, term: &str, other_keys: &[String], keys: &[String]) -> Vec<String> {
-        let redirect_sources = keys.iter().flat_map(|key| self.redirects.sources_of(key));
-        let mut alternates: Vec<String> = Vec::new();
-        for key in other_keys.iter().chain(redirect_sources) {
-            if key != term && !alternates.contains(key) {
-                alternates.push(key.clone());
-            }
-        }
-        alternates
-    }
 }
 
 #[cfg(test)]
@@ -66,7 +59,6 @@ mod tests {
     use super::*;
     use crate::dictionary::mdict::header::FormatVersion;
     use crate::dictionary::mdict::header_attributes::HeaderAttributes;
-    use crate::dictionary::mdict::redirects::RedirectCollector;
 
     fn header(attributes: &str) -> Header {
         Header {
@@ -83,20 +75,9 @@ mod tests {
         }
     }
 
-    fn redirects_to_cat() -> Redirects {
-        let mut collector = RedirectCollector::new(TextEncoding::UTF_16LE);
-        collector.visit(
-            &group(&["kitty"]),
-            &TextEncoding::UTF_16LE.encode_ascii("@@@LINK=cat"),
-        );
-        collector.finish()
-    }
-
     fn convert(attributes: &str, keys: &[&str], record: &str) -> Option<TermEntry> {
-        let redirects = redirects_to_cat();
         let encoding = TextEncoding::from_label("UTF-8").unwrap();
-        EntryConversion::new(&header(attributes), encoding, &redirects)
-            .convert(&group(keys), record.as_bytes())
+        EntryConversion::new(&header(attributes), encoding).convert(&group(keys), record.as_bytes())
     }
 
     #[test]
@@ -123,13 +104,20 @@ mod tests {
     }
 
     #[test]
-    fn skips_a_redirect_record() {
-        assert_eq!(convert("", &["kitty"], "@@@LINK=cat\r\n"), None);
+    fn lists_the_other_keys_of_the_record_as_alternates() {
+        let entry = convert("", &["cat", "Cat"], "a feline").unwrap();
+        assert_eq!(entry.alternates, ["Cat"]);
     }
 
     #[test]
-    fn lists_redirect_sources_and_shared_keys_as_alternates() {
-        let entry = convert("", &["cat", "Cat"], "a feline").unwrap();
-        assert_eq!(entry.alternates, ["Cat", "kitty"]);
+    fn adds_the_spelling_of_a_key_without_punctuation_when_keys_are_stripped() {
+        let entry = convert("", &["o'clock"], "of the clock").unwrap();
+        assert_eq!(entry.alternates, ["oclock"]);
+    }
+
+    #[test]
+    fn adds_no_spelling_without_punctuation_when_keys_are_not_stripped() {
+        let entry = convert(r#"StripKey="No""#, &["o'clock"], "of the clock").unwrap();
+        assert!(entry.alternates.is_empty());
     }
 }

@@ -2,14 +2,15 @@ use std::io::{Cursor, Read};
 
 use zip::ZipArchive;
 
-use super::archive::unpack_tar_archive;
+use super::archive::unpack_archive;
 use super::error::DictionaryError;
 
 /// The files of a dictionary as the user supplied them.
 ///
 /// Archives among the files are opened, and their members are listed alongside the loose files.
 /// Zip members stay compressed until a format reads them, so that a large archive is never unpacked whole.
-/// Tar archives, plain or compressed with gzip, xz, or zstd, are unpacked into loose files when the source is created.
+/// Tar archives, plain or compressed with gzip, bzip2, xz, or zstd, are unpacked into loose files when the source is created,
+/// and so is a lone bzip2-compressed file.
 /// Archives are recognized by their contents rather than their names.
 pub struct DictionarySource {
     loose_files: Vec<SourceFile>,
@@ -55,7 +56,7 @@ impl DictionarySource {
         if file.bytes.starts_with(ZIP_SIGNATURE) {
             return self.add_zip_archive(file.bytes);
         }
-        match unpack_tar_archive(&file)? {
+        match unpack_archive(&file)? {
             Some(members) => members
                 .into_iter()
                 .for_each(|member| self.add_loose_file(member)),

@@ -11,6 +11,8 @@ mod error;
 mod format;
 mod kanji_entry;
 mod mdict;
+#[cfg(test)]
+mod media_collector;
 mod metadata;
 mod sink;
 mod source;
@@ -42,6 +44,8 @@ pub use term_meta::{
     Frequency, IpaTranscription, PitchAccent, PitchPosition, TermMeta, TermMetaData,
 };
 pub use yomitan::{YomitanError, YomitanFormat};
+
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -93,6 +97,8 @@ pub struct Dictionary {
 #[derive(Default)]
 struct DictionaryCollector {
     dictionary: Option<Dictionary>,
+    /// The positions of the entries under each term, for adding alternates.
+    entry_positions_by_term: HashMap<String, Vec<usize>>,
 }
 
 impl DictionaryCollector {
@@ -117,7 +123,27 @@ impl DictionarySink for DictionaryCollector {
     }
 
     fn term_entry(&mut self, entry: TermEntry) -> SinkResult {
-        self.dictionary()?.entries.push(entry);
+        let entries = &mut self.dictionary()?.entries;
+        let position = entries.len();
+        let term = entry.term.clone();
+        entries.push(entry);
+        self.entry_positions_by_term
+            .entry(term)
+            .or_default()
+            .push(position);
+        Ok(())
+    }
+
+    fn term_alternates(&mut self, term: String, alternates: Vec<String>) -> SinkResult {
+        let positions = self
+            .entry_positions_by_term
+            .get(&term)
+            .cloned()
+            .unwrap_or_default();
+        let entries = &mut self.dictionary()?.entries;
+        for position in positions {
+            entries[position].add_alternates(alternates.iter().cloned());
+        }
         Ok(())
     }
 

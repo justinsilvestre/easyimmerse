@@ -9,12 +9,14 @@ rust-version.workspace = true
 
 [dependencies]
 adler2 = { workspace = true }
+bzip2-rs = { workspace = true }
 chardetng = { workspace = true }
 csv = { workspace = true }
 encoding_rs = { workspace = true }
 flate2 = { workspace = true }
 lzma-rust2 = { workspace = true }
 lzokay = { workspace = true }
+memchr = { workspace = true }
 percent-encoding = { workspace = true }
 ripemd = { workspace = true }
 roxmltree = { workspace = true }

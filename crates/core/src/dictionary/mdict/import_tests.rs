@@ -1,6 +1,7 @@
 use crate::dictionary::mdict::block::LZO;
 use crate::dictionary::mdict::header::FormatVersion;
 use crate::dictionary::mdict::test_writer::{TestFile, encode_header};
+use crate::dictionary::media_collector::MediaCollector;
 use crate::dictionary::*;
 use crate::test_support::read_fixture_bytes;
 
@@ -31,34 +32,6 @@ fn parse_test_file(file: &TestFile) -> Result<Dictionary, DictionaryError> {
 
 fn first_definition(file: &TestFile) -> Definition {
     parse_test_file(file).unwrap().entries[0].definitions[0].clone()
-}
-
-#[derive(Default)]
-struct MediaCollector(Vec<DictionaryMedia>);
-
-impl DictionarySink for MediaCollector {
-    fn begin(&mut self, _: DictionaryMetadata) -> SinkResult {
-        Ok(())
-    }
-    fn term_entry(&mut self, _: TermEntry) -> SinkResult {
-        Ok(())
-    }
-    fn term_meta(&mut self, _: TermMeta) -> SinkResult {
-        Ok(())
-    }
-    fn tag(&mut self, _: TagDefinition) -> SinkResult {
-        Ok(())
-    }
-    fn kanji_entry(&mut self, _: KanjiEntry) -> SinkResult {
-        Ok(())
-    }
-    fn kanji_meta(&mut self, _: KanjiMeta) -> SinkResult {
-        Ok(())
-    }
-    fn media(&mut self, media: DictionaryMedia) -> SinkResult {
-        self.0.push(media);
-        Ok(())
-    }
 }
 
 #[test]
@@ -109,12 +82,10 @@ fn imports_the_resources_of_the_sample() {
     let paths = ["sample-mdict/sample.mdx", "sample-mdict/sample.mdd"];
     let mut collector = MediaCollector::default();
     import_dictionary(&mut fixture_source(&paths), &mut collector).unwrap();
-    let media: Vec<(String, String)> = collector
-        .0
-        .into_iter()
-        .map(|media| (media.path, media.media_type))
-        .collect();
-    assert_eq!(media, [("cat.png".to_string(), "image/png".to_string())]);
+    assert_eq!(
+        collector.described(),
+        [("cat.png".to_string(), "image/png".to_string())]
+    );
 }
 
 #[test]
@@ -237,4 +208,45 @@ fn rejects_a_dictionary_that_needs_a_registration_code() {
         parse_header_only(r#"<Dictionary GeneratedByEngineVersion="2.0" Encrypted="1"/>"#),
         Err(DictionaryError::Mdict(MdictError::RegistrationRequired))
     ));
+}
+
+/// Parses a dictionary of the given entries and header attributes, and returns the alternates of its first entry.
+fn first_alternates(attributes: &str, entries: &[(&str, &str)]) -> Vec<String> {
+    let file = TestFile {
+        attributes: format!(r#"Format="Html" {attributes}"#),
+        ..TestFile::new(entries)
+    };
+    parse_test_file(&file).unwrap().entries[0]
+        .alternates
+        .clone()
+}
+
+const REDIRECT_IN_ANOTHER_CASE: &[(&str, &str)] = &[("Cat", "a feline"), ("kitty", "@@@LINK=cat")];
+const REDIRECT_WITHOUT_PUNCTUATION: &[(&str, &str)] = &[
+    ("ice-cream", "a frozen dessert"),
+    ("gelato", "@@@LINK=ice cream"),
+];
+
+#[test]
+fn follows_a_redirect_in_another_case_when_keys_are_not_case_sensitive() {
+    let alternates = first_alternates(r#"KeyCaseSensitive="No""#, REDIRECT_IN_ANOTHER_CASE);
+    assert_eq!(alternates, ["kitty"]);
+}
+
+#[test]
+fn drops_a_redirect_in_another_case_when_keys_are_case_sensitive() {
+    let alternates = first_alternates(r#"KeyCaseSensitive="Yes""#, REDIRECT_IN_ANOTHER_CASE);
+    assert!(alternates.is_empty());
+}
+
+#[test]
+fn ignores_punctuation_in_keys_and_redirects_when_keys_are_stripped() {
+    let alternates = first_alternates(r#"StripKey="Yes""#, REDIRECT_WITHOUT_PUNCTUATION);
+    assert_eq!(alternates, ["icecream", "gelato"]);
+}
+
+#[test]
+fn keeps_punctuation_in_keys_and_redirects_significant_when_keys_are_not_stripped() {
+    let alternates = first_alternates(r#"StripKey="No""#, REDIRECT_WITHOUT_PUNCTUATION);
+    assert!(alternates.is_empty());
 }

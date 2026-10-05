@@ -1,10 +1,12 @@
 //! The StarDict dictionary format: an `.ifo` file with the metadata, an `.idx` index of headwords,
 //! a `.dict` file (often dictzip-compressed as `.dict.dz`) with the entries, an optional `.syn` file of synonyms,
-//! and an optional `res/` directory of media.
+//! and optional media, either in a `res/` directory or packed into a resource database (`res.rifo`, `res.ridx`, `res.rdic`).
 
 mod byte_cursor;
 mod conversion;
+mod dict_data;
 mod dictzip;
+mod dictzip_chunks;
 mod entries;
 mod error;
 mod fields;
@@ -14,10 +16,13 @@ mod idx;
 mod ifo;
 mod ifo_metadata;
 mod media;
+mod resource_database;
 mod resource_list;
 mod syn;
 
 pub use error::StardictError;
+
+use std::collections::HashSet;
 
 use super::{
     DictionaryError, DictionaryFormat, DictionaryFormatKind, DictionaryMetadata, DictionarySink,
@@ -28,6 +33,7 @@ use entries::import_entries;
 use files::{StardictFiles, is_ifo_name};
 use ifo::Ifo;
 use media::import_media;
+use resource_database::import_resource_database;
 
 /// Reads the first StarDict dictionary in a source. Tree dictionaries and WordNet dictionaries are rejected.
 pub struct StardictFormat;
@@ -50,7 +56,11 @@ impl DictionaryFormat for StardictFormat {
         let ifo = Ifo::parse(&source.read(&files.ifo)?)?;
         sink.begin(read_metadata(source, &files, &ifo)?)?;
         import_entries(source, &files, &ifo, sink)?;
-        import_media(source, &files.resource_prefix, sink)
+        let database_paths = match &files.resource_database {
+            Some(database) => import_resource_database(source, database, sink)?,
+            None => HashSet::new(),
+        };
+        import_media(source, &files.resource_prefix, &database_paths, sink)
     }
 }
 
