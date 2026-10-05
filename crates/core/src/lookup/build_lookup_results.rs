@@ -329,6 +329,61 @@ mod tests {
         assert_eq!(results[0].term, "猫舌");
     }
 
+    /// 日本 read にほん and にっぽん, with a frequency and a pitch accent for each reading.
+    fn nihon_results() -> Vec<LookupResult> {
+        let candidates = lookup_candidates("日本", "ja");
+        let entries = vec![
+            scored(found(1, "日本", "にっぽん"), 1, 0),
+            scored(found(1, "日本", "にほん"), 2, 0),
+        ];
+        let mut pitch = frequency(8, "日本", "にっぽん", 0.0);
+        pitch.meta.data = TermMetaData::Pitch {
+            pitches: Vec::new(),
+        };
+        let meta = vec![
+            frequency(9, "日本", "にっぽん", 9_000.0),
+            frequency(9, "日本", "にほん", 40.0),
+            pitch,
+        ];
+        build_lookup_results(&candidates, entries, &meta)
+    }
+
+    fn frequency_values(result: &LookupResult) -> Vec<Option<f64>> {
+        result
+            .frequencies
+            .iter()
+            .map(|found| found.frequency.value)
+            .collect()
+    }
+
+    #[test]
+    fn ranks_the_more_common_reading_of_a_term_first() {
+        assert_eq!(
+            readings(&nihon_results()),
+            vec![Some("にほん".to_string()), Some("にっぽん".to_string())]
+        );
+    }
+
+    #[test]
+    fn attaches_only_the_frequency_of_the_first_reading() {
+        assert_eq!(frequency_values(&nihon_results()[0]), vec![Some(40.0)]);
+    }
+
+    #[test]
+    fn attaches_only_the_frequency_of_the_second_reading() {
+        assert_eq!(frequency_values(&nihon_results()[1]), vec![Some(9_000.0)]);
+    }
+
+    #[test]
+    fn leaves_out_the_pitch_accent_of_another_reading() {
+        assert!(nihon_results()[0].pronunciations.is_empty());
+    }
+
+    #[test]
+    fn attaches_the_pitch_accent_of_the_reading() {
+        assert_eq!(nihon_results()[1].pronunciations.len(), 1);
+    }
+
     #[test]
     fn ranks_a_more_common_reading_first() {
         let candidates = lookup_candidates("角", "ja");
