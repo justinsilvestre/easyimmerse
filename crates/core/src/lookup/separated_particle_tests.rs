@@ -13,9 +13,9 @@ use crate::lookup::fold_case;
 #[rustfmt::skip]
 const VERBS: &[&str] = &[
     "abnehmen", "absagen", "anarbeiten", "anfangen", "anhalten", "ankommen", "anrufen", "ansehen", "arbeiten",
-    "auffallen", "aufstehen", "aufwarten", "durchfallen", "einladen", "ernennen", "fallen", "fangen", "festhalten",
-    "finden", "geben", "gehen", "haben", "halten", "hinzukommen", "hören", "innehaben", "klarstellen", "kommen",
-    "laden", "loswerden", "nehmen", "nennen", "rufen", "sagen", "schlafen", "sehen", "sein", "setzen",
+    "auffallen", "aufstehen", "aufwarten", "durchfallen", "einladen", "ernennen", "fallen", "fangen", "fernsehen",
+    "festhalten", "finden", "geben", "gehen", "haben", "halten", "hinzukommen", "hören", "innehaben", "klarstellen",
+    "kommen", "laden", "loswerden", "nehmen", "nennen", "rufen", "sagen", "schlafen", "sehen", "sein", "setzen",
     "stattfinden", "stehen", "stellen", "übersetzen", "vorhaben", "warten", "werden", "wiederkommen", "wiedersehen",
     "zuhören", "zunehmen", "zurückgeben", "zurückhaben", "zurufen",
 ];
@@ -374,7 +374,6 @@ fn s31_finds_the_separable_reading_of_uebersetzen() {
 }
 
 #[test]
-#[ignore = "coordinated particles: zu before statt is not a clause end, so only abnehmen is found"]
 fn s32_finds_both_coordinated_particles() {
     let found = terms("Er nimmt im Winter zu statt ab.", "nimmt");
     assert!(found.contains(&"zunehmen".to_string()) && found.contains(&"abnehmen".to_string()));
@@ -385,6 +384,22 @@ fn s32_finds_the_last_of_two_coordinated_particles() {
     assert_eq!(
         first_term("Er nimmt im Winter zu statt ab.", "nimmt"),
         "abnehmen"
+    );
+}
+
+#[test]
+fn finds_a_particle_after_the_preposition_statt() {
+    assert_eq!(
+        first_term("Er kam statt seines Bruders an.", "kam"),
+        "ankommen"
+    );
+}
+
+#[test]
+fn finds_a_particle_before_statt_and_a_zu_infinitive() {
+    assert_eq!(
+        first_term("Er sieht fern, statt zu lernen.", "sieht"),
+        "fernsehen"
     );
 }
 
