@@ -1,6 +1,8 @@
 //! Dictionaries imported into SQLite, and the queries that lookup runs against them.
 
 mod columns;
+#[cfg(test)]
+mod concurrent_import_tests;
 mod importer;
 mod kanji_lookup;
 mod listing;
