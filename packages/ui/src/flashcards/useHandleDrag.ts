@@ -8,7 +8,7 @@ import {
 import {
   draggedHandle,
   type WaveformFrame,
-  type WaveformView,
+  type ClipEditorView,
   xOfTime,
 } from "./clipView.ts";
 
@@ -33,7 +33,7 @@ type Drag = DraggableTime & {
   frame: WaveformFrame;
   grabOffsetPx: number;
   x: number;
-  view: WaveformView;
+  view: ClipEditorView;
   lastMs: number;
   lastFrameAt: number | null;
   animationFrame: number;
@@ -52,9 +52,9 @@ export function useHandleDrag({
   onDragEnd,
 }: {
   waveformRef: RefObject<HTMLElement | null>;
-  view: WaveformView;
+  view: ClipEditorView;
   durationMs: number;
-  onViewChange: (view: WaveformView) => void;
+  onViewChange: (view: ClipEditorView) => void;
   /** Called once the pointer lets go of a handle, after the last move has been applied. */
   onDragEnd: () => void;
 }): (time: DraggableTime) => DragHandlers {
