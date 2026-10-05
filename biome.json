@@ -22,6 +22,7 @@
       "!**/fixtures/sample-stardict",
       "!**/fixtures/sample-yomitan",
       "!**/fixtures/sample-epub",
+      "!**/deinflection/german/fixtures/wikidata-cases.json",
       "!**/fixtures/conversion-h264-aac.ts"
     ]
   },
