@@ -27,3 +27,5 @@ pub use lookup_result::{
     DictionaryDefinitions, DictionaryFrequency, DictionaryPronunciation, DictionaryStylesheet,
     KanjiResult, LookupResult,
 };
+#[cfg(test)]
+mod german_lookup_tests;

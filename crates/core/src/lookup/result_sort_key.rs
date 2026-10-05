@@ -11,6 +11,8 @@ pub struct ResultSortKey {
     pub inflection_count: usize,
     /// Whether the only inflection undone is the step from a bare stem to its dictionary form, as from 書き to 書く.
     pub undoes_only_a_bare_stem: bool,
+    /// Whether the result rests on a rule that fits almost any word, such as the German bare-stem imperative.
+    pub is_fallback: bool,
     pub commonness: Commonness,
     /// Whether an entry in the result has the searched headword as written, without folding its case.
     pub matches_exactly: bool,
@@ -26,10 +28,11 @@ impl ResultSortKey {
     /// 1. A one-character match with inflections undone, such as し reached from する, ranks last.
     /// 2. Unchanged matches and bare stems rank above every other inflected match,
     ///    so that 動かす as listed ranks above 動く, which it may also be a causative of.
-    /// 3. Within each of those two groups, the more common result comes first where one frequency dictionary lists both,
+    /// 3. A result resting on a rule that fits almost any word, such as the German bare-stem imperative, ranks below its equals.
+    /// 4. Within each of those two groups, the more common result comes first where one frequency dictionary lists both,
     ///    so that a common verb's stem 書き (書く) can outrank a rarer noun 書き. Fewer inflections come next.
-    /// 4. Then an exact match comes before one found only by folding case, as Maße does before Masse.
-    /// 5. Then a result that a frequency dictionary lists, then earlier imported dictionaries, then higher scores.
+    /// 5. Then an exact match comes before one found only by folding case, as Maße does before Masse.
+    /// 6. Then a result that a frequency dictionary lists, then earlier imported dictionaries, then higher scores.
     pub fn compare(&self, other: &Self) -> Ordering {
         other
             .matched_length
@@ -42,6 +45,7 @@ impl ResultSortKey {
                 self.is_inflected_beyond_a_stem()
                     .cmp(&other.is_inflected_beyond_a_stem())
             })
+            .then_with(|| self.is_fallback.cmp(&other.is_fallback))
             .then_with(|| self.commonness.compare_shared(&other.commonness))
             .then_with(|| self.inflection_count.cmp(&other.inflection_count))
             .then_with(|| other.matches_exactly.cmp(&self.matches_exactly))
@@ -261,6 +265,31 @@ mod tests {
                 key(3, 2, Some(1.0)).compare(&key(3, 1, Some(900.0))),
                 Ordering::Less
             );
+        }
+
+        #[test]
+        fn ranks_a_fallback_after_an_equal_reading_before_commonness() {
+            let plain = ResultSortKey::default();
+            let fallback = ResultSortKey {
+                is_fallback: true,
+                commonness: commonness(&[(1, None, 1.0)]),
+                ..ResultSortKey::default()
+            };
+            assert_eq!(plain.compare(&fallback), Ordering::Less);
+        }
+
+        #[test]
+        fn ranks_commonness_before_dictionary_order() {
+            let common = ResultSortKey {
+                commonness: commonness(&[(1, None, 1.0)]),
+                first_dictionary_rank: 5,
+                ..ResultSortKey::default()
+            };
+            let early = ResultSortKey {
+                first_dictionary_rank: 1,
+                ..ResultSortKey::default()
+            };
+            assert_eq!(common.compare(&early), Ordering::Less);
         }
 
         #[test]

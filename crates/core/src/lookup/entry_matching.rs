@@ -1,11 +1,13 @@
 use super::fold_case::fold_case;
 use super::found_rows::FoundEntry;
 use super::lookup_candidate::LookupCandidate;
+use crate::deinflection::is_unmarked_word_class;
 
 /// Reports whether a found entry is a dictionary form that the candidate stands for, ignoring case.
 ///
 /// A candidate with inflections undone needs an entry of one of its word classes,
 /// unless the entry's format carries no word classes at all.
+/// An entry without classes also fits a candidate of a class that dictionaries leave unmarked, such as adverbs.
 pub fn is_match(candidate: &LookupCandidate, found: &FoundEntry) -> bool {
     found.folded_headword == fold_case(&candidate.deinflection.term)
         && (!candidate.is_inflected()
@@ -25,11 +27,17 @@ pub fn best_match<'a>(
 }
 
 fn has_required_word_class(candidate: &LookupCandidate, found: &FoundEntry) -> bool {
+    let candidate_classes = &candidate.deinflection.word_classes;
+    if found.entry.word_classes.is_empty() {
+        return candidate_classes
+            .iter()
+            .any(|word_class| is_unmarked_word_class(word_class));
+    }
     found
         .entry
         .word_classes
         .iter()
-        .any(|word_class| candidate.deinflection.word_classes.contains(word_class))
+        .any(|word_class| candidate_classes.contains(word_class))
 }
 
 #[cfg(test)]
@@ -133,6 +141,18 @@ mod tests {
     fn rejects_a_deinflected_candidate_for_a_yomitan_entry_without_word_classes() {
         let entry = found("食べる", DictionaryFormatKind::Yomitan, &[]);
         assert!(!is_match(&deinflected("食べた", "食べる", "v1"), &entry));
+    }
+
+    #[test]
+    fn matches_an_adverb_candidate_to_a_yomitan_entry_without_word_classes() {
+        let entry = found("gern", DictionaryFormatKind::Yomitan, &[]);
+        assert!(is_match(&deinflected("lieber", "gern", "adv"), &entry));
+    }
+
+    #[test]
+    fn rejects_an_adverb_candidate_for_a_yomitan_entry_of_another_word_class() {
+        let entry = found("gern", DictionaryFormatKind::Yomitan, &["n"]);
+        assert!(!is_match(&deinflected("lieber", "gern", "adv"), &entry));
     }
 
     #[test]
