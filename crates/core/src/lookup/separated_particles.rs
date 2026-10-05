@@ -7,8 +7,9 @@
 
 use super::context_sentence::{SentenceToken, sentence_around};
 use super::german_clause_words::{
-    BI_PARTICLE_ADVERBS, COMPARISON_PARTICLES, COORDINATORS, NEVER_SEPARATED_PREFIXES,
-    PREPOSITIONS, RELATIVE_PRONOUNS, SUBJUNCTIONS, UNSEPARABLE_BASES, W_WORDS,
+    BI_PARTICLE_ADVERBS, COMPARISON_PARTICLES, COORDINATORS, INSTEAD_CONJUNCTIONS,
+    NEVER_SEPARATED_PREFIXES, PREPOSITIONS, RELATIVE_PRONOUNS, SUBJUNCTIONS, UNSEPARABLE_BASES,
+    W_WORDS,
 };
 use super::lookup_candidate::LookupCandidate;
 use super::separated_verb::{ContextWord, SeparatedVerb};
@@ -73,8 +74,8 @@ impl Sentence {
     }
 
     /// Lists the positions in the clause of the finite verb at `verb` where its particle may stand:
-    /// directly before the end of the clause, a coordinator or a comparison.
-    /// The clause skips embedded clauses, and reaches past a comma or coordinator when no finite verb follows.
+    /// directly before the end of the clause, a joining word or a comparison.
+    /// The clause skips embedded clauses, and reaches past a comma or joining word when no finite verb follows.
     fn particle_slots(&self, verb: usize) -> Vec<usize> {
         if !self.is_verb(verb) || self.ends_clause_at(verb + 1) {
             return Vec::new();
@@ -89,7 +90,7 @@ impl Sentence {
                 }
                 continue;
             }
-            if self.is_comma(index) || self.is_word_of(index, COORDINATORS) {
+            if self.is_comma(index) || self.is_joining_word(index) {
                 if self.has_finite_verb_from(index + 1) {
                     break;
                 }
@@ -161,19 +162,19 @@ impl Sentence {
                 || (opens(PREPOSITIONS) && self.is_word_of(index + 2, RELATIVE_PRONOUNS)))
     }
 
-    /// Whether a lowercase finite verb stands between `start` and the next comma, coordinator, subjunction or end.
+    /// Whether a lowercase finite verb stands between `start` and the next comma, joining word, subjunction or end.
     fn has_finite_verb_from(&self, start: usize) -> bool {
         (start..self.tokens.len())
             .take_while(|index| {
                 !self.is_comma(*index)
-                    && !self.is_word_of(*index, COORDINATORS)
+                    && !self.is_joining_word(*index)
                     && !self.is_word_of(*index, SUBJUNCTIONS)
             })
             .any(|index| self.is_verb(index))
     }
 
     /// Whether the word at `index` may be a separated particle: a lowercase word directly before the end of the clause,
-    /// a coordinator or a comparison, which is not a prefix that never separates or part of a bi-particle adverb.
+    /// a joining word or a comparison, which is not a prefix that never separates or part of a bi-particle adverb.
     fn is_particle_slot(&self, index: usize) -> bool {
         let Some(word) = self.word(index) else {
             return false;
@@ -182,10 +183,17 @@ impl Sentence {
         starts_lowercase(&word.text)
             && (next == self.tokens.len()
                 || self.is_comma(next)
-                || self.is_word_of(next, COORDINATORS)
+                || self.is_joining_word(next)
                 || self.is_word_of(next, COMPARISON_PARTICLES))
             && !NEVER_SEPARATED_PREFIXES.contains(&word.text.as_str())
             && !self.is_in_bi_particle_adverb(index)
+    }
+
+    /// Whether the word at `index` is a coordinator, or a conjunction meaning "instead of" that a word follows.
+    /// A statt that ends its clause is the particle of stattfinden instead.
+    fn is_joining_word(&self, index: usize) -> bool {
+        self.is_word_of(index, COORDINATORS)
+            || (self.is_word_of(index, INSTEAD_CONJUNCTIONS) && self.word(index + 1).is_some())
     }
 
     fn is_in_bi_particle_adverb(&self, index: usize) -> bool {

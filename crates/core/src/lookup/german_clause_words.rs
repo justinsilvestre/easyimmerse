@@ -7,6 +7,14 @@
 /// STTS tag table, KON (und, oder, aber).
 pub const COORDINATORS: &[&str] = &["und", "oder", "aber", "sondern", "sowie"];
 
+/// Conjunctions meaning "instead of", which join two phrases as in „Er nimmt zu statt ab".
+/// They are also prepositions, so a verb directly before them is not taken to end its clause.
+///
+/// Sources: Duden online, „statt, anstatt" (https://www.duden.de/rechtschreibung/statt_anstatt), Konjunktion;
+/// STTS tag table, KOUI (anstatt), for their use before a zu-infinitive.
+/// A reviewer who knows German confirmed that statt joins the two particles of „Er nimmt zu statt ab".
+pub const INSTEAD_CONJUNCTIONS: &[&str] = &["statt", "anstatt"];
+
 /// Subordinating conjunctions that open a verb-final clause and are not spelled like a particle or a preposition.
 /// Those that serve more often as an adverb, such as da, nun, so and soweit, are left out.
 ///
