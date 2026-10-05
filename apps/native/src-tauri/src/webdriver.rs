@@ -2,15 +2,17 @@
 //!
 //! The WebdriverIO Tauri service starts the app with `TAURI_WEBDRIVER_PORT` set. The embedded
 //! WebDriver server plugin then listens on that loopback port, and the companion plugin answers
-//! the service's questions about the app's windows. Only debug desktop builds with the `webdriver`
-//! feature compile the plugins in, and they register them only when that variable is set, so an
-//! ordinary development run exposes no automation server.
+//! the service's questions about the app's windows. Only the `webdriver` feature compiles the plugins
+//! in. Only debug desktop builds register them, and only when that variable is set, so an ordinary
+//! development run exposes no automation server.
 
 #[cfg(all(feature = "webdriver", debug_assertions, desktop))]
 pub use enabled::add_plugins_when_requested;
 
 #[cfg(not(all(feature = "webdriver", debug_assertions, desktop)))]
-pub fn add_plugins_when_requested(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
+pub fn add_plugins_when_requested(
+    builder: tauri::Builder<tauri::Wry>,
+) -> tauri::Builder<tauri::Wry> {
     builder
 }
 
