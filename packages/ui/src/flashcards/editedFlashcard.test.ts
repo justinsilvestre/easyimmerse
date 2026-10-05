@@ -237,3 +237,69 @@ describe("reduceEditedFlashcard on lookupAnswered", () => {
     ).toBe(edited);
   });
 });
+
+describe("reduceEditedFlashcard while a late lookup is awaited", () => {
+  const fields = {
+    word: "食べる",
+    word_pronunciation: "たべる",
+    l1_definition: "to eat",
+    l2_definition: "",
+  };
+
+  function awaiting(draft: FlashcardDraft) {
+    return reduceEditedFlashcard(null, {
+      type: "started",
+      draft,
+      awaitsLookup: true,
+    });
+  }
+
+  it("asks a save to wait for the lookup", () => {
+    const draft = createDraft();
+    const edited = reduceEditedFlashcard(awaiting(draft), {
+      type: "saveRequested",
+    });
+    expect(edited?.kind === "new" && edited.isSaveWaiting).toBe(true);
+  });
+
+  it("stops awaiting once the lookup answers", () => {
+    const draft = createDraft();
+    const edited = reduceEditedFlashcard(awaiting(draft), {
+      type: "lookupAnswered",
+      draft,
+      fields,
+    });
+    expect(edited?.kind === "new" && edited.awaitsLookup).toBe(false);
+  });
+
+  it("stops awaiting once the lookup fails", () => {
+    const draft = createDraft();
+    const edited = reduceEditedFlashcard(awaiting(draft), {
+      type: "lookupFailed",
+      draft,
+    });
+    expect(edited?.kind === "new" && edited.awaitsLookup).toBe(false);
+  });
+
+  it("replaces the word the user has not typed in, as with a dictionary form", () => {
+    const draft = {
+      ...createDraft(),
+      content: { ...createDraft().content, word: "食べた" },
+    };
+    const edited = reduceEditedFlashcard(awaiting(draft), {
+      type: "lookupAnswered",
+      draft,
+      fields,
+    });
+    expect(edited?.editor.content.word).toBe("食べる");
+  });
+
+  it("clears the waiting save once it starts", () => {
+    const draft = createDraft();
+    const waiting = reduceEditedFlashcard(awaiting(draft), {
+      type: "saveRequested",
+    });
+    const edited = reduceEditedFlashcard(waiting, { type: "saveStarted" });
+    expect(edited?.kind === "new" && edited.isSaveWaiting).toBe(false);
+  });
+});

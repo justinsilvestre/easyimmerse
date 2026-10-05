@@ -64,6 +64,8 @@ type MediaScreenSetup = {
   unansweredLookups?: readonly string[];
   /** The texts whose lookups answer only after the given number of milliseconds. */
   slowLookups?: Readonly<Record<string, number>>;
+  /** The texts whose lookups fail after the given number of milliseconds. */
+  failingLookups?: Readonly<Record<string, number>>;
 };
 
 /**
@@ -75,6 +77,7 @@ export function renderMediaScreen({
   dictionaries = germanDictionaries,
   unansweredLookups = [],
   slowLookups = {},
+  failingLookups = {},
 }: MediaScreenSetup = {}) {
   const client = withUnansweredLookups(
     createFakeBackendClient(
@@ -90,7 +93,7 @@ export function renderMediaScreen({
       },
       directPlaybackRoutes,
     ),
-    { unansweredLookups, slowLookups },
+    { unansweredLookups, slowLookups, failingLookups },
   );
   const navigation = { dictionariesOpenCount: 0 };
   const rendered = renderWithAppStore(
@@ -119,7 +122,13 @@ function withUnansweredLookups(
   {
     unansweredLookups,
     slowLookups,
-  }: Required<Pick<MediaScreenSetup, "unansweredLookups" | "slowLookups">>,
+    failingLookups,
+  }: Required<
+    Pick<
+      MediaScreenSetup,
+      "unansweredLookups" | "slowLookups" | "failingLookups"
+    >
+  >,
 ): ReturnType<typeof createFakeBackendClient> {
   return {
     requests: client.requests,
@@ -131,14 +140,22 @@ function withUnansweredLookups(
         client.requests.push(request);
         return new Promise(() => undefined);
       }
+      const failMs = failingLookups[text];
+      if (failMs !== undefined) {
+        client.requests.push(request);
+        return after(failMs).then(() => ({
+          error: { status: 500, message: "The dictionaries are unavailable" },
+        }));
+      }
       const delayMs = slowLookups[text];
       if (delayMs === undefined) return client.send<T>(request);
-      return new Promise<void>((resolve) => setTimeout(resolve, delayMs)).then(
-        () => client.send<T>(request),
-      );
+      return after(delayMs).then(() => client.send<T>(request));
     },
   };
 }
+
+const after = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export async function findSubtitles() {
   await screen.findByRole("button", { name: "night" });

@@ -10,6 +10,7 @@ import { useEffect, useReducer, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import {
+  type EditedFlashcard,
   flashcardsOnWaveform,
   reduceEditedFlashcard,
   segmentIdOf,
@@ -24,6 +25,7 @@ const noFlashcards: readonly Flashcard[] = [];
  * Saving a new card creates it; saving an existing one replaces it.
  * Retiming the open card changes only the editor's copy, which is saved with the rest of the editor; any other card is saved at once.
  * A new card started before the media file is known to show pictures gains a screenshot once it is.
+ * A new card whose word's lookup has yet to answer is saved only once it answers or fails, so that its definitions are saved with it.
  */
 export function useMediaFlashcards(
   projectId: string,
@@ -58,8 +60,8 @@ export function useMediaFlashcards(
   const close = () => dispatchEdited({ type: "closed" });
   const edit = (action: EditorAction) =>
     dispatchEdited({ type: "edited", action });
-  const save = () => {
-    if (edited === null) return;
+  /** Sends the card as the editor holds it. */
+  const saveNow = (edited: EditedFlashcard) => {
     const changes = {
       content: edited.editor.content,
       included_fields: [...edited.editor.includedFields],
@@ -78,6 +80,18 @@ export function useMediaFlashcards(
       })
       .catch(() => notify("The flashcard could not be saved"));
   };
+  const save = () => {
+    if (edited === null) return;
+    if (edited.kind === "new" && edited.awaitsLookup)
+      return dispatchEdited({ type: "saveRequested" });
+    saveNow(edited);
+  };
+  useEffect(() => {
+    if (edited?.kind !== "new" || !edited.isSaveWaiting || edited.awaitsLookup)
+      return;
+    dispatchEdited({ type: "saveStarted" });
+    saveNow(edited);
+  });
   const remove = () => {
     if (edited?.kind !== "existing") return close();
     deleteFlashcard({ projectId, flashcardId: edited.flashcard.id })
@@ -98,13 +112,24 @@ export function useMediaFlashcards(
     edit,
     isSaved,
     dismissSaved: () => setSaved(false),
-    start: (draft: FlashcardDraft) => {
+    /** Starts a new card; `awaitsLookup` tells that its word's lookup has yet to answer. */
+    start: (draft: FlashcardDraft, awaitsLookup = false) => {
       setSaved(false);
-      dispatchEdited({ type: "started", draft });
+      dispatchEdited({ type: "started", draft, awaitsLookup });
     },
-    /** Fills the new flashcard started from `draft`, if it is still open, from a lookup that answered after it opened. */
-    fillFromLookup: (draft: FlashcardDraft, fields: LookupFlashcardFields) =>
-      dispatchEdited({ type: "lookupAnswered", draft, fields }),
+    /**
+     * Fills the new flashcard started from `draft`, if it is still open, from a lookup that answered after it opened,
+     * or, with null fields, lets it be saved as it is once that lookup has failed.
+     */
+    finishLookup: (
+      draft: FlashcardDraft,
+      fields: LookupFlashcardFields | null,
+    ) =>
+      dispatchEdited(
+        fields
+          ? { type: "lookupAnswered", draft, fields }
+          : { type: "lookupFailed", draft },
+      ),
     open: (id: string) => {
       const flashcard = find(id);
       if (flashcard) dispatchEdited({ type: "opened", flashcard });

@@ -10,6 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
+  bodyOf,
   dictionarySummary,
   doubleClick,
   findSubtitles,
@@ -279,6 +280,53 @@ describe("MediaScreen lookup gestures", () => {
         });
         await advance(1500);
         expect(fieldValue("Definition (en)")).toMatch(/^to eat/);
+      });
+
+      describe("when Save is pressed before the answer", () => {
+        async function pressSaveBeforeAnswer(
+          setup: Parameters<typeof renderMediaScreen>[0] = lateLookup,
+        ) {
+          const rendered = await doubleClickCat(setup);
+          await advance(1500);
+          fireEvent.click(screen.getByRole("button", { name: "Save" }));
+          return rendered;
+        }
+
+        const savedWord = (
+          client: ReturnType<typeof createFakeBackendClient>,
+        ) =>
+          (
+            bodyOf(
+              requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
+            ) as { content?: { word?: string } } | undefined
+          )?.content?.word;
+
+        it("says that it waits for the definitions", async () => {
+          await pressSaveBeforeAnswer();
+          expect(screen.getByText("Waiting for definitions…")).toBeDefined();
+        });
+
+        it("sends nothing while it waits, so that no answer can arrive during the save", async () => {
+          const { client } = await pressSaveBeforeAnswer();
+          await advance(1000);
+          expect(
+            requestsTo(client.requests, "POST", "/projects/p1/flashcards"),
+          ).toEqual([]);
+        });
+
+        it("saves the flashcard filled from the answer once it arrives", async () => {
+          const { client } = await pressSaveBeforeAnswer();
+          await advance(1500);
+          await vi.waitFor(() => expect(savedWord(client)).toBe("fressen"));
+        });
+
+        it("saves the flashcard as it is once the lookup fails", async () => {
+          const { client } = await pressSaveBeforeAnswer({
+            failingLookups: { "cat is sleeping.": 3000 },
+          });
+          await advance(1500);
+          await vi.waitFor(() => expect(savedWord(client)).toBe("cat"));
+        });
       });
     });
 

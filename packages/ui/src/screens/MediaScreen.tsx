@@ -96,10 +96,8 @@ export function MediaScreen({
     const started = lookupFields
       ? { ...draft, content: { ...draft.content, ...lookupFields } }
       : draft;
-    flashcards.start(started);
-    lateFields?.then(
-      (fields) => fields && flashcards.fillFromLookup(started, fields),
-    );
+    flashcards.start(started, lateFields !== undefined);
+    lateFields?.then((fields) => flashcards.finishLookup(started, fields));
   };
   const languages = {
     target: settings.target_language,
@@ -193,6 +191,10 @@ export function MediaScreen({
             languages={languages}
             waveform={clipWaveform}
             screenshotUrl={screenshotUrl}
+            isSaveWaiting={
+              flashcards.edited.kind === "new" &&
+              flashcards.edited.isSaveWaiting
+            }
             onSave={flashcards.save}
             onDelete={flashcards.remove}
             onClose={flashcards.close}

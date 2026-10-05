@@ -22,11 +22,16 @@ export type EditedFlashcard =
       editor: EditorState;
       /** The text fields the user has typed in, which a late lookup leaves alone. */
       typedFields: readonly FlashcardFieldKey[];
+      /** Whether the lookup of the flashcard's word has yet to answer, after the editor opened without it. */
+      awaitsLookup: boolean;
+      /** Whether the user has asked to save, and the save waits for that lookup. */
+      isSaveWaiting: boolean;
     }
   | { kind: "existing"; flashcard: Flashcard; editor: EditorState };
 
 export type EditedFlashcardAction =
-  | { type: "started"; draft: FlashcardDraft }
+  /** A new flashcard opens, perhaps before the lookup of its word has answered. */
+  | { type: "started"; draft: FlashcardDraft; awaitsLookup?: boolean }
   | { type: "opened"; flashcard: Flashcard }
   | { type: "edited"; action: EditorAction }
   /** The lookup of the new flashcard started from `draft` has answered after the editor opened. */
@@ -35,6 +40,12 @@ export type EditedFlashcardAction =
       draft: FlashcardDraft;
       fields: LookupFlashcardFields;
     }
+  /** The lookup of the new flashcard started from `draft` has failed after the editor opened. */
+  | { type: "lookupFailed"; draft: FlashcardDraft }
+  /** The user has asked to save a new flashcard whose lookup has yet to answer. */
+  | { type: "saveRequested" }
+  /** The waiting save has been sent. */
+  | { type: "saveStarted" }
   /** The media file has turned out to show pictures, so a new flashcard started before then can have a screenshot. */
   | { type: "screenshotsAvailable" }
   | { type: "closed" };
@@ -50,6 +61,8 @@ export function reduceEditedFlashcard(
         draft: action.draft,
         editor: editorStateOf(action.draft),
         typedFields: [],
+        awaitsLookup: action.awaitsLookup ?? false,
+        isSaveWaiting: false,
       };
     case "opened":
       return {
@@ -61,7 +74,19 @@ export function reduceEditedFlashcard(
       return edited && withEdit(edited, action.action);
     case "lookupAnswered":
       return edited?.kind === "new" && edited.draft === action.draft
-        ? withLookupFields(edited, action.fields)
+        ? { ...withLookupFields(edited, action.fields), awaitsLookup: false }
+        : edited;
+    case "lookupFailed":
+      return edited?.kind === "new" && edited.draft === action.draft
+        ? { ...edited, awaitsLookup: false }
+        : edited;
+    case "saveRequested":
+      return edited?.kind === "new"
+        ? { ...edited, isSaveWaiting: true }
+        : edited;
+    case "saveStarted":
+      return edited?.kind === "new"
+        ? { ...edited, isSaveWaiting: false }
         : edited;
     case "screenshotsAvailable":
       return edited?.kind === "new" ? withScreenshot(edited) : edited;
@@ -88,7 +113,7 @@ function withEdit(
 function withLookupFields(
   edited: Extract<EditedFlashcard, { kind: "new" }>,
   fields: LookupFlashcardFields,
-): EditedFlashcard {
+): Extract<EditedFlashcard, { kind: "new" }> {
   const untyped = Object.entries(fields).filter(
     ([key]) => !edited.typedFields.includes(key as FlashcardFieldKey),
   );

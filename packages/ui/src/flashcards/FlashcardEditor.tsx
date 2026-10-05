@@ -25,6 +25,7 @@ export function FlashcardEditor({
   languages,
   waveform,
   screenshotUrl = null,
+  isSaveWaiting = false,
   onSave,
   onDelete,
   onClose,
@@ -36,6 +37,8 @@ export function FlashcardEditor({
   waveform: MediaWaveform | null;
   /** The image of the screenshot at its current time. Without it, no screenshot is shown. */
   screenshotUrl?: string | null;
+  /** Whether a save the user asked for waits for definitions still on their way. */
+  isSaveWaiting?: boolean;
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -93,11 +96,21 @@ export function FlashcardEditor({
         >
           More fields
         </MenuButton>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {isSaveWaiting && (
+            <span role="status" className="text-xs text-fg-muted">
+              Waiting for definitions…
+            </span>
+          )}
           <Button variant="danger" onClick={onDelete}>
             Delete
           </Button>
-          <Button variant="primary" type="submit">
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={isSaveWaiting}
+            aria-busy={isSaveWaiting || undefined}
+          >
             Save
           </Button>
         </div>
