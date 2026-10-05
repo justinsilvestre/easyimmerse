@@ -66,6 +66,15 @@ const tableLayoutQuery = (
         hasHeader: String(layout.hasHeader),
       };
 
+/** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
+const lookupContextQuery = (
+  context: string | undefined,
+  offset: number | undefined,
+): Record<string, string> =>
+  context === undefined || offset === undefined
+    ? {}
+    : { context, offset: String(offset) };
+
 const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
   `/projects/${projectId}/media/${mediaFileId}`;
 
@@ -268,10 +277,10 @@ export const backendApi = createApi({
       invalidatesTags: ["Dictionaries"],
     }),
     lookupText: build.query<LookupResponse, LookupQuery>({
-      query: ({ text, language }) => ({
+      query: ({ text, language, context, offset }) => ({
         method: "GET",
         path: "/dictionaries/lookup",
-        query: { text, language },
+        query: { text, language, ...lookupContextQuery(context, offset) },
       }),
       providesTags: ["Dictionaries"],
     }),

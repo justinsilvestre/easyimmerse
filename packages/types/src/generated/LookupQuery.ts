@@ -8,4 +8,13 @@ text: string,
 /**
  * The language of the text, as a BCP 47 tag, which decides how inflections are undone.
  */
-language: string, };
+language: string, 
+/**
+ * The text around the looked-up character, such as its subtitle cue or paragraph.
+ * In German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an".
+ */
+context?: string, 
+/**
+ * The position of the looked-up character in `context`, counted in characters (Unicode scalar values).
+ */
+offset?: number, };

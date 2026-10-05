@@ -510,6 +510,12 @@ export interface components {
             start_ms?: number | null;
             tracks: components["schemas"]["TrackInfo"][];
         };
+        /** @description A word as written in the context of a lookup. */
+        ContextWord: {
+            /** @description The position of the word's first character in the context, counted in characters (Unicode scalar values). */
+            start: number;
+            text: string;
+        };
         /** @description Sizes are in bytes. */
         ConversionCacheStatus: {
             /**
@@ -705,6 +711,7 @@ export interface components {
             matchedText: string;
             pronunciations: components["schemas"]["DictionaryPronunciation"][];
             reading?: string | null;
+            separatedVerb?: components["schemas"]["SeparatedVerb"] | null;
             term: string;
         };
         /** @enum {string} */
@@ -826,6 +833,11 @@ export interface components {
             den: number;
             /** Format: int64 */
             num: number;
+        };
+        /** @description A particle verb whose finite verb and particle stand apart, as rufe and an in „Ich rufe dich morgen an". */
+        SeparatedVerb: {
+            particle: components["schemas"]["ContextWord"];
+            verb: components["schemas"]["ContextWord"];
         };
         SubtitleTracksResponse: {
             tracks: components["schemas"]["TrackInfo"][];
@@ -1492,6 +1504,13 @@ export interface operations {
                 text: string;
                 /** @description The language of the text, as a BCP 47 tag, which decides how inflections are undone. */
                 language: string;
+                /**
+                 * @description The text around the looked-up character, such as its subtitle cue or paragraph.
+                 *     In German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an".
+                 */
+                context?: string;
+                /** @description The position of the looked-up character in `context`, counted in characters (Unicode scalar values). */
+                offset?: number;
             };
             header?: never;
             path?: never;

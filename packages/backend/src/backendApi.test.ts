@@ -229,6 +229,25 @@ describe("backendApi", () => {
     ]);
   });
 
+  it("puts the context and offset in the query string for lookupText", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.lookupText.initiate({
+        text: "rufe dich an.",
+        language: "de",
+        context: "Ich rufe dich an.",
+        offset: 4,
+      }),
+    );
+    expect(client.requests[0]?.query).toEqual({
+      text: "rufe dich an.",
+      language: "de",
+      context: "Ich rufe dich an.",
+      offset: "4",
+    });
+  });
+
   it("returns the dictionaries' stylesheets with the lookup results", async () => {
     const response: LookupResponse = {
       results: [],

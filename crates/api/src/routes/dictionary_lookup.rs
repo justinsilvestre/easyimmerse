@@ -2,7 +2,7 @@ use axum::Json;
 use axum::extract::{Query, State};
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, KanjiResult, LookupResult, build_kanji_results, build_lookup_results,
-    candidate_headwords, is_kanji, lookup_candidates,
+    candidate_headwords, is_kanji, lookup_candidates, separated_verb_candidates,
 };
 use easyimmerse_storage::{Storage, StorageError};
 use serde::{Deserialize, Serialize};
@@ -20,6 +20,15 @@ pub struct LookupQuery {
     pub text: String,
     /// The language of the text, as a BCP 47 tag, which decides how inflections are undone.
     pub language: String,
+    /// The text around the looked-up character, such as its subtitle cue or paragraph.
+    /// In German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub context: Option<String>,
+    /// The position of the looked-up character in `context`, counted in characters (Unicode scalar values).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub offset: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -51,13 +60,17 @@ pub async fn lookup_text(
     Query(query): Query<LookupQuery>,
 ) -> Result<Json<LookupResponse>, ApiFailure> {
     let response = state
-        .with_storage(move |storage| look_up(storage, &query.text, &query.language))
+        .with_storage(move |storage| look_up(storage, &query))
         .await?;
     Ok(Json(response))
 }
 
-fn look_up(storage: &Storage, text: &str, language: &str) -> Result<LookupResponse, StorageError> {
-    let candidates = lookup_candidates(text, language);
+fn look_up(storage: &Storage, query: &LookupQuery) -> Result<LookupResponse, StorageError> {
+    let (text, language) = (query.text.as_str(), query.language.as_str());
+    let mut candidates = lookup_candidates(text, language);
+    if let (Some(context), Some(offset)) = (&query.context, query.offset) {
+        candidates.extend(separated_verb_candidates(context, offset, language));
+    }
     let found_entries = storage.find_dictionary_entries(&candidate_headwords(&candidates))?;
     let mut terms: Vec<String> = found_entries
         .iter()

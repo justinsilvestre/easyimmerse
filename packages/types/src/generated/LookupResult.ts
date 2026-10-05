@@ -2,6 +2,7 @@
 import type { DictionaryDefinitions } from "./DictionaryDefinitions";
 import type { DictionaryFrequency } from "./DictionaryFrequency";
 import type { DictionaryPronunciation } from "./DictionaryPronunciation";
+import type { SeparatedVerb } from "./SeparatedVerb";
 
 /**
  * The entries of every dictionary for one term and reading that the looked-up text may stand for.
@@ -15,4 +16,9 @@ matchedText: string, term: string, reading: string | null,
  * The equally good chains of inflections that lead from the term to the matched text, the most plausible first.
  * Each chain names its inflections outermost first. The list is empty when no inflection was undone.
  */
-inflectionChains: Array<Array<string>>, definitions: Array<DictionaryDefinitions>, frequencies: Array<DictionaryFrequency>, pronunciations: Array<DictionaryPronunciation>, };
+inflectionChains: Array<Array<string>>, definitions: Array<DictionaryDefinitions>, frequencies: Array<DictionaryFrequency>, pronunciations: Array<DictionaryPronunciation>, 
+/**
+ * The finite verb and the particle, with their places in the context, when the term is a particle verb
+ * whose parts stand apart, as rufe and an in „Ich rufe dich morgen an".
+ */
+separatedVerb?: SeparatedVerb, };

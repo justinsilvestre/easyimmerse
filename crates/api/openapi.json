@@ -650,6 +650,25 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "The text around the looked-up character, such as its subtitle cue or paragraph.\nIn German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an\".",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The position of the looked-up character in `context`, counted in characters (Unicode scalar values).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -2527,6 +2546,24 @@
           }
         }
       },
+      "ContextWord": {
+        "type": "object",
+        "description": "A word as written in the context of a lookup.",
+        "required": [
+          "text",
+          "start"
+        ],
+        "properties": {
+          "start": {
+            "type": "integer",
+            "description": "The position of the word's first character in the context, counted in characters (Unicode scalar values).",
+            "minimum": 0
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
       "ConversionCacheStatus": {
         "type": "object",
         "description": "Sizes are in bytes.",
@@ -3210,6 +3247,17 @@
               "null"
             ]
           },
+          "separatedVerb": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SeparatedVerb",
+                "description": "The finite verb and the particle, with their places in the context, when the term is a particle verb\nwhose parts stand apart, as rufe and an in „Ich rufe dich morgen an\"."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "term": {
             "type": "string"
           }
@@ -3630,6 +3678,22 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          }
+        }
+      },
+      "SeparatedVerb": {
+        "type": "object",
+        "description": "A particle verb whose finite verb and particle stand apart, as rufe and an in „Ich rufe dich morgen an\".",
+        "required": [
+          "verb",
+          "particle"
+        ],
+        "properties": {
+          "particle": {
+            "$ref": "#/components/schemas/ContextWord"
+          },
+          "verb": {
+            "$ref": "#/components/schemas/ContextWord"
           }
         }
       },
