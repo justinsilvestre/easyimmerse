@@ -20,6 +20,8 @@ default = []
 # Embeds the built hello-rust plugin and exposes the `check_plugin_host` command,
 # which the end-to-end tests call to prove the plugin host runs on the platform under test.
 plugin-check = []
+# Compiles in the WebDriver plugins that the desktop end-to-end tests drive the app through; see webdriver.rs.
+webdriver = ["dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver"]
 
 [build-dependencies]
 tauri-build = { workspace = true }
@@ -50,7 +52,7 @@ paranoid-android = { workspace = true }
 [target.'cfg(target_os = "ios")'.dependencies]
 easyimmerse-plugins = { workspace = true, features = ["interpreter"] }
 
-# Debug builds register these plugins only when an end-to-end test asks for them; see webdriver.rs.
+# The webdriver feature turns these on. The mobile end-to-end tests go through Appium instead.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-wdio = { workspace = true }
-tauri-plugin-wdio-webdriver = { workspace = true }
+tauri-plugin-wdio = { workspace = true, optional = true }
+tauri-plugin-wdio-webdriver = { workspace = true, optional = true }
