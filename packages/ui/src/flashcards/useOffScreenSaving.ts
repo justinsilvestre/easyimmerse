@@ -1,17 +1,16 @@
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { saveRequestLimitMs } from "../lookup/lookupTiming.ts";
 import { withinTime } from "../lookup/withinTime.ts";
-import { useNotices } from "../notices/NoticesContext.tsx";
 import {
   type EditedFlashcard,
   reduceEditedFlashcard,
 } from "./editedFlashcard.ts";
-import { flashcardNotices } from "./flashcardNotices.ts";
 import { createSaveQueue } from "./saveQueue.ts";
 import { isSaveAsked } from "./saveStage.ts";
 import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
+import { useLeftCardNotices } from "./useLeftCardNotices.ts";
 import { useSaveUndo } from "./useSaveUndo.ts";
 import { useUnsavedWorkTracking } from "./useUnsavedWorkTracking.ts";
 import { withTimeLimit } from "./withTimeLimit.ts";
@@ -19,44 +18,21 @@ import { withTimeLimit } from "./withTimeLimit.ts";
 type FlashcardRequests = ReturnType<typeof useFlashcardRequests>;
 
 /**
- * Sends flashcard saves through one queue, counting each as pending so that the app warns before closing meanwhile,
- * and saves the cards that leave the editor, with notices about them:
- * - a card saved without the user pressing Save gains an Undo notice, as `useSaveUndo` describes;
- * - a failed save leaves a lasting notice with Retry, and with Reopen while the screen is mounted;
- * - a discarded card gains an Undo notice that reopens it, which goes when the screen does.
+ * Sends flashcard saves through one queue, and saves the cards that leave the editor.
+ * A card saved without the user pressing Save gains an Undo notice, as `useSaveUndo` describes;
+ * a failed save and a discarded card leave the notices `useLeftCardNotices` describes.
  * `reopen` brings a card back to the editor.
  */
 export function useOffScreenSaving(
   requests: FlashcardRequests,
   reopen: (card: EditedFlashcard) => void,
 ) {
-  const notices = useNotices();
   const [queue] = useState(createSaveQueue);
   const [lookups] = useState(
     () => new WeakMap<FlashcardDraft, Promise<LookupFlashcardFields | null>>(),
   );
-  /** The notices whose actions need this screen's editor, which go or lose those actions when the screen does. */
-  const [screenNotices] = useState(() => ({
-    reopenable: new Set<number>(),
-    discarded: new Set<number>(),
-  }));
-  const screen = useRef({ isMounted: false, reopen });
-  useLayoutEffect(() => {
-    screen.current.reopen = reopen;
-  });
-  useEffect(() => {
-    const current = screen.current;
-    current.isMounted = true;
-    return () => {
-      current.isMounted = false;
-      for (const id of screenNotices.reopenable)
-        notices.withdrawAction(id, "Reopen");
-      for (const id of screenNotices.discarded) notices.dismiss(id);
-      screenNotices.reopenable.clear();
-      screenNotices.discarded.clear();
-    };
-  }, [notices, screenNotices]);
-  const { track, hold } = useUnsavedWorkTracking();
+  const leftCards = useLeftCardNotices(reopen);
+  const { track } = useUnsavedWorkTracking();
   const undo = useSaveUndo(queue, requests);
   /**
    * Sends a card's save, or returns undefined when this opening's save is already under way.
@@ -74,32 +50,12 @@ export function useOffScreenSaving(
       ),
     );
   };
-  /** Leaves a notice holding a failed card's edits, which count as unsaved work until the card is retried, reopened or discarded. */
-  const showFailure = (card: EditedFlashcard) => {
-    const word = card.editor.content.word;
-    const release = hold();
-    const retry = () => {
-      saveOffScreen(card, false);
-      release();
-    };
-    const discard = () => {
-      release();
-      notices.show(flashcardNotices.discarded(word, () => showFailure(card)));
-    };
-    if (!screen.current.isMounted)
-      return void notices.show(
-        flashcardNotices.saveFailed(word, retry, discard),
-      );
-    const reopenCard = () => {
-      screen.current.reopen(card);
-      release();
-    };
-    screenNotices.reopenable.add(
-      notices.show(
-        flashcardNotices.saveFailed(word, retry, discard, reopenCard),
-      ),
+  const showFailure = (card: EditedFlashcard) =>
+    leftCards.showFailure(
+      card,
+      () => saveOffScreen(card, false),
+      () => undefined,
     );
-  };
   function saveOffScreen(card: EditedFlashcard, offersUndo: boolean) {
     const saving = send(card);
     if (!saving) return;
@@ -111,7 +67,7 @@ export function useOffScreenSaving(
     );
   }
   return {
-    isScreenMounted: () => screen.current.isMounted,
+    isScreenMounted: leftCards.isScreenMounted,
     withdrawUndo: undo.withdraw,
     /** Deletes a saved flashcard after any earlier work on it. */
     remove: (flashcard: Flashcard) => {
@@ -148,15 +104,7 @@ export function useOffScreenSaving(
         if (filled) saveOffScreen(filled, !isSaveAsked(card.stage));
       });
     },
-    /** Shows that a changed card was closed without saving, with an Undo that reopens it. */
-    showDiscarded: (card: EditedFlashcard) => {
-      const undo = () => screen.current.reopen(card);
-      screenNotices.discarded.add(
-        notices.show(
-          flashcardNotices.discarded(card.editor.content.word, undo),
-        ),
-      );
-    },
+    showDiscarded: leftCards.showDiscarded,
     /** Remembers the lookup a new card's late fields come from, for waiting on it once the card has left the editor. */
     rememberLookup: (
       draft: FlashcardDraft,
