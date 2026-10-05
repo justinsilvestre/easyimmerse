@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { MouseEvent, ReactNode } from "react";
 import {
   dictionaryElementId,
@@ -12,9 +13,11 @@ import { useDefinitionContext } from "./definitionContext.ts";
  */
 export function FragmentLink({
   id,
+  className,
   children,
 }: {
   id: string;
+  className?: string;
   children?: ReactNode;
 }) {
   const { dictionaryId } = useDefinitionContext();
@@ -24,7 +27,7 @@ export function FragmentLink({
     <a
       href={`#${elementId}`}
       onClick={(event) => scrollToElement(event, elementId)}
-      className="text-accent-fg underline underline-offset-2"
+      className={clsx("text-accent-fg underline underline-offset-2", className)}
     >
       <PlainTextScope>{children}</PlainTextScope>
     </a>
