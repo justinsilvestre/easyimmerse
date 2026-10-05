@@ -25,7 +25,9 @@ mod term_meta;
 mod yomitan;
 
 pub use archive::ArchiveError;
-pub use csv::{ColumnRole, CsvError, CsvFormat, TableLayout, TablePreview, preview_table};
+pub use csv::{
+    ColumnRole, CsvError, CsvFormat, TableLayout, TablePreview, preview_table, preview_table_in,
+};
 pub use dictionary_media::{DictionaryMedia, media_key};
 pub use error::DictionaryError;
 pub use format::DictionaryFormat;

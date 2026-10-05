@@ -2,6 +2,7 @@ import type { BrowserFileRegistry } from "@easyimmerse/state";
 import type { ReactNode } from "react";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "../browserFileRegistryContext.ts";
+import { WordClickMemoryProvider } from "../components/wordClickMemoryContext.tsx";
 import { PlayerRegistryContext } from "../playerRegistryContext.ts";
 import type { createTestAppStore } from "./createTestAppStore.ts";
 
@@ -20,7 +21,7 @@ export function AppStoreProviders({
     <Provider store={store}>
       <PlayerRegistryContext value={playerRegistry}>
         <BrowserFileRegistryContext value={browserFileRegistry}>
-          {children}
+          <WordClickMemoryProvider>{children}</WordClickMemoryProvider>
         </BrowserFileRegistryContext>
       </PlayerRegistryContext>
     </Provider>

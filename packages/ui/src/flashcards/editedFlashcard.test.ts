@@ -175,3 +175,65 @@ describe("reduceEditedFlashcard on screenshotsAvailable", () => {
     ).toBe(opened);
   });
 });
+
+describe("reduceEditedFlashcard on lookupAnswered", () => {
+  const fields = {
+    word: "Katze",
+    word_pronunciation: "ˈkat͡sə",
+    l1_definition: "cat",
+    l2_definition: "Haustier",
+  };
+
+  function startedWith(draft: FlashcardDraft) {
+    return reduceEditedFlashcard(null, { type: "started", draft });
+  }
+
+  it("fills the fields of the new flashcard it was made for", () => {
+    const draft = createDraft();
+    const edited = reduceEditedFlashcard(startedWith(draft), {
+      type: "lookupAnswered",
+      draft,
+      fields,
+    });
+    expect(edited?.editor.content.l1_definition).toBe("cat");
+  });
+
+  it("leaves alone a field the user has typed in", () => {
+    const draft = createDraft();
+    const typed = reduceEditedFlashcard(startedWith(draft), {
+      type: "edited",
+      action: { type: "textChanged", key: "l1_definition", value: "kitty" },
+    });
+    const edited = reduceEditedFlashcard(typed, {
+      type: "lookupAnswered",
+      draft,
+      fields,
+    });
+    expect(edited?.editor.content.l1_definition).toBe("kitty");
+  });
+
+  it("leaves alone a field the user has emptied", () => {
+    const draft = createDraft();
+    const typed = reduceEditedFlashcard(startedWith(draft), {
+      type: "edited",
+      action: { type: "textChanged", key: "word", value: "" },
+    });
+    const edited = reduceEditedFlashcard(typed, {
+      type: "lookupAnswered",
+      draft,
+      fields,
+    });
+    expect(edited?.editor.content.word).toBe("");
+  });
+
+  it("ignores an answer for another flashcard", () => {
+    const edited = startedWith(createDraft());
+    expect(
+      reduceEditedFlashcard(edited, {
+        type: "lookupAnswered",
+        draft: createDraft(),
+        fields,
+      }),
+    ).toBe(edited);
+  });
+});

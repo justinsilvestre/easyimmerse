@@ -68,7 +68,11 @@ impl DictionaryFormat for CsvFormat {
 
 /// Detects the layout of the one table in a file, which may be an archive, and returns it with the table's first rows.
 pub fn preview_table(file_name: &str, bytes: Vec<u8>) -> Result<TablePreview, DictionaryError> {
-    let mut source = DictionarySource::single(file_name, bytes)?;
+    preview_table_in(DictionarySource::single(file_name, bytes)?)
+}
+
+/// Detects the layout of the one table among a dictionary's files, and returns it with the table's first rows.
+pub fn preview_table_in(mut source: DictionarySource) -> Result<TablePreview, DictionaryError> {
     let name = table_file_name(&source)
         .ok_or(CsvError::NoTableFile)?
         .to_string();

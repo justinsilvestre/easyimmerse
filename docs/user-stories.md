@@ -259,18 +259,26 @@ As a user:
 ### Dictionary lookup and flashcard creation
 
 As a user:
-- when I mouse over or tap on a word in the target-language subtitles or text:
-  - [ ] I can see the definition of the word in the dictionary pop-up, if available
+- when I click or tap on a word in the target-language subtitles or text:
+  - [x] the dictionary pop-up opens at the word, with the word's definitions, if available
   - [ ] any audio/video playback is either looped (if the word is in the subtitles/timing-enhanced text) or paused (if no timing is available)
 - while the dictionary pop-up is open:
-  - [ ] I can click or double-tap on a word in the dictionary pop-up to create a flashcard for the word
+  - [x] while it shows a word rather than its search field, when I rest the mouse pointer on another word in the target-language subtitles or text for a moment, the pop-up moves to that word and shows its definitions; passing quickly over words leaves it where it is
+  - [x] while the mouse pointer is inside the pop-up, it stays on its word, so I can reach its buttons
+  - [x] on a touch screen, when I tap another word in the target-language subtitles or text, the pop-up moves to that word and shows its definitions
+  - [x] when I click or tap a word or a link in the pop-up's definitions, the pop-up shows the definitions of that word, or of the word the link points to
+  - [x] I can double-click, double-tap, or hold a tap on a word in the dictionary pop-up to create a flashcard for the word, filled from that word's definitions
 - when I click or tap outside the pop-up and not on a word in the target-language subtitles or text:
   - [x] the dictionary pop-up is closed
   - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
-- when I double-click or double-tap on a word in the target-language subtitles or text:
+- when I click the pop-up's close button, click or tap the word it shows, or press Escape:
+  - [x] the dictionary pop-up is closed
+  - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
+- when I double-click, double-tap, or hold a tap on a word in the target-language subtitles or text:
   - [x] a flashcard is created for the word
+  - [x] the word, its pronunciation, and the L1 and L2 definitions are filled from the word's definitions, as when I create the flashcard from the dictionary pop-up; when the definitions arrive only after the form has opened, they fill the fields I have not typed in yet
   - [x] the fields are shown according to my flashcard settings
-  - [x] the flashcard-editing form is opened
+  - [x] the flashcard-editing form is opened instead of the dictionary pop-up
 - when the flashcard-editing form is open:
   - [ ] the corresponding segment of audio/video is looped
   - [x] I can edit the text fields of the flashcard
@@ -281,6 +289,8 @@ As a user:
   - [x] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
   - [x] I can save the flashcard and close the form
   - [x] I can delete the flashcard and close the form
+- when I delete the contents of a field of the flashcard-editing form that can be filled from the dictionary:
+  - [ ] I am offered an option to fill it again from the lookup
 - when a flashcard is created from a word:
   - [ ] the fields are filled according to my flashcard settings, translation settings, and TTS settings
     - word (taken from the dictionary lemma)
@@ -326,10 +336,12 @@ As a user:
 - when I have more than one dictionary enabled for a language:
   - [ ] I can set the order in which their entries appear in the dictionary pop-up
 - when I add a dictionary from a table file (CSV, TSV or Tabfile):
-  - [ ] I see a preview of its first rows, with what each column holds
-  - [ ] I can change what a column holds, and whether the first row is a header, before importing
+  - [x] I see a preview of its first rows, with what each column holds
+  - [x] I can change what a column holds, and whether the first row is a header, before importing
 - when I add a dictionary in a format the app does not support:
   - [x] I am told which formats are supported, and that a plugin may add support for others
+- when I remove a dictionary:
+  - [x] I am asked to confirm first, and told that the removal cannot be undone
 
 As a web app user:
 - when I add a dictionary from a file:

@@ -6,6 +6,7 @@ pub mod dictionary_media;
 pub mod documents;
 pub mod flashcards;
 pub mod health;
+pub mod local_dictionaries;
 pub mod media;
 pub mod media_frame;
 pub mod media_playback;

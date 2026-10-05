@@ -71,11 +71,15 @@ export function MediaScreen({
     targetSubtitlesId: subtitles.selection.target_track_id,
     translationSubtitlesId: subtitles.selection.translation_track_id,
   };
-  /** Starts a flashcard for a word from its cue, or else from the cue at the current time. */
+  /**
+   * Starts a flashcard for a word from its cue, or else from the cue at the current time,
+   * filled from its lookup now or, through `lateFields`, once the lookup answers.
+   */
   const startFlashcard = (
     word: string,
     wordCue: Cue | null,
     lookupFields: LookupFlashcardFields | null,
+    lateFields?: Promise<LookupFlashcardFields | null>,
   ) => {
     if (mediaFile === null) return;
     const cue = wordCue ?? cueForFlashcard(subtitles.cues, currentMs);
@@ -89,10 +93,12 @@ export function MediaScreen({
       settings,
       hasScreenshots,
     });
-    flashcards.start(
-      lookupFields
-        ? { ...draft, content: { ...draft.content, ...lookupFields } }
-        : draft,
+    const started = lookupFields
+      ? { ...draft, content: { ...draft.content, ...lookupFields } }
+      : draft;
+    flashcards.start(started);
+    lateFields?.then(
+      (fields) => fields && flashcards.fillFromLookup(started, fields),
     );
   };
   const languages = {

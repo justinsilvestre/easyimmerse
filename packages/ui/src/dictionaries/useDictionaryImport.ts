@@ -3,6 +3,7 @@ import {
   useImportDictionaryMutation,
   useImportLocalDictionaryMutation,
   usePreviewDictionaryTableMutation,
+  usePreviewLocalDictionaryTableMutation,
 } from "@easyimmerse/backend";
 import type { PickedDictionaryFile } from "@easyimmerse/state";
 import { actions, selectChosenDictionaryFile } from "@easyimmerse/state";
@@ -19,6 +20,7 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 import {
   initialDictionaryImport,
   isTableFile,
+  type PendingTable,
   reduceDictionaryImport,
 } from "./dictionaryImport.ts";
 
@@ -34,8 +36,8 @@ type ResettableRequest<T> = { unwrap(): Promise<T>; reset(): void };
 
 /**
  * Imports the dictionary file the user picked through the backend.
- * A desktop app's file is read by the server from its path; a browser's file is sent as bytes,
- * and a table among them is previewed first so that the user can check its columns.
+ * A desktop app's file is read by the server from its path; a browser's file is sent as bytes.
+ * Either way, a table is previewed first so that the user can check its columns.
  */
 export function useDictionaryImport() {
   const dispatch = useAppDispatch();
@@ -48,6 +50,7 @@ export function useDictionaryImport() {
   const [importDictionary] = useImportDictionaryMutation();
   const [importLocalDictionary] = useImportLocalDictionaryMutation();
   const [previewTable] = usePreviewDictionaryTableMutation();
+  const [previewLocalTable] = usePreviewLocalDictionaryTableMutation();
   const fail = (fileName: string, failure: ImportFailure) => {
     if (failure.code === unsupportedFormatCode)
       return dispatchImport({ type: "refusedAsUnsupported", fileName });
@@ -61,16 +64,31 @@ export function useDictionaryImport() {
         dispatch(actions.notificationRequested(`Added ${summary.title}`));
       })
       .catch((error: BackendError) => fail(fileName, error));
+  const showColumns = (
+    fileName: string,
+    contents: PendingTable["contents"],
+    preview: Promise<TablePreview>,
+  ) =>
+    preview.then((tablePreview) =>
+      dispatchImport({
+        type: "tablePreviewed",
+        table: { fileName, contents, preview: tablePreview },
+      }),
+    );
   const addFromPath = (fileName: string, path: string) =>
-    settle(fileName, importLocalDictionary({ path }).unwrap());
+    isTableFile(fileName)
+      ? showColumns(
+          fileName,
+          { kind: "path", path },
+          previewLocalTable({ path }).unwrap(),
+        ).catch((error: BackendError) => fail(fileName, error))
+      : settle(fileName, importLocalDictionary({ path }).unwrap());
   const sendBytes = (fileName: string, bytes: Uint8Array) =>
     isTableFile(fileName)
-      ? settledOnce(previewTable({ fileName, bytes })).then(
-          (preview: TablePreview) =>
-            dispatchImport({
-              type: "tablePreviewed",
-              table: { fileName, bytes, preview },
-            }),
+      ? showColumns(
+          fileName,
+          { kind: "bytes", bytes },
+          settledOnce(previewTable({ fileName, bytes })),
         )
       : settle(fileName, settledOnce(importDictionary({ fileName, bytes })));
   const addFromBrowser = (fileName: string, source: MediaFileSource) => {
@@ -102,15 +120,21 @@ export function useDictionaryImport() {
       const table = state.pendingTable;
       if (table === null) return;
       dispatchImport({ type: "started", fileName: table.fileName });
+      const { contents, fileName } = table;
       settle(
-        table.fileName,
-        settledOnce(
-          importDictionary({
-            fileName: table.fileName,
-            bytes: table.bytes,
-            tableLayout: layout,
-          }),
-        ),
+        fileName,
+        contents.kind === "path"
+          ? importLocalDictionary({
+              path: contents.path,
+              tableLayout: layout,
+            }).unwrap()
+          : settledOnce(
+              importDictionary({
+                fileName,
+                bytes: contents.bytes,
+                tableLayout: layout,
+              }),
+            ),
       );
     },
     cancelTable: () => dispatchImport({ type: "tableCancelled" }),

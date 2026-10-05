@@ -20,7 +20,6 @@ import {
   reduceLookupPopup,
 } from "./lookupPopup.ts";
 import { type LookupOutcome, lookupStateOf } from "./lookupStateOf.ts";
-import { withinTime } from "./withinTime.ts";
 
 const noDictionaries: readonly DictionarySummary[] = [];
 
@@ -51,28 +50,25 @@ export function useDictionaryLookup<S>(language: string) {
     popup,
     request,
     dictionaries,
-    results: query.data?.results ?? [],
+    /** The results for the word shown, never those of the word before while it is looked up. */
+    results: query.currentData?.results ?? [],
     state: isMissingDictionary
       ? { kind: "noDictionary" as const, language, term: request?.term }
       : request && lookupStateOf(request.term, outcomeOf(query)),
     resolveMediaUrl,
     /**
-     * Looks a word up without showing it, and resolves its results, or none once `waitMs` has passed.
+     * Looks a word up without showing it, and resolves its results, or null when the lookup fails or no dictionary covers the language.
      * A lookup the pop-up already made or is making for the same word is reused.
      */
-    lookUpNow: (
+    lookUp: (
       wanted: LookupRequest<S>,
-      waitMs: number,
-    ): Promise<readonly LookupResult[]> =>
+    ): Promise<readonly LookupResult[] | null> =>
       isMissingDictionary
-        ? Promise.resolve([])
-        : withinTime(
-            lookUpLazily(lookupQueryOf(wanted, language), true)
-              .unwrap()
-              .then((response) => response.results),
-            waitMs,
-            [],
-          ),
+        ? Promise.resolve(null)
+        : lookUpLazily(lookupQueryOf(wanted, language), true)
+            .unwrap()
+            .then((response) => response.results)
+            .catch(() => null),
     /** Starts looking a word up, so that its results are at hand when the pop-up shows it. */
     prefetch: (wanted: LookupRequest<S>) => {
       if (!isMissingDictionary)

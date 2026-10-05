@@ -3,7 +3,10 @@ import type { TablePreview } from "@easyimmerse/types";
 /** A table file waiting for the user to check its columns before it is imported. */
 export type PendingTable = {
   fileName: string;
-  bytes: Uint8Array;
+  /** The file's bytes, as a browser holds them, or its path, from which the server reads it. */
+  contents:
+    | { kind: "bytes"; bytes: Uint8Array }
+    | { kind: "path"; path: string };
   preview: TablePreview;
 };
 

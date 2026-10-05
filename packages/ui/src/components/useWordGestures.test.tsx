@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ClickableText } from "./ClickableText.tsx";
 import type { WordGestures } from "./useWordGestures.ts";
+import { WordClickMemoryProvider } from "./wordClickMemoryContext.tsx";
 
 beforeEach(() => vi.useFakeTimers());
 
@@ -24,13 +25,16 @@ type Gesture =
   | "hold";
 
 /** Renders a sentence whose word gestures are recorded as `gesture word`. */
-function renderSentence(options: Pick<WordGestures, "defersClick"> = {}) {
+function renderSentence(
+  options: Pick<WordGestures, "defersClick"> = {},
+  text = "Ich rufe an.",
+) {
   const gestures: string[] = [];
   const record = (gesture: Gesture) => (hit: { word: string }) =>
     gestures.push(`${gesture} ${hit.word}`);
   render(
     <ClickableText
-      text="Ich rufe an."
+      text={text}
       gestures={{
         onWordClick: record("click"),
         onWordDoubleClick: record("doubleClick"),
@@ -58,6 +62,33 @@ function holdTouch(element: HTMLElement, ms: number) {
   act(() => vi.advanceTimersByTime(ms));
   fireEvent.pointerUp(element, { pointerType: "touch", clientX: 5 });
   fireEvent.click(element, { detail: 1 });
+}
+
+/** Taps an element with a finger at a horizontal position, as the browser counts the tap. */
+function tap(element: HTMLElement, clientX: number, detail = 1) {
+  fireEvent.pointerDown(element, { pointerType: "touch", clientX });
+  fireEvent.pointerUp(element, { pointerType: "touch", clientX });
+  fireEvent.click(element, { detail, clientX });
+}
+
+/**
+ * Lays text out as the browser would in a monospaced font, each UTF-16 code unit 16 px wide on one line 20 px high,
+ * so that a character outside the Basic Multilingual Plane is 32 px wide.
+ */
+function layOutCharacters() {
+  vi.spyOn(Range.prototype, "getClientRects").mockImplementation(function (
+    this: Range,
+  ) {
+    const rect = new DOMRect(
+      this.startOffset * 16,
+      0,
+      (this.endOffset - this.startOffset) * 16,
+      20,
+    );
+    return Object.assign([rect], {
+      item: () => rect,
+    }) as unknown as DOMRectList;
+  });
 }
 
 describe("useWordGestures", () => {
@@ -92,6 +123,36 @@ describe("useWordGestures", () => {
     fireEvent.click(word("rufe"), { detail: 1 });
     fireEvent.click(word("an"), { detail: 2 });
     expect(gestures).toEqual(["click rufe", "doubleClick rufe"]);
+  });
+
+  it("reports a click, not a double-click, for a second click 600 ms after the first", () => {
+    const gestures = renderSentence();
+    fireEvent.click(word("rufe"), { detail: 1 });
+    act(() => vi.advanceTimersByTime(600));
+    fireEvent.click(word("an"), { detail: 2 });
+    expect(gestures).toEqual(["click rufe", "click an"]);
+  });
+
+  it("reports a click, not a double-click, for a second click whose first landed between words", () => {
+    const { container } = render(
+      <WordClickMemoryProvider>
+        <ClickableText
+          text="Ich rufe an."
+          gestures={{
+            onWordClick: (hit) => gestures.push(`click ${hit.word}`),
+            onWordDoubleClick: (hit) =>
+              gestures.push(`doubleClick ${hit.word}`),
+          }}
+        />
+      </WordClickMemoryProvider>,
+    );
+    const gestures: string[] = [];
+    fireEvent.click(word("rufe"), { detail: 1 });
+    act(() => vi.advanceTimersByTime(1000));
+    fireEvent.click(word("Ich"), { detail: 1 });
+    fireEvent.click(container.firstChild as HTMLElement, { detail: 1 });
+    fireEvent.click(word("an"), { detail: 2 });
+    expect(gestures).toEqual(["click rufe", "click Ich", "click an"]);
   });
 
   it("reports Shift+Enter on a word as a double-click", () => {
@@ -152,6 +213,140 @@ describe("useWordGestures", () => {
     fireEvent.pointerLeave(word("rufe"), { pointerType: "mouse" });
     act(() => vi.advanceTimersByTime(200));
     expect(gestures).toEqual([]);
+  });
+
+  describe("in a run of Japanese", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it("reports a click from the character under the pointer", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      layOutCharacters();
+      fireEvent.click(word("映画を見る"), {
+        detail: 1,
+        clientX: 50,
+        clientY: 10,
+      });
+      expect(gestures).toEqual(["click 見る"]);
+    });
+
+    it("reports a click from a character after one outside the Basic Multilingual Plane", () => {
+      const gestures = renderSentence({}, "𠮷野家");
+      layOutCharacters();
+      fireEvent.click(word("𠮷野家"), { detail: 1, clientX: 40, clientY: 10 });
+      expect(gestures).toEqual(["click 野家"]);
+    });
+
+    it("reports a click on the right half of a character outside the Basic Multilingual Plane from that character", () => {
+      const gestures = renderSentence({}, "𠮷野家");
+      layOutCharacters();
+      fireEvent.click(word("𠮷野家"), { detail: 1, clientX: 30, clientY: 10 });
+      expect(gestures).toEqual(["click 𠮷野家"]);
+    });
+
+    it("reports a key press from the start of the run", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      layOutCharacters();
+      fireEvent.click(word("映画を見る"), { detail: 0 });
+      expect(gestures).toEqual(["click 映画を見る"]);
+    });
+
+    it("reports a click from the start of the run when no character lies under the pointer", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      fireEvent.click(word("映画を見る"), {
+        detail: 1,
+        clientX: 50,
+        clientY: 10,
+      });
+      expect(gestures).toEqual(["click 映画を見る"]);
+    });
+
+    it("waits for the mouse to rest on the character it has moved to", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      layOutCharacters();
+      const run = word("映画を見る");
+      fireEvent.pointerEnter(run, {
+        pointerType: "mouse",
+        clientX: 5,
+        clientY: 10,
+      });
+      act(() => vi.advanceTimersByTime(100));
+      fireEvent.pointerMove(run, {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
+      act(() => vi.advanceTimersByTime(150));
+      expect(gestures).toEqual(["hoverIntent 見る"]);
+    });
+
+    it("reports a held tap from the character under the finger", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      layOutCharacters();
+      fireEvent.pointerDown(word("映画を見る"), {
+        pointerType: "touch",
+        clientX: 50,
+        clientY: 10,
+      });
+      act(() => vi.advanceTimersByTime(600));
+      expect(gestures).toEqual(["hold 見る"]);
+    });
+
+    it("reports a tap from where the finger came down, as a held tap would", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      layOutCharacters();
+      const run = word("映画を見る");
+      fireEvent.pointerDown(run, {
+        pointerType: "touch",
+        clientX: 50,
+        clientY: 10,
+      });
+      fireEvent.pointerUp(run, {
+        pointerType: "touch",
+        clientX: 58,
+        clientY: 10,
+      });
+      fireEvent.click(run, { detail: 1, clientX: 66, clientY: 10 });
+      expect(gestures).toEqual(["click 見る"]);
+    });
+
+    it("reports a Latin word next to the run from its start", () => {
+      const gestures = renderSentence({}, "今日はNetflixで");
+      layOutCharacters();
+      fireEvent.click(word("Netflix"), { detail: 1, clientX: 50, clientY: 10 });
+      expect(gestures).toEqual(["click Netflix"]);
+    });
+  });
+
+  describe("on a touch screen", () => {
+    it("reports two quick taps on a word as a double-click", () => {
+      const gestures = renderSentence();
+      tap(word("rufe"), 40);
+      act(() => vi.advanceTimersByTime(250));
+      tap(word("rufe"), 42);
+      expect(gestures).toEqual(["click rufe", "doubleClick rufe"]);
+    });
+
+    it("reports a double tap the browser counts as one once", () => {
+      const gestures = renderSentence();
+      tap(word("rufe"), 40);
+      tap(word("rufe"), 42, 2);
+      expect(gestures).toEqual(["click rufe", "doubleClick rufe"]);
+    });
+
+    it("reports taps further apart in time than the double-click interval as two clicks", () => {
+      const gestures = renderSentence();
+      tap(word("rufe"), 40);
+      act(() => vi.advanceTimersByTime(600));
+      tap(word("rufe"), 40);
+      expect(gestures).toEqual(["click rufe", "click rufe"]);
+    });
+
+    it("reports quick taps on two words apart from each other as two clicks", () => {
+      const gestures = renderSentence();
+      tap(word("rufe"), 40);
+      tap(word("an"), 120);
+      expect(gestures).toEqual(["click rufe", "click an"]);
+    });
   });
 
   it("reports a held tap and swallows the click that ends it", () => {

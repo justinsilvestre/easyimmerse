@@ -75,6 +75,7 @@ export type * from "./PlaybackRequest";
 export type * from "./PlaybackResponse";
 export type * from "./PreferenceValue";
 export type * from "./PreviewDictionaryTableQuery";
+export type * from "./PreviewLocalDictionaryTableRequest";
 export type * from "./ProgressEvent";
 export type * from "./Project";
 export type * from "./ProjectId";

@@ -1,9 +1,7 @@
-use std::path::PathBuf;
-
+use axum::Json;
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::{Extension, Json};
 use easyimmerse_core::dictionary::{
     ColumnRole, DictionaryFormatKind, DictionarySource, SourceFile, TableLayout, TablePreview,
     preview_table,
@@ -13,10 +11,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::{IntoParams, ToSchema};
 
-use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
-use crate::auth::token_kind::TokenKind;
-use crate::local_dictionary_files::read_dictionary_files;
-use crate::local_path::ensure_local_paths_allowed;
+use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -61,13 +56,6 @@ pub struct PreviewDictionaryTableQuery {
     #[serde(rename = "fileName")]
     #[param(rename = "fileName")]
     pub file_name: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
-#[ts(export)]
-pub struct ImportLocalDictionaryRequest {
-    /// A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files.
-    pub path: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -139,36 +127,6 @@ pub async fn preview_dictionary_table(
 }
 
 #[utoipa::path(
-    post,
-    path = "/dictionaries/import-local",
-    tag = "dictionaries",
-    operation_id = "importLocalDictionary",
-    security(("bearer_token" = [])),
-    request_body = ImportLocalDictionaryRequest,
-    responses(
-        (status = 201, description = "The dictionary was imported", body = DictionarySummary),
-        (status = 400, description = "The files could not be read as a dictionary", body = ApiError),
-        (status = 401, description = "Missing or invalid token", body = ApiError),
-        (status = 403, description = "The token may not read local paths", body = ApiError),
-        (status = 404, description = "Nothing at the given path", body = ApiError),
-        (status = 421, description = "Unexpected Host header", body = ApiError),
-    ),
-)]
-pub async fn import_local_dictionary(
-    State(state): State<AppState>,
-    Extension(token): Extension<TokenKind>,
-    Json(request): Json<ImportLocalDictionaryRequest>,
-) -> Result<(StatusCode, Json<DictionarySummary>), ApiFailure> {
-    ensure_local_paths_allowed(token, &state.config)?;
-    let path = PathBuf::from(&request.path);
-    let files = tokio::task::spawn_blocking(move || read_dictionary_files(&path))
-        .await
-        .map_err(|error| internal(error.to_string()))?
-        .map_err(|error| describe_read_error(&request.path, error))?;
-    import_files(&state, files, None).await
-}
-
-#[utoipa::path(
     get,
     path = "/dictionaries",
     tag = "dictionaries",
@@ -216,7 +174,7 @@ pub async fn delete_dictionary(
 }
 
 /// Imports on the blocking pool, since reading and storing a large dictionary takes a while.
-async fn import_files(
+pub(crate) async fn import_files(
     state: &AppState,
     files: Vec<SourceFile>,
     table_layout: Option<TableLayout>,
@@ -254,13 +212,6 @@ fn chosen_table_layout(query: &ImportDictionaryQuery) -> Result<Option<TableLayo
 fn parse_column_role(name: &str) -> Result<ColumnRole, ApiFailure> {
     serde_json::from_value(serde_json::Value::String(name.trim().to_string()))
         .map_err(|_| bad_request(format!("{name:?} is not a column role")))
-}
-
-fn describe_read_error(path: &str, error: std::io::Error) -> ApiFailure {
-    match error.kind() {
-        std::io::ErrorKind::NotFound => not_found(format!("nothing at {path:?}")),
-        _ => bad_request(format!("could not read {path:?}: {error}")),
-    }
 }
 
 fn summarize(dictionary: StoredDictionary) -> DictionarySummary {

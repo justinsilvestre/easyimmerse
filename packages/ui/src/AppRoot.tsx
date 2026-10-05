@@ -8,6 +8,7 @@ import { actions } from "@easyimmerse/state";
 import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
+import { WordClickMemoryProvider } from "./components/wordClickMemoryContext.tsx";
 import { useAppDispatch } from "./hooks/useAppDispatch.ts";
 import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
@@ -68,22 +69,24 @@ export function AppRoot({
       <PlayerRegistryContext value={playerRegistry}>
         <BrowserFileRegistryContext value={browserFileRegistry}>
           <NavigationActionsContext value={navigationActions}>
-            <AppearanceHandler />
-            <PreferencesLoader />
-            <div inert={settingsOpen}>
-              <MainScreen
-                navigation={mainScreenOf(navigation)}
-                dispatchNavigation={dispatchNavigation}
-              />
-            </div>
-            {navigation.screen === "settings" && (
-              <SettingsOverlay>
-                <SettingsPage
-                  navigation={navigation}
+            <WordClickMemoryProvider>
+              <AppearanceHandler />
+              <PreferencesLoader />
+              <div inert={settingsOpen}>
+                <MainScreen
+                  navigation={mainScreenOf(navigation)}
                   dispatchNavigation={dispatchNavigation}
                 />
-              </SettingsOverlay>
-            )}
+              </div>
+              {navigation.screen === "settings" && (
+                <SettingsOverlay>
+                  <SettingsPage
+                    navigation={navigation}
+                    dispatchNavigation={dispatchNavigation}
+                  />
+                </SettingsOverlay>
+              )}
+            </WordClickMemoryProvider>
           </NavigationActionsContext>
         </BrowserFileRegistryContext>
       </PlayerRegistryContext>

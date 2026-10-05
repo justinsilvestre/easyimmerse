@@ -22,6 +22,60 @@ describe("splitIntoWords", () => {
     ]);
   });
 
+  it("keeps a run of Japanese apart from a Latin word inside it", () => {
+    expect(
+      splitIntoWords("今日はNetflixで映画を見る")
+        .filter((part) => part.isWord)
+        .map((part) => part.text),
+    ).toEqual(["今日は", "Netflix", "で映画を見る"]);
+  });
+
+  it("keeps Japanese punctuation out of a run", () => {
+    expect(
+      splitIntoWords("食べる、飲む。")
+        .filter((part) => part.isWord)
+        .map((part) => part.text),
+    ).toEqual(["食べる", "飲む"]);
+  });
+
+  it("keeps a character outside the Basic Multilingual Plane in its run", () => {
+    expect(splitIntoWords("𠮷野家で")[0]?.text).toBe("𠮷野家で");
+  });
+
+  it("keeps a run that begins with fullwidth digits together", () => {
+    expect(splitIntoWords("３人で")[0]?.text).toBe("３人で");
+  });
+
+  it("keeps a run that begins with ASCII digits together", () => {
+    expect(splitIntoWords("2026年")[0]?.text).toBe("2026年");
+  });
+
+  it("keeps the ideographic zero inside a run", () => {
+    expect(splitIntoWords("二〇二六年")[0]?.text).toBe("二〇二六年");
+  });
+
+  it("keeps the spacing voicing marks inside a run", () => {
+    expect(splitIntoWords("か゛き゜")[0]?.text).toBe("か゛き゜");
+  });
+
+  it("marks a run of Bopomofo as written without spaces", () => {
+    expect(splitIntoWords("ㄅㄆㄇ")[0]?.isUnspaced).toBe(true);
+  });
+
+  it("leaves digits that stand alone out of the words", () => {
+    expect(
+      splitIntoWords("Seite 12")
+        .filter((part) => part.isWord)
+        .map((part) => part.text),
+    ).toEqual(["Seite"]);
+  });
+
+  it("marks a Japanese run as written without spaces", () => {
+    expect(
+      splitIntoWords("映画Netflix").map((part) => part.isUnspaced),
+    ).toEqual([true, false]);
+  });
+
   it("keeps an apostrophe inside a word", () => {
     expect(splitIntoWords("l'homme")[0]?.text).toBe("l'homme");
   });
@@ -67,6 +121,55 @@ describe("ClickableText", () => {
         .getByRole("button", { name: "rufe" })
         .getAttribute("aria-controls"),
     ).toBe("dictionary");
+  });
+
+  describe("in a run of Japanese", () => {
+    const matchedText = (container: HTMLElement) =>
+      container.querySelector("[data-matched]")?.textContent;
+
+    it("highlights the characters the lookup matched", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          activeWord={{ start: 3, length: 2, popupId: "dictionary" }}
+        />,
+      );
+      expect(matchedText(container)).toBe("見る");
+    });
+
+    it("highlights the character looked up from until the lookup reports its match", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          activeWord={{ start: 3, popupId: "dictionary" }}
+        />,
+      );
+      expect(matchedText(container)).toBe("見");
+    });
+
+    it("highlights a whole character outside the Basic Multilingual Plane", () => {
+      const { container } = render(
+        <ClickableText
+          text="𠮷野家"
+          activeWord={{ start: 0, popupId: "dictionary" }}
+        />,
+      );
+      expect(matchedText(container)).toBe("𠮷");
+    });
+
+    it("keeps the run one button for assistive technology", () => {
+      render(
+        <ClickableText
+          text="映画を見る"
+          activeWord={{ start: 3, length: 2, popupId: "dictionary" }}
+        />,
+      );
+      expect(
+        screen
+          .getByRole("button", { name: "映画を見る" })
+          .getAttribute("aria-expanded"),
+      ).toBe("true");
+    });
   });
 
   it("passes a clicked word's offset in the text", () => {

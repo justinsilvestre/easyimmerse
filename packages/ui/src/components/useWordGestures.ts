@@ -6,9 +6,11 @@ import {
   useState,
 } from "react";
 import { useTimer } from "../hooks/useTimer.ts";
+import { characterOffsetAt, type ViewportPoint } from "./characterAtPoint.ts";
 import { doubleClickMs, hoverIntentMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
-import { rememberFirstClick, takeFirstClick } from "./wordClickMemory.ts";
+import type { ClickPoint, WordClickMemory } from "./wordClickMemory.ts";
+import { useWordClickMemory } from "./wordClickMemoryContext.tsx";
 
 /** A word the user acted on, with the element that shows it, so that a pop-up can be placed at it. */
 export type WordHit = {
@@ -24,7 +26,8 @@ export type WordGestures = {
   /** A single click or tap, or Enter or Space on the focused word. */
   onWordClick?: (hit: WordHit) => void;
   /**
-   * The second click of a double-click, reported for the word of the first click; or Shift+Enter or Shift+Space on the focused word.
+   * The second click of a double-click or the second tap of a double tap, reported for the word of the first;
+   * or Shift+Enter or Shift+Space on the focused word.
    * Without this handler a double-click counts as another click.
    */
   onWordDoubleClick?: (hit: WordHit) => void;
@@ -44,6 +47,8 @@ export type WordGestures = {
 /**
  * Turns pointer, touch and keyboard events on words into the gestures of `WordGestures`.
  * Returns a function that builds the event handlers for one word's button.
+ * In a run of a script written without spaces, each character can begin a word, so the hit starts at the character under the pointer,
+ * and moving the mouse to another character of the run restarts the wait for hover intent.
  */
 export function useWordGestures(gestures: WordGestures) {
   const latest = useRef(gestures);
@@ -52,19 +57,23 @@ export function useWordGestures(gestures: WordGestures) {
   const clickTimer = useTimer();
   const [press] = useState(createPressTracker);
   useEffect(() => press.cancelHold, [press]);
+  const memory = useWordClickMemory();
   const reportClick = (event: MouseEvent<HTMLElement>, hit: WordHit) => {
     const { onWordClick, onWordDoubleClick, defersClick } = latest.current;
     if (hit.input === "keyboard")
       return (
         event.shiftKey && onWordDoubleClick ? onWordDoubleClick : onWordClick
       )?.(hit);
-    if (event.detail >= 2) {
-      const first = event.detail === 2 ? takeFirstClick() : null;
-      first?.cancel();
-      return first?.onDoubleClick?.(first.hit);
+    const point = pointOf(event);
+    const first = firstClickCompletedBy(memory, event, hit, point);
+    if (first) {
+      first.cancel();
+      return first.onDoubleClick?.(first.hit);
     }
-    rememberFirstClick({
+    // A second click whose first landed on no word, or too long ago, counts as a click of its own.
+    memory.remember({
       hit,
+      point,
       onDoubleClick: onWordDoubleClick ?? onWordClick,
       cancel: clickTimer.cancel,
     });
@@ -72,49 +81,98 @@ export function useWordGestures(gestures: WordGestures) {
     latest.current.onWordClickStarted?.(hit);
     clickTimer.restart(doubleClickMs, () => latest.current.onWordClick?.(hit));
   };
-  return (word: string, start: number) => {
-    const hitOf = (element: HTMLElement, input: WordHit["input"]): WordHit => ({
-      word,
-      start,
-      element,
-      input,
+  const hovered = useRef<WordHit | null>(null);
+  /** Starts, or restarts for another character, the wait before a mouse resting on a word counts as hover intent. */
+  const restartHover = (hit: WordHit) => {
+    if (hovered.current?.start === hit.start) return;
+    hovered.current = hit;
+    hoverTimer.restart(hoverIntentMs, () => {
+      if (hit.element.isConnected) latest.current.onWordHoverIntent?.(hit);
     });
-    return {
-      onPointerEnter: (event: PointerEvent<HTMLElement>) => {
-        if (event.pointerType !== "mouse") return;
-        const hit = hitOf(event.currentTarget, "mouse");
-        hoverTimer.restart(hoverIntentMs, () => {
-          if (hit.element.isConnected) latest.current.onWordHoverIntent?.(hit);
-        });
-      },
-      onPointerLeave: () => {
-        hoverTimer.cancel();
-        press.cancelHold();
-      },
-      onPointerDown: (event: PointerEvent<HTMLElement>) => {
-        const hit = hitOf(event.currentTarget, "touch");
-        press.start(event, () => {
-          if (hit.element.isConnected) latest.current.onWordHold?.(hit);
-        });
-      },
-      onPointerMove: (event: PointerEvent<HTMLElement>) => press.move(event),
-      onPointerUp: press.cancelHold,
-      onPointerCancel: press.cancelHold,
-      // A long press on a touch screen would otherwise open the browser's menu for the word.
-      onContextMenu: (event: MouseEvent<HTMLElement>) => {
-        if (press.isTouch()) event.preventDefault();
-      },
-      onClick: (event: MouseEvent<HTMLElement>) => {
-        // A key press is never the end of a held tap, however a touch before it ended.
-        const isKeyboard = event.detail === 0;
-        if (!isKeyboard && press.takeHeld()) return;
-        const input = isKeyboard
-          ? "keyboard"
-          : press.isTouch()
-            ? "touch"
-            : "mouse";
-        reportClick(event, hitOf(event.currentTarget, input));
-      },
-    };
   };
+  return (part: WordPart) => ({
+    onPointerEnter: (event: PointerEvent<HTMLElement>) => {
+      if (event.pointerType !== "mouse") return;
+      hovered.current = null;
+      restartHover(hitAt(part, event.currentTarget, pointOf(event), "mouse"));
+    },
+    onPointerLeave: () => {
+      hovered.current = null;
+      hoverTimer.cancel();
+      press.cancelHold();
+    },
+    onPointerDown: (event: PointerEvent<HTMLElement>) => {
+      const hit = hitAt(part, event.currentTarget, pointOf(event), "touch");
+      press.start(event, () => {
+        if (hit.element.isConnected) latest.current.onWordHold?.(hit);
+      });
+    },
+    onPointerMove: (event: PointerEvent<HTMLElement>) => {
+      press.move(event);
+      if (event.pointerType === "mouse" && part.isUnspaced)
+        restartHover(hitAt(part, event.currentTarget, pointOf(event), "mouse"));
+    },
+    onPointerUp: press.cancelHold,
+    onPointerCancel: press.cancelHold,
+    // A long press on a touch screen would otherwise open the browser's menu for the word.
+    onContextMenu: (event: MouseEvent<HTMLElement>) => {
+      if (press.isTouch()) event.preventDefault();
+    },
+    onClick: (event: MouseEvent<HTMLElement>) => {
+      // A key press is never the end of a held tap, however a touch before it ended.
+      const isKeyboard = event.detail === 0;
+      if (!isKeyboard && press.takeHeld()) return;
+      const input = isKeyboard
+        ? "keyboard"
+        : press.isTouch()
+          ? "touch"
+          : "mouse";
+      // A finger lands where it came down, which a held tap uses too, rather than where it lifted.
+      const point = input === "touch" ? press.origin() : pointOf(event);
+      reportClick(event, hitAt(part, event.currentTarget, point, input));
+    },
+  });
+}
+
+/** A word of clickable text, as `splitIntoWords` finds it. */
+type WordPart = { text: string; start: number; isUnspaced: boolean };
+
+/**
+ * The hit for an event on a word. In a run of a script written without spaces, the word begins at the character under the pointer;
+ * from the keyboard, or where the browser cannot tell that character, it begins where the run does.
+ */
+function hitAt(
+  part: WordPart,
+  element: HTMLElement,
+  point: ViewportPoint,
+  input: WordHit["input"],
+): WordHit {
+  const offset =
+    part.isUnspaced && input !== "keyboard"
+      ? (characterOffsetAt(element, point) ?? 0)
+      : 0;
+  return {
+    word: part.text.slice(offset),
+    start: part.start + offset,
+    element,
+    input,
+  };
+}
+
+function pointOf(event: MouseEvent<HTMLElement>): ViewportPoint {
+  return { x: event.clientX, y: event.clientY };
+}
+
+/**
+ * The first click that this click makes a double-click, if any.
+ * The browser's count decides for a mouse; a tap counts by its time and place, since browsers count taps unreliably.
+ */
+function firstClickCompletedBy(
+  memory: WordClickMemory,
+  event: MouseEvent<HTMLElement>,
+  hit: WordHit,
+  point: ClickPoint,
+) {
+  if (hit.input === "touch") return memory.takeDoubleTap(point);
+  return event.detail === 2 ? memory.take() : null;
 }

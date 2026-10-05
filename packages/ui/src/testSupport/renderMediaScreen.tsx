@@ -62,6 +62,8 @@ type MediaScreenSetup = {
   dictionaries?: DictionarySummary[];
   /** The texts whose lookups never answer. Every other lookup finds the example results. */
   unansweredLookups?: readonly string[];
+  /** The texts whose lookups answer only after the given number of milliseconds. */
+  slowLookups?: Readonly<Record<string, number>>;
 };
 
 /**
@@ -72,6 +74,7 @@ export function renderMediaScreen({
   flashcards = [],
   dictionaries = germanDictionaries,
   unansweredLookups = [],
+  slowLookups = {},
 }: MediaScreenSetup = {}) {
   const client = withUnansweredLookups(
     createFakeBackendClient(
@@ -87,7 +90,7 @@ export function renderMediaScreen({
       },
       directPlaybackRoutes,
     ),
-    unansweredLookups,
+    { unansweredLookups, slowLookups },
   );
   const navigation = { dictionariesOpenCount: 0 };
   const rendered = renderWithAppStore(
@@ -113,17 +116,26 @@ export function renderMediaScreen({
 
 function withUnansweredLookups(
   client: ReturnType<typeof createFakeBackendClient>,
-  texts: readonly string[],
+  {
+    unansweredLookups,
+    slowLookups,
+  }: Required<Pick<MediaScreenSetup, "unansweredLookups" | "slowLookups">>,
 ): ReturnType<typeof createFakeBackendClient> {
   return {
     requests: client.requests,
-    send: (request) => {
-      const isUnanswered =
-        request.path === "/dictionaries/lookup" &&
-        texts.includes(request.query?.text ?? "");
-      if (!isUnanswered) return client.send(request);
-      client.requests.push(request);
-      return new Promise(() => undefined);
+    send: <T,>(request: BackendRequest) => {
+      const text =
+        request.path === "/dictionaries/lookup" ? request.query?.text : null;
+      if (text == null) return client.send<T>(request);
+      if (unansweredLookups.includes(text)) {
+        client.requests.push(request);
+        return new Promise(() => undefined);
+      }
+      const delayMs = slowLookups[text];
+      if (delayMs === undefined) return client.send<T>(request);
+      return new Promise<void>((resolve) => setTimeout(resolve, delayMs)).then(
+        () => client.send<T>(request),
+      );
     },
   };
 }

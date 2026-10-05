@@ -33,6 +33,8 @@ export function createPressTracker() {
       if (distance > holdSlopPx) holdTimer.cancel();
     },
     cancelHold: holdTimer.cancel,
+    /** Where the last press came down. */
+    origin: () => ({ x: press.x, y: press.y }),
     /** Whether the last press came from a touch or a pen rather than a mouse. */
     isTouch: () => press.isTouch,
     /** Tells, once, whether the last press was a held tap, whose closing click is then dropped. */
