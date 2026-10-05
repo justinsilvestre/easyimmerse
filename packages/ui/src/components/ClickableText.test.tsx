@@ -95,6 +95,55 @@ describe("ClickableText", () => {
     ).toBe("dictionary");
   });
 
+  describe("in a run of Japanese", () => {
+    const matchedText = (container: HTMLElement) =>
+      container.querySelector("[data-matched]")?.textContent;
+
+    it("highlights the characters the lookup matched", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          activeWord={{ start: 3, length: 2, popupId: "dictionary" }}
+        />,
+      );
+      expect(matchedText(container)).toBe("見る");
+    });
+
+    it("highlights the character looked up from until the lookup reports its match", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          activeWord={{ start: 3, popupId: "dictionary" }}
+        />,
+      );
+      expect(matchedText(container)).toBe("見");
+    });
+
+    it("highlights a whole character outside the Basic Multilingual Plane", () => {
+      const { container } = render(
+        <ClickableText
+          text="𠮷野家"
+          activeWord={{ start: 0, popupId: "dictionary" }}
+        />,
+      );
+      expect(matchedText(container)).toBe("𠮷");
+    });
+
+    it("keeps the run one button for assistive technology", () => {
+      render(
+        <ClickableText
+          text="映画を見る"
+          activeWord={{ start: 3, length: 2, popupId: "dictionary" }}
+        />,
+      );
+      expect(
+        screen
+          .getByRole("button", { name: "映画を見る" })
+          .getAttribute("aria-expanded"),
+      ).toBe("true");
+    });
+  });
+
   it("passes a clicked word's offset in the text", () => {
     const clicks: [string, number][] = [];
     render(

@@ -50,7 +50,8 @@ export function useDictionaryLookup<S>(language: string) {
     popup,
     request,
     dictionaries,
-    results: query.data?.results ?? [],
+    /** The results for the word shown, never those of the word before while it is looked up. */
+    results: query.currentData?.results ?? [],
     state: isMissingDictionary
       ? { kind: "noDictionary" as const, language, term: request?.term }
       : request && lookupStateOf(request.term, outcomeOf(query)),

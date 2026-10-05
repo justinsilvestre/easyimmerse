@@ -111,11 +111,15 @@ export function useWordLookup<S>({
           fieldsFrom(lookup.results, entryIndex, lookup.dictionaries),
         ),
     }),
-    /** The occurrence the pop-up shows, if it shows a word from the text, with the pop-up's id. */
+    /**
+     * The occurrence the pop-up shows, if it shows a word from the text, with the pop-up's id,
+     * and the length of the text its best result matched, once the lookup has answered.
+     */
     activeOccurrence: lookup.request?.occurrence && {
       ...lookup.request.occurrence,
       source: lookup.request.source,
       popupId,
+      length: lookup.results[0]?.matchedText.length,
     },
     /** A word clicked or tapped in the text. */
     clickWord: (request: LookupRequest<S>, input: WordHit["input"]) => {

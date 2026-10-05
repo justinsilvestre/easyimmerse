@@ -30,6 +30,8 @@ export function gesturesForCue(
 export type ActiveCueWord = {
   cueIndex: number;
   start: number;
+  /** How much of the cue's text the lookup matched, once it has answered. */
+  length?: number;
   popupId: string;
 };
 
@@ -37,6 +39,6 @@ export type ActiveCueWord = {
 export function activeWordIn(
   activeWord: ActiveCueWord | undefined,
   cue: Cue,
-): { start: number; popupId: string } | undefined {
+): { start: number; length?: number; popupId: string } | undefined {
   return activeWord?.cueIndex === cue.index ? activeWord : undefined;
 }

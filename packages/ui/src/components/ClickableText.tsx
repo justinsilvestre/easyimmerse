@@ -66,41 +66,80 @@ export function ClickableText({
   gestures = noGestures,
 }: {
   text: string;
-  /** The word the dictionary pop-up shows, by its offset in the text, and the pop-up's id. */
-  activeWord?: { start: number; popupId: string };
+  /**
+   * The word the dictionary pop-up shows, by its offset in the text, and the pop-up's id.
+   * `length` is how much of the text the lookup matched, which a run written without spaces highlights.
+   */
+  activeWord?: ActiveWord;
   gestures?: WordGestures;
 }) {
   const handlersFor = useWordGestures(gestures);
   return (
     <span className="whitespace-pre-line">
-      {splitIntoWords(text).map((part) =>
-        part.isWord ? (
+      {splitIntoWords(text).map((part) => {
+        if (!part.isWord) return part.text;
+        const isActive =
+          activeWord !== undefined && contains(part, activeWord.start);
+        return (
           <button
             key={part.start}
             type="button"
+            // The highlight splits a run into pieces, which must not split its name.
+            aria-label={part.isUnspaced ? part.text : undefined}
             aria-haspopup="dialog"
-            aria-expanded={part.start === activeWord?.start || undefined}
-            aria-controls={
-              part.start === activeWord?.start ? activeWord.popupId : undefined
-            }
+            aria-expanded={isActive || undefined}
+            aria-controls={isActive ? activeWord?.popupId : undefined}
             {...{ [lookupTriggerAttribute]: "" }}
             {...handlersFor(part)}
             className={clsx(
               // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu,
               // and a double tap must not zoom the page.
               "touch-manipulation rounded-sm px-px decoration-dotted underline-offset-4 hover:bg-accent-soft hover:underline focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
-              part.start === activeWord?.start &&
-                "bg-accent-soft text-accent-fg",
+              isActive && !part.isUnspaced && "bg-accent-soft text-accent-fg",
             )}
           >
-            {part.text}
+            {isActive && part.isUnspaced && activeWord ? (
+              <MatchedRun part={part} activeWord={activeWord} />
+            ) : (
+              part.text
+            )}
           </button>
-        ) : (
-          part.text
-        ),
-      )}
+        );
+      })}
     </span>
   );
 }
 
+type ActiveWord = { start: number; length?: number; popupId: string };
+
 const noGestures: WordGestures = {};
+
+function contains(part: { start: number; text: string }, offset: number) {
+  return offset >= part.start && offset < part.start + part.text.length;
+}
+
+/**
+ * A run written without spaces with the characters the lookup matched highlighted,
+ * or, until the lookup reports its match, the character it looks up from.
+ */
+function MatchedRun({
+  part,
+  activeWord,
+}: {
+  part: { start: number; text: string };
+  activeWord: ActiveWord;
+}) {
+  const from = activeWord.start - part.start;
+  const firstCodePoint = part.text.codePointAt(from) ?? 0;
+  const length = activeWord.length ?? (firstCodePoint > 0xffff ? 2 : 1);
+  const to = Math.min(from + length, part.text.length);
+  return (
+    <>
+      {part.text.slice(0, from)}
+      <span data-matched className="rounded-sm bg-accent-soft text-accent-fg">
+        {part.text.slice(from, to)}
+      </span>
+      {part.text.slice(to)}
+    </>
+  );
+}

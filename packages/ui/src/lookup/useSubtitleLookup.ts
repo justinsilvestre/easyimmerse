@@ -63,8 +63,8 @@ function activeCueWordOf(
   occurrence: ReturnType<typeof useWordLookup<Cue>>["activeOccurrence"],
 ): ActiveCueWord | undefined {
   if (!occurrence?.source) return undefined;
-  const { source, start, popupId } = occurrence;
-  return { cueIndex: source.index, start, popupId };
+  const { source, start, length, popupId } = occurrence;
+  return { cueIndex: source.index, start, length, popupId };
 }
 
 function requestFor(hit: WordHit, cue: Cue): LookupRequest<Cue> {
