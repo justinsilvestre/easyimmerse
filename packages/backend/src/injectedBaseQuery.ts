@@ -7,4 +7,4 @@ export const injectedBaseQuery: BaseQueryFn<
   BackendRequest,
   unknown,
   BackendError
-> = (request) => getBackendClient().send(request);
+> = (request, api) => getBackendClient().send(request, api.signal);

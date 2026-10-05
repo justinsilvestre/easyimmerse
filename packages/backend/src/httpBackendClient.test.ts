@@ -27,6 +27,23 @@ function createClient(fakeFetch: RecordedFetch) {
 }
 
 describe("createHttpBackendClient", () => {
+  it("passes the abort signal on to the request", async () => {
+    const signals: (AbortSignal | null | undefined)[] = [];
+    const fakeFetch = Object.assign(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        signals.push(init?.signal);
+        return jsonResponse(200, {});
+      },
+      { requests: [] },
+    );
+    const controller = new AbortController();
+    await createClient(fakeFetch).send(
+      { method: "GET", path: "/projects" },
+      controller.signal,
+    );
+    expect(signals).toEqual([controller.signal]);
+  });
+
   it("sends the bearer token in the Authorization header", async () => {
     const fakeFetch = createFakeFetch(() =>
       jsonResponse(200, { projects: [] }),
