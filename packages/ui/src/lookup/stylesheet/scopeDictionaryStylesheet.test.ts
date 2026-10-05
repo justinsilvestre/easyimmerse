@@ -92,10 +92,32 @@ describe("scopeDictionaryStylesheet", () => {
       expect(scoped("body + p { margin: 0 }")).toBe("");
     });
 
-    it("drops a rule nested inside another, since it depends on the rule around it", () => {
+    it("writes a nested rule out in full, confined to the scope", () => {
       expect(scoped(".a { margin: 0; & .b { margin: 1px } }")).toBe(
-        `${scope} .dict-a { margin: 0; }`,
+        `${scope} .dict-a { margin: 0; }\n${scope} :is(.dict-a) .dict-b { margin: 1px; }`,
       );
+    });
+
+    it("reads a nested selector without & as a descendant of the parent", () => {
+      expect(scoped("td { & ol, ul { margin: 0 } }")).toBe(
+        `${scope} :is(td) ol, ${scope} :is(td) ul { margin: 0; }`,
+      );
+    });
+
+    it("writes a pseudo-element on the parent of a nested rule", () => {
+      expect(scoped('td > span { &::before { content: "x" } }')).toBe(
+        `${scope} :is(td>span)::before { content: "x"; }`,
+      );
+    });
+
+    it("writes rules nested two levels deep out in full", () => {
+      expect(scoped("td { & span { & b { margin: 0 } } }")).toBe(
+        `${scope} :is(:is(td) span) b { margin: 0; }`,
+      );
+    });
+
+    it("drops an at-rule nested inside a rule", () => {
+      expect(scoped("td { @media print { margin: 0 } }")).toBe("");
     });
 
     it("keeps a rule after an unbalanced brace inside the scope", () => {

@@ -1,10 +1,11 @@
-import type { Atrule, CssNode, Rule } from "css-tree";
+import type { Atrule, CssNode, Rule, SelectorList } from "css-tree";
 import generate from "css-tree/generator";
 import parse from "css-tree/parser";
 import walk from "css-tree/walker";
 import type { ResolveMediaUrl } from "../definition/definitionContext.ts";
 import { dictionaryFontFamilies } from "./dictionaryFontFamilies.ts";
 import { scopeAttribute } from "./dictionaryScope.ts";
+import { flattenNestedSelectors } from "./flattenNestedSelectors.ts";
 import {
   type StylesheetOwner,
   sanitizeDeclaration,
@@ -60,18 +61,37 @@ function writeRule(
   return "";
 }
 
+/** Writes a style rule, followed by the rules nested inside it, each with its selectors written out in full. */
 function writeStyleRule(
   rule: Rule,
   owner: StylesheetOwner,
   scope: string,
 ): string {
   if (rule.prelude.type !== "SelectorList") return "";
+  // Nested rules read the parent's selectors before scoping rewrites them.
+  const nestedRules = writeNestedRules(rule, rule.prelude, owner, scope);
   const declarations = writeDeclarations(rule.block.children.toArray(), owner);
   const selectors = scopeSelectorList(rule.prelude, scope, owner.dictionaryId);
-  return selectors && declarations ? `${selectors} { ${declarations} }` : "";
+  const ownRule =
+    selectors && declarations ? `${selectors} { ${declarations} }` : "";
+  return [ownRule, ...nestedRules].filter(Boolean).join("\n");
 }
 
-/** Writes a block's declarations. Nested rules are dropped, since their selectors depend on the rule around them. */
+/** Writes the style rules nested in a rule's block. Nested at-rules are dropped. */
+function writeNestedRules(
+  rule: Rule,
+  parent: SelectorList,
+  owner: StylesheetOwner,
+  scope: string,
+): string[] {
+  return rule.block.children.toArray().flatMap((node) => {
+    if (node.type !== "Rule" || node.prelude.type !== "SelectorList") return [];
+    const prelude = flattenNestedSelectors(node.prelude, parent);
+    return prelude ? [writeStyleRule({ ...node, prelude }, owner, scope)] : [];
+  });
+}
+
+/** Writes a block's declarations, leaving out the rules nested among them. */
 function writeDeclarations(
   nodes: CssNode[],
   owner: StylesheetOwner,
