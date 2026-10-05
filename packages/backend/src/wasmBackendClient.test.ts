@@ -16,6 +16,10 @@ function createFakeWasm(): OfflineWasm {
     parseDictionary: () => {
       throw new Error("not a zip archive");
     },
+    previewDictionaryTable: () => ({
+      layout: { columns: ["term", "definition"], hasHeader: false },
+      rows: [["cat", "a pet"]],
+    }),
   };
 }
 
@@ -58,6 +62,7 @@ describe("createWasmBackendClient", () => {
         kind: "parseDictionary",
         fileName: "a.zip",
         bytes: new Uint8Array(),
+        tableLayout: null,
       },
     });
     expect(result).toEqual({

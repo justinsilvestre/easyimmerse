@@ -76,5 +76,26 @@ describe("OfflineWasm", () => {
         wasm.parseDictionary("notes.txt", new TextEncoder().encode("hello")),
       ).toThrow("no supported dictionary format");
     });
+
+    it("skips the header row of a table when the layout says so", async () => {
+      const wasm = await loadFromDisk();
+      const dictionary = wasm.parseDictionary(
+        "words.csv",
+        new TextEncoder().encode("Wort;Bedeutung\nHund;dog\n"),
+        { columns: ["term", "definition"], hasHeader: true },
+      );
+      expect(dictionary.entries.map((entry) => entry.term)).toEqual(["Hund"]);
+    });
+  });
+
+  describe("previewDictionaryTable", () => {
+    it("detects the columns of a headerless table", async () => {
+      const wasm = await loadFromDisk();
+      const preview = wasm.previewDictionaryTable(
+        "words.csv",
+        new TextEncoder().encode("猫,ねこ,cat\n"),
+      );
+      expect(preview.layout.columns).toEqual(["term", "reading", "definition"]);
+    });
   });
 });
