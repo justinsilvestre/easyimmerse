@@ -8,7 +8,7 @@ const meta = {
   component: SettingsScreen,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
-  args: { onBack: fn() },
+  args: { onBack: fn(), onOpenDictionaries: fn() },
 } satisfies Meta<typeof SettingsScreen>;
 
 export default meta;
