@@ -30,10 +30,10 @@ export type PageInfo = { page: number; pageCount: number };
 const gapEm = 3;
 
 /**
- * Lays a chapter, or a section of a long one, out in pages of one or two columns, which the reader turns by keyboard,
- * swipe, scroll wheel, or the arrows beside the page. The page is found again from the
- * reading location whenever the layout changes, so resizing the window or the text keeps
- * the reader's place.
+ * Lays a chapter, or a section of a long one, out in pages of one or two columns,
+ * which the reader turns by keyboard, swipe, scroll wheel, or the arrows beside the page.
+ * The page is found again from the reading location whenever the layout changes,
+ * so that resizing the window or the text keeps the reader's place.
  */
 export function PagedChapter({
   chapterIndex,

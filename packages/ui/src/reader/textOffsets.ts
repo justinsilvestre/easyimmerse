@@ -1,6 +1,6 @@
 /**
- * Helpers that translate between character offsets in a paragraph's text and positions in
- * the DOM. A paragraph may be split into several text nodes, for instance by search marks.
+ * Helpers that translate between character offsets in a paragraph's text and positions in the DOM.
+ * A paragraph may be split into several text nodes, for instance by search marks.
  */
 
 /** The attribute that carries a paragraph's index on its element. */

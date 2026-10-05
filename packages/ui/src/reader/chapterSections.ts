@@ -7,9 +7,9 @@ import type { ReaderLocation } from "./readingProgress.ts";
 export type ChapterSection = { start: number; end: number };
 
 /**
- * Divides a chapter's paragraphs into sections of at most `maxCharacters`, breaking only
- * between paragraphs. The sections are kept close to one size, so that none is much
- * shorter than the rest. A paragraph longer than the limit gets a section of its own.
+ * Divides a chapter's paragraphs into sections of at most `maxCharacters`, breaking only between paragraphs.
+ * The sections are kept close to one size, so that none is much shorter than the rest.
+ * A paragraph longer than the limit gets a section of its own.
  */
 export function sectionsOf(
   paragraphs: readonly string[],

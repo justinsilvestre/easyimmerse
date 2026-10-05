@@ -9,8 +9,8 @@ export type PageLayout = {
 };
 
 /**
- * Fits columns of at most `maxColumnWidth` into the available width. Two columns are shown
- * side by side, like an open book, once each can be nearly as wide as one would be alone.
+ * Fits columns of at most `maxColumnWidth` into the available width.
+ * Two columns are shown side by side, like an open book, once each can be nearly as wide as one would be alone.
  */
 export function pageLayoutOf(
   availableWidth: number,

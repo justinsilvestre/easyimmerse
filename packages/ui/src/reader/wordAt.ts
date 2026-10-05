@@ -2,8 +2,8 @@
 export type TextSpan = { text: string; start: number; end: number };
 
 /**
- * Finds the word that contains the character at the offset, using the language's word
- * boundaries, so that languages written without spaces, such as Japanese, are split too.
+ * Finds the word that contains the character at the offset, using the language's word boundaries,
+ * so that languages written without spaces, such as Japanese, are split too.
  * Returns null when the character is punctuation or space.
  */
 export function wordAt(
@@ -20,7 +20,7 @@ export function wordAt(
 
 /**
  * Finds the words beside a caret at the offset: the one after it first, then the one before it.
- * A caret lies between characters, so the character under the pointer may be on either side,
+ * A caret lies between characters, so the character under the pointer may be on either side of it,
  * and in text without spaces both sides can belong to words.
  */
 export function wordsAroundCaret(

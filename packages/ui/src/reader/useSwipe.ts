@@ -7,8 +7,8 @@ const dragStartPx = 8;
 const turnPx = 48;
 
 /**
- * Lets a finger drag the page sideways and turn it on release. Mouse drags are left alone,
- * so that they still select text.
+ * Lets a finger drag the page sideways and turn it on release.
+ * Mouse drags are left alone, so that they still select text.
  */
 export function useSwipe(turner: PageTurner) {
   const [dragX, setDragX] = useState(0);

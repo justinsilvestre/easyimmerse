@@ -6,9 +6,9 @@ import type { PageInfo } from "./PagedChapter.tsx";
 const sliderSteps = 1000;
 
 /**
- * The reader's place in the book. A quiet line of page and percentage stays at the bottom of
- * the page; while the toolbar shows, a slider above it moves through the whole book, with a
- * tick at the start of each chapter.
+ * The reader's place in the book.
+ * A quiet line of page and percentage stays at the bottom of the page;
+ * while the toolbar shows, a slider above it moves through the whole book, with a tick at the start of each chapter.
  * Like the toolbar, the hidden slider lets clicks through but stays in the tab order.
  */
 export function ReaderFooter({

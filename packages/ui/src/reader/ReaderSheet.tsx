@@ -14,9 +14,8 @@ import {
 } from "../components/modalFocus.ts";
 
 /**
- * A panel that slides over the text: on a wide screen from the side, or as a card under the
- * toolbar; on a phone from the bottom. It lies over the page rather than beside it, so
- * opening it does not move the text.
+ * A panel that slides over the text: on a wide screen from the side, or as a card under the toolbar; on a phone from the bottom.
+ * It lies over the page rather than beside it, so that opening it does not move the text.
  * Escape, the close button, and a click beside it close it, and focus returns to where it was.
  */
 export function ReaderSheet({

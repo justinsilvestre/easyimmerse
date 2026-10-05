@@ -96,9 +96,9 @@ const searchLimit = 500;
 const sectionCharacterLimit = 250_000;
 
 /**
- * The screen for reading an ebook or a text file. The text fills the window, set like a
- * book; the toolbar and progress bar fade in when they are wanted. Words are looked up by
- * resting the pointer on them or tapping them, as in the subtitles.
+ * The screen for reading an ebook or a text file.
+ * The text fills the window, set like a book; the toolbar and progress bar fade in when they are wanted.
+ * Words are looked up by resting the pointer on them or tapping them, as in the subtitles.
  */
 export function ReaderView(props: ReaderViewProps) {
   const { preferences, callbacks } = props;

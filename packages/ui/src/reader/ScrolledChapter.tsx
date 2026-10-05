@@ -8,8 +8,8 @@ import { characterRect } from "./textOffsets.ts";
 const directionThresholdPx = 6;
 
 /**
- * Shows a whole chapter as one scrolling column. The reader's place is the first character
- * at the top of the view, which the column scrolls back to whenever the layout changes.
+ * Shows a whole chapter as one scrolling column.
+ * The reader's place is the first character at the top of the view, which the column scrolls back to whenever the layout changes.
  */
 export function ScrolledChapter({
   chapterIndex,
@@ -110,9 +110,9 @@ function scrollTo(
 }
 
 /**
- * Lays out the paragraph and the one before it, even where the browser would skip them as off
- * screen. The browser gives no positions for characters it has not laid out, and the text above
- * the reader's place must keep its height once the view moves there.
+ * Lays out the paragraph and the one before it, even where the browser would skip them as off screen.
+ * The browser gives no positions for characters it has not laid out,
+ * and the text above the reader's place must keep its height once the view moves there.
  */
 function layOutNow(paragraph: HTMLElement) {
   for (const element of [paragraph, paragraph.previousElementSibling])

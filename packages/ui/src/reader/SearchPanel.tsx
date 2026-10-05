@@ -9,8 +9,9 @@ import { ReaderSheet } from "./ReaderSheet.tsx";
 import { excerptAround, type SearchMatch } from "./searchDocument.ts";
 
 /**
- * Searches the whole book. Results are listed by chapter with a little context; choosing
- * one shows it in the text. Enter steps to the next result and Shift+Enter to the previous.
+ * Searches the whole book.
+ * Results are listed by chapter with a little context; choosing one shows it in the text.
+ * Enter steps to the next result and Shift+Enter to the previous.
  */
 export function SearchPanel({
   document,

@@ -55,8 +55,8 @@ function popupFor(word: string, onClose: () => void) {
 }
 
 /**
- * Keeps the preferences and the looked-up word in state, so that the appearance controls
- * and the dictionary pop-up work in every story. "Ungeziefer" and "fressen" have entries.
+ * Keeps the preferences and the looked-up word in state, so that the appearance controls and the dictionary pop-up work in every story.
+ * "Ungeziefer" and "fressen" have entries.
  */
 function StatefulReader(args: ReaderViewProps) {
   const [preferences, setPreferences] = useState(args.preferences);
@@ -220,8 +220,7 @@ function writeStored(key: string, value: unknown) {
 
 /**
  * Opens a fixture or a file of your own with the app's Rust parser, built to WebAssembly.
- * The reading position and the appearance are kept in the browser's storage, so reopening
- * a file returns to the same place.
+ * The reading position and the appearance are kept in the browser's storage, so that reopening a file returns to the same place.
  */
 function FileReader(args: ReaderViewProps) {
   const [file, setFile] = useState<OpenFile | null>(null);

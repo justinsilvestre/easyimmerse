@@ -12,8 +12,8 @@ export type SearchMatch = {
 const contextLength = 40;
 
 /**
- * Finds every occurrence of the query in the document, ignoring case and accents,
- * so that "uber" finds "Über". Stops after `limit` matches.
+ * Finds every occurrence of the query in the document, ignoring case and accents, so that "uber" finds "Über".
+ * Stops after `limit` matches.
  */
 export function searchDocument(
   document: Document,

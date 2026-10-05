@@ -5,8 +5,8 @@ import { popupPlacement } from "./popupPlacement.ts";
 const popupWidthPx = 352;
 
 /**
- * Holds the dictionary pop-up beside the word it is about. On a phone, or before any word
- * has been looked up, it sits at the bottom of the window instead.
+ * Holds the dictionary pop-up beside the word it is about.
+ * On a phone, or before any word has been looked up, it sits at the bottom of the window instead.
  */
 export function LookupAnchor({
   wordRect,

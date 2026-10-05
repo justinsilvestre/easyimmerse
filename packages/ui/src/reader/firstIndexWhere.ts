@@ -1,6 +1,6 @@
 /**
- * Finds the first index below `count` that satisfies a predicate which, once true, stays true
- * for every later index. Returns the last index when none does.
+ * Finds the first index below `count` that satisfies a predicate which, once true, stays true for every later index.
+ * Returns the last index when none does.
  */
 export function firstIndexWhere(
   count: number,

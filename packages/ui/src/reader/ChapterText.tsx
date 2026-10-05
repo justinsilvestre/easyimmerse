@@ -13,9 +13,8 @@ export type TextMark = {
 };
 
 /**
- * One chapter's text, or one section of it, set like a book page: a centered heading, then
- * paragraphs with indented first lines. Every paragraph carries its index in the chapter, so
- * positions in the text can be found again after the layout changes.
+ * One chapter's text, or one section of it, set like a book page: a centered heading, then paragraphs with indented first lines.
+ * Every paragraph carries its index in the chapter, so that positions in the text can be found again after the layout changes.
  */
 export const ChapterText = memo(function ChapterText({
   chapter,
@@ -31,8 +30,8 @@ export const ChapterText = memo(function ChapterText({
   language: string;
   isJustified: boolean;
   /**
-   * Lets the browser skip laying out paragraphs far from the view, which speeds up long
-   * chapters in a scrolling layout. Page counts in a column layout would come out wrong.
+   * Lets the browser skip laying out paragraphs far from the view, which speeds up long chapters in a scrolling layout.
+   * Page counts in a column layout would come out wrong.
    */
   skipsOffscreenLayout: boolean;
   marks: readonly TextMark[];

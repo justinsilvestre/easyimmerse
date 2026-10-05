@@ -34,10 +34,9 @@ const clickSlopPx = 10;
 const highlightName = "reader-word";
 
 /**
- * Finds the word under the pointer without wrapping every word in an element, so that long
- * chapters stay quick to lay out. A mouse looks a word up by resting on it and makes a
- * flashcard by clicking it; a finger looks a word up by tapping and makes a flashcard by
- * tapping twice.
+ * Finds the word under the pointer without wrapping every word in an element, so that long chapters stay quick to lay out.
+ * A mouse looks a word up by resting on it and makes a flashcard by clicking it;
+ * a finger looks a word up by tapping and makes a flashcard by tapping twice.
  */
 export function useWordPointer(
   chapterIndex: number,

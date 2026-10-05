@@ -4,8 +4,8 @@ import type { Document } from "@easyimmerse/types";
 const partHeading = /^(I{1,3})\.$/;
 
 /**
- * Kafka's "Die Verwandlung" in its three parts, split from the plain-text fixture the way
- * the EPUB fixture divides it, so that stories have a whole book without running the parser.
+ * Kafka's "Die Verwandlung" in its three parts, split from the plain-text fixture the way the EPUB fixture divides it,
+ * so that stories have a whole book without running the parser.
  */
 export const exampleNovel: Document = {
   title: "Die Verwandlung",

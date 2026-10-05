@@ -5,8 +5,9 @@ type Size = { width: number; height: number };
 const margin = 8;
 
 /**
- * Places a pop-up of the given width next to a word: below it when the word is in the upper
- * part of the window, above it otherwise, and centered on it as far as the window allows.
+ * Places a pop-up of the given width next to a word:
+ * below it when the word is in the upper part of the window, above it otherwise,
+ * and centered on it as far as the window allows.
  * Returns CSS offsets for a fixed-position element.
  */
 export function popupPlacement(
