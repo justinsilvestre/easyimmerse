@@ -31,6 +31,7 @@ function renderScreen(responses: Record<string, FakeResponse> = {}) {
     "DELETE /dictionaries/d1": undefined,
     "POST /dictionaries/import-local": exampleDictionaries[0],
     "POST /dictionaries/preview": tablePreview,
+    "POST /dictionaries/preview-local": tablePreview,
     "POST /dictionaries": exampleDictionaries[0],
     ...responses,
   });
@@ -213,6 +214,44 @@ describe("DictionariesScreen", () => {
         requestsTo(client, "POST", "/dictionaries/import-local")[0]?.body,
       ).toEqual({ kind: "json", value: { path: "/dictionaries/jmdict.zip" } }),
     );
+  });
+
+  describe("for a table the desktop app picked from its path", () => {
+    function chooseLocalTable(store: ReturnType<typeof renderScreen>["store"]) {
+      act(() => {
+        store.dispatch(
+          actions.dictionaryFileChosen({
+            name: "animals.csv",
+            source: { kind: "path", path: "/dictionaries/animals.csv" },
+          }),
+        );
+      });
+    }
+
+    it("shows the table's columns before importing it", async () => {
+      const { store } = renderScreen();
+      chooseLocalTable(store);
+      expect(
+        await screen.findByRole("dialog", { name: "Import animals.csv" }),
+      ).toBeDefined();
+    });
+
+    it("has the server import the path with the columns the user checked", async () => {
+      const { client, store } = renderScreen();
+      chooseLocalTable(store);
+      fireEvent.click(await screen.findByRole("button", { name: "Import" }));
+      await vi.waitFor(() =>
+        expect(
+          requestsTo(client, "POST", "/dictionaries/import-local")[0]?.body,
+        ).toEqual({
+          kind: "json",
+          value: {
+            path: "/dictionaries/animals.csv",
+            tableLayout: { columns: ["term", "definition"], hasHeader: false },
+          },
+        }),
+      );
+    });
   });
 
   it("sends a file the browser picked as bytes", async () => {

@@ -20,6 +20,7 @@ import type {
   ParseTimedTextRequest,
   PlaybackRequest,
   PlaybackResponse,
+  PreviewLocalDictionaryTableRequest,
   Project,
   ProjectSettings,
   SubtitleSelection,
@@ -408,6 +409,16 @@ export const backendApi = createApi({
             : undefined,
       }),
     }),
+    previewLocalDictionaryTable: build.mutation<
+      TablePreview,
+      PreviewLocalDictionaryTableRequest
+    >({
+      query: (request) => ({
+        method: "POST",
+        path: "/dictionaries/preview-local",
+        body: { kind: "json", value: request },
+      }),
+    }),
     importLocalDictionary: build.mutation<
       DictionarySummary,
       ImportLocalDictionaryRequest
@@ -470,6 +481,7 @@ export const {
   useParseLocalDocumentMutation,
   useImportDictionaryMutation,
   usePreviewDictionaryTableMutation,
+  usePreviewLocalDictionaryTableMutation,
   useImportLocalDictionaryMutation,
   useListDictionariesQuery,
   useDeleteDictionaryMutation,

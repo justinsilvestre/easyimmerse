@@ -7,7 +7,7 @@ import {
 
 const table = {
   fileName: "animals.csv",
-  bytes: new Uint8Array([1]),
+  contents: { kind: "bytes", bytes: new Uint8Array([1]) } as const,
   preview: { layout: { columns: [], hasHeader: false }, rows: [] },
 };
 
