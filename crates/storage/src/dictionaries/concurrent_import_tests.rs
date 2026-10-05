@@ -28,12 +28,17 @@ fn import_paused(
     finish: Receiver<Result<(), DictionaryError>>,
 ) -> Result<(), StorageError> {
     let read = |sink: &mut dyn DictionarySink| {
-        sink.begin(DictionaryMetadata::new(term, DictionaryFormatKind::Stardict))?;
+        sink.begin(DictionaryMetadata::new(
+            term,
+            DictionaryFormatKind::Stardict,
+        ))?;
         sink.term_entry(TermEntry::new(term, vec![Definition::text("a word")]))?;
         let _ = started.send(());
         finish.recv().unwrap_or(Ok(()))
     };
-    storage.write(|conn| import_with(conn, 1_000, read)).map(|_| ())
+    storage
+        .write(|conn| import_with(conn, 1_000, read))
+        .map(|_| ())
 }
 
 /// Looks up `term` while an import of it is paused, and returns what the lookup found in time,
@@ -69,7 +74,10 @@ fn completes_a_lookup_while_an_import_is_in_progress() {
 fn hides_the_entries_of_an_unfinished_import_from_lookups() {
     let dir = tempfile::tempdir().unwrap();
     let storage = open_file_storage(&dir);
-    assert_eq!(look_up_during_import(&storage, "cat", Ok(())), Some(Vec::new()));
+    assert_eq!(
+        look_up_during_import(&storage, "cat", Ok(())),
+        Some(Vec::new())
+    );
 }
 
 #[test]
@@ -77,7 +85,9 @@ fn finds_the_entries_of_an_import_once_it_finishes() {
     let dir = tempfile::tempdir().unwrap();
     let storage = open_file_storage(&dir);
     look_up_during_import(&storage, "cat", Ok(()));
-    let found = storage.find_dictionary_entries(&["cat".to_string()]).unwrap();
+    let found = storage
+        .find_dictionary_entries(&["cat".to_string()])
+        .unwrap();
     assert_eq!(found.len(), 1);
 }
 

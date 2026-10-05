@@ -101,9 +101,7 @@ impl Storage {
         id: &MediaFileId,
         track_selection_json: Option<&str>,
     ) -> Result<(), StorageError> {
-        self.write(|conn| {
-            media_files::set_track_selection_json(conn, id, track_selection_json)
-        })
+        self.write(|conn| media_files::set_track_selection_json(conn, id, track_selection_json))
     }
 
     /// Lists every distinct local path that some media file still points at.
