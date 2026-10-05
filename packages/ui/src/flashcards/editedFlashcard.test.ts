@@ -509,3 +509,35 @@ describe("reduceEditedFlashcard's record of the user's changes", () => {
     ).toBe(false);
   });
 });
+
+describe("reduceEditedFlashcard on restored", () => {
+  const typeDefinition: EditedFlashcardAction = {
+    type: "edited",
+    action: { type: "textChanged", key: "l1_definition", value: "a pet" },
+  };
+
+  function restore(card: EditedFlashcard | null) {
+    if (card === null) throw new Error("No flashcard to restore.");
+    return reduceAll(startedFrom(createDraft()), { type: "restored", card });
+  }
+
+  it("puts the card back with its edits", () => {
+    const changed = reduceAll(startedFrom(createDraft()), typeDefinition);
+    expect(restore(changed)?.editor.content.l1_definition).toBe("a pet");
+  });
+
+  it("opens the card for editing again", () => {
+    const sending = reduceAll(
+      startedFrom(createDraft()),
+      typeDefinition,
+      { type: "saveRequested" },
+      { type: "sendStarted" },
+    );
+    expect(restore(sending)?.stage).toBe("editing");
+  });
+
+  it("gives the card a session of its own, apart from the one it had", () => {
+    const changed = reduceAll(startedFrom(createDraft()), typeDefinition);
+    expect(restore(changed)?.session).not.toBe(changed?.session);
+  });
+});

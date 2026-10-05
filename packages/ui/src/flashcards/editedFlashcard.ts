@@ -48,6 +48,8 @@ export type EditedFlashcardAction =
   /** A new flashcard opens, perhaps before the lookup of its word has answered. */
   | { type: "started"; draft: FlashcardDraft; awaitsLookup?: boolean }
   | { type: "opened"; flashcard: Flashcard }
+  /** A card that left the editor comes back to it with its edits, as when a discard is undone or a failed save reopened. */
+  | { type: "restored"; card: EditedFlashcard }
   | { type: "edited"; action: EditorAction }
   /** The lookup of the new flashcard started from `draft` has answered after the editor opened. */
   | {
@@ -95,6 +97,12 @@ export function reduceEditedFlashcard(
         stage: "editing",
         isChanged: false,
         session: Symbol("saved flashcard"),
+      };
+    case "restored":
+      return {
+        ...action.card,
+        stage: "editing",
+        session: Symbol("restored flashcard"),
       };
     case "edited":
       // The editor is read-only once Save is pressed, so that what is saved is what the user saw.
