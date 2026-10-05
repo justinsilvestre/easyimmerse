@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
 #[serde(untagged)]
 #[ts(export)]
 pub enum StructuredContent {
@@ -17,7 +17,7 @@ pub enum StructuredContent {
     Element(Box<StructuredElement>),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
 #[serde(tag = "tag", rename_all = "lowercase")]
 #[ts(export)]
 pub enum StructuredElement {

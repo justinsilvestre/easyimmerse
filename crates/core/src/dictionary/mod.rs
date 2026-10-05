@@ -16,6 +16,7 @@ mod sink;
 mod source;
 mod stardict;
 mod structured_content;
+mod structured_content_deserialization;
 mod tag_definition;
 mod term_entry;
 mod term_meta;
