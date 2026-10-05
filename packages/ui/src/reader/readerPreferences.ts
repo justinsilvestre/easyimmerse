@@ -45,5 +45,6 @@ export const lineLengthsEm: Record<ReaderPreferences["lineLength"], number> = {
 /** The size of the text relative to the default, as a whole percentage. */
 export function fontSizePercentOf(preferences: ReaderPreferences): number {
   const sizeRem = fontSizesRem[preferences.fontSizeStep] ?? 1;
-  return Math.round((sizeRem / 1.125) * 100);
+  const defaultRem = fontSizesRem[defaultReaderPreferences.fontSizeStep] ?? 1;
+  return Math.round((sizeRem / defaultRem) * 100);
 }

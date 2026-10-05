@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   type ReactNode,
@@ -181,7 +182,10 @@ function EdgeButton({
         event.stopPropagation();
         onClick();
       }}
-      className={`absolute inset-y-0 hidden w-14 items-center justify-center text-fg-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-fg md:flex ${side === "left" ? "left-0" : "right-0"}`}
+      className={clsx(
+        "absolute inset-y-0 hidden w-14 items-center justify-center text-fg-faint opacity-0 transition-opacity group-hover:opacity-100 hover:text-fg md:flex",
+        side === "left" ? "left-0" : "right-0",
+      )}
     >
       <Icon className="size-6" aria-hidden />
     </button>
