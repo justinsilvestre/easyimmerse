@@ -167,7 +167,7 @@ fn finds_an_entry_of_the_yomitan_fixture() {
 #[test]
 fn rejects_files_that_no_format_recognizes() {
     let storage = Storage::open_in_memory().unwrap();
-    let mut source = DictionarySource::single("notes.txt", b"hello".to_vec()).unwrap();
+    let mut source = DictionarySource::single("notes.pdf", b"hello".to_vec()).unwrap();
     assert!(matches!(
         storage.import_dictionary(&mut source),
         Err(StorageError::Dictionary(
