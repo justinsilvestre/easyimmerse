@@ -186,6 +186,35 @@ describe("useMediaFlashcards", () => {
     );
   });
 
+  describe("when a save finishes after its card has left the screen", () => {
+    async function leaveWhileSending(setup: { savesFail?: boolean } = {}) {
+      const rendered = renderFlashcards(setup);
+      const { result, held, letSavesThrough } = rendered;
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.save());
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      act(() => result.current.start(createDraft("Katze")));
+      await letSavesThrough();
+      return rendered;
+    }
+
+    it("says nothing of its success", async () => {
+      const { result, posts } = await leaveWhileSending();
+      await vi.waitFor(() => expect(posts()).toHaveLength(1));
+      await act(async () => undefined);
+      expect(result.current.isSaved).toBe(false);
+    });
+
+    it("names the word when it fails", async () => {
+      const { notifications } = await leaveWhileSending({ savesFail: true });
+      await vi.waitFor(() =>
+        expect(notifications()).toEqual([
+          "Couldn't save the flashcard for “Hund”.",
+        ]),
+      );
+    });
+  });
+
   it("still tells of an ordinary save", async () => {
     const { result, held, letSavesThrough } = renderFlashcards();
     act(() => result.current.start(createDraft("Hund")));

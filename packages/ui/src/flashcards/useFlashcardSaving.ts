@@ -8,7 +8,7 @@ import type {
 import { createSaveQueue } from "./saveQueue.ts";
 import { isSaveAsked } from "./saveStage.ts";
 
-/** Tells of a save's outcome. A save in the background is one of a card no longer on screen. */
+/** Tells of a save's outcome, and whether its card had left the screen by the time the save finished. */
 export type SaveReports = {
   saved: (card: EditedFlashcard, isInBackground: boolean) => void;
   failed: (card: EditedFlashcard, isInBackground: boolean) => void;
@@ -29,16 +29,25 @@ export function useFlashcardSaving(
   reports: SaveReports,
 ): () => void {
   const [queue] = useState(createSaveQueue);
-  const sendAndReport = (card: EditedFlashcard, isInBackground: boolean) => {
+  const latest = useRef({ edited, isMounted: false });
+  useEffect(() => {
+    latest.current.edited = edited;
+  });
+  /** Whether the editor still shows the card, which decides how a save that finishes is told of. */
+  const isOnScreen = (card: EditedFlashcard) =>
+    latest.current.isMounted && latest.current.edited?.session === card.session;
+  const sendAndReport = (card: EditedFlashcard) => {
     const { session } = card;
     queue
       .add(card, () => send(card))
       ?.then(
         () => {
+          const isInBackground = !isOnScreen(card);
           dispatchEdited({ type: "saved", session });
           reports.saved(card, isInBackground);
         },
         () => {
+          const isInBackground = !isOnScreen(card);
           dispatchEdited({ type: "saveFailed", session });
           reports.failed(card, isInBackground);
         },
@@ -47,7 +56,7 @@ export function useFlashcardSaving(
   useEffect(() => {
     if (edited?.stage !== "readyToSend") return;
     dispatchEdited({ type: "sendStarted" });
-    sendAndReport(edited, false);
+    sendAndReport(edited);
   });
   const waitingDraft =
     edited?.kind === "new" && edited.stage === "awaitingLookupToSave"
@@ -63,17 +72,21 @@ export function useFlashcardSaving(
       dispatchEdited({ type: "lookupFailed", draft: waitingDraft }),
     );
   }, [waitingDraft, giveUp, dispatchEdited]);
-  const latest = useRef({ edited, sendAndReport });
-  latest.current = { edited, sendAndReport };
-  useEffect(
-    () => () => {
-      const { edited: left, sendAndReport: sendLeft } = latest.current;
-      if (left && isWorthSavingWhenLeft(left)) sendLeft(left, true);
-    },
-    [],
-  );
+  const sendLeft = useRef(sendAndReport);
+  useEffect(() => {
+    sendLeft.current = sendAndReport;
+  });
+  useEffect(() => {
+    const current = latest.current;
+    current.isMounted = true;
+    return () => {
+      current.isMounted = false;
+      const left = current.edited;
+      if (left && isWorthSavingWhenLeft(left)) sendLeft.current(left);
+    };
+  }, []);
   return () => {
-    if (edited && isWorthSavingWhenLeft(edited)) sendAndReport(edited, true);
+    if (edited && isWorthSavingWhenLeft(edited)) sendAndReport(edited);
   };
 }
 
