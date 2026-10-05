@@ -8,21 +8,28 @@
 pub const COORDINATORS: &[&str] = &["und", "oder", "aber", "sondern", "sowie"];
 
 /// Subordinating conjunctions that open a verb-final clause and are not spelled like a particle or a preposition.
+/// Those that serve more often as an adverb, such as da, nun, so and soweit, are left out.
 ///
 /// Sources: STTS tag table, KOUS (weil, dass, wenn, ob); grammis, Systematische Grammatik, unit 1202
-/// „Subjunktoren", inventory (obwohl, falls, sobald, solange, seitdem, indem, ehe).
+/// „Subjunktoren", inventory (https://grammis.ids-mannheim.de/systematische-grammatik/1202);
+/// Wikidata lexemes that are instances of subordinating conjunction (Q11655558): sodass (L408933),
+/// and daß, the older spelling of dass (L248793).
+#[rustfmt::skip]
 pub const SUBJUNCTIONS: &[&str] = &[
-    "dass", "weil", "ob", "wenn", "obwohl", "falls", "sobald", "solange", "seitdem", "indem", "ehe",
+    "dass", "daß", "weil", "ob", "wenn", "obwohl", "obgleich", "obschon", "obzwar", "wenngleich", "wennzwar",
+    "wiewohl", "falls", "sofern", "wofern", "sobald", "solange", "sooft", "sosehr", "sodass", "seitdem", "nachdem",
+    "indem", "ehe", "alldieweil", "sintemal",
 ];
 
 /// The relative pronouns, which open a verb-final relative clause after a comma.
 ///
 /// Sources: grammis, Terminologie, unit 1890 „Relativ-Pronomen" (der, die, das; welch-; was, wer);
 /// grammis, Kontrastive Grammatik, unit 3673, the forms of der, die, das (den, dem, dessen, derer, denen);
+/// Wikidata lexeme L411096, the relative pronoun der, whose genitive feminine singular and genitive plural is deren;
 /// the endings of welch- as declined by the determiner rules of the deinflector.
 #[rustfmt::skip]
 pub const RELATIVE_PRONOUNS: &[&str] = &[
-    "der", "die", "das", "den", "dem", "dessen", "derer", "denen",
+    "der", "die", "das", "den", "dem", "dessen", "deren", "derer", "denen",
     "welcher", "welche", "welches", "welchem", "welchen",
 ];
 

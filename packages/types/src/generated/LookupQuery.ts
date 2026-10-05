@@ -16,5 +16,7 @@ language: string,
 context?: string, 
 /**
  * The position of the looked-up character in `context`, counted in characters (Unicode scalar values).
+ * A JavaScript string index counts UTF-16 code units instead, and differs after any emoji or other character
+ * outside the Basic Multilingual Plane, so a web client converts it with `[...context.slice(0, index)].length`.
  */
 offset?: number, };

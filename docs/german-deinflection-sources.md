@@ -156,13 +156,15 @@ The word lists are short, closed and written for this code, each with its source
 | List | Words | Sources |
 |---|---|---|
 | Coordinators | und, oder, aber, sondern, sowie | grammis, Systematische Grammatik 1281; STTS KON |
-| Subjunctions | dass, weil, ob, wenn, obwohl, falls, sobald, solange, seitdem, indem, ehe | STTS KOUS; grammis, Systematische Grammatik 1202 |
-| Relative pronouns | der, die, das, den, dem, dessen, derer, denen; welch- with its endings | grammis, Terminologie 1890; grammis, Kontrastive Grammatik 3673 |
+| Subjunctions | dass (daß), weil, ob, wenn, obwohl, obgleich, obschon, obzwar, wenngleich, wennzwar, wiewohl, falls, sofern, wofern, sobald, solange, sooft, sosehr, sodass, seitdem, nachdem, indem, ehe, alldieweil, sintemal | STTS KOUS; grammis, Systematische Grammatik 1202; Wikidata L408933 (sodass), L248793 (daß) |
+| Relative pronouns | der, die, das, den, dem, dessen, deren, derer, denen; welch- with its endings | grammis, Terminologie 1890; grammis, Kontrastive Grammatik 3673; Wikidata L411096 (deren) |
 | Interrogatives | wer, wen, wem, wessen, was, warum, wo, wann, wie, worüber, wobei, wofür, womit, worin | STTS PWS, PWAT, PWAV; grammis, Kontrastive Grammatik 3849 |
 | Prepositions before a relative pronoun | the particles spelled like prepositions, and ohne | RW § 34 (1.1), p. 57; STTS APPR |
 | Comparison particles | als, wie | STTS KOKOM; grammis, „Nachfeld" |
 | Prefixes that never separate | be, emp, ent, er, ge, miss, ver, zer | GfdS |
 | Bi-particle adverbs | ab und an, ab und zu, auf und ab, auf und davon, durch und durch, hin und wieder, nach und nach, nach wie vor, aus und vorbei, über und über | Volk et al. 2016, Table 1 and text, p. 301 |
+
+The subjunctions of grammis 1202 that are also particles, prepositions or common adverbs are left out, because the clause search stops at any subjunction, wherever it stands: als and wie (comparison particles), bis, bevor (the particle of bevorstehen), seit, während, statt and anstatt, um, da, damit, nun, so, soweit, soviel, derweil, indessen, insofern, insoweit, gleichwohl, trotzdem, währenddessen and wennschon. The two-word so dass needs no entry, because its dass ends the clause. A relative pronoun opens a clause only directly after a comma, where deren is as ambiguous as der, die and das: a demonstrative pronoun of the same form there is also read as opening a relative clause.
 
 Further sources: STTS tag table, IMS Stuttgart (https://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/germantagsets/); M. Volk, S. Clematide, J. Graën, P. Ströbel, „Bi-particle Adverbs, PoS-Tagging and the Recognition of German Separable Prefix Verbs", KONVENS 2016, pp. 297–305; P. Gallmann, „Das topologische Modell: Basisartikel", 2015; Gesellschaft für deutsche Sprache, https://gfds.de/trennbare-und-nicht-trennbare-verben/.
 

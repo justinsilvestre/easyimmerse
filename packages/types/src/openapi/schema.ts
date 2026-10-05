@@ -1509,7 +1509,11 @@ export interface operations {
                  *     In German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an".
                  */
                 context?: string;
-                /** @description The position of the looked-up character in `context`, counted in characters (Unicode scalar values). */
+                /**
+                 * @description The position of the looked-up character in `context`, counted in characters (Unicode scalar values).
+                 *     A JavaScript string index counts UTF-16 code units instead, and differs after any emoji or other character
+                 *     outside the Basic Multilingual Plane, so a web client converts it with `[...context.slice(0, index)].length`.
+                 */
                 offset?: number;
             };
             header?: never;
