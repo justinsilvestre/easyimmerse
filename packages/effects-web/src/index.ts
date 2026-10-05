@@ -6,7 +6,7 @@ import type {
 import { createBrowserFileRegistry } from "@easyimmerse/state";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { pickFile } from "./pickFile.ts";
-import { createPickMediaFile } from "./pickMediaFile.ts";
+import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
 import { createPlayerEffects } from "./playerEffects.ts";
 import { createPreferenceStore } from "./preferenceStore.ts";
 import { showNotification } from "./showNotification.ts";
@@ -20,7 +20,7 @@ export function createWebEffects(options: {
   notify?: (message: string) => void;
 }): Effects {
   const preferences = createPreferenceStore();
-  const pickRegisteredFile = createPickMediaFile(
+  const pickRegisteredFile = createPickRegisteredFile(
     options.browserFileRegistry ?? createBrowserFileRegistry<File>(),
   );
   return {

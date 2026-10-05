@@ -1,10 +1,10 @@
 import type { BrowserFileRegistry, PickedMediaFile } from "@easyimmerse/state";
 
 /**
- * Builds the browser's media file picker. The chosen `File` goes into the registry, and the
- * result describes it the way the backend stores a `browser_file` source.
+ * Builds the browser's picker for files the app keeps hold of, such as media and dictionary files.
+ * The chosen `File` goes into the registry, and the result describes it the way the backend stores a `browser_file` source.
  */
-export function createPickMediaFile(
+export function createPickRegisteredFile(
   registry: BrowserFileRegistry<File>,
 ): (accept: readonly string[]) => Promise<PickedMediaFile | null> {
   return (accept) =>

@@ -1,11 +1,10 @@
 import type { ServerConfig } from "@easyimmerse/backend";
 import { createWebEffects } from "@easyimmerse/effects-web";
 import type { Effects, PlayerRegistry } from "@easyimmerse/state";
+import { desktopDictionaryExtensions } from "./desktopDictionaryExtensions.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { sendOsNotification } from "./osNotification.ts";
-import { pickDictionaryFile } from "./pickDictionaryFile.ts";
-import { pickFile } from "./pickFile.ts";
-import { pickMediaFile } from "./pickMediaFile.ts";
+import { pickPath } from "./pickPath.ts";
 import { createServerPreferenceStore } from "./serverPreferenceStore.ts";
 import { createShowNotification } from "./showNotification.ts";
 import { subscribeToSettingsRequests } from "./subscribeToSettingsRequests.ts";
@@ -25,9 +24,10 @@ export function createNativeEffects(options: {
   const preferences = createServerPreferenceStore(options.server);
   return {
     ...webEffects,
-    pickFile,
-    pickMediaFile,
-    pickDictionaryFile,
+    pickFile: (accept) => pickPath("Subtitles", accept),
+    pickMediaFile: (accept) => pickPath("Media", accept),
+    pickDictionaryFile: (accept) =>
+      pickPath("Dictionaries", desktopDictionaryExtensions(accept)),
     savePreference: preferences.save,
     loadPreference: preferences.load,
     showNotification: createShowNotification(
