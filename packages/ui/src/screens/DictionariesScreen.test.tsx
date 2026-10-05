@@ -41,15 +41,34 @@ function renderScreen(responses: Record<string, FakeResponse> = {}) {
     { browserFileRegistry: registry },
   );
   /** Acts as the user picking a file in the browser. */
-  const chooseBrowserFile = (name: string) => {
-    const file = new File([new Uint8Array([1])], name, { lastModified: 1 });
+  const chooseBrowserFile = (
+    name: string,
+    file = new File([new Uint8Array([1])], name, { lastModified: 1 }),
+  ) => {
     act(() => {
       rendered.store.dispatch(
         actions.dictionaryFileChosen({ name, source: registry.register(file) }),
       );
     });
   };
-  return { ...rendered, client, chooseBrowserFile };
+  const notifications = () =>
+    rendered.effects.calls.flatMap((call) =>
+      call.type === "showNotification" ? [call.message] : [],
+    );
+  return { ...rendered, client, chooseBrowserFile, notifications };
+}
+
+const serverFailure = fakeFailure({
+  status: 400,
+  code: "bad_request",
+  message: "the index is broken",
+});
+
+/** A file whose bytes cannot be read, as when it was deleted after being picked. */
+class UnreadableFile extends File {
+  override arrayBuffer(): Promise<ArrayBuffer> {
+    return Promise.reject(new Error("The file could not be read."));
+  }
 }
 
 const requestsTo = (
@@ -65,6 +84,16 @@ describe("DictionariesScreen", () => {
   it("lists the dictionaries the server keeps", async () => {
     renderScreen();
     expect(await screen.findByText("DWDS Kernwortschatz")).toBeDefined();
+  });
+
+  it("does not call the list empty while it loads", () => {
+    renderScreen();
+    expect(screen.queryByText("No dictionaries yet")).toBeNull();
+  });
+
+  it("says the list is loading", () => {
+    renderScreen();
+    expect(screen.getByText("Loading the dictionaries…")).toBeDefined();
   });
 
   it("asks for a dictionary file when Add from a file is clicked", async () => {
@@ -135,6 +164,61 @@ describe("DictionariesScreen", () => {
         hasHeader: "false",
       }),
     );
+  });
+
+  describe("when adding a file fails", () => {
+    it("says so when the browser no longer holds the file", async () => {
+      const { store, notifications } = renderScreen();
+      act(() => {
+        store.dispatch(
+          actions.dictionaryFileChosen({
+            name: "jmdict.zip",
+            source: { kind: "browser_file", size: 1, last_modified_ms: 1 },
+          }),
+        );
+      });
+      await vi.waitFor(() =>
+        expect(notifications()).toEqual([
+          "jmdict.zip is no longer available. Pick it again.",
+        ]),
+      );
+    });
+
+    it("says what the server reported", async () => {
+      const { chooseBrowserFile, notifications } = renderScreen({
+        "POST /dictionaries": serverFailure,
+      });
+      chooseBrowserFile("jmdict.zip");
+      await vi.waitFor(() =>
+        expect(notifications()).toEqual([
+          "The dictionary could not be added: the index is broken",
+        ]),
+      );
+    });
+
+    it("says so when a table cannot be previewed", async () => {
+      const { chooseBrowserFile, notifications } = renderScreen({
+        "POST /dictionaries/preview": serverFailure,
+      });
+      chooseBrowserFile("animals.csv");
+      await vi.waitFor(() =>
+        expect(notifications()).toEqual([
+          "The dictionary could not be added: the index is broken",
+        ]),
+      );
+    });
+
+    it("stops showing the file as being added when it cannot be read", async () => {
+      const { chooseBrowserFile } = renderScreen();
+      chooseBrowserFile(
+        "jmdict.zip",
+        new UnreadableFile([], "jmdict.zip", { lastModified: 1 }),
+      );
+      await screen.findByText("Adding jmdict.zip…");
+      await vi.waitFor(() =>
+        expect(screen.queryByText("Adding jmdict.zip…")).toBeNull(),
+      );
+    });
   });
 
   it("names a file in a format no reader supports", async () => {
