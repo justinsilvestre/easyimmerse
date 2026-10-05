@@ -58,9 +58,9 @@ function selectorContaining(container: HTMLElement, fragment: string): string {
   return rule.slice(0, rule.indexOf(" {"));
 }
 
-/** Returns the selector that a one-rule stylesheet of the dictionary `dict` becomes once scoped. */
-function scopedSelector(css: string): string {
-  const scoped = scopeDictionaryStylesheet(css, "dict", () => null);
+/** Returns the selector that a one-rule stylesheet of a dictionary, by default `dict`, becomes once scoped. */
+function scopedSelector(css: string, dictionaryId = "dict"): string {
+  const scoped = scopeDictionaryStylesheet(css, dictionaryId, () => null);
   return scoped.slice(0, scoped.indexOf(" {"));
 }
 
@@ -134,5 +134,36 @@ describe("DictionaryStylesheets", () => {
       ".gloss-sc-table-container { & .gloss-sc-table { margin: 0 } }",
     );
     expect(container.querySelector(selector)?.tagName).toBe("TABLE");
+  });
+
+  describe("with the rules that Wiktionary-based dictionaries write for Yomitan", () => {
+    it("styles the gloss items that hold structured content", () => {
+      const { container } = renderStyledPopup();
+      const selector = scopedSelector(
+        ".gloss-item:has(.structured-content) .gloss-content { margin: 0 }",
+        "sample-yomitan",
+      );
+      expect(container.querySelector(selector)?.textContent).toContain("book");
+    });
+
+    it("styles the gloss separator", () => {
+      const { container } = renderStyledPopup();
+      const selector = scopedSelector(
+        ".gloss-separator { display: none !important }",
+        "sample-yomitan",
+      );
+      expect(container.querySelector(selector)).not.toBeNull();
+    });
+
+    it("styles the tag that names the dictionary", () => {
+      const { container } = renderStyledPopup();
+      const selector = scopedSelector(
+        ".tag[data-category='dictionary'] .tag-label { padding: 0 }",
+        "sample-yomitan",
+      );
+      expect(container.querySelector(selector)?.textContent).toBe(
+        "Sample Dictionary",
+      );
+    });
   });
 });

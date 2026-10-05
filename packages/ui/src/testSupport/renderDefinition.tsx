@@ -2,8 +2,9 @@ import type { Definition } from "@easyimmerse/types";
 import { render } from "@testing-library/react";
 import { DefinitionView } from "../lookup/definition/DefinitionView.tsx";
 import type { ResolveMediaUrl } from "../lookup/definition/definitionContext.ts";
+import { DictionaryScope } from "../lookup/stylesheet/DictionaryScope.tsx";
 
-/** Renders a definition from the dictionary `dict`, with no media unless `resolveMediaUrl` supplies some. */
+/** Renders a definition from the dictionary `dict` in that dictionary's scope, with no media unless `resolveMediaUrl` supplies some. */
 export function renderDefinition(
   definition: Definition,
   {
@@ -17,13 +18,15 @@ export function renderDefinition(
   } = {},
 ) {
   return render(
-    <DefinitionView
-      definition={definition}
-      dictionaryId="dict"
-      resolveMediaUrl={resolveMediaUrl}
-      onWordClick={onWordClick}
-      onLookup={onLookup}
-    />,
+    <DictionaryScope dictionaryId="dict">
+      <DefinitionView
+        definition={definition}
+        dictionaryId="dict"
+        resolveMediaUrl={resolveMediaUrl}
+        onWordClick={onWordClick}
+        onLookup={onLookup}
+      />
+    </DictionaryScope>,
   );
 }
 
