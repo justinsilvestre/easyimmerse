@@ -88,7 +88,7 @@ mod tests {
                 frequency_mode: None,
             },
             entry_id,
-            headword: headword.to_string(),
+            folded_headword: headword.to_string(),
             entry,
             tags: Vec::new(),
         }

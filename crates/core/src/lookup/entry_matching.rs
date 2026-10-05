@@ -1,14 +1,13 @@
+use super::fold_case::fold_case;
 use super::found_rows::FoundEntry;
 use super::lookup_candidate::LookupCandidate;
 
-/// Reports whether a found entry is a dictionary form that the candidate stands for.
+/// Reports whether a found entry is a dictionary form that the candidate stands for, ignoring case.
 ///
 /// A candidate with inflections undone needs an entry of one of its word classes,
 /// unless the entry's format carries no word classes at all.
 pub fn is_match(candidate: &LookupCandidate, found: &FoundEntry) -> bool {
-    found
-        .headword
-        .eq_ignore_ascii_case(&candidate.deinflection.term)
+    found.folded_headword == fold_case(&candidate.deinflection.term)
         && (!candidate.is_inflected()
             || !found.dictionary.format.has_word_classes()
             || has_required_word_class(candidate, found))
@@ -52,7 +51,7 @@ mod tests {
                 frequency_mode: None,
             },
             entry_id: 1,
-            headword: headword.to_string(),
+            folded_headword: fold_case(headword),
             entry,
             tags: Vec::new(),
         }
@@ -90,8 +89,32 @@ mod tests {
 
     #[test]
     fn ignores_ascii_case_in_the_headword() {
-        let entry = found("Cat", DictionaryFormatKind::Stardict, &[]);
-        assert!(is_match(&unchanged("cat"), &entry));
+        let entry = found("cat", DictionaryFormatKind::Stardict, &[]);
+        assert!(is_match(&unchanged("Cat"), &entry));
+    }
+
+    #[test]
+    fn ignores_the_case_of_an_umlaut() {
+        let entry = found("über", DictionaryFormatKind::Stardict, &[]);
+        assert!(is_match(&unchanged("Über"), &entry));
+    }
+
+    #[test]
+    fn ignores_the_case_of_a_capitalized_noun() {
+        let entry = found("Ärger", DictionaryFormatKind::Stardict, &[]);
+        assert!(is_match(&unchanged("ÄRGER"), &entry));
+    }
+
+    #[test]
+    fn ignores_cyrillic_case() {
+        let entry = found("москва", DictionaryFormatKind::Stardict, &[]);
+        assert!(is_match(&unchanged("Москва"), &entry));
+    }
+
+    #[test]
+    fn tells_apart_kana_that_differ_only_in_size() {
+        let entry = found("つ", DictionaryFormatKind::Yomitan, &[]);
+        assert!(!is_match(&unchanged("っ"), &entry));
     }
 
     #[test]

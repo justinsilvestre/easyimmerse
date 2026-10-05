@@ -6,6 +6,7 @@
 
 mod build_lookup_results;
 mod entry_matching;
+mod fold_case;
 mod found_rows;
 #[cfg(test)]
 mod japanese_splits;
@@ -18,6 +19,7 @@ mod term_meta_matching;
 mod word_boundary;
 
 pub use build_lookup_results::build_lookup_results;
+pub use fold_case::fold_case;
 pub use found_rows::{DictionaryOrigin, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta};
 pub use kanji_results::{build_kanji_results, is_kanji};
 pub use lookup_candidate::{LookupCandidate, candidate_headwords, lookup_candidates};

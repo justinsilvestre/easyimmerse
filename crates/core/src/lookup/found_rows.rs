@@ -21,8 +21,8 @@ pub struct FoundEntry {
     pub dictionary: DictionaryOrigin,
     /// Identifies the entry among all stored entries, so that an entry found under several headwords is shown once.
     pub entry_id: i64,
-    /// The stored headword that matched, which may differ from the searched one in ASCII case.
-    pub headword: String,
+    /// The stored headword that matched, with its case folded by [`fold_case`](super::fold_case).
+    pub folded_headword: String,
     pub entry: TermEntry,
     /// The definitions of the tags that the entry uses.
     pub tags: Vec<TagDefinition>,

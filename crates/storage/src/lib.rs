@@ -138,7 +138,7 @@ impl Storage {
         self.with_connection(|conn| dictionaries::delete_dictionary(conn, id))
     }
 
-    /// Finds the entries of every dictionary stored under any of the headwords, ignoring ASCII case.
+    /// Finds the entries of every dictionary stored under any of the headwords, ignoring case.
     pub fn find_dictionary_entries(
         &self,
         headwords: &[String],

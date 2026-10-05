@@ -106,7 +106,7 @@ mod tests {
         FoundEntry {
             dictionary: dictionary(rank),
             entry_id: rank,
-            headword: term.to_string(),
+            folded_headword: term.to_string(),
             entry,
             tags: Vec::new(),
         }

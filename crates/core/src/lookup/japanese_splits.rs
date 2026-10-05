@@ -39,7 +39,7 @@ fn found_entry(index: usize, term: &str, word_class: &str) -> FoundEntry {
             frequency_mode: None,
         },
         entry_id: index as i64,
-        headword: term.to_string(),
+        folded_headword: term.to_string(),
         entry,
         tags: Vec::new(),
     }
