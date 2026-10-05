@@ -146,8 +146,18 @@ fn open_storage(path: &Path) -> Result<Storage, EmbeddedServerError> {
     // developer then deletes the database to start over. Release builds start empty.
     if cfg!(debug_assertions) {
         storage.seed_placeholder_projects()?;
+        seed_sample_content(&storage);
     }
     Ok(storage)
+}
+
+/// Adds sample media and dictionaries from the repository's fixtures.
+/// A failure is only logged, because the app works without them.
+fn seed_sample_content(storage: &Storage) {
+    let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../fixtures");
+    if let Err(error) = storage.seed_sample_content(&fixtures_dir) {
+        tracing::warn!("could not add the sample content: {error}");
+    }
 }
 
 fn create_cache_dir(app: &AppHandle) -> Result<PathBuf, EmbeddedServerError> {
