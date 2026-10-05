@@ -58,7 +58,11 @@ Results list inflections outermost first, so gelesenen gives `declined`, `past p
 
 The finite names are listed with their paradigm and persons in `FINITE_FORMS` in `german/inflection.rs`. `deinflection::german::is_finite_verb` reports whether a deinflection is a finite verb form: class `v` and a single inflection from that list. Participles, infinitives, declined forms and the unchanged text are not finite.
 
-When a regular ending leads to a verb of the irregular lexicon, alone or after particles, only the readings that the verb can have are kept (`lexicon/regular_readings.rs`). Persons whose present form the lexicon lists are removed: lauft gives laufen `present 2pl` and `imperative pl`, not `present 3sg/2pl`, and laufst gives no reading of laufen. A regular past, subjunctive II or participle is dropped when the lexicon lists the verb's own (gehte, gegeht). The verbs that grammis 4074 lists with both strong and weak forms (backen, hängen, senden, wiegen and others), and dingen, whose weak forms Wikidata attests (L883783), keep every regular reading. Verbs with an inseparable prefix are not narrowed, because weak verbs such as bereiten and begleiten share their shape with be- + reiten and be- + gleiten.
+When a regular ending leads to a verb of the irregular lexicon, alone or after particles and an inseparable prefix, only the readings that the verb can have are kept (`lexicon/regular_readings.rs`). Persons whose present form the lexicon lists are removed: lauft and verlauft give `present 2pl` and `imperative pl`, not `present 3sg/2pl`, and laufst gives no reading of laufen. A regular past, subjunctive II or participle is dropped when the lexicon lists the verb's own (gehte, gegeht). Three lists in `lexicon/weak_verbs.rs` keep every regular reading:
+
+- the verbs that grammis 4074 lists with both strong and weak forms (backen, bewegen, erschrecken, hängen, löschen, quellen, schaffen, schleifen, schwellen, senden, stecken, weichen, wenden, wiegen and others), and dingen, whose weak forms Wikidata attests (L883783);
+- weak homonyms of a strong verb: wachsen "to wax" (wachste, gewachst), from Duden online (`wachsen_gewachst`, a weak verb) and Wikidata L594187;
+- weak verbs shaped like an inseparable prefix or a particle followed by a strong verb: begleiten (L486051), bekneifen (L752696), bereiten (L656275), beringen (L814855), umringen (L830568), verleiden (L881959), verspleißen (L765176), aufheißen (L836613), auspreisen (L837103), einpreisen (L781761), einringen (L756513), bevorraten (L815962). These are all the verbs of that shape with a weak past in the Wikidata dump, except erbitten, whose weak past erbittete is an error in Wikidata (Duden online gives erbat). Weak verbs whose shape is not prefix plus strong verb, such as beinhalten (be + inhalten), beerdigen, veranlassen (ver + anlassen) and verkörpern, are not narrowed in the first place.
 
 The imperative singular is a fallback reading: lookup ranks a candidate whose only inflection is `imperative sg` below other candidates that match as much text through as many inflections (`is_fallback` in `crates/core/src/deinflection/mod.rs`), because the bare-stem imperative fits almost any word (Vögel → Vogel `plural` ranks above vögeln `imperative sg`).
 
@@ -80,13 +84,13 @@ The imperative singular is a fallback reading: lookup ranks a candidate whose on
 | Suppletive comparison | `lexicon/comparison.rs` `SUPPLETIVE_COMPARISON` | gut, viel, wenig, hoch (and hoh-), nah(e); gern(e), oft | S18 p. 283; grammis 5208 (1, 4), 6896; WP-DD |
 | Irregular verbs | `lexicon/irregular_verbs.rs` `IRREGULAR_VERBS` | 192 strong, mixed, modal and auxiliary verbs: present 2sg and 3sg, past, subjunctive II, participle, imperative singular; the other persons are derived | WD lexeme per row; grammis 4073–4076 where WD lacks a form, and as the check; S18 Tab. 10.9, 10.17, 10.18, 10.20 |
 | Weak verbs with strong forms | `lexicon/irregular_verbs.rs` `WEAK_VERBS_WITH_STRONG_FORMS` | frug, gesalzen, gewunken, stak and four more | grammis 4074 |
-| Person forms of irregular verbs | `lexicon/verb_forms.rs` | -st/-est, -en/-n, -t/-et on the past and subjunctive II; the subjunctive II without schwa (hättst, wär) | S18 Tab. 10.9, 10.10, 10.12, 10.20; grammis 4119 |
+| Person forms of irregular verbs | `lexicon/verb_forms.rs` | -st/-est, -en/-n, -t/-et on the past and subjunctive II; the subjunctive II without schwa (hättst, wär), only where umlaut or another stem still tells it from the past | S18 Tab. 10.9, 10.10, 10.12, 10.20; grammis 4119 |
 | Irregular participles | `lexicon/verb_forms.rs` | ge- removed after particles or replaced by an inseparable prefix (vergangen, aufgestanden); verbs starting with ge (gegangen, but gewonnen) | S18 Tab. 10.14–10.15 p. 309; grammis 5210 |
 | Suppletive verb forms | `lexicon/suppletive_forms.rs` | the present of the modal verbs, wissen, sein, haben, werden; the subjunctive I of sein; tun and seiend | S18 Tab. 10.17 p. 311, Tab. 10.20 p. 314; grammis 4075, 4076; WD L302572 (tun), L1761 (sein) |
 | Determiners | `lexicon/determiners.rs` | ein, kein, the possessives (unser, unsr-, euer, eur-), dies-, jen-, solch-, welch-, jed-, manch- and others | S18 Tab. 9.7 p. 270, Tab. 9.8 p. 273, Tab. 9.11 p. 275; grammis 4062, 4063 |
 | Separable first parts | `particles.rs` | 84 particles of the rules; 156 particles, adverbs and adjectives of the word list; 8 nouns; 6 colloquial particles; up to two in a row (her + unter) | see [Separable first parts](#separable-first-parts) |
 | Inseparable prefixes | `opening.rs` | 16 prefixes | RW § 33; S18 Tab. 10.14; grammis Systematische Grammatik 1285, Kontrastive Grammatik 4859 |
-| Readings of irregular verbs | `lexicon/regular_readings.rs` | narrows regular endings for verbs of the lexicon | the lexicon's sources; grammis 4074 (verbs with strong and weak forms); WD L883783 |
+| Readings of irregular verbs | `lexicon/regular_readings.rs`, `lexicon/weak_verbs.rs` | narrows regular endings for verbs of the lexicon, after particles and inseparable prefixes | the lexicon's sources; grammis 4074; Duden online; WD lexemes per verb |
 
 ### Separable first parts
 
@@ -103,6 +107,10 @@ Left out:
 - verbs as first parts (sitzen bleiben, spazieren gehen), which RW § 34 (4) writes apart;
 - the misread word-list entries alle, miss and r; miss- is an inseparable prefix (RW § 33);
 - first parts that have no entry of their own in the word list and no other source.
+
+### The subjunctive II without schwa
+
+The subjunctive II may drop its schwa (hätt(e)st, wär(e)), but only where the schwa is not the only mark of the mood. grammis 4119 states that the schwa of verb endings tends to drop in speech when it violates no phonotactic rule and marks no inflection, and that riefst for riefest is impossible because it would equal the past. Its examples (läg(e), hätt(e)st) and S18 Tab. 10.20 (wär(-e), wär(-e)-st) all have umlaut. So the deinflector drops the schwa only when the shortened form still differs from the past: wär, hätt, käm and würd are read as subjunctive II, but ging, gingst and gingt are not, because they equal the past of gehen. Ging is read only as `past 1sg/3sg`. The forms are colloquial: grammis places them in spoken language, and RW § 80 (3), p. 150, marks such left-out letters with an apostrophe when writing imitates speech (müsst’ ich), while allowing frequent forms without one. S18 lists wär(-e) in the paradigm of sein without a label. No source found gives a shortened subjunctive that equals the past.
 
 ### Irregular verbs
 
@@ -137,7 +145,7 @@ Both spelling variants apply to every German tag.
 
 ## Points of uncertainty
 
-- Regular endings on verbs with an inseparable prefix are not narrowed (verlauft still gives `present 3sg/2pl`), and a weak homograph of a strong verb that grammis does not list, such as wachsen (to wax), loses its regular present and past.
+- A weak verb shaped like a prefix plus a strong verb that neither Wikidata nor the lists above name loses its regular readings. The list of such verbs covers only lexemes that Wikidata gives a past for.
 - The umlaut adjectives kalt and grob rest on grammis 5208 (1) alone; Wikidata and S18 lack their comparatives. The optional umlauts (blass, fromm, gesund, glatt, schmal and others) are covered only in their regular forms.
 - Particle stacking (her + unter) goes beyond the lists, which name compound particles such as heraus and herunter individually. With about 250 first parts, stacking also allows unlikely splits; the dictionary filters the results.
 - The Swiss variant overgenerates (Masse → Maße), and the bare-stem imperative overgenerates in formats without word classes (Haus → hausen); both rank below the unchanged text.
