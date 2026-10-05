@@ -56,8 +56,8 @@ export function useOffScreenSaving(
     };
   }, [notices, screenNotices]);
   const track = <T>(work: Promise<T>): Promise<T> => {
-    dispatch(actions.saveBegan());
-    return work.finally(() => dispatch(actions.saveEnded()));
+    dispatch(actions.unsavedWorkBegan());
+    return work.finally(() => dispatch(actions.unsavedWorkEnded()));
   };
   /** Sends a card's save, or returns undefined when this opening's save is already under way. */
   const send = (card: EditedFlashcard) => {

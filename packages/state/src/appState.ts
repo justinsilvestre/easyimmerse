@@ -51,8 +51,8 @@ export type AppState = {
   chosenMediaFile: PickedMediaFile | null;
   /** A picked dictionary file waiting to be imported through the backend. */
   chosenDictionaryFile: PickedDictionaryFile | null;
-  /** How many saves are under way, or waiting to go out, which closing the app would lose. */
-  pendingSaveCount: number;
+  /** How many pieces of work closing the app would lose, such as flashcard saves under way or unsaved changes in the editor. */
+  unsavedWorkCount: number;
   theme: ThemeState;
 };
 
@@ -65,6 +65,6 @@ export const initialAppState: AppState = {
   currentMediaFileId: null,
   chosenMediaFile: null,
   chosenDictionaryFile: null,
-  pendingSaveCount: 0,
+  unsavedWorkCount: 0,
   theme: initialThemeState,
 };

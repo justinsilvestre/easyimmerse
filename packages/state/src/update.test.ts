@@ -32,27 +32,27 @@ const withPreference = (value: string): AppState => ({
 });
 
 describe("update", () => {
-  it("guards the app's closing when the first save begins", () => {
-    const [, effects] = update(initialAppState, actions.saveBegan());
+  it("guards the app's closing when the first unsaved work begins", () => {
+    const [, effects] = update(initialAppState, actions.unsavedWorkBegan());
     expect(effects).toEqual([{ type: "guardClose", isActive: true }]);
   });
 
-  it("keeps the guard while a second save begins", () => {
-    const [saving] = update(initialAppState, actions.saveBegan());
-    const [, effects] = update(saving, actions.saveBegan());
+  it("keeps the guard while more unsaved work begins", () => {
+    const [saving] = update(initialAppState, actions.unsavedWorkBegan());
+    const [, effects] = update(saving, actions.unsavedWorkBegan());
     expect(effects).toEqual([]);
   });
 
-  it("keeps the guard while other saves are pending", () => {
-    const [one] = update(initialAppState, actions.saveBegan());
-    const [two] = update(one, actions.saveBegan());
-    const [, effects] = update(two, actions.saveEnded());
+  it("keeps the guard while other unsaved work remains", () => {
+    const [one] = update(initialAppState, actions.unsavedWorkBegan());
+    const [two] = update(one, actions.unsavedWorkBegan());
+    const [, effects] = update(two, actions.unsavedWorkEnded());
     expect(effects).toEqual([]);
   });
 
-  it("lifts the guard once the last save ends", () => {
-    const [saving] = update(initialAppState, actions.saveBegan());
-    const [, effects] = update(saving, actions.saveEnded());
+  it("lifts the guard once the last unsaved work ends", () => {
+    const [saving] = update(initialAppState, actions.unsavedWorkBegan());
+    const [, effects] = update(saving, actions.unsavedWorkEnded());
     expect(effects).toEqual([{ type: "guardClose", isActive: false }]);
   });
 

@@ -77,9 +77,9 @@ export function useFlashcardSaving(
   const isSavePending = edited !== null && isSaveAsked(edited.stage);
   useEffect(() => {
     if (!isSavePending) return;
-    dispatch(actions.saveBegan());
+    dispatch(actions.unsavedWorkBegan());
     return () => {
-      dispatch(actions.saveEnded());
+      dispatch(actions.unsavedWorkEnded());
     };
   }, [isSavePending, dispatch]);
   useEffect(() => {

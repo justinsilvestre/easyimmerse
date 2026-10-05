@@ -168,18 +168,18 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "notificationRequested":
       return [state, [{ type: "showNotification", message: action.message }]];
-    case "saveBegan":
+    case "unsavedWorkBegan":
       return [
-        { ...state, pendingSaveCount: state.pendingSaveCount + 1 },
-        state.pendingSaveCount === 0
+        { ...state, unsavedWorkCount: state.unsavedWorkCount + 1 },
+        state.unsavedWorkCount === 0
           ? [{ type: "guardClose", isActive: true }]
           : [],
       ];
-    case "saveEnded": {
-      const pendingSaveCount = Math.max(state.pendingSaveCount - 1, 0);
+    case "unsavedWorkEnded": {
+      const unsavedWorkCount = Math.max(state.unsavedWorkCount - 1, 0);
       return [
-        { ...state, pendingSaveCount },
-        state.pendingSaveCount > 0 && pendingSaveCount === 0
+        { ...state, unsavedWorkCount },
+        state.unsavedWorkCount > 0 && unsavedWorkCount === 0
           ? [{ type: "guardClose", isActive: false }]
           : [],
       ];

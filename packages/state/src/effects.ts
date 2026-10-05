@@ -32,7 +32,7 @@ export interface Effects {
   showNotification(message: string): void;
   openExternalUrl(url: string): void;
   /**
-   * Warns before the app or its page closes while `isActive`, as while a flashcard is being saved.
+   * Warns before the app or its page closes while `isActive`, as while a flashcard is being saved or has unsaved changes.
    * Where closing cannot be held back, as on a phone, it does nothing.
    */
   guardClose(isActive: boolean): void;
