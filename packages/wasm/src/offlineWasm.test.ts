@@ -73,7 +73,7 @@ describe("OfflineWasm", () => {
     it("throws for a file that no format recognizes", async () => {
       const wasm = await loadFromDisk();
       expect(() =>
-        wasm.parseDictionary("notes.txt", new TextEncoder().encode("hello")),
+        wasm.parseDictionary("notes.doc", new TextEncoder().encode("hello")),
       ).toThrow("no supported dictionary format");
     });
 
