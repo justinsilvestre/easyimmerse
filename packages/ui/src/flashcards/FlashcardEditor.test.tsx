@@ -153,3 +153,232 @@ describe("FlashcardEditor", () => {
     expect(saved[0]).not.toContain("screenshot");
   });
 });
+
+function renderWithSaveStatus(
+  saveStatus: "idle" | "waitingForDefinitions" | "saving",
+  onSave: () => void = () => undefined,
+) {
+  render(
+    <FlashcardEditor
+      state={{
+        content: exampleFlashcard,
+        includedFields: fieldsOfPreset("intermediate"),
+      }}
+      dispatch={() => undefined}
+      languages={exampleLanguages}
+      waveform={null}
+      saveStatus={saveStatus}
+      onSave={onSave}
+      onDelete={() => undefined}
+      onClose={() => undefined}
+    />,
+  );
+}
+
+/** Renders the editor with its clip and screenshot shown, recording the actions it dispatches. */
+function renderWithMedia(saveStatus: "idle" | "saving") {
+  const actions: string[] = [];
+  render(
+    <FlashcardEditor
+      state={{
+        content: exampleFlashcard,
+        includedFields: [...fieldsOfPreset("intermediate"), "screenshot"],
+      }}
+      dispatch={(action) => actions.push(action.type)}
+      languages={exampleLanguages}
+      waveform={{ peaks: [0.1, 0.5, 0.9, 0.3], durationMs: 24_000 }}
+      screenshotUrl={exampleScreenshotUrl}
+      saveStatus={saveStatus}
+      onSave={() => undefined}
+      onDelete={() => undefined}
+      onClose={() => undefined}
+    />,
+  );
+  return actions;
+}
+
+/** Renders the editor, recording presses of Close and Delete. */
+function renderWithLeavingButtons(
+  saveStatus: "idle" | "waitingForDefinitions" | "saving",
+) {
+  const presses: string[] = [];
+  render(
+    <FlashcardEditor
+      state={{
+        content: exampleFlashcard,
+        includedFields: fieldsOfPreset("intermediate"),
+      }}
+      dispatch={() => undefined}
+      languages={exampleLanguages}
+      waveform={null}
+      saveStatus={saveStatus}
+      onSave={() => undefined}
+      onDelete={() => presses.push("delete")}
+      onClose={() => presses.push("close")}
+    />,
+  );
+  return presses;
+}
+
+describe("FlashcardEditor's Close and Delete buttons", () => {
+  const buttonNames = ["Close without saving", "Delete"];
+
+  describe.each(["saving", "waitingForDefinitions"] as const)(
+    "while the save status is %s",
+    (saveStatus) => {
+      it.each(buttonNames)("mark %s unavailable", (name) => {
+        renderWithLeavingButtons(saveStatus);
+        expect(
+          screen.getByRole("button", { name }).getAttribute("aria-disabled"),
+        ).toBe("true");
+      });
+
+      it.each(buttonNames)("ignore %s", (name) => {
+        const presses = renderWithLeavingButtons(saveStatus);
+        fireEvent.click(screen.getByRole("button", { name }));
+        expect(presses).toEqual([]);
+      });
+    },
+  );
+
+  it("work before Save is pressed", () => {
+    const presses = renderWithLeavingButtons("idle");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Close without saving" }),
+    );
+    expect(presses).toEqual(["close"]);
+  });
+});
+
+describe("FlashcardEditor while the flashcard is being saved", () => {
+  it("ignores the screenshot checkbox", () => {
+    const actions = renderWithMedia("saving");
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Include the screenshot" }),
+    );
+    expect(actions).toEqual([]);
+  });
+
+  it("marks the screenshot checkbox unavailable", () => {
+    renderWithMedia("saving");
+    expect(
+      screen
+        .getByRole("checkbox", { name: "Include the screenshot" })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
+  });
+
+  it("makes the clip's handles inert", () => {
+    renderWithMedia("saving");
+    expect(
+      screen
+        .getByRole("group", { name: "Sentence audio" })
+        .hasAttribute("inert"),
+    ).toBe(true);
+  });
+
+  it("marks the More fields button unavailable", () => {
+    renderWithMedia("saving");
+    expect(
+      screen
+        .getByRole("button", { name: "More fields" })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
+  });
+
+  it("does not open the More fields menu", () => {
+    renderWithMedia("saving");
+    fireEvent.click(screen.getByRole("button", { name: "More fields" }));
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("leaves the clip's handles usable until Save is pressed", () => {
+    renderWithMedia("idle");
+    expect(
+      screen
+        .getByRole("group", { name: "Sentence audio" })
+        .hasAttribute("inert"),
+    ).toBe(false);
+  });
+});
+
+describe("FlashcardEditor's save status", () => {
+  it("is never hidden while empty, so that its text is announced when it appears", () => {
+    renderWithSaveStatus("idle");
+    expect(screen.getByRole("status").className).not.toMatch(/hidden/);
+  });
+
+  it("makes the text fields read-only while the flashcard is being saved", () => {
+    renderWithSaveStatus("saving");
+    expect(
+      screen
+        .getAllByRole("textbox")
+        .every((field) => field.hasAttribute("readonly")),
+    ).toBe(true);
+  });
+
+  it("makes the text fields read-only while the save waits for definitions", () => {
+    renderWithSaveStatus("waitingForDefinitions");
+    expect(
+      screen
+        .getAllByRole("textbox")
+        .every((field) => field.hasAttribute("readonly")),
+    ).toBe(true);
+  });
+
+  it("leaves the text fields editable until Save is pressed", () => {
+    renderWithSaveStatus("idle");
+    expect(
+      screen
+        .getAllByRole("textbox")
+        .some((field) => field.hasAttribute("readonly")),
+    ).toBe(false);
+  });
+});
+
+describe("FlashcardEditor while its save waits for definitions", () => {
+  function renderWaiting(onSave: () => void) {
+    render(
+      <FlashcardEditor
+        state={{
+          content: exampleFlashcard,
+          includedFields: fieldsOfPreset("intermediate"),
+        }}
+        dispatch={() => undefined}
+        languages={exampleLanguages}
+        waveform={null}
+        saveStatus="waitingForDefinitions"
+        onSave={onSave}
+        onDelete={() => undefined}
+        onClose={() => undefined}
+      />,
+    );
+  }
+
+  it("ignores Save", () => {
+    let saveCount = 0;
+    renderWaiting(() => {
+      saveCount += 1;
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(saveCount).toBe(0);
+  });
+
+  it("keeps Save focusable, marking it unavailable instead", () => {
+    renderWaiting(() => undefined);
+    expect(
+      screen
+        .getByRole("button", { name: "Save" })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
+  });
+
+  it("describes Save with what it waits for", () => {
+    renderWaiting(() => undefined);
+    expect(
+      screen
+        .getByRole("button", { name: "Save" })
+        .getAttribute("aria-describedby"),
+    ).toBe(screen.getByRole("status").id);
+  });
+});

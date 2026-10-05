@@ -16,6 +16,7 @@ import type {
   LookupQuery,
   LookupResponse,
   MediaFile,
+  NewFlashcard,
   ParseLocalDocumentRequest,
   ParseTimedTextRequest,
   PlaybackRequest,
@@ -165,12 +166,12 @@ export const backendApi = createApi({
     }),
     createFlashcard: build.mutation<
       Flashcard,
-      { projectId: string; draft: FlashcardDraft }
+      { projectId: string; flashcard: NewFlashcard }
     >({
-      query: ({ projectId, draft }) => ({
+      query: ({ projectId, flashcard }) => ({
         method: "POST",
         path: `/projects/${projectId}/flashcards`,
-        body: { kind: "json", value: draft },
+        body: { kind: "json", value: flashcard },
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },

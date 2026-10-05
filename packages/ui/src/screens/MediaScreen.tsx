@@ -5,6 +5,7 @@ import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
+import { saveStatusOf } from "../flashcards/saveStage.ts";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
@@ -96,10 +97,7 @@ export function MediaScreen({
     const started = lookupFields
       ? { ...draft, content: { ...draft.content, ...lookupFields } }
       : draft;
-    flashcards.start(started);
-    lateFields?.then(
-      (fields) => fields && flashcards.fillFromLookup(started, fields),
-    );
+    flashcards.start(started, lateFields);
   };
   const languages = {
     target: settings.target_language,
@@ -193,6 +191,7 @@ export function MediaScreen({
             languages={languages}
             waveform={clipWaveform}
             screenshotUrl={screenshotUrl}
+            saveStatus={saveStatusOf(flashcards.edited.stage)}
             onSave={flashcards.save}
             onDelete={flashcards.remove}
             onClose={flashcards.close}

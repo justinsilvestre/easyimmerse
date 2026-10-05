@@ -3,7 +3,9 @@ import { actions } from "@easyimmerse/state";
 import type {
   DictionarySummary,
   Flashcard,
+  FlashcardDraft,
   LookupResponse,
+  NewFlashcard,
 } from "@easyimmerse/types";
 import { act, fireEvent, screen } from "@testing-library/react";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
@@ -64,6 +66,8 @@ type MediaScreenSetup = {
   unansweredLookups?: readonly string[];
   /** The texts whose lookups answer only after the given number of milliseconds. */
   slowLookups?: Readonly<Record<string, number>>;
+  /** The texts whose lookups fail after the given number of milliseconds. */
+  failingLookups?: Readonly<Record<string, number>>;
 };
 
 /**
@@ -75,8 +79,9 @@ export function renderMediaScreen({
   dictionaries = germanDictionaries,
   unansweredLookups = [],
   slowLookups = {},
+  failingLookups = {},
 }: MediaScreenSetup = {}) {
-  const client = withUnansweredLookups(
+  const client = withLookupTiming(
     createFakeBackendClient(
       {
         ...fixtureResponses,
@@ -90,7 +95,7 @@ export function renderMediaScreen({
       },
       directPlaybackRoutes,
     ),
-    { unansweredLookups, slowLookups },
+    { unansweredLookups, slowLookups, failingLookups },
   );
   const navigation = { dictionariesOpenCount: 0 };
   const rendered = renderWithAppStore(
@@ -114,12 +119,19 @@ export function renderMediaScreen({
   return { ...rendered, client, navigation };
 }
 
-function withUnansweredLookups(
+/** Wraps a client so that lookups of the given texts never answer, answer late, or fail late. */
+function withLookupTiming(
   client: ReturnType<typeof createFakeBackendClient>,
   {
     unansweredLookups,
     slowLookups,
-  }: Required<Pick<MediaScreenSetup, "unansweredLookups" | "slowLookups">>,
+    failingLookups,
+  }: Required<
+    Pick<
+      MediaScreenSetup,
+      "unansweredLookups" | "slowLookups" | "failingLookups"
+    >
+  >,
 ): ReturnType<typeof createFakeBackendClient> {
   return {
     requests: client.requests,
@@ -131,14 +143,22 @@ function withUnansweredLookups(
         client.requests.push(request);
         return new Promise(() => undefined);
       }
+      const failMs = failingLookups[text];
+      if (failMs !== undefined) {
+        client.requests.push(request);
+        return after(failMs).then(() => ({
+          error: { status: 500, message: "The dictionaries are unavailable" },
+        }));
+      }
       const delayMs = slowLookups[text];
       if (delayMs === undefined) return client.send<T>(request);
-      return new Promise<void>((resolve) => setTimeout(resolve, delayMs)).then(
-        () => client.send<T>(request),
-      );
+      return after(delayMs).then(() => client.send<T>(request));
     },
   };
 }
+
+const after = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export async function findSubtitles() {
   await screen.findByRole("button", { name: "night" });
@@ -157,6 +177,13 @@ export function requestsTo(
 
 export function bodyOf(request: BackendRequest | undefined): unknown {
   return request?.body?.kind === "json" ? request.body.value : undefined;
+}
+
+/** The draft a request that creates a flashcard sent. */
+export function createdDraftOf(
+  request: BackendRequest | undefined,
+): FlashcardDraft | undefined {
+  return (bodyOf(request) as NewFlashcard | undefined)?.draft;
 }
 
 /** Fires what a browser fires for a double-click: two clicks counting up, then dblclick. */

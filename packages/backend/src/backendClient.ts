@@ -24,5 +24,9 @@ export type BackendResult<T> = { data: T } | { error: BackendError };
 
 /** The one way the frontend reaches the backend, over HTTP or through WebAssembly. */
 export interface BackendClient {
-  send<T>(request: BackendRequest): Promise<BackendResult<T>>;
+  /** Sends a request. A client that can stop a request on its way does so once `signal` aborts. */
+  send<T>(
+    request: BackendRequest,
+    signal?: AbortSignal,
+  ): Promise<BackendResult<T>>;
 }

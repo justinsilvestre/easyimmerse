@@ -8,6 +8,7 @@ import {
   type LookupFlashcardFields,
 } from "./flashcardFieldsFromLookup.ts";
 import type { LookupRequest } from "./lookupPopup.ts";
+import { flashcardLookupWaitMs } from "./lookupTiming.ts";
 import {
   type PopupHold,
   useLookupPopupControl,
@@ -26,9 +27,6 @@ export type StartFlashcardFromLookup<S> = (
   lookupFields: LookupFlashcardFields | null,
   lateFields?: Promise<LookupFlashcardFields | null>,
 ) => void;
-
-/** How long a flashcard waits for its word's lookup before it opens without it, to be filled when the lookup answers. */
-export const flashcardLookupWaitMs = 1500;
 
 /** Stands for a lookup that has not answered within `flashcardLookupWaitMs`. */
 const tooSlow = Symbol("too slow");

@@ -57,6 +57,9 @@ export const actions = {
     ({ type: "preferencesLoaded", preferences }) as const,
   notificationRequested: (message: string) =>
     ({ type: "notificationRequested", message }) as const,
+  /** Work that closing the app would lose has begun, such as a flashcard save or unsaved changes; the app warns before closing until all of it ends. */
+  unsavedWorkBegan: () => ({ type: "unsavedWorkBegan" }) as const,
+  unsavedWorkEnded: () => ({ type: "unsavedWorkEnded" }) as const,
   externalLinkRequested: (url: string) =>
     ({ type: "externalLinkRequested", url }) as const,
   systemThemeChanged: (theme: Theme) =>

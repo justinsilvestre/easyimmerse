@@ -24,11 +24,21 @@ fn draft(word: &str, media_file_id: Option<&str>) -> Value {
     })
 }
 
+/// A fresh id of the form the app makes.
+fn new_id() -> String {
+    hex::encode(rand::random::<[u8; 16]>())
+}
+
+/// The body that creates a flashcard under `id`.
+fn new_flashcard(id: &str, word: &str, media_file_id: Option<&str>) -> Value {
+    json!({ "id": id, "draft": draft(word, media_file_id) })
+}
+
 async fn create(server: &TestServer, word: &str) -> Value {
     let response = server
         .post_json(
             &format!("/projects/{PROJECT}/flashcards"),
-            &draft(word, None),
+            &new_flashcard(&new_id(), word, None),
         )
         .await;
     assert_eq!(response.status, 201, "{}", response.text());
@@ -81,7 +91,7 @@ async fn a_flashcard_may_name_a_media_file_of_its_project() {
     let response = server
         .post_json(
             &format!("/projects/{PROJECT}/flashcards"),
-            &draft("fressen", Some(&media_id)),
+            &new_flashcard(&new_id(), "fressen", Some(&media_id)),
         )
         .await;
     assert_eq!(response.json()["media_file_id"], media_id);
@@ -94,10 +104,52 @@ async fn refuses_a_media_file_of_another_project() {
     let response = server
         .post_json(
             &format!("/projects/{PROJECT}/flashcards"),
-            &draft("fressen", Some(&media_id)),
+            &new_flashcard(&new_id(), "fressen", Some(&media_id)),
         )
         .await;
     assert_eq!(response.status, 404);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn creating_again_under_the_same_id_leaves_one_flashcard() {
+    let server = spawn_test_server(false).await;
+    let id = new_id();
+    for _ in 0..2 {
+        server
+            .post_json(
+                &format!("/projects/{PROJECT}/flashcards"),
+                &new_flashcard(&id, "fressen", None),
+            )
+            .await;
+    }
+    let response = server.get(&format!("/projects/{PROJECT}/flashcards")).await;
+    assert_eq!(response.json()["flashcards"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_a_malformed_flashcard_id() {
+    let server = spawn_test_server(false).await;
+    let response = server
+        .post_json(
+            &format!("/projects/{PROJECT}/flashcards"),
+            &new_flashcard("not-an-id", "fressen", None),
+        )
+        .await;
+    assert_eq!(response.status, 400);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_an_id_that_belongs_to_another_project() {
+    let server = spawn_test_server(false).await;
+    let created = create(&server, "fressen").await;
+    let id = created["id"].as_str().unwrap();
+    let response = server
+        .post_json(
+            "/projects/placeholder-2/flashcards",
+            &new_flashcard(id, "fressen", None),
+        )
+        .await;
+    assert_eq!(response.status, 409);
 }
 
 #[tokio::test(flavor = "multi_thread")]

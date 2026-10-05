@@ -4,6 +4,7 @@ import type {
   PlayerRegistry,
 } from "@easyimmerse/state";
 import { createBrowserFileRegistry } from "@easyimmerse/state";
+import { createCloseGuard } from "./closeGuard.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { pickFile } from "./pickFile.ts";
 import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
@@ -32,6 +33,7 @@ export function createWebEffects(options: {
     loadPreference: preferences.load,
     showNotification: options.notify ?? showNotification,
     openExternalUrl,
+    guardClose: createCloseGuard(),
     subscribeToSettingsRequests: ignoreSettingsRequests,
   };
 }

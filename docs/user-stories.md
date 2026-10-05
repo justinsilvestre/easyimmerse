@@ -112,6 +112,8 @@ As a user:
   - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
 - while I am working in a project:
   - [ ] my work is saved automatically at regular intervals, so an unexpected crash does not lose it
+- when I try to close the app while a flashcard has unsaved changes or is still being saved:
+  - [x] I am warned and can keep the app open, on desktop, on the web and in the browser extension
 - when I open the app after it closed unexpectedly:
   - [ ] the last automatically saved state of my project is reloaded
 - when the last automatically saved state cannot be loaded:
@@ -262,6 +264,21 @@ As a user:
 - when I click or tap on a word in the target-language subtitles or text:
   - [x] the dictionary pop-up opens at the word, with the word's definitions, if available
   - [ ] any audio/video playback is either looped (if the word is in the subtitles/timing-enhanced text) or paused (if no timing is available)
+- when I look up text in a language written with spaces between words, such as German or English:
+  - [x] the word I click, tap or point at is looked up, and the word is highlighted
+- when I look up text in a language written without spaces between words, such as Japanese or Chinese text:
+  - [x] the lookup starts at the character I click, tap or point at, and finds the longest word the dictionaries know from there
+  - [x] the characters the lookup matched are highlighted
+  - [x] clicking or tapping punctuation such as 、 or 。 looks nothing up
+- when a word in the target-language subtitles or text has keyboard focus:
+  - [x] pressing Enter or Space opens the dictionary pop-up for the word
+  - [x] pressing Shift+Enter or Shift+Space creates a flashcard for the word, filled from the word's definitions
+- when a Japanese or Chinese run of text has keyboard focus:
+  - [x] Left and Right choose the character the lookup starts from, which is marked in the text and announced
+- when I press the lookup button, or L while no text field has focus:
+  - [x] the dictionary pop-up opens, with focus on its search field, where I can type a word to look up
+- while the dictionary pop-up is open, when I press Escape:
+  - [x] the pop-up closes, and keyboard focus returns to where it was before the pop-up opened
 - while the dictionary pop-up is open:
   - [x] while it shows a word rather than its search field, when I rest the mouse pointer on another word in the target-language subtitles or text for a moment, the pop-up moves to that word and shows its definitions; passing quickly over words leaves it where it is
   - [x] while the mouse pointer is inside the pop-up, it stays on its word, so I can reach its buttons
@@ -276,7 +293,7 @@ As a user:
   - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
 - when I double-click, double-tap, or hold a tap on a word in the target-language subtitles or text:
   - [x] a flashcard is created for the word
-  - [x] the word, its pronunciation, and the L1 and L2 definitions are filled from the word's definitions, as when I create the flashcard from the dictionary pop-up; when the definitions arrive only after the form has opened, they fill the fields I have not typed in yet
+  - [x] the word, its pronunciation, and the L1 and L2 definitions are filled from the word's definitions, as when I create the flashcard from the dictionary pop-up (unless I have already typed in the field before the definitions had a chance to load)
   - [x] the fields are shown according to my flashcard settings
   - [x] the flashcard-editing form is opened instead of the dictionary pop-up
 - when the flashcard-editing form is open:
@@ -289,6 +306,7 @@ As a user:
   - [x] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
   - [x] I can save the flashcard and close the form
   - [x] I can delete the flashcard and close the form
+  - [x] I can close the form without saving; changes I discard this way can be brought back with Undo for a short while
 - when I delete the contents of a field of the flashcard-editing form that can be filled from the dictionary:
   - [ ] I am offered an option to fill it again from the lookup
 - when a flashcard is created from a word:
@@ -307,8 +325,6 @@ As a user:
   - [x] the L1 and/or L2 fields are filled with the definitions from all matching dictionary entries
 - when I create a flashcard from a specific dictionary entry:
   - [x] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
-- when I press the lookup button or its keyboard shortcut:
-  - [x] the dictionary pop-up opens, with focus on a text input field where I can type a word to look up
 - while the dictionary pop-up is open but no dictionary is enabled for the project's language:
   - [x] the dictionary pop-up prompts me to set up a dictionary
 - when I have made flashcards without having saved my work:

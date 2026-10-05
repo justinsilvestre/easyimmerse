@@ -84,3 +84,25 @@ test("a later character of a Japanese run is looked up from that character", asy
   const query = new URL((await lookup).url()).searchParams;
   expect([query.get("text"), query.get("offset")]).toEqual(["見る", "7"]);
 });
+
+test("Right moves a keyboard lookup to a later character of a Japanese run", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    !!testInfo.project.use.hasTouch,
+    "Keyboard lookups need a keyboard.",
+  );
+  await openJapaneseSubtitles(page);
+  const run = page
+    .getByRole("list", { name: "Subtitles" })
+    .getByRole("button", { name: "𠮷野家で映画を見る" });
+  await run.focus();
+  for (let step = 0; step < 7; step += 1)
+    await page.keyboard.press("ArrowRight");
+  const lookup = page.waitForRequest((request) =>
+    request.url().includes("/dictionaries/lookup"),
+  );
+  await page.keyboard.press("Enter");
+  const query = new URL((await lookup).url()).searchParams;
+  expect([query.get("text"), query.get("offset")]).toEqual(["見る", "7"]);
+});

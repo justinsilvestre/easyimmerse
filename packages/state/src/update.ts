@@ -168,6 +168,22 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "notificationRequested":
       return [state, [{ type: "showNotification", message: action.message }]];
+    case "unsavedWorkBegan":
+      return [
+        { ...state, unsavedWorkCount: state.unsavedWorkCount + 1 },
+        state.unsavedWorkCount === 0
+          ? [{ type: "guardClose", isActive: true }]
+          : [],
+      ];
+    case "unsavedWorkEnded": {
+      const unsavedWorkCount = Math.max(state.unsavedWorkCount - 1, 0);
+      return [
+        { ...state, unsavedWorkCount },
+        state.unsavedWorkCount > 0 && unsavedWorkCount === 0
+          ? [{ type: "guardClose", isActive: false }]
+          : [],
+      ];
+    }
     case "externalLinkRequested":
       return [state, [{ type: "openExternalUrl", url: action.url }]];
     case "systemThemeChanged":

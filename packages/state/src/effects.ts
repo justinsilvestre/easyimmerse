@@ -32,6 +32,11 @@ export interface Effects {
   showNotification(message: string): void;
   openExternalUrl(url: string): void;
   /**
+   * Warns before the app or its page closes while `isActive`, as while a flashcard is being saved or has unsaved changes.
+   * Where closing cannot be held back, as on a phone, it does nothing.
+   */
+  guardClose(isActive: boolean): void;
+  /**
    * Calls the listener whenever the platform asks for the Settings screen, as a desktop menu item does.
    * Returns a function that stops the calls.
    */

@@ -10,6 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
+  createdDraftOf,
   dictionarySummary,
   doubleClick,
   findSubtitles,
@@ -92,7 +93,10 @@ describe("MediaScreen lookup gestures", () => {
     flushDue = setInterval(() => vi.advanceTimersByTime(0), 5);
   });
 
+  // Unmounting saves any card still waiting for its lookup after a delay,
+  // so the screen must unmount while that delay is still on the fake clock.
   afterEach(() => {
+    cleanup();
     clearInterval(flushDue);
     vi.useRealTimers();
   });
@@ -274,11 +278,136 @@ describe("MediaScreen lookup gestures", () => {
       it("fills the fields the user has not typed in", async () => {
         await doubleClickCat(lateLookup);
         await advance(1500);
+        fireEvent.change(screen.getByLabelText("Definition (en)"), {
+          target: { value: "a small pet" },
+        });
+        await advance(1500);
+        expect(fieldValue("Word (de)")).toBe("fressen");
+      });
+
+      it("leaves alone a definition typed in before the answer", async () => {
+        await doubleClickCat(lateLookup);
+        await advance(1500);
+        fireEvent.change(screen.getByLabelText("Definition (en)"), {
+          target: { value: "a small pet" },
+        });
+        await advance(1500);
+        expect(fieldValue("Definition (en)")).toBe("a small pet");
+      });
+
+      it("saves at once once the word has been changed before Save", async () => {
+        const { client } = await doubleClickCat(lateLookup);
+        await advance(1500);
+        fireEvent.change(screen.getByLabelText("Word (de)"), {
+          target: { value: "Kater" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Save" }));
+        await vi.waitFor(() =>
+          expect(
+            requestsTo(client.requests, "POST", "/projects/p1/flashcards"),
+          ).toHaveLength(1),
+        );
+      });
+
+      it("fills nothing once the word has been changed before the answer", async () => {
+        await doubleClickCat(lateLookup);
+        await advance(1500);
         fireEvent.change(screen.getByLabelText("Word (de)"), {
           target: { value: "Kater" },
         });
         await advance(1500);
-        expect(fieldValue("Definition (en)")).toMatch(/^to eat/);
+        expect(fieldValue("Definition (en)")).toBe("");
+      });
+
+      describe("when Save is pressed before the answer", () => {
+        async function pressSaveBeforeAnswer(
+          setup: Parameters<typeof renderMediaScreen>[0] = lateLookup,
+        ) {
+          const rendered = await doubleClickCat(setup);
+          await advance(1500);
+          fireEvent.click(screen.getByRole("button", { name: "Save" }));
+          return rendered;
+        }
+
+        const savedContent = (
+          client: ReturnType<typeof createFakeBackendClient>,
+        ) =>
+          (
+            createdDraftOf(
+              requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
+            ) as
+              | { content?: { word?: string; l1_definition?: string } }
+              | undefined
+          )?.content;
+
+        const savedWord = (
+          client: ReturnType<typeof createFakeBackendClient>,
+        ) => savedContent(client)?.word;
+
+        it("says that it waits for the definitions", async () => {
+          await pressSaveBeforeAnswer();
+          expect(
+            within(screen.getByRole("form", { name: "Flashcard" })).getByRole(
+              "status",
+            ).textContent,
+          ).toBe("Waiting for definitions…");
+        });
+
+        it("sends nothing while it waits, so that no answer can arrive during the save", async () => {
+          const { client } = await pressSaveBeforeAnswer();
+          await advance(1000);
+          expect(
+            requestsTo(client.requests, "POST", "/projects/p1/flashcards"),
+          ).toEqual([]);
+        });
+
+        it("saves the flashcard filled from the answer once it arrives", async () => {
+          const { client } = await pressSaveBeforeAnswer();
+          await advance(1500);
+          await vi.waitFor(() => expect(savedWord(client)).toBe("fressen"));
+        });
+
+        it("sends nothing before a failing lookup fails", async () => {
+          const { client } = await pressSaveBeforeAnswer({
+            failingLookups: { "cat is sleeping.": 3000 },
+          });
+          await advance(1000);
+          expect(
+            requestsTo(client.requests, "POST", "/projects/p1/flashcards"),
+          ).toEqual([]);
+        });
+
+        it("keeps the word as it was once Save is pressed", async () => {
+          await pressSaveBeforeAnswer();
+          fireEvent.change(screen.getByLabelText("Word (de)"), {
+            target: { value: "Kater" },
+          });
+          expect(fieldValue("Word (de)")).toBe("cat");
+        });
+
+        it("saves a definition typed in before Save as typed, with the word from the answer", async () => {
+          const { client } = await doubleClickCat(lateLookup);
+          await advance(1500);
+          fireEvent.change(screen.getByLabelText("Definition (en)"), {
+            target: { value: "a small pet" },
+          });
+          fireEvent.click(screen.getByRole("button", { name: "Save" }));
+          await advance(1500);
+          await vi.waitFor(() =>
+            expect(savedContent(client)).toMatchObject({
+              word: "fressen",
+              l1_definition: "a small pet",
+            }),
+          );
+        });
+
+        it("saves the flashcard as it is once the lookup fails", async () => {
+          const { client } = await pressSaveBeforeAnswer({
+            failingLookups: { "cat is sleeping.": 3000 },
+          });
+          await advance(1500);
+          await vi.waitFor(() => expect(savedWord(client)).toBe("cat"));
+        });
       });
     });
 

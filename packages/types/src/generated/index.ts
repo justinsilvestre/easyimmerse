@@ -62,6 +62,7 @@ export type * from "./MediaFile";
 export type * from "./MediaFileId";
 export type * from "./MediaFileSource";
 export type * from "./MediaLocator";
+export type * from "./NewFlashcard";
 export type * from "./ParseDocumentQuery";
 export type * from "./ParseLocalDocumentRequest";
 export type * from "./ParseTimedTextRequest";

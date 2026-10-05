@@ -25,14 +25,20 @@ export function MenuButton({
   label,
   items,
   opensUpward = false,
+  isUnavailable = false,
   children,
 }: {
   label: string;
   items: readonly MenuItem[];
   opensUpward?: boolean;
+  /** Keeps the menu closed and marks its button unavailable, keeping keyboard focus on it. */
+  isUnavailable?: boolean;
   children?: ReactNode;
 }) {
   const [isOpen, setOpen] = useState(false);
+  const toggle = () => {
+    if (!isUnavailable) setOpen(!isOpen);
+  };
   const menuId = useId();
   const ref = useRef<HTMLDivElement>(null);
   return (
@@ -56,7 +62,8 @@ export function MenuButton({
           aria-haspopup="menu"
           aria-expanded={isOpen}
           aria-controls={isOpen ? menuId : undefined}
-          onClick={() => setOpen(!isOpen)}
+          aria-disabled={isUnavailable || undefined}
+          onClick={toggle}
         >
           {children}
           <ChevronDown className="size-3" aria-hidden />
@@ -67,12 +74,13 @@ export function MenuButton({
           aria-haspopup="menu"
           aria-expanded={isOpen}
           aria-controls={isOpen ? menuId : undefined}
-          onClick={() => setOpen(!isOpen)}
+          aria-disabled={isUnavailable || undefined}
+          onClick={toggle}
         >
           <MoreHorizontal className="size-4" />
         </IconButton>
       )}
-      {isOpen && (
+      {isOpen && !isUnavailable && (
         <div
           id={menuId}
           role="menu"

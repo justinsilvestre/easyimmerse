@@ -1,8 +1,11 @@
 import clsx from "clsx";
+import { useEffect } from "react";
 import {
   clickableWordAttribute,
   lookupTriggerAttribute,
 } from "./lookupTrigger.ts";
+import { type Range, RunText } from "./RunText.tsx";
+import { characterLength } from "./useKeyboardStart.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
 
 /** The scripts written without spaces between words: Chinese characters, hiragana, katakana and Bopomofo. */
@@ -88,19 +91,28 @@ export function ClickableText({
   activeWord?: ActiveWord;
   gestures?: WordGestures;
 }) {
-  const handlersFor = useWordGestures(gestures);
+  const { handlersFor, keyboardStart } = useWordGestures(gestures);
+  const parts = splitIntoWords(text);
+  const { keepWithin } = keyboardStart;
+  useEffect(() => {
+    keepWithin(splitIntoWords(text).filter((part) => part.isUnspaced));
+  }, [text, keepWithin]);
   return (
     <span className="whitespace-pre-line">
-      {splitIntoWords(text).map((part) => {
+      {parts.map((part) => {
         if (!part.isWord) return part.text;
         const isActive =
           activeWord !== undefined && contains(part, activeWord.start);
+        const runStart = part.isUnspaced ? keyboardStart.offsetIn(part) : null;
         return (
           <button
             key={part.start}
             type="button"
             // The highlight splits a run into pieces, which must not split its name.
             aria-label={part.isUnspaced ? part.text : undefined}
+            aria-keyshortcuts={
+              part.isUnspaced ? "ArrowLeft ArrowRight" : undefined
+            }
             aria-haspopup="dialog"
             aria-expanded={isActive || undefined}
             aria-controls={isActive ? activeWord?.popupId : undefined}
@@ -113,14 +125,24 @@ export function ClickableText({
               isActive && !part.isUnspaced && "bg-accent-soft text-accent-fg",
             )}
           >
-            {isActive && part.isUnspaced && activeWord ? (
-              <MatchedRun part={part} activeWord={activeWord} />
+            {part.isUnspaced ? (
+              <RunText
+                text={part.text}
+                matched={
+                  isActive && activeWord ? matchedRange(part, activeWord) : null
+                }
+                keyboardStart={runStart}
+              />
             ) : (
               part.text
             )}
           </button>
         );
       })}
+      {/* One region for the whole text, outside the buttons, where screen readers announce reliably. */}
+      <span aria-live="polite" className="sr-only">
+        {keyboardStart.announcement()}
+      </span>
     </span>
   );
 }
@@ -134,27 +156,14 @@ function contains(part: { start: number; text: string }, offset: number) {
 }
 
 /**
- * A run written without spaces with the characters the lookup matched highlighted,
+ * The range of a run, from its start, that the lookup matched,
  * or, until the lookup reports its match, the character it looks up from.
  */
-function MatchedRun({
-  part,
-  activeWord,
-}: {
-  part: { start: number; text: string };
-  activeWord: ActiveWord;
-}) {
+function matchedRange(
+  part: { start: number; text: string },
+  activeWord: ActiveWord,
+): Range {
   const from = activeWord.start - part.start;
-  const firstCodePoint = part.text.codePointAt(from) ?? 0;
-  const length = activeWord.length ?? (firstCodePoint > 0xffff ? 2 : 1);
-  const to = Math.min(from + length, part.text.length);
-  return (
-    <>
-      {part.text.slice(0, from)}
-      <span data-matched className="rounded-sm bg-accent-soft text-accent-fg">
-        {part.text.slice(from, to)}
-      </span>
-      {part.text.slice(to)}
-    </>
-  );
+  const length = activeWord.length ?? characterLength(part.text, from);
+  return { from, to: Math.min(from + length, part.text.length) };
 }

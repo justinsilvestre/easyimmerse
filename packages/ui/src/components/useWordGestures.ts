@@ -1,4 +1,5 @@
 import {
+  type KeyboardEvent,
   type MouseEvent,
   type PointerEvent,
   useEffect,
@@ -9,6 +10,7 @@ import { useTimer } from "../hooks/useTimer.ts";
 import { characterOffsetAt, type ViewportPoint } from "./characterAtPoint.ts";
 import { doubleClickMs, hoverIntentMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
+import { useKeyboardStart } from "./useKeyboardStart.ts";
 import type { ClickPoint, WordClickMemory } from "./wordClickMemory.ts";
 import { useWordClickMemory } from "./wordClickMemoryContext.tsx";
 
@@ -46,8 +48,10 @@ export type WordGestures = {
 
 /**
  * Turns pointer, touch and keyboard events on words into the gestures of `WordGestures`.
- * Returns a function that builds the event handlers for one word's button.
+ * Returns a function that builds the event handlers for one word's button,
+ * and the character of a focused run that a lookup from the keyboard starts from.
  * In a run of a script written without spaces, each character can begin a word, so the hit starts at the character under the pointer,
+ * or, from the keyboard, at the character that Left and Right have moved to;
  * and moving the mouse to another character of the run restarts the wait for hover intent.
  */
 export function useWordGestures(gestures: WordGestures) {
@@ -58,6 +62,13 @@ export function useWordGestures(gestures: WordGestures) {
   const [press] = useState(createPressTracker);
   useEffect(() => press.cancelHold, [press]);
   const memory = useWordClickMemory();
+  const keyboardStart = useKeyboardStart();
+  const pointerHit = (
+    part: WordPart,
+    element: HTMLElement,
+    point: ViewportPoint,
+    input: WordHit["input"],
+  ) => hitAt(part, element, offsetAtPoint(part, element, point), input);
   const reportClick = (event: MouseEvent<HTMLElement>, hit: WordHit) => {
     const { onWordClick, onWordDoubleClick, defersClick } = latest.current;
     if (hit.input === "keyboard")
@@ -90,11 +101,13 @@ export function useWordGestures(gestures: WordGestures) {
       if (hit.element.isConnected) latest.current.onWordHoverIntent?.(hit);
     });
   };
-  return (part: WordPart) => ({
+  const handlersFor = (part: WordPart) => ({
     onPointerEnter: (event: PointerEvent<HTMLElement>) => {
       if (event.pointerType !== "mouse") return;
       hovered.current = null;
-      restartHover(hitAt(part, event.currentTarget, pointOf(event), "mouse"));
+      restartHover(
+        pointerHit(part, event.currentTarget, pointOf(event), "mouse"),
+      );
     },
     onPointerLeave: () => {
       hovered.current = null;
@@ -102,7 +115,12 @@ export function useWordGestures(gestures: WordGestures) {
       press.cancelHold();
     },
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
-      const hit = hitAt(part, event.currentTarget, pointOf(event), "touch");
+      const hit = pointerHit(
+        part,
+        event.currentTarget,
+        pointOf(event),
+        "touch",
+      );
       press.start(event, () => {
         if (hit.element.isConnected) latest.current.onWordHold?.(hit);
       });
@@ -110,7 +128,9 @@ export function useWordGestures(gestures: WordGestures) {
     onPointerMove: (event: PointerEvent<HTMLElement>) => {
       press.move(event);
       if (event.pointerType === "mouse" && part.isUnspaced)
-        restartHover(hitAt(part, event.currentTarget, pointOf(event), "mouse"));
+        restartHover(
+          pointerHit(part, event.currentTarget, pointOf(event), "mouse"),
+        );
     },
     onPointerUp: press.cancelHold,
     onPointerCancel: press.cancelHold,
@@ -122,41 +142,57 @@ export function useWordGestures(gestures: WordGestures) {
       // A key press is never the end of a held tap, however a touch before it ended.
       const isKeyboard = event.detail === 0;
       if (!isKeyboard && press.takeHeld()) return;
-      const input = isKeyboard
-        ? "keyboard"
-        : press.isTouch()
-          ? "touch"
-          : "mouse";
+      if (isKeyboard) {
+        const offset = keyboardStart.offsetIn(part) ?? 0;
+        return reportClick(
+          event,
+          hitAt(part, event.currentTarget, offset, "keyboard"),
+        );
+      }
+      const input = press.isTouch() ? "touch" : "mouse";
       // A finger lands where it came down, which a held tap uses too, rather than where it lifted.
       const point = input === "touch" ? press.origin() : pointOf(event);
-      reportClick(event, hitAt(part, event.currentTarget, point, input));
+      reportClick(event, pointerHit(part, event.currentTarget, point, input));
     },
+    ...(part.isUnspaced && {
+      onFocus: () => keyboardStart.focus(part),
+      onBlur: () => keyboardStart.blur(part),
+      onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+        if (keyboardStart.move(part, event)) event.preventDefault();
+      },
+    }),
   });
+  return { handlersFor, keyboardStart };
 }
 
 /** A word of clickable text, as `splitIntoWords` finds it. */
 type WordPart = { text: string; start: number; isUnspaced: boolean };
 
-/**
- * The hit for an event on a word. In a run of a script written without spaces, the word begins at the character under the pointer;
- * from the keyboard, or where the browser cannot tell that character, it begins where the run does.
- */
+/** The hit on a word beginning `offset` code units into it, as within a run of a script written without spaces. */
 function hitAt(
   part: WordPart,
   element: HTMLElement,
-  point: ViewportPoint,
+  offset: number,
   input: WordHit["input"],
 ): WordHit {
-  const offset =
-    part.isUnspaced && input !== "keyboard"
-      ? (characterOffsetAt(element, point) ?? 0)
-      : 0;
   return {
     word: part.text.slice(offset),
     start: part.start + offset,
     element,
     input,
   };
+}
+
+/**
+ * Where a hit at a point begins within a word: in a run of a script written without spaces, at the character under the point,
+ * or at the run's start where no character lies there; in any other word, at its start.
+ */
+function offsetAtPoint(
+  part: WordPart,
+  element: HTMLElement,
+  point: ViewportPoint,
+): number {
+  return part.isUnspaced ? (characterOffsetAt(element, point) ?? 0) : 0;
 }
 
 function pointOf(event: MouseEvent<HTMLElement>): ViewportPoint {

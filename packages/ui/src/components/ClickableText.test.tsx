@@ -172,6 +172,99 @@ describe("ClickableText", () => {
     });
   });
 
+  describe("with the keyboard in a run of Japanese", () => {
+    function focusAndMoveRight(times: number) {
+      const { container } = render(<ClickableText text="映画を見る" />);
+      const run = screen.getByRole("button", { name: "映画を見る" });
+      fireEvent.focus(run);
+      for (let count = 0; count < times; count += 1)
+        fireEvent.keyDown(run, { key: "ArrowRight" });
+      return container;
+    }
+
+    it("marks the character a lookup would start from", () => {
+      const container = focusAndMoveRight(3);
+      expect(
+        container.querySelector("[data-keyboard-start]")?.textContent,
+      ).toBe("見");
+    });
+
+    it("announces the character a lookup would start from", () => {
+      focusAndMoveRight(3);
+      expect(screen.getByText("Looks up from 見")).toBeDefined();
+    });
+
+    it("announces from outside the run's button", () => {
+      focusAndMoveRight(3);
+      expect(screen.getByText("Looks up from 見").closest("button")).toBeNull();
+    });
+
+    it("keeps its announcing region on the page before any key is pressed", () => {
+      const { container } = render(<ClickableText text="映画を見る" />);
+      expect(container.querySelector("[aria-live]")).not.toBeNull();
+    });
+
+    it("tells assistive technology that Left and Right work in a run", () => {
+      render(<ClickableText text="映画を見る" />);
+      expect(
+        screen
+          .getByRole("button", { name: "映画を見る" })
+          .getAttribute("aria-keyshortcuts"),
+      ).toBe("ArrowLeft ArrowRight");
+    });
+
+    it("ignores Shift with Right, which belongs to text selection", () => {
+      const clicks: string[] = [];
+      render(
+        <ClickableText
+          text="映画を見る"
+          gestures={{ onWordClick: (hit) => clicks.push(hit.word) }}
+        />,
+      );
+      const run = screen.getByRole("button", { name: "映画を見る" });
+      fireEvent.focus(run);
+      fireEvent.keyDown(run, { key: "ArrowRight", shiftKey: true });
+      fireEvent.click(run, { detail: 0 });
+      expect(clicks).toEqual(["映画を見る"]);
+    });
+
+    it("starts from the first character of a run whose text changed under focus", () => {
+      const clicks: string[] = [];
+      const gestures = {
+        onWordClick: (hit: { word: string }) => clicks.push(hit.word),
+      };
+      const { rerender } = render(
+        <ClickableText text="映画を見る" gestures={gestures} />,
+      );
+      const run = screen.getByRole("button", { name: "映画を見る" });
+      fireEvent.focus(run);
+      for (let count = 0; count < 4; count += 1)
+        fireEvent.keyDown(run, { key: "ArrowRight" });
+      rerender(<ClickableText text="今日は" gestures={gestures} />);
+      fireEvent.click(screen.getByRole("button", { name: "今日は" }), {
+        detail: 0,
+      });
+      expect(clicks).toEqual(["今日は"]);
+    });
+
+    it("forgets the start once the run's button is gone", () => {
+      const { container, rerender } = render(
+        <ClickableText text="映画を見る" />,
+      );
+      const run = screen.getByRole("button", { name: "映画を見る" });
+      fireEvent.focus(run);
+      fireEvent.keyDown(run, { key: "ArrowRight" });
+      rerender(<ClickableText text="Hund" />);
+      rerender(<ClickableText text="映画を見る" />);
+      expect(container.querySelector("[data-keyboard-start]")).toBeNull();
+    });
+
+    it("keeps the run's name whole while a character is marked", () => {
+      focusAndMoveRight(3);
+      expect(screen.getByRole("button", { name: "映画を見る" })).toBeDefined();
+    });
+  });
+
   it("passes a clicked word's offset in the text", () => {
     const clicks: [string, number][] = [];
     render(

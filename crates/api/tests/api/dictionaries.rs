@@ -453,3 +453,30 @@ async fn importing_a_local_table_with_chosen_columns_imports_the_picked_file_and
         .await;
     assert_eq!(response.json()["entry_count"], 3);
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn importing_a_local_table_without_chosen_columns_imports_the_picked_file_and_not_a_sibling()
+{
+    let server = spawn_test_server(true).await;
+    let directory = tables_sharing_a_stem();
+    let path = directory.path().join("words.txt");
+    import_local(&server, path.to_str().unwrap()).await;
+    let response = server
+        .get("/dictionaries/lookup?text=Maus&language=de")
+        .await;
+    assert_eq!(response.json()["results"][0]["term"], "Maus");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn previewing_a_local_directory_named_like_a_table_reads_the_table_inside_it() {
+    let server = spawn_test_server(true).await;
+    let directory = tempfile::tempdir().unwrap();
+    let named_like_a_table = directory.path().join("words.txt");
+    std::fs::create_dir(&named_like_a_table).unwrap();
+    std::fs::write(named_like_a_table.join("words.csv"), GERMAN_TABLE).unwrap();
+    let response = preview_local(&server, named_like_a_table.to_str().unwrap()).await;
+    assert_eq!(
+        response.json()["layout"],
+        json!({ "columns": ["term", "definition"], "hasHeader": false })
+    );
+}
