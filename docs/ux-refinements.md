@@ -25,7 +25,13 @@ As a user:
 
 - [x] Sometimes a flashcard's definitions arrive from the dictionaries after its form has already opened. If Save is pressed before they arrive, the form says it is waiting for definitions and its fields can no longer be edited. The flashcard is saved once the definitions arrive, with them filling the fields not typed in. If they cannot be found, or have not arrived within ten seconds, the flashcard is saved as it is.
 - [x] Changing the word before its definitions arrive means they no longer belong to the flashcard, so they are not added, and Save does not wait for them.
-- [x] Starting another flashcard while one is waiting to be saved saves the waiting one as it is.
+- [x] A flashcard the form leaves, because another flashcard is started or opened or the screen is left, is saved in the background as it is, so that moving on never loses work and never asks a question first. This applies to a new flashcard even if it was never changed. A saved flashcard that was not changed is left alone.
+  - A brief notice names the flashcard and offers Undo, which deletes a new flashcard or puts back the earlier content of a saved one. No notice appears for a flashcard whose Save had already been pressed.
+  - A flashcard whose Save was pressed while waiting for definitions keeps waiting in the background, until ten seconds after Save was pressed, and is then saved with whatever arrived. A new flashcard left while its definitions are still on their way waits for them in the same way, for up to ten seconds.
+- [x] When a background save fails, a notice names the flashcard and stays until it is acted on or dismissed. It keeps the flashcard's edits: Retry sends them again, and Reopen puts the flashcard back in the form, saving the flashcard open there as if the user had moved on from it. Reopen is withdrawn once the screen is left, since the form is gone; Retry remains.
+- [x] Closing a changed flashcard without saving discards it at once, and a brief notice offers Undo, which reopens it with its edits. Leaving the screen withdraws the notice. Closing an unchanged flashcard shows no notice.
+- [x] Notices appear in one region of the app, which screen readers announce politely. A brief notice stays for ten seconds, and the countdown pauses while the pointer is over it or keyboard focus is in it, so its actions can be reached by keyboard. A notice that reports a failure stays until it is dismissed.
+- [x] While a flashcard is being saved, the app warns before it closes: the browser's own leave-page prompt on the web and in the extension, and a confirmation dialog on desktop. Mobile systems close an app without asking it first, so a save still under way when the app is closed there is lost; keeping it would need the project's work to be stored on the device, as the autosave stories describe.
 
 ## Dictionaries
 

@@ -112,6 +112,8 @@ As a user:
   - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
 - while I am working in a project:
   - [ ] my work is saved automatically at regular intervals, so an unexpected crash does not lose it
+- when I try to close the app while a flashcard is still being saved:
+  - [x] I am warned and can keep the app open, on desktop, on the web and in the browser extension
 - when I open the app after it closed unexpectedly:
   - [ ] the last automatically saved state of my project is reloaded
 - when the last automatically saved state cannot be loaded:
@@ -304,6 +306,7 @@ As a user:
   - [x] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
   - [x] I can save the flashcard and close the form
   - [x] I can delete the flashcard and close the form
+  - [x] I can close the form without saving; changes I discard this way can be brought back with Undo for a short while
 - when I delete the contents of a field of the flashcard-editing form that can be filled from the dictionary:
   - [ ] I am offered an option to fill it again from the lookup
 - when a flashcard is created from a word:
