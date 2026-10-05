@@ -7,7 +7,6 @@ import {
   Globe,
   X,
 } from "lucide-react";
-import { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { IconButton } from "../components/IconButton.tsx";
@@ -19,6 +18,7 @@ import {
 } from "./dictionaryItem.ts";
 import { RemoveDictionaryDialog } from "./RemoveDictionaryDialog.tsx";
 import { TableColumnsDialog } from "./TableColumnsDialog.tsx";
+import { useRemovalConfirmation } from "./useRemovalConfirmation.ts";
 
 /**
  * The dictionaries settings: every dictionary the user has added, and the ways to add one.
@@ -63,8 +63,11 @@ export function DictionariesView({
   onImportTable: (layout: TableLayout) => void;
   onCancelTable: () => void;
 }) {
-  const [removingId, setRemovingId] = useState<string | null>(null);
-  const removing = dictionaries.find(({ id }) => id === removingId);
+  const removal = useRemovalConfirmation(
+    dictionaries.map(({ id }) => id),
+    onRemove,
+  );
+  const removing = dictionaries.find(({ id }) => id === removal.askingId);
   const isAdding = addingFile !== null;
   const addButtons = (
     <>
@@ -98,7 +101,13 @@ export function DictionariesView({
       }
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Dictionaries</h1>
+        <h1
+          ref={removal.headingRef}
+          tabIndex={-1}
+          className="text-xl font-semibold focus:outline-none"
+        >
+          Dictionaries
+        </h1>
         {dictionaries.length > 0 && (
           <div className="flex flex-wrap gap-2">{addButtons}</div>
         )}
@@ -135,7 +144,7 @@ export function DictionariesView({
           dictionaries={dictionaries}
           onToggle={onToggle}
           onMove={onMove}
-          onRemove={setRemovingId}
+          onRemove={removal.ask}
         />
       )}
       {onMove && (
@@ -147,11 +156,8 @@ export function DictionariesView({
       {removing && (
         <RemoveDictionaryDialog
           title={removing.title}
-          onRemove={() => {
-            setRemovingId(null);
-            onRemove(removing.id);
-          }}
-          onCancel={() => setRemovingId(null)}
+          onRemove={removal.confirm}
+          onCancel={removal.cancel}
         />
       )}
       {pendingTable && (

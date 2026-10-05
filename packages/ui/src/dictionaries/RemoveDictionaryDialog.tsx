@@ -14,7 +14,7 @@ export function RemoveDictionaryDialog({
   return (
     <ModalDialog
       title={`Remove ${title}?`}
-      description="Its entries, images and sounds are deleted from this device. The removal cannot be undone; to use the dictionary again, add it again."
+      description="Its entries, images and sounds are deleted with it. The removal cannot be undone; to use the dictionary again, add it again."
       onCancel={onCancel}
       footer={
         <>

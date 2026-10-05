@@ -133,6 +133,11 @@ describe("DictionariesScreen", () => {
       );
     });
 
+    it("does not say where the dictionary is kept, which differs between the apps", async () => {
+      await pressRemove();
+      expect(screen.getByRole("dialog").textContent).not.toContain("device");
+    });
+
     it("focuses Cancel", async () => {
       await pressRemove();
       expect(document.activeElement).toBe(
@@ -151,6 +156,31 @@ describe("DictionariesScreen", () => {
       await vi.waitFor(() =>
         expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toHaveLength(
           1,
+        ),
+      );
+    });
+
+    it("moves focus to the heading once the dictionary is gone", async () => {
+      let isRemoved = false;
+      renderScreen({
+        "GET /dictionaries": () => ({
+          dictionaries: exampleDictionaries.filter(
+            ({ id }) => !(isRemoved && id === "d1"),
+          ),
+        }),
+        "DELETE /dictionaries/d1": () => {
+          isRemoved = true;
+        },
+      });
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "Remove German-English Wiktionary",
+        }),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+      await vi.waitFor(() =>
+        expect(document.activeElement).toBe(
+          screen.getByRole("heading", { name: "Dictionaries" }),
         ),
       );
     });
