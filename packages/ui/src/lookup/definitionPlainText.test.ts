@@ -38,6 +38,43 @@ describe("definitionPlainText", () => {
     ).toBe("Hund m");
   });
 
+  it("leaves out the stylesheets and scripts of HTML", () => {
+    expect(
+      definitionPlainText({
+        kind: "html",
+        html: "<style>b { color: red }</style><script>run()</script>Hund",
+      }),
+    ).toBe("Hund");
+  });
+
+  it("leaves out the furigana of HTML", () => {
+    expect(
+      definitionPlainText({
+        kind: "html",
+        html: "<ruby>食<rp>(</rp><rt>た</rt><rp>)</rp></ruby>べる",
+      }),
+    ).toBe("食べる");
+  });
+
+  it("starts a new line at each line break and block of HTML", () => {
+    expect(
+      definitionPlainText({
+        kind: "html",
+        html: "<div>dog</div><ul><li>hound</li></ul>cur<br>mutt",
+      }),
+    ).toBe("dog\nhound\ncur\nmutt");
+  });
+
+  it("starts a new line at each line break of XDXF markup", () => {
+    expect(
+      definitionPlainText({
+        kind: "markup",
+        dialect: "xdxf",
+        markup: "<k>Hund</k><br/><dtrn>dog</dtrn>",
+      }),
+    ).toBe("Hund\ndog");
+  });
+
   it("names the base of an inflected form", () => {
     expect(
       definitionPlainText({ kind: "formOf", base: "食べる", inflections: [] }),
