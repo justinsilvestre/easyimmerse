@@ -10,10 +10,13 @@ test("a dictionary added from a file appears in the dictionaries settings", asyn
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Settings" }).click();
-  await page.getByRole("button", { name: /Dictionaries/ }).click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: /^Dictionaries/ }).click();
   const fileChooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Add from a file" }).first().click();
   await (await fileChooser).setFiles(dictionaryFixture);
-  await expect(page.getByText("Sample Dictionary").first()).toBeVisible();
+  // The fixture states Japanese as its language, so it is listed under that heading.
+  await expect(page.getByRole("region", { name: "Japanese" })).toContainText(
+    "Sample Dictionary",
+  );
 });
