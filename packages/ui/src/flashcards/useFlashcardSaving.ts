@@ -87,20 +87,24 @@ export function useFlashcardSaving(
     if (edited?.stage !== "readyToSend") return;
     dispatchEdited({ type: "sendStarted" });
     const card = edited;
-    offScreen.send(card)?.then(
-      () => {
-        const wasOnScreen = isOnScreen(card);
-        dispatchEdited({ type: "saved", session: card.session });
-        if (wasOnScreen) setSaved(true);
-      },
-      () => {
-        const wasOnScreen = isOnScreen(card);
-        dispatchEdited({ type: "saveFailed", session: card.session });
-        if (!wasOnScreen) return offScreen.showFailure(card);
-        dispatch(
-          actions.notificationRequested("The flashcard could not be saved"),
-        );
-      },
+    const saving = offScreen.send(card);
+    if (!saving) return;
+    offScreen.track(
+      saving.then(
+        () => {
+          const wasOnScreen = isOnScreen(card);
+          dispatchEdited({ type: "saved", session: card.session });
+          if (wasOnScreen) setSaved(true);
+        },
+        () => {
+          const wasOnScreen = isOnScreen(card);
+          dispatchEdited({ type: "saveFailed", session: card.session });
+          if (!wasOnScreen) return offScreen.showFailure(card);
+          dispatch(
+            actions.notificationRequested("The flashcard could not be saved"),
+          );
+        },
+      ),
     );
   });
   const waitingDraft =

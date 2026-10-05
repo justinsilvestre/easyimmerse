@@ -56,33 +56,53 @@ export function useOffScreenSaving(
       screenNotices.discarded.clear();
     };
   }, [notices, screenNotices]);
-  const track = useUnsavedWorkTracking();
+  const { track, hold } = useUnsavedWorkTracking();
   const undo = useSaveUndo(queue, requests);
   /**
    * Sends a card's save, or returns undefined when this opening's save is already under way.
+   * The caller counts the save, with what it does on settling, as unsaved work through `track`.
    * A request left unanswered for `saveRequestLimitMs` counts as failed.
    */
   const send = (card: EditedFlashcard) => {
     if (card.kind === "existing") undo.withdraw(card.flashcard.id);
-    const saving = queue.add(card, () =>
+    return queue.add(card, () =>
       withTimeLimit(requests.send(card), saveRequestLimitMs),
     );
-    return saving && track(saving);
   };
+  /** Leaves a notice holding a failed card's edits, which count as unsaved work until the card is retried, reopened or discarded. */
   const showFailure = (card: EditedFlashcard) => {
     const word = card.editor.content.word;
-    const retry = () => saveOffScreen(card, false);
+    const release = hold();
+    const retry = () => {
+      saveOffScreen(card, false);
+      release();
+    };
+    const discard = () => {
+      release();
+      notices.show(flashcardNotices.discarded(word, () => showFailure(card)));
+    };
     if (!screen.current.isMounted)
-      return void notices.show(flashcardNotices.saveFailed(word, retry));
-    const reopenCard = () => screen.current.reopen(card);
+      return void notices.show(
+        flashcardNotices.saveFailed(word, retry, discard),
+      );
+    const reopenCard = () => {
+      screen.current.reopen(card);
+      release();
+    };
     screenNotices.reopenable.add(
-      notices.show(flashcardNotices.saveFailed(word, retry, reopenCard)),
+      notices.show(
+        flashcardNotices.saveFailed(word, retry, discard, reopenCard),
+      ),
     );
   };
   function saveOffScreen(card: EditedFlashcard, offersUndo: boolean) {
-    send(card)?.then(
-      (saved) => offersUndo && undo.offer(card, saved),
-      () => showFailure(card),
+    const saving = send(card);
+    if (!saving) return;
+    track(
+      saving.then(
+        (saved) => offersUndo && undo.offer(card, saved),
+        () => showFailure(card),
+      ),
     );
   }
   return {
@@ -103,6 +123,7 @@ export function useOffScreenSaving(
       );
     },
     send,
+    track,
     showFailure,
     /** Saves a card that has left the editor, with an Undo notice when the user did not ask for the save. */
     save: (card: EditedFlashcard) =>

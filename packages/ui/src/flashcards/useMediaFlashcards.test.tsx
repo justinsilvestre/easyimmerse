@@ -66,27 +66,39 @@ function createDraft(word: string): FlashcardDraft {
   };
 }
 
-/** Renders the hook over a backend whose flashcard saves wait until the test lets them through, and then succeed or fail. */
-function renderFlashcards({ savesFail = false } = {}) {
-  const client = createFakeBackendClient({
+/** A backend that answers flashcard saves with success or, when `savesFail`, with failure. */
+function createFlashcardBackend(savesFail: boolean) {
+  const saveAnswer = savesFail
+    ? fakeFailure({ status: 500, message: "The disk is full" })
+    : savedFlashcard;
+  return createFakeBackendClient({
     ...fixtureResponses,
     "GET /projects/p1/flashcards": { flashcards: [savedFlashcard] },
-    "POST /projects/p1/flashcards": savesFail
-      ? fakeFailure({ status: 500, message: "The disk is full" })
-      : savedFlashcard,
-    "PUT /projects/p1/flashcards/f1": savesFail
-      ? fakeFailure({ status: 500, message: "The disk is full" })
-      : savedFlashcard,
+    "POST /projects/p1/flashcards": saveAnswer,
+    "PUT /projects/p1/flashcards/f1": saveAnswer,
     "DELETE /projects/p1/flashcards/f1": undefined,
   });
+}
+
+/**
+ * Renders the hook over a backend whose flashcard saves wait until the test lets them through,
+ * and then succeed or, while `savesFail`, fail.
+ */
+function renderFlashcards({ savesFail = false } = {}) {
+  const backends = {
+    failing: createFlashcardBackend(true),
+    succeeding: createFlashcardBackend(false),
+  };
+  let backend = savesFail ? backends.failing : backends.succeeding;
+  const requests: BackendRequest[] = [];
   const held: (() => void)[] = [];
   const holdingClient = {
-    send: <T,>(request: BackendRequest) =>
-      request.method === "POST" || request.method === "PUT"
-        ? new Promise<void>((resolve) => held.push(resolve)).then(() =>
-            client.send<T>(request),
-          )
-        : client.send<T>(request),
+    send: async <T,>(request: BackendRequest) => {
+      if (request.method === "POST" || request.method === "PUT")
+        await new Promise<void>((resolve) => held.push(resolve));
+      requests.push(request);
+      return backend.send<T>(request);
+    },
   };
   const { store, playerRegistry, effects } = createTestAppStore(holdingClient);
   const noticeStore = createNoticeStore();
@@ -102,10 +114,18 @@ function renderFlashcards({ savesFail = false } = {}) {
   const rendered = renderHook(() => useMediaFlashcards("p1", "m1", false), {
     wrapper,
   });
-  const posts = () =>
-    client.requests.filter((request) => request.method === "POST");
-  const puts = () =>
-    client.requests.filter((request) => request.method === "PUT");
+  const posts = () => requests.filter((request) => request.method === "POST");
+  const puts = () => requests.filter((request) => request.method === "PUT");
+  /** Makes the saves let through from now on succeed. */
+  const letSavesSucceed = () => {
+    backend = backends.succeeding;
+  };
+  /** Dismisses the latest notice as the user would. */
+  const dismissNotice = () =>
+    act(() => {
+      const latest = noticeStore.list().at(-1);
+      if (latest) noticeStore.dismissByUser(latest.id);
+    });
   /** Lets every save sent so far reach the backend. */
   const letSavesThrough = () =>
     act(async () => {
@@ -133,7 +153,7 @@ function renderFlashcards({ savesFail = false } = {}) {
         ?.onSelect(),
     );
   const deletes = () =>
-    client.requests.filter((request) => request.method === "DELETE");
+    requests.filter((request) => request.method === "DELETE");
   return {
     ...rendered,
     held,
@@ -141,9 +161,11 @@ function renderFlashcards({ savesFail = false } = {}) {
     puts,
     deletes,
     letSavesThrough,
+    letSavesSucceed,
     notifications,
     notices,
     choose,
+    dismissNotice,
     effects,
   };
 }
@@ -314,6 +336,58 @@ describe("useMediaFlashcards", () => {
       await vi.waitFor(() => expect(held).toHaveLength(1));
       await letSavesThrough();
       expect(sentWord(posts()[1])).toBe("Kater");
+    });
+
+    const guardCalls = (
+      effects: ReturnType<typeof renderFlashcards>["effects"],
+    ) => effects.calls.filter((call) => call.type === "guardClose");
+
+    it("keeps the close guard up while the notice holds the edits", async () => {
+      const { effects } = await failOffScreen();
+      expect(guardCalls(effects)).toEqual([
+        { type: "guardClose", isActive: true },
+      ]);
+    });
+
+    it("lifts the close guard once a retry succeeds", async () => {
+      const { choose, held, letSavesSucceed, letSavesThrough, effects } =
+        await failOffScreen();
+      letSavesSucceed();
+      choose("Retry");
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      await vi.waitFor(() =>
+        expect(guardCalls(effects).at(-1)).toEqual({
+          type: "guardClose",
+          isActive: false,
+        }),
+      );
+    });
+
+    it("lifts the close guard once the notice is dismissed", async () => {
+      const { dismissNotice, effects } = await failOffScreen();
+      dismissNotice();
+      expect(guardCalls(effects).at(-1)).toEqual({
+        type: "guardClose",
+        isActive: false,
+      });
+    });
+
+    it("offers Undo once the notice is dismissed, since the edits are discarded", async () => {
+      const { dismissNotice, notices } = await failOffScreen();
+      dismissNotice();
+      expect(notices()).toEqual([
+        ["Discarded your changes to the flashcard for “Hündin”.", "Undo"],
+      ]);
+    });
+
+    it("brings the failure notice back on Undo", async () => {
+      const { dismissNotice, choose, notices } = await failOffScreen();
+      dismissNotice();
+      choose("Undo");
+      expect(notices()).toEqual([
+        ["Couldn't save the flashcard for “Hündin”.", "Retry", "Reopen"],
+      ]);
     });
 
     it("offers only Retry when the failure comes after the screen has closed", async () => {

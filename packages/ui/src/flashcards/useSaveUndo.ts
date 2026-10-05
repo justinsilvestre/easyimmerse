@@ -17,7 +17,7 @@ export function useSaveUndo(
   requests: ReturnType<typeof useFlashcardRequests>,
 ) {
   const notices = useNotices();
-  const track = useUnsavedWorkTracking();
+  const { track } = useUnsavedWorkTracking();
   /** The notice offering Undo of each flashcard's latest save, by flashcard id. */
   const [undoNotices] = useState(() => new Map<string, number>());
   const withdraw = (flashcardId: string) => {

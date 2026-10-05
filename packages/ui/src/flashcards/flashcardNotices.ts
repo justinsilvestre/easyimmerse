@@ -9,10 +9,14 @@ export const flashcardNotices = {
     actions: [{ label: "Undo", onSelect: undo }],
     isTransient: true,
   }),
-  /** A save off screen failed; the card's edits wait in the notice until it is retried or, while the editor is there, reopened. */
+  /**
+   * A save off screen failed; the card's edits wait in the notice until it is retried or, while the editor is there, reopened.
+   * Dismissing the notice discards them.
+   */
   saveFailed: (
     word: string,
     retry: () => void,
+    discard: () => void,
     reopen?: () => void,
   ): NoticeContent => ({
     tone: "danger",
@@ -22,8 +26,9 @@ export const flashcardNotices = {
       ...(reopen ? [{ label: "Reopen", onSelect: reopen }] : []),
     ],
     isTransient: false,
+    onDismiss: discard,
   }),
-  /** A changed card was closed without saving; Undo reopens it with its edits. */
+  /** A changed card was closed without saving, or its failure notice dismissed; Undo brings its edits back. */
   discarded: (word: string, undo: () => void): NoticeContent => ({
     tone: "info",
     message: `Discarded your changes to the flashcard for “${word}”.`,
