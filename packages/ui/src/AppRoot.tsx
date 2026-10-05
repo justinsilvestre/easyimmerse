@@ -1,4 +1,4 @@
-import { ffmpegNotices } from "@easyimmerse/licenses";
+import { licenseNotices } from "@easyimmerse/licenses";
 import type {
   AppStore,
   BrowserFileRegistry,
@@ -101,7 +101,7 @@ function ConnectedSettingsScreen({ onBack }: { onBack: () => void }) {
     <SettingsScreen
       onBack={onBack}
       conversionCache={useConversionCacheControls()}
-      licenseNotices={ffmpegNotices}
+      licenseNotices={licenseNotices}
     />
   );
 }
