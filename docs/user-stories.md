@@ -325,6 +325,9 @@ As a user:
   - [ ] I can remove a dictionary
 - when I have more than one dictionary enabled for a language:
   - [ ] I can set the order in which their entries appear in the dictionary pop-up
+- when I add a dictionary from a table file (CSV, TSV or Tabfile):
+  - [ ] I see a preview of its first rows, with what each column holds
+  - [ ] I can change what a column holds, and whether the first row is a header, before importing
 - when I add a dictionary in a format the app does not support:
   - [ ] I am told which formats are supported, and that a plugin may add support for others
 
