@@ -83,6 +83,23 @@ describe("useMediaFlashcards", () => {
     expect(posts()).toHaveLength(1);
   });
 
+  it("sends a save again after one has failed", async () => {
+    const { result, held, letSavesThrough, posts } = renderFlashcards({
+      savesFail: true,
+    });
+    act(() => result.current.start(createDraft("Hund")));
+    act(() => result.current.save());
+    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await letSavesThrough();
+    await vi.waitFor(() =>
+      expect(result.current.edited?.stage).toBe("editing"),
+    );
+    act(() => result.current.save());
+    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await letSavesThrough();
+    expect(posts()).toHaveLength(2);
+  });
+
   it("leaves open a card started while an earlier one was being saved", async () => {
     const { result, held, letSavesThrough } = renderFlashcards();
     act(() => result.current.start(createDraft("Hund")));
@@ -174,6 +191,35 @@ describe("useMediaFlashcards", () => {
     act(() => result.current.save());
     act(() => result.current.open(savedFlashcard.id));
     await vi.waitFor(() => expect(held).toHaveLength(1));
+  });
+
+  describe("when the screen closes while a save waits for its lookup", () => {
+    function closeWhileWaiting(setup: { savesFail?: boolean } = {}) {
+      const rendered = renderFlashcards(setup);
+      const never = new Promise<LookupFlashcardFields | null>(() => undefined);
+      act(() => rendered.result.current.start(createDraft("Hund"), never));
+      act(() => rendered.result.current.save());
+      rendered.unmount();
+      return rendered;
+    }
+
+    it("saves the waiting card as it is", async () => {
+      const { held } = closeWhileWaiting();
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+    });
+
+    it("names the word of a card that could not be saved", async () => {
+      const { held, letSavesThrough, notifications } = closeWhileWaiting({
+        savesFail: true,
+      });
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      await vi.waitFor(() =>
+        expect(notifications()).toEqual([
+          "Couldn't save the flashcard for “Hund”.",
+        ]),
+      );
+    });
   });
 
   describe("when the lookup never settles", () => {

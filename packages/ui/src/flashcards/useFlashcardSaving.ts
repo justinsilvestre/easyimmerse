@@ -1,4 +1,4 @@
-import { type Dispatch, useEffect } from "react";
+import { type Dispatch, useEffect, useRef, useState } from "react";
 import { useTimer } from "../hooks/useTimer.ts";
 import { saveLookupWaitMs } from "../lookup/lookupTiming.ts";
 import {
@@ -6,6 +6,7 @@ import {
   type EditedFlashcardAction,
   sourceOf,
 } from "./editedFlashcard.ts";
+import { isSaveAsked } from "./saveStage.ts";
 
 /** Tells of a save's outcome. A save in the background is one of a card no longer on screen. */
 export type SaveReports = {
@@ -16,6 +17,7 @@ export type SaveReports = {
 /**
  * Sends the open card once a save is ready, and reports whether it was saved, so that only that card closes.
  * A save that waits for a lookup stops waiting after `saveLookupWaitMs` and saves the card as it is.
+ * A card whose save waits or is ready when the editor goes away, as when the screen closes, is saved as it is in the background.
  * Returns a function that saves a card whose save waits, as it is, in the background, as when another card replaces it in the editor.
  */
 export function useFlashcardSaving(
@@ -24,18 +26,24 @@ export function useFlashcardSaving(
   send: (card: EditedFlashcard) => Promise<unknown>,
   reports: SaveReports,
 ): () => void {
+  // A card's save goes out once at a time, however the editor and its going away overlap; a retry after it settles may go out again.
+  const [sending] = useState(() => new Set<object>());
   const sendAndReport = (card: EditedFlashcard, isInBackground: boolean) => {
     const source = sourceOf(card);
-    send(card).then(
-      () => {
-        dispatchEdited({ type: "saved", source });
-        reports.saved(card, isInBackground);
-      },
-      () => {
-        dispatchEdited({ type: "saveFailed", source });
-        reports.failed(card, isInBackground);
-      },
-    );
+    if (sending.has(source)) return;
+    sending.add(source);
+    send(card)
+      .finally(() => sending.delete(source))
+      .then(
+        () => {
+          dispatchEdited({ type: "saved", source });
+          reports.saved(card, isInBackground);
+        },
+        () => {
+          dispatchEdited({ type: "saveFailed", source });
+          reports.failed(card, isInBackground);
+        },
+      );
   };
   useEffect(() => {
     if (edited?.stage !== "readyToSend") return;
@@ -56,6 +64,15 @@ export function useFlashcardSaving(
       dispatchEdited({ type: "lookupFailed", draft: waitingDraft }),
     );
   }, [waitingDraft, giveUp, dispatchEdited]);
+  const latest = useRef({ edited, sendAndReport });
+  latest.current = { edited, sendAndReport };
+  useEffect(
+    () => () => {
+      const { edited: left, sendAndReport: sendLeft } = latest.current;
+      if (left && isSaveAsked(left.stage)) sendLeft(left, true);
+    },
+    [],
+  );
   return () => {
     if (edited?.stage === "awaitingLookupToSave") sendAndReport(edited, true);
   };

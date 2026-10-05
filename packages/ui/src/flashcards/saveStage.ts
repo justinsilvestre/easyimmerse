@@ -27,6 +27,11 @@ export function isLocked(stage: SaveStage): boolean {
   );
 }
 
+/** Tells whether the user has asked to save a card that has not been sent yet. */
+export function isSaveAsked(stage: SaveStage): boolean {
+  return stage === "awaitingLookupToSave" || stage === "readyToSend";
+}
+
 /** Tells whether a save is under way, after which nothing may change the card it sent. */
 export function isSending(stage: SaveStage): boolean {
   return stage === "readyToSend" || stage === "sending";
