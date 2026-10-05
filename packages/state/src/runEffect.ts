@@ -3,6 +3,11 @@ import { actions } from "./actions.ts";
 import type { AppState, PreferenceKey } from "./appState.ts";
 import type { Effect } from "./effect.ts";
 import type { Effects } from "./effects.ts";
+import {
+  parseReadingLocation,
+  type ReaderLocation,
+  readingLocationKey,
+} from "./readingLocation.ts";
 
 /** Performs one effect. Effects that produce a result dispatch the corresponding action once it arrives. */
 export function runEffect(
@@ -53,6 +58,19 @@ export function runEffect(
         dispatch(actions.preferencesLoaded(preferences)),
       );
       return;
+    case "loadReadingLocation":
+      loadReadingLocation(effects, effect.mediaFileId).then((location) =>
+        dispatch(actions.readingLocationLoaded(effect.mediaFileId, location)),
+      );
+      return;
+    case "saveReadingLocation":
+      effects
+        .savePreference(
+          readingLocationKey(effect.mediaFileId),
+          JSON.stringify(effect.location),
+        )
+        .catch(ignoreFailure);
+      return;
     case "showNotification":
       effects.showNotification(effect.message);
       return;
@@ -76,6 +94,17 @@ async function loadPreferences(
       return value === null || value === undefined ? [] : [[key, value]];
     }),
   );
+}
+
+/** Reads a book's stored reading place, treating one that cannot be read as absent. */
+async function loadReadingLocation(
+  effects: Effects,
+  mediaFileId: string,
+): Promise<ReaderLocation | null> {
+  const value = await effects
+    .loadPreference(readingLocationKey(mediaFileId))
+    .catch(() => null);
+  return parseReadingLocation(value);
 }
 
 /** Rejections other than a failed file pick are dropped for now. Reporting errors to the user is a later effect. */

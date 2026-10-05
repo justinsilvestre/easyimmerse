@@ -29,6 +29,11 @@ export const selectCurrentMediaFileId = (state: RootState) =>
 export const selectChosenMediaFile = (state: RootState) =>
   state.app.chosenMediaFile;
 
+/** Returns the book's last reading place, null when it has none, or undefined until its stored place has been read. */
+export const selectReadingLocation =
+  (mediaFileId: string) => (state: RootState) =>
+    state.app.readingLocations[mediaFileId];
+
 /** Returns the theme the app shows: the one the user chose, or else the operating system's. */
 export const selectTheme = (state: RootState) => chooseTheme(state.app.theme);
 

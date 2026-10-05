@@ -1,4 +1,5 @@
 import type { PickedFile, PickedMediaFile } from "./effects.ts";
+import type { ReaderLocation } from "./readingLocation.ts";
 import type { ThemeState } from "./theme.ts";
 import { initialThemeState } from "./theme.ts";
 
@@ -6,13 +7,16 @@ export type PreferenceKey =
   | "showTranslations"
   | "textScale"
   | "losslessAudio"
-  | "conversionNoticeDismissed";
+  | "conversionNoticeDismissed"
+  /** The reader's appearance, as JSON. */
+  | "readerPreferences";
 
 export const preferenceKeys: readonly PreferenceKey[] = [
   "showTranslations",
   "textScale",
   "losslessAudio",
   "conversionNoticeDismissed",
+  "readerPreferences",
 ];
 
 /** The player as the controls show it. Volume is 0 to 1; speed is a multiplier. */
@@ -46,6 +50,11 @@ export type AppState = {
   /** A picked media file waiting to be added to the project through the backend. */
   chosenMediaFile: PickedMediaFile | null;
   theme: ThemeState;
+  /**
+   * The last reading place in each book opened since the app started, by media file id.
+   * Null for a book with no stored place; absent until the stored place has been read.
+   */
+  readingLocations: Partial<Record<string, ReaderLocation | null>>;
 };
 
 export const initialAppState: AppState = {
@@ -57,4 +66,5 @@ export const initialAppState: AppState = {
   currentMediaFileId: null,
   chosenMediaFile: null,
   theme: initialThemeState,
+  readingLocations: {},
 };

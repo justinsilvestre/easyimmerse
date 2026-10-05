@@ -133,4 +133,41 @@ describe("effectsMiddleware", () => {
     store.dispatch(actions.preferenceToggled("showTranslations"));
     expect(effects.preferences.get("showTranslations")).toBe("true");
   });
+
+  it("dispatches readingLocationLoaded with the stored location after readingLocationLoadRequested", async () => {
+    const location = { chapterIndex: 2, paragraphIndex: 3, offset: 4 };
+    const effects = createRecordingEffects();
+    effects.preferences.set("readingLocation:b1", JSON.stringify(location));
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.readingLocationLoadRequested("b1"));
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.readingLocationLoaded("b1", location),
+      );
+    });
+  });
+
+  it("dispatches readingLocationLoaded with null when the location fails to load", async () => {
+    const effects = createRecordingEffects();
+    effects.loadPreference = () => Promise.reject(new Error("storage locked"));
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.readingLocationLoadRequested("b1"));
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.readingLocationLoaded("b1", null),
+      );
+    });
+  });
+
+  it("stores the reading location as JSON after readingLocationReported in a new paragraph", () => {
+    const location = { chapterIndex: 0, paragraphIndex: 1, offset: 2 };
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.readingLocationReported("b1", location));
+    expect(effects.preferences.get("readingLocation:b1")).toBe(
+      JSON.stringify(location),
+    );
+  });
 });

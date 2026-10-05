@@ -3,6 +3,7 @@ import type { AppState, PreferenceKey } from "./appState.ts";
 import { initialPlayerState, preferenceKeys } from "./appState.ts";
 import type { Effect } from "./effect.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
+import { isSameParagraph, type ReaderLocation } from "./readingLocation.ts";
 import { followSystemTheme, toggleTheme } from "./theme.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
@@ -130,7 +131,37 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
             speed: state.player.speed,
           },
         },
+        saveOpenBookLocation(state),
+      ];
+    case "readingLocationLoadRequested":
+      return [
+        state,
+        state.readingLocations[action.mediaFileId] === undefined
+          ? [{ type: "loadReadingLocation", mediaFileId: action.mediaFileId }]
+          : [],
+      ];
+    case "readingLocationLoaded":
+      return [
+        state.readingLocations[action.mediaFileId] === undefined
+          ? setReadingLocation(state, action.mediaFileId, action.location)
+          : state,
         [],
+      ];
+    case "readingLocationReported":
+      return [
+        setReadingLocation(state, action.mediaFileId, action.location),
+        isSameParagraph(
+          action.location,
+          state.readingLocations[action.mediaFileId],
+        )
+          ? []
+          : [
+              {
+                type: "saveReadingLocation",
+                mediaFileId: action.mediaFileId,
+                location: action.location,
+              },
+            ],
       ];
     case "preferenceToggled":
       return togglePreference(state, action.key);
@@ -192,4 +223,27 @@ function setPreference(
   value: string,
 ): AppState {
   return { ...state, preferences: { ...state.preferences, [key]: value } };
+}
+
+function setReadingLocation(
+  state: AppState,
+  mediaFileId: string,
+  location: ReaderLocation | null,
+): AppState {
+  return {
+    ...state,
+    readingLocations: { ...state.readingLocations, [mediaFileId]: location },
+  };
+}
+
+/**
+ * Saves the reading place in the open book, if it is a book.
+ * Within a paragraph the place is saved only here, so that scrolling does not write on every frame.
+ */
+function saveOpenBookLocation(state: AppState): Effect[] {
+  const mediaFileId = state.currentMediaFileId;
+  const location = mediaFileId && state.readingLocations[mediaFileId];
+  return mediaFileId && location
+    ? [{ type: "saveReadingLocation", mediaFileId, location }]
+    : [];
 }
