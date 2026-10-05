@@ -83,7 +83,7 @@ export function useMediaFlashcards(
       },
     );
   };
-  useFlashcardSaving(edited, dispatchEdited, send);
+  const saveWaitingCard = useFlashcardSaving(edited, dispatchEdited, send);
   const remove = () => {
     if (edited?.kind !== "existing") return close();
     deleteFlashcard({ projectId, flashcardId: edited.flashcard.id })
@@ -107,12 +107,14 @@ export function useMediaFlashcards(
     /**
      * Starts a new card. `lateFields` gives the fields of its word's lookup once it answers, or null when it fails,
      * and the card is filled from them if still open; until then a save waits for them.
+     * A card it replaces whose save was waiting is saved at once, as it is.
      */
     start: (
       draft: FlashcardDraft,
       lateFields?: Promise<LookupFlashcardFields | null>,
     ) => {
       setSaved(false);
+      saveWaitingCard();
       dispatchEdited({ type: "started", draft, awaitsLookup: !!lateFields });
       const fail = () => dispatchEdited({ type: "lookupFailed", draft });
       lateFields?.then(

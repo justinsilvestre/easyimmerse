@@ -94,6 +94,35 @@ describe("useMediaFlashcards", () => {
     await vi.waitFor(() => expect(held).toHaveLength(1));
   });
 
+  describe("when another card is started while a save waits for its lookup", () => {
+    async function startAnotherWhileWaiting() {
+      const rendered = renderFlashcards();
+      const never = new Promise<LookupFlashcardFields | null>(() => undefined);
+      act(() => rendered.result.current.start(createDraft("Hund"), never));
+      act(() => rendered.result.current.save());
+      act(() => rendered.result.current.start(createDraft("Katze")));
+      return rendered;
+    }
+
+    it("saves the waiting card as it is", async () => {
+      const { held, letSavesThrough, posts } = await startAnotherWhileWaiting();
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(
+        (posts()[0]?.body?.value as { content?: { word?: string } })?.content
+          ?.word,
+      ).toBe("Hund");
+    });
+
+    it("keeps the new card open once the waiting card is saved", async () => {
+      const { result, held, letSavesThrough } =
+        await startAnotherWhileWaiting();
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(result.current.edited?.editor.content.word).toBe("Katze");
+    });
+  });
+
   describe("when the lookup never settles", () => {
     beforeEach(() =>
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }),
