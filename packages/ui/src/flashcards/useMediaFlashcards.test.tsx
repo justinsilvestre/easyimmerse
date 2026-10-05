@@ -144,6 +144,11 @@ function renderFlashcards({ savesFail = false } = {}) {
         ?.actions?.find((action) => action.label === label)
         ?.onSelect(),
     );
+  /** Dismisses the notice at `index` as the user would. */
+  const dismissNoticeAt = (index: number) => {
+    const notice = noticeStore.list()[index];
+    if (notice) noticeStore.dismissByUser(notice.id);
+  };
   /** Dismisses the latest notice as the user would. */
   const dismissNotice = () =>
     act(() => {
@@ -192,6 +197,7 @@ function renderFlashcards({ savesFail = false } = {}) {
     chooseFor,
     letSaveThrough,
     dismissNotice,
+    dismissNoticeAt,
     effects,
   };
 }
@@ -933,6 +939,32 @@ describe("useMediaFlashcards", () => {
         rendered.dismissNotice();
         await act(() => vi.advanceTimersByTimeAsync(0));
         expect(rendered.deletes()).toHaveLength(0);
+      });
+
+      it("leaves alone a flashcard whose later work succeeded, once its failure notice is dismissed", async () => {
+        const rendered = renderFlashcards();
+        const { result } = rendered;
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        act(() => result.current.open(savedFlashcard.id));
+        act(() => result.current.edit(typeWord("Hündin")));
+        act(() => result.current.start(createDraft("Katze")));
+        await act(() => vi.advanceTimersByTimeAsync(saveRequestLimitMs));
+        act(() =>
+          result.current.moveClipEndpoint(savedFlashcard.id, "end", 4000),
+        );
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        await rendered.letSavesThrough();
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        const putsBefore = rendered.puts().length;
+        act(() => {
+          const notice = rendered
+            .notices()
+            .findIndex(([message]) => message?.startsWith("Couldn't save"));
+          if (notice >= 0) rendered.dismissNoticeAt(notice);
+        });
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        await rendered.letSavesThrough();
+        expect(rendered.puts()).toHaveLength(putsBefore);
       });
 
       it("puts back a saved card's earlier content once Close without saving is pressed", async () => {

@@ -81,10 +81,12 @@ export function createSaveQueue() {
       const known = isReturnedNewer ? returned : listed;
       return draft ? withDraft(known, draft) : known;
     },
-    /** Calls `listener` with a flashcard's id whenever work on that flashcard succeeds. */
+    /** Calls `listener` with a flashcard's id whenever work on that flashcard succeeds, until the returned function is called. */
     onSuccess(listener: (flashcardId: string) => void) {
       successListeners.add(listener);
-      return () => successListeners.delete(listener);
+      return () => {
+        successListeners.delete(listener);
+      };
     },
   };
 }

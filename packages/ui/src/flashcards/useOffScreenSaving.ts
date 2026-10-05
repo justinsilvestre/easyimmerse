@@ -56,7 +56,7 @@ export function useOffScreenSaving(
       () => saveOffScreen(card, false),
       () => timedOut.cleanUpAfterDiscard(card),
     );
-  /** A saved flashcard as last sent, which the list of flashcards may not show yet while work on it is under way. */
+  /** A saved flashcard as the latest work on it left it, which the list of flashcards may not show yet. */
   const latestOf = (flashcard: Flashcard) => queue.latestOf(flashcard);
   /** What a card's flashcard holds before its save: the draft last sent for a saved one, or nothing for a new one. */
   const beforeOf = (card: EditedFlashcard) =>

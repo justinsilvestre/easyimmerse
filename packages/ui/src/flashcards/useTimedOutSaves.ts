@@ -1,5 +1,5 @@
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNotices } from "../notices/NoticesContext.tsx";
 import type { EditedFlashcard } from "./editedFlashcard.ts";
 import { flashcardNotices } from "./flashcardNotices.ts";
@@ -9,7 +9,8 @@ import { useUnsavedWorkTracking } from "./useUnsavedWorkTracking.ts";
 import { TimeLimitError } from "./withTimeLimit.ts";
 
 /**
- * Remembers the flashcards whose save timed out, so that whether it landed is unknown, until a later save succeeds.
+ * Remembers the flashcards whose save timed out, so that whether it landed is unknown,
+ * until any later work on the flashcard succeeds, be it a save, a retiming, an Undo or a deletion.
  * Discarding such a card takes the save back, through `queue`, so that the discard holds whatever happened to it:
  * a new card is deleted, and a saved one gets back what it held before the first timed-out save.
  */
@@ -21,6 +22,10 @@ export function useTimedOutSaves(
   const { track } = useUnsavedWorkTracking();
   /** What each flashcard held before its first timed-out save: a draft, or null for a new card. */
   const [beforeById] = useState(() => new Map<string, FlashcardDraft | null>());
+  useEffect(
+    () => queue.onSuccess((flashcardId) => beforeById.delete(flashcardId)),
+    [queue, beforeById],
+  );
   return {
     /** Notes how a save of the flashcard with `before` as its earlier content turns out. */
     watch: (
@@ -28,17 +33,11 @@ export function useTimedOutSaves(
       before: FlashcardDraft | null,
       saving: Promise<Flashcard>,
     ) =>
-      saving.then(
-        (saved) => {
-          beforeById.delete(flashcardId);
-          return saved;
-        },
-        (error: unknown) => {
-          if (error instanceof TimeLimitError && !beforeById.has(flashcardId))
-            beforeById.set(flashcardId, before);
-          throw error;
-        },
-      ),
+      saving.catch((error: unknown) => {
+        if (error instanceof TimeLimitError && !beforeById.has(flashcardId))
+          beforeById.set(flashcardId, before);
+        throw error;
+      }),
     /** Takes back the timed-out save of a card the user has discarded, if a save of it timed out. */
     cleanUpAfterDiscard: (card: EditedFlashcard) => {
       const flashcardId = flashcardIdOf(card);
