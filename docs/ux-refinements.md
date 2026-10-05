@@ -28,9 +28,13 @@ As a user:
 As a user:
 - when I create flashcards with a dictionary from the easyImmerse registry:
   - [ ] each flashcard stores a reference to the dictionary entry rather than the entry's full text, so it takes less space on my device and in the cloud
+- when I look up a word that begins a dictionary entry of several separate words, such as „von … an" in „Er arbeitet von heute an", "pick … up" in English, or « ne … pas » in French:
+  - [ ] the entry is found when its later words follow in the same sentence, and all of its words are highlighted
+  - [ ] the matching may be naive: looking up „arbeitet" in the same sentence may still offer anarbeiten, with „an" highlighted, as long as looking up „von" offers „von … an"
 
 - [x] A dictionary's own stylesheet (Yomitan's `styles.css`, the `.css` beside an MDict or StarDict dictionary) styles that dictionary's definitions and nothing else. It arrives with each lookup, so entries never show unstyled first. Before it is applied, every selector is confined to that dictionary's definitions, and anything that could load a remote resource, run code, or draw outside the definition is dropped. Class names in dictionary markup are kept with a prefix, so they cannot pick up the app's own styles.
 - [x] Dictionaries are designed for white pages. In the dark theme, their text colors are lightened and their background colors darkened, keeping each color's hue, so that their entries stay readable. Where the browser cannot compute these colors, the dictionary's own colors are shown.
+- [ ] In German, lookup finds a separated particle verb only when the particle ends its clause, so „Fang endlich an mit der Arbeit!" does not lead to anfangen. A simple check of the word after a particle in the middle of a clause could find such verbs: another preposition would suggest a verb particle, and an article, a pronoun or a noun would suggest a preposition, as in „Ich denke an dich". The check should be adopted only if it finds such verbs without adding many wrong matches.
 
 ## Settings
 
