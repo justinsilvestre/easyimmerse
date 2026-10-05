@@ -122,4 +122,29 @@ describe("NoticeRegion", () => {
     act(() => store.withdrawAction(id, "Reopen"));
     expect(screen.queryByRole("button", { name: "Reopen" })).toBeNull();
   });
+
+  it("announces a failure as an alert", () => {
+    const store = renderRegion();
+    act(() => {
+      store.show({
+        tone: "danger",
+        message: "Couldn't save the flashcard for “Hund”.",
+        isTransient: false,
+      });
+    });
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Couldn't save the flashcard for “Hund”.",
+    );
+  });
+
+  it("announces other notices politely, apart from failures", () => {
+    const store = renderRegion();
+    showUndo(store);
+    expect(
+      screen
+        .getByText("Saved the flashcard for “Hund”.")
+        .closest("[aria-live]")
+        ?.getAttribute("aria-live"),
+    ).toBe("polite");
+  });
 });
