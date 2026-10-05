@@ -302,6 +302,28 @@ describe("useMediaFlashcards", () => {
     });
   });
 
+  it("saves a changed card as it is when the screen closes", async () => {
+    const { result, held, unmount } = renderFlashcards();
+    act(() => result.current.start(createDraft("Hund")));
+    act(() =>
+      result.current.edit({
+        type: "textChanged",
+        key: "word",
+        value: "Hündin",
+      }),
+    );
+    unmount();
+    await vi.waitFor(() => expect(held).toHaveLength(1));
+  });
+
+  it("drops an untouched new card when the screen closes", async () => {
+    const { result, held, unmount } = renderFlashcards();
+    act(() => result.current.start(createDraft("Hund")));
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(held).toHaveLength(0);
+  });
+
   describe("when the lookup never settles", () => {
     beforeEach(() =>
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }),

@@ -17,7 +17,8 @@ export type SaveReports = {
 /**
  * Sends the open card once a save is ready, and reports whether it was saved, so that only that card closes.
  * A save that waits for a lookup stops waiting after `saveLookupWaitMs` and saves the card as it is.
- * A card whose save waits or is ready when the editor goes away, as when the screen closes, is saved as it is in the background.
+ * When the editor goes away, as when the screen closes, the open card is saved as it is in the background,
+ * if the user has asked to save it or has changed it.
  * Returns a function that saves the open card as it is, in the background, before another replaces it in the editor,
  * if the user has asked to save it or has changed it.
  */
@@ -70,7 +71,7 @@ export function useFlashcardSaving(
   useEffect(
     () => () => {
       const { edited: left, sendAndReport: sendLeft } = latest.current;
-      if (left && isSaveAsked(left.stage)) sendLeft(left, true);
+      if (left && isWorthSavingWhenLeft(left)) sendLeft(left, true);
     },
     [],
   );
@@ -80,7 +81,7 @@ export function useFlashcardSaving(
 }
 
 /**
- * Tells whether a card the editor is leaving for another should be saved first, as it is:
+ * Tells whether a card the editor is leaving, for another card or as the screen closes, should be saved first, as it is:
  * one the user has asked to save, or changed. A new card left untouched is dropped, as it holds nothing of the user's.
  */
 function isWorthSavingWhenLeft(card: EditedFlashcard): boolean {
