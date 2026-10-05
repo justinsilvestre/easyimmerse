@@ -22,7 +22,8 @@ pub const BARE: &[Rule] = &[
 ];
 
 /// Continuative stems (連用形-一般): the godan い row, the bare ichidan stem, き for 来る, し for する, じ for ずる,
-/// and the stems in い (連用形-イ音便) of the honorific verbs いらっしゃる, おっしゃる, くださる, なさる and ござる.
+/// and the stems in い (連用形-イ音便) of the honorific verbs いらっしゃる, おっしゃる, くださる, なさる and ござる,
+/// and of the auxiliary てらっしゃる.
 ///
 /// Sources: UniDic manual §5.2.1, p. 17 (五段-ラ行-アル); UniDic 2025.12, 連用形-一般 and 連用形-イ音便 of each 活用型.
 pub const CONTINUATIVE: &[Rule] = &sharing(
@@ -41,7 +42,7 @@ pub const CONTINUATIVE: &[Rule] = &sharing(
         kuru("来", "来る"),
         suru("し", "する"),
         zuru("じ", "ずる"),
-        godan("いらっしゃい", "いらっしゃる"),
+        godan("らっしゃい", "らっしゃる"),
         godan("おっしゃい", "おっしゃる"),
         godan("仰い", "仰る"),
         godan("ください", "くださる"),

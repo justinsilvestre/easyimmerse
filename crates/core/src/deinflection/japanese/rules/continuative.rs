@@ -1,6 +1,6 @@
 //! Auxiliaries on the continuative stem of a verb, and appearance そう, which also follows an adjective stem.
 
-use crate::deinflection::japanese::rule::Rule;
+use crate::deinflection::japanese::rule::{Rule, Stem};
 use crate::deinflection::japanese::word_class::WordClasses as C;
 
 /// Desiderative たい, which inflects as an i-adjective; たがる, "show signs of wanting to", which inflects as a godan verb;
@@ -23,6 +23,16 @@ pub const CONTINUATIVE_AUXILIARIES: &[Rule] = &[
         .to(C::CONTINUATIVE)
         .named(&["contemptuous"]),
 ];
+
+/// The western honorific はる, which follows the irrealis or the continuative stem (行かはる, 行きはる)
+/// and inflects as a godan verb.
+///
+/// Sources: 規程集 下, 資料「要注意語」助動詞 ハル, p. (35) (接続: 未然形, 連用形); UniDic 2025.12, はる (五段-ラ行).
+pub const WESTERN_HONORIFIC: &[Rule] = &[Rule::replace("はる", "")
+    .from(C::V5)
+    .to(C::IRREALIS.or(C::CONTINUATIVE))
+    .named(&["honorific"])
+    .stem(Stem::NonEmpty)];
 
 /// そう ("looks like") after a verb's continuative stem or an adjective's stem.
 /// いい and ない take さ before it (語幹-サ): よさそう and なさそう.
@@ -119,6 +129,20 @@ mod tests {
                 "vk",
                 &["past", "contemptuous"]
             ));
+        }
+    }
+
+    mod western_honorific {
+        use super::yields;
+
+        #[test]
+        fn undoes_haru_after_the_irrealis() {
+            assert!(yields("行かはる", "行く", "v5", &["honorific"]));
+        }
+
+        #[test]
+        fn undoes_haru_after_the_continuative() {
+            assert!(yields("行きはった", "行く", "v5", &["past", "honorific"]));
         }
     }
 

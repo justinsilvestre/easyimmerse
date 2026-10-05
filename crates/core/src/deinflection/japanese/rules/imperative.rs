@@ -29,7 +29,7 @@ pub const IMPERATIVE: &[Rule] = &sharing(
         suru("せよ", "する"),
         zuru("じろ", "ずる"),
         zuru("ぜよ", "ずる"),
-        godan("いらっしゃい", "いらっしゃる"),
+        godan("らっしゃい", "らっしゃる"),
         godan("おっしゃい", "おっしゃる"),
         godan("仰い", "仰る"),
         godan("ください", "くださる"),

@@ -47,6 +47,26 @@ pub const COMPLETIVE: &[Rule] = &[
     voiced("じまう", C::V5, &["completive"]),
 ];
 
+/// Benefactive たげる for てあげる, which inflects as an ichidan verb, and たる for てやる, which inflects as a godan verb.
+///
+/// Sources: 規程集 下, 資料「要注意語」助動詞 タゲル and タル, p. (33) (送っ【たげ】たり, 殴っ【たっ】てん);
+/// UniDic 2025.12, たげる (下一段-ガ行) and たる (五段-ラ行).
+pub const BENEFACTIVE: &[Rule] = &[
+    voiceless("たげる", C::V1, &["benefactive"]),
+    voiced("だげる", C::V1, &["benefactive"]),
+    voiceless("たる", C::V5, &["benefactive"]),
+    voiced("だる", C::V5, &["benefactive"]),
+];
+
+/// てらっしゃる for ていらっしゃる, the honorific of ている, which inflects as いらっしゃる does.
+///
+/// Sources: 規程集 下, 資料「要注意語」助動詞 テラッシャル, p. (34) (参加し【てらっしゃい】ました, 住ん【でらっしゃる】);
+/// UniDic 2025.12, てらっしゃる (五段-ラ行).
+pub const HONORIFIC_PROGRESSIVE: &[Rule] = &[
+    voiceless("てらっしゃる", C::V5, &["honorific progressive"]),
+    voiced("でらっしゃる", C::V5, &["honorific progressive"]),
+];
+
 const fn voiceless(inflected: &'static str, from: C, inflections: &'static [&'static str]) -> Rule {
     Rule::replace(inflected, "")
         .from(from)
@@ -149,6 +169,49 @@ mod tests {
         #[test]
         fn undoes_a_voiced_deku() {
             assert!(yields("飛んでく", "飛ぶ", "v5", &["continuing"]));
+        }
+    }
+
+    mod benefactive {
+        use super::yields;
+
+        #[test]
+        fn undoes_tageru() {
+            assert!(yields("送ったげる", "送る", "v5", &["benefactive"]));
+        }
+
+        #[test]
+        fn undoes_taru() {
+            assert!(yields("書いたる", "書く", "v5", &["benefactive"]));
+        }
+
+        #[test]
+        fn undoes_a_voiced_daru() {
+            assert!(yields("読んだる", "読む", "v5", &["benefactive"]));
+        }
+    }
+
+    mod honorific_progressive {
+        use super::yields;
+
+        #[test]
+        fn undoes_terassharu() {
+            assert!(yields(
+                "住んでらっしゃる",
+                "住む",
+                "v5",
+                &["honorific progressive"]
+            ));
+        }
+
+        #[test]
+        fn undoes_a_polite_terassharu() {
+            assert!(yields(
+                "参加してらっしゃいました",
+                "参加する",
+                "vs",
+                &["past", "polite", "honorific progressive"]
+            ));
         }
     }
 

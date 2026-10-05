@@ -214,6 +214,17 @@ const auxiliaries = [
     ],
   ],
   ["でく", "五段-カ行", [["読ん", "読む", "v5"]]],
+  ["たげる", "下一段-ガ行", [["送っ", "送る", "v5"]]],
+  ["たる", "五段-ラ行", [["書い", "書く", "v5"]]],
+  ["てらっしゃる", "五段-ラ行", [["書い", "書く", "v5"]]],
+  [
+    "はる",
+    "五段-ラ行",
+    [
+      ["行か", "行く", "v5"],
+      ["行き", "行く", "v5"],
+    ],
+  ],
   [
     "ちゃう",
     "五段-ワア行",
@@ -291,7 +302,7 @@ const NONSTANDARD_SPELLINGS = new Map([
  * Individual forms left out, as `written base form/written form`. UniDic lists them, but they are dialect forms
  * that the deinflector does not undo:
  * - forms of auxiliaries: ない's ね, ねへ, ねく, なし, な, なか and なから; ぬ's んく, はっ, やはっ, んきゃ, な and んかろう;
- *   classical ず's ざ; まい's めえ;
+ *   classical ず's ざ; まい's めえ; たげる's たげろう;
  *   たい's たか, たぐ, たあい, て, てい and た; ます's まへ, ま, まん, まっ, ましい, ませい, まあす, まする, まっす, まさ,
  *   ましょお, ましよう, まっしゃろ, まっしゃろう and まひょ; た's たあ and its hypothetical た; へん's へ and へんく, ひん's ひんく;
  * - forms of する and 来る: す, するう, しい, ち, い, しや and しょっ; きや, こえ, こや, これ, こう and きい;
@@ -313,6 +324,7 @@ const SKIPPED_SPELLINGS = new Set([
   "ぬ/んかろう",
   "ず/ざ",
   "まい/めえ",
+  "たげる/たげろう",
   "たい/たか",
   "たい/たぐ",
   "たい/たあい",
