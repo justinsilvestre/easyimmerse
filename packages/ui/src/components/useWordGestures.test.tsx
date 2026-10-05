@@ -16,7 +16,12 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-type Gesture = "click" | "doubleClick" | "hoverIntent" | "hold";
+type Gesture =
+  | "click"
+  | "clickStarted"
+  | "doubleClick"
+  | "hoverIntent"
+  | "hold";
 
 /** Renders a sentence whose word gestures are recorded as `gesture word`. */
 function renderSentence(options: Pick<WordGestures, "defersClick"> = {}) {
@@ -31,6 +36,7 @@ function renderSentence(options: Pick<WordGestures, "defersClick"> = {}) {
         onWordDoubleClick: record("doubleClick"),
         onWordHoverIntent: record("hoverIntent"),
         onWordHold: record("hold"),
+        onWordClickStarted: record("clickStarted"),
         ...options,
       }}
     />,
@@ -73,19 +79,62 @@ describe("useWordGestures", () => {
     expect(gestures).toEqual(["click rufe", "doubleClick rufe"]);
   });
 
+  it("reports a double-click whose second click comes 400 ms after the first", () => {
+    const gestures = renderSentence();
+    fireEvent.click(word("rufe"), { detail: 1 });
+    act(() => vi.advanceTimersByTime(400));
+    fireEvent.click(word("rufe"), { detail: 2 });
+    expect(gestures).toEqual(["click rufe", "doubleClick rufe"]);
+  });
+
+  it("reports a double-click for the word of the first click, when the second lands on another", () => {
+    const gestures = renderSentence();
+    fireEvent.click(word("rufe"), { detail: 1 });
+    fireEvent.click(word("an"), { detail: 2 });
+    expect(gestures).toEqual(["click rufe", "doubleClick rufe"]);
+  });
+
+  it("reports Shift+Enter on a word as a double-click", () => {
+    const gestures = renderSentence();
+    fireEvent.click(word("rufe"), { detail: 0, shiftKey: true });
+    expect(gestures).toEqual(["doubleClick rufe"]);
+  });
+
+  it("does not let an earlier held tap swallow a key press", () => {
+    const gestures = renderSentence();
+    fireEvent.pointerDown(word("an"), { pointerType: "touch" });
+    act(() => vi.advanceTimersByTime(600));
+    fireEvent.click(word("an"), { detail: 0 });
+    expect(gestures).toEqual(["hold an", "click an"]);
+  });
+
+  it("reports no hover intent for a word removed while the mouse rested on it", () => {
+    const gestures = renderSentence();
+    fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
+    word("rufe").remove();
+    act(() => vi.advanceTimersByTime(200));
+    expect(gestures).toEqual([]);
+  });
+
   describe("when clicks are deferred", () => {
+    it("reports at once that a click has begun", () => {
+      const gestures = renderSentence({ defersClick: true });
+      fireEvent.click(word("rufe"), { detail: 1 });
+      expect(gestures).toEqual(["clickStarted rufe"]);
+    });
+
     it("reports a lone click once the double-click interval has passed", () => {
       const gestures = renderSentence({ defersClick: true });
       fireEvent.click(word("rufe"), { detail: 1 });
-      act(() => vi.advanceTimersByTime(400));
-      expect(gestures).toEqual(["click rufe"]);
+      act(() => vi.advanceTimersByTime(500));
+      expect(gestures).toEqual(["clickStarted rufe", "click rufe"]);
     });
 
     it("reports only the double-click of a double-click", () => {
       const gestures = renderSentence({ defersClick: true });
       doubleClick(word("rufe"));
-      act(() => vi.advanceTimersByTime(400));
-      expect(gestures).toEqual(["doubleClick rufe"]);
+      act(() => vi.advanceTimersByTime(500));
+      expect(gestures).toEqual(["clickStarted rufe", "doubleClick rufe"]);
     });
   });
 

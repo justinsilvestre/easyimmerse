@@ -43,7 +43,7 @@ export function useSubtitleLookup(
   };
   const wordGestures: CueWordGestures = {
     onWordClick: (hit, cue) =>
-      lookup.clickWord(requestFor(hit, cue), hit.isKeyboard),
+      lookup.clickWord(requestFor(hit, cue), hit.input === "keyboard"),
     onWordHoverIntent: (hit, cue) => lookup.hoverWord(requestFor(hit, cue)),
     onWordDoubleClick: (hit, cue) =>
       lookup.startFlashcardFor(requestFor(hit, cue)),

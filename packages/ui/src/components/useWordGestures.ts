@@ -1,4 +1,14 @@
-import { type MouseEvent, type PointerEvent, useEffect, useRef } from "react";
+import {
+  type MouseEvent,
+  type PointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useTimer } from "../hooks/useTimer.ts";
+import { doubleClickMs, hoverIntentMs } from "./gestureTiming.ts";
+import { createPressTracker } from "./pressTracker.ts";
+import { rememberFirstClick, takeFirstClick } from "./wordClickMemory.ts";
 
 /** A word the user acted on, with the element that shows it, so that a pop-up can be placed at it. */
 export type WordHit = {
@@ -6,15 +16,17 @@ export type WordHit = {
   /** The word's offset in its text, in UTF-16 code units. */
   start: number;
   element: HTMLElement;
-  /** Whether the word was activated from the keyboard, so that no double-click can follow. */
-  isKeyboard: boolean;
+  input: "mouse" | "touch" | "keyboard";
 };
 
 /** What the user can do to a word, each reported once. */
 export type WordGestures = {
   /** A single click or tap, or Enter or Space on the focused word. */
   onWordClick?: (hit: WordHit) => void;
-  /** The second click of a double-click. Without this handler it counts as another click. */
+  /**
+   * The second click of a double-click, reported for the word of the first click; or Shift+Enter or Shift+Space on the focused word.
+   * Without this handler a double-click counts as another click.
+   */
   onWordDoubleClick?: (hit: WordHit) => void;
   /** A mouse pointer resting on the word for a moment. Passing over it reports nothing. */
   onWordHoverIntent?: (hit: WordHit) => void;
@@ -25,16 +37,9 @@ export type WordGestures = {
    * Use it where a click changes the text under the pointer, so that the second click of a double-click still lands on the word.
    */
   defersClick?: boolean;
+  /** A click that `defersClick` holds back, reported at once, so that work such as a lookup can begin. */
+  onWordClickStarted?: (hit: WordHit) => void;
 };
-
-export const hoverIntentMs = 150;
-export const holdMs = 500;
-/** About the double-click interval of common systems. */
-const doubleClickMs = 300;
-/** How far a touch may move before it counts as a scroll rather than a held tap. */
-const holdSlopPx = 10;
-
-type Timer = ReturnType<typeof setTimeout> | undefined;
 
 /**
  * Turns pointer, touch and keyboard events on words into the gestures of `WordGestures`.
@@ -43,91 +48,72 @@ type Timer = ReturnType<typeof setTimeout> | undefined;
 export function useWordGestures(gestures: WordGestures) {
   const latest = useRef(gestures);
   latest.current = gestures;
-  const timers = useRef({
-    hover: undefined as Timer,
-    hold: undefined as Timer,
-    click: undefined as Timer,
-  });
-  const touch = useRef({ x: 0, y: 0, isHeld: false, isTouch: false });
-  useEffect(() => {
-    const pending = timers.current;
-    return () => {
-      for (const timer of Object.values(pending)) clearTimeout(timer);
-    };
-  }, []);
-  const restart = (
-    name: keyof typeof timers.current,
-    ms: number,
-    callback: () => void,
-  ) => {
-    clearTimeout(timers.current[name]);
-    timers.current[name] = setTimeout(callback, ms);
+  const hoverTimer = useTimer();
+  const clickTimer = useTimer();
+  const [press] = useState(createPressTracker);
+  useEffect(() => press.cancelHold, [press]);
+  const reportClick = (event: MouseEvent<HTMLElement>, hit: WordHit) => {
+    const { onWordClick, onWordDoubleClick, defersClick } = latest.current;
+    if (hit.input === "keyboard")
+      return (
+        event.shiftKey && onWordDoubleClick ? onWordDoubleClick : onWordClick
+      )?.(hit);
+    if (event.detail >= 2) {
+      const first = event.detail === 2 ? takeFirstClick() : null;
+      first?.cancel();
+      return first?.onDoubleClick?.(first.hit);
+    }
+    rememberFirstClick({
+      hit,
+      onDoubleClick: onWordDoubleClick ?? onWordClick,
+      cancel: clickTimer.cancel,
+    });
+    if (!defersClick) return onWordClick?.(hit);
+    latest.current.onWordClickStarted?.(hit);
+    clickTimer.restart(doubleClickMs, () => latest.current.onWordClick?.(hit));
   };
-  const cancel = (name: keyof typeof timers.current) =>
-    clearTimeout(timers.current[name]);
   return (word: string, start: number) => {
-    const hitOf = (element: HTMLElement, isKeyboard = false): WordHit => ({
+    const hitOf = (element: HTMLElement, input: WordHit["input"]): WordHit => ({
       word,
       start,
       element,
-      isKeyboard,
+      input,
     });
     return {
       onPointerEnter: (event: PointerEvent<HTMLElement>) => {
         if (event.pointerType !== "mouse") return;
-        const hit = hitOf(event.currentTarget);
-        restart("hover", hoverIntentMs, () =>
-          latest.current.onWordHoverIntent?.(hit),
-        );
-      },
-      onPointerLeave: () => {
-        cancel("hover");
-        cancel("hold");
-      },
-      onPointerDown: (event: PointerEvent<HTMLElement>) => {
-        touch.current = {
-          x: event.clientX,
-          y: event.clientY,
-          isHeld: false,
-          isTouch: event.pointerType !== "mouse",
-        };
-        if (!touch.current.isTouch) return;
-        const hit = hitOf(event.currentTarget);
-        restart("hold", holdMs, () => {
-          touch.current.isHeld = true;
-          latest.current.onWordHold?.(hit);
+        const hit = hitOf(event.currentTarget, "mouse");
+        hoverTimer.restart(hoverIntentMs, () => {
+          if (hit.element.isConnected) latest.current.onWordHoverIntent?.(hit);
         });
       },
-      onPointerMove: (event: PointerEvent<HTMLElement>) => {
-        const distance = Math.hypot(
-          event.clientX - touch.current.x,
-          event.clientY - touch.current.y,
-        );
-        if (distance > holdSlopPx) cancel("hold");
+      onPointerLeave: () => {
+        hoverTimer.cancel();
+        press.cancelHold();
       },
-      onPointerUp: () => cancel("hold"),
-      onPointerCancel: () => cancel("hold"),
+      onPointerDown: (event: PointerEvent<HTMLElement>) => {
+        const hit = hitOf(event.currentTarget, "touch");
+        press.start(event, () => {
+          if (hit.element.isConnected) latest.current.onWordHold?.(hit);
+        });
+      },
+      onPointerMove: (event: PointerEvent<HTMLElement>) => press.move(event),
+      onPointerUp: press.cancelHold,
+      onPointerCancel: press.cancelHold,
       // A long press on a touch screen would otherwise open the browser's menu for the word.
       onContextMenu: (event: MouseEvent<HTMLElement>) => {
-        if (touch.current.isTouch) event.preventDefault();
+        if (press.isTouch()) event.preventDefault();
       },
       onClick: (event: MouseEvent<HTMLElement>) => {
-        if (touch.current.isHeld) {
-          touch.current.isHeld = false;
-          return;
-        }
-        const hit = hitOf(event.currentTarget, event.detail === 0);
-        const { onWordClick, onWordDoubleClick, defersClick } = latest.current;
-        if (event.detail === 2 && onWordDoubleClick) {
-          cancel("click");
-          onWordDoubleClick(hit);
-        } else if (event.detail > 2) {
-          return;
-        } else if (defersClick && event.detail > 0) {
-          restart("click", doubleClickMs, () => onWordClick?.(hit));
-        } else {
-          onWordClick?.(hit);
-        }
+        // A key press is never the end of a held tap, however a touch before it ended.
+        const isKeyboard = event.detail === 0;
+        if (!isKeyboard && press.takeHeld()) return;
+        const input = isKeyboard
+          ? "keyboard"
+          : press.isTouch()
+            ? "touch"
+            : "mouse";
+        reportClick(event, hitOf(event.currentTarget, input));
       },
     };
   };

@@ -53,11 +53,13 @@ export function ClickableText({
           <button
             key={part.start}
             type="button"
+            aria-haspopup="dialog"
             {...{ [lookupTriggerAttribute]: "" }}
             {...handlersFor(part.text, part.start)}
             className={clsx(
-              // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu.
-              "rounded-sm px-px decoration-dotted underline-offset-4 hover:bg-accent-soft hover:underline focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
+              // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu,
+              // and a double tap must not zoom the page.
+              "touch-manipulation rounded-sm px-px decoration-dotted underline-offset-4 hover:bg-accent-soft hover:underline focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
               part.text === activeWord && "bg-accent-soft text-accent-fg",
             )}
           >
