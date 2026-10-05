@@ -24,6 +24,7 @@ function renderProject(onEditSettings: () => void = () => undefined) {
   const client = createFakeBackendClient(
     {
       ...fixtureResponses,
+      "GET /dictionaries": { dictionaries: [] },
       "POST /projects/p1/media": fixtureMediaFiles.media_files[0],
       "DELETE /projects/p1/media/m2": undefined,
     },
@@ -50,6 +51,13 @@ describe("ProjectScreen", () => {
   it("shows the project's name", async () => {
     renderProject();
     expect(await screen.findByRole("heading", { name: "Alpha" })).toBeDefined();
+  });
+
+  it("offers to set up dictionaries when none covers the project's languages", async () => {
+    renderProject();
+    expect(
+      await screen.findByRole("button", { name: "Set up dictionaries" }),
+    ).toBeDefined();
   });
 
   it("records that the project was opened", async () => {
