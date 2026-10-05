@@ -53,6 +53,7 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
         matches_exactly: matches_exactly(group),
         inflection_count: group.candidate.inflection_count(),
         undoes_only_a_bare_stem: group.candidate.undoes_only_a_bare_stem(),
+        is_fallback: group.candidate.is_fallback(),
         commonness: commonness(term_meta),
         first_dictionary_rank: entries
             .clone()

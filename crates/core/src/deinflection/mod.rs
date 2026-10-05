@@ -1,5 +1,6 @@
 //! Undoing inflection, to find the dictionary forms that an inflected word may have come from.
 
+pub mod german;
 mod japanese;
 
 use serde::{Deserialize, Serialize};
@@ -36,8 +37,21 @@ impl Deinflection {
 pub fn deinflect(language: &str, text: &str) -> Vec<Deinflection> {
     match primary_subtag(language).as_str() {
         "ja" => japanese::deinflect(text),
+        "de" => german::deinflect(text),
         _ => vec![Deinflection::unchanged(text)],
     }
+}
+
+/// Whether lookup should rank `deinflection` below other readings that match as much text through as many inflections,
+/// because the rule behind it fits almost any word. Only German produces such readings: the imperative singular.
+pub fn is_fallback(deinflection: &Deinflection) -> bool {
+    german::is_fallback(deinflection)
+}
+
+/// Whether dictionaries leave entries of `word_class` without any word class, as German Yomitan dictionaries do
+/// for adverbs and determiners. A deinflected candidate of such a class may then match an entry without classes.
+pub fn is_unmarked_word_class(word_class: &str) -> bool {
+    matches!(word_class, "adv" | "det")
 }
 
 fn primary_subtag(language: &str) -> String {
@@ -62,6 +76,23 @@ mod tests {
         assert_eq!(
             deinflect("ja", "食べた")[0],
             Deinflection::unchanged("食べた")
+        );
+    }
+
+    #[test]
+    fn deinflect_puts_the_unchanged_text_first_for_german() {
+        assert_eq!(
+            deinflect("de", "Häusern")[0],
+            Deinflection::unchanged("Häusern")
+        );
+    }
+
+    #[test]
+    fn deinflect_uses_the_german_rules_for_a_regional_tag() {
+        assert!(
+            deinflect("de-CH", "ging")
+                .iter()
+                .any(|candidate| candidate.term == "gehen")
         );
     }
 

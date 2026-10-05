@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use super::word_boundary::is_word_boundary;
-use crate::deinflection::{Deinflection, deinflect};
+use crate::deinflection::{Deinflection, deinflect, is_fallback};
 
 /// The most characters of the looked-up text that lookup considers.
 const MAX_MATCHED_CHARACTERS: usize = 20;
@@ -39,13 +39,19 @@ impl LookupCandidate {
         )
     }
 
+    /// Whether the candidate comes from a rule that fits almost any word, and so ranks below its equals.
+    pub fn is_fallback(&self) -> bool {
+        is_fallback(&self.deinflection)
+    }
+
     /// Orders candidates from the most to the least preferred:
-    /// longer matched text first, then fewer inflections.
+    /// longer matched text first, then fewer inflections, then candidates that are not fallbacks.
     pub fn preference(&self, other: &Self) -> Ordering {
         other
             .matched_length()
             .cmp(&self.matched_length())
             .then_with(|| self.inflection_count().cmp(&other.inflection_count()))
+            .then_with(|| self.is_fallback().cmp(&other.is_fallback()))
     }
 }
 
@@ -173,6 +179,13 @@ mod tests {
     fn prefers_a_longer_match() {
         let ordering = candidate("abc", &["past"]).preference(&candidate("ab", &[]));
         assert_eq!(ordering, Ordering::Less);
+    }
+
+    #[test]
+    fn prefers_a_reading_that_is_not_a_fallback() {
+        let ordering =
+            candidate("ab", &["imperative sg"]).preference(&candidate("ab", &["plural"]));
+        assert_eq!(ordering, Ordering::Greater);
     }
 
     #[test]
