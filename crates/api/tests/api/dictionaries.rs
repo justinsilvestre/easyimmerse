@@ -256,3 +256,81 @@ async fn the_media_route_allows_requests_from_other_origins() {
         .await;
     assert_eq!(response.header("access-control-allow-origin"), Some("*"));
 }
+
+const GERMAN_TABLE: &[u8] = "Wort;Bedeutung\nHund;dog\nKatze;cat\n".as_bytes();
+
+async fn import_table(server: &TestServer, query: &str) -> TestResponse {
+    server
+        .post_bytes(
+            &format!("/dictionaries?fileName=words.csv{query}"),
+            "application/octet-stream",
+            GERMAN_TABLE.to_vec(),
+        )
+        .await
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn previewing_a_table_returns_its_detected_columns() {
+    let server = spawn_test_server(false).await;
+    let response = server
+        .post_bytes(
+            "/dictionaries/preview?fileName=words.csv",
+            "application/octet-stream",
+            GERMAN_TABLE.to_vec(),
+        )
+        .await;
+    assert_eq!(
+        response.json()["layout"],
+        json!({ "columns": ["term", "definition"], "hasHeader": false })
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn previewing_something_that_is_not_a_table_is_a_bad_request() {
+    let server = spawn_test_server(false).await;
+    let response = server
+        .post_bytes(
+            "/dictionaries/preview?fileName=notes.ifo",
+            "application/octet-stream",
+            b"nope".to_vec(),
+        )
+        .await;
+    assert_eq!(response.status, 400);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn importing_a_table_with_chosen_columns_skips_the_header_the_user_marks() {
+    let server = spawn_test_server(false).await;
+    let response = import_table(&server, "&columns=term,definition&hasHeader=true").await;
+    assert_eq!(response.json()["entry_count"], 2);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn importing_a_table_with_an_unknown_column_role_is_a_bad_request() {
+    let server = spawn_test_server(false).await;
+    let response = import_table(&server, "&columns=term,meaning").await;
+    assert_eq!(response.status, 400);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn looking_up_a_verb_in_context_finds_its_separated_particle_verb() {
+    let server = spawn_test_server(false).await;
+    server
+        .post_bytes(
+            "/dictionaries?fileName=verbs.csv",
+            "application/octet-stream",
+            b"anrufen,to call\nrufen,to shout\n".to_vec(),
+        )
+        .await;
+    let context = "Ich rufe dich an.";
+    let query = format!(
+        "text={}&language=de&context={}&offset=4",
+        percent_encode("rufe dich an."),
+        percent_encode(context)
+    );
+    let response = server
+        .get(&format!("/dictionaries/lookup?{query}"))
+        .await
+        .json();
+    assert_eq!(response["results"][0]["term"], "anrufen");
+}

@@ -40,6 +40,12 @@ function perform(wasm: OfflineWasm, operation: OfflineOperation): unknown {
     case "parseDocument":
       return wasm.parseDocument(operation.bytes, operation.format);
     case "parseDictionary":
-      return wasm.parseDictionary(operation.fileName, operation.bytes);
+      return wasm.parseDictionary(
+        operation.fileName,
+        operation.bytes,
+        operation.tableLayout,
+      );
+    case "previewDictionaryTable":
+      return wasm.previewDictionaryTable(operation.fileName, operation.bytes);
   }
 }

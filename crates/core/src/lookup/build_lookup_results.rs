@@ -42,6 +42,7 @@ fn rank_group(
         definitions: group.entries.into_iter().map(definitions).collect(),
         frequencies: frequencies(&applicable),
         pronunciations: pronunciations(&applicable),
+        separated_verb: group.candidate.separated_verb.clone(),
     };
     (sort_key, result)
 }
@@ -49,6 +50,7 @@ fn rank_group(
 fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey {
     let entries = group.entries.iter();
     ResultSortKey {
+        is_separated_verb: group.candidate.separated_verb.is_some(),
         matched_length: group.candidate.matched_length(),
         matches_exactly: matches_exactly(group),
         inflection_count: group.candidate.inflection_count(),
@@ -160,6 +162,7 @@ mod tests {
                 inflections: vec!["past".to_string()],
             },
             is_bare_form: false,
+            separated_verb: None,
         }
     }
 

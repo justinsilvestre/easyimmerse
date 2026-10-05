@@ -12,6 +12,7 @@ const meta = {
   args: {
     dictionaries: exampleDictionaries,
     unsupportedFile: null,
+    pendingTable: null,
     onBack: fn(),
     onAddFromRegistry: fn(),
     onAddFromFile: fn(),
@@ -19,6 +20,8 @@ const meta = {
     onMove: fn(),
     onRemove: fn(),
     onDismissUnsupportedFile: fn(),
+    onImportTable: fn(),
+    onCancelTable: fn(),
   },
 } satisfies Meta<typeof DictionariesView>;
 
@@ -31,4 +34,23 @@ export const Empty: Story = { args: { dictionaries: [] } };
 
 export const UnsupportedFile: Story = {
   args: { unsupportedFile: "duden.lsd" },
+};
+
+export const AddingTable: Story = {
+  args: {
+    pendingTable: {
+      fileName: "animals.csv",
+      preview: {
+        layout: {
+          columns: ["term", "reading", "definition"],
+          hasHeader: false,
+        },
+        rows: [
+          ["猫", "ねこ", "cat"],
+          ["犬", "いぬ", "dog"],
+          ["鳥", "とり", "bird"],
+        ],
+      },
+    },
+  },
 };

@@ -3,6 +3,7 @@ use std::io::{Cursor, Read};
 use zip::ZipArchive;
 
 use super::archive::unpack_archive;
+use super::csv::TableLayout;
 use super::error::DictionaryError;
 
 /// The files of a dictionary as the user supplied them.
@@ -16,6 +17,7 @@ pub struct DictionarySource {
     loose_files: Vec<SourceFile>,
     zip_archives: Vec<ZipArchive<Cursor<Vec<u8>>>>,
     names: Vec<(String, Location)>,
+    table_layout: Option<TableLayout>,
 }
 
 /// A file supplied by the user, named as it was on their disk or within an archive.
@@ -38,6 +40,7 @@ impl DictionarySource {
             loose_files: Vec::new(),
             zip_archives: Vec::new(),
             names: Vec::new(),
+            table_layout: None,
         };
         for file in files {
             source.add(file)?;
@@ -50,6 +53,17 @@ impl DictionarySource {
             name: name.into(),
             bytes,
         }])
+    }
+
+    /// Sets what each column of a table holds, in place of the detected layout.
+    /// Formats other than tables ignore it.
+    pub fn with_table_layout(mut self, layout: Option<TableLayout>) -> Self {
+        self.table_layout = layout;
+        self
+    }
+
+    pub fn table_layout(&self) -> Option<&TableLayout> {
+        self.table_layout.as_ref()
     }
 
     fn add(&mut self, file: SourceFile) -> Result<(), DictionaryError> {

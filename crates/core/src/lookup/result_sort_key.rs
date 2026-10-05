@@ -7,6 +7,8 @@ use crate::dictionary::FrequencyMode;
 /// What lookup results are ranked by.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ResultSortKey {
+    /// Whether the result is a particle verb whose finite verb and particle stand apart in the context.
+    pub is_separated_verb: bool,
     pub matched_length: usize,
     /// Whether an entry in the result has the searched form as its term, reading or an alternate, without folding its case.
     /// The searched form is the dictionary form that deinflection reached, or the matched text when nothing was undone.
@@ -24,7 +26,8 @@ pub struct ResultSortKey {
 }
 
 impl ResultSortKey {
-    /// Orders keys from the best result to the worst. Among matches of the same length:
+    /// Orders keys from the best result to the worst. A particle verb whose parts stand apart ranks first,
+    /// ahead of the verb and the particle read alone. Then longer matches rank first, and among matches of the same length:
     ///
     /// 1. A result spelled exactly as the searched form ranks above one found only by folding case,
     ///    as Maße does before Masse when Maße is looked up.
@@ -37,8 +40,9 @@ impl ResultSortKey {
     /// 6. Then a result that a frequency dictionary lists, then earlier imported dictionaries, then higher scores.
     pub fn compare(&self, other: &Self) -> Ordering {
         other
-            .matched_length
-            .cmp(&self.matched_length)
+            .is_separated_verb
+            .cmp(&self.is_separated_verb)
+            .then_with(|| other.matched_length.cmp(&self.matched_length))
             .then_with(|| other.matches_exactly.cmp(&self.matches_exactly))
             .then_with(|| {
                 self.is_one_character_stem()
@@ -228,6 +232,15 @@ mod tests {
                 key(3, 2, Some(900.0)).compare(&key(2, 0, Some(1.0))),
                 Ordering::Less
             );
+        }
+
+        #[test]
+        fn ranks_a_separated_particle_verb_before_a_longer_match() {
+            let separated = ResultSortKey {
+                is_separated_verb: true,
+                ..key(2, 1, None)
+            };
+            assert_eq!(separated.compare(&key(3, 0, None)), Ordering::Less);
         }
 
         fn bare_stem(matched_length: usize, frequency: Option<f64>) -> ResultSortKey {

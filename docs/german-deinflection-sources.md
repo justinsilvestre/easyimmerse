@@ -8,7 +8,7 @@ No GPL or LGPL code was read or used: not DWDSmor, SMOR, Zmorge, Yomitan or any 
 
 The deinflector undoes inflection in the sense of Schäfer (2018), Def. 7.10, pp. 210–211: conjugation, declension and comparison. It does not undo word formation (derivation, conversion, compounds) or analytic forms (hat gelesen, wird gelesen), which are separate words.
 
-- **Verbs:** the present, past, subjunctive I and II, and imperative, by person and number; the past participle; the zu-infinitive of particle verbs (anzurufen); and, by the user's choice, the present participle (lesend → lesen), which both sources treat as an adjective formed from the verb. Particle verbs written as one word lead to the particle verb (angerufen, anrief → anrufen). Separated particles (rief … an) are left to lookup.
+- **Verbs:** the present, past, subjunctive I and II, and imperative, by person and number; the past participle; the zu-infinitive of particle verbs (anzurufen); and, by the user's choice, the present participle (lesend → lesen), which both sources treat as an adjective formed from the verb. Particle verbs written as one word lead to the particle verb (angerufen, anrief → anrufen). Separated particles (rief … an) are left to lookup; see [Separated particles](#separated-particles).
 - **Nouns:** the genitive and dative singular, the plural, the dative plural, and the ending of weak nouns. Rules work at the end of the word, so they also inflect the last part of a compound (Kinderbüchern → Kinderbuch).
 - **Adjectives:** declension, comparison, and chains of both (schnellsten → schnell). Declined participles go back to the verb (gelesenen → lesen).
 - **Adverbs:** the comparison of gern and oft (lieber, am liebsten → gern).
@@ -128,7 +128,7 @@ Both spelling variants apply to every German tag.
 
 ## Deliberate exclusions
 
-- **Separated particles** (rief … an) are left to lookup.
+- **Separated particles** (rief … an) are left to lookup, which finds them in the sentence around the looked-up word ([Separated particles](#separated-particles)).
 - **Unlisted first parts:** first parts that none of the four lists names are not split off. Weak forms of such verbs still deinflect when the change is at the end of the word.
 - **Word formation:** derivation, conversion and compounds. Lexicalized nominalizations are left to the dictionary.
 - **Personal pronouns** (mir → ich) and the definite article (dem → der).
@@ -137,7 +137,42 @@ Both spelling variants apply to every German tag.
 - **Capitals throughout** (HÄUSER, STRASSE) are not lowercased; case-insensitive matching is left to lookup and storage.
 - **Lowercase nouns:** noun rules require a capital, so all-lowercase text (häusern) is not traced back to a noun.
 
-## Oracles
+## Separated particles
+
+In a verb-first or verb-second clause the finite verb stands in the left sentence bracket and its particle in the right one, at the end of the clause (grammis, „Satzklammer", https://grammis.ids-mannheim.de/sgt/2269; Gallmann 2015, „Das topologische Modell", § 3.3, p. 16). Lookup uses this to find the particle verb when the user clicks either part, as rufe or an in „Ich rufe dich morgen an" (`crates/core/src/lookup/separated_particles.rs`). It needs no part-of-speech tagger: clause boundaries, capitalization and the user's dictionaries stand in for one. Before it was built, the method was evaluated on the test set of UD German-HDT, with the treebank's lemmas in place of deinflection: clicks on verbs scored a precision of 0.95 and a recall of 0.93, clicks on particles 0.94 and 0.93. The treebank was used for that evaluation only and is not in the repository.
+
+The client sends the text around the click (a subtitle cue or paragraph) and the click's offset in it, counted in characters. Lookup then works as follows:
+
+1. **Sentence.** The context is split naively at `. ! ? ; :`, and only the sentence of the click is kept. Quotation marks and other punctuation are ignored; commas are kept.
+2. **Finite verbs.** A word can be the verb when it is lowercase, or the first word of the sentence, because German capitalizes nouns (RW § 55, p. 83), and when deinflection reads it as a finite verb (`is_finite_verb`). The bare-stem imperative fits almost any word, so it counts only for the first word, where imperatives stand (Gallmann 2015, § 2.2, pp. 4–5). Readings of sein are dropped, because combinations with sein are written apart (RW § 35, p. 59).
+3. **Clause.** From the verb, the clause runs rightwards to the end of the sentence, and stops at a subjunction. A comma that opens an embedded clause (followed by a subjunction, an interrogative, a relative pronoun, or a preposition and a relative pronoun) is skipped together with the embedded clause, up to its closing comma; Volk et al. (2016), p. 299, name such nested clauses as the main error of reattachment. Another comma, or a coordinator, is crossed only when no finite verb follows before the next comma, coordinator or subjunction. A verb directly before a comma, coordinator or the end of the sentence is clause-final and has no separated particle.
+4. **Particle slots.** A lowercase word in the clause can be the particle when it stands directly before the end of the sentence, a comma, a coordinator, or als or wie, which may follow the right bracket (grammis, „Nachfeld", https://grammis.ids-mannheim.de/vggf/2288). Prefixes that never separate (GfdS, „Trennbare und nicht trennbare Verben") and the particles of bi-particle adverbs such as ab und zu and nach wie vor (Volk et al. 2016, Table 1, p. 301) are excluded.
+5. **Topicalized particle.** A click on the first word of the sentence also pairs it with a finite verb directly after it, as in „Hinzu kommt ein weiteres Problem". A particle with some meaning of its own can stand before the finite verb (RW § 34 E3; Gallmann 2015, § 3.6.2, p. 24), and Volk et al. (2016), p. 299, count 33 such cases in the TIGER treebank.
+6. **The dictionary decides.** Each pair yields the candidate particle + lemma (anrufen) with the verb's inflection. It matches only an entry that has that lowercase spelling as a headword, and, where the format has word classes, is a verb. No particle list filters the pairs, because adjectives and nouns are first parts too (festhalten, stattfinden), and the dictionaries decide.
+7. **Ranking and positions.** A particle verb ranks first, ahead of the verb and the particle read alone, which stay as later results. The result reports the verb and the particle with their offsets in the context, so that the display can highlight both.
+
+The word lists are short, closed and written for this code, each with its sources in a doc comment (`crates/core/src/lookup/german_clause_words.rs`):
+
+| List | Words | Sources |
+|---|---|---|
+| Coordinators | und, oder, aber, sondern, sowie | grammis, Systematische Grammatik 1281; STTS KON |
+| Subjunctions | dass, weil, ob, wenn, obwohl, falls, sobald, solange, seitdem, indem, ehe | STTS KOUS; grammis, Systematische Grammatik 1202 |
+| Relative pronouns | der, die, das, den, dem, dessen, derer, denen; welch- with its endings | grammis, Terminologie 1890; grammis, Kontrastive Grammatik 3673 |
+| Interrogatives | wer, wen, wem, wessen, was, warum, wo, wann, wie, worüber, wobei, wofür, womit, worin | STTS PWS, PWAT, PWAV; grammis, Kontrastive Grammatik 3849 |
+| Prepositions before a relative pronoun | the particles spelled like prepositions, and ohne | RW § 34 (1.1), p. 57; STTS APPR |
+| Comparison particles | als, wie | STTS KOKOM; grammis, „Nachfeld" |
+| Prefixes that never separate | be, emp, ent, er, ge, miss, ver, zer | GfdS |
+| Bi-particle adverbs | ab und an, ab und zu, auf und ab, auf und davon, durch und durch, hin und wieder, nach und nach, nach wie vor, aus und vorbei, über und über | Volk et al. 2016, Table 1 and text, p. 301 |
+
+Further sources: STTS tag table, IMS Stuttgart (https://www.ims.uni-stuttgart.de/forschung/ressourcen/lexika/germantagsets/); M. Volk, S. Clematide, J. Graën, P. Ströbel, „Bi-particle Adverbs, PoS-Tagging and the Recognition of German Separable Prefix Verbs", KONVENS 2016, pp. 297–305; P. Gallmann, „Das topologische Modell: Basisartikel", 2015; Gesellschaft für deutsche Sprache, https://gfds.de/trennbare-und-nicht-trennbare-verben/.
+
+Not handled, as the tests record:
+
+- **Coordinated particles** (Er nimmt zu statt ab): only the last particle is found (Volk et al. 2016, p. 299).
+- **Extraposition** (Fang endlich an mit der Arbeit!): a particle before a phrase in the Nachfeld is not sought, because allowing it cost more precision than it gained in the evaluation.
+- **Circumpositions** (Er arbeitet von heute an): a dictionary that lists anarbeiten makes it the first result.
+- **Sentences split across subtitle cues:** the client must join the cues of one sentence into the context.
+
 
 - **Wikidata** (`german/fixtures/wikidata-cases.json`, generated by `german/fixtures/generate-wikidata-cases.cjs` from the CC0 dump of 2026-09-30): lexemes drawn with a fixed seed from groups that cover the rule groups (strong and weak verbs with and without a particle or prefix, verbs in -eln, -ern and -ieren, nouns by plural ending, adjectives), with every single-word form except the dictionary form. The fixture holds 3,130 forms of 928 lexemes. The test asserts that each form yields its dictionary form with its class, except for the forms of a listed set of lexemes: errors in Wikidata, other spellings of the lemma, and forms outside the scope above. 3,054 forms pass (97.6 %); the largest group of the 76 that fail is the plural Bauten of 35 compounds of Bau.
 - **Hand-written adjectives** (`german/adjective_cases.rs`): our own examples of declension and comparison, following S18 Tab. 9.12 and 9.13 and the lexicon's sources, because Wikidata lists few adjective forms.

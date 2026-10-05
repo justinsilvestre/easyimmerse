@@ -167,7 +167,37 @@ describe("backendApi", () => {
       kind: "parseDictionary",
       fileName: "words.csv",
       bytes,
+      tableLayout: null,
     });
+  });
+
+  it("puts a chosen table layout in the query string for importDictionary", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.importDictionary.initiate({
+        fileName: "words.csv",
+        bytes: new Uint8Array(),
+        tableLayout: { columns: ["term", "ignored"], hasHeader: true },
+      }),
+    );
+    expect(client.requests[0]?.query).toEqual({
+      fileName: "words.csv",
+      columns: "term,ignored",
+      hasHeader: "true",
+    });
+  });
+
+  it("sends POST /dictionaries/preview for previewDictionaryTable", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.previewDictionaryTable.initiate({
+        fileName: "words.csv",
+        bytes: new Uint8Array(),
+      }),
+    );
+    expect(client.requests[0]?.path).toBe("/dictionaries/preview");
   });
 
   it("sends DELETE /dictionaries/{id} for deleteDictionary", async () => {
@@ -197,6 +227,25 @@ describe("backendApi", () => {
         query: { text: "猫が", language: "ja" },
       },
     ]);
+  });
+
+  it("puts the context and offset in the query string for lookupText", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.lookupText.initiate({
+        text: "rufe dich an.",
+        language: "de",
+        context: "Ich rufe dich an.",
+        offset: 4,
+      }),
+    );
+    expect(client.requests[0]?.query).toEqual({
+      text: "rufe dich an.",
+      language: "de",
+      context: "Ich rufe dich an.",
+      offset: "4",
+    });
   });
 
   it("returns the dictionaries' stylesheets with the lookup results", async () => {

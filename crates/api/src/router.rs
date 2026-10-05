@@ -94,6 +94,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             dictionaries::list_dictionaries
         ))
         .routes(routes!(dictionaries::import_local_dictionary))
+        .routes(routes!(dictionaries::preview_dictionary_table))
         .routes(routes!(dictionaries::delete_dictionary))
         .routes(routes!(dictionary_lookup::lookup_text))
         .routes(routes!(dictionary_media::get_dictionary_media))

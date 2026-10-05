@@ -12,11 +12,13 @@ mod layout;
 mod records;
 mod table;
 mod table_file;
+mod table_layout;
 
 #[cfg(test)]
 mod fixture_tests;
 
 pub use error::CsvError;
+pub use table_layout::{ColumnRole, TableLayout, TablePreview};
 
 use std::collections::HashSet;
 
@@ -55,13 +57,23 @@ impl DictionaryFormat for CsvFormat {
             .ok_or(CsvError::NoTableFile)?
             .to_string();
         let text = decode_text(source.read(&name)?);
-        let table = Table::parse(&name, &text)?;
+        let table = Table::parse(&name, &text, source.table_layout())?;
         sink.begin(table.metadata(&name))?;
         match table.layout.kind {
             TableKind::Terms => import_terms(&table, sink),
             TableKind::Frequency => import_frequencies(&table, sink),
         }
     }
+}
+
+/// Detects the layout of the one table in a file, which may be an archive, and returns it with the table's first rows.
+pub fn preview_table(file_name: &str, bytes: Vec<u8>) -> Result<TablePreview, DictionaryError> {
+    let mut source = DictionarySource::single(file_name, bytes)?;
+    let name = table_file_name(&source)
+        .ok_or(CsvError::NoTableFile)?
+        .to_string();
+    let text = decode_text(source.read(&name)?);
+    Ok(Table::read(&name, &text, None)?.preview()?)
 }
 
 /// Sends the entries once the whole table is read, because rows of one entry may lie apart.
@@ -100,6 +112,7 @@ fn import_frequencies(table: &Table, sink: &mut dyn DictionarySink) -> Result<()
 mod tests {
     use super::super::term_meta::{Frequency, TermMeta, TermMetaData};
     use super::super::{Dictionary, DictionarySource, FrequencyMode, parse_dictionary};
+    use super::{ColumnRole, TableLayout, preview_table};
 
     fn parse(text: &str) -> Dictionary {
         let mut source = DictionarySource::single("words.csv", text.as_bytes().to_vec()).unwrap();
@@ -118,6 +131,97 @@ mod tests {
                 display: None,
             }),
         }
+    }
+
+    const GERMAN_WITH_HEADER: &str = "Wort;Bedeutung\nHund;dog\nKatze;cat\n";
+
+    fn parse_with_layout(text: &str, layout: TableLayout) -> Dictionary {
+        let source = DictionarySource::single("words.csv", text.as_bytes().to_vec()).unwrap();
+        parse_dictionary(&mut source.with_table_layout(Some(layout))).unwrap()
+    }
+
+    fn layout(columns: &[ColumnRole], has_header: bool) -> TableLayout {
+        TableLayout {
+            columns: columns.to_vec(),
+            has_header,
+        }
+    }
+
+    #[test]
+    fn previews_the_detected_roles_of_a_headerless_table() {
+        let preview = preview_table("words.csv", "猫,ねこ,cat\n犬,いぬ,dog\n".into()).unwrap();
+        assert_eq!(
+            preview.layout,
+            layout(
+                &[
+                    ColumnRole::Term,
+                    ColumnRole::Reading,
+                    ColumnRole::Definition
+                ],
+                false
+            )
+        );
+    }
+
+    #[test]
+    fn previews_a_detected_header() {
+        let preview = preview_table("words.csv", "word,meaning\ncat,a pet\n".into()).unwrap();
+        assert!(preview.layout.has_header);
+    }
+
+    #[test]
+    fn previews_the_rows_split_into_cells() {
+        let preview = preview_table("words.csv", GERMAN_WITH_HEADER.into()).unwrap();
+        assert_eq!(preview.rows[1], ["Hund", "dog"]);
+    }
+
+    #[test]
+    fn previews_a_table_without_a_term_column() {
+        let text = "#columns:meaning,notes\na pet,furry\n";
+        let preview = preview_table("words.csv", text.into()).unwrap();
+        assert_eq!(
+            preview.layout.columns,
+            [ColumnRole::Definition, ColumnRole::Definition]
+        );
+    }
+
+    #[test]
+    fn rejects_a_preview_of_a_file_that_is_not_a_table() {
+        assert!(preview_table("words.ifo", b"a,b".to_vec()).is_err());
+    }
+
+    #[test]
+    fn skips_the_header_row_the_user_marks() {
+        let layout = layout(&[ColumnRole::Term, ColumnRole::Definition], true);
+        assert_eq!(
+            parse_with_layout(GERMAN_WITH_HEADER, layout).entries[0].term,
+            "Hund"
+        );
+    }
+
+    #[test]
+    fn takes_the_term_from_the_column_the_user_chooses() {
+        let layout = layout(&[ColumnRole::Definition, ColumnRole::Term], false);
+        assert_eq!(
+            parse_with_layout("cat,a pet\n", layout).entries[0].term,
+            "a pet"
+        );
+    }
+
+    #[test]
+    fn leaves_out_a_column_the_user_ignores() {
+        let layout = layout(
+            &[
+                ColumnRole::Term,
+                ColumnRole::Ignored,
+                ColumnRole::Definition,
+            ],
+            false,
+        );
+        assert_eq!(
+            parse_with_layout("猫,ねこ,cat\n", layout).entries[0].reading,
+            None
+        );
     }
 
     #[test]

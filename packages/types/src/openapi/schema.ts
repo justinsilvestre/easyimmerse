@@ -133,6 +133,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dictionaries/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Detects what each column of a table holds and returns that layout with the table's first rows,
+         *     so that the user can check it before importing.
+         */
+        post: operations["previewDictionaryTable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dictionaries/{id}": {
         parameters: {
             query?: never;
@@ -470,6 +490,11 @@ export interface components {
             paragraphs: string[];
             title?: string | null;
         };
+        /**
+         * @description What a column of a table holds, as a person choosing the columns of a table sees it.
+         * @enum {string}
+         */
+        ColumnRole: "term" | "reading" | "definition" | "alternates" | "tags" | "frequency" | "ignored";
         /** @enum {string} */
         ContainerFormat: "mp4" | "matroska" | "mp3" | "ogg" | "wav" | "flac" | "adts" | "mpeg_ts" | "avi";
         ContainerInfo: {
@@ -484,6 +509,12 @@ export interface components {
             /** Format: int64 */
             start_ms?: number | null;
             tracks: components["schemas"]["TrackInfo"][];
+        };
+        /** @description A word as written in the context of a lookup. */
+        ContextWord: {
+            /** @description The position of the word's first character in the context, counted in characters (Unicode scalar values). */
+            start: number;
+            text: string;
         };
         /** @description Sizes are in bytes. */
         ConversionCacheStatus: {
@@ -680,6 +711,7 @@ export interface components {
             matchedText: string;
             pronunciations: components["schemas"]["DictionaryPronunciation"][];
             reading?: string | null;
+            separatedVerb?: components["schemas"]["SeparatedVerb"] | null;
             term: string;
         };
         /** @enum {string} */
@@ -802,8 +834,24 @@ export interface components {
             /** Format: int64 */
             num: number;
         };
+        /** @description A particle verb whose finite verb and particle stand apart, as rufe and an in „Ich rufe dich morgen an". */
+        SeparatedVerb: {
+            particle: components["schemas"]["ContextWord"];
+            verb: components["schemas"]["ContextWord"];
+        };
         SubtitleTracksResponse: {
             tracks: components["schemas"]["TrackInfo"][];
+        };
+        /** @description What each column of a table holds, and whether its first row is a header. */
+        TableLayout: {
+            columns: components["schemas"]["ColumnRole"][];
+            hasHeader: boolean;
+        };
+        /** @description The layout detected in a table, with its first rows, for a person to check before importing. */
+        TablePreview: {
+            layout: components["schemas"]["TableLayout"];
+            /** @description The first rows of the table, including any header row, split into cells. */
+            rows: string[][];
         };
         /** @description The meaning of a tag that a dictionary attaches to its entries. */
         TagDefinition: {
@@ -1326,6 +1374,10 @@ export interface operations {
             query: {
                 /** @description The name of the uploaded file, whose extension tells formats such as MDict and CSV apart. */
                 fileName: string;
+                /** @description What each column of a table holds, as column roles separated by commas, in place of the detected layout. */
+                columns?: string;
+                /** @description Whether the first row of a table is a header. Read only together with `columns`; false when left out. */
+                hasHeader?: boolean;
             };
             header?: never;
             path?: never;
@@ -1452,6 +1504,13 @@ export interface operations {
                 text: string;
                 /** @description The language of the text, as a BCP 47 tag, which decides how inflections are undone. */
                 language: string;
+                /**
+                 * @description The text around the looked-up character, such as its subtitle cue or paragraph.
+                 *     In German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an".
+                 */
+                context?: string;
+                /** @description The position of the looked-up character in `context`, counted in characters (Unicode scalar values). */
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -1466,6 +1525,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LookupResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    previewDictionaryTable: {
+        parameters: {
+            query: {
+                /** @description The name of the uploaded file, whose extension marks it as a CSV, TSV or Tabfile table. */
+                fileName: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A CSV, TSV or Tabfile table, or an archive holding one */
+        requestBody?: {
+            content: {
+                "application/octet-stream": unknown;
+            };
+        };
+        responses: {
+            /** @description The detected layout and the first rows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TablePreview"];
+                };
+            };
+            /** @description The file could not be read as a table */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Missing or invalid token */

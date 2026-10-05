@@ -3,6 +3,8 @@ import type {
   Document,
   DocumentFormat,
   ParseTimedTextRequest,
+  TableLayout,
+  TablePreview,
   TimedTextTrack,
 } from "@easyimmerse/types";
 
@@ -10,12 +12,21 @@ import type {
 export type OfflineWasm = {
   parseTimedText(request: ParseTimedTextRequest): TimedTextTrack;
   parseDocument(bytes: Uint8Array, format: DocumentFormat | null): Document;
-  parseDictionary(fileName: string, bytes: Uint8Array): Dictionary;
+  /** Reads a dictionary file. A table layout replaces the detected layout of a CSV, TSV or Tabfile table. */
+  parseDictionary(
+    fileName: string,
+    bytes: Uint8Array,
+    tableLayout?: TableLayout | null,
+  ): Dictionary;
+  previewDictionaryTable(fileName: string, bytes: Uint8Array): TablePreview;
 };
 
 type WasmExports = Pick<
   typeof import("../pkg/easyimmerse_wasm.js"),
-  "parse_timed_text" | "parse_document" | "parse_dictionary"
+  | "parse_timed_text"
+  | "parse_document"
+  | "parse_dictionary"
+  | "preview_dictionary_table"
 >;
 
 /** Wraps the raw JSON-string exports of an initialized module with typed functions. */
@@ -25,7 +36,11 @@ export function createOfflineWasm(module: WasmExports): OfflineWasm {
       JSON.parse(module.parse_timed_text(JSON.stringify(request))),
     parseDocument: (bytes, format) =>
       JSON.parse(module.parse_document(bytes, JSON.stringify(format))),
-    parseDictionary: (fileName, bytes) =>
-      JSON.parse(module.parse_dictionary(fileName, bytes)),
+    parseDictionary: (fileName, bytes, tableLayout = null) =>
+      JSON.parse(
+        module.parse_dictionary(fileName, bytes, JSON.stringify(tableLayout)),
+      ),
+    previewDictionaryTable: (fileName, bytes) =>
+      JSON.parse(module.preview_dictionary_table(fileName, bytes)),
   };
 }

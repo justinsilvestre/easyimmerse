@@ -466,6 +466,24 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "columns",
+            "in": "query",
+            "description": "What each column of a table holds, as column roles separated by commas, in place of the detected layout.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasHeader",
+            "in": "query",
+            "description": "Whether the first row of a table is a header. Read only together with `columns`; false when left out.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "requestBody": {
@@ -632,6 +650,25 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "The text around the looked-up character, such as its subtitle cue or paragraph.\nIn German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an\".",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The position of the looked-up character in `context`, counted in characters (Unicode scalar values).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         ],
         "responses": {
@@ -641,6 +678,79 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LookupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/preview": {
+      "post": {
+        "tags": [
+          "dictionaries"
+        ],
+        "summary": "Detects what each column of a table holds and returns that layout with the table's first rows,\nso that the user can check it before importing.",
+        "operationId": "previewDictionaryTable",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "query",
+            "description": "The name of the uploaded file, whose extension marks it as a CSV, TSV or Tabfile table.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "A CSV, TSV or Tabfile table, or an archive holding one",
+          "content": {
+            "application/octet-stream": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The detected layout and the first rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The file could not be read as a table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -2366,6 +2476,19 @@
           }
         }
       },
+      "ColumnRole": {
+        "type": "string",
+        "description": "What a column of a table holds, as a person choosing the columns of a table sees it.",
+        "enum": [
+          "term",
+          "reading",
+          "definition",
+          "alternates",
+          "tags",
+          "frequency",
+          "ignored"
+        ]
+      },
       "ContainerFormat": {
         "type": "string",
         "enum": [
@@ -2420,6 +2543,24 @@
             "items": {
               "$ref": "#/components/schemas/TrackInfo"
             }
+          }
+        }
+      },
+      "ContextWord": {
+        "type": "object",
+        "description": "A word as written in the context of a lookup.",
+        "required": [
+          "text",
+          "start"
+        ],
+        "properties": {
+          "start": {
+            "type": "integer",
+            "description": "The position of the word's first character in the context, counted in characters (Unicode scalar values).",
+            "minimum": 0
+          },
+          "text": {
+            "type": "string"
           }
         }
       },
@@ -3106,6 +3247,17 @@
               "null"
             ]
           },
+          "separatedVerb": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SeparatedVerb",
+                "description": "The finite verb and the particle, with their places in the context, when the term is a particle verb\nwhose parts stand apart, as rufe and an in „Ich rufe dich morgen an\"."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "term": {
             "type": "string"
           }
@@ -3529,6 +3681,22 @@
           }
         }
       },
+      "SeparatedVerb": {
+        "type": "object",
+        "description": "A particle verb whose finite verb and particle stand apart, as rufe and an in „Ich rufe dich morgen an\".",
+        "required": [
+          "verb",
+          "particle"
+        ],
+        "properties": {
+          "particle": {
+            "$ref": "#/components/schemas/ContextWord"
+          },
+          "verb": {
+            "$ref": "#/components/schemas/ContextWord"
+          }
+        }
+      },
       "SubtitleTracksResponse": {
         "type": "object",
         "required": [
@@ -3540,6 +3708,48 @@
             "items": {
               "$ref": "#/components/schemas/TrackInfo"
             }
+          }
+        }
+      },
+      "TableLayout": {
+        "type": "object",
+        "description": "What each column of a table holds, and whether its first row is a header.",
+        "required": [
+          "columns",
+          "hasHeader"
+        ],
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ColumnRole"
+            }
+          },
+          "hasHeader": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TablePreview": {
+        "type": "object",
+        "description": "The layout detected in a table, with its first rows, for a person to check before importing.",
+        "required": [
+          "layout",
+          "rows"
+        ],
+        "properties": {
+          "layout": {
+            "$ref": "#/components/schemas/TableLayout"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "The first rows of the table, including any header row, split into cells."
           }
         }
       },

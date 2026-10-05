@@ -1,3 +1,4 @@
+import type { TableLayout, TablePreview } from "@easyimmerse/types";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -15,11 +16,13 @@ import {
   type DictionaryItem,
   dictionaryFormatLabels,
 } from "./dictionaryItem.ts";
+import { TableColumnsDialog } from "./TableColumnsDialog.tsx";
 
 /** The dictionaries settings: every dictionary the user has added, and the ways to add one. */
 export function DictionariesView({
   dictionaries,
   unsupportedFile,
+  pendingTable,
   onBack,
   onAddFromRegistry,
   onAddFromFile,
@@ -27,10 +30,14 @@ export function DictionariesView({
   onMove,
   onRemove,
   onDismissUnsupportedFile,
+  onImportTable,
+  onCancelTable,
 }: {
   dictionaries: readonly DictionaryItem[];
   /** The file the user last tried to add in a format the app cannot read, until dismissed. */
   unsupportedFile: string | null;
+  /** The table file the user is adding, with its first rows and detected columns, until imported or cancelled. */
+  pendingTable: { fileName: string; preview: TablePreview } | null;
   onBack: () => void;
   onAddFromRegistry: () => void;
   onAddFromFile: () => void;
@@ -38,6 +45,8 @@ export function DictionariesView({
   onMove: (dictionaryId: string, direction: "up" | "down") => void;
   onRemove: (dictionaryId: string) => void;
   onDismissUnsupportedFile: () => void;
+  onImportTable: (layout: TableLayout) => void;
+  onCancelTable: () => void;
 }) {
   const addButtons = (
     <>
@@ -91,6 +100,14 @@ export function DictionariesView({
         When more than one dictionary is enabled for a language, the pop-up
         shows their entries in the order listed.
       </p>
+      {pendingTable && (
+        <TableColumnsDialog
+          fileName={pendingTable.fileName}
+          preview={pendingTable.preview}
+          onImport={onImportTable}
+          onCancel={onCancelTable}
+        />
+      )}
     </ScreenLayout>
   );
 }

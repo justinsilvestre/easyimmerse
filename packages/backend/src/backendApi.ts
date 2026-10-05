@@ -17,6 +17,8 @@ import type {
   PlaybackResponse,
   PreferenceValue,
   SubtitleTracksResponse,
+  TableLayout,
+  TablePreview,
   TimedTextTrack,
   TrackSelection,
   TracksResponse,
@@ -31,7 +33,17 @@ type ParseDocumentArgs = {
   contentType: string;
 };
 
-type ImportDictionaryArgs = { fileName: string; bytes: Uint8Array | Blob };
+type ImportDictionaryArgs = {
+  fileName: string;
+  bytes: Uint8Array | Blob;
+  /** Replaces the detected layout of a CSV, TSV or Tabfile table. */
+  tableLayout?: TableLayout | null;
+};
+
+type PreviewDictionaryTableArgs = {
+  fileName: string;
+  bytes: Uint8Array | Blob;
+};
 
 type AddMediaFileArgs = { projectId: string; request: AddMediaFileRequest };
 
@@ -42,6 +54,26 @@ type PlanPlaybackArgs = MediaFileArgs & { request: PlaybackRequest };
 type SaveTrackSelectionArgs = MediaFileArgs & { selection: TrackSelection };
 
 type WaveformWindowArgs = MediaFileArgs & { startMs: number; endMs: number };
+
+/** Encodes a table layout as the `columns` and `hasHeader` query parameters of an import. */
+const tableLayoutQuery = (
+  layout: TableLayout | null,
+): Record<string, string> =>
+  layout === null
+    ? {}
+    : {
+        columns: layout.columns.join(","),
+        hasHeader: String(layout.hasHeader),
+      };
+
+/** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
+const lookupContextQuery = (
+  context: string | undefined,
+  offset: number | undefined,
+): Record<string, string> =>
+  context === undefined || offset === undefined
+    ? {}
+    : { context, offset: String(offset) };
 
 const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
   `/projects/${projectId}/media/${mediaFileId}`;
@@ -187,9 +219,29 @@ export const backendApi = createApi({
       }),
     }),
     importDictionary: build.mutation<DictionarySummary, ImportDictionaryArgs>({
-      query: ({ fileName, bytes }) => ({
+      query: ({ fileName, bytes, tableLayout = null }) => ({
         method: "POST",
         path: "/dictionaries",
+        query: { fileName, ...tableLayoutQuery(tableLayout) },
+        body: {
+          kind: "bytes",
+          value: bytes,
+          contentType: "application/octet-stream",
+        },
+        offlineOperation:
+          bytes instanceof Uint8Array
+            ? { kind: "parseDictionary", fileName, bytes, tableLayout }
+            : undefined,
+      }),
+      invalidatesTags: ["Dictionaries"],
+    }),
+    previewDictionaryTable: build.mutation<
+      TablePreview,
+      PreviewDictionaryTableArgs
+    >({
+      query: ({ fileName, bytes }) => ({
+        method: "POST",
+        path: "/dictionaries/preview",
         query: { fileName },
         body: {
           kind: "bytes",
@@ -198,10 +250,9 @@ export const backendApi = createApi({
         },
         offlineOperation:
           bytes instanceof Uint8Array
-            ? { kind: "parseDictionary", fileName, bytes }
+            ? { kind: "previewDictionaryTable", fileName, bytes }
             : undefined,
       }),
-      invalidatesTags: ["Dictionaries"],
     }),
     importLocalDictionary: build.mutation<
       DictionarySummary,
@@ -226,10 +277,10 @@ export const backendApi = createApi({
       invalidatesTags: ["Dictionaries"],
     }),
     lookupText: build.query<LookupResponse, LookupQuery>({
-      query: ({ text, language }) => ({
+      query: ({ text, language, context, offset }) => ({
         method: "GET",
         path: "/dictionaries/lookup",
-        query: { text, language },
+        query: { text, language, ...lookupContextQuery(context, offset) },
       }),
       providesTags: ["Dictionaries"],
     }),
@@ -255,6 +306,7 @@ export const {
   useParseDocumentMutation,
   useParseLocalDocumentMutation,
   useImportDictionaryMutation,
+  usePreviewDictionaryTableMutation,
   useImportLocalDictionaryMutation,
   useListDictionariesQuery,
   useDeleteDictionaryMutation,
