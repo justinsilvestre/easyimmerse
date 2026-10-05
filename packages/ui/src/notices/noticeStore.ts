@@ -7,6 +7,8 @@ export type NoticeContent = {
   actions?: readonly NoticeAction[];
   /** Whether the notice goes by itself after `noticeTimeoutMs`, unless the user is pointing at it or focusing it. */
   isTransient: boolean;
+  /** Runs when the user dismisses the notice, but not when one of its actions is chosen or it goes by itself. */
+  onDismiss?: () => void;
 };
 
 export type ShownNotice = NoticeContent & { id: number };
@@ -40,6 +42,12 @@ export function createNoticeStore() {
       return id;
     },
     dismiss,
+    /** Dismisses a notice at the user's request, running what the notice does on dismissal. */
+    dismissByUser(id: number) {
+      const notice = notices.find((shown) => shown.id === id);
+      dismiss(id);
+      notice?.onDismiss?.();
+    },
     /** Takes an action off a notice, as when what it needs is no longer on screen. */
     withdrawAction(id: number, label: string) {
       set(

@@ -147,4 +147,34 @@ describe("NoticeRegion", () => {
         ?.getAttribute("aria-live"),
     ).toBe("polite");
   });
+
+  describe("when a notice has something to do on dismissal", () => {
+    function showWithDismissal(store: ReturnType<typeof createNoticeStore>) {
+      const dismissals: string[] = [];
+      act(() => {
+        store.show({
+          tone: "danger",
+          message: "Couldn't save the flashcard for “Hund”.",
+          actions: [{ label: "Retry", onSelect: () => undefined }],
+          isTransient: false,
+          onDismiss: () => dismissals.push("dismissed"),
+        });
+      });
+      return dismissals;
+    }
+
+    it("does it once the user dismisses the notice", () => {
+      const store = renderRegion();
+      const dismissals = showWithDismissal(store);
+      fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+      expect(dismissals).toEqual(["dismissed"]);
+    });
+
+    it("leaves it undone when one of the notice's actions is chosen", () => {
+      const store = renderRegion();
+      const dismissals = showWithDismissal(store);
+      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+      expect(dismissals).toEqual([]);
+    });
+  });
 });

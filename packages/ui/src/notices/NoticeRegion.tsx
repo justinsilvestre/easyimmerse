@@ -76,7 +76,7 @@ function TimedNotice({
           tone={notice.tone}
           message={notice.message}
           actions={notice.actions}
-          onDismiss={() => store.dismiss(notice.id)}
+          onDismiss={() => store.dismissByUser(notice.id)}
         />
       </div>
     </li>
