@@ -45,7 +45,8 @@ fn group_entries(
     groups
 }
 
-/// Adds the entry to the group of its term and reading, unless the group holds it already under another headword.
+/// Adds the entry to the group of its term and reading.
+/// An entry found under several headwords is added once for each, so that every headword can match a candidate.
 fn add_to_groups(groups: &mut Vec<Vec<FoundEntry>>, found: FoundEntry) {
     let holds_term = |group: &&mut Vec<FoundEntry>| {
         group
@@ -53,11 +54,7 @@ fn add_to_groups(groups: &mut Vec<Vec<FoundEntry>>, found: FoundEntry) {
             .is_some_and(|first| has_same_term(first, &found))
     };
     match groups.iter_mut().find(holds_term) {
-        Some(group) => {
-            if !group.iter().any(|known| is_same_entry(known, &found)) {
-                group.push(found);
-            }
-        }
+        Some(group) => group.push(found),
         None => groups.push(vec![found]),
     }
 }
@@ -77,9 +74,20 @@ impl<'a> ResultGroup<'a> {
             reading: first.entry.reading.clone(),
             candidate,
             inflection_chains: equally_preferred_chains(candidate, &matching),
-            entries,
+            entries: distinct_entries(entries),
         })
     }
+}
+
+/// Keeps the first row of each entry that was found under several headwords.
+fn distinct_entries(entries: Vec<FoundEntry>) -> Vec<FoundEntry> {
+    let mut distinct: Vec<FoundEntry> = Vec::new();
+    for found in entries {
+        if !distinct.iter().any(|known| is_same_entry(known, &found)) {
+            distinct.push(found);
+        }
+    }
+    distinct
 }
 
 fn equally_preferred_chains(
@@ -187,6 +195,17 @@ mod tests {
             found(2, "角", "角", Some("つの")),
         ];
         assert_eq!(group_matches(&candidates, entries).len(), 2);
+    }
+
+    #[test]
+    fn matches_the_longer_of_two_headwords_of_one_entry() {
+        let candidates = vec![unchanged("comer"), unchanged("come")];
+        let entries = vec![
+            found(1, "come", "comer", None),
+            found(1, "comer", "comer", None),
+        ];
+        let groups = group_matches(&candidates, entries);
+        assert_eq!(groups[0].candidate.matched_text, "comer");
     }
 
     #[test]
