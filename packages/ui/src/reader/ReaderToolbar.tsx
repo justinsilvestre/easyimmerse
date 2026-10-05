@@ -5,7 +5,10 @@ import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import type { ReaderPanel } from "./readerState.ts";
 
-/** The bar over the top of the page, which fades away while the reader reads. */
+/**
+ * The bar over the top of the page, which fades away while the reader reads.
+ * While hidden, it lets clicks through to the text but stays in the tab order, so that a keyboard can still reach it.
+ */
 export function ReaderToolbar({
   title,
   chapterTitle,
@@ -16,6 +19,7 @@ export function ReaderToolbar({
   onBack,
   onLookup,
   onTogglePanel,
+  onReveal,
 }: {
   title: string;
   chapterTitle: string | null;
@@ -27,14 +31,18 @@ export function ReaderToolbar({
   onBack: () => void;
   onLookup: () => void;
   onTogglePanel: (panel: ReaderPanel) => void;
+  /** Called when focus moves into the bar, so that a hidden bar can show itself again. */
+  onReveal: () => void;
 }) {
   return (
+    // The focus listener only shows the bar again; the controls inside it are the interactive elements.
+    // biome-ignore lint/a11y/noStaticElementInteractions: see above
     <header
-      inert={!isVisible}
       className={clsx(
         "absolute inset-x-0 top-0 z-20 border-b border-line bg-surface/90 backdrop-blur transition-[opacity,translate] duration-300",
-        !isVisible && "-translate-y-2 opacity-0",
+        !isVisible && "pointer-events-none -translate-y-2 opacity-0",
       )}
+      onFocus={onReveal}
     >
       <div className="flex h-12 items-center gap-1 px-2">
         <Button variant="subtle" onClick={onBack}>

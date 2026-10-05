@@ -9,6 +9,7 @@ const sliderSteps = 1000;
  * The reader's place in the book. A quiet line of page and percentage stays at the bottom of
  * the page; while the toolbar shows, a slider above it moves through the whole book, with a
  * tick at the start of each chapter.
+ * Like the toolbar, the hidden slider lets clicks through but stays in the tab order.
  */
 export function ReaderFooter({
   progress,
@@ -18,6 +19,7 @@ export function ReaderFooter({
   isVisible,
   chapterTitleAt,
   onScrub,
+  onReveal,
 }: {
   progress: number;
   /** The page within the chapter, in the paged layout when the whole chapter is laid out at once. */
@@ -29,6 +31,8 @@ export function ReaderFooter({
   /** Names the chapter at a point in the book, for the slider's preview. */
   chapterTitleAt: (progress: number) => string | null;
   onScrub: (progress: number) => void;
+  /** Called when focus moves to the slider, so that a hidden slider can show itself again. */
+  onReveal: () => void;
 }) {
   const [preview, setPreview] = useState<number | null>(null);
   const shown = preview ?? progress;
@@ -39,12 +43,14 @@ export function ReaderFooter({
   };
   return (
     <footer className="pointer-events-none absolute inset-x-0 bottom-0 z-20">
+      {/* The focus listener only shows the slider again; the slider itself is the interactive element. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: see above */}
       <div
-        inert={!isVisible}
         className={clsx(
-          "pointer-events-auto mx-auto mb-1 flex max-w-xl flex-col gap-1 rounded-xl border border-line bg-surface/90 px-4 pt-2 pb-1 shadow-lg backdrop-blur transition-[opacity,translate] duration-300 max-sm:mx-2",
-          !isVisible && "translate-y-2 opacity-0",
+          "mx-auto mb-1 flex max-w-xl flex-col gap-1 rounded-xl border border-line bg-surface/90 px-4 pt-2 pb-1 shadow-lg backdrop-blur transition-[opacity,translate] duration-300 max-sm:mx-2",
+          isVisible ? "pointer-events-auto" : "translate-y-2 opacity-0",
         )}
+        onFocus={onReveal}
       >
         <div className="relative flex h-5 items-center">
           {chapterStarts.slice(1).map((start) => (

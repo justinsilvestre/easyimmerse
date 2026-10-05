@@ -88,6 +88,27 @@ describe("ReaderView", () => {
     expect(changes.map((change) => change.theme)).toEqual(["sepia"]);
   });
 
+  describe("when the toolbar is hidden", () => {
+    // Without a layout engine no word is found under the pointer, so a click counts as a tap beside the words.
+    function hideToolbar() {
+      fireEvent.click(screen.getByRole("main"));
+    }
+
+    it("keeps the back button reachable by keyboard", () => {
+      renderReader();
+      hideToolbar();
+      const back = screen.getByRole("button", { name: "Project" });
+      expect(back.closest("[inert]")).toBeNull();
+    });
+
+    it("keeps the progress slider reachable by keyboard", () => {
+      renderReader();
+      hideToolbar();
+      const slider = screen.getByRole("slider");
+      expect(slider.closest("[inert]")).toBeNull();
+    });
+  });
+
   describe("in the paged layout", () => {
     // Without a layout engine every chapter fills one page, so turning the page moves to the next chapter.
     it("turns the page with the right arrow key", () => {

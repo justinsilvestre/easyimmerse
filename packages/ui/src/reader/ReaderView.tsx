@@ -239,6 +239,7 @@ export function ReaderView(props: ReaderViewProps) {
   const chapterTitle =
     chapter.title ??
     (document.chapters.length > 1 ? `Chapter ${chapterIndex + 1}` : null);
+  const showChrome = () => dispatch({ type: "chromeShown" });
   const closePanelOnPhone = () => {
     if (!isWide) dispatch({ type: "panelClosed" });
   };
@@ -250,8 +251,7 @@ export function ReaderView(props: ReaderViewProps) {
       onPointerMove={(event) => {
         const isNearEdge =
           event.clientY < 56 || event.clientY > window.innerHeight - 56;
-        if (event.pointerType === "mouse" && isNearEdge)
-          dispatch({ type: "chromeShown" });
+        if (event.pointerType === "mouse" && isNearEdge) showChrome();
       }}
     >
       <ReaderToolbar
@@ -264,8 +264,9 @@ export function ReaderView(props: ReaderViewProps) {
         onBack={callbacks.onBack}
         onLookup={callbacks.onLookup}
         onTogglePanel={(panel) => dispatch({ type: "panelToggled", panel })}
+        onReveal={showChrome}
       />
-      <div
+      <main
         key={chapterIndex}
         className="absolute inset-0 touch-manipulation transition-opacity duration-300 starting:opacity-0"
         style={{
@@ -325,7 +326,7 @@ export function ReaderView(props: ReaderViewProps) {
             {text}
           </ScrolledChapter>
         )}
-      </div>
+      </main>
       <ReaderFooter
         progress={progress}
         pageInfo={isPaged && sections.length === 1 ? pageInfo : null}
@@ -337,6 +338,7 @@ export function ReaderView(props: ReaderViewProps) {
           return document.chapters[index]?.title ?? null;
         }}
         onScrub={(at) => jumpTo(locationAtProgress(document, at))}
+        onReveal={showChrome}
       />
       {props.lookup && (
         <LookupAnchor wordRect={wordRect} isWide={isWide}>
