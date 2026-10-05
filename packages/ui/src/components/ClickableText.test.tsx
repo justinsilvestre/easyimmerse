@@ -42,6 +42,34 @@ describe("splitIntoWords", () => {
     expect(splitIntoWords("𠮷野家で")[0]?.text).toBe("𠮷野家で");
   });
 
+  it("keeps a run that begins with fullwidth digits together", () => {
+    expect(splitIntoWords("３人で")[0]?.text).toBe("３人で");
+  });
+
+  it("keeps a run that begins with ASCII digits together", () => {
+    expect(splitIntoWords("2026年")[0]?.text).toBe("2026年");
+  });
+
+  it("keeps the ideographic zero inside a run", () => {
+    expect(splitIntoWords("二〇二六年")[0]?.text).toBe("二〇二六年");
+  });
+
+  it("keeps the spacing voicing marks inside a run", () => {
+    expect(splitIntoWords("か゛き゜")[0]?.text).toBe("か゛き゜");
+  });
+
+  it("marks a run of Bopomofo as written without spaces", () => {
+    expect(splitIntoWords("ㄅㄆㄇ")[0]?.isUnspaced).toBe(true);
+  });
+
+  it("leaves digits that stand alone out of the words", () => {
+    expect(
+      splitIntoWords("Seite 12")
+        .filter((part) => part.isWord)
+        .map((part) => part.text),
+    ).toEqual(["Seite"]);
+  });
+
   it("marks a Japanese run as written without spaces", () => {
     expect(
       splitIntoWords("映画Netflix").map((part) => part.isUnspaced),

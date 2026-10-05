@@ -5,15 +5,27 @@ import {
 } from "./lookupTrigger.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
 
-/** A letter of a script written without spaces between words: Chinese characters, hiragana and katakana, with marks such as ー. */
-const unspacedLetter = String.raw`(?=[\p{L}\p{M}])[\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}]`;
+/** The scripts written without spaces between words: Chinese characters, hiragana, katakana and Bopomofo. */
+const unspacedScript = String.raw`\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}\p{scx=Bopomofo}`;
+
+/**
+ * A character of an unspaced script that belongs in a run: a letter or mark, with marks such as ー,
+ * the ideographic zero 〇 and the spacing voicing marks ゛ and ゜, but not punctuation such as 、.
+ */
+const unspacedLetter = String.raw`(?=[\p{L}\p{M}〇゛゜])[${unspacedScript}]`;
+
+/** A digit, ASCII or fullwidth, which a run takes in, as in ３人 or 2026年. */
+const runDigit = "[0-9０-９]";
 
 /** A letter, mark, digit or joining character of any other script. */
-const spacedLetter = String.raw`(?![\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}])[\p{L}\p{M}\p{N}'’-]`;
+const spacedLetter = String.raw`(?![${unspacedScript}])[\p{L}\p{M}\p{N}'’-]`;
 
-/** A run of unspaced letters, or a word of spaced ones beginning with a letter. */
+/**
+ * A run of an unspaced script, with any digits before or inside it, or a word of another script beginning with a letter.
+ * Digits alone make no word.
+ */
 const wordPattern = new RegExp(
-  String.raw`(?<unspaced>(?:${unspacedLetter})+)|(?=\p{L})(?:${spacedLetter})+`,
+  String.raw`(?<unspaced>${runDigit}*${unspacedLetter}(?:${unspacedLetter}|${runDigit})*)|(?=\p{L})(?:${spacedLetter})+`,
   "gu",
 );
 
