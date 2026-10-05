@@ -4,6 +4,8 @@ import type { PreferenceKey } from "./appState.ts";
 export type Effect =
   | { type: "seekPlayer"; seconds: number }
   | { type: "togglePlayer" }
+  | { type: "playPlayer" }
+  | { type: "pausePlayer" }
   | { type: "setPlayerVolume"; volume: number }
   | { type: "setPlayerSpeed"; speed: number }
   | { type: "pickFile"; accept: readonly string[] }

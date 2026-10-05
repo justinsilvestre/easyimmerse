@@ -5,6 +5,8 @@ import { createPlayerRegistry } from "./playerRegistry.ts";
 const createHandle = (): PlayerHandle => ({
   seek: () => undefined,
   togglePlay: () => undefined,
+  play: () => undefined,
+  pause: () => undefined,
   setVolume: () => undefined,
   setSpeed: () => undefined,
 });

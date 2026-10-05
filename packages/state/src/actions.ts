@@ -15,6 +15,8 @@ export const actions = {
   playerDurationChanged: (seconds: number) =>
     ({ type: "playerDurationChanged", seconds }) as const,
   playToggleRequested: () => ({ type: "playToggleRequested" }) as const,
+  playRequested: () => ({ type: "playRequested" }) as const,
+  pauseRequested: () => ({ type: "pauseRequested" }) as const,
   playerPlayingChanged: (isPlaying: boolean) =>
     ({ type: "playerPlayingChanged", isPlaying }) as const,
   volumeChangeRequested: (volume: number) =>

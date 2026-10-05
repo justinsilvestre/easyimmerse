@@ -16,6 +16,10 @@ export interface Effects {
   seekPlayer(seconds: number): void;
   /** Pauses the player when it plays, and plays it otherwise. */
   togglePlayer(): void;
+  /** Plays the player, and does nothing when it already plays. */
+  playPlayer(): void;
+  /** Pauses the player, and does nothing when it is already paused. */
+  pausePlayer(): void;
   setPlayerVolume(volume: number): void;
   setPlayerSpeed(speed: number): void;
   pickFile(accept: readonly string[]): Promise<PickedFile | null>;

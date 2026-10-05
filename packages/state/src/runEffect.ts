@@ -17,6 +17,12 @@ export function runEffect(
     case "togglePlayer":
       effects.togglePlayer();
       return;
+    case "playPlayer":
+      effects.playPlayer();
+      return;
+    case "pausePlayer":
+      effects.pausePlayer();
+      return;
     case "setPlayerVolume":
       effects.setPlayerVolume(effect.volume);
       return;

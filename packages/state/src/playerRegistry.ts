@@ -3,6 +3,8 @@ export type PlayerHandle = {
   seek(seconds: number): void;
   /** Pauses the player when it plays, and plays it otherwise. */
   togglePlay(): void;
+  play(): void;
+  pause(): void;
   setVolume(volume: number): void;
   setSpeed(speed: number): void;
 };

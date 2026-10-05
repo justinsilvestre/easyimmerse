@@ -283,8 +283,10 @@ async function lookUpInPanel(word: string) {
   return screen.findByRole("region", { name: "Dictionary" });
 }
 
-const togglePlayerCount = (effects: { calls: { type: string }[] }) =>
-  effects.calls.filter((call) => call.type === "togglePlayer").length;
+const playbackCalls = (effects: { calls: { type: string }[] }) =>
+  effects.calls
+    .map((call) => call.type)
+    .filter((type) => type === "playPlayer" || type === "pausePlayer");
 
 describe("MediaScreen lookup", () => {
   it("looks a clicked word up with its cue as context", async () => {
@@ -343,7 +345,7 @@ describe("MediaScreen lookup", () => {
     const { effects, store } = renderMediaScreen();
     act(() => store.dispatch(actions.playerPlayingChanged(true)));
     await lookUpInPanel("cat");
-    expect(togglePlayerCount(effects)).toBe(1);
+    expect(playbackCalls(effects)).toEqual(["pausePlayer"]);
   });
 
   it("resumes playback when the pop-up closes", async () => {
@@ -352,7 +354,7 @@ describe("MediaScreen lookup", () => {
     await lookUpInPanel("cat");
     act(() => store.dispatch(actions.playerPlayingChanged(false)));
     fireEvent.keyDown(document.body, { key: "Escape" });
-    expect(togglePlayerCount(effects)).toBe(2);
+    expect(playbackCalls(effects)).toEqual(["pausePlayer", "playPlayer"]);
   });
 
   it("asks for a dictionary when none covers the project's language", async () => {

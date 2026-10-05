@@ -42,6 +42,10 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "playToggleRequested":
       return [state, [{ type: "togglePlayer" }]];
+    case "playRequested":
+      return [state, [{ type: "playPlayer" }]];
+    case "pauseRequested":
+      return [state, [{ type: "pausePlayer" }]];
     case "playerPlayingChanged":
       return [
         { ...state, player: { ...state.player, isPlaying: action.isPlaying } },

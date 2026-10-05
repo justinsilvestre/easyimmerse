@@ -106,6 +106,16 @@ describe("update", () => {
     ]);
   });
 
+  it("returns a playPlayer effect for playRequested", () => {
+    const [, effects] = update(initialAppState, actions.playRequested());
+    expect(effects).toEqual([{ type: "playPlayer" }]);
+  });
+
+  it("returns a pausePlayer effect for pauseRequested", () => {
+    const [, effects] = update(initialAppState, actions.pauseRequested());
+    expect(effects).toEqual([{ type: "pausePlayer" }]);
+  });
+
   it("returns a togglePlayer effect for playToggleRequested", () => {
     const [, effects] = update(initialAppState, actions.playToggleRequested());
     expect(effects).toEqual([{ type: "togglePlayer" }]);

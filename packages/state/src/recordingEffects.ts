@@ -8,6 +8,8 @@ import type {
 type EffectCall =
   | { type: "seekPlayer"; seconds: number }
   | { type: "togglePlayer" }
+  | { type: "playPlayer" }
+  | { type: "pausePlayer" }
   | { type: "setPlayerVolume"; volume: number }
   | { type: "setPlayerSpeed"; speed: number }
   | { type: "pickFile"; accept: readonly string[] }
@@ -78,6 +80,12 @@ export function createRecordingEffects(): RecordingEffects {
     },
     togglePlayer: () => {
       calls.push({ type: "togglePlayer" });
+    },
+    playPlayer: () => {
+      calls.push({ type: "playPlayer" });
+    },
+    pausePlayer: () => {
+      calls.push({ type: "pausePlayer" });
     },
     setPlayerVolume: (volume) => {
       calls.push({ type: "setPlayerVolume", volume });
