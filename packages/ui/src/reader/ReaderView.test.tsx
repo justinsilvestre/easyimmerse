@@ -23,6 +23,7 @@ function renderReader(
   overrides: {
     initialLocation?: ReaderLocation;
     layout?: ReaderPreferences["layout"];
+    onLocationChange?: (location: ReaderLocation) => unknown;
     onPreferencesChange?: (preferences: ReaderPreferences) => void;
     sidePanel?: ReactNode;
   } = {},
@@ -44,7 +45,7 @@ function renderReader(
         onWordHover: ignore,
         onWordClick: ignore,
         onDismissLookup: ignore,
-        onLocationChange: ignore,
+        onLocationChange: overrides.onLocationChange ?? ignore,
         onPreferencesChange: overrides.onPreferencesChange ?? ignore,
       }}
     />,
@@ -72,6 +73,19 @@ describe("ReaderView", () => {
 
   it("moves to the chapter chosen from the contents", () => {
     renderReader();
+    fireEvent.click(screen.getByRole("button", { name: "Contents" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: /Chapter Two/,
+      }),
+    );
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
+      "Chapter Two",
+    );
+  });
+
+  it("moves on when the location callback returns a value, as a dispatch does", () => {
+    renderReader({ onLocationChange: (location) => ({ type: "x", location }) });
     fireEvent.click(screen.getByRole("button", { name: "Contents" }));
     fireEvent.click(
       within(screen.getByRole("dialog")).getByRole("button", {
