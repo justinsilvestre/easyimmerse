@@ -19,6 +19,7 @@ export type BookParsers = {
 const failureSentences: Record<string, string> = {
   OFFLINE:
     "This file lies on a computer's disk, and only the easyImmerse server can read it.",
+  NETWORK: "The easyImmerse server could not be reached.",
   400: "The file could not be read as an ebook or a text file.",
   403: "This server does not allow reading files from its own disk.",
   404: "The file was not found. It may have been moved or deleted.",

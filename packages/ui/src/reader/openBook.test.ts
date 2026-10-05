@@ -112,6 +112,18 @@ describe("openBook", () => {
     });
   });
 
+  it("explains a server that cannot be reached", async () => {
+    const { parsers } = recordingParsers(() =>
+      Promise.reject({ status: "NETWORK", message: "Failed to fetch" }),
+    );
+    expect(
+      await openBook(mediaFileAt("/books/sample.epub"), null, parsers),
+    ).toEqual({
+      status: "failed",
+      cause: "The easyImmerse server could not be reached.",
+    });
+  });
+
   it("explains a path that only the server can read when there is no server", async () => {
     const { parsers } = recordingParsers(() =>
       Promise.reject({ status: "OFFLINE", message: "no server" }),
