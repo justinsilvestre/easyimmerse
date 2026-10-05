@@ -43,13 +43,23 @@ test("clicking a cue's time seeks the player to its start", async ({
   ).toHaveValue(/^175/);
 });
 
-test("a word clicked in the subtitles becomes a saved flashcard", async ({
+test("a word clicked in the subtitles opens the dictionary pop-up", async ({
   page,
 }) => {
   await page
     .getByRole("list", { name: "Subtitles" })
     .getByRole("button", { name: "cat" })
     .click();
+  await expect(page.getByRole("region", { name: "Dictionary" })).toBeVisible();
+});
+
+test("a word double-clicked in the subtitles becomes a saved flashcard", async ({
+  page,
+}) => {
+  await page
+    .getByRole("list", { name: "Subtitles" })
+    .getByRole("button", { name: "cat" })
+    .dblclick();
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Flashcard saved to the project.")).toBeVisible();
 });
