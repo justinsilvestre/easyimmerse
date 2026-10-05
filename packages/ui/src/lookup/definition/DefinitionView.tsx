@@ -1,5 +1,4 @@
 import type { Definition } from "@easyimmerse/types";
-import { DictionaryScope } from "../stylesheet/DictionaryScope.tsx";
 import { ContentText } from "./ContentText.tsx";
 import {
   DefinitionContext,
@@ -8,11 +7,12 @@ import {
 import { FormOfView } from "./FormOfView.tsx";
 import { MarkupView } from "./MarkupView.tsx";
 import { StructuredContentView } from "./StructuredContentView.tsx";
+import { yomitanClassName } from "./yomitanClassName.ts";
 
 /**
  * Renders one definition in the form its dictionary wrote it: plain text, Yomitan structured content, HTML, Pango or XDXF markup, or a pointer to a base form.
  * Clicked words go to `onWordClick`, links to other headwords go to `onLookup`, and images come from `resolveMediaUrl`. Nothing in a definition can run code or load remote resources.
- * The definition sits in its dictionary's scope, where `DictionaryStylesheets` applies the dictionary's own stylesheet.
+ * Place it inside its dictionary's `DictionaryScope`, where `DictionaryStylesheets` applies the dictionary's own stylesheet.
  */
 export function DefinitionView({
   definition,
@@ -37,9 +37,7 @@ export function DefinitionView({
         isPlainText: false,
       }}
     >
-      <DictionaryScope dictionaryId={dictionaryId}>
-        <DefinitionBody definition={definition} />
-      </DictionaryScope>
+      <DefinitionBody definition={definition} />
     </DefinitionContext>
   );
 }
@@ -49,7 +47,11 @@ function DefinitionBody({ definition }: { definition: Definition }) {
     case "text":
       return <ContentText text={definition.text} />;
     case "structured":
-      return <StructuredContentView content={definition.content} />;
+      return (
+        <span className={yomitanClassName("structured-content")}>
+          <StructuredContentView content={definition.content} />
+        </span>
+      );
     case "html":
       return <MarkupView markup={definition.html} language="html" />;
     case "markup":
