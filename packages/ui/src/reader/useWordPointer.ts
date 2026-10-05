@@ -7,7 +7,7 @@ import {
   paragraphIndexOf,
   rangeOfSpan,
 } from "./textOffsets.ts";
-import { sentenceAt, wordAt } from "./wordAt.ts";
+import { sentenceAt, wordsAroundCaret } from "./wordAt.ts";
 
 /** A word in the text, with the sentence around it for a flashcard's context. */
 export type ReaderWord = {
@@ -46,7 +46,7 @@ export function useWordPointer(
   const hoveredWord = useRef<ReaderWord | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const press = useRef({ x: 0, y: 0, pointerType: "mouse" });
-  const lastTap = useRef<{ word: string; offset: number; at: number }>(null);
+  const lastTap = useRef<{ word: ReaderWord; at: number }>(null);
   useEffect(() => () => clearTimeout(hoverTimer.current), []);
 
   const findWord = (x: number, y: number) =>
@@ -82,20 +82,18 @@ export function useWordPointer(
         event.clientY - press.current.y,
       );
       if (moved > clickSlopPx || hasSelection()) return;
+      // A hover still waiting to look a word up would otherwise follow the click.
+      clearTimeout(hoverTimer.current);
       const word = findWord(event.clientX, event.clientY);
       if (!word) return callbacks.onBlankClick(event);
       highlightWord(word);
       if (press.current.pointerType === "mouse")
         return callbacks.onWordClick(word);
       const isDoubleTap =
-        lastTap.current?.offset === word.location.offset &&
-        lastTap.current.word === word.text &&
+        lastTap.current !== null &&
+        isSameWord(word, lastTap.current.word) &&
         event.timeStamp - lastTap.current.at < doubleTapMs;
-      lastTap.current = {
-        word: word.text,
-        offset: word.location.offset,
-        at: event.timeStamp,
-      };
+      lastTap.current = { word, at: event.timeStamp };
       if (isDoubleTap) callbacks.onWordClick(word);
       else callbacks.onWordHover(word);
     },
@@ -121,23 +119,21 @@ function wordAtPoint(
   if (!caret || !paragraph) return null;
   const text = paragraph.textContent ?? "";
   const offset = offsetWithin(paragraph, caret.node, caret.offset);
-  // The caret sits between characters, so the character under the pointer may be on either side of it.
-  const word =
-    wordAt(text, offset, language) ??
-    (offset > 0 ? wordAt(text, offset - 1, language) : null);
-  if (!word) return null;
-  const rect = wordRectAt(paragraph, word, x, y);
-  if (!rect) return null;
-  return {
-    text: word.text,
-    sentence: sentenceAt(text, word.start, language)?.text ?? word.text,
-    location: {
-      chapterIndex,
-      paragraphIndex: paragraphIndexOf(paragraph),
-      offset: word.start,
-    },
-    rect,
-  };
+  for (const word of wordsAroundCaret(text, offset, language)) {
+    const rect = wordRectAt(paragraph, word, x, y);
+    if (!rect) continue;
+    return {
+      text: word.text,
+      sentence: sentenceAt(text, word.start, language)?.text ?? word.text,
+      location: {
+        chapterIndex,
+        paragraphIndex: paragraphIndexOf(paragraph),
+        offset: word.start,
+      },
+      rect,
+    };
+  }
+  return null;
 }
 
 /** The rectangle of the word's line box under the point, or null when the point is beside the word rather than on it. */
