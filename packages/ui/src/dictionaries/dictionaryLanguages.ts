@@ -35,6 +35,7 @@ export function definesInLanguage(
   );
 }
 
-function primarySubtag(tag: string): string {
+/** Returns the language of a BCP 47 tag without its script or region, in lowercase, as `zh` for `zh-Hans`. */
+export function primarySubtag(tag: string): string {
   return tag.split(/[-_]/)[0]?.toLowerCase() ?? "";
 }

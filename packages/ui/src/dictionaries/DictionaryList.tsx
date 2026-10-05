@@ -7,9 +7,10 @@ import {
   describeDictionaryLanguages,
   dictionaryFormatLabels,
 } from "./dictionaryItem.ts";
+import { primarySubtag } from "./dictionaryLanguages.ts";
 
 /**
- * Lists dictionaries grouped by the language they are looked up in, with those that do not state it last.
+ * Lists dictionaries grouped by the language they are looked up in, whatever the script or region, with those that do not state it last.
  * Within a language the order is the order their entries take in the pop-up.
  * The checkboxes and arrows show only when the caller can switch dictionaries off and reorder them.
  */
@@ -108,8 +109,9 @@ function groupByLanguage(
 ): [string | null, DictionaryItem[]][] {
   const groups = new Map<string | null, DictionaryItem[]>();
   for (const dictionary of dictionaries) {
-    const group = groups.get(dictionary.source_language) ?? [];
-    groups.set(dictionary.source_language, [...group, dictionary]);
+    const language =
+      dictionary.source_language && primarySubtag(dictionary.source_language);
+    groups.set(language, [...(groups.get(language) ?? []), dictionary]);
   }
   return [...groups.entries()].sort(
     ([first], [second]) => Number(first === null) - Number(second === null),
