@@ -77,6 +77,7 @@ export function FlashcardEditor({
           waveform={waveform}
           screenshotUrl={screenshotUrl}
           dispatch={dispatch}
+          isReadOnly={isSaveInert}
         />
         {includedFields.includes("tags") && (
           <TagsField
@@ -98,6 +99,7 @@ export function FlashcardEditor({
           <MenuButton
             label="More fields"
             opensUpward
+            isUnavailable={isSaveInert}
             items={flashcardFieldDefinitions
               .filter((field) => field.key !== "screenshot")
               .map((field) => ({

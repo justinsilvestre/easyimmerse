@@ -175,6 +175,80 @@ function renderWithSaveStatus(
   );
 }
 
+/** Renders the editor with its clip and screenshot shown, recording the actions it dispatches. */
+function renderWithMedia(saveStatus: "idle" | "saving") {
+  const actions: string[] = [];
+  render(
+    <FlashcardEditor
+      state={{
+        content: exampleFlashcard,
+        includedFields: [...fieldsOfPreset("intermediate"), "screenshot"],
+      }}
+      dispatch={(action) => actions.push(action.type)}
+      languages={exampleLanguages}
+      waveform={{ peaks: [0.1, 0.5, 0.9, 0.3], durationMs: 24_000 }}
+      screenshotUrl={exampleScreenshotUrl}
+      saveStatus={saveStatus}
+      onSave={() => undefined}
+      onDelete={() => undefined}
+      onClose={() => undefined}
+    />,
+  );
+  return actions;
+}
+
+describe("FlashcardEditor while the flashcard is being saved", () => {
+  it("ignores the screenshot checkbox", () => {
+    const actions = renderWithMedia("saving");
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Include the screenshot" }),
+    );
+    expect(actions).toEqual([]);
+  });
+
+  it("marks the screenshot checkbox unavailable", () => {
+    renderWithMedia("saving");
+    expect(
+      screen
+        .getByRole("checkbox", { name: "Include the screenshot" })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
+  });
+
+  it("makes the clip's handles inert", () => {
+    renderWithMedia("saving");
+    expect(
+      screen
+        .getByRole("group", { name: "Sentence audio" })
+        .hasAttribute("inert"),
+    ).toBe(true);
+  });
+
+  it("marks the More fields button unavailable", () => {
+    renderWithMedia("saving");
+    expect(
+      screen
+        .getByRole("button", { name: "More fields" })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
+  });
+
+  it("does not open the More fields menu", () => {
+    renderWithMedia("saving");
+    fireEvent.click(screen.getByRole("button", { name: "More fields" }));
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("leaves the clip's handles usable until Save is pressed", () => {
+    renderWithMedia("idle");
+    expect(
+      screen
+        .getByRole("group", { name: "Sentence audio" })
+        .hasAttribute("inert"),
+    ).toBe(false);
+  });
+});
+
 describe("FlashcardEditor's save status", () => {
   it("is never hidden while empty, so that its text is announced when it appears", () => {
     renderWithSaveStatus("idle");
