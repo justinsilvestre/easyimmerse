@@ -464,3 +464,32 @@ describe("reduceEditedFlashcard when the word is changed before its lookup answe
     expect(edited?.stage).toBe("awaitingLookup");
   });
 });
+
+describe("reduceEditedFlashcard's record of the user's changes", () => {
+  const typeDefinition: EditedFlashcardAction = {
+    type: "edited",
+    action: { type: "textChanged", key: "l1_definition", value: "a pet" },
+  };
+
+  it("starts a new card unchanged", () => {
+    expect(startedFrom(createDraft())?.isChanged).toBe(false);
+  });
+
+  it("marks a card changed once the user edits it", () => {
+    expect(
+      reduceAll(startedFrom(createDraft()), typeDefinition)?.isChanged,
+    ).toBe(true);
+  });
+
+  it("marks a saved card changed once the user edits it", () => {
+    expect(reduceAll(openedFlashcard(), typeDefinition)?.isChanged).toBe(true);
+  });
+
+  it("leaves a card unchanged when the lookup fills it", () => {
+    const draft = createDraft();
+    expect(
+      reduceAll(awaiting(draft), { type: "lookupAnswered", draft, fields })
+        ?.isChanged,
+    ).toBe(false);
+  });
+});

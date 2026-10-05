@@ -39,11 +39,14 @@ function renderFlashcards({ savesFail = false } = {}) {
     "POST /projects/p1/flashcards": savesFail
       ? fakeFailure({ status: 500, message: "The disk is full" })
       : savedFlashcard,
+    "PUT /projects/p1/flashcards/f1": savesFail
+      ? fakeFailure({ status: 500, message: "The disk is full" })
+      : savedFlashcard,
   });
   const held: (() => void)[] = [];
   const holdingClient = {
     send: <T,>(request: BackendRequest) =>
-      request.method === "POST"
+      request.method === "POST" || request.method === "PUT"
         ? new Promise<void>((resolve) => held.push(resolve)).then(() =>
             client.send<T>(request),
           )
@@ -60,6 +63,8 @@ function renderFlashcards({ savesFail = false } = {}) {
   });
   const posts = () =>
     client.requests.filter((request) => request.method === "POST");
+  const puts = () =>
+    client.requests.filter((request) => request.method === "PUT");
   /** Lets every save sent so far reach the backend. */
   const letSavesThrough = () =>
     act(async () => {
@@ -69,7 +74,14 @@ function renderFlashcards({ savesFail = false } = {}) {
     effects.calls.flatMap((call) =>
       call.type === "showNotification" ? [call.message] : [],
     );
-  return { ...rendered, held, posts, letSavesThrough, notifications };
+  return {
+    ...rendered,
+    held,
+    posts,
+    puts,
+    letSavesThrough,
+    notifications,
+  };
 }
 
 describe("useMediaFlashcards", () => {
@@ -217,6 +229,74 @@ describe("useMediaFlashcards", () => {
       await vi.waitFor(() =>
         expect(notifications()).toEqual([
           "Couldn't save the flashcard for “Hund”.",
+        ]),
+      );
+    });
+  });
+
+  describe("when another card replaces one with unsaved changes", () => {
+    const typeWord = (word: string) =>
+      ({
+        type: "textChanged",
+        key: "word",
+        value: word,
+      }) as const;
+
+    const sentWord = (request: BackendRequest | undefined) =>
+      (request?.body?.value as { content?: { word?: string } } | undefined)
+        ?.content?.word;
+
+    it("saves a changed new card as it is first", async () => {
+      const { result, held, letSavesThrough, posts } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.start(createDraft("Katze")));
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(sentWord(posts()[0])).toBe("Hündin");
+    });
+
+    it("saves a changed saved card as it is first", async () => {
+      const { result, held, letSavesThrough, puts } = renderFlashcards();
+      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+      act(() => result.current.open(savedFlashcard.id));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.start(createDraft("Katze")));
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(sentWord(puts()[0])).toBe("Hündin");
+    });
+
+    it("opens the other card at once", () => {
+      const { result } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.start(createDraft("Katze")));
+      expect(result.current.edited?.editor.content.word).toBe("Katze");
+    });
+
+    it("drops an untouched new card without saving it", async () => {
+      const { result, held } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.start(createDraft("Katze")));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(held).toHaveLength(0);
+    });
+
+    it("names the word of a changed card that could not be saved", async () => {
+      const { result, held, letSavesThrough, notifications } = renderFlashcards(
+        {
+          savesFail: true,
+        },
+      );
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.start(createDraft("Katze")));
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      await vi.waitFor(() =>
+        expect(notifications()).toEqual([
+          "Couldn't save the flashcard for “Hündin”.",
         ]),
       );
     });

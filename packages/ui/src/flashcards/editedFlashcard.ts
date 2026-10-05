@@ -31,12 +31,15 @@ export type EditedFlashcard =
       /** The text fields the user has typed in, which a late lookup leaves alone. */
       typedFields: readonly FlashcardFieldKey[];
       stage: SaveStage;
+      /** Whether the user has changed the card since it opened, which a lookup filling it does not count as. */
+      isChanged: boolean;
     }
   | {
       kind: "existing";
       flashcard: Flashcard;
       editor: EditorState;
       stage: SaveStage;
+      isChanged: boolean;
     };
 
 export type EditedFlashcardAction =
@@ -76,6 +79,7 @@ export function reduceEditedFlashcard(
         editor: editorStateOf(action.draft),
         typedFields: [],
         stage: action.awaitsLookup ? "awaitingLookup" : "editing",
+        isChanged: false,
       };
     case "opened":
       return {
@@ -83,6 +87,7 @@ export function reduceEditedFlashcard(
         flashcard: action.flashcard,
         editor: editorStateOf(action.flashcard),
         stage: "editing",
+        isChanged: false,
       };
     case "edited":
       // The editor is read-only once Save is pressed, so that what is saved is what the user saw.
@@ -149,11 +154,13 @@ function withEdit(
   action: EditorAction,
 ): EditedFlashcard {
   const editor = reduceEditor(edited.editor, action);
+  if (editor === edited.editor) return edited;
   if (edited.kind !== "new" || action.type !== "textChanged")
-    return { ...edited, editor };
+    return { ...edited, editor, isChanged: true };
   const typed = {
     ...edited,
     editor,
+    isChanged: true,
     typedFields: [...new Set([...edited.typedFields, action.key])],
   };
   // A changed word makes the definitions on their way those of another word, so they are given up.

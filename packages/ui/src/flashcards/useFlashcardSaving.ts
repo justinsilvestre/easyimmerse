@@ -18,7 +18,8 @@ export type SaveReports = {
  * Sends the open card once a save is ready, and reports whether it was saved, so that only that card closes.
  * A save that waits for a lookup stops waiting after `saveLookupWaitMs` and saves the card as it is.
  * A card whose save waits or is ready when the editor goes away, as when the screen closes, is saved as it is in the background.
- * Returns a function that saves a card whose save waits, as it is, in the background, as when another card replaces it in the editor.
+ * Returns a function that saves the open card as it is, in the background, before another replaces it in the editor,
+ * if the user has asked to save it or has changed it.
  */
 export function useFlashcardSaving(
   edited: EditedFlashcard | null,
@@ -74,6 +75,18 @@ export function useFlashcardSaving(
     [],
   );
   return () => {
-    if (edited?.stage === "awaitingLookupToSave") sendAndReport(edited, true);
+    if (edited && isWorthSavingWhenLeft(edited)) sendAndReport(edited, true);
   };
+}
+
+/**
+ * Tells whether a card the editor is leaving for another should be saved first, as it is:
+ * one the user has asked to save, or changed. A new card left untouched is dropped, as it holds nothing of the user's.
+ */
+function isWorthSavingWhenLeft(card: EditedFlashcard): boolean {
+  if (isSaveAsked(card.stage)) return true;
+  return (
+    card.isChanged &&
+    (card.stage === "editing" || card.stage === "awaitingLookup")
+  );
 }

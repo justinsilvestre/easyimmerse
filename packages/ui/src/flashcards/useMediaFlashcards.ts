@@ -75,7 +75,7 @@ export function useMediaFlashcards(
         }).unwrap()
       : replace(card.flashcard, changes);
   };
-  const saveWaitingCard = useFlashcardSaving(edited, dispatchEdited, send, {
+  const saveLeftCard = useFlashcardSaving(edited, dispatchEdited, send, {
     // A card saved in the background is no longer on screen, so only its failure is told, by its word.
     saved: (_card, isInBackground) => {
       if (!isInBackground) setSaved(true);
@@ -88,12 +88,11 @@ export function useMediaFlashcards(
       ),
   });
   /**
-   * Replaces the open card in the editor by calling `openNext`, after dealing with the open card:
-   * one whose save waits is saved as it is first. A card with unsaved edits is replaced as it is;
-   * this is the one place to change for it to be saved first, or for the user to be asked, calling `openNext` once they answer.
+   * Replaces the open card in the editor by calling `openNext`, after saving the open card as it is, in the background,
+   * if the user has asked to save it or has changed it.
    */
   const replaceOpenCard = (openNext: () => void) => {
-    saveWaitingCard();
+    saveLeftCard();
     openNext();
   };
   const remove = () => {
@@ -119,7 +118,7 @@ export function useMediaFlashcards(
     /**
      * Starts a new card. `lateFields` gives the fields of its word's lookup once it answers, or null when it fails,
      * and the card is filled from them if still open; until then a save waits for them.
-     * A card it replaces whose save was waiting is saved at once, as it is.
+     * A card it replaces is first saved as it is, if the user asked to save it or changed it.
      */
     start: (
       draft: FlashcardDraft,
@@ -138,7 +137,7 @@ export function useMediaFlashcards(
         fail,
       );
     },
-    /** Opens a saved card. A card it replaces whose save was waiting is saved at once, as it is. */
+    /** Opens a saved card. A card it replaces is first saved as it is, if the user asked to save it or changed it. */
     open: (id: string) => {
       const flashcard = find(id);
       if (flashcard)
