@@ -68,22 +68,25 @@ export function useMediaFlashcards(
       content: card.editor.content,
       included_fields: [...card.editor.includedFields],
     };
-    const sending =
-      card.kind === "new"
-        ? createFlashcard({
-            projectId,
-            draft: { ...card.draft, ...changes },
-          }).unwrap()
-        : replace(card.flashcard, changes);
-    return sending.then(
-      () => setSaved(true),
-      (error: unknown) => {
-        notify("The flashcard could not be saved");
-        throw error;
-      },
-    );
+    return card.kind === "new"
+      ? createFlashcard({
+          projectId,
+          draft: { ...card.draft, ...changes },
+        }).unwrap()
+      : replace(card.flashcard, changes);
   };
-  const saveWaitingCard = useFlashcardSaving(edited, dispatchEdited, send);
+  const saveWaitingCard = useFlashcardSaving(edited, dispatchEdited, send, {
+    // A card saved in the background is no longer on screen, so only its failure is told, by its word.
+    saved: (_card, isInBackground) => {
+      if (!isInBackground) setSaved(true);
+    },
+    failed: (card, isInBackground) =>
+      notify(
+        isInBackground
+          ? `Couldn't save the flashcard for “${card.editor.content.word}”.`
+          : "The flashcard could not be saved",
+      ),
+  });
   const remove = () => {
     if (edited?.kind !== "existing") return close();
     deleteFlashcard({ projectId, flashcardId: edited.flashcard.id })
@@ -125,9 +128,12 @@ export function useMediaFlashcards(
         fail,
       );
     },
+    /** Opens a saved card. A card it replaces whose save was waiting is saved at once, as it is. */
     open: (id: string) => {
       const flashcard = find(id);
-      if (flashcard) dispatchEdited({ type: "opened", flashcard });
+      if (!flashcard) return;
+      saveWaitingCard();
+      dispatchEdited({ type: "opened", flashcard });
     },
     close,
     /** Asks to save the open card. Asking again while a save waits or is under way does nothing. */

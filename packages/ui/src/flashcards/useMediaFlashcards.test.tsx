@@ -7,7 +7,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { saveLookupWaitMs } from "../lookup/lookupTiming.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  fakeFailure,
+} from "../testSupport/createFakeBackendClient.ts";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { savedFlashcard } from "../testSupport/renderMediaScreen.tsx";
@@ -28,12 +31,14 @@ function createDraft(word: string): FlashcardDraft {
   };
 }
 
-/** Renders the hook over a backend whose flashcard saves wait until the test lets them through. */
-function renderFlashcards() {
+/** Renders the hook over a backend whose flashcard saves wait until the test lets them through, and then succeed or fail. */
+function renderFlashcards({ savesFail = false } = {}) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
-    "GET /projects/p1/flashcards": { flashcards: [] },
-    "POST /projects/p1/flashcards": savedFlashcard,
+    "GET /projects/p1/flashcards": { flashcards: [savedFlashcard] },
+    "POST /projects/p1/flashcards": savesFail
+      ? fakeFailure({ status: 500, message: "The disk is full" })
+      : savedFlashcard,
   });
   const held: (() => void)[] = [];
   const holdingClient = {
@@ -44,7 +49,7 @@ function renderFlashcards() {
           )
         : client.send<T>(request),
   };
-  const { store, playerRegistry } = createTestAppStore(holdingClient);
+  const { store, playerRegistry, effects } = createTestAppStore(holdingClient);
   const wrapper = ({ children }: { children: ReactNode }) => (
     <AppStoreProviders store={store} playerRegistry={playerRegistry}>
       {children}
@@ -60,7 +65,11 @@ function renderFlashcards() {
     act(async () => {
       for (const resolve of held.splice(0)) resolve();
     });
-  return { ...rendered, held, posts, letSavesThrough };
+  const notifications = () =>
+    effects.calls.flatMap((call) =>
+      call.type === "showNotification" ? [call.message] : [],
+    );
+  return { ...rendered, held, posts, letSavesThrough, notifications };
 }
 
 describe("useMediaFlashcards", () => {
@@ -114,6 +123,14 @@ describe("useMediaFlashcards", () => {
       ).toBe("Hund");
     });
 
+    it("says nothing once the waiting card is saved in the background", async () => {
+      const { result, held, letSavesThrough } =
+        await startAnotherWhileWaiting();
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(result.current.isSaved).toBe(false);
+    });
+
     it("keeps the new card open once the waiting card is saved", async () => {
       const { result, held, letSavesThrough } =
         await startAnotherWhileWaiting();
@@ -121,6 +138,42 @@ describe("useMediaFlashcards", () => {
       await letSavesThrough();
       expect(result.current.edited?.editor.content.word).toBe("Katze");
     });
+  });
+
+  it("names the word of a card that could not be saved in the background", async () => {
+    const { result, held, letSavesThrough, notifications } = renderFlashcards({
+      savesFail: true,
+    });
+    const never = new Promise<LookupFlashcardFields | null>(() => undefined);
+    act(() => result.current.start(createDraft("Hund"), never));
+    act(() => result.current.save());
+    act(() => result.current.start(createDraft("Katze")));
+    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await letSavesThrough();
+    await vi.waitFor(() =>
+      expect(notifications()).toEqual([
+        "Couldn't save the flashcard for “Hund”.",
+      ]),
+    );
+  });
+
+  it("still tells of an ordinary save", async () => {
+    const { result, held, letSavesThrough } = renderFlashcards();
+    act(() => result.current.start(createDraft("Hund")));
+    act(() => result.current.save());
+    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await letSavesThrough();
+    await vi.waitFor(() => expect(result.current.isSaved).toBe(true));
+  });
+
+  it("saves a waiting card as it is when a saved card is opened", async () => {
+    const { result, held } = renderFlashcards();
+    await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+    const never = new Promise<LookupFlashcardFields | null>(() => undefined);
+    act(() => result.current.start(createDraft("Hund"), never));
+    act(() => result.current.save());
+    act(() => result.current.open(savedFlashcard.id));
+    await vi.waitFor(() => expect(held).toHaveLength(1));
   });
 
   describe("when the lookup never settles", () => {
