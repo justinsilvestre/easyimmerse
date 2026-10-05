@@ -102,4 +102,12 @@ describe("DictionaryStylesheets", () => {
     expect(container.querySelector(selector)?.textContent).toBe("sense");
   });
 
+  it("styles structured content through Yomitan's classes", () => {
+    const { container } = renderDefinition({
+      kind: "structured",
+      content: { tag: "div", content: "gloss" },
+    });
+    const selector = scopedSelector(".gloss-sc-div { margin: 0 }");
+    expect(container.querySelector(selector)?.textContent).toBe("gloss");
+  });
 });

@@ -5,6 +5,7 @@ import { type CSSProperties, type ReactNode, useState } from "react";
 import { useDefinitionContext } from "./definitionContext.ts";
 import { dataAttributes } from "./sanitizeAttributes.ts";
 import { sanitizeStyle } from "./sanitizeStyle.ts";
+import { structuredContentClassName } from "./structuredContentClassName.ts";
 
 const verticalAlignments = new Set([
   "baseline",
@@ -55,7 +56,10 @@ function Picture({
       <span
         role="img"
         aria-label={label}
-        className="inline-block bg-current"
+        className={clsx(
+          "inline-block bg-current",
+          structuredContentClassName("img"),
+        )}
         style={{ ...pictureStyle(image, "1em"), ...maskStyle(url) }}
         {...attributes}
       />
@@ -67,6 +71,7 @@ function Picture({
       className={clsx(
         "inline-block max-w-full object-contain",
         image.background !== false && "bg-surface-muted",
+        structuredContentClassName("img"),
       )}
       style={pictureStyle(image)}
       {...attributes}

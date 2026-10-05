@@ -34,6 +34,12 @@ describe("scopeDictionaryStylesheet", () => {
       );
     });
 
+    it("prefixes Yomitan's structured content classes as rendered structured content prefixes them", () => {
+      expect(scoped(".gloss-sc-td { padding: 0 }")).toBe(
+        `${scope} .dict-gloss-sc-td { padding: 0; }`,
+      );
+    });
+
     it("prefixes ids with the dictionary's id, as rendered markup prefixes them", () => {
       expect(scoped("#top:not(#end) { margin: 0 }")).toBe(
         `${scope} #dict-d-top:not(#dict-d-end) { margin: 0; }`,
