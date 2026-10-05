@@ -15,6 +15,7 @@ mod lookup_candidate;
 mod lookup_result;
 mod result_group;
 mod result_sort_key;
+mod separated_verb;
 mod term_meta_matching;
 mod word_boundary;
 
@@ -27,5 +28,6 @@ pub use lookup_result::{
     DictionaryDefinitions, DictionaryFrequency, DictionaryPronunciation, DictionaryStylesheet,
     KanjiResult, LookupResult,
 };
+pub use separated_verb::{ContextWord, SeparatedVerb};
 #[cfg(test)]
 mod german_lookup_tests;

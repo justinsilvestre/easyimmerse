@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 
+use super::separated_verb::SeparatedVerb;
 use super::word_boundary::is_word_boundary;
 use crate::deinflection::{Deinflection, deinflect, is_bare_form, is_fallback};
 
@@ -14,6 +15,9 @@ pub struct LookupCandidate {
     pub deinflection: Deinflection,
     /// Whether the deinflection only takes a word back from a bare form, such as 書き or 書け from 書く.
     pub is_bare_form: bool,
+    /// The finite verb and the particle, when the candidate is a particle verb whose parts stand apart in the context.
+    /// The matched text is then the one of the two that was looked up.
+    pub separated_verb: Option<SeparatedVerb>,
 }
 
 impl LookupCandidate {
@@ -62,6 +66,7 @@ pub fn lookup_candidates(text: &str, language: &str) -> Vec<LookupCandidate> {
                     matched_text: prefix.to_string(),
                     is_bare_form: is_bare_form(language, &deinflection),
                     deinflection,
+                    separated_verb: None,
                 });
             }
         }
@@ -113,6 +118,7 @@ mod tests {
                 inflections: inflections.iter().map(|name| name.to_string()).collect(),
             },
             is_bare_form: false,
+            separated_verb: None,
         }
     }
 

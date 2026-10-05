@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
+use super::separated_verb::SeparatedVerb;
 use crate::dictionary::{Frequency, KanjiEntry, TagDefinition, TermEntry, TermMetaData};
 
 /// The entries of every dictionary for one term and reading that the looked-up text may stand for.
@@ -19,6 +20,11 @@ pub struct LookupResult {
     pub definitions: Vec<DictionaryDefinitions>,
     pub frequencies: Vec<DictionaryFrequency>,
     pub pronunciations: Vec<DictionaryPronunciation>,
+    /// The finite verb and the particle, with their places in the context, when the term is a particle verb
+    /// whose parts stand apart, as rufe and an in „Ich rufe dich morgen an".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub separated_verb: Option<SeparatedVerb>,
 }
 
 /// One dictionary's entry for a result, with the meaning of each tag it uses.

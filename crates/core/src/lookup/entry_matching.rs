@@ -8,8 +8,14 @@ use crate::deinflection::is_unmarked_word_class;
 /// A candidate with inflections undone needs an entry of one of its word classes,
 /// unless the entry's format carries no word classes at all.
 /// An entry without classes also fits a candidate of a class that dictionaries leave unmarked, such as adverbs.
+/// A particle verb whose parts stand apart needs an entry with that verb, in lowercase, as a headword.
 pub fn is_match(candidate: &LookupCandidate, found: &FoundEntry) -> bool {
     found.folded_headword == fold_case(&candidate.deinflection.term)
+        && (candidate.separated_verb.is_none()
+            || found
+                .entry
+                .headwords()
+                .contains(&candidate.deinflection.term.as_str()))
         && (!candidate.is_inflected()
             || !found.dictionary.format.has_word_classes()
             || has_required_word_class(candidate, found))
@@ -59,6 +65,7 @@ mod tests {
             matched_text: text.to_string(),
             deinflection: Deinflection::unchanged(text),
             is_bare_form: false,
+            separated_verb: None,
         }
     }
 
@@ -71,6 +78,7 @@ mod tests {
                 inflections: vec!["past".to_string()],
             },
             is_bare_form: false,
+            separated_verb: None,
         }
     }
 
