@@ -185,6 +185,7 @@ const meta = {
     onBack: fn(),
     onWordHover: fn(),
     onWordClick: fn(),
+    onWordDoubleClick: fn(),
     onLookup: fn(),
     onAddFlashcard: fn(),
     sidePanel: subtitlesPanel(),

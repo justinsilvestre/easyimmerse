@@ -28,6 +28,7 @@ const meta = {
     onSeek: fn(),
     onWordHover: fn(),
     onWordClick: fn(),
+    onWordDoubleClick: fn(),
     onAddSubtitlesFile: fn(),
     onGenerateSubtitles: fn(),
   },

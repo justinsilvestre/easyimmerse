@@ -1,6 +1,7 @@
 import { actions, selectPlayer } from "@easyimmerse/state";
-import type { Project } from "@easyimmerse/types";
+import type { Cue, Project } from "@easyimmerse/types";
 import { useReducer } from "react";
+import { stripMarkup } from "../components/ClickableText.tsx";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
@@ -11,12 +12,22 @@ import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
 import { useScreenshotUrl } from "../flashcards/useScreenshotUrl.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
+import { usePlaybackPause } from "../hooks/usePlaybackPause.ts";
+import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
+import {
+  flashcardFieldsFromLookup,
+  type LookupFlashcardFields,
+} from "../lookup/flashcardFieldsFromLookup.ts";
+import { lookupTextAt } from "../lookup/lookupTextAt.ts";
+import { useDictionaryLookup } from "../lookup/useDictionaryLookup.ts";
 import { findTranslationOf } from "../media/findCue.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { skipTarget } from "../media/skipTarget.ts";
+import { useNavigationActions } from "../navigationContext.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
@@ -26,6 +37,8 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
 /**
  * The screen for watching or listening to one of the project's media files:
  * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
+ * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
+ * double-clicking a word starts a flashcard for it at once.
  */
 export function MediaScreen({
   project,
@@ -68,25 +81,72 @@ export function MediaScreen({
   const startFlashcard = (
     word: string,
     cue = cueForFlashcard(subtitles.cues, currentMs),
+    lookupFields: LookupFlashcardFields | null = null,
   ) => {
     if (mediaFile === null) return;
+    const draft = draftFromCue({
+      word,
+      cue,
+      translationCue: cue
+        ? findTranslationOf(cue, subtitles.translationCues)
+        : null,
+      mediaFile,
+      settings,
+      hasScreenshots,
+    });
     flashcards.start(
-      draftFromCue({
-        word,
-        cue,
-        translationCue: cue
-          ? findTranslationOf(cue, subtitles.translationCues)
-          : null,
-        mediaFile,
-        settings,
-        hasScreenshots,
-      }),
+      lookupFields
+        ? { ...draft, content: { ...draft.content, ...lookupFields } }
+        : draft,
     );
   };
   const languages = {
     target: settings.target_language,
     translation: settings.translation_language,
   };
+  const lookup = useDictionaryLookup(settings.target_language);
+  const lookupPause = usePlaybackPause();
+  const { openDictionaries } = useNavigationActions();
+  const lookUpWord = (word: string, cue: Cue, start: number) => {
+    lookupPause.pause();
+    lookup.chooseWord({
+      term: word,
+      lookup: lookupTextAt(stripMarkup(cue.text), start),
+      cue,
+    });
+  };
+  const openLookupSearch = () => {
+    lookupPause.pause();
+    lookup.openSearch();
+  };
+  const closeLookup = () => {
+    lookup.close();
+    lookupPause.resume();
+  };
+  /** Ends the lookup in a flashcard, which keeps playback paused while it is edited. */
+  const startFlashcardFromLookup = (
+    word: string,
+    cue: Cue | null,
+    lookupFields: LookupFlashcardFields | null,
+  ) => {
+    lookup.close();
+    lookupPause.forget();
+    startFlashcard(lookupFields?.word ?? word, cue ?? undefined, lookupFields);
+  };
+  const createFlashcardFromPopup = (entryIndex: number | null) =>
+    startFlashcardFromLookup(
+      lookup.request?.term ?? "",
+      lookup.request?.cue ?? null,
+      flashcardFieldsFromLookup(
+        lookup.results,
+        entryIndex,
+        languages,
+        lookup.dictionaries,
+      ),
+    );
+  const startFlashcardFromWord = (word: string, cue: Cue) =>
+    startFlashcardFromLookup(word, cue, null);
+  useKeyboardShortcut("l", openLookupSearch);
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
     onSeek: (ms) => dispatch(actions.seekRequested(ms / 1000)),
@@ -140,16 +200,28 @@ export function MediaScreen({
       subtitleDisplay={panels.subtitleDisplay}
       playerCallbacks={playerCallbacks}
       onBack={() => dispatch(actions.closeMedia())}
+      activeWord={lookup.request?.term}
       onWordHover={() => undefined}
-      onWordClick={(word) => startFlashcard(word)}
-      onLookup={() =>
-        dispatch(
-          actions.notificationRequested(
-            "Dictionary lookups are not available yet.",
-          ),
+      onWordClick={lookUpWord}
+      onWordDoubleClick={startFlashcardFromWord}
+      onLookup={openLookupSearch}
+      onAddFlashcard={() => startFlashcard("")}
+      lookup={
+        lookup.popup && (
+          <DictionaryPopup
+            state={lookup.state}
+            mode={lookup.popup.mode}
+            resolveMediaUrl={lookup.resolveMediaUrl}
+            onSearch={lookup.search}
+            onCreateFlashcard={createFlashcardFromPopup}
+            onClose={closeLookup}
+            onSetUpDictionary={() => {
+              closeLookup();
+              openDictionaries();
+            }}
+          />
         )
       }
-      onAddFlashcard={() => startFlashcard("")}
       headerContent={
         flashcards.isSaved ? (
           <FlashcardSaveNotice
@@ -181,7 +253,9 @@ export function MediaScreen({
             tracks={tracks}
             currentMs={currentMs}
             flashcardCueIndexes={flashcards.cueIndexes}
-            onWordClick={startFlashcard}
+            activeWord={lookup.request?.term}
+            onWordClick={lookUpWord}
+            onWordDoubleClick={startFlashcardFromWord}
           />
         ) : undefined
       }

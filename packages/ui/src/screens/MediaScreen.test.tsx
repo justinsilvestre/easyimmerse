@@ -5,7 +5,12 @@ import {
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
 } from "@easyimmerse/state";
-import type { Flashcard, MediaFile } from "@easyimmerse/types";
+import type {
+  DictionarySummary,
+  Flashcard,
+  LookupResponse,
+  MediaFile,
+} from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -15,6 +20,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
+import { exampleResults } from "../lookup/exampleLookup.ts";
 import {
   createFrameCapturer,
   type FrameCapturer,
@@ -53,10 +59,46 @@ const savedFlashcard: Flashcard = {
   updated_at_ms: 0,
 };
 
-function renderMediaScreen(flashcards: Flashcard[] = []) {
+function dictionarySummary(
+  id: string,
+  sourceLanguage: string,
+  targetLanguage: string,
+): DictionarySummary {
+  return {
+    id,
+    title: id,
+    format: "csv",
+    source_language: sourceLanguage,
+    target_language: targetLanguage,
+    entry_count: 1,
+    term_meta_count: 0,
+    tag_count: 0,
+    kanji_count: 0,
+    kanji_meta_count: 0,
+    media_count: 0,
+  };
+}
+
+const germanDictionaries = [
+  dictionarySummary("wiktionary-de-en", "de", "en"),
+  dictionarySummary("dwds", "de", "de"),
+];
+
+const lookupResponse: LookupResponse = {
+  results: [...exampleResults],
+  kanji: [],
+  stylesheets: [],
+};
+
+function renderMediaScreen(
+  flashcards: Flashcard[] = [],
+  dictionaries: DictionarySummary[] = germanDictionaries,
+) {
   const client = createFakeBackendClient(
     {
       ...fixtureResponses,
+      "GET /dictionaries": { dictionaries },
+      "GET /dictionaries/lookup": lookupResponse,
       "GET /projects/p1/flashcards": { flashcards },
       "PUT /projects/p1/flashcards/f1": savedFlashcard,
       "POST /projects/p1/media/m1/subtitles":
@@ -140,7 +182,7 @@ async function startFlashcardBeforeProbe(hasPictures: boolean) {
   const { capturer, answer } = createWaitingFrameCapturer();
   const rendered = renderBrowserVideoScreen(file, capturer);
   const list = await findSubtitles();
-  fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+  fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
   answer(hasPictures);
   await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(hasPictures));
   return rendered;
@@ -164,7 +206,7 @@ async function savedScreenshotOfNewFlashcard(
   client: ReturnType<typeof createFakeBackendClient>,
 ) {
   const list = await findSubtitles();
-  fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+  fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
   return saveOpenFlashcard(client);
 }
 
@@ -232,6 +274,103 @@ function bodyOf(request: BackendRequest | undefined): unknown {
   return request?.body?.kind === "json" ? request.body.value : undefined;
 }
 
+/** Clicks a word in the subtitles panel and waits for the dictionary pop-up. */
+async function lookUpInPanel(word: string) {
+  const list = await findSubtitles();
+  fireEvent.click(within(list).getByRole("button", { name: word }));
+  return screen.findByRole("region", { name: "Dictionary" });
+}
+
+const togglePlayerCount = (effects: { calls: { type: string }[] }) =>
+  effects.calls.filter((call) => call.type === "togglePlayer").length;
+
+describe("MediaScreen lookup", () => {
+  it("looks a clicked word up with its cue as context", async () => {
+    const { client } = renderMediaScreen();
+    await lookUpInPanel("cat");
+    await vi.waitFor(() =>
+      expect(
+        requestsTo(client.requests, "GET", "/dictionaries/lookup")[0]?.query,
+      ).toEqual({
+        text: "cat is sleeping.",
+        language: "de",
+        context: "The cat is sleeping.",
+        offset: "4",
+      }),
+    );
+  });
+
+  it("shows the entries of a clicked word in the dictionary pop-up", async () => {
+    renderMediaScreen();
+    const popup = await lookUpInPanel("cat");
+    expect(
+      await within(popup).findByRole("button", { name: "devour" }),
+    ).toBeDefined();
+  });
+
+  it("fills a flashcard made from the pop-up with the definitions in the translation language", async () => {
+    renderMediaScreen();
+    const popup = await lookUpInPanel("cat");
+    fireEvent.click(
+      await within(popup).findByRole("button", { name: "Flashcard" }),
+    );
+    expect(
+      (screen.getByLabelText("Definition (en)") as HTMLTextAreaElement).value,
+    ).toMatch(/^to eat \(of an animal\); to devour\n/);
+  });
+
+  it("takes the word of a flashcard made from the pop-up from the dictionary", async () => {
+    renderMediaScreen();
+    const popup = await lookUpInPanel("cat");
+    fireEvent.click(
+      await within(popup).findByRole("button", { name: "Flashcard" }),
+    );
+    expect(
+      (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
+    ).toBe("fressen");
+  });
+
+  it("closes the pop-up on Escape", async () => {
+    renderMediaScreen();
+    await lookUpInPanel("cat");
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(screen.queryByRole("region", { name: "Dictionary" })).toBeNull();
+  });
+
+  it("pauses playback while the pop-up is open", async () => {
+    const { effects, store } = renderMediaScreen();
+    act(() => store.dispatch(actions.playerPlayingChanged(true)));
+    await lookUpInPanel("cat");
+    expect(togglePlayerCount(effects)).toBe(1);
+  });
+
+  it("resumes playback when the pop-up closes", async () => {
+    const { effects, store } = renderMediaScreen();
+    act(() => store.dispatch(actions.playerPlayingChanged(true)));
+    await lookUpInPanel("cat");
+    act(() => store.dispatch(actions.playerPlayingChanged(false)));
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(togglePlayerCount(effects)).toBe(2);
+  });
+
+  it("asks for a dictionary when none covers the project's language", async () => {
+    renderMediaScreen([], [dictionarySummary("jmdict", "ja", "en")]);
+    const popup = await lookUpInPanel("cat");
+    expect(
+      await within(popup).findByRole("button", { name: "Add a dictionary" }),
+    ).toBeDefined();
+  });
+
+  it("opens the pop-up's search field with the L key", async () => {
+    renderMediaScreen();
+    await findSubtitles();
+    fireEvent.keyDown(document.body, { key: "l" });
+    expect(
+      screen.getByRole("textbox", { name: "Word to look up" }),
+    ).toBeDefined();
+  });
+});
+
 describe("MediaScreen", () => {
   it("lists one card per cue of the target-language subtitles", async () => {
     renderMediaScreen();
@@ -290,19 +429,19 @@ describe("MediaScreen", () => {
     );
   });
 
-  it("opens the flashcard editor with a word clicked in the subtitles", async () => {
+  it("opens the flashcard editor with a word double-clicked in the subtitles", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+    fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
     expect(
       (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
     ).toBe("cat");
   });
 
-  it("takes a new flashcard's sentence from the cue whose word was clicked", async () => {
+  it("takes a new flashcard's sentence from the cue whose word was double-clicked", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    fireEvent.click(within(list).getByRole("button", { name: "dog" }));
+    fireEvent.doubleClick(within(list).getByRole("button", { name: "dog" }));
     expect(
       (screen.getByLabelText("Sentence (de)") as HTMLTextAreaElement).value,
     ).toBe("The dog wants to eat.\nIt is hungry.");
@@ -311,7 +450,7 @@ describe("MediaScreen", () => {
   it("saves a new flashcard in the project", async () => {
     const { client } = renderMediaScreen();
     const list = await findSubtitles();
-    fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+    fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await vi.waitFor(() =>
       expect(
@@ -325,7 +464,7 @@ describe("MediaScreen", () => {
   it("tells the user once the flashcard is saved", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+    fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(
       await screen.findByText("Flashcard saved to the project."),
@@ -419,7 +558,7 @@ describe("MediaScreen", () => {
 
     it("moves the clip of a new flashcard that is not saved yet", async () => {
       const { client } = await renderWithWaveform();
-      fireEvent.click(
+      fireEvent.doubleClick(
         within(screen.getByRole("list", { name: "Subtitles" })).getByRole(
           "button",
           { name: "cat" },
@@ -448,7 +587,7 @@ describe("MediaScreen", () => {
     it("shows the screenshot captured from the file", async () => {
       renderBrowserVideoScreen(browserVideo());
       const list = await findSubtitles();
-      fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+      fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
       const thumbnail = await screen.findByAltText("Screenshot from the video");
       expect(thumbnail.getAttribute("src")).toBe("frame-at-1");
     });
@@ -475,7 +614,7 @@ describe("MediaScreen", () => {
       const { capturer } = createWaitingFrameCapturer();
       renderBrowserVideoScreen(browserVideo(), capturer);
       const list = await findSubtitles();
-      fireEvent.click(within(list).getByRole("button", { name: "cat" }));
+      fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
       expect(screen.queryByLabelText("Include the screenshot")).toBeNull();
     });
 

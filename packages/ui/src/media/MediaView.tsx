@@ -33,7 +33,9 @@ type MediaViewProps = {
   playerCallbacks: PlayerCallbacks;
   onBack: () => void;
   onWordHover: (word: string) => void;
-  onWordClick: (word: string) => void;
+  /** Receives a word clicked in the subtitles over the stage, with its cue and its offset in the cue's text without markup. */
+  onWordClick: (word: string, cue: Cue, start: number) => void;
+  onWordDoubleClick?: (word: string, cue: Cue, start: number) => void;
   onLookup: () => void;
   onAddFlashcard: () => void;
   /** Notices to show above the stage, such as the unsaved-work banner. */
@@ -81,6 +83,7 @@ export function MediaView(props: MediaViewProps) {
               activeWord={props.activeWord}
               onWordHover={props.onWordHover}
               onWordClick={props.onWordClick}
+              onWordDoubleClick={props.onWordDoubleClick}
             />
             {props.lookup && (
               <div className="fixed inset-x-2 top-16 bottom-2 z-30 flex items-end justify-center md:absolute md:inset-x-auto md:top-auto md:bottom-28 md:left-1/2 md:-translate-x-1/2">

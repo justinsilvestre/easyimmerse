@@ -14,6 +14,7 @@ export function SubtitleOverlay({
   activeWord,
   onWordHover,
   onWordClick,
+  onWordDoubleClick,
 }: {
   targetCue: Cue | null;
   translationCue: Cue | null;
@@ -22,7 +23,9 @@ export function SubtitleOverlay({
   isRaised: boolean;
   activeWord?: string;
   onWordHover: (word: string) => void;
-  onWordClick: (word: string) => void;
+  /** Receives the clicked word with the cue it was clicked in and its offset in the cue's text without markup. */
+  onWordClick: (word: string, cue: Cue, start: number) => void;
+  onWordDoubleClick?: (word: string, cue: Cue, start: number) => void;
 }) {
   const showsTarget = display !== "translation" && targetCue !== null;
   const showsTranslation = display !== "target" && translationCue !== null;
@@ -39,7 +42,10 @@ export function SubtitleOverlay({
             text={stripMarkup(targetCue.text)}
             activeWord={activeWord}
             onWordHover={onWordHover}
-            onWordClick={onWordClick}
+            onWordClick={(word, start) => onWordClick(word, targetCue, start)}
+            onWordDoubleClick={(word, start) =>
+              onWordDoubleClick?.(word, targetCue, start)
+            }
           />
         </p>
       )}
