@@ -115,7 +115,7 @@ export const exampleInflectedResult: LookupResult = {
   matchedText: "食べなかった",
   term: "食べる",
   reading: "たべる",
-  inflections: ["past", "negative"],
+  inflectionChains: [["past", "negative"]],
   definitions: [
     {
       dictionaryId: "jitendex",
@@ -152,12 +152,22 @@ export const exampleInflectedResult: LookupResult = {
   ],
 };
 
+/** A verb form with two equally good analyses: the causative of 食べる made potential or passive by られる. */
+export const exampleAmbiguousInflectionResult: LookupResult = {
+  ...exampleInflectedResult,
+  matchedText: "食べさせられなかった",
+  inflectionChains: [
+    ["past", "negative", "potential", "causative"],
+    ["past", "negative", "passive", "causative"],
+  ],
+};
+
 /** An inflected form whose dictionary entry only points to its base form. */
 export const exampleFormOfResult: LookupResult = {
   matchedText: "行かなかった",
   term: "行かない",
   reading: "いかない",
-  inflections: ["past"],
+  inflectionChains: [["past"]],
   definitions: [
     {
       dictionaryId: "kaikki-ja",
@@ -181,7 +191,7 @@ export const examplePronunciationResult: LookupResult = {
   matchedText: "学生",
   term: "学生",
   reading: "がくせい",
-  inflections: [],
+  inflectionChains: [],
   definitions: [
     {
       dictionaryId: "jitendex",

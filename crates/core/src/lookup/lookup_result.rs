@@ -13,8 +13,9 @@ pub struct LookupResult {
     pub matched_text: String,
     pub term: String,
     pub reading: Option<String>,
-    /// The inflections undone to reach the term from the matched text, outermost first.
-    pub inflections: Vec<String>,
+    /// The equally good chains of inflections that lead from the term to the matched text, the most plausible first.
+    /// Each chain names its inflections outermost first. The list is empty when no inflection was undone.
+    pub inflection_chains: Vec<Vec<String>>,
     pub definitions: Vec<DictionaryDefinitions>,
     pub frequencies: Vec<DictionaryFrequency>,
     pub pronunciations: Vec<DictionaryPronunciation>,

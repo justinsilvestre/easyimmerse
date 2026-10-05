@@ -671,8 +671,11 @@ export interface components {
         LookupResult: {
             definitions: components["schemas"]["DictionaryDefinitions"][];
             frequencies: components["schemas"]["DictionaryFrequency"][];
-            /** @description The inflections undone to reach the term from the matched text, outermost first. */
-            inflections: string[];
+            /**
+             * @description The equally good chains of inflections that lead from the term to the matched text, the most plausible first.
+             *     Each chain names its inflections outermost first. The list is empty when no inflection was undone.
+             */
+            inflectionChains: string[][];
             /** @description The beginning of the looked-up text that this result covers. */
             matchedText: string;
             pronunciations: components["schemas"]["DictionaryPronunciation"][];

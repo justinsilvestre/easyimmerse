@@ -3062,7 +3062,7 @@
         "required": [
           "matchedText",
           "term",
-          "inflections",
+          "inflectionChains",
           "definitions",
           "frequencies",
           "pronunciations"
@@ -3080,12 +3080,15 @@
               "$ref": "#/components/schemas/DictionaryFrequency"
             }
           },
-          "inflections": {
+          "inflectionChains": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
-            "description": "The inflections undone to reach the term from the matched text, outermost first."
+            "description": "The equally good chains of inflections that lead from the term to the matched text, the most plausible first.\nEach chain names its inflections outermost first. The list is empty when no inflection was undone."
           },
           "matchedText": {
             "type": "string",

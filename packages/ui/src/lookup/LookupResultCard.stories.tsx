@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
 import {
+  exampleAmbiguousInflectionResult,
   exampleFormOfResult,
   exampleInflectedResult,
   examplePronunciationResult,
@@ -38,6 +39,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const YomitanStructuredContent: Story = {};
+
+export const SeveralInflectionChains: Story = {
+  args: { result: exampleAmbiguousInflectionResult },
+};
 
 export const InflectedFormOf: Story = {
   args: { result: exampleFormOfResult },

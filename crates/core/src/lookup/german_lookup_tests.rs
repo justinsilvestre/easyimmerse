@@ -136,3 +136,18 @@ fn ranks_the_noun_of_a_sentence_initial_word_above_a_bare_imperative() {
     let entries = vec![found("laufen", &["v"], 1), found("Lauf", &["n"], 2)];
     assert_eq!(look_up("Lauf", entries)[0].term, "Lauf");
 }
+
+#[test]
+fn reports_both_the_present_and_the_imperative_plural_of_a_form_in_t() {
+    let results = look_up("lauft", vec![found("laufen", &["v"], 1)]);
+    assert_eq!(
+        results[0].inflection_chains,
+        vec![vec!["present 2pl"], vec!["imperative pl"]]
+    );
+}
+
+#[test]
+fn reports_one_chain_for_a_form_with_one_analysis() {
+    let results = look_up("Häusern", vec![found("Haus", &["n"], 1)]);
+    assert_eq!(results[0].inflection_chains, vec![vec!["dative", "plural"]]);
+}
