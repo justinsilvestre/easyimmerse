@@ -2,6 +2,9 @@ import type { Document } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useState } from "react";
 import { fn } from "storybook/test";
+import { exampleLanguages } from "../flashcards/exampleFlashcard.ts";
+import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
+import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleEntries } from "../lookup/exampleLookup.ts";
@@ -179,6 +182,37 @@ export const UnsavedWork: Story = {
         isBackedUp={false}
         onSave={fn()}
         onLogIn={fn()}
+      />
+    ),
+  },
+};
+
+export const FlashcardStarted: Story = {
+  args: {
+    sidePanel: (
+      <FlashcardEditor
+        state={{
+          content: {
+            word: "Ungeziefer",
+            word_pronunciation: "",
+            l1_definition: "",
+            l2_definition: "",
+            text_context:
+              "Als Gregor Samsa eines Morgens aus unruhigen Träumen erwachte, fand er sich in seinem Bett zu einem ungeheueren Ungeziefer verwandelt.",
+            text_context_translation: "",
+            text_context_pronunciation: "",
+            audio_context: null,
+            screenshot: null,
+            tags: ["die-verwandlung"],
+          },
+          includedFields: fieldsOfPreset("beginner"),
+        }}
+        dispatch={fn()}
+        languages={exampleLanguages}
+        waveform={null}
+        onSave={fn()}
+        onDelete={fn()}
+        onClose={fn()}
       />
     ),
   },
