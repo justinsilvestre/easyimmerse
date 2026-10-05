@@ -27,10 +27,10 @@ import {
 } from "./exampleCues.ts";
 import { generateExamplePeaks } from "./examplePeaks.ts";
 import { MediaView } from "./MediaView.tsx";
-import type { TrackSelection } from "./playback.ts";
 import { SubtitleTrackBar } from "./SubtitleTrackBar.tsx";
+import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 
-const tracks: TrackSelection = {
+const tracks: SubtitleTrackChoices = {
   subtitles: [
     {
       id: "s1",

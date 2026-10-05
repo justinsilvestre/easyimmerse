@@ -4,10 +4,10 @@ import {
   fixtureCopyPlayback,
   fixtureTracksDirect,
 } from "../testSupport/mediaFixtureResponses.ts";
-import type { PlaybackInputs } from "./derivePlaybackState.ts";
-import { derivePlaybackState } from "./derivePlaybackState.ts";
+import type { PlayerStatusInputs } from "./derivePlayerStatus.ts";
+import { derivePlayerStatus } from "./derivePlayerStatus.ts";
 
-const inputs: PlaybackInputs = {
+const inputs: PlayerStatusInputs = {
   server: fakeServer,
   projectId: "p1",
   mediaFileId: "m1",
@@ -19,9 +19,9 @@ const inputs: PlaybackInputs = {
   noticeSettled: false,
 };
 
-describe("derivePlaybackState", () => {
+describe("derivePlayerStatus", () => {
   it("builds the HLS source with the bearer header for a converting plan", () => {
-    expect(derivePlaybackState(inputs)).toMatchObject({
+    expect(derivePlayerStatus(inputs)).toMatchObject({
       status: "ready",
       source: {
         kind: "hls",
@@ -32,13 +32,13 @@ describe("derivePlaybackState", () => {
   });
 
   it("takes the frame rate from the video track", () => {
-    expect(derivePlaybackState(inputs)).toMatchObject({
+    expect(derivePlayerStatus(inputs)).toMatchObject({
       frameRate: { num: 24, den: 1 },
     });
   });
 
   it("fails when a converting plan names no playlist", () => {
-    const state = derivePlaybackState({
+    const state = derivePlayerStatus({
       ...inputs,
       playback: { ...fixtureCopyPlayback, playlist_path: null },
     });
@@ -46,7 +46,7 @@ describe("derivePlaybackState", () => {
   });
 
   it("reports a tracks error before waiting for the plan", () => {
-    const state = derivePlaybackState({
+    const state = derivePlayerStatus({
       ...inputs,
       tracks: undefined,
       tracksError: { message: "Forbidden" },
@@ -56,7 +56,7 @@ describe("derivePlaybackState", () => {
   });
 
   it("falls back to a plain sentence when an error has no message", () => {
-    const state = derivePlaybackState({ ...inputs, playbackError: {} });
+    const state = derivePlayerStatus({ ...inputs, playbackError: {} });
     expect(state).toEqual({
       status: "error",
       cause: "The server did not answer.",

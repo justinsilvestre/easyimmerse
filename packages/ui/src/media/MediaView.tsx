@@ -12,15 +12,16 @@ import { useNavigationActions } from "../navigationContext.ts";
 import { languageName } from "../projects/languages.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
 import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
-import type { PlaybackState, TrackSelection } from "./playback.ts";
+import type { PlayerControlsState } from "./PlayerControlsState.ts";
 import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
+import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 
 type MediaViewProps = {
   media: { title: string; language: string };
   /** The player itself: the video, or the artwork of an audio file, with whatever precedes playback. */
   stage: ReactNode;
-  playback: PlaybackState;
-  tracks: TrackSelection;
+  playback: PlayerControlsState;
+  tracks: SubtitleTrackChoices;
   cues: readonly Cue[];
   translationCues: readonly Cue[];
   /** The waveform strip under the stage, shown while the waveform panel is open. */

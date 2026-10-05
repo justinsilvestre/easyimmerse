@@ -18,12 +18,12 @@ import type {
 import { useMemo, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { derivePlaybackState } from "./derivePlaybackState.ts";
+import { derivePlayerStatus } from "./derivePlayerStatus.ts";
 import {
   measurePlaybackEnvironment,
   readPlaybackProbes,
 } from "./measurePlaybackEnvironment.ts";
-import type { PlaybackState } from "./PlaybackState.ts";
+import type { PlayerStatus } from "./PlayerStatus.ts";
 import {
   containerCodecStrings,
   needsTrackChoice,
@@ -83,7 +83,7 @@ export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
   );
   const [saveSelection] = useSaveTrackSelectionMutation();
 
-  const playbackState: PlaybackState = derivePlaybackState({
+  const playerStatus: PlayerStatus = derivePlayerStatus({
     server: getServerConfig(),
     projectId,
     mediaFileId,
@@ -106,7 +106,7 @@ export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
       );
   };
   return {
-    playback: playbackState,
+    playback: playerStatus,
     trackChoice:
       container !== undefined && (choiceDue || trackDialog === "open")
         ? {

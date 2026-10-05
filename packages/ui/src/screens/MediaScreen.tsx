@@ -15,7 +15,7 @@ import { findTranslationOf } from "../media/findCue.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
-import type { TrackSelection } from "../media/playback.ts";
+import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { skipTarget } from "../media/skipTarget.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
@@ -59,7 +59,7 @@ export function MediaScreen({
     screenshotSource,
     editedContent?.screenshot?.at_ms ?? null,
   );
-  const tracks: TrackSelection = {
+  const tracks: SubtitleTrackChoices = {
     subtitles: subtitles.options,
     targetSubtitlesId: subtitles.selection.target_track_id,
     translationSubtitlesId: subtitles.selection.translation_track_id,

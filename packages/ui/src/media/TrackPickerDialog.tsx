@@ -3,7 +3,7 @@ import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { ModalDialog } from "../components/ModalDialog.tsx";
 import { languageName } from "../projects/languages.ts";
-import type { TrackOption } from "./playback.ts";
+import type { SubtitleTrackOption } from "./SubtitleTrackChoices.ts";
 
 /** Asks which of several subtitle tracks to show when none is alone in the wanted language. */
 export function TrackPickerDialog({
@@ -14,7 +14,7 @@ export function TrackPickerDialog({
   onSkip,
 }: {
   purpose: "targetSubtitles" | "translationSubtitles";
-  tracks: readonly TrackOption[];
+  tracks: readonly SubtitleTrackOption[];
   wantedLanguage: string;
   onChoose: (trackId: string) => void;
   onSkip: () => void;

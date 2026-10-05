@@ -9,8 +9,8 @@ import type {
   TrackSelection,
   TracksResponse,
 } from "@easyimmerse/types";
-import type { PlaybackState } from "./PlaybackState.ts";
-import { failedPlayback, loadingPlayback } from "./PlaybackState.ts";
+import type { PlayerStatus } from "./PlayerStatus.ts";
+import { failedPlayback, loadingPlayback } from "./PlayerStatus.ts";
 import type { RequestError } from "./playbackFailure.ts";
 import {
   describeRequestError,
@@ -22,7 +22,7 @@ import {
   tracksOfKind,
 } from "./playbackPlanRules.ts";
 
-export type PlaybackInputs = {
+export type PlayerStatusInputs = {
   server: ServerConfig | null;
   projectId: string;
   mediaFileId: string;
@@ -36,7 +36,7 @@ export type PlaybackInputs = {
 };
 
 /** Turns the state of the tracks and playback requests into what the player shows. */
-export function derivePlaybackState(inputs: PlaybackInputs): PlaybackState {
+export function derivePlayerStatus(inputs: PlayerStatusInputs): PlayerStatus {
   if (inputs.server === null)
     return failedPlayback(
       "This file is on a server's disk, and no server is connected.",
@@ -51,11 +51,11 @@ export function derivePlaybackState(inputs: PlaybackInputs): PlaybackState {
 }
 
 function planState(
-  inputs: PlaybackInputs,
+  inputs: PlayerStatusInputs,
   server: ServerConfig,
   tracks: TracksResponse,
   playback: PlaybackResponse,
-): PlaybackState {
+): PlayerStatus {
   const { plan } = playback;
   if (plan.kind === "unsupported")
     return failedPlayback(describeUnsupportedReason(plan.reason));

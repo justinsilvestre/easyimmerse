@@ -3,8 +3,8 @@ import { selectCurrentMediaFileId } from "@easyimmerse/state";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { BrowserFilePlayer } from "./BrowserFilePlayer.tsx";
 import { PathMediaPlayer } from "./PathMediaPlayer.tsx";
-import { failedPlayback, loadingPlayback } from "./PlaybackState.ts";
 import { PlayerPanel } from "./PlayerPanel.tsx";
+import { failedPlayback, loadingPlayback } from "./PlayerStatus.ts";
 
 /** The player for the project's open media file, or an invitation to open one. */
 export function MediaPlayer({ projectId }: { projectId: string }) {

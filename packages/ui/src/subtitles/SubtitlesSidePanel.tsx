@@ -3,8 +3,8 @@ import type { Cue } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { CuePanel } from "../media/CuePanel.tsx";
 import { findCueAt } from "../media/findCue.ts";
-import type { TrackSelection } from "../media/playback.ts";
 import { SubtitleTrackBar } from "../media/SubtitleTrackBar.tsx";
+import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import type { useMediaSubtitles } from "./useMediaSubtitles.ts";
 
 /** The subtitles panel beside the stage: the track choice above one card per cue of the target-language track. */
@@ -16,7 +16,7 @@ export function SubtitlesSidePanel({
   onWordClick,
 }: {
   subtitles: ReturnType<typeof useMediaSubtitles>;
-  tracks: TrackSelection;
+  tracks: SubtitleTrackChoices;
   currentMs: number;
   flashcardCueIndexes: readonly number[];
   onWordClick: (word: string, cue: Cue) => void;

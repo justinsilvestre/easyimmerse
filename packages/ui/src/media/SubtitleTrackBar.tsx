@@ -1,6 +1,9 @@
 import { FilePlus } from "lucide-react";
 import { IconButton } from "../components/IconButton.tsx";
-import type { TrackOption, TrackSelection } from "./playback.ts";
+import type {
+  SubtitleTrackChoices,
+  SubtitleTrackOption,
+} from "./SubtitleTrackChoices.ts";
 
 /** The row at the top of the subtitles panel for choosing the subtitle tracks and adding a subtitles file. */
 export function SubtitleTrackBar({
@@ -9,7 +12,7 @@ export function SubtitleTrackBar({
   onTranslationChange,
   onAddFile,
 }: {
-  tracks: TrackSelection;
+  tracks: SubtitleTrackChoices;
   onTargetChange: (trackId: string | null) => void;
   onTranslationChange: (trackId: string | null) => void;
   onAddFile: () => void;
@@ -47,7 +50,7 @@ function TrackSelect({
   label: string;
   value: string | null;
   noneLabel: string;
-  tracks: readonly TrackOption[];
+  tracks: readonly SubtitleTrackOption[];
   onChange: (trackId: string | null) => void;
 }) {
   return (

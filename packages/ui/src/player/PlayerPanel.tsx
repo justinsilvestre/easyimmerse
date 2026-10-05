@@ -6,9 +6,9 @@ import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { captureVideoFrame } from "./captureVideoFrame.ts";
 import { MediaElement } from "./MediaElement.tsx";
-import type { PlaybackState } from "./PlaybackState.ts";
 import { PlayerFailure } from "./PlayerFailure.tsx";
 import type { PlayerSource } from "./PlayerSource.ts";
+import type { PlayerStatus } from "./PlayerStatus.ts";
 
 /**
  * The player as it fills the media screen's black stage: the video, or artwork standing in for an audio file,
@@ -20,7 +20,7 @@ export function PlayerPanel({
   onOpenTracks,
 }: {
   name: string;
-  playback: PlaybackState;
+  playback: PlayerStatus;
   /** Opens the track choice dialog. Absent when the file offers nothing to choose. */
   onOpenTracks?: () => void;
 }) {
@@ -40,7 +40,7 @@ function PlayerBody({
   onOpenTracks,
 }: {
   name: string;
-  playback: PlaybackState;
+  playback: PlayerStatus;
   onOpenTracks?: () => void;
 }) {
   switch (playback.status) {

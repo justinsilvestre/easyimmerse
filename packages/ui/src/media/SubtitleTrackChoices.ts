@@ -1,14 +1,5 @@
-/** The player's state as the controls show it. Volume is 0 to 1; speed is a multiplier. */
-export type PlaybackState = {
-  isPlaying: boolean;
-  currentMs: number;
-  durationMs: number;
-  volume: number;
-  speed: number;
-};
-
 /** A subtitle track the user can switch to. */
-export type TrackOption = {
+export type SubtitleTrackOption = {
   id: string;
   label: string;
   language: string | null;
@@ -17,8 +8,8 @@ export type TrackOption = {
 };
 
 /** The subtitle tracks a media file offers and which of them are in use. */
-export type TrackSelection = {
-  subtitles: readonly TrackOption[];
+export type SubtitleTrackChoices = {
+  subtitles: readonly SubtitleTrackOption[];
   targetSubtitlesId: string | null;
   translationSubtitlesId: string | null;
 };

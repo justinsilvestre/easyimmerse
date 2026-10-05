@@ -12,7 +12,7 @@ import type {
   SubtitleTrack,
 } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import type { TrackOption } from "../media/playback.ts";
+import type { SubtitleTrackOption } from "../media/SubtitleTrackChoices.ts";
 import { useAddChosenSubtitleFile } from "./useAddChosenSubtitleFile.ts";
 
 const noCues: readonly Cue[] = [];
@@ -67,7 +67,7 @@ function useCues(
   };
 }
 
-function optionOf(track: SubtitleTrack): TrackOption {
+function optionOf(track: SubtitleTrack): SubtitleTrackOption {
   return {
     id: track.id,
     label: track.name,

@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { IconButton } from "../components/IconButton.tsx";
 import { formatTimestamp } from "./formatTimestamp.ts";
-import type { PlaybackState, TrackSelection } from "./playback.ts";
+import type { PlayerControlsState } from "./PlayerControlsState.ts";
+import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 
 export type PlayerCallbacks = {
   onTogglePlay: () => void;
@@ -36,8 +37,8 @@ export function PlayerControls({
   panels,
   callbacks,
 }: {
-  playback: PlaybackState;
-  tracks: TrackSelection;
+  playback: PlayerControlsState;
+  tracks: SubtitleTrackChoices;
   panels: { cues: boolean; waveform: boolean };
   callbacks: PlayerCallbacks;
 }) {

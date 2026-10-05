@@ -2,9 +2,9 @@ import type { MediaFile } from "@easyimmerse/types";
 import { useEffect, useMemo } from "react";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { isAudioFileName } from "./isAudioFileName.ts";
-import type { PlaybackState } from "./PlaybackState.ts";
-import { failedPlayback, loadingPlayback } from "./PlaybackState.ts";
 import { PlayerPanel } from "./PlayerPanel.tsx";
+import type { PlayerStatus } from "./PlayerStatus.ts";
+import { failedPlayback, loadingPlayback } from "./PlayerStatus.ts";
 
 /** Plays a file the browser holds from a blob URL. Such a file is never converted and has no waveform. */
 export function BrowserFilePlayer({ mediaFile }: { mediaFile: MediaFile }) {
@@ -24,7 +24,7 @@ function browserPlayback(
   file: File | null,
   url: string | null,
   name: string,
-): PlaybackState {
+): PlayerStatus {
   if (!hasRegistry)
     return failedPlayback(
       "This file was added in a web browser, and this app cannot reach it.",

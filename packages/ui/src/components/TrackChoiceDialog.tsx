@@ -1,11 +1,9 @@
+import type { TrackSelection } from "@easyimmerse/types";
 import { useId, useState } from "react";
 import { Button } from "./Button.tsx";
 import { ModalDialog } from "./ModalDialog.tsx";
 import type { TrackChoice } from "./trackChoiceLabels.ts";
 import { trackLabels } from "./trackChoiceLabels.ts";
-
-/** The chosen stream index of each kind, or null when the file has no track of that kind. */
-export type TrackSelection = { video: number | null; audio: number | null };
 
 /** Lets the user pick one video and one audio track before a file with several of either plays. */
 export function TrackChoiceDialog({

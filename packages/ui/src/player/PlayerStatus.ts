@@ -2,7 +2,7 @@ import type { Rational } from "@easyimmerse/types";
 import type { PlayerSource } from "./PlayerSource.ts";
 
 /** What the player shows for the open media file. */
-export type PlaybackState =
+export type PlayerStatus =
   | { status: "loading" }
   /** The conversion notice must be accepted before the stream loads. */
   | { status: "notice" }
@@ -14,9 +14,9 @@ export type PlaybackState =
     }
   | { status: "error"; cause: string };
 
-export const loadingPlayback: PlaybackState = { status: "loading" };
+export const loadingPlayback: PlayerStatus = { status: "loading" };
 
-export const failedPlayback = (cause: string): PlaybackState => ({
+export const failedPlayback = (cause: string): PlayerStatus => ({
   status: "error",
   cause,
 });
