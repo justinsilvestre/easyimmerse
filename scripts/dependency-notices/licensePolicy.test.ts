@@ -20,7 +20,7 @@ describe("isAllowedLicense", () => {
   });
 
   it("rejects a combination that includes a license outside the list", () => {
-    assert.equal(isAllowedLicense("MIT AND CDLA-Permissive-2.0"), false);
+    assert.equal(isAllowedLicense("MIT AND GPL-3.0-only"), false);
   });
 
   it("rejects a missing license", () => {

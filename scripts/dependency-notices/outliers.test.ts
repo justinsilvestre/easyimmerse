@@ -10,7 +10,7 @@ const data = {
       title: "Rust crates",
       packages: [
         { name: "cat", license: "MIT" },
-        { name: "roots", license: "CDLA-Permissive-2.0" },
+        { name: "copyleft", license: "GPL-3.0-only" },
       ].map((found) => ({
         ...found,
         version: "1.0.0",
@@ -27,7 +27,7 @@ describe("findOutliers", () => {
   it("lists the packages whose license is outside the allowed list", () => {
     assert.deepEqual(
       findOutliers(data).map((outlier) => outlier.name),
-      ["roots"],
+      ["copyleft"],
     );
   });
 });
@@ -37,8 +37,8 @@ describe("findUnacceptedOutliers", () => {
     const accepted = [
       {
         group: "Rust crates",
-        name: "roots",
-        license: "CDLA-Permissive-2.0",
+        name: "copyleft",
+        license: "GPL-3.0-only",
         reason: "reviewed",
       },
     ];
@@ -49,7 +49,7 @@ describe("findUnacceptedOutliers", () => {
     const accepted = [
       {
         group: "Rust crates",
-        name: "roots",
+        name: "copyleft",
         license: "MIT",
         reason: "reviewed",
       },

@@ -19,6 +19,7 @@ const ALLOWED_LICENSES = new Set([
   "Unicode-3.0",
   "Unicode-DFS-2016",
   "BSL-1.0",
+  "CDLA-Permissive-2.0",
 ]);
 
 /** Rewrites the `MIT/Apache-2.0` form that older packages use into an SPDX expression. */

@@ -1,8 +1,1 @@
-[
-  {
-    "group": "Rust crates",
-    "name": "webpki-roots",
-    "license": "CDLA-Permissive-2.0",
-    "reason": "Mozilla's root certificates, reached through ureq and rustls, under a permissive data license that is not on the allowed list. Found when every shipped dependency was first listed; awaiting review."
-  }
-]
+[]
