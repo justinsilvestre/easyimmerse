@@ -12,7 +12,10 @@ export function createSaveQueue() {
      * Sends a card's save after any earlier save of the same saved flashcard has settled.
      * Returns the save's outcome, or undefined when this opening's save is already under way.
      */
-    add(card: EditedFlashcard, send: () => Promise<unknown>) {
+    add<T>(
+      card: EditedFlashcard,
+      send: () => Promise<T>,
+    ): Promise<T> | undefined {
       if (inFlight.has(card.session)) return undefined;
       inFlight.add(card.session);
       const key = card.kind === "existing" ? card.flashcard.id : null;
