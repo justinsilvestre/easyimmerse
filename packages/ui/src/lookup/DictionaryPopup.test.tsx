@@ -214,6 +214,29 @@ describe("DictionaryPopup states", () => {
 });
 
 describe("DictionaryPopup links", () => {
+  it("stays open when a followed link re-renders it before the click reaches the page", () => {
+    let closeCount = 0;
+    render(
+      <DictionaryPopup
+        state={{
+          kind: "found",
+          term: "食べなかった",
+          results: [exampleInflectedResult],
+        }}
+        mode="word"
+        resolveMediaUrl={() => null}
+        onSearch={() => undefined}
+        onCreateFlashcard={() => undefined}
+        onClose={() => (closeCount += 1)}
+        onSetUpDictionary={() => undefined}
+      />,
+    );
+    const link = screen.getByRole("button", { name: "食う" });
+    link.addEventListener("click", () => link.remove());
+    fireEvent.click(link);
+    expect(closeCount).toBe(0);
+  });
+
   it("looks up the target of a link in a definition", () => {
     const searched: string[] = [];
     render(
