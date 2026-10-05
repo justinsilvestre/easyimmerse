@@ -133,6 +133,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dictionaries/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Detects what each column of a table holds and returns that layout with the table's first rows,
+         *     so that the user can check it before importing.
+         */
+        post: operations["previewDictionaryTable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dictionaries/{id}": {
         parameters: {
             query?: never;
@@ -470,6 +490,11 @@ export interface components {
             paragraphs: string[];
             title?: string | null;
         };
+        /**
+         * @description What a column of a table holds, as a person choosing the columns of a table sees it.
+         * @enum {string}
+         */
+        ColumnRole: "term" | "reading" | "definition" | "alternates" | "tags" | "frequency" | "ignored";
         /** @enum {string} */
         ContainerFormat: "mp4" | "matroska" | "mp3" | "ogg" | "wav" | "flac" | "adts" | "mpeg_ts" | "avi";
         ContainerInfo: {
@@ -804,6 +829,17 @@ export interface components {
         };
         SubtitleTracksResponse: {
             tracks: components["schemas"]["TrackInfo"][];
+        };
+        /** @description What each column of a table holds, and whether its first row is a header. */
+        TableLayout: {
+            columns: components["schemas"]["ColumnRole"][];
+            hasHeader: boolean;
+        };
+        /** @description The layout detected in a table, with its first rows, for a person to check before importing. */
+        TablePreview: {
+            layout: components["schemas"]["TableLayout"];
+            /** @description The first rows of the table, including any header row, split into cells. */
+            rows: string[][];
         };
         /** @description The meaning of a tag that a dictionary attaches to its entries. */
         TagDefinition: {
@@ -1326,6 +1362,10 @@ export interface operations {
             query: {
                 /** @description The name of the uploaded file, whose extension tells formats such as MDict and CSV apart. */
                 fileName: string;
+                /** @description What each column of a table holds, as column roles separated by commas, in place of the detected layout. */
+                columns?: string;
+                /** @description Whether the first row of a table is a header. Read only together with `columns`; false when left out. */
+                hasHeader?: boolean;
             };
             header?: never;
             path?: never;
@@ -1466,6 +1506,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LookupResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    previewDictionaryTable: {
+        parameters: {
+            query: {
+                /** @description The name of the uploaded file, whose extension marks it as a CSV, TSV or Tabfile table. */
+                fileName: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A CSV, TSV or Tabfile table, or an archive holding one */
+        requestBody?: {
+            content: {
+                "application/octet-stream": unknown;
+            };
+        };
+        responses: {
+            /** @description The detected layout and the first rows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TablePreview"];
+                };
+            };
+            /** @description The file could not be read as a table */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Missing or invalid token */

@@ -4,4 +4,12 @@ export type ImportDictionaryQuery = {
 /**
  * The name of the uploaded file, whose extension tells formats such as MDict and CSV apart.
  */
-fileName: string, };
+fileName: string, 
+/**
+ * What each column of a table holds, as column roles separated by commas, in place of the detected layout.
+ */
+columns: string | null, 
+/**
+ * Whether the first row of a table is a header. Read only together with `columns`; false when left out.
+ */
+hasHeader: boolean | null, };

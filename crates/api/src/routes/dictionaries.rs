@@ -4,7 +4,10 @@ use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
-use easyimmerse_core::dictionary::{DictionaryFormatKind, DictionarySource, SourceFile};
+use easyimmerse_core::dictionary::{
+    ColumnRole, DictionaryFormatKind, DictionarySource, SourceFile, TableLayout, TablePreview,
+    preview_table,
+};
 use easyimmerse_storage::{DictionaryId, Storage, StorageError, StoredDictionary};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -35,6 +38,22 @@ pub struct DictionarySummary {
 #[ts(export)]
 pub struct ImportDictionaryQuery {
     /// The name of the uploaded file, whose extension tells formats such as MDict and CSV apart.
+    #[serde(rename = "fileName")]
+    #[param(rename = "fileName")]
+    pub file_name: String,
+    /// What each column of a table holds, as column roles separated by commas, in place of the detected layout.
+    pub columns: Option<String>,
+    /// Whether the first row of a table is a header. Read only together with `columns`; false when left out.
+    #[serde(rename = "hasHeader")]
+    #[param(rename = "hasHeader")]
+    pub has_header: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema, IntoParams)]
+#[into_params(parameter_in = Query)]
+#[ts(export)]
+pub struct PreviewDictionaryTableQuery {
+    /// The name of the uploaded file, whose extension marks it as a CSV, TSV or Tabfile table.
     #[serde(rename = "fileName")]
     #[param(rename = "fileName")]
     pub file_name: String,
@@ -76,11 +95,43 @@ pub async fn import_dictionary(
     Query(query): Query<ImportDictionaryQuery>,
     body: Bytes,
 ) -> Result<(StatusCode, Json<DictionarySummary>), ApiFailure> {
+    let table_layout = chosen_table_layout(&query)?;
     let file = SourceFile {
         name: query.file_name,
         bytes: body.to_vec(),
     };
-    import_files(&state, vec![file]).await
+    import_files(&state, vec![file], table_layout).await
+}
+
+/// Detects what each column of a table holds and returns that layout with the table's first rows,
+/// so that the user can check it before importing.
+#[utoipa::path(
+    post,
+    path = "/dictionaries/preview",
+    tag = "dictionaries",
+    operation_id = "previewDictionaryTable",
+    security(("bearer_token" = [])),
+    params(PreviewDictionaryTableQuery),
+    request_body(
+        description = "A CSV, TSV or Tabfile table, or an archive holding one",
+        content(("application/octet-stream")),
+    ),
+    responses(
+        (status = 200, description = "The detected layout and the first rows", body = TablePreview),
+        (status = 400, description = "The file could not be read as a table", body = ApiError),
+        (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 421, description = "Unexpected Host header", body = ApiError),
+    ),
+)]
+pub async fn preview_dictionary_table(
+    Query(query): Query<PreviewDictionaryTableQuery>,
+    body: Bytes,
+) -> Result<Json<TablePreview>, ApiFailure> {
+    let preview =
+        tokio::task::spawn_blocking(move || preview_table(&query.file_name, body.to_vec()))
+            .await
+            .map_err(|error| internal(error.to_string()))??;
+    Ok(Json(preview))
 }
 
 #[utoipa::path(
@@ -110,7 +161,7 @@ pub async fn import_local_dictionary(
         .await
         .map_err(|error| internal(error.to_string()))?
         .map_err(|error| describe_read_error(&request.path, error))?;
-    import_files(&state, files).await
+    import_files(&state, files, None).await
 }
 
 #[utoipa::path(
@@ -164,9 +215,10 @@ pub async fn delete_dictionary(
 async fn import_files(
     state: &AppState,
     files: Vec<SourceFile>,
+    table_layout: Option<TableLayout>,
 ) -> Result<(StatusCode, Json<DictionarySummary>), ApiFailure> {
     let summary = state
-        .with_storage(move |storage| import_into(storage, files))
+        .with_storage(move |storage| import_into(storage, files, table_layout))
         .await?;
     Ok((StatusCode::CREATED, Json(summary)))
 }
@@ -174,10 +226,30 @@ async fn import_files(
 fn import_into(
     storage: &Storage,
     files: Vec<SourceFile>,
+    table_layout: Option<TableLayout>,
 ) -> Result<DictionarySummary, StorageError> {
-    let mut source = DictionarySource::new(files)?;
+    let mut source = DictionarySource::new(files)?.with_table_layout(table_layout);
     let id = storage.import_dictionary(&mut source)?;
     storage.get_dictionary(&id).map(summarize)
+}
+
+fn chosen_table_layout(query: &ImportDictionaryQuery) -> Result<Option<TableLayout>, ApiFailure> {
+    let Some(columns) = &query.columns else {
+        return Ok(None);
+    };
+    let columns = columns
+        .split(',')
+        .map(parse_column_role)
+        .collect::<Result<_, _>>()?;
+    Ok(Some(TableLayout {
+        columns,
+        has_header: query.has_header.unwrap_or(false),
+    }))
+}
+
+fn parse_column_role(name: &str) -> Result<ColumnRole, ApiFailure> {
+    serde_json::from_value(serde_json::Value::String(name.trim().to_string()))
+        .map_err(|_| bad_request(format!("{name:?} is not a column role")))
 }
 
 fn describe_read_error(path: &str, error: std::io::Error) -> ApiFailure {
