@@ -24,6 +24,42 @@ describe("StructuredContentView", () => {
     expect(container.querySelector("ul > li")?.textContent).toBe("one");
   });
 
+  it("gives an element Yomitan's class for its tag, prefixed like the dictionary's classes", () => {
+    const { container } = renderContent({ tag: "span", content: "x" });
+    expect(container.querySelector(".dict-gloss-sc-span")?.textContent).toBe(
+      "x",
+    );
+  });
+
+  it("gives a table cell Yomitan's class for its tag", () => {
+    const { container } = renderContent({
+      tag: "table",
+      content: { tag: "tr", content: { tag: "td", content: "x" } },
+    });
+    expect(container.querySelector("td")?.className).toContain(
+      "dict-gloss-sc-td",
+    );
+  });
+
+  it("gives a link Yomitan's class for its tag", () => {
+    const { container } = renderContent({
+      tag: "a",
+      href: "?query=x",
+      content: "x",
+    });
+    expect(container.querySelector(".dict-gloss-sc-a")?.textContent).toBe("x");
+  });
+
+  it("gives an image Yomitan's class for its tag", () => {
+    renderContent(
+      { tag: "img", path: "a.png", alt: "a" },
+      { resolveMediaUrl: resolveFakeMediaUrl },
+    );
+    expect(screen.getByRole("img", { name: "a" }).className).toContain(
+      "dict-gloss-sc-img",
+    );
+  });
+
   it("makes the words of text clickable", () => {
     const clicked: string[] = [];
     renderContent("to eat", { onWordClick: (word) => clicked.push(word) });
@@ -72,7 +108,12 @@ describe("StructuredContentView", () => {
       data: { "a b": "c" },
       content: "x",
     });
-    expect(container.querySelector("span")?.attributes).toHaveLength(0);
+    const span = container.querySelector("span");
+    expect(
+      [...(span?.attributes ?? [])].filter(({ name }) =>
+        name.startsWith("data-"),
+      ),
+    ).toHaveLength(0);
   });
 
   it("drops a lang that is not a language tag", () => {

@@ -16,3 +16,21 @@ export function dictionaryClassName(
     ? names.map((name) => classPrefix + name).join(" ")
     : undefined;
 }
+
+/**
+ * Returns the prefix that ids in one dictionary's markup gain when rendered.
+ * It keeps them apart from the app's own ids, from other dictionaries' ids, and from the names of the page's global variables.
+ */
+export function elementIdPrefix(dictionaryId: string): string {
+  return `${classPrefix}${dictionaryId}-`;
+}
+
+/** Returns the id attribute that an id in a dictionary's markup becomes when rendered, or undefined when it is empty or holds whitespace, which ids may not. */
+export function dictionaryElementId(
+  dictionaryId: string,
+  id: string | null | undefined,
+): string | undefined {
+  return id && !/[ \t\n\f\r]/.test(id)
+    ? elementIdPrefix(dictionaryId) + id
+    : undefined;
+}

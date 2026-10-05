@@ -67,7 +67,7 @@ function writeStyleRule(
 ): string {
   if (rule.prelude.type !== "SelectorList") return "";
   const declarations = writeDeclarations(rule.block.children.toArray(), owner);
-  const selectors = scopeSelectorList(rule.prelude, scope);
+  const selectors = scopeSelectorList(rule.prelude, scope, owner.dictionaryId);
   return selectors && declarations ? `${selectors} { ${declarations} }` : "";
 }
 

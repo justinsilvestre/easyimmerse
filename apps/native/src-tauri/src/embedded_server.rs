@@ -198,3 +198,38 @@ mod tests {
         assert_eq!(path, None);
     }
 }
+
+/// The pages show images, fonts and sounds that the embedded server serves, such as those stored with dictionaries.
+#[cfg(test)]
+mod content_security_policy_tests {
+    use std::path::Path;
+
+    const SERVER_SOURCE: &str = "http://127.0.0.1:*";
+
+    fn allows_the_server(directive: &str) -> bool {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tauri.conf.json");
+        let config: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let sources = config["app"]["security"]["csp"][directive]
+            .as_str()
+            .unwrap_or_default();
+        sources
+            .split_whitespace()
+            .any(|source| source == SERVER_SOURCE)
+    }
+
+    #[test]
+    fn allows_images_from_the_server() {
+        assert!(allows_the_server("img-src"));
+    }
+
+    #[test]
+    fn allows_fonts_from_the_server() {
+        assert!(allows_the_server("font-src"));
+    }
+
+    #[test]
+    fn allows_sounds_and_video_from_the_server() {
+        assert!(allows_the_server("media-src"));
+    }
+}

@@ -237,3 +237,22 @@ async fn the_media_route_accepts_the_token_in_the_query() {
     let response = server.request("GET", &path).without_token().send().await;
     assert_eq!(response.status, 404);
 }
+
+/// Fonts that a dictionary's stylesheet declares load in CORS mode, so a page on another origin
+/// can use them only when the media response allows that origin.
+#[tokio::test(flavor = "multi_thread")]
+async fn the_media_route_allows_requests_from_other_origins() {
+    let server = spawn_test_server(false).await;
+    let id = imported_id(&server).await;
+    let path = format!(
+        "/dictionaries/{id}/media/images%2Fcat.png?token={}",
+        server.token
+    );
+    let response = server
+        .request("GET", &path)
+        .without_token()
+        .header("Origin", "http://localhost:5173")
+        .send()
+        .await;
+    assert_eq!(response.header("access-control-allow-origin"), Some("*"));
+}

@@ -77,8 +77,50 @@ export const exampleStyledMDictResult: LookupResult = {
   pronunciations: [],
 };
 
-/** The stylesheets that the Yomitan and MDict fixtures ship. */
+/** An entry written in semantic HTML, with a link from its first sense to its second. */
+export const exampleSemanticHtmlResult: LookupResult = {
+  matchedText: "book",
+  term: "book",
+  reading: null,
+  inflections: [],
+  definitions: [
+    {
+      dictionaryId: "example-semantic",
+      dictionaryTitle: "Example Semantic HTML",
+      entry: exampleTermEntry({
+        term: "book",
+        definitions: [
+          {
+            kind: "html",
+            html: [
+              '<header><h1>book</h1> <abbr title="noun">n.</abbr></header>',
+              '<section id="sense-1"><h2>1</h2> <p><strong>A written work</strong> bound in covers; see also <a href="#sense-2">sense 2</a>.</p></section>',
+              '<section id="sense-2"><h2>2</h2> <p>One of the parts of a long work, as in <q>the third <em>book</em> of the epic</q>.</p></section>',
+            ].join(""),
+          },
+        ],
+      }),
+      tags: [],
+    },
+  ],
+  frequencies: [],
+  pronunciations: [],
+};
+
+/** A stylesheet that selects the semantic entry's tags and ids. */
+const semanticHtmlCss = `
+header { display: flex; gap: 0.5em; align-items: baseline; }
+h1 { font-size: 1.4em; color: #1565c0; }
+abbr { color: #888; }
+h2 { display: inline; font-size: 1em; color: #888; }
+section > p { display: inline; }
+#sense-2 { background-color: #fff8e1; }
+q { font-style: italic; }
+`;
+
+/** The stylesheets that the Yomitan and MDict fixtures ship, and the semantic entry's stylesheet. */
 export const exampleStylesheets: DictionaryStylesheet[] = [
   { dictionaryId: "sample-yomitan", css: yomitanCss },
   { dictionaryId: "sample-mdict", css: mdictCss },
+  { dictionaryId: "example-semantic", css: semanticHtmlCss },
 ];

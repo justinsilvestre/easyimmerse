@@ -14,8 +14,12 @@ import {
   tableSpan,
 } from "./sanitizeAttributes.ts";
 import { sanitizeStyle } from "./sanitizeStyle.ts";
+import { structuredContentClassName } from "./structuredContentClassName.ts";
 
-/** Renders Yomitan structured content as React elements, keeping only safe styles, attributes and links. */
+/**
+ * Renders Yomitan structured content as React elements, keeping only safe styles, attributes and links.
+ * Each element carries the `gloss-sc-<tag>` class that Yomitan gives it, prefixed like a dictionary's own classes.
+ */
 export function StructuredContentView({
   content,
 }: {
@@ -35,12 +39,20 @@ export function StructuredContentView({
 function StructuredElementView({ element }: { element: StructuredElement }) {
   switch (element.tag) {
     case "br":
-      return <br {...dataAttributes(element.data)} />;
+      return (
+        <br
+          className={structuredContentClassName("br")}
+          {...dataAttributes(element.data)}
+        />
+      );
     case "img":
       return <StructuredImage image={element} />;
     case "a":
       return (
-        <span lang={languageTag(element.lang)}>
+        <span
+          lang={languageTag(element.lang)}
+          className={structuredContentClassName("a")}
+        >
           <ContentLink target={classifyHref(element.href)}>
             <StructuredContentView content={element.content} />
           </ContentLink>
@@ -86,8 +98,11 @@ function StructuredElementView({ element }: { element: StructuredElement }) {
   }
 }
 
-function containerAttributes(element: ContainerElement) {
+function containerAttributes(
+  element: ContainerElement & Pick<StructuredElement, "tag">,
+) {
   return {
+    className: structuredContentClassName(element.tag),
     lang: languageTag(element.lang),
     title: element.title,
     style: element.style && sanitizeStyle(element.style),

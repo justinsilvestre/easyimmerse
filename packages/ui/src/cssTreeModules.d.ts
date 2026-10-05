@@ -17,5 +17,5 @@ declare module "css-tree/walker" {
 }
 
 declare module "css-tree/utils" {
-  export { clone, List } from "css-tree";
+  export { clone, ident, List } from "css-tree";
 }

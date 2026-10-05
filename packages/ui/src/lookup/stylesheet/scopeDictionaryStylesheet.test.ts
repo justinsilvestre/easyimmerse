@@ -34,6 +34,34 @@ describe("scopeDictionaryStylesheet", () => {
       );
     });
 
+    it("prefixes Yomitan's structured content classes as rendered structured content prefixes them", () => {
+      expect(scoped(".gloss-sc-td { padding: 0 }")).toBe(
+        `${scope} .dict-gloss-sc-td { padding: 0; }`,
+      );
+    });
+
+    it("prefixes ids with the dictionary's id, as rendered markup prefixes them", () => {
+      expect(scoped("#top:not(#end) { margin: 0 }")).toBe(
+        `${scope} #dict-d-top:not(#dict-d-end) { margin: 0; }`,
+      );
+    });
+
+    it("prefixes the id that an id attribute selector compares with", () => {
+      expect(scoped('[id="top"] { margin: 0 }')).toBe(
+        `${scope} [id="dict-d-top"] { margin: 0; }`,
+      );
+    });
+
+    it("escapes a dictionary id that is not a plain name in an id selector", () => {
+      expect(
+        scopeDictionaryStylesheet(
+          "#top { margin: 0 }",
+          "v1.5",
+          resolveFakeMediaUrl,
+        ),
+      ).toBe('[data-dictionary-scope="v1.5"] #dict-v1\\.5-top { margin: 0; }');
+    });
+
     it("keeps the data attributes of structured content", () => {
       expect(scoped('[data-sc-content="glossary"] { margin: 0 }')).toBe(
         `${scope} [data-sc-content="glossary"] { margin: 0; }`,

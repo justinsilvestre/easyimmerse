@@ -8,6 +8,7 @@ import {
 import { exampleResults } from "./exampleLookup.ts";
 import { resolveExampleMediaUrl } from "./exampleMedia.ts";
 import {
+  exampleSemanticHtmlResult,
   exampleStyledMDictResult,
   exampleStyledYomitanResult,
   exampleStylesheets,
@@ -43,13 +44,17 @@ export const JapaneseWithKanji: Story = {
   },
 };
 
-/** Entries from the Yomitan and MDict fixtures, each styled by its own dictionary's stylesheet. */
+/** Entries from the Yomitan and MDict fixtures and one in semantic HTML, each styled by its own dictionary's stylesheet. */
 export const DictionaryStylesheets: Story = {
   args: {
     state: {
       kind: "found",
       term: "本",
-      results: [exampleStyledYomitanResult, exampleStyledMDictResult],
+      results: [
+        exampleStyledYomitanResult,
+        exampleStyledMDictResult,
+        exampleSemanticHtmlResult,
+      ],
       stylesheets: exampleStylesheets,
     },
   },
