@@ -1,2 +1,2 @@
-# Dictionary fixtures test exact bytes, including CRLF line endings, so git must not convert them.
-fixtures/sample-csv/** -text
+# Sample fixtures are compared byte for byte, including CRLF line endings, so git must not convert them.
+fixtures/sample-*/** -text
