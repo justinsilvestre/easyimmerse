@@ -799,8 +799,12 @@ export interface components {
             kanji_meta_count: number;
             /** Format: int64 */
             media_count: number;
+            /** @description The language of the words looked up, as a BCP 47 tag, when the dictionary states it. */
+            source_language?: string | null;
             /** Format: int64 */
             tag_count: number;
+            /** @description The language of the definitions, as a BCP 47 tag, when the dictionary states it. */
+            target_language?: string | null;
             /** Format: int64 */
             term_meta_count: number;
             title: string;

@@ -84,7 +84,7 @@ impl From<StorageError> for ApiFailure {
             | StorageError::MediaFileNotFound(_)
             | StorageError::FlashcardNotFound(_)
             | StorageError::SubtitleTrackNotFound(_) => not_found(error.to_string()),
-            StorageError::Dictionary(_) => bad_request(error.to_string()),
+            StorageError::Dictionary(error) => error.into(),
             _ => internal(error.to_string()),
         }
     }
@@ -104,7 +104,14 @@ impl From<DocumentError> for ApiFailure {
 
 impl From<DictionaryError> for ApiFailure {
     fn from(error: DictionaryError) -> Self {
-        bad_request(error.to_string())
+        match error {
+            DictionaryError::UnrecognizedFormat => ApiFailure::new(
+                StatusCode::BAD_REQUEST,
+                "unsupported_dictionary_format",
+                error.to_string(),
+            ),
+            _ => bad_request(error.to_string()),
+        }
     }
 }
 
@@ -116,6 +123,14 @@ mod tests {
     fn a_missing_dictionary_maps_to_not_found() {
         let failure = ApiFailure::from(StorageError::DictionaryNotFound("x".to_string()));
         assert_eq!(failure.status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn an_unrecognized_dictionary_format_has_its_own_code() {
+        let failure = ApiFailure::from(StorageError::Dictionary(
+            DictionaryError::UnrecognizedFormat,
+        ));
+        assert_eq!(failure.error.code, "unsupported_dictionary_format");
     }
 
     #[test]

@@ -4170,10 +4170,24 @@
             "format": "int64",
             "minimum": 0
           },
+          "source_language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The language of the words looked up, as a BCP 47 tag, when the dictionary states it."
+          },
           "tag_count": {
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          },
+          "target_language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The language of the definitions, as a BCP 47 tag, when the dictionary states it."
           },
           "term_meta_count": {
             "type": "integer",
