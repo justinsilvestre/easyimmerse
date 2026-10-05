@@ -157,7 +157,9 @@ export function ReaderView(props: ReaderViewProps) {
   const progress = progressAt(document, state.location);
 
   const reportLocation = useEffectEvent(callbacks.onLocationChange);
-  useEffect(() => reportLocation(state.location), [state.location]);
+  useEffect(() => {
+    reportLocation(state.location);
+  }, [state.location]);
   const hasLookup = props.lookup != null;
   useEffect(() => {
     if (!hasLookup) clearWordHighlight();
