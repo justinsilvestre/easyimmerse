@@ -1,7 +1,6 @@
 use super::super::metadata::FrequencyMode;
 use super::columns::{Column, name_column, recognise_column};
 use super::directives::{Directives, TableKind};
-use super::error::CsvError;
 use super::frequency::{guess_frequency_mode, parse_number};
 
 /// What each column of a table holds, and whether the table lists entries or frequencies.
@@ -34,27 +33,39 @@ impl Layout {
 
 /// Works out the layout from the directives, a header row, or the shape of the sampled rows,
 /// and reports whether the first sampled row is a header.
+/// The layout may lack a term column, which the caller checks.
 pub fn detect_layout(
     directives: &Directives,
     delimiter: u8,
     sample: &[Vec<String>],
-) -> Result<(Layout, bool), CsvError> {
+) -> (Layout, bool) {
     let (named, has_header) = named_columns(directives, delimiter, sample);
-    let data = &sample[usize::from(has_header)..];
+    let data = data_rows(sample, has_header);
     let mut columns = named.unwrap_or_else(|| default_columns(directives, data));
     for (index, column) in &directives.column_roles {
         if let Some(slot) = columns.get_mut(*index) {
             *slot = column.clone();
         }
     }
+    (complete_layout(directives, columns, data), has_header)
+}
+
+/// Decides whether the table lists entries or frequencies, and gives a frequency list its frequency column.
+pub fn complete_layout(
+    directives: &Directives,
+    mut columns: Vec<Column>,
+    data: &[Vec<String>],
+) -> Layout {
     let kind = directives.kind.unwrap_or_else(|| infer_kind(&columns));
     if kind == TableKind::Frequency {
         ensure_frequency_column(&mut columns, data);
     }
-    if !columns.contains(&Column::Term) {
-        return Err(CsvError::NoTermColumn);
-    }
-    Ok((Layout::new(columns, kind), has_header))
+    Layout::new(columns, kind)
+}
+
+/// Returns the sampled rows after any header.
+pub fn data_rows(sample: &[Vec<String>], has_header: bool) -> &[Vec<String>] {
+    sample.get(usize::from(has_header)..).unwrap_or_default()
 }
 
 fn named_columns(
@@ -126,7 +137,7 @@ fn is_numeric_column(data: &[Vec<String>], index: usize) -> bool {
     filled > 0 && column_numbers(data, index).count() as f64 >= NUMERIC_SHARE * filled as f64
 }
 
-fn column_numbers(data: &[Vec<String>], index: usize) -> impl Iterator<Item = f64> + '_ {
+pub fn column_numbers(data: &[Vec<String>], index: usize) -> impl Iterator<Item = f64> + '_ {
     data.iter()
         .filter_map(move |row| parse_number(row.get(index)?))
 }
@@ -173,7 +184,7 @@ mod tests {
     }
 
     fn detect(directives: &Directives, lines: &[&[&str]]) -> (Layout, bool) {
-        detect_layout(directives, b',', &rows(lines)).unwrap()
+        detect_layout(directives, b',', &rows(lines))
     }
 
     fn columns_of(lines: &[&[&str]]) -> Vec<Column> {
@@ -287,17 +298,5 @@ mod tests {
                 .frequency_mode(),
             Some(FrequencyMode::RankBased)
         );
-    }
-
-    #[test]
-    fn rejects_named_columns_without_a_term() {
-        let directives = Directives {
-            columns: Some("meaning,notes".into()),
-            ..Directives::default()
-        };
-        assert!(matches!(
-            detect_layout(&directives, b',', &rows(&[&["a pet", "furry"]])),
-            Err(CsvError::NoTermColumn)
-        ));
     }
 }
