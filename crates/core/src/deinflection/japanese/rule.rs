@@ -1,6 +1,7 @@
 //! A single deinflection rule: a suffix replacement between two sets of word classes.
 
 use super::word_class::WordClasses;
+use crate::lookup::is_kanji;
 
 /// Replaces the ending `inflected` of a word in one of the classes `from`
 /// with `base`, giving a word in one of the classes `to`.
@@ -27,6 +28,16 @@ pub(super) enum Stem {
     NonEmpty,
     /// No stem: the ending is the whole word.
     Empty,
+    /// A stem that ends in a kanji, such as 高 in 高う.
+    Kanji,
+    /// A stem that ends in a kanji or a hiragana, as the stem of an i-adjective does.
+    KanjiOrHiragana,
+    /// A stem that is one kanji, such as 愛 in 愛さない.
+    SingleKanji,
+    /// A stem that ends in a kana of the あ row, as the irrealis stem of a godan verb does.
+    ARow,
+    /// A stem that does not end in て or で, so that the auxiliary てく is not mistaken for a verb in く.
+    NotTe,
 }
 
 impl Rule {
@@ -82,16 +93,26 @@ impl Stem {
             Stem::NonEmpty => !stem.is_empty(),
             Stem::Empty => stem.is_empty(),
             Stem::Ichidan => stem.chars().last().is_some_and(can_end_ichidan_stem),
+            Stem::Kanji => stem.chars().last().is_some_and(is_kanji),
+            Stem::KanjiOrHiragana => stem
+                .chars()
+                .last()
+                .is_some_and(|last| is_kanji(last) || is_hiragana(last)),
+            Stem::SingleKanji => stem.chars().count() == 1 && stem.chars().all(is_kanji),
+            Stem::ARow => stem.chars().last().is_some_and(|last| A_ROW.contains(last)),
+            Stem::NotTe => !stem.ends_with(['て', 'で']),
         }
     }
 }
 
 /// Ichidan stems end in a kana of the い or え row, or in a kanji such as 見 or 出.
 fn can_end_ichidan_stem(character: char) -> bool {
-    !is_hiragana(character) || I_AND_E_ROWS.contains(character)
+    is_kanji(character) || I_AND_E_ROWS.contains(character)
 }
 
 const I_AND_E_ROWS: &str = "いきぎしじちぢにひびぴみりゐえけげせぜてでねへべぺめれゑ";
+
+const A_ROW: &str = "あかがさざただなはばぱまやらわ";
 
 fn is_hiragana(character: char) -> bool {
     ('\u{3041}'..='\u{3096}').contains(&character)
@@ -130,6 +151,33 @@ mod tests {
             rule.undo("見られる", WordClasses::UNDEINFLECTED).as_deref(),
             Some("見る")
         );
+    }
+
+    #[test]
+    fn undo_accepts_a_stem_of_one_kanji() {
+        let rule = Rule::replace("さ", "する").stem(Stem::SingleKanji);
+        assert_eq!(
+            rule.undo("愛さ", WordClasses::UNDEINFLECTED).as_deref(),
+            Some("愛する")
+        );
+    }
+
+    #[test]
+    fn undo_rejects_a_stem_of_two_kanji_where_one_is_required() {
+        let rule = Rule::replace("さ", "する").stem(Stem::SingleKanji);
+        assert_eq!(rule.undo("勉強さ", WordClasses::UNDEINFLECTED), None);
+    }
+
+    #[test]
+    fn undo_rejects_a_kana_stem_where_a_kanji_is_required() {
+        let rule = Rule::replace("う", "い").stem(Stem::Kanji);
+        assert_eq!(rule.undo("たかう", WordClasses::UNDEINFLECTED), None);
+    }
+
+    #[test]
+    fn undo_rejects_a_stem_outside_the_a_row_where_it_is_required() {
+        let rule = Rule::replace("し", "せ").stem(Stem::ARow);
+        assert_eq!(rule.undo("話し", WordClasses::UNDEINFLECTED), None);
     }
 
     #[test]

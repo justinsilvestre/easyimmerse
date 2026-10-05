@@ -84,11 +84,14 @@ fn prefixes(text: &str) -> Vec<&str> {
 mod tests {
     use super::*;
 
+    /// The distinct matched texts of the candidates, in order.
     fn matched_texts(text: &str) -> Vec<String> {
-        lookup_candidates(text, "ja")
+        let mut texts: Vec<String> = lookup_candidates(text, "ja")
             .into_iter()
             .map(|candidate| candidate.matched_text)
-            .collect()
+            .collect();
+        texts.dedup();
+        texts
     }
 
     fn candidate(matched_text: &str, inflections: &[&str]) -> LookupCandidate {

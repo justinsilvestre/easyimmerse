@@ -3,6 +3,8 @@
 // as rows of [inflected form, dictionary form, word class].
 // kamiya-codec only serves as an oracle for test cases; the rules cite their own sources.
 // It treats する compounds such as 勉強する as godan verbs, so only する itself is included.
+// Forms that the deinflector leaves to lookup are left out: the full subsidiary verbs ている, ておく and てしまう
+// (their contractions てる, とく and ちゃう stay), で after ない, the short causative, and the nominal さ of adjectives.
 //
 // Install kamiya-codec outside the repository, then run this script from the repository root:
 //   mise exec -- npm install --prefix /tmp/kamiya-codec kamiya-codec@4.16.1
@@ -51,9 +53,7 @@ const auxiliaryChains = [
   ["Potential"],
   ["ReruRareru"],
   ["SeruSaseru"],
-  ["ShortenedCausative"],
   ["CausativePassive"],
-  ["ShortenedCausativePassive"],
   ["TeIru"],
   ["Oku"],
   ["Shimau"],
@@ -81,7 +81,6 @@ const adjectiveConjugations = [
   "Adverbial",
   "Conditional",
   "TaraConditional",
-  "Noun",
   "StemSou",
   "StemNegativeSou",
 ];
@@ -143,7 +142,7 @@ function adjectiveCases() {
 /**
  * Drops the bare stems that kamiya-codec lists beside some forms (書か beside 書かない),
  * the doubled endings it produces for some irregular forms (しようう), its ぢまう where the sources give じまう,
- * and the copula after そう.
+ * the copula after そう, the full subsidiary verbs after the te-form, and the particle で after ない.
  */
 function completeForms(forms) {
   return forms
@@ -152,6 +151,9 @@ function completeForms(forms) {
         !forms.some((other) => other !== form && other.startsWith(form)),
     )
     .filter((form) => !/(うう|ずず|ぬぬ)$/.test(form) && !form.includes("ぢま"))
+    .filter(
+      (form) => !/[てで](い|お|しま)/.test(form) && !form.endsWith("ないで"),
+    )
     .map((form) => form.replace(/そうだ$/, "そう"));
 }
 

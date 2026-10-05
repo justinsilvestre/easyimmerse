@@ -61,7 +61,7 @@ fn apply(candidate: &Candidate, rule: &Rule) -> Option<Candidate> {
 /// Keeps a candidate that is a dictionary form, merging the classes of one already found
 /// with the same term and inflections.
 fn record(found: &mut Vec<Candidate>, candidate: &Candidate) {
-    if candidate.text.is_empty() || !candidate.classes.intersects(WordClasses::DICTIONARY) {
+    if candidate.text.is_empty() || !candidate.classes.intersects(WordClasses::RESULT) {
         return;
     }
     let same = found.iter_mut().find(|existing| {

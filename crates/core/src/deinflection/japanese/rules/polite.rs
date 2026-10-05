@@ -3,21 +3,27 @@
 use crate::deinflection::japanese::rule::Rule;
 use crate::deinflection::japanese::word_class::WordClasses as C;
 
-/// ます, past ました, negative ません, negative past ませんでした, volitional ましょう, te-form まして,
-/// conditional ましたら, provisional ますれば and imperative ませ.
+/// ます, past ました, negative ません with its pasts ませんでした and ませんかった, volitional ましょう (also ましょ and ましょっ),
+/// negative volitional ますまい, te-form まして, conditional ましたら, provisional ますれば and imperative ませ or まし.
 ///
-/// Sources: <https://en.wiktionary.org/w/index.php?title=Appendix:Japanese_verbs&oldid=92311215#Inflected_forms>
-/// (the paradigm of ます) and <https://en.wikipedia.org/w/index.php?title=Japanese_conjugation&oldid=1377029019#Politeness_stylization>.
+/// Sources: 規程集 下, 資料「要注意語」助動詞 マス, p. (35); UniDic manual §5.3, p. 19 (意志推量形 with ending っ or dropped);
+/// UniDic 2025.12, 助動詞-マス (未然形 ませ, 連用形 まし, 仮定形 ますれ, 命令形 ませ and まし, 意志推量形 ましょう, ましょ and ましょっ),
+/// with ん (助動詞-ヌ), でし (助動詞-デス), んかっ (助動詞-ナイ) and まい (助動詞-マイ) after it.
 pub const POLITE: &[Rule] = &[
     polite("ます", &["polite"]),
     polite("ました", &["past", "polite"]),
     polite("ません", &["negative", "polite"]),
     polite("ませんでした", &["past", "negative", "polite"]),
+    polite("ませんかった", &["past", "negative", "polite"]),
     polite("ましょう", &["volitional", "polite"]),
+    polite("ましょ", &["volitional", "polite"]),
+    polite("ましょっ", &["volitional", "polite"]),
+    polite("ますまい", &["negative volitional", "polite"]),
     polite("まして", &["te-form", "polite"]),
     polite("ましたら", &["conditional", "polite"]),
     polite("ますれば", &["provisional", "polite"]),
     polite("ませ", &["imperative", "polite"]),
+    polite("まし", &["imperative", "polite"]),
 ];
 
 const fn polite(inflected: &'static str, inflections: &'static [&'static str]) -> Rule {
@@ -124,6 +130,46 @@ mod tests {
     fn undoes_the_polite_imperative_of_an_honorific_verb() {
         assert!(yields(
             "いらっしゃいませ",
+            "いらっしゃる",
+            "v5",
+            &["imperative", "polite"]
+        ));
+    }
+
+    #[test]
+    fn undoes_the_nonstandard_polite_negative_past() {
+        assert!(yields(
+            "書きませんかった",
+            "書く",
+            "v5",
+            &["past", "negative", "polite"]
+        ));
+    }
+
+    #[test]
+    fn undoes_the_short_polite_volitional() {
+        assert!(yields(
+            "帰りましょっ",
+            "帰る",
+            "v5",
+            &["volitional", "polite"]
+        ));
+    }
+
+    #[test]
+    fn undoes_the_polite_negative_volitional() {
+        assert!(yields(
+            "申しますまい",
+            "申す",
+            "v5",
+            &["negative volitional", "polite"]
+        ));
+    }
+
+    #[test]
+    fn undoes_the_polite_imperative_in_mashi() {
+        assert!(yields(
+            "いらっしゃいまし",
             "いらっしゃる",
             "v5",
             &["imperative", "polite"]
