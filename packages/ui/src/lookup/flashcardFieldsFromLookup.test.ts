@@ -71,6 +71,14 @@ describe("flashcardFieldsFromLookup", () => {
     ).toBe("");
   });
 
+  it("leaves out of L1 the definitions in a third language", () => {
+    expect(
+      flashcardFieldsFromLookup(exampleResults, 1, languages, [
+        summary("wiktionary-de-en", "fr"),
+      ])?.l1_definition,
+    ).toBe("");
+  });
+
   it("fills nothing when nothing was found", () => {
     expect(flashcardFieldsFromLookup([], null, languages, [])).toBeNull();
   });

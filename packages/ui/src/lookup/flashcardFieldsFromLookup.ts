@@ -17,6 +17,7 @@ type ProjectLanguages = { target: string; translation: string };
 /**
  * Fills the word fields of a flashcard from a lookup: the word and its reading from the dictionary's headword,
  * and the definitions sorted into L1 (in the translation language) and L2 (in the target language) by each dictionary's stated language.
+ * Definitions in any other language are left out.
  * Without an `entryIndex`, every result for the longest matched text contributes; with one, only that result does.
  * A dictionary that does not state its language counts as defining in the translation language.
  */
@@ -30,13 +31,13 @@ export function flashcardFieldsFromLookup(
   const first = chosen[0];
   if (first === undefined) return null;
   const sections = chosen.flatMap((result) => result.definitions);
-  const isL2 = (section: DictionaryDefinitions) =>
-    definesInTargetLanguage(section.dictionaryId, languages, dictionaries);
+  const fieldOf = (section: DictionaryDefinitions) =>
+    definitionField(section.dictionaryId, languages, dictionaries);
   return {
     word: first.term,
     word_pronunciation: first.reading ?? "",
-    l1_definition: joinDefinitions(sections.filter((s) => !isL2(s))),
-    l2_definition: joinDefinitions(sections.filter(isL2)),
+    l1_definition: joinDefinitions(sections.filter((s) => fieldOf(s) === "l1")),
+    l2_definition: joinDefinitions(sections.filter((s) => fieldOf(s) === "l2")),
   };
 }
 
@@ -49,16 +50,22 @@ function chooseResults(
   return results.filter((result) => result.matchedText === longest);
 }
 
-function definesInTargetLanguage(
+/**
+ * Chooses the field a dictionary's definitions go into: L1 when they are in the translation language,
+ * L2 when they are in the target language, and neither when they are in a third language.
+ * When the two project languages are the same, every definition goes into L1.
+ */
+function definitionField(
   dictionaryId: string,
   languages: ProjectLanguages,
   dictionaries: readonly DictionarySummary[],
-): boolean {
-  if (isSameLanguage(languages.target, languages.translation)) return false;
+): "l1" | "l2" | null {
   const language = dictionaries.find(
     ({ id }) => id === dictionaryId,
   )?.target_language;
-  return language != null && isSameLanguage(language, languages.target);
+  if (language == null || isSameLanguage(language, languages.translation))
+    return "l1";
+  return isSameLanguage(language, languages.target) ? "l2" : null;
 }
 
 /** Puts each definition on its own line, each distinct text once. */
