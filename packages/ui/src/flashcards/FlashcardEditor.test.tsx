@@ -153,3 +153,50 @@ describe("FlashcardEditor", () => {
     expect(saved[0]).not.toContain("screenshot");
   });
 });
+
+describe("FlashcardEditor while its save waits for definitions", () => {
+  function renderWaiting(onSave: () => void) {
+    render(
+      <FlashcardEditor
+        state={{
+          content: exampleFlashcard,
+          includedFields: fieldsOfPreset("intermediate"),
+        }}
+        dispatch={() => undefined}
+        languages={exampleLanguages}
+        waveform={null}
+        saveStatus="waitingForDefinitions"
+        onSave={onSave}
+        onDelete={() => undefined}
+        onClose={() => undefined}
+      />,
+    );
+  }
+
+  it("ignores Save", () => {
+    let saveCount = 0;
+    renderWaiting(() => {
+      saveCount += 1;
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(saveCount).toBe(0);
+  });
+
+  it("keeps Save focusable, marking it unavailable instead", () => {
+    renderWaiting(() => undefined);
+    expect(
+      screen
+        .getByRole("button", { name: "Save" })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
+  });
+
+  it("describes Save with what it waits for", () => {
+    renderWaiting(() => undefined);
+    expect(
+      screen
+        .getByRole("button", { name: "Save" })
+        .getAttribute("aria-describedby"),
+    ).toBe(screen.getByRole("status").id);
+  });
+});

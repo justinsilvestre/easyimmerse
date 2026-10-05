@@ -81,5 +81,5 @@ export const FromAnEbook: Story = {
 
 /** Save was pressed while the word's definitions are still on their way. */
 export const SaveWaitingForDefinitions: Story = {
-  args: { isSaveWaiting: true },
+  args: { saveStatus: "waitingForDefinitions" },
 };

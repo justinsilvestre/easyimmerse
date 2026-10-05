@@ -303,7 +303,11 @@ describe("MediaScreen lookup gestures", () => {
 
         it("says that it waits for the definitions", async () => {
           await pressSaveBeforeAnswer();
-          expect(screen.getByText("Waiting for definitions…")).toBeDefined();
+          expect(
+            within(screen.getByRole("form", { name: "Flashcard" })).getByRole(
+              "status",
+            ).textContent,
+          ).toBe("Waiting for definitions…");
         });
 
         it("sends nothing while it waits, so that no answer can arrive during the save", async () => {
@@ -318,6 +322,27 @@ describe("MediaScreen lookup gestures", () => {
           const { client } = await pressSaveBeforeAnswer();
           await advance(1500);
           await vi.waitFor(() => expect(savedWord(client)).toBe("fressen"));
+        });
+
+        it("sends nothing before a failing lookup fails", async () => {
+          const { client } = await pressSaveBeforeAnswer({
+            failingLookups: { "cat is sleeping.": 3000 },
+          });
+          await advance(1000);
+          expect(
+            requestsTo(client.requests, "POST", "/projects/p1/flashcards"),
+          ).toEqual([]);
+        });
+
+        it("saves a field typed in before Save as typed", async () => {
+          const { client } = await doubleClickCat(lateLookup);
+          await advance(1500);
+          fireEvent.change(screen.getByLabelText("Word (de)"), {
+            target: { value: "Kater" },
+          });
+          fireEvent.click(screen.getByRole("button", { name: "Save" }));
+          await advance(1500);
+          await vi.waitFor(() => expect(savedWord(client)).toBe("Kater"));
         });
 
         it("saves the flashcard as it is once the lookup fails", async () => {

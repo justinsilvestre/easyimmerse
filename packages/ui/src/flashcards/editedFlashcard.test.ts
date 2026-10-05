@@ -2,6 +2,7 @@ import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import {
   type EditedFlashcard,
+  type EditedFlashcardAction,
   flashcardsOnWaveform,
   newFlashcardSegmentId,
   reduceEditedFlashcard,
@@ -176,6 +177,18 @@ describe("reduceEditedFlashcard on screenshotsAvailable", () => {
   });
 });
 
+function startedFrom(draft: FlashcardDraft) {
+  return reduceEditedFlashcard(null, { type: "started", draft });
+}
+
+function awaiting(draft: FlashcardDraft) {
+  return reduceEditedFlashcard(null, {
+    type: "started",
+    draft,
+    awaitsLookup: true,
+  });
+}
+
 describe("reduceEditedFlashcard on lookupAnswered", () => {
   const fields = {
     word: "Katze",
@@ -184,13 +197,9 @@ describe("reduceEditedFlashcard on lookupAnswered", () => {
     l2_definition: "Haustier",
   };
 
-  function startedWith(draft: FlashcardDraft) {
-    return reduceEditedFlashcard(null, { type: "started", draft });
-  }
-
   it("fills the fields of the new flashcard it was made for", () => {
     const draft = createDraft();
-    const edited = reduceEditedFlashcard(startedWith(draft), {
+    const edited = reduceEditedFlashcard(awaiting(draft), {
       type: "lookupAnswered",
       draft,
       fields,
@@ -200,7 +209,7 @@ describe("reduceEditedFlashcard on lookupAnswered", () => {
 
   it("leaves alone a field the user has typed in", () => {
     const draft = createDraft();
-    const typed = reduceEditedFlashcard(startedWith(draft), {
+    const typed = reduceEditedFlashcard(awaiting(draft), {
       type: "edited",
       action: { type: "textChanged", key: "l1_definition", value: "kitty" },
     });
@@ -214,7 +223,7 @@ describe("reduceEditedFlashcard on lookupAnswered", () => {
 
   it("leaves alone a field the user has emptied", () => {
     const draft = createDraft();
-    const typed = reduceEditedFlashcard(startedWith(draft), {
+    const typed = reduceEditedFlashcard(awaiting(draft), {
       type: "edited",
       action: { type: "textChanged", key: "word", value: "" },
     });
@@ -226,8 +235,21 @@ describe("reduceEditedFlashcard on lookupAnswered", () => {
     expect(edited?.editor.content.word).toBe("");
   });
 
+  it("replaces the word the user has not typed in, as with a dictionary form", () => {
+    const draft = {
+      ...createDraft(),
+      content: { ...createDraft().content, word: "食べた" },
+    };
+    const edited = reduceEditedFlashcard(awaiting(draft), {
+      type: "lookupAnswered",
+      draft,
+      fields: { ...fields, word: "食べる" },
+    });
+    expect(edited?.editor.content.word).toBe("食べる");
+  });
+
   it("ignores an answer for another flashcard", () => {
-    const edited = startedWith(createDraft());
+    const edited = awaiting(createDraft());
     expect(
       reduceEditedFlashcard(edited, {
         type: "lookupAnswered",
@@ -238,7 +260,7 @@ describe("reduceEditedFlashcard on lookupAnswered", () => {
   });
 });
 
-describe("reduceEditedFlashcard while a late lookup is awaited", () => {
+describe("reduceEditedFlashcard on its way to being saved", () => {
   const fields = {
     word: "食べる",
     word_pronunciation: "たべる",
@@ -246,60 +268,122 @@ describe("reduceEditedFlashcard while a late lookup is awaited", () => {
     l2_definition: "",
   };
 
-  function awaiting(draft: FlashcardDraft) {
-    return reduceEditedFlashcard(null, {
-      type: "started",
-      draft,
-      awaitsLookup: true,
-    });
+  function reduceAll(
+    edited: EditedFlashcard | null,
+    ...actions: EditedFlashcardAction[]
+  ) {
+    return actions.reduce(reduceEditedFlashcard, edited);
   }
 
-  it("asks a save to wait for the lookup", () => {
-    const draft = createDraft();
-    const edited = reduceEditedFlashcard(awaiting(draft), {
+  it("readies a card to send when Save is pressed", () => {
+    const edited = reduceAll(startedFrom(createDraft()), {
       type: "saveRequested",
     });
-    expect(edited?.kind === "new" && edited.isSaveWaiting).toBe(true);
+    expect(edited?.stage).toBe("readyToSend");
   });
 
-  it("stops awaiting once the lookup answers", () => {
-    const draft = createDraft();
-    const edited = reduceEditedFlashcard(awaiting(draft), {
-      type: "lookupAnswered",
-      draft,
-      fields,
-    });
-    expect(edited?.kind === "new" && edited.awaitsLookup).toBe(false);
+  it("readies an existing card to send when Save is pressed", () => {
+    const edited = reduceAll(openedFlashcard(), { type: "saveRequested" });
+    expect(edited?.stage).toBe("readyToSend");
   });
 
-  it("stops awaiting once the lookup fails", () => {
-    const draft = createDraft();
-    const edited = reduceEditedFlashcard(awaiting(draft), {
-      type: "lookupFailed",
-      draft,
-    });
-    expect(edited?.kind === "new" && edited.awaitsLookup).toBe(false);
-  });
-
-  it("replaces the word the user has not typed in, as with a dictionary form", () => {
-    const draft = {
-      ...createDraft(),
-      content: { ...createDraft().content, word: "食べた" },
-    };
-    const edited = reduceEditedFlashcard(awaiting(draft), {
-      type: "lookupAnswered",
-      draft,
-      fields,
-    });
-    expect(edited?.editor.content.word).toBe("食べる");
-  });
-
-  it("clears the waiting save once it starts", () => {
-    const draft = createDraft();
-    const waiting = reduceEditedFlashcard(awaiting(draft), {
+  it("makes a save wait for a lookup that has yet to answer", () => {
+    const edited = reduceAll(awaiting(createDraft()), {
       type: "saveRequested",
     });
-    const edited = reduceEditedFlashcard(waiting, { type: "saveStarted" });
-    expect(edited?.kind === "new" && edited.isSaveWaiting).toBe(false);
+    expect(edited?.stage).toBe("awaitingLookupToSave");
+  });
+
+  it("readies a waiting save to send once the lookup answers", () => {
+    const draft = createDraft();
+    const edited = reduceAll(
+      awaiting(draft),
+      { type: "saveRequested" },
+      { type: "lookupAnswered", draft, fields },
+    );
+    expect(edited?.stage).toBe("readyToSend");
+  });
+
+  it("readies a waiting save to send once the lookup fails", () => {
+    const draft = createDraft();
+    const edited = reduceAll(
+      awaiting(draft),
+      { type: "saveRequested" },
+      { type: "lookupFailed", draft },
+    );
+    expect(edited?.stage).toBe("readyToSend");
+  });
+
+  it("keeps waiting when another card's lookup answers", () => {
+    const edited = reduceAll(
+      awaiting(createDraft()),
+      { type: "saveRequested" },
+      { type: "lookupAnswered", draft: createDraft(), fields },
+    );
+    expect(edited?.stage).toBe("awaitingLookupToSave");
+  });
+
+  it("keeps waiting when another card's lookup fails", () => {
+    const edited = reduceAll(
+      awaiting(createDraft()),
+      { type: "saveRequested" },
+      { type: "lookupFailed", draft: createDraft() },
+    );
+    expect(edited?.stage).toBe("awaitingLookupToSave");
+  });
+
+  it("ignores Save pressed again while the card is being sent", () => {
+    const sending = reduceAll(
+      startedFrom(createDraft()),
+      { type: "saveRequested" },
+      { type: "sendStarted" },
+    );
+    expect(reduceAll(sending, { type: "saveRequested" })).toBe(sending);
+  });
+
+  it("fills nothing from an answer that arrives while the card is being sent", () => {
+    const draft = createDraft();
+    const sending = reduceAll(
+      awaiting(draft),
+      { type: "saveRequested" },
+      { type: "lookupFailed", draft },
+      { type: "sendStarted" },
+    );
+    expect(reduceAll(sending, { type: "lookupAnswered", draft, fields })).toBe(
+      sending,
+    );
+  });
+
+  it("closes the card once it is saved", () => {
+    const draft = createDraft();
+    const edited = reduceAll(
+      startedFrom(draft),
+      { type: "saveRequested" },
+      { type: "sendStarted" },
+      { type: "saved", source: draft },
+    );
+    expect(edited).toBeNull();
+  });
+
+  it("leaves open a card started after the one that was saved", () => {
+    const saved = createDraft();
+    const later = reduceAll(
+      startedFrom(saved),
+      { type: "saveRequested" },
+      { type: "sendStarted" },
+      { type: "started", draft: createDraft() },
+    );
+    expect(reduceAll(later, { type: "saved", source: saved })).toBe(later);
+  });
+
+  it("lets the user edit again once a save fails", () => {
+    const draft = createDraft();
+    const edited = reduceAll(
+      startedFrom(draft),
+      { type: "saveRequested" },
+      { type: "sendStarted" },
+      { type: "saveFailed", source: draft },
+    );
+    expect(edited?.stage).toBe("editing");
   });
 });

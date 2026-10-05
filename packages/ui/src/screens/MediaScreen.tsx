@@ -3,6 +3,7 @@ import type { Cue, Project } from "@easyimmerse/types";
 import { useReducer, useRef } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
+import { saveStatusOf } from "../flashcards/editedFlashcard.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
@@ -96,8 +97,7 @@ export function MediaScreen({
     const started = lookupFields
       ? { ...draft, content: { ...draft.content, ...lookupFields } }
       : draft;
-    flashcards.start(started, lateFields !== undefined);
-    lateFields?.then((fields) => flashcards.finishLookup(started, fields));
+    flashcards.start(started, lateFields);
   };
   const languages = {
     target: settings.target_language,
@@ -191,10 +191,7 @@ export function MediaScreen({
             languages={languages}
             waveform={clipWaveform}
             screenshotUrl={screenshotUrl}
-            isSaveWaiting={
-              flashcards.edited.kind === "new" &&
-              flashcards.edited.isSaveWaiting
-            }
+            saveStatus={saveStatusOf(flashcards.edited)}
             onSave={flashcards.save}
             onDelete={flashcards.remove}
             onClose={flashcards.close}

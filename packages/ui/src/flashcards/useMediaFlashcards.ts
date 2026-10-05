@@ -17,6 +17,7 @@ import {
 } from "./editedFlashcard.ts";
 import { type EditorAction, moveClipEndpoint } from "./editFlashcard.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
+import { useFlashcardSaving } from "./useFlashcardSaving.ts";
 
 const noFlashcards: readonly Flashcard[] = [];
 
@@ -25,7 +26,8 @@ const noFlashcards: readonly Flashcard[] = [];
  * Saving a new card creates it; saving an existing one replaces it.
  * Retiming the open card changes only the editor's copy, which is saved with the rest of the editor; any other card is saved at once.
  * A new card started before the media file is known to show pictures gains a screenshot once it is.
- * A new card whose word's lookup has yet to answer is saved only once it answers or fails, so that its definitions are saved with it.
+ * A new card whose word's lookup has yet to answer is saved only once it answers, fails or takes too long,
+ * so that its definitions are saved with it.
  */
 export function useMediaFlashcards(
   projectId: string,
@@ -60,38 +62,28 @@ export function useMediaFlashcards(
   const close = () => dispatchEdited({ type: "closed" });
   const edit = (action: EditorAction) =>
     dispatchEdited({ type: "edited", action });
-  /** Sends the card as the editor holds it. */
-  const saveNow = (edited: EditedFlashcard) => {
+  /** Sends a card as the editor holds it. */
+  const send = (card: EditedFlashcard) => {
     const changes = {
-      content: edited.editor.content,
-      included_fields: [...edited.editor.includedFields],
+      content: card.editor.content,
+      included_fields: [...card.editor.includedFields],
     };
-    const saving =
-      edited.kind === "new"
+    const sending =
+      card.kind === "new"
         ? createFlashcard({
             projectId,
-            draft: { ...edited.draft, ...changes },
+            draft: { ...card.draft, ...changes },
           }).unwrap()
-        : replace(edited.flashcard, changes);
-    saving
-      .then(() => {
-        close();
-        setSaved(true);
-      })
-      .catch(() => notify("The flashcard could not be saved"));
+        : replace(card.flashcard, changes);
+    return sending.then(
+      () => setSaved(true),
+      (error: unknown) => {
+        notify("The flashcard could not be saved");
+        throw error;
+      },
+    );
   };
-  const save = () => {
-    if (edited === null) return;
-    if (edited.kind === "new" && edited.awaitsLookup)
-      return dispatchEdited({ type: "saveRequested" });
-    saveNow(edited);
-  };
-  useEffect(() => {
-    if (edited?.kind !== "new" || !edited.isSaveWaiting || edited.awaitsLookup)
-      return;
-    dispatchEdited({ type: "saveStarted" });
-    saveNow(edited);
-  });
+  useFlashcardSaving(edited, dispatchEdited, send);
   const remove = () => {
     if (edited?.kind !== "existing") return close();
     deleteFlashcard({ projectId, flashcardId: edited.flashcard.id })
@@ -112,30 +104,32 @@ export function useMediaFlashcards(
     edit,
     isSaved,
     dismissSaved: () => setSaved(false),
-    /** Starts a new card; `awaitsLookup` tells that its word's lookup has yet to answer. */
-    start: (draft: FlashcardDraft, awaitsLookup = false) => {
-      setSaved(false);
-      dispatchEdited({ type: "started", draft, awaitsLookup });
-    },
     /**
-     * Fills the new flashcard started from `draft`, if it is still open, from a lookup that answered after it opened,
-     * or, with null fields, lets it be saved as it is once that lookup has failed.
+     * Starts a new card. `lateFields` gives the fields of its word's lookup once it answers, or null when it fails,
+     * and the card is filled from them if still open; until then a save waits for them.
      */
-    finishLookup: (
+    start: (
       draft: FlashcardDraft,
-      fields: LookupFlashcardFields | null,
-    ) =>
-      dispatchEdited(
-        fields
-          ? { type: "lookupAnswered", draft, fields }
-          : { type: "lookupFailed", draft },
-      ),
+      lateFields?: Promise<LookupFlashcardFields | null>,
+    ) => {
+      setSaved(false);
+      dispatchEdited({ type: "started", draft, awaitsLookup: !!lateFields });
+      const fail = () => dispatchEdited({ type: "lookupFailed", draft });
+      lateFields?.then(
+        (fields) =>
+          fields
+            ? dispatchEdited({ type: "lookupAnswered", draft, fields })
+            : fail(),
+        fail,
+      );
+    },
     open: (id: string) => {
       const flashcard = find(id);
       if (flashcard) dispatchEdited({ type: "opened", flashcard });
     },
     close,
-    save,
+    /** Asks to save the open card. Asking again while a save waits or is under way does nothing. */
+    save: () => dispatchEdited({ type: "saveRequested" }),
     remove,
     moveClipEndpoint: (id: string, endpoint: "start" | "end", ms: number) => {
       const content = isOpen(id) ? edited?.editor.content : find(id)?.content;

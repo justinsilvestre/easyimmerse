@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useId } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
@@ -25,7 +26,7 @@ export function FlashcardEditor({
   languages,
   waveform,
   screenshotUrl = null,
-  isSaveWaiting = false,
+  saveStatus = "idle",
   onSave,
   onDelete,
   onClose,
@@ -37,20 +38,22 @@ export function FlashcardEditor({
   waveform: MediaWaveform | null;
   /** The image of the screenshot at its current time. Without it, no screenshot is shown. */
   screenshotUrl?: string | null;
-  /** Whether a save the user asked for waits for definitions still on their way. */
-  isSaveWaiting?: boolean;
+  /** Whether a save the user asked for waits for definitions still on their way, or is under way; Save does nothing meanwhile. */
+  saveStatus?: "idle" | "waitingForDefinitions" | "saving";
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
 }) {
   const { content, includedFields } = state;
+  const saveStatusId = useId();
+  const isSaveInert = saveStatus !== "idle";
   return (
     <form
       aria-label="Flashcard"
       className="flex h-full w-full flex-col rounded-lg border border-line bg-surface text-fg"
       onSubmit={(event) => {
         event.preventDefault();
-        onSave();
+        if (!isSaveInert) onSave();
       }}
     >
       <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
@@ -97,19 +100,23 @@ export function FlashcardEditor({
           More fields
         </MenuButton>
         <div className="flex items-center gap-2">
-          {isSaveWaiting && (
-            <span role="status" className="text-xs text-fg-muted">
-              Waiting for definitions…
-            </span>
-          )}
+          <span
+            id={saveStatusId}
+            role="status"
+            className="text-xs text-fg-muted empty:hidden"
+          >
+            {saveStatusTexts[saveStatus]}
+          </span>
           <Button variant="danger" onClick={onDelete}>
             Delete
           </Button>
           <Button
             variant="primary"
             type="submit"
-            disabled={isSaveWaiting}
-            aria-busy={isSaveWaiting || undefined}
+            // Not `disabled`, which would move keyboard focus away from the button.
+            aria-disabled={isSaveInert || undefined}
+            aria-describedby={saveStatusId}
+            className={isSaveInert ? "opacity-50" : undefined}
           >
             Save
           </Button>
@@ -118,3 +125,9 @@ export function FlashcardEditor({
     </form>
   );
 }
+
+const saveStatusTexts = {
+  idle: "",
+  waitingForDefinitions: "Waiting for definitions…",
+  saving: "Saving…",
+};

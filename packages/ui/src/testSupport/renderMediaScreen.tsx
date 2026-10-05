@@ -79,7 +79,7 @@ export function renderMediaScreen({
   slowLookups = {},
   failingLookups = {},
 }: MediaScreenSetup = {}) {
-  const client = withUnansweredLookups(
+  const client = withLookupTiming(
     createFakeBackendClient(
       {
         ...fixtureResponses,
@@ -117,7 +117,8 @@ export function renderMediaScreen({
   return { ...rendered, client, navigation };
 }
 
-function withUnansweredLookups(
+/** Wraps a client so that lookups of the given texts never answer, answer late, or fail late. */
+function withLookupTiming(
   client: ReturnType<typeof createFakeBackendClient>,
   {
     unansweredLookups,
