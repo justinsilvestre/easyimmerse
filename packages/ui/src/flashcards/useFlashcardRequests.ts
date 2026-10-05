@@ -5,6 +5,7 @@ import {
 } from "@easyimmerse/backend";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import type { EditedFlashcard } from "./editedFlashcard.ts";
+import { draftOfEdited, draftOfFlashcard } from "./flashcardDrafts.ts";
 
 /** The backend requests that save and delete a project's flashcards. */
 export function useFlashcardRequests(projectId: string) {
@@ -18,7 +19,7 @@ export function useFlashcardRequests(projectId: string) {
     updateFlashcard({
       projectId,
       flashcardId: flashcard.id,
-      draft: { ...draftOf(flashcard), ...changes },
+      draft: { ...draftOfFlashcard(flashcard), ...changes },
     });
   const replace = (flashcard: Flashcard, changes: Partial<FlashcardDraft>) =>
     requestReplace(flashcard, changes).unwrap();
@@ -29,41 +30,27 @@ export function useFlashcardRequests(projectId: string) {
      * Resolves the flashcard as saved. The request stops once `signal` aborts.
      */
     send: (card: EditedFlashcard, signal?: AbortSignal): Promise<Flashcard> => {
-      const changes = {
-        content: card.editor.content,
-        included_fields: [...card.editor.includedFields],
-      };
+      const draft = draftOfEdited(card);
       const pending =
         card.kind === "new"
           ? createFlashcard({
               projectId,
-              flashcard: {
-                id: card.flashcardId,
-                draft: { ...card.draft, ...changes },
-              },
+              flashcard: { id: card.flashcardId, draft },
             })
-          : requestReplace(card.flashcard, changes);
+          : requestReplace(card.flashcard, draft);
       signal?.addEventListener("abort", () => pending.abort(), { once: true });
       return pending.unwrap();
     },
     remove: (flashcard: Flashcard) =>
       deleteFlashcard({ projectId, flashcardId: flashcard.id }).unwrap(),
-    /** Takes back a save of the card: deletes a card it created, or puts back what a saved card held when it was opened. */
-    undoSave: (card: EditedFlashcard, saved: Flashcard): Promise<unknown> =>
-      card.kind === "new"
+    /** Takes back a save of the card: deletes a card it created, or puts back `before`, what a saved card held before the save. */
+    undoSave: (
+      card: EditedFlashcard,
+      saved: Flashcard,
+      before: FlashcardDraft | null,
+    ): Promise<unknown> =>
+      card.kind === "new" || before === null
         ? deleteFlashcard({ projectId, flashcardId: saved.id }).unwrap()
-        : replace(card.flashcard, {
-            content: card.flashcard.content,
-            included_fields: card.flashcard.included_fields,
-          }),
-  };
-}
-
-function draftOf(flashcard: Flashcard): FlashcardDraft {
-  return {
-    media_file_id: flashcard.media_file_id,
-    cue_index: flashcard.cue_index,
-    content: flashcard.content,
-    included_fields: flashcard.included_fields,
+        : replace(card.flashcard, before),
   };
 }

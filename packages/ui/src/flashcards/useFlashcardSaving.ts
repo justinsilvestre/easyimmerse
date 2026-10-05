@@ -134,6 +134,7 @@ export function useFlashcardSaving(
     },
     rememberLookup: offScreen.rememberLookup,
     replace: offScreen.replace,
+    latestOf: offScreen.latestOf,
     remove: offScreen.remove,
     withdrawUndo: offScreen.withdrawUndo,
   };

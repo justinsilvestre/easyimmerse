@@ -92,16 +92,19 @@ export function useMediaFlashcards(
         fail,
       );
     },
-    /** Opens a saved card, withdrawing the Undo of its last save. The card it replaces is saved as it leaves. */
+    /**
+     * Opens a saved card as last sent, withdrawing the Undo of its last save. The card it replaces is saved as it leaves.
+     */
     open: (id: string) => {
-      const flashcard = flashcards.find((card) => card.id === id);
-      if (!flashcard) return;
+      const listed = flashcards.find((card) => card.id === id);
+      if (!listed) return;
       // Undoing the save now would change the card under the editor, so only saving it again from there remains.
       saving.withdrawUndo(id);
+      // Read once the card being replaced has been sent, which may be this very flashcard.
       replaceOpenCard(() =>
         dispatchEdited({
           type: "opened",
-          flashcard,
+          flashcard: saving.latestOf(listed),
           session: createCardSession(),
         }),
       );

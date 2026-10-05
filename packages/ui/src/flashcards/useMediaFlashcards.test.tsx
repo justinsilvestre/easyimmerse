@@ -130,6 +130,20 @@ function renderFlashcards({ savesFail = false } = {}) {
   const letSavesSucceed = () => {
     backend = backends.succeeding;
   };
+  /** Lets the save held at `index` reach the backend, leaving the others held. */
+  const letSaveThrough = (index: number) =>
+    act(async () => {
+      held.splice(index, 1)[0]?.();
+    });
+  /** Chooses an action of the latest notice whose message starts with `message`. */
+  const chooseFor = (message: string, label: string) =>
+    act(() =>
+      noticeStore
+        .list()
+        .findLast((notice) => notice.message.startsWith(message))
+        ?.actions?.find((action) => action.label === label)
+        ?.onSelect(),
+    );
   /** Dismisses the latest notice as the user would. */
   const dismissNotice = () =>
     act(() => {
@@ -175,6 +189,8 @@ function renderFlashcards({ savesFail = false } = {}) {
     notifications,
     notices,
     choose,
+    chooseFor,
+    letSaveThrough,
     dismissNotice,
     effects,
   };
@@ -670,6 +686,56 @@ describe("useMediaFlashcards", () => {
       const { result, notices } = await moveOnFrom(startChanged);
       act(() => result.current.open(savedFlashcard.id));
       expect(notices()).toEqual([]);
+    });
+
+    describe("when the flashcard is reopened while its save waits behind an earlier one", () => {
+      /** Saves f1 as “Hündin”, then, while that save is on its way, as “Hündchen”, which waits in the queue; then reopens f1. */
+      async function reopenDuringSaves() {
+        const rendered = renderFlashcards();
+        const { result, held } = rendered;
+        await vi.waitFor(() =>
+          expect(result.current.flashcards).toHaveLength(1),
+        );
+        act(() => result.current.open(savedFlashcard.id));
+        act(() => result.current.edit(typeWord("Hündin")));
+        act(() => result.current.open(savedFlashcard.id));
+        await vi.waitFor(() => expect(held).toHaveLength(1));
+        act(() => result.current.edit(typeWord("Hündchen")));
+        act(() => result.current.open(savedFlashcard.id));
+        return rendered;
+      }
+
+      /** Lets saves through until `count` PUTs have reached the backend. */
+      const letPutsThrough = async (
+        { held, puts }: ReturnType<typeof renderFlashcards>,
+        count: number,
+      ) =>
+        vi.waitFor(async () => {
+          for (const resolve of held.splice(0)) resolve();
+          await Promise.resolve();
+          expect(puts()).toHaveLength(count);
+        });
+
+      it("opens it with the content last sent, which the list does not show yet", async () => {
+        const { result } = await reopenDuringSaves();
+        expect(result.current.edited?.editor.content.word).toBe("Hündchen");
+      });
+
+      it("puts back the content from before a later save on its Undo", async () => {
+        const rendered = await reopenDuringSaves();
+        const { result, puts, chooseFor } = rendered;
+        act(() => result.current.edit(typeWord("Welpe")));
+        act(() => result.current.start(createDraft("Katze")));
+        await letPutsThrough(rendered, 3);
+        await vi.waitFor(() =>
+          expect(rendered.notices().flat()).toContain(
+            "Saved the flashcard for “Welpe”.",
+          ),
+        );
+        chooseFor("Saved the flashcard for “Welpe”", "Undo");
+        await letPutsThrough(rendered, 4);
+        expect(sentWord(puts().at(-1))).toBe("Hündchen");
+      });
     });
 
     it("leaves an unchanged saved card as it is", async () => {

@@ -2,6 +2,7 @@ import type { Flashcard } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { createCardSession, reduceEditedFlashcard } from "./editedFlashcard.ts";
 import { exampleFlashcard } from "./exampleFlashcard.ts";
+import { draftOfEdited } from "./flashcardDrafts.ts";
 import { createSaveQueue } from "./saveQueue.ts";
 
 const flashcard: Flashcard = {
@@ -78,5 +79,28 @@ describe("createSaveQueue", () => {
     first.finish();
     await settle();
     expect([sentBefore, sent]).toEqual([["save"], ["save", "undo"]]);
+  });
+
+  it("keeps the draft last sent for a flashcard while work on it is under way", async () => {
+    const queue = createSaveQueue();
+    const card = opening();
+    queue.add(card, heldSave([], "save").send);
+    expect(queue.latest(flashcard.id)).toEqual(draftOfEdited(card));
+  });
+
+  it("keeps the draft other work sent for a flashcard while it is under way", async () => {
+    const queue = createSaveQueue();
+    const draft = { ...draftOfEdited(opening()), cue_index: 9 };
+    queue.addFor(flashcard.id, heldSave([], "retime").send, draft);
+    expect(queue.latest(flashcard.id)).toEqual(draft);
+  });
+
+  it("forgets the draft once work on the flashcard has settled", async () => {
+    const queue = createSaveQueue();
+    const save = heldSave([], "save");
+    queue.add(opening(), save.send);
+    save.finish();
+    await settle();
+    expect(queue.latest(flashcard.id)).toBeUndefined();
   });
 });

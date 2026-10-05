@@ -7,6 +7,7 @@ import {
   type EditedFlashcard,
   reduceEditedFlashcard,
 } from "./editedFlashcard.ts";
+import { draftOfFlashcard, withDraft } from "./flashcardDrafts.ts";
 import { createSaveQueue } from "./saveQueue.ts";
 import { isSaveAsked } from "./saveStage.ts";
 import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
@@ -56,12 +57,21 @@ export function useOffScreenSaving(
       () => saveOffScreen(card, false),
       () => undefined,
     );
+  /** A saved flashcard as last sent, which the list of flashcards may not show yet while work on it is under way. */
+  const latestOf = (flashcard: Flashcard): Flashcard => {
+    const latest = queue.latest(flashcard.id);
+    return latest ? withDraft(flashcard, latest) : flashcard;
+  };
   function saveOffScreen(card: EditedFlashcard, offersUndo: boolean) {
+    const before =
+      card.kind === "existing"
+        ? draftOfFlashcard(latestOf(card.flashcard))
+        : null;
     const saving = send(card);
     if (!saving) return;
     track(
       saving.then(
-        (saved) => offersUndo && undo.offer(card, saved),
+        (saved) => offersUndo && undo.offer(card, saved, before),
         () => showFailure(card),
       ),
     );
@@ -79,10 +89,17 @@ export function useOffScreenSaving(
     /** Saves changes to a flashcard that is not open in the editor, after any earlier work on it. */
     replace: (flashcard: Flashcard, changes: Partial<FlashcardDraft>) => {
       undo.withdraw(flashcard.id);
+      const latest = latestOf(flashcard);
+      const draft = { ...draftOfFlashcard(latest), ...changes };
       return track(
-        queue.addFor(flashcard.id, () => requests.replace(flashcard, changes)),
+        queue.addFor(
+          flashcard.id,
+          () => requests.replace(latest, changes),
+          draft,
+        ),
       );
     },
+    latestOf,
     send,
     track,
     showFailure,

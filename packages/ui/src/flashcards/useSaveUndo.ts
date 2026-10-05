@@ -1,4 +1,4 @@
-import type { Flashcard } from "@easyimmerse/types";
+import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { useState } from "react";
 import { useNotices } from "../notices/NoticesContext.tsx";
 import type { EditedFlashcard } from "./editedFlashcard.ts";
@@ -28,13 +28,22 @@ export function useSaveUndo(
   };
   return {
     withdraw,
-    /** Shows that `card` was saved as `saved`, with an Undo that takes the save back. */
-    offer: (card: EditedFlashcard, saved: Flashcard) => {
+    /**
+     * Shows that `card` was saved as `saved`, with an Undo that takes the save back:
+     * it deletes a new card, or puts back `before`, what a saved card held before the save.
+     */
+    offer: (
+      card: EditedFlashcard,
+      saved: Flashcard,
+      before: FlashcardDraft | null,
+    ) => {
       const word = card.editor.content.word;
       const undo = () => {
         undoNotices.delete(saved.id);
-        const undoing = queue.addFor(saved.id, () =>
-          requests.undoSave(card, saved),
+        const undoing = queue.addFor(
+          saved.id,
+          () => requests.undoSave(card, saved, before),
+          before ?? undefined,
         );
         track(undoing).catch(() =>
           notices.show(flashcardNotices.undoFailed(word)),
