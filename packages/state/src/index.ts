@@ -11,11 +11,18 @@ export type {
   ServerStoreParts,
 } from "./createAppStore.ts";
 export { createAppStore } from "./createAppStore.ts";
-export type { Effects, PickedFile, PickedMediaFile } from "./effects.ts";
+export { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
+export type {
+  Effects,
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 export type { PlayerRegistry } from "./playerRegistry.ts";
 export { createPlayerRegistry } from "./playerRegistry.ts";
 export { createRecordingEffects } from "./recordingEffects.ts";
 export {
+  selectChosenDictionaryFile,
   selectChosenMediaFile,
   selectChosenSubtitleFile,
   selectCurrentMediaFileId,

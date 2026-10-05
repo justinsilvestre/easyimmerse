@@ -14,18 +14,20 @@ import { showNotification } from "./showNotification.ts";
 /** Builds the browser implementation of the app's side effects. */
 export function createWebEffects(options: {
   playerRegistry: PlayerRegistry;
-  /** Where picked media files are kept; pass the app's own to read them back later. */
+  /** Where picked media and dictionary files are kept; pass the app's own to read them back later. */
   browserFileRegistry?: BrowserFileRegistry<File>;
   /** Replaces the default in-page toast. */
   notify?: (message: string) => void;
 }): Effects {
   const preferences = createPreferenceStore();
+  const pickRegisteredFile = createPickMediaFile(
+    options.browserFileRegistry ?? createBrowserFileRegistry<File>(),
+  );
   return {
     ...createPlayerEffects(options.playerRegistry),
     pickFile,
-    pickMediaFile: createPickMediaFile(
-      options.browserFileRegistry ?? createBrowserFileRegistry<File>(),
-    ),
+    pickMediaFile: pickRegisteredFile,
+    pickDictionaryFile: pickRegisteredFile,
     savePreference: preferences.save,
     loadPreference: preferences.load,
     showNotification: options.notify ?? showNotification,

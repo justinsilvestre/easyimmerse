@@ -1,6 +1,10 @@
 import type { Action } from "redux";
 import type { AppState, PreferenceKey } from "./appState.ts";
-import type { PickedFile, PickedMediaFile } from "./effects.ts";
+import type {
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 import type { Theme } from "./theme.ts";
 
 export const actions = {
@@ -31,6 +35,13 @@ export const actions = {
   mediaFileAddFailed: () => ({ type: "mediaFileAddFailed" }) as const,
   mediaFileRemoved: (mediaFileId: string) =>
     ({ type: "mediaFileRemoved", mediaFileId }) as const,
+  dictionaryFilePickRequested: () =>
+    ({ type: "dictionaryFilePickRequested" }) as const,
+  dictionaryFileChosen: (file: PickedDictionaryFile) =>
+    ({ type: "dictionaryFileChosen", file }) as const,
+  dictionaryFilePickCancelled: () =>
+    ({ type: "dictionaryFilePickCancelled" }) as const,
+  dictionaryFileHandled: () => ({ type: "dictionaryFileHandled" }) as const,
   openMedia: (mediaFileId: string) =>
     ({ type: "openMedia", mediaFileId }) as const,
   closeMedia: () => ({ type: "closeMedia" }) as const,

@@ -45,6 +45,18 @@ export function runEffect(
         )
         .catch(() => dispatch(actions.mediaFilePickCancelled()));
       return;
+    case "pickDictionaryFile":
+      effects
+        .pickDictionaryFile(effect.accept)
+        .then((file) =>
+          dispatch(
+            file
+              ? actions.dictionaryFileChosen(file)
+              : actions.dictionaryFilePickCancelled(),
+          ),
+        )
+        .catch(() => dispatch(actions.dictionaryFilePickCancelled()));
+      return;
     case "savePreference":
       effects.savePreference(effect.key, effect.value).catch(ignoreFailure);
       return;

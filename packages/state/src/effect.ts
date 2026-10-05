@@ -8,6 +8,7 @@ export type Effect =
   | { type: "setPlayerSpeed"; speed: number }
   | { type: "pickFile"; accept: readonly string[] }
   | { type: "pickMediaFile"; accept: readonly string[] }
+  | { type: "pickDictionaryFile"; accept: readonly string[] }
   | { type: "savePreference"; key: PreferenceKey; value: string }
   | { type: "loadPreferences"; keys: readonly PreferenceKey[] }
   | { type: "showNotification"; message: string }
