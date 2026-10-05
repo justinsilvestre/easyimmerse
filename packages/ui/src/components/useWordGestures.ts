@@ -9,12 +9,8 @@ import { useTimer } from "../hooks/useTimer.ts";
 import { characterOffsetAt } from "./characterAtPoint.ts";
 import { doubleClickMs, hoverIntentMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
-import {
-  type ClickPoint,
-  rememberFirstClick,
-  takeDoubleTap,
-  takeFirstClick,
-} from "./wordClickMemory.ts";
+import type { ClickPoint, WordClickMemory } from "./wordClickMemory.ts";
+import { useWordClickMemory } from "./wordClickMemoryContext.tsx";
 
 /** A word the user acted on, with the element that shows it, so that a pop-up can be placed at it. */
 export type WordHit = {
@@ -61,6 +57,7 @@ export function useWordGestures(gestures: WordGestures) {
   const clickTimer = useTimer();
   const [press] = useState(createPressTracker);
   useEffect(() => press.cancelHold, [press]);
+  const memory = useWordClickMemory();
   const reportClick = (event: MouseEvent<HTMLElement>, hit: WordHit) => {
     const { onWordClick, onWordDoubleClick, defersClick } = latest.current;
     if (hit.input === "keyboard")
@@ -68,13 +65,13 @@ export function useWordGestures(gestures: WordGestures) {
         event.shiftKey && onWordDoubleClick ? onWordDoubleClick : onWordClick
       )?.(hit);
     const point = { x: event.clientX, y: event.clientY };
-    const first = firstClickCompletedBy(event, hit, point);
+    const first = firstClickCompletedBy(memory, event, hit, point);
     if (first) {
       first.cancel();
       return first.onDoubleClick?.(first.hit);
     }
-    if (event.detail > 1 && hit.input === "mouse") return;
-    rememberFirstClick({
+    // A second click whose first landed on no word, or too long ago, counts as a click of its own.
+    memory.remember({
       hit,
       point,
       onDoubleClick: onWordDoubleClick ?? onWordClick,
@@ -166,10 +163,11 @@ function hitAt(
  * The browser's count decides for a mouse; a tap counts by its time and place, since browsers count taps unreliably.
  */
 function firstClickCompletedBy(
+  memory: WordClickMemory,
   event: MouseEvent<HTMLElement>,
   hit: WordHit,
   point: ClickPoint,
 ) {
-  if (hit.input === "touch") return takeDoubleTap(point);
-  return event.detail === 2 ? takeFirstClick() : null;
+  if (hit.input === "touch") return memory.takeDoubleTap(point);
+  return event.detail === 2 ? memory.take() : null;
 }

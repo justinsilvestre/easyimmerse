@@ -1,5 +1,8 @@
 import clsx from "clsx";
-import { lookupTriggerAttribute } from "./lookupTrigger.ts";
+import {
+  clickableWordAttribute,
+  lookupTriggerAttribute,
+} from "./lookupTrigger.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
 
 /** A letter of a script written without spaces between words: Chinese characters, hiragana and katakana, with marks such as ー. */
@@ -89,7 +92,7 @@ export function ClickableText({
             aria-haspopup="dialog"
             aria-expanded={isActive || undefined}
             aria-controls={isActive ? activeWord?.popupId : undefined}
-            {...{ [lookupTriggerAttribute]: "" }}
+            {...{ [lookupTriggerAttribute]: "", [clickableWordAttribute]: "" }}
             {...handlersFor(part)}
             className={clsx(
               // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu,

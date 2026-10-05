@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ClickableText } from "./ClickableText.tsx";
 import type { WordGestures } from "./useWordGestures.ts";
+import { WordClickMemoryProvider } from "./wordClickMemoryContext.tsx";
 
 beforeEach(() => vi.useFakeTimers());
 
@@ -112,6 +113,36 @@ describe("useWordGestures", () => {
     fireEvent.click(word("rufe"), { detail: 1 });
     fireEvent.click(word("an"), { detail: 2 });
     expect(gestures).toEqual(["click rufe", "doubleClick rufe"]);
+  });
+
+  it("reports a click, not a double-click, for a second click 600 ms after the first", () => {
+    const gestures = renderSentence();
+    fireEvent.click(word("rufe"), { detail: 1 });
+    act(() => vi.advanceTimersByTime(600));
+    fireEvent.click(word("an"), { detail: 2 });
+    expect(gestures).toEqual(["click rufe", "click an"]);
+  });
+
+  it("reports a click, not a double-click, for a second click whose first landed between words", () => {
+    const { container } = render(
+      <WordClickMemoryProvider>
+        <ClickableText
+          text="Ich rufe an."
+          gestures={{
+            onWordClick: (hit) => gestures.push(`click ${hit.word}`),
+            onWordDoubleClick: (hit) =>
+              gestures.push(`doubleClick ${hit.word}`),
+          }}
+        />
+      </WordClickMemoryProvider>,
+    );
+    const gestures: string[] = [];
+    fireEvent.click(word("rufe"), { detail: 1 });
+    act(() => vi.advanceTimersByTime(1000));
+    fireEvent.click(word("Ich"), { detail: 1 });
+    fireEvent.click(container.firstChild as HTMLElement, { detail: 1 });
+    fireEvent.click(word("an"), { detail: 2 });
+    expect(gestures).toEqual(["click rufe", "click Ich", "click an"]);
   });
 
   it("reports Shift+Enter on a word as a double-click", () => {
