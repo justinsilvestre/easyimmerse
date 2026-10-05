@@ -84,7 +84,7 @@ export function ClickableText({
               part.start === activeWord?.start ? activeWord.popupId : undefined
             }
             {...{ [lookupTriggerAttribute]: "" }}
-            {...handlersFor(part.text, part.start)}
+            {...handlersFor(part)}
             className={clsx(
               // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu,
               // and a double tap must not zoom the page.
