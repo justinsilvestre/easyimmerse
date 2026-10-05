@@ -135,13 +135,19 @@ fn reads_xdxf_markup() {
     );
 }
 
+fn archive_source(name: &str) -> DictionarySource {
+    DictionarySource::single(name, read_fixture_bytes(name)).unwrap()
+}
+
 #[test]
 fn reads_the_same_dictionary_from_a_gzip_compressed_tar_archive() {
-    let mut source = DictionarySource::single(
-        "sample-stardict.tar.gz",
-        read_fixture_bytes("sample-stardict.tar.gz"),
-    )
-    .unwrap();
+    let mut source = archive_source("sample-stardict.tar.gz");
+    assert_eq!(parse_dictionary(&mut source).unwrap(), sample());
+}
+
+#[test]
+fn reads_the_same_dictionary_from_a_bzip2_compressed_tar_archive() {
+    let mut source = archive_source("sample-stardict.tar.bz2");
     assert_eq!(parse_dictionary(&mut source).unwrap(), sample());
 }
 

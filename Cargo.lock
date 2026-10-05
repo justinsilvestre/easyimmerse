@@ -533,6 +533,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bzip2-rs"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "beeb59e7e4c811ab37cc73680c798c7a5da77fc9989c62b09138e31ee740f735"
+dependencies = [
+ "crc32fast",
+ "tinyvec",
+]
+
+[[package]]
 name = "cairo-rs"
 version = "0.18.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1446,12 +1456,14 @@ name = "easyimmerse-core"
 version = "0.1.0"
 dependencies = [
  "adler2",
+ "bzip2-rs",
  "chardetng",
  "csv",
  "encoding_rs",
  "flate2",
  "lzma-rust2",
  "lzokay",
+ "memchr",
  "percent-encoding",
  "ripemd",
  "roxmltree",

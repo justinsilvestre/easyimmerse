@@ -6,10 +6,12 @@
 - sample-stardict-sametypesequence/: version 3.0.0 with sametypesequence=tm,
   64-bit offsets, a gzipped index, and an uncompressed data file.
 - sample-stardict.tar.gz: sample-stardict/ packed as a gzip-compressed tar archive.
+- sample-stardict.tar.bz2: the same tar archive compressed with bzip2.
 
 Run it from anywhere with `python3 fixtures/generate-stardict.py`. The output is deterministic.
 """
 
+import bz2
 import gzip
 import io
 import shutil
@@ -184,8 +186,8 @@ def write_sample_archive():
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w", format=tarfile.USTAR_FORMAT) as archive:
         archive.add(FIXTURES / "sample-stardict", arcname="sample-stardict", filter=normalize)
-    archive_path = FIXTURES / "sample-stardict.tar.gz"
-    archive_path.write_bytes(gzip.compress(buffer.getvalue(), mtime=0))
+    (FIXTURES / "sample-stardict.tar.gz").write_bytes(gzip.compress(buffer.getvalue(), mtime=0))
+    (FIXTURES / "sample-stardict.tar.bz2").write_bytes(bz2.compress(buffer.getvalue(), 9))
 
 
 write_sample()
