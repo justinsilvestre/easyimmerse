@@ -1,16 +1,12 @@
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { useState } from "react";
-import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { saveRequestLimitMs } from "../lookup/lookupTiming.ts";
-import { withinTime } from "../lookup/withinTime.ts";
-import {
-  type EditedFlashcard,
-  reduceEditedFlashcard,
-} from "./editedFlashcard.ts";
+import type { EditedFlashcard } from "./editedFlashcard.ts";
 import { draftOfFlashcard, withDraft } from "./flashcardDrafts.ts";
 import { createSaveQueue } from "./saveQueue.ts";
 import { isSaveAsked } from "./saveStage.ts";
 import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
+import { useLateLookupSaves } from "./useLateLookupSaves.ts";
 import { useLeftCardNotices } from "./useLeftCardNotices.ts";
 import { useSaveUndo } from "./useSaveUndo.ts";
 import { flashcardIdOf, useTimedOutSaves } from "./useTimedOutSaves.ts";
@@ -30,13 +26,13 @@ export function useOffScreenSaving(
   reopen: (card: EditedFlashcard) => void,
 ) {
   const [queue] = useState(createSaveQueue);
-  const [lookups] = useState(
-    () => new WeakMap<FlashcardDraft, Promise<LookupFlashcardFields | null>>(),
-  );
   const leftCards = useLeftCardNotices(reopen);
   const { track } = useUnsavedWorkTracking();
   const undo = useSaveUndo(queue, requests);
   const timedOut = useTimedOutSaves(queue, requests);
+  const lateLookups = useLateLookupSaves((card) =>
+    saveOffScreen(card, !isSaveAsked(card.stage)),
+  );
   /**
    * Sends a card's save, or returns undefined when this opening's save is already under way.
    * The caller counts the save, with what it does on settling, as unsaved work through `track`.
@@ -111,27 +107,9 @@ export function useOffScreenSaving(
     /** Saves a card that has left the editor, with an Undo notice when the user did not ask for the save. */
     save: (card: EditedFlashcard) =>
       saveOffScreen(card, !isSaveAsked(card.stage)),
-    /** Waits up to `waitMs` for the lookup of a new card that left the editor before it answered, then saves the card filled from it. */
-    saveAfterLookup: (card: EditedFlashcard, waitMs: number) => {
-      if (card.kind !== "new") return;
-      const { draft } = card;
-      const lateFields = lookups.get(draft) ?? Promise.resolve(null);
-      track(withinTime(lateFields, waitMs, null)).then((fields) => {
-        const filled = reduceEditedFlashcard(
-          card,
-          fields
-            ? { type: "lookupAnswered", draft, fields }
-            : { type: "lookupFailed", draft },
-        );
-        if (filled) saveOffScreen(filled, !isSaveAsked(card.stage));
-      });
-    },
+    saveAfterLookup: lateLookups.saveAfterLookup,
+    rememberLookup: lateLookups.rememberLookup,
     showDiscarded: leftCards.showDiscarded,
     cleanUpAfterDiscard: timedOut.cleanUpAfterDiscard,
-    /** Remembers the lookup a new card's late fields come from, for waiting on it once the card has left the editor. */
-    rememberLookup: (
-      draft: FlashcardDraft,
-      lateFields: Promise<LookupFlashcardFields | null>,
-    ) => lookups.set(draft, lateFields),
   };
 }
