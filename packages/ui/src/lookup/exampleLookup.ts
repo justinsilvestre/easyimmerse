@@ -19,7 +19,7 @@ export const exampleResults: readonly LookupResult[] = [
     matchedText: "fressen",
     term: "fressen",
     reading: null,
-    inflections: [],
+    inflectionChains: [],
     definitions: [
       {
         dictionaryId: "wiktionary-de-en",
@@ -74,7 +74,7 @@ export const exampleResults: readonly LookupResult[] = [
     matchedText: "fressen",
     term: "Fressen",
     reading: null,
-    inflections: [],
+    inflectionChains: [],
     definitions: [
       {
         dictionaryId: "wiktionary-de-en",

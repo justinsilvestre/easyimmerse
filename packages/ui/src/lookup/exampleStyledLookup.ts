@@ -34,7 +34,7 @@ export const exampleStyledYomitanResult: LookupResult = {
   matchedText: "本",
   term: "本",
   reading: "ほん",
-  inflections: [],
+  inflectionChains: [],
   definitions: [
     {
       dictionaryId: "sample-yomitan",
@@ -56,7 +56,7 @@ export const exampleStyledMDictResult: LookupResult = {
   matchedText: "cat",
   term: "cat",
   reading: null,
-  inflections: [],
+  inflectionChains: [],
   definitions: [
     {
       dictionaryId: "sample-mdict",
@@ -82,7 +82,7 @@ export const exampleSemanticHtmlResult: LookupResult = {
   matchedText: "book",
   term: "book",
   reading: null,
-  inflections: [],
+  inflectionChains: [],
   definitions: [
     {
       dictionaryId: "example-semantic",

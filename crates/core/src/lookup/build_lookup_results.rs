@@ -38,7 +38,7 @@ fn rank_group(
         matched_text: group.candidate.matched_text.clone(),
         term: group.term,
         reading: group.reading,
-        inflections: group.candidate.deinflection.inflections.clone(),
+        inflection_chains: group.inflection_chains,
         definitions: group.entries.into_iter().map(definitions).collect(),
         frequencies: frequencies(&applicable),
         pronunciations: pronunciations(&applicable),
@@ -269,7 +269,7 @@ mod tests {
             frequency(9, "行ける", "いける", 3_000.0),
         ];
         let results = build_lookup_results(&candidates, ike_entries(1, 1), &meta);
-        assert_eq!(results[0].inflections, vec!["imperative"]);
+        assert_eq!(results[0].inflection_chains, vec![vec!["imperative"]]);
     }
 
     #[test]
@@ -480,7 +480,30 @@ mod tests {
     #[test]
     fn reports_the_inflections_undone() {
         let results = build_lookup_results(&[eaten()], vec![verb("v1")], &[]);
-        assert_eq!(results[0].inflections, vec!["past"]);
+        assert_eq!(results[0].inflection_chains, vec![vec!["past"]]);
+    }
+
+    #[test]
+    fn reports_both_the_potential_and_the_passive_after_a_causative() {
+        let candidates = lookup_candidates("食べさせられなかった", "ja");
+        let results = build_lookup_results(&candidates, vec![verb("v1")], &[]);
+        assert_eq!(
+            results[0].inflection_chains,
+            vec![
+                vec!["past", "negative", "potential", "causative"],
+                vec!["past", "negative", "passive", "causative"],
+            ]
+        );
+    }
+
+    #[test]
+    fn reports_a_single_chain_when_only_one_analysis_fits() {
+        let candidates = lookup_candidates("食べさせた", "ja");
+        let results = build_lookup_results(&candidates, vec![verb("v1")], &[]);
+        assert_eq!(
+            results[0].inflection_chains,
+            vec![vec!["past", "causative"]]
+        );
     }
 
     #[test]

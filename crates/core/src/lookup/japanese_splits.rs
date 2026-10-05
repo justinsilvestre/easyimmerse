@@ -9,7 +9,7 @@ use super::found_rows::{DictionaryOrigin, FoundEntry};
 use super::lookup_candidate::{candidate_headwords, lookup_candidates};
 use crate::dictionary::{DictionaryFormatKind, TermEntry};
 
-/// The matched text, term and inflections of the best result for `text`,
+/// The matched text, term and first inflection chain of the best result for `text`,
 /// in a dictionary of the given terms and their word classes.
 fn best_result(text: &str, dictionary: &[(&str, &str)]) -> (String, String, Vec<String>) {
     let candidates = lookup_candidates(text, "ja");
@@ -24,7 +24,12 @@ fn best_result(text: &str, dictionary: &[(&str, &str)]) -> (String, String, Vec<
         .into_iter()
         .next()
         .expect("some entry matches");
-    (result.matched_text, result.term, result.inflections)
+    let inflections = result
+        .inflection_chains
+        .into_iter()
+        .next()
+        .unwrap_or_default();
+    (result.matched_text, result.term, inflections)
 }
 
 fn found_entry(index: usize, term: &str, word_class: &str) -> FoundEntry {

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  exampleAmbiguousInflectionResult,
   exampleInflectedResult,
   examplePronunciationResult,
 } from "./exampleJapaneseLookup.ts";
@@ -37,6 +38,18 @@ describe("LookupResultCard", () => {
   it("shows the inflections from the dictionary form outwards", () => {
     renderCard();
     expect(screen.getByText("negative ‹ past")).toBeDefined();
+  });
+
+  it("shows a single inflection chain on one line", () => {
+    renderCard();
+    expect(screen.getAllByText(/‹/)).toHaveLength(1);
+  });
+
+  it("shows equally good chains that differ in one step as alternatives on one line", () => {
+    renderCard(exampleAmbiguousInflectionResult);
+    expect(
+      screen.getByText("causative ‹ potential or passive ‹ negative ‹ past"),
+    ).toBeDefined();
   });
 
   it("shows a tag's notes as its tooltip", () => {

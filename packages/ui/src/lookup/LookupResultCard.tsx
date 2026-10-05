@@ -4,14 +4,14 @@ import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { DictionaryDefinitionsSection } from "./DictionaryDefinitionsSection.tsx";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import { FrequencyList } from "./FrequencyList.tsx";
-import { formatInflectionChain } from "./formatInflectionChain.ts";
+import { formatInflectionChains } from "./formatInflectionChains.ts";
 import { PronunciationList } from "./PronunciationList.tsx";
 import { ResultHeadword } from "./ResultHeadword.tsx";
 import { resolveTags } from "./resolveTags.ts";
 import { TagList } from "./TagList.tsx";
 
 /**
- * One result in the dictionary pop-up: the term and its reading, the inflections that lead to the looked-up text,
+ * One result in the dictionary pop-up: the term and its reading, each equally good chain of inflections that leads to the looked-up text,
  * its tags, frequencies and pronunciations, and then each dictionary's definitions.
  * Clicked words go to `onWordClick`; links to other headwords go to `onLookup`.
  */
@@ -28,6 +28,7 @@ export function LookupResultCard({
   onLookup: (term: string) => void;
   onCreateFlashcard: () => void;
 }) {
+  const inflectionLines = formatInflectionChains(result.inflectionChains);
   return (
     <article className="flex flex-col gap-2 border-t border-line py-3 first:border-t-0 first:pt-0">
       <header className="flex flex-wrap items-end gap-x-2 gap-y-1">
@@ -46,10 +47,12 @@ export function LookupResultCard({
           <NewFlashcardIcon className="size-4" />
         </IconButton>
       </header>
-      {result.inflections.length > 0 && (
-        <p className="text-xs text-fg-muted">
-          {formatInflectionChain(result.inflections)}
-        </p>
+      {inflectionLines.length > 0 && (
+        <div className="text-xs text-fg-muted">
+          {inflectionLines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
       )}
       <FrequencyList frequencies={result.frequencies} />
       <PronunciationList

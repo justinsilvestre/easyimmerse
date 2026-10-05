@@ -10,7 +10,7 @@ function markupResult(
     matchedText: term,
     term,
     reading: null,
-    inflections: [],
+    inflectionChains: [],
     definitions: [
       {
         dictionaryId: dictionaryTitle.toLowerCase().replaceAll(" ", "-"),

@@ -15,17 +15,6 @@ pub fn is_match(candidate: &LookupCandidate, found: &FoundEntry) -> bool {
             || has_required_word_class(candidate, found))
 }
 
-/// Returns the most preferred candidate that the found entry matches.
-pub fn best_match<'a>(
-    candidates: &'a [LookupCandidate],
-    found: &FoundEntry,
-) -> Option<&'a LookupCandidate> {
-    candidates
-        .iter()
-        .filter(|candidate| is_match(candidate, found))
-        .min_by(|left, right| left.preference(right))
-}
-
 fn has_required_word_class(candidate: &LookupCandidate, found: &FoundEntry) -> bool {
     let candidate_classes = &candidate.deinflection.word_classes;
     if found.entry.word_classes.is_empty() {
@@ -161,12 +150,5 @@ mod tests {
     fn matches_a_deinflected_candidate_in_a_format_without_word_classes() {
         let entry = found("食べる", DictionaryFormatKind::Stardict, &[]);
         assert!(is_match(&deinflected("食べた", "食べる", "v1"), &entry));
-    }
-
-    #[test]
-    fn picks_the_longest_matching_candidate() {
-        let candidates = vec![deinflected("食べたい", "食べる", "v1"), unchanged("食べる")];
-        let entry = found("食べる", DictionaryFormatKind::Yomitan, &["v1"]);
-        assert_eq!(best_match(&candidates, &entry), Some(&candidates[0]));
     }
 }
