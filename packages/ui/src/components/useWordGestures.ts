@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 import { useTimer } from "../hooks/useTimer.ts";
-import { characterOffsetAt } from "./characterAtPoint.ts";
+import { characterOffsetAt, type ViewportPoint } from "./characterAtPoint.ts";
 import { doubleClickMs, hoverIntentMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
 import type { ClickPoint, WordClickMemory } from "./wordClickMemory.ts";
@@ -64,7 +64,7 @@ export function useWordGestures(gestures: WordGestures) {
       return (
         event.shiftKey && onWordDoubleClick ? onWordDoubleClick : onWordClick
       )?.(hit);
-    const point = { x: event.clientX, y: event.clientY };
+    const point = pointOf(event);
     const first = firstClickCompletedBy(memory, event, hit, point);
     if (first) {
       first.cancel();
@@ -94,7 +94,7 @@ export function useWordGestures(gestures: WordGestures) {
     onPointerEnter: (event: PointerEvent<HTMLElement>) => {
       if (event.pointerType !== "mouse") return;
       hovered.current = null;
-      restartHover(hitAt(part, event, "mouse"));
+      restartHover(hitAt(part, event.currentTarget, pointOf(event), "mouse"));
     },
     onPointerLeave: () => {
       hovered.current = null;
@@ -102,7 +102,7 @@ export function useWordGestures(gestures: WordGestures) {
       press.cancelHold();
     },
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
-      const hit = hitAt(part, event, "touch");
+      const hit = hitAt(part, event.currentTarget, pointOf(event), "touch");
       press.start(event, () => {
         if (hit.element.isConnected) latest.current.onWordHold?.(hit);
       });
@@ -110,7 +110,7 @@ export function useWordGestures(gestures: WordGestures) {
     onPointerMove: (event: PointerEvent<HTMLElement>) => {
       press.move(event);
       if (event.pointerType === "mouse" && part.isUnspaced)
-        restartHover(hitAt(part, event, "mouse"));
+        restartHover(hitAt(part, event.currentTarget, pointOf(event), "mouse"));
     },
     onPointerUp: press.cancelHold,
     onPointerCancel: press.cancelHold,
@@ -127,7 +127,9 @@ export function useWordGestures(gestures: WordGestures) {
         : press.isTouch()
           ? "touch"
           : "mouse";
-      reportClick(event, hitAt(part, event, input));
+      // A finger lands where it came down, which a held tap uses too, rather than where it lifted.
+      const point = input === "touch" ? press.origin() : pointOf(event);
+      reportClick(event, hitAt(part, event.currentTarget, point, input));
     },
   });
 }
@@ -141,14 +143,13 @@ type WordPart = { text: string; start: number; isUnspaced: boolean };
  */
 function hitAt(
   part: WordPart,
-  event: MouseEvent<HTMLElement>,
+  element: HTMLElement,
+  point: ViewportPoint,
   input: WordHit["input"],
 ): WordHit {
-  const element = event.currentTarget;
   const offset =
     part.isUnspaced && input !== "keyboard"
-      ? (characterOffsetAt(element, { x: event.clientX, y: event.clientY }) ??
-        0)
+      ? (characterOffsetAt(element, point) ?? 0)
       : 0;
   return {
     word: part.text.slice(offset),
@@ -156,6 +157,10 @@ function hitAt(
     element,
     input,
   };
+}
+
+function pointOf(event: MouseEvent<HTMLElement>): ViewportPoint {
+  return { x: event.clientX, y: event.clientY };
 }
 
 /**

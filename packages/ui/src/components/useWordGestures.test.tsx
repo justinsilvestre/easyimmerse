@@ -72,12 +72,22 @@ function tap(element: HTMLElement, clientX: number, detail = 1) {
 }
 
 /**
- * Makes the browser report the caret before the character at `offset` of the element's text
- * wherever the pointer is, as `caretPositionFromPoint` does for the character under it.
+ * Lays text out as the browser would in a monospaced font, each UTF-16 code unit 16 px wide on one line 20 px high,
+ * so that a character outside the Basic Multilingual Plane is 32 px wide.
  */
-function pointAtCharacter(element: HTMLElement, offset: number) {
-  Object.assign(document, {
-    caretPositionFromPoint: () => ({ offsetNode: element.firstChild, offset }),
+function layOutCharacters() {
+  vi.spyOn(Range.prototype, "getClientRects").mockImplementation(function (
+    this: Range,
+  ) {
+    const rect = new DOMRect(
+      this.startOffset * 16,
+      0,
+      (this.endOffset - this.startOffset) * 16,
+      20,
+    );
+    return Object.assign([rect], {
+      item: () => rect,
+    }) as unknown as DOMRectList;
   });
 }
 
@@ -206,71 +216,103 @@ describe("useWordGestures", () => {
   });
 
   describe("in a run of Japanese", () => {
-    afterEach(() => {
-      Reflect.deleteProperty(document, "caretPositionFromPoint");
-    });
+    afterEach(() => vi.restoreAllMocks());
 
     it("reports a click from the character under the pointer", () => {
       const gestures = renderSentence({}, "映画を見る");
-      pointAtCharacter(word("映画を見る"), 3);
-      fireEvent.click(word("映画を見る"), { detail: 1, clientX: 50 });
+      layOutCharacters();
+      fireEvent.click(word("映画を見る"), {
+        detail: 1,
+        clientX: 50,
+        clientY: 10,
+      });
       expect(gestures).toEqual(["click 見る"]);
     });
 
-    it("reports a click from a character outside the Basic Multilingual Plane", () => {
+    it("reports a click from a character after one outside the Basic Multilingual Plane", () => {
       const gestures = renderSentence({}, "𠮷野家");
-      pointAtCharacter(word("𠮷野家"), 2);
-      fireEvent.click(word("𠮷野家"), { detail: 1, clientX: 50 });
+      layOutCharacters();
+      fireEvent.click(word("𠮷野家"), { detail: 1, clientX: 40, clientY: 10 });
       expect(gestures).toEqual(["click 野家"]);
     });
 
-    it("never reports half of a character outside the Basic Multilingual Plane", () => {
+    it("reports a click on the right half of a character outside the Basic Multilingual Plane from that character", () => {
       const gestures = renderSentence({}, "𠮷野家");
-      pointAtCharacter(word("𠮷野家"), 1);
-      fireEvent.click(word("𠮷野家"), { detail: 1, clientX: 50 });
+      layOutCharacters();
+      fireEvent.click(word("𠮷野家"), { detail: 1, clientX: 30, clientY: 10 });
       expect(gestures).toEqual(["click 𠮷野家"]);
     });
 
     it("reports a key press from the start of the run", () => {
       const gestures = renderSentence({}, "映画を見る");
-      pointAtCharacter(word("映画を見る"), 3);
+      layOutCharacters();
       fireEvent.click(word("映画を見る"), { detail: 0 });
       expect(gestures).toEqual(["click 映画を見る"]);
     });
 
-    it("reports a click from the start of the run when the browser cannot tell the character", () => {
+    it("reports a click from the start of the run when no character lies under the pointer", () => {
       const gestures = renderSentence({}, "映画を見る");
-      fireEvent.click(word("映画を見る"), { detail: 1, clientX: 50 });
+      fireEvent.click(word("映画を見る"), {
+        detail: 1,
+        clientX: 50,
+        clientY: 10,
+      });
       expect(gestures).toEqual(["click 映画を見る"]);
     });
 
     it("waits for the mouse to rest on the character it has moved to", () => {
       const gestures = renderSentence({}, "映画を見る");
+      layOutCharacters();
       const run = word("映画を見る");
-      pointAtCharacter(run, 0);
-      fireEvent.pointerEnter(run, { pointerType: "mouse", clientX: 5 });
+      fireEvent.pointerEnter(run, {
+        pointerType: "mouse",
+        clientX: 5,
+        clientY: 10,
+      });
       act(() => vi.advanceTimersByTime(100));
-      pointAtCharacter(run, 3);
-      fireEvent.pointerMove(run, { pointerType: "mouse", clientX: 50 });
+      fireEvent.pointerMove(run, {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
       act(() => vi.advanceTimersByTime(150));
       expect(gestures).toEqual(["hoverIntent 見る"]);
     });
 
     it("reports a held tap from the character under the finger", () => {
       const gestures = renderSentence({}, "映画を見る");
-      pointAtCharacter(word("映画を見る"), 3);
+      layOutCharacters();
       fireEvent.pointerDown(word("映画を見る"), {
         pointerType: "touch",
         clientX: 50,
+        clientY: 10,
       });
       act(() => vi.advanceTimersByTime(600));
       expect(gestures).toEqual(["hold 見る"]);
     });
 
+    it("reports a tap from where the finger came down, as a held tap would", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      layOutCharacters();
+      const run = word("映画を見る");
+      fireEvent.pointerDown(run, {
+        pointerType: "touch",
+        clientX: 50,
+        clientY: 10,
+      });
+      fireEvent.pointerUp(run, {
+        pointerType: "touch",
+        clientX: 58,
+        clientY: 10,
+      });
+      fireEvent.click(run, { detail: 1, clientX: 66, clientY: 10 });
+      expect(gestures).toEqual(["click 見る"]);
+    });
+
     it("reports a Latin word next to the run from its start", () => {
       const gestures = renderSentence({}, "今日はNetflixで");
-      pointAtCharacter(word("Netflix"), 3);
-      fireEvent.click(word("Netflix"), { detail: 1, clientX: 50 });
+      layOutCharacters();
+      fireEvent.click(word("Netflix"), { detail: 1, clientX: 50, clientY: 10 });
       expect(gestures).toEqual(["click Netflix"]);
     });
   });
