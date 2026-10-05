@@ -1,22 +1,17 @@
-import {
-  useCreateFlashcardMutation,
-  useDeleteFlashcardMutation,
-  useListFlashcardsQuery,
-  useUpdateFlashcardMutation,
-} from "@easyimmerse/backend";
+import { useListFlashcardsQuery } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { useEffect, useReducer, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import {
-  type EditedFlashcard,
   flashcardsOnWaveform,
   reduceEditedFlashcard,
-  segmentIdOf,
 } from "./editedFlashcard.ts";
-import { type EditorAction, moveClipEndpoint } from "./editFlashcard.ts";
+import type { EditorAction } from "./editFlashcard.ts";
+import { flashcardRetiming } from "./flashcardRetiming.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
+import { useFlashcardRequests } from "./useFlashcardRequests.ts";
 import { useFlashcardSaving } from "./useFlashcardSaving.ts";
 
 const noFlashcards: readonly Flashcard[] = [];
@@ -46,47 +41,27 @@ export function useMediaFlashcards(
     if (hasScreenshots) dispatchEdited({ type: "screenshotsAvailable" });
   }, [hasScreenshots]);
   const [isSaved, setSaved] = useState(false);
-  const [createFlashcard] = useCreateFlashcardMutation();
-  const [updateFlashcard] = useUpdateFlashcardMutation();
-  const [deleteFlashcard] = useDeleteFlashcardMutation();
-  const replace = (flashcard: Flashcard, changes: Partial<FlashcardDraft>) =>
-    updateFlashcard({
-      projectId,
-      flashcardId: flashcard.id,
-      draft: { ...draftOf(flashcard), ...changes },
-    }).unwrap();
-  const replaceNow = (flashcard: Flashcard, changes: Partial<FlashcardDraft>) =>
-    replace(flashcard, changes).catch(() =>
-      notify("The flashcard could not be saved"),
-    );
+  const requests = useFlashcardRequests(projectId);
   const close = () => dispatchEdited({ type: "closed" });
   const edit = (action: EditorAction) =>
     dispatchEdited({ type: "edited", action });
-  /** Sends a card as the editor holds it. */
-  const send = (card: EditedFlashcard) => {
-    const changes = {
-      content: card.editor.content,
-      included_fields: [...card.editor.includedFields],
-    };
-    return card.kind === "new"
-      ? createFlashcard({
-          projectId,
-          draft: { ...card.draft, ...changes },
-        }).unwrap()
-      : replace(card.flashcard, changes);
-  };
-  const saveLeftCard = useFlashcardSaving(edited, dispatchEdited, send, {
-    // A card saved in the background is no longer on screen, so only its failure is told, by its word.
-    saved: (_card, isInBackground) => {
-      if (!isInBackground) setSaved(true);
+  const saveLeftCard = useFlashcardSaving(
+    edited,
+    dispatchEdited,
+    requests.send,
+    {
+      // A card saved in the background is no longer on screen, so only its failure is told, by its word.
+      saved: (_card, isInBackground) => {
+        if (!isInBackground) setSaved(true);
+      },
+      failed: (card, isInBackground) =>
+        notify(
+          isInBackground
+            ? `Couldn't save the flashcard for “${card.editor.content.word}”.`
+            : "The flashcard could not be saved",
+        ),
     },
-    failed: (card, isInBackground) =>
-      notify(
-        isInBackground
-          ? `Couldn't save the flashcard for “${card.editor.content.word}”.`
-          : "The flashcard could not be saved",
-      ),
-  });
+  );
   /**
    * Replaces the open card in the editor by calling `openNext`, after saving the open card as it is, in the background,
    * if the user has asked to save it or has changed it.
@@ -95,16 +70,6 @@ export function useMediaFlashcards(
     saveLeftCard();
     openNext();
   };
-  const remove = () => {
-    if (edited?.kind !== "existing") return close();
-    deleteFlashcard({ projectId, flashcardId: edited.flashcard.id })
-      .unwrap()
-      .then(close)
-      .catch(() => notify("The flashcard could not be deleted"));
-  };
-  const find = (id: string) =>
-    flashcards.find((flashcard) => flashcard.id === id);
-  const isOpen = (id: string) => edited !== null && segmentIdOf(edited) === id;
   return {
     flashcards,
     segments: flashcardSegmentsOf(flashcardsOnWaveform(flashcards, edited)),
@@ -139,43 +104,24 @@ export function useMediaFlashcards(
     },
     /** Opens a saved card. A card it replaces is first saved as it is, if the user asked to save it or changed it. */
     open: (id: string) => {
-      const flashcard = find(id);
+      const flashcard = flashcards.find((card) => card.id === id);
       if (flashcard)
         replaceOpenCard(() => dispatchEdited({ type: "opened", flashcard }));
     },
     close,
     /** Asks to save the open card. Asking again while a save waits or is under way does nothing. */
     save: () => dispatchEdited({ type: "saveRequested" }),
-    remove,
-    moveClipEndpoint: (id: string, endpoint: "start" | "end", ms: number) => {
-      const content = isOpen(id) ? edited?.editor.content : find(id)?.content;
-      const clip = content?.audio_context;
-      if (!clip) return;
-      const moved = moveClipEndpoint(clip, endpoint, ms);
-      if (isOpen(id)) return edit({ type: "clipChanged", clip: moved });
-      const flashcard = find(id);
-      if (flashcard)
-        replaceNow(flashcard, {
-          content: { ...flashcard.content, audio_context: moved },
-        });
+    remove: () => {
+      if (edited?.kind !== "existing") return close();
+      requests
+        .remove(edited.flashcard)
+        .then(close)
+        .catch(() => notify("The flashcard could not be deleted"));
     },
-    moveScreenshot: (id: string, ms: number) => {
-      const atMs = Math.round(ms);
-      if (isOpen(id)) return edit({ type: "screenshotMsChanged", ms: atMs });
-      const flashcard = find(id);
-      if (flashcard)
-        replaceNow(flashcard, {
-          content: { ...flashcard.content, screenshot: { at_ms: atMs } },
-        });
-    },
-  };
-}
-
-function draftOf(flashcard: Flashcard): FlashcardDraft {
-  return {
-    media_file_id: flashcard.media_file_id,
-    cue_index: flashcard.cue_index,
-    content: flashcard.content,
-    included_fields: flashcard.included_fields,
+    ...flashcardRetiming(flashcards, edited, edit, (flashcard, changes) =>
+      requests
+        .replace(flashcard, changes)
+        .catch(() => notify("The flashcard could not be saved")),
+    ),
   };
 }
