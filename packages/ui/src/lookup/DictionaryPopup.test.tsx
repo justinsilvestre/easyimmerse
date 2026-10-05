@@ -10,46 +10,89 @@ import type { LookupState } from "./lookupState.ts";
 
 afterEach(cleanup);
 
-function renderPopup(
-  onCreateFlashcard: (term: string, entryIndex: number | null) => void,
-) {
+type PopupHandlers = {
+  onSearch?: (term: string) => void;
+  onCreateFlashcard?: (entryIndex: number | null) => void;
+  onClose?: () => void;
+};
+
+function renderPopup({
+  onSearch = () => undefined,
+  onCreateFlashcard = () => undefined,
+  onClose = () => undefined,
+}: PopupHandlers) {
   render(
-    <DictionaryPopup
-      state={{ kind: "found", term: "fressen", results: exampleResults }}
-      resolveMediaUrl={() => null}
-      mode="hover"
-      onSearch={() => undefined}
-      onCreateFlashcard={onCreateFlashcard}
-      onClose={() => undefined}
-      onSetUpDictionary={() => undefined}
-    />,
+    <>
+      <button type="button" data-lookup-trigger>
+        Hund
+      </button>
+      <DictionaryPopup
+        state={{ kind: "found", term: "fressen", results: exampleResults }}
+        resolveMediaUrl={() => null}
+        mode="hover"
+        onSearch={onSearch}
+        onCreateFlashcard={onCreateFlashcard}
+        onClose={onClose}
+        onSetUpDictionary={() => undefined}
+      />
+    </>,
   );
 }
 
 describe("DictionaryPopup", () => {
   it("creates a flashcard from every entry with the header button", () => {
-    const created: [string, number | null][] = [];
-    renderPopup((term, index) => created.push([term, index]));
+    const created: (number | null)[] = [];
+    renderPopup({ onCreateFlashcard: (index) => created.push(index) });
     fireEvent.click(screen.getByRole("button", { name: "Flashcard" }));
-    expect(created).toEqual([["fressen", null]]);
+    expect(created).toEqual([null]);
   });
 
   it("creates a flashcard from one entry with that entry's button", () => {
-    const created: [string, number | null][] = [];
-    renderPopup((term, index) => created.push([term, index]));
+    const created: (number | null)[] = [];
+    renderPopup({ onCreateFlashcard: (index) => created.push(index) });
     fireEvent.click(
       screen.getAllByRole("button", {
         name: "Flashcard from this entry",
       })[1] as HTMLElement,
     );
-    expect(created).toEqual([["fressen", 1]]);
+    expect(created).toEqual([1]);
   });
 
-  it("creates a flashcard for a word clicked inside a definition", () => {
-    const created: [string, number | null][] = [];
-    renderPopup((term, index) => created.push([term, index]));
+  it("looks up a word clicked inside a definition", () => {
+    const searched: string[] = [];
+    renderPopup({ onSearch: (term) => searched.push(term) });
     fireEvent.click(screen.getByRole("button", { name: "devour" }));
-    expect(created).toEqual([["devour", null]]);
+    expect(searched).toEqual(["devour"]);
+  });
+});
+
+describe("DictionaryPopup dismissal", () => {
+  it("closes on Escape", () => {
+    let closeCount = 0;
+    renderPopup({ onClose: () => (closeCount += 1) });
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(closeCount).toBe(1);
+  });
+
+  it("closes when the pointer goes down outside it", () => {
+    let closeCount = 0;
+    renderPopup({ onClose: () => (closeCount += 1) });
+    fireEvent.pointerDown(document.body);
+    expect(closeCount).toBe(1);
+  });
+
+  it("stays open when the pointer goes down on a word that opens it", () => {
+    let closeCount = 0;
+    renderPopup({ onClose: () => (closeCount += 1) });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Hund" }));
+    expect(closeCount).toBe(0);
+  });
+
+  it("stays open when the pointer goes down inside it", () => {
+    let closeCount = 0;
+    renderPopup({ onClose: () => (closeCount += 1) });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "devour" }));
+    expect(closeCount).toBe(0);
   });
 });
 
@@ -76,6 +119,13 @@ describe("DictionaryPopup states", () => {
   it("says when nothing was found", () => {
     renderState({ kind: "notFound", term: "Hundi" });
     expect(screen.getByText("No entry for “Hundi”.")).toBeDefined();
+  });
+
+  it("says when the dictionaries could not be searched", () => {
+    renderState({ kind: "failed", term: "fressen" });
+    expect(
+      screen.getByText("The dictionaries could not be searched for “fressen”."),
+    ).toBeDefined();
   });
 
   it("offers to add a dictionary when none is set up", () => {

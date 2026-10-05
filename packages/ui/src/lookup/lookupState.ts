@@ -16,4 +16,6 @@ export type LookupState =
       stylesheets?: readonly DictionaryStylesheet[];
     }
   | { kind: "notFound"; term: string }
+  /** The lookup could not reach the dictionaries, as when no server is connected. */
+  | { kind: "failed"; term: string }
   | { kind: "noDictionary"; language: string };
