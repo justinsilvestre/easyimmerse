@@ -1,17 +1,14 @@
 import { useListFlashcardsQuery } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
-import { useEffect, useReducer } from "react";
+import { useEffect } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
-import {
-  createCardSession,
-  flashcardsOnWaveform,
-  reduceEditedFlashcard,
-} from "./editedFlashcard.ts";
+import { createCardSession, flashcardsOnWaveform } from "./editedFlashcard.ts";
 import type { EditorAction } from "./editFlashcard.ts";
 import { flashcardRetiming } from "./flashcardRetiming.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
+import { useEditedFlashcard } from "./useEditedFlashcard.ts";
 import { useFlashcardRequests } from "./useFlashcardRequests.ts";
 import { useFlashcardSaving } from "./useFlashcardSaving.ts";
 
@@ -38,23 +35,20 @@ export function useMediaFlashcards(
   const flashcards = (data?.flashcards ?? noFlashcards).filter(
     (flashcard) => flashcard.media_file_id === mediaFileId,
   );
-  const [edited, dispatchEdited] = useReducer(reduceEditedFlashcard, null);
+  const { edited, dispatchEdited, openSession } = useEditedFlashcard();
   useEffect(() => {
     if (hasScreenshots) dispatchEdited({ type: "screenshotsAvailable" });
-  }, [hasScreenshots]);
+  }, [hasScreenshots, dispatchEdited]);
   const requests = useFlashcardRequests(projectId);
   const edit = (action: EditorAction) =>
     dispatchEdited({ type: "edited", action });
-  const saving = useFlashcardSaving(edited, dispatchEdited, requests, (card) =>
-    replaceOpenCard(() =>
-      dispatchEdited({ type: "restored", card, session: createCardSession() }),
-    ),
+  const saving = useFlashcardSaving(
+    edited,
+    dispatchEdited,
+    requests,
+    openSession,
   );
-  /** Replaces the open card in the editor by calling `openNext`, after the card open there has been dealt with as it leaves. */
-  const replaceOpenCard = (openNext: () => void) => {
-    if (edited) saving.leave(edited);
-    openNext();
-  };
+  const { replaceOpenCard } = saving;
   return {
     flashcards,
     segments: flashcardSegmentsOf(flashcardsOnWaveform(flashcards, edited)),

@@ -9,17 +9,17 @@ export const flashcardNotices = {
     actions: [{ label: "Undo", onSelect: undo }],
     isTransient: true,
   }),
-  /** A save off screen failed; the card's edits wait in the notice until it is retried or reopened. */
+  /** A save off screen failed; the card's edits wait in the notice until it is retried or, while the editor is there, reopened. */
   saveFailed: (
     word: string,
     retry: () => void,
-    reopen: () => void,
+    reopen?: () => void,
   ): NoticeContent => ({
     tone: "danger",
     message: `Couldn't save the flashcard for “${word}”.`,
     actions: [
       { label: "Retry", onSelect: retry },
-      { label: "Reopen", onSelect: reopen },
+      ...(reopen ? [{ label: "Reopen", onSelect: reopen }] : []),
     ],
     isTransient: false,
   }),

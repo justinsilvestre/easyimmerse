@@ -313,6 +313,20 @@ describe("useMediaFlashcards", () => {
       expect(sentWord(posts()[1])).toBe("Kater");
     });
 
+    it("offers only Retry when the failure comes after the screen has closed", async () => {
+      const rendered = renderFlashcards({ savesFail: true });
+      act(() => rendered.result.current.start(createDraft("Hund")));
+      act(() => rendered.result.current.edit(typeWord("Hündin")));
+      rendered.unmount();
+      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await rendered.letSavesThrough();
+      await vi.waitFor(() =>
+        expect(rendered.notices()).toEqual([
+          ["Couldn't save the flashcard for “Hündin”.", "Retry"],
+        ]),
+      );
+    });
+
     it("keeps Retry once the screen closes", async () => {
       const { unmount, notices } = await failOffScreen();
       unmount();
@@ -577,6 +591,27 @@ describe("useMediaFlashcards", () => {
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.save());
       await vi.waitFor(() => expect(held).toHaveLength(1));
+      expect(guardCalls(effects)).toEqual([
+        { type: "guardClose", isActive: true },
+      ]);
+    });
+
+    it("guards the app against closing while a save waits for definitions", () => {
+      const { result, effects } = renderFlashcards();
+      const lookup = createLateLookup();
+      act(() => result.current.start(createDraft("Hund"), lookup.fields));
+      act(() => result.current.save());
+      expect(guardCalls(effects)).toEqual([
+        { type: "guardClose", isActive: true },
+      ]);
+    });
+
+    it("keeps the guard up while a waiting card leaves the screen", () => {
+      const { result, effects, unmount } = renderFlashcards();
+      const lookup = createLateLookup();
+      act(() => result.current.start(createDraft("Hund"), lookup.fields));
+      act(() => result.current.save());
+      unmount();
       expect(guardCalls(effects)).toEqual([
         { type: "guardClose", isActive: true },
       ]);
