@@ -6,6 +6,7 @@ import { findManifestChanges, findStaleOutputs } from "./staleness.ts";
 
 function manifestEntry(sha256: string): ManifestEntry {
   return {
+    release: "ffmpeg-8.1.3",
     url: "https://example.com/ffmpeg.tar.xz",
     sha256,
     archive: "tar.xz",

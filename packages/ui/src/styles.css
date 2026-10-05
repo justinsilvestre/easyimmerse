@@ -28,8 +28,6 @@
   --color-accent-soft: var(--color-blue-50);
   --color-on-accent: var(--color-white);
 
-  --color-danger: var(--color-red-600);
-  --color-danger-hover: var(--color-red-700);
   --color-danger-fg: var(--color-red-800);
   --color-danger-soft: var(--color-red-50);
   --color-danger-line: var(--color-red-200);
@@ -139,18 +137,6 @@
   initial-value: transparent;
 }
 
-@property --color-danger {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: transparent;
-}
-
-@property --color-danger-hover {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: transparent;
-}
-
 @property --color-danger-fg {
   syntax: "<color>";
   inherits: true;
@@ -202,7 +188,7 @@
 @media (prefers-reduced-motion: no-preference) {
   :root[data-theme-transitions] {
     transition-property:
-      --color-canvas, --color-surface, --color-surface-muted, --color-surface-strong, --color-fg, --color-fg-soft, --color-fg-muted, --color-fg-faint, --color-line, --color-line-strong, --color-accent, --color-accent-hover, --color-accent-fg, --color-accent-soft, --color-on-accent, --color-danger, --color-danger-hover, --color-danger-fg, --color-danger-soft, --color-danger-line, --color-warning-fg, --color-warning-soft, --color-warning-line, --color-success-fg, --color-success-soft;
+      --color-canvas, --color-surface, --color-surface-muted, --color-surface-strong, --color-fg, --color-fg-soft, --color-fg-muted, --color-fg-faint, --color-line, --color-line-strong, --color-accent, --color-accent-hover, --color-accent-fg, --color-accent-soft, --color-on-accent, --color-danger-fg, --color-danger-soft, --color-danger-line, --color-warning-fg, --color-warning-soft, --color-warning-line, --color-success-fg, --color-success-soft;
     transition-duration: 250ms;
     transition-timing-function: ease-out;
   }
@@ -249,8 +235,6 @@
     );
     --color-on-accent: var(--color-white);
 
-    --color-danger: var(--color-red-600);
-    --color-danger-hover: var(--color-red-500);
     --color-danger-fg: var(--color-red-300);
     --color-danger-soft: color-mix(
       in oklab,

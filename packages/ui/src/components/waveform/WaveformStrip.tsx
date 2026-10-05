@@ -12,7 +12,7 @@ import type { WaveformView } from "./waveformGeometry.ts";
 import { canZoom, computeViewStart, zoomedSpan } from "./waveformGeometry.ts";
 import type { WaveformGestureHandlers } from "./waveformGestureHandlers.ts";
 
-export const waveformStripHeightPx = 72;
+const waveformStripHeightPx = 72;
 
 /** The media's duration and position in milliseconds, with the peaks windows held so far by their start. */
 export type WaveformStripProps = WaveformGestureHandlers & {

@@ -1,7 +1,7 @@
 import { Check, Download } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
-import { Dialog } from "../components/Dialog.tsx";
+import { ModalDialog } from "../components/ModalDialog.tsx";
 import { SelectField } from "../components/SelectField.tsx";
 import {
   formatLanguagePair,
@@ -43,10 +43,10 @@ export function DictionaryRegistryDialog({
     (entry) => languageFilter === "" || entry.sourceLanguage === languageFilter,
   );
   return (
-    <Dialog
+    <ModalDialog
       title="Add a dictionary from the registry"
       description="Free dictionaries checked to work with easyImmerse. Each one is downloaded once and kept on this device."
-      onClose={onClose}
+      onCancel={onClose}
     >
       <SelectField
         label="Language"
@@ -93,7 +93,7 @@ export function DictionaryRegistryDialog({
           </li>
         )}
       </ul>
-    </Dialog>
+    </ModalDialog>
   );
 }
 

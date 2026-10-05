@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { shortestClipMs } from "../../flashcards/clipView.ts";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import { applyDrag, constrainDrag } from "./waveformDrag.ts";
 
@@ -16,7 +17,9 @@ describe("constrainDrag", () => {
       timeMs: 25_000,
     } as const;
     const markerAtEnd = { ...segment, screenshotMs: 20_000 };
-    expect(constrainDrag(drag, [markerAtEnd], 60_000).timeMs).toBe(19_900);
+    expect(constrainDrag(drag, [markerAtEnd], 60_000).timeMs).toBe(
+      20_000 - shortestClipMs,
+    );
   });
 
   it("stops the clip start at the screenshot marker", () => {

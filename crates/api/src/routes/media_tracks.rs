@@ -20,7 +20,7 @@ use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
-pub struct SubtitleTracksResponse {
+pub struct EmbeddedSubtitleTracksResponse {
     pub tracks: Vec<TrackInfo>,
 }
 
@@ -62,16 +62,16 @@ pub async fn get_media_tracks(
 
 #[utoipa::path(
     get,
-    path = "/projects/{id}/media/{media_id}/subtitle-tracks",
+    path = "/projects/{id}/media/{media_id}/embedded-subtitles",
     tag = "media",
-    operation_id = "getMediaSubtitleTracks",
+    operation_id = "listEmbeddedSubtitleTracks",
     security(("bearer_token" = [])),
     params(
         ("id" = String, Path, description = "The project id"),
         ("media_id" = String, Path, description = "The media file id"),
     ),
     responses(
-        (status = 200, description = "The subtitle tracks embedded in the file", body = SubtitleTracksResponse),
+        (status = 200, description = "The subtitle tracks embedded in the file, which cannot be shown yet", body = EmbeddedSubtitleTracksResponse),
         (status = 400, description = "The file could not be probed", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The token may not read local paths", body = ApiError),
@@ -80,15 +80,15 @@ pub async fn get_media_tracks(
         (status = 503, description = "This server cannot probe media (code `conversion_unavailable`)", body = ApiError),
     ),
 )]
-pub async fn get_media_subtitle_tracks(
+pub async fn list_embedded_subtitle_tracks(
     State(state): State<AppState>,
     Extension(token): Extension<TokenKind>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
-) -> Result<Json<SubtitleTracksResponse>, ApiFailure> {
+) -> Result<Json<EmbeddedSubtitleTracksResponse>, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id).await?;
     let path = resolve_source_path(&state, token, &media_file).await?;
     let container = probe_media(&state, &path).await?;
-    Ok(Json(SubtitleTracksResponse {
+    Ok(Json(EmbeddedSubtitleTracksResponse {
         tracks: container
             .tracks_of_kind(TrackKind::Subtitle)
             .cloned()

@@ -26,9 +26,30 @@ describe("ts-rs output", () => {
       Schemas["ListProjectsResponse"]
     >();
   });
-  it("ProjectSummary is assignable to its OpenAPI schema", () => {
-    expectTypeOf<generated.ProjectSummary>().toExtend<
-      Schemas["ProjectSummary"]
+  it("Project is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.Project>().toExtend<Schemas["Project"]>();
+  });
+  it("ProjectSettings is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.ProjectSettings>().toExtend<
+      Schemas["ProjectSettings"]
+    >();
+  });
+  it("Flashcard is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.Flashcard>().toExtend<Schemas["Flashcard"]>();
+  });
+  it("FlashcardDraft is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.FlashcardDraft>().toExtend<
+      Schemas["FlashcardDraft"]
+    >();
+  });
+  it("SubtitleTracksResponse is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.SubtitleTracksResponse>().toExtend<
+      Schemas["SubtitleTracksResponse"]
+    >();
+  });
+  it("AddSubtitleTrackRequest is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.AddSubtitleTrackRequest>().toExtend<
+      Schemas["AddSubtitleTrackRequest"]
     >();
   });
   it("PreferenceValue is assignable to its OpenAPI schema", () => {

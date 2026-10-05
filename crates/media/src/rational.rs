@@ -31,10 +31,6 @@ impl Rational {
         Self::new(self.num / divisor, self.den / divisor)
     }
 
-    pub fn as_f64(self) -> f64 {
-        self.num as f64 / self.den as f64
-    }
-
     pub fn is_greater_than(self, other: Rational) -> bool {
         u128::from(self.num) * u128::from(other.den) > u128::from(other.num) * u128::from(self.den)
     }

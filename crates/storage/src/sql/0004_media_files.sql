@@ -7,7 +7,9 @@ CREATE TABLE media_files (
     browser_file_size INTEGER,
     browser_file_last_modified_ms INTEGER,
     created_at_ms INTEGER NOT NULL,
-    track_selection_json TEXT
+    track_selection_json TEXT,
+    target_subtitle_track_id TEXT,
+    translation_subtitle_track_id TEXT
 );
 
 CREATE INDEX media_files_by_project ON media_files (project_id, created_at_ms);

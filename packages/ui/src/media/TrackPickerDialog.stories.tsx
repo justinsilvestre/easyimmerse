@@ -7,36 +7,8 @@ const meta = {
   component: TrackPickerDialog,
   parameters: { layout: "fullscreen" },
   args: {
-    purpose: "audio",
-    wantedLanguage: "de",
-    tracks: [
-      { id: "a1", label: "Track 1 (AAC, 5.1)", language: "de", sample: null },
-      {
-        id: "a2",
-        label: "Track 2 (AAC, stereo)",
-        language: "de",
-        sample: null,
-      },
-      {
-        id: "a3",
-        label: "Track 3 (AAC, stereo)",
-        language: "en",
-        sample: null,
-      },
-    ],
-    onChoose: fn(),
-    onSkip: fn(),
-  },
-} satisfies Meta<typeof TrackPickerDialog>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const AudioTracks: Story = {};
-
-export const Subtitles: Story = {
-  args: {
     purpose: "targetSubtitles",
+    wantedLanguage: "de",
     tracks: [
       {
         id: "s1",
@@ -63,8 +35,15 @@ export const Subtitles: Story = {
         sample: "¿Viste la luz?\nNo. Solo era el viento.",
       },
     ],
+    onChoose: fn(),
+    onSkip: fn(),
   },
-};
+} satisfies Meta<typeof TrackPickerDialog>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Subtitles: Story = {};
 
 export const TranslationSubtitles: Story = {
   args: {

@@ -9,13 +9,14 @@ use serde::Deserialize;
 use crate::auth::error_body::unauthorized;
 use crate::auth::token_kind::TokenKind;
 use crate::config::ApiConfig;
+use crate::routes::media_frame::FRAME_ROUTE_PATH;
 use crate::routes::media_stream::STREAM_ROUTE_PATH;
 
 /// Requires `Authorization: Bearer <token>` and records the token's kind on the request.
 ///
-/// The media stream route alone also accepts the token as the `token` query parameter,
-/// because media elements cannot send headers. No other route does, since a token in a URL
-/// ends up in logs and browser history more easily than one in a header.
+/// The media stream and frame routes alone also accept the token as the `token` query parameter,
+/// because media and image elements cannot send headers.
+/// No other route does, since a token in a URL ends up in logs and browser history more easily than one in a header.
 pub async fn require_bearer_token(
     State(config): State<Arc<ApiConfig>>,
     mut request: Request,
@@ -64,7 +65,9 @@ fn accepts_query_token(request: &Request) -> bool {
     request
         .extensions()
         .get::<MatchedPath>()
-        .is_some_and(|matched| matched.as_str() == STREAM_ROUTE_PATH)
+        .is_some_and(|matched| {
+            matched.as_str() == STREAM_ROUTE_PATH || matched.as_str() == FRAME_ROUTE_PATH
+        })
 }
 
 /// Compares in time that depends only on the length of the input, so that a caller cannot
@@ -98,6 +101,7 @@ mod tests {
                 get(|Extension(kind): Extension<TokenKind>| async move { format!("{kind:?}") }),
             )
             .route(STREAM_ROUTE_PATH, get(|| async { "streamed" }))
+            .route(FRAME_ROUTE_PATH, get(|| async { "framed" }))
             .route("/other/{id}", get(|| async { "other" }))
             .layer(from_fn_with_state(config, require_bearer_token))
     }
@@ -164,6 +168,18 @@ mod tests {
     async fn accepts_a_query_token_on_the_stream_route() {
         let response = app()
             .oneshot(request_to("/projects/p/media/m/stream?token=secret", None))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn accepts_a_query_token_on_the_frame_route() {
+        let response = app()
+            .oneshot(request_to(
+                "/projects/p/media/m/frame?at_ms=1&token=secret",
+                None,
+            ))
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);

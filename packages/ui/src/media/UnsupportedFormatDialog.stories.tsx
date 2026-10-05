@@ -8,8 +8,6 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     fileName: "Dark S01E01.mkv",
-    platform: "desktop",
-    onConvert: fn(),
     onLearnAboutDesktopApp: fn(),
     onClose: fn(),
   },
@@ -18,6 +16,4 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const OnDesktop: Story = {};
-
-export const InTheBrowser: Story = { args: { platform: "web" } };
+export const InTheBrowser: Story = {};

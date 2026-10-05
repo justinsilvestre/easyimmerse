@@ -14,47 +14,66 @@ afterEach(() => {
   resetBackend();
 });
 
+function renderHome(
+  callbacks: {
+    onOpenProject?: (projectId: string) => void;
+    onCreateProject?: () => void;
+    onContinueOffline?: () => void;
+  } = {},
+  client?: BackendClient,
+) {
+  return renderWithAppStore(
+    <HomeScreen
+      onOpenProject={callbacks.onOpenProject ?? (() => undefined)}
+      onCreateProject={callbacks.onCreateProject ?? (() => undefined)}
+      onContinueOffline={callbacks.onContinueOffline ?? (() => undefined)}
+    />,
+    client,
+  );
+}
+
 describe("HomeScreen", () => {
   describe("when projects load", () => {
-    it("lists each project name", async () => {
-      renderWithAppStore(<HomeScreen onOpenProject={() => undefined} />);
-      await screen.findByRole("button", { name: "Alpha" });
-      const list = screen.getByRole("list", { name: "Projects" });
+    it("lists each project, most recently opened first", async () => {
+      renderHome();
+      const list = await screen.findByRole("list", { name: "Projects" });
       expect(
         within(list)
-          .getAllByRole("button")
-          .map((button) => button.textContent),
-      ).toEqual(["Alpha", "Beta"]);
+          .getAllByRole("listitem")
+          .map((item) => item.textContent?.includes("Alpha")),
+      ).toEqual([true, false]);
     });
 
     it("calls onOpenProject with the id of a clicked project", async () => {
       const opened: string[] = [];
-      renderWithAppStore(
-        <HomeScreen onOpenProject={(id) => opened.push(id)} />,
-      );
-      fireEvent.click(await screen.findByRole("button", { name: "Beta" }));
+      renderHome({ onOpenProject: (id) => opened.push(id) });
+      fireEvent.click(await screen.findByRole("button", { name: /Beta/ }));
       expect(opened).toEqual(["p2"]);
+    });
+
+    it("calls onCreateProject when New project is clicked", async () => {
+      let created = false;
+      renderHome({ onCreateProject: () => (created = true) });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "New project" }),
+      );
+      expect(created).toBe(true);
     });
   });
 
   describe("when no server is configured", () => {
     it("offers to continue offline", async () => {
-      const opened: string[] = [];
-      renderWithAppStore(
-        <HomeScreen onOpenProject={(id) => opened.push(id)} />,
-        offlineClient,
-      );
+      let offline = false;
+      renderHome({ onContinueOffline: () => (offline = true) }, offlineClient);
       fireEvent.click(
         await screen.findByRole("button", { name: "Continue offline" }),
       );
-      expect(opened).toEqual(["offline"]);
+      expect(offline).toBe(true);
     });
   });
 
   it("requests an external link when Help is clicked", () => {
-    const { effects } = renderWithAppStore(
-      <HomeScreen onOpenProject={() => undefined} />,
-    );
+    const { effects } = renderHome();
     fireEvent.click(screen.getByRole("button", { name: "Help" }));
     expect(effects.calls).toContainEqual({
       type: "openExternalUrl",

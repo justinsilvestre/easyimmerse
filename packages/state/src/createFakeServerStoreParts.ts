@@ -1,7 +1,7 @@
 import type { Action } from "redux";
 import type { ServerStoreParts } from "./createAppStore.ts";
 
-export type FakeServerState = { mounted: true };
+type FakeServerState = { mounted: true };
 
 /** Builds trivial server store parts for tests. The middleware records every dispatched action. */
 export function createFakeServerStoreParts(): ServerStoreParts & {

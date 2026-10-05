@@ -2,40 +2,15 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { fn } from "storybook/test";
 import { fixtureTrack } from "../../testSupport/fixtureResponses.ts";
+import {
+  exampleWaveformWindows,
+  windowStartsUpTo,
+} from "./exampleWaveformWindows.ts";
 import type { WaveformStripProps } from "./WaveformStrip.tsx";
 import { WaveformStrip } from "./WaveformStrip.tsx";
 import { clampVisibleSpan } from "./waveformGeometry.ts";
-import {
-  waveformPeaksPerSecond,
-  waveformWindowMs,
-} from "./waveformWindowPolicy.ts";
 
 const durationMs = 10 * 60_000;
-
-/** A speech-like signal: bursts of varying loudness with pauses between them. */
-function syntheticWindow(startMs: number): Uint8Array {
-  const peaks = new Uint8Array(
-    (waveformWindowMs / 1000) * waveformPeaksPerSecond,
-  );
-  for (let i = 0; i < peaks.length; i += 1) {
-    const t = (startMs / 1000) * waveformPeaksPerSecond + i;
-    const burst = Math.max(0, Math.sin(t / 90)) ** 2;
-    const texture = 0.6 + 0.4 * Math.abs(Math.sin(t / 3.7) * Math.cos(t / 11));
-    peaks[i] = Math.round(255 * burst * texture);
-  }
-  return peaks;
-}
-
-function windowsFor(
-  starts: readonly number[],
-): ReadonlyMap<number, Uint8Array> {
-  return new Map(starts.map((start) => [start, syntheticWindow(start)]));
-}
-
-const everyWindow = Array.from(
-  { length: durationMs / waveformWindowMs },
-  (_, index) => index * waveformWindowMs,
-);
 
 /** Keeps the zoom and position in local state so the strip can be used in the story. */
 function InteractiveStrip(props: WaveformStripProps) {
@@ -72,7 +47,7 @@ const meta = {
   args: {
     durationMs,
     currentTimeMs: 62_000,
-    windows: windowsFor(everyWindow),
+    windows: exampleWaveformWindows(windowStartsUpTo(durationMs)),
     cues: [],
     flashcardSegments: [],
     visibleSpanMs: 60_000,
@@ -90,7 +65,7 @@ type Story = StoryObj<typeof meta>;
 export const Loaded: Story = {};
 
 export const StillLoading: Story = {
-  args: { windows: windowsFor([30_000, 60_000]) },
+  args: { windows: exampleWaveformWindows([30_000, 60_000]) },
 };
 
 export const NoAudio: Story = {

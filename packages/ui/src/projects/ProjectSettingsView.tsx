@@ -1,6 +1,6 @@
+import type { ProjectSettings } from "@easyimmerse/types";
 import { Button } from "../components/Button.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import type { ProjectFormValues } from "./editProject.ts";
 import { ProjectForm } from "./ProjectForm.tsx";
 
 /** The screen for creating a project or editing an existing project's settings. */
@@ -11,8 +11,8 @@ export function ProjectSettingsView({
   onCancel,
 }: {
   mode: "create" | "edit";
-  initialValues: ProjectFormValues;
-  onSubmit: (values: ProjectFormValues) => void;
+  initialValues: ProjectSettings;
+  onSubmit: (values: ProjectSettings) => void;
   onCancel: () => void;
 }) {
   return (

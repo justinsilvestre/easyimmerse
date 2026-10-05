@@ -14,8 +14,9 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    conversion_cache, conversions, dictionaries, documents, health, media, media_playback,
-    media_stream, media_tracks, media_waveform, openapi, preferences, projects, timed_text,
+    conversion_cache, conversions, dictionaries, documents, flashcards, health, media, media_frame,
+    media_playback, media_stream, media_tracks, media_waveform, openapi, preferences, projects,
+    subtitles, timed_text,
 };
 use crate::state::AppState;
 
@@ -64,12 +65,34 @@ pub fn openapi_document() -> OpenApi {
 fn protected_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::with_openapi(ApiDoc::openapi())
         .routes(routes!(openapi::get_openapi_document))
-        .routes(routes!(projects::list_projects))
+        .routes(routes!(projects::list_projects, projects::create_project))
+        .routes(routes!(
+            projects::get_project,
+            projects::update_project,
+            projects::delete_project
+        ))
+        .routes(routes!(projects::mark_project_opened))
+        .routes(routes!(
+            flashcards::list_flashcards,
+            flashcards::create_flashcard
+        ))
+        .routes(routes!(
+            flashcards::update_flashcard,
+            flashcards::delete_flashcard
+        ))
         .routes(routes!(media::list_media_files, media::add_media_file))
         .routes(routes!(media::remove_media_file))
         .routes(routes!(media_stream::stream_media_file))
+        .routes(routes!(media_frame::get_media_frame))
         .routes(routes!(media_tracks::get_media_tracks))
-        .routes(routes!(media_tracks::get_media_subtitle_tracks))
+        .routes(routes!(media_tracks::list_embedded_subtitle_tracks))
+        .routes(routes!(
+            subtitles::list_subtitle_tracks,
+            subtitles::add_subtitle_track
+        ))
+        .routes(routes!(subtitles::remove_subtitle_track))
+        .routes(routes!(subtitles::get_subtitle_cues))
+        .routes(routes!(subtitles::set_subtitle_selection))
         .routes(routes!(
             media_tracks::set_media_track_selection,
             media_tracks::clear_media_track_selection

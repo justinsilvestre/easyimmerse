@@ -1,10 +1,8 @@
-import type {
-  FlashcardContent,
-  FlashcardLanguages,
-} from "./flashcardFields.ts";
+import type { FlashcardContent } from "@easyimmerse/types";
+import type { FlashcardLanguages } from "./flashcardFields.ts";
 
 /** A still frame drawn as an SVG, so previews can show a screenshot without a media file. */
-const exampleScreenshotUrl = `data:image/svg+xml,${encodeURIComponent(
+export const exampleScreenshotUrl = `data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180">
     <defs>
       <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
@@ -22,14 +20,14 @@ const exampleScreenshotUrl = `data:image/svg+xml,${encodeURIComponent(
 /** A flashcard made from the sample subtitles, shown wherever a preview needs realistic content. */
 export const exampleFlashcard: FlashcardContent = {
   word: "fressen",
-  wordPronunciation: "[ˈfʁɛsn̩]",
-  l1Definition: "to eat (of an animal); to devour",
-  l2Definition: "(von Tieren) Nahrung zu sich nehmen",
-  textContext: "Der Hund will fressen. Er hat Hunger.",
-  textContextTranslation: "The dog wants to eat. It is hungry.",
-  textContextPronunciation: "[deːɐ̯ hʊnt vɪl ˈfʁɛsn̩ ‖ eːɐ̯ hat ˈhʊŋɐ]",
-  audioContext: { startMs: 1750, endMs: 3000 },
-  screenshot: { url: exampleScreenshotUrl, atMs: 6800 },
+  word_pronunciation: "[ˈfʁɛsn̩]",
+  l1_definition: "to eat (of an animal); to devour",
+  l2_definition: "(von Tieren) Nahrung zu sich nehmen",
+  text_context: "Der Hund will fressen. Er hat Hunger.",
+  text_context_translation: "The dog wants to eat. It is hungry.",
+  text_context_pronunciation: "[deːɐ̯ hʊnt vɪl ˈfʁɛsn̩ ‖ eːɐ̯ hat ˈhʊŋɐ]",
+  audio_context: { start_ms: 1750, end_ms: 3000 },
+  screenshot: { at_ms: 6800 },
   tags: ["sample", "dark-s01e01"],
 };
 

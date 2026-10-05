@@ -83,7 +83,7 @@ The script needs an ffmpeg build with libx264, libx265, libmp3lame, and the nati
 
 Every frame is 256x144 and shows its zero-based frame index as 16 full-height columns, each 16 pixels wide. Column `i` (counting from the left, starting at 0) holds bit `i` of the index, so the least significant bit is on the left. A set bit is white (luma 235), a clear bit is black (luma 16), and chroma is neutral (128).
 
-To read a frame, decode it to grayscale, take any row, and pass it to `decodeFrameIndex` from `frameIndex.ts`, which samples the center of each column and treats values of 128 or more as set. Decoding with `-pix_fmt gray` maps the luma range to 0–255, which the same threshold handles. The frame index divided by the frame rate is the frame's source timestamp.
+To read a frame, decode it to grayscale, take any row, and sample the center of each column, treating values of 128 or more as set. Decoding with `-pix_fmt gray` maps the luma range to 0–255, which the same threshold handles. The frame index divided by the frame rate is the frame's source timestamp.
 
 ### Audio pattern
 
