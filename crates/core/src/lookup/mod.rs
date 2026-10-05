@@ -7,6 +7,8 @@
 mod build_lookup_results;
 mod entry_matching;
 mod found_rows;
+#[cfg(test)]
+mod japanese_splits;
 mod kanji_results;
 mod lookup_candidate;
 mod lookup_result;
