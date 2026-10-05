@@ -271,8 +271,10 @@ As a user:
 - when a word in the target-language subtitles or text has keyboard focus:
   - [x] pressing Enter or Space opens the dictionary pop-up for the word
   - [x] pressing Shift+Enter or Shift+Space creates a flashcard for the word, filled from the word's definitions
-- when I press L while no text field has focus:
-  - [x] the dictionary pop-up opens, with focus on its search field
+- when a Japanese or Chinese run of text has keyboard focus:
+  - [x] Left and Right choose the character the lookup starts from, which is marked in the text and announced
+- when I press the lookup button, or L while no text field has focus:
+  - [x] the dictionary pop-up opens, with focus on its search field, where I can type a word to look up
 - while the dictionary pop-up is open, when I press Escape:
   - [x] the pop-up closes, and keyboard focus returns to where it was before the pop-up opened
 - while the dictionary pop-up is open:
@@ -301,8 +303,6 @@ As a user:
   - [x] fields excluded in my flashcard settings are hidden
   - [x] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
   - [x] I can save the flashcard and close the form
-- when I save a flashcard whose definitions are still on their way from the dictionaries:
-  - [x] I see that saving waits for the definitions, and the flashcard is saved with them once they arrive, or as it is if they cannot be found
   - [x] I can delete the flashcard and close the form
 - when I delete the contents of a field of the flashcard-editing form that can be filled from the dictionary:
   - [ ] I am offered an option to fill it again from the lookup

@@ -23,6 +23,10 @@ As a user:
 - when I export flashcards to Anki:
   - [ ] the Anki template shows whichever fields have values, so my flashcard settings do not affect the export and I can change them for an existing deck
 
+- [x] Sometimes a flashcard's definitions arrive from the dictionaries after its form has already opened. If Save is pressed before they arrive, the form says it is waiting for definitions and its fields can no longer be edited. The flashcard is saved once the definitions arrive, with them filling the fields not typed in. If they cannot be found, or have not arrived within ten seconds, the flashcard is saved as it is.
+- [x] Changing the word before its definitions arrive means they no longer belong to the flashcard, so they are not added, and Save does not wait for them.
+- [x] Starting another flashcard while one is waiting to be saved saves the waiting one as it is.
+
 ## Dictionaries
 
 As a user:
