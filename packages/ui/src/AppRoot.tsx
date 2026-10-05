@@ -27,6 +27,7 @@ import {
   settingsPageOf,
 } from "./navigation.ts";
 import { NavigationActionsContext } from "./navigationContext.ts";
+import { NoticesProvider } from "./notices/NoticesContext.tsx";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
@@ -66,30 +67,32 @@ export function AppRoot({
   const settingsOpen = navigation.screen === "settings";
   return (
     <Provider store={store}>
-      <PlayerRegistryContext value={playerRegistry}>
-        <BrowserFileRegistryContext value={browserFileRegistry}>
-          <NavigationActionsContext value={navigationActions}>
-            <WordClickMemoryProvider>
-              <AppearanceHandler />
-              <PreferencesLoader />
-              <div inert={settingsOpen}>
-                <MainScreen
-                  navigation={mainScreenOf(navigation)}
-                  dispatchNavigation={dispatchNavigation}
-                />
-              </div>
-              {navigation.screen === "settings" && (
-                <SettingsOverlay>
-                  <SettingsPage
-                    navigation={navigation}
+      <NoticesProvider>
+        <PlayerRegistryContext value={playerRegistry}>
+          <BrowserFileRegistryContext value={browserFileRegistry}>
+            <NavigationActionsContext value={navigationActions}>
+              <WordClickMemoryProvider>
+                <AppearanceHandler />
+                <PreferencesLoader />
+                <div inert={settingsOpen}>
+                  <MainScreen
+                    navigation={mainScreenOf(navigation)}
                     dispatchNavigation={dispatchNavigation}
                   />
-                </SettingsOverlay>
-              )}
-            </WordClickMemoryProvider>
-          </NavigationActionsContext>
-        </BrowserFileRegistryContext>
-      </PlayerRegistryContext>
+                </div>
+                {navigation.screen === "settings" && (
+                  <SettingsOverlay>
+                    <SettingsPage
+                      navigation={navigation}
+                      dispatchNavigation={dispatchNavigation}
+                    />
+                  </SettingsOverlay>
+                )}
+              </WordClickMemoryProvider>
+            </NavigationActionsContext>
+          </BrowserFileRegistryContext>
+        </PlayerRegistryContext>
+      </NoticesProvider>
     </Provider>
   );
 }
