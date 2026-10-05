@@ -601,7 +601,7 @@ As a user:
 - when I am on the settings screen:
   - [x] I can turn on "Keep audio lossless when converting", so later conversions keep the audio at full quality at the cost of more disk space
   - [x] I see how much disk the converted videos use of what they may use, and a "Clear converted videos" button; without a server that can convert, the section is one line saying so
-  - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices
+  - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices and those of every Rust crate and JavaScript package that ships
   - [ ] I can change the app's theme between light and dark
   - [ ] I can set whether to honor the system's light/dark theme preference
   - [ ] I can change the language of the app's interface

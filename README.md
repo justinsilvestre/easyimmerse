@@ -157,7 +157,7 @@ packages/             the TypeScript workspace
 ├── effects-native/
 ├── effects-extension/
 ├── wasm/ *           the typed wrapper around the offline WebAssembly module
-├── licenses/         the open-source notices shown in Settings, including the generated ffmpeg notices
+├── licenses/         the open-source notices shown in Settings, generated for ffmpeg and every shipped dependency
 └── config/           shared TypeScript configuration
 ```
 
