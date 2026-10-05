@@ -9,6 +9,8 @@ use crate::dictionary::FrequencyMode;
 pub struct ResultSortKey {
     pub matched_length: usize,
     pub inflection_count: usize,
+    /// Whether the result rests on a rule that fits almost any word, such as the German bare-stem imperative.
+    pub is_fallback: bool,
     pub commonness: Commonness,
     /// The import position of the earliest imported dictionary with an entry in the result.
     pub first_dictionary_rank: i64,
@@ -23,6 +25,7 @@ impl ResultSortKey {
             .matched_length
             .cmp(&self.matched_length)
             .then_with(|| self.inflection_count.cmp(&other.inflection_count))
+            .then_with(|| self.is_fallback.cmp(&other.is_fallback))
             .then_with(|| self.commonness.compare(&other.commonness))
             .then_with(|| self.first_dictionary_rank.cmp(&other.first_dictionary_rank))
             .then_with(|| other.best_score.cmp(&self.best_score))
@@ -146,6 +149,17 @@ mod tests {
             ..ResultSortKey::default()
         };
         assert_eq!(plain.compare(&inflected), Ordering::Less);
+    }
+
+    #[test]
+    fn ranks_a_fallback_after_an_equal_reading_before_commonness() {
+        let plain = ResultSortKey::default();
+        let fallback = ResultSortKey {
+            is_fallback: true,
+            commonness: commonness(&[(1, None, 1.0)]),
+            ..ResultSortKey::default()
+        };
+        assert_eq!(plain.compare(&fallback), Ordering::Less);
     }
 
     #[test]

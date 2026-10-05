@@ -51,6 +51,7 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
     ResultSortKey {
         matched_length: group.candidate.matched_length(),
         inflection_count: group.candidate.inflection_count(),
+        is_fallback: group.candidate.is_fallback(),
         commonness: commonness(term_meta),
         first_dictionary_rank: entries
             .clone()

@@ -22,3 +22,5 @@ pub use lookup_candidate::{LookupCandidate, candidate_headwords, lookup_candidat
 pub use lookup_result::{
     DictionaryDefinitions, DictionaryFrequency, DictionaryPronunciation, KanjiResult, LookupResult,
 };
+#[cfg(test)]
+mod german_lookup_tests;
