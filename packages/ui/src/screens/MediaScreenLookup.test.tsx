@@ -275,11 +275,31 @@ describe("MediaScreen lookup gestures", () => {
       it("fills the fields the user has not typed in", async () => {
         await doubleClickCat(lateLookup);
         await advance(1500);
+        fireEvent.change(screen.getByLabelText("Definition (en)"), {
+          target: { value: "a small pet" },
+        });
+        await advance(1500);
+        expect(fieldValue("Word (de)")).toBe("fressen");
+      });
+
+      it("leaves alone a definition typed in before the answer", async () => {
+        await doubleClickCat(lateLookup);
+        await advance(1500);
+        fireEvent.change(screen.getByLabelText("Definition (en)"), {
+          target: { value: "a small pet" },
+        });
+        await advance(1500);
+        expect(fieldValue("Definition (en)")).toBe("a small pet");
+      });
+
+      it("fills nothing once the word has been changed before the answer", async () => {
+        await doubleClickCat(lateLookup);
+        await advance(1500);
         fireEvent.change(screen.getByLabelText("Word (de)"), {
           target: { value: "Kater" },
         });
         await advance(1500);
-        expect(fieldValue("Definition (en)")).toMatch(/^to eat/);
+        expect(fieldValue("Definition (en)")).toBe("");
       });
 
       describe("when Save is pressed before the answer", () => {
@@ -332,6 +352,14 @@ describe("MediaScreen lookup gestures", () => {
           expect(
             requestsTo(client.requests, "POST", "/projects/p1/flashcards"),
           ).toEqual([]);
+        });
+
+        it("saves at once, as typed, once the word is changed", async () => {
+          const { client } = await pressSaveBeforeAnswer();
+          fireEvent.change(screen.getByLabelText("Word (de)"), {
+            target: { value: "Kater" },
+          });
+          await vi.waitFor(() => expect(savedWord(client)).toBe("Kater"));
         });
 
         it("saves a field typed in before Save as typed", async () => {

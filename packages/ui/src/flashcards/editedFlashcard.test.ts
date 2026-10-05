@@ -387,3 +387,58 @@ describe("reduceEditedFlashcard on its way to being saved", () => {
     expect(edited?.stage).toBe("editing");
   });
 });
+
+describe("reduceEditedFlashcard when the word is changed before its lookup answers", () => {
+  const fields = {
+    word: "食べる",
+    word_pronunciation: "たべる",
+    l1_definition: "to eat",
+    l2_definition: "",
+  };
+
+  const typeWord = (word: string): EditedFlashcardAction => ({
+    type: "edited",
+    action: { type: "textChanged", key: "word", value: word },
+  });
+
+  function reduceAll(
+    edited: EditedFlashcard | null,
+    ...actions: EditedFlashcardAction[]
+  ) {
+    return actions.reduce(reduceEditedFlashcard, edited);
+  }
+
+  it("stops awaiting the lookup", () => {
+    const edited = reduceAll(awaiting(createDraft()), typeWord("飲む"));
+    expect(edited?.stage).toBe("editing");
+  });
+
+  it("sends a waiting save at once", () => {
+    const edited = reduceAll(
+      awaiting(createDraft()),
+      { type: "saveRequested" },
+      typeWord("飲む"),
+    );
+    expect(edited?.stage).toBe("readyToSend");
+  });
+
+  it("fills nothing from the answer that arrives afterwards", () => {
+    const draft = createDraft();
+    const edited = reduceAll(awaiting(draft), typeWord("飲む"), {
+      type: "lookupAnswered",
+      draft,
+      fields,
+    });
+    expect(edited?.editor.content.l1_definition).toBe(
+      createDraft().content.l1_definition,
+    );
+  });
+
+  it("keeps awaiting the lookup when another field is typed in", () => {
+    const edited = reduceAll(awaiting(createDraft()), {
+      type: "edited",
+      action: { type: "textChanged", key: "l1_definition", value: "to eat" },
+    });
+    expect(edited?.stage).toBe("awaitingLookup");
+  });
+});

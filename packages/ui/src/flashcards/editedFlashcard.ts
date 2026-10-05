@@ -179,11 +179,15 @@ function withEdit(
   const editor = reduceEditor(edited.editor, action);
   if (edited.kind !== "new" || action.type !== "textChanged")
     return { ...edited, editor };
-  return {
+  const typed = {
     ...edited,
     editor,
     typedFields: [...new Set([...edited.typedFields, action.key])],
   };
+  // A changed word makes the definitions on their way those of another word, so they are given up.
+  return action.key === "word" && isAwaitingLookupOf(edited, edited.draft)
+    ? settleLookup(typed)
+    : typed;
 }
 
 /** Fills the fields of a new flashcard from its lookup, except those the user has typed in. */
