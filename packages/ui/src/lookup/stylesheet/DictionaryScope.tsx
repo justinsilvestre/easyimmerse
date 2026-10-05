@@ -13,6 +13,10 @@ const yomitanVariables = [
   "[--dict-link-color:var(--color-accent-fg)]",
   "[--dict-accent-color:var(--color-accent)]",
   "[--dict-font-size-no-units:14]",
+  "[--dict-tag-color:var(--color-surface-muted)]",
+  "[--dict-tag-text-color:var(--color-fg-muted)]",
+  "[--dict-tag-border-radius:9999px]",
+  "[--dict-tag-font-size:0.75rem]",
 ].join(" ");
 
 /**

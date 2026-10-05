@@ -54,9 +54,14 @@ describe("LookupResultCard", () => {
 
   it("shows a tag's notes as its tooltip", () => {
     renderCard();
-    expect(screen.getByText("vt").getAttribute("title")).toBe(
-      "Transitive verb",
-    );
+    expect(
+      screen.getByText("vt").closest("[title]")?.getAttribute("title"),
+    ).toBe("Transitive verb");
+  });
+
+  it("gives a term tag Yomitan's tag class", () => {
+    renderCard();
+    expect(screen.getByText("★").closest(".dict-tag")).not.toBeNull();
   });
 
   it("shows each frequency with its dictionary", () => {

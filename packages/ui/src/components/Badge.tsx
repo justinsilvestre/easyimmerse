@@ -1,14 +1,19 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
 
-/** A small label that marks a status or a category. `title` is shown as a tooltip. */
+/**
+ * A small label that marks a status or a category. `title` is shown as a tooltip.
+ * `className` adds classes that other stylesheets select the label by, such as a dictionary's.
+ */
 export function Badge({
   tone = "neutral",
   title,
+  className,
   children,
 }: {
   tone?: "neutral" | "accent" | "success" | "warning" | "danger" | "info";
   title?: string;
+  className?: string;
   children: ReactNode;
 }) {
   return (
@@ -22,6 +27,7 @@ export function Badge({
         tone === "warning" && "bg-warning-soft text-warning-fg",
         tone === "danger" && "bg-danger-soft text-danger-fg",
         tone === "info" && "bg-info-soft text-info-fg",
+        className,
       )}
     >
       {children}
