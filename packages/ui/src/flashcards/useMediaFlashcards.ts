@@ -110,7 +110,7 @@ export function useMediaFlashcards(
     remove: () => {
       const close = () => dispatchEdited({ type: "closed" });
       if (edited?.kind !== "existing") return close();
-      requests
+      saving
         .remove(edited.flashcard)
         .then(close)
         .catch(() => notify("The flashcard could not be deleted"));

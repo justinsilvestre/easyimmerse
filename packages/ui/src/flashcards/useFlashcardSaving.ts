@@ -130,6 +130,7 @@ export function useFlashcardSaving(
     },
     rememberLookup: offScreen.rememberLookup,
     replace: offScreen.replace,
+    remove: offScreen.remove,
     withdrawUndo: offScreen.withdrawUndo,
   };
 }

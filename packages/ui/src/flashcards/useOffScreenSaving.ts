@@ -88,6 +88,13 @@ export function useOffScreenSaving(
   return {
     isScreenMounted: () => screen.current.isMounted,
     withdrawUndo: undo.withdraw,
+    /** Deletes a saved flashcard after any earlier work on it. */
+    remove: (flashcard: Flashcard) => {
+      undo.withdraw(flashcard.id);
+      return track(
+        queue.addFor(flashcard.id, () => requests.remove(flashcard)),
+      );
+    },
     /** Saves changes to a flashcard that is not open in the editor, after any earlier work on it. */
     replace: (flashcard: Flashcard, changes: Partial<FlashcardDraft>) => {
       undo.withdraw(flashcard.id);

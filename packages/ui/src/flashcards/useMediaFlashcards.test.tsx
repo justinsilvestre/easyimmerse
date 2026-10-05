@@ -527,6 +527,22 @@ describe("useMediaFlashcards", () => {
         expect(notices()).toEqual([]);
       });
 
+      it("holds a deletion of the flashcard until its save has settled", async () => {
+        const rendered = renderFlashcards();
+        const { result, held, deletes } = rendered;
+        await vi.waitFor(() =>
+          expect(result.current.flashcards).toHaveLength(1),
+        );
+        act(() => result.current.open(savedFlashcard.id));
+        act(() => result.current.edit(typeWord("Hündin")));
+        act(() => result.current.start(createDraft("Katze")));
+        await vi.waitFor(() => expect(held).toHaveLength(1));
+        act(() => result.current.open(savedFlashcard.id));
+        act(() => result.current.remove());
+        await flushPendingWork();
+        expect(deletes()).toHaveLength(0);
+      });
+
       it("holds a later save of the flashcard until its Undo has settled", async () => {
         const { result, choose, held } = await moveOnFromSavedCard();
         choose("Undo");
