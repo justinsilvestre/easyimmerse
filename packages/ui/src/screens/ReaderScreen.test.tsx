@@ -1,7 +1,13 @@
 import { resetBackend } from "@easyimmerse/backend";
 import { actions, createBrowserFileRegistry } from "@easyimmerse/state";
 import type { Document, MediaFile } from "@easyimmerse/types";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { defaultReaderPreferences } from "../reader/readerPreferences.ts";
@@ -42,11 +48,14 @@ const storedInSecondChapter: RenderOptions = {
 
 function renderReader({
   mediaFile = bookFile,
+  listed = [mediaFile],
   parsed = exampleShortBook,
   loadedPreferences = {},
   options = {},
 }: {
   mediaFile?: MediaFile;
+  /** The project's media files as the server lists them. */
+  listed?: MediaFile[];
   parsed?: FakeResponse;
   /** The app's preferences as read when it started. */
   loadedPreferences?: Record<string, string>;
@@ -54,7 +63,7 @@ function renderReader({
 } = {}) {
   const client = createFakeBackendClient({
     ...fixtureResponses,
-    "GET /projects/p1/media": { media_files: [mediaFile] },
+    "GET /projects/p1/media": { media_files: listed },
     "POST /documents/parse-local": parsed,
     "POST /documents/parse": parsed,
   });
@@ -138,6 +147,21 @@ describe("ReaderScreen", () => {
     );
   });
 
+  it("saves the place when the reader moves into another chapter", async () => {
+    const { effects } = renderReader();
+    await chapterHeading();
+    fireEvent.click(screen.getByRole("button", { name: "Contents" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: /Chapter Two/,
+      }),
+    );
+    expect(
+      JSON.parse(effects.preferences.get("readingLocation:b1") ?? "{}")
+        .chapterIndex,
+    ).toBe(1);
+  });
+
   it("parses the bytes of a file the browser holds", async () => {
     const registry = createBrowserFileRegistry<File>();
     const file = new File(["The cat sat."], "notes.txt", { lastModified: 5 });
@@ -162,6 +186,13 @@ describe("ReaderScreen", () => {
     });
     expect((await screen.findByRole("alert")).textContent).toBe(
       "The book could not be opened. The file was not found. It may have been moved or deleted.",
+    );
+  });
+
+  it("explains a file that has been removed from the project", async () => {
+    renderReader({ listed: [] });
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "The book could not be opened. This file is no longer in the project.",
     );
   });
 
