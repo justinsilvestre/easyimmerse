@@ -87,6 +87,15 @@ export function useMediaFlashcards(
           : "The flashcard could not be saved",
       ),
   });
+  /**
+   * Replaces the open card in the editor by calling `openNext`, after dealing with the open card:
+   * one whose save waits is saved as it is first. A card with unsaved edits is replaced as it is;
+   * this is the one place to change for it to be saved first, or for the user to be asked, calling `openNext` once they answer.
+   */
+  const replaceOpenCard = (openNext: () => void) => {
+    saveWaitingCard();
+    openNext();
+  };
   const remove = () => {
     if (edited?.kind !== "existing") return close();
     deleteFlashcard({ projectId, flashcardId: edited.flashcard.id })
@@ -117,8 +126,9 @@ export function useMediaFlashcards(
       lateFields?: Promise<LookupFlashcardFields | null>,
     ) => {
       setSaved(false);
-      saveWaitingCard();
-      dispatchEdited({ type: "started", draft, awaitsLookup: !!lateFields });
+      replaceOpenCard(() =>
+        dispatchEdited({ type: "started", draft, awaitsLookup: !!lateFields }),
+      );
       const fail = () => dispatchEdited({ type: "lookupFailed", draft });
       lateFields?.then(
         (fields) =>
@@ -131,9 +141,8 @@ export function useMediaFlashcards(
     /** Opens a saved card. A card it replaces whose save was waiting is saved at once, as it is. */
     open: (id: string) => {
       const flashcard = find(id);
-      if (!flashcard) return;
-      saveWaitingCard();
-      dispatchEdited({ type: "opened", flashcard });
+      if (flashcard)
+        replaceOpenCard(() => dispatchEdited({ type: "opened", flashcard }));
     },
     close,
     /** Asks to save the open card. Asking again while a save waits or is under way does nothing. */

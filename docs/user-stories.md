@@ -289,7 +289,7 @@ As a user:
   - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
 - when I double-click, double-tap, or hold a tap on a word in the target-language subtitles or text:
   - [x] a flashcard is created for the word
-  - [x] the word, its pronunciation, and the L1 and L2 definitions are filled from the word's definitions, as when I create the flashcard from the dictionary pop-up; when the definitions arrive only after the form has opened, they fill the fields I have not typed in yet
+  - [x] the word, its pronunciation, and the L1 and L2 definitions are filled from the word's definitions, as when I create the flashcard from the dictionary pop-up (unless I have already typed in the field before the definitions had a chance to load)
   - [x] the fields are shown according to my flashcard settings
   - [x] the flashcard-editing form is opened instead of the dictionary pop-up
 - when the flashcard-editing form is open:
@@ -322,8 +322,6 @@ As a user:
   - [x] the L1 and/or L2 fields are filled with the definitions from all matching dictionary entries
 - when I create a flashcard from a specific dictionary entry:
   - [x] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
-- when I press the lookup button or its keyboard shortcut:
-  - [x] the dictionary pop-up opens, with focus on a text input field where I can type a word to look up
 - while the dictionary pop-up is open but no dictionary is enabled for the project's language:
   - [x] the dictionary pop-up prompts me to set up a dictionary
 - when I have made flashcards without having saved my work:
