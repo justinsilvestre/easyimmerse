@@ -26,6 +26,12 @@ export default defineConfig({
       testMatch: /offline\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: offlineUrl },
     },
+    // A phone, whose taps differ from clicks, for the tests where that matters. CI installs Chromium only.
+    {
+      name: "touch",
+      testMatch: /japaneseLookup\.spec\.ts/,
+      use: { ...devices["Pixel 7"], baseURL: onlineUrl },
+    },
   ],
   webServer: [
     {
