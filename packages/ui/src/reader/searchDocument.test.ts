@@ -32,6 +32,12 @@ describe("findMatchRanges", () => {
     expect(findMatchRanges("Über", "über")).toEqual([{ start: 0, end: 5 }]);
   });
 
+  it("ignores zero-width spaces, such as those left where lines were joined", () => {
+    expect(findMatchRanges("我们\u200B去学校", "我们去")).toEqual([
+      { start: 0, end: 4 },
+    ]);
+  });
+
   it("finds every occurrence", () => {
     expect(findMatchRanges("ab ab ab", "ab")).toHaveLength(3);
   });

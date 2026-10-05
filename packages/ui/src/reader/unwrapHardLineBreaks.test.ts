@@ -52,6 +52,20 @@ describe("unwrapHardLineBreaks", () => {
     expect(unwrapFirst(`    ${line}\n${line}\nend.`)).not.toContain("\n");
   });
 
+  it("joins lines of a script written without spaces with a zero-width space", () => {
+    const line = "字".repeat(70);
+    expect(unwrapFirst(`${line}\n${line}\n完。`)).toBe(
+      `${line}\u200B${line}\u200B完。`,
+    );
+  });
+
+  it("joins a line ending in full-width punctuation with a zero-width space", () => {
+    const line = `${"字".repeat(69)}，`;
+    expect(unwrapFirst(`${line}\n${line}\n完。`)).toBe(
+      `${line}\u200B${line}\u200B完。`,
+    );
+  });
+
   it("keeps each break as one character, so offsets stay the same", () => {
     const paragraph = wrappedParagraph(70);
     expect(unwrapFirst(paragraph)?.length).toBe(paragraph.length);

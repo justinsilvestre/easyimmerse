@@ -65,8 +65,8 @@ export function excerptAround(text: string, start: number, end: number) {
 }
 
 /**
- * Lowercases the text and strips its accents, keeping for each folded character
- * the index of the source character it came from.
+ * Lowercases the text and strips its accents and zero-width spaces,
+ * keeping for each folded character the index of the source character it came from.
  */
 function foldText(text: string) {
   let folded = "";
@@ -74,7 +74,7 @@ function foldText(text: string) {
   for (let index = 0; index < text.length; index++) {
     const piece = text[index]
       ?.normalize("NFD")
-      .replace(/\p{M}/gu, "")
+      .replace(/[\p{M}\u200B]/gu, "")
       .toLowerCase();
     for (const character of piece ?? "") {
       folded += character;

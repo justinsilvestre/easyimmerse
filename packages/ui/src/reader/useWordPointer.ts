@@ -7,6 +7,7 @@ import {
   paragraphIndexOf,
   rangeOfSpan,
 } from "./textOffsets.ts";
+import { zeroWidthSpace } from "./unwrapHardLineBreaks.ts";
 import { sentenceAt, wordsAroundCaret } from "./wordAt.ts";
 
 /** A word in the text, with the sentence around it for a flashcard's context. */
@@ -124,7 +125,9 @@ function wordAtPoint(
     if (!rect) continue;
     return {
       text: word.text,
-      sentence: sentenceAt(text, word.start, language)?.text ?? word.text,
+      sentence: (
+        sentenceAt(text, word.start, language)?.text ?? word.text
+      ).replaceAll(zeroWidthSpace, ""),
       location: {
         chapterIndex,
         paragraphIndex: paragraphIndexOf(paragraph),
