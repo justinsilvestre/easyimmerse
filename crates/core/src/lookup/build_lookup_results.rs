@@ -50,10 +50,10 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
     let entries = group.entries.iter();
     ResultSortKey {
         matched_length: group.candidate.matched_length(),
+        matches_exactly: matches_exactly(group),
         inflection_count: group.candidate.inflection_count(),
         undoes_only_a_bare_stem: group.candidate.undoes_only_a_bare_stem(),
         commonness: commonness(term_meta),
-        matches_exactly: matches_exactly(group),
         first_dictionary_rank: entries
             .clone()
             .map(|found| found.dictionary.rank)
@@ -64,11 +64,11 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
 }
 
 fn matches_exactly(group: &ResultGroup) -> bool {
-    let searched = group.candidate.deinflection.term.as_str();
+    let matched_text = group.candidate.matched_text.as_str();
     group
         .entries
         .iter()
-        .any(|found| found.entry.headwords().contains(&searched))
+        .any(|found| found.entry.headwords().contains(&matched_text))
 }
 
 fn commonness(term_meta: &[&FoundTermMeta]) -> Commonness {
@@ -185,14 +185,14 @@ mod tests {
     }
 
     #[test]
-    fn ranks_the_more_common_of_two_matches_of_equal_length_first() {
+    fn ranks_an_exact_match_before_a_more_common_stem_of_equal_length() {
         let candidates = lookup_candidates("書きながら", "ja");
         let meta = vec![
             frequency(9, "書き", "かき", 20_000.0),
             frequency(9, "書く", "かく", 800.0),
         ];
         let results = build_lookup_results(&candidates, kaki_entries(), &meta);
-        assert_eq!(terms(&results), vec!["書く", "書き"]);
+        assert_eq!(terms(&results), vec!["書き", "書く"]);
     }
 
     #[test]
@@ -262,6 +262,47 @@ mod tests {
         entries.reverse();
         let results = build_lookup_results(&candidates, entries, &[]);
         assert_eq!(terms(&results), vec!["Masse", "Maße"]);
+    }
+
+    #[test]
+    fn ranks_the_exact_spelling_before_a_more_common_folded_one() {
+        let candidates = lookup_candidates("Maße", "de");
+        let meta = vec![
+            frequency(9, "Masse", "Masse", 10.0),
+            frequency(9, "Maße", "Maße", 5_000.0),
+        ];
+        let results = build_lookup_results(&candidates, masse_entries(), &meta);
+        assert_eq!(terms(&results), vec!["Maße", "Masse"]);
+    }
+
+    /// The noun Essen and the verb essen, which differ only in case.
+    fn essen_entries() -> Vec<FoundEntry> {
+        vec![
+            scored(found(1, "essen", "essen"), 1, 0),
+            scored(found(1, "Essen", "Essen"), 2, 0),
+        ]
+    }
+
+    #[test]
+    fn ranks_the_noun_spelled_as_matched_before_the_verb() {
+        let candidates = lookup_candidates("Essen", "de");
+        let results = build_lookup_results(&candidates, essen_entries(), &[]);
+        assert_eq!(terms(&results), vec!["Essen", "essen"]);
+    }
+
+    #[test]
+    fn finds_a_capitalized_noun_from_a_lowercase_sentence_start() {
+        let candidates = lookup_candidates("hund", "de");
+        let entries = vec![found(1, "Hund", "Hund")];
+        let results = build_lookup_results(&candidates, entries, &[]);
+        assert_eq!(terms(&results), vec!["Hund"]);
+    }
+
+    #[test]
+    fn ranks_the_verb_spelled_as_matched_before_the_noun() {
+        let candidates = lookup_candidates("essen", "de");
+        let results = build_lookup_results(&candidates, essen_entries(), &[]);
+        assert_eq!(terms(&results), vec!["essen", "Essen"]);
     }
 
     /// The pointer on し in 雨だし looks up the text し.

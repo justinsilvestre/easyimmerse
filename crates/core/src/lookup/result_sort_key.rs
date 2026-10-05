@@ -8,12 +8,12 @@ use crate::dictionary::FrequencyMode;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ResultSortKey {
     pub matched_length: usize,
+    /// Whether an entry in the result has the matched text as its term, reading or an alternate, without folding its case.
+    pub matches_exactly: bool,
     pub inflection_count: usize,
     /// Whether the only inflection undone is the step from a bare stem to its dictionary form, as from 書き to 書く.
     pub undoes_only_a_bare_stem: bool,
     pub commonness: Commonness,
-    /// Whether an entry in the result has the searched headword as written, without folding its case.
-    pub matches_exactly: bool,
     /// The import position of the earliest imported dictionary with an entry in the result.
     pub first_dictionary_rank: i64,
     /// The highest score that a dictionary gives an entry in the result.
@@ -23,17 +23,18 @@ pub struct ResultSortKey {
 impl ResultSortKey {
     /// Orders keys from the best result to the worst. Among matches of the same length:
     ///
-    /// 1. A one-character match with inflections undone, such as し reached from する, ranks last.
-    /// 2. Unchanged matches and bare stems rank above every other inflected match,
+    /// 1. A result spelled exactly as the matched text ranks first, as Maße does before Masse when Maße is looked up.
+    /// 2. A one-character match with inflections undone, such as し reached from する, ranks last.
+    /// 3. Unchanged matches and bare stems rank above every other inflected match,
     ///    so that 動かす as listed ranks above 動く, which it may also be a causative of.
-    /// 3. Within each of those two groups, the more common result comes first where one frequency dictionary lists both,
-    ///    so that a common verb's stem 書き (書く) can outrank a rarer noun 書き. Fewer inflections come next.
-    /// 4. Then an exact match comes before one found only by folding case, as Maße does before Masse.
+    /// 4. Within each of those two groups, the more common result comes first where one frequency dictionary lists both.
+    ///    Fewer inflections come next.
     /// 5. Then a result that a frequency dictionary lists, then earlier imported dictionaries, then higher scores.
     pub fn compare(&self, other: &Self) -> Ordering {
         other
             .matched_length
             .cmp(&self.matched_length)
+            .then_with(|| other.matches_exactly.cmp(&self.matches_exactly))
             .then_with(|| {
                 self.is_one_character_stem()
                     .cmp(&other.is_one_character_stem())
@@ -44,7 +45,6 @@ impl ResultSortKey {
             })
             .then_with(|| self.commonness.compare_shared(&other.commonness))
             .then_with(|| self.inflection_count.cmp(&other.inflection_count))
-            .then_with(|| other.matches_exactly.cmp(&self.matches_exactly))
             .then_with(|| self.commonness.compare_coverage(&other.commonness))
             .then_with(|| self.first_dictionary_rank.cmp(&other.first_dictionary_rank))
             .then_with(|| other.best_score.cmp(&self.best_score))
@@ -278,12 +278,30 @@ mod tests {
         }
 
         #[test]
-        fn ranks_fewer_inflections_before_an_exact_match() {
+        fn ranks_an_exact_match_before_a_more_common_one() {
             let exact = ResultSortKey {
                 matches_exactly: true,
-                ..key(4, 2, None)
+                ..key(4, 0, Some(900.0))
             };
-            assert_eq!(key(4, 1, None).compare(&exact), Ordering::Less);
+            assert_eq!(exact.compare(&key(4, 0, Some(1.0))), Ordering::Less);
+        }
+
+        #[test]
+        fn ranks_an_exact_match_before_a_bare_stem() {
+            let exact = ResultSortKey {
+                matches_exactly: true,
+                ..key(2, 0, Some(900.0))
+            };
+            assert_eq!(exact.compare(&bare_stem(2, Some(1.0))), Ordering::Less);
+        }
+
+        #[test]
+        fn ranks_a_longer_match_before_an_exact_one() {
+            let exact = ResultSortKey {
+                matches_exactly: true,
+                ..key(2, 0, None)
+            };
+            assert_eq!(key(3, 1, None).compare(&exact), Ordering::Less);
         }
 
         #[test]
