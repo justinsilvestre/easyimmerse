@@ -8,6 +8,7 @@ import { IconButton } from "../components/IconButton.tsx";
 import { Kbd } from "../components/Kbd.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
+import { lookupTriggerAttribute } from "../lookup/usePopupDismissal.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import { languageName } from "../projects/languages.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
@@ -96,7 +97,11 @@ export function MediaView(props: MediaViewProps) {
                 showsControls ? "bottom-22" : "bottom-2",
               )}
             >
-              <IconButton label="Look up a word" onClick={props.onLookup}>
+              <IconButton
+                label="Look up a word"
+                {...{ [lookupTriggerAttribute]: "" }}
+                onClick={props.onLookup}
+              >
                 <Search className="size-4" />
               </IconButton>
               <Kbd>L</Kbd>
