@@ -87,17 +87,19 @@ export function useMediaFlashcards(
         fail,
       );
     },
-    /** Opens a saved card. The card it replaces is saved as it leaves. */
+    /** Opens a saved card, withdrawing the Undo of its last save. The card it replaces is saved as it leaves. */
     open: (id: string) => {
       const flashcard = flashcards.find((card) => card.id === id);
-      if (flashcard)
-        replaceOpenCard(() =>
-          dispatchEdited({
-            type: "opened",
-            flashcard,
-            session: createCardSession(),
-          }),
-        );
+      if (!flashcard) return;
+      // Undoing the save now would change the card under the editor, so only saving it again from there remains.
+      saving.withdrawUndo(id);
+      replaceOpenCard(() =>
+        dispatchEdited({
+          type: "opened",
+          flashcard,
+          session: createCardSession(),
+        }),
+      );
     },
     /** Closes the open card without saving it; a changed one can be brought back from the notice's Undo. */
     close: () => {
@@ -114,7 +116,7 @@ export function useMediaFlashcards(
         .catch(() => notify("The flashcard could not be deleted"));
     },
     ...flashcardRetiming(flashcards, edited, edit, (flashcard, changes) =>
-      requests
+      saving
         .replace(flashcard, changes)
         .catch(() => notify("The flashcard could not be saved")),
     ),

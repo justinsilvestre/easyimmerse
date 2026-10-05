@@ -512,6 +512,37 @@ describe("useMediaFlashcards", () => {
         await letSavesThrough();
         expect(sentWord(puts()[1])).toBe(savedFlashcard.content.word);
       });
+
+      it("withdraws the Undo once a later save of the flashcard starts", async () => {
+        const { result, notices } = await moveOnFromSavedCard();
+        act(() =>
+          result.current.moveClipEndpoint(savedFlashcard.id, "end", 4000),
+        );
+        expect(notices()).toEqual([]);
+      });
+
+      it("withdraws the Undo once the flashcard is opened in the editor", async () => {
+        const { result, notices } = await moveOnFromSavedCard();
+        act(() => result.current.open(savedFlashcard.id));
+        expect(notices()).toEqual([]);
+      });
+
+      it("holds a later save of the flashcard until its Undo has settled", async () => {
+        const { result, choose, held } = await moveOnFromSavedCard();
+        choose("Undo");
+        await vi.waitFor(() => expect(held).toHaveLength(1));
+        act(() =>
+          result.current.moveClipEndpoint(savedFlashcard.id, "end", 4000),
+        );
+        await flushPendingWork();
+        expect(held).toHaveLength(1);
+      });
+    });
+
+    it("withdraws a new card's Undo once the card is opened in the editor", async () => {
+      const { result, notices } = await moveOnFrom(startChanged);
+      act(() => result.current.open(savedFlashcard.id));
+      expect(notices()).toEqual([]);
     });
 
     it("leaves an unchanged saved card as it is", async () => {

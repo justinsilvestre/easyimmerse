@@ -129,5 +129,7 @@ export function useFlashcardSaving(
       if (card.isChanged) offScreen.showDiscarded(card);
     },
     rememberLookup: offScreen.rememberLookup,
+    replace: offScreen.replace,
+    withdrawUndo: offScreen.withdrawUndo,
   };
 }

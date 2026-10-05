@@ -1,7 +1,5 @@
-import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { saveRequestLimitMs } from "../lookup/lookupTiming.ts";
 import { withinTime } from "../lookup/withinTime.ts";
@@ -14,6 +12,8 @@ import { flashcardNotices } from "./flashcardNotices.ts";
 import { createSaveQueue } from "./saveQueue.ts";
 import { isSaveAsked } from "./saveStage.ts";
 import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
+import { useSaveUndo } from "./useSaveUndo.ts";
+import { useUnsavedWorkTracking } from "./useUnsavedWorkTracking.ts";
 import { withTimeLimit } from "./withTimeLimit.ts";
 
 type FlashcardRequests = ReturnType<typeof useFlashcardRequests>;
@@ -21,7 +21,7 @@ type FlashcardRequests = ReturnType<typeof useFlashcardRequests>;
 /**
  * Sends flashcard saves through one queue, counting each as pending so that the app warns before closing meanwhile,
  * and saves the cards that leave the editor, with notices about them:
- * - a card saved without the user pressing Save gains an Undo notice;
+ * - a card saved without the user pressing Save gains an Undo notice, as `useSaveUndo` describes;
  * - a failed save leaves a lasting notice with Retry, and with Reopen while the screen is mounted;
  * - a discarded card gains an Undo notice that reopens it, which goes when the screen does.
  * `reopen` brings a card back to the editor.
@@ -30,7 +30,6 @@ export function useOffScreenSaving(
   requests: FlashcardRequests,
   reopen: (card: EditedFlashcard) => void,
 ) {
-  const dispatch = useAppDispatch();
   const notices = useNotices();
   const [queue] = useState(createSaveQueue);
   const [lookups] = useState(
@@ -57,15 +56,14 @@ export function useOffScreenSaving(
       screenNotices.discarded.clear();
     };
   }, [notices, screenNotices]);
-  const track = <T>(work: Promise<T>): Promise<T> => {
-    dispatch(actions.unsavedWorkBegan());
-    return work.finally(() => dispatch(actions.unsavedWorkEnded()));
-  };
+  const track = useUnsavedWorkTracking();
+  const undo = useSaveUndo(queue, requests);
   /**
    * Sends a card's save, or returns undefined when this opening's save is already under way.
    * A request left unanswered for `saveRequestLimitMs` counts as failed.
    */
   const send = (card: EditedFlashcard) => {
+    if (card.kind === "existing") undo.withdraw(card.flashcard.id);
     const saving = queue.add(card, () =>
       withTimeLimit(requests.send(card), saveRequestLimitMs),
     );
@@ -81,24 +79,22 @@ export function useOffScreenSaving(
       notices.show(flashcardNotices.saveFailed(word, retry, reopenCard)),
     );
   };
-  const offerUndo = (card: EditedFlashcard, saved: Flashcard) => {
-    const word = card.editor.content.word;
-    notices.show(
-      flashcardNotices.savedWithUndo(word, () => {
-        track(requests.undoSave(card, saved)).catch(() =>
-          notices.show(flashcardNotices.undoFailed(word)),
-        );
-      }),
-    );
-  };
   function saveOffScreen(card: EditedFlashcard, offersUndo: boolean) {
     send(card)?.then(
-      (saved) => offersUndo && offerUndo(card, saved),
+      (saved) => offersUndo && undo.offer(card, saved),
       () => showFailure(card),
     );
   }
   return {
     isScreenMounted: () => screen.current.isMounted,
+    withdrawUndo: undo.withdraw,
+    /** Saves changes to a flashcard that is not open in the editor, after any earlier work on it. */
+    replace: (flashcard: Flashcard, changes: Partial<FlashcardDraft>) => {
+      undo.withdraw(flashcard.id);
+      return track(
+        queue.addFor(flashcard.id, () => requests.replace(flashcard, changes)),
+      );
+    },
     send,
     showFailure,
     /** Saves a card that has left the editor, with an Undo notice when the user did not ask for the save. */
