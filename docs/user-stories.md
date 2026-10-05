@@ -262,6 +262,19 @@ As a user:
 - when I click or tap on a word in the target-language subtitles or text:
   - [x] the dictionary pop-up opens at the word, with the word's definitions, if available
   - [ ] any audio/video playback is either looped (if the word is in the subtitles/timing-enhanced text) or paused (if no timing is available)
+- when I look up text in a language written with spaces between words, such as German or English:
+  - [x] the word I click, tap or point at is looked up, and the word is highlighted
+- when I look up text in a language written without spaces between words, such as Japanese or Chinese text:
+  - [x] the lookup starts at the character I click, tap or point at, and finds the longest word the dictionaries know from there
+  - [x] the characters the lookup matched are highlighted
+  - [x] clicking or tapping punctuation such as 、 or 。 looks nothing up
+- when a word in the target-language subtitles or text has keyboard focus:
+  - [x] pressing Enter or Space opens the dictionary pop-up for the word
+  - [x] pressing Shift+Enter or Shift+Space creates a flashcard for the word, filled from the word's definitions
+- when I press L while no text field has focus:
+  - [x] the dictionary pop-up opens, with focus on its search field
+- while the dictionary pop-up is open, when I press Escape:
+  - [x] the pop-up closes, and keyboard focus returns to where it was before the pop-up opened
 - while the dictionary pop-up is open:
   - [x] while it shows a word rather than its search field, when I rest the mouse pointer on another word in the target-language subtitles or text for a moment, the pop-up moves to that word and shows its definitions; passing quickly over words leaves it where it is
   - [x] while the mouse pointer is inside the pop-up, it stays on its word, so I can reach its buttons
@@ -288,6 +301,8 @@ As a user:
   - [x] fields excluded in my flashcard settings are hidden
   - [x] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
   - [x] I can save the flashcard and close the form
+- when I save a flashcard whose definitions are still on their way from the dictionaries:
+  - [x] I see that saving waits for the definitions, and the flashcard is saved with them once they arrive, or as it is if they cannot be found
   - [x] I can delete the flashcard and close the form
 - when I delete the contents of a field of the flashcard-editing form that can be filled from the dictionary:
   - [ ] I am offered an option to fill it again from the lookup
