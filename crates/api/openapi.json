@@ -663,7 +663,7 @@
           {
             "name": "offset",
             "in": "query",
-            "description": "The position of the looked-up character in `context`, counted in characters (Unicode scalar values).",
+            "description": "The position of the looked-up character in `context`, counted in characters (Unicode scalar values).\nA JavaScript string index counts UTF-16 code units instead, and differs after any emoji or other character\noutside the Basic Multilingual Plane, so a web client converts it with `[...context.slice(0, index)].length`.",
             "required": false,
             "schema": {
               "type": "integer",

@@ -26,6 +26,8 @@ pub struct LookupQuery {
     #[ts(optional)]
     pub context: Option<String>,
     /// The position of the looked-up character in `context`, counted in characters (Unicode scalar values).
+    /// A JavaScript string index counts UTF-16 code units instead, and differs after any emoji or other character
+    /// outside the Basic Multilingual Plane, so a web client converts it with `[...context.slice(0, index)].length`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub offset: Option<usize>,
