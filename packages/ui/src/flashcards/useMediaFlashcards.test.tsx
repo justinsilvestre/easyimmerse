@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { saveLookupWaitMs } from "../lookup/lookupTiming.ts";
+import { createNoticeStore } from "../notices/noticeStore.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import {
   createFakeBackendClient,
@@ -25,6 +26,33 @@ afterEach(() => {
 /** Lets every request and promise already under way run, without waiting on the clock. */
 const flushPendingWork = () =>
   act(() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
+
+/** A lookup that answers when the test says so. */
+function createLateLookup() {
+  let answer: (fields: LookupFlashcardFields | null) => void = () => undefined;
+  const fields = new Promise<LookupFlashcardFields | null>((resolve) => {
+    answer = resolve;
+  });
+  return {
+    fields,
+    answer: (found: LookupFlashcardFields | null) => act(() => answer(found)),
+  };
+}
+
+const lookedUp: LookupFlashcardFields = {
+  word: "Hündchen",
+  word_pronunciation: "",
+  l1_definition: "puppy",
+  l2_definition: "",
+};
+
+const typeWord = (word: string) =>
+  ({ type: "textChanged", key: "word", value: word }) as const;
+
+/** The word a save request sent. */
+const sentWord = (request: BackendRequest | undefined) =>
+  (request?.body?.value as { content?: { word?: string } } | undefined)?.content
+    ?.word;
 
 function createDraft(word: string): FlashcardDraft {
   return {
@@ -46,6 +74,7 @@ function renderFlashcards({ savesFail = false } = {}) {
     "PUT /projects/p1/flashcards/f1": savesFail
       ? fakeFailure({ status: 500, message: "The disk is full" })
       : savedFlashcard,
+    "DELETE /projects/p1/flashcards/f1": undefined,
   });
   const held: (() => void)[] = [];
   const holdingClient = {
@@ -57,8 +86,13 @@ function renderFlashcards({ savesFail = false } = {}) {
         : client.send<T>(request),
   };
   const { store, playerRegistry, effects } = createTestAppStore(holdingClient);
+  const noticeStore = createNoticeStore();
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <AppStoreProviders store={store} playerRegistry={playerRegistry}>
+    <AppStoreProviders
+      store={store}
+      playerRegistry={playerRegistry}
+      noticeStore={noticeStore}
+    >
       {children}
     </AppStoreProviders>
   );
@@ -78,13 +112,36 @@ function renderFlashcards({ savesFail = false } = {}) {
     effects.calls.flatMap((call) =>
       call.type === "showNotification" ? [call.message] : [],
     );
+  /** The app's notices, each as its message followed by its actions' labels. */
+  const notices = () =>
+    noticeStore
+      .list()
+      .map((notice) => [
+        notice.message,
+        ...(notice.actions ?? []).map((action) => action.label),
+      ]);
+  /** Chooses an action of the latest notice that offers it. */
+  const choose = (label: string) =>
+    act(() =>
+      noticeStore
+        .list()
+        .flatMap((notice) => notice.actions ?? [])
+        .findLast((action) => action.label === label)
+        ?.onSelect(),
+    );
+  const deletes = () =>
+    client.requests.filter((request) => request.method === "DELETE");
   return {
     ...rendered,
     held,
     posts,
     puts,
+    deletes,
     letSavesThrough,
     notifications,
+    notices,
+    choose,
+    effects,
   };
 }
 
@@ -139,55 +196,130 @@ describe("useMediaFlashcards", () => {
   describe("when another card is started while a save waits for its lookup", () => {
     async function startAnotherWhileWaiting() {
       const rendered = renderFlashcards();
-      const never = new Promise<LookupFlashcardFields | null>(() => undefined);
-      act(() => rendered.result.current.start(createDraft("Hund"), never));
+      const lookup = createLateLookup();
+      act(() =>
+        rendered.result.current.start(createDraft("Hund"), lookup.fields),
+      );
       act(() => rendered.result.current.save());
       act(() => rendered.result.current.start(createDraft("Katze")));
-      return rendered;
+      return { ...rendered, lookup };
     }
 
-    it("saves the waiting card as it is", async () => {
-      const { held, letSavesThrough, posts } = await startAnotherWhileWaiting();
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-      await letSavesThrough();
-      expect(
-        (posts()[0]?.body?.value as { content?: { word?: string } })?.content
-          ?.word,
-      ).toBe("Hund");
+    it("keeps waiting for the lookup in the background", async () => {
+      const { held } = await startAnotherWhileWaiting();
+      await flushPendingWork();
+      expect(held).toHaveLength(0);
     });
 
-    it("says nothing once the waiting card is saved in the background", async () => {
-      const { result, held, letSavesThrough } =
+    it("saves the card filled from the lookup once it answers", async () => {
+      const { held, letSavesThrough, posts, lookup } =
         await startAnotherWhileWaiting();
+      await lookup.answer(lookedUp);
       await vi.waitFor(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      expect(result.current.isSaved).toBe(false);
+      expect(sentWord(posts()[0])).toBe("Hündchen");
+    });
+
+    it("says nothing once the waiting card is saved, since Save was pressed", async () => {
+      const { held, letSavesThrough, lookup, notices } =
+        await startAnotherWhileWaiting();
+      await lookup.answer(lookedUp);
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(notices()).toEqual([]);
     });
 
     it("keeps the new card open once the waiting card is saved", async () => {
-      const { result, held, letSavesThrough } =
+      const { result, held, letSavesThrough, lookup } =
         await startAnotherWhileWaiting();
+      await lookup.answer(lookedUp);
       await vi.waitFor(() => expect(held).toHaveLength(1));
       await letSavesThrough();
       expect(result.current.edited?.editor.content.word).toBe("Katze");
     });
   });
 
-  it("names the word of a card that could not be saved in the background", async () => {
-    const { result, held, letSavesThrough, notifications } = renderFlashcards({
-      savesFail: true,
-    });
-    const never = new Promise<LookupFlashcardFields | null>(() => undefined);
-    act(() => result.current.start(createDraft("Hund"), never));
-    act(() => result.current.save());
-    act(() => result.current.start(createDraft("Katze")));
-    await vi.waitFor(() => expect(held).toHaveLength(1));
-    await letSavesThrough();
-    await vi.waitFor(() =>
-      expect(notifications()).toEqual([
-        "Couldn't save the flashcard for “Hund”.",
-      ]),
+  describe("when a waiting card's lookup never settles after the card has left the editor", () => {
+    beforeEach(() =>
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] }),
     );
+
+    afterEach(() => vi.useRealTimers());
+
+    it("saves the card as it is once the limit from pressing Save has passed", async () => {
+      const { result, held } = renderFlashcards();
+      const never = new Promise<LookupFlashcardFields | null>(() => undefined);
+      act(() => result.current.start(createDraft("Hund"), never));
+      act(() => result.current.save());
+      await act(() => vi.advanceTimersByTimeAsync(4000));
+      act(() => result.current.start(createDraft("Katze")));
+      await act(() => vi.advanceTimersByTimeAsync(saveLookupWaitMs - 4000));
+      expect(held).toHaveLength(1);
+    });
+
+    it("keeps waiting short of that limit", async () => {
+      const { result, held } = renderFlashcards();
+      const never = new Promise<LookupFlashcardFields | null>(() => undefined);
+      act(() => result.current.start(createDraft("Hund"), never));
+      act(() => result.current.save());
+      await act(() => vi.advanceTimersByTimeAsync(4000));
+      act(() => result.current.start(createDraft("Katze")));
+      await act(() => vi.advanceTimersByTimeAsync(saveLookupWaitMs - 4100));
+      expect(held).toHaveLength(0);
+    });
+  });
+
+  describe("when a save fails after its card has left the editor", () => {
+    async function failOffScreen() {
+      const rendered = renderFlashcards({ savesFail: true });
+      const { result, held, letSavesThrough } = rendered;
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.start(createDraft("Katze")));
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      await vi.waitFor(() => expect(rendered.notices()).toHaveLength(1));
+      return rendered;
+    }
+
+    it("leaves a notice naming the card, with Retry and Reopen", async () => {
+      const { notices } = await failOffScreen();
+      expect(notices()).toEqual([
+        ["Couldn't save the flashcard for “Hündin”.", "Retry", "Reopen"],
+      ]);
+    });
+
+    it("sends the card again on Retry", async () => {
+      const { held, letSavesThrough, posts, choose } = await failOffScreen();
+      choose("Retry");
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(sentWord(posts()[1])).toBe("Hündin");
+    });
+
+    it("puts the card back in the editor with its edits on Reopen", async () => {
+      const { result, choose } = await failOffScreen();
+      choose("Reopen");
+      expect(result.current.edited?.editor.content.word).toBe("Hündin");
+    });
+
+    it("saves the card open in the editor when another is reopened", async () => {
+      const { result, held, letSavesThrough, posts, choose } =
+        await failOffScreen();
+      act(() => result.current.edit(typeWord("Kater")));
+      choose("Reopen");
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(sentWord(posts()[1])).toBe("Kater");
+    });
+
+    it("keeps Retry once the screen closes", async () => {
+      const { unmount, notices } = await failOffScreen();
+      unmount();
+      expect(notices()).toEqual([
+        ["Couldn't save the flashcard for “Hündin”.", "Retry"],
+      ]);
+    });
   });
 
   describe("when a save finishes after its card has left the screen", () => {
@@ -205,15 +337,15 @@ describe("useMediaFlashcards", () => {
     it("says nothing of its success", async () => {
       const { result, posts } = await leaveWhileSending();
       await vi.waitFor(() => expect(posts()).toHaveLength(1));
-      await act(async () => undefined);
+      await flushPendingWork();
       expect(result.current.isSaved).toBe(false);
     });
 
-    it("names the word when it fails", async () => {
-      const { notifications } = await leaveWhileSending({ savesFail: true });
+    it("leaves a failure notice naming the card", async () => {
+      const { notices } = await leaveWhileSending({ savesFail: true });
       await vi.waitFor(() =>
-        expect(notifications()).toEqual([
-          "Couldn't save the flashcard for “Hund”.",
+        expect(notices()).toEqual([
+          ["Couldn't save the flashcard for “Hund”.", "Retry", "Reopen"],
         ]),
       );
     });
@@ -228,43 +360,17 @@ describe("useMediaFlashcards", () => {
     await vi.waitFor(() => expect(result.current.isSaved).toBe(true));
   });
 
-  it("saves a waiting card as it is when a saved card is opened", async () => {
-    const { result, held } = renderFlashcards();
-    await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
-    const never = new Promise<LookupFlashcardFields | null>(() => undefined);
-    act(() => result.current.start(createDraft("Hund"), never));
+  it("still tells of an ordinary failed save in the editor", async () => {
+    const { result, held, letSavesThrough, notifications } = renderFlashcards({
+      savesFail: true,
+    });
+    act(() => result.current.start(createDraft("Hund")));
     act(() => result.current.save());
-    act(() => result.current.open(savedFlashcard.id));
     await vi.waitFor(() => expect(held).toHaveLength(1));
-  });
-
-  describe("when the screen closes while a save waits for its lookup", () => {
-    function closeWhileWaiting(setup: { savesFail?: boolean } = {}) {
-      const rendered = renderFlashcards(setup);
-      const never = new Promise<LookupFlashcardFields | null>(() => undefined);
-      act(() => rendered.result.current.start(createDraft("Hund"), never));
-      act(() => rendered.result.current.save());
-      rendered.unmount();
-      return rendered;
-    }
-
-    it("saves the waiting card as it is", async () => {
-      const { held } = closeWhileWaiting();
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-    });
-
-    it("names the word of a card that could not be saved", async () => {
-      const { held, letSavesThrough, notifications } = closeWhileWaiting({
-        savesFail: true,
-      });
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-      await letSavesThrough();
-      await vi.waitFor(() =>
-        expect(notifications()).toEqual([
-          "Couldn't save the flashcard for “Hund”.",
-        ]),
-      );
-    });
+    await letSavesThrough();
+    await vi.waitFor(() =>
+      expect(notifications()).toEqual(["The flashcard could not be saved"]),
+    );
   });
 
   describe("when a saved card is reopened while a save of it is under way", () => {
@@ -309,94 +415,186 @@ describe("useMediaFlashcards", () => {
     });
   });
 
-  describe("when another card replaces one with unsaved changes", () => {
-    const typeWord = (word: string) =>
-      ({
-        type: "textChanged",
-        key: "word",
-        value: word,
-      }) as const;
+  describe("when the user moves on from a card without pressing Save", () => {
+    async function moveOnFrom(
+      change: (rendered: ReturnType<typeof renderFlashcards>) => void,
+    ) {
+      const rendered = renderFlashcards();
+      change(rendered);
+      act(() => rendered.result.current.start(createDraft("Katze")));
+      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await rendered.letSavesThrough();
+      await vi.waitFor(() => expect(rendered.notices()).toHaveLength(1));
+      return rendered;
+    }
 
-    const sentWord = (request: BackendRequest | undefined) =>
-      (request?.body?.value as { content?: { word?: string } } | undefined)
-        ?.content?.word;
-
-    it("saves a changed new card as it is first", async () => {
-      const { result, held, letSavesThrough, posts } = renderFlashcards();
+    const startChanged = ({ result }: ReturnType<typeof renderFlashcards>) => {
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.edit(typeWord("Hündin")));
-      act(() => result.current.start(createDraft("Katze")));
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-      await letSavesThrough();
+    };
+
+    const startUntouched = ({ result }: ReturnType<typeof renderFlashcards>) =>
+      act(() => result.current.start(createDraft("Hund")));
+
+    it("saves a changed new card as it is", async () => {
+      const { posts } = await moveOnFrom(startChanged);
       expect(sentWord(posts()[0])).toBe("Hündin");
     });
 
-    it("saves a changed saved card as it is first", async () => {
-      const { result, held, letSavesThrough, puts } = renderFlashcards();
-      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
-      act(() => result.current.open(savedFlashcard.id));
-      act(() => result.current.edit(typeWord("Hündin")));
-      act(() => result.current.start(createDraft("Katze")));
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-      await letSavesThrough();
-      expect(sentWord(puts()[0])).toBe("Hündin");
+    it("saves an untouched new card too", async () => {
+      const { posts } = await moveOnFrom(startUntouched);
+      expect(sentWord(posts()[0])).toBe("Hund");
+    });
+
+    it("offers Undo in a notice naming the card", async () => {
+      const { notices } = await moveOnFrom(startChanged);
+      expect(notices()).toEqual([
+        ["Saved the flashcard for “Hündin”.", "Undo"],
+      ]);
+    });
+
+    it("deletes a new card on Undo", async () => {
+      const { choose, deletes } = await moveOnFrom(startChanged);
+      choose("Undo");
+      await vi.waitFor(() => expect(deletes()).toHaveLength(1));
     });
 
     it("opens the other card at once", () => {
       const { result } = renderFlashcards();
-      act(() => result.current.start(createDraft("Hund")));
-      act(() => result.current.edit(typeWord("Hündin")));
+      startChanged({ result } as ReturnType<typeof renderFlashcards>);
       act(() => result.current.start(createDraft("Katze")));
       expect(result.current.edited?.editor.content.word).toBe("Katze");
     });
 
-    it("drops an untouched new card without saving it", async () => {
+    describe("from a changed saved card", () => {
+      async function moveOnFromSavedCard() {
+        const rendered = renderFlashcards();
+        const { result } = rendered;
+        await vi.waitFor(() =>
+          expect(result.current.flashcards).toHaveLength(1),
+        );
+        act(() => result.current.open(savedFlashcard.id));
+        act(() => result.current.edit(typeWord("Hündin")));
+        act(() => result.current.start(createDraft("Katze")));
+        await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+        await rendered.letSavesThrough();
+        await vi.waitFor(() => expect(rendered.notices()).toHaveLength(1));
+        return rendered;
+      }
+
+      it("saves it as it is", async () => {
+        const { puts } = await moveOnFromSavedCard();
+        expect(sentWord(puts()[0])).toBe("Hündin");
+      });
+
+      it("puts back its earlier content on Undo", async () => {
+        const { choose, held, letSavesThrough, puts } =
+          await moveOnFromSavedCard();
+        choose("Undo");
+        await vi.waitFor(() => expect(held).toHaveLength(1));
+        await letSavesThrough();
+        expect(sentWord(puts()[1])).toBe(savedFlashcard.content.word);
+      });
+    });
+
+    it("leaves an unchanged saved card as it is", async () => {
       const { result, held } = renderFlashcards();
-      act(() => result.current.start(createDraft("Hund")));
+      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+      act(() => result.current.open(savedFlashcard.id));
       act(() => result.current.start(createDraft("Katze")));
       await flushPendingWork();
       expect(held).toHaveLength(0);
     });
 
-    it("names the word of a changed card that could not be saved", async () => {
-      const { result, held, letSavesThrough, notifications } = renderFlashcards(
-        {
-          savesFail: true,
-        },
-      );
-      act(() => result.current.start(createDraft("Hund")));
-      act(() => result.current.edit(typeWord("Hündin")));
-      act(() => result.current.start(createDraft("Katze")));
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-      await letSavesThrough();
+    it("saves a card as it is when the screen closes, offering Undo", async () => {
+      const rendered = renderFlashcards();
+      startChanged(rendered);
+      rendered.unmount();
+      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await rendered.letSavesThrough();
       await vi.waitFor(() =>
-        expect(notifications()).toEqual([
-          "Couldn't save the flashcard for “Hündin”.",
+        expect(rendered.notices()).toEqual([
+          ["Saved the flashcard for “Hündin”.", "Undo"],
         ]),
       );
     });
   });
 
-  it("saves a changed card as it is when the screen closes", async () => {
-    const { result, held, unmount } = renderFlashcards();
-    act(() => result.current.start(createDraft("Hund")));
-    act(() =>
-      result.current.edit({
-        type: "textChanged",
-        key: "word",
-        value: "Hündin",
-      }),
-    );
-    unmount();
-    await vi.waitFor(() => expect(held).toHaveLength(1));
+  describe("when Close without saving is pressed", () => {
+    function closeChanged() {
+      const rendered = renderFlashcards();
+      act(() => rendered.result.current.start(createDraft("Hund")));
+      act(() => rendered.result.current.edit(typeWord("Hündin")));
+      act(() => rendered.result.current.close());
+      return rendered;
+    }
+
+    it("discards a changed card at once", () => {
+      const { result } = closeChanged();
+      expect(result.current.edited).toBeNull();
+    });
+
+    it("offers Undo in a notice naming the card", () => {
+      const { notices } = closeChanged();
+      expect(notices()).toEqual([
+        ["Discarded your changes to the flashcard for “Hündin”.", "Undo"],
+      ]);
+    });
+
+    it("reopens the card with its edits on Undo", () => {
+      const { result, choose } = closeChanged();
+      choose("Undo");
+      expect(result.current.edited?.editor.content.word).toBe("Hündin");
+    });
+
+    it("saves nothing", async () => {
+      const { held } = closeChanged();
+      await flushPendingWork();
+      expect(held).toHaveLength(0);
+    });
+
+    it("closes an untouched card without a notice", () => {
+      const { result, notices } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.close());
+      expect(notices()).toEqual([]);
+    });
+
+    it("withdraws the Undo once the screen closes", () => {
+      const { unmount, notices } = closeChanged();
+      unmount();
+      expect(notices()).toEqual([]);
+    });
   });
 
-  it("drops an untouched new card when the screen closes", async () => {
-    const { result, held, unmount } = renderFlashcards();
-    act(() => result.current.start(createDraft("Hund")));
-    unmount();
-    await flushPendingWork();
-    expect(held).toHaveLength(0);
+  describe("while a save is pending", () => {
+    const guardCalls = (
+      effects: ReturnType<typeof renderFlashcards>["effects"],
+    ) => effects.calls.filter((call) => call.type === "guardClose");
+
+    it("guards the app against closing", async () => {
+      const { result, held, effects } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.save());
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      expect(guardCalls(effects)).toEqual([
+        { type: "guardClose", isActive: true },
+      ]);
+    });
+
+    it("lifts the guard once the save has settled", async () => {
+      const { result, held, letSavesThrough, effects } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.save());
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      await vi.waitFor(() =>
+        expect(guardCalls(effects)).toEqual([
+          { type: "guardClose", isActive: true },
+          { type: "guardClose", isActive: false },
+        ]),
+      );
+    });
   });
 
   describe("when the lookup never settles", () => {

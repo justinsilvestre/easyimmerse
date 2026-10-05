@@ -1,7 +1,7 @@
 import { useListFlashcardsQuery } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import {
@@ -23,6 +23,7 @@ const noFlashcards: readonly Flashcard[] = [];
  * A new card started before the media file is known to show pictures gains a screenshot once it is.
  * A new card whose word's lookup has yet to answer is saved only once it answers, fails or takes too long,
  * so that its definitions are saved with it.
+ * A card the editor leaves, for another card or as the screen closes, is saved as it is; see `useFlashcardSaving`.
  */
 export function useMediaFlashcards(
   projectId: string,
@@ -40,34 +41,15 @@ export function useMediaFlashcards(
   useEffect(() => {
     if (hasScreenshots) dispatchEdited({ type: "screenshotsAvailable" });
   }, [hasScreenshots]);
-  const [isSaved, setSaved] = useState(false);
   const requests = useFlashcardRequests(projectId);
-  const close = () => dispatchEdited({ type: "closed" });
   const edit = (action: EditorAction) =>
     dispatchEdited({ type: "edited", action });
-  const saveLeftCard = useFlashcardSaving(
-    edited,
-    dispatchEdited,
-    requests.send,
-    {
-      // A card saved in the background is no longer on screen, so only its failure is told, by its word.
-      saved: (_card, isInBackground) => {
-        if (!isInBackground) setSaved(true);
-      },
-      failed: (card, isInBackground) =>
-        notify(
-          isInBackground
-            ? `Couldn't save the flashcard for “${card.editor.content.word}”.`
-            : "The flashcard could not be saved",
-        ),
-    },
+  const saving = useFlashcardSaving(edited, dispatchEdited, requests, (card) =>
+    replaceOpenCard(() => dispatchEdited({ type: "restored", card })),
   );
-  /**
-   * Replaces the open card in the editor by calling `openNext`, after saving the open card as it is, in the background,
-   * if the user has asked to save it or has changed it.
-   */
+  /** Replaces the open card in the editor by calling `openNext`, after the card open there has been dealt with as it leaves. */
   const replaceOpenCard = (openNext: () => void) => {
-    saveLeftCard();
+    if (edited) saving.leave(edited);
     openNext();
   };
   return {
@@ -78,18 +60,19 @@ export function useMediaFlashcards(
     ),
     edited,
     edit,
-    isSaved,
-    dismissSaved: () => setSaved(false),
+    isSaved: saving.isSaved,
+    dismissSaved: saving.dismissSaved,
     /**
      * Starts a new card. `lateFields` gives the fields of its word's lookup once it answers, or null when it fails,
      * and the card is filled from them if still open; until then a save waits for them.
-     * A card it replaces is first saved as it is, if the user asked to save it or changed it.
+     * The card it replaces is saved as it leaves.
      */
     start: (
       draft: FlashcardDraft,
       lateFields?: Promise<LookupFlashcardFields | null>,
     ) => {
-      setSaved(false);
+      saving.dismissSaved();
+      if (lateFields) saving.rememberLookup(draft, lateFields);
       replaceOpenCard(() =>
         dispatchEdited({ type: "started", draft, awaitsLookup: !!lateFields }),
       );
@@ -102,16 +85,20 @@ export function useMediaFlashcards(
         fail,
       );
     },
-    /** Opens a saved card. A card it replaces is first saved as it is, if the user asked to save it or changed it. */
+    /** Opens a saved card. The card it replaces is saved as it leaves. */
     open: (id: string) => {
       const flashcard = flashcards.find((card) => card.id === id);
       if (flashcard)
         replaceOpenCard(() => dispatchEdited({ type: "opened", flashcard }));
     },
-    close,
+    /** Closes the open card without saving it; a changed one can be brought back from the notice's Undo. */
+    close: () => {
+      if (edited) saving.discard(edited);
+    },
     /** Asks to save the open card. Asking again while a save waits or is under way does nothing. */
     save: () => dispatchEdited({ type: "saveRequested" }),
     remove: () => {
+      const close = () => dispatchEdited({ type: "closed" });
       if (edited?.kind !== "existing") return close();
       requests
         .remove(edited.flashcard)
