@@ -35,6 +35,10 @@ describe("deriveManifestEntries", () => {
     it("keeps the hash", () => {
       assert.equal(entry()?.sha256, "abc");
     });
+
+    it("keeps the release", () => {
+      assert.equal(entry()?.release, "ffmpeg-8.1.3");
+    });
   });
 
   describe("for a Windows triple", () => {

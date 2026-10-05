@@ -4,7 +4,9 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
+  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -12,6 +14,7 @@ import { fileURLToPath } from "node:url";
 
 import { downloadToFile, verifySha256 } from "./download.ts";
 import { extractArchive } from "./extract.ts";
+import { formatInstallStamp, isInstalled } from "./installStamp.ts";
 import {
   hostTriple,
   type ManifestEntry,
@@ -21,6 +24,8 @@ import {
 /**
  * Downloads the pinned ffmpeg build for a target triple and places its `ffmpeg` and
  * `ffprobe` where Tauri looks for sidecar binaries.
+ * A stamp beside them records the release and archive hash installed,
+ * so the download is skipped only while both binaries exist and the stamp matches the manifest.
  *
  * Usage: `node scripts/fetch-ffmpeg/index.ts [triple] [--force]`
  */
@@ -34,16 +39,31 @@ await main(process.argv.slice(2));
 async function main(args: string[]): Promise<void> {
   const force = args.includes("--force");
   const triple = args.find((arg) => !arg.startsWith("--")) ?? hostTriple();
+  const entry = readManifestEntry(triple);
   const outputs = binaryNames.map((name) => sidecarPath(name, triple));
-  if (!force && outputs.every((path) => existsSync(path))) {
+  if (!force && isCurrent(entry, triple, outputs)) {
     console.log(
-      `ffmpeg binaries for ${triple} already exist; pass --force to refetch`,
+      `ffmpeg binaries for ${triple} from ${entry.release} already exist; pass --force to refetch`,
     );
     printPaths(outputs);
     return;
   }
-  await fetchIntoOutputDir(readManifestEntry(triple), triple);
+  await fetchIntoOutputDir(entry, triple);
   printPaths(outputs);
+}
+
+function isCurrent(
+  entry: ManifestEntry,
+  triple: string,
+  outputs: string[],
+): boolean {
+  const stampPath = installStampPath(triple);
+  const stampText = existsSync(stampPath)
+    ? readFileSync(stampPath, "utf-8")
+    : null;
+  return (
+    outputs.every((path) => existsSync(path)) && isInstalled(entry, stampText)
+  );
 }
 
 async function fetchIntoOutputDir(
@@ -51,6 +71,7 @@ async function fetchIntoOutputDir(
   triple: string,
 ): Promise<void> {
   const workDir = mkdtempSync(join(tmpdir(), "fetch-ffmpeg-"));
+  rmSync(installStampPath(triple), { force: true });
   try {
     const archive = join(workDir, `ffmpeg.${entry.archive}`);
     console.log(`downloading ${entry.url}`);
@@ -63,6 +84,7 @@ async function fetchIntoOutputDir(
         sidecarPath(name, triple),
       );
     }
+    writeFileSync(installStampPath(triple), formatInstallStamp(entry));
   } finally {
     rmSync(workDir, { recursive: true, force: true });
   }
@@ -82,6 +104,11 @@ function installBinary(source: string, destination: string): void {
 function sidecarPath(name: string, triple: string): string {
   const suffix = triple.includes("windows") ? ".exe" : "";
   return join(outputDir, `easyimmerse-${name}-${triple}${suffix}`);
+}
+
+/** The stamp's name matches no `externalBin` entry, so Tauri does not bundle it. */
+function installStampPath(triple: string): string {
+  return join(outputDir, `fetch-ffmpeg-${triple}.json`);
 }
 
 function printPaths(paths: string[]): void {
