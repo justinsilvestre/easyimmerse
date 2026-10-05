@@ -7,6 +7,7 @@ import {
   Globe,
   X,
 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { IconButton } from "../components/IconButton.tsx";
@@ -16,11 +17,13 @@ import {
   type DictionaryItem,
   dictionaryFormatLabels,
 } from "./dictionaryItem.ts";
+import { RemoveDictionaryDialog } from "./RemoveDictionaryDialog.tsx";
 import { TableColumnsDialog } from "./TableColumnsDialog.tsx";
 
 /**
  * The dictionaries settings: every dictionary the user has added, and the ways to add one.
  * The registry button, the checkboxes and the order arrows show only when their handlers are given.
+ * Removing a dictionary asks for confirmation before `onRemove` is called.
  */
 export function DictionariesView({
   dictionaries,
@@ -60,6 +63,8 @@ export function DictionariesView({
   onImportTable: (layout: TableLayout) => void;
   onCancelTable: () => void;
 }) {
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const removing = dictionaries.find(({ id }) => id === removingId);
   const isAdding = addingFile !== null;
   const addButtons = (
     <>
@@ -130,7 +135,7 @@ export function DictionariesView({
           dictionaries={dictionaries}
           onToggle={onToggle}
           onMove={onMove}
-          onRemove={onRemove}
+          onRemove={setRemovingId}
         />
       )}
       {onMove && (
@@ -138,6 +143,16 @@ export function DictionariesView({
           When more than one dictionary is enabled for a language, the pop-up
           shows their entries in the order listed.
         </p>
+      )}
+      {removing && (
+        <RemoveDictionaryDialog
+          title={removing.title}
+          onRemove={() => {
+            setRemovingId(null);
+            onRemove(removing.id);
+          }}
+          onCancel={() => setRemovingId(null)}
+        />
       )}
       {pendingTable && (
         <TableColumnsDialog

@@ -106,16 +106,66 @@ describe("DictionariesScreen", () => {
     });
   });
 
-  it("removes a dictionary", async () => {
-    const { client } = renderScreen();
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: "Remove German-English Wiktionary",
-      }),
-    );
-    await vi.waitFor(() =>
-      expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toHaveLength(1),
-    );
+  describe("when Remove is clicked", () => {
+    async function pressRemove() {
+      const rendered = renderScreen();
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "Remove German-English Wiktionary",
+        }),
+      );
+      return rendered;
+    }
+
+    it("asks for confirmation, naming the dictionary", async () => {
+      await pressRemove();
+      expect(
+        screen.getByRole("dialog", {
+          name: "Remove German-English Wiktionary?",
+        }),
+      ).toBeDefined();
+    });
+
+    it("says that the removal cannot be undone", async () => {
+      await pressRemove();
+      expect(screen.getByRole("dialog").textContent).toContain(
+        "cannot be undone",
+      );
+    });
+
+    it("focuses Cancel", async () => {
+      await pressRemove();
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "Cancel" }),
+      );
+    });
+
+    it("removes nothing until confirmed", async () => {
+      const { client } = await pressRemove();
+      expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toEqual([]);
+    });
+
+    it("removes the dictionary once confirmed", async () => {
+      const { client } = await pressRemove();
+      fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+      await vi.waitFor(() =>
+        expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toHaveLength(
+          1,
+        ),
+      );
+    });
+
+    it("closes the question on Cancel", async () => {
+      await pressRemove();
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("removes nothing when cancelled", async () => {
+      const { client } = await pressRemove();
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toEqual([]);
+    });
   });
 
   it("has the server import a file the desktop app picked from its path", async () => {
