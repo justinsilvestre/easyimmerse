@@ -9,7 +9,12 @@ import {
 export function ContentText({ text }: { text: string }) {
   const { isPlainText, onWordClick } = useDefinitionContext();
   if (isPlainText) return text;
-  return <ClickableText text={text} onWordClick={onWordClick} />;
+  return (
+    <ClickableText
+      text={text}
+      gestures={{ onWordClick: (hit) => onWordClick(hit.word) }}
+    />
+  );
 }
 
 /** Renders definition content whose words are not clickable, such as a link's text or a reading above a word. */

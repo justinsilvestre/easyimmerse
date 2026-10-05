@@ -28,7 +28,7 @@ export function KanjiCard({
         <p>
           <ClickableText
             text={entry.meanings.join(", ")}
-            onWordClick={onWordClick}
+            gestures={{ onWordClick: (hit) => onWordClick(hit.word) }}
           />
         </p>
         <FrequencyList frequencies={result.frequencies} />

@@ -153,9 +153,7 @@ export function MediaScreen({
       playerCallbacks={playerCallbacks}
       onBack={() => dispatch(actions.closeMedia())}
       activeWord={lookup.activeWord}
-      onWordHover={() => undefined}
-      onWordClick={lookup.lookUpWord}
-      onWordDoubleClick={lookup.startFlashcardFromWord}
+      wordGestures={lookup.wordGestures}
       onLookup={lookup.openSearch}
       onAddFlashcard={() => startFlashcard("")}
       lookup={lookup.popupProps && <DictionaryPopup {...lookup.popupProps} />}
@@ -191,8 +189,7 @@ export function MediaScreen({
             currentMs={currentMs}
             flashcardCueIndexes={flashcards.cueIndexes}
             activeWord={lookup.activeWord}
-            onWordClick={lookup.lookUpWord}
-            onWordDoubleClick={lookup.startFlashcardFromWord}
+            wordGestures={lookup.wordGestures}
           />
         ) : undefined
       }

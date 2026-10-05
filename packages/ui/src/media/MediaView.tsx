@@ -11,6 +11,7 @@ import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import { languageName } from "../projects/languages.ts";
+import type { CueWordGestures } from "./cueWordGestures.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
 import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
@@ -35,10 +36,8 @@ type MediaViewProps = {
   activeWord?: string;
   playerCallbacks: PlayerCallbacks;
   onBack: () => void;
-  onWordHover: (word: string) => void;
-  /** Receives a word clicked in the subtitles over the stage, with its cue and its offset in the cue's text without markup. */
-  onWordClick: (word: string, cue: Cue, start: number) => void;
-  onWordDoubleClick?: (word: string, cue: Cue, start: number) => void;
+  /** What the user does to the words of the subtitles over the stage. */
+  wordGestures: CueWordGestures;
   onLookup: () => void;
   onAddFlashcard: () => void;
   /** Notices to show above the stage, such as the unsaved-work banner. */
@@ -85,9 +84,7 @@ export function MediaView(props: MediaViewProps) {
               display={props.subtitleDisplay}
               isRaised={showsControls}
               activeWord={props.activeWord}
-              onWordHover={props.onWordHover}
-              onWordClick={props.onWordClick}
-              onWordDoubleClick={props.onWordDoubleClick}
+              wordGestures={props.wordGestures}
             />
             {props.lookup && (
               <div className="fixed inset-x-2 top-16 bottom-2 z-30 flex items-end justify-center md:absolute md:inset-x-auto md:top-auto md:bottom-28 md:left-1/2 md:-translate-x-1/2">

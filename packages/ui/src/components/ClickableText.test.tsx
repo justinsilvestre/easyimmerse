@@ -46,22 +46,10 @@ describe("ClickableText", () => {
     render(
       <ClickableText
         text="Ich rufe an."
-        onWordClick={(word, start) => clicks.push([word, start])}
+        gestures={{ onWordClick: (hit) => clicks.push([hit.word, hit.start]) }}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "rufe" }));
     expect(clicks).toEqual([["rufe", 4]]);
-  });
-
-  it("passes a double-clicked word", () => {
-    const doubleClicks: string[] = [];
-    render(
-      <ClickableText
-        text="Ich rufe an."
-        onWordDoubleClick={(word) => doubleClicks.push(word)}
-      />,
-    );
-    fireEvent.doubleClick(screen.getByRole("button", { name: "an" }));
-    expect(doubleClicks).toEqual(["an"]);
   });
 });

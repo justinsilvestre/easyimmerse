@@ -43,6 +43,13 @@ import {
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { MediaScreen } from "./MediaScreen.tsx";
 
+/** Fires what a browser fires for a double-click: two clicks counting up, then dblclick. */
+function doubleClick(element: HTMLElement) {
+  fireEvent.click(element, { detail: 1 });
+  fireEvent.click(element, { detail: 2 });
+  fireEvent.doubleClick(element, { detail: 2 });
+}
+
 afterEach(() => {
   cleanup();
   resetBackend();
@@ -193,7 +200,7 @@ async function startFlashcardBeforeProbe(hasPictures: boolean) {
   const { capturer, answer } = createWaitingFrameCapturer();
   const rendered = renderBrowserVideoScreen(file, capturer);
   const list = await findSubtitles();
-  fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
+  doubleClick(within(list).getByRole("button", { name: "cat" }));
   answer(hasPictures);
   await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(hasPictures));
   // The screen learns the answer only after the probe's own callback, which may run after the check above.
@@ -219,7 +226,7 @@ async function savedScreenshotOfNewFlashcard(
   client: ReturnType<typeof createFakeBackendClient>,
 ) {
   const list = await findSubtitles();
-  fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
+  doubleClick(within(list).getByRole("button", { name: "cat" }));
   return saveOpenFlashcard(client);
 }
 
@@ -504,7 +511,7 @@ describe("MediaScreen", () => {
   it("opens the flashcard editor with a word double-clicked in the subtitles", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
+    doubleClick(within(list).getByRole("button", { name: "cat" }));
     expect(
       (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
     ).toBe("cat");
@@ -513,7 +520,7 @@ describe("MediaScreen", () => {
   it("takes a new flashcard's sentence from the cue whose word was double-clicked", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    fireEvent.doubleClick(within(list).getByRole("button", { name: "dog" }));
+    doubleClick(within(list).getByRole("button", { name: "dog" }));
     expect(
       (screen.getByLabelText("Sentence (de)") as HTMLTextAreaElement).value,
     ).toBe("The dog wants to eat.\nIt is hungry.");
@@ -522,7 +529,7 @@ describe("MediaScreen", () => {
   it("saves a new flashcard in the project", async () => {
     const { client } = renderMediaScreen();
     const list = await findSubtitles();
-    fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
+    doubleClick(within(list).getByRole("button", { name: "cat" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await vi.waitFor(() =>
       expect(
@@ -536,7 +543,7 @@ describe("MediaScreen", () => {
   it("tells the user once the flashcard is saved", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
+    doubleClick(within(list).getByRole("button", { name: "cat" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(
       await screen.findByText("Flashcard saved to the project."),
@@ -630,7 +637,7 @@ describe("MediaScreen", () => {
 
     it("moves the clip of a new flashcard that is not saved yet", async () => {
       const { client } = await renderWithWaveform();
-      fireEvent.doubleClick(
+      doubleClick(
         within(screen.getByRole("list", { name: "Subtitles" })).getByRole(
           "button",
           { name: "cat" },
@@ -659,7 +666,7 @@ describe("MediaScreen", () => {
     it("shows the screenshot captured from the file", async () => {
       renderBrowserVideoScreen(browserVideo());
       const list = await findSubtitles();
-      fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
+      doubleClick(within(list).getByRole("button", { name: "cat" }));
       const thumbnail = await screen.findByAltText("Screenshot from the video");
       expect(thumbnail.getAttribute("src")).toBe("frame-at-1");
     });
@@ -686,7 +693,7 @@ describe("MediaScreen", () => {
       const { capturer } = createWaitingFrameCapturer();
       renderBrowserVideoScreen(browserVideo(), capturer);
       const list = await findSubtitles();
-      fireEvent.doubleClick(within(list).getByRole("button", { name: "cat" }));
+      doubleClick(within(list).getByRole("button", { name: "cat" }));
       expect(screen.queryByLabelText("Include the screenshot")).toBeNull();
     });
 

@@ -128,8 +128,7 @@ function subtitlesPanel(
         activeCueIndex={3}
         flashcardCueIndexes={exampleFlashcardCueIndexes}
         onSeek={fn()}
-        onWordHover={fn()}
-        onWordClick={fn()}
+        wordGestures={{ onWordClick: fn(), onWordDoubleClick: fn() }}
         onAddSubtitlesFile={fn()}
         onGenerateSubtitles={fn()}
       />
@@ -183,9 +182,12 @@ const meta = {
       onToggleDistractionFree: fn(),
     },
     onBack: fn(),
-    onWordHover: fn(),
-    onWordClick: fn(),
-    onWordDoubleClick: fn(),
+    wordGestures: {
+      onWordClick: fn(),
+      onWordDoubleClick: fn(),
+      onWordHoverIntent: fn(),
+      onWordHold: fn(),
+    },
     onLookup: fn(),
     onAddFlashcard: fn(),
     sidePanel: subtitlesPanel(),

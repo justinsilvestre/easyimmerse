@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Button } from "../components/Button.tsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
+import { type CueWordGestures, gesturesForCue } from "./cueWordGestures.ts";
 import { findTranslationOf } from "./findCue.ts";
 import { formatTimestamp } from "./formatTimestamp.ts";
 
@@ -16,9 +17,7 @@ export function CuePanel({
   flashcardCueIndexes,
   activeWord,
   onSeek,
-  onWordHover,
-  onWordClick,
-  onWordDoubleClick,
+  wordGestures,
   onAddSubtitlesFile,
   onGenerateSubtitles,
 }: {
@@ -28,10 +27,8 @@ export function CuePanel({
   flashcardCueIndexes: readonly number[];
   activeWord?: string;
   onSeek: (ms: number) => void;
-  onWordHover: (word: string) => void;
-  /** Receives the clicked word with the cue it was clicked in and its offset in the cue's text without markup. */
-  onWordClick: (word: string, cue: Cue, start: number) => void;
-  onWordDoubleClick?: (word: string, cue: Cue, start: number) => void;
+  /** What the user does to the words of each cue. */
+  wordGestures: CueWordGestures;
   onAddSubtitlesFile: () => void;
   onGenerateSubtitles: () => void;
 }) {
@@ -79,9 +76,7 @@ export function CuePanel({
           hasFlashcard={flashcardCueIndexes.includes(cue.index)}
           activeWord={activeWord}
           onSeek={onSeek}
-          onWordHover={onWordHover}
-          onWordClick={onWordClick}
-          onWordDoubleClick={onWordDoubleClick}
+          wordGestures={wordGestures}
         />
       ))}
     </ol>
@@ -95,9 +90,7 @@ function CueCard({
   hasFlashcard,
   activeWord,
   onSeek,
-  onWordHover,
-  onWordClick,
-  onWordDoubleClick,
+  wordGestures,
 }: {
   cue: Cue;
   translation: Cue | null;
@@ -105,9 +98,8 @@ function CueCard({
   hasFlashcard: boolean;
   activeWord?: string;
   onSeek: (ms: number) => void;
-  onWordHover: (word: string) => void;
-  onWordClick: (word: string, cue: Cue, start: number) => void;
-  onWordDoubleClick?: (word: string, cue: Cue, start: number) => void;
+  /** What the user does to the words of each cue. */
+  wordGestures: CueWordGestures;
 }) {
   const ref = useRef<HTMLLIElement>(null);
   useEffect(() => {
@@ -144,11 +136,7 @@ function CueCard({
         <ClickableText
           text={stripMarkup(cue.text)}
           activeWord={activeWord}
-          onWordHover={onWordHover}
-          onWordClick={(word, start) => onWordClick(word, cue, start)}
-          onWordDoubleClick={(word, start) =>
-            onWordDoubleClick?.(word, cue, start)
-          }
+          gestures={gesturesForCue(wordGestures, cue)}
         />
       </p>
       {translation && (

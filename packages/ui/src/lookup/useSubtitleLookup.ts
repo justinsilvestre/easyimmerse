@@ -3,6 +3,7 @@ import type { ComponentProps, RefObject } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { usePlaybackPause } from "../hooks/usePlaybackPause.ts";
+import type { CueWordGestures } from "../media/cueWordGestures.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import {
@@ -83,16 +84,16 @@ export function useSubtitleLookup(
     activeWord: lookup.request?.term,
     popupProps,
     openSearch,
-    lookUpWord: (word: string, cue: Cue, start: number) => {
-      pause.pause();
-      lookup.chooseWord({
-        term: word,
-        lookup: lookupTextAt(stripMarkup(cue.text), start),
-        cue,
-      });
-    },
-    /** Skips the pop-up and starts a flashcard for the word at once. */
-    startFlashcardFromWord: (word: string, cue: Cue) =>
-      endInFlashcard(word, cue, null),
+    wordGestures: {
+      onWordClick: ({ word, start }, cue) => {
+        pause.pause();
+        lookup.chooseWord({
+          term: word,
+          lookup: lookupTextAt(stripMarkup(cue.text), start),
+          cue,
+        });
+      },
+      onWordDoubleClick: ({ word }, cue) => endInFlashcard(word, cue, null),
+    } satisfies CueWordGestures,
   };
 }
