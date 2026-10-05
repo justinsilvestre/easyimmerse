@@ -10,24 +10,16 @@ import {
   type EditorState,
   reduceEditor,
 } from "./editFlashcard.ts";
+import {
+  isAwaitingLookup,
+  isSending,
+  type SaveStage,
+  stageAfterLookup,
+  stageAfterSaveRequest,
+} from "./saveStage.ts";
 
 /** The waveform segment id of a new flashcard, which has no id of its own until it is saved. */
 export const newFlashcardSegmentId = "new";
-
-/**
- * Where the open card stands on its way to being saved:
- * - `editing`: open for changes;
- * - `awaitingLookup`: a new card whose word's lookup has yet to answer, after the editor opened without it;
- * - `awaitingLookupToSave`: the same, with a save the user asked for waiting until the lookup answers, fails or takes too long;
- * - `readyToSend`: a save the user asked for, to be sent;
- * - `sending`: a save on its way, during which Save does nothing.
- */
-export type SaveStage =
-  | "editing"
-  | "awaitingLookup"
-  | "awaitingLookupToSave"
-  | "readyToSend"
-  | "sending";
 
 /** The flashcard open in the editor, one not saved yet or one the project holds, with the editor's unsaved changes to it. */
 export type EditedFlashcard =
@@ -127,32 +119,6 @@ export function sourceOf(edited: EditedFlashcard): FlashcardSource {
   return edited.kind === "new" ? edited.draft : edited.flashcard;
 }
 
-/** Tells the editor whether its save waits for definitions, is under way, or is free to ask for. */
-export function saveStatusOf(
-  edited: EditedFlashcard,
-): "idle" | "waitingForDefinitions" | "saving" {
-  switch (edited.stage) {
-    case "editing":
-    case "awaitingLookup":
-      return "idle";
-    case "awaitingLookupToSave":
-      return "waitingForDefinitions";
-    case "readyToSend":
-    case "sending":
-      return "saving";
-  }
-}
-
-function isSending(stage: SaveStage): boolean {
-  return stage === "readyToSend" || stage === "sending";
-}
-
-function stageAfterSaveRequest(stage: SaveStage): SaveStage {
-  if (stage === "editing") return "readyToSend";
-  if (stage === "awaitingLookup") return "awaitingLookupToSave";
-  return stage;
-}
-
 type NewFlashcard = Extract<EditedFlashcard, { kind: "new" }>;
 
 function isAwaitingLookupOf(
@@ -162,17 +128,12 @@ function isAwaitingLookupOf(
   return (
     edited?.kind === "new" &&
     edited.draft === draft &&
-    (edited.stage === "awaitingLookup" ||
-      edited.stage === "awaitingLookupToSave")
+    isAwaitingLookup(edited.stage)
   );
 }
 
-/** Ends the wait for a lookup, sending a save that waited for it. */
 function settleLookup(edited: NewFlashcard): EditedFlashcard {
-  return withStage(
-    edited,
-    edited.stage === "awaitingLookupToSave" ? "readyToSend" : "editing",
-  );
+  return withStage(edited, stageAfterLookup(edited.stage));
 }
 
 function withStage(edited: EditedFlashcard, stage: SaveStage): EditedFlashcard {

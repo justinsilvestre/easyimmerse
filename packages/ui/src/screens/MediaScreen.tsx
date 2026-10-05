@@ -3,9 +3,9 @@ import type { Cue, Project } from "@easyimmerse/types";
 import { useReducer, useRef } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
-import { saveStatusOf } from "../flashcards/editedFlashcard.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
+import { saveStatusOf } from "../flashcards/saveStage.ts";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
@@ -191,7 +191,7 @@ export function MediaScreen({
             languages={languages}
             waveform={clipWaveform}
             screenshotUrl={screenshotUrl}
-            saveStatus={saveStatusOf(flashcards.edited)}
+            saveStatus={saveStatusOf(flashcards.edited.stage)}
             onSave={flashcards.save}
             onDelete={flashcards.remove}
             onClose={flashcards.close}

@@ -35,7 +35,10 @@ export function useFlashcardSaving(
       : null;
   const giveUp = useTimer();
   useEffect(() => {
-    if (waitingDraft === null) return giveUp.cancel();
+    if (waitingDraft === null) {
+      giveUp.cancel();
+      return;
+    }
     giveUp.restart(saveLookupWaitMs, () =>
       dispatchEdited({ type: "lookupFailed", draft: waitingDraft }),
     );
