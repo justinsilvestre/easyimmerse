@@ -8,7 +8,8 @@ use crate::dictionary::FrequencyMode;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ResultSortKey {
     pub matched_length: usize,
-    /// Whether an entry in the result has the matched text as its term, reading or an alternate, without folding its case.
+    /// Whether an entry in the result has the searched form as its term, reading or an alternate, without folding its case.
+    /// The searched form is the dictionary form that deinflection reached, or the matched text when nothing was undone.
     pub matches_exactly: bool,
     pub inflection_count: usize,
     /// Whether the only inflection undone takes a word back from a bare form, as from 書き or 書け to 書く.
@@ -25,7 +26,8 @@ pub struct ResultSortKey {
 impl ResultSortKey {
     /// Orders keys from the best result to the worst. Among matches of the same length:
     ///
-    /// 1. A result spelled exactly as the matched text ranks first, as Maße does before Masse when Maße is looked up.
+    /// 1. A result spelled exactly as the searched form ranks above one found only by folding case,
+    ///    as Maße does before Masse when Maße is looked up.
     /// 2. A one-character match with inflections undone, such as し reached from する, ranks last.
     /// 3. Unchanged matches and bare forms rank above every other inflected match,
     ///    so that 動かす as listed ranks above 動く, which it may also be a causative of.
@@ -307,7 +309,7 @@ mod tests {
         }
 
         #[test]
-        fn ranks_an_exact_match_before_a_more_common_one() {
+        fn ranks_an_exact_match_before_a_more_common_folded_one() {
             let exact = ResultSortKey {
                 matches_exactly: true,
                 ..key(4, 0, Some(900.0))
@@ -316,7 +318,7 @@ mod tests {
         }
 
         #[test]
-        fn ranks_an_exact_match_before_a_bare_stem() {
+        fn ranks_an_exact_match_before_a_folded_bare_form() {
             let exact = ResultSortKey {
                 matches_exactly: true,
                 ..key(2, 0, Some(900.0))

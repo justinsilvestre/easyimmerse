@@ -65,11 +65,11 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
 }
 
 fn matches_exactly(group: &ResultGroup) -> bool {
-    let matched_text = group.candidate.matched_text.as_str();
+    let searched = group.candidate.deinflection.term.as_str();
     group
         .entries
         .iter()
-        .any(|found| found.entry.headwords().contains(&matched_text))
+        .any(|found| found.entry.headwords().contains(&searched))
 }
 
 fn commonness(term_meta: &[&FoundTermMeta]) -> Commonness {
@@ -187,14 +187,14 @@ mod tests {
     }
 
     #[test]
-    fn ranks_an_exact_match_before_a_more_common_stem_of_equal_length() {
+    fn ranks_the_more_common_of_two_matches_of_equal_length_first() {
         let candidates = lookup_candidates("書きながら", "ja");
         let meta = vec![
             frequency(9, "書き", "かき", 20_000.0),
             frequency(9, "書く", "かく", 800.0),
         ];
         let results = build_lookup_results(&candidates, kaki_entries(), &meta);
-        assert_eq!(terms(&results), vec!["書き", "書く"]);
+        assert_eq!(terms(&results), vec!["書く", "書き"]);
     }
 
     #[test]
