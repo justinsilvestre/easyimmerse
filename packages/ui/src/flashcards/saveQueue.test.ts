@@ -1,6 +1,6 @@
 import type { Flashcard } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import { reduceEditedFlashcard } from "./editedFlashcard.ts";
+import { createCardSession, reduceEditedFlashcard } from "./editedFlashcard.ts";
 import { exampleFlashcard } from "./exampleFlashcard.ts";
 import { createSaveQueue } from "./saveQueue.ts";
 
@@ -16,7 +16,11 @@ const flashcard: Flashcard = {
 };
 
 function opening() {
-  const opened = reduceEditedFlashcard(null, { type: "opened", flashcard });
+  const opened = reduceEditedFlashcard(null, {
+    type: "opened",
+    flashcard,
+    session: createCardSession(),
+  });
   if (opened === null) throw new Error("The flashcard did not open.");
   return opened;
 }

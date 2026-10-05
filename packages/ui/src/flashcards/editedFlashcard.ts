@@ -46,10 +46,15 @@ export type EditedFlashcard =
 
 export type EditedFlashcardAction =
   /** A new flashcard opens, perhaps before the lookup of its word has answered. */
-  | { type: "started"; draft: FlashcardDraft; awaitsLookup?: boolean }
-  | { type: "opened"; flashcard: Flashcard }
+  | {
+      type: "started";
+      draft: FlashcardDraft;
+      awaitsLookup?: boolean;
+      session: CardSession;
+    }
+  | { type: "opened"; flashcard: Flashcard; session: CardSession }
   /** A card that left the editor comes back to it with its edits, as when a discard is undone or a failed save reopened. */
-  | { type: "restored"; card: EditedFlashcard }
+  | { type: "restored"; card: EditedFlashcard; session: CardSession }
   | { type: "edited"; action: EditorAction }
   /** The lookup of the new flashcard started from `draft` has answered after the editor opened. */
   | {
@@ -74,6 +79,11 @@ export type EditedFlashcardAction =
  */
 export type CardSession = symbol;
 
+/** Creates the session of a new opening, to be carried by the action that opens the card. */
+export function createCardSession(): CardSession {
+  return Symbol("flashcard opening");
+}
+
 export function reduceEditedFlashcard(
   edited: EditedFlashcard | null,
   action: EditedFlashcardAction,
@@ -87,7 +97,7 @@ export function reduceEditedFlashcard(
         typedFields: [],
         stage: action.awaitsLookup ? "awaitingLookup" : "editing",
         isChanged: false,
-        session: Symbol("new flashcard"),
+        session: action.session,
       };
     case "opened":
       return {
@@ -96,13 +106,13 @@ export function reduceEditedFlashcard(
         editor: editorStateOf(action.flashcard),
         stage: "editing",
         isChanged: false,
-        session: Symbol("saved flashcard"),
+        session: action.session,
       };
     case "restored":
       return {
         ...action.card,
         stage: "editing",
-        session: Symbol("restored flashcard"),
+        session: action.session,
       };
     case "edited":
       // The editor is read-only once Save is pressed, so that what is saved is what the user saw.

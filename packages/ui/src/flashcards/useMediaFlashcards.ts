@@ -5,6 +5,7 @@ import { useEffect, useReducer } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import {
+  createCardSession,
   flashcardsOnWaveform,
   reduceEditedFlashcard,
 } from "./editedFlashcard.ts";
@@ -45,7 +46,9 @@ export function useMediaFlashcards(
   const edit = (action: EditorAction) =>
     dispatchEdited({ type: "edited", action });
   const saving = useFlashcardSaving(edited, dispatchEdited, requests, (card) =>
-    replaceOpenCard(() => dispatchEdited({ type: "restored", card })),
+    replaceOpenCard(() =>
+      dispatchEdited({ type: "restored", card, session: createCardSession() }),
+    ),
   );
   /** Replaces the open card in the editor by calling `openNext`, after the card open there has been dealt with as it leaves. */
   const replaceOpenCard = (openNext: () => void) => {
@@ -74,7 +77,12 @@ export function useMediaFlashcards(
       saving.dismissSaved();
       if (lateFields) saving.rememberLookup(draft, lateFields);
       replaceOpenCard(() =>
-        dispatchEdited({ type: "started", draft, awaitsLookup: !!lateFields }),
+        dispatchEdited({
+          type: "started",
+          draft,
+          awaitsLookup: !!lateFields,
+          session: createCardSession(),
+        }),
       );
       const fail = () => dispatchEdited({ type: "lookupFailed", draft });
       lateFields?.then(
@@ -89,7 +97,13 @@ export function useMediaFlashcards(
     open: (id: string) => {
       const flashcard = flashcards.find((card) => card.id === id);
       if (flashcard)
-        replaceOpenCard(() => dispatchEdited({ type: "opened", flashcard }));
+        replaceOpenCard(() =>
+          dispatchEdited({
+            type: "opened",
+            flashcard,
+            session: createCardSession(),
+          }),
+        );
     },
     /** Closes the open card without saving it; a changed one can be brought back from the notice's Undo. */
     close: () => {

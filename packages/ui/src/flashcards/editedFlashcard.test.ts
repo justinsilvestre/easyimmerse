@@ -1,6 +1,7 @@
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import {
+  createCardSession,
   type EditedFlashcard,
   type EditedFlashcardAction,
   flashcardsOnWaveform,
@@ -33,7 +34,11 @@ function createDraft(): FlashcardDraft {
 }
 
 function openedFlashcard(flashcard = createFlashcard("f1")): EditedFlashcard {
-  const opened = reduceEditedFlashcard(null, { type: "opened", flashcard });
+  const opened = reduceEditedFlashcard(null, {
+    type: "opened",
+    flashcard,
+    session: createCardSession(),
+  });
   if (opened === null) throw new Error("The flashcard did not open.");
   return opened;
 }
@@ -41,9 +46,32 @@ function openedFlashcard(flashcard = createFlashcard("f1")): EditedFlashcard {
 const movedClip = { start_ms: 1000, end_ms: 3000 };
 
 describe("reduceEditedFlashcard", () => {
+  it("gives a started card the session its action carries", () => {
+    const session = createCardSession();
+    expect(
+      reduceEditedFlashcard(null, {
+        type: "started",
+        draft: createDraft(),
+        session,
+      })?.session,
+    ).toBe(session);
+  });
+
+  it("gives an opened card the session its action carries", () => {
+    const session = createCardSession();
+    expect(
+      reduceEditedFlashcard(null, {
+        type: "opened",
+        flashcard: createFlashcard("f1"),
+        session,
+      })?.session,
+    ).toBe(session);
+  });
+
   it("starts editing a draft with its content", () => {
     const edited = reduceEditedFlashcard(null, {
       type: "started",
+      session: createCardSession(),
       draft: createDraft(),
     });
     expect(edited?.editor.content.word).toBe("Katze");
@@ -52,6 +80,7 @@ describe("reduceEditedFlashcard", () => {
   it("starts editing a draft with its included fields", () => {
     const edited = reduceEditedFlashcard(null, {
       type: "started",
+      session: createCardSession(),
       draft: createDraft(),
     });
     expect(edited?.editor.includedFields).toEqual(["word", "tags"]);
@@ -92,6 +121,7 @@ describe("segmentIdOf", () => {
   it("gives a new flashcard the id reserved for it", () => {
     const edited = reduceEditedFlashcard(null, {
       type: "started",
+      session: createCardSession(),
       draft: createDraft(),
     });
     expect(edited && segmentIdOf(edited)).toBe(newFlashcardSegmentId);
@@ -121,6 +151,7 @@ describe("flashcardsOnWaveform", () => {
   it("draws a new flashcard after the saved ones", () => {
     const edited = reduceEditedFlashcard(null, {
       type: "started",
+      session: createCardSession(),
       draft: createDraft(),
     });
     expect(
@@ -133,6 +164,7 @@ describe("reduceEditedFlashcard on screenshotsAvailable", () => {
   const startDraft = (content: Partial<FlashcardDraft["content"]>) =>
     reduceEditedFlashcard(null, {
       type: "started",
+      session: createCardSession(),
       draft: {
         ...createDraft(),
         content: { ...createDraft().content, ...content },
@@ -178,12 +210,17 @@ describe("reduceEditedFlashcard on screenshotsAvailable", () => {
 });
 
 function startedFrom(draft: FlashcardDraft) {
-  return reduceEditedFlashcard(null, { type: "started", draft });
+  return reduceEditedFlashcard(null, {
+    type: "started",
+    draft,
+    session: createCardSession(),
+  });
 }
 
 function awaiting(draft: FlashcardDraft) {
   return reduceEditedFlashcard(null, {
     type: "started",
+    session: createCardSession(),
     draft,
     awaitsLookup: true,
   });
@@ -372,7 +409,11 @@ describe("reduceEditedFlashcard on its way to being saved", () => {
 
   it("leaves open a card started after the one that was saved", () => {
     const sending = sendingFrom(startedFrom(createDraft()));
-    const later = reduceAll(sending, { type: "started", draft: createDraft() });
+    const later = reduceAll(sending, {
+      type: "started",
+      draft: createDraft(),
+      session: createCardSession(),
+    });
     expect(
       reduceAll(later, { type: "saved", session: sessionOf(sending) }),
     ).toBe(later);
@@ -381,9 +422,17 @@ describe("reduceEditedFlashcard on its way to being saved", () => {
   it("leaves open a saved card reopened while an earlier save of it was under way", () => {
     const flashcard = createFlashcard("f1");
     const sending = sendingFrom(
-      reduceEditedFlashcard(null, { type: "opened", flashcard }),
+      reduceEditedFlashcard(null, {
+        type: "opened",
+        flashcard,
+        session: createCardSession(),
+      }),
     );
-    const reopened = reduceAll(sending, { type: "opened", flashcard });
+    const reopened = reduceAll(sending, {
+      type: "opened",
+      flashcard,
+      session: createCardSession(),
+    });
     expect(
       reduceAll(reopened, { type: "saved", session: sessionOf(sending) }),
     ).toBe(reopened);
@@ -518,7 +567,11 @@ describe("reduceEditedFlashcard on restored", () => {
 
   function restore(card: EditedFlashcard | null) {
     if (card === null) throw new Error("No flashcard to restore.");
-    return reduceAll(startedFrom(createDraft()), { type: "restored", card });
+    return reduceAll(startedFrom(createDraft()), {
+      type: "restored",
+      card,
+      session: createCardSession(),
+    });
   }
 
   it("puts the card back with its edits", () => {
@@ -536,8 +589,12 @@ describe("reduceEditedFlashcard on restored", () => {
     expect(restore(sending)?.stage).toBe("editing");
   });
 
-  it("gives the card a session of its own, apart from the one it had", () => {
+  it("gives the card the session its action carries", () => {
     const changed = reduceAll(startedFrom(createDraft()), typeDefinition);
-    expect(restore(changed)?.session).not.toBe(changed?.session);
+    if (changed === null) throw new Error("No flashcard to restore.");
+    const session = createCardSession();
+    expect(
+      reduceAll(null, { type: "restored", card: changed, session })?.session,
+    ).toBe(session);
   });
 });
