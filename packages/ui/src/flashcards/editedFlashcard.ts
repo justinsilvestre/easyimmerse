@@ -1,4 +1,9 @@
-import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
+import type {
+  Flashcard,
+  FlashcardDraft,
+  FlashcardFieldKey,
+} from "@easyimmerse/types";
+import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { screenshotForClip } from "./draftFromCue.ts";
 import {
   type EditorAction,
@@ -11,13 +16,25 @@ export const newFlashcardSegmentId = "new";
 
 /** The flashcard open in the editor, one not saved yet or one the project holds, with the editor's unsaved changes to it. */
 export type EditedFlashcard =
-  | { kind: "new"; draft: FlashcardDraft; editor: EditorState }
+  | {
+      kind: "new";
+      draft: FlashcardDraft;
+      editor: EditorState;
+      /** The text fields the user has typed in, which a late lookup leaves alone. */
+      typedFields: readonly FlashcardFieldKey[];
+    }
   | { kind: "existing"; flashcard: Flashcard; editor: EditorState };
 
 export type EditedFlashcardAction =
   | { type: "started"; draft: FlashcardDraft }
   | { type: "opened"; flashcard: Flashcard }
   | { type: "edited"; action: EditorAction }
+  /** The lookup of the new flashcard started from `draft` has answered after the editor opened. */
+  | {
+      type: "lookupAnswered";
+      draft: FlashcardDraft;
+      fields: LookupFlashcardFields;
+    }
   /** The media file has turned out to show pictures, so a new flashcard started before then can have a screenshot. */
   | { type: "screenshotsAvailable" }
   | { type: "closed" };
@@ -32,6 +49,7 @@ export function reduceEditedFlashcard(
         kind: "new",
         draft: action.draft,
         editor: editorStateOf(action.draft),
+        typedFields: [],
       };
     case "opened":
       return {
@@ -40,17 +58,48 @@ export function reduceEditedFlashcard(
         editor: editorStateOf(action.flashcard),
       };
     case "edited":
-      return (
-        edited && {
-          ...edited,
-          editor: reduceEditor(edited.editor, action.action),
-        }
-      );
+      return edited && withEdit(edited, action.action);
+    case "lookupAnswered":
+      return edited?.kind === "new" && edited.draft === action.draft
+        ? withLookupFields(edited, action.fields)
+        : edited;
     case "screenshotsAvailable":
       return edited?.kind === "new" ? withScreenshot(edited) : edited;
     case "closed":
       return null;
   }
+}
+
+function withEdit(
+  edited: EditedFlashcard,
+  action: EditorAction,
+): EditedFlashcard {
+  const editor = reduceEditor(edited.editor, action);
+  if (edited.kind !== "new" || action.type !== "textChanged")
+    return { ...edited, editor };
+  return {
+    ...edited,
+    editor,
+    typedFields: [...new Set([...edited.typedFields, action.key])],
+  };
+}
+
+/** Fills the fields of a new flashcard from its lookup, except those the user has typed in. */
+function withLookupFields(
+  edited: Extract<EditedFlashcard, { kind: "new" }>,
+  fields: LookupFlashcardFields,
+): EditedFlashcard {
+  const untyped = Object.entries(fields).filter(
+    ([key]) => !edited.typedFields.includes(key as FlashcardFieldKey),
+  );
+  const { content } = edited.editor;
+  return {
+    ...edited,
+    editor: {
+      ...edited.editor,
+      content: { ...content, ...Object.fromEntries(untyped) },
+    },
+  };
 }
 
 function withScreenshot(

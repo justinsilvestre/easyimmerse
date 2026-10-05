@@ -12,18 +12,26 @@ import {
   type PopupHold,
   useLookupPopupControl,
 } from "./useLookupPopupControl.ts";
+import { withinTime } from "./withinTime.ts";
 
 export type { PopupHold } from "./useLookupPopupControl.ts";
 
-/** Starts a flashcard for a word from its passage, with fields filled from its lookup when one answered. */
+/**
+ * Starts a flashcard for a word from its passage, with fields filled from its lookup when one answered,
+ * or, through `lateFields`, once a lookup that was too slow to wait for answers.
+ */
 export type StartFlashcardFromLookup<S> = (
   word: string,
   source: S | null,
   lookupFields: LookupFlashcardFields | null,
+  lateFields?: Promise<LookupFlashcardFields | null>,
 ) => void;
 
-/** How long a flashcard waits for its word's lookup before it opens with what has arrived. */
+/** How long a flashcard waits for its word's lookup before it opens without it, to be filled when the lookup answers. */
 export const flashcardLookupWaitMs = 1500;
+
+/** Stands for a lookup that has not answered within `flashcardLookupWaitMs`. */
+const tooSlow = Symbol("too slow");
 
 type Languages = { target: string; translation: string };
 
@@ -56,9 +64,15 @@ export function useWordLookup<S>({
     word: string,
     source: S | null,
     lookupFields: LookupFlashcardFields | null,
+    lateFields?: Promise<LookupFlashcardFields | null>,
   ) =>
     control.leaveFor(() =>
-      startFlashcard(lookupFields?.word ?? word, source, lookupFields),
+      startFlashcard(
+        lookupFields?.word ?? word,
+        source,
+        lookupFields,
+        lateFields,
+      ),
     );
   /** Turns a word into a flashcard once its lookup answers, showing the word in the pop-up meanwhile when it comes from the text. */
   const startFlashcardFor = (request: LookupRequest<S>) => {
@@ -66,15 +80,25 @@ export function useWordLookup<S>({
     if (request.occurrence !== null && !control.showsOccurrence(request))
       control.open(request);
     const { dictionaries } = lookup;
+    const fieldsOf = (results: readonly LookupResult[] | null) =>
+      results && fieldsFrom(results, null, dictionaries);
+    const answer = lookup.lookUp(request);
     control.pending.start(
       request.term,
-      lookup.lookUpNow(request, flashcardLookupWaitMs),
+      withinTime<readonly LookupResult[] | null | typeof tooSlow>(
+        answer,
+        flashcardLookupWaitMs,
+        tooSlow,
+      ),
       (results) =>
-        endInFlashcard(
-          request.term,
-          request.source,
-          fieldsFrom(results, null, dictionaries),
-        ),
+        results === tooSlow
+          ? endInFlashcard(
+              request.term,
+              request.source,
+              null,
+              answer.then(fieldsOf),
+            )
+          : endInFlashcard(request.term, request.source, fieldsOf(results)),
     );
   };
   return {

@@ -229,6 +229,37 @@ describe("MediaScreen lookup gestures", () => {
       expect(fieldValue("Word (de)")).toBe("cat");
     });
 
+    describe("when the lookup answers after the flashcard has opened", () => {
+      const lateLookup = { slowLookups: { "cat is sleeping.": 3000 } };
+
+      it("fills the flashcard from it", async () => {
+        await doubleClickCat(lateLookup);
+        await advance(1500);
+        await advance(1500);
+        expect(fieldValue("Word (de)")).toBe("fressen");
+      });
+
+      it("leaves alone a field typed in before the answer", async () => {
+        await doubleClickCat(lateLookup);
+        await advance(1500);
+        fireEvent.change(screen.getByLabelText("Word (de)"), {
+          target: { value: "Kater" },
+        });
+        await advance(1500);
+        expect(fieldValue("Word (de)")).toBe("Kater");
+      });
+
+      it("fills the fields the user has not typed in", async () => {
+        await doubleClickCat(lateLookup);
+        await advance(1500);
+        fireEvent.change(screen.getByLabelText("Word (de)"), {
+          target: { value: "Kater" },
+        });
+        await advance(1500);
+        expect(fieldValue("Definition (en)")).toMatch(/^to eat/);
+      });
+    });
+
     it("drops the flashcard when another word is clicked before the lookup answers", async () => {
       await doubleClickCat({ unansweredLookups: ["cat is sleeping."] });
       fireEvent.click(panelWord("dog"), { detail: 1 });

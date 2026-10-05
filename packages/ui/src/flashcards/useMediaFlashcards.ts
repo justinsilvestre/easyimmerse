@@ -8,6 +8,7 @@ import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { useEffect, useReducer, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import {
   flashcardsOnWaveform,
   reduceEditedFlashcard,
@@ -101,6 +102,9 @@ export function useMediaFlashcards(
       setSaved(false);
       dispatchEdited({ type: "started", draft });
     },
+    /** Fills the new flashcard started from `draft`, if it is still open, from a lookup that answered after it opened. */
+    fillFromLookup: (draft: FlashcardDraft, fields: LookupFlashcardFields) =>
+      dispatchEdited({ type: "lookupAnswered", draft, fields }),
     open: (id: string) => {
       const flashcard = find(id);
       if (flashcard) dispatchEdited({ type: "opened", flashcard });
