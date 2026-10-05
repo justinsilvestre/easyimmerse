@@ -14,6 +14,8 @@ export type UnsavedCard = {
   retry: () => void;
   /** Takes back whatever a save of the card may have left on the server, once the user discards it. */
   discard: () => void;
+  /** The notice that tells of the card on its own, as a rejected save has, which goes once the card leaves the list. */
+  noticeId?: number;
 };
 
 export type ListedUnsavedCard = UnsavedCard & {

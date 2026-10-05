@@ -9,6 +9,8 @@ import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
 import { WordClickMemoryProvider } from "./components/wordClickMemoryContext.tsx";
+import { UnsavedCardsProvider } from "./flashcards/unsaved/UnsavedCardsContext.tsx";
+import { UnsavedCardsStatus } from "./flashcards/unsaved/UnsavedCardsStatus.tsx";
 import { useAppDispatch } from "./hooks/useAppDispatch.ts";
 import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
@@ -56,6 +58,10 @@ export function AppRoot({
   const navigationActions = {
     openSettings: () => dispatchNavigation({ type: "openSettings" }),
     openDictionaries: () => dispatchNavigation({ type: "openDictionaries" }),
+    openMediaFile: (projectId: string, mediaFileId: string) => {
+      dispatchNavigation({ type: "openProject", projectId });
+      store.dispatch(actions.openMedia(mediaFileId));
+    },
   };
   useEffect(
     () =>
@@ -67,32 +73,34 @@ export function AppRoot({
   const settingsOpen = navigation.screen === "settings";
   return (
     <Provider store={store}>
-      <NoticesProvider>
-        <PlayerRegistryContext value={playerRegistry}>
-          <BrowserFileRegistryContext value={browserFileRegistry}>
-            <NavigationActionsContext value={navigationActions}>
-              <WordClickMemoryProvider>
-                <AppearanceHandler />
-                <PreferencesLoader />
-                <div inert={settingsOpen}>
-                  <MainScreen
-                    navigation={mainScreenOf(navigation)}
-                    dispatchNavigation={dispatchNavigation}
-                  />
-                </div>
-                {navigation.screen === "settings" && (
-                  <SettingsOverlay>
-                    <SettingsPage
-                      navigation={navigation}
+      <NavigationActionsContext value={navigationActions}>
+        <UnsavedCardsProvider>
+          <NoticesProvider statusLine={<UnsavedCardsStatus />}>
+            <PlayerRegistryContext value={playerRegistry}>
+              <BrowserFileRegistryContext value={browserFileRegistry}>
+                <WordClickMemoryProvider>
+                  <AppearanceHandler />
+                  <PreferencesLoader />
+                  <div inert={settingsOpen}>
+                    <MainScreen
+                      navigation={mainScreenOf(navigation)}
                       dispatchNavigation={dispatchNavigation}
                     />
-                  </SettingsOverlay>
-                )}
-              </WordClickMemoryProvider>
-            </NavigationActionsContext>
-          </BrowserFileRegistryContext>
-        </PlayerRegistryContext>
-      </NoticesProvider>
+                  </div>
+                  {navigation.screen === "settings" && (
+                    <SettingsOverlay>
+                      <SettingsPage
+                        navigation={navigation}
+                        dispatchNavigation={dispatchNavigation}
+                      />
+                    </SettingsOverlay>
+                  )}
+                </WordClickMemoryProvider>
+              </BrowserFileRegistryContext>
+            </PlayerRegistryContext>
+          </NoticesProvider>
+        </UnsavedCardsProvider>
+      </NavigationActionsContext>
     </Provider>
   );
 }

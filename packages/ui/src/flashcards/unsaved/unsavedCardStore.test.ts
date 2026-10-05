@@ -1,42 +1,12 @@
-import type { FlashcardDraft } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import {
-  createCardSession,
-  createFlashcardId,
-  reduceEditedFlashcard,
-} from "../editedFlashcard.ts";
-import { exampleFlashcard } from "../exampleFlashcard.ts";
+import { exampleUnsavedCard } from "./exampleUnsavedCard.ts";
 import {
   createUnsavedCardStore,
   type UnsavedCard,
 } from "./unsavedCardStore.ts";
 
-const draft: FlashcardDraft = {
-  media_file_id: "m1",
-  cue_index: 1,
-  content: { ...exampleFlashcard, word: "Hund" },
-  included_fields: ["word"],
-};
-
-function unsavedCard(overrides: Partial<UnsavedCard> = {}): UnsavedCard {
-  const card = reduceEditedFlashcard(null, {
-    type: "started",
-    draft,
-    flashcardId: createFlashcardId(),
-    session: createCardSession(),
-  });
-  if (card === null) throw new Error("The card did not start.");
-  return {
-    flashcardId: "c1",
-    card,
-    projectId: "p1",
-    mediaFileId: "m1",
-    isRejected: false,
-    retry: () => undefined,
-    discard: () => undefined,
-    ...overrides,
-  };
-}
+const unsavedCard = (overrides: Partial<UnsavedCard> = {}) =>
+  exampleUnsavedCard("Hund", { flashcardId: "c1", ...overrides });
 
 describe("createUnsavedCardStore", () => {
   it("lists a card put in it", () => {

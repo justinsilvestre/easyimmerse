@@ -105,6 +105,7 @@ export function renderMediaScreen({
         openDictionaries: () => {
           navigation.dictionariesOpenCount += 1;
         },
+        openMediaFile: () => undefined,
       }}
     >
       <MediaScreen project={fixtureProject} mediaFileId="m1" />
