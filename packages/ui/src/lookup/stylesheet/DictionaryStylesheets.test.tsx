@@ -2,12 +2,14 @@ import { readFixtureText } from "@easyimmerse/fixtures";
 import type { DictionaryStylesheet } from "@easyimmerse/types";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { renderDefinition } from "../../testSupport/renderDefinition.tsx";
 import { DictionaryPopup } from "../DictionaryPopup.tsx";
 import {
   exampleStyledMDictResult,
   exampleStyledYomitanResult,
 } from "../exampleStyledLookup.ts";
 import { DictionaryStylesheets } from "./DictionaryStylesheets.tsx";
+import { scopeDictionaryStylesheet } from "./scopeDictionaryStylesheet.ts";
 
 afterEach(cleanup);
 
@@ -53,6 +55,12 @@ function selectorContaining(container: HTMLElement, fragment: string): string {
   return rule.slice(0, rule.indexOf(" {"));
 }
 
+/** Returns the selector that a one-rule stylesheet of the dictionary `dict` becomes once scoped. */
+function scopedSelector(css: string): string {
+  const scoped = scopeDictionaryStylesheet(css, "dict", () => null);
+  return scoped.slice(0, scoped.indexOf(" {"));
+}
+
 describe("DictionaryStylesheets", () => {
   it("renders one style element for each dictionary", () => {
     const { container } = render(
@@ -84,4 +92,14 @@ describe("DictionaryStylesheets", () => {
     );
     expect(mdictScope?.querySelector(selector)).toBeNull();
   });
+
+  it("styles markup through the ids its dictionary gave it", () => {
+    const { container } = renderDefinition({
+      kind: "html",
+      html: '<h2 id="sense-1">sense</h2>',
+    });
+    const selector = scopedSelector("h2#sense-1 { margin: 0 }");
+    expect(container.querySelector(selector)?.textContent).toBe("sense");
+  });
+
 });

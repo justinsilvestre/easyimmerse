@@ -1,6 +1,8 @@
 import { useMemo } from "react";
+import { dictionaryElementId } from "../stylesheet/dictionaryScope.ts";
 import { ContentLink, SoundControl } from "./ContentLink.tsx";
 import { ContentText } from "./ContentText.tsx";
+import { useDefinitionContext } from "./definitionContext.ts";
 import { htmlRule } from "./htmlRule.ts";
 import { MarkupImage } from "./MarkupImage.tsx";
 import {
@@ -19,8 +21,19 @@ const rules = { html: htmlRule, pango: pangoRule, xdxf: xdxfRule };
 /** Kinds that start a new line, so that a line break in the text beside them would add an empty line. */
 const blockKinds = new Set<RichKind>([
   "p",
-  "heading",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
   "div",
+  "section",
+  "article",
+  "header",
+  "footer",
+  "figure",
+  "figcaption",
   "center",
   "blockquote",
   "pre",
@@ -100,6 +113,7 @@ function MarkupNode({
   language: MarkupLanguage;
   preservesWhitespace: boolean;
 }) {
+  const { dictionaryId } = useDefinitionContext();
   if (
     node.nodeType === Node.TEXT_NODE ||
     node.nodeType === Node.CDATA_SECTION_NODE
@@ -130,14 +144,20 @@ function MarkupNode({
       return null;
     case "unwrap":
       return children;
-    case "element":
-      return rule.kind === "br" || rule.kind === "hr" ? (
-        <RichElement kind={rule.kind} />
-      ) : (
-        <RichElement kind={rule.kind} {...rule.attributes}>
+    case "element": {
+      if (rule.kind === "br" || rule.kind === "hr")
+        return <RichElement kind={rule.kind} />;
+      const { markupId, ...attributes } = rule.attributes ?? {};
+      return (
+        <RichElement
+          kind={rule.kind}
+          id={dictionaryElementId(dictionaryId, markupId)}
+          {...attributes}
+        >
           {children}
         </RichElement>
       );
+    }
     case "link":
       return <ContentLink target={rule.target}>{children}</ContentLink>;
     case "sound":

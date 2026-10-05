@@ -1,6 +1,6 @@
 import type { Definition } from "@easyimmerse/types";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   renderDefinition,
   resolveFakeMediaUrl,
@@ -98,6 +98,52 @@ describe("MarkupView", () => {
     it("does not let a dictionary class name match an app class", () => {
       const { container } = renderDefinition(html('<b class="fixed">x</b>'));
       expect(container.querySelector(".fixed")).toBeNull();
+    });
+
+    it.each([
+      ...["strong", "em", "h1", "h2", "h3", "h4", "h5", "h6", "section"],
+      ...["article", "header", "footer", "figure", "figcaption", "small"],
+      ...["mark", "abbr", "cite", "q", "blockquote", "dl", "dt", "dd"],
+    ])(
+      "keeps a %s element as itself, so that stylesheets can select it",
+      (tag) => {
+        const { container } = renderDefinition(html(`<${tag}>x</${tag}>`));
+        expect(container.querySelector(tag)?.textContent).toBe("x");
+      },
+    );
+
+    it("keeps an id with a prefix that names the dictionary", () => {
+      const { container } = renderDefinition(html('<p id="top">x</p>'));
+      expect(container.querySelector("#dict-dict-top")?.textContent).toBe("x");
+    });
+
+    it("drops an id that holds whitespace", () => {
+      const { container } = renderDefinition(html('<p id="a b">x</p>'));
+      expect(container.querySelector("[id]")).toBeNull();
+    });
+
+    it("links a same-document link to the prefixed id", () => {
+      renderDefinition(html('<p id="top">x</p><a href="#top">up</a>'));
+      expect(
+        screen.getByRole("link", { name: "up" }).getAttribute("href"),
+      ).toBe("#dict-dict-top");
+    });
+
+    it("scrolls to the element that a same-document link names", () => {
+      const { container } = renderDefinition(
+        html('<p id="top">x</p><a href="#top">up</a>'),
+      );
+      const target = container.querySelector("#dict-dict-top") as HTMLElement;
+      target.scrollIntoView = vi.fn();
+      fireEvent.click(screen.getByRole("link", { name: "up" }));
+      expect(target.scrollIntoView).toHaveBeenCalled();
+    });
+
+    it("follows a same-document link without changing the page's address", () => {
+      renderDefinition(html('<a href="#missing">up</a>'));
+      expect(fireEvent.click(screen.getByRole("link", { name: "up" }))).toBe(
+        false,
+      );
     });
 
     it("looks up the target of a bword link", () => {

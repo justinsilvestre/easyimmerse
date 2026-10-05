@@ -1,7 +1,8 @@
 import type { CssNode, Selector, SelectorList } from "css-tree";
 import generate from "css-tree/generator";
+import { ident } from "css-tree/utils";
 import walk from "css-tree/walker";
-import { classPrefix } from "./dictionaryScope.ts";
+import { classPrefix, elementIdPrefix } from "./dictionaryScope.ts";
 
 /** Selectors that dictionaries use for the whole document, which stand for the scope root instead. */
 const rootTypes = new Set(["html", "body"]);
@@ -12,25 +13,32 @@ const siblingCombinators = new Set(["+", "~"]);
 
 /**
  * Rewrites a selector list so that every selector matches only the scope root or elements inside it, and returns it as text.
- * Selectors for the document root select the scope root instead, and class names gain the prefix that rendered dictionary markup carries.
+ * Selectors for the document root select the scope root instead, and class names and ids gain the prefixes that rendered dictionary markup carries.
  * Returns null when no selector of the list can be confined to the scope.
  */
 export function scopeSelectorList(
   list: SelectorList,
   scope: string,
+  dictionaryId: string,
 ): string | null {
   const selectors = list.children
     .toArray()
     .map((selector) =>
-      selector.type === "Selector" ? scopeSelector(selector, scope) : null,
+      selector.type === "Selector"
+        ? scopeSelector(selector, scope, dictionaryId)
+        : null,
     )
     .filter((selector) => selector !== null);
   return selectors.length > 0 ? selectors.join(", ") : null;
 }
 
-function scopeSelector(selector: Selector, scope: string): string | null {
+function scopeSelector(
+  selector: Selector,
+  scope: string,
+  dictionaryId: string,
+): string | null {
   if (hasNestingSelector(selector)) return null;
-  prefixClassNames(selector);
+  prefixNames(selector, elementIdPrefix(dictionaryId));
   const nodes = selector.children.toArray();
   const rootIndex = nodes.findLastIndex(isRootSelector);
   if (rootIndex < 0) return `${scope} ${generateAll(nodes)}`;
@@ -68,30 +76,39 @@ function isRootSelector(node: CssNode): boolean {
   );
 }
 
-/** Prefixes class selectors and the values of `class` attribute selectors, including those nested in pseudo-classes such as `:not()`. */
-function prefixClassNames(selector: Selector) {
+/**
+ * Prefixes class names and ids in selectors and in `class` and `id` attribute selectors, including those nested in pseudo-classes such as `:not()`.
+ * Ids gain `idPrefix`, which names the dictionary.
+ */
+function prefixNames(selector: Selector, idPrefix: string) {
   walk(selector, (node) => {
     if (node.type === "ClassSelector") node.name = classPrefix + node.name;
-    if (
-      node.type === "AttributeSelector" &&
-      node.name.name.toLowerCase() === "class"
-    )
-      prefixClassAttributeValue(node);
+    if (node.type === "IdSelector")
+      node.name = ident.encode(idPrefix) + node.name;
+    if (node.type !== "AttributeSelector") return;
+    const attribute = node.name.name.toLowerCase();
+    if (attribute === "class")
+      prefixAttributeValue(node, (text) =>
+        node.matcher === "=" ? prefixEachClassName(text) : classPrefix + text,
+      );
+    if (attribute === "id")
+      prefixAttributeValue(node, (text) => idPrefix + text);
   });
 }
 
-/** Prefixes the class names an attribute selector compares with. Substring and suffix matches stay as they are, since a prefix does not change them. */
-function prefixClassAttributeValue(
+/** Prefixes the value an attribute selector compares with. Substring and suffix matches stay as they are, since a prefix does not change them. */
+function prefixAttributeValue(
   node: Extract<CssNode, { type: "AttributeSelector" }>,
+  prefix: (text: string) => string,
 ) {
   const { value, matcher } = node;
   if (!value || matcher === "*=" || matcher === "$=") return;
-  const prefixed = (text: string) =>
-    matcher === "="
-      ? text.replace(/(^|\s+)(?=\S)/g, `$1${classPrefix}`)
-      : classPrefix + text;
-  if (value.type === "String") value.value = prefixed(value.value);
-  else value.name = prefixed(value.name);
+  if (value.type === "String") value.value = prefix(value.value);
+  else value.name = ident.encode(prefix(ident.decode(value.name)));
+}
+
+function prefixEachClassName(classNames: string): string {
+  return classNames.replace(/(^|\s+)(?=\S)/g, `$1${classPrefix}`);
 }
 
 /** Whether a selector uses `&` from CSS nesting, whose meaning depends on a parent rule that sanitizing removes. */

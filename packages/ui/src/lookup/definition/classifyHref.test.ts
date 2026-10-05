@@ -23,8 +23,22 @@ describe("classifyHref", () => {
     });
   });
 
-  it("ignores a link to an anchor within the same entry", () => {
-    expect(classifyHref("entry://#top")).toEqual({ kind: "none" });
+  it("reads an entry link to an anchor within the same entry as a fragment", () => {
+    expect(classifyHref("entry://#top")).toEqual({
+      kind: "fragment",
+      id: "top",
+    });
+  });
+
+  it("reads a same-document link as a fragment", () => {
+    expect(classifyHref("#sense%202")).toEqual({
+      kind: "fragment",
+      id: "sense 2",
+    });
+  });
+
+  it("ignores a link to an empty fragment", () => {
+    expect(classifyHref("#")).toEqual({ kind: "none" });
   });
 
   it("reads a sound link as a sound", () => {

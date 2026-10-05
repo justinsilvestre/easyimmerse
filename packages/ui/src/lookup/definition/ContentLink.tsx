@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import { PlainTextScope } from "./ContentText.tsx";
 import type { LinkTarget } from "./classifyHref.ts";
 import { useDefinitionContext } from "./definitionContext.ts";
+import { FragmentLink } from "./FragmentLink.tsx";
 
-/** Renders a link in a definition: a lookup, an external page opened in a new window, an inert sound control, or plain content. */
+/** Renders a link in a definition: a lookup, an element of the same definition, an external page opened in a new window, an inert sound control, or plain content. */
 export function ContentLink({
   target,
   children,
@@ -24,6 +25,8 @@ export function ContentLink({
           <PlainTextScope>{children}</PlainTextScope>
         </button>
       );
+    case "fragment":
+      return <FragmentLink id={target.id}>{children}</FragmentLink>;
     case "external":
       return (
         <a

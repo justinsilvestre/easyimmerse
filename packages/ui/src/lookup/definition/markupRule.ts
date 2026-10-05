@@ -11,6 +11,8 @@ export type MarkupLanguage = "html" | MarkupDialect;
 export type ElementAttributes = {
   /** The dictionary's class names, prefixed so that they cannot match the app's own classes. */
   className?: string;
+  /** The element's id as the dictionary wrote it. Rendering prefixes it with the dictionary's id, so that it cannot collide with other ids on the page. */
+  markupId?: string;
   style?: CSSProperties;
   title?: string;
   lang?: string;
