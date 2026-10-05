@@ -1,5 +1,9 @@
 import type { StyleValue } from "@easyimmerse/types";
 import type { CSSProperties } from "react";
+import {
+  type ColorRole,
+  themeAdaptedInlineColor,
+} from "../stylesheet/themeAdaptedColor.ts";
 
 /** Lengths whose unitless numbers mean multiples of the font size, as in Yomitan structured content. */
 const emLengthProperties = new Set([
@@ -42,12 +46,17 @@ const allowedProperties = new Set([
   "wordBreak",
 ]);
 
+const colorRoles: Readonly<Record<string, ColorRole>> = {
+  color: "foreground",
+  backgroundColor: "background",
+};
+
 /** Values that could load a resource, which would reveal the reader to a remote server, or escape their own syntax. */
 const forbiddenValuePattern = /url\(|image-set\(|expression\(|@|\\/i;
 
 /**
  * Builds a React style from dictionary-supplied properties, keeping only typographic and box properties.
- * Drops any value that could load a resource or escape its syntax.
+ * Drops any value that could load a resource or escape its syntax, and adapts colors to the app's dark theme.
  */
 export function sanitizeStyle(
   style: Readonly<Record<string, StyleValue>>,
@@ -59,9 +68,16 @@ export function sanitizeStyle(
       allowedProperties.has(property) &&
       !forbiddenValuePattern.test(String(cssValue))
     )
-      sanitized[property] = cssValue;
+      sanitized[property] = adaptColor(property, cssValue);
   }
   return sanitized;
+}
+
+function adaptColor(property: string, value: string | number) {
+  const role = colorRoles[property];
+  return role && typeof value === "string"
+    ? themeAdaptedInlineColor(value, role)
+    : value;
 }
 
 function toCssValue(property: string, value: StyleValue): string | number {

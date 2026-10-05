@@ -6,6 +6,7 @@ mod kanji_lookup;
 mod listing;
 mod media;
 mod origin;
+mod stylesheets;
 mod term_lookup;
 
 #[cfg(test)]
@@ -15,6 +16,7 @@ pub use importer::import_dictionary;
 pub use kanji_lookup::{find_kanji, find_kanji_meta};
 pub use listing::{delete_dictionary, get_dictionary, list_dictionaries};
 pub use media::get_media;
+pub use stylesheets::find_stylesheets;
 pub use term_lookup::{find_entries, find_term_meta};
 
 use easyimmerse_core::dictionary::DictionaryMetadata;

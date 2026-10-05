@@ -6,6 +6,7 @@ use easyimmerse_core::dictionary::{
     DictionarySink, DictionarySource, Frequency, FrequencyMode, KanjiEntry, KanjiMeta,
     StructuredContent, TagDefinition, TermEntry, TermMeta, TermMetaData,
 };
+use easyimmerse_core::lookup::DictionaryStylesheet;
 
 use super::importer::import_with;
 use super::{DictionaryCounts, DictionaryId};
@@ -102,7 +103,9 @@ fn japanese_dictionary() -> Reader {
 
 fn english_dictionary() -> Reader {
     Box::new(|sink| {
-        sink.begin(metadata("English", DictionaryFormatKind::Stardict))?;
+        let mut english = metadata("English", DictionaryFormatKind::Stardict);
+        english.stylesheet = Some(".pos { font-style: italic }".to_string());
+        sink.begin(english)?;
         let mut cat = entry("Cat", None, "a small feline");
         cat.alternates = vec!["kitty".to_string()];
         sink.term_entry(cat)?;
@@ -226,6 +229,7 @@ fn round_trips_the_metadata() {
     let mut stored = metadata("Frequencies", DictionaryFormatKind::Yomitan);
     stored.frequency_mode = Some(FrequencyMode::OccurrenceBased);
     stored.attribution = Some("© Example".to_string());
+    stored.stylesheet = Some("b { color: red }".to_string());
     let expected = stored.clone();
     let id = import(&storage, Box::new(move |sink| Ok(sink.begin(stored)?))).unwrap();
     assert_eq!(storage.get_dictionary(&id).unwrap().metadata, expected);
@@ -472,4 +476,28 @@ fn deleting_an_unknown_dictionary_fails() {
         storage.delete_dictionary(&DictionaryId("missing".to_string())),
         Err(StorageError::DictionaryNotFound(_))
     ));
+}
+
+#[test]
+fn finds_the_stylesheets_of_the_given_dictionaries() {
+    let (storage, ids) = storage_with(vec![japanese_dictionary(), english_dictionary()]);
+    let stylesheets = storage
+        .find_dictionary_stylesheets(&[ids[0].0.clone(), ids[1].0.clone()])
+        .unwrap();
+    assert_eq!(
+        stylesheets,
+        [DictionaryStylesheet {
+            dictionary_id: ids[1].0.clone(),
+            css: ".pos { font-style: italic }".to_string(),
+        }]
+    );
+}
+
+#[test]
+fn finds_no_stylesheet_of_a_dictionary_not_asked_for() {
+    let (storage, ids) = storage_with(vec![japanese_dictionary(), english_dictionary()]);
+    let stylesheets = storage
+        .find_dictionary_stylesheets(&[ids[0].0.clone()])
+        .unwrap();
+    assert_eq!(stylesheets, []);
 }

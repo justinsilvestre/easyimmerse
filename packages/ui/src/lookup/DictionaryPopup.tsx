@@ -1,3 +1,4 @@
+import type { DictionaryStylesheet } from "@easyimmerse/types";
 import { BookOpen, Search, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Button } from "../components/Button.tsx";
@@ -8,6 +9,7 @@ import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import { KanjiCard } from "./KanjiCard.tsx";
 import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupState } from "./lookupState.ts";
+import { DictionaryStylesheets } from "./stylesheet/DictionaryStylesheets.tsx";
 
 /**
  * The dictionary pop-up. In `hover` mode it shows the word under the pointer; in `search` mode it opens with a field to type a word into.
@@ -130,6 +132,10 @@ function Body({
     case "found":
       return (
         <>
+          <DictionaryStylesheets
+            stylesheets={state.stylesheets ?? noStylesheets}
+            resolveMediaUrl={resolveMediaUrl}
+          />
           {state.results.map((result, index) => (
             <LookupResultCard
               // Results never reorder within a lookup, and two results can share a term.
@@ -153,6 +159,8 @@ function Body({
       );
   }
 }
+
+const noStylesheets: readonly DictionaryStylesheet[] = [];
 
 function Hint({ children }: { children: ReactNode }) {
   return <p className="py-3 text-center text-sm text-fg-muted">{children}</p>;

@@ -161,6 +161,22 @@ async fn looks_up_a_term_in_every_dictionary() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn looks_up_the_stylesheet_of_a_dictionary_that_defines_the_term() {
+    let server = spawn_test_server(false).await;
+    let id = imported_id(&server).await;
+    let response = look_up(&server, "猫").await;
+    assert_eq!(response["stylesheets"][0]["dictionaryId"], id);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn lists_each_stylesheet_once_however_many_results_it_styles() {
+    let server = spawn_test_server(false).await;
+    import_fixture(&server).await;
+    let response = look_up(&server, "食べた").await;
+    assert_eq!(response["stylesheets"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn finds_nothing_for_an_unknown_term() {
     let server = spawn_test_server(false).await;
     import_fixture(&server).await;

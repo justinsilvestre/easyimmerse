@@ -1,4 +1,4 @@
-import type { PlaybackRequest } from "@easyimmerse/types";
+import type { LookupResponse, PlaybackRequest } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
 import { afterEach, describe, expect, it } from "vitest";
 import { backendApi } from "./backendApi.ts";
@@ -197,6 +197,21 @@ describe("backendApi", () => {
         query: { text: "猫が", language: "ja" },
       },
     ]);
+  });
+
+  it("returns the dictionaries' stylesheets with the lookup results", async () => {
+    const response: LookupResponse = {
+      results: [],
+      kanji: [],
+      stylesheets: [{ dictionaryId: "d1", css: "b { color: red }" }],
+    };
+    configureBackend({
+      send: async <T>() => ({ data: response as T }),
+    });
+    const result = await createStore().dispatch(
+      backendApi.endpoints.lookupText.initiate({ text: "猫", language: "ja" }),
+    );
+    expect(result.data?.stylesheets).toEqual(response.stylesheets);
   });
 
   it("puts the format in the query string for parseDocument", async () => {

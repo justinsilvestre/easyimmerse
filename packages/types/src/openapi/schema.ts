@@ -575,6 +575,14 @@ export interface components {
             dictionaryTitle: string;
             reading?: string | null;
         };
+        /**
+         * @description The CSS that a dictionary ships for its own entries, unsanitized.
+         *     Displays must sanitize it and confine it to that dictionary's entries before applying it.
+         */
+        DictionaryStylesheet: {
+            css: string;
+            dictionaryId: string;
+        };
         DictionarySummary: {
             /** Format: int64 */
             entry_count: number;
@@ -656,6 +664,8 @@ export interface components {
             kanji: components["schemas"]["KanjiResult"][];
             /** @description The terms that the text may begin with, best first. */
             results: components["schemas"]["LookupResult"][];
+            /** @description The stylesheets of the dictionaries whose definitions appear in `results`, each once. */
+            stylesheets: components["schemas"]["DictionaryStylesheet"][];
         };
         /** @description The entries of every dictionary for one term and reading that the looked-up text may stand for. */
         LookupResult: {

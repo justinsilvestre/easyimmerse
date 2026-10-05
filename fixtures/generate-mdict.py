@@ -13,7 +13,12 @@ FIXTURES = Path(__file__).resolve().parent
 NO_COMPRESSION = 0
 ZLIB = 2
 
-STYLESHEET = "1\r\n<b>\r\n</b>\r\n2\r\n<i>\r\n</i>\r\n"
+STYLESHEET = '1\r\n<b class="headword">\r\n</b>\r\n2\r\n<i>\r\n</i>\r\n'
+
+SAMPLE_CSS = """body { font-family: Georgia, serif; }
+.headword { color: #a33; letter-spacing: 0.05em; }
+.headword + i { color: #555; }
+"""
 
 SAMPLE_ENTRIES = [
     ("cat", '`1`cat`2`a small domesticated feline. See also <a href="entry://dog">dog</a>.<br><img src="cat.png">'),
@@ -33,7 +38,7 @@ def main():
     sample.mkdir(exist_ok=True)
     (sample / "sample.mdx").write_bytes(sample_mdx())
     (sample / "sample.mdd").write_bytes(sample_mdd())
-    (sample / "sample.css").write_text(".cat b { color: #a33; }\n")
+    (sample / "sample.css").write_text(SAMPLE_CSS)
     legacy = FIXTURES / "sample-mdict-v1"
     legacy.mkdir(exist_ok=True)
     (legacy / "legacy.mdx").write_bytes(legacy_mdx())

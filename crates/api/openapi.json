@@ -2732,6 +2732,22 @@
           }
         }
       },
+      "DictionaryStylesheet": {
+        "type": "object",
+        "description": "The CSS that a dictionary ships for its own entries, unsanitized.\nDisplays must sanitize it and confine it to that dictionary's entries before applying it.",
+        "required": [
+          "dictionaryId",
+          "css"
+        ],
+        "properties": {
+          "css": {
+            "type": "string"
+          },
+          "dictionaryId": {
+            "type": "string"
+          }
+        }
+      },
       "DictionarySummary": {
         "type": "object",
         "required": [
@@ -3013,7 +3029,8 @@
         "type": "object",
         "required": [
           "results",
-          "kanji"
+          "kanji",
+          "stylesheets"
         ],
         "properties": {
           "kanji": {
@@ -3029,6 +3046,13 @@
               "$ref": "#/components/schemas/LookupResult"
             },
             "description": "The terms that the text may begin with, best first."
+          },
+          "stylesheets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryStylesheet"
+            },
+            "description": "The stylesheets of the dictionaries whose definitions appear in `results`, each once."
           }
         }
       },

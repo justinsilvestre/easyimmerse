@@ -73,10 +73,8 @@ fn reads_the_title_of_the_sample() {
 
 #[test]
 fn reads_the_stylesheet_beside_the_sample() {
-    assert_eq!(
-        sample().metadata.stylesheet.as_deref(),
-        Some(".cat b { color: #a33; }\n")
-    );
+    let stylesheet = sample().metadata.stylesheet.unwrap();
+    assert!(stylesheet.starts_with("body { font-family: Georgia, serif; }"));
 }
 
 #[test]
@@ -97,7 +95,7 @@ fn lists_redirect_sources_as_alternates() {
 #[test]
 fn stores_styled_html_with_its_links_intact() {
     let html = concat!(
-        "<b>cat</b><i>a small domesticated feline. ",
+        r#"<b class="headword">cat</b><i>a small domesticated feline. "#,
         r#"See also <a href="entry://dog">dog</a>.<br><img src="cat.png"></i>"#
     );
     assert_eq!(
