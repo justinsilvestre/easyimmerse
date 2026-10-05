@@ -11,6 +11,7 @@ mod header;
 mod header_attributes;
 #[cfg(test)]
 mod import_tests;
+mod key_comparison;
 mod key_info;
 mod key_info_cipher;
 mod key_section;
@@ -33,8 +34,9 @@ use super::metadata::DictionaryFormatKind;
 use super::sink::DictionarySink;
 use super::source::DictionarySource;
 use entry_conversion::EntryConversion;
+use key_comparison::KeyComparison;
 use mdict_file::{FileKind, MdictFile};
-use redirects::{RedirectCollector, Redirects};
+use redirects::RedirectCollector;
 
 pub struct MdictFormat;
 
@@ -47,7 +49,6 @@ impl DictionaryFormat for MdictFormat {
         find_mdx(source).is_some()
     }
 
-    /// Reads the `.mdx` twice: first to gather redirects, then to stream entries with their redirects attached.
     fn import(
         &self,
         source: &mut DictionarySource,
@@ -56,10 +57,8 @@ impl DictionaryFormat for MdictFormat {
         let mdx_name = find_mdx(source)
             .ok_or(DictionaryError::UnrecognizedFormat)?
             .to_string();
-        let (header, redirects) = collect_redirects(source, &mdx_name)?;
         let stylesheet = metadata::read_stylesheet(source, &mdx_name)?;
-        sink.begin(metadata::build_metadata(&header, &mdx_name, stylesheet))?;
-        stream_entries(source, &mdx_name, &redirects, sink)?;
+        import_entries(source, &mdx_name, stylesheet, sink)?;
         media::import_media(source, sink)
     }
 }
@@ -68,32 +67,32 @@ fn find_mdx(source: &DictionarySource) -> Option<&str> {
     source.find(|name| name.to_ascii_lowercase().ends_with(".mdx"))
 }
 
-fn collect_redirects(
+/// Reads the `.mdx` in one pass, decompressing each record block once.
+/// Entries are sent as they are read; the keys that redirect to them follow once every record is known,
+/// since a redirect may come before or after its target.
+fn import_entries(
     source: &mut DictionarySource,
     mdx_name: &str,
-) -> Result<(header::Header, Redirects), DictionaryError> {
-    let file = MdictFile::open(source.open(mdx_name)?, FileKind::Entries)?;
-    let header = file.header.clone();
-    let mut collector = RedirectCollector::new(file.encoding);
-    file.for_each_record(|group, record| {
-        collector.visit(group, record);
-        Ok::<(), MdictError>(())
-    })?;
-    Ok((header, collector.finish()))
-}
-
-fn stream_entries(
-    source: &mut DictionarySource,
-    mdx_name: &str,
-    redirects: &Redirects,
+    stylesheet: Option<String>,
     sink: &mut dyn DictionarySink,
 ) -> Result<(), DictionaryError> {
     let file = MdictFile::open(source.open(mdx_name)?, FileKind::Entries)?;
-    let conversion = EntryConversion::new(&file.header, file.encoding, redirects);
+    sink.begin(metadata::build_metadata(&file.header, mdx_name, stylesheet))?;
+    let conversion = EntryConversion::new(&file.header, file.encoding);
+    let comparison = KeyComparison::from_header(&file.header);
+    let mut redirects = RedirectCollector::new(file.encoding, comparison);
     file.for_each_record(|group, record| {
+        if redirects.visit_record(group, record) {
+            return Ok(());
+        }
         if let Some(entry) = conversion.convert(group, record) {
+            redirects.visit_entry(group);
             sink.term_entry(entry)?;
         }
         Ok::<(), DictionaryError>(())
-    })
+    })?;
+    for (term, sources) in redirects.finish() {
+        sink.term_alternates(term, conversion.spellings(&sources))?;
+    }
+    Ok(())
 }

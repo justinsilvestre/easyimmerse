@@ -15,6 +15,9 @@ use super::term_meta::TermMeta;
 pub trait DictionarySink {
     fn begin(&mut self, metadata: DictionaryMetadata) -> SinkResult;
     fn term_entry(&mut self, entry: TermEntry) -> SinkResult;
+    /// Adds alternates to every entry already received whose term is `term`.
+    /// A format calls this for spellings it learns of only after their entry, such as MDict redirects.
+    fn term_alternates(&mut self, term: String, alternates: Vec<String>) -> SinkResult;
     fn term_meta(&mut self, meta: TermMeta) -> SinkResult;
     fn tag(&mut self, tag: TagDefinition) -> SinkResult;
     fn kanji_entry(&mut self, entry: KanjiEntry) -> SinkResult;

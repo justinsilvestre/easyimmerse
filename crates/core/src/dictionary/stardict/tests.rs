@@ -2,9 +2,10 @@ use std::fs;
 use std::path::Path;
 
 use super::*;
+use crate::dictionary::media_collector::MediaCollector;
 use crate::dictionary::{
-    Definition, Dictionary, DictionaryMedia, KanjiEntry, KanjiMeta, MarkupDialect, SinkResult,
-    SourceFile, TagDefinition, TermEntry, TermMeta, import_dictionary, parse_dictionary,
+    Definition, Dictionary, MarkupDialect, SourceFile, TermEntry, import_dictionary,
+    parse_dictionary,
 };
 use crate::test_support::{fixture_path, read_fixture_bytes};
 
@@ -52,7 +53,7 @@ fn matches_a_source_with_an_ifo_file() {
 fn imports_the_sample_as_a_stardict_dictionary() {
     let kind = import_dictionary(
         &mut directory_source("sample-stardict"),
-        &mut MediaSink::default(),
+        &mut MediaCollector::default(),
     );
     assert_eq!(kind.unwrap(), DictionaryFormatKind::Stardict);
 }
@@ -162,49 +163,10 @@ fn reads_entries_laid_out_by_a_same_type_sequence() {
 
 #[test]
 fn imports_the_files_under_res_as_media() {
-    let mut sink = MediaSink::default();
+    let mut sink = MediaCollector::default();
     import_dictionary(&mut directory_source("sample-stardict"), &mut sink).unwrap();
-    let described: Vec<_> = sink
-        .media
-        .iter()
-        .map(|media| (media.path.as_str(), media.media_type.as_str()))
-        .collect();
-    assert_eq!(described, vec![("cat.png", "image/png")]);
-}
-
-/// A sink that keeps only the media it receives.
-#[derive(Default)]
-struct MediaSink {
-    media: Vec<DictionaryMedia>,
-}
-
-impl DictionarySink for MediaSink {
-    fn begin(&mut self, _metadata: DictionaryMetadata) -> SinkResult {
-        Ok(())
-    }
-
-    fn term_entry(&mut self, _entry: TermEntry) -> SinkResult {
-        Ok(())
-    }
-
-    fn term_meta(&mut self, _meta: TermMeta) -> SinkResult {
-        Ok(())
-    }
-
-    fn tag(&mut self, _tag: TagDefinition) -> SinkResult {
-        Ok(())
-    }
-
-    fn kanji_entry(&mut self, _entry: KanjiEntry) -> SinkResult {
-        Ok(())
-    }
-
-    fn kanji_meta(&mut self, _meta: KanjiMeta) -> SinkResult {
-        Ok(())
-    }
-
-    fn media(&mut self, media: DictionaryMedia) -> SinkResult {
-        self.media.push(media);
-        Ok(())
-    }
+    assert_eq!(
+        sink.described(),
+        [("cat.png".to_string(), "image/png".to_string())]
+    );
 }

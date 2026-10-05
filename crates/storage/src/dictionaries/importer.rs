@@ -125,12 +125,41 @@ impl DictionaryImporter<'_> {
                 definitions,
             ])?;
         let entry_id = self.transaction.last_insert_rowid();
+        self.insert_headwords(entry_id, &entry.headwords())
+    }
+
+    fn insert_headwords(&self, entry_id: i64, headwords: &[&str]) -> Result<(), StorageError> {
         let mut statement = self.transaction.prepare_cached(
             "INSERT OR IGNORE INTO dictionary_headwords (folded_headword, entry_id, dictionary_number)
              VALUES (?1, ?2, ?3)",
         )?;
-        for headword in entry.headwords() {
-            statement.execute(params![fold_case(headword), entry_id, number])?;
+        for headword in headwords {
+            statement.execute(params![fold_case(headword), entry_id, self.number()?])?;
+        }
+        Ok(())
+    }
+
+    /// Adds alternates to the stored entries of this dictionary whose term is `term`, found through their headwords.
+    fn add_alternates(&self, term: &str, alternates: Vec<String>) -> Result<(), StorageError> {
+        let entries: Vec<(i64, String)> = self
+            .transaction
+            .prepare_cached(
+                "SELECT e.id, e.alternates FROM dictionary_headwords h
+                 JOIN dictionary_entries e ON e.id = h.entry_id
+                 WHERE h.folded_headword = ?1 AND h.dictionary_number = ?2 AND e.term = ?3",
+            )?
+            .query_map(params![fold_case(term), self.number()?, term], |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })?
+            .collect::<Result<_, _>>()?;
+        for (entry_id, stored) in entries {
+            let mut entry = TermEntry::new(term, Vec::new());
+            entry.alternates = serde_json::from_str(&stored)?;
+            entry.add_alternates(alternates.iter().cloned());
+            self.transaction
+                .prepare_cached("UPDATE dictionary_entries SET alternates = ?1 WHERE id = ?2")?
+                .execute(params![serde_json::to_string(&entry.alternates)?, entry_id])?;
+            self.insert_headwords(entry_id, &entry.headwords())?;
         }
         Ok(())
     }
@@ -218,6 +247,10 @@ impl DictionarySink for DictionaryImporter<'_> {
 
     fn term_entry(&mut self, entry: TermEntry) -> SinkResult {
         self.insert_entry(&entry).map_err(sink_error)
+    }
+
+    fn term_alternates(&mut self, term: String, alternates: Vec<String>) -> SinkResult {
+        self.add_alternates(&term, alternates).map_err(sink_error)
     }
 
     fn term_meta(&mut self, meta: TermMeta) -> SinkResult {

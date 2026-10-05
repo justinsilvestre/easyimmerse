@@ -41,6 +41,15 @@ impl TermEntry {
         }
     }
 
+    /// Adds the alternates that the entry lacks, leaving out its term.
+    pub fn add_alternates(&mut self, alternates: impl IntoIterator<Item = String>) {
+        for alternate in alternates {
+            if alternate != self.term && !self.alternates.contains(&alternate) {
+                self.alternates.push(alternate);
+            }
+        }
+    }
+
     /// Lists every string under which the entry is found: the term, the reading, and the alternates.
     pub fn headwords(&self) -> Vec<&str> {
         let mut headwords = vec![self.term.as_str()];
@@ -94,4 +103,28 @@ pub enum MarkupDialect {
     Pango,
     /// The XML Dictionary Exchange Format.
     Xdxf,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry_with_alternates(alternates: &[&str]) -> TermEntry {
+        let mut entry = TermEntry::new("cat", Vec::new());
+        entry.add_alternates(alternates.iter().map(|alternate| alternate.to_string()));
+        entry
+    }
+
+    #[test]
+    fn adds_new_alternates_once_each() {
+        assert_eq!(
+            entry_with_alternates(&["kitty", "puss", "kitty"]).alternates,
+            ["kitty", "puss"]
+        );
+    }
+
+    #[test]
+    fn leaves_the_term_out_of_its_alternates() {
+        assert!(entry_with_alternates(&["cat"]).alternates.is_empty());
+    }
 }
