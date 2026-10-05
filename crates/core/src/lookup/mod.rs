@@ -5,9 +5,11 @@
 //! `build_lookup_results` then keeps the entries that fit a candidate, groups them by term and reading, and ranks the groups.
 
 mod build_lookup_results;
+mod context_sentence;
 mod entry_matching;
 mod fold_case;
 mod found_rows;
+mod german_clause_words;
 #[cfg(test)]
 mod japanese_splits;
 mod kanji_results;
@@ -15,6 +17,7 @@ mod lookup_candidate;
 mod lookup_result;
 mod result_group;
 mod result_sort_key;
+mod separated_particles;
 mod separated_verb;
 mod term_meta_matching;
 mod word_boundary;
@@ -28,6 +31,9 @@ pub use lookup_result::{
     DictionaryDefinitions, DictionaryFrequency, DictionaryPronunciation, DictionaryStylesheet,
     KanjiResult, LookupResult,
 };
+pub use separated_particles::separated_verb_candidates;
 pub use separated_verb::{ContextWord, SeparatedVerb};
 #[cfg(test)]
 mod german_lookup_tests;
+#[cfg(test)]
+mod separated_particle_tests;
