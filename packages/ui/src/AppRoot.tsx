@@ -9,7 +9,7 @@ import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
 import { WordClickMemoryProvider } from "./components/wordClickMemoryContext.tsx";
-import { UnsavedCardsProvider } from "./flashcards/unsaved/UnsavedCardsContext.tsx";
+import { SharedSavingProvider } from "./flashcards/SharedSavingContext.tsx";
 import { UnsavedCardsStatus } from "./flashcards/unsaved/UnsavedCardsStatus.tsx";
 import { useAppDispatch } from "./hooks/useAppDispatch.ts";
 import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
@@ -28,6 +28,7 @@ import {
   navigate,
   settingsPageOf,
 } from "./navigation.ts";
+import { createNavigationActions } from "./navigationActions.ts";
 import { NavigationActionsContext } from "./navigationContext.ts";
 import { NoticesProvider } from "./notices/NoticesContext.tsx";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
@@ -55,14 +56,7 @@ export function AppRoot({
     navigate,
     initialNavigation,
   );
-  const navigationActions = {
-    openSettings: () => dispatchNavigation({ type: "openSettings" }),
-    openDictionaries: () => dispatchNavigation({ type: "openDictionaries" }),
-    openMediaFile: (projectId: string, mediaFileId: string) => {
-      dispatchNavigation({ type: "openProject", projectId });
-      store.dispatch(actions.openMedia(mediaFileId));
-    },
-  };
+  const navigationActions = createNavigationActions(dispatchNavigation, store);
   useEffect(
     () =>
       effects.subscribeToSettingsRequests(() =>
@@ -74,7 +68,7 @@ export function AppRoot({
   return (
     <Provider store={store}>
       <NavigationActionsContext value={navigationActions}>
-        <UnsavedCardsProvider>
+        <SharedSavingProvider>
           <NoticesProvider statusLine={<UnsavedCardsStatus />}>
             <PlayerRegistryContext value={playerRegistry}>
               <BrowserFileRegistryContext value={browserFileRegistry}>
@@ -99,7 +93,7 @@ export function AppRoot({
               </BrowserFileRegistryContext>
             </PlayerRegistryContext>
           </NoticesProvider>
-        </UnsavedCardsProvider>
+        </SharedSavingProvider>
       </NavigationActionsContext>
     </Provider>
   );
