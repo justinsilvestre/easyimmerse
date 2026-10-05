@@ -12,6 +12,10 @@ export type {
 } from "./createAppStore.ts";
 export { createAppStore } from "./createAppStore.ts";
 export type { Effects, PickedFile, PickedMediaFile } from "./effects.ts";
+export {
+  documentFormatOf,
+  isDocumentFileName,
+} from "./mediaFileExtensions.ts";
 export type { PlayerRegistry } from "./playerRegistry.ts";
 export { createPlayerRegistry } from "./playerRegistry.ts";
 export { createRecordingEffects } from "./recordingEffects.ts";
