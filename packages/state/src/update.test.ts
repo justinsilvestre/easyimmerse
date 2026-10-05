@@ -32,6 +32,30 @@ const withPreference = (value: string): AppState => ({
 });
 
 describe("update", () => {
+  it("guards the app's closing when the first save begins", () => {
+    const [, effects] = update(initialAppState, actions.saveBegan());
+    expect(effects).toEqual([{ type: "guardClose", isActive: true }]);
+  });
+
+  it("keeps the guard while a second save begins", () => {
+    const [saving] = update(initialAppState, actions.saveBegan());
+    const [, effects] = update(saving, actions.saveBegan());
+    expect(effects).toEqual([]);
+  });
+
+  it("keeps the guard while other saves are pending", () => {
+    const [one] = update(initialAppState, actions.saveBegan());
+    const [two] = update(one, actions.saveBegan());
+    const [, effects] = update(two, actions.saveEnded());
+    expect(effects).toEqual([]);
+  });
+
+  it("lifts the guard once the last save ends", () => {
+    const [saving] = update(initialAppState, actions.saveBegan());
+    const [, effects] = update(saving, actions.saveEnded());
+    expect(effects).toEqual([{ type: "guardClose", isActive: false }]);
+  });
+
   it("stores the target as the current time for seekRequested", () => {
     const [state] = update(initialAppState, actions.seekRequested(12.5));
     expect(state.player.currentTimeSeconds).toBe(12.5);

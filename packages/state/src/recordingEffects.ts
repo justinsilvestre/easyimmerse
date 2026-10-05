@@ -19,6 +19,7 @@ type EffectCall =
   | { type: "loadPreference"; key: string }
   | { type: "showNotification"; message: string }
   | { type: "openExternalUrl"; url: string }
+  | { type: "guardClose"; isActive: boolean }
   | { type: "subscribeToSettingsRequests" };
 
 export type RecordingEffects = Effects & {
@@ -118,6 +119,9 @@ export function createRecordingEffects(): RecordingEffects {
     },
     openExternalUrl: (url) => {
       calls.push({ type: "openExternalUrl", url });
+    },
+    guardClose: (isActive) => {
+      calls.push({ type: "guardClose", isActive });
     },
     subscribeToSettingsRequests: (listener) => {
       calls.push({ type: "subscribeToSettingsRequests" });

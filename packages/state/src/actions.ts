@@ -57,6 +57,9 @@ export const actions = {
     ({ type: "preferencesLoaded", preferences }) as const,
   notificationRequested: (message: string) =>
     ({ type: "notificationRequested", message }) as const,
+  /** A flashcard save, or a wait before one, has begun; the app warns before closing until it ends. */
+  saveBegan: () => ({ type: "saveBegan" }) as const,
+  saveEnded: () => ({ type: "saveEnded" }) as const,
   externalLinkRequested: (url: string) =>
     ({ type: "externalLinkRequested", url }) as const,
   systemThemeChanged: (theme: Theme) =>

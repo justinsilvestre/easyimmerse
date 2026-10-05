@@ -77,6 +77,9 @@ export function runEffect(
     case "openExternalUrl":
       effects.openExternalUrl(effect.url);
       return;
+    case "guardClose":
+      effects.guardClose(effect.isActive);
+      return;
   }
 }
 
