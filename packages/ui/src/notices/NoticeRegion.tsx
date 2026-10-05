@@ -7,7 +7,7 @@ import {
 } from "./noticeStore.ts";
 
 /**
- * Shows the app's notices at the bottom of the window. Failures sit in an alert, which is announced at once;
+ * Shows the app's notices at the bottom of the window. Each failure is an alert, announced as soon as it appears;
  * other notices sit in a polite live region, announced once the screen reader is idle. Their buttons follow the page in keyboard order.
  * A transient notice waits while the pointer or focus is on it.
  */
@@ -19,9 +19,7 @@ export function NoticeRegion({ store }: { store: NoticeStore }) {
       aria-label="Notifications"
       className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex flex-col items-center gap-2 px-4"
     >
-      <div role="alert">
-        <NoticeList notices={notices.filter(isFailure)} store={store} />
-      </div>
+      <NoticeList notices={notices.filter(isFailure)} store={store} />
       <div aria-live="polite">
         <NoticeList
           notices={notices.filter((notice) => !isFailure(notice))}
@@ -73,12 +71,14 @@ function TimedNotice({
           setHeld((held) => ({ ...held, focus: false }));
       }}
     >
-      <Notice
-        tone={notice.tone}
-        message={notice.message}
-        actions={notice.actions}
-        onDismiss={() => store.dismiss(notice.id)}
-      />
+      <div role={notice.tone === "danger" ? "alert" : undefined}>
+        <Notice
+          tone={notice.tone}
+          message={notice.message}
+          actions={notice.actions}
+          onDismiss={() => store.dismiss(notice.id)}
+        />
+      </div>
     </li>
   );
 }
