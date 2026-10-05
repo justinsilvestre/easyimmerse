@@ -1,94 +1,6 @@
 //! The start of a verb form: separable particles, inseparable prefixes, and the ge- and zu of non-finite forms.
 
-/// The verb particles that are written together with the verb in infinitives, participles and verb-final clauses.
-///
-/// Source: Amtliches Regelwerk der deutschen Rechtschreibung (2024), § 34 (1.1), (1.2) with E2, and (1.3) with E4, pp. 56–58.
-pub const PARTICLES: [&str; 84] = [
-    "ab",
-    "an",
-    "auf",
-    "aus",
-    "bei",
-    "durch",
-    "ein",
-    "entgegen",
-    "entlang",
-    "gegen",
-    "gegenüber",
-    "hinter",
-    "in",
-    "mit",
-    "nach",
-    "über",
-    "um",
-    "unter",
-    "vor",
-    "wider",
-    "zu",
-    "zuwider",
-    "zwischen",
-    "abwärts",
-    "auseinander",
-    "beisammen",
-    "davon",
-    "davor",
-    "dazu",
-    "dazwischen",
-    "empor",
-    "fort",
-    "her",
-    "heraus",
-    "herbei",
-    "herein",
-    "hin",
-    "hinaus",
-    "hindurch",
-    "hinein",
-    "hintenüber",
-    "hinterher",
-    "hinüber",
-    "nebenher",
-    "nieder",
-    "rückwärts",
-    "umher",
-    "voran",
-    "voraus",
-    "vorbei",
-    "vorher",
-    "vorweg",
-    "weg",
-    "weiter",
-    "wieder",
-    "zurück",
-    "zusammen",
-    "zuvor",
-    "dran",
-    "drauf",
-    "drauflos",
-    "abhanden",
-    "anheim",
-    "bevor",
-    "dar",
-    "einher",
-    "entzwei",
-    "fürlieb",
-    "hintan",
-    "inne",
-    "überein",
-    "überhand",
-    "umhin",
-    "vorlieb",
-    "zurecht",
-    "fehl",
-    "feil",
-    "heim",
-    "irre",
-    "kund",
-    "preis",
-    "wahr",
-    "weis",
-    "wett",
-];
+use super::particles;
 
 /// The prefixes that stay attached to the verb and suppress the ge- of the past participle.
 ///
@@ -140,6 +52,15 @@ impl Opening {
             Opening::ZuInfix => marked_splits(text, "zu", 1),
         }
     }
+}
+
+/// Lists the ways in which `text` divides into one or two particles and a rest.
+pub(super) fn particle_splits(text: &str) -> Vec<Split<'_>> {
+    particle_ends(text)
+        .into_iter()
+        .filter(|end| *end > 0 && *end < text.len())
+        .map(|end| split_at(text, end, end))
+        .collect()
 }
 
 fn prefixed_splits(text: &str) -> Vec<Split<'_>> {
@@ -204,8 +125,9 @@ fn particle_ends_counted(text: &str) -> Vec<(usize, usize)> {
 }
 
 fn following_particle_ends(text: &str, start: usize) -> Vec<usize> {
-    PARTICLES
+    particles::ALL
         .iter()
+        .flat_map(|group| group.iter())
         .filter(|particle| text[start..].starts_with(*particle))
         .map(|particle| start + particle.len())
         .collect()
@@ -250,6 +172,24 @@ mod tests {
     #[test]
     fn inseparable_keeps_the_prefix() {
         assert!(rests(Opening::Inseparable, "verstanden").contains(&pair("ver", "standen")));
+    }
+
+    #[test]
+    fn augment_removes_ge_after_a_colloquial_particle() {
+        assert!(rests(Opening::Augment, "rausgegangen").contains(&pair("raus", "gangen")));
+    }
+
+    #[test]
+    fn augment_removes_ge_after_an_adjective_first_part() {
+        assert!(rests(Opening::Augment, "festgehalten").contains(&pair("fest", "halten")));
+    }
+
+    #[test]
+    fn zu_infix_removes_zu_after_a_noun_first_part() {
+        assert_eq!(
+            rests(Opening::ZuInfix, "teilzunehmen"),
+            [pair("teil", "nehmen")]
+        );
     }
 
     #[test]

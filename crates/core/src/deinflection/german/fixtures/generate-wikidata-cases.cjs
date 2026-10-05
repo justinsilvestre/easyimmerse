@@ -7,7 +7,7 @@
 // strong and weak verbs with and without a particle or prefix, verbs in -eln, -ern and -ieren,
 // nouns by plural ending, and adjectives. Every single-word form of a drawn lexeme is kept, except the dictionary form.
 // Left out: forms of more than one word (zu gehen, rief an), and verbs whose first part is neither a particle
-// nor an inseparable prefix of the lists in opening.rs (losgehen, festhalten), which the deinflector does not split.
+// nor an inseparable prefix of the lists in particles.rs and opening.rs, which the deinflector does not split.
 //
 // Download the dump outside the repository, then run this script from the repository root:
 //   curl -A easyimmerse-research -o /tmp/latest-lexemes.json.gz https://dumps.wikimedia.org/wikidatawiki/entities/latest-lexemes.json.gz
@@ -27,13 +27,9 @@ const THIRD_PERSON = "Q51929074";
 const INDICATIVE = "Q682111";
 const SINGULAR = "Q110786";
 
-// Kept in sync with PARTICLES and INSEPARABLE_PREFIXES in opening.rs.
-const PARTICLES = `ab an auf aus bei durch ein entgegen entlang gegen gegenüber hinter in mit nach über um unter vor
-  wider zu zuwider zwischen abwärts auseinander beisammen davon davor dazu dazwischen empor fort her heraus herbei
-  herein hin hinaus hindurch hinein hintenüber hinterher hinüber nebenher nieder rückwärts umher voran voraus vorbei
-  vorher vorweg weg weiter wieder zurück zusammen zuvor dran drauf drauflos abhanden anheim bevor dar einher entzwei
-  fürlieb hintan inne überein überhand umhin vorlieb zurecht fehl feil heim irre kund preis wahr weis wett`.split(/\s+/);
-const PREFIXES = "be emp ent er ge miss ver zer durch hinter über um unter wider wieder voll".split(" ");
+// The particles and inseparable prefixes that the deinflector splits off, read from its source.
+const PARTICLES = quotedStrings(path.join(__dirname, "..", "particles.rs"), /pub const \w+: &\[&str\] = &\[([^\]]*)\]/g);
+const PREFIXES = quotedStrings(path.join(__dirname, "..", "opening.rs"), /INSEPARABLE_PREFIXES: \[&str; \d+\] = \[([^\]]*)\]/g);
 
 const VERB_GROUPS = {
   "strong simple": 60,
@@ -143,6 +139,11 @@ function draw(items, count, random) {
     drawn.push(pool.splice(Math.floor(random() * pool.length), 1)[0]);
   }
   return drawn;
+}
+
+function quotedStrings(file, listPattern) {
+  const source = fs.readFileSync(file, "utf8");
+  return [...source.matchAll(listPattern)].flatMap((list) => [...list[1].matchAll(/"([^"]+)"/g)].map((item) => item[1]));
 }
 
 function isOneWord(text) {
