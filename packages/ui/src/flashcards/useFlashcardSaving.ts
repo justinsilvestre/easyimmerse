@@ -1,11 +1,11 @@
 import { type Dispatch, useEffect, useRef, useState } from "react";
 import { useTimer } from "../hooks/useTimer.ts";
 import { saveLookupWaitMs } from "../lookup/lookupTiming.ts";
-import {
-  type EditedFlashcard,
-  type EditedFlashcardAction,
-  sourceOf,
+import type {
+  EditedFlashcard,
+  EditedFlashcardAction,
 } from "./editedFlashcard.ts";
+import { createSaveQueue } from "./saveQueue.ts";
 import { isSaveAsked } from "./saveStage.ts";
 
 /** Tells of a save's outcome. A save in the background is one of a card no longer on screen. */
@@ -28,21 +28,18 @@ export function useFlashcardSaving(
   send: (card: EditedFlashcard) => Promise<unknown>,
   reports: SaveReports,
 ): () => void {
-  // A card's save goes out once at a time, however the editor and its going away overlap; a retry after it settles may go out again.
-  const [sending] = useState(() => new Set<object>());
+  const [queue] = useState(createSaveQueue);
   const sendAndReport = (card: EditedFlashcard, isInBackground: boolean) => {
-    const source = sourceOf(card);
-    if (sending.has(source)) return;
-    sending.add(source);
-    send(card)
-      .finally(() => sending.delete(source))
-      .then(
+    const { session } = card;
+    queue
+      .add(card, () => send(card))
+      ?.then(
         () => {
-          dispatchEdited({ type: "saved", source });
+          dispatchEdited({ type: "saved", session });
           reports.saved(card, isInBackground);
         },
         () => {
-          dispatchEdited({ type: "saveFailed", source });
+          dispatchEdited({ type: "saveFailed", session });
           reports.failed(card, isInBackground);
         },
       );

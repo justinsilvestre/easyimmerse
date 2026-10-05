@@ -234,6 +234,48 @@ describe("useMediaFlashcards", () => {
     });
   });
 
+  describe("when a saved card is reopened while a save of it is under way", () => {
+    async function reopenWhileSaving() {
+      const rendered = renderFlashcards();
+      const { result, held } = rendered;
+      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+      act(() => result.current.open(savedFlashcard.id));
+      act(() =>
+        result.current.edit({
+          type: "textChanged",
+          key: "word",
+          value: "Hündin",
+        }),
+      );
+      act(() => result.current.save());
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      act(() => result.current.open(savedFlashcard.id));
+      act(() =>
+        result.current.edit({
+          type: "textChanged",
+          key: "word",
+          value: "Rüde",
+        }),
+      );
+      return rendered;
+    }
+
+    it("keeps the reopened card open once the earlier save returns", async () => {
+      const { result, letSavesThrough } = await reopenWhileSaving();
+      await letSavesThrough();
+      expect(result.current.edited?.editor.content.word).toBe("Rüde");
+    });
+
+    it("sends its second save after the first rather than dropping it", async () => {
+      const { result, held, letSavesThrough, puts } = await reopenWhileSaving();
+      act(() => result.current.save());
+      await letSavesThrough();
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      expect(puts()).toHaveLength(2);
+    });
+  });
+
   describe("when another card replaces one with unsaved changes", () => {
     const typeWord = (word: string) =>
       ({

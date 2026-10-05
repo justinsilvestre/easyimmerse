@@ -349,26 +349,44 @@ describe("reduceEditedFlashcard on its way to being saved", () => {
     );
   });
 
-  it("closes the card once it is saved", () => {
-    const draft = createDraft();
-    const edited = reduceAll(
-      startedFrom(draft),
+  /** Sends the card that `edited` holds, returning it as it is while being sent. */
+  function sendingFrom(edited: EditedFlashcard | null) {
+    return reduceAll(
+      edited,
       { type: "saveRequested" },
       { type: "sendStarted" },
-      { type: "saved", source: draft },
     );
-    expect(edited).toBeNull();
+  }
+
+  const sessionOf = (edited: EditedFlashcard | null) => {
+    if (edited === null) throw new Error("No flashcard is open.");
+    return edited.session;
+  };
+
+  it("closes the card once it is saved", () => {
+    const sending = sendingFrom(startedFrom(createDraft()));
+    expect(
+      reduceAll(sending, { type: "saved", session: sessionOf(sending) }),
+    ).toBeNull();
   });
 
   it("leaves open a card started after the one that was saved", () => {
-    const saved = createDraft();
-    const later = reduceAll(
-      startedFrom(saved),
-      { type: "saveRequested" },
-      { type: "sendStarted" },
-      { type: "started", draft: createDraft() },
+    const sending = sendingFrom(startedFrom(createDraft()));
+    const later = reduceAll(sending, { type: "started", draft: createDraft() });
+    expect(
+      reduceAll(later, { type: "saved", session: sessionOf(sending) }),
+    ).toBe(later);
+  });
+
+  it("leaves open a saved card reopened while an earlier save of it was under way", () => {
+    const flashcard = createFlashcard("f1");
+    const sending = sendingFrom(
+      reduceEditedFlashcard(null, { type: "opened", flashcard }),
     );
-    expect(reduceAll(later, { type: "saved", source: saved })).toBe(later);
+    const reopened = reduceAll(sending, { type: "opened", flashcard });
+    expect(
+      reduceAll(reopened, { type: "saved", session: sessionOf(sending) }),
+    ).toBe(reopened);
   });
 
   it("ignores edits while a save waits for the lookup", () => {
@@ -415,13 +433,11 @@ describe("reduceEditedFlashcard on its way to being saved", () => {
   });
 
   it("lets the user edit again once a save fails", () => {
-    const draft = createDraft();
-    const edited = reduceAll(
-      startedFrom(draft),
-      { type: "saveRequested" },
-      { type: "sendStarted" },
-      { type: "saveFailed", source: draft },
-    );
+    const sending = sendingFrom(startedFrom(createDraft()));
+    const edited = reduceAll(sending, {
+      type: "saveFailed",
+      session: sessionOf(sending),
+    });
     expect(edited?.stage).toBe("editing");
   });
 });

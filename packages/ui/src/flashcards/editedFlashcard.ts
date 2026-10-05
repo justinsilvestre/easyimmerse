@@ -33,6 +33,7 @@ export type EditedFlashcard =
       stage: SaveStage;
       /** Whether the user has changed the card since it opened, which a lookup filling it does not count as. */
       isChanged: boolean;
+      session: CardSession;
     }
   | {
       kind: "existing";
@@ -40,6 +41,7 @@ export type EditedFlashcard =
       editor: EditorState;
       stage: SaveStage;
       isChanged: boolean;
+      session: CardSession;
     };
 
 export type EditedFlashcardAction =
@@ -57,15 +59,18 @@ export type EditedFlashcardAction =
   | { type: "lookupFailed"; draft: FlashcardDraft }
   | { type: "saveRequested" }
   | { type: "sendStarted" }
-  /** The card that `source`, its draft or saved flashcard, opened has been saved. */
-  | { type: "saved"; source: FlashcardSource }
-  | { type: "saveFailed"; source: FlashcardSource }
+  /** The card opened in `session` has been saved. */
+  | { type: "saved"; session: CardSession }
+  | { type: "saveFailed"; session: CardSession }
   /** The media file has turned out to show pictures, so a new flashcard started before then can have a screenshot. */
   | { type: "screenshotsAvailable" }
   | { type: "closed" };
 
-/** What an open card was opened from, which tells it apart from any card opened later. */
-export type FlashcardSource = FlashcardDraft | Flashcard;
+/**
+ * Tells one opening of a card in the editor from every other, even of the same saved flashcard,
+ * so that a save's outcome reaches only the opening it was sent from.
+ */
+export type CardSession = symbol;
 
 export function reduceEditedFlashcard(
   edited: EditedFlashcard | null,
@@ -80,6 +85,7 @@ export function reduceEditedFlashcard(
         typedFields: [],
         stage: action.awaitsLookup ? "awaitingLookup" : "editing",
         isChanged: false,
+        session: Symbol("new flashcard"),
       };
     case "opened":
       return {
@@ -88,6 +94,7 @@ export function reduceEditedFlashcard(
         editor: editorStateOf(action.flashcard),
         stage: "editing",
         isChanged: false,
+        session: Symbol("saved flashcard"),
       };
     case "edited":
       // The editor is read-only once Save is pressed, so that what is saved is what the user saw.
@@ -109,9 +116,9 @@ export function reduceEditedFlashcard(
         ? withStage(edited, "sending")
         : edited;
     case "saved":
-      return edited && sourceOf(edited) === action.source ? null : edited;
+      return edited?.session === action.session ? null : edited;
     case "saveFailed":
-      return edited && sourceOf(edited) === action.source
+      return edited?.session === action.session
         ? withStage(edited, "editing")
         : edited;
     case "screenshotsAvailable":
@@ -122,10 +129,6 @@ export function reduceEditedFlashcard(
     case "closed":
       return null;
   }
-}
-
-export function sourceOf(edited: EditedFlashcard): FlashcardSource {
-  return edited.kind === "new" ? edited.draft : edited.flashcard;
 }
 
 type NewFlashcard = Extract<EditedFlashcard, { kind: "new" }>;
