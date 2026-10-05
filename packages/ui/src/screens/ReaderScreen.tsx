@@ -4,10 +4,9 @@ import {
   type ReaderLocation,
   selectPreference,
   selectPreferencesLoaded,
-  selectReadingLocation,
 } from "@easyimmerse/state";
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { draftFromText } from "../flashcards/draftFromText.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
@@ -18,6 +17,7 @@ import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { ReaderView } from "../reader/ReaderView.tsx";
 import { parseReaderPreferences } from "../reader/readerPreferences.ts";
 import { useOpenedBook } from "../reader/useOpenedBook.ts";
+import { useOpeningLocation } from "../reader/useOpeningLocation.ts";
 
 /**
  * The screen for reading one of the project's ebooks or text files.
@@ -63,25 +63,6 @@ export function ReaderScreen({
       initialLocation={location ?? undefined}
     />
   );
-}
-
-/**
- * Reads the book's stored place once.
- * Later reports from the reader leave the result alone, so that reading does not re-render the screen on every scroll.
- */
-function useOpeningLocation(mediaFileId: string) {
-  const dispatch = useAppDispatch();
-  useEffect(() => {
-    dispatch(actions.readingLocationLoadRequested(mediaFileId));
-  }, [dispatch, mediaFileId]);
-  return useAppSelector(selectReadingLocation(mediaFileId), haveSameLoadState);
-}
-
-function haveSameLoadState(
-  a: ReaderLocation | null | undefined,
-  b: ReaderLocation | null | undefined,
-): boolean {
-  return (a === undefined) === (b === undefined);
 }
 
 function BookReader({
