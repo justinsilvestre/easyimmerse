@@ -2,26 +2,50 @@ import clsx from "clsx";
 import { lookupTriggerAttribute } from "./lookupTrigger.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
 
-const wordPattern = /\p{L}[\p{L}\p{M}\p{N}'’-]*/gu;
+/** A letter of a script written without spaces between words: Chinese characters, hiragana and katakana, with marks such as ー. */
+const unspacedLetter = String.raw`(?=[\p{L}\p{M}])[\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}]`;
 
-type TextPart = { text: string; isWord: boolean; start: number };
+/** A letter, mark, digit or joining character of any other script. */
+const spacedLetter = String.raw`(?![\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}])[\p{L}\p{M}\p{N}'’-]`;
+
+/** A run of unspaced letters, or a word of spaced ones beginning with a letter. */
+const wordPattern = new RegExp(
+  String.raw`(?<unspaced>(?:${unspacedLetter})+)|(?=\p{L})(?:${spacedLetter})+`,
+  "gu",
+);
+
+type TextPart = {
+  text: string;
+  isWord: boolean;
+  /** Whether the word is a run of a script written without spaces, whose every character can begin a word. */
+  isUnspaced: boolean;
+  start: number;
+};
 
 /** Splits text into the words a reader could look up, keeping the characters between them. `start` is each part's offset in the text. */
 export function splitIntoWords(text: string): TextPart[] {
   const parts: TextPart[] = [];
   let lastEnd = 0;
-  for (const match of text.matchAll(wordPattern)) {
-    if (match.index > lastEnd)
+  const pushGap = (end: number) => {
+    if (end > lastEnd)
       parts.push({
-        text: text.slice(lastEnd, match.index),
+        text: text.slice(lastEnd, end),
         isWord: false,
+        isUnspaced: false,
         start: lastEnd,
       });
-    parts.push({ text: match[0], isWord: true, start: match.index });
+  };
+  for (const match of text.matchAll(wordPattern)) {
+    pushGap(match.index);
+    parts.push({
+      text: match[0],
+      isWord: true,
+      isUnspaced: match.groups?.unspaced !== undefined,
+      start: match.index,
+    });
     lastEnd = match.index + match[0].length;
   }
-  if (lastEnd < text.length)
-    parts.push({ text: text.slice(lastEnd), isWord: false, start: lastEnd });
+  pushGap(text.length);
   return parts;
 }
 

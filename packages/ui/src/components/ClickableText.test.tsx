@@ -22,6 +22,32 @@ describe("splitIntoWords", () => {
     ]);
   });
 
+  it("keeps a run of Japanese apart from a Latin word inside it", () => {
+    expect(
+      splitIntoWords("今日はNetflixで映画を見る")
+        .filter((part) => part.isWord)
+        .map((part) => part.text),
+    ).toEqual(["今日は", "Netflix", "で映画を見る"]);
+  });
+
+  it("keeps Japanese punctuation out of a run", () => {
+    expect(
+      splitIntoWords("食べる、飲む。")
+        .filter((part) => part.isWord)
+        .map((part) => part.text),
+    ).toEqual(["食べる", "飲む"]);
+  });
+
+  it("keeps a character outside the Basic Multilingual Plane in its run", () => {
+    expect(splitIntoWords("𠮷野家で")[0]?.text).toBe("𠮷野家で");
+  });
+
+  it("marks a Japanese run as written without spaces", () => {
+    expect(
+      splitIntoWords("映画Netflix").map((part) => part.isUnspaced),
+    ).toEqual([true, false]);
+  });
+
   it("keeps an apostrophe inside a word", () => {
     expect(splitIntoWords("l'homme")[0]?.text).toBe("l'homme");
   });
