@@ -58,12 +58,16 @@ The short causative of する is traced only after a stem, as in 勉強さす. �
 
 The bare continuative of a verb and the stem of an i-adjective are reported as results, named `continuative` and `stem`: 食べ gives 食べる, し gives する, 高 gives 高い. They are what lookup finds before a suffix or a subsidiary verb (食べやすい, 高すぎる, 書きながら, 寒がる). An adjective reached from its bare stem is not deinflected further, so that the stems of the auxiliaries ない and たい (な, た) do not lead on to a verb.
 
-Lookup ranks a longer match first. Among matches of the same length:
+Lookup ranks a longer match first. Among matches of the same length, for every language:
 
-1. A one-character stem such as し or き ranks below an unchanged word, such as the particle し in 雨だし, however common the verb is.
-2. An unchanged word and a bare stem rank above any other inflected match, whatever the frequencies, so 動かす ranks above 動く (of which it may be the short causative) and 切れる above 切る (of which it may be the potential).
-3. Within each of those groups, the more common result comes first when one frequency dictionary lists both, and otherwise the result with fewer inflections. 書きながら therefore shows the verb 書く before a rarer noun 書き when frequency data says so, and the noun first without it.
-4. Among results still equal, an entry spelled exactly as the looked-up text comes before one found only by folding case, so Maße comes before Masse when Maße is looked up, and the reverse for Masse.
+1. A result spelled exactly as the form searched for ranks above one found only by folding case, whatever the frequencies. The form searched for is the dictionary form that deinflection reached, or the looked-up text when nothing was undone, and it may equal an entry's term, reading or alternate spelling. Maße therefore comes before Masse when Maße is looked up, and the reverse for Masse; Essen shows the noun before the verb essen. In 書きながら, both the noun 書き and the verb 書く reached from 書き are exact, so the later tiers decide between them.
+2. A one-character stem such as し or き ranks below an unchanged word, such as the particle し in 雨だし, however common the verb is.
+3. An unchanged word and a bare form rank above any other inflected match, whatever the frequencies, so 動かす ranks above 動く (of which it may be the short causative) and 切れる above 切る (of which it may be the potential). A bare form is one step back from a stem used as a word: the continuative (食べ, 書き), the adjective stem (高), and the godan imperative, which is the bare e-stem (行け, 書け).
+4. A German reading that rests on a rule fitting almost any word, the bare-stem imperative (lach from lachen), ranks below its equals, so Vögel shows Vogel before vögeln.
+5. Within each of those groups, the more common result comes first when one frequency dictionary lists both, and otherwise the result with fewer inflections. 書きながら therefore shows the verb 書く before a rarer noun 書き when frequency data says so, and the noun first without it. 行け likewise shows the imperative of 行く before the continuative of 行ける when frequency data calls 行く more common.
+6. Then a result that a frequency dictionary lists, then the dictionary imported first, then the higher score. Without frequency data, 行け shows whichever of 行く and 行ける comes from the dictionary imported first.
+
+A result lists every inflection chain that is as good as its best one: a chain that matches the same text through as many inflections, with the same bare-form status, and that fits one of the result's entries. The chains keep the order in which the deinflector finds them. 食べさせられなかった therefore gives 食べる both as `causative`, `passive`, `negative`, `past` and as `causative`, `potential`, `negative`, `past`, read from the dictionary form outwards. The pop-up writes chains that differ in one step on one line, as in causative ‹ passive or potential ‹ negative ‹ past.
 
 The lookup tests in `crates/core/src/lookup/japanese_splits.rs` and `build_lookup_results.rs` show each of these cases.
 
@@ -71,7 +75,7 @@ The lookup tests in `crates/core/src/lookup/japanese_splits.rs` and `build_looku
 
 Results carry the six classes that Yomitan-format dictionaries put in their rules column: `v1` (ichidan), `v5` (godan), `vk` (来る), `vs` (する and its compounds), `vz` (ずる verbs) and `adj-i`. While a chain is being undone, rules also pass through intermediate states: the continuative stem, the irrealis stem, the two euphonic stems (before た and て, and before だ and で), the adjective stem, and the adjective continuative (高く, 高う). Rules that turn a stem back into a dictionary form undo no inflection of their own; the suffix rule that produced the stem names the inflection.
 
-When two chains reach the same term with the same inflections, their classes are merged into one result.
+When two chains reach the same term with the same inflections, their classes are merged into one result. Chains that reach the same term through different inflections stay separate.
 
 ## Inflection names
 
@@ -176,8 +180,8 @@ Results list inflections outermost first, so 食べさせられなかった give
 ## Points of uncertainty
 
 - やがる is a suffix in the 規程集 (下 p. (53)) and an auxiliary in UniDic 2025.12. It is undone, following the newer source; lookup would split 言いやがる cleanly either way.
-- ん is both the negative ぬ and the conjecture む, so a word in ん is traced back both ways and lookup shows the result named `negative`.
+- ん is both the negative ぬ and the conjecture む, so a word in ん is traced back both ways and lookup shows both chains, `negative` first.
 - Godan forms are traced to a する verb only when the stem is one kanji, as in every such pair in UniDic 2025.12; kana spellings such as あいさない are not.
 - Without frequency data, an unchanged word of the same length outranks a bare stem, so 書きながら shows a dictionary's noun 書き before the verb 書く, and 高すぎる shows the prefix 高 before 高い. With frequency data, the more common of the two comes first.
 - The short causative rules cannot tell a short causative from a transitive verb that happens to end in -as-u, such as 動かす, 減らす or 鳴らす, so these also lead to 動く, 減る and 鳴る, named `causative`. A dictionary that lists the transitive verb still shows it first.
-- A bare stem ranks above any other inflected match of the same length, so 行け shows the continuative of 行ける before the imperative of 行く when a dictionary lists both verbs.
+- The godan imperative counts as a bare form, as the continuative does, so 行け leaves the choice between the imperative of 行く and the continuative of 行ける to frequency data, and without it to dictionary order.

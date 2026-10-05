@@ -29,6 +29,9 @@ As a user:
 - when I create flashcards with a dictionary from the easyImmerse registry:
   - [ ] each flashcard stores a reference to the dictionary entry rather than the entry's full text, so it takes less space on my device and in the cloud
 
+- [x] A dictionary's own stylesheet (Yomitan's `styles.css`, the `.css` beside an MDict or StarDict dictionary) styles that dictionary's definitions and nothing else. It arrives with each lookup, so entries never show unstyled first. Before it is applied, every selector is confined to that dictionary's definitions, and anything that could load a remote resource, run code, or draw outside the definition is dropped. Class names in dictionary markup are kept with a prefix, so they cannot pick up the app's own styles.
+- [x] Dictionaries are designed for white pages. In the dark theme, their text colors are lightened and their background colors darkened, keeping each color's hue, so that their entries stay readable. Where the browser cannot compute these colors, the dictionary's own colors are shown.
+
 ## Settings
 
 - [x] Settings does not replace the screen beneath it. The media screen stays mounted and inert under the Settings overlay, so that Back restores the player exactly, including the position it had reached.
