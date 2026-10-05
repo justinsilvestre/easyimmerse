@@ -21,16 +21,26 @@ export function usePopupDismissal(
   useEffect(() => {
     const opener = openerRef.current;
     const isActive = () => !isOutOfReach(popupRef.current);
+    // Decided as the click sets out, before any handler of the clicked element runs,
+    // since a re-render in between may detach that element from the pop-up.
+    // A click that began before the pop-up opened, such as the one that opened it, is left alone.
+    let outsideClick: Event | null = null;
+    const onClickStart = (event: MouseEvent) => {
+      outsideClick = isInsideOrTrigger(popupRef.current, event.target)
+        ? null
+        : event;
+    };
     const onClick = (event: MouseEvent) => {
-      if (isActive() && !isInsideOrTrigger(popupRef.current, event.target))
-        onCloseRef.current();
+      if (isActive() && event === outsideClick) onCloseRef.current();
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && isActive()) onCloseRef.current();
     };
+    document.addEventListener("click", onClickStart, { capture: true });
     document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKeyDown);
     return () => {
+      document.removeEventListener("click", onClickStart, { capture: true });
       document.removeEventListener("click", onClick);
       document.removeEventListener("keydown", onKeyDown);
       restoreFocus(popupRef.current, opener);

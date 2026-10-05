@@ -89,6 +89,16 @@ describe("DictionaryPopup dismissal", () => {
     expect(closeCount).toBe(0);
   });
 
+  it("stays open on a click inside it that removes the clicked element before the click reaches the page", () => {
+    let closeCount = 0;
+    renderPopup({ onClose: () => (closeCount += 1) });
+    const button = screen.getByRole("button", { name: "Flashcard" });
+    // A browser re-renders between the element's own handler and the page's, as when a link inside is followed.
+    button.addEventListener("click", () => button.remove());
+    fireEvent.click(button);
+    expect(closeCount).toBe(0);
+  });
+
   it("stays open on a click inside it", () => {
     let closeCount = 0;
     renderPopup({ onClose: () => (closeCount += 1) });
