@@ -27,7 +27,7 @@ function PopupAtWord({ wordTop }: { wordTop: string | null }) {
           resolveMediaUrl={resolveExampleMediaUrl}
           onSearch={fn()}
           onCreateFlashcard={fn()}
-          onWordFlashcard={fn()}
+          wordActions={{ onFlashcard: fn(), onLookupStarted: fn() }}
           onClose={fn()}
           onSetUpDictionary={fn()}
         />

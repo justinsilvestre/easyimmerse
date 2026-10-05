@@ -9,15 +9,16 @@ import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import { KanjiCard } from "./KanjiCard.tsx";
 import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupState } from "./lookupState.ts";
+import { type PopupWordActions, PopupWordContext } from "./popupWordContext.ts";
 import { DictionaryStylesheets } from "./stylesheet/DictionaryStylesheets.tsx";
 import { usePopupDismissal } from "./usePopupDismissal.ts";
-import { WordFlashcardContext } from "./wordFlashcardContext.ts";
 
 /**
  * The dictionary pop-up. In `word` mode it shows the word chosen in the text; in `search` mode it opens with a field to type a word into.
  * Clicking a word inside the pop-up, or following a link to another headword, looks it up in turn.
  * A flashcard comes from every result with the header button (`entryIndex` null) or from one result with its own button,
- * and, through `onWordFlashcard`, from a word inside the pop-up that is double-clicked or held.
+ * and, through `wordActions`, from a word inside the pop-up that is double-clicked or held.
+ * While such a flashcard waits for its word's lookup, `pendingFlashcard` names the word.
  * Escape, or pressing outside the pop-up and not on a word marked as a lookup trigger, closes it.
  * Images in definitions are found through `resolveMediaUrl`.
  */
@@ -28,7 +29,8 @@ export function DictionaryPopup({
   resolveMediaUrl,
   onSearch,
   onCreateFlashcard,
-  onWordFlashcard = null,
+  wordActions = null,
+  pendingFlashcard = null,
   onClose,
   onSetUpDictionary,
 }: {
@@ -39,7 +41,8 @@ export function DictionaryPopup({
   resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
   onCreateFlashcard: (entryIndex: number | null) => void;
-  onWordFlashcard?: ((word: string) => void) | null;
+  wordActions?: PopupWordActions | null;
+  pendingFlashcard?: string | null;
   onClose: () => void;
   onSetUpDictionary: () => void;
 }) {
@@ -75,7 +78,12 @@ export function DictionaryPopup({
         </IconButton>
       </header>
       <div className="flex-1 overflow-y-auto px-3 py-2">
-        <WordFlashcardContext value={onWordFlashcard}>
+        {pendingFlashcard !== null && (
+          <p role="status" className="pb-2 text-sm text-fg-muted">
+            Making a flashcard for “{pendingFlashcard}”…
+          </p>
+        )}
+        <PopupWordContext value={wordActions}>
           <Body
             state={state}
             resolveMediaUrl={resolveMediaUrl}
@@ -83,7 +91,7 @@ export function DictionaryPopup({
             onCreateFlashcard={onCreateFlashcard}
             onSetUpDictionary={onSetUpDictionary}
           />
-        </WordFlashcardContext>
+        </PopupWordContext>
       </div>
     </section>
   );

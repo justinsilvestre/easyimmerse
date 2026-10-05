@@ -46,6 +46,7 @@ export function useDictionaryLookup<S>(language: string) {
       : skipToken,
   );
   const [lookUpLazily] = useLazyLookupTextQuery();
+  const [prefetchLazily] = useLazyLookupTextQuery();
   return {
     popup,
     request,
@@ -72,6 +73,11 @@ export function useDictionaryLookup<S>(language: string) {
             waitMs,
             [],
           ),
+    /** Starts looking a word up, so that its results are at hand when the pop-up shows it. */
+    prefetch: (wanted: LookupRequest<S>) => {
+      if (!isMissingDictionary)
+        prefetchLazily(lookupQueryOf(wanted, language), true);
+    },
     chooseWord: (chosen: LookupRequest<S>) =>
       dispatch({ type: "wordChosen", request: chosen }),
     openSearch: () => dispatch({ type: "searchOpened" }),
