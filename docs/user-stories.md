@@ -328,6 +328,16 @@ As a user:
 - when I add a dictionary in a format the app does not support:
   - [ ] I am told which formats are supported, and that a plugin may add support for others
 
+As a web app user:
+- when I add a dictionary from a file:
+  - [ ] it is saved in my browser's storage, together with its images, sounds and stylesheet
+  - [ ] it is still in my list of dictionaries after I reload or reopen the app, including while offline
+  - [ ] I can look words up in it without any connection to a server
+- when I add a dictionary that is too large for the storage my browser allows:
+  - [ ] I am told that it could not be saved and how much space it needs, and that the desktop app has no such limit
+- when I remove a dictionary:
+  - [ ] its storage space on my device is freed
+
 ---
 
 ### Exporting flashcard decks
