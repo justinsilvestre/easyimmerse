@@ -4,8 +4,12 @@ export function withinTime<T>(
   ms: number,
   fallback: T,
 ): Promise<T> {
-  const timeout = new Promise<T>((resolve) =>
-    setTimeout(() => resolve(fallback), ms),
-  );
-  return Promise.race([promise.catch(() => fallback), timeout]);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const expiry = new Promise<T>((resolve) => {
+    timeout = setTimeout(() => resolve(fallback), ms);
+  });
+  const settled = promise
+    .catch(() => fallback)
+    .finally(() => clearTimeout(timeout));
+  return Promise.race([settled, expiry]);
 }

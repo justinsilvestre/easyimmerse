@@ -22,6 +22,11 @@ describe("withinTime", () => {
     expect(await result).toBe("none");
   });
 
+  it("leaves no timer behind once the promise settles", async () => {
+    await withinTime(Promise.resolve("found"), 100, "none");
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("resolves the fallback when the promise fails", async () => {
     expect(await withinTime(Promise.reject(new Error()), 100, "none")).toBe(
       "none",
