@@ -30,7 +30,7 @@ function renderPopup({
       <DictionaryPopup
         state={{ kind: "found", term: "fressen", results: exampleResults }}
         resolveMediaUrl={() => null}
-        mode="hover"
+        mode="word"
         onSearch={onSearch}
         onCreateFlashcard={onCreateFlashcard}
         onClose={onClose}
@@ -102,7 +102,7 @@ describe("DictionaryPopup dismissal", () => {
       <div inert>
         <DictionaryPopup
           state={null}
-          mode="hover"
+          mode="word"
           resolveMediaUrl={() => null}
           onSearch={() => undefined}
           onCreateFlashcard={() => undefined}
@@ -152,7 +152,7 @@ function renderState(state: LookupState) {
   render(
     <DictionaryPopup
       state={state}
-      mode="hover"
+      mode="word"
       resolveMediaUrl={() => null}
       onSearch={() => undefined}
       onCreateFlashcard={() => undefined}
@@ -213,7 +213,7 @@ describe("DictionaryPopup links", () => {
           term: "食べなかった",
           results: [exampleInflectedResult],
         }}
-        mode="hover"
+        mode="word"
         resolveMediaUrl={() => null}
         onSearch={(term) => searched.push(term)}
         onCreateFlashcard={() => undefined}

@@ -1,8 +1,10 @@
 import type { KanjiResult } from "@easyimmerse/types";
 import { ClickableText } from "../components/ClickableText.tsx";
 import { FrequencyList } from "./FrequencyList.tsx";
+import { popupWordGestures } from "./popupWordGestures.ts";
 import { resolveTags } from "./resolveTags.ts";
 import { TagList } from "./TagList.tsx";
+import { useWordFlashcard } from "./wordFlashcardContext.ts";
 
 /** One kanji in the dictionary pop-up: the character, its readings and meanings, and facts such as stroke count labelled by the dictionary's tags. */
 export function KanjiCard({
@@ -13,6 +15,7 @@ export function KanjiCard({
   onWordClick: (word: string) => void;
 }) {
   const { entry, tags } = result;
+  const onWordFlashcard = useWordFlashcard();
   return (
     <article
       aria-label={`Kanji ${entry.character}`}
@@ -28,7 +31,7 @@ export function KanjiCard({
         <p>
           <ClickableText
             text={entry.meanings.join(", ")}
-            gestures={{ onWordClick: (hit) => onWordClick(hit.word) }}
+            gestures={popupWordGestures(onWordClick, onWordFlashcard)}
           />
         </p>
         <FrequencyList frequencies={result.frequencies} />

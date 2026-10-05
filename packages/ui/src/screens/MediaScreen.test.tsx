@@ -50,6 +50,12 @@ function doubleClick(element: HTMLElement) {
   fireEvent.doubleClick(element, { detail: 2 });
 }
 
+/** Double-clicks a word and waits for the flashcard editor, which opens once the word's lookup answers. */
+async function doubleClickWord(element: HTMLElement) {
+  doubleClick(element);
+  await screen.findByRole("form", { name: "Flashcard" });
+}
+
 afterEach(() => {
   cleanup();
   resetBackend();
@@ -200,7 +206,7 @@ async function startFlashcardBeforeProbe(hasPictures: boolean) {
   const { capturer, answer } = createWaitingFrameCapturer();
   const rendered = renderBrowserVideoScreen(file, capturer);
   const list = await findSubtitles();
-  doubleClick(within(list).getByRole("button", { name: "cat" }));
+  await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
   answer(hasPictures);
   await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(hasPictures));
   // The screen learns the answer only after the probe's own callback, which may run after the check above.
@@ -226,7 +232,7 @@ async function savedScreenshotOfNewFlashcard(
   client: ReturnType<typeof createFakeBackendClient>,
 ) {
   const list = await findSubtitles();
-  doubleClick(within(list).getByRole("button", { name: "cat" }));
+  await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
   return saveOpenFlashcard(client);
 }
 
@@ -305,6 +311,166 @@ const playbackCalls = (effects: { calls: { type: string }[] }) =>
   effects.calls
     .map((call) => call.type)
     .filter((type) => type === "playPlayer" || type === "pausePlayer");
+
+const findPopup = () => screen.findByRole("region", { name: "Dictionary" });
+
+const queryPopup = () => screen.queryByRole("region", { name: "Dictionary" });
+
+/** Waits for the pop-up to show the word in its header. */
+const findPopupShowing = async (word: string) =>
+  within(await findPopup()).findByText(word, { selector: "header *" });
+
+const panelWord = (word: string) =>
+  within(screen.getByRole("list", { name: "Subtitles" })).getByRole("button", {
+    name: word,
+  });
+
+const lookupTexts = (client: ReturnType<typeof createFakeBackendClient>) =>
+  requestsTo(client.requests, "GET", "/dictionaries/lookup").map(
+    (request) => request.query?.text,
+  );
+
+const wait = (ms: number) =>
+  act(() => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+
+/** Holds a touch on an element long enough to count as a held tap, then lifts it. */
+async function holdTouch(element: HTMLElement) {
+  fireEvent.pointerDown(element, { pointerType: "touch" });
+  await wait(600);
+  fireEvent.pointerUp(element, { pointerType: "touch" });
+  fireEvent.click(element, { detail: 1 });
+}
+
+describe("MediaScreen lookup gestures", () => {
+  it("places the pop-up at the clicked word", async () => {
+    renderMediaScreen();
+    const popup = await lookUpInPanel("cat");
+    expect(popup.closest("[data-side]")).not.toBeNull();
+  });
+
+  it("moves the pop-up to another word tapped while it is open", async () => {
+    renderMediaScreen();
+    await lookUpInPanel("cat");
+    fireEvent.click(panelWord("dog"), { detail: 1 });
+    expect(await findPopupShowing("dog")).toBeDefined();
+  });
+
+  it("follows the mouse once it rests on another word", async () => {
+    renderMediaScreen();
+    await lookUpInPanel("cat");
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    expect(await findPopupShowing("dog")).toBeDefined();
+  });
+
+  it("does not follow the mouse while the pointer is inside the pop-up", async () => {
+    renderMediaScreen();
+    const popup = await lookUpInPanel("cat");
+    fireEvent.pointerEnter(popup, { pointerType: "mouse" });
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    await wait(250);
+    expect(
+      within(popup).getByText("cat", { selector: "header *" }),
+    ).toBeDefined();
+  });
+
+  it("looks nothing up for words hovered inside the pop-up", async () => {
+    const { client } = renderMediaScreen();
+    const popup = await lookUpInPanel("cat");
+    const devour = await within(popup).findByRole("button", { name: "devour" });
+    fireEvent.pointerEnter(devour, { pointerType: "mouse" });
+    await wait(250);
+    expect(lookupTexts(client)).toEqual(["cat is sleeping."]);
+  });
+
+  it("closes when the word it shows is clicked again", async () => {
+    renderMediaScreen();
+    await lookUpInPanel("cat");
+    fireEvent.click(panelWord("cat"), { detail: 1 });
+    await vi.waitFor(() => expect(queryPopup()).toBeNull());
+  });
+
+  it("closes at once when the word it shows is activated from the keyboard", async () => {
+    renderMediaScreen();
+    await lookUpInPanel("cat");
+    fireEvent.click(panelWord("cat"), { detail: 0 });
+    expect(queryPopup()).toBeNull();
+  });
+
+  it("looks a double-clicked word up once, for both the pop-up and the flashcard", async () => {
+    const { client } = renderMediaScreen();
+    await findSubtitles();
+    await doubleClickWord(panelWord("cat"));
+    expect(lookupTexts(client)).toEqual(["cat is sleeping."]);
+  });
+
+  it("fills a double-clicked word's flashcard with the definitions in the translation language", async () => {
+    renderMediaScreen();
+    await findSubtitles();
+    await doubleClickWord(panelWord("cat"));
+    expect(
+      (screen.getByLabelText("Definition (en)") as HTMLTextAreaElement).value,
+    ).toMatch(/^to eat \(of an animal\); to devour\n/);
+  });
+
+  it("replaces the pop-up with the flashcard editor on a double-click", async () => {
+    renderMediaScreen();
+    await findSubtitles();
+    await doubleClickWord(panelWord("cat"));
+    expect(queryPopup()).toBeNull();
+  });
+
+  it("turns the word the pop-up shows into a flashcard on a double-click, without closing it and resuming playback", async () => {
+    const { effects, store } = renderMediaScreen();
+    act(() => store.dispatch(actions.playerPlayingChanged(true)));
+    await lookUpInPanel("cat");
+    act(() => store.dispatch(actions.playerPlayingChanged(false)));
+    await doubleClickWord(panelWord("cat"));
+    await wait(350);
+    expect(playbackCalls(effects)).toEqual(["pausePlayer"]);
+  });
+
+  it("starts a flashcard filled from the lookup on a held tap", async () => {
+    renderMediaScreen();
+    await findSubtitles();
+    await holdTouch(panelWord("cat"));
+    await screen.findByRole("form", { name: "Flashcard" });
+    expect(
+      (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
+    ).toBe("fressen");
+  });
+
+  describe("for a word inside the pop-up", () => {
+    it("looks a clicked word up in the pop-up", async () => {
+      renderMediaScreen();
+      const popup = await lookUpInPanel("cat");
+      fireEvent.click(
+        await within(popup).findByRole("button", { name: "devour" }),
+        { detail: 1 },
+      );
+      expect(await findPopupShowing("devour")).toBeDefined();
+    });
+
+    it("starts a flashcard from its lookup on a double-click", async () => {
+      const { client } = renderMediaScreen();
+      const popup = await lookUpInPanel("cat");
+      await doubleClickWord(
+        await within(popup).findByRole("button", { name: "devour" }),
+      );
+      expect(lookupTexts(client)).toEqual(["cat is sleeping.", "devour"]);
+    });
+
+    it("starts a flashcard on a held tap", async () => {
+      renderMediaScreen();
+      const popup = await lookUpInPanel("cat");
+      await holdTouch(
+        await within(popup).findByRole("button", { name: "devour" }),
+      );
+      expect(
+        await screen.findByRole("form", { name: "Flashcard" }),
+      ).toBeDefined();
+    });
+  });
+});
 
 describe("MediaScreen lookup", () => {
   it("looks a clicked word up with its cue as context", async () => {
@@ -511,16 +677,16 @@ describe("MediaScreen", () => {
   it("opens the flashcard editor with a word double-clicked in the subtitles", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    doubleClick(within(list).getByRole("button", { name: "cat" }));
+    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
     expect(
       (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
-    ).toBe("cat");
+    ).toBe("fressen");
   });
 
   it("takes a new flashcard's sentence from the cue whose word was double-clicked", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    doubleClick(within(list).getByRole("button", { name: "dog" }));
+    await doubleClickWord(within(list).getByRole("button", { name: "dog" }));
     expect(
       (screen.getByLabelText("Sentence (de)") as HTMLTextAreaElement).value,
     ).toBe("The dog wants to eat.\nIt is hungry.");
@@ -529,21 +695,21 @@ describe("MediaScreen", () => {
   it("saves a new flashcard in the project", async () => {
     const { client } = renderMediaScreen();
     const list = await findSubtitles();
-    doubleClick(within(list).getByRole("button", { name: "cat" }));
+    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await vi.waitFor(() =>
       expect(
         bodyOf(
           requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
         ),
-      ).toMatchObject({ media_file_id: "m1", content: { word: "cat" } }),
+      ).toMatchObject({ media_file_id: "m1", content: { word: "fressen" } }),
     );
   });
 
   it("tells the user once the flashcard is saved", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    doubleClick(within(list).getByRole("button", { name: "cat" }));
+    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(
       await screen.findByText("Flashcard saved to the project."),
@@ -637,7 +803,7 @@ describe("MediaScreen", () => {
 
     it("moves the clip of a new flashcard that is not saved yet", async () => {
       const { client } = await renderWithWaveform();
-      doubleClick(
+      await doubleClickWord(
         within(screen.getByRole("list", { name: "Subtitles" })).getByRole(
           "button",
           { name: "cat" },
@@ -666,7 +832,7 @@ describe("MediaScreen", () => {
     it("shows the screenshot captured from the file", async () => {
       renderBrowserVideoScreen(browserVideo());
       const list = await findSubtitles();
-      doubleClick(within(list).getByRole("button", { name: "cat" }));
+      await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
       const thumbnail = await screen.findByAltText("Screenshot from the video");
       expect(thumbnail.getAttribute("src")).toBe("frame-at-1");
     });
@@ -693,7 +859,7 @@ describe("MediaScreen", () => {
       const { capturer } = createWaitingFrameCapturer();
       renderBrowserVideoScreen(browserVideo(), capturer);
       const list = await findSubtitles();
-      doubleClick(within(list).getByRole("button", { name: "cat" }));
+      await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
       expect(screen.queryByLabelText("Include the screenshot")).toBeNull();
     });
 

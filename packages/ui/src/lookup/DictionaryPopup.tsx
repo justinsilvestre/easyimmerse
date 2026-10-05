@@ -11,11 +11,13 @@ import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupState } from "./lookupState.ts";
 import { DictionaryStylesheets } from "./stylesheet/DictionaryStylesheets.tsx";
 import { usePopupDismissal } from "./usePopupDismissal.ts";
+import { WordFlashcardContext } from "./wordFlashcardContext.ts";
 
 /**
- * The dictionary pop-up. In `hover` mode it shows the word chosen in the text; in `search` mode it opens with a field to type a word into.
+ * The dictionary pop-up. In `word` mode it shows the word chosen in the text; in `search` mode it opens with a field to type a word into.
  * Clicking a word inside the pop-up, or following a link to another headword, looks it up in turn.
- * A flashcard comes from every result with the header button (`entryIndex` null) or from one result with its own button.
+ * A flashcard comes from every result with the header button (`entryIndex` null) or from one result with its own button,
+ * and, through `onWordFlashcard`, from a word inside the pop-up that is double-clicked or held.
  * Escape, or pressing outside the pop-up and not on a word marked as a lookup trigger, closes it.
  * Images in definitions are found through `resolveMediaUrl`.
  */
@@ -25,14 +27,16 @@ export function DictionaryPopup({
   resolveMediaUrl,
   onSearch,
   onCreateFlashcard,
+  onWordFlashcard = null,
   onClose,
   onSetUpDictionary,
 }: {
   state: LookupState | null;
-  mode: "hover" | "search";
+  mode: "word" | "search";
   resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
   onCreateFlashcard: (entryIndex: number | null) => void;
+  onWordFlashcard?: ((word: string) => void) | null;
   onClose: () => void;
   onSetUpDictionary: () => void;
 }) {
@@ -65,13 +69,15 @@ export function DictionaryPopup({
         </IconButton>
       </header>
       <div className="flex-1 overflow-y-auto px-3 py-2">
-        <Body
-          state={state}
-          resolveMediaUrl={resolveMediaUrl}
-          onSearch={onSearch}
-          onCreateFlashcard={onCreateFlashcard}
-          onSetUpDictionary={onSetUpDictionary}
-        />
+        <WordFlashcardContext value={onWordFlashcard}>
+          <Body
+            state={state}
+            resolveMediaUrl={resolveMediaUrl}
+            onSearch={onSearch}
+            onCreateFlashcard={onCreateFlashcard}
+            onSetUpDictionary={onSetUpDictionary}
+          />
+        </WordFlashcardContext>
       </div>
     </section>
   );

@@ -6,6 +6,8 @@ export type WordHit = {
   /** The word's offset in its text, in UTF-16 code units. */
   start: number;
   element: HTMLElement;
+  /** Whether the word was activated from the keyboard, so that no double-click can follow. */
+  isKeyboard: boolean;
 };
 
 /** What the user can do to a word, each reported once. */
@@ -64,7 +66,12 @@ export function useWordGestures(gestures: WordGestures) {
   const cancel = (name: keyof typeof timers.current) =>
     clearTimeout(timers.current[name]);
   return (word: string, start: number) => {
-    const hitOf = (element: HTMLElement): WordHit => ({ word, start, element });
+    const hitOf = (element: HTMLElement, isKeyboard = false): WordHit => ({
+      word,
+      start,
+      element,
+      isKeyboard,
+    });
     return {
       onPointerEnter: (event: PointerEvent<HTMLElement>) => {
         if (event.pointerType !== "mouse") return;
@@ -109,7 +116,7 @@ export function useWordGestures(gestures: WordGestures) {
           touch.current.isHeld = false;
           return;
         }
-        const hit = hitOf(event.currentTarget);
+        const hit = hitOf(event.currentTarget, event.detail === 0);
         const { onWordClick, onWordDoubleClick, defersClick } = latest.current;
         if (event.detail === 2 && onWordDoubleClick) {
           cancel("click");

@@ -1,5 +1,5 @@
 import { actions, selectPlayer } from "@easyimmerse/state";
-import type { Project } from "@easyimmerse/types";
+import type { Cue, Project } from "@easyimmerse/types";
 import { useReducer, useRef } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
@@ -11,6 +11,7 @@ import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
 import { useScreenshotUrl } from "../flashcards/useScreenshotUrl.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
@@ -70,12 +71,14 @@ export function MediaScreen({
     targetSubtitlesId: subtitles.selection.target_track_id,
     translationSubtitlesId: subtitles.selection.translation_track_id,
   };
+  /** Starts a flashcard for a word from its cue, or else from the cue at the current time. */
   const startFlashcard = (
     word: string,
-    cue = cueForFlashcard(subtitles.cues, currentMs),
-    lookupFields: LookupFlashcardFields | null = null,
+    wordCue: Cue | null,
+    lookupFields: LookupFlashcardFields | null,
   ) => {
     if (mediaFile === null) return;
+    const cue = wordCue ?? cueForFlashcard(subtitles.cues, currentMs);
     const draft = draftFromCue({
       word,
       cue,
@@ -155,8 +158,14 @@ export function MediaScreen({
       activeWord={lookup.activeWord}
       wordGestures={lookup.wordGestures}
       onLookup={lookup.openSearch}
-      onAddFlashcard={() => startFlashcard("")}
-      lookup={lookup.popupProps && <DictionaryPopup {...lookup.popupProps} />}
+      onAddFlashcard={() => startFlashcard("", null, null)}
+      lookup={
+        lookup.popup && (
+          <AnchoredPopup {...lookup.popup.anchored}>
+            <DictionaryPopup {...lookup.popup.props} />
+          </AnchoredPopup>
+        )
+      }
       headerContent={
         flashcards.isSaved ? (
           <FlashcardSaveNotice

@@ -16,6 +16,7 @@ import {
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
+import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
@@ -136,17 +137,19 @@ function subtitlesPanel(
   );
 }
 
-function lookupPopup(state: LookupState | null, mode: "hover" | "search") {
+function lookupPopup(state: LookupState | null, mode: "word" | "search") {
   return (
-    <DictionaryPopup
-      state={state}
-      mode={mode}
-      resolveMediaUrl={resolveExampleMediaUrl}
-      onSearch={fn()}
-      onCreateFlashcard={fn()}
-      onClose={fn()}
-      onSetUpDictionary={fn()}
-    />
+    <AnchoredPopup anchor={null}>
+      <DictionaryPopup
+        state={state}
+        mode={mode}
+        resolveMediaUrl={resolveExampleMediaUrl}
+        onSearch={fn()}
+        onCreateFlashcard={fn()}
+        onClose={fn()}
+        onSetUpDictionary={fn()}
+      />
+    </AnchoredPopup>
   );
 }
 
@@ -204,14 +207,14 @@ export const LookingUpAWord: Story = {
     activeWord: "fressen",
     lookup: lookupPopup(
       { kind: "found", term: "fressen", results: exampleResults },
-      "hover",
+      "word",
     ),
   },
 };
 
 export const LookupWithoutDictionary: Story = {
   args: {
-    lookup: lookupPopup({ kind: "noDictionary", language: "de" }, "hover"),
+    lookup: lookupPopup({ kind: "noDictionary", language: "de" }, "word"),
   },
 };
 

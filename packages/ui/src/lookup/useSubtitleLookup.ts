@@ -1,99 +1,68 @@
 import type { Cue } from "@easyimmerse/types";
 import type { ComponentProps, RefObject } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
+import type { WordHit } from "../components/useWordGestures.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { usePlaybackPause } from "../hooks/usePlaybackPause.ts";
 import type { CueWordGestures } from "../media/cueWordGestures.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
-import {
-  flashcardFieldsFromLookup,
-  type LookupFlashcardFields,
-} from "./flashcardFieldsFromLookup.ts";
+import type { LookupRequest } from "./lookupPopup.ts";
 import { lookupTextAt } from "./lookupTextAt.ts";
-import { useDictionaryLookup } from "./useDictionaryLookup.ts";
-
-/** Starts a flashcard for a word, from its cue or else the cue at the current time, with fields filled from a lookup. */
-export type StartFlashcard = (
-  word: string,
-  cue: Cue | undefined,
-  lookupFields: LookupFlashcardFields | null,
-) => void;
+import { anchorOf } from "./placeAtAnchor.ts";
+import {
+  type StartFlashcardFromLookup,
+  useWordLookup,
+} from "./useWordLookup.ts";
 
 /**
  * Looks up words of the subtitles in the dictionary pop-up, which pauses playback while it is open
  * and resumes it when closed, unless the lookup led on to a flashcard or to the dictionaries settings.
  * The L key opens the pop-up's search field while the screen that `screenRef` marks is in reach.
- * Returns the handlers for the subtitles, and the pop-up's props, or null while it is closed.
+ * Returns the gestures for the subtitles' words, and the pop-up's props, or null while it is closed.
  */
 export function useSubtitleLookup(
   languages: { target: string; translation: string },
-  startFlashcard: StartFlashcard,
+  startFlashcard: StartFlashcardFromLookup<Cue>,
   screenRef: RefObject<Element | null>,
 ) {
-  const lookup = useDictionaryLookup(languages.target);
   const pause = usePlaybackPause();
   const { openDictionaries } = useNavigationActions();
-  const openSearch = () => {
-    pause.pause();
-    lookup.openSearch();
+  const lookup = useWordLookup<Cue>({
+    languages,
+    hold: { hold: pause.pause, release: pause.resume, forget: pause.forget },
+    startFlashcard,
+  });
+  useKeyboardShortcut("l", lookup.openSearch, screenRef);
+  const popup = lookup.popup && {
+    anchored: lookup.popup.anchored,
+    props: {
+      ...lookup.popup.props,
+      onSetUpDictionary: () => lookup.leaveFor(openDictionaries),
+    } satisfies ComponentProps<typeof DictionaryPopup>,
   };
-  /** Closes the pop-up for something else that keeps playback paused. */
-  const leaveFor = (next: () => void) => {
-    lookup.close();
-    pause.forget();
-    next();
+  const wordGestures: CueWordGestures = {
+    onWordClick: (hit, cue) =>
+      lookup.clickWord(requestFor(hit, cue), hit.isKeyboard),
+    onWordHoverIntent: (hit, cue) => lookup.hoverWord(requestFor(hit, cue)),
+    onWordDoubleClick: (hit, cue) =>
+      lookup.startFlashcardFor(requestFor(hit, cue)),
+    onWordHold: (hit, cue) => lookup.startFlashcardFor(requestFor(hit, cue)),
   };
-  const endInFlashcard = (
-    word: string,
-    cue: Cue | null,
-    lookupFields: LookupFlashcardFields | null,
-  ) =>
-    leaveFor(() =>
-      startFlashcard(
-        lookupFields?.word ?? word,
-        cue ?? undefined,
-        lookupFields,
-      ),
-    );
-  useKeyboardShortcut("l", openSearch, screenRef);
-  const popupProps: ComponentProps<typeof DictionaryPopup> | null =
-    lookup.popup && {
-      state: lookup.state,
-      mode: lookup.popup.mode,
-      resolveMediaUrl: lookup.resolveMediaUrl,
-      onSearch: lookup.search,
-      onCreateFlashcard: (entryIndex) =>
-        endInFlashcard(
-          lookup.request?.term ?? "",
-          lookup.request?.cue ?? null,
-          flashcardFieldsFromLookup(
-            lookup.results,
-            entryIndex,
-            languages,
-            lookup.dictionaries,
-          ),
-        ),
-      onClose: () => {
-        lookup.close();
-        pause.resume();
-      },
-      onSetUpDictionary: () => leaveFor(openDictionaries),
-    };
   return {
-    activeWord: lookup.request?.term,
-    popupProps,
-    openSearch,
-    wordGestures: {
-      onWordClick: ({ word, start }, cue) => {
-        pause.pause();
-        lookup.chooseWord({
-          term: word,
-          lookup: lookupTextAt(stripMarkup(cue.text), start),
-          cue,
-        });
-      },
-      onWordDoubleClick: ({ word }, cue) => endInFlashcard(word, cue, null),
-    } satisfies CueWordGestures,
+    activeWord: lookup.activeWord,
+    popup,
+    openSearch: lookup.openSearch,
+    wordGestures,
+  };
+}
+
+function requestFor(hit: WordHit, cue: Cue): LookupRequest<Cue> {
+  return {
+    term: hit.word,
+    lookup: lookupTextAt(stripMarkup(cue.text), hit.start),
+    source: cue,
+    occurrence: `${cue.index}:${hit.start}`,
+    anchor: anchorOf(hit.element),
   };
 }

@@ -19,10 +19,11 @@ const meta = {
   component: DictionaryPopup,
   args: {
     state: { kind: "found", term: "fressen", results: exampleResults },
-    mode: "hover",
+    mode: "word",
     resolveMediaUrl: resolveExampleMediaUrl,
     onSearch: fn(),
     onCreateFlashcard: fn(),
+    onWordFlashcard: fn(),
     onClose: fn(),
     onSetUpDictionary: fn(),
   },

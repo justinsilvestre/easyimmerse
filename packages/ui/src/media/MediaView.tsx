@@ -42,7 +42,7 @@ type MediaViewProps = {
   onAddFlashcard: () => void;
   /** Notices to show above the stage, such as the unsaved-work banner. */
   headerContent?: ReactNode;
-  /** The dictionary pop-up, drawn over the lower part of the stage. */
+  /** The dictionary pop-up, which places itself at its word or else over the lower part of the stage. */
   lookup?: ReactNode;
   /** The subtitles panel or the flashcard editor, docked beside the stage. */
   sidePanel?: ReactNode;
@@ -86,11 +86,7 @@ export function MediaView(props: MediaViewProps) {
               activeWord={props.activeWord}
               wordGestures={props.wordGestures}
             />
-            {props.lookup && (
-              <div className="fixed inset-x-2 top-16 bottom-2 z-30 flex items-end justify-center md:absolute md:inset-x-auto md:top-auto md:bottom-28 md:left-1/2 md:-translate-x-1/2">
-                {props.lookup}
-              </div>
-            )}
+            {props.lookup}
             <span
               className={clsx(
                 "absolute right-2 z-10 flex items-center gap-1 rounded-md bg-black/50 transition-[bottom]",

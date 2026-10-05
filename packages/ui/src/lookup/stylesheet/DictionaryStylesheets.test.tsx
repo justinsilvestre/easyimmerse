@@ -39,7 +39,7 @@ function renderStyledPopup() {
         results: [exampleStyledYomitanResult, exampleStyledMDictResult],
         stylesheets: fixtureStylesheets(),
       }}
-      mode="hover"
+      mode="word"
       resolveMediaUrl={() => null}
       onSearch={() => undefined}
       onCreateFlashcard={() => undefined}
