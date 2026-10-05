@@ -92,9 +92,10 @@ jobs:
       - name: Build the hello-rust plugin
         run: mise run plugins:build-rust
 
-      # The end-to-end tests need the global Tauri object, which the extra config file turns on.
+      # The end-to-end tests need the global Tauri object, which the extra config file turns on,
+      # and the embedded WebDriver server, which the webdriver feature compiles in.
       - name: Debug build without bundling
-        run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json --features plugin-check
+        run: pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json --features plugin-check,webdriver
 
       - name: Embedded server health check
         shell: bash
