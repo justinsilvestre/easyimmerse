@@ -197,6 +197,59 @@ function renderWithMedia(saveStatus: "idle" | "saving") {
   return actions;
 }
 
+/** Renders the editor, recording presses of Close and Delete. */
+function renderWithLeavingButtons(
+  saveStatus: "idle" | "waitingForDefinitions" | "saving",
+) {
+  const presses: string[] = [];
+  render(
+    <FlashcardEditor
+      state={{
+        content: exampleFlashcard,
+        includedFields: fieldsOfPreset("intermediate"),
+      }}
+      dispatch={() => undefined}
+      languages={exampleLanguages}
+      waveform={null}
+      saveStatus={saveStatus}
+      onSave={() => undefined}
+      onDelete={() => presses.push("delete")}
+      onClose={() => presses.push("close")}
+    />,
+  );
+  return presses;
+}
+
+describe("FlashcardEditor's Close and Delete buttons", () => {
+  const buttonNames = ["Close without saving", "Delete"];
+
+  describe.each(["saving", "waitingForDefinitions"] as const)(
+    "while the save status is %s",
+    (saveStatus) => {
+      it.each(buttonNames)("mark %s unavailable", (name) => {
+        renderWithLeavingButtons(saveStatus);
+        expect(
+          screen.getByRole("button", { name }).getAttribute("aria-disabled"),
+        ).toBe("true");
+      });
+
+      it.each(buttonNames)("ignore %s", (name) => {
+        const presses = renderWithLeavingButtons(saveStatus);
+        fireEvent.click(screen.getByRole("button", { name }));
+        expect(presses).toEqual([]);
+      });
+    },
+  );
+
+  it("work before Save is pressed", () => {
+    const presses = renderWithLeavingButtons("idle");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Close without saving" }),
+    );
+    expect(presses).toEqual(["close"]);
+  });
+});
+
 describe("FlashcardEditor while the flashcard is being saved", () => {
   it("ignores the screenshot checkbox", () => {
     const actions = renderWithMedia("saving");

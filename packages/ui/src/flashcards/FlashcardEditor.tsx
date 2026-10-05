@@ -40,7 +40,7 @@ export function FlashcardEditor({
   screenshotUrl?: string | null;
   /**
    * Whether a save the user asked for waits for definitions still on their way, or is under way.
-   * Meanwhile Save does nothing and the fields are read-only, so that what is saved is what is shown.
+   * Meanwhile Save, Close and Delete do nothing and the fields are read-only, so that what is saved is what is shown.
    */
   saveStatus?: "idle" | "waitingForDefinitions" | "saving";
   onSave: () => void;
@@ -61,7 +61,13 @@ export function FlashcardEditor({
     >
       <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
         <h2 className="font-semibold">Flashcard</h2>
-        <IconButton label="Close without saving" onClick={onClose}>
+        <IconButton
+          label="Close without saving"
+          aria-disabled={isSaveInert || undefined}
+          onClick={() => {
+            if (!isSaveInert) onClose();
+          }}
+        >
           <X className="size-4" />
         </IconButton>
       </div>
@@ -112,7 +118,13 @@ export function FlashcardEditor({
             More fields
           </MenuButton>
           <div className="flex items-center gap-2">
-            <Button variant="danger" onClick={onDelete}>
+            <Button
+              variant="danger"
+              aria-disabled={isSaveInert || undefined}
+              onClick={() => {
+                if (!isSaveInert) onDelete();
+              }}
+            >
               Delete
             </Button>
             <Button
