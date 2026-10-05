@@ -11,8 +11,8 @@ pub struct ResultSortKey {
     /// Whether an entry in the result has the matched text as its term, reading or an alternate, without folding its case.
     pub matches_exactly: bool,
     pub inflection_count: usize,
-    /// Whether the only inflection undone is the step from a bare stem to its dictionary form, as from 書き to 書く.
-    pub undoes_only_a_bare_stem: bool,
+    /// Whether the only inflection undone takes a word back from a bare form, as from 書き or 書け to 書く.
+    pub is_bare_form: bool,
     /// Whether the result rests on a rule that fits almost any word, such as the German bare-stem imperative.
     pub is_fallback: bool,
     pub commonness: Commonness,
@@ -27,7 +27,7 @@ impl ResultSortKey {
     ///
     /// 1. A result spelled exactly as the matched text ranks first, as Maße does before Masse when Maße is looked up.
     /// 2. A one-character match with inflections undone, such as し reached from する, ranks last.
-    /// 3. Unchanged matches and bare stems rank above every other inflected match,
+    /// 3. Unchanged matches and bare forms rank above every other inflected match,
     ///    so that 動かす as listed ranks above 動く, which it may also be a causative of.
     /// 4. A result resting on a rule that fits almost any word, such as the German bare-stem imperative, ranks below its equals.
     /// 5. Within each of those two groups, the more common result comes first where one frequency dictionary lists both.
@@ -43,8 +43,8 @@ impl ResultSortKey {
                     .cmp(&other.is_one_character_stem())
             })
             .then_with(|| {
-                self.is_inflected_beyond_a_stem()
-                    .cmp(&other.is_inflected_beyond_a_stem())
+                self.is_inflected_beyond_a_bare_form()
+                    .cmp(&other.is_inflected_beyond_a_bare_form())
             })
             .then_with(|| self.is_fallback.cmp(&other.is_fallback))
             .then_with(|| self.commonness.compare_shared(&other.commonness))
@@ -58,8 +58,8 @@ impl ResultSortKey {
         self.matched_length == 1 && self.inflection_count > 0
     }
 
-    fn is_inflected_beyond_a_stem(&self) -> bool {
-        self.inflection_count > 0 && !self.undoes_only_a_bare_stem
+    fn is_inflected_beyond_a_bare_form(&self) -> bool {
+        self.inflection_count > 0 && !self.is_bare_form
     }
 }
 
@@ -230,7 +230,7 @@ mod tests {
 
         fn bare_stem(matched_length: usize, frequency: Option<f64>) -> ResultSortKey {
             ResultSortKey {
-                undoes_only_a_bare_stem: true,
+                is_bare_form: true,
                 ..key(matched_length, 1, frequency)
             }
         }

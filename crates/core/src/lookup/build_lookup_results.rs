@@ -52,7 +52,7 @@ fn sort_key(group: &ResultGroup, term_meta: &[&FoundTermMeta]) -> ResultSortKey 
         matched_length: group.candidate.matched_length(),
         matches_exactly: matches_exactly(group),
         inflection_count: group.candidate.inflection_count(),
-        undoes_only_a_bare_stem: group.candidate.undoes_only_a_bare_stem(),
+        is_bare_form: group.candidate.is_bare_form,
         is_fallback: group.candidate.is_fallback(),
         commonness: commonness(term_meta),
         first_dictionary_rank: entries
@@ -159,6 +159,7 @@ mod tests {
                 word_classes: vec!["v1".to_string()],
                 inflections: vec!["past".to_string()],
             },
+            is_bare_form: false,
         }
     }
 
@@ -239,6 +240,50 @@ mod tests {
         ];
         let results = build_lookup_results(&candidates, entries, &meta);
         assert_eq!(terms(&results), vec!["切れる", "切る"]);
+    }
+
+    /// The verbs 行く and 行ける, whose imperative and continuative are both 行け.
+    fn ike_entries(iku_rank: i64, ikeru_rank: i64) -> Vec<FoundEntry> {
+        vec![
+            classed("v1", scored(found(ikeru_rank, "行ける", "いける"), 1, 0)),
+            classed("v5", scored(found(iku_rank, "行く", "いく"), 2, 0)),
+        ]
+    }
+
+    #[test]
+    fn ranks_the_more_common_of_an_imperative_and_a_continuative_first() {
+        let candidates = lookup_candidates("行け", "ja");
+        let meta = vec![
+            frequency(9, "行く", "いく", 50.0),
+            frequency(9, "行ける", "いける", 3_000.0),
+        ];
+        let results = build_lookup_results(&candidates, ike_entries(1, 1), &meta);
+        assert_eq!(terms(&results), vec!["行く", "行ける"]);
+    }
+
+    #[test]
+    fn reports_the_imperative_of_iku_for_ike() {
+        let candidates = lookup_candidates("行け", "ja");
+        let meta = vec![
+            frequency(9, "行く", "いく", 50.0),
+            frequency(9, "行ける", "いける", 3_000.0),
+        ];
+        let results = build_lookup_results(&candidates, ike_entries(1, 1), &meta);
+        assert_eq!(results[0].inflections, vec!["imperative"]);
+    }
+
+    #[test]
+    fn ranks_an_imperative_and_a_continuative_by_dictionary_order_without_frequencies() {
+        let candidates = lookup_candidates("行け", "ja");
+        let results = build_lookup_results(&candidates, ike_entries(1, 2), &[]);
+        assert_eq!(terms(&results), vec!["行く", "行ける"]);
+    }
+
+    #[test]
+    fn ranks_a_continuative_from_an_earlier_dictionary_first_without_frequencies() {
+        let candidates = lookup_candidates("行け", "ja");
+        let results = build_lookup_results(&candidates, ike_entries(2, 1), &[]);
+        assert_eq!(terms(&results), vec!["行ける", "行く"]);
     }
 
     /// Two entries that fold to the same headword, as ß folds to ss.

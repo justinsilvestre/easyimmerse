@@ -1,13 +1,10 @@
 use std::cmp::Ordering;
 
 use super::word_boundary::is_word_boundary;
-use crate::deinflection::{Deinflection, deinflect, is_fallback};
+use crate::deinflection::{Deinflection, deinflect, is_bare_form, is_fallback};
 
 /// The most characters of the looked-up text that lookup considers.
 const MAX_MATCHED_CHARACTERS: usize = 20;
-
-/// The names that the Japanese deinflector gives a bare stem taken as a word: a verb's continuative and an adjective's stem.
-const BARE_STEM_INFLECTIONS: [&str; 2] = ["continuative", "stem"];
 
 /// A dictionary form that the beginning of the looked-up text may stand for.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -15,6 +12,8 @@ pub struct LookupCandidate {
     /// The beginning of the looked-up text that the candidate covers.
     pub matched_text: String,
     pub deinflection: Deinflection,
+    /// Whether the deinflection only takes a word back from a bare form, such as 書き or 書け from 書く.
+    pub is_bare_form: bool,
 }
 
 impl LookupCandidate {
@@ -30,27 +29,19 @@ impl LookupCandidate {
         self.deinflection.inflections.len()
     }
 
-    /// Whether the only inflection undone is the step from a bare stem to its dictionary form,
-    /// as from the continuative 書き to 書く or the adjective stem 高 to 高い.
-    pub fn undoes_only_a_bare_stem(&self) -> bool {
-        matches!(
-            self.deinflection.inflections.as_slice(),
-            [only] if BARE_STEM_INFLECTIONS.contains(&only.as_str())
-        )
-    }
-
     /// Whether the candidate comes from a rule that fits almost any word, and so ranks below its equals.
     pub fn is_fallback(&self) -> bool {
         is_fallback(&self.deinflection)
     }
 
     /// Orders candidates from the most to the least preferred:
-    /// longer matched text first, then fewer inflections, then candidates that are not fallbacks.
+    /// longer matched text first, then fewer inflections, then bare forms, then candidates that are not fallbacks.
     pub fn preference(&self, other: &Self) -> Ordering {
         other
             .matched_length()
             .cmp(&self.matched_length())
             .then_with(|| self.inflection_count().cmp(&other.inflection_count()))
+            .then_with(|| other.is_bare_form.cmp(&self.is_bare_form))
             .then_with(|| self.is_fallback().cmp(&other.is_fallback()))
     }
 }
@@ -69,6 +60,7 @@ pub fn lookup_candidates(text: &str, language: &str) -> Vec<LookupCandidate> {
             {
                 candidates.push(LookupCandidate {
                     matched_text: prefix.to_string(),
+                    is_bare_form: is_bare_form(language, &deinflection),
                     deinflection,
                 });
             }
@@ -120,6 +112,14 @@ mod tests {
                 word_classes: Vec::new(),
                 inflections: inflections.iter().map(|name| name.to_string()).collect(),
             },
+            is_bare_form: false,
+        }
+    }
+
+    fn bare(matched_text: &str, inflections: &[&str]) -> LookupCandidate {
+        LookupCandidate {
+            is_bare_form: true,
+            ..candidate(matched_text, inflections)
         }
     }
 
@@ -160,19 +160,27 @@ mod tests {
         assert_eq!(candidate_headwords(&candidates), vec!["ab"]);
     }
 
-    #[test]
-    fn counts_a_bare_continuative_as_a_bare_stem() {
-        assert!(candidate("書き", &["continuative"]).undoes_only_a_bare_stem());
+    fn is_bare_candidate(text: &str, term: &str) -> bool {
+        lookup_candidates(text, "ja")
+            .into_iter()
+            .find(|candidate| candidate.deinflection.term == term)
+            .is_some_and(|candidate| candidate.is_bare_form)
     }
 
     #[test]
-    fn does_not_count_a_stem_under_other_inflections_as_a_bare_stem() {
-        assert!(!candidate("書かせ", &["continuative", "causative"]).undoes_only_a_bare_stem());
+    fn marks_a_godan_imperative_as_a_bare_form() {
+        assert!(is_bare_candidate("行け", "行く"));
     }
 
     #[test]
-    fn does_not_count_an_unchanged_word_as_a_bare_stem() {
-        assert!(!candidate("書き", &[]).undoes_only_a_bare_stem());
+    fn does_not_mark_an_unchanged_word_as_a_bare_form() {
+        assert!(!is_bare_candidate("行け", "行け"));
+    }
+
+    #[test]
+    fn prefers_a_bare_form_among_chains_of_equal_length() {
+        let ordering = bare("ab", &["continuative"]).preference(&candidate("ab", &["imperative"]));
+        assert_eq!(ordering, Ordering::Less);
     }
 
     #[test]

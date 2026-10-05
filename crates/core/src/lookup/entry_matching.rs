@@ -69,6 +69,7 @@ mod tests {
         LookupCandidate {
             matched_text: text.to_string(),
             deinflection: Deinflection::unchanged(text),
+            is_bare_form: false,
         }
     }
 
@@ -80,6 +81,7 @@ mod tests {
                 word_classes: vec![word_class.to_string()],
                 inflections: vec!["past".to_string()],
             },
+            is_bare_form: false,
         }
     }
 

@@ -48,6 +48,16 @@ pub fn is_fallback(deinflection: &Deinflection) -> bool {
     german::is_fallback(deinflection)
 }
 
+/// Whether `deinflection` takes a word back from a bare form: a stem used as a word without an ending of its own,
+/// such as the Japanese continuative 書き or the godan imperative 書け, both of 書く.
+/// Lookup ranks such a reading with unchanged words rather than below them.
+pub fn is_bare_form(language: &str, deinflection: &Deinflection) -> bool {
+    match primary_subtag(language).as_str() {
+        "ja" => japanese::is_bare_form(deinflection),
+        _ => false,
+    }
+}
+
 /// Whether dictionaries leave entries of `word_class` without any word class, as German Yomitan dictionaries do
 /// for adverbs and determiners. A deinflected candidate of such a class may then match an entry without classes.
 pub fn is_unmarked_word_class(word_class: &str) -> bool {
@@ -61,7 +71,30 @@ fn primary_subtag(language: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{Deinflection, deinflect};
+    use super::{Deinflection, deinflect, is_bare_form};
+
+    fn first_with_term(language: &str, text: &str, term: &str) -> Deinflection {
+        deinflect(language, text)
+            .into_iter()
+            .find(|candidate| candidate.term == term)
+            .unwrap()
+    }
+
+    #[test]
+    fn is_bare_form_uses_the_japanese_rules_for_a_regional_tag() {
+        assert!(is_bare_form(
+            "ja-JP",
+            &first_with_term("ja", "書き", "書く")
+        ));
+    }
+
+    #[test]
+    fn is_bare_form_finds_no_bare_form_in_german() {
+        assert!(!is_bare_form(
+            "de",
+            &first_with_term("de", "lach", "lachen")
+        ));
+    }
 
     #[test]
     fn deinflect_returns_only_the_unchanged_text_for_other_languages() {
