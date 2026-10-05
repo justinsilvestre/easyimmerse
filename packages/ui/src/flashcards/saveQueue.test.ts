@@ -85,14 +85,17 @@ describe("createSaveQueue", () => {
     const queue = createSaveQueue();
     const card = opening();
     queue.add(card, heldSave([], "save").send);
-    expect(queue.latest(flashcard.id)).toEqual(draftOfEdited(card));
+    expect(queue.latestOf(flashcard)).toEqual({
+      ...flashcard,
+      ...draftOfEdited(card),
+    });
   });
 
   it("keeps the draft other work sent for a flashcard while it is under way", async () => {
     const queue = createSaveQueue();
     const draft = { ...draftOfEdited(opening()), cue_index: 9 };
     queue.addFor(flashcard.id, heldSave([], "retime").send, draft);
-    expect(queue.latest(flashcard.id)).toEqual(draft);
+    expect(queue.latestOf(flashcard)).toEqual({ ...flashcard, ...draft });
   });
 
   it("forgets the draft once work on the flashcard has settled", async () => {
@@ -101,6 +104,41 @@ describe("createSaveQueue", () => {
     queue.add(opening(), save.send);
     save.finish();
     await settle();
-    expect(queue.latest(flashcard.id)).toBeUndefined();
+    expect(queue.latestOf(flashcard)).toBe(flashcard);
+  });
+
+  describe("once a save has settled but the list has yet to catch up", () => {
+    const returned: Flashcard = {
+      ...flashcard,
+      content: { ...flashcard.content, word: "Hündin" },
+      updated_at_ms: 5,
+    };
+
+    async function settleSave() {
+      const queue = createSaveQueue();
+      queue.add(opening(), () => Promise.resolve(returned));
+      await settle();
+      return queue;
+    }
+
+    it("prefers the flashcard the save returned over an older listed one", async () => {
+      const queue = await settleSave();
+      expect(queue.latestOf(flashcard).content.word).toBe("Hündin");
+    });
+
+    it("prefers the listed flashcard once it is as new", async () => {
+      const queue = await settleSave();
+      const listed = { ...flashcard, updated_at_ms: 5 };
+      expect(queue.latestOf(listed)).toBe(listed);
+    });
+  });
+
+  it("tells its listeners of work on a flashcard that succeeded", async () => {
+    const queue = createSaveQueue();
+    const succeeded: string[] = [];
+    queue.onSuccess((flashcardId) => succeeded.push(flashcardId));
+    queue.addFor(flashcard.id, () => Promise.resolve(undefined));
+    await settle();
+    expect(succeeded).toEqual([flashcard.id]);
   });
 });

@@ -2,7 +2,7 @@ import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { useState } from "react";
 import { saveRequestLimitMs } from "../lookup/lookupTiming.ts";
 import type { EditedFlashcard } from "./editedFlashcard.ts";
-import { draftOfFlashcard, withDraft } from "./flashcardDrafts.ts";
+import { draftOfFlashcard } from "./flashcardDrafts.ts";
 import { createSaveQueue } from "./saveQueue.ts";
 import { isSaveAsked } from "./saveStage.ts";
 import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
@@ -57,10 +57,7 @@ export function useOffScreenSaving(
       () => timedOut.cleanUpAfterDiscard(card),
     );
   /** A saved flashcard as last sent, which the list of flashcards may not show yet while work on it is under way. */
-  const latestOf = (flashcard: Flashcard): Flashcard => {
-    const latest = queue.latest(flashcard.id);
-    return latest ? withDraft(flashcard, latest) : flashcard;
-  };
+  const latestOf = (flashcard: Flashcard) => queue.latestOf(flashcard);
   /** What a card's flashcard holds before its save: the draft last sent for a saved one, or nothing for a new one. */
   const beforeOf = (card: EditedFlashcard) =>
     card.kind === "existing"

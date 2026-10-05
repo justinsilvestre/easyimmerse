@@ -1,17 +1,26 @@
-import type { FlashcardDraft } from "@easyimmerse/types";
+import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import type { CardSession, EditedFlashcard } from "./editedFlashcard.ts";
-import { draftOfEdited } from "./flashcardDrafts.ts";
+import { draftOfEdited, withDraft } from "./flashcardDrafts.ts";
 
 /**
  * Orders the saves of flashcards. One opening of a card is saved at most once at a time, however the editor and its going away overlap;
  * work on the same flashcard, such as two openings' saves or a save and its Undo, is sent one after the other,
- * so that the later work lands last. While work on a flashcard is under way, the queue keeps the draft last sent for it,
- * which the list of flashcards may not show yet.
+ * so that the later work lands last.
+ * The queue also knows a flashcard's content before the list of flashcards does: the draft last sent while work on it is under way,
+ * and afterwards the flashcard that work returned, until the list has caught up.
  */
 export function createSaveQueue() {
   const inFlight = new Set<CardSession>();
   const lastByFlashcard = new Map<string, Promise<unknown>>();
   const latestDrafts = new Map<string, FlashcardDraft>();
+  const returnedFlashcards = new Map<string, Flashcard>();
+  const successListeners = new Set<(flashcardId: string) => void>();
+  const noteSuccess = (flashcardId: string, result: unknown) => {
+    if (isFlashcard(result, flashcardId))
+      returnedFlashcards.set(flashcardId, result);
+    else returnedFlashcards.delete(flashcardId);
+    for (const listener of successListeners) listener(flashcardId);
+  };
   /** Sends `send` once any earlier work on the flashcard has settled. */
   const enqueue = <T>(
     flashcardId: string,
@@ -20,7 +29,13 @@ export function createSaveQueue() {
   ) => {
     if (draft) latestDrafts.set(flashcardId, draft);
     const earlier = lastByFlashcard.get(flashcardId) ?? Promise.resolve();
-    const settled = earlier.catch(() => undefined).then(send);
+    const settled = earlier
+      .catch(() => undefined)
+      .then(send)
+      .then((result) => {
+        noteSuccess(flashcardId, result);
+        return result;
+      });
     lastByFlashcard.set(flashcardId, settled);
     settled
       .catch(() => undefined)
@@ -56,7 +71,29 @@ export function createSaveQueue() {
     ): Promise<T> {
       return enqueue(flashcardId, send, draft);
     },
-    /** The draft last sent for a flashcard, while work on it is under way. */
-    latest: (flashcardId: string) => latestDrafts.get(flashcardId),
+    /** The flashcard as the latest work on it left it, which the list of flashcards, holding `listed`, may not show yet. */
+    latestOf(listed: Flashcard): Flashcard {
+      const draft = latestDrafts.get(listed.id);
+      const returned = returnedFlashcards.get(listed.id);
+      const isReturnedNewer =
+        returned !== undefined && returned.updated_at_ms > listed.updated_at_ms;
+      if (!isReturnedNewer) returnedFlashcards.delete(listed.id);
+      const known = isReturnedNewer ? returned : listed;
+      return draft ? withDraft(known, draft) : known;
+    },
+    /** Calls `listener` with a flashcard's id whenever work on that flashcard succeeds. */
+    onSuccess(listener: (flashcardId: string) => void) {
+      successListeners.add(listener);
+      return () => successListeners.delete(listener);
+    },
   };
+}
+
+function isFlashcard(result: unknown, id: string): result is Flashcard {
+  return (
+    typeof result === "object" &&
+    result !== null &&
+    (result as Partial<Flashcard>).id === id &&
+    "updated_at_ms" in result
+  );
 }
