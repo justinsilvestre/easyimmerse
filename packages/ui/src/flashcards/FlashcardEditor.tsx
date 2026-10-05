@@ -67,6 +67,7 @@ export function FlashcardEditor({
           state={state}
           languages={languages}
           dispatch={dispatch}
+          isReadOnly={saveStatus === "saving"}
         />
         <MediaFields
           state={state}
@@ -78,48 +79,47 @@ export function FlashcardEditor({
           <TagsField
             label="Tags"
             isLabelBeside
+            isReadOnly={saveStatus === "saving"}
             className="shrink-0"
             tags={content.tags}
             onChange={(tags) => dispatch({ type: "tagsChanged", tags })}
           />
         )}
       </div>
-      <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2">
-        <MenuButton
-          label="More fields"
-          opensUpward
-          items={flashcardFieldDefinitions
-            .filter((field) => field.key !== "screenshot")
-            .map((field) => ({
-              label: field.label(languages),
-              isChecked: includedFields.includes(field.key),
-              onSelect: () =>
-                dispatch({ type: "fieldToggled", key: field.key }),
-            }))}
-        >
-          More fields
-        </MenuButton>
-        <div className="flex items-center gap-2">
-          <span
-            id={saveStatusId}
-            role="status"
-            className="text-xs text-fg-muted empty:hidden"
+      <div className="flex flex-col border-t border-line px-4 py-2">
+        {/* Always shown, even while empty, so that its text is announced when it appears. */}
+        <p id={saveStatusId} role="status" className="text-xs text-fg-muted">
+          {saveStatusTexts[saveStatus]}
+        </p>
+        <div className="flex items-center justify-between gap-2">
+          <MenuButton
+            label="More fields"
+            opensUpward
+            items={flashcardFieldDefinitions
+              .filter((field) => field.key !== "screenshot")
+              .map((field) => ({
+                label: field.label(languages),
+                isChecked: includedFields.includes(field.key),
+                onSelect: () =>
+                  dispatch({ type: "fieldToggled", key: field.key }),
+              }))}
           >
-            {saveStatusTexts[saveStatus]}
-          </span>
-          <Button variant="danger" onClick={onDelete}>
-            Delete
-          </Button>
-          <Button
-            variant="primary"
-            type="submit"
-            // Not `disabled`, which would move keyboard focus away from the button.
-            aria-disabled={isSaveInert || undefined}
-            aria-describedby={saveStatusId}
-            className={isSaveInert ? "opacity-50" : undefined}
-          >
-            Save
-          </Button>
+            More fields
+          </MenuButton>
+          <div className="flex items-center gap-2">
+            <Button variant="danger" onClick={onDelete}>
+              Delete
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              // Not `disabled`, which would move keyboard focus away from the button.
+              aria-disabled={isSaveInert || undefined}
+              aria-describedby={saveStatusId}
+            >
+              Save
+            </Button>
+          </div>
         </div>
       </div>
     </form>

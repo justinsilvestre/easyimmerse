@@ -92,7 +92,10 @@ export function reduceEditedFlashcard(
         stage: "editing",
       };
     case "edited":
-      return edited && withEdit(edited, action.action);
+      // The editor is read-only from then on, so that nothing typed is lost to the save under way.
+      return edited && !isSending(edited.stage)
+        ? withEdit(edited, action.action)
+        : edited;
     case "lookupAnswered":
       return isAwaitingLookupOf(edited, action.draft)
         ? settleLookup(withLookupFields(edited, action.fields))
@@ -138,6 +141,10 @@ export function saveStatusOf(
     case "sending":
       return "saving";
   }
+}
+
+function isSending(stage: SaveStage): boolean {
+  return stage === "readyToSend" || stage === "sending";
 }
 
 function stageAfterSaveRequest(stage: SaveStage): SaveStage {

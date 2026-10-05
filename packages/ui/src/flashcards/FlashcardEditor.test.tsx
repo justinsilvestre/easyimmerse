@@ -154,6 +154,52 @@ describe("FlashcardEditor", () => {
   });
 });
 
+function renderWithSaveStatus(
+  saveStatus: "idle" | "waitingForDefinitions" | "saving",
+  onSave: () => void = () => undefined,
+) {
+  render(
+    <FlashcardEditor
+      state={{
+        content: exampleFlashcard,
+        includedFields: fieldsOfPreset("intermediate"),
+      }}
+      dispatch={() => undefined}
+      languages={exampleLanguages}
+      waveform={null}
+      saveStatus={saveStatus}
+      onSave={onSave}
+      onDelete={() => undefined}
+      onClose={() => undefined}
+    />,
+  );
+}
+
+describe("FlashcardEditor's save status", () => {
+  it("is never hidden while empty, so that its text is announced when it appears", () => {
+    renderWithSaveStatus("idle");
+    expect(screen.getByRole("status").className).not.toMatch(/hidden/);
+  });
+
+  it("makes the text fields read-only while the flashcard is being saved", () => {
+    renderWithSaveStatus("saving");
+    expect(
+      screen
+        .getAllByRole("textbox")
+        .every((field) => field.hasAttribute("readonly")),
+    ).toBe(true);
+  });
+
+  it("leaves the text fields editable while the save waits for definitions", () => {
+    renderWithSaveStatus("waitingForDefinitions");
+    expect(
+      screen
+        .getAllByRole("textbox")
+        .some((field) => field.hasAttribute("readonly")),
+    ).toBe(false);
+  });
+});
+
 describe("FlashcardEditor while its save waits for definitions", () => {
   function renderWaiting(onSave: () => void) {
     render(

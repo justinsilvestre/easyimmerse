@@ -376,6 +376,20 @@ describe("reduceEditedFlashcard on its way to being saved", () => {
     expect(reduceAll(later, { type: "saved", source: saved })).toBe(later);
   });
 
+  it("ignores edits while the card is being sent", () => {
+    const sending = reduceAll(
+      startedFrom(createDraft()),
+      { type: "saveRequested" },
+      { type: "sendStarted" },
+    );
+    expect(
+      reduceAll(sending, {
+        type: "edited",
+        action: { type: "textChanged", key: "l1_definition", value: "late" },
+      }),
+    ).toBe(sending);
+  });
+
   it("lets the user edit again once a save fails", () => {
     const draft = createDraft();
     const edited = reduceAll(

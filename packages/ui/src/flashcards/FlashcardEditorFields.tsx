@@ -17,6 +17,8 @@ type FieldsProps = {
   state: EditorState;
   languages: FlashcardLanguages;
   dispatch: (action: EditorAction) => void;
+  /** Whether the fields only show their text, as while the flashcard is being saved. */
+  isReadOnly?: boolean;
 };
 
 /**
@@ -93,6 +95,7 @@ function Cell({
   state,
   languages,
   dispatch,
+  isReadOnly = false,
 }: FieldsProps & { fieldKey: FlashcardTextFieldKey }) {
   const id = useId();
   const field = findFlashcardField(fieldKey);
@@ -104,6 +107,7 @@ function Cell({
       <AutoGrowTextarea
         id={id}
         value={state.content[fieldKey]}
+        readOnly={isReadOnly}
         className="w-full resize-none overflow-hidden bg-transparent text-sm wrap-anywhere text-fg outline-none"
         onChange={(event) =>
           dispatch({

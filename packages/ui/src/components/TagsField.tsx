@@ -13,6 +13,7 @@ export function TagsField({
   onChange,
   hint,
   isLabelBeside = false,
+  isReadOnly = false,
   className,
 }: {
   label: string;
@@ -20,6 +21,8 @@ export function TagsField({
   onChange: (tags: readonly string[]) => void;
   hint?: string;
   isLabelBeside?: boolean;
+  /** Whether the tags only show, as while a flashcard is being saved. */
+  isReadOnly?: boolean;
   className?: string;
 }) {
   const id = useId();
@@ -53,19 +56,22 @@ export function TagsField({
             className="inline-flex items-center gap-0.5 rounded-full bg-surface-muted py-0.5 pr-1 pl-2 text-xs font-medium text-fg-muted"
           >
             {tag}
-            <button
-              type="button"
-              aria-label={`Remove the tag ${tag}`}
-              onClick={() => onChange(tags.filter((other) => other !== tag))}
-              className="rounded-full p-0.5 hover:bg-surface-strong hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
-            >
-              <X className="size-3" aria-hidden />
-            </button>
+            {!isReadOnly && (
+              <button
+                type="button"
+                aria-label={`Remove the tag ${tag}`}
+                onClick={() => onChange(tags.filter((other) => other !== tag))}
+                className="rounded-full p-0.5 hover:bg-surface-strong hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+              >
+                <X className="size-3" aria-hidden />
+              </button>
+            )}
           </span>
         ))}
         <input
           id={id}
           value={text}
+          readOnly={isReadOnly}
           placeholder={tags.length === 0 ? "Add a tag" : undefined}
           onChange={(event) => finish(event.target.value)}
           onBlur={finishAll}
@@ -73,7 +79,11 @@ export function TagsField({
             if (event.key === "Enter") {
               event.preventDefault();
               finishAll();
-            } else if (event.key === "Backspace" && text === "") {
+            } else if (
+              event.key === "Backspace" &&
+              text === "" &&
+              !isReadOnly
+            ) {
               onChange(tags.slice(0, -1));
             }
           }}
