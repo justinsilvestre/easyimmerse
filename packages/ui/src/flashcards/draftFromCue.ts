@@ -21,7 +21,7 @@ export function cueForFlashcard(cues: readonly Cue[], ms: number): Cue | null {
 /**
  * Starts a flashcard for a word from a subtitle cue under the project's flashcard settings:
  * the cue is the sentence, its timing the audio clip, and its middle the moment of the screenshot when the media file is known to show pictures.
- * Definitions are left empty for the user to fill in, since dictionaries are not consulted yet.
+ * Definitions are left empty; a flashcard made from the dictionary pop-up has them filled from the lookup afterwards.
  */
 export function draftFromCue({
   word,
