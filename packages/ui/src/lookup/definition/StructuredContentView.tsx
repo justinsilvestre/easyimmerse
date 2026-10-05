@@ -3,6 +3,7 @@ import type {
   StructuredContent,
   StructuredElement,
 } from "@easyimmerse/types";
+import clsx from "clsx";
 import { ContentLink } from "./ContentLink.tsx";
 import { ContentText, PlainTextScope } from "./ContentText.tsx";
 import { classifyHref } from "./classifyHref.ts";
@@ -14,11 +15,14 @@ import {
   tableSpan,
 } from "./sanitizeAttributes.ts";
 import { sanitizeStyle } from "./sanitizeStyle.ts";
-import { structuredContentClassName } from "./structuredContentClassName.ts";
+import {
+  structuredContentClassName,
+  yomitanClassName,
+} from "./yomitanClassName.ts";
 
 /**
  * Renders Yomitan structured content as React elements, keeping only safe styles, attributes and links.
- * Each element carries the `gloss-sc-<tag>` class that Yomitan gives it, prefixed like a dictionary's own classes.
+ * Elements carry the classes that Yomitan gives them, such as `gloss-sc-<tag>`, and tables, links and images sit in the wrappers Yomitan puts around them, so that stylesheets written for Yomitan apply.
  */
 export function StructuredContentView({
   content,
@@ -49,12 +53,17 @@ function StructuredElementView({ element }: { element: StructuredElement }) {
       return <StructuredImage image={element} />;
     case "a":
       return (
-        <span
-          lang={languageTag(element.lang)}
-          className={structuredContentClassName("a")}
-        >
-          <ContentLink target={classifyHref(element.href)}>
-            <StructuredContentView content={element.content} />
+        <span lang={languageTag(element.lang)}>
+          <ContentLink
+            target={classifyHref(element.href)}
+            className={clsx(
+              yomitanClassName("gloss-link"),
+              structuredContentClassName("a"),
+            )}
+          >
+            <span className={yomitanClassName("gloss-link-text")}>
+              <StructuredContentView content={element.content} />
+            </span>
           </ContentLink>
         </span>
       );
@@ -78,6 +87,19 @@ function StructuredElementView({ element }: { element: StructuredElement }) {
         >
           <StructuredContentView content={element.content} />
         </RichElement>
+      );
+    case "table":
+      return (
+        <div
+          className={clsx(
+            yomitanClassName("gloss-sc-table-container"),
+            "max-w-full overflow-x-auto",
+          )}
+        >
+          <RichElement kind="table" {...containerAttributes(element)}>
+            <StructuredContentView content={element.content} />
+          </RichElement>
+        </div>
       );
     case "details":
       return (

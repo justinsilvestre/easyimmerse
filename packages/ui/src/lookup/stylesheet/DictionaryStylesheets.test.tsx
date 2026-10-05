@@ -2,7 +2,10 @@ import { readFixtureText } from "@easyimmerse/fixtures";
 import type { DictionaryStylesheet } from "@easyimmerse/types";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { renderDefinition } from "../../testSupport/renderDefinition.tsx";
+import {
+  renderDefinition,
+  resolveFakeMediaUrl,
+} from "../../testSupport/renderDefinition.tsx";
 import { DictionaryPopup } from "../DictionaryPopup.tsx";
 import {
   exampleStyledMDictResult,
@@ -109,5 +112,27 @@ describe("DictionaryStylesheets", () => {
     });
     const selector = scopedSelector(".gloss-sc-div { margin: 0 }");
     expect(container.querySelector(selector)?.textContent).toBe("gloss");
+  });
+
+  it("styles an image through Yomitan's image container", () => {
+    const { container } = renderDefinition(
+      { kind: "structured", content: { tag: "img", path: "a.png" } },
+      { resolveMediaUrl: resolveFakeMediaUrl },
+    );
+    const selector = scopedSelector(
+      '.gloss-image-link[data-has-aspect-ratio="false"] .gloss-image-container { border: 0 }',
+    );
+    expect(container.querySelector(selector)).not.toBeNull();
+  });
+
+  it("styles a table through Yomitan's table container", () => {
+    const { container } = renderDefinition({
+      kind: "structured",
+      content: { tag: "table", content: { tag: "tr", content: [] } },
+    });
+    const selector = scopedSelector(
+      ".gloss-sc-table-container { & .gloss-sc-table { margin: 0 } }",
+    );
+    expect(container.querySelector(selector)?.tagName).toBe("TABLE");
   });
 });

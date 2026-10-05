@@ -1,4 +1,4 @@
-import type { StructuredContent } from "@easyimmerse/types";
+import type { ImageElement, StructuredContent } from "@easyimmerse/types";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -41,13 +41,42 @@ describe("StructuredContentView", () => {
     );
   });
 
-  it("gives a link Yomitan's class for its tag", () => {
+  it("gives a link Yomitan's link class", () => {
+    renderContent({ tag: "a", href: "?query=x", content: "x" });
+    expect(screen.getByRole("button", { name: "x" }).className).toContain(
+      "dict-gloss-link",
+    );
+  });
+
+  it("wraps a link's text in Yomitan's link text element", () => {
     const { container } = renderContent({
       tag: "a",
       href: "?query=x",
       content: "x",
     });
-    expect(container.querySelector(".dict-gloss-sc-a")?.textContent).toBe("x");
+    expect(
+      container.querySelector(".dict-gloss-link > .dict-gloss-link-text")
+        ?.textContent,
+    ).toBe("x");
+  });
+
+  it("puts a table in Yomitan's table container", () => {
+    const { container } = renderContent({
+      tag: "table",
+      content: { tag: "tr", content: { tag: "td", content: "x" } },
+    });
+    expect(
+      container.querySelector(
+        ".dict-gloss-sc-table-container > table.dict-gloss-sc-table",
+      ),
+    ).not.toBeNull();
+  });
+
+  it("lets a wide table scroll inside its container rather than widen the card", () => {
+    const { container } = renderContent({ tag: "table", content: [] });
+    expect(
+      container.querySelector(".dict-gloss-sc-table-container")?.className,
+    ).toContain("overflow-x-auto");
   });
 
   it("gives an image Yomitan's class for its tag", () => {
@@ -161,27 +190,103 @@ describe("StructuredContentView", () => {
     );
   });
 
-  it("sizes an image in the units it asks for", () => {
-    renderContent(
-      {
-        tag: "img",
-        path: "a.png",
-        alt: "a",
+  describe("for an image", () => {
+    function renderImage(image: Omit<ImageElement, "path">) {
+      return renderContent(
+        { tag: "img", path: "a.png", alt: "a", ...image },
+        { resolveMediaUrl: resolveFakeMediaUrl },
+      );
+    }
+
+    it("wraps it in Yomitan's link, container and sizer", () => {
+      const { container } = renderImage({});
+      expect(
+        container.querySelector(
+          ".dict-gloss-image-link > .dict-gloss-image-container > .dict-gloss-image-sizer",
+        ),
+      ).not.toBeNull();
+    });
+
+    it("gives it Yomitan's image class", () => {
+      renderImage({});
+      expect(screen.getByRole("img", { name: "a" }).className).toContain(
+        "dict-gloss-image",
+      );
+    });
+
+    it("sizes its container in pixels when it asks for them", () => {
+      const { container } = renderImage({ width: 200, height: 100 });
+      const imageContainer = container.querySelector<HTMLElement>(
+        ".dict-gloss-image-container",
+      );
+      expect(imageContainer?.style.width).toBe("200px");
+    });
+
+    it("sizes its container in the text's em, scaled to the container's smaller font", () => {
+      const { container } = renderImage({
         width: 2,
         height: 1,
         sizeUnits: "em",
-      },
-      { resolveMediaUrl: resolveFakeMediaUrl },
-    );
-    expect(screen.getByRole("img", { name: "a" }).style.width).toBe("2em");
-  });
+      });
+      const imageContainer = container.querySelector<HTMLElement>(
+        ".dict-gloss-image-container",
+      );
+      expect(imageContainer?.getAttribute("style")).toContain(
+        "calc(2em * var(--dict-font-size-no-units, 14))",
+      );
+    });
 
-  it("paints a monochrome image through a mask", () => {
-    renderContent(
-      { tag: "img", path: "a.svg", alt: "glyph", appearance: "monochrome" },
-      { resolveMediaUrl: resolveFakeMediaUrl },
-    );
-    expect(screen.getByRole("img", { name: "glyph" }).tagName).toBe("SPAN");
+    it("keeps its aspect ratio through the sizer as its container shrinks", () => {
+      const { container } = renderImage({ width: 200, height: 100 });
+      const sizer = container.querySelector<HTMLElement>(
+        ".dict-gloss-image-sizer",
+      );
+      expect(sizer?.style.paddingTop).toBe("50%");
+    });
+
+    it("sizes an image that gives only its height by that height", () => {
+      renderImage({ height: 30 });
+      expect(screen.getByRole("img", { name: "a" }).style.height).toBe("30px");
+    });
+
+    it("exposes its settings through Yomitan's data attributes", () => {
+      const { container } = renderImage({
+        collapsible: false,
+        background: false,
+      });
+      expect(
+        container
+          .querySelector(".dict-gloss-image-link")
+          ?.getAttribute("data-background"),
+      ).toBe("false");
+    });
+
+    it("keeps the dictionary's data attributes on its link", () => {
+      const { container } = renderImage({ data: { class: "graphic" } });
+      expect(
+        container.querySelector(
+          ".dict-gloss-image-link[data-sc-class=graphic]",
+        ),
+      ).not.toBeNull();
+    });
+
+    it("marks itself loaded once it loads", () => {
+      const { container } = renderImage({});
+      fireEvent.load(screen.getByRole("img", { name: "a" }));
+      expect(
+        container
+          .querySelector(".dict-gloss-image-link")
+          ?.getAttribute("data-image-load-state"),
+      ).toBe("loaded");
+    });
+
+    it("paints a monochrome image through a mask", () => {
+      const { container } = renderImage({ appearance: "monochrome" });
+      const background = container.querySelector<HTMLElement>(
+        ".dict-gloss-image-background",
+      );
+      expect(background?.getAttribute("style")).toContain("media://dict/a.png");
+    });
   });
 
   it("hides a collapsed image until it is shown", () => {
