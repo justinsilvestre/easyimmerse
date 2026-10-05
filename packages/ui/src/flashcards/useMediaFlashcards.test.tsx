@@ -581,7 +581,7 @@ describe("useMediaFlashcards", () => {
     });
   });
 
-  describe("while a save is pending", () => {
+  describe("while work would be lost by closing the app", () => {
     const guardCalls = (
       effects: ReturnType<typeof renderFlashcards>["effects"],
     ) => effects.calls.filter((call) => call.type === "guardClose");
@@ -612,6 +612,36 @@ describe("useMediaFlashcards", () => {
       act(() => result.current.start(createDraft("Hund"), lookup.fields));
       act(() => result.current.save());
       unmount();
+      expect(guardCalls(effects)).toEqual([
+        { type: "guardClose", isActive: true },
+      ]);
+    });
+
+    it("guards the app against closing while the open card has unsaved changes", () => {
+      const { result, effects } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.edit(typeWord("Hündin")));
+      expect(guardCalls(effects)).toEqual([
+        { type: "guardClose", isActive: true },
+      ]);
+    });
+
+    it("lifts the guard once unsaved changes are discarded", () => {
+      const { result, effects } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.close());
+      expect(guardCalls(effects)).toEqual([
+        { type: "guardClose", isActive: true },
+        { type: "guardClose", isActive: false },
+      ]);
+    });
+
+    it("keeps the guard up while a changed card leaves to be saved", () => {
+      const { result, effects } = renderFlashcards();
+      act(() => result.current.start(createDraft("Hund")));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.start(createDraft("Katze")));
       expect(guardCalls(effects)).toEqual([
         { type: "guardClose", isActive: true },
       ]);

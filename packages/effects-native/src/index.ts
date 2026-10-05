@@ -16,7 +16,7 @@ import { createWindowCloseGuard } from "./windowCloseGuard.ts";
  * Builds the Tauri implementation of the app's side effects.
  * Native dialogs, notifications, and external links go through Tauri plugins;
  * preferences are stored by the embedded server; the Settings menu item reaches the page as a Tauri event;
- * and closing the window while a flashcard is being saved asks first.
+ * and closing the window while a flashcard has unsaved changes or is being saved asks first.
  */
 export function createNativeEffects(options: {
   playerRegistry: PlayerRegistry;
@@ -47,10 +47,10 @@ export function createNativeEffects(options: {
   };
 }
 
-/** Asks whether to close the window although a flashcard is still being saved. */
+/** Asks whether to close the window although a flashcard has unsaved changes or is still being saved. */
 function confirmClosingWhileSaving(): Promise<boolean> {
   return ask(
-    "A flashcard is still being saved. If you close easyImmerse now, it may be lost.",
+    "A flashcard has unsaved changes or is still being saved. If you close easyImmerse now, they may be lost.",
     {
       title: "Close easyImmerse?",
       kind: "warning",

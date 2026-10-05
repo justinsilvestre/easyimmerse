@@ -24,7 +24,7 @@ import { useOffScreenSaving } from "./useOffScreenSaving.ts";
  * Saves flashcards: the open card once its save is ready, and any card the editor leaves, as it is, in the background.
  * - A save that waits for a lookup stops waiting `saveLookupWaitMs` after Save was pressed and saves the card as it is,
  *   and keeps waiting, within the same limit, if the editor leaves the card.
- * - A save the user asked for counts as pending from when Save is pressed, so that the app warns before closing meanwhile.
+ * - The open card counts as unsaved work while it has unsaved changes or a save the user asked for, so that the app warns before closing meanwhile.
  * - A card that leaves the editor is dealt with as `useOffScreenSaving` describes.
  * `openSession` is the opening the editor will show once React has rendered every action dispatched so far.
  */
@@ -66,7 +66,7 @@ export function useFlashcardSaving(
     if (open) leave(open);
     openNext();
   };
-  // Declared before the pending-save count below, so that a waiting card leaving with the screen is counted again before that count ends.
+  // Declared before the unsaved-work count below, so that a card leaving with the screen is counted again before that count ends.
   useEffect(
     () => () => {
       const { edited: open, leave: leaveOnClose } = latest.current;
@@ -74,14 +74,15 @@ export function useFlashcardSaving(
     },
     [],
   );
-  const isSavePending = edited !== null && isSaveAsked(edited.stage);
+  const isWorkAtRisk =
+    edited !== null && (edited.isChanged || isSaveAsked(edited.stage));
   useEffect(() => {
-    if (!isSavePending) return;
+    if (!isWorkAtRisk) return;
     dispatch(actions.unsavedWorkBegan());
     return () => {
       dispatch(actions.unsavedWorkEnded());
     };
-  }, [isSavePending, dispatch]);
+  }, [isWorkAtRisk, dispatch]);
   useEffect(() => {
     if (edited?.stage !== "readyToSend") return;
     dispatchEdited({ type: "sendStarted" });
