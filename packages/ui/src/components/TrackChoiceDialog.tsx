@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { Button } from "./Button.tsx";
-import { DialogActions, ModalDialog } from "./ModalDialog.tsx";
+import { ModalDialog } from "./ModalDialog.tsx";
 import type { TrackChoice } from "./trackChoiceLabels.ts";
 import { trackLabels } from "./trackChoiceLabels.ts";
 
@@ -30,7 +30,22 @@ export function TrackChoiceDialog({
       },
   );
   return (
-    <ModalDialog title="Choose tracks" onCancel={onCancel}>
+    <ModalDialog
+      title="Choose tracks"
+      onCancel={onCancel}
+      footer={
+        <>
+          <Button onClick={onCancel}>Cancel</Button>
+          <Button
+            variant="primary"
+            autoFocus
+            onClick={() => onChoose(selection)}
+          >
+            Choose
+          </Button>
+        </>
+      }
+    >
       {videoTracks.length > 0 && (
         <TrackGroup
           legend="Video"
@@ -47,12 +62,6 @@ export function TrackChoiceDialog({
           onSelect={(audio) => setSelection({ ...selection, audio })}
         />
       )}
-      <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" autoFocus onClick={() => onChoose(selection)}>
-          Choose
-        </Button>
-      </DialogActions>
     </ModalDialog>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
-import { Dialog } from "../components/Dialog.tsx";
+import { ModalDialog } from "../components/ModalDialog.tsx";
 import { languageName } from "../projects/languages.ts";
 import type { TrackOption } from "./playback.ts";
 
@@ -23,10 +23,10 @@ export function TrackPickerDialog({
     tracks.find((track) => track.language === wantedLanguage)?.id ?? null,
   );
   return (
-    <Dialog
+    <ModalDialog
       title={titles[purpose]}
       description={descriptions[purpose]}
-      onClose={onSkip}
+      onCancel={onSkip}
       footer={
         <>
           <Button onClick={onSkip}>Skip</Button>
@@ -77,7 +77,7 @@ export function TrackPickerDialog({
           </label>
         ))}
       </fieldset>
-    </Dialog>
+    </ModalDialog>
   );
 }
 

@@ -81,6 +81,12 @@ describe("ConversionNoticeDialog", () => {
     expect(effects.preferences.has("conversionNoticeDismissed")).toBe(false);
   });
 
+  it("cancels when the close button is clicked", () => {
+    const { calls } = renderDialog();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(calls).toEqual(["cancel"]);
+  });
+
   it("starts with focus on Play", () => {
     renderDialog();
     expect(document.activeElement?.textContent).toBe("Play");
@@ -90,7 +96,7 @@ describe("ConversionNoticeDialog", () => {
     renderDialog();
     fireEvent.keyDown(findDialog(), { key: "Tab" });
     expect(document.activeElement).toBe(
-      screen.getByRole("checkbox", { name: "Don't show this again" }),
+      screen.getByRole("button", { name: "Close" }),
     );
   });
 });

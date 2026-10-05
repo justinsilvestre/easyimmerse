@@ -1,5 +1,5 @@
 import { Button } from "../components/Button.tsx";
-import { Dialog } from "../components/Dialog.tsx";
+import { ModalDialog } from "../components/ModalDialog.tsx";
 
 /** Tells the user that the browser cannot play a media file, and that the desktop app can. */
 export function UnsupportedFormatDialog({
@@ -12,9 +12,9 @@ export function UnsupportedFormatDialog({
   onClose: () => void;
 }) {
   return (
-    <Dialog
+    <ModalDialog
       title="This browser cannot play the file"
-      onClose={onClose}
+      onCancel={onClose}
       footer={
         <>
           <Button onClick={onClose}>Close</Button>
@@ -29,6 +29,6 @@ export function UnsupportedFormatDialog({
         desktop app plays it, converting the file when needed, and opens your
         projects and flashcards as they are here.
       </p>
-    </Dialog>
+    </ModalDialog>
   );
 }

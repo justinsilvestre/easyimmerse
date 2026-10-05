@@ -2,7 +2,7 @@ import { actions } from "@easyimmerse/state";
 import { useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { Button } from "./Button.tsx";
-import { DialogActions, ModalDialog } from "./ModalDialog.tsx";
+import { ModalDialog } from "./ModalDialog.tsx";
 
 /**
  * Tells the user, once, that a file is about to be converted as it plays.
@@ -26,6 +26,14 @@ export function ConversionNoticeDialog({
     <ModalDialog
       title="This file will be converted as it plays"
       onCancel={onCancel}
+      footer={
+        <>
+          <Button onClick={onCancel}>Cancel</Button>
+          <Button variant="primary" autoFocus onClick={play}>
+            Play
+          </Button>
+        </>
+      }
     >
       <p className="text-sm text-fg-soft">
         Your system cannot play this format directly, so easyImmerse converts it
@@ -39,12 +47,6 @@ export function ConversionNoticeDialog({
         />
         Don't show this again
       </label>
-      <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" autoFocus onClick={play}>
-          Play
-        </Button>
-      </DialogActions>
     </ModalDialog>
   );
 }
