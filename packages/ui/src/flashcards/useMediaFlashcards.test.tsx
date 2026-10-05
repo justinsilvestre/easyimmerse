@@ -301,7 +301,12 @@ describe("useMediaFlashcards", () => {
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] }),
     );
 
-    afterEach(() => vi.useRealTimers());
+    afterEach(() => {
+      // Unmounting saves the open card in the background; dropping its fake timeouts keeps it out of later tests.
+      cleanup();
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    });
 
     it("saves the card as it is once the limit from pressing Save has passed", async () => {
       const { result, held } = renderFlashcards();
@@ -900,7 +905,12 @@ describe("useMediaFlashcards", () => {
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }),
     );
 
-    afterEach(() => vi.useRealTimers());
+    afterEach(() => {
+      // Unmounting saves the open card in the background; dropping its fake timeouts keeps it out of later tests.
+      cleanup();
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    });
 
     async function hangSave() {
       const rendered = renderFlashcards();
@@ -1033,7 +1043,12 @@ describe("useMediaFlashcards", () => {
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }),
     );
 
-    afterEach(() => vi.useRealTimers());
+    afterEach(() => {
+      // Unmounting saves the open card in the background; dropping its fake timeouts keeps it out of later tests.
+      cleanup();
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    });
 
     it("saves the card as it is once the save has waited its limit", async () => {
       const { result, held } = renderFlashcards();

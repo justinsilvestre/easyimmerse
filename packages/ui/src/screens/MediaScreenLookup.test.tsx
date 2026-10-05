@@ -94,6 +94,10 @@ describe("MediaScreen lookup gestures", () => {
   });
 
   afterEach(() => {
+    // Unmounting saves the open card in the background, which may wait on timeouts. Unmounting while they are fake,
+    // and dropping them, keeps that work from running in real time during a later test, against that test's backend.
+    cleanup();
+    vi.clearAllTimers();
     clearInterval(flushDue);
     vi.useRealTimers();
   });
