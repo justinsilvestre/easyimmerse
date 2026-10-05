@@ -3,6 +3,8 @@
 mod columns;
 #[cfg(test)]
 mod concurrent_import_tests;
+#[cfg(test)]
+mod import_timing_tests;
 mod importer;
 mod kanji_lookup;
 mod listing;
