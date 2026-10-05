@@ -65,8 +65,7 @@ pub async fn import_local_dictionary(
     Json(request): Json<ImportLocalDictionaryRequest>,
 ) -> Result<(StatusCode, Json<DictionarySummary>), ApiFailure> {
     ensure_local_paths_allowed(token, &state.config)?;
-    // A table file is the file the user picked, never a sibling of the same stem, whether or not its columns were chosen.
-    let files = read_local_table(request.path, None).await?;
+    let files = read_local_dictionary(request.path, None).await?;
     import_files(&state, files, request.table_layout).await
 }
 
@@ -94,7 +93,7 @@ pub async fn preview_local_dictionary_table(
     Json(request): Json<PreviewLocalDictionaryTableRequest>,
 ) -> Result<Json<TablePreview>, ApiFailure> {
     ensure_local_paths_allowed(token, &state.config)?;
-    let files = read_local_table(request.path, Some(PREVIEW_BYTES)).await?;
+    let files = read_local_dictionary(request.path, Some(PREVIEW_BYTES)).await?;
     let preview =
         tokio::task::spawn_blocking(move || preview_table_in(DictionarySource::new(files)?))
             .await
@@ -102,27 +101,23 @@ pub async fn preview_local_dictionary_table(
     Ok(Json(preview))
 }
 
-/// Reads a table at a local path on the blocking pool: a table file alone, up to `limit` bytes,
-/// or, for a directory or an archive, the files an import of the path reads.
-async fn read_local_table(path: String, limit: Option<u64>) -> Result<Vec<SourceFile>, ApiFailure> {
+/// Reads the dictionary at a local path on the blocking pool: a table file on its own, only its first `limit` bytes when given;
+/// any other file with its siblings of the same stem; or every file beneath a directory, whatever its name.
+async fn read_local_dictionary(
+    path: String,
+    limit: Option<u64>,
+) -> Result<Vec<SourceFile>, ApiFailure> {
     let path_buf = PathBuf::from(&path);
-    if !is_table_file(&path_buf) {
-        return read_local_files(path).await;
-    }
-    tokio::task::spawn_blocking(move || read_table_file(&path_buf, limit))
-        .await
-        .map_err(|error| internal(error.to_string()))?
-        .map(|file| vec![file])
-        .map_err(|error| describe_read_error(&path, error))
-}
-
-/// Reads the files of the dictionary at a local path on the blocking pool, as an import of that path does.
-async fn read_local_files(path: String) -> Result<Vec<SourceFile>, ApiFailure> {
-    let path_buf = PathBuf::from(&path);
-    tokio::task::spawn_blocking(move || read_dictionary_files(&path_buf))
-        .await
-        .map_err(|error| internal(error.to_string()))?
-        .map_err(|error| describe_read_error(&path, error))
+    tokio::task::spawn_blocking(move || {
+        if is_table_file(&path_buf) && path_buf.is_file() {
+            read_table_file(&path_buf, limit).map(|file| vec![file])
+        } else {
+            read_dictionary_files(&path_buf)
+        }
+    })
+    .await
+    .map_err(|error| internal(error.to_string()))?
+    .map_err(|error| describe_read_error(&path, error))
 }
 
 fn describe_read_error(path: &str, error: std::io::Error) -> ApiFailure {
