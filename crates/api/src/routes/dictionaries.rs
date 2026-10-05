@@ -25,6 +25,10 @@ pub struct DictionarySummary {
     pub id: String,
     pub title: String,
     pub format: DictionaryFormatKind,
+    /// The language of the words looked up, as a BCP 47 tag, when the dictionary states it.
+    pub source_language: Option<String>,
+    /// The language of the definitions, as a BCP 47 tag, when the dictionary states it.
+    pub target_language: Option<String>,
     pub entry_count: u64,
     pub term_meta_count: u64,
     pub tag_count: u64,
@@ -265,6 +269,8 @@ fn summarize(dictionary: StoredDictionary) -> DictionarySummary {
         id: dictionary.id.0,
         title: dictionary.metadata.title,
         format: dictionary.metadata.format,
+        source_language: dictionary.metadata.source_language,
+        target_language: dictionary.metadata.target_language,
         entry_count: counts.entries,
         term_meta_count: counts.term_meta,
         tag_count: counts.tags,

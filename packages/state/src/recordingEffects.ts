@@ -1,12 +1,20 @@
-import type { Effects, PickedFile, PickedMediaFile } from "./effects.ts";
+import type {
+  Effects,
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 
 type EffectCall =
   | { type: "seekPlayer"; seconds: number }
   | { type: "togglePlayer" }
+  | { type: "playPlayer" }
+  | { type: "pausePlayer" }
   | { type: "setPlayerVolume"; volume: number }
   | { type: "setPlayerSpeed"; speed: number }
   | { type: "pickFile"; accept: readonly string[] }
   | { type: "pickMediaFile"; accept: readonly string[] }
+  | { type: "pickDictionaryFile"; accept: readonly string[] }
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
   | { type: "showNotification"; message: string }
@@ -26,6 +34,8 @@ export type RecordingEffects = Effects & {
   resolvePickMediaFile(file: PickedMediaFile | null): void;
   /** Rejects the pending pickMediaFile promise. Throws when no pick is pending. */
   rejectPickMediaFile(error: Error): void;
+  /** Settles the pending pickDictionaryFile promise. Throws when no pick is pending. */
+  resolvePickDictionaryFile(file: PickedDictionaryFile | null): void;
   /** Acts as the platform asking for the Settings screen, by calling every subscribed listener. */
   requestSettings(): void;
 };
@@ -58,6 +68,9 @@ export function createRecordingEffects(): RecordingEffects {
   const preferences = new Map<string, string>();
   const filePick = createPendingPick<PickedFile>("file pick");
   const mediaFilePick = createPendingPick<PickedMediaFile>("media file pick");
+  const dictionaryFilePick = createPendingPick<PickedDictionaryFile>(
+    "dictionary file pick",
+  );
   const settingsListeners = new Set<() => void>();
   return {
     calls,
@@ -67,6 +80,12 @@ export function createRecordingEffects(): RecordingEffects {
     },
     togglePlayer: () => {
       calls.push({ type: "togglePlayer" });
+    },
+    playPlayer: () => {
+      calls.push({ type: "playPlayer" });
+    },
+    pausePlayer: () => {
+      calls.push({ type: "pausePlayer" });
     },
     setPlayerVolume: (volume) => {
       calls.push({ type: "setPlayerVolume", volume });
@@ -81,6 +100,10 @@ export function createRecordingEffects(): RecordingEffects {
     pickMediaFile: (accept) => {
       calls.push({ type: "pickMediaFile", accept });
       return mediaFilePick.start();
+    },
+    pickDictionaryFile: (accept) => {
+      calls.push({ type: "pickDictionaryFile", accept });
+      return dictionaryFilePick.start();
     },
     savePreference: async (key, value) => {
       calls.push({ type: "savePreference", key, value });
@@ -112,6 +135,9 @@ export function createRecordingEffects(): RecordingEffects {
     },
     rejectPickMediaFile: (error) => {
       mediaFilePick.take().reject(error);
+    },
+    resolvePickDictionaryFile: (file) => {
+      dictionaryFilePick.take().resolve(file);
     },
     requestSettings: () => {
       for (const listener of settingsListeners) listener();

@@ -14,10 +14,20 @@ import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
 import { useLicenseNotices } from "./hooks/useLicenseNotices.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
-import type { MainNavigation, NavigationAction } from "./navigation.ts";
-import { initialNavigation, mainScreenOf, navigate } from "./navigation.ts";
+import type {
+  MainNavigation,
+  Navigation,
+  NavigationAction,
+} from "./navigation.ts";
+import {
+  initialNavigation,
+  mainScreenOf,
+  navigate,
+  settingsPageOf,
+} from "./navigation.ts";
 import { NavigationActionsContext } from "./navigationContext.ts";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
+import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
 import { NewProjectScreen } from "./screens/NewProjectScreen.tsx";
 import { OfflineScreen } from "./screens/OfflineScreen.tsx";
@@ -41,7 +51,10 @@ export function AppRoot({
     navigate,
     initialNavigation,
   );
-  const openSettings = () => dispatchNavigation({ type: "openSettings" });
+  const navigationActions = {
+    openSettings: () => dispatchNavigation({ type: "openSettings" }),
+    openDictionaries: () => dispatchNavigation({ type: "openDictionaries" }),
+  };
   useEffect(
     () =>
       effects.subscribeToSettingsRequests(() =>
@@ -54,7 +67,7 @@ export function AppRoot({
     <Provider store={store}>
       <PlayerRegistryContext value={playerRegistry}>
         <BrowserFileRegistryContext value={browserFileRegistry}>
-          <NavigationActionsContext value={{ openSettings }}>
+          <NavigationActionsContext value={navigationActions}>
             <AppearanceHandler />
             <PreferencesLoader />
             <div inert={settingsOpen}>
@@ -63,10 +76,11 @@ export function AppRoot({
                 dispatchNavigation={dispatchNavigation}
               />
             </div>
-            {settingsOpen && (
+            {navigation.screen === "settings" && (
               <SettingsOverlay>
-                <ConnectedSettingsScreen
-                  onBack={() => dispatchNavigation({ type: "closeSettings" })}
+                <SettingsPage
+                  navigation={navigation}
+                  dispatchNavigation={dispatchNavigation}
                 />
               </SettingsOverlay>
             )}
@@ -125,11 +139,42 @@ function MainScreen({
   }
 }
 
+/** The settings page on top of the settings stack. */
+function SettingsPage({
+  navigation,
+  dispatchNavigation,
+}: {
+  navigation: Extract<Navigation, { screen: "settings" }>;
+  dispatchNavigation: (action: NavigationAction) => void;
+}) {
+  const onBack = () => dispatchNavigation({ type: "closeSettings" });
+  switch (settingsPageOf(navigation)) {
+    case "general":
+      return (
+        <ConnectedSettingsScreen
+          onBack={onBack}
+          onOpenDictionaries={() =>
+            dispatchNavigation({ type: "openDictionaries" })
+          }
+        />
+      );
+    case "dictionaries":
+      return <DictionariesScreen onBack={onBack} />;
+  }
+}
+
 /** The Settings screen with the converted-videos status from the server and the bundled license notices. */
-function ConnectedSettingsScreen({ onBack }: { onBack: () => void }) {
+function ConnectedSettingsScreen({
+  onBack,
+  onOpenDictionaries,
+}: {
+  onBack: () => void;
+  onOpenDictionaries: () => void;
+}) {
   return (
     <SettingsScreen
       onBack={onBack}
+      onOpenDictionaries={onOpenDictionaries}
       conversionCache={useConversionCacheControls()}
       licenseNotices={useLicenseNotices()}
     />

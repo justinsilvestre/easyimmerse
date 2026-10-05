@@ -1,6 +1,6 @@
 import { actions, selectPlayer } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
-import { useReducer } from "react";
+import { useReducer, useRef } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
@@ -11,6 +11,9 @@ import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
 import { useScreenshotUrl } from "../flashcards/useScreenshotUrl.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
+import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
+import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
 import { findTranslationOf } from "../media/findCue.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
@@ -26,6 +29,8 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
 /**
  * The screen for watching or listening to one of the project's media files:
  * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
+ * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
+ * double-clicking a word starts a flashcard for it at once.
  */
 export function MediaScreen({
   project,
@@ -68,25 +73,31 @@ export function MediaScreen({
   const startFlashcard = (
     word: string,
     cue = cueForFlashcard(subtitles.cues, currentMs),
+    lookupFields: LookupFlashcardFields | null = null,
   ) => {
     if (mediaFile === null) return;
+    const draft = draftFromCue({
+      word,
+      cue,
+      translationCue: cue
+        ? findTranslationOf(cue, subtitles.translationCues)
+        : null,
+      mediaFile,
+      settings,
+      hasScreenshots,
+    });
     flashcards.start(
-      draftFromCue({
-        word,
-        cue,
-        translationCue: cue
-          ? findTranslationOf(cue, subtitles.translationCues)
-          : null,
-        mediaFile,
-        settings,
-        hasScreenshots,
-      }),
+      lookupFields
+        ? { ...draft, content: { ...draft.content, ...lookupFields } }
+        : draft,
     );
   };
   const languages = {
     target: settings.target_language,
     translation: settings.translation_language,
   };
+  const screenRef = useRef<HTMLDivElement>(null);
+  const lookup = useSubtitleLookup(languages, startFlashcard, screenRef);
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
     onSeek: (ms) => dispatch(actions.seekRequested(ms / 1000)),
@@ -107,6 +118,7 @@ export function MediaScreen({
   };
   return (
     <MediaView
+      ref={screenRef}
       media={{
         title: mediaFile?.name ?? "",
         language: settings.target_language,
@@ -140,16 +152,13 @@ export function MediaScreen({
       subtitleDisplay={panels.subtitleDisplay}
       playerCallbacks={playerCallbacks}
       onBack={() => dispatch(actions.closeMedia())}
+      activeWord={lookup.activeWord}
       onWordHover={() => undefined}
-      onWordClick={(word) => startFlashcard(word)}
-      onLookup={() =>
-        dispatch(
-          actions.notificationRequested(
-            "Dictionary lookups are not available yet.",
-          ),
-        )
-      }
+      onWordClick={lookup.lookUpWord}
+      onWordDoubleClick={lookup.startFlashcardFromWord}
+      onLookup={lookup.openSearch}
       onAddFlashcard={() => startFlashcard("")}
+      lookup={lookup.popupProps && <DictionaryPopup {...lookup.popupProps} />}
       headerContent={
         flashcards.isSaved ? (
           <FlashcardSaveNotice
@@ -181,7 +190,9 @@ export function MediaScreen({
             tracks={tracks}
             currentMs={currentMs}
             flashcardCueIndexes={flashcards.cueIndexes}
-            onWordClick={startFlashcard}
+            activeWord={lookup.activeWord}
+            onWordClick={lookup.lookUpWord}
+            onWordDoubleClick={lookup.startFlashcardFromWord}
           />
         ) : undefined
       }

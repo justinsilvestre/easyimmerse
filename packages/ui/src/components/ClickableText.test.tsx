@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   ClickableText,
@@ -39,5 +39,29 @@ describe("ClickableText", () => {
   it("renders angle-bracketed text as it is", () => {
     const { container } = render(<ClickableText text="<colloq.> mate" />);
     expect(container.textContent).toBe("<colloq.> mate");
+  });
+
+  it("passes a clicked word's offset in the text", () => {
+    const clicks: [string, number][] = [];
+    render(
+      <ClickableText
+        text="Ich rufe an."
+        onWordClick={(word, start) => clicks.push([word, start])}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "rufe" }));
+    expect(clicks).toEqual([["rufe", 4]]);
+  });
+
+  it("passes a double-clicked word", () => {
+    const doubleClicks: string[] = [];
+    render(
+      <ClickableText
+        text="Ich rufe an."
+        onWordDoubleClick={(word) => doubleClicks.push(word)}
+      />,
+    );
+    fireEvent.doubleClick(screen.getByRole("button", { name: "an" }));
+    expect(doubleClicks).toEqual(["an"]);
   });
 });

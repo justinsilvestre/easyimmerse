@@ -16,4 +16,7 @@ export type LookupState =
       stylesheets?: readonly DictionaryStylesheet[];
     }
   | { kind: "notFound"; term: string }
-  | { kind: "noDictionary"; language: string };
+  /** The lookup could not reach the dictionaries, as when no server is connected. */
+  | { kind: "failed"; term: string }
+  /** No dictionary covers the language. `term` is the word chosen in the text, when there is one. */
+  | { kind: "noDictionary"; language: string; term?: string };

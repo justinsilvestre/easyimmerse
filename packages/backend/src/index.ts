@@ -27,6 +27,7 @@ export {
   useParseLocalDocumentMutation,
   useParseTimedTextMutation,
   usePlanPlaybackQuery,
+  usePreviewDictionaryTableMutation,
   useRemoveMediaFileMutation,
   useSaveTrackSelectionMutation,
   useSetSubtitleSelectionMutation,

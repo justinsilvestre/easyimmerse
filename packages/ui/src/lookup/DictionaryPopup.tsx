@@ -1,6 +1,6 @@
 import type { DictionaryStylesheet } from "@easyimmerse/types";
 import { BookOpen, Search, X } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
@@ -10,10 +10,13 @@ import { KanjiCard } from "./KanjiCard.tsx";
 import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupState } from "./lookupState.ts";
 import { DictionaryStylesheets } from "./stylesheet/DictionaryStylesheets.tsx";
+import { usePopupDismissal } from "./usePopupDismissal.ts";
 
 /**
- * The dictionary pop-up. In `hover` mode it shows the word under the pointer; in `search` mode it opens with a field to type a word into.
- * Clicking a word inside the pop-up starts a flashcard for that word, as it does in the subtitles; following a link to another headword searches for it.
+ * The dictionary pop-up. In `hover` mode it shows the word chosen in the text; in `search` mode it opens with a field to type a word into.
+ * Clicking a word inside the pop-up, or following a link to another headword, looks it up in turn.
+ * A flashcard comes from every result with the header button (`entryIndex` null) or from one result with its own button.
+ * Escape, or pressing outside the pop-up and not on a word marked as a lookup trigger, closes it.
  * Images in definitions are found through `resolveMediaUrl`.
  */
 export function DictionaryPopup({
@@ -29,12 +32,15 @@ export function DictionaryPopup({
   mode: "hover" | "search";
   resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
-  onCreateFlashcard: (term: string, entryIndex: number | null) => void;
+  onCreateFlashcard: (entryIndex: number | null) => void;
   onClose: () => void;
   onSetUpDictionary: () => void;
 }) {
+  const ref = useRef<HTMLElement>(null);
+  usePopupDismissal(ref, onClose);
   return (
     <section
+      ref={ref}
       aria-label="Dictionary"
       className="flex max-h-[min(24rem,100%)] w-[min(26rem,calc(100vw-1rem))] flex-col rounded-lg border border-line bg-surface text-fg shadow-xl"
     >
@@ -48,7 +54,7 @@ export function DictionaryPopup({
           <Button
             size="sm"
             variant="primary"
-            onClick={() => onCreateFlashcard(state.term, null)}
+            onClick={() => onCreateFlashcard(null)}
           >
             <NewFlashcardIcon className="size-3.5" />
             Flashcard
@@ -72,7 +78,8 @@ export function DictionaryPopup({
 }
 
 function termOf(state: LookupState | null): string {
-  return state && state.kind !== "noDictionary" ? state.term : "";
+  if (state?.kind === "noDictionary") return state.term ?? "Dictionary";
+  return state?.term ?? "";
 }
 
 function SearchField({ onSearch }: { onSearch: (term: string) => void }) {
@@ -110,7 +117,7 @@ function Body({
   state: LookupState | null;
   resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
-  onCreateFlashcard: (term: string, entryIndex: number | null) => void;
+  onCreateFlashcard: (entryIndex: number | null) => void;
   onSetUpDictionary: () => void;
 }) {
   if (!state) return <Hint>Type a word and press Enter.</Hint>;
@@ -119,6 +126,10 @@ function Body({
       return <Hint>Looking up {state.term}…</Hint>;
     case "notFound":
       return <Hint>No entry for “{state.term}”.</Hint>;
+    case "failed":
+      return (
+        <Hint>The dictionaries could not be searched for “{state.term}”.</Hint>
+      );
     case "noDictionary":
       return (
         <div className="flex flex-col items-center gap-2 py-4 text-center text-sm">
@@ -143,16 +154,16 @@ function Body({
               key={index}
               result={result}
               resolveMediaUrl={resolveMediaUrl}
-              onWordClick={(word) => onCreateFlashcard(word, null)}
+              onWordClick={onSearch}
               onLookup={onSearch}
-              onCreateFlashcard={() => onCreateFlashcard(state.term, index)}
+              onCreateFlashcard={() => onCreateFlashcard(index)}
             />
           ))}
           {state.kanji?.map((kanji) => (
             <KanjiCard
               key={`${kanji.dictionaryId}-${kanji.entry.character}`}
               result={kanji}
-              onWordClick={(word) => onCreateFlashcard(word, null)}
+              onWordClick={onSearch}
             />
           ))}
         </>

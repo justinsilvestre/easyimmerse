@@ -85,6 +85,29 @@ async fn importing_something_that_is_not_a_dictionary_is_a_bad_request() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn importing_a_file_in_an_unsupported_format_says_so() {
+    let server = spawn_test_server(false).await;
+    let response = server
+        .post_bytes(
+            "/dictionaries?fileName=duden.lsd",
+            "application/octet-stream",
+            b"nope".to_vec(),
+        )
+        .await;
+    assert_eq!(response.json()["code"], "unsupported_dictionary_format");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn importing_a_file_body_reports_its_languages() {
+    let server = spawn_test_server(false).await;
+    let summary = import_fixture(&server).await.json();
+    assert_eq!(
+        [&summary["source_language"], &summary["target_language"]],
+        [&json!("ja"), &json!("en")]
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn importing_a_local_archive_works_when_allowed() {
     let server = spawn_test_server(true).await;
     let path = fixture_path("sample-yomitan.zip");

@@ -13,13 +13,18 @@ export function SubtitlesSidePanel({
   tracks,
   currentMs,
   flashcardCueIndexes,
+  activeWord,
   onWordClick,
+  onWordDoubleClick,
 }: {
   subtitles: ReturnType<typeof useMediaSubtitles>;
   tracks: SubtitleTrackChoices;
   currentMs: number;
   flashcardCueIndexes: readonly number[];
-  onWordClick: (word: string, cue: Cue) => void;
+  /** The word the dictionary pop-up shows. */
+  activeWord?: string;
+  onWordClick: (word: string, cue: Cue, start: number) => void;
+  onWordDoubleClick: (word: string, cue: Cue, start: number) => void;
 }) {
   const dispatch = useAppDispatch();
   const activeCue: Cue | null = findCueAt(subtitles.cues, currentMs);
@@ -43,9 +48,11 @@ export function SubtitlesSidePanel({
         translationCues={subtitles.translationCues}
         activeCueIndex={activeCue?.index ?? null}
         flashcardCueIndexes={flashcardCueIndexes}
+        activeWord={activeWord}
         onSeek={(ms) => dispatch(actions.seekRequested(ms / 1000))}
         onWordHover={() => undefined}
         onWordClick={onWordClick}
+        onWordDoubleClick={onWordDoubleClick}
         onAddSubtitlesFile={subtitles.requestFile}
         onGenerateSubtitles={() =>
           dispatch(

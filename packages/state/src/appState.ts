@@ -1,4 +1,8 @@
-import type { PickedFile, PickedMediaFile } from "./effects.ts";
+import type {
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 import type { ThemeState } from "./theme.ts";
 import { initialThemeState } from "./theme.ts";
 
@@ -45,6 +49,8 @@ export type AppState = {
   currentMediaFileId: string | null;
   /** A picked media file waiting to be added to the project through the backend. */
   chosenMediaFile: PickedMediaFile | null;
+  /** A picked dictionary file waiting to be imported through the backend. */
+  chosenDictionaryFile: PickedDictionaryFile | null;
   theme: ThemeState;
 };
 
@@ -56,5 +62,6 @@ export const initialAppState: AppState = {
   pendingFilePick: false,
   currentMediaFileId: null,
   chosenMediaFile: null,
+  chosenDictionaryFile: null,
   theme: initialThemeState,
 };

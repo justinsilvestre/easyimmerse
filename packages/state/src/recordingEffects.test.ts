@@ -59,6 +59,17 @@ describe("createRecordingEffects", () => {
     );
   });
 
+  it("settles a pending dictionary file pick with the given file", async () => {
+    const effects = createRecordingEffects();
+    const pick = effects.pickDictionaryFile([".zip"]);
+    const file = {
+      name: "a.zip",
+      source: { kind: "path", path: "/a.zip" },
+    } as const;
+    effects.resolvePickDictionaryFile(file);
+    expect(await pick).toBe(file);
+  });
+
   it("calls a settings listener when settings are requested", () => {
     const effects = createRecordingEffects();
     let callCount = 0;

@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import { actions } from "./actions.ts";
 import type { AppState } from "./appState.ts";
 import { initialAppState } from "./appState.ts";
-import type { PickedFile, PickedMediaFile } from "./effects.ts";
+import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
+import type {
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { update } from "./update.ts";
 
@@ -14,6 +19,11 @@ const pickedFile: PickedFile = {
 const pickedMediaFile: PickedMediaFile = {
   name: "episode.mkv",
   source: { kind: "path", path: "/videos/episode.mkv" },
+};
+
+const pickedDictionaryFile: PickedDictionaryFile = {
+  name: "jmdict.zip",
+  source: { kind: "path", path: "/dictionaries/jmdict.zip" },
 };
 
 const withPreference = (value: string): AppState => ({
@@ -96,6 +106,16 @@ describe("update", () => {
     ]);
   });
 
+  it("returns a playPlayer effect for playRequested", () => {
+    const [, effects] = update(initialAppState, actions.playRequested());
+    expect(effects).toEqual([{ type: "playPlayer" }]);
+  });
+
+  it("returns a pausePlayer effect for pauseRequested", () => {
+    const [, effects] = update(initialAppState, actions.pauseRequested());
+    expect(effects).toEqual([{ type: "pausePlayer" }]);
+  });
+
   it("returns a togglePlayer effect for playToggleRequested", () => {
     const [, effects] = update(initialAppState, actions.playToggleRequested());
     expect(effects).toEqual([{ type: "togglePlayer" }]);
@@ -149,6 +169,33 @@ describe("update", () => {
       actions.mediaFileChosen(pickedMediaFile),
     );
     expect(state.chosenMediaFile).toBe(pickedMediaFile);
+  });
+
+  it("returns a pickDictionaryFile effect accepting dictionary files for dictionaryFilePickRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.dictionaryFilePickRequested(),
+    );
+    expect(effects).toEqual([
+      { type: "pickDictionaryFile", accept: dictionaryFileExtensions },
+    ]);
+  });
+
+  it("keeps the chosen dictionary file for dictionaryFileChosen", () => {
+    const [state] = update(
+      initialAppState,
+      actions.dictionaryFileChosen(pickedDictionaryFile),
+    );
+    expect(state.chosenDictionaryFile).toBe(pickedDictionaryFile);
+  });
+
+  it("forgets the chosen dictionary file for dictionaryFileHandled", () => {
+    const chosen = {
+      ...initialAppState,
+      chosenDictionaryFile: pickedDictionaryFile,
+    };
+    const [state] = update(chosen, actions.dictionaryFileHandled());
+    expect(state.chosenDictionaryFile).toBeNull();
   });
 
   it("opens the added media file for mediaFileAdded", () => {

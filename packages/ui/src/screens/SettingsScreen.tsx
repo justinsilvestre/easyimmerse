@@ -1,3 +1,4 @@
+import { BookOpen, ChevronRight } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
@@ -16,10 +17,12 @@ const unavailableConversionCache: ConversionCacheControls = {
 
 export function SettingsScreen({
   onBack,
+  onOpenDictionaries,
   conversionCache = unavailableConversionCache,
   licenseNotices = { status: "loaded", groups: [] },
 }: {
   onBack: () => void;
+  onOpenDictionaries: () => void;
   conversionCache?: ConversionCacheControls;
   licenseNotices?: LicenseNoticesState;
 }) {
@@ -29,6 +32,20 @@ export function SettingsScreen({
       showSettingsLink={false}
     >
       <h1 className="text-xl font-semibold">Settings</h1>
+      <button
+        type="button"
+        onClick={onOpenDictionaries}
+        className="flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-left hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
+      >
+        <BookOpen className="size-4 text-fg-muted" aria-hidden />
+        <span className="flex flex-1 flex-col">
+          <span className="font-medium">Dictionaries</span>
+          <span className="text-sm text-fg-muted">
+            Add and remove the dictionaries words are looked up in.
+          </span>
+        </span>
+        <ChevronRight className="size-4 text-fg-muted" aria-hidden />
+      </button>
       <section
         aria-labelledby="settings-conversion"
         className="flex flex-col gap-3"

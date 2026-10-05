@@ -18,6 +18,7 @@ export function CuePanel({
   onSeek,
   onWordHover,
   onWordClick,
+  onWordDoubleClick,
   onAddSubtitlesFile,
   onGenerateSubtitles,
 }: {
@@ -28,8 +29,9 @@ export function CuePanel({
   activeWord?: string;
   onSeek: (ms: number) => void;
   onWordHover: (word: string) => void;
-  /** Receives the clicked word with the cue it was clicked in. */
-  onWordClick: (word: string, cue: Cue) => void;
+  /** Receives the clicked word with the cue it was clicked in and its offset in the cue's text without markup. */
+  onWordClick: (word: string, cue: Cue, start: number) => void;
+  onWordDoubleClick?: (word: string, cue: Cue, start: number) => void;
   onAddSubtitlesFile: () => void;
   onGenerateSubtitles: () => void;
 }) {
@@ -79,6 +81,7 @@ export function CuePanel({
           onSeek={onSeek}
           onWordHover={onWordHover}
           onWordClick={onWordClick}
+          onWordDoubleClick={onWordDoubleClick}
         />
       ))}
     </ol>
@@ -94,6 +97,7 @@ function CueCard({
   onSeek,
   onWordHover,
   onWordClick,
+  onWordDoubleClick,
 }: {
   cue: Cue;
   translation: Cue | null;
@@ -102,7 +106,8 @@ function CueCard({
   activeWord?: string;
   onSeek: (ms: number) => void;
   onWordHover: (word: string) => void;
-  onWordClick: (word: string, cue: Cue) => void;
+  onWordClick: (word: string, cue: Cue, start: number) => void;
+  onWordDoubleClick?: (word: string, cue: Cue, start: number) => void;
 }) {
   const ref = useRef<HTMLLIElement>(null);
   useEffect(() => {
@@ -140,7 +145,10 @@ function CueCard({
           text={stripMarkup(cue.text)}
           activeWord={activeWord}
           onWordHover={onWordHover}
-          onWordClick={(word) => onWordClick(word, cue)}
+          onWordClick={(word, start) => onWordClick(word, cue, start)}
+          onWordDoubleClick={(word, start) =>
+            onWordDoubleClick?.(word, cue, start)
+          }
         />
       </p>
       {translation && (

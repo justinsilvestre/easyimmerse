@@ -1,6 +1,6 @@
 import { createBrowserFileRegistry } from "@easyimmerse/state";
 import { describe, expect, it } from "vitest";
-import { createPickMediaFile } from "./pickMediaFile.ts";
+import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
 
 function findFileInput(): HTMLInputElement {
   const input = document.body.querySelector("input[type=file]");
@@ -15,9 +15,11 @@ function chooseFile(input: HTMLInputElement, file: File): void {
 
 const clip = new File(["abc"], "clip.webm", { lastModified: 1700000000000 });
 
-describe("createPickMediaFile", () => {
+describe("createPickRegisteredFile", () => {
   it("resolves the chosen file's name and a browser_file source", async () => {
-    const picked = createPickMediaFile(createBrowserFileRegistry())([".webm"]);
+    const picked = createPickRegisteredFile(createBrowserFileRegistry())([
+      ".webm",
+    ]);
     chooseFile(findFileInput(), clip);
     expect(await picked).toEqual({
       name: "clip.webm",
@@ -31,7 +33,7 @@ describe("createPickMediaFile", () => {
 
   it("keeps the chosen file in the registry", async () => {
     const registry = createBrowserFileRegistry<File>();
-    const picked = createPickMediaFile(registry)([".webm"]);
+    const picked = createPickRegisteredFile(registry)([".webm"]);
     chooseFile(findFileInput(), clip);
     const result = await picked;
     if (result === null) throw new Error("No file was picked.");
@@ -39,13 +41,18 @@ describe("createPickMediaFile", () => {
   });
 
   it("resolves null when the dialog is cancelled", async () => {
-    const picked = createPickMediaFile(createBrowserFileRegistry())([".webm"]);
+    const picked = createPickRegisteredFile(createBrowserFileRegistry())([
+      ".webm",
+    ]);
     findFileInput().dispatchEvent(new Event("cancel"));
     expect(await picked).toBeNull();
   });
 
   it("limits the input to the accepted extensions", () => {
-    void createPickMediaFile(createBrowserFileRegistry())([".mp4", ".webm"]);
+    void createPickRegisteredFile(createBrowserFileRegistry())([
+      ".mp4",
+      ".webm",
+    ]);
     const input = findFileInput();
     expect(input.accept).toBe(".mp4,.webm");
     input.dispatchEvent(new Event("cancel"));

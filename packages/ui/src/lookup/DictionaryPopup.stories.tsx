@@ -68,6 +68,10 @@ export const NothingFound: Story = {
   args: { state: { kind: "notFound", term: "Hundi" } },
 };
 
+export const LookupFailed: Story = {
+  args: { state: { kind: "failed", term: "fressen" } },
+};
+
 export const NoDictionary: Story = {
   args: { state: { kind: "noDictionary", language: "de" } },
 };

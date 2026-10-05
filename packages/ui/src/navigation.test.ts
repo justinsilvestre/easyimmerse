@@ -9,6 +9,7 @@ describe("navigate", () => {
     expect(navigate(project, { type: "openSettings" })).toEqual({
       screen: "settings",
       beneath: project,
+      pages: ["general"],
     });
   });
 
@@ -24,6 +25,34 @@ describe("navigate", () => {
 
   it("ignores closing settings when they are not open", () => {
     expect(navigate(project, { type: "closeSettings" })).toBe(project);
+  });
+
+  it("opens the dictionaries over the current screen", () => {
+    expect(navigate(project, { type: "openDictionaries" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["dictionaries"],
+    });
+  });
+
+  it("opens the dictionaries on top of the general settings", () => {
+    const settings = navigate(project, { type: "openSettings" });
+    expect(navigate(settings, { type: "openDictionaries" })).toEqual({
+      screen: "settings",
+      beneath: project,
+      pages: ["general", "dictionaries"],
+    });
+  });
+
+  it("returns from the dictionaries to the general settings they were opened from", () => {
+    const settings = navigate(project, { type: "openSettings" });
+    const dictionaries = navigate(settings, { type: "openDictionaries" });
+    expect(navigate(dictionaries, { type: "closeSettings" })).toEqual(settings);
+  });
+
+  it("returns from the dictionaries to the screen they were opened over", () => {
+    const dictionaries = navigate(project, { type: "openDictionaries" });
+    expect(navigate(dictionaries, { type: "closeSettings" })).toEqual(project);
   });
 
   it("opens a project from home", () => {
@@ -53,9 +82,13 @@ describe("navigate", () => {
 
 describe("mainScreenOf", () => {
   it("returns the screen beneath settings", () => {
-    expect(mainScreenOf({ screen: "settings", beneath: project })).toBe(
-      project,
-    );
+    expect(
+      mainScreenOf({
+        screen: "settings",
+        beneath: project,
+        pages: ["general"],
+      }),
+    ).toBe(project);
   });
 
   it("returns a main screen as it is", () => {

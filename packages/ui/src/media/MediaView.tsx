@@ -1,11 +1,12 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ArrowLeft, ChevronUp, Minimize, Search, Settings } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { Kbd } from "../components/Kbd.tsx";
+import { lookupTriggerAttribute } from "../components/lookupTrigger.ts";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import { useNavigationActions } from "../navigationContext.ts";
@@ -17,6 +18,8 @@ import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 
 type MediaViewProps = {
+  /** The screen's root element, which keyboard shortcuts check to tell whether the screen is in reach. */
+  ref?: Ref<HTMLDivElement>;
   media: { title: string; language: string };
   /** The player itself: the video, or the artwork of an audio file, with whatever precedes playback. */
   stage: ReactNode;
@@ -33,7 +36,9 @@ type MediaViewProps = {
   playerCallbacks: PlayerCallbacks;
   onBack: () => void;
   onWordHover: (word: string) => void;
-  onWordClick: (word: string) => void;
+  /** Receives a word clicked in the subtitles over the stage, with its cue and its offset in the cue's text without markup. */
+  onWordClick: (word: string, cue: Cue, start: number) => void;
+  onWordDoubleClick?: (word: string, cue: Cue, start: number) => void;
   onLookup: () => void;
   onAddFlashcard: () => void;
   /** Notices to show above the stage, such as the unsaved-work banner. */
@@ -57,6 +62,7 @@ export function MediaView(props: MediaViewProps) {
   const showsSidePanel = !panels.distractionFree && props.sidePanel != null;
   return (
     <div
+      ref={props.ref}
       data-theme="dark"
       className="flex h-dvh flex-col bg-canvas text-fg"
       onPointerMove={pointer.onPointerMove}
@@ -81,6 +87,7 @@ export function MediaView(props: MediaViewProps) {
               activeWord={props.activeWord}
               onWordHover={props.onWordHover}
               onWordClick={props.onWordClick}
+              onWordDoubleClick={props.onWordDoubleClick}
             />
             {props.lookup && (
               <div className="fixed inset-x-2 top-16 bottom-2 z-30 flex items-end justify-center md:absolute md:inset-x-auto md:top-auto md:bottom-28 md:left-1/2 md:-translate-x-1/2">
@@ -93,7 +100,11 @@ export function MediaView(props: MediaViewProps) {
                 showsControls ? "bottom-22" : "bottom-2",
               )}
             >
-              <IconButton label="Look up a word" onClick={props.onLookup}>
+              <IconButton
+                label="Look up a word"
+                {...{ [lookupTriggerAttribute]: "" }}
+                onClick={props.onLookup}
+              >
                 <Search className="size-4" />
               </IconButton>
               <Kbd>L</Kbd>
