@@ -189,6 +189,19 @@ async fn answers_404_for_a_job_of_another_project() {
     assert_eq!(response.status, 404);
 }
 
+/// A fetch that misbehaves is first a question of which build of the plugin ran, so the job
+/// starts by saying so.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_job_first_logs_the_plugin_build_it_runs() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch(&fixture.locator()).await;
+    let first = job["log"][0]["message"].as_str().unwrap_or_default();
+    assert!(
+        first.starts_with(&format!("running {PLUGIN} 0.1.0 (component ")) && first.ends_with(')'),
+        "{first:?}"
+    );
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn a_finished_job_carries_the_plugins_last_progress_report() {
     let fixture = Fixture::start(false).await;
