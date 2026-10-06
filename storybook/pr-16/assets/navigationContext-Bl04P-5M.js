@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{n as t}from"./iframe-BUbF2aut.js";function n(){return(0,r.useContext)(a)}var r,i,a;function o(){return(o=e((()=>{r=t(),i={openSettings:()=>void 0,openDictionaries:()=>void 0,openMediaFile:()=>void 0},a=(0,r.createContext)(i)})))()}export{n,o as t};
