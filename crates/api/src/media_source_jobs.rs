@@ -22,6 +22,10 @@ const FINISHED_JOBS_KEPT: usize = 50;
 /// How many log lines a job keeps; a download's progress lines would otherwise crowd out
 /// the rest.
 const LOG_LINES_KEPT: usize = 200;
+/// How much of one line of a command's output a job keeps. A command's JSON report can run
+/// to hundreds of kilobytes, which would swamp the job that clients poll for, and the host
+/// has already logged the whole line at debug level.
+const OUTPUT_LINE_CHARS_KEPT: usize = 2000;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
 #[serde(transparent)]
@@ -102,6 +106,11 @@ impl MediaSourceJob {
         self.status != MediaSourceJobStatus::Running
     }
 
+    /// Records something the server itself has to say about the job.
+    pub fn note(&mut self, message: impl Into<String>) {
+        self.push_line(MediaSourceLogLevel::Info, message.into());
+    }
+
     fn push_line(&mut self, level: MediaSourceLogLevel, message: String) {
         self.log.push(MediaSourceLogLine {
             at_ms: now_ms(),
@@ -127,7 +136,7 @@ impl MediaSourceJob {
                 format!("running {command} {}", shell_words(&args)),
             ),
             HostEvent::CommandOutput { line, .. } => {
-                self.push_line(MediaSourceLogLevel::Output, line)
+                self.push_line(MediaSourceLogLevel::Output, abridge(line))
             }
             HostEvent::CommandFinished {
                 command,
@@ -170,6 +179,19 @@ fn log_level(level: LogLevel) -> MediaSourceLogLevel {
         LogLevel::Warn => MediaSourceLogLevel::Warn,
         LogLevel::Error => MediaSourceLogLevel::Error,
     }
+}
+
+/// Cuts a line of output down to the number of characters kept, saying how much was cut.
+fn abridge(line: String) -> String {
+    let total = line.chars().count();
+    if total <= OUTPUT_LINE_CHARS_KEPT {
+        return line;
+    }
+    let kept: String = line.chars().take(OUTPUT_LINE_CHARS_KEPT).collect();
+    format!(
+        "{kept}… [{} more characters; the server log has the whole line at debug level]",
+        total - OUTPUT_LINE_CHARS_KEPT
+    )
 }
 
 /// Quotes the arguments that contain spaces, as a shell would want them.
@@ -346,6 +368,42 @@ mod tests {
             line: "[download] 50%".to_string(),
         });
         assert_eq!(job.log[0].level, MediaSourceLogLevel::Output);
+    }
+
+    #[test]
+    fn keeps_a_commands_short_output_line_whole() {
+        let mut job = job();
+        let line = "x".repeat(OUTPUT_LINE_CHARS_KEPT);
+        job.record(HostEvent::CommandOutput {
+            command: "tool".to_string(),
+            line: line.clone(),
+        });
+        assert_eq!(job.log[0].message, line);
+    }
+
+    #[test]
+    fn abridges_a_commands_long_output_line_and_says_how_much_was_cut() {
+        let mut job = job();
+        job.record(HostEvent::CommandOutput {
+            command: "tool".to_string(),
+            line: "é".repeat(OUTPUT_LINE_CHARS_KEPT + 3),
+        });
+        let message = &job.log[0].message;
+        assert!(
+            message.starts_with(&"é".repeat(OUTPUT_LINE_CHARS_KEPT))
+                && message.contains("… [3 more characters"),
+            "{message}"
+        );
+    }
+
+    #[test]
+    fn a_note_is_an_info_line() {
+        let mut job = job();
+        job.note("running source 1.0.0");
+        assert_eq!(
+            (job.log[0].level, job.log[0].message.as_str()),
+            (MediaSourceLogLevel::Info, "running source 1.0.0")
+        );
     }
 
     #[test]

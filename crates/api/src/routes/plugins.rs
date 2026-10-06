@@ -138,7 +138,11 @@ pub async fn add_media_from_source(
             "this server has no media directory, so plugins cannot fetch media",
         )
     })?;
-    let job = MediaSourceJob::start(project_id, &package.manifest.name, request.locator);
+    let mut job = MediaSourceJob::start(project_id, &package.manifest.name, request.locator);
+    // Which build of the plugin runs is the first thing to check when a fetch misbehaves,
+    // and the version alone does not tell a rebuilt plugin from a stale copy.
+    let build = plugin_build(&package);
+    job.note(format!("running {build}"));
     let output_dir = output_dir_for(&media_dir, &job);
     tokio::fs::create_dir_all(&output_dir)
         .await
@@ -150,7 +154,7 @@ pub async fn add_media_from_source(
         })?;
     tracing::info!(
         job = job.id.0,
-        plugin = job.plugin,
+        plugin = build,
         locator = job.locator.0,
         output_dir = %output_dir.display(),
         "fetching media through a plugin"
@@ -192,6 +196,19 @@ pub async fn get_media_source_job(
                 job_id.0, project_id.0
             ))
         })
+}
+
+/// Names a plugin build: its name and version, and the start of its component's digest, which
+/// tells two builds of the same version apart.
+fn plugin_build(package: &PluginPackage) -> String {
+    let digest = package
+        .wasm_sha256
+        .get(..12)
+        .unwrap_or(&package.wasm_sha256);
+    format!(
+        "{} {} (component {digest})",
+        package.manifest.name, package.manifest.version
+    )
 }
 
 /// Runs the plugin and stores what it fetched, recording the outcome on the job.
