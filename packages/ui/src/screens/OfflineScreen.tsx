@@ -24,7 +24,7 @@ export function OfflineScreen({ onBack }: { onBack: () => void }) {
   const { cues, hasFailed } = useParsedChosenFile();
   const openFile = () => dispatch(actions.filePickRequested());
   return (
-    <ScreenLayout headerActions={<Button onClick={onBack}>Back</Button>}>
+    <ScreenLayout onBack={onBack} backLabel="Projects">
       <h1 className="text-xl font-semibold">Working offline</h1>
       <p className="text-sm text-fg-muted">
         Projects, media, and flashcards are kept by a server. Until one is

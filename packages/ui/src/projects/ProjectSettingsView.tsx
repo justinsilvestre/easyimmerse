@@ -1,9 +1,8 @@
 import type { ProjectSettings } from "@easyimmerse/types";
-import { Button } from "../components/Button.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { ProjectForm } from "./ProjectForm.tsx";
 
-/** The screen for creating a project or editing an existing project's settings. */
+/** The screen for creating a project or editing an existing project's settings. Back leads to the projects or to the project. */
 export function ProjectSettingsView({
   mode,
   initialValues,
@@ -18,11 +17,8 @@ export function ProjectSettingsView({
   return (
     <ScreenLayout
       wide
-      headerActions={
-        <Button variant="subtle" onClick={onCancel}>
-          {mode === "create" ? "Back" : "Back to project"}
-        </Button>
-      }
+      onBack={onCancel}
+      backLabel={mode === "create" ? "Projects" : "Project"}
     >
       <h1 className="text-xl font-semibold">
         {mode === "create" ? "New project" : "Project settings"}

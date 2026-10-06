@@ -1,5 +1,4 @@
-import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
-import { Button } from "../components/Button.tsx";
+import { BookOpen, ChevronRight } from "lucide-react";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
 import {
@@ -21,21 +20,14 @@ export function SettingsScreen({
   conversionCache = unavailableConversionCache,
   licenseNotices = { status: "loaded", groups: [] },
 }: {
+  /** Closes Settings to the screen beneath, whichever it is, so its button says only Back. */
   onBack: () => void;
   onOpenDictionaries: () => void;
   conversionCache?: ConversionCacheControls;
   licenseNotices?: LicenseNoticesState;
 }) {
   return (
-    <ScreenLayout
-      headerActions={
-        <Button variant="subtle" onClick={onBack}>
-          <ArrowLeft className="size-4" aria-hidden />
-          Back
-        </Button>
-      }
-      showSettingsLink={false}
-    >
+    <ScreenLayout onBack={onBack} showSettingsLink={false}>
       <h1 className="text-xl font-semibold">Settings</h1>
       <button
         type="button"

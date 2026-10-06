@@ -1,7 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { FilePlus, Layers, LocateFixed, Sparkles } from "lucide-react";
-import { useMemo } from "react";
+import { type MouseEvent, useMemo } from "react";
 import { Button } from "../components/Button.tsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
@@ -16,7 +16,8 @@ import { formatTimestamp } from "./formatTimestamp.ts";
 import { useFollowsPlayback } from "./useFollowsPlayback.ts";
 
 /**
- * The collapsible panel with one card per cue, which seeks on click and follows playback.
+ * The collapsible panel with one card per cue, which follows playback.
+ * A click anywhere on a card seeks to its cue, except on its words, which keep their own gestures, and on its buttons.
  * Once the user scrolls the current line out of view, the panel stops following and offers a button back to it.
  */
 export function CuePanel({
@@ -29,6 +30,7 @@ export function CuePanel({
   wordGestures,
   onAddSubtitlesFile,
   onGenerateSubtitles,
+  onOpenFlashcardForCue,
 }: {
   cues: readonly Cue[];
   translationCues: readonly Cue[];
@@ -40,6 +42,8 @@ export function CuePanel({
   wordGestures: CueWordGestures;
   onAddSubtitlesFile: () => void;
   onGenerateSubtitles: () => void;
+  /** Opens the flashcard made from a cue. Without it, a card only marks that it has one. */
+  onOpenFlashcardForCue?: (cueIndex: number) => void;
 }) {
   const pairs = useMemo(
     () =>
@@ -93,6 +97,9 @@ export function CuePanel({
               onSeek(ms);
             }}
             wordGestures={wordGestures}
+            onOpenFlashcard={
+              onOpenFlashcardForCue && (() => onOpenFlashcardForCue(cue.index))
+            }
           />
         ))}
       </ol>
@@ -118,6 +125,7 @@ function CueCard({
   activeWord,
   onSeek,
   wordGestures,
+  onOpenFlashcard,
 }: {
   cue: Cue;
   translation: Cue | null;
@@ -127,13 +135,32 @@ function CueCard({
   onSeek: (ms: number) => void;
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
+  onOpenFlashcard?: () => void;
 }) {
+  const seekOnClick = (event: MouseEvent<HTMLLIElement>) => {
+    if (event.target instanceof Element && event.target.closest("button"))
+      return;
+    const selection = window.getSelection();
+    if (
+      selection !== null &&
+      !selection.isCollapsed &&
+      event.currentTarget.contains(selection.anchorNode)
+    )
+      return;
+    onSeek(cue.start_ms);
+  };
   return (
+    // The timestamp button seeks from the keyboard; a click elsewhere on the card is a larger target for the pointer.
+    // Words and buttons inside the card keep their own clicks, and a drag that selects text does not seek.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: see above
     <li
       aria-current={isActive || undefined}
+      onClick={seekOnClick}
       className={clsx(
-        "flex flex-col gap-1 rounded-md border px-3 py-2 text-sm",
-        isActive ? "border-accent bg-accent-soft" : "border-line bg-surface",
+        "flex cursor-pointer flex-col gap-1 rounded-md border px-3 py-2 text-sm",
+        isActive
+          ? "border-accent bg-accent-soft"
+          : "border-line bg-surface hover:bg-surface-muted",
       )}
     >
       <div className="flex items-center gap-2 text-xs text-fg-faint">
@@ -145,14 +172,25 @@ function CueCard({
         >
           {formatTimestamp(cue.start_ms)}
         </button>
-        {hasFlashcard && (
-          <span
-            className="flex items-center gap-1 text-accent-fg"
-            title="Has a flashcard"
-          >
-            <Layers className="size-3" aria-label="Has a flashcard" />
-          </span>
-        )}
+        {hasFlashcard &&
+          (onOpenFlashcard ? (
+            <button
+              type="button"
+              aria-label="Open the flashcard"
+              title="Open the flashcard"
+              onClick={onOpenFlashcard}
+              className="-my-1 inline-flex items-center rounded p-1 text-accent-fg pointer-coarse:-my-4 pointer-coarse:p-4 hover:bg-surface-strong focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              <Layers className="size-3" aria-hidden />
+            </button>
+          ) : (
+            <span
+              className="flex items-center gap-1 text-accent-fg"
+              title="Has a flashcard"
+            >
+              <Layers className="size-3" aria-label="Has a flashcard" />
+            </span>
+          ))}
       </div>
       <p className="text-base">
         <ClickableText

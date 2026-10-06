@@ -7,7 +7,8 @@ import { useRegisteredPlayer } from "./useRegisteredPlayer.ts";
 
 /**
  * The media element itself, registered as the app's player and attached to its source.
- * The controls drawn over the stage drive it, so it shows none of its own; an audio file's element stays hidden.
+ * The controls drawn over the stage drive it, so it shows none of its own. A video fills the space it is given, keeping its proportions;
+ * an audio file's element stays hidden.
  * `crossOrigin="anonymous"` lets a canvas capture frames from a stream on another origin.
  */
 export function MediaElement({
@@ -37,7 +38,7 @@ export function MediaElement({
       crossOrigin="anonymous"
       preload="metadata"
       aria-label={hasVideo ? "Video" : "Audio"}
-      className={hasVideo ? "max-h-full max-w-full" : "hidden"}
+      className={hasVideo ? "h-full w-full object-contain" : "hidden"}
       onError={onError}
       {...handlers}
     />

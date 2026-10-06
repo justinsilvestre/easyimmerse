@@ -36,13 +36,14 @@ const ignoreSegments: FlashcardSegmentHandlers = {
 
 /**
  * The waveform strip under the player for the open media file, following the store's current time,
- * with the cues and the flashcard segments drawn over it.
+ * with the cues and the flashcard segments drawn over it. Any segment opens on a double-click; only the open one's handles drag.
  */
 export function PlayerWaveform({
   projectId,
   mediaFileId,
   cues = [],
   flashcardSegments = [],
+  editableSegmentId = null,
   segmentHandlers = ignoreSegments,
   onHide,
 }: {
@@ -50,6 +51,8 @@ export function PlayerWaveform({
   mediaFileId: string;
   cues?: readonly Cue[];
   flashcardSegments?: readonly FlashcardSegment[];
+  /** The segment of the flashcard open in the editor, the only one whose clip and screenshot time can be dragged. */
+  editableSegmentId?: string | null;
   segmentHandlers?: FlashcardSegmentHandlers;
   /** Hides the strip. Without it, the strip offers no way to hide itself. */
   onHide?: () => void;
@@ -80,6 +83,7 @@ export function PlayerWaveform({
         windows={windows}
         cues={cues}
         flashcardSegments={flashcardSegments}
+        editableSegmentId={editableSegmentId}
         visibleSpanMs={visibleSpanMs}
         onVisibleSpanChange={setRequestedSpanMs}
         onSeek={(timeMs) => dispatch(actions.seekRequested(timeMs / 1000))}

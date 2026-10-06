@@ -1,12 +1,5 @@
 import type { TableLayout, TablePreview } from "@easyimmerse/types";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  BookOpen,
-  FolderOpen,
-  Globe,
-  X,
-} from "lucide-react";
+import { AlertTriangle, BookOpen, FolderOpen, Globe, X } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { IconButton } from "../components/IconButton.tsx";
@@ -53,6 +46,7 @@ export function DictionariesView({
   unsupportedFile: string | null;
   /** The table file the user is adding, with its first rows and detected columns, until imported or cancelled. */
   pendingTable: { fileName: string; preview: TablePreview } | null;
+  /** Leaves for wherever the dictionaries were opened from, such as Settings or a word's pop-up, so its button says only Back. */
   onBack: () => void;
   onAddFromRegistry?: () => void;
   onAddFromFile: () => void;
@@ -92,14 +86,7 @@ export function DictionariesView({
     </>
   );
   return (
-    <ScreenLayout
-      headerActions={
-        <Button variant="subtle" onClick={onBack}>
-          <ArrowLeft className="size-4" aria-hidden />
-          Back
-        </Button>
-      }
-    >
+    <ScreenLayout onBack={onBack}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1
           ref={removal.headingRef}

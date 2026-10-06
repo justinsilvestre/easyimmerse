@@ -121,7 +121,7 @@ async function saveOpenFlashcard(
   client: ReturnType<typeof createFakeBackendClient>,
 ) {
   fireEvent.click(screen.getByRole("button", { name: "Save" }));
-  await screen.findByText("Flashcard saved to the project.");
+  await screen.findByText(/^Saved the flashcard for/);
   const body = createdDraftOf(
     requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
   ) as Partial<Flashcard> | undefined;
@@ -162,6 +162,7 @@ async function renderWithWaveform() {
   const rendered = renderMediaScreen({ flashcards: [savedFlashcard] });
   act(() => rendered.store.dispatch(actions.playerDurationChanged(10)));
   await findSubtitles();
+  fireEvent.click(screen.getByRole("button", { name: "Show the waveform" }));
   return rendered;
 }
 
@@ -284,15 +285,89 @@ describe("MediaScreen", () => {
     await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(
-      await screen.findByText("Flashcard saved to the project."),
+      await screen.findByText("Saved the flashcard for “fressen”."),
     ).toBeDefined();
   });
 
-  it("shows the waveform strip", () => {
+  it("starts with the waveform strip hidden", () => {
     renderMediaScreen();
     expect(
-      screen.getByRole("slider", { name: "Playback position" }),
+      screen.queryByRole("slider", { name: "Playback position" }),
+    ).toBeNull();
+  });
+
+  it("shows no lasting bar above the video once a flashcard is saved", async () => {
+    renderMediaScreen();
+    const list = await findSubtitles();
+    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await screen.findByText("Saved the flashcard for “fressen”.");
+    expect(screen.queryByText("Flashcard saved to the project.")).toBeNull();
+  });
+
+  it("opens a saved flashcard from the mark on its cue's card", async () => {
+    renderMediaScreen({ flashcards: [{ ...savedFlashcard, cue_index: 1 }] });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Open the flashcard" }),
+    );
+    expect(
+      await screen.findByRole("form", { name: "Flashcard" }),
     ).toBeDefined();
+  });
+
+  it("seeks to a new flashcard's clip start once it opens", async () => {
+    const { effects } = renderMediaScreen();
+    const list = await findSubtitles();
+    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+    await vi.waitFor(() =>
+      expect(
+        effects.calls.filter((call) => call.type === "seekPlayer").at(-1),
+      ).toEqual({
+        type: "seekPlayer",
+        seconds: 0.5,
+      }),
+    );
+  });
+
+  describe("while a flashcard is open", () => {
+    async function openFlashcard() {
+      const rendered = renderMediaScreen();
+      const list = await findSubtitles();
+      await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+      return rendered;
+    }
+
+    it("marks the subtitles panel's toggle unavailable", async () => {
+      await openFlashcard();
+      expect(
+        screen
+          .getByRole("button", { name: "Subtitles panel" })
+          .getAttribute("aria-disabled"),
+      ).toBe("true");
+    });
+
+    it("says why the subtitles panel's toggle is unavailable", async () => {
+      await openFlashcard();
+      expect(
+        screen.getByRole("button", { name: "Subtitles panel" }).title,
+      ).toBe("Close the flashcard to show the subtitles");
+    });
+
+    it("leaves the subtitles panel's toggle as it was when pressed", async () => {
+      await openFlashcard();
+      const toggle = screen.getByRole("button", { name: "Subtitles panel" });
+      const before = toggle.getAttribute("aria-pressed");
+      fireEvent.click(toggle);
+      expect(toggle.getAttribute("aria-pressed")).toBe(before);
+    });
+
+    it("shows the subtitles again once it closes", async () => {
+      await openFlashcard();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Close without saving" }),
+      );
+      expect(screen.getByRole("list", { name: "Subtitles" })).toBeDefined();
+    });
   });
 
   it("asks the player to play when Play is clicked", () => {
@@ -328,19 +403,24 @@ describe("MediaScreen", () => {
   });
 
   describe("when a flashcard's segment is dragged on the waveform", () => {
-    it("saves the moved clip at once while the flashcard is closed", async () => {
+    it("leaves the clip of a closed flashcard as it is", async () => {
       const { client } = await renderWithWaveform();
-      await vi.waitFor(() => {
-        dragOnStrip(105, 90);
-        expect(
-          requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1"),
-        ).toHaveLength(1);
-      });
+      await vi.waitFor(() =>
+        expect(findStrip().getAttribute("aria-valuemax")).toBe("10"),
+      );
+      dragOnStrip(105, 90);
+      await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
       expect(
-        bodyOf(
-          requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1")[0],
-        ),
-      ).toMatchObject({ content: { audio_context: { start_ms: 1500 } } });
+        requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1"),
+      ).toHaveLength(0);
+    });
+
+    it("seeks to the clip's start once a flashcard is opened by a double-click", async () => {
+      const { store } = await renderWithWaveform();
+      await openSavedFlashcardFromStrip();
+      await vi.waitFor(() =>
+        expect(store.getState().app.player.currentTimeSeconds).toBe(1.75),
+      );
     });
 
     it("leaves the moved clip unsaved while the flashcard is open", async () => {
@@ -368,7 +448,7 @@ describe("MediaScreen", () => {
       await openSavedFlashcardFromStrip();
       dragOnStrip(105, 90);
       fireEvent.click(screen.getByRole("button", { name: "Save" }));
-      await screen.findByText("Flashcard saved to the project.");
+      await screen.findByText(/^Saved the flashcard for/);
       expect(
         bodyOf(
           requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1").at(
@@ -383,7 +463,7 @@ describe("MediaScreen", () => {
       await openSavedFlashcardFromStrip();
       dragOnStrip(144, 156, 5);
       fireEvent.click(screen.getByRole("button", { name: "Save" }));
-      await screen.findByText("Flashcard saved to the project.");
+      await screen.findByText(/^Saved the flashcard for/);
       expect(
         bodyOf(
           requestsTo(client.requests, "PUT", "/projects/p1/flashcards/f1").at(

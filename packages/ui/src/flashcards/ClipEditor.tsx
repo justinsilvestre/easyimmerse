@@ -24,6 +24,7 @@ import {
  * the arrow keys, and so can the marker for the time the screenshot is taken at.
  * The part on view stays put while a handle moves, widens while a handle is held past its edge,
  * and settles around the clip again once the handle is let go.
+ * Beneath the waveform sit the clip's start and end times, with the controls passed in between them.
  */
 export function ClipEditor({
   peaks,
@@ -32,6 +33,7 @@ export function ClipEditor({
   screenshotMs,
   onClipChange,
   onScreenshotMsChange,
+  controls,
 }: {
   peaks: readonly number[];
   durationMs: number;
@@ -39,6 +41,8 @@ export function ClipEditor({
   screenshotMs: number | null;
   onClipChange: (clip: AudioClip) => void;
   onScreenshotMsChange: (ms: number) => void;
+  /** Shown between the clip's start and end times, such as a button that plays the clip. */
+  controls?: ReactNode;
 }) {
   const waveformRef = useRef<HTMLDivElement>(null);
   const [storedView, setStoredView] = useState(() =>
@@ -130,8 +134,9 @@ export function ClipEditor({
           />
         )}
       </div>
-      <div className="flex justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span>{formatClipTime(clip.start_ms)}</span>
+        {controls}
         <span>{formatClipTime(clip.end_ms)}</span>
       </div>
     </div>

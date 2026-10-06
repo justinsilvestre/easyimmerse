@@ -4,6 +4,7 @@ import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createNoticeStore } from "../notices/noticeStore.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
@@ -39,8 +40,13 @@ function renderSaving() {
         : backend.send<T>(request),
   };
   const { store, playerRegistry } = createTestAppStore(client);
+  const noticeStore = createNoticeStore();
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <AppStoreProviders store={store} playerRegistry={playerRegistry}>
+    <AppStoreProviders
+      store={store}
+      playerRegistry={playerRegistry}
+      noticeStore={noticeStore}
+    >
       {children}
     </AppStoreProviders>
   );
@@ -57,7 +63,7 @@ function renderSaving() {
     },
     { wrapper },
   );
-  return { ...rendered, finishes };
+  return { ...rendered, finishes, noticeStore };
 }
 
 /** Runs `work` as the app would run it, with React scheduling its renders itself instead of within the test's act scope. */
@@ -82,7 +88,7 @@ const start = () =>
 
 describe("useFlashcardSaving", () => {
   it("says nothing of a save that finishes after another card was started but before React rendered it", async () => {
-    const { result, finishes } = renderSaving();
+    const { result, finishes, noticeStore } = renderSaving();
     act(() => result.current.dispatchEdited(start()));
     act(() => result.current.dispatchEdited({ type: "saveRequested" }));
     await vi.waitFor(() => expect(finishes).toHaveLength(1));
@@ -91,6 +97,6 @@ describe("useFlashcardSaving", () => {
       finishes[0]?.(savedFlashcard);
     });
     await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
-    expect(result.current.saving.isSaved).toBe(false);
+    expect(noticeStore.list()).toEqual([]);
   });
 });

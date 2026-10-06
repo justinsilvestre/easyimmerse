@@ -1,5 +1,5 @@
 import type { ProjectSettings } from "@easyimmerse/types";
-import { type ReactNode, useReducer } from "react";
+import { type ReactNode, useId, useReducer } from "react";
 import { Button } from "../components/Button.tsx";
 import { CheckboxField } from "../components/CheckboxField.tsx";
 import { SelectField } from "../components/SelectField.tsx";
@@ -14,6 +14,7 @@ import { ProjectFormPreview } from "./ProjectFormPreview.tsx";
 /**
  * The settings of a new or existing project, with a preview of a flashcard made under them.
  * On a wide screen the preview stands beside the form; on a narrow one it sits under the preset, small until expanded.
+ * While the translation language is the target language, a hint asks for another and the form cannot be submitted.
  */
 export function ProjectForm({
   initialValues,
@@ -27,12 +28,14 @@ export function ProjectForm({
   onCancel: () => void;
 }) {
   const [state, dispatch] = useReducer(reduceProjectForm, initialValues);
+  const sameLanguageHintId = useId();
+  const hasSameLanguages = state.target_language === state.translation_language;
   return (
     <form
       className="grid gap-6 md:grid-cols-[1fr_20rem] md:gap-x-8"
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit(state);
+        if (!hasSameLanguages) onSubmit(state);
       }}
     >
       <Column>
@@ -58,18 +61,29 @@ export function ProjectForm({
               })
             }
           />
-          <SelectField
-            label="Translation language"
-            hint="Translations and definitions in this language."
-            options={languageOptions}
-            value={state.translation_language}
-            onChange={(event) =>
-              dispatch({
-                type: "translationLanguageChanged",
-                value: event.target.value,
-              })
-            }
-          />
+          <div className="flex flex-col gap-1">
+            <SelectField
+              label="Translation language"
+              hint="Translations and definitions in this language."
+              options={languageOptions}
+              value={state.translation_language}
+              aria-invalid={hasSameLanguages || undefined}
+              aria-describedby={
+                hasSameLanguages ? sameLanguageHintId : undefined
+              }
+              onChange={(event) =>
+                dispatch({
+                  type: "translationLanguageChanged",
+                  value: event.target.value,
+                })
+              }
+            />
+            {hasSameLanguages && (
+              <p id={sameLanguageHintId} className="text-xs text-danger-fg">
+                Choose a different language from the target language.
+              </p>
+            )}
+          </div>
         </div>
       </Column>
       <Column>
@@ -110,7 +124,13 @@ export function ProjectForm({
       </Column>
       <div className="flex justify-end gap-2 md:col-start-1">
         <Button onClick={onCancel}>Cancel</Button>
-        <Button variant="primary" type="submit">
+        <Button
+          variant="primary"
+          type="submit"
+          // Not `disabled`, which would move keyboard focus away from the button.
+          aria-disabled={hasSameLanguages || undefined}
+          aria-describedby={hasSameLanguages ? sameLanguageHintId : undefined}
+        >
           {submitLabel}
         </Button>
       </div>

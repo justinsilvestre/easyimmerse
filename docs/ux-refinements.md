@@ -125,3 +125,33 @@ The web app was run against a local server and walked through at desktop and pho
 - Motion: about 100 ms for feedback, 150 to 250 ms for pop-ups and notices, 300 to 500 ms for panels, and none when the system asks for less (Material 3, WCAG 2.3.3).
 - Loading: nothing under a second, content-shaped skeletons up to ten, a determinate bar beyond (NN/g skeleton screens).
 - Empty states explain and offer one main action; error states say what happened and what to do next, where it happened (NN/g).
+
+### Exploratory test, second round
+
+A session-based exploratory test (charters: reproduce the reported issues, make flashcards as a first-time user, edit clips, interrupt and resume, sweep every screen) found 27 issues. Fixed in this round:
+
+- [x] Clicking the picture plays and pauses, as in every player, and the video fills the stage instead of staying at its own size.
+- [x] The Screenshot button in the stage's corner showed a thumbnail nothing used. It is gone; Tracks is an icon button like the other overlay controls.
+- [x] The waveform starts closed. Saved cards are reopened from the "Open the flashcard" button on their subtitle card, as well as by double-clicking the waveform.
+- [x] Clicking anywhere on a subtitle card seeks to its cue; word buttons still look up.
+- [x] The seek bar's arrow keys move one second rather than one millisecond, and it announces its time.
+- [x] A saved flashcard was announced in a bar above the video, which resized the picture and stayed until dismissed. The brief bottom toast with Undo, which off-screen saves already used, serves both.
+- [x] Only the card open in the editor has draggable clip handles and a screenshot marker on the waveform; a closed card's bounds cannot be changed by accident.
+- [x] Starting an edit, by any route, seeks to the clip's start, and if the player was playing, loops the clip until the card closes, the user pauses, or the user seeks elsewhere.
+- [x] A failed save keeps a failure line in the editor until the next attempt, and closing the card afterwards lists it among the cards not saved instead of dropping it.
+- [x] Deleting a saved card asks first; a new card has no Delete, since Close offers Undo.
+- [x] The Subtitles panel toggle is unavailable while a card occupies the side panel, and says why.
+- [x] On the web, where there is no server waveform, the editor still shows the clip's times, length, ±100 ms nudges and Play clip.
+- [x] A word with no dictionary entry still offers Flashcard, so a card can be made from the sentence.
+- [x] Re-adding a file already in the project opens the existing one instead of adding a duplicate row.
+- [x] The project form refuses the same target and translation language.
+- [x] Every Back control sits at the left of the header, before the wordmark, named for its destination, as the media and reader screens already did.
+
+Found and left for later:
+
+- [ ] Japanese lookup starts from the clicked character rather than the whole underlined word.
+- [ ] Definitions from structured entries read as a run of fragments ("本 / book / volume / see 書籍").
+- [ ] The frequency badge ("Sample Dictionary: 340㋕") is unexplained.
+- [ ] A tap on the video on a phone pauses it; the platform convention is that the first tap reveals the controls.
+- [ ] Reopening a media file starts at 0:00 rather than where the user left off.
+- [ ] Word and Definition stay blank with no sign of loading while a lookup is pending.

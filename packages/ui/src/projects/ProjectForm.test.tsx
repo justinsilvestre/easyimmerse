@@ -144,4 +144,47 @@ describe("ProjectForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     expect(submitted).toEqual(["German"]);
   });
+
+  describe("when the translation language is the target language", () => {
+    function chooseGermanTranslations() {
+      fireEvent.change(screen.getByLabelText("Translation language"), {
+        target: { value: "de" },
+      });
+    }
+
+    it("asks for a different language under the translation language", () => {
+      renderForm();
+      chooseGermanTranslations();
+      expect(
+        screen
+          .getByLabelText("Translation language")
+          .getAttribute("aria-describedby"),
+      ).toBe(
+        screen.getByText(
+          "Choose a different language from the target language.",
+        ).id,
+      );
+    });
+
+    it("marks the submit button as unavailable", () => {
+      renderForm();
+      chooseGermanTranslations();
+      expect(
+        screen
+          .getByRole("button", { name: "Create" })
+          .getAttribute("aria-disabled"),
+      ).toBe("true");
+    });
+
+    it("does not submit", () => {
+      const submitted: string[] = [];
+      renderForm((values) => submitted.push(values.name));
+      fireEvent.change(screen.getByLabelText("Project name"), {
+        target: { value: "German" },
+      });
+      chooseGermanTranslations();
+      fireEvent.click(screen.getByRole("button", { name: "Create" }));
+      expect(submitted).toEqual([]);
+    });
+  });
 });

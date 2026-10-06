@@ -12,12 +12,20 @@ import type { LookupState } from "./lookupState.ts";
 afterEach(cleanup);
 
 type PopupHandlers = {
+  state?: LookupState;
   onSearch?: (term: string) => void;
   onCreateFlashcard?: (entryIndex: number | null) => void;
   onClose?: () => void;
 };
 
+const foundState: LookupState = {
+  kind: "found",
+  term: "fressen",
+  results: exampleResults,
+};
+
 function renderPopup({
+  state = foundState,
   onSearch = () => undefined,
   onCreateFlashcard = () => undefined,
   onClose = () => undefined,
@@ -28,7 +36,7 @@ function renderPopup({
         Hund
       </button>
       <DictionaryPopup
-        state={{ kind: "found", term: "fressen", results: exampleResults }}
+        state={state}
         resolveMediaUrl={() => null}
         mode="word"
         onSearch={onSearch}
@@ -57,6 +65,26 @@ describe("DictionaryPopup", () => {
       })[1] as HTMLElement,
     );
     expect(created).toEqual([1]);
+  });
+
+  it("creates a flashcard with the header button when no entry is found", () => {
+    const created: (number | null)[] = [];
+    renderPopup({
+      state: { kind: "notFound", term: "Hundi" },
+      onCreateFlashcard: (index) => created.push(index),
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Flashcard" }));
+    expect(created).toEqual([null]);
+  });
+
+  it("offers no flashcard while the word is looked up", () => {
+    renderPopup({ state: { kind: "loading", term: "Hundi" } });
+    expect(screen.queryByRole("button", { name: "Flashcard" })).toBeNull();
+  });
+
+  it("offers no flashcard while no dictionary is set up", () => {
+    renderPopup({ state: { kind: "noDictionary", language: "de" } });
+    expect(screen.queryByRole("button", { name: "Flashcard" })).toBeNull();
   });
 
   it("looks up a word clicked inside a definition", () => {

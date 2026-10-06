@@ -1,8 +1,10 @@
+import clsx from "clsx";
 import { X } from "lucide-react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
+import { ModalDialog } from "../components/ModalDialog.tsx";
 import { TagsField } from "../components/TagsField.tsx";
 import type { EditorAction, EditorState } from "./editFlashcard.ts";
 import {
@@ -19,6 +21,7 @@ import {
  * The form for a flashcard that was just created or reopened.
  * Fields outside the project's flashcard settings stay hidden until checked in the "More fields" menu; the screenshot has its own checkbox.
  * The caller holds the flashcard being edited, so that other views can show and change it too.
+ * Delete asks first, in a dialog naming the word; a new card that was never saved has no Delete, since Close without saving offers Undo.
  */
 export function FlashcardEditor({
   state,
@@ -27,6 +30,8 @@ export function FlashcardEditor({
   waveform,
   screenshotUrl = null,
   saveStatus = "idle",
+  isNew = false,
+  hasSaveFailed = false,
   onSave,
   onDelete,
   onClose,
@@ -43,6 +48,10 @@ export function FlashcardEditor({
    * Meanwhile Save, Close and Delete do nothing and the fields are read-only, so that what is saved is what is shown.
    */
   saveStatus?: "idle" | "waitingForDefinitions" | "saving";
+  /** Whether the flashcard has never been saved, so that there is nothing to delete. */
+  isNew?: boolean;
+  /** Whether the last save failed, which the status line tells until Save is pressed again. */
+  hasSaveFailed?: boolean;
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -50,98 +59,136 @@ export function FlashcardEditor({
   const { content, includedFields } = state;
   const saveStatusId = useId();
   const isSaveInert = saveStatus !== "idle";
+  const [isConfirmingDelete, setConfirmingDelete] = useState(false);
+  const showsFailure = hasSaveFailed && saveStatus === "idle";
   return (
-    <form
-      aria-label="Flashcard"
-      className="flex h-full w-full flex-col rounded-lg border border-line bg-surface text-fg"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (!isSaveInert) onSave();
-      }}
-    >
-      <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
-        <h2 className="font-semibold">Flashcard</h2>
-        <IconButton
-          label="Close without saving"
-          aria-disabled={isSaveInert || undefined}
-          onClick={() => {
-            if (!isSaveInert) onClose();
-          }}
-        >
-          <X className="size-4" />
-        </IconButton>
-      </div>
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
-        <TextFieldBlocks
-          state={state}
-          languages={languages}
-          dispatch={dispatch}
-          isReadOnly={isSaveInert}
-        />
-        <MediaFields
-          state={state}
-          waveform={waveform}
-          screenshotUrl={screenshotUrl}
-          dispatch={dispatch}
-          isReadOnly={isSaveInert}
-        />
-        {includedFields.includes("tags") && (
-          <TagsField
-            label="Tags"
-            isLabelBeside
-            isReadOnly={isSaveInert}
-            className="shrink-0"
-            tags={content.tags}
-            onChange={(tags) => dispatch({ type: "tagsChanged", tags })}
-          />
-        )}
-      </div>
-      <div className="flex flex-col border-t border-line px-4 py-2">
-        {/* Always shown, even while empty, so that its text is announced when it appears. */}
-        <p id={saveStatusId} role="status" className="text-xs text-fg-muted">
-          {saveStatusTexts[saveStatus]}
-        </p>
-        <div className="flex items-center justify-between gap-2">
-          <MenuButton
-            label="More fields"
-            opensUpward
-            isUnavailable={isSaveInert}
-            items={flashcardFieldDefinitions
-              .filter((field) => field.key !== "screenshot")
-              .map((field) => ({
-                label: field.label(languages),
-                isChecked: includedFields.includes(field.key),
-                onSelect: () =>
-                  dispatch({ type: "fieldToggled", key: field.key }),
-              }))}
+    <>
+      <form
+        aria-label="Flashcard"
+        className="flex h-full w-full flex-col rounded-lg border border-line bg-surface text-fg"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!isSaveInert) onSave();
+        }}
+      >
+        <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
+          <h2 className="font-semibold">Flashcard</h2>
+          <IconButton
+            label="Close without saving"
+            aria-disabled={isSaveInert || undefined}
+            onClick={() => {
+              if (!isSaveInert) onClose();
+            }}
           >
-            More fields
-          </MenuButton>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="danger"
-              aria-disabled={isSaveInert || undefined}
-              onClick={() => {
-                if (!isSaveInert) onDelete();
-              }}
+            <X className="size-4" />
+          </IconButton>
+        </div>
+        <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
+          <TextFieldBlocks
+            state={state}
+            languages={languages}
+            dispatch={dispatch}
+            isReadOnly={isSaveInert}
+          />
+          <MediaFields
+            state={state}
+            waveform={waveform}
+            screenshotUrl={screenshotUrl}
+            dispatch={dispatch}
+            isReadOnly={isSaveInert}
+          />
+          {includedFields.includes("tags") && (
+            <TagsField
+              label="Tags"
+              isLabelBeside
+              isReadOnly={isSaveInert}
+              className="shrink-0"
+              tags={content.tags}
+              onChange={(tags) => dispatch({ type: "tagsChanged", tags })}
+            />
+          )}
+        </div>
+        <div className="flex flex-col border-t border-line px-4 py-2">
+          {/* Always shown, even while empty, so that its text is announced when it appears. */}
+          <p
+            id={saveStatusId}
+            role="status"
+            className={clsx(
+              "text-xs",
+              showsFailure ? "text-danger-fg" : "text-fg-muted",
+            )}
+          >
+            {showsFailure ? saveFailedText : saveStatusTexts[saveStatus]}
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <MenuButton
+              label="More fields"
+              opensUpward
+              isUnavailable={isSaveInert}
+              items={flashcardFieldDefinitions
+                .filter((field) => field.key !== "screenshot")
+                .map((field) => ({
+                  label: field.label(languages),
+                  isChecked: includedFields.includes(field.key),
+                  onSelect: () =>
+                    dispatch({ type: "fieldToggled", key: field.key }),
+                }))}
             >
-              Delete
-            </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              // Not `disabled`, which would move keyboard focus away from the button.
-              aria-disabled={isSaveInert || undefined}
-              aria-describedby={saveStatusId}
-            >
-              Save
-            </Button>
+              More fields
+            </MenuButton>
+            <div className="flex items-center gap-2">
+              {!isNew && (
+                <Button
+                  variant="danger"
+                  aria-disabled={isSaveInert || undefined}
+                  onClick={() => {
+                    if (!isSaveInert) setConfirmingDelete(true);
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
+              <Button
+                variant="primary"
+                type="submit"
+                // Not `disabled`, which would move keyboard focus away from the button.
+                aria-disabled={isSaveInert || undefined}
+                aria-describedby={saveStatusId}
+              >
+                Save
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </form>
+      </form>
+      {isConfirmingDelete && (
+        <ModalDialog
+          title="Delete this flashcard?"
+          description={`The flashcard for “${content.word}” is deleted from the project. The deletion cannot be undone.`}
+          onCancel={() => setConfirmingDelete(false)}
+          footer={
+            <>
+              <Button autoFocus onClick={() => setConfirmingDelete(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => {
+                  setConfirmingDelete(false);
+                  onDelete();
+                }}
+              >
+                Delete
+              </Button>
+            </>
+          }
+        />
+      )}
+    </>
   );
 }
+
+const saveFailedText = "Could not save the flashcard. Press Save to try again.";
 
 const saveStatusTexts = {
   idle: "",

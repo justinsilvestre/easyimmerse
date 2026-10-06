@@ -21,13 +21,15 @@ export type WaveformStripProps = WaveformGestureHandlers & {
   windows: ReadonlyMap<number, Uint8Array>;
   cues: readonly Cue[];
   flashcardSegments: readonly FlashcardSegment[];
+  /** The segment of the flashcard open in the editor, the only one whose handles can be dragged. None when left out. */
+  editableSegmentId?: string | null;
   /** The span of media shown, already clamped by the caller through `clampVisibleSpan`. */
   visibleSpanMs: number;
 };
 
 /**
  * Draws the audio peaks around the current time with the cues and flashcard segments over them.
- * Clicking seeks, double-clicking a segment opens it, and its handles drag; the wheel, a pinch, or the corner control zooms.
+ * Clicking seeks, double-clicking a segment opens it, and the open segment's handles drag; the wheel, a pinch, or the corner control zooms.
  */
 export function WaveformStrip(props: WaveformStripProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,6 +49,7 @@ export function WaveformStrip(props: WaveformStripProps) {
     view,
     durationMs: props.durationMs,
     segments: props.flashcardSegments,
+    editableSegmentId: props.editableSegmentId ?? null,
     handlers: props,
   });
   const segments = applyDrag(props.flashcardSegments, drag);

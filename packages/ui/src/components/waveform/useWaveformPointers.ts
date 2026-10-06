@@ -7,7 +7,7 @@ import type { WaveformView } from "./waveformGeometry.ts";
 import { timeAtX } from "./waveformGeometry.ts";
 import type { WaveformGestureHandlers } from "./waveformGestureHandlers.ts";
 import { reportDragEnd } from "./waveformGestureHandlers.ts";
-import { hitTest } from "./waveformHitTest.ts";
+import { cursorOf, hitTest } from "./waveformHitTest.ts";
 import type { WaveformPinch } from "./waveformPinch.ts";
 import { pinchedSpan, startPinch } from "./waveformPinch.ts";
 
@@ -15,6 +15,8 @@ type PointersInput = {
   view: WaveformView;
   durationMs: number;
   segments: readonly FlashcardSegment[];
+  /** The segment whose handles can be dragged, the flashcard open in the editor, or null when none is open. */
+  editableSegmentId: string | null;
   handlers: WaveformGestureHandlers;
 };
 
@@ -23,11 +25,15 @@ type CanvasPointerEvent = ReactPointerEvent<HTMLCanvasElement>;
 /** A pointer moving less than this many pixels between press and release counts as a click. */
 const clickTolerancePx = 4;
 
-/** Turns pointer events on the canvas into seeks, handle drags, and pinch zooms. */
+/**
+ * Turns pointer events on the canvas into seeks, handle drags, and pinch zooms.
+ * The cursor tells what lies under the pointer: a resize cursor over a handle that can be dragged, a pointer over a segment's body.
+ */
 export function useWaveformPointers({
   view,
   durationMs,
   segments,
+  editableSegmentId,
   handlers,
 }: PointersInput) {
   const [drag, setDrag] = useState<WaveformDrag | null>(null);
@@ -45,7 +51,7 @@ export function useWaveformPointers({
       setDrag(null);
       return;
     }
-    const hit = hitTest(view, segments, point);
+    const hit = hitTest(view, segments, point, editableSegmentId);
     if (
       hit.kind === "clipStart" ||
       hit.kind === "clipEnd" ||
@@ -59,6 +65,11 @@ export function useWaveformPointers({
 
   const onPointerMove = (event: CanvasPointerEvent) => {
     const point = pointAt(event);
+    // Set on the element directly, since a hover needs no render.
+    if (!drag)
+      event.currentTarget.style.cursor = cursorOf(
+        hitTest(view, segments, point, editableSegmentId),
+      );
     if (!pointerXs.current.has(event.pointerId)) return;
     pointerXs.current.set(event.pointerId, point.x);
     if (pinch.current && pointerXs.current.size === 2) {

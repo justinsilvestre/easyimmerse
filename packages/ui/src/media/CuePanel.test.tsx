@@ -1,3 +1,4 @@
+import type { Cue } from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -23,16 +24,28 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function panel(activeCueIndex: number | null, onSeek = vi.fn()) {
+function panel(
+  activeCueIndex: number | null,
+  {
+    onSeek = vi.fn(),
+    onWordClick = vi.fn(),
+    onOpenFlashcardForCue = vi.fn(),
+  }: {
+    onSeek?: (ms: number) => void;
+    onWordClick?: () => void;
+    onOpenFlashcardForCue?: (cueIndex: number) => void;
+  } = {},
+) {
   return (
     <CuePanel
       cues={exampleCues}
       translationCues={[]}
       activeCueIndex={activeCueIndex}
-      flashcardCueIndexes={[]}
+      flashcardCueIndexes={[flashcardCue.index]}
       onSeek={onSeek}
+      onOpenFlashcardForCue={onOpenFlashcardForCue}
       wordGestures={{
-        onWordClick: vi.fn(),
+        onWordClick,
         onWordDoubleClick: vi.fn(),
         onWordHoverIntent: vi.fn(),
         onWordHold: vi.fn(),
@@ -41,6 +54,11 @@ function panel(activeCueIndex: number | null, onSeek = vi.fn()) {
       onGenerateSubtitles={vi.fn()}
     />
   );
+}
+
+/** The first word button inside a card, past its timestamp. */
+function firstWordOf(card: HTMLElement): HTMLElement {
+  return card.querySelector("[data-clickable-word]") as HTMLElement;
 }
 
 /** Lets the scroll the panel started settle, so that the next scroll counts as the user's. */
@@ -62,6 +80,15 @@ function scrollActiveCueOutOfView() {
   );
   fireEvent.scroll(list);
 }
+
+/** The cue at 0:08, which the panel marks as having a flashcard. */
+const flashcardCue = exampleCues.find((cue) => cue.index === 4) as Cue;
+
+/** The card of the cue that starts at the given time, found through its timestamp button. */
+const cardStartingAt = (timestamp: string) =>
+  screen
+    .getByRole("button", { name: `Play from ${timestamp}` })
+    .closest("li") as HTMLElement;
 
 const backButton = () =>
   screen.queryByRole("button", { name: "Back to current line" });
@@ -152,5 +179,60 @@ describe("CuePanel", () => {
       block: "nearest",
       behavior: "auto",
     });
+  });
+  it("seeks to the start of a cue when its card is clicked", () => {
+    const onSeek = vi.fn();
+    render(panel(2, { onSeek }));
+    fireEvent.click(cardStartingAt("0:08"));
+    expect(onSeek).toHaveBeenCalledWith(8600);
+  });
+
+  it("seeks once when a cue's time is clicked", () => {
+    const onSeek = vi.fn();
+    render(panel(2, { onSeek }));
+    fireEvent.click(screen.getByRole("button", { name: "Play from 0:08" }));
+    expect(onSeek).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves the position alone when a word of a card is clicked", () => {
+    const onSeek = vi.fn();
+    render(panel(2, { onSeek }));
+    fireEvent.click(firstWordOf(cardStartingAt("0:08")));
+    expect(onSeek).not.toHaveBeenCalled();
+  });
+
+  it("looks up a word of a card when it is clicked", () => {
+    const onWordClick = vi.fn();
+    render(panel(2, { onWordClick }));
+    fireEvent.click(firstWordOf(cardStartingAt("0:08")));
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(onWordClick).toHaveBeenCalled();
+  });
+
+  it("follows playback again after the user clicks a card", () => {
+    const { rerender } = render(panel(2));
+    settle();
+    scrollActiveCueOutOfView();
+    fireEvent.click(cardStartingAt("0:08"));
+    vi.restoreAllMocks();
+    scrollIntoView.mockClear();
+    rerender(panel(4));
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the flashcard of a cue from its card", () => {
+    const onOpenFlashcardForCue = vi.fn();
+    render(panel(2, { onOpenFlashcardForCue }));
+    fireEvent.click(screen.getByRole("button", { name: "Open the flashcard" }));
+    expect(onOpenFlashcardForCue).toHaveBeenCalledWith(flashcardCue.index);
+  });
+
+  it("leaves the position alone when a flashcard is opened", () => {
+    const onSeek = vi.fn();
+    render(panel(2, { onSeek }));
+    fireEvent.click(screen.getByRole("button", { name: "Open the flashcard" }));
+    expect(onSeek).not.toHaveBeenCalled();
   });
 });

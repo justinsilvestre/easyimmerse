@@ -1,10 +1,9 @@
 import { actions } from "@easyimmerse/state";
 import type { Rational } from "@easyimmerse/types";
-import { Music } from "lucide-react";
+import { AudioLines, Music } from "lucide-react";
 import { useRef, useState } from "react";
-import { Button } from "../components/Button.tsx";
+import { IconButton } from "../components/IconButton.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { captureVideoFrame } from "./captureVideoFrame.ts";
 import { MediaElement } from "./MediaElement.tsx";
 import { PlayerFailure } from "./PlayerFailure.tsx";
 import type { PlayerSource } from "./PlayerSource.ts";
@@ -73,6 +72,10 @@ function PlayerBody({
 /** A failure belongs to the source it happened on; a new source starts clean. */
 type SourceFailure = { url: string; cause: string };
 
+/**
+ * The video, or the artwork of an audio file, filling the stage. A click on the picture plays or pauses, as in other players;
+ * the buttons, subtitles and pop-ups drawn over the stage are its siblings, so a click on them does not reach it.
+ */
 function PlayerMedia({
   name,
   source,
@@ -88,51 +91,37 @@ function PlayerMedia({
 }) {
   const elementRef = useRef<HTMLVideoElement>(null);
   const [failure, setFailure] = useState<SourceFailure | null>(null);
-  const [screenshot, setScreenshot] = useState<string | null>(null);
   const dispatch = useAppDispatch();
-  const takeScreenshot = () => {
-    const video = elementRef.current;
-    if (video === null) return;
-    captureVideoFrame(video).then(setScreenshot, () =>
-      dispatch(
-        actions.notificationRequested("The screenshot could not be taken"),
-      ),
-    );
-  };
   return (
     <>
-      <MediaElement
-        source={source}
-        frameRate={frameRate}
-        hasVideo={hasVideo}
-        elementRef={elementRef}
-        onFailure={(cause) => setFailure({ url: source.url, cause })}
-      />
-      {!hasVideo && <AudioArtwork name={name} />}
+      {/* Space and K play and pause from the keyboard; the click is the pointer's way to do the same. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: see above */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: see above */}
+      <div
+        className="flex h-full w-full items-center justify-center"
+        onClick={() => dispatch(actions.playToggleRequested())}
+      >
+        <MediaElement
+          source={source}
+          frameRate={frameRate}
+          hasVideo={hasVideo}
+          elementRef={elementRef}
+          onFailure={(cause) => setFailure({ url: source.url, cause })}
+        />
+        {!hasVideo && <AudioArtwork name={name} />}
+      </div>
       {failure !== null && failure.url === source.url && (
         <div className="absolute inset-x-0 top-12 flex justify-center px-4">
           <PlayerFailure cause={failure.cause} />
         </div>
       )}
-      <div className="absolute top-2 left-2 z-10 flex flex-col items-start gap-2">
-        <PlayerButtons
-          onOpenTracks={onOpenTracks}
-          onScreenshot={hasVideo ? takeScreenshot : undefined}
-        />
-        {screenshot !== null && (
-          <button
-            type="button"
-            aria-label="Dismiss the screenshot"
-            onClick={() => setScreenshot(null)}
-          >
-            <img
-              src={screenshot}
-              alt="Screenshot of the current frame"
-              className="max-h-24 rounded shadow-lg"
-            />
-          </button>
-        )}
-      </div>
+      {onOpenTracks && (
+        <span className="absolute top-2 left-2 z-10 rounded-md bg-black/50">
+          <IconButton label="Tracks" onClick={onOpenTracks}>
+            <AudioLines className="size-4" />
+          </IconButton>
+        </span>
+      )}
     </>
   );
 }
@@ -144,38 +133,6 @@ function AudioArtwork({ name }: { name: string }) {
         <Music className="size-20 text-gray-400" aria-hidden />
       </div>
       <p className="text-lg text-gray-300">{name}</p>
-    </div>
-  );
-}
-
-function PlayerButtons({
-  onOpenTracks,
-  onScreenshot,
-}: {
-  onOpenTracks?: () => void;
-  onScreenshot?: () => void;
-}) {
-  if (onOpenTracks === undefined && onScreenshot === undefined) return null;
-  return (
-    <div className="flex gap-2">
-      {onOpenTracks && (
-        <Button
-          size="sm"
-          className="border-gray-600 bg-black/50 text-white hover:bg-gray-800"
-          onClick={onOpenTracks}
-        >
-          Tracks
-        </Button>
-      )}
-      {onScreenshot && (
-        <Button
-          size="sm"
-          className="border-gray-600 bg-black/50 text-white hover:bg-gray-800"
-          onClick={onScreenshot}
-        >
-          Screenshot
-        </Button>
-      )}
     </div>
   );
 }

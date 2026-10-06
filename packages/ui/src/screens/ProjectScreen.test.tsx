@@ -159,8 +159,8 @@ describe("ProjectScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add media" }));
     act(() =>
       effects.resolvePickMediaFile({
-        name: "episode.mkv",
-        source: { kind: "path", path: "/videos/episode.mkv" },
+        name: "pilot.mkv",
+        source: { kind: "path", path: "/videos/pilot.mkv" },
       }),
     );
     await vi.waitFor(() =>

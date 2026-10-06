@@ -3,6 +3,7 @@ import type { ComponentProps } from "react";
 import { useReducer } from "react";
 import { fn } from "storybook/test";
 import { generateExamplePeaks } from "../media/examplePeaks.ts";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { type EditorAction, reduceEditor } from "./editFlashcard.ts";
 import {
   exampleFlashcard,
@@ -29,6 +30,7 @@ const meta = {
   component: FlashcardEditor,
   render: (args) => <EditorWithState {...args} />,
   decorators: [
+    withAppStore,
     (Story) => (
       <div className="h-[36rem] w-full max-w-96">
         <Story />
@@ -82,4 +84,14 @@ export const FromAnEbook: Story = {
 /** Save was pressed while the word's definitions are still on their way. */
 export const SaveWaitingForDefinitions: Story = {
   args: { saveStatus: "waitingForDefinitions" },
+};
+
+/** A flashcard just started, which has never been saved and so has nothing to delete. */
+export const NewFlashcard: Story = {
+  args: { isNew: true },
+};
+
+/** The last save failed; the line stays until Save is pressed again. */
+export const SaveFailed: Story = {
+  args: { hasSaveFailed: true },
 };

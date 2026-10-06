@@ -25,8 +25,9 @@ const meta = {
     cues: exampleCues,
     translationCues: exampleTranslationCues,
     activeCueIndex: 3,
-    flashcardCueIndexes: exampleFlashcardCueIndexes,
+    flashcardCueIndexes: [],
     onSeek: fn(),
+    onOpenFlashcardForCue: fn(),
     wordGestures: {
       onWordClick: fn(),
       onWordDoubleClick: fn(),
@@ -42,6 +43,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const DualSubtitles: Story = {};
+
+/** Some lines already have a flashcard, which opens from the mark beside their time. */
+export const WithFlashcards: Story = {
+  args: { flashcardCueIndexes: exampleFlashcardCueIndexes },
+};
 
 export const TargetOnly: Story = { args: { translationCues: [] } };
 

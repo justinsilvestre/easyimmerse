@@ -14,9 +14,10 @@ export type MediaPanelsAction =
   | { type: "distractionFreeToggled" }
   | { type: "subtitleDisplayCycled" };
 
+/** The subtitles panel starts open and the waveform closed, since the waveform matters only when editing a flashcard's clip. */
 export const initialMediaPanels: MediaPanels = {
   cues: true,
-  waveform: true,
+  waveform: false,
   distractionFree: false,
   subtitleDisplay: "both",
 };

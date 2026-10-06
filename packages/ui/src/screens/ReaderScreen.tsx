@@ -9,7 +9,6 @@ import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo } from "react";
 import { draftFromText } from "../flashcards/draftFromText.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
-import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -140,14 +139,6 @@ function BookReader({
             actions.preferenceSet("readerPreferences", JSON.stringify(changed)),
           ),
       }}
-      headerContent={
-        flashcards.isSaved ? (
-          <FlashcardSaveNotice
-            outcome="savedInProject"
-            onDismiss={flashcards.dismissSaved}
-          />
-        ) : undefined
-      }
       sidePanel={
         flashcards.edited && (
           <FlashcardEditor
@@ -157,6 +148,8 @@ function BookReader({
                 : flashcards.edited.flashcard.id
             }
             state={flashcards.edited.editor}
+            isNew={flashcards.edited.kind === "new"}
+            hasSaveFailed={flashcards.saveFailed}
             dispatch={flashcards.edit}
             languages={languages}
             waveform={null}

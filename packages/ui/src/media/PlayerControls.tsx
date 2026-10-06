@@ -42,9 +42,18 @@ export function PlayerControls({
 }: {
   playback: PlayerControlsState;
   tracks: SubtitleTrackChoices;
-  panels: { cues: boolean; waveform: boolean };
+  /**
+   * Which panels are open. `isCuePanelTakenByEditor` tells that the flashcard editor holds the side panel,
+   * so that the subtitles panel cannot show and its toggle is marked unavailable, with a tooltip saying why.
+   */
+  panels: {
+    cues: boolean;
+    waveform: boolean;
+    isCuePanelTakenByEditor?: boolean;
+  };
   callbacks: PlayerCallbacks;
 }) {
+  const isCueToggleUnavailable = panels.isCuePanelTakenByEditor === true;
   return (
     <div className="flex flex-col gap-1.5 bg-surface/90 px-3 py-2 backdrop-blur-sm">
       <div className="flex items-center gap-3 text-xs text-fg-muted tabular-nums">
@@ -55,7 +64,26 @@ export function PlayerControls({
           min={0}
           max={playback.durationMs}
           value={playback.currentMs}
+          aria-valuetext={formatTimestamp(playback.currentMs)}
           onChange={(event) => callbacks.onSeek(Number(event.target.value))}
+          // The arrows move a second at a time. A `step` would do the same, but it would also round the position the bar shows.
+          onKeyDown={(event) => {
+            const directions: Partial<Record<string, number>> = {
+              ArrowLeft: -1,
+              ArrowDown: -1,
+              ArrowRight: 1,
+              ArrowUp: 1,
+            };
+            const direction = directions[event.key];
+            if (direction === undefined) return;
+            event.preventDefault();
+            callbacks.onSeek(
+              Math.min(
+                Math.max(playback.currentMs + direction * 1000, 0),
+                playback.durationMs,
+              ),
+            );
+          }}
           className="flex-1 accent-accent"
         />
         <span>{formatTimestamp(playback.durationMs)}</span>
@@ -119,8 +147,16 @@ export function PlayerControls({
           )}
           <IconButton
             label="Subtitles panel"
-            pressed={panels.cues}
-            onClick={callbacks.onToggleCuePanel}
+            pressed={panels.cues && !isCueToggleUnavailable}
+            aria-disabled={isCueToggleUnavailable || undefined}
+            title={
+              isCueToggleUnavailable
+                ? "Close the flashcard to show the subtitles"
+                : "Subtitles panel"
+            }
+            onClick={() => {
+              if (!isCueToggleUnavailable) callbacks.onToggleCuePanel();
+            }}
           >
             <Captions className="size-4" />
           </IconButton>

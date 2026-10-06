@@ -4,7 +4,6 @@ import { useReducer, useRef } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
-import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
 import { saveStatusOf } from "../flashcards/saveStage.ts";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
@@ -22,6 +21,7 @@ import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
+import { useClipLoop } from "../media/useClipLoop.ts";
 import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
@@ -35,6 +35,8 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
  * double-clicking a word starts a flashcard for it at once.
  * Space or K plays and pauses, the arrow keys skip between cues, and R replays the cue shown now.
+ * Opening a flashcard seeks to its clip, which loops while playing, as `useClipLoop` describes.
+ * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
  */
 export function MediaScreen({
   project,
@@ -59,6 +61,15 @@ export function MediaScreen({
     initialMediaPanels,
   );
   const editedContent = flashcards.edited?.editor.content;
+  useClipLoop(
+    flashcards.edited?.session ?? null,
+    editedContent?.audio_context ?? null,
+    { isPlaying: player.isPlaying, currentMs },
+    (ms) => dispatch(actions.seekRequested(ms / 1000)),
+  );
+  const isEditorOpen = flashcards.edited !== null;
+  // Passed through MediaView to the player controls, which mark the subtitles panel's toggle unavailable meanwhile.
+  const shownPanels = { ...panels, isCuePanelTakenByEditor: isEditorOpen };
   const clipWaveform = useClipWaveform(
     projectId,
     mediaFile,
@@ -120,7 +131,9 @@ export function MediaScreen({
     onSpeedChange: (speed) => dispatch(actions.speedChangeRequested(speed)),
     onToggleSubtitleDisplay: () =>
       dispatchPanels({ type: "subtitleDisplayCycled" }),
-    onToggleCuePanel: () => dispatchPanels({ type: "cuePanelToggled" }),
+    onToggleCuePanel: () => {
+      if (!isEditorOpen) dispatchPanels({ type: "cuePanelToggled" });
+    },
     onToggleWaveform: () => dispatchPanels({ type: "waveformToggled" }),
     onToggleDistractionFree: () =>
       dispatchPanels({ type: "distractionFreeToggled" }),
@@ -159,6 +172,7 @@ export function MediaScreen({
           mediaFileId={mediaFileId}
           cues={subtitles.cues}
           flashcardSegments={flashcards.segments}
+          editableSegmentId={flashcards.editedSegmentId}
           segmentHandlers={{
             onOpenFlashcardSegment: flashcards.open,
             onClipEndpointMoved: flashcards.moveClipEndpoint,
@@ -167,7 +181,7 @@ export function MediaScreen({
           onHide={() => dispatchPanels({ type: "waveformToggled" })}
         />
       }
-      panels={panels}
+      panels={shownPanels}
       subtitleDisplay={panels.subtitleDisplay}
       playerCallbacks={playerCallbacks}
       onBack={() => dispatch(actions.closeMedia())}
@@ -181,14 +195,6 @@ export function MediaScreen({
             <DictionaryPopup {...lookup.popup.props} />
           </AnchoredPopup>
         )
-      }
-      headerContent={
-        flashcards.isSaved ? (
-          <FlashcardSaveNotice
-            outcome="savedInProject"
-            onDismiss={flashcards.dismissSaved}
-          />
-        ) : undefined
       }
       sidePanel={
         flashcards.edited !== null ? (
@@ -204,6 +210,8 @@ export function MediaScreen({
             waveform={clipWaveform}
             screenshotUrl={screenshotUrl}
             saveStatus={saveStatusOf(flashcards.edited.stage)}
+            isNew={flashcards.edited.kind === "new"}
+            hasSaveFailed={flashcards.saveFailed}
             onSave={flashcards.save}
             onDelete={flashcards.remove}
             onClose={flashcards.close}
@@ -216,6 +224,7 @@ export function MediaScreen({
             flashcardCueIndexes={flashcards.cueIndexes}
             activeWord={lookup.activeWord}
             wordGestures={lookup.wordGestures}
+            onOpenFlashcardForCue={flashcards.openForCue}
           />
         ) : undefined
       }

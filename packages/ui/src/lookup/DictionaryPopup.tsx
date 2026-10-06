@@ -18,6 +18,7 @@ import { usePopupDismissal } from "./usePopupDismissal.ts";
  * Clicking a word inside the pop-up, or following a link to another headword, looks it up in turn.
  * A flashcard comes from every result with the header button (`entryIndex` null) or from one result with its own button,
  * and, through `wordActions`, from a word inside the pop-up that is double-clicked or held.
+ * When no dictionary has an entry for the word, the header button still makes a flashcard, with the word and its sentence only.
  * While such a flashcard waits for its word's lookup, `pendingFlashcard` names the word.
  * Escape, or pressing outside the pop-up and not on a word marked as a lookup trigger, closes it.
  * Images in definitions are found through `resolveMediaUrl`.
@@ -63,7 +64,7 @@ export function DictionaryPopup({
         ) : (
           <span className="flex-1 truncate font-semibold">{termOf(state)}</span>
         )}
-        {state && state.kind === "found" && (
+        {(state?.kind === "found" || state?.kind === "notFound") && (
           <Button
             size="sm"
             variant="primary"

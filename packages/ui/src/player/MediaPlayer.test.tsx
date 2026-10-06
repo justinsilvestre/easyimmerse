@@ -153,10 +153,10 @@ describe("MediaPlayer", () => {
       expect(selectPlayerDuration(store.getState())).toBe(90);
     });
 
-    it("offers a screenshot of the video", async () => {
-      renderPlayer(directPlaybackRoutes);
-      await findVideo();
-      expect(screen.getByRole("button", { name: "Screenshot" })).toBeDefined();
+    it("plays or pauses when the picture is clicked", async () => {
+      const { effects } = renderPlayer(directPlaybackRoutes);
+      fireEvent.click(await findVideo());
+      expect(effects.calls).toContainEqual({ type: "togglePlayer" });
     });
 
     it("offers no track choice for a file with one track of each kind", async () => {
@@ -366,6 +366,15 @@ describe("MediaPlayer", () => {
       ).toBeDefined();
     });
 
+    it("leaves playback alone when the Tracks button is clicked", async () => {
+      const { effects, hls } = renderPlayer(copyPlaybackRoutes, {
+        mediaFiles: withSavedSelection,
+      });
+      await vi.waitFor(() => expect(hls[0]).toBeDefined());
+      fireEvent.click(screen.getByRole("button", { name: "Tracks" }));
+      expect(effects.calls).not.toContainEqual({ type: "togglePlayer" });
+    });
+
     it("asks for a new plan when the tracks change", async () => {
       const { client, hls } = renderPlayer(copyPlaybackRoutes, {
         mediaFiles: withSavedSelection,
@@ -517,6 +526,18 @@ describe("MediaPlayer", () => {
       expect(client.requests.map((request) => request.path)).not.toContain(
         "/projects/p1/media/m2/tracks",
       );
+    });
+
+    it("plays or pauses when the artwork is clicked", async () => {
+      const { registry, mediaFiles } = registryHolding(audioFile());
+      const { effects } = renderPlayer([], {
+        mediaFiles,
+        mediaFileId: "m2",
+        browserFileRegistry: registry,
+      });
+      await screen.findByLabelText("Audio");
+      fireEvent.click(screen.getByText("interview.mp3"));
+      expect(effects.calls).toContainEqual({ type: "togglePlayer" });
     });
 
     it("explains when the browser no longer holds the file", async () => {

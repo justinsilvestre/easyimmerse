@@ -71,7 +71,7 @@ function videoStage() {
     <video
       src="fixtures/sample.mp4"
       preload="metadata"
-      className="max-h-full max-w-full"
+      className="h-full w-full object-contain"
       aria-label="Dark S01E01 - Geheimnisse.mkv"
     >
       <track kind="captions" />
@@ -129,6 +129,7 @@ function subtitlesPanel(
         activeCueIndex={3}
         flashcardCueIndexes={exampleFlashcardCueIndexes}
         onSeek={fn()}
+        onOpenFlashcardForCue={fn()}
         wordGestures={{ onWordClick: fn(), onWordDoubleClick: fn() }}
         onAddSubtitlesFile={fn()}
         onGenerateSubtitles={fn()}
@@ -171,7 +172,7 @@ const meta = {
     cues: exampleCues,
     translationCues: exampleTranslationCues,
     waveform: waveform(),
-    panels: { cues: true, waveform: true, distractionFree: false },
+    panels: { cues: true, waveform: false, distractionFree: false },
     subtitleDisplay: "both",
     playerCallbacks: {
       onTogglePlay: fn(),
@@ -290,8 +291,8 @@ export const Playing: Story = {
   },
 };
 
-export const WaveformHidden: Story = {
-  args: { panels: { cues: true, waveform: false, distractionFree: false } },
+export const WaveformShown: Story = {
+  args: { panels: { cues: true, waveform: true, distractionFree: false } },
 };
 
 export const DistractionFree: Story = {
