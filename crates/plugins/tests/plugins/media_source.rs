@@ -1,9 +1,10 @@
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 use crate::support::FixtureServer;
 use easyimmerse_plugins::{
-    CapabilityGrants, CompiledPlugin, HostLimits, MediaSourceFixturePlugin, MediaSourcePlugin,
-    PluginErrorKind, PluginPackage,
+    CapabilityGrants, CompiledPlugin, HostEvent, HostLimits, MediaSourceFixturePlugin,
+    MediaSourcePlugin, PluginErrorKind, PluginPackage,
 };
 
 /// The fixture plugin compiled once, with a server for it to fetch from and a directory
@@ -145,6 +146,53 @@ fn reports_the_language_of_each_subtitle_file() {
         .map(|subtitle| subtitle.language.as_deref())
         .collect();
     assert_eq!(languages, vec![Some("en")]);
+}
+
+/// Resolves with a listener installed and returns every event it heard, in order.
+fn events_while_resolving(fixture: &Fixture) -> Vec<HostEvent> {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let heard = Arc::clone(&events);
+    let mut plugin = fixture.media_source();
+    plugin.listen(move |event| heard.lock().unwrap().push(event));
+    plugin
+        .resolve(&fixture.locator(), &fixture.output_path(""))
+        .expect("resolve");
+    // Cloned out of the lock before the guard is dropped at the end of the statement.
+    events.lock().unwrap().clone()
+}
+
+#[test]
+fn the_listener_hears_each_progress_report_as_it_happens() {
+    let fixture = Fixture::start();
+    let progress = events_while_resolving(&fixture)
+        .into_iter()
+        .filter(|event| matches!(event, HostEvent::Progress(_)))
+        .count();
+    assert!(progress >= 2, "got {progress} progress events");
+}
+
+#[test]
+fn the_listener_hears_the_command_the_plugin_runs() {
+    let fixture = Fixture::start();
+    let started = events_while_resolving(&fixture)
+        .into_iter()
+        .find_map(|event| match event {
+            HostEvent::CommandStarted { command, args } => Some((command, args)),
+            _ => None,
+        });
+    assert_eq!(
+        started,
+        Some(("fetch-locator".to_string(), vec![fixture.locator()]))
+    );
+}
+
+#[test]
+fn the_listener_hears_what_the_command_prints() {
+    let fixture = Fixture::start();
+    let printed = events_while_resolving(&fixture).into_iter().any(|event| {
+        matches!(event, HostEvent::CommandOutput { line, .. } if line.contains("\"title\":\"Fixture\""))
+    });
+    assert!(printed);
 }
 
 fn files_match(written: &str, fixture: &Path) -> bool {
