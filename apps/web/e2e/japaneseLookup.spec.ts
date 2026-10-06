@@ -63,8 +63,13 @@ test("a later character of a Japanese run is looked up from that character", asy
     .getByRole("list", { name: "Subtitles" })
     .getByRole("button", { name: "𠮷野家で映画を見る" });
   // The middle of 見, the seventh character after 𠮷, relative to the run's button.
+  // The run's text may be split across several text nodes, so the node holding 見 is searched for.
   const position = await run.evaluate((element) => {
-    const text = element.firstChild as Text;
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    let text = walker.nextNode() as Text | null;
+    while (text && !text.data.includes("見"))
+      text = walker.nextNode() as Text | null;
+    if (!text) throw new Error("The run does not contain 見.");
     const index = text.data.indexOf("見");
     const range = document.createRange();
     range.setStart(text, index);
