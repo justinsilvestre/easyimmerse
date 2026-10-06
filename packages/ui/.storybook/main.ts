@@ -1,6 +1,9 @@
 import { sharedVitePlugins } from "@easyimmerse/config/vite-plugins";
+import { unpackFixtures } from "@easyimmerse/fixtures";
 import { defineMain } from "@storybook/react-vite/node";
 import { mergeConfig } from "vite";
+
+unpackFixtures();
 
 export default defineMain({
   framework: "@storybook/react-vite",

@@ -1,4 +1,5 @@
 import type { PreferenceKey } from "./appState.ts";
+import type { ReaderLocation } from "./readingLocation.ts";
 
 /** A description of a side effect to perform. Effects are plain data and contain no code. */
 export type Effect =
@@ -13,6 +14,12 @@ export type Effect =
   | { type: "pickDictionaryFile"; accept: readonly string[] }
   | { type: "savePreference"; key: PreferenceKey; value: string }
   | { type: "loadPreferences"; keys: readonly PreferenceKey[] }
+  | { type: "loadReadingLocation"; mediaFileId: string }
+  | {
+      type: "saveReadingLocation";
+      mediaFileId: string;
+      location: ReaderLocation;
+    }
   | { type: "showNotification"; message: string }
   | { type: "openExternalUrl"; url: string }
   | { type: "guardClose"; isActive: boolean };

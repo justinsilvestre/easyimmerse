@@ -17,6 +17,13 @@ const unspacedScript = String.raw`\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}\p{
  */
 const unspacedLetter = String.raw`(?=[\p{L}\p{M}〇゛゜])[${unspacedScript}]`;
 
+const unspacedLetterPattern = new RegExp(`^${unspacedLetter}$`, "u");
+
+/** Tells whether a character is a letter of a script written without spaces, every one of which can begin a word. */
+export function isUnspacedLetter(character: string): boolean {
+  return unspacedLetterPattern.test(character);
+}
+
 /** A digit, ASCII or fullwidth, which a run takes in, as in ３人 or 2026年. */
 const runDigit = "[0-9０-９]";
 

@@ -10,6 +10,7 @@ import {
   selectPlayerDuration,
   selectPreference,
   selectPreferencesLoaded,
+  selectReadingLocation,
   selectTextScale,
 } from "./selectors.ts";
 
@@ -27,6 +28,10 @@ const rootState: RootState = {
     pendingFilePick: true,
     currentMediaFileId: "m1",
     chosenMediaFile: { name: "a.mp4", source: { kind: "path", path: "/a" } },
+    readingLocations: {
+      b1: { chapterIndex: 1, paragraphIndex: 2, offset: 3 },
+      b2: null,
+    },
   },
 };
 
@@ -65,5 +70,21 @@ describe("selectors", () => {
 
   it("selectTextScale returns 100 until a scale is stored", () => {
     expect(selectTextScale(rootState)).toBe(100);
+  });
+
+  it("selectReadingLocation returns the book's last reading location", () => {
+    expect(selectReadingLocation("b1")(rootState)).toEqual({
+      chapterIndex: 1,
+      paragraphIndex: 2,
+      offset: 3,
+    });
+  });
+
+  it("selectReadingLocation returns null for a book with no stored location", () => {
+    expect(selectReadingLocation("b2")(rootState)).toBeNull();
+  });
+
+  it("selectReadingLocation returns undefined until the book's location has loaded", () => {
+    expect(selectReadingLocation("b3")(rootState)).toBeUndefined();
   });
 });

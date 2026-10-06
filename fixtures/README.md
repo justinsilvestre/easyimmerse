@@ -28,6 +28,43 @@ To regenerate `sample.epub` after editing the tree (the `mimetype` entry must co
 cd fixtures/sample-epub && rm -f ../sample.epub && zip -X0 ../sample.epub mimetype && zip -Xr9D ../sample.epub META-INF OEBPS
 ```
 
+## die-verwandlung.txt.gz and die-verwandlung.epub
+
+Franz Kafka's "Die Verwandlung" (1915, in the public domain), a whole novella in German for exercising the reader with a realistic book: long chapters, many pages, and words to look up. The text comes from Project Gutenberg eBook #22367, with Project Gutenberg's header, footer, and license removed.
+
+Both files are compressed so that the book's text does not appear in diffs. Their unpacked forms, `die-verwandlung.txt` and `die-verwandlung-epub/`, are ignored by Git.
+
+- `die-verwandlung.txt.gz` holds the plain-text layout: lines hard-wrapped at about 70 characters, paragraphs separated by blank lines, `--` for dashes, and the parts headed `I.`, `II.`, and `III.`. The plain-text parser reads it as one untitled chapter. The Storybook and Vitest configs of `packages/ui` call `unpackFixtures` from `unpackFixtures.ts`, which writes every `.gz` file in this folder out as its uncompressed sibling, so `die-verwandlung.txt` is current whenever stories or tests import it. Run `node fixtures/unpackFixtures.ts` to unpack it by hand.
+- `die-verwandlung.epub` is an EPUB 3 book with one XHTML file per part, the paragraphs unwrapped, and the dashes written as `–`. Its metadata gives the title, the author, and the language `de`.
+
+To change the plain text, edit `die-verwandlung.txt` and compress it again (`-n` leaves out the file name and timestamp, so the same text always gives the same bytes):
+
+```sh
+cd fixtures && gzip -9nc die-verwandlung.txt > die-verwandlung.txt.gz
+```
+
+To change the EPUB, unzip it into its tree:
+
+```sh
+cd fixtures && unzip -o die-verwandlung.epub -d die-verwandlung-epub
+```
+
+Then edit the tree and package it again (the `mimetype` entry must come first and be stored uncompressed):
+
+```sh
+cd fixtures/die-verwandlung-epub && rm -f ../die-verwandlung.epub && zip -X0 ../die-verwandlung.epub mimetype && zip -Xr9D ../die-verwandlung.epub META-INF OEBPS
+```
+
+## ginga-tetsudo-no-yoru.epub
+
+Kenji Miyazawa's 銀河鉄道の夜 (Night on the Galactic Railroad, in the public domain), a whole Japanese novel for exercising the reader and lookups in a language written without spaces. The development seed adds it to the Japanese placeholder project. It is an EPUB 3 book with one XHTML file per chapter and a last file holding Aozora Bunko's credits. The ruby readings of the source are left out, since the reader shows only the base text.
+
+`build-ginga-tetsudo-no-yoru.py` builds it from Aozora Bunko's XHTML edition (card 456). To regenerate it:
+
+```sh
+curl -sL -o /tmp/456_15050.html https://www.aozora.gr.jp/cards/000081/files/456_15050.html && python3 fixtures/build-ginga-tetsudo-no-yoru.py /tmp/456_15050.html
+```
+
 ## sample-yomitan/ and sample-yomitan.zip
 
 A Yomitan dictionary in format version 3. It holds five term entries: 猫 (cat), 犬 (dog), 食べる (to eat, word class `v1`), 本 (book, with structured content and an image), and 食べた, which points to 食べる as an inflected form. It also has a tag bank, frequency and pitch-accent rows, a kanji entry with its own metadata, a stylesheet, and the image under `images/`. The sample subtitles mention the same words.

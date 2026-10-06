@@ -22,6 +22,10 @@ apps/native/.appium/
 apps/native/e2e/logs/
 packages/ui/storybook-static/
 
+# Whole books are stored compressed. Storybook and the UI tests unpack the plain text, and the EPUB tree is unzipped by hand for editing.
+fixtures/die-verwandlung.txt
+fixtures/die-verwandlung-epub/
+
 # Local development data
 .dev/
 

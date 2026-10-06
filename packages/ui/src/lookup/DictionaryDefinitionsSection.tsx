@@ -34,7 +34,7 @@ export function DictionaryDefinitionsSection({
             className={clsx(
               yomitanClassName("gloss-list"),
               "flex flex-col gap-1 text-sm",
-              entry.definitions.length > 1 && "list-decimal pl-5",
+              entry.definitions.length > 1 && "list-decimal pl-6",
             )}
           >
             {entry.definitions.map((definition, index) => (

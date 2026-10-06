@@ -1,3 +1,4 @@
+import { isDocumentFileName } from "@easyimmerse/state";
 import type { Flashcard, MediaFile } from "@easyimmerse/types";
 import { isAudioFileName } from "../player/isAudioFileName.ts";
 import type { MediaItem } from "./MediaList.tsx";
@@ -10,9 +11,14 @@ export function mediaItemsOf(
   return mediaFiles.map((mediaFile) => ({
     id: mediaFile.id,
     name: mediaFile.name,
-    kind: isAudioFileName(mediaFile.name) ? "audio" : "video",
+    kind: kindOf(mediaFile.name),
     flashcardCount: flashcards.filter(
       (flashcard) => flashcard.media_file_id === mediaFile.id,
     ).length,
   }));
+}
+
+function kindOf(name: string): MediaItem["kind"] {
+  if (isDocumentFileName(name)) return "ebook";
+  return isAudioFileName(name) ? "audio" : "video";
 }

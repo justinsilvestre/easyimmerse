@@ -39,6 +39,8 @@
   --color-success-fg: var(--color-green-600);
   --color-success-soft: var(--color-green-50);
 
+  --color-highlight: var(--color-amber-200);
+  --color-highlight-strong: var(--color-amber-400);
   --color-info-fg: var(--color-violet-700);
   --color-info-soft: var(--color-violet-50);
 }
@@ -270,6 +272,12 @@
       transparent
     );
 
+    --color-highlight: color-mix(
+      in oklab,
+      var(--color-amber-500) 30%,
+      transparent
+    );
+    --color-highlight-strong: var(--color-amber-700);
     --color-info-fg: var(--color-violet-300);
     --color-info-soft: color-mix(
       in oklab,
@@ -278,8 +286,69 @@
     );
   }
 
+  /* The reader can be set light inside a dark app, so the light values are repeated for a subtree. */
+  [data-theme="light"] {
+    color-scheme: light;
+    --color-canvas: var(--color-gray-50);
+    --color-surface: var(--color-white);
+    --color-surface-muted: var(--color-gray-100);
+    --color-surface-strong: var(--color-gray-200);
+
+    --color-fg: var(--color-gray-900);
+    --color-fg-soft: var(--color-gray-800);
+    --color-fg-muted: var(--color-gray-600);
+    --color-fg-faint: var(--color-gray-500);
+
+    --color-line: var(--color-gray-200);
+    --color-line-strong: var(--color-gray-400);
+
+    --color-accent: var(--color-blue-600);
+    --color-accent-hover: var(--color-blue-700);
+    --color-accent-fg: var(--color-blue-700);
+    --color-accent-soft: var(--color-blue-50);
+
+    --color-highlight: var(--color-amber-200);
+    --color-highlight-strong: var(--color-amber-400);
+    --color-info-fg: var(--color-violet-700);
+    --color-info-soft: var(--color-violet-50);
+  }
+
+  /* A warm paper tone for reading, which some readers find easier on the eyes than white. */
+  [data-theme="sepia"] {
+    color-scheme: light;
+    --color-canvas: #f5edda;
+    --color-surface: #fbf5e7;
+    --color-surface-muted: #eee3c9;
+    --color-surface-strong: #e3d4b1;
+
+    --color-fg: #3b2c1e;
+    --color-fg-soft: #4b3a29;
+    --color-fg-muted: #6b5640;
+    --color-fg-faint: #8a735b;
+
+    --color-line: #e2d2ae;
+    --color-line-strong: #b59d77;
+
+    --color-accent: #8a5525;
+    --color-accent-hover: #74441a;
+    --color-accent-fg: #7a4718;
+    --color-accent-soft: color-mix(in oklab, #b07a3c 18%, transparent);
+    --color-on-accent: var(--color-white);
+
+    --color-highlight: #f0d488;
+    --color-highlight-strong: #ddaa45;
+    --color-info-fg: var(--color-violet-700);
+    --color-info-soft: var(--color-violet-50);
+  }
+
   body {
     background-color: var(--color-canvas);
     color: var(--color-fg);
   }
+}
+
+/* The word the dictionary pop-up shows in the reader, drawn without changing the text's markup. */
+::highlight(reader-word) {
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent-fg);
 }

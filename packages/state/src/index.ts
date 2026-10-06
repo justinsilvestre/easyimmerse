@@ -18,8 +18,13 @@ export type {
   PickedFile,
   PickedMediaFile,
 } from "./effects.ts";
+export {
+  documentFormatOf,
+  isDocumentFileName,
+} from "./mediaFileExtensions.ts";
 export type { PlayerRegistry } from "./playerRegistry.ts";
 export { createPlayerRegistry } from "./playerRegistry.ts";
+export type { ReaderLocation } from "./readingLocation.ts";
 export { createRecordingEffects } from "./recordingEffects.ts";
 export {
   selectChosenDictionaryFile,
@@ -32,6 +37,7 @@ export {
   selectPlayerDuration,
   selectPreference,
   selectPreferencesLoaded,
+  selectReadingLocation,
   selectTextScale,
   selectTheme,
 } from "./selectors.ts";

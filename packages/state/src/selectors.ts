@@ -29,6 +29,11 @@ export const selectCurrentMediaFileId = (state: RootState) =>
 export const selectChosenMediaFile = (state: RootState) =>
   state.app.chosenMediaFile;
 
+/** Returns the book's last reading place, null when it has none, or undefined until its stored place has been read. */
+export const selectReadingLocation =
+  (mediaFileId: string) => (state: RootState) =>
+    state.app.readingLocations[mediaFileId];
+
 export const selectChosenDictionaryFile = (state: RootState) =>
   state.app.chosenDictionaryFile;
 

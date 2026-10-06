@@ -9,6 +9,7 @@ import type {
   PickedMediaFile,
 } from "./effects.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
+import type { ReaderLocation } from "./readingLocation.ts";
 import { update } from "./update.ts";
 
 const pickedFile: PickedFile = {
@@ -20,6 +21,17 @@ const pickedMediaFile: PickedMediaFile = {
   name: "episode.mkv",
   source: { kind: "path", path: "/videos/episode.mkv" },
 };
+
+const location = { chapterIndex: 1, paragraphIndex: 4, offset: 10 };
+
+const withReadingLocation = (
+  mediaFileId: string,
+  stored: ReaderLocation | null,
+): AppState => ({
+  ...initialAppState,
+  currentMediaFileId: mediaFileId,
+  readingLocations: { [mediaFileId]: stored },
+});
 
 const pickedDictionaryFile: PickedDictionaryFile = {
   name: "jmdict.zip",
@@ -334,6 +346,7 @@ describe("update", () => {
           "textScale",
           "losslessAudio",
           "conversionNoticeDismissed",
+          "readerPreferences",
         ],
       },
     ]);
@@ -410,5 +423,95 @@ describe("update", () => {
     expect(effects).toEqual([
       { type: "savePreference", key: "textScale", value: "125" },
     ]);
+  });
+
+  describe("for the reading location", () => {
+    it("returns a loadReadingLocation effect for readingLocationLoadRequested", () => {
+      const [, effects] = update(
+        initialAppState,
+        actions.readingLocationLoadRequested("b1"),
+      );
+      expect(effects).toEqual([
+        { type: "loadReadingLocation", mediaFileId: "b1" },
+      ]);
+    });
+
+    it("returns no effects for readingLocationLoadRequested once the location is known", () => {
+      const [, effects] = update(
+        withReadingLocation("b1", null),
+        actions.readingLocationLoadRequested("b1"),
+      );
+      expect(effects).toEqual([]);
+    });
+
+    it("stores the loaded location for readingLocationLoaded", () => {
+      const [state] = update(
+        initialAppState,
+        actions.readingLocationLoaded("b1", location),
+      );
+      expect(state.readingLocations.b1).toEqual(location);
+    });
+
+    it("records a book without a stored location for readingLocationLoaded", () => {
+      const [state] = update(
+        initialAppState,
+        actions.readingLocationLoaded("b1", null),
+      );
+      expect(state.readingLocations.b1).toBeNull();
+    });
+
+    it("keeps a location reported before the stored one arrived for readingLocationLoaded", () => {
+      const [state] = update(
+        withReadingLocation("b1", location),
+        actions.readingLocationLoaded("b1", null),
+      );
+      expect(state.readingLocations.b1).toEqual(location);
+    });
+
+    it("stores the reported location for readingLocationReported", () => {
+      const moved = { ...location, offset: 80 };
+      const [state] = update(
+        withReadingLocation("b1", location),
+        actions.readingLocationReported("b1", moved),
+      );
+      expect(state.readingLocations.b1).toEqual(moved);
+    });
+
+    it("returns a saveReadingLocation effect for readingLocationReported in a new paragraph", () => {
+      const moved = { ...location, paragraphIndex: 5, offset: 0 };
+      const [, effects] = update(
+        withReadingLocation("b1", location),
+        actions.readingLocationReported("b1", moved),
+      );
+      expect(effects).toEqual([
+        { type: "saveReadingLocation", mediaFileId: "b1", location: moved },
+      ]);
+    });
+
+    it("returns no effects for readingLocationReported within the same paragraph", () => {
+      const [, effects] = update(
+        withReadingLocation("b1", location),
+        actions.readingLocationReported("b1", { ...location, offset: 80 }),
+      );
+      expect(effects).toEqual([]);
+    });
+
+    it("returns a saveReadingLocation effect with the last location for closeMedia", () => {
+      const [, effects] = update(
+        withReadingLocation("b1", location),
+        actions.closeMedia(),
+      );
+      expect(effects).toEqual([
+        { type: "saveReadingLocation", mediaFileId: "b1", location },
+      ]);
+    });
+
+    it("returns no effects for closeMedia when the open file has no reading location", () => {
+      const [, effects] = update(
+        withReadingLocation("b1", null),
+        actions.closeMedia(),
+      );
+      expect(effects).toEqual([]);
+    });
   });
 });

@@ -37,6 +37,23 @@ describe("createServerPreferenceStore", () => {
     });
   });
 
+  it("sends a save only after the key's earlier save has finished", async () => {
+    const fetchFn = vi.fn<typeof fetch>(() => new Promise(() => undefined));
+    const store = createServerPreferenceStore(server, fetchFn);
+    store.save("key", "1");
+    store.save("key", "2");
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends a save after the key's earlier save has failed", async () => {
+    const fetchFn = fakeFetch(new Response("nope", { status: 500 }));
+    const store = createServerPreferenceStore(server, fetchFn);
+    store.save("key", "1").catch(() => undefined);
+    await store.save("key", "2").catch(() => undefined);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
   it("loads the stored value", async () => {
     const fetchFn = fakeFetch(jsonResponse({ value: "true" }));
     const loaded = await createServerPreferenceStore(server, fetchFn).load("k");

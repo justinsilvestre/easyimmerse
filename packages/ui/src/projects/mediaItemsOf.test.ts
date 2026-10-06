@@ -1,4 +1,4 @@
-import type { Flashcard } from "@easyimmerse/types";
+import type { Flashcard, MediaFile } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { fixtureMediaFiles } from "../testSupport/fixtureResponses.ts";
@@ -17,10 +17,24 @@ function flashcardFrom(mediaFileId: string | null): Flashcard {
   };
 }
 
+function mediaFileNamed(name: string): MediaFile {
+  const [video] = fixtureMediaFiles.media_files;
+  if (!video) throw new Error("The fixture lists no media files.");
+  return { ...video, name };
+}
+
 describe("mediaItemsOf", () => {
   it("tells audio from video by the file name", () => {
     const items = mediaItemsOf(fixtureMediaFiles.media_files, []);
     expect(items.map((item) => item.kind)).toEqual(["video", "audio"]);
+  });
+
+  it("lists an ebook or a text file as an ebook", () => {
+    const items = mediaItemsOf(
+      [mediaFileNamed("book.epub"), mediaFileNamed("notes.txt")],
+      [],
+    );
+    expect(items.map((item) => item.kind)).toEqual(["ebook", "ebook"]);
   });
 
   it("counts the flashcards made from each file", () => {

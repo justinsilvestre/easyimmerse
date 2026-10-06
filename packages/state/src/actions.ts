@@ -5,6 +5,7 @@ import type {
   PickedFile,
   PickedMediaFile,
 } from "./effects.ts";
+import type { ReaderLocation } from "./readingLocation.ts";
 import type { Theme } from "./theme.ts";
 
 export const actions = {
@@ -47,6 +48,14 @@ export const actions = {
   openMedia: (mediaFileId: string) =>
     ({ type: "openMedia", mediaFileId }) as const,
   closeMedia: () => ({ type: "closeMedia" }) as const,
+  readingLocationLoadRequested: (mediaFileId: string) =>
+    ({ type: "readingLocationLoadRequested", mediaFileId }) as const,
+  readingLocationLoaded: (
+    mediaFileId: string,
+    location: ReaderLocation | null,
+  ) => ({ type: "readingLocationLoaded", mediaFileId, location }) as const,
+  readingLocationReported: (mediaFileId: string, location: ReaderLocation) =>
+    ({ type: "readingLocationReported", mediaFileId, location }) as const,
   preferenceToggled: (key: PreferenceKey) =>
     ({ type: "preferenceToggled", key }) as const,
   preferenceSet: (key: PreferenceKey, value: string) =>

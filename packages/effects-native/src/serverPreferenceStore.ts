@@ -9,19 +9,36 @@ export function createServerPreferenceStore(
   const request = (key: string, init: RequestInit) =>
     fetchFn(buildUrl(server, key), withAuthorization(server, init));
   return {
-    save: async (key, value) => {
+    save: oneAtATimePerKey(async (key, value) => {
       const response = await request(key, {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ value }),
       });
       assertOk(response, "save");
-    },
+    }),
     load: async (key) => {
       const response = await request(key, { method: "GET" });
       assertOk(response, "load");
       return readValue(await response.json());
     },
+  };
+}
+
+/**
+ * Sends each key's saves one after another.
+ * Requests sent together can reach the server in any order, and an earlier value would then overwrite a later one.
+ */
+function oneAtATimePerKey(
+  save: (key: string, value: string) => Promise<void>,
+): (key: string, value: string) => Promise<void> {
+  const lastSaves = new Map<string, Promise<void>>();
+  return (key, value) => {
+    const saving = (lastSaves.get(key) ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(() => save(key, value));
+    lastSaves.set(key, saving);
+    return saving;
   };
 }
 
