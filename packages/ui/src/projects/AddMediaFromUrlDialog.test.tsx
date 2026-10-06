@@ -1,6 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { AddMediaFromUrlDialog } from "./AddMediaFromUrlDialog.tsx";
+import {
+  exampleFailedJob,
+  exampleRunningJob,
+} from "./exampleMediaSourceJob.ts";
 
 afterEach(cleanup);
 
@@ -11,7 +15,8 @@ function renderDialog(
   render(
     <AddMediaFromUrlDialog
       sources={[{ name: "youtube" }]}
-      isAdding={false}
+      isStarting={false}
+      job={null}
       error={null}
       onAdd={(source, locator) => added.push([source, locator])}
       onCancel={() => undefined}
@@ -58,15 +63,47 @@ describe("AddMediaFromUrlDialog", () => {
     expect(screen.queryByLabelText("Source")).toBeNull();
   });
 
-  it("adds nothing more while the media is being fetched", () => {
-    const { added } = renderDialog({ isAdding: true });
+  it("adds nothing more while the fetch is being started", () => {
+    const { added } = renderDialog({ isStarting: true });
     typeLocator("https://youtu.be/abc");
     fireEvent.click(screen.getByRole("button", { name: "Adding…" }));
     expect(added).toEqual([]);
   });
 
-  it("shows why the last attempt failed", () => {
-    renderDialog({ error: "The video is private" });
-    expect(screen.getByRole("alert").textContent).toBe("The video is private");
+  it("shows the running fetch's latest step", () => {
+    renderDialog({ job: exampleRunningJob });
+    expect(screen.getByRole("status").textContent).toContain(
+      "downloading the video and subtitles",
+    );
+  });
+
+  it("fills the progress bar to the fetch's fraction", () => {
+    renderDialog({ job: exampleRunningJob });
+    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe(
+      "45",
+    );
+  });
+
+  it("lists what the plugin and its commands reported", () => {
+    renderDialog({ job: exampleRunningJob });
+    const lines = screen.getByRole("list", { name: "Log" });
+    expect(lines.textContent).toContain("[download]  45.0% of   48.21MiB");
+  });
+
+  it("shows why a fetch failed", () => {
+    renderDialog({ job: exampleFailedJob });
+    expect(screen.getByRole("alert").textContent).toContain("Private video");
+  });
+
+  it("opens the log of a failed fetch", () => {
+    renderDialog({ job: exampleFailedJob });
+    expect(screen.getByText("Log").closest("details")?.open).toBe(true);
+  });
+
+  it("shows why a fetch could not be started", () => {
+    renderDialog({ error: "The server has no media directory" });
+    expect(screen.getByRole("alert").textContent).toBe(
+      "The server has no media directory",
+    );
   });
 });
