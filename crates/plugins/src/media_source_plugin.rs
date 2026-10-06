@@ -9,7 +9,7 @@ use crate::compiled_plugin::CompiledPlugin;
 use crate::error::{PluginError, PluginErrorKind};
 use crate::execution_mode::ExecutionMode;
 use crate::grants::CapabilityGrants;
-use crate::host_state::{HostState, LogEntry};
+use crate::host_state::{HostEvent, HostState, LogEntry};
 use crate::limits::{HostLimits, reset_fuel};
 use crate::package::PluginPackage;
 
@@ -62,6 +62,13 @@ impl MediaSourcePlugin {
         let progress = self.store.data_mut().take_progress();
         let resolved = outcome.map_err(to_error_kind)?;
         Ok((to_resolved_media(resolved), progress))
+    }
+
+    /// Installs the listener that hears each log entry, progress report, and command of
+    /// the plugin's calls as it happens, replacing any earlier one. The entries and
+    /// reports are still collected for `take_log` and `resolve`.
+    pub fn listen(&mut self, listener: impl FnMut(HostEvent) + Send + 'static) {
+        self.store.data_mut().listener = Some(Box::new(listener));
     }
 
     /// Removes and returns the log entries the plugin has written so far.

@@ -3,7 +3,7 @@ use easyimmerse_plugin_api::base::easyimmerse::plugin::log::{
     Host, ProgressEvent as WitProgressEvent,
 };
 
-use crate::host_state::{HostState, LogEntry, LogLevel};
+use crate::host_state::{HostEvent, HostState, LogEntry, LogLevel};
 
 impl Host for HostState {
     fn info(&mut self, message: String) -> wasmtime::Result<()> {
@@ -26,16 +26,20 @@ impl Host for HostState {
 
     fn progress(&mut self, event: WitProgressEvent) -> wasmtime::Result<()> {
         tracing::debug!(target: "plugin", fraction = event.fraction, "{}", event.message);
-        self.progress.push(ProgressEvent {
+        let event = ProgressEvent {
             fraction: event.fraction,
             message: event.message,
-        });
+        };
+        self.progress.push(event.clone());
+        self.emit(HostEvent::Progress(event));
         Ok(())
     }
 }
 
 impl HostState {
     fn push_log(&mut self, level: LogLevel, message: String) {
-        self.log.push(LogEntry { level, message });
+        let entry = LogEntry { level, message };
+        self.log.push(entry.clone());
+        self.emit(HostEvent::Log(entry));
     }
 }

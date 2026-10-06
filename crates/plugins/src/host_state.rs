@@ -6,7 +6,8 @@ use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 use crate::grants::CapabilityGrants;
 
 /// Everything the host keeps for one plugin instance: the WASI context, the
-/// resource limits, the capability grants, and what the plugin has reported.
+/// resource limits, the capability grants, what the plugin has reported, and the
+/// listener that hears each event as it happens.
 pub struct HostState {
     pub wasi: WasiCtx,
     pub table: ResourceTable,
@@ -14,7 +15,33 @@ pub struct HostState {
     pub grants: CapabilityGrants,
     pub log: Vec<LogEntry>,
     pub progress: Vec<ProgressEvent>,
+    pub listener: Option<HostListener>,
 }
+
+/// Something that happened during a call into the plugin, reported as it happens.
+#[derive(Debug, Clone, PartialEq)]
+pub enum HostEvent {
+    Log(LogEntry),
+    Progress(ProgressEvent),
+    /// The plugin asked for a command, which the host is now running.
+    CommandStarted {
+        command: String,
+        args: Vec<String>,
+    },
+    /// A line the running command wrote to its standard output or error.
+    CommandOutput {
+        command: String,
+        line: String,
+    },
+    CommandFinished {
+        command: String,
+        exit_code: i32,
+        elapsed_ms: u64,
+    },
+}
+
+/// Hears each event of a plugin call. It runs on the thread making the call.
+pub type HostListener = Box<dyn FnMut(HostEvent) + Send>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogEntry {
@@ -39,6 +66,14 @@ impl HostState {
             grants,
             log: Vec::new(),
             progress: Vec::new(),
+            listener: None,
+        }
+    }
+
+    /// Hands the event to the listener, when one is installed.
+    pub fn emit(&mut self, event: HostEvent) {
+        if let Some(listener) = &mut self.listener {
+            listener(event);
         }
     }
 
