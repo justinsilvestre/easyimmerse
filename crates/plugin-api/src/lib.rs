@@ -35,6 +35,23 @@ pub mod hello {
     });
 }
 
+/// Bindings for the `media-source-plugin` world, which exports `media-source`.
+pub mod media_source {
+    wasmtime::component::bindgen!({
+        path: "wit",
+        world: "media-source-plugin",
+        imports: { default: trappable },
+        with: {
+            "easyimmerse:plugin/types": crate::base::easyimmerse::plugin::types,
+            "easyimmerse:plugin/log": crate::base::easyimmerse::plugin::log,
+            "easyimmerse:plugin/http": crate::base::easyimmerse::plugin::http,
+            "easyimmerse:plugin/fs": crate::base::easyimmerse::plugin::fs,
+            "easyimmerse:plugin/run-command": crate::base::easyimmerse::plugin::run_command,
+            "easyimmerse:plugin/secrets": crate::base::easyimmerse::plugin::secrets,
+        },
+    });
+}
+
 /// Bindings for the test-only `media-source-fixture` world, which exports
 /// `media-source` and `sandbox-probe`.
 pub mod media_source_fixture {

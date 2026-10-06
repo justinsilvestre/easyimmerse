@@ -9,13 +9,24 @@ use utoipa::ToSchema;
 #[ts(export)]
 pub struct MediaLocator(pub String);
 
+/// What a media-source plugin fetched for a locator: the media file it wrote, and the
+/// subtitle files beside it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct ResolvedMedia {
     pub title: String,
     pub media_path: String,
-    pub subtitle_paths: Vec<String>,
+    pub subtitles: Vec<ResolvedSubtitle>,
     pub duration_ms: Option<u64>,
+}
+
+/// A subtitle file a media-source plugin wrote, with its language when the source names one.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct ResolvedSubtitle {
+    pub path: String,
+    /// A language tag such as "en" or "ja", as the source reports it.
+    pub language: Option<String>,
 }
 
 /// Progress of a long-running provider operation, with `fraction` between 0 and 1.

@@ -9,7 +9,7 @@ pub mod text_to_speech;
 pub mod translation;
 
 pub use alignment::{AlignmentRequest, AlignmentResponse};
-pub use media_source::{MediaLocator, ProgressEvent, ResolvedMedia};
+pub use media_source::{MediaLocator, ProgressEvent, ResolvedMedia, ResolvedSubtitle};
 pub use speech_to_text::{SpeechToTextRequest, SpeechToTextResponse};
 pub use text_to_speech::{TextToSpeechRequest, TextToSpeechResponse};
 pub use translation::{TranslationRequest, TranslationResponse};
