@@ -1254,6 +1254,51 @@
         ]
       }
     },
+    "/plugins": {
+      "get": {
+        "tags": [
+          "plugins"
+        ],
+        "operationId": "listPlugins",
+        "responses": {
+          "200": {
+            "description": "The installed plugins, by name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPluginsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/preferences/{key}": {
       "get": {
         "tags": [
@@ -2110,6 +2155,113 @@
           },
           "421": {
             "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/from-source": {
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Asks a media-source plugin to fetch the media at a locator, such as a URL, into the\nserver's media directory, then adds it to the project with the subtitle files the plugin\nfetched beside it. A subtitle file in the project's target language or translation\nlanguage takes that role at once. The request lasts as long as the fetch.",
+        "operationId": "addMediaFromSource",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMediaFromSourceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The added media file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaFile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The plugin did not understand the locator (code `invalid_locator`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no installed media-source plugin of that name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The plugin failed to fetch the media (code `media_source_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The server has no media directory for plugins to fetch into (code `media_dir_unavailable`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3664,6 +3816,22 @@
           }
         }
       },
+      "AddMediaFromSourceRequest": {
+        "type": "object",
+        "required": [
+          "plugin",
+          "locator"
+        ],
+        "properties": {
+          "locator": {
+            "$ref": "#/components/schemas/MediaLocator"
+          },
+          "plugin": {
+            "type": "string",
+            "description": "The name of an installed media-source plugin."
+          }
+        }
+      },
       "AddSubtitleTrackRequest": {
         "type": "object",
         "required": [
@@ -4586,6 +4754,27 @@
           }
         }
       },
+      "InstalledPlugin": {
+        "type": "object",
+        "description": "A plugin the server found in its plugin directory.",
+        "required": [
+          "name",
+          "version",
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "The capability the plugin exports, as its manifest names it, such as `media-source`."
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
       "IpaTranscription": {
         "type": "object",
         "required": [
@@ -4729,6 +4918,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MediaFile"
+            }
+          }
+        }
+      },
+      "ListPluginsResponse": {
+        "type": "object",
+        "required": [
+          "plugins"
+        ],
+        "properties": {
+          "plugins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InstalledPlugin"
             }
           }
         }
@@ -4942,6 +5145,10 @@
           }
         ],
         "description": "Where the bytes of a media file come from.\n\nThe `path` variant names a file on the machine running the server. The `browser_file`\nvariant describes a file the web app holds in memory; the server never sees its bytes,\nso it records only what identifies the file when the user picks it again."
+      },
+      "MediaLocator": {
+        "type": "string",
+        "description": "Identifies a media item at an external source, in whatever form the source's plugin\nunderstands, such as a URL."
       },
       "NewFlashcard": {
         "type": "object",
