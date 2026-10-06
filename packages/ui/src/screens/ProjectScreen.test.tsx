@@ -168,6 +168,54 @@ describe("ProjectScreen", () => {
     );
   });
 
+  it("offers no URL entry while no media-source plugin is installed", async () => {
+    renderProject();
+    await screen.findByRole("button", { name: "Add media" });
+    expect(screen.queryByRole("button", { name: "Add from URL" })).toBeNull();
+  });
+
+  it("adds media from a URL through a media-source plugin and opens it", async () => {
+    const client = createFakeBackendClient(
+      {
+        ...fixtureResponses,
+        "GET /dictionaries": { dictionaries: [] },
+        "GET /plugins": {
+          plugins: [
+            { name: "youtube", version: "0.1.0", kind: "media-source" },
+          ],
+        },
+        "POST /projects/p1/media/from-source": fixtureMediaFiles.media_files[0],
+      },
+      directPlaybackRoutes,
+    );
+    const { store } = renderWithAppStore(
+      <ProjectScreen
+        projectId="p1"
+        onBack={() => undefined}
+        onEditSettings={() => undefined}
+      />,
+      client,
+      { server: fakeServer },
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add from URL" }),
+    );
+    fireEvent.change(screen.getByLabelText("URL or ID"), {
+      target: { value: "https://youtu.be/abc" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    await vi.waitFor(() =>
+      expect(selectCurrentMediaFileId(store.getState())).toBe("m1"),
+    );
+    const request = client.requests.find(
+      ({ path }) => path === "/projects/p1/media/from-source",
+    );
+    expect(request?.body).toEqual({
+      kind: "json",
+      value: { plugin: "youtube", locator: "https://youtu.be/abc" },
+    });
+  });
+
   it("opens the project's settings", async () => {
     let opened = false;
     renderProject(() => (opened = true));
