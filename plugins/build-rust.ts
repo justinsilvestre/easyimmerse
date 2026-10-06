@@ -5,7 +5,12 @@ import { fileURLToPath } from "node:url";
 
 /** Builds every Rust example plugin to a component and copies it into that plugin's `dist/`. */
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
-const pluginNames = ["hello-rust", "hello-loop", "fixture-media-source"];
+const pluginNames = [
+  "hello-rust",
+  "hello-loop",
+  "fixture-media-source",
+  "youtube-media-source",
+];
 
 buildComponents();
 for (const name of pluginNames) {

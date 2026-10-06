@@ -1,0 +1,78 @@
+use crate::easyimmerse::plugin::{
+    log,
+    types::{MediaMetadata, PluginError, ProgressEvent, ResolvedMedia, SubtitleTrack},
+};
+use crate::locator::video_url;
+use crate::ytdlp::{Description, Download, describe, download};
+
+/// The suffix yt-dlp gives the automatic captions in the video's own language.
+const ORIGINAL_SUFFIX: &str = "-orig";
+/// YouTube lists the live chat replay among the subtitles.
+const LIVE_CHAT: &str = "live_chat";
+
+pub fn resolve(locator: &str, output_dir: &str) -> Result<ResolvedMedia, PluginError> {
+    let url = video_url(locator)?;
+    report(0.0, "reading the video's description");
+    let description = describe(&url)?;
+    let languages = languages_to_fetch(&description);
+    report(0.1, "downloading the video and subtitles");
+    let downloaded = download(&url, output_dir, &languages)?;
+    report(1.0, "downloaded");
+    Ok(resolved_media(description, downloaded))
+}
+
+/// Every subtitle track the uploader provided, except the live chat, and the automatic
+/// captions in the video's own language. The automatic translations are left out.
+fn languages_to_fetch(description: &Description) -> Vec<String> {
+    let manual = description
+        .subtitle_languages
+        .iter()
+        .filter(|language| *language != LIVE_CHAT)
+        .cloned();
+    let original_captions = description
+        .caption_languages
+        .iter()
+        .filter(|language| language.ends_with(ORIGINAL_SUFFIX))
+        .cloned();
+    manual.chain(original_captions).collect()
+}
+
+fn resolved_media(description: Description, downloaded: Download) -> ResolvedMedia {
+    let (subtitle_tracks, subtitle_paths): (Vec<_>, Vec<_>) = downloaded
+        .subtitles
+        .into_iter()
+        .filter_map(|(requested, subtitle)| {
+            let path = subtitle.filepath?;
+            let track = SubtitleTrack {
+                language: Some(language_tag(&requested)),
+                url: subtitle.url,
+            };
+            Some((track, path))
+        })
+        .unzip();
+    ResolvedMedia {
+        metadata: MediaMetadata {
+            title: description.title,
+            duration_ms: description.duration_ms,
+            media_url: description.webpage_url,
+        },
+        subtitle_tracks,
+        media_path: downloaded.media_path,
+        subtitle_paths,
+    }
+}
+
+/// The language of a requested subtitle: `ja-orig` is the original captions in `ja`.
+fn language_tag(requested: &str) -> String {
+    requested
+        .strip_suffix(ORIGINAL_SUFFIX)
+        .unwrap_or(requested)
+        .to_string()
+}
+
+fn report(fraction: f32, message: &str) {
+    log::progress(&ProgressEvent {
+        fraction,
+        message: message.to_string(),
+    });
+}
