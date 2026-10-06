@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use easyimmerse_core::providers::media_source::ResolvedMedia;
 use easyimmerse_plugins::{
-    CapabilityGrants, ExecutionMode, HostLimits, LogLevel, MediaSourcePlugin, PluginError,
+    CapabilityGrants, ExecutionMode, HostEvent, HostLimits, MediaSourcePlugin, PluginError,
     PluginKind, PluginPackage,
 };
 
@@ -61,12 +61,13 @@ fn package_dirs(dir: &Path) -> Vec<PathBuf> {
 }
 
 /// Runs the plugin's `resolve` on the current thread, granting it `output_dir` to write
-/// into, the hosts its manifest lists, and the executables it bundles. What the plugin
-/// logs is forwarded to the server's log.
+/// into, the hosts its manifest lists, and the executables it bundles. The listener hears
+/// what the plugin and its commands report as it happens; the host logs it as well.
 pub fn resolve_media(
     package: &PluginPackage,
     locator: &str,
     output_dir: &Path,
+    listener: impl FnMut(HostEvent) + Send + 'static,
 ) -> Result<ResolvedMedia, PluginError> {
     let grants = CapabilityGrants {
         allowed_hosts: package.manifest.allowed_hosts.clone(),
@@ -78,21 +79,17 @@ pub fn resolve_media(
         fuel: MEDIA_SOURCE_FUEL,
         ..HostLimits::default()
     };
-    let mut plugin = MediaSourcePlugin::load(package, grants, ExecutionMode::from_env(), limits)?;
-    let outcome = plugin.resolve(locator, &output_dir.to_string_lossy());
-    forward_log(&package.manifest.name, plugin.take_log());
-    let (resolved, _progress) = outcome?;
+    let mode = ExecutionMode::from_env();
+    tracing::debug!(
+        plugin = package.manifest.name,
+        version = package.manifest.version,
+        mode = mode.name(),
+        "loading the plugin"
+    );
+    let mut plugin = MediaSourcePlugin::load(package, grants, mode, limits)?;
+    plugin.listen(listener);
+    let (resolved, _progress) = plugin.resolve(locator, &output_dir.to_string_lossy())?;
     Ok(resolved)
-}
-
-fn forward_log(plugin: &str, entries: Vec<easyimmerse_plugins::LogEntry>) {
-    for entry in entries {
-        match entry.level {
-            LogLevel::Info => tracing::info!(plugin, "{}", entry.message),
-            LogLevel::Warn => tracing::warn!(plugin, "{}", entry.message),
-            LogLevel::Error => tracing::error!(plugin, "{}", entry.message),
-        }
-    }
 }
 
 /// The directory a plugin fetched `path` into, when `path` lies in one: the media directory

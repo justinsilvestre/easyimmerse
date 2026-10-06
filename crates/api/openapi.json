@@ -2176,7 +2176,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Asks a media-source plugin to fetch the media at a locator, such as a URL, into the\nserver's media directory, then adds it to the project with the subtitle files the plugin\nfetched beside it. A subtitle file in the project's target language or translation\nlanguage takes that role at once. The request lasts as long as the fetch.",
+        "summary": "Starts fetching the media at a locator, such as a URL, through a media-source plugin\ninto the server's media directory. The answer is the running job; poll it with\n`getMediaSourceJob` until it is done or has failed. Once done, the media file is in\nthe project with the subtitle files the plugin fetched beside it, and a subtitle file in\nthe project's target language or translation language has that role at once.",
         "operationId": "addMediaFromSource",
         "parameters": [
           {
@@ -2200,22 +2200,12 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "The added media file",
+          "202": {
+            "description": "The job fetching the media, still running",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MediaFile"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The plugin did not understand the locator (code `invalid_locator`)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
+                  "$ref": "#/components/schemas/MediaSourceJob"
                 }
               }
             }
@@ -2250,8 +2240,63 @@
               }
             }
           },
-          "502": {
-            "description": "The plugin failed to fetch the media (code `media_source_failed`)",
+          "503": {
+            "description": "The server has no media directory for plugins to fetch into (code `media_dir_unavailable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/from-source/{job_id}": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "operationId": "getMediaSourceJob",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "The job id, from the answer that started it",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The job, with its progress and log so far, and its outcome once it has one",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaSourceJob"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
             "content": {
               "application/json": {
                 "schema": {
@@ -2260,8 +2305,18 @@
               }
             }
           },
-          "503": {
-            "description": "The server has no media directory for plugins to fetch into (code `media_dir_unavailable`)",
+          "404": {
+            "description": "No such job in the project; the server forgets old finished jobs and all jobs when it restarts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
             "content": {
               "application/json": {
                 "schema": {
@@ -5150,6 +5205,133 @@
         "type": "string",
         "description": "Identifies a media item at an external source, in whatever form the source's plugin\nunderstands, such as a URL."
       },
+      "MediaSourceJob": {
+        "type": "object",
+        "description": "A fetch through a media-source plugin, from its start to the media file it added or the\nerror it ended in.",
+        "required": [
+          "id",
+          "project_id",
+          "plugin",
+          "locator",
+          "status",
+          "log",
+          "started_at_ms"
+        ],
+        "properties": {
+          "error": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ApiError",
+                "description": "Why the job failed, once it has."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finished_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "id": {
+            "$ref": "#/components/schemas/MediaSourceJobId"
+          },
+          "locator": {
+            "$ref": "#/components/schemas/MediaLocator"
+          },
+          "log": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaSourceLogLine"
+            },
+            "description": "What the plugin and its commands reported, oldest first; only the latest lines are kept."
+          },
+          "media_file": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MediaFile",
+                "description": "The added media file, once the job is done."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plugin": {
+            "type": "string"
+          },
+          "progress": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ProgressEvent",
+                "description": "The plugin's latest progress report."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "project_id": {
+            "$ref": "#/components/schemas/ProjectId"
+          },
+          "started_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/MediaSourceJobStatus"
+          }
+        }
+      },
+      "MediaSourceJobId": {
+        "type": "string"
+      },
+      "MediaSourceJobStatus": {
+        "type": "string",
+        "enum": [
+          "running",
+          "done",
+          "failed"
+        ]
+      },
+      "MediaSourceLogLevel": {
+        "type": "string",
+        "enum": [
+          "info",
+          "warn",
+          "error",
+          "output"
+        ]
+      },
+      "MediaSourceLogLine": {
+        "type": "object",
+        "description": "One line of what a job reported.",
+        "required": [
+          "at_ms",
+          "level",
+          "message"
+        ],
+        "properties": {
+          "at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "level": {
+            "$ref": "#/components/schemas/MediaSourceLogLevel"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "NewFlashcard": {
         "type": "object",
         "description": "What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.\nSending the same id again replaces that flashcard, so that a retried request cannot create a second one.",
@@ -5448,6 +5630,23 @@
           "path": {
             "type": "string",
             "description": "A CSV, TSV or Tabfile table, or a directory holding one, read as an import of the same path would read it."
+          }
+        }
+      },
+      "ProgressEvent": {
+        "type": "object",
+        "description": "Progress of a long-running provider operation, with `fraction` between 0 and 1.",
+        "required": [
+          "fraction",
+          "message"
+        ],
+        "properties": {
+          "fraction": {
+            "type": "number",
+            "format": "float"
+          },
+          "message": {
+            "type": "string"
           }
         }
       },

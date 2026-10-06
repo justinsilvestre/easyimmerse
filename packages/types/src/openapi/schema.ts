@@ -413,12 +413,29 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Asks a media-source plugin to fetch the media at a locator, such as a URL, into the
-         *     server's media directory, then adds it to the project with the subtitle files the plugin
-         *     fetched beside it. A subtitle file in the project's target language or translation
-         *     language takes that role at once. The request lasts as long as the fetch.
+         * Starts fetching the media at a locator, such as a URL, through a media-source plugin
+         *     into the server's media directory. The answer is the running job; poll it with
+         *     `getMediaSourceJob` until it is done or has failed. Once done, the media file is in
+         *     the project with the subtitle files the plugin fetched beside it, and a subtitle file in
+         *     the project's target language or translation language has that role at once.
          */
         post: operations["addMediaFromSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/from-source/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getMediaSourceJob"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1078,6 +1095,44 @@ export interface components {
          */
         MediaLocator: string;
         /**
+         * @description A fetch through a media-source plugin, from its start to the media file it added or the
+         *     error it ended in.
+         */
+        MediaSourceJob: {
+            error?: components["schemas"]["ApiError"] | null;
+            /** Format: int64 */
+            finished_at_ms?: number | null;
+            id: components["schemas"]["MediaSourceJobId"];
+            locator: components["schemas"]["MediaLocator"];
+            /** @description What the plugin and its commands reported, oldest first; only the latest lines are kept. */
+            log: components["schemas"]["MediaSourceLogLine"][];
+            media_file?: components["schemas"]["MediaFile"] | null;
+            plugin: string;
+            progress?: components["schemas"]["ProgressEvent"] | null;
+            project_id: components["schemas"]["ProjectId"];
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch.
+             */
+            started_at_ms: number;
+            status: components["schemas"]["MediaSourceJobStatus"];
+        };
+        MediaSourceJobId: string;
+        /** @enum {string} */
+        MediaSourceJobStatus: "running" | "done" | "failed";
+        /** @enum {string} */
+        MediaSourceLogLevel: "info" | "warn" | "error" | "output";
+        /** @description One line of what a job reported. */
+        MediaSourceLogLine: {
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch.
+             */
+            at_ms: number;
+            level: components["schemas"]["MediaSourceLogLevel"];
+            message: string;
+        };
+        /**
          * @description What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.
          *     Sending the same id again replaces that flashcard, so that a retried request cannot create a second one.
          */
@@ -1151,6 +1206,12 @@ export interface components {
         PreviewLocalDictionaryTableRequest: {
             /** @description A CSV, TSV or Tabfile table, or a directory holding one, read as an import of the same path would read it. */
             path: string;
+        };
+        /** @description Progress of a long-running provider operation, with `fraction` between 0 and 1. */
+        ProgressEvent: {
+            /** Format: float */
+            fraction: number;
+            message: string;
         };
         /** @description A project with its settings and the counts the home screen shows. */
         Project: {
@@ -3074,22 +3135,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The added media file */
-            201: {
+            /** @description The job fetching the media, still running */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MediaFile"];
-                };
-            };
-            /** @description The plugin did not understand the locator (code `invalid_locator`) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
+                    "application/json": components["schemas"]["MediaSourceJob"];
                 };
             };
             /** @description Missing or invalid token */
@@ -3119,8 +3171,8 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description The plugin failed to fetch the media (code `media_source_failed`) */
-            502: {
+            /** @description The server has no media directory for plugins to fetch into (code `media_dir_unavailable`) */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3128,8 +3180,51 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description The server has no media directory for plugins to fetch into (code `media_dir_unavailable`) */
-            503: {
+        };
+    };
+    getMediaSourceJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The job id, from the answer that started it */
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The job, with its progress and log so far, and its outcome once it has one */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaSourceJob"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such job in the project; the server forgets old finished jobs and all jobs when it restarts */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
                 headers: {
                     [name: string]: unknown;
                 };
