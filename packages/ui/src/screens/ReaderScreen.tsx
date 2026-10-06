@@ -13,15 +13,20 @@ import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
+import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
+import { useReaderLookup } from "../lookup/useReaderLookup.ts";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { ReaderView } from "../reader/ReaderView.tsx";
 import { parseReaderPreferences } from "../reader/readerPreferences.ts";
 import { useOpenedBook } from "../reader/useOpenedBook.ts";
 import { useOpeningLocation } from "../reader/useOpeningLocation.ts";
+import type { ReaderWord } from "../reader/useWordPointer.ts";
 
 /**
  * The screen for reading one of the project's ebooks or text files.
- * The book opens where it was last left, in the appearance last chosen, and a clicked word starts a flashcard with its sentence as context.
+ * The book opens where it was last left, in the appearance last chosen.
+ * Words are looked up in the dictionary pop-up as in the subtitles, and a flashcard made from one is filled from its lookup, with its sentence as context.
  */
 export function ReaderScreen({
   project,
@@ -90,6 +95,28 @@ function BookReader({
     target: settings.target_language,
     translation: settings.translation_language,
   };
+  /**
+   * Starts a flashcard for a word with its sentence as context,
+   * filled from its lookup now or, through `lateFields`, once the lookup answers.
+   */
+  const startFlashcard = (
+    word: string,
+    source: ReaderWord | null,
+    lookupFields: LookupFlashcardFields | null,
+    lateFields?: Promise<LookupFlashcardFields | null>,
+  ) => {
+    const draft = draftFromText({
+      word,
+      sentence: source?.sentence ?? "",
+      mediaFile,
+      settings,
+    });
+    const started = lookupFields
+      ? { ...draft, content: { ...draft.content, ...lookupFields } }
+      : draft;
+    flashcards.start(started, lateFields);
+  };
+  const lookup = useReaderLookup(languages, startFlashcard);
   return (
     <ReaderView
       document={document}
@@ -97,25 +124,15 @@ function BookReader({
       language={document.language ?? settings.target_language}
       preferences={preferences}
       initialLocation={initialLocation}
+      lookup={lookup.popup && <DictionaryPopup {...lookup.popup.props} />}
+      lookupWord={lookup.lookupWord}
+      highlightedWord={lookup.highlightedWord}
       callbacks={{
+        ...lookup.wordGestures,
         onBack: () => dispatch(actions.closeMedia()),
-        onLookup: () =>
-          dispatch(
-            actions.notificationRequested(
-              "Dictionary lookups are not available yet.",
-            ),
-          ),
-        onWordHover: () => undefined,
-        onWordClick: (word) =>
-          flashcards.start(
-            draftFromText({
-              word: word.text,
-              sentence: word.sentence,
-              mediaFile,
-              settings,
-            }),
-          ),
-        onDismissLookup: () => undefined,
+        onLookup: lookup.openSearch,
+        onDismissLookup: lookup.close,
+        onPointerInsideLookupChange: lookup.popup?.onPointerInsideChange,
         onLocationChange: (location) =>
           dispatch(actions.readingLocationReported(mediaFile.id, location)),
         onPreferencesChange: (changed) =>

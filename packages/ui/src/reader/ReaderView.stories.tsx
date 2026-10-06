@@ -26,6 +26,7 @@ import {
   defaultReaderPreferences,
   type ReaderPreferences,
 } from "./readerPreferences.ts";
+import type { ReaderWord } from "./useWordPointer.ts";
 
 type ReaderViewProps = ComponentProps<typeof ReaderView>;
 
@@ -80,18 +81,19 @@ function popupFor(word: string, onClose: () => void) {
 
 /**
  * Keeps the preferences and the looked-up word in state, so that the appearance controls and the dictionary pop-up work in every story.
+ * A click opens the pop-up on a word, and resting the mouse on another moves it there.
  * "Ungeziefer" and "fressen" have entries.
  */
 function StatefulReader(args: ReaderViewProps) {
   const [preferences, setPreferences] = useState(args.preferences);
-  const [word, setWord] = useState<string | null>(null);
+  const [word, setWord] = useState<ReaderWord | null>(null);
   const [isInitialLookupOpen, setInitialLookupOpen] = useState(true);
   const close = () => {
     setWord(null);
     setInitialLookupOpen(false);
   };
   const lookup = word
-    ? popupFor(word, close)
+    ? popupFor(word.text, close)
     : isInitialLookupOpen
       ? args.lookup
       : undefined;
@@ -100,11 +102,17 @@ function StatefulReader(args: ReaderViewProps) {
       {...args}
       preferences={preferences}
       lookup={lookup}
+      lookupWord={word ?? undefined}
+      highlightedWord={word ? { word } : undefined}
       callbacks={{
         ...args.callbacks,
-        onWordHover: (hovered) => {
-          args.callbacks.onWordHover(hovered);
-          setWord(hovered.text);
+        onWordClick: (clicked, input) => {
+          args.callbacks.onWordClick(clicked, input);
+          setWord(clicked);
+        },
+        onWordHoverIntent: (hovered) => {
+          args.callbacks.onWordHoverIntent(hovered);
+          if (word) setWord(hovered);
         },
         onDismissLookup: () => {
           args.callbacks.onDismissLookup();
@@ -131,8 +139,10 @@ const meta = {
     callbacks: {
       onBack: fn(),
       onLookup: fn(),
-      onWordHover: fn(),
       onWordClick: fn(),
+      onWordDoubleClick: fn(),
+      onWordHoverIntent: fn(),
+      onWordHold: fn(),
       onDismissLookup: fn(),
       onLocationChange: fn(),
       onPreferencesChange: fn(),

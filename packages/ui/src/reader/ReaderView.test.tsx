@@ -42,8 +42,10 @@ function renderReader(
       callbacks={{
         onBack: ignore,
         onLookup: ignore,
-        onWordHover: ignore,
         onWordClick: ignore,
+        onWordDoubleClick: ignore,
+        onWordHoverIntent: ignore,
+        onWordHold: ignore,
         onDismissLookup: ignore,
         onLocationChange: overrides.onLocationChange ?? ignore,
         onPreferencesChange: overrides.onPreferencesChange ?? ignore,

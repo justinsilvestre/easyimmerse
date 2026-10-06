@@ -52,21 +52,22 @@ import { ScrolledChapter } from "./ScrolledChapter.tsx";
 import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
+import { useLookedUpHighlight } from "./useLookedUpHighlight.ts";
 import { useReaderKeys } from "./useReaderKeys.ts";
 import {
-  clearWordHighlight,
   type ReaderWord,
+  type ReaderWordGestures,
   useWordPointer,
 } from "./useWordPointer.ts";
 
-export type ReaderCallbacks = {
+export type ReaderCallbacks = ReaderWordGestures & {
   onBack: () => void;
   /** Opens the dictionary pop-up with a field to type a word into. */
   onLookup: () => void;
-  onWordHover: (word: ReaderWord) => void;
-  onWordClick: (word: ReaderWord) => void;
-  /** A click or tap beside the dictionary pop-up and off the words, which closes it. */
+  /** Escape, or a click or tap beside the dictionary pop-up and off the words, which closes it. */
   onDismissLookup: () => void;
+  /** The pointer entering or leaving the dictionary pop-up. */
+  onPointerInsideLookupChange?: (isInside: boolean) => void;
   onLocationChange: (location: ReaderLocation) => void;
   onPreferencesChange: (preferences: ReaderPreferences) => void;
 };
@@ -84,8 +85,16 @@ type ReaderViewProps = {
   initialPanel?: ReaderPanel;
   initialSearchQuery?: string;
   callbacks: ReaderCallbacks;
-  /** The dictionary pop-up, placed beside the word last looked up. */
+  /** The dictionary pop-up, placed beside `lookupWord`. */
   lookup?: ReactNode;
+  /** The word of the text the pop-up opened on, which it stands beside. */
+  lookupWord?: ReaderWord;
+  /**
+   * The word of the text the pop-up shows, which is highlighted as in the subtitles:
+   * a word written with spaces whole, and in a script without spaces the characters the lookup matched,
+   * or, until `matchedLength` is known, the character it looks up from.
+   */
+  highlightedWord?: { word: ReaderWord; matchedLength?: number };
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
   /** A panel laid over the text at the side, such as the flashcard editor. The reader's keys leave it alone. */
@@ -102,7 +111,7 @@ const sectionCharacterLimit = 250_000;
 /**
  * The screen for reading an ebook or a text file.
  * The text fills the window, set like a book; the toolbar and progress bar fade in when they are wanted.
- * Words are looked up by resting the pointer on them or tapping them, as in the subtitles.
+ * Words are looked up and turned into flashcards with the same gestures as in the subtitles.
  */
 export function ReaderView(props: ReaderViewProps) {
   const { preferences, callbacks } = props;
@@ -120,7 +129,6 @@ export function ReaderView(props: ReaderViewProps) {
     }),
   );
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
-  const [wordRect, setWordRect] = useState<DOMRect | null>(null);
   const turner = useRef<PageTurner>(null);
   const searchInput = useRef<HTMLInputElement>(null);
   const isWide = useMediaQuery(wideScreenQuery);
@@ -161,9 +169,7 @@ export function ReaderView(props: ReaderViewProps) {
     reportLocation(state.location);
   }, [state.location]);
   const hasLookup = props.lookup != null;
-  useEffect(() => {
-    if (!hasLookup) clearWordHighlight();
-  }, [hasLookup]);
+  useLookedUpHighlight(props.highlightedWord);
 
   const jumpTo = (location: ReaderLocation) =>
     dispatch({ type: "jumped", location });
@@ -200,14 +206,10 @@ export function ReaderView(props: ReaderViewProps) {
   });
 
   const wordPointer = useWordPointer(chapterIndex, props.language, {
-    onWordHover: (word) => {
-      setWordRect(word.rect);
-      callbacks.onWordHover(word);
-    },
-    onWordClick: (word) => {
-      setWordRect(word.rect);
-      callbacks.onWordClick(word);
-    },
+    onWordClick: callbacks.onWordClick,
+    onWordDoubleClick: callbacks.onWordDoubleClick,
+    onWordHoverIntent: callbacks.onWordHoverIntent,
+    onWordHold: callbacks.onWordHold,
     onBlankClick: (event) => {
       if (hasLookup) return callbacks.onDismissLookup();
       const share = event.clientX / window.innerWidth;
@@ -338,7 +340,11 @@ export function ReaderView(props: ReaderViewProps) {
         onReveal={showChrome}
       />
       {props.lookup && (
-        <LookupAnchor wordRect={wordRect} isWide={isWide}>
+        <LookupAnchor
+          wordRect={props.lookupWord?.rect ?? null}
+          isWide={isWide}
+          onPointerInsideChange={callbacks.onPointerInsideLookupChange}
+        >
           {props.lookup}
         </LookupAnchor>
       )}

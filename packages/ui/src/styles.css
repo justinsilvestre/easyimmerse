@@ -347,7 +347,7 @@
   }
 }
 
-/* The word under the pointer in the reader, drawn without changing the text's markup. */
+/* The word the dictionary pop-up shows in the reader, drawn without changing the text's markup. */
 ::highlight(reader-word) {
   background-color: var(--color-accent-soft);
   color: var(--color-accent-fg);

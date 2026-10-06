@@ -135,8 +135,11 @@ export function useWordLookup<S>({
       if (followsPointer && !control.showsOccurrence(request))
         control.show(request);
     },
+    /** The passage of the word the pop-up opened on, kept while it looks up words inside it; null when it opened on its search field. */
+    shownSource: lookup.request?.source ?? null,
     startFlashcardFor,
     openSearch: control.openSearch,
+    close: control.close,
     leaveFor: control.leaveFor,
   };
 }
