@@ -15,6 +15,7 @@ pub mod media_support;
 pub mod media_tracks;
 pub mod media_waveform;
 pub mod openapi;
+pub mod plugins;
 pub mod preferences;
 pub mod projects;
 pub mod subtitles;

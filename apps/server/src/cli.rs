@@ -42,6 +42,14 @@ pub struct ServeArgs {
     /// Where converted media is cached. Without it, media is never converted.
     #[arg(long, env = "EASYIMMERSE_CACHE_DIR")]
     pub cache_dir: Option<PathBuf>,
+    /// Where installed plugins live, one package per subdirectory. Without it, or when the
+    /// directory is missing, no plugin is installed.
+    #[arg(long, env = "EASYIMMERSE_PLUGINS_DIR")]
+    pub plugins_dir: Option<PathBuf>,
+    /// Where media-source plugins put the media they fetch. Without it, media cannot be
+    /// added through a plugin.
+    #[arg(long, env = "EASYIMMERSE_MEDIA_DIR")]
+    pub media_dir: Option<PathBuf>,
     /// A `Host` header value clients will send, such as `192.168.1.5:8787`. Needed when the
     /// server is bound to `0.0.0.0` or `[::]`. May be repeated.
     #[arg(long = "expected-host")]

@@ -279,6 +279,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/plugins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPlugins"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/preferences/{key}": {
         parameters: {
             query?: never;
@@ -381,6 +397,28 @@ export interface paths {
          *     server's machine, which only a token allowed to read local paths may do.
          */
         post: operations["addMediaFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/from-source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Asks a media-source plugin to fetch the media at a locator, such as a URL, into the
+         *     server's media directory, then adds it to the project with the subtitle files the plugin
+         *     fetched beside it. A subtitle file in the project's target language or translation
+         *     language takes that role at once. The request lasts as long as the fetch.
+         */
+        post: operations["addMediaFromSource"];
         delete?: never;
         options?: never;
         head?: never;
@@ -643,6 +681,11 @@ export interface components {
             /** @description The name shown in the project's media list, usually the file name. */
             name: string;
             source: components["schemas"]["MediaFileSource"];
+        };
+        AddMediaFromSourceRequest: {
+            locator: components["schemas"]["MediaLocator"];
+            /** @description The name of an installed media-source plugin. */
+            plugin: string;
         };
         AddSubtitleTrackRequest: {
             format?: components["schemas"]["TimedTextFormat"] | null;
@@ -914,6 +957,13 @@ export interface components {
             path: string;
             tableLayout?: components["schemas"]["TableLayout"] | null;
         };
+        /** @description A plugin the server found in its plugin directory. */
+        InstalledPlugin: {
+            /** @description The capability the plugin exports, as its manifest names it, such as `media-source`. */
+            kind: string;
+            name: string;
+            version: string;
+        };
         IpaTranscription: {
             ipa: string;
             tags: string[];
@@ -948,6 +998,9 @@ export interface components {
         };
         ListMediaFilesResponse: {
             media_files: components["schemas"]["MediaFile"][];
+        };
+        ListPluginsResponse: {
+            plugins: components["schemas"]["InstalledPlugin"][];
         };
         ListProjectsResponse: {
             projects: components["schemas"]["Project"][];
@@ -1019,6 +1072,11 @@ export interface components {
             /** Format: int64 */
             size: number;
         };
+        /**
+         * @description Identifies a media item at an external source, in whatever form the source's plugin
+         *     understands, such as a URL.
+         */
+        MediaLocator: string;
         /**
          * @description What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.
          *     Sending the same id again replaces that flashcard, so that a retried request cannot create a second one.
@@ -2305,6 +2363,44 @@ export interface operations {
             };
         };
     };
+    listPlugins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The installed plugins, by name */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListPluginsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getPreference: {
         parameters: {
             query?: never;
@@ -2953,6 +3049,87 @@ export interface operations {
             };
             /** @description Unexpected Host header */
             421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addMediaFromSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMediaFromSourceRequest"];
+            };
+        };
+        responses: {
+            /** @description The added media file */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaFile"];
+                };
+            };
+            /** @description The plugin did not understand the locator (code `invalid_locator`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project, or no installed media-source plugin of that name */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The plugin failed to fetch the media (code `media_source_failed`) */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The server has no media directory for plugins to fetch into (code `media_dir_unavailable`) */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
@@ -5,6 +6,7 @@ use easyimmerse_storage::{Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
+use crate::plugins::PluginRegistry;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -14,6 +16,11 @@ pub struct AppState {
     pub probes: Option<Arc<ProbeCache>>,
     /// Converts media while it plays. None without ffmpeg or a cache directory.
     pub conversion: Option<ConversionService>,
+    /// The installed plugins. Empty without a plugin directory.
+    pub plugins: Arc<PluginRegistry>,
+    /// Where media-source plugins put what they fetch. None when the server has no media
+    /// directory, in which case media cannot be added through a plugin.
+    pub media_dir: Option<PathBuf>,
 }
 
 impl AppState {
@@ -28,7 +35,15 @@ impl AppState {
             config: Arc::new(config),
             probes: probes.map(Arc::new),
             conversion,
+            plugins: Arc::new(PluginRegistry::default()),
+            media_dir: None,
         }
+    }
+
+    pub fn with_plugins(mut self, plugins: PluginRegistry, media_dir: Option<PathBuf>) -> Self {
+        self.plugins = Arc::new(plugins);
+        self.media_dir = media_dir;
+        self
     }
 
     /// Runs a storage operation on the blocking thread pool, since SQLite calls block.

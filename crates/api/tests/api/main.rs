@@ -5,6 +5,7 @@ mod flashcards;
 mod media;
 mod media_conversion;
 mod openapi;
+mod plugins;
 mod preferences;
 mod projects;
 mod subtitles;
