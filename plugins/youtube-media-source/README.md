@@ -2,7 +2,9 @@
 
 A proof-of-concept media-source plugin that adds a YouTube video to a project: the video as MP4, with the subtitles the uploader provided and the automatic captions in the video's own language as WebVTT. It is here to show that a media-source plugin can carry a video all the way into the app, where it plays, its subtitles can be looked up, and flashcards can be made from it. It is not meant to be published.
 
-The plugin does no downloading itself. It asks the host to run its bundled `youtube` script, which runs [yt-dlp](https://github.com/yt-dlp/yt-dlp): once to read the title, the duration, and the subtitle languages, and once to download. The script runs the `yt-dlp` executable placed beside it in `bin/<target>/`, or the one on `PATH`.
+The plugin does no downloading itself. It asks the host to run its bundled `youtube` script, which runs [yt-dlp](https://github.com/yt-dlp/yt-dlp): once for its version, once to read the title, the duration, and the subtitle languages, and once to download. The script runs the `yt-dlp` executable placed beside it in `bin/<target>/`, or the one on `PATH`. Each of the last two commands prints one JSON object with every field the plugin needs, so that its answer does not depend on what else yt-dlp prints, and a field yt-dlp has no value for, such as the subtitles of a video without any, is simply absent.
+
+While it runs, the plugin logs the yt-dlp version, what it learned about the video, which subtitle languages it fetches, and the download's progress lines, all of which the app shows under "Log" in the dialog and the server writes to its log at the `plugin` target.
 
 ## What it needs
 
@@ -26,7 +28,7 @@ The desktop app reads its plugins from the `plugins/` directory beside its datab
 
 ## Limits of the proof of concept
 
-- The request blocks until the download ends, and nothing reports its progress to the page.
+- yt-dlp's own progress is reported line by line rather than as a fraction, so the dialog's bar jumps from the description step to done.
 - A video that needs signing in, such as an age-restricted one, fails, since the plugin passes no cookies.
 - The video is capped at 720p so that the download stays small.
 - Only the uploader's subtitles and the original-language automatic captions are fetched; automatic translations are not.

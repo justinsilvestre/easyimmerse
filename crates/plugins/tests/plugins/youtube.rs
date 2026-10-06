@@ -4,7 +4,8 @@
 use std::path::{Path, PathBuf};
 
 use easyimmerse_plugins::{
-    CapabilityGrants, HostLimits, MediaSourcePlugin, PluginError, PluginErrorKind, PluginPackage,
+    CapabilityGrants, HostLimits, LogLevel, MediaSourcePlugin, PluginError, PluginErrorKind,
+    PluginPackage,
 };
 
 const PLUGIN: &str = "youtube-media-source";
@@ -131,6 +132,43 @@ fn names_the_subtitle_files_the_tool_wrote() {
             fixture.output_path("media.en.vtt"),
             fixture.output_path("media.es-orig.vtt")
         ]
+    );
+}
+
+#[test]
+fn copes_with_a_video_that_has_no_subtitles() {
+    let mut fixture = Fixture::start();
+    let resolved = fixture
+        .resolve("https://www.youtube.com/watch?v=nosubs00000")
+        .expect("resolve");
+    assert_eq!(
+        (resolved.subtitles.len(), resolved.title.as_str()),
+        (0, "Video https://www.youtube.com/watch?v=nosubs00000")
+    );
+}
+
+#[test]
+fn logs_the_tools_version() {
+    let mut fixture = Fixture::start();
+    fixture.resolve(VIDEO_ID).expect("resolve");
+    let log = fixture.plugin.take_log();
+    assert!(
+        log.iter().any(|entry| entry.message == "yt-dlp 2026.08.19"),
+        "{log:?}"
+    );
+}
+
+#[test]
+fn warns_when_there_are_no_subtitles_to_fetch() {
+    let mut fixture = Fixture::start();
+    fixture
+        .resolve("https://www.youtube.com/watch?v=nosubs00000")
+        .expect("resolve");
+    let log = fixture.plugin.take_log();
+    assert!(
+        log.iter()
+            .any(|entry| entry.level == LogLevel::Warn && entry.message.contains("no subtitles")),
+        "{log:?}"
     );
 }
 

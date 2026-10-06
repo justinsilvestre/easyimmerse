@@ -1,4 +1,9 @@
 //! Running yt-dlp through the bundled `youtube` script, and reading what it prints.
+//!
+//! Each command asks yt-dlp to print one JSON object with every field the plugin needs,
+//! so that the answer does not depend on how many lines yt-dlp writes before it, such as
+//! download progress. A field yt-dlp has no value for is left out of the object, where a
+//! separate `--print` of it would have printed `NA`.
 
 use std::collections::BTreeMap;
 
@@ -11,18 +16,43 @@ const COMMAND: &str = "youtube";
 
 /// MP4 video up to 720p with M4A audio, merged by ffmpeg; else the best single MP4 file,
 /// which YouTube offers at 360p; else whatever is best.
-const FORMAT: &str = "bv*[ext=mp4][height<=720]+ba[ext=m4a]/b[ext=mp4]/b";
+pub const FORMAT: &str = "bv*[ext=mp4][height<=720]+ba[ext=m4a]/b[ext=mp4]/b";
 
 /// What yt-dlp reports about a video before downloading it.
+#[derive(Deserialize)]
 pub struct Description {
+    #[serde(default)]
     pub title: String,
-    pub duration_ms: Option<u64>,
+    /// Seconds, possibly with a fraction.
+    #[serde(default)]
+    pub duration: Option<f64>,
+    #[serde(default)]
     pub webpage_url: String,
-    /// The languages of the subtitles the uploader provided.
-    pub subtitle_languages: Vec<String>,
-    /// The languages of the automatic captions, as yt-dlp names them: the original
-    /// language carries an `-orig` suffix, the translations do not.
-    pub caption_languages: Vec<String>,
+    /// The subtitles the uploader provided, by language.
+    #[serde(default)]
+    pub subtitles: LanguageKeys,
+    /// The automatic captions, by language as yt-dlp names them: the original language
+    /// carries an `-orig` suffix, the translations do not.
+    #[serde(default)]
+    pub automatic_captions: LanguageKeys,
+}
+
+impl Description {
+    pub fn duration_ms(&self) -> Option<u64> {
+        self.duration
+            .map(|seconds| (seconds * 1000.0).round() as u64)
+    }
+}
+
+/// The keys of a captions object, with the values skipped: the values list every format
+/// of every language, which would be a lot to parse for nothing.
+#[derive(Default, Deserialize)]
+pub struct LanguageKeys(pub BTreeMap<String, serde::de::IgnoredAny>);
+
+impl LanguageKeys {
+    pub fn languages(&self) -> impl Iterator<Item = &str> {
+        self.0.keys().map(String::as_str)
+    }
 }
 
 /// A subtitle file yt-dlp wrote, keyed by the language it was requested as.
@@ -33,55 +63,34 @@ pub struct WrittenSubtitle {
     pub url: String,
 }
 
+#[derive(Deserialize)]
 pub struct Download {
-    pub media_path: String,
-    pub subtitles: BTreeMap<String, WrittenSubtitle>,
+    /// Where the media file landed after any merging.
+    pub filepath: String,
+    #[serde(default)]
+    pub requested_subtitles: Option<BTreeMap<String, WrittenSubtitle>>,
 }
 
-/// The keys of a captions object, with the values skipped: the values list every format
-/// of every language, which would be a lot to parse for nothing.
-#[derive(Deserialize)]
-struct LanguageKeys(BTreeMap<String, serde::de::IgnoredAny>);
+/// The version of yt-dlp the script runs, for the log.
+pub fn version() -> Result<String, PluginError> {
+    let output = run(&["--version"])?;
+    Ok(output.trim().to_string())
+}
 
 pub fn describe(url: &str) -> Result<Description, PluginError> {
     let output = run(&[
         "--no-playlist",
         "--skip-download",
         "--print",
-        "%(title)s",
-        "--print",
-        "%(duration)s",
-        "--print",
-        "%(webpage_url)s",
-        "--print",
-        "%(subtitles)j",
-        "--print",
-        "%(automatic_captions)j",
+        "%(.{title,duration,webpage_url,subtitles,automatic_captions})j",
         url,
     ])?;
-    let mut lines = output.lines();
-    let mut next = |what: &str| {
-        lines
-            .next()
-            .map(str::to_string)
-            .ok_or_else(|| PluginError::Other(format!("yt-dlp printed no {what}")))
-    };
-    let title = next("title")?;
-    let duration = next("duration")?;
-    let webpage_url = next("URL")?;
-    let subtitles = next("subtitles")?;
-    let captions = next("automatic captions")?;
-    Ok(Description {
-        title,
-        duration_ms: parse_duration_ms(&duration),
-        webpage_url,
-        subtitle_languages: parse_language_keys(&subtitles, "subtitles")?,
-        caption_languages: parse_language_keys(&captions, "automatic captions")?,
-    })
+    parse_report(&output, "the video's description")
 }
 
 /// Downloads the video as `media.<ext>` into `output_dir`, with the subtitles in
 /// `languages` beside it as `media.<language>.vtt`, and returns where the files landed.
+/// yt-dlp reports its progress line by line, which the host passes on as it arrives.
 pub fn download(
     url: &str,
     output_dir: &str,
@@ -91,6 +100,8 @@ pub fn download(
     let languages = languages.join(",");
     let mut args = vec![
         "--no-playlist",
+        "--progress",
+        "--newline",
         "-f",
         FORMAT,
         "--merge-output-format",
@@ -110,24 +121,30 @@ pub fn download(
     }
     args.extend([
         "--print",
-        "after_move:filepath",
-        "--print",
-        "after_move:%(requested_subtitles)j",
+        "after_move:%(.{filepath,requested_subtitles})j",
         url,
     ]);
     let output = run(&args)?;
-    let mut lines = output.lines();
-    let media_path = lines
-        .next()
-        .filter(|line| !line.is_empty())
-        .ok_or_else(|| PluginError::Other("yt-dlp printed no file path".to_string()))?
-        .to_string();
-    let subtitles: Option<BTreeMap<String, WrittenSubtitle>> =
-        serde_json::from_str(lines.next().unwrap_or("null"))
-            .map_err(|error| PluginError::Other(format!("yt-dlp's subtitles report: {error}")))?;
-    Ok(Download {
-        media_path,
-        subtitles: subtitles.unwrap_or_default(),
+    parse_report(&output, "the download")
+}
+
+/// Reads the JSON object yt-dlp printed: the last line that is one. Anything else on
+/// standard output, such as progress, comes before it.
+fn parse_report<T: serde::de::DeserializeOwned>(
+    stdout: &str,
+    what: &str,
+) -> Result<T, PluginError> {
+    let Some(line) = stdout.lines().rev().find(|line| line.starts_with('{')) else {
+        return Err(PluginError::Other(format!(
+            "yt-dlp printed no report of {what}; its output ended with: {}",
+            last_lines(stdout)
+        )));
+    };
+    serde_json::from_str(line).map_err(|error| {
+        PluginError::Other(format!(
+            "yt-dlp's report of {what} could not be read ({error}); it was: {}",
+            excerpt(line)
+        ))
     })
 }
 
@@ -142,8 +159,14 @@ fn run(args: &[&str]) -> Result<String, PluginError> {
         .lines()
         .rev()
         .find(|line| line.starts_with("ERROR:"))
-        .unwrap_or("yt-dlp failed without an error message")
-        .to_string();
+        .map(str::to_string)
+        .unwrap_or_else(|| {
+            format!(
+                "yt-dlp failed with exit code {} without an error message; its output ended with: {}",
+                output.exit_code,
+                last_lines(&output.stderr)
+            )
+        });
     if message.contains("is not a valid URL") || message.contains("Unsupported URL") {
         Err(PluginError::InvalidInput(message))
     } else {
@@ -151,17 +174,31 @@ fn run(args: &[&str]) -> Result<String, PluginError> {
     }
 }
 
-/// yt-dlp prints `NA` for a missing duration, and seconds with a fraction otherwise.
-fn parse_duration_ms(text: &str) -> Option<u64> {
-    let seconds: f64 = text.trim().parse().ok()?;
-    Some((seconds * 1000.0).round() as u64)
+/// The last few lines of a command's output, for an error message.
+fn last_lines(text: &str) -> String {
+    let lines: Vec<&str> = text
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect();
+    let tail = &lines[lines.len().saturating_sub(3)..];
+    if tail.is_empty() {
+        "nothing".to_string()
+    } else {
+        format!("{tail:?}")
+    }
 }
 
-/// yt-dlp prints `null` for a missing captions object.
-fn parse_language_keys(json: &str, what: &str) -> Result<Vec<String>, PluginError> {
-    let keys: Option<LanguageKeys> = serde_json::from_str(json)
-        .map_err(|error| PluginError::Other(format!("yt-dlp's {what} report: {error}")))?;
-    Ok(keys
-        .map(|keys| keys.0.into_keys().collect())
-        .unwrap_or_default())
+fn excerpt(line: &str) -> String {
+    const LIMIT: usize = 200;
+    if line.len() <= LIMIT {
+        line.to_string()
+    } else {
+        let end = line
+            .char_indices()
+            .map(|(index, _)| index)
+            .take_while(|index| *index <= LIMIT)
+            .last()
+            .unwrap_or(0);
+        format!("{}…", &line[..end])
+    }
 }
