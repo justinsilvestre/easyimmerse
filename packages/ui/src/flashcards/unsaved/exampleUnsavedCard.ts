@@ -7,17 +7,19 @@ import { exampleFlashcard } from "../exampleFlashcard.ts";
 import { createUnsavedCard, type UnsavedCard } from "./unsavedCard.ts";
 
 /**
- * A new card for `word` in the project p1 that could not be saved, for tests and stories.
- * Its flashcard id is the word unless given; its media file is m1 unless given, or null for none.
+ * A new card for `word` that could not be saved, for tests and stories.
+ * Its flashcard id is the word unless given; its project is p1 and its media file m1 unless given, or null for none.
  */
 export function exampleUnsavedCard(
   word: string,
   {
     flashcardId = word,
+    projectId = "p1",
     mediaFileId = "m1",
     isRejected = false,
   }: {
     flashcardId?: string;
+    projectId?: string;
     mediaFileId?: string | null;
     isRejected?: boolean;
   } = {},
@@ -35,5 +37,5 @@ export function exampleUnsavedCard(
     session: createCardSession(),
   });
   if (card === null) throw new Error("The card did not start.");
-  return createUnsavedCard(card, "p1", { isRejected });
+  return createUnsavedCard(card, projectId, { isRejected });
 }

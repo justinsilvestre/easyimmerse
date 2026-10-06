@@ -142,37 +142,54 @@ describe("createUnsavedCardStore", () => {
       store.requestOpen("c1");
       expect(store.takeOpening("m1")).toBeDefined();
     });
+  });
 
-    it("clears the mark when the request is given up", () => {
-      const store = storeWith(unsavedCard());
-      store.requestOpen("c1")?.giveUp();
-      expect(store.list()[0]?.isOpening).toBe(false);
-    });
-
-    it("keeps the card listed when the request is given up", () => {
-      const store = storeWith(unsavedCard());
-      store.requestOpen("c1")?.giveUp();
-      expect(store.list().map((listed) => listed.flashcardId)).toEqual(["c1"]);
-    });
-
-    it("tells that a request was given up while it held the mark", () => {
-      const store = storeWith(unsavedCard());
-      expect(store.requestOpen("c1")?.giveUp()).toBe(true);
-    });
-
-    it("leaves a later request's mark alone when an earlier one is given up", () => {
-      const store = storeWith(unsavedCard());
-      const earlier = store.requestOpen("c1");
+  describe("when openings are given up", () => {
+    /** A store listing c1 for m1, waiting to open, and c2 for m2, whose openings in m1 are then given up. */
+    function giveUpM1() {
+      const store = storeWith(
+        unsavedCard(),
+        unsavedCard({ flashcardId: "c2", mediaFileId: "m2" }),
+      );
       store.requestOpen("c1");
-      earlier?.giveUp();
-      expect(store.list()[0]?.isOpening).toBe(true);
+      store.requestOpen("c2");
+      const givenUp = store.giveUpOpenings((card) => card.mediaFileId === "m1");
+      return { store, givenUp };
+    }
+
+    it("clears the marks of the cards matched", () => {
+      const { store } = giveUpM1();
+      expect(store.list().map((listed) => listed.isOpening)).toEqual([
+        false,
+        true,
+      ]);
     });
 
-    it("gives up nothing once an editor has taken the card", () => {
+    it("keeps the cards listed", () => {
+      const { store } = giveUpM1();
+      expect(store.list()).toHaveLength(2);
+    });
+
+    it("returns the cards that lost their mark", () => {
+      const { givenUp } = giveUpM1();
+      expect(givenUp.map((card) => card.flashcardId)).toEqual(["c1"]);
+    });
+
+    it("returns nothing for a card already taken by its editor", () => {
       const store = storeWith(unsavedCard());
-      const opening = store.requestOpen("c1");
+      store.requestOpen("c1");
       store.takeOpening("m1");
-      expect(opening?.giveUp()).toBe(false);
+      expect(store.giveUpOpenings(() => true)).toEqual([]);
+    });
+
+    it("tells no listener when no mark was cleared", () => {
+      const store = storeWith(unsavedCard());
+      let changes = 0;
+      store.subscribe(() => {
+        changes += 1;
+      });
+      store.giveUpOpenings(() => true);
+      expect(changes).toBe(0);
     });
   });
 });

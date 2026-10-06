@@ -136,7 +136,7 @@ describe("segmentIdOf", () => {
 describe("flashcardsOnWaveform", () => {
   it("draws the saved flashcards while none is open", () => {
     const flashcards = [createFlashcard("f1"), createFlashcard("f2")];
-    expect(flashcardsOnWaveform(flashcards, null)).toEqual([
+    expect(flashcardsOnWaveform(flashcards, [], null)).toEqual([
       { id: "f1", content: exampleFlashcard },
       { id: "f2", content: exampleFlashcard },
     ]);
@@ -148,7 +148,7 @@ describe("flashcardsOnWaveform", () => {
       action: { type: "clipChanged", clip: movedClip },
     });
     expect(
-      flashcardsOnWaveform([createFlashcard("f1")], edited)[0]?.content
+      flashcardsOnWaveform([createFlashcard("f1")], [], edited)[0]?.content
         .audio_context,
     ).toEqual(movedClip);
   });
@@ -161,8 +161,32 @@ describe("flashcardsOnWaveform", () => {
       draft: createDraft(),
     });
     expect(
-      flashcardsOnWaveform([createFlashcard("f1")], edited).map(({ id }) => id),
+      flashcardsOnWaveform([createFlashcard("f1")], [], edited).map(
+        ({ id }) => id,
+      ),
     ).toEqual(["f1", newFlashcardSegmentId]);
+  });
+
+  const listedContent = { ...exampleFlashcard, audio_context: movedClip };
+
+  it("draws a saved flashcard listed as not saved with its listed edits", () => {
+    expect(
+      flashcardsOnWaveform(
+        [createFlashcard("f1")],
+        [{ id: "f1", content: listedContent }],
+        null,
+      )[0]?.content.audio_context,
+    ).toEqual(movedClip);
+  });
+
+  it("draws a listed flashcard that was never saved after the saved ones", () => {
+    expect(
+      flashcardsOnWaveform(
+        [createFlashcard("f1")],
+        [{ id: "c1", content: listedContent }],
+        null,
+      ).map(({ id }) => id),
+    ).toEqual(["f1", "c1"]);
   });
 });
 

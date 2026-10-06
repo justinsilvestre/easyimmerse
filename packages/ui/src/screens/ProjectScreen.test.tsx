@@ -1,9 +1,22 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
 import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import { createSharedSaving } from "../flashcards/sharedSaving.ts";
+import { exampleUnsavedCard } from "../flashcards/unsaved/exampleUnsavedCard.ts";
+import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
+import {
+  createFakeBackendClient,
+  fakeFailure,
+} from "../testSupport/createFakeBackendClient.ts";
+import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 import {
   fixtureMediaFiles,
   fixtureResponses,
@@ -130,5 +143,35 @@ describe("ProjectScreen", () => {
       screen.getAllByRole("button", { name: "Settings" })[0] as HTMLElement,
     );
     expect(opened).toBe(true);
+  });
+
+  it("tells that a flashcard waiting to open there could not be opened when the project fails to load", async () => {
+    const { store, playerRegistry } = createTestAppStore(
+      createFakeBackendClient({
+        ...fixtureResponses,
+        "GET /projects/p1": fakeFailure({ status: 500, message: "Gone" }),
+      }),
+    );
+    const sharedSaving = createSharedSaving();
+    sharedSaving.unsavedCards.put(exampleUnsavedCard("Hund"));
+    sharedSaving.unsavedCards.requestOpen("Hund");
+    render(
+      <AppStoreProviders
+        store={store}
+        playerRegistry={playerRegistry}
+        sharedSaving={sharedSaving}
+      >
+        <ProjectScreen
+          projectId="p1"
+          onBack={() => undefined}
+          onEditSettings={() => undefined}
+        />
+      </AppStoreProviders>,
+    );
+    expect(
+      await screen.findByText(
+        "Couldn't open the flashcard for “Hund”. It is still listed among the flashcards not saved.",
+      ),
+    ).toBeDefined();
   });
 });

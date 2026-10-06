@@ -20,10 +20,7 @@ import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { savedFlashcard } from "../testSupport/renderMediaScreen.tsx";
 import { exampleFlashcard } from "./exampleFlashcard.ts";
 import { createSharedSaving } from "./sharedSaving.ts";
-import {
-  unsavedCardOpenLimitMs,
-  useUnsavedCardActions,
-} from "./unsaved/useUnsavedCardActions.ts";
+import { useUnsavedCardActions } from "./unsaved/useUnsavedCardActions.ts";
 import { useMediaFlashcards } from "./useMediaFlashcards.ts";
 
 // Unmounting saves any card still waiting for its lookup after a delay,
@@ -386,6 +383,14 @@ describe("useMediaFlashcards", () => {
       expect(unsavedWords()).toEqual(["Hündin"]);
     });
 
+    it("draws the card on the waveform, though it was never saved", async () => {
+      const rendered = await failOffScreen();
+      const [listed] = rendered.unsavedCards();
+      expect(
+        rendered.result.current.segments.map((segment) => segment.id),
+      ).toContain(listed?.flashcardId);
+    });
+
     it("gives the card no notice of its own, since a retry may still succeed", async () => {
       const { notices } = await failOffScreen();
       expect(notices()).toEqual([]);
@@ -562,45 +567,6 @@ describe("useMediaFlashcards", () => {
           isActive: true,
         });
       });
-
-      describe("when its screen does not show within the limit", () => {
-        async function openUnreached() {
-          const rendered = await failAndClose();
-          vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-          rendered.actOnUnsaved("Hündin", "open");
-          await act(() => vi.advanceTimersByTimeAsync(unsavedCardOpenLimitMs));
-          return rendered;
-        }
-
-        it("tells that the card could not be opened", async () => {
-          const { notices } = await openUnreached();
-          expect(notices()).toEqual([
-            [
-              "Couldn't open the flashcard for “Hündin”. It is still listed among the flashcards not saved.",
-            ],
-          ]);
-        });
-
-        it("keeps the card listed", async () => {
-          const { unsavedWords } = await openUnreached();
-          expect(unsavedWords()).toEqual(["Hündin"]);
-        });
-
-        it("clears the card's opening mark", async () => {
-          const { unsavedCards } = await openUnreached();
-          expect(unsavedCards()[0]?.isOpening).toBe(false);
-        });
-      });
-
-      it("says nothing short of the limit", async () => {
-        const rendered = await failAndClose();
-        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-        rendered.actOnUnsaved("Hündin", "open");
-        await act(() =>
-          vi.advanceTimersByTimeAsync(unsavedCardOpenLimitMs - 100),
-        );
-        expect(rendered.notices()).toEqual([]);
-      });
     });
 
     it("offers Undo once an opened card is closed without saving, even one never changed", async () => {
@@ -730,6 +696,16 @@ describe("useMediaFlashcards", () => {
 
     const listedEndMs = (rendered: ReturnType<typeof renderFlashcards>) =>
       rendered.unsavedCards()[0]?.card.editor.content.audio_context?.end_ms;
+
+    it("draws a retimed listed card on the waveform where it was dragged", async () => {
+      const rendered = await failSavedCard();
+      retimeTo4000(rendered);
+      expect(
+        rendered.result.current.segments.find(
+          (segment) => segment.id === savedFlashcard.id,
+        )?.endMs,
+      ).toBe(4000);
+    });
 
     it("sends nothing for a retiming from the waveform", async () => {
       const rendered = await failSavedCard();

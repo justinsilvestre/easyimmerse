@@ -1,6 +1,10 @@
 import type { FlashcardContent } from "@easyimmerse/types";
 import type { EditedFlashcard } from "../editedFlashcard.ts";
 import type { UnsavedCard } from "./unsavedCard.ts";
+import {
+  withOpeningMarked,
+  withOpeningsCleared,
+} from "./unsavedCardOpenings.ts";
 
 export type ListedUnsavedCard = UnsavedCard & {
   /** Whether a retry the user asked for is under way. */
@@ -15,8 +19,6 @@ export type ListedUnsavedCard = UnsavedCard & {
  */
 export function createUnsavedCardStore() {
   let cards: readonly ListedUnsavedCard[] = [];
-  /** The latest request to open each card, so that giving up an earlier request leaves a later one alone. */
-  const openingRequests = new Map<string, symbol>();
   const listeners = new Set<() => void>();
   const set = (next: readonly ListedUnsavedCard[]) => {
     cards = next;
@@ -79,31 +81,20 @@ export function createUnsavedCardStore() {
         change(flashcardId, (listed) => withContent(listed, edit));
     },
     /**
-     * Marks a card to be opened in the editor of its media file, which takes it with `takeOpening`.
+     * Marks a card to be opened in the editor of its media file, which takes it with `takeOpening`, and returns it.
      * A media file's editor has at most one card waiting to open, and a card without a media file cannot be opened.
-     * Returns the card and `giveUp`, which clears the mark if this request still holds it and tells whether it did.
      */
     requestOpen(flashcardId: string) {
       const listed = find(flashcardId);
       if (!listed || listed.mediaFileId === null) return undefined;
-      const request = Symbol("opening request");
-      openingRequests.set(flashcardId, request);
-      set(
-        cards.map((other) =>
-          other.mediaFileId === listed.mediaFileId
-            ? { ...other, isOpening: other === listed }
-            : other,
-        ),
-      );
-      const giveUp = () => {
-        const isHeld =
-          openingRequests.get(flashcardId) === request &&
-          find(flashcardId)?.isOpening === true;
-        if (isHeld)
-          change(flashcardId, (other) => ({ ...other, isOpening: false }));
-        return isHeld;
-      };
-      return { listed, giveUp };
+      set(withOpeningMarked(cards, listed));
+      return listed;
+    },
+    /** Clears the opening marks of the cards `isGivenUp` matches, which stay listed, and returns those cards. */
+    giveUpOpenings(isGivenUp: (card: ListedUnsavedCard) => boolean) {
+      const cleared = withOpeningsCleared(cards, isGivenUp);
+      if (cleared.givenUp.length > 0) set(cleared.cards);
+      return cleared.givenUp;
     },
     /** Takes off the list, and hands to the editor of a media file, the card waiting to be opened there, if there is one. */
     takeOpening(mediaFileId: string): EditedFlashcard | undefined {

@@ -13,6 +13,7 @@ import type { EditorAction } from "./editFlashcard.ts";
 import { flashcardRetiming, type Retiming } from "./flashcardRetiming.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
 import { useUnsavedCards } from "./SharedSavingContext.tsx";
+import { useListedCardsOf } from "./unsaved/useListedCardsOf.ts";
 import { useOpeningOfUnsavedCards } from "./unsaved/useOpeningOfUnsavedCards.ts";
 import { useUnsavedCardActions } from "./unsaved/useUnsavedCardActions.ts";
 import { useEditedFlashcard } from "./useEditedFlashcard.ts";
@@ -23,7 +24,8 @@ const noFlashcards: readonly Flashcard[] = [];
 /**
  * The flashcards made from one media file, with the one open in the editor and the ways to save, delete, and retime them.
  * Saving a new card creates it; saving an existing one replaces it.
- * Retiming the open card changes only the editor's copy, which is saved with the rest of the editor; any other card is saved at once.
+ * Retiming the open card changes only the editor's copy, which is saved with the rest of the editor; a card listed as not saved changes only in its listed edits;
+ * any other card is saved at once. The waveform draws each card with the content the app holds for it.
  * A new card started before the media file is known to show pictures gains a screenshot once it is.
  * A new card whose word's lookup has yet to answer is saved only once it answers, fails or takes too long,
  * so that its definitions are saved with it.
@@ -56,7 +58,8 @@ export function useMediaFlashcards(
     openSession,
   );
   const { replaceOpenCard } = saving;
-  useOpeningOfUnsavedCards(mediaFileId, saving.reopen);
+  useOpeningOfUnsavedCards(projectId, mediaFileId, saving.reopen);
+  const listedCards = useListedCardsOf(mediaFileId);
   /**
    * Retimes a card that is not open. A card listed as not saved changes only in its listed edits, to be sent on Retry;
    * any other is saved at once, from its latest content, after any earlier work on it.
@@ -74,7 +77,9 @@ export function useMediaFlashcards(
   };
   return {
     flashcards,
-    segments: flashcardSegmentsOf(flashcardsOnWaveform(flashcards, edited)),
+    segments: flashcardSegmentsOf(
+      flashcardsOnWaveform(flashcards, listedCards, edited),
+    ),
     cueIndexes: flashcards.flatMap((flashcard) =>
       flashcard.cue_index === null ? [] : [flashcard.cue_index],
     ),
