@@ -51,7 +51,7 @@ fn resolved_media(info: LocatorInfo, media_path: String, subtitle_path: String) 
             media_url: info.media_url,
         },
         subtitle_tracks: vec![SubtitleTrack {
-            language: Some("eng".to_string()),
+            language: Some("en".to_string()),
             url: info.subtitle_url,
         }],
         media_path,

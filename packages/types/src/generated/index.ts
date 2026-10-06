@@ -83,6 +83,7 @@ export type * from "./ProjectId";
 export type * from "./ProjectSettings";
 export type * from "./Rational";
 export type * from "./ResolvedMedia";
+export type * from "./ResolvedSubtitle";
 export type * from "./Screenshot";
 export type * from "./SeparatedVerb";
 export type * from "./SpeechToTextRequest";
