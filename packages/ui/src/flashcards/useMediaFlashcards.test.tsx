@@ -20,7 +20,10 @@ import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { savedFlashcard } from "../testSupport/renderMediaScreen.tsx";
 import { exampleFlashcard } from "./exampleFlashcard.ts";
 import { createSharedSaving } from "./sharedSaving.ts";
-import { useUnsavedCardActions } from "./unsaved/useUnsavedCardActions.ts";
+import {
+  unsavedCardOpenLimitMs,
+  useUnsavedCardActions,
+} from "./unsaved/useUnsavedCardActions.ts";
 import { useMediaFlashcards } from "./useMediaFlashcards.ts";
 
 // Unmounting saves any card still waiting for its lookup after a delay,
@@ -229,6 +232,7 @@ function renderFlashcards({ savesFail = false, savesRejected = false } = {}) {
     dismissNotice,
     effects,
     unsavedWords,
+    unsavedCards: () => unsavedCardStore.list(),
     actOnUnsaved,
     renderScreen,
   };
@@ -558,6 +562,45 @@ describe("useMediaFlashcards", () => {
           isActive: true,
         });
       });
+
+      describe("when its screen does not show within the limit", () => {
+        async function openUnreached() {
+          const rendered = await failAndClose();
+          vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+          rendered.actOnUnsaved("Hündin", "open");
+          await act(() => vi.advanceTimersByTimeAsync(unsavedCardOpenLimitMs));
+          return rendered;
+        }
+
+        it("tells that the card could not be opened", async () => {
+          const { notices } = await openUnreached();
+          expect(notices()).toEqual([
+            [
+              "Couldn't open the flashcard for “Hündin”. It is still listed among the flashcards not saved.",
+            ],
+          ]);
+        });
+
+        it("keeps the card listed", async () => {
+          const { unsavedWords } = await openUnreached();
+          expect(unsavedWords()).toEqual(["Hündin"]);
+        });
+
+        it("clears the card's opening mark", async () => {
+          const { unsavedCards } = await openUnreached();
+          expect(unsavedCards()[0]?.isOpening).toBe(false);
+        });
+      });
+
+      it("says nothing short of the limit", async () => {
+        const rendered = await failAndClose();
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+        rendered.actOnUnsaved("Hündin", "open");
+        await act(() =>
+          vi.advanceTimersByTimeAsync(unsavedCardOpenLimitMs - 100),
+        );
+        expect(rendered.notices()).toEqual([]);
+      });
     });
 
     it("offers Undo once an opened card is closed without saving, even one never changed", async () => {
@@ -680,18 +723,24 @@ describe("useMediaFlashcards", () => {
       expect(unsavedWords()).toEqual([]);
     });
 
-    it("keeps a retiming from the waveform through a later Retry", async () => {
-      const rendered = await failSavedCard();
+    const retimeTo4000 = ({ result }: ReturnType<typeof renderFlashcards>) =>
       act(() =>
-        rendered.result.current.moveClipEndpoint(
-          savedFlashcard.id,
-          "end",
-          4000,
-        ),
+        result.current.moveClipEndpoint(savedFlashcard.id, "end", 4000),
       );
-      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
-      await rendered.letSavesThrough();
+
+    const listedEndMs = (rendered: ReturnType<typeof renderFlashcards>) =>
+      rendered.unsavedCards()[0]?.card.editor.content.audio_context?.end_ms;
+
+    it("sends nothing for a retiming from the waveform", async () => {
+      const rendered = await failSavedCard();
+      retimeTo4000(rendered);
       await flushPendingWork();
+      expect(rendered.held).toHaveLength(0);
+    });
+
+    it("sends a retiming from the waveform on the next Retry", async () => {
+      const rendered = await failSavedCard();
+      retimeTo4000(rendered);
       rendered.letSavesSucceed();
       rendered.actOnUnsaved("Hündin", "retry");
       await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
@@ -701,20 +750,73 @@ describe("useMediaFlashcards", () => {
       );
     });
 
-    it("holds a retiming from another mount of the screen until a Retry from the list has settled", async () => {
-      const rendered = await failSavedCard();
-      const other = rendered.renderScreen();
-      await vi.waitFor(() =>
-        expect(other.result.current.flashcards).toHaveLength(1),
-      );
-      rendered.actOnUnsaved("Hündin", "retry");
-      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
-      act(() =>
-        other.result.current.moveClipEndpoint(savedFlashcard.id, "end", 4000),
-      );
-      await flushPendingWork();
-      expect(rendered.held).toHaveLength(1);
+    describe("while a Retry is under way", () => {
+      async function retryHündin() {
+        const rendered = await failSavedCard();
+        rendered.actOnUnsaved("Hündin", "retry");
+        await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+        return rendered;
+      }
+
+      it("opens the card at once with the content being sent", async () => {
+        const { result } = await retryHündin();
+        act(() => result.current.open(savedFlashcard.id));
+        expect(result.current.edited?.editor.content.word).toBe("Hündin");
+      });
+
+      it("takes the card off the list once it opens", async () => {
+        const { result, unsavedWords } = await retryHündin();
+        act(() => result.current.open(savedFlashcard.id));
+        expect(unsavedWords()).toEqual([]);
+      });
+
+      it("leaves an opened card to the editor when the Retry fails", async () => {
+        const rendered = await retryHündin();
+        act(() => rendered.result.current.open(savedFlashcard.id));
+        await rendered.letSavesThrough();
+        await flushPendingWork();
+        expect(rendered.unsavedWords()).toEqual([]);
+      });
+
+      it("keeps the editor open on an opened card when the Retry succeeds", async () => {
+        const rendered = await retryHündin();
+        act(() => rendered.result.current.open(savedFlashcard.id));
+        rendered.letSavesSucceed();
+        await rendered.letSavesThrough();
+        await flushPendingWork();
+        expect(rendered.result.current.edited?.editor.content.word).toBe(
+          "Hündin",
+        );
+      });
+
+      it("keeps a retiming listed once the Retry succeeds without it", async () => {
+        const rendered = await retryHündin();
+        retimeTo4000(rendered);
+        rendered.letSavesSucceed();
+        await rendered.letSavesThrough();
+        await flushPendingWork();
+        expect(listedEndMs(rendered)).toBe(4000);
+      });
     });
+  });
+
+  it("holds a retiming from another mount of the screen until a save from the first has settled", async () => {
+    const rendered = renderFlashcards();
+    const { result, held } = rendered;
+    await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+    act(() => result.current.open(savedFlashcard.id));
+    act(() => result.current.edit(typeWord("Hündin")));
+    act(() => result.current.start(createDraft("Katze")));
+    await vi.waitFor(() => expect(held).toHaveLength(1));
+    const other = rendered.renderScreen();
+    await vi.waitFor(() =>
+      expect(other.result.current.flashcards).toHaveLength(1),
+    );
+    act(() =>
+      other.result.current.moveClipEndpoint(savedFlashcard.id, "end", 4000),
+    );
+    await flushPendingWork();
+    expect(held).toHaveLength(1);
   });
 
   it("takes a listed card off the list once a later save of it from the screen succeeds", async () => {

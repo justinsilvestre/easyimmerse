@@ -136,10 +136,43 @@ describe("createUnsavedCardStore", () => {
       expect(store.requestOpen("c1")).toBeUndefined();
     });
 
-    it("refuses a card while a retry of it is under way", () => {
+    it("opens a card while a retry of it is under way", () => {
       const store = storeWith(unsavedCard());
       store.retry("c1", sends);
-      expect(store.requestOpen("c1")).toBeUndefined();
+      store.requestOpen("c1");
+      expect(store.takeOpening("m1")).toBeDefined();
+    });
+
+    it("clears the mark when the request is given up", () => {
+      const store = storeWith(unsavedCard());
+      store.requestOpen("c1")?.giveUp();
+      expect(store.list()[0]?.isOpening).toBe(false);
+    });
+
+    it("keeps the card listed when the request is given up", () => {
+      const store = storeWith(unsavedCard());
+      store.requestOpen("c1")?.giveUp();
+      expect(store.list().map((listed) => listed.flashcardId)).toEqual(["c1"]);
+    });
+
+    it("tells that a request was given up while it held the mark", () => {
+      const store = storeWith(unsavedCard());
+      expect(store.requestOpen("c1")?.giveUp()).toBe(true);
+    });
+
+    it("leaves a later request's mark alone when an earlier one is given up", () => {
+      const store = storeWith(unsavedCard());
+      const earlier = store.requestOpen("c1");
+      store.requestOpen("c1");
+      earlier?.giveUp();
+      expect(store.list()[0]?.isOpening).toBe(true);
+    });
+
+    it("gives up nothing once an editor has taken the card", () => {
+      const store = storeWith(unsavedCard());
+      const opening = store.requestOpen("c1");
+      store.takeOpening("m1");
+      expect(opening?.giveUp()).toBe(false);
     });
   });
 });

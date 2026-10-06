@@ -32,6 +32,12 @@ export const flashcardNotices = {
     actions: [{ label: "Undo", onSelect: undo }],
     isTransient: true,
   }),
+  /** A card the user chose to open from the list of unsaved flashcards did not reach its editor, and stays listed. */
+  openFailed: (word: string): NoticeContent => ({
+    tone: "danger",
+    message: `Couldn't open the flashcard for “${word}”. It is still listed among the flashcards not saved.`,
+    isTransient: false,
+  }),
   undoFailed: (word: string): NoticeContent => ({
     tone: "danger",
     message: `Couldn't undo the save of the flashcard for “${word}”.`,

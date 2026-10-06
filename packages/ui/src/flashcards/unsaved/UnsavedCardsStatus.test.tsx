@@ -207,15 +207,15 @@ describe("UnsavedCardsStatus", () => {
       expect(status().textContent).toBe("1 flashcard not saved");
     });
 
-    it("marks Open unavailable", () => {
+    it("keeps Open available, since opening shows the content being sent", () => {
       retryHund();
-      expect(disabledOf("Open “Hund”")).toBe("true");
+      expect(disabledOf("Open “Hund”")).toBeNull();
     });
 
-    it("opens nothing on Open", () => {
+    it("opens the flashcard's media file on Open", () => {
       const { openedMediaFiles } = retryHund();
       fireEvent.click(screen.getByRole("button", { name: "Open “Hund”" }));
-      expect(openedMediaFiles).toEqual([]);
+      expect(openedMediaFiles).toEqual(["p1/m1"]);
     });
   });
 

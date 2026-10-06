@@ -57,9 +57,12 @@ export function useMediaFlashcards(
   );
   const { replaceOpenCard } = saving;
   useOpeningOfUnsavedCards(mediaFileId, saving.reopen);
-  /** Retimes a card that is not open: its saved content at once, after any earlier work on it, and its edits if it is listed as not saved. */
+  /**
+   * Retimes a card that is not open. A card listed as not saved changes only in its listed edits, to be sent on Retry;
+   * any other is saved at once, from its latest content, after any earlier work on it.
+   */
   const retimeNow = (id: string, retiming: Retiming) => {
-    unsavedCards.editContent(id, retiming);
+    if (unsavedCards.find(id)) return unsavedCards.editContent(id, retiming);
     const flashcard = flashcards.find((listed) => listed.id === id);
     if (!flashcard) return;
     const { content } = saving.latestOf(flashcard);

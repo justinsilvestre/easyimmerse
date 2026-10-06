@@ -102,10 +102,7 @@ function UnsavedCardItem({ card }: { card: ListedUnsavedCard }) {
         <Button
           size="sm"
           aria-label={`Open “${word}”`}
-          aria-disabled={card.isRetrying || undefined}
-          onClick={() => {
-            if (!card.isRetrying) actions.open(card.flashcardId);
-          }}
+          onClick={() => actions.open(card.flashcardId)}
         >
           Open
         </Button>
