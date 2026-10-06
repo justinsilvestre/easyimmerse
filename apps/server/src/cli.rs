@@ -35,6 +35,10 @@ pub struct ServeArgs {
     /// Inserts two example projects into an empty database.
     #[arg(long)]
     pub seed_placeholders: bool,
+    /// Gives the example projects a sample video with subtitles, and imports small dictionaries,
+    /// all from the fixtures of the repository this server was built from. Runs once per database.
+    #[arg(long)]
+    pub seed_sample_content: bool,
     /// Where converted media is cached. Without it, media is never converted.
     #[arg(long, env = "EASYIMMERSE_CACHE_DIR")]
     pub cache_dir: Option<PathBuf>,

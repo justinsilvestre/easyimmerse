@@ -14,7 +14,7 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
         .with_context(|| format!("could not bind {}", args.bind))?;
     let addr = listener.local_addr()?;
     let config = build_config(&args, addr);
-    let storage = open_storage(&args.db, args.seed_placeholders)?;
+    let storage = open_storage(&args)?;
     let options = ServeOptions {
         cache_dir: args.cache_dir.clone(),
     };
@@ -67,13 +67,19 @@ fn generate_and_print_token() -> String {
     token
 }
 
-fn open_storage(db: &str, seed_placeholders: bool) -> anyhow::Result<Storage> {
-    let storage = match db {
+fn open_storage(args: &ServeArgs) -> anyhow::Result<Storage> {
+    let storage = match args.db.as_str() {
         ":memory:" => Storage::open_in_memory()?,
         path => Storage::open(Path::new(path)).with_context(|| format!("could not open {path}"))?,
     };
-    if seed_placeholders {
+    if args.seed_placeholders {
         storage.seed_placeholder_projects()?;
+    }
+    if args.seed_sample_content {
+        let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+        storage
+            .seed_sample_content(&fixtures_dir)
+            .context("could not add the sample content")?;
     }
     Ok(storage)
 }
@@ -89,6 +95,7 @@ mod tests {
             db: ":memory:".to_string(),
             allow_local_paths: false,
             seed_placeholders: false,
+            seed_sample_content: false,
             cache_dir: None,
             expected_hosts: expected_hosts.iter().map(|host| host.to_string()).collect(),
         }

@@ -1,0 +1,2 @@
+# Sample fixtures are compared byte for byte, including CRLF line endings, so git must not convert them.
+fixtures/sample-*/** -text

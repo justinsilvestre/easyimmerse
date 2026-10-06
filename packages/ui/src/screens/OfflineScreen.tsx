@@ -49,8 +49,7 @@ export function OfflineScreen({ onBack }: { onBack: () => void }) {
           activeCueIndex={null}
           flashcardCueIndexes={[]}
           onSeek={() => undefined}
-          onWordHover={() => undefined}
-          onWordClick={() => undefined}
+          wordGestures={{}}
           onAddSubtitlesFile={openFile}
           onGenerateSubtitles={() => undefined}
         />

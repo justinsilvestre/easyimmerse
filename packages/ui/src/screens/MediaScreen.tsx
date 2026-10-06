@@ -1,16 +1,21 @@
 import { actions, selectPlayer } from "@easyimmerse/state";
-import type { Project } from "@easyimmerse/types";
-import { useReducer } from "react";
+import type { Cue, Project } from "@easyimmerse/types";
+import { useReducer, useRef } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
+import { saveStatusOf } from "../flashcards/saveStage.ts";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
 import { useScreenshotUrl } from "../flashcards/useScreenshotUrl.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
+import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
+import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
+import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
 import { findTranslationOf } from "../media/findCue.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
@@ -26,6 +31,8 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
 /**
  * The screen for watching or listening to one of the project's media files:
  * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
+ * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
+ * double-clicking a word starts a flashcard for it at once.
  */
 export function MediaScreen({
   project,
@@ -65,28 +72,39 @@ export function MediaScreen({
     targetSubtitlesId: subtitles.selection.target_track_id,
     translationSubtitlesId: subtitles.selection.translation_track_id,
   };
+  /**
+   * Starts a flashcard for a word from its cue, or else from the cue at the current time,
+   * filled from its lookup now or, through `lateFields`, once the lookup answers.
+   */
   const startFlashcard = (
     word: string,
-    cue = cueForFlashcard(subtitles.cues, currentMs),
+    wordCue: Cue | null,
+    lookupFields: LookupFlashcardFields | null,
+    lateFields?: Promise<LookupFlashcardFields | null>,
   ) => {
     if (mediaFile === null) return;
-    flashcards.start(
-      draftFromCue({
-        word,
-        cue,
-        translationCue: cue
-          ? findTranslationOf(cue, subtitles.translationCues)
-          : null,
-        mediaFile,
-        settings,
-        hasScreenshots,
-      }),
-    );
+    const cue = wordCue ?? cueForFlashcard(subtitles.cues, currentMs);
+    const draft = draftFromCue({
+      word,
+      cue,
+      translationCue: cue
+        ? findTranslationOf(cue, subtitles.translationCues)
+        : null,
+      mediaFile,
+      settings,
+      hasScreenshots,
+    });
+    const started = lookupFields
+      ? { ...draft, content: { ...draft.content, ...lookupFields } }
+      : draft;
+    flashcards.start(started, lateFields);
   };
   const languages = {
     target: settings.target_language,
     translation: settings.translation_language,
   };
+  const screenRef = useRef<HTMLDivElement>(null);
+  const lookup = useSubtitleLookup(languages, startFlashcard, screenRef);
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
     onSeek: (ms) => dispatch(actions.seekRequested(ms / 1000)),
@@ -107,6 +125,7 @@ export function MediaScreen({
   };
   return (
     <MediaView
+      ref={screenRef}
       media={{
         title: mediaFile?.name ?? "",
         language: settings.target_language,
@@ -140,16 +159,17 @@ export function MediaScreen({
       subtitleDisplay={panels.subtitleDisplay}
       playerCallbacks={playerCallbacks}
       onBack={() => dispatch(actions.closeMedia())}
-      onWordHover={() => undefined}
-      onWordClick={(word) => startFlashcard(word)}
-      onLookup={() =>
-        dispatch(
-          actions.notificationRequested(
-            "Dictionary lookups are not available yet.",
-          ),
+      activeWord={lookup.activeWord}
+      wordGestures={lookup.wordGestures}
+      onLookup={lookup.openSearch}
+      onAddFlashcard={() => startFlashcard("", null, null)}
+      lookup={
+        lookup.popup && (
+          <AnchoredPopup {...lookup.popup.anchored}>
+            <DictionaryPopup {...lookup.popup.props} />
+          </AnchoredPopup>
         )
       }
-      onAddFlashcard={() => startFlashcard("")}
       headerContent={
         flashcards.isSaved ? (
           <FlashcardSaveNotice
@@ -171,6 +191,7 @@ export function MediaScreen({
             languages={languages}
             waveform={clipWaveform}
             screenshotUrl={screenshotUrl}
+            saveStatus={saveStatusOf(flashcards.edited.stage)}
             onSave={flashcards.save}
             onDelete={flashcards.remove}
             onClose={flashcards.close}
@@ -181,7 +202,8 @@ export function MediaScreen({
             tracks={tracks}
             currentMs={currentMs}
             flashcardCueIndexes={flashcards.cueIndexes}
-            onWordClick={startFlashcard}
+            activeWord={lookup.activeWord}
+            wordGestures={lookup.wordGestures}
           />
         ) : undefined
       }

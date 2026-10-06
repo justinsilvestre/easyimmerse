@@ -22,6 +22,12 @@ export function runEffect(
     case "togglePlayer":
       effects.togglePlayer();
       return;
+    case "playPlayer":
+      effects.playPlayer();
+      return;
+    case "pausePlayer":
+      effects.pausePlayer();
+      return;
     case "setPlayerVolume":
       effects.setPlayerVolume(effect.volume);
       return;
@@ -50,6 +56,18 @@ export function runEffect(
         )
         .catch(() => dispatch(actions.mediaFilePickCancelled()));
       return;
+    case "pickDictionaryFile":
+      effects
+        .pickDictionaryFile(effect.accept)
+        .then((file) =>
+          dispatch(
+            file
+              ? actions.dictionaryFileChosen(file)
+              : actions.dictionaryFilePickCancelled(),
+          ),
+        )
+        .catch(() => dispatch(actions.dictionaryFilePickCancelled()));
+      return;
     case "savePreference":
       effects.savePreference(effect.key, effect.value).catch(ignoreFailure);
       return;
@@ -76,6 +94,9 @@ export function runEffect(
       return;
     case "openExternalUrl":
       effects.openExternalUrl(effect.url);
+      return;
+    case "guardClose":
+      effects.guardClose(effect.isActive);
       return;
   }
 }

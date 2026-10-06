@@ -1,4 +1,8 @@
-import type { PickedFile, PickedMediaFile } from "./effects.ts";
+import type {
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 import type { ReaderLocation } from "./readingLocation.ts";
 import type { ThemeState } from "./theme.ts";
 import { initialThemeState } from "./theme.ts";
@@ -49,6 +53,10 @@ export type AppState = {
   currentMediaFileId: string | null;
   /** A picked media file waiting to be added to the project through the backend. */
   chosenMediaFile: PickedMediaFile | null;
+  /** A picked dictionary file waiting to be imported through the backend. */
+  chosenDictionaryFile: PickedDictionaryFile | null;
+  /** How many pieces of work closing the app would lose, such as flashcard saves under way or unsaved changes in the editor. */
+  unsavedWorkCount: number;
   theme: ThemeState;
   /**
    * The last reading place in each book opened since the app started, by media file id.
@@ -65,6 +73,8 @@ export const initialAppState: AppState = {
   pendingFilePick: false,
   currentMediaFileId: null,
   chosenMediaFile: null,
+  chosenDictionaryFile: null,
+  unsavedWorkCount: 0,
   theme: initialThemeState,
   readingLocations: {},
 };

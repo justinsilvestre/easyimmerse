@@ -1,0 +1,16 @@
+1
+00:00:00,500 --> 00:00:01,500
+El gato está durmiendo.
+
+2
+00:00:01,750 --> 00:00:03,000
+El perro quiere comer.
+Tiene hambre.
+
+3
+00:00:03,250 --> 00:00:04,000
+<i>Todo</i> está tranquilo.
+
+4
+00:00:04,250 --> 00:00:05,000
+Buenas noches.

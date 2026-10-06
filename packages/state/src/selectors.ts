@@ -34,6 +34,9 @@ export const selectReadingLocation =
   (mediaFileId: string) => (state: RootState) =>
     state.app.readingLocations[mediaFileId];
 
+export const selectChosenDictionaryFile = (state: RootState) =>
+  state.app.chosenDictionaryFile;
+
 /** Returns the theme the app shows: the one the user chose, or else the operating system's. */
 export const selectTheme = (state: RootState) => chooseTheme(state.app.theme);
 

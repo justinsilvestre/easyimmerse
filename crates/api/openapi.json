@@ -416,7 +416,7 @@
         "operationId": "listDictionaries",
         "responses": {
           "200": {
-            "description": "Every imported dictionary",
+            "description": "Every imported dictionary, in import order",
             "content": {
               "application/json": {
                 "schema": {
@@ -457,10 +457,39 @@
           "dictionaries"
         ],
         "operationId": "importDictionary",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "query",
+            "description": "The name of the uploaded file, whose extension tells formats such as MDict and CSV apart.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "columns",
+            "in": "query",
+            "description": "What each column of a table holds, as column roles separated by commas, in place of the detected layout.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasHeader",
+            "in": "query",
+            "description": "Whether the first row of a table is a header. Read only together with `columns`; false when left out.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "requestBody": {
-          "description": "The dictionary archive",
+          "description": "One dictionary file: a zip or tar archive, an MDict `.mdx`, a CSV or TSV file, and so on",
           "content": {
-            "application/zip": {}
+            "application/octet-stream": {}
           }
         },
         "responses": {
@@ -475,7 +504,7 @@
             }
           },
           "400": {
-            "description": "The archive could not be parsed",
+            "description": "The file could not be read as a dictionary",
             "content": {
               "application/json": {
                 "schema": {
@@ -540,7 +569,7 @@
             }
           },
           "400": {
-            "description": "The archive could not be parsed",
+            "description": "The files could not be read as a dictionary",
             "content": {
               "application/json": {
                 "schema": {
@@ -570,7 +599,7 @@
             }
           },
           "404": {
-            "description": "No file at the given path",
+            "description": "Nothing at the given path",
             "content": {
               "application/json": {
                 "schema": {
@@ -597,35 +626,54 @@
         ]
       }
     },
-    "/dictionaries/{id}/lookup": {
+    "/dictionaries/lookup": {
       "get": {
         "tags": [
           "dictionaries"
         ],
-        "operationId": "lookupTerm",
+        "operationId": "lookupText",
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "description": "The dictionary id",
+            "name": "text",
+            "in": "query",
+            "description": "The text from the looked-up character onwards. Lookup reads at most 20 characters of it.",
             "required": true,
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "term",
+            "name": "language",
             "in": "query",
-            "description": "The exact term or reading to find.",
+            "description": "The language of the text, as a BCP 47 tag, which decides how inflections are undone.",
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "context",
+            "in": "query",
+            "description": "The text around the looked-up character, such as its subtitle cue or paragraph.\nIn German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an\".",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "The position of the looked-up character in `context`, counted in characters (Unicode scalar values).\nA JavaScript string index counts UTF-16 code units instead, and differs after any emoji or other character\noutside the Basic Multilingual Plane, so a web client converts it with `[...context.slice(0, index)].length`.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "The entries matching the term exactly",
+            "description": "The entries of every dictionary for the beginning of the text",
             "content": {
               "application/json": {
                 "schema": {
@@ -644,8 +692,305 @@
               }
             }
           },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/preview": {
+      "post": {
+        "tags": [
+          "dictionaries"
+        ],
+        "summary": "Detects what each column of a table holds and returns that layout with the table's first rows,\nso that the user can check it before importing.",
+        "operationId": "previewDictionaryTable",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "query",
+            "description": "The name of the uploaded file, whose extension marks it as a CSV, TSV or Tabfile table.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "A CSV, TSV or Tabfile table, or an archive holding one",
+          "content": {
+            "application/octet-stream": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The detected layout and the first rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The file could not be read as a table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/preview-local": {
+      "post": {
+        "tags": [
+          "dictionaries"
+        ],
+        "summary": "Detects what each column of a table at a local path holds and returns that layout with the table's first rows,\nso that the user can check it before importing the same path. Of a table file, only the start is read.",
+        "operationId": "previewLocalDictionaryTable",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewLocalDictionaryTableRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The detected layout and the first rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablePreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The files could not be read as a table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token may not read local paths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nothing at the given path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/{id}": {
+      "delete": {
+        "tags": [
+          "dictionaries"
+        ],
+        "operationId": "deleteDictionary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The dictionary and everything it stored were deleted"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No dictionary has the id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/{id}/media/{path}": {
+      "get": {
+        "tags": [
+          "dictionaries"
+        ],
+        "operationId": "getDictionaryMedia",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The dictionary id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "description": "The file's path within the dictionary, percent-encoded as one segment, so that `/` is written `%2F`",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "The bearer token, for image elements, which cannot send headers.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file, with its media type",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such dictionary, or no file at the path",
             "content": {
               "application/json": {
                 "schema": {
@@ -1397,7 +1742,7 @@
         "tags": [
           "flashcards"
         ],
-        "summary": "Saves a new flashcard. Its media file, when named, must belong to the project.",
+        "summary": "Saves a new flashcard under the id the client chose for it. Sending the same id again replaces that flashcard,\nso that a retried request cannot create a second one. Its media file, when named, must belong to the project.",
         "operationId": "createFlashcard",
         "parameters": [
           {
@@ -1414,7 +1759,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FlashcardDraft"
+                "$ref": "#/components/schemas/NewFlashcard"
               }
             }
           },
@@ -1431,6 +1776,16 @@
               }
             }
           },
+          "400": {
+            "description": "The id is not 32 lowercase hexadecimal digits",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Missing or invalid token",
             "content": {
@@ -1443,6 +1798,16 @@
           },
           "404": {
             "description": "No such project, or no such media file in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The id belongs to a flashcard of another project",
             "content": {
               "application/json": {
                 "schema": {
@@ -3458,6 +3823,19 @@
           }
         }
       },
+      "ColumnRole": {
+        "type": "string",
+        "description": "What a column of a table holds, as a person choosing the columns of a table sees it.",
+        "enum": [
+          "term",
+          "reading",
+          "definition",
+          "alternates",
+          "tags",
+          "frequency",
+          "ignored"
+        ]
+      },
       "ContainerFormat": {
         "type": "string",
         "enum": [
@@ -3512,6 +3890,24 @@
             "items": {
               "$ref": "#/components/schemas/TrackInfo"
             }
+          }
+        }
+      },
+      "ContextWord": {
+        "type": "object",
+        "description": "A word as written in the context of a lookup.",
+        "required": [
+          "text",
+          "start"
+        ],
+        "properties": {
+          "start": {
+            "type": "integer",
+            "description": "The position of the word's first character in the context, counted in characters (Unicode scalar values).",
+            "minimum": 0
+          },
+          "text": {
+            "type": "string"
           }
         }
       },
@@ -3628,12 +4024,230 @@
           }
         }
       },
+      "Definition": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Plain text, in which line breaks are significant.",
+            "required": [
+              "text",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "text"
+                ]
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A tree of elements from an allowlisted set, as Yomitan dictionaries supply.",
+            "required": [
+              "content",
+              "kind"
+            ],
+            "properties": {
+              "content": {},
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "structured"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "HTML as MDict and StarDict dictionaries supply it. It is unsanitized and must be sanitized for display.",
+            "required": [
+              "html",
+              "kind"
+            ],
+            "properties": {
+              "html": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "html"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Markup in another XML dialect. It is unsanitized and must be sanitized for display.",
+            "required": [
+              "dialect",
+              "markup",
+              "kind"
+            ],
+            "properties": {
+              "dialect": {
+                "$ref": "#/components/schemas/MarkupDialect"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "markup"
+                ]
+              },
+              "markup": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A pointer from an inflected form to the term it is inflected from.",
+            "required": [
+              "base",
+              "inflections",
+              "kind"
+            ],
+            "properties": {
+              "base": {
+                "type": "string"
+              },
+              "inflections": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "formOf"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "One definition of an entry, kept in the form its dictionary supplies so that display can stay faithful to it."
+      },
+      "DictionaryDefinitions": {
+        "type": "object",
+        "description": "One dictionary's entry for a result, with the meaning of each tag it uses.",
+        "required": [
+          "dictionaryId",
+          "dictionaryTitle",
+          "entry",
+          "tags"
+        ],
+        "properties": {
+          "dictionaryId": {
+            "type": "string"
+          },
+          "dictionaryTitle": {
+            "type": "string"
+          },
+          "entry": {
+            "$ref": "#/components/schemas/TermEntry"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagDefinition"
+            }
+          }
+        }
+      },
+      "DictionaryFormatKind": {
+        "type": "string",
+        "enum": [
+          "yomitan",
+          "stardict",
+          "mdict",
+          "csv"
+        ]
+      },
+      "DictionaryFrequency": {
+        "type": "object",
+        "required": [
+          "dictionaryId",
+          "dictionaryTitle",
+          "frequency"
+        ],
+        "properties": {
+          "dictionaryId": {
+            "type": "string"
+          },
+          "dictionaryTitle": {
+            "type": "string"
+          },
+          "frequency": {
+            "$ref": "#/components/schemas/Frequency"
+          },
+          "reading": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "DictionaryPronunciation": {
+        "type": "object",
+        "description": "A pitch accent or IPA transcription from one dictionary.",
+        "required": [
+          "dictionaryId",
+          "dictionaryTitle",
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TermMetaData"
+          },
+          "dictionaryId": {
+            "type": "string"
+          },
+          "dictionaryTitle": {
+            "type": "string"
+          },
+          "reading": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "DictionaryStylesheet": {
+        "type": "object",
+        "description": "The CSS that a dictionary ships for its own entries, unsanitized.\nDisplays must sanitize it and confine it to that dictionary's entries before applying it.",
+        "required": [
+          "dictionaryId",
+          "css"
+        ],
+        "properties": {
+          "css": {
+            "type": "string"
+          },
+          "dictionaryId": {
+            "type": "string"
+          }
+        }
+      },
       "DictionarySummary": {
         "type": "object",
         "required": [
           "id",
           "title",
-          "entry_count"
+          "format",
+          "entry_count",
+          "term_meta_count",
+          "tag_count",
+          "kanji_count",
+          "kanji_meta_count",
+          "media_count"
         ],
         "properties": {
           "entry_count": {
@@ -3641,8 +4255,50 @@
             "format": "int64",
             "minimum": 0
           },
+          "format": {
+            "$ref": "#/components/schemas/DictionaryFormatKind"
+          },
           "id": {
             "type": "string"
+          },
+          "kanji_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "kanji_meta_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "media_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "source_language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The language of the words looked up, as a BCP 47 tag, when the dictionary states it."
+          },
+          "tag_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "target_language": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The language of the definitions, as a BCP 47 tag, when the dictionary states it."
+          },
+          "term_meta_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           },
           "title": {
             "type": "string"
@@ -3875,6 +4531,27 @@
       "FlashcardId": {
         "type": "string"
       },
+      "Frequency": {
+        "type": "object",
+        "description": "How common a term is. The dictionary's `FrequencyMode` says whether higher values mean more or less common.",
+        "properties": {
+          "display": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The text to show in place of the value, if the dictionary gives one."
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "The number to sort by, if the dictionary gives one."
+          }
+        }
+      },
       "HealthResponse": {
         "type": "object",
         "required": [
@@ -3893,7 +4570,124 @@
         ],
         "properties": {
           "path": {
+            "type": "string",
+            "description": "A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files.\nA CSV, TSV or Tabfile table file is imported on its own."
+          },
+          "tableLayout": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TableLayout",
+                "description": "Replaces the detected layout of a CSV, TSV or Tabfile table."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "IpaTranscription": {
+        "type": "object",
+        "required": [
+          "ipa",
+          "tags"
+        ],
+        "properties": {
+          "ipa": {
             "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "KanjiEntry": {
+        "type": "object",
+        "description": "A single kanji character with its readings and meanings.",
+        "required": [
+          "character",
+          "onyomi",
+          "kunyomi",
+          "tags",
+          "meanings",
+          "stats"
+        ],
+        "properties": {
+          "character": {
+            "type": "string"
+          },
+          "kunyomi": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Native Japanese readings, written in hiragana."
+          },
+          "meanings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "onyomi": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Readings borrowed from Chinese, written in katakana."
+          },
+          "stats": {
+            "type": "object",
+            "description": "Facts such as stroke count or grade, keyed by the name of the tag that labels them.",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "KanjiResult": {
+        "type": "object",
+        "description": "One dictionary's entry for a single kanji character.",
+        "required": [
+          "dictionaryId",
+          "dictionaryTitle",
+          "entry",
+          "tags",
+          "frequencies"
+        ],
+        "properties": {
+          "dictionaryId": {
+            "type": "string"
+          },
+          "dictionaryTitle": {
+            "type": "string"
+          },
+          "entry": {
+            "$ref": "#/components/schemas/KanjiEntry"
+          },
+          "frequencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryFrequency"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagDefinition"
+            }
           }
         }
       },
@@ -3956,16 +4750,106 @@
       "LookupResponse": {
         "type": "object",
         "required": [
-          "entries"
+          "results",
+          "kanji",
+          "stylesheets"
         ],
         "properties": {
-          "entries": {
+          "kanji": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TermEntry"
-            }
+              "$ref": "#/components/schemas/KanjiResult"
+            },
+            "description": "The kanji dictionary entries for the first character, when it is a kanji."
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LookupResult"
+            },
+            "description": "The terms that the text may begin with, best first."
+          },
+          "stylesheets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryStylesheet"
+            },
+            "description": "The stylesheets of the dictionaries whose definitions appear in `results`, each once."
           }
         }
+      },
+      "LookupResult": {
+        "type": "object",
+        "description": "The entries of every dictionary for one term and reading that the looked-up text may stand for.",
+        "required": [
+          "matchedText",
+          "term",
+          "inflectionChains",
+          "definitions",
+          "frequencies",
+          "pronunciations"
+        ],
+        "properties": {
+          "definitions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryDefinitions"
+            }
+          },
+          "frequencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryFrequency"
+            }
+          },
+          "inflectionChains": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "The equally good chains of inflections that lead from the term to the matched text, the most plausible first.\nEach chain names its inflections outermost first. The list is empty when no inflection was undone."
+          },
+          "matchedText": {
+            "type": "string",
+            "description": "The beginning of the looked-up text that this result covers."
+          },
+          "pronunciations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryPronunciation"
+            }
+          },
+          "reading": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "separatedVerb": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SeparatedVerb",
+                "description": "The finite verb and the particle, with their places in the context, when the term is a particle verb\nwhose parts stand apart, as rufe and an in „Ich rufe dich morgen an\"."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "term": {
+            "type": "string"
+          }
+        }
+      },
+      "MarkupDialect": {
+        "type": "string",
+        "enum": [
+          "pango",
+          "xdxf"
+        ]
       },
       "MediaFile": {
         "type": "object",
@@ -4059,6 +4943,23 @@
         ],
         "description": "Where the bytes of a media file come from.\n\nThe `path` variant names a file on the machine running the server. The `browser_file`\nvariant describes a file the web app holds in memory; the server never sees its bytes,\nso it records only what identifies the file when the user picks it again."
       },
+      "NewFlashcard": {
+        "type": "object",
+        "description": "What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.\nSending the same id again replaces that flashcard, so that a retried request cannot create a second one.",
+        "required": [
+          "id",
+          "draft"
+        ],
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/FlashcardDraft"
+          },
+          "id": {
+            "$ref": "#/components/schemas/FlashcardId",
+            "description": "Thirty-two lowercase hexadecimal digits, as in the ids the app makes."
+          }
+        }
+      },
       "ParseLocalDocumentRequest": {
         "type": "object",
         "required": [
@@ -4121,6 +5022,59 @@
             "minimum": 0
           }
         }
+      },
+      "PitchAccent": {
+        "type": "object",
+        "description": "The pitch accent of one reading of a Japanese term.",
+        "required": [
+          "position",
+          "nasal",
+          "devoice",
+          "tags"
+        ],
+        "properties": {
+          "devoice": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Mora positions, counted from 1, that are devoiced."
+          },
+          "nasal": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Mora positions, counted from 1, that are pronounced nasally."
+          },
+          "position": {
+            "$ref": "#/components/schemas/PitchPosition"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PitchPosition": {
+        "oneOf": [
+          {
+            "type": "integer",
+            "format": "int32",
+            "description": "The mora after which the pitch drops, counted from 1; 0 means the pitch never drops.",
+            "minimum": 0
+          },
+          {
+            "type": "string",
+            "description": "One letter per mora, `H` for high and `L` for low, optionally followed by one letter for a following particle."
+          }
+        ]
       },
       "PlaybackEngine": {
         "type": "string",
@@ -4278,6 +5232,18 @@
           }
         }
       },
+      "PreviewLocalDictionaryTableRequest": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "A CSV, TSV or Tabfile table, or a directory holding one, read as an import of the same path would read it."
+          }
+        }
+      },
       "Project": {
         "type": "object",
         "description": "A project with its settings and the counts the home screen shows.",
@@ -4405,6 +5371,22 @@
           }
         }
       },
+      "SeparatedVerb": {
+        "type": "object",
+        "description": "A particle verb whose finite verb and particle stand apart, as rufe and an in „Ich rufe dich morgen an\".",
+        "required": [
+          "verb",
+          "particle"
+        ],
+        "properties": {
+          "particle": {
+            "$ref": "#/components/schemas/ContextWord"
+          },
+          "verb": {
+            "$ref": "#/components/schemas/ContextWord"
+          }
+        }
+      },
       "SubtitleRole": {
         "type": "string",
         "description": "Which role a subtitle track plays for its media file.",
@@ -4499,36 +5481,217 @@
           }
         }
       },
-      "TermEntry": {
+      "TableLayout": {
         "type": "object",
+        "description": "What each column of a table holds, and whether its first row is a header.",
         "required": [
-          "term",
-          "definitions",
-          "tags"
+          "columns",
+          "hasHeader"
         ],
         "properties": {
-          "definitions": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ColumnRole"
+            }
+          },
+          "hasHeader": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TablePreview": {
+        "type": "object",
+        "description": "The layout detected in a table, with its first rows, for a person to check before importing.",
+        "required": [
+          "layout",
+          "rows"
+        ],
+        "properties": {
+          "layout": {
+            "$ref": "#/components/schemas/TableLayout"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "The first rows of the table, including any header row, split into cells."
+          }
+        }
+      },
+      "TagDefinition": {
+        "type": "object",
+        "description": "The meaning of a tag that a dictionary attaches to its entries.",
+        "required": [
+          "name",
+          "category",
+          "order",
+          "notes",
+          "score"
+        ],
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "A grouping such as `partOfSpeech` or `frequent`, which display uses to color the tag."
+          },
+          "name": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string",
+            "description": "A longer description of the tag."
+          },
+          "order": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The position of the tag among others; lower comes first."
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "TermEntry": {
+        "type": "object",
+        "description": "One headword of a dictionary with its definitions.",
+        "required": [
+          "term",
+          "alternates",
+          "wordClasses",
+          "score",
+          "termTags",
+          "definitionTags",
+          "definitions"
+        ],
+        "properties": {
+          "alternates": {
             "type": "array",
             "items": {
               "type": "string"
+            },
+            "description": "Other spellings under which the entry is found, such as StarDict synonyms or MDict redirects."
+          },
+          "definitionTags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "definitions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Definition"
             }
           },
           "reading": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "How the term is read, for scripts such as kanji where the spelling does not show it."
           },
-          "tags": {
+          "score": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The dictionary's own ranking among entries with the same headword; higher comes first."
+          },
+          "sequence": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "An identifier shared by entries that the dictionary treats as one word."
+          },
+          "term": {
+            "type": "string"
+          },
+          "termTags": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "term": {
-            "type": "string"
+          "wordClasses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The inflection classes of the term, such as `v1` or `adj-i`, which deinflection matches against."
           }
         }
+      },
+      "TermMetaData": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Frequency"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "frequency"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "pitches",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "pitch"
+                ]
+              },
+              "pitches": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PitchAccent"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "transcriptions",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "ipa"
+                ]
+              },
+              "transcriptions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/IpaTranscription"
+                }
+              }
+            }
+          }
+        ]
       },
       "TextSource": {
         "oneOf": [

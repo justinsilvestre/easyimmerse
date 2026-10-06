@@ -1,6 +1,7 @@
 import type { AppAction } from "./actions.ts";
 import type { AppState, PreferenceKey } from "./appState.ts";
 import { initialPlayerState, preferenceKeys } from "./appState.ts";
+import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import type { Effect } from "./effect.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { isSameParagraph, type ReaderLocation } from "./readingLocation.ts";
@@ -42,6 +43,10 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "playToggleRequested":
       return [state, [{ type: "togglePlayer" }]];
+    case "playRequested":
+      return [state, [{ type: "playPlayer" }]];
+    case "pauseRequested":
+      return [state, [{ type: "pausePlayer" }]];
     case "playerPlayingChanged":
       return [
         { ...state, player: { ...state.player, isPlaying: action.isPlaying } },
@@ -117,6 +122,17 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         },
         [],
       ];
+    case "dictionaryFilePickRequested":
+      return [
+        state,
+        [{ type: "pickDictionaryFile", accept: dictionaryFileExtensions }],
+      ];
+    case "dictionaryFileChosen":
+      return [{ ...state, chosenDictionaryFile: action.file }, []];
+    case "dictionaryFilePickCancelled":
+      return [state, []];
+    case "dictionaryFileHandled":
+      return [{ ...state, chosenDictionaryFile: null }, []];
     case "openMedia":
       return [{ ...state, currentMediaFileId: action.mediaFileId }, []];
     case "closeMedia":
@@ -183,6 +199,22 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       ];
     case "notificationRequested":
       return [state, [{ type: "showNotification", message: action.message }]];
+    case "unsavedWorkBegan":
+      return [
+        { ...state, unsavedWorkCount: state.unsavedWorkCount + 1 },
+        state.unsavedWorkCount === 0
+          ? [{ type: "guardClose", isActive: true }]
+          : [],
+      ];
+    case "unsavedWorkEnded": {
+      const unsavedWorkCount = Math.max(state.unsavedWorkCount - 1, 0);
+      return [
+        { ...state, unsavedWorkCount },
+        state.unsavedWorkCount > 0 && unsavedWorkCount === 0
+          ? [{ type: "guardClose", isActive: false }]
+          : [],
+      ];
+    }
     case "externalLinkRequested":
       return [state, [{ type: "openExternalUrl", url: action.url }]];
     case "systemThemeChanged":

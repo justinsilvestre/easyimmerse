@@ -17,6 +17,8 @@ type FieldsProps = {
   state: EditorState;
   languages: FlashcardLanguages;
   dispatch: (action: EditorAction) => void;
+  /** Whether the fields only show their text, as while the flashcard is being saved. */
+  isReadOnly?: boolean;
 };
 
 /**
@@ -93,6 +95,7 @@ function Cell({
   state,
   languages,
   dispatch,
+  isReadOnly = false,
 }: FieldsProps & { fieldKey: FlashcardTextFieldKey }) {
   const id = useId();
   const field = findFlashcardField(fieldKey);
@@ -104,6 +107,7 @@ function Cell({
       <AutoGrowTextarea
         id={id}
         value={state.content[fieldKey]}
+        readOnly={isReadOnly}
         className="w-full resize-none overflow-hidden bg-transparent text-sm wrap-anywhere text-fg outline-none"
         onChange={(event) =>
           dispatch({
@@ -120,18 +124,23 @@ function Cell({
   );
 }
 
-/** The clip's waveform with the screenshot thumbnail beside it. Clicking the thumbnail includes or excludes the screenshot. */
+/**
+ * The clip's waveform with the screenshot thumbnail beside it. Clicking the thumbnail includes or excludes the screenshot.
+ * While read-only, the clip's handles are inert and the screenshot checkbox is marked unavailable and ignored.
+ */
 export function MediaFields({
   state,
   waveform,
   screenshotUrl,
   dispatch,
+  isReadOnly = false,
 }: {
   state: EditorState;
   waveform: MediaWaveform | null;
   /** The image of the screenshot at its current time, or null when none can be shown. */
   screenshotUrl: string | null;
   dispatch: (action: EditorAction) => void;
+  isReadOnly?: boolean;
 }) {
   const { content } = state;
   const thumbnailUrl = content.screenshot === null ? null : screenshotUrl;
@@ -143,7 +152,12 @@ export function MediaFields({
   return (
     <div className="flex shrink-0 items-start gap-2">
       {showsClip && content.audio_context && waveform && (
-        <fieldset aria-label="Sentence audio" className="min-w-0 flex-1">
+        <fieldset
+          aria-label="Sentence audio"
+          aria-disabled={isReadOnly || undefined}
+          inert={isReadOnly}
+          className="min-w-0 flex-1"
+        >
           <ClipEditor
             peaks={waveform.peaks}
             durationMs={waveform.durationMs}
@@ -160,6 +174,7 @@ export function MediaFields({
         <ScreenshotThumbnail
           url={thumbnailUrl}
           isIncluded={state.includedFields.includes("screenshot")}
+          isReadOnly={isReadOnly}
           onToggle={() => dispatch({ type: "screenshotToggled" })}
         />
       )}
@@ -170,10 +185,12 @@ export function MediaFields({
 function ScreenshotThumbnail({
   url,
   isIncluded,
+  isReadOnly,
   onToggle,
 }: {
   url: string;
   isIncluded: boolean;
+  isReadOnly: boolean;
   onToggle: () => void;
 }) {
   return (
@@ -199,7 +216,10 @@ function ScreenshotThumbnail({
           type="checkbox"
           aria-label="Include the screenshot"
           checked={isIncluded}
-          onChange={onToggle}
+          // Not `disabled`, which would move keyboard focus away from the checkbox.
+          aria-disabled={isReadOnly || undefined}
+          readOnly={isReadOnly}
+          onChange={isReadOnly ? undefined : onToggle}
           className="size-3.5 accent-accent"
         />
         Screenshot

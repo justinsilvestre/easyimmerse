@@ -12,6 +12,17 @@ use crate::project::ProjectId;
 #[ts(export)]
 pub struct FlashcardId(pub String);
 
+impl FlashcardId {
+    /// Tells whether the id has the form of the ids the app makes: thirty-two lowercase hexadecimal digits.
+    pub fn is_well_formed(&self) -> bool {
+        self.0.len() == 32
+            && self
+                .0
+                .bytes()
+                .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+    }
+}
+
 /// A flashcard saved in a project.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
@@ -39,6 +50,16 @@ pub struct FlashcardDraft {
     pub cue_index: Option<u32>,
     pub content: FlashcardContent,
     pub included_fields: Vec<FlashcardFieldKey>,
+}
+
+/// What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.
+/// Sending the same id again replaces that flashcard, so that a retried request cannot create a second one.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct NewFlashcard {
+    /// Thirty-two lowercase hexadecimal digits, as in the ids the app makes.
+    pub id: FlashcardId,
+    pub draft: FlashcardDraft,
 }
 
 /// Everything a flashcard can hold. L1 is the language the user already knows; L2 is the one they are learning.
@@ -92,6 +113,21 @@ pub enum FlashcardFieldKey {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_flashcard_id_of_32_lowercase_hex_digits_is_well_formed() {
+        assert!(FlashcardId("0123456789abcdef0123456789abcdef".to_string()).is_well_formed());
+    }
+
+    #[test]
+    fn a_flashcard_id_of_another_length_is_not_well_formed() {
+        assert!(!FlashcardId("0123456789abcdef".to_string()).is_well_formed());
+    }
+
+    #[test]
+    fn a_flashcard_id_with_uppercase_digits_is_not_well_formed() {
+        assert!(!FlashcardId("0123456789ABCDEF0123456789ABCDEF".to_string()).is_well_formed());
+    }
 
     #[test]
     fn names_the_definition_fields_like_the_content_keys() {

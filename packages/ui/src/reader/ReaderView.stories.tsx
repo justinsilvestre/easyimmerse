@@ -1,4 +1,4 @@
-import type { Document } from "@easyimmerse/types";
+import type { Document, LookupResult } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useState } from "react";
 import { fn } from "storybook/test";
@@ -7,7 +7,9 @@ import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
-import { exampleEntries } from "../lookup/exampleLookup.ts";
+import { exampleResults } from "../lookup/exampleLookup.ts";
+import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
+import { exampleTermEntry } from "../lookup/exampleTermEntry.ts";
 import type { LookupState } from "../lookup/lookupState.ts";
 import { languageOptions } from "../projects/languages.ts";
 import {
@@ -27,20 +29,38 @@ import {
 
 type ReaderViewProps = ComponentProps<typeof ReaderView>;
 
-const ungezieferEntry = {
+const ungezieferResult: LookupResult = {
+  matchedText: "Ungeziefer",
   term: "Ungeziefer",
   reading: null,
-  definitions: ["vermin; pests (insects, rodents and the like)"],
-  tags: ["noun", "neuter"],
-  dictionaryTitle: "German-English Wiktionary",
+  inflectionChains: [],
+  definitions: [
+    {
+      dictionaryId: "wiktionary-de-en",
+      dictionaryTitle: "German-English Wiktionary",
+      entry: exampleTermEntry({
+        term: "Ungeziefer",
+        termTags: ["noun"],
+        definitions: [
+          {
+            kind: "text",
+            text: "vermin; pests (insects, rodents and the like)",
+          },
+        ],
+      }),
+      tags: [],
+    },
+  ],
+  frequencies: [],
+  pronunciations: [],
 };
 
 function lookupStateOf(word: string): LookupState {
-  const entries = [...exampleEntries, ungezieferEntry].filter(
-    (entry) => entry.term.toLowerCase() === word.toLowerCase(),
+  const results = [...exampleResults, ungezieferResult].filter(
+    (result) => result.term.toLowerCase() === word.toLowerCase(),
   );
-  return entries.length > 0
-    ? { kind: "found", term: word, entries }
+  return results.length > 0
+    ? { kind: "found", term: word, results }
     : { kind: "notFound", term: word };
 }
 
@@ -48,7 +68,8 @@ function popupFor(word: string, onClose: () => void) {
   return (
     <DictionaryPopup
       state={lookupStateOf(word)}
-      mode="hover"
+      mode="word"
+      resolveMediaUrl={resolveExampleMediaUrl}
       onSearch={fn()}
       onCreateFlashcard={fn()}
       onClose={onClose}

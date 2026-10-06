@@ -37,6 +37,8 @@ export function useRegisteredPlayer(
           element.currentTime = seekTarget(seconds, frameRate);
         })(),
       togglePlay: withElement(togglePlayback),
+      play: withElement(play),
+      pause: withElement((element) => element.pause()),
       setVolume: (volume) =>
         withElement((element) => applySettings(element, { volume }))(),
       setSpeed: (speed) =>
@@ -56,10 +58,15 @@ export function useRegisteredPlayer(
   };
 }
 
-/** Plays a paused element and pauses a playing one. A play the browser refuses leaves it paused. */
+/** Plays a paused element and pauses a playing one. */
 function togglePlayback(element: HTMLMediaElement): void {
-  if (element.paused) element.play()?.catch(() => undefined);
+  if (element.paused) play(element);
   else element.pause();
+}
+
+/** Plays the element. A play the browser refuses leaves it paused. */
+function play(element: HTMLMediaElement): void {
+  if (element.paused) element.play()?.catch(() => undefined);
 }
 
 /** The default rate is set too, because loading a new source resets the rate to it. */

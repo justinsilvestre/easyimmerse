@@ -1,21 +1,28 @@
-import type { DictionarySummary } from "@easyimmerse/types";
+import type {
+  DictionaryFormatKind,
+  DictionarySummary,
+} from "@easyimmerse/types";
+import { formatLanguagePair, languageName } from "../projects/languages.ts";
 
-/** The dictionary file formats the app reads. A plugin may add others. */
-export type DictionaryFormat = "yomitan" | "stardict" | "mdict" | "epwing";
-
-export const dictionaryFormatLabels: Record<DictionaryFormat, string> = {
+export const dictionaryFormatLabels: Record<DictionaryFormatKind, string> = {
   yomitan: "Yomitan",
   stardict: "StarDict",
   mdict: "MDict",
-  epwing: "EPWING",
+  csv: "CSV",
 };
 
-/** A dictionary the user has added, as the dictionaries settings list it: the server's summary plus what the screen needs beyond it. */
-export type DictionaryItem = DictionarySummary & {
-  /** The language of the words looked up. */
-  sourceLanguage: string;
-  /** The language of the definitions. The same as the source language in a monolingual dictionary. */
-  targetLanguage: string;
-  format: DictionaryFormat;
-  isEnabled: boolean;
-};
+/** A dictionary the user has added, as the dictionaries settings list it. `isEnabled` is left out where dictionaries cannot be switched off. */
+export type DictionaryItem = DictionarySummary & { isEnabled?: boolean };
+
+/** Writes a dictionary's languages as `German → English`, or null when it states neither. */
+export function describeDictionaryLanguages({
+  source_language,
+  target_language,
+}: Pick<DictionarySummary, "source_language" | "target_language">):
+  | string
+  | null {
+  if (source_language && target_language)
+    return formatLanguagePair(source_language, target_language);
+  const known = source_language ?? target_language;
+  return known ? languageName(known) : null;
+}

@@ -41,6 +41,8 @@
 
   --color-highlight: var(--color-amber-200);
   --color-highlight-strong: var(--color-amber-400);
+  --color-info-fg: var(--color-violet-700);
+  --color-info-soft: var(--color-violet-50);
 }
 
 /*
@@ -185,10 +187,22 @@
   initial-value: transparent;
 }
 
+@property --color-info-fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --color-info-soft {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   :root[data-theme-transitions] {
     transition-property:
-      --color-canvas, --color-surface, --color-surface-muted, --color-surface-strong, --color-fg, --color-fg-soft, --color-fg-muted, --color-fg-faint, --color-line, --color-line-strong, --color-accent, --color-accent-hover, --color-accent-fg, --color-accent-soft, --color-on-accent, --color-danger-fg, --color-danger-soft, --color-danger-line, --color-warning-fg, --color-warning-soft, --color-warning-line, --color-success-fg, --color-success-soft;
+      --color-canvas, --color-surface, --color-surface-muted, --color-surface-strong, --color-fg, --color-fg-soft, --color-fg-muted, --color-fg-faint, --color-line, --color-line-strong, --color-accent, --color-accent-hover, --color-accent-fg, --color-accent-soft, --color-on-accent, --color-danger-fg, --color-danger-soft, --color-danger-line, --color-warning-fg, --color-warning-soft, --color-warning-line, --color-success-fg, --color-success-soft, --color-info-fg, --color-info-soft;
     transition-duration: 250ms;
     transition-timing-function: ease-out;
   }
@@ -264,6 +278,12 @@
       transparent
     );
     --color-highlight-strong: var(--color-amber-700);
+    --color-info-fg: var(--color-violet-300);
+    --color-info-soft: color-mix(
+      in oklab,
+      var(--color-violet-500) 15%,
+      transparent
+    );
   }
 
   /* The reader can be set light inside a dark app, so the light values are repeated for a subtree. */
@@ -289,6 +309,8 @@
 
     --color-highlight: var(--color-amber-200);
     --color-highlight-strong: var(--color-amber-400);
+    --color-info-fg: var(--color-violet-700);
+    --color-info-soft: var(--color-violet-50);
   }
 
   /* A warm paper tone for reading, which some readers find easier on the eyes than white. */
@@ -315,6 +337,8 @@
 
     --color-highlight: #f0d488;
     --color-highlight-strong: #ddaa45;
+    --color-info-fg: var(--color-violet-700);
+    --color-info-soft: var(--color-violet-50);
   }
 
   body {

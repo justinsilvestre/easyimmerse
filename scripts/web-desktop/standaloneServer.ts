@@ -10,7 +10,7 @@ export function standaloneServerCargoArgs(storage: DesktopStorage): string[] {
     ...["run", "--quiet", "-p", "easyimmerse-server", "--", "serve"],
     ...["--bind", bind, "--db", storage.databasePath],
     ...["--cache-dir", storage.cacheDir],
-    // The embedded server accepts local paths and seeds an empty database, so this one does too.
-    ...["--allow-local-paths", "--seed-placeholders"],
+    // The embedded server accepts local paths and seeds its database, so this one does too.
+    ...["--allow-local-paths", "--seed-placeholders", "--seed-sample-content"],
   ];
 }

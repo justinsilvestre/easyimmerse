@@ -6,7 +6,9 @@
 
 mod json_call;
 
-use easyimmerse_core::dictionary::{self, Dictionary};
+use easyimmerse_core::dictionary::{
+    self, Dictionary, DictionaryError, DictionarySource, TableLayout, TablePreview,
+};
 use easyimmerse_core::document::{self, DocumentFormat};
 use easyimmerse_core::text_source::TextSource;
 use easyimmerse_core::timed_text::{self, ParseTimedTextRequest};
@@ -28,10 +30,22 @@ pub fn parse_document(bytes: &[u8], format_json: &str) -> Result<String, JsError
     Ok(parse_document_json(bytes, format_json)?)
 }
 
-/// Parses a dictionary archive into a JSON-encoded `Dictionary`.
+/// Parses one dictionary file into a JSON-encoded `Dictionary`, leaving out its media.
+/// The file name's extension tells formats such as MDict and CSV apart.
+/// `table_layout_json` is `null` or a JSON-encoded `TableLayout` that replaces the detected layout of a table.
 #[wasm_bindgen::prelude::wasm_bindgen]
-pub fn parse_dictionary(bytes: &[u8]) -> Result<String, JsError> {
-    Ok(parse_dictionary_json(bytes)?)
+pub fn parse_dictionary(
+    file_name: &str,
+    bytes: &[u8],
+    table_layout_json: &str,
+) -> Result<String, JsError> {
+    Ok(parse_dictionary_json(file_name, bytes, table_layout_json)?)
+}
+
+/// Detects the layout of a CSV, TSV or Tabfile table and returns it with the first rows as a JSON-encoded `TablePreview`.
+#[wasm_bindgen::prelude::wasm_bindgen]
+pub fn preview_dictionary_table(file_name: &str, bytes: &[u8]) -> Result<String, JsError> {
+    Ok(preview_dictionary_table_json(file_name, bytes)?)
 }
 
 fn parse_timed_text_json(request_json: &str) -> Result<String, JsonCallError> {
@@ -45,8 +59,26 @@ fn parse_document_json(bytes: &[u8], format_json: &str) -> Result<String, JsonCa
     to_json_result(document::parse_document(bytes, format))
 }
 
-fn parse_dictionary_json(bytes: &[u8]) -> Result<String, JsonCallError> {
-    to_json_result::<Dictionary, _>(dictionary::parse_dictionary(bytes))
+fn parse_dictionary_json(
+    file_name: &str,
+    bytes: &[u8],
+    table_layout_json: &str,
+) -> Result<String, JsonCallError> {
+    let table_layout: Option<TableLayout> = parse_input(table_layout_json)?;
+    to_json_result::<Dictionary, _>(read_dictionary(file_name, bytes, table_layout))
+}
+
+fn read_dictionary(
+    file_name: &str,
+    bytes: &[u8],
+    table_layout: Option<TableLayout>,
+) -> Result<Dictionary, DictionaryError> {
+    let source = DictionarySource::single(file_name, bytes.to_vec())?;
+    dictionary::parse_dictionary(&mut source.with_table_layout(table_layout))
+}
+
+fn preview_dictionary_table_json(file_name: &str, bytes: &[u8]) -> Result<String, JsonCallError> {
+    to_json_result::<TablePreview, _>(dictionary::preview_table(file_name, bytes.to_vec()))
 }
 
 fn inline_text(source: TextSource) -> Result<String, JsonCallError> {
@@ -110,10 +142,49 @@ mod tests {
 
     #[test]
     fn parses_the_yomitan_fixture_with_its_title() {
-        let dictionary: serde_json::Value = serde_json::from_str(
-            &parse_dictionary_json(&read_fixture("sample-yomitan.zip")).unwrap(),
-        )
-        .unwrap();
-        assert_eq!(dictionary["title"], "Sample Dictionary");
+        let json = parse_dictionary_json(
+            "sample-yomitan.zip",
+            &read_fixture("sample-yomitan.zip"),
+            "null",
+        );
+        let dictionary: serde_json::Value = serde_json::from_str(&json.unwrap()).unwrap();
+        assert_eq!(dictionary["metadata"]["title"], "Sample Dictionary");
+    }
+
+    #[test]
+    fn parses_the_yomitan_fixture_with_its_stylesheet() {
+        let json = parse_dictionary_json(
+            "sample-yomitan.zip",
+            &read_fixture("sample-yomitan.zip"),
+            "null",
+        );
+        let dictionary: serde_json::Value = serde_json::from_str(&json.unwrap()).unwrap();
+        assert_eq!(
+            dictionary["metadata"]["stylesheet"],
+            "[data-sc-content=\"glossary\"] {\n  list-style-type: square;\n}\n"
+        );
+    }
+
+    #[test]
+    fn rejects_a_file_that_no_format_recognizes() {
+        assert!(parse_dictionary_json("notes.txt", b"hello", "null").is_err());
+    }
+
+    #[test]
+    fn parses_a_table_with_the_chosen_layout() {
+        let layout = r#"{"columns":["term","definition"],"hasHeader":true}"#;
+        let json = parse_dictionary_json("words.csv", b"Wort;Bedeutung\nHund;dog\n", layout);
+        let dictionary: serde_json::Value = serde_json::from_str(&json.unwrap()).unwrap();
+        assert_eq!(dictionary["entries"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn previews_a_table() {
+        let json = preview_dictionary_table_json("words.csv", b"cat,a pet\n");
+        let preview: serde_json::Value = serde_json::from_str(&json.unwrap()).unwrap();
+        assert_eq!(
+            preview["layout"]["columns"],
+            serde_json::json!(["term", "definition"])
+        );
     }
 }

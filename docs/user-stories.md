@@ -87,7 +87,7 @@ As a user:
   - [x] I can remove a media file from the project through the menu on its row
   - [ ] the menu bar has an option to save the project
   - [x] I see a button to edit the project's settings
-  - [ ] the status of dictionaries is indicated, according to the languages of my project flashcard settings
+  - [x] the status of dictionaries is indicated, according to the languages of my project flashcard settings
 - when I have not yet exported flashcards from this project or used the easyImmerse SRS for this project:
   - [ ] I see a button to export an Anki deck package for the project
   - [ ] I see a button to set up AnkiConnect for direct export to Anki
@@ -112,6 +112,8 @@ As a user:
   - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
 - while I am working in a project:
   - [ ] my work is saved automatically at regular intervals, so an unexpected crash does not lose it
+- when I try to close the app while a flashcard has unsaved changes or is still being saved:
+  - [x] I am warned and can keep the app open, on desktop, on the web and in the browser extension
 - when I open the app after it closed unexpectedly:
   - [ ] the last automatically saved state of my project is reloaded
 - when the last automatically saved state cannot be loaded:
@@ -266,18 +268,41 @@ As a user:
 ### Dictionary lookup and flashcard creation
 
 As a user:
-- when I mouse over or tap on a word in the target-language subtitles or text:
-  - [ ] I can see the definition of the word in the dictionary pop-up, if available
+- when I click or tap on a word in the target-language subtitles or text:
+  - [x] the dictionary pop-up opens at the word, with the word's definitions, if available
   - [ ] any audio/video playback is either looped (if the word is in the subtitles/timing-enhanced text) or paused (if no timing is available)
+- when I look up text in a language written with spaces between words, such as German or English:
+  - [x] the word I click, tap or point at is looked up, and the word is highlighted
+- when I look up text in a language written without spaces between words, such as Japanese or Chinese text:
+  - [x] the lookup starts at the character I click, tap or point at, and finds the longest word the dictionaries know from there
+  - [x] the characters the lookup matched are highlighted
+  - [x] clicking or tapping punctuation such as 、 or 。 looks nothing up
+- when a word in the target-language subtitles or text has keyboard focus:
+  - [x] pressing Enter or Space opens the dictionary pop-up for the word
+  - [x] pressing Shift+Enter or Shift+Space creates a flashcard for the word, filled from the word's definitions
+- when a Japanese or Chinese run of text has keyboard focus:
+  - [x] Left and Right choose the character the lookup starts from, which is marked in the text and announced
+- when I press the lookup button, or L while no text field has focus:
+  - [x] the dictionary pop-up opens, with focus on its search field, where I can type a word to look up
+- while the dictionary pop-up is open, when I press Escape:
+  - [x] the pop-up closes, and keyboard focus returns to where it was before the pop-up opened
 - while the dictionary pop-up is open:
-  - [ ] I can click or double-tap on a word in the dictionary pop-up to create a flashcard for the word
+  - [x] while it shows a word rather than its search field, when I rest the mouse pointer on another word in the target-language subtitles or text for a moment, the pop-up moves to that word and shows its definitions; passing quickly over words leaves it where it is
+  - [x] while the mouse pointer is inside the pop-up, it stays on its word, so I can reach its buttons
+  - [x] on a touch screen, when I tap another word in the target-language subtitles or text, the pop-up moves to that word and shows its definitions
+  - [x] when I click or tap a word or a link in the pop-up's definitions, the pop-up shows the definitions of that word, or of the word the link points to
+  - [x] I can double-click, double-tap, or hold a tap on a word in the dictionary pop-up to create a flashcard for the word, filled from that word's definitions
 - when I click or tap outside the pop-up and not on a word in the target-language subtitles or text:
-  - [ ] the dictionary pop-up is closed
-  - [ ] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
-- when I click or double-tap on a word in the target-language subtitles or text:
+  - [x] the dictionary pop-up is closed
+  - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
+- when I click the pop-up's close button, click or tap the word it shows, or press Escape:
+  - [x] the dictionary pop-up is closed
+  - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
+- when I double-click, double-tap, or hold a tap on a word in the target-language subtitles or text:
   - [x] a flashcard is created for the word
+  - [x] the word, its pronunciation, and the L1 and L2 definitions are filled from the word's definitions, as when I create the flashcard from the dictionary pop-up (unless I have already typed in the field before the definitions had a chance to load)
   - [x] the fields are shown according to my flashcard settings
-  - [x] the flashcard-editing form is opened
+  - [x] the flashcard-editing form is opened instead of the dictionary pop-up
 - when the flashcard-editing form is open:
   - [ ] the corresponding segment of audio/video is looped
   - [x] I can edit the text fields of the flashcard
@@ -288,6 +313,9 @@ As a user:
   - [x] I can add a field excluded in my flashcard settings back to the flashcard, from the list behind the "Add a field" button
   - [x] I can save the flashcard and close the form
   - [x] I can delete the flashcard and close the form
+  - [x] I can close the form without saving; changes I discard this way can be brought back with Undo for a short while
+- when I delete the contents of a field of the flashcard-editing form that can be filled from the dictionary:
+  - [ ] I am offered an option to fill it again from the lookup
 - when a flashcard is created from a word:
   - [ ] the fields are filled according to my flashcard settings, translation settings, and TTS settings
     - word (taken from the dictionary lemma)
@@ -301,13 +329,11 @@ As a user:
     - screenshot (taken from a video frame within the timing of the subtitle cue containing the word)
     - tags
 - when I create a flashcard from a word, but not from a specific dictionary entry:
-  - [ ] the L1 and/or L2 fields are filled with the definitions from all matching dictionary entries
+  - [x] the L1 and/or L2 fields are filled with the definitions from all matching dictionary entries
 - when I create a flashcard from a specific dictionary entry:
-  - [ ] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
-- when I press the lookup button or its keyboard shortcut:
-  - [ ] the dictionary pop-up opens, with focus on a text input field where I can type a word to look up
+  - [x] the L1 or L2 field is filled with the definition from that entry, rather than all matching entries
 - while the dictionary pop-up is open but no dictionary is enabled for the project's language:
-  - [ ] the dictionary pop-up prompts me to set up a dictionary
+  - [x] the dictionary pop-up prompts me to set up a dictionary
 - when I have made flashcards without having saved my work:
   - [ ] I see an indication that my work is unsaved, and a button to save it
 - when I have made flashcards without having logged in:
@@ -326,14 +352,29 @@ As a user:
 
 As a user:
 - when I open the dictionaries settings:
-  - [ ] I see a list of my dictionaries, with each one's language(s) and format
+  - [x] I see a list of my dictionaries, with each one's language(s) and format
   - [ ] I can add a dictionary from the easyImmerse registry
-  - [ ] I can add a dictionary from a file
-  - [ ] I can remove a dictionary
+  - [x] I can add a dictionary from a file
+  - [x] I can remove a dictionary
 - when I have more than one dictionary enabled for a language:
   - [ ] I can set the order in which their entries appear in the dictionary pop-up
+- when I add a dictionary from a table file (CSV, TSV or Tabfile):
+  - [x] I see a preview of its first rows, with what each column holds
+  - [x] I can change what a column holds, and whether the first row is a header, before importing
 - when I add a dictionary in a format the app does not support:
-  - [ ] I am told which formats are supported, and that a plugin may add support for others
+  - [x] I am told which formats are supported, and that a plugin may add support for others
+- when I remove a dictionary:
+  - [x] I am asked to confirm first, and told that the removal cannot be undone
+
+As a web app user:
+- when I add a dictionary from a file:
+  - [ ] it is saved in my browser's storage, together with its images, sounds and stylesheet
+  - [ ] it is still in my list of dictionaries after I reload or reopen the app, including while offline
+  - [ ] I can look words up in it without any connection to a server
+- when I add a dictionary that is too large for the storage my browser allows:
+  - [ ] I am told that it could not be saved and how much space it needs, and that the desktop app has no such limit
+- when I remove a dictionary:
+  - [ ] its storage space on my device is freed
 
 ---
 
@@ -598,7 +639,7 @@ As a user:
 - when I am on the settings screen:
   - [x] I can turn on "Keep audio lossless when converting", so later conversions keep the audio at full quality at the cost of more disk space
   - [x] I see how much disk the converted videos use of what they may use, and a "Clear converted videos" button; without a server that can convert, the section is one line saying so
-  - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices
+  - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices and those of every Rust crate and JavaScript package that ships
   - [ ] I can change the app's theme between light and dark
   - [ ] I can set whether to honor the system's light/dark theme preference
   - [ ] I can change the language of the app's interface

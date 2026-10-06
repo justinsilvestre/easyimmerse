@@ -5,6 +5,7 @@ export {
   useClearConversionCacheMutation,
   useCreateFlashcardMutation,
   useCreateProjectMutation,
+  useDeleteDictionaryMutation,
   useDeleteFlashcardMutation,
   useGetConversionCacheStatusQuery,
   useGetMediaTracksQuery,
@@ -13,18 +14,21 @@ export {
   useImportDictionaryMutation,
   useImportLocalDictionaryMutation,
   useLazyGetWaveformWindowQuery,
+  useLazyLookupTextQuery,
   useListDictionariesQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
   useListProjectsQuery,
   useListSubtitleTracksQuery,
-  useLookupTermQuery,
+  useLookupTextQuery,
   useMarkProjectOpenedMutation,
   useParseDocumentMutation,
   useParseLocalDocumentMutation,
   useParseTimedTextMutation,
   usePlanPlaybackQuery,
+  usePreviewDictionaryTableMutation,
+  usePreviewLocalDictionaryTableMutation,
   useRemoveMediaFileMutation,
   useSaveTrackSelectionMutation,
   useSetSubtitleSelectionMutation,
@@ -46,6 +50,7 @@ export {
   buildAuthorizationHeader,
   buildConversionFileUrl,
 } from "./conversionFileUrl.ts";
+export { buildDictionaryMediaUrl } from "./dictionaryMediaUrl.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
 export type { ServerConfig } from "./resolveServerConfig.ts";

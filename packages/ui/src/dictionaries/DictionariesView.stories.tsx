@@ -12,6 +12,7 @@ const meta = {
   args: {
     dictionaries: exampleDictionaries,
     unsupportedFile: null,
+    pendingTable: null,
     onBack: fn(),
     onAddFromRegistry: fn(),
     onAddFromFile: fn(),
@@ -19,6 +20,8 @@ const meta = {
     onMove: fn(),
     onRemove: fn(),
     onDismissUnsupportedFile: fn(),
+    onImportTable: fn(),
+    onCancelTable: fn(),
   },
 } satisfies Meta<typeof DictionariesView>;
 
@@ -27,8 +30,48 @@ type Story = StoryObj<typeof meta>;
 
 export const SeveralDictionaries: Story = {};
 
+/** As the app shows them today: without a registry, and without switching dictionaries off or reordering them. */
+export const WithoutRegistryOrOrdering: Story = {
+  args: {
+    onAddFromRegistry: undefined,
+    onToggle: undefined,
+    onMove: undefined,
+  },
+};
+
+export const Adding: Story = {
+  args: { addingFile: "jmdict_english.zip" },
+};
+
+export const Loading: Story = {
+  args: { dictionaries: [], isLoading: true },
+};
+
+export const NoServer: Story = {
+  args: { dictionaries: [], loadFailed: true },
+};
+
 export const Empty: Story = { args: { dictionaries: [] } };
 
 export const UnsupportedFile: Story = {
   args: { unsupportedFile: "duden.lsd" },
+};
+
+export const AddingTable: Story = {
+  args: {
+    pendingTable: {
+      fileName: "animals.csv",
+      preview: {
+        layout: {
+          columns: ["term", "reading", "definition"],
+          hasHeader: false,
+        },
+        rows: [
+          ["猫", "ねこ", "cat"],
+          ["犬", "いぬ", "dog"],
+          ["鳥", "とり", "bird"],
+        ],
+      },
+    },
+  },
 };

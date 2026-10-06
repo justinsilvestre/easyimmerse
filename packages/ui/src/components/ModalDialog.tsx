@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { X } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useId, useRef } from "react";
@@ -16,12 +17,15 @@ export function ModalDialog({
   description,
   onCancel,
   footer,
+  isWide = false,
   children,
 }: {
   title: string;
   description?: string;
   onCancel: () => void;
   footer?: ReactNode;
+  /** Widens the dialog for content such as tables. */
+  isWide?: boolean;
   children?: ReactNode;
 }) {
   const titleId = useId();
@@ -57,7 +61,10 @@ export function ModalDialog({
         event.preventDefault();
         onCancel();
       }}
-      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg flex-col gap-4 rounded-lg border border-line bg-surface p-6 text-fg shadow-xl backdrop:bg-black/50 open:flex"
+      className={clsx(
+        "m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] flex-col gap-4 rounded-lg border border-line bg-surface p-6 text-fg shadow-xl backdrop:bg-black/50 open:flex",
+        isWide ? "max-w-2xl" : "max-w-lg",
+      )}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">

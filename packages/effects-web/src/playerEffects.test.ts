@@ -8,6 +8,8 @@ function registryWithRecorder() {
   registry.register({
     seek: (seconds) => calls.push(`seek ${seconds}`),
     togglePlay: () => calls.push("togglePlay"),
+    play: () => calls.push("play"),
+    pause: () => calls.push("pause"),
     setVolume: (volume) => calls.push(`setVolume ${volume}`),
     setSpeed: (speed) => calls.push(`setSpeed ${speed}`),
   });
@@ -25,6 +27,18 @@ describe("createPlayerEffects", () => {
     const { registry, calls } = registryWithRecorder();
     createPlayerEffects(registry).togglePlayer();
     expect(calls).toEqual(["togglePlay"]);
+  });
+
+  it("plays the registered player", () => {
+    const { registry, calls } = registryWithRecorder();
+    createPlayerEffects(registry).playPlayer();
+    expect(calls).toEqual(["play"]);
+  });
+
+  it("pauses the registered player", () => {
+    const { registry, calls } = registryWithRecorder();
+    createPlayerEffects(registry).pausePlayer();
+    expect(calls).toEqual(["pause"]);
   });
 
   it("sets the registered player's speed", () => {

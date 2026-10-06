@@ -10,13 +10,17 @@ import {
 import type { Project } from "@easyimmerse/types";
 import { useEffect } from "react";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { useGiveUpOpenings } from "../flashcards/unsaved/useGiveUpOpenings.ts";
 import { useAddChosenMediaFile } from "../hooks/useAddChosenMediaFile.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { MediaScreen } from "./MediaScreen.tsx";
 import { ProjectOverview } from "./ProjectOverview.tsx";
 import { ReaderScreen } from "./ReaderScreen.tsx";
 
-/** A project: its overview, or the media screen or the reader while one of its files is open. */
+/**
+ * A project: its overview, or the media screen or the reader while one of its files is open.
+ * A flashcard waiting to open in one of its media files is given up if the project fails to load, or the screen goes first.
+ */
 export function ProjectScreen({
   projectId,
   onBack,
@@ -29,6 +33,7 @@ export function ProjectScreen({
   const { data: project, error } = useGetProjectQuery(projectId);
   const mediaFileId = useAppSelector(selectCurrentMediaFileId);
   useMarkOpened(projectId);
+  useGiveUpOpenings("projectId", projectId, error !== undefined);
   useAddChosenMediaFile(projectId);
   if (error)
     return (

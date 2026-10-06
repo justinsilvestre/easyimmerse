@@ -3,13 +3,13 @@
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId};
+use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId, NewFlashcard};
 use easyimmerse_core::project::ProjectId;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
-use crate::auth::error_body::{ApiError, ApiFailure, not_found};
+use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -45,7 +45,8 @@ pub async fn list_flashcards(
     Ok(Json(ListFlashcardsResponse { flashcards }))
 }
 
-/// Saves a new flashcard. Its media file, when named, must belong to the project.
+/// Saves a new flashcard under the id the client chose for it. Sending the same id again replaces that flashcard,
+/// so that a retried request cannot create a second one. Its media file, when named, must belong to the project.
 #[utoipa::path(
     post,
     path = "/projects/{id}/flashcards",
@@ -53,21 +54,29 @@ pub async fn list_flashcards(
     operation_id = "createFlashcard",
     security(("bearer_token" = [])),
     params(("id" = String, Path, description = "The project id")),
-    request_body = FlashcardDraft,
+    request_body = NewFlashcard,
     responses(
         (status = 201, description = "The saved flashcard", body = Flashcard),
+        (status = 400, description = "The id is not 32 lowercase hexadecimal digits", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such project, or no such media file in it", body = ApiError),
+        (status = 409, description = "The id belongs to a flashcard of another project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
 pub async fn create_flashcard(
     State(state): State<AppState>,
     Path(project_id): Path<ProjectId>,
-    Json(draft): Json<FlashcardDraft>,
+    Json(new): Json<NewFlashcard>,
 ) -> Result<(StatusCode, Json<Flashcard>), ApiFailure> {
+    if !new.id.is_well_formed() {
+        return Err(bad_request(format!(
+            "the flashcard id {:?} is not 32 lowercase hexadecimal digits",
+            new.id.0
+        )));
+    }
     let flashcard = state
-        .with_storage(move |storage| storage.create_flashcard(&project_id, &draft))
+        .with_storage(move |storage| storage.create_flashcard(&project_id, &new.id, &new.draft))
         .await?;
     Ok((StatusCode::CREATED, Json(flashcard)))
 }

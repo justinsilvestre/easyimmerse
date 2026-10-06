@@ -27,3 +27,5 @@ wasmtime-wasi = { workspace = true }
 [dev-dependencies]
 tempfile = { workspace = true }
 tiny_http = { workspace = true }
+# Lets the tests load components written in the WebAssembly text format.
+wasmtime = { workspace = true, features = ["wat"] }
