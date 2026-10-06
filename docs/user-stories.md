@@ -232,7 +232,7 @@ As a user:
   - [x] I can search for specific words or phrases in the text, ignoring capitals and accents, and jump to each result
   - [x] I can open the table of contents via a button
   - [x] I can change the font size and style of the text, the line spacing and length, the justification, and the theme (light, sepia, or dark)
-  - [x] I can look up a word by resting the pointer on it or tapping it, and create a flashcard by clicking or double-tapping it
+  - [ ] I can look up words and create flashcards from them as in the subtitles (described under "Dictionary lookup and flashcard creation")
   - [x] I can search with Ctrl+F or Cmd+F, which searches the whole book rather than only the page on screen
 - while I am reading:
   - [x] the toolbar and progress bar get out of the way when I turn a page or scroll down
