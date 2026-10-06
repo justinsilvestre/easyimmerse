@@ -48,19 +48,6 @@ export function createNoticeStore() {
       dismiss(id);
       notice?.onDismiss?.();
     },
-    /** Takes an action off a notice, as when what it needs is no longer on screen. */
-    withdrawAction(id: number, label: string) {
-      set(
-        notices.map((notice) =>
-          notice.id === id
-            ? {
-                ...notice,
-                actions: notice.actions?.filter((a) => a.label !== label),
-              }
-            : notice,
-        ),
-      );
-    },
     list: () => notices,
     subscribe(listener: () => void) {
       listeners.add(listener);

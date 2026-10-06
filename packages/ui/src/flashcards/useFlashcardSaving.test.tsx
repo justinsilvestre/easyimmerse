@@ -1,17 +1,23 @@
+import type { BackendRequest } from "@easyimmerse/backend";
+import { resetBackend } from "@easyimmerse/backend";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
+import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
+import { fixtureResponses } from "../testSupport/fixtureResponses.ts";
 import { savedFlashcard } from "../testSupport/renderMediaScreen.tsx";
 import { createCardSession, createFlashcardId } from "./editedFlashcard.ts";
 import { exampleFlashcard } from "./exampleFlashcard.ts";
 import { useEditedFlashcard } from "./useEditedFlashcard.ts";
-import type { useFlashcardRequests } from "./useFlashcardRequests.ts";
 import { useFlashcardSaving } from "./useFlashcardSaving.ts";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  resetBackend();
+});
 
 const draft: FlashcardDraft = {
   media_file_id: "m1",
@@ -23,13 +29,16 @@ const draft: FlashcardDraft = {
 /** Renders the hook with saves that settle when the test says so. */
 function renderSaving() {
   const finishes: ((saved: Flashcard) => void)[] = [];
-  const requests = {
-    send: () =>
-      new Promise<Flashcard>((resolve) => {
-        finishes.push(resolve);
-      }),
-  } as unknown as ReturnType<typeof useFlashcardRequests>;
-  const { store, playerRegistry } = createTestAppStore();
+  const backend = createFakeBackendClient(fixtureResponses);
+  const client = {
+    send: <T,>(request: BackendRequest) =>
+      request.method === "POST"
+        ? new Promise<{ data: T }>((resolve) => {
+            finishes.push((saved) => resolve({ data: saved as T }));
+          })
+        : backend.send<T>(request),
+  };
+  const { store, playerRegistry } = createTestAppStore(client);
   const wrapper = ({ children }: { children: ReactNode }) => (
     <AppStoreProviders store={store} playerRegistry={playerRegistry}>
       {children}
@@ -41,7 +50,7 @@ function renderSaving() {
       const saving = useFlashcardSaving(
         editor.edited,
         editor.dispatchEdited,
-        requests,
+        "p1",
         editor.openSession,
       );
       return { ...editor, saving };
@@ -76,8 +85,7 @@ describe("useFlashcardSaving", () => {
     const { result, finishes } = renderSaving();
     act(() => result.current.dispatchEdited(start()));
     act(() => result.current.dispatchEdited({ type: "saveRequested" }));
-    await act(() => Promise.resolve());
-    if (finishes.length !== 1) throw new Error("The save was not sent.");
+    await vi.waitFor(() => expect(finishes).toHaveLength(1));
     withoutActEnvironment(() => {
       result.current.dispatchEdited(start());
       finishes[0]?.(savedFlashcard);

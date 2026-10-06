@@ -1,4 +1,9 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { Notice } from "./Notice.tsx";
 import {
   type NoticeStore,
@@ -11,7 +16,14 @@ import {
  * other notices sit in a polite live region, announced once the screen reader is idle. Their buttons follow the page in keyboard order.
  * A transient notice waits while the pointer or focus is on it.
  */
-export function NoticeRegion({ store }: { store: NoticeStore }) {
+export function NoticeRegion({
+  store,
+  statusLine,
+}: {
+  store: NoticeStore;
+  /** A lasting line shown above the notices, which announces itself. */
+  statusLine?: ReactNode;
+}) {
   const notices = useSyncExternalStore(store.subscribe, store.list);
   const isFailure = (notice: ShownNotice) => notice.tone === "danger";
   return (
@@ -19,6 +31,7 @@ export function NoticeRegion({ store }: { store: NoticeStore }) {
       aria-label="Notifications"
       className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex flex-col items-center gap-2 px-4"
     >
+      {statusLine}
       <NoticeList notices={notices.filter(isFailure)} store={store} />
       <div aria-live="polite">
         <NoticeList

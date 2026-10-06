@@ -25,13 +25,13 @@ export const Discarded: Story = {
   },
 };
 
-export const SaveFailed: Story = {
+export const SaveRejected: Story = {
   args: {
     tone: "danger",
-    message: "Couldn't save the flashcard for “fressen”.",
+    message: "The server refused the flashcard for “fressen”.",
     actions: [
-      { label: "Retry", onSelect: fn() },
-      { label: "Reopen", onSelect: fn() },
+      { label: "Open", onSelect: fn() },
+      { label: "Discard", onSelect: fn() },
     ],
   },
 };

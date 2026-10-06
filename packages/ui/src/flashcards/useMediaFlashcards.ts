@@ -10,10 +10,13 @@ import {
   flashcardsOnWaveform,
 } from "./editedFlashcard.ts";
 import type { EditorAction } from "./editFlashcard.ts";
-import { flashcardRetiming } from "./flashcardRetiming.ts";
+import { flashcardRetiming, type Retiming } from "./flashcardRetiming.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
+import { useUnsavedCards } from "./SharedSavingContext.tsx";
+import { useListedCardsOf } from "./unsaved/useListedCardsOf.ts";
+import { useOpeningOfUnsavedCards } from "./unsaved/useOpeningOfUnsavedCards.ts";
+import { useUnsavedCardActions } from "./unsaved/useUnsavedCardActions.ts";
 import { useEditedFlashcard } from "./useEditedFlashcard.ts";
-import { useFlashcardRequests } from "./useFlashcardRequests.ts";
 import { useFlashcardSaving } from "./useFlashcardSaving.ts";
 
 const noFlashcards: readonly Flashcard[] = [];
@@ -21,7 +24,8 @@ const noFlashcards: readonly Flashcard[] = [];
 /**
  * The flashcards made from one media file, with the one open in the editor and the ways to save, delete, and retime them.
  * Saving a new card creates it; saving an existing one replaces it.
- * Retiming the open card changes only the editor's copy, which is saved with the rest of the editor; any other card is saved at once.
+ * Retiming the open card changes only the editor's copy, which is saved with the rest of the editor; a card listed as not saved changes only in its listed edits;
+ * any other card is saved at once. The waveform draws each card with the content the app holds for it.
  * A new card started before the media file is known to show pictures gains a screenshot once it is.
  * A new card whose word's lookup has yet to answer is saved only once it answers, fails or takes too long,
  * so that its definitions are saved with it.
@@ -43,19 +47,39 @@ export function useMediaFlashcards(
   useEffect(() => {
     if (hasScreenshots) dispatchEdited({ type: "screenshotsAvailable" });
   }, [hasScreenshots, dispatchEdited]);
-  const requests = useFlashcardRequests(projectId);
+  const unsavedCards = useUnsavedCards();
+  const unsavedCardActions = useUnsavedCardActions();
   const edit = (action: EditorAction) =>
     dispatchEdited({ type: "edited", action });
   const saving = useFlashcardSaving(
     edited,
     dispatchEdited,
-    requests,
+    projectId,
     openSession,
   );
   const { replaceOpenCard } = saving;
+  useOpeningOfUnsavedCards(projectId, mediaFileId, saving.reopen);
+  const listedCards = useListedCardsOf(mediaFileId);
+  /**
+   * Retimes a card that is not open. A card listed as not saved changes only in its listed edits, to be sent on Retry;
+   * any other is saved at once, from its latest content, after any earlier work on it.
+   */
+  const retimeNow = (id: string, retiming: Retiming) => {
+    if (unsavedCards.find(id)) return unsavedCards.editContent(id, retiming);
+    const flashcard = flashcards.find((listed) => listed.id === id);
+    if (!flashcard) return;
+    const { content } = saving.latestOf(flashcard);
+    const retimed = retiming(content);
+    if (retimed === content) return;
+    saving
+      .replace(flashcard, { content: retimed })
+      .catch(() => notify("The flashcard could not be saved"));
+  };
   return {
     flashcards,
-    segments: flashcardSegmentsOf(flashcardsOnWaveform(flashcards, edited)),
+    segments: flashcardSegmentsOf(
+      flashcardsOnWaveform(flashcards, listedCards, edited),
+    ),
     cueIndexes: flashcards.flatMap((flashcard) =>
       flashcard.cue_index === null ? [] : [flashcard.cue_index],
     ),
@@ -94,8 +118,10 @@ export function useMediaFlashcards(
     },
     /**
      * Opens a saved card as last sent, withdrawing the Undo of its last save. The card it replaces is saved as it leaves.
+     * A card listed as not saved opens with its edits, as its Open in the list does.
      */
     open: (id: string) => {
+      if (unsavedCards.find(id)) return unsavedCardActions.open(id);
       const listed = flashcards.find((card) => card.id === id);
       if (!listed) return;
       // Undoing the save now would change the card under the editor, so only saving it again from there remains.
@@ -123,10 +149,6 @@ export function useMediaFlashcards(
         .then(close)
         .catch(() => notify("The flashcard could not be deleted"));
     },
-    ...flashcardRetiming(flashcards, edited, edit, (flashcard, changes) =>
-      saving
-        .replace(flashcard, changes)
-        .catch(() => notify("The flashcard could not be saved")),
-    ),
+    ...flashcardRetiming(edited, edit, retimeNow),
   };
 }

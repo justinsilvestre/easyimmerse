@@ -122,9 +122,11 @@ export function reduceEditedFlashcard(
         session: action.session,
       };
     case "restored":
+      // A restored card holds edits that are saved nowhere, which closing it would lose.
       return {
         ...action.card,
         stage: "editing",
+        isChanged: true,
         session: action.session,
       };
     case "edited":
@@ -232,26 +234,44 @@ function withScreenshot(edited: NewFlashcard): EditedFlashcard {
   };
 }
 
+/** The id a card's flashcard has, or will be created under. */
+export function flashcardIdOf(card: EditedFlashcard): string {
+  return card.kind === "existing" ? card.flashcard.id : card.flashcardId;
+}
+
 export function segmentIdOf(edited: EditedFlashcard): string {
   return edited.kind === "new" ? newFlashcardSegmentId : edited.flashcard.id;
 }
 
+type DrawnFlashcard = Pick<Flashcard, "id" | "content">;
+
 /**
- * The flashcards to draw on the waveform: the saved ones, with the open card's unsaved content in place of its saved content,
- * and then the open card when it is new.
+ * The flashcards to draw on the waveform, each with the content the app holds for it:
+ * the saved ones, with the open card's unsaved content, or a listed card's edits, in place of the saved content;
+ * then the listed cards not saved at all; then the open card when it is new.
+ * `listed` holds the cards listed as not saved, by flashcard id, with their edited content.
  */
 export function flashcardsOnWaveform(
   flashcards: readonly Flashcard[],
+  listed: readonly DrawnFlashcard[],
   edited: EditedFlashcard | null,
-): Pick<Flashcard, "id" | "content">[] {
+): DrawnFlashcard[] {
   const editedId = edited && segmentIdOf(edited);
-  const saved = flashcards.map(({ id, content }) => ({
-    id,
-    content: id === editedId && edited ? edited.editor.content : content,
+  const contentOf = ({ id, content }: DrawnFlashcard) =>
+    id === editedId && edited
+      ? edited.editor.content
+      : (listed.find((card) => card.id === id)?.content ?? content);
+  const saved = flashcards.map((flashcard) => ({
+    id: flashcard.id,
+    content: contentOf(flashcard),
   }));
+  const unsaved = listed.filter(
+    (card) => !flashcards.some((flashcard) => flashcard.id === card.id),
+  );
+  const drawn = [...saved, ...unsaved];
   return edited?.kind === "new"
-    ? [...saved, { id: newFlashcardSegmentId, content: edited.editor.content }]
-    : saved;
+    ? [...drawn, { id: newFlashcardSegmentId, content: edited.editor.content }]
+    : drawn;
 }
 
 function editorStateOf(card: FlashcardDraft | Flashcard): EditorState {
