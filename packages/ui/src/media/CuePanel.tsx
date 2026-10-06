@@ -1,7 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
-import { FilePlus, Layers, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { FilePlus, Layers, LocateFixed, Sparkles } from "lucide-react";
+import { useMemo } from "react";
 import { Button } from "../components/Button.tsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
@@ -13,8 +13,12 @@ import {
 } from "./cueWordGestures.ts";
 import { findTranslationOf } from "./findCue.ts";
 import { formatTimestamp } from "./formatTimestamp.ts";
+import { useFollowsPlayback } from "./useFollowsPlayback.ts";
 
-/** The collapsible panel with one card per cue, which follows playback and seeks on click. */
+/**
+ * The collapsible panel with one card per cue, which seeks on click and follows playback.
+ * Once the user scrolls the current line out of view, the panel stops following and offers a button back to it.
+ */
 export function CuePanel({
   cues,
   translationCues,
@@ -45,6 +49,8 @@ export function CuePanel({
       })),
     [cues, translationCues],
   );
+  const { listRef, isFollowing, resume, follow } =
+    useFollowsPlayback(activeCueIndex);
   if (cues.length === 0) {
     return (
       <div className="p-3">
@@ -68,23 +74,39 @@ export function CuePanel({
     );
   }
   return (
-    <ol
-      aria-label="Subtitles"
-      className="flex flex-col gap-1 overflow-y-auto p-2"
-    >
-      {pairs.map(({ cue, translation }) => (
-        <CueCard
-          key={cue.index}
-          cue={cue}
-          translation={translation}
-          isActive={cue.index === activeCueIndex}
-          hasFlashcard={flashcardCueIndexes.includes(cue.index)}
-          activeWord={activeWord}
-          onSeek={onSeek}
-          wordGestures={wordGestures}
-        />
-      ))}
-    </ol>
+    <div className="relative flex min-h-0 flex-col">
+      <ol
+        ref={listRef}
+        aria-label="Subtitles"
+        className="flex flex-col gap-1 overflow-y-auto p-2"
+      >
+        {pairs.map(({ cue, translation }) => (
+          <CueCard
+            key={cue.index}
+            cue={cue}
+            translation={translation}
+            isActive={cue.index === activeCueIndex}
+            hasFlashcard={flashcardCueIndexes.includes(cue.index)}
+            activeWord={activeWord}
+            onSeek={(ms) => {
+              follow();
+              onSeek(ms);
+            }}
+            wordGestures={wordGestures}
+          />
+        ))}
+      </ol>
+      {!isFollowing && activeCueIndex !== null && (
+        <button
+          type="button"
+          onClick={resume}
+          className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-sm font-medium whitespace-nowrap text-on-accent shadow-lg hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          <LocateFixed className="size-4" aria-hidden />
+          Back to current line
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -106,13 +128,8 @@ function CueCard({
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
 }) {
-  const ref = useRef<HTMLLIElement>(null);
-  useEffect(() => {
-    if (isActive) ref.current?.scrollIntoView({ block: "nearest" });
-  }, [isActive]);
   return (
     <li
-      ref={ref}
       aria-current={isActive || undefined}
       className={clsx(
         "flex flex-col gap-1 rounded-md border px-3 py-2 text-sm",

@@ -77,3 +77,51 @@ As a user:
 - [x] Until the server has probed the file or the player has reported a duration, the waveform strip spans nothing and requests no windows, so it never asks for peaks past the end of the file.
 - [x] A seek moves the strip's view at once, before the player reports the new time, so the waveform around the target starts loading immediately.
 - [x] The strip loads the waveform in thirty-second windows, at most three at a time, and keeps a window in memory for five minutes after the view last showed it. A window whose request failed is requested again after a few seconds, so a server restart leaves no permanent gap.
+
+## Audit of October 2026
+
+The web app was run against a local server and walked through at desktop and phone sizes, in both themes, with the heuristics below as the yardstick: Nielsen Norman Group's ten usability heuristics and response-time limits, Apple's Human Interface Guidelines and Material 3 for touch targets and safe areas, WCAG 2.2 for contrast, focus, target size and reduced motion, the BBC subtitle guidelines, YouTube's and Anki's keyboard conventions, and Refactoring UI for hierarchy and spacing. The principles that apply to this project are summarized at the end of this section.
+
+### Found and fixed
+
+- [x] The player had no keyboard shortcuts besides L for the dictionary. Space and K play and pause, ← and → skip to the previous and next cue (or by a few seconds without cues), and R replays the current cue. Space is left to a focused button, so pressing it there does not also toggle playback. The control labels, shown as tooltips, name their keys.
+- [x] The L hint next to the lookup button showed on phones, where there is no keyboard. It shows only for fine pointers.
+- [x] On phones the lookup and new-flashcard buttons lay over the subtitle text, and the file name of an audio file showed through the translucent control bar. The subtitles keep clear of the buttons and the bar is blurred.
+- [x] The subtitles panel scrolled back to the active cue on every cue change, even while the user was reading elsewhere. It follows playback until the user scrolls the active cue out of view, then offers "Back to current line", and follows again once the user seeks from a cue.
+- [x] The home screen's Dictionaries button said that managing dictionaries was not available, although the Dictionaries screen exists under Settings. It opens that screen.
+- [x] The project screen's header had a "Saved" button that only showed a notice. Work is saved as it happens, so the button is gone.
+- [x] The project screen said "Settings" twice: once for the project's settings and once, in the footer, for the app's. The project's is "Project settings".
+- [x] The Flashcards panel offered reviewing, exporting, and AnkiConnect, each of which only said it was not available yet. The options are marked "Coming soon".
+- [x] Loading a project list or a project showed a line of text. Content-shaped skeletons take its place, with a live status for screen readers.
+- [x] The Settings screen's Back was a bordered button while every other screen uses the quiet arrow. They match.
+- [x] A playback failure was a red sentence with no way on. It is a small card that names the problem and offers "Back to the project".
+- [x] Icon buttons were 32 pixels, below the 44 points Apple and Material ask for. They grow to 44 pixels for coarse pointers.
+- [x] Reduced motion was honoured in three places. A global rule shortens every transition and animation when the system asks for reduced motion.
+- [x] Nothing accounted for the notch and home indicator of phones. The viewport covers the safe area, and the headers, footers, player controls, and the notices region pad themselves by the insets.
+
+### Found and left for later
+
+- [ ] The seek bar and the volume are native range inputs with no time preview while scrubbing. A custom slider with `aria-valuetext` ("1:23 of 45:00") and a hover tooltip would match other players.
+- [ ] Subtitles have no size or background setting. Every major streaming service offers one, and learners read subtitles longer than viewers do.
+- [ ] The example flashcard in the project form is always German, whatever target language is chosen.
+- [ ] The Screenshot and Tracks buttons sit as grey text buttons in the top-left corner of the stage, apart from the other controls. They belong in the control bar.
+- [ ] Notices appear at the bottom centre, where the reader's progress slider also sits, so a notice can cover it.
+- [ ] Target-language text has no `lang` attribute, so screen readers and text-to-speech pronounce it as the interface language.
+- [ ] A `?` overlay listing every shortcut would make them discoverable without hunting through tooltips.
+
+### Principles that apply here
+
+- Status within a second, progress beyond ten: lookups, conversion, imports and saves each show state at once; anything longer shows how far it is and can be cancelled (NN/g response times).
+- Every automatic or destructive step can be undone, as the flashcard notices already do (NN/g user control).
+- One gesture for one meaning across subtitles, the transcript panel, the reader and the extension; the same name for the same thing on every screen (NN/g consistency).
+- Hover is never the only way: every hover lookup has a tap and a keyboard path (Apple HIG, WCAG 2.1.1).
+- Touch targets of 44 points, 48 on Android, 24 CSS pixels at the least on the web (Apple HIG, Material 3, WCAG 2.5.8).
+- The immersion screens show the media, the subtitles and the lookup, and nothing else until asked (NN/g minimalist design; the product's own "introduce gradually").
+- Captions: at most two lines of about 40 characters, high contrast on a translucent box, never under the controls (BBC subtitle guidelines).
+- Player keys follow YouTube where they can, and cue-level keys are added because the cue is the unit of study.
+- Review, once built, follows Anki: Space shows the answer, 1 to 4 rate, the buttons show the next interval, and context appears only after the reveal.
+- Reader: lines of 50 to 75 characters, line height 1.4 to 1.6, 4.5:1 contrast in all three themes, word taps never turn the page (Baymard, WCAG 1.4.3).
+- Contrast 4.5:1 for text and 3:1 for controls and focus rings; a visible focus ring on everything; Escape closes and returns focus (WCAG 1.4.3, 1.4.11, 2.4.7).
+- Motion: about 100 ms for feedback, 150 to 250 ms for pop-ups and notices, 300 to 500 ms for panels, and none when the system asks for less (Material 3, WCAG 2.3.3).
+- Loading: nothing under a second, content-shaped skeletons up to ten, a determinate bar beyond (NN/g skeleton screens).
+- Empty states explain and offer one main action; error states say what happened and what to do next, where it happened (NN/g).

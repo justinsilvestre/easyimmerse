@@ -68,7 +68,7 @@ export function ReaderSheet({
           }
         }}
         className={clsx(
-          "relative flex max-h-[85dvh] w-full flex-col rounded-t-xl border-line bg-surface text-fg shadow-2xl transition-[translate,opacity] duration-300 ease-out starting:translate-y-full md:max-h-none md:w-96 md:rounded-none md:starting:translate-y-0",
+          "relative flex max-h-[85dvh] w-full flex-col rounded-t-xl pb-[env(safe-area-inset-bottom)] md:pb-0 border-line bg-surface text-fg shadow-2xl transition-[translate,opacity] duration-300 ease-out starting:translate-y-full md:max-h-none md:w-96 md:rounded-none md:starting:translate-y-0",
           placement === "left" && "md:border-r md:starting:-translate-x-full",
           placement === "right" &&
             "md:ml-auto md:border-l md:starting:translate-x-full",

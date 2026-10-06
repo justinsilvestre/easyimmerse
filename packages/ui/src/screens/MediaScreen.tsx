@@ -21,7 +21,8 @@ import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
-import { skipTarget } from "../media/skipTarget.ts";
+import { replayTarget, skipTarget } from "../media/skipTarget.ts";
+import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
@@ -33,6 +34,7 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
  * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
  * double-clicking a word starts a flashcard for it at once.
+ * Space or K plays and pauses, the arrow keys skip between cues, and R replays the cue shown now.
  */
 export function MediaScreen({
   project,
@@ -123,6 +125,16 @@ export function MediaScreen({
     onToggleDistractionFree: () =>
       dispatchPanels({ type: "distractionFreeToggled" }),
   };
+  usePlayerShortcuts(
+    {
+      ...playerCallbacks,
+      onReplay: () =>
+        dispatch(
+          actions.seekRequested(replayTarget(subtitles.cues, currentMs) / 1000),
+        ),
+    },
+    screenRef,
+  );
   return (
     <MediaView
       ref={screenRef}

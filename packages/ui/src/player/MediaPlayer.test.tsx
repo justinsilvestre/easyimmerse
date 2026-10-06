@@ -458,6 +458,14 @@ describe("MediaPlayer", () => {
         "No canned GET /projects/p1/media/m1/tracks",
       );
     });
+
+    it("closes the file from the failure's way back to the project", async () => {
+      const { store } = renderPlayer(unsupportedPlaybackRoutes);
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Back to the project" }),
+      );
+      expect(selectCurrentMediaFileId(store.getState())).toBeNull();
+    });
   });
 
   describe("with a file the browser holds", () => {

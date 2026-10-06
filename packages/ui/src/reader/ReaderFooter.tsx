@@ -42,7 +42,7 @@ export function ReaderFooter({
     setPreview(null);
   };
   return (
-    <footer className="pointer-events-none absolute inset-x-0 bottom-0 z-20">
+    <footer className="pointer-events-none absolute inset-x-0 bottom-0 z-20 pb-[env(safe-area-inset-bottom)]">
       {/* The focus listener only shows the slider again; the slider itself is the interactive element. */}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: see above */}
       <div

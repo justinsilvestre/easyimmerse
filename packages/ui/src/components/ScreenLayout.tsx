@@ -5,6 +5,7 @@ import { AppFooter } from "./AppFooter.tsx";
 /**
  * Frames a screen with the app's header and footer, and places the given actions, such as a Help link, in the header.
  * The wide layout suits forms with a side column. The Settings screen hides the footer's link to itself.
+ * On a phone with a notch or a home indicator, the header and footer keep clear of them.
  */
 export function ScreenLayout({
   headerActions,
@@ -19,8 +20,8 @@ export function ScreenLayout({
 }) {
   const width = wide ? "max-w-5xl" : "max-w-3xl";
   return (
-    <div className="flex min-h-screen flex-col bg-canvas text-fg">
-      <header className="border-b border-line bg-surface">
+    <div className="flex min-h-screen flex-col bg-canvas pb-[env(safe-area-inset-bottom)] text-fg">
+      <header className="border-b border-line bg-surface pt-[env(safe-area-inset-top)]">
         <div
           className={clsx(
             "mx-auto flex items-center justify-between gap-4 px-4 py-3",

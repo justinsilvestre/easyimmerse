@@ -202,6 +202,11 @@ type Story = StoryObj<typeof meta>;
 
 export const VideoWithDualSubtitles: Story = {};
 
+/** A large phone, where the subtitles give way to the lookup buttons beside them and the controls wrap onto two rows. */
+export const OnAPhone: Story = {
+  globals: { viewport: { value: "mobile2", isRotated: false } },
+};
+
 export const LookingUpAWord: Story = {
   args: {
     activeWord: { cueIndex: 3, start: 13, popupId: "dictionary" },

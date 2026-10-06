@@ -172,10 +172,7 @@ describe("ProjectScreen", () => {
     let opened = false;
     renderProject(() => (opened = true));
     await screen.findByRole("heading", { name: "Alpha" });
-    // The first Settings button is the project's; the footer's opens the app's settings.
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "Settings" })[0] as HTMLElement,
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Project settings" }));
     expect(opened).toBe(true);
   });
 

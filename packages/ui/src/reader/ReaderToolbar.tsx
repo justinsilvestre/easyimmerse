@@ -39,7 +39,7 @@ export function ReaderToolbar({
     // biome-ignore lint/a11y/noStaticElementInteractions: see above
     <header
       className={clsx(
-        "absolute inset-x-0 top-0 z-20 border-b border-line bg-surface/90 backdrop-blur transition-[opacity,translate] duration-300",
+        "absolute inset-x-0 top-0 z-20 pt-[env(safe-area-inset-top)] border-b border-line bg-surface/90 backdrop-blur transition-[opacity,translate] duration-300",
         !isVisible && "pointer-events-none -translate-y-2 opacity-0",
       )}
       onFocus={onReveal}

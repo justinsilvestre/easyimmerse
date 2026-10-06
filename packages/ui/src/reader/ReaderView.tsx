@@ -275,7 +275,7 @@ export function ReaderView(props: ReaderViewProps) {
         {...wordPointer}
       >
         {isPaged ? (
-          <div className="h-full pt-14 pb-10">
+          <div className="h-full pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
             <PagedChapter
               ref={turner}
               chapterIndex={chapterIndex}

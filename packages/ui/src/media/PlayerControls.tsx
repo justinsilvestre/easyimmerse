@@ -30,7 +30,10 @@ export type PlayerCallbacks = {
 
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-/** The bar over the bottom of the player: the position, transport, volume, and speed, with the toggles for the panels around it. */
+/**
+ * The bar over the bottom of the player: the position, transport, volume, and speed, with the toggles for the panels around it.
+ * The transport buttons name their keys in their labels, which show as tooltips.
+ */
 export function PlayerControls({
   playback,
   tracks,
@@ -43,7 +46,7 @@ export function PlayerControls({
   callbacks: PlayerCallbacks;
 }) {
   return (
-    <div className="flex flex-col gap-1.5 bg-surface/90 px-3 py-2">
+    <div className="flex flex-col gap-1.5 bg-surface/90 px-3 py-2 backdrop-blur-sm">
       <div className="flex items-center gap-3 text-xs text-fg-muted tabular-nums">
         <span>{formatTimestamp(playback.currentMs)}</span>
         <input
@@ -59,13 +62,13 @@ export function PlayerControls({
       </div>
       <div className="flex flex-wrap items-center gap-1">
         <IconButton
-          label="Previous cue"
+          label="Previous cue (←)"
           onClick={() => callbacks.onSkip("back")}
         >
           <SkipBack className="size-4" />
         </IconButton>
         <IconButton
-          label={playback.isPlaying ? "Pause" : "Play"}
+          label={playback.isPlaying ? "Pause (Space)" : "Play (Space)"}
           onClick={callbacks.onTogglePlay}
         >
           {playback.isPlaying ? (
@@ -75,12 +78,13 @@ export function PlayerControls({
           )}
         </IconButton>
         <IconButton
-          label="Next cue"
+          label="Next cue (→)"
           onClick={() => callbacks.onSkip("forward")}
         >
           <SkipForward className="size-4" />
         </IconButton>
-        <label className="ml-2 flex items-center gap-1 text-fg-muted">
+        {/* Phones and tablets set the volume with their own buttons, so the slider shows only for fine pointers. */}
+        <label className="ml-2 hidden items-center gap-1 text-fg-muted pointer-fine:flex">
           <Volume2 className="size-4" aria-hidden />
           <input
             type="range"

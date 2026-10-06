@@ -85,7 +85,7 @@ export function ScrolledChapter({
       <div
         ref={content}
         data-chapter={chapterIndex}
-        className="mx-auto px-5 pt-16 pb-12"
+        className="mx-auto px-5 pt-[calc(4rem+env(safe-area-inset-top))] pb-[calc(3rem+env(safe-area-inset-bottom))]"
         style={{ maxWidth: `calc(${maxColumnWidthEm}em + 2.5rem)` }}
       >
         {children}

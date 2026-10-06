@@ -89,7 +89,7 @@ export function PlayerWaveform({
         <span className="absolute right-4 bottom-3 rounded-md bg-surface/80">
           <IconButton
             label="Hide the waveform"
-            className="size-6"
+            className="size-6 pointer-coarse:size-6"
             onClick={onHide}
           >
             <ChevronDown className="size-3.5" />

@@ -345,6 +345,24 @@
     background-color: var(--color-canvas);
     color: var(--color-fg);
   }
+
+  /*
+   * When the system asks for less motion, every transition and animation finishes at once instead of moving.
+   * A near-zero duration rather than none still fires the transitionend and animationend events.
+   * The theme fade above is already off under this preference, so a theme change is simply instant.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      /* biome-ignore-start lint/complexity/noImportantStyles: the preference must win over every component's own duration. */
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      /* biome-ignore-end lint/complexity/noImportantStyles: see above */
+    }
+  }
 }
 
 /* The word the dictionary pop-up shows in the reader, drawn without changing the text's markup. */

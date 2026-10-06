@@ -53,7 +53,7 @@ function PlayerBody({
       );
     case "error":
       return (
-        <div className="max-w-md p-6">
+        <div className="p-6">
           <PlayerFailure cause={playback.cause} />
         </div>
       );
@@ -111,9 +111,7 @@ function PlayerMedia({
       {!hasVideo && <AudioArtwork name={name} />}
       {failure !== null && failure.url === source.url && (
         <div className="absolute inset-x-0 top-12 flex justify-center px-4">
-          <div className="rounded bg-black/80 px-3 py-2">
-            <PlayerFailure cause={failure.cause} />
-          </div>
+          <PlayerFailure cause={failure.cause} />
         </div>
       )}
       <div className="absolute top-2 left-2 z-10 flex flex-col items-start gap-2">

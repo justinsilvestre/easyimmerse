@@ -297,8 +297,28 @@ describe("MediaScreen", () => {
 
   it("asks the player to play when Play is clicked", () => {
     const { effects } = renderMediaScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Play" }));
+    fireEvent.click(screen.getByRole("button", { name: "Play (Space)" }));
     expect(effects.calls).toContainEqual({ type: "togglePlayer" });
+  });
+
+  it("asks the player to play when Space is pressed", () => {
+    const { effects } = renderMediaScreen();
+    fireEvent.keyDown(document.body, { key: " " });
+    expect(effects.calls).toContainEqual({ type: "togglePlayer" });
+  });
+
+  it("leaves Space to the focused button rather than toggling playback", () => {
+    const { effects } = renderMediaScreen();
+    fireEvent.keyDown(screen.getByRole("button", { name: "Project" }), {
+      key: " ",
+    });
+    expect(effects.calls).not.toContainEqual({ type: "togglePlayer" });
+  });
+
+  it("asks the player to replay the cue when R is pressed", () => {
+    const { effects } = renderMediaScreen();
+    fireEvent.keyDown(document.body, { key: "r" });
+    expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 0 });
   });
 
   it("closes the media file when Project is clicked", () => {

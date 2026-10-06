@@ -23,6 +23,12 @@ export type FlashcardSyncState =
       nextCard: FlashcardContent | null;
     };
 
+/** A place the project's flashcards can go, named after the state it leads to. */
+export type FlashcardDestination = Exclude<
+  FlashcardSyncState["kind"],
+  "notStarted"
+>;
+
 type Callbacks = {
   onExportPackage: () => void;
   onSetUpAnkiConnect: () => void;
@@ -30,16 +36,21 @@ type Callbacks = {
   onSendToAnki: () => void;
 };
 
-/** Shows where the project's flashcards go, with the next card to review or send, and the action to take. */
+/**
+ * Shows where the project's flashcards go, with the next card to review or send, and the action to take.
+ * Destinations listed in `comingSoon` are marked as such among the options; choosing one still calls its callback, which can explain.
+ */
 export function FlashcardSyncPanel({
   state,
   includedFields,
   languages,
+  comingSoon = [],
   ...callbacks
 }: {
   state: FlashcardSyncState;
   includedFields: readonly FlashcardFieldKey[];
   languages: FlashcardLanguages;
+  comingSoon?: readonly FlashcardDestination[];
 } & Callbacks) {
   return (
     <section
@@ -48,7 +59,7 @@ export function FlashcardSyncPanel({
     >
       <h2 className="font-semibold">Flashcards</h2>
       {state.kind === "notStarted" ? (
-        <NotStarted {...callbacks} />
+        <NotStarted comingSoon={comingSoon} {...callbacks} />
       ) : (
         <div className="grid items-start gap-4 sm:grid-cols-[1fr_14rem]">
           <Status state={state} {...callbacks} />
@@ -70,7 +81,10 @@ export function FlashcardSyncPanel({
   );
 }
 
-function NotStarted(callbacks: Callbacks) {
+function NotStarted({
+  comingSoon,
+  ...callbacks
+}: { comingSoon: readonly FlashcardDestination[] } & Callbacks) {
   return (
     <div className="flex flex-col gap-2">
       <ul className="flex flex-col">
@@ -78,18 +92,21 @@ function NotStarted(callbacks: Callbacks) {
           icon={<GraduationCap className="size-5" aria-hidden />}
           title="Review in easyImmerse"
           description="Study the cards here, with spaced repetition."
+          isComingSoon={comingSoon.includes("review")}
           onClick={callbacks.onStartReview}
         />
         <Option
           icon={<Download className="size-5" aria-hidden />}
           title="Export an Anki deck"
           description="Save a package to import into Anki."
+          isComingSoon={comingSoon.includes("ankiPackage")}
           onClick={callbacks.onExportPackage}
         />
         <Option
           icon={<Plug className="size-5" aria-hidden />}
           title="Set up AnkiConnect"
           description="Send new cards straight to Anki while it runs."
+          isComingSoon={comingSoon.includes("ankiConnect")}
           onClick={callbacks.onSetUpAnkiConnect}
         />
       </ul>
@@ -101,11 +118,13 @@ function Option({
   icon,
   title,
   description,
+  isComingSoon,
   onClick,
 }: {
   icon: ReactNode;
   title: string;
   description: string;
+  isComingSoon: boolean;
   onClick: () => void;
 }) {
   return (
@@ -116,10 +135,11 @@ function Option({
         className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-accent"
       >
         <span className="text-fg-muted">{icon}</span>
-        <span className="flex flex-col">
+        <span className="flex flex-1 flex-col">
           <span className="font-medium">{title}</span>
           <span className="text-xs text-fg-muted">{description}</span>
         </span>
+        {isComingSoon && <Badge>Coming soon</Badge>}
       </button>
     </li>
   );

@@ -1,4 +1,4 @@
-import { BookOpen, ChevronRight } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
@@ -28,7 +28,12 @@ export function SettingsScreen({
 }) {
   return (
     <ScreenLayout
-      headerActions={<Button onClick={onBack}>Back</Button>}
+      headerActions={
+        <Button variant="subtle" onClick={onBack}>
+          <ArrowLeft className="size-4" aria-hidden />
+          Back
+        </Button>
+      }
       showSettingsLink={false}
     >
       <h1 className="text-xl font-semibold">Settings</h1>

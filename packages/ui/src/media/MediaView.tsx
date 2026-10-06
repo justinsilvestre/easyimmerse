@@ -51,6 +51,8 @@ type MediaViewProps = {
 /**
  * The screen for watching or listening to one media file. It is dark in both themes, like a cinema.
  * The controls lie over the bottom of the stage and show only while the pointer moves or playback is paused.
+ * The subtitles sit just above them, centered when they fit, and give way to the lookup buttons beside them rather than run under them.
+ * On a phone with a notch or a home indicator, the screen keeps clear of them.
  * The panels around the stage come in as children, so that each can be wired to the store on its own.
  */
 export function MediaView(props: MediaViewProps) {
@@ -63,7 +65,10 @@ export function MediaView(props: MediaViewProps) {
     <div
       ref={props.ref}
       data-theme="dark"
-      className="flex h-dvh flex-col bg-canvas text-fg"
+      className={clsx(
+        "flex h-dvh flex-col bg-canvas pb-[env(safe-area-inset-bottom)] text-fg",
+        panels.distractionFree && "pt-[env(safe-area-inset-top)]",
+      )}
       onPointerMove={pointer.onPointerMove}
     >
       {!panels.distractionFree && <Header {...props} />}
@@ -76,38 +81,6 @@ export function MediaView(props: MediaViewProps) {
           )}
           <div className="relative flex min-h-40 flex-1 items-center justify-center overflow-hidden bg-black">
             {props.stage}
-            <SubtitleOverlay
-              targetCue={activeCue}
-              translationCue={
-                activeCue ? findTranslationOf(activeCue, translationCues) : null
-              }
-              display={props.subtitleDisplay}
-              isRaised={showsControls}
-              activeWord={props.activeWord}
-              wordGestures={props.wordGestures}
-            />
-            {props.lookup}
-            <span
-              className={clsx(
-                "absolute right-2 z-10 flex items-center gap-1 rounded-md bg-black/50 transition-[bottom]",
-                showsControls ? "bottom-22" : "bottom-2",
-              )}
-            >
-              <IconButton
-                label="Look up a word"
-                {...{ [lookupTriggerAttribute]: "" }}
-                onClick={props.onLookup}
-              >
-                <Search className="size-4" />
-              </IconButton>
-              <Kbd>L</Kbd>
-              <IconButton
-                label="New flashcard from this subtitle"
-                onClick={props.onAddFlashcard}
-              >
-                <NewFlashcardIcon className="size-4" />
-              </IconButton>
-            </span>
             {panels.distractionFree && (
               <span className="absolute top-2 right-2 z-10">
                 <IconButton
@@ -118,19 +91,59 @@ export function MediaView(props: MediaViewProps) {
                 </IconButton>
               </span>
             )}
-            <div
-              className={clsx(
-                "absolute inset-x-0 bottom-0 z-10 transition-opacity focus-within:pointer-events-auto focus-within:opacity-100",
-                !showsControls && "pointer-events-none opacity-0",
-              )}
-            >
-              <PlayerControls
-                playback={playback}
-                tracks={props.tracks}
-                panels={panels}
-                callbacks={props.playerCallbacks}
-              />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col">
+              <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2 p-2">
+                <div className="col-start-2 min-w-0">
+                  <SubtitleOverlay
+                    targetCue={activeCue}
+                    translationCue={
+                      activeCue
+                        ? findTranslationOf(activeCue, translationCues)
+                        : null
+                    }
+                    display={props.subtitleDisplay}
+                    activeWord={props.activeWord}
+                    wordGestures={props.wordGestures}
+                  />
+                </div>
+                <span className="pointer-events-auto flex items-center gap-1 justify-self-end rounded-md bg-black/50">
+                  <IconButton
+                    label="Look up a word"
+                    {...{ [lookupTriggerAttribute]: "" }}
+                    onClick={props.onLookup}
+                  >
+                    <Search className="size-4" />
+                  </IconButton>
+                  <span className="hidden pointer-fine:inline">
+                    <Kbd>L</Kbd>
+                  </span>
+                  <IconButton
+                    label="New flashcard from this subtitle"
+                    onClick={props.onAddFlashcard}
+                  >
+                    <NewFlashcardIcon className="size-4" />
+                  </IconButton>
+                </span>
+              </div>
+              <div
+                className={clsx(
+                  "grid transition-[grid-template-rows,opacity] focus-within:pointer-events-auto focus-within:grid-rows-[1fr] focus-within:opacity-100",
+                  showsControls
+                    ? "pointer-events-auto grid-rows-[1fr]"
+                    : "grid-rows-[0fr] opacity-0",
+                )}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <PlayerControls
+                    playback={playback}
+                    tracks={props.tracks}
+                    panels={panels}
+                    callbacks={props.playerCallbacks}
+                  />
+                </div>
+              </div>
             </div>
+            {props.lookup}
           </div>
           {!panels.distractionFree && panels.waveform && props.waveform}
           {!panels.distractionFree && !panels.waveform && (
@@ -159,7 +172,7 @@ export function MediaView(props: MediaViewProps) {
 function Header({ media, onBack }: MediaViewProps) {
   const { openSettings } = useNavigationActions();
   return (
-    <header className="flex items-center gap-3 border-b border-line bg-surface px-3 py-2">
+    <header className="flex items-center gap-3 border-b border-line bg-surface px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2">
       <Button variant="subtle" onClick={onBack}>
         <ArrowLeft className="size-4" aria-hidden />
         Project

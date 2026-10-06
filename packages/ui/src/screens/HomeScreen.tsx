@@ -1,6 +1,5 @@
 import { useListProjectsQuery } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useNavigationActions } from "../navigationContext.ts";
 import { HomeView, type ProjectListStatus } from "../projects/HomeView.tsx";
 import { isOfflineError } from "./isOfflineError.ts";
 
@@ -14,7 +13,7 @@ export function HomeScreen({
   onCreateProject: () => void;
   onContinueOffline: () => void;
 }) {
-  const dispatch = useAppDispatch();
+  const { openDictionaries } = useNavigationActions();
   const { data, isLoading, error } = useListProjectsQuery();
   return (
     <HomeView
@@ -23,13 +22,7 @@ export function HomeScreen({
       onOpenProject={onOpenProject}
       onCreateProject={onCreateProject}
       onContinueOffline={onContinueOffline}
-      onOpenDictionaries={() =>
-        dispatch(
-          actions.notificationRequested(
-            "Managing dictionaries is not available yet.",
-          ),
-        )
-      }
+      onOpenDictionaries={openDictionaries}
     />
   );
 }
