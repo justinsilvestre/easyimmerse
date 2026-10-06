@@ -1,0 +1,86 @@
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { AnchoredPopup } from "./AnchoredPopup.tsx";
+import type { AnchorRect } from "./placeAtAnchor.ts";
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
+
+/** A word on the page whose place the test sets. */
+function createWord(rect: AnchorRect) {
+  const word = document.createElement("button");
+  document.body.append(word);
+  let current = rect;
+  vi.spyOn(word, "getBoundingClientRect").mockImplementation(
+    () =>
+      ({
+        ...current,
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+        toJSON: () => current,
+      }) as DOMRect,
+  );
+  return {
+    word,
+    moveTo: (next: AnchorRect) => {
+      current = next;
+    },
+  };
+}
+
+const lowWord = { top: 700, bottom: 720, left: 100, right: 140 };
+const higherWord = { top: 620, bottom: 640, left: 100, right: 140 };
+
+function renderAt(word: Element) {
+  const { container } = render(
+    <AnchoredPopup anchor={word}>
+      <section aria-label="Dictionary" />
+    </AnchoredPopup>,
+  );
+  return () =>
+    (container.querySelector("[data-side]") as HTMLElement | null)?.style
+      .bottom;
+}
+
+describe("AnchoredPopup", () => {
+  it("stands above a word low on the screen", () => {
+    const { word } = createWord(lowWord);
+    const bottomOf = renderAt(word);
+    expect(bottomOf()).toBe(`${window.innerHeight - 700 + 8}px`);
+  });
+
+  it("follows its word when the window is resized", () => {
+    const { word, moveTo } = createWord(lowWord);
+    const bottomOf = renderAt(word);
+    moveTo(higherWord);
+    act(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    expect(bottomOf()).toBe(`${window.innerHeight - 620 + 8}px`);
+  });
+
+  it("follows its word when something scrolls", () => {
+    const { word, moveTo } = createWord(lowWord);
+    const bottomOf = renderAt(word);
+    moveTo(higherWord);
+    act(() => {
+      fireEvent.scroll(document.body);
+    });
+    expect(bottomOf()).toBe(`${window.innerHeight - 620 + 8}px`);
+  });
+
+  it("stays where its word last was once the word is gone", () => {
+    const { word, moveTo } = createWord(lowWord);
+    const bottomOf = renderAt(word);
+    word.remove();
+    moveTo({ top: 0, bottom: 0, left: 0, right: 0 });
+    act(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    expect(bottomOf()).toBe(`${window.innerHeight - 700 + 8}px`);
+  });
+});

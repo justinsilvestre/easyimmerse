@@ -67,6 +67,9 @@ jobs:
       - name: Fail when the ffmpeg license notices are stale or a build breaks the license policy
         run: node scripts/ffmpeg-notices/index.ts --check
 
+      - name: Fail when the dependency license notices are stale or a shipped license is outside the allowed list
+        run: node scripts/dependency-notices/index.ts --check
+
   record:
     needs: [gate, check]
     runs-on: ubuntu-24.04

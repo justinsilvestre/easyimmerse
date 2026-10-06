@@ -31,6 +31,7 @@ run = [
   "pnpm -r test",
   "node --test 'scripts/**/*.test.ts'",
   "node scripts/ffmpeg-notices/index.ts --check",
+  "node scripts/dependency-notices/index.ts --check",
   "cargo fmt --all --check",
   "cargo fmt --manifest-path plugins/Cargo.toml --all --check",
   "cargo clippy --workspace --exclude easyimmerse-native --all-targets -- -D warnings",
@@ -84,6 +85,14 @@ run = "node scripts/ffmpeg-notices/index.ts"
 description = "Fail when the committed ffmpeg license notices no longer match the manifest"
 run = "node scripts/ffmpeg-notices/index.ts --check"
 
+[tasks."license-notices"]
+description = "Regenerate the license notices of every Rust crate and npm package that ships"
+run = "node scripts/dependency-notices/index.ts"
+
+[tasks."license-notices:check"]
+description = "Fail when the license notices are stale or a shipped license is outside the allowed list"
+run = "node scripts/dependency-notices/index.ts --check"
+
 [tasks."fixtures:media"]
 description = "Regenerate the media fixtures with ffmpeg"
 run = "sh fixtures/generate-media.sh"
@@ -111,13 +120,14 @@ run = "scripts/install-appium-driver.sh uiautomator2 8.7.0"
 description = "Install the Appium driver for the iOS end-to-end tests"
 run = "scripts/install-appium-driver.sh xcuitest 12.14.0"
 
+# The webdriver feature compiles in the embedded WebDriver server that the tests drive the app through.
 # The plugin-check feature embeds the hello-rust plugin, so that plugin is built first.
 # Tauri refuses to build the desktop app while a declared ffmpeg sidecar is missing.
 [tasks."e2e:desktop"]
 description = "Drive a debug build of the desktop app through WebDriver"
 depends = ["plugins:build-rust", "fetch-ffmpeg"]
 run = [
-  "pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json --features plugin-check",
+  "pnpm --filter @easyimmerse/native exec tauri build --debug --no-bundle --config e2e/tauri.conf.json --features plugin-check,webdriver",
   "pnpm --filter @easyimmerse/native e2e",
 ]
 
@@ -174,6 +184,7 @@ depends = ["web-dev:server", "web-dev:vite"]
 run = "cargo build -p easyimmerse-server"
 
 # The server keeps its data in .dev/ and seeds the placeholder projects only into a new database.
+# It gives them sample media and dictionaries once per database, so an older database receives them too.
 # Port 8788 leaves 8787 to the desktop app's embedded server.
 [tasks."web-dev:server"]
 depends = ["web-dev:build"]
@@ -181,7 +192,7 @@ env = { EASYIMMERSE_TOKEN = "dev" }
 run = '''
 mkdir -p .dev
 seed=$([ -e .dev/server.sqlite ] || echo --seed-placeholders)
-exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed
+exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed --seed-sample-content
 '''
 
 # Waits for the server build so that a compile error stops the task before Vite starts.

@@ -1,25 +1,69 @@
 import clsx from "clsx";
+import { useEffect } from "react";
+import {
+  clickableWordAttribute,
+  lookupTriggerAttribute,
+} from "./lookupTrigger.ts";
+import { type Range, RunText } from "./RunText.tsx";
+import { characterLength } from "./useKeyboardStart.ts";
+import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
 
-const wordPattern = /\p{L}[\p{L}\p{M}\p{N}'’-]*/gu;
+/** The scripts written without spaces between words: Chinese characters, hiragana, katakana and Bopomofo. */
+const unspacedScript = String.raw`\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}\p{scx=Bopomofo}`;
 
-type TextPart = { text: string; isWord: boolean; start: number };
+/**
+ * A character of an unspaced script that belongs in a run: a letter or mark, with marks such as ー,
+ * the ideographic zero 〇 and the spacing voicing marks ゛ and ゜, but not punctuation such as 、.
+ */
+const unspacedLetter = String.raw`(?=[\p{L}\p{M}〇゛゜])[${unspacedScript}]`;
+
+/** A digit, ASCII or fullwidth, which a run takes in, as in ３人 or 2026年. */
+const runDigit = "[0-9０-９]";
+
+/** A letter, mark, digit or joining character of any other script. */
+const spacedLetter = String.raw`(?![${unspacedScript}])[\p{L}\p{M}\p{N}'’-]`;
+
+/**
+ * A run of an unspaced script, with any digits before or inside it, or a word of another script beginning with a letter.
+ * Digits alone make no word.
+ */
+const wordPattern = new RegExp(
+  String.raw`(?<unspaced>${runDigit}*${unspacedLetter}(?:${unspacedLetter}|${runDigit})*)|(?=\p{L})(?:${spacedLetter})+`,
+  "gu",
+);
+
+type TextPart = {
+  text: string;
+  isWord: boolean;
+  /** Whether the word is a run of a script written without spaces, whose every character can begin a word. */
+  isUnspaced: boolean;
+  start: number;
+};
 
 /** Splits text into the words a reader could look up, keeping the characters between them. `start` is each part's offset in the text. */
 export function splitIntoWords(text: string): TextPart[] {
   const parts: TextPart[] = [];
   let lastEnd = 0;
-  for (const match of text.matchAll(wordPattern)) {
-    if (match.index > lastEnd)
+  const pushGap = (end: number) => {
+    if (end > lastEnd)
       parts.push({
-        text: text.slice(lastEnd, match.index),
+        text: text.slice(lastEnd, end),
         isWord: false,
+        isUnspaced: false,
         start: lastEnd,
       });
-    parts.push({ text: match[0], isWord: true, start: match.index });
+  };
+  for (const match of text.matchAll(wordPattern)) {
+    pushGap(match.index);
+    parts.push({
+      text: match[0],
+      isWord: true,
+      isUnspaced: match.groups?.unspaced !== undefined,
+      start: match.index,
+    });
     lastEnd = match.index + match[0].length;
   }
-  if (lastEnd < text.length)
-    parts.push({ text: text.slice(lastEnd), isWord: false, start: lastEnd });
+  pushGap(text.length);
   return parts;
 }
 
@@ -28,39 +72,98 @@ export function stripMarkup(text: string): string {
   return text.replace(/<[^>]+>/g, "");
 }
 
-/** Renders text with each word as a button, so a word can be looked up on hover or focus and turned into a flashcard on click. */
+/**
+ * Renders text with each word as a button, so that a word can be looked up or turned into a flashcard.
+ * `gestures` receives what the user does to each word: click, double-click, hover or a held tap.
+ * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
+ * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
+ */
 export function ClickableText({
   text,
   activeWord,
-  onWordHover,
-  onWordClick,
+  gestures = noGestures,
 }: {
   text: string;
-  activeWord?: string;
-  onWordHover?: (word: string) => void;
-  onWordClick?: (word: string) => void;
+  /**
+   * The word the dictionary pop-up shows, by its offset in the text, and the pop-up's id.
+   * `length` is how much of the text the lookup matched, which a run written without spaces highlights.
+   */
+  activeWord?: ActiveWord;
+  gestures?: WordGestures;
 }) {
+  const { handlersFor, keyboardStart } = useWordGestures(gestures);
+  const parts = splitIntoWords(text);
+  const { keepWithin } = keyboardStart;
+  useEffect(() => {
+    keepWithin(splitIntoWords(text).filter((part) => part.isUnspaced));
+  }, [text, keepWithin]);
   return (
     <span className="whitespace-pre-line">
-      {splitIntoWords(stripMarkup(text)).map((part) =>
-        part.isWord ? (
+      {parts.map((part) => {
+        if (!part.isWord) return part.text;
+        const isActive =
+          activeWord !== undefined && contains(part, activeWord.start);
+        const runStart = part.isUnspaced ? keyboardStart.offsetIn(part) : null;
+        return (
           <button
             key={part.start}
             type="button"
-            onMouseEnter={() => onWordHover?.(part.text)}
-            onFocus={() => onWordHover?.(part.text)}
-            onClick={() => onWordClick?.(part.text)}
+            // The highlight splits a run into pieces, which must not split its name.
+            aria-label={part.isUnspaced ? part.text : undefined}
+            aria-keyshortcuts={
+              part.isUnspaced ? "ArrowLeft ArrowRight" : undefined
+            }
+            aria-haspopup="dialog"
+            aria-expanded={isActive || undefined}
+            aria-controls={isActive ? activeWord?.popupId : undefined}
+            {...{ [lookupTriggerAttribute]: "", [clickableWordAttribute]: "" }}
+            {...handlersFor(part)}
             className={clsx(
-              "rounded-sm px-px decoration-dotted underline-offset-4 hover:bg-accent-soft hover:underline focus-visible:outline-2 focus-visible:outline-accent",
-              part.text === activeWord && "bg-accent-soft text-accent-fg",
+              // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu,
+              // and a double tap must not zoom the page.
+              "touch-manipulation rounded-sm px-px decoration-dotted underline-offset-4 hover:bg-accent-soft hover:underline focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
+              isActive && !part.isUnspaced && "bg-accent-soft text-accent-fg",
             )}
           >
-            {part.text}
+            {part.isUnspaced ? (
+              <RunText
+                text={part.text}
+                matched={
+                  isActive && activeWord ? matchedRange(part, activeWord) : null
+                }
+                keyboardStart={runStart}
+              />
+            ) : (
+              part.text
+            )}
           </button>
-        ) : (
-          part.text
-        ),
-      )}
+        );
+      })}
+      {/* One region for the whole text, outside the buttons, where screen readers announce reliably. */}
+      <span aria-live="polite" className="sr-only">
+        {keyboardStart.announcement()}
+      </span>
     </span>
   );
+}
+
+type ActiveWord = { start: number; length?: number; popupId: string };
+
+const noGestures: WordGestures = {};
+
+function contains(part: { start: number; text: string }, offset: number) {
+  return offset >= part.start && offset < part.start + part.text.length;
+}
+
+/**
+ * The range of a run, from its start, that the lookup matched,
+ * or, until the lookup reports its match, the character it looks up from.
+ */
+function matchedRange(
+  part: { start: number; text: string },
+  activeWord: ActiveWord,
+): Range {
+  const from = activeWord.start - part.start;
+  const length = activeWord.length ?? characterLength(part.text, from);
+  return { from, to: Math.min(from + length, part.text.length) };
 }

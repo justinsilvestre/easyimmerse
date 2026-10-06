@@ -1,15 +1,17 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ArrowLeft, ChevronUp, Minimize, Search, Settings } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { Kbd } from "../components/Kbd.tsx";
+import { lookupTriggerAttribute } from "../components/lookupTrigger.ts";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import { languageName } from "../projects/languages.ts";
+import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
 import { findCueAt, findTranslationOf } from "./findCue.ts";
 import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
@@ -17,6 +19,8 @@ import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 
 type MediaViewProps = {
+  /** The screen's root element, which keyboard shortcuts check to tell whether the screen is in reach. */
+  ref?: Ref<HTMLDivElement>;
   media: { title: string; language: string };
   /** The player itself: the video, or the artwork of an audio file, with whatever precedes playback. */
   stage: ReactNode;
@@ -29,16 +33,16 @@ type MediaViewProps = {
   panels: { cues: boolean; waveform: boolean; distractionFree: boolean };
   subtitleDisplay: SubtitleDisplay;
   /** The word the dictionary pop-up shows, which is highlighted in the subtitles. */
-  activeWord?: string;
+  activeWord?: ActiveCueWord;
   playerCallbacks: PlayerCallbacks;
   onBack: () => void;
-  onWordHover: (word: string) => void;
-  onWordClick: (word: string) => void;
+  /** What the user does to the words of the subtitles over the stage. */
+  wordGestures: CueWordGestures;
   onLookup: () => void;
   onAddFlashcard: () => void;
   /** Notices to show above the stage, such as the unsaved-work banner. */
   headerContent?: ReactNode;
-  /** The dictionary pop-up, drawn over the lower part of the stage. */
+  /** The dictionary pop-up, which places itself at its word or else over the lower part of the stage. */
   lookup?: ReactNode;
   /** The subtitles panel or the flashcard editor, docked beside the stage. */
   sidePanel?: ReactNode;
@@ -57,6 +61,7 @@ export function MediaView(props: MediaViewProps) {
   const showsSidePanel = !panels.distractionFree && props.sidePanel != null;
   return (
     <div
+      ref={props.ref}
       data-theme="dark"
       className="flex h-dvh flex-col bg-canvas text-fg"
       onPointerMove={pointer.onPointerMove}
@@ -79,21 +84,20 @@ export function MediaView(props: MediaViewProps) {
               display={props.subtitleDisplay}
               isRaised={showsControls}
               activeWord={props.activeWord}
-              onWordHover={props.onWordHover}
-              onWordClick={props.onWordClick}
+              wordGestures={props.wordGestures}
             />
-            {props.lookup && (
-              <div className="fixed inset-x-2 top-16 bottom-2 z-30 flex items-end justify-center md:absolute md:inset-x-auto md:top-auto md:bottom-28 md:left-1/2 md:-translate-x-1/2">
-                {props.lookup}
-              </div>
-            )}
+            {props.lookup}
             <span
               className={clsx(
                 "absolute right-2 z-10 flex items-center gap-1 rounded-md bg-black/50 transition-[bottom]",
                 showsControls ? "bottom-22" : "bottom-2",
               )}
             >
-              <IconButton label="Look up a word" onClick={props.onLookup}>
+              <IconButton
+                label="Look up a word"
+                {...{ [lookupTriggerAttribute]: "" }}
+                onClick={props.onLookup}
+              >
                 <Search className="size-4" />
               </IconButton>
               <Kbd>L</Kbd>

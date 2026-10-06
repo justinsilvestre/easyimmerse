@@ -1,8 +1,9 @@
 //! SQLite persistence for the desktop, mobile, and server builds.
 //!
-//! `Storage` owns one connection behind a mutex, so it can be shared between threads. Each
-//! method locks the connection for the duration of one operation.
+//! `Storage` can be shared between threads. Writes run one at a time,
+//! while reads on a database file run beside them and see only what has been committed.
 
+mod connections;
 mod dictionaries;
 mod error;
 mod flashcards;
@@ -11,67 +12,74 @@ mod migrations;
 mod new_row;
 mod preferences;
 mod projects;
+mod sample_content;
 mod stored_integer;
 mod subtitle_tracks;
 
-pub use dictionaries::{DictionaryId, StoredDictionary};
+pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use error::StorageError;
+pub use sample_content::SampleContentError;
 pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 
 use std::path::Path;
-use std::sync::Mutex;
 
-use easyimmerse_core::dictionary::{Dictionary, TermEntry};
+use easyimmerse_core::dictionary::{DictionaryMedia, DictionarySource};
 use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId};
+use easyimmerse_core::lookup::{
+    DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
+};
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
 
+use connections::Connections;
+
 pub struct Storage {
-    conn: Mutex<Connection>,
+    connections: Connections,
 }
 
 impl Storage {
     /// Opens or creates the database file and brings its schema up to date.
     pub fn open(path: &Path) -> Result<Self, StorageError> {
-        let conn = Connection::open(path)?;
-        conn.pragma_update(None, "journal_mode", "WAL")?;
-        Self::from_connection(conn)
-    }
-
-    /// Opens an empty database that lives only as long as this value.
-    pub fn open_in_memory() -> Result<Self, StorageError> {
-        Self::from_connection(Connection::open_in_memory()?)
-    }
-
-    fn from_connection(mut conn: Connection) -> Result<Self, StorageError> {
-        conn.pragma_update(None, "foreign_keys", "ON")?;
-        migrations::MIGRATIONS.to_latest(&mut conn)?;
         Ok(Self {
-            conn: Mutex::new(conn),
+            connections: Connections::open(path)?,
         })
     }
 
-    fn with_connection<T>(
+    /// Opens an empty database that lives only as long as this value.
+    /// Its reads wait for any write in progress.
+    pub fn open_in_memory() -> Result<Self, StorageError> {
+        Ok(Self {
+            connections: Connections::open_in_memory()?,
+        })
+    }
+
+    fn write<T>(
         &self,
         operation: impl FnOnce(&mut Connection) -> Result<T, StorageError>,
     ) -> Result<T, StorageError> {
-        let mut conn = self.conn.lock().map_err(|_| StorageError::LockPoisoned)?;
-        operation(&mut conn)
+        self.connections.write(operation)
+    }
+
+    fn read<T>(
+        &self,
+        operation: impl FnOnce(&Connection) -> Result<T, StorageError>,
+    ) -> Result<T, StorageError> {
+        self.connections.read(operation)
     }
 
     /// Lists every project, most recently opened first.
     pub fn list_projects(&self) -> Result<Vec<Project>, StorageError> {
-        self.with_connection(|conn| projects::list_projects(conn))
+        self.read(projects::list_projects)
     }
 
     pub fn get_project(&self, id: &ProjectId) -> Result<Project, StorageError> {
-        self.with_connection(|conn| projects::get_project(conn, id))
+        self.read(|conn| projects::get_project(conn, id))
     }
 
     pub fn create_project(&self, settings: &ProjectSettings) -> Result<Project, StorageError> {
-        self.with_connection(|conn| projects::create_project(conn, settings))
+        self.write(|conn| projects::create_project(conn, settings))
     }
 
     pub fn update_project(
@@ -79,29 +87,36 @@ impl Storage {
         id: &ProjectId,
         settings: &ProjectSettings,
     ) -> Result<Project, StorageError> {
-        self.with_connection(|conn| projects::update_project(conn, id, settings))
+        self.write(|conn| projects::update_project(conn, id, settings))
     }
 
     /// Records that the project was opened just now, which moves it to the front of the list.
     pub fn mark_project_opened(&self, id: &ProjectId) -> Result<(), StorageError> {
-        self.with_connection(|conn| projects::mark_project_opened(conn, id))
+        self.write(|conn| projects::mark_project_opened(conn, id))
     }
 
     pub fn seed_placeholder_projects(&self) -> Result<(), StorageError> {
-        self.with_connection(|conn| projects::seed_placeholder_projects(conn))
+        self.write(|conn| projects::seed_placeholder_projects(conn))
+    }
+
+    /// Gives each placeholder project that has no media a video with subtitles,
+    /// and imports small Spanish and Japanese dictionaries, once per database.
+    /// The video and the English subtitles are read from `fixtures_dir`.
+    pub fn seed_sample_content(&self, fixtures_dir: &Path) -> Result<(), SampleContentError> {
+        sample_content::seed_sample_content(self, fixtures_dir)
     }
 
     /// Deletes a project together with everything that belongs to it.
     pub fn delete_project(&self, project_id: &ProjectId) -> Result<(), StorageError> {
-        self.with_connection(|conn| projects::delete_project(conn, project_id))
+        self.write(|conn| projects::delete_project(conn, project_id))
     }
 
     pub fn list_media_files(&self, project_id: &ProjectId) -> Result<Vec<MediaFile>, StorageError> {
-        self.with_connection(|conn| media_files::list_media_files(conn, project_id))
+        self.read(|conn| media_files::list_media_files(conn, project_id))
     }
 
     pub fn get_media_file(&self, id: &MediaFileId) -> Result<MediaFile, StorageError> {
-        self.with_connection(|conn| media_files::get_media_file(conn, id))
+        self.read(|conn| media_files::get_media_file(conn, id))
     }
 
     pub fn add_media_file(
@@ -110,11 +125,11 @@ impl Storage {
         name: &str,
         source: &MediaFileSource,
     ) -> Result<MediaFile, StorageError> {
-        self.with_connection(|conn| media_files::add_media_file(conn, project_id, name, source))
+        self.write(|conn| media_files::add_media_file(conn, project_id, name, source))
     }
 
     pub fn remove_media_file(&self, id: &MediaFileId) -> Result<(), StorageError> {
-        self.with_connection(|conn| media_files::remove_media_file(conn, id))
+        self.write(|conn| media_files::remove_media_file(conn, id))
     }
 
     /// Stores the user's track choice for a media file; `None` clears it.
@@ -123,30 +138,29 @@ impl Storage {
         id: &MediaFileId,
         track_selection_json: Option<&str>,
     ) -> Result<(), StorageError> {
-        self.with_connection(|conn| {
-            media_files::set_track_selection_json(conn, id, track_selection_json)
-        })
+        self.write(|conn| media_files::set_track_selection_json(conn, id, track_selection_json))
     }
 
     /// Lists every distinct local path that some media file still points at.
     pub fn list_referenced_source_paths(&self) -> Result<Vec<String>, StorageError> {
-        self.with_connection(|conn| media_files::list_referenced_source_paths(conn))
+        self.read(media_files::list_referenced_source_paths)
     }
 
     pub fn list_flashcards(&self, project_id: &ProjectId) -> Result<Vec<Flashcard>, StorageError> {
-        self.with_connection(|conn| flashcards::list_flashcards(conn, project_id))
+        self.read(|conn| flashcards::list_flashcards(conn, project_id))
     }
 
     pub fn get_flashcard(&self, id: &FlashcardId) -> Result<Flashcard, StorageError> {
-        self.with_connection(|conn| flashcards::get_flashcard(conn, id))
+        self.read(|conn| flashcards::get_flashcard(conn, id))
     }
 
     pub fn create_flashcard(
         &self,
         project_id: &ProjectId,
+        id: &FlashcardId,
         draft: &FlashcardDraft,
     ) -> Result<Flashcard, StorageError> {
-        self.with_connection(|conn| flashcards::create_flashcard(conn, project_id, draft))
+        self.write(|conn| flashcards::create_flashcard(conn, project_id, id, draft))
     }
 
     pub fn update_flashcard(
@@ -154,25 +168,25 @@ impl Storage {
         id: &FlashcardId,
         draft: &FlashcardDraft,
     ) -> Result<Flashcard, StorageError> {
-        self.with_connection(|conn| flashcards::update_flashcard(conn, id, draft))
+        self.write(|conn| flashcards::update_flashcard(conn, id, draft))
     }
 
     pub fn delete_flashcard(&self, id: &FlashcardId) -> Result<(), StorageError> {
-        self.with_connection(|conn| flashcards::delete_flashcard(conn, id))
+        self.write(|conn| flashcards::delete_flashcard(conn, id))
     }
 
     pub fn list_subtitle_tracks(
         &self,
         media_file_id: &MediaFileId,
     ) -> Result<Vec<SubtitleTrack>, StorageError> {
-        self.with_connection(|conn| subtitle_tracks::list_subtitle_tracks(conn, media_file_id))
+        self.read(|conn| subtitle_tracks::list_subtitle_tracks(conn, media_file_id))
     }
 
     pub fn get_subtitle_track(
         &self,
         id: &SubtitleTrackId,
     ) -> Result<StoredSubtitleTrack, StorageError> {
-        self.with_connection(|conn| subtitle_tracks::get_subtitle_track(conn, id))
+        self.read(|conn| subtitle_tracks::get_subtitle_track(conn, id))
     }
 
     pub fn add_subtitle_track(
@@ -180,19 +194,19 @@ impl Storage {
         media_file_id: &MediaFileId,
         track: &NewSubtitleTrack,
     ) -> Result<SubtitleTrack, StorageError> {
-        self.with_connection(|conn| subtitle_tracks::add_subtitle_track(conn, media_file_id, track))
+        self.write(|conn| subtitle_tracks::add_subtitle_track(conn, media_file_id, track))
     }
 
     /// Removes a track and takes it out of its media file's selection.
     pub fn remove_subtitle_track(&self, id: &SubtitleTrackId) -> Result<(), StorageError> {
-        self.with_connection(|conn| subtitle_tracks::remove_subtitle_track(conn, id))
+        self.write(|conn| subtitle_tracks::remove_subtitle_track(conn, id))
     }
 
     pub fn get_subtitle_selection(
         &self,
         media_file_id: &MediaFileId,
     ) -> Result<SubtitleSelection, StorageError> {
-        self.with_connection(|conn| subtitle_tracks::get_subtitle_selection(conn, media_file_id))
+        self.read(|conn| subtitle_tracks::get_subtitle_selection(conn, media_file_id))
     }
 
     /// Stores which tracks the media file shows. Each named track must belong to the media file.
@@ -201,33 +215,80 @@ impl Storage {
         media_file_id: &MediaFileId,
         selection: &SubtitleSelection,
     ) -> Result<(), StorageError> {
-        self.with_connection(|conn| {
-            subtitle_tracks::set_subtitle_selection(conn, media_file_id, selection)
-        })
+        self.write(|conn| subtitle_tracks::set_subtitle_selection(conn, media_file_id, selection))
     }
 
     pub fn get_preference(&self, key: &str) -> Result<Option<String>, StorageError> {
-        self.with_connection(|conn| preferences::get_preference(conn, key))
+        self.read(|conn| preferences::get_preference(conn, key))
     }
 
     pub fn set_preference(&self, key: &str, value: &str) -> Result<(), StorageError> {
-        self.with_connection(|conn| preferences::set_preference(conn, key, value))
+        self.write(|conn| preferences::set_preference(conn, key, value))
     }
 
-    pub fn insert_dictionary(&self, dictionary: &Dictionary) -> Result<DictionaryId, StorageError> {
-        self.with_connection(|conn| dictionaries::insert_dictionary(conn, dictionary))
+    /// Imports a dictionary from its files in one transaction and returns its new id.
+    /// Other writes wait until the import finishes; reads do not.
+    pub fn import_dictionary(
+        &self,
+        source: &mut DictionarySource,
+    ) -> Result<DictionaryId, StorageError> {
+        let imported_at = new_row::now_ms();
+        self.write(|conn| dictionaries::import_dictionary(conn, source, imported_at))
     }
 
+    /// Lists every stored dictionary in the order they were imported.
     pub fn list_dictionaries(&self) -> Result<Vec<StoredDictionary>, StorageError> {
-        self.with_connection(|conn| dictionaries::list_dictionaries(conn))
+        self.read(dictionaries::list_dictionaries)
     }
 
-    pub fn lookup_term(
+    pub fn get_dictionary(&self, id: &DictionaryId) -> Result<StoredDictionary, StorageError> {
+        self.read(|conn| dictionaries::get_dictionary(conn, id))
+    }
+
+    /// Deletes a dictionary together with everything it stored.
+    pub fn delete_dictionary(&self, id: &DictionaryId) -> Result<(), StorageError> {
+        self.write(|conn| dictionaries::delete_dictionary(conn, id))
+    }
+
+    /// Finds the entries of every dictionary stored under any of the headwords, ignoring case.
+    pub fn find_dictionary_entries(
+        &self,
+        headwords: &[String],
+    ) -> Result<Vec<FoundEntry>, StorageError> {
+        self.read(|conn| dictionaries::find_entries(conn, headwords))
+    }
+
+    /// Finds the frequencies and pronunciations that every dictionary stores for any of the terms.
+    pub fn find_term_meta(&self, terms: &[String]) -> Result<Vec<FoundTermMeta>, StorageError> {
+        self.read(|conn| dictionaries::find_term_meta(conn, terms))
+    }
+
+    pub fn find_kanji(&self, characters: &[String]) -> Result<Vec<FoundKanji>, StorageError> {
+        self.read(|conn| dictionaries::find_kanji(conn, characters))
+    }
+
+    pub fn find_kanji_meta(
+        &self,
+        characters: &[String],
+    ) -> Result<Vec<FoundKanjiMeta>, StorageError> {
+        self.read(|conn| dictionaries::find_kanji_meta(conn, characters))
+    }
+
+    /// Returns the stylesheets of the given dictionaries in import order, leaving out dictionaries that have none.
+    pub fn find_dictionary_stylesheets(
+        &self,
+        dictionary_ids: &[String],
+    ) -> Result<Vec<DictionaryStylesheet>, StorageError> {
+        self.read(|conn| dictionaries::find_stylesheets(conn, dictionary_ids))
+    }
+
+    /// Returns a file stored with a dictionary, by the path its definitions use.
+    pub fn get_dictionary_media(
         &self,
         id: &DictionaryId,
-        term: &str,
-    ) -> Result<Vec<TermEntry>, StorageError> {
-        self.with_connection(|conn| dictionaries::lookup_term(conn, id, term))
+        path: &str,
+    ) -> Result<DictionaryMedia, StorageError> {
+        self.read(|conn| dictionaries::get_media(conn, id, path))
     }
 }
 
@@ -237,7 +298,7 @@ mod tests {
 
     fn query_pragma<T: rusqlite::types::FromSql>(storage: &Storage, name: &str) -> T {
         storage
-            .with_connection(|conn| Ok(conn.pragma_query_value(None, name, |row| row.get(0))?))
+            .write(|conn| Ok(conn.pragma_query_value(None, name, |row| row.get(0))?))
             .unwrap()
     }
 

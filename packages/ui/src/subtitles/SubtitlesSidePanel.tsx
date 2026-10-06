@@ -2,6 +2,10 @@ import { actions } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { CuePanel } from "../media/CuePanel.tsx";
+import type {
+  ActiveCueWord,
+  CueWordGestures,
+} from "../media/cueWordGestures.ts";
 import { findCueAt } from "../media/findCue.ts";
 import { SubtitleTrackBar } from "../media/SubtitleTrackBar.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
@@ -13,13 +17,16 @@ export function SubtitlesSidePanel({
   tracks,
   currentMs,
   flashcardCueIndexes,
-  onWordClick,
+  activeWord,
+  wordGestures,
 }: {
   subtitles: ReturnType<typeof useMediaSubtitles>;
   tracks: SubtitleTrackChoices;
   currentMs: number;
   flashcardCueIndexes: readonly number[];
-  onWordClick: (word: string, cue: Cue) => void;
+  /** The word the dictionary pop-up shows. */
+  activeWord?: ActiveCueWord;
+  wordGestures: CueWordGestures;
 }) {
   const dispatch = useAppDispatch();
   const activeCue: Cue | null = findCueAt(subtitles.cues, currentMs);
@@ -43,9 +50,9 @@ export function SubtitlesSidePanel({
         translationCues={subtitles.translationCues}
         activeCueIndex={activeCue?.index ?? null}
         flashcardCueIndexes={flashcardCueIndexes}
+        activeWord={activeWord}
         onSeek={(ms) => dispatch(actions.seekRequested(ms / 1000))}
-        onWordHover={() => undefined}
-        onWordClick={onWordClick}
+        wordGestures={wordGestures}
         onAddSubtitlesFile={subtitles.requestFile}
         onGenerateSubtitles={() =>
           dispatch(

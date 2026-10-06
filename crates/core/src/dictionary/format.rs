@@ -1,20 +1,22 @@
-use std::io::Cursor;
-
-use zip::ZipArchive;
-
-use super::Dictionary;
 use super::error::DictionaryError;
+use super::metadata::DictionaryFormatKind;
+use super::sink::DictionarySink;
+use super::source::DictionarySource;
 
-/// A dictionary file format packaged as a zip archive.
+/// A dictionary file format.
 ///
-/// Each supported format implements this trait and is listed in `registered_formats`, which
-/// `parse_dictionary` consults in order. New formats such as StarDict are added the same way.
+/// Each supported format implements this trait and is listed in `registered_formats`,
+/// which `import_dictionary` consults in order.
 pub trait DictionaryFormat {
-    fn name(&self) -> &'static str;
+    fn kind(&self) -> DictionaryFormatKind;
 
-    /// Reports whether the archive looks like this format, without parsing it fully.
-    fn matches(&self, archive: &mut ZipArchive<Cursor<&[u8]>>) -> bool;
+    /// Reports whether the source looks like this format, judging by file names and headers only.
+    fn matches(&self, source: &DictionarySource) -> bool;
 
-    fn parse(&self, archive: &mut ZipArchive<Cursor<&[u8]>>)
-    -> Result<Dictionary, DictionaryError>;
+    /// Reads the whole dictionary into the sink, starting with a call to `begin`.
+    fn import(
+        &self,
+        source: &mut DictionarySource,
+        sink: &mut dyn DictionarySink,
+    ) -> Result<(), DictionaryError>;
 }

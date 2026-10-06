@@ -1,6 +1,7 @@
 import type {
   Flashcard,
   FlashcardDraft,
+  LookupResponse,
   PlaybackRequest,
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
@@ -233,18 +234,143 @@ describe("backendApi", () => {
     ]);
   });
 
-  it("sends a raw zip body for importDictionary", async () => {
+  it("sends the file as a raw body for importDictionary", async () => {
     const client = createRecordingClient();
     configureBackend(client);
     const bytes = new Uint8Array([80, 75]);
     await createStore().dispatch(
-      backendApi.endpoints.importDictionary.initiate({ bytes }),
+      backendApi.endpoints.importDictionary.initiate({
+        fileName: "jmdict.zip",
+        bytes,
+      }),
     );
     expect(client.requests[0]?.body).toEqual({
       kind: "bytes",
       value: bytes,
-      contentType: "application/zip",
+      contentType: "application/octet-stream",
     });
+  });
+
+  it("puts the file name in the query string for importDictionary", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.importDictionary.initiate({
+        fileName: "oxford.mdx",
+        bytes: new Uint8Array(),
+      }),
+    );
+    expect(client.requests[0]?.query).toEqual({ fileName: "oxford.mdx" });
+  });
+
+  it("carries the file name in the offline operation for importDictionary", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    const bytes = new Uint8Array();
+    await createStore().dispatch(
+      backendApi.endpoints.importDictionary.initiate({
+        fileName: "words.csv",
+        bytes,
+      }),
+    );
+    expect(client.requests[0]?.offlineOperation).toEqual({
+      kind: "parseDictionary",
+      fileName: "words.csv",
+      bytes,
+      tableLayout: null,
+    });
+  });
+
+  it("puts a chosen table layout in the query string for importDictionary", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.importDictionary.initiate({
+        fileName: "words.csv",
+        bytes: new Uint8Array(),
+        tableLayout: { columns: ["term", "ignored"], hasHeader: true },
+      }),
+    );
+    expect(client.requests[0]?.query).toEqual({
+      fileName: "words.csv",
+      columns: "term,ignored",
+      hasHeader: "true",
+    });
+  });
+
+  it("sends POST /dictionaries/preview for previewDictionaryTable", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.previewDictionaryTable.initiate({
+        fileName: "words.csv",
+        bytes: new Uint8Array(),
+      }),
+    );
+    expect(client.requests[0]?.path).toBe("/dictionaries/preview");
+  });
+
+  it("sends DELETE /dictionaries/{id} for deleteDictionary", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.deleteDictionary.initiate("d1"),
+    );
+    expect(client.requests).toEqual([
+      { method: "DELETE", path: "/dictionaries/d1" },
+    ]);
+  });
+
+  it("puts the text and language in the query string for lookupText", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.lookupText.initiate({
+        text: "猫が",
+        language: "ja",
+      }),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "GET",
+        path: "/dictionaries/lookup",
+        query: { text: "猫が", language: "ja" },
+      },
+    ]);
+  });
+
+  it("puts the context and offset in the query string for lookupText", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.lookupText.initiate({
+        text: "rufe dich an.",
+        language: "de",
+        context: "Ich rufe dich an.",
+        offset: 4,
+      }),
+    );
+    expect(client.requests[0]?.query).toEqual({
+      text: "rufe dich an.",
+      language: "de",
+      context: "Ich rufe dich an.",
+      offset: "4",
+    });
+  });
+
+  it("returns the dictionaries' stylesheets with the lookup results", async () => {
+    const response: LookupResponse = {
+      results: [],
+      kanji: [],
+      stylesheets: [{ dictionaryId: "d1", css: "b { color: red }" }],
+    };
+    configureBackend({
+      send: async <T>() => ({ data: response as T }),
+    });
+    const result = await createStore().dispatch(
+      backendApi.endpoints.lookupText.initiate({ text: "猫", language: "ja" }),
+    );
+    expect(result.data?.stylesheets).toEqual(response.stylesheets);
   });
 
   it("puts the format in the query string for parseDocument", async () => {

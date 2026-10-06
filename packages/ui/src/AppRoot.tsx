@@ -1,4 +1,3 @@
-import { ffmpegNotices } from "@easyimmerse/licenses";
 import type {
   AppStore,
   BrowserFileRegistry,
@@ -9,15 +8,31 @@ import { actions } from "@easyimmerse/state";
 import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
+import { WordClickMemoryProvider } from "./components/wordClickMemoryContext.tsx";
+import { SharedSavingProvider } from "./flashcards/SharedSavingContext.tsx";
+import { UnsavedCardsStatus } from "./flashcards/unsaved/UnsavedCardsStatus.tsx";
 import { useAppDispatch } from "./hooks/useAppDispatch.ts";
 import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
+import { useLicenseNotices } from "./hooks/useLicenseNotices.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
-import type { MainNavigation, NavigationAction } from "./navigation.ts";
-import { initialNavigation, mainScreenOf, navigate } from "./navigation.ts";
+import type {
+  MainNavigation,
+  Navigation,
+  NavigationAction,
+} from "./navigation.ts";
+import {
+  initialNavigation,
+  mainScreenOf,
+  navigate,
+  settingsPageOf,
+} from "./navigation.ts";
+import { createNavigationActions } from "./navigationActions.ts";
 import { NavigationActionsContext } from "./navigationContext.ts";
+import { NoticesProvider } from "./notices/NoticesContext.tsx";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
+import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
 import { NewProjectScreen } from "./screens/NewProjectScreen.tsx";
 import { OfflineScreen } from "./screens/OfflineScreen.tsx";
@@ -41,7 +56,7 @@ export function AppRoot({
     navigate,
     initialNavigation,
   );
-  const openSettings = () => dispatchNavigation({ type: "openSettings" });
+  const navigationActions = createNavigationActions(dispatchNavigation, store);
   useEffect(
     () =>
       effects.subscribeToSettingsRequests(() =>
@@ -52,27 +67,34 @@ export function AppRoot({
   const settingsOpen = navigation.screen === "settings";
   return (
     <Provider store={store}>
-      <PlayerRegistryContext value={playerRegistry}>
-        <BrowserFileRegistryContext value={browserFileRegistry}>
-          <NavigationActionsContext value={{ openSettings }}>
-            <AppearanceHandler />
-            <PreferencesLoader />
-            <div inert={settingsOpen}>
-              <MainScreen
-                navigation={mainScreenOf(navigation)}
-                dispatchNavigation={dispatchNavigation}
-              />
-            </div>
-            {settingsOpen && (
-              <SettingsOverlay>
-                <ConnectedSettingsScreen
-                  onBack={() => dispatchNavigation({ type: "closeSettings" })}
-                />
-              </SettingsOverlay>
-            )}
-          </NavigationActionsContext>
-        </BrowserFileRegistryContext>
-      </PlayerRegistryContext>
+      <NavigationActionsContext value={navigationActions}>
+        <SharedSavingProvider>
+          <NoticesProvider statusLine={<UnsavedCardsStatus />}>
+            <PlayerRegistryContext value={playerRegistry}>
+              <BrowserFileRegistryContext value={browserFileRegistry}>
+                <WordClickMemoryProvider>
+                  <AppearanceHandler />
+                  <PreferencesLoader />
+                  <div inert={settingsOpen}>
+                    <MainScreen
+                      navigation={mainScreenOf(navigation)}
+                      dispatchNavigation={dispatchNavigation}
+                    />
+                  </div>
+                  {navigation.screen === "settings" && (
+                    <SettingsOverlay>
+                      <SettingsPage
+                        navigation={navigation}
+                        dispatchNavigation={dispatchNavigation}
+                      />
+                    </SettingsOverlay>
+                  )}
+                </WordClickMemoryProvider>
+              </BrowserFileRegistryContext>
+            </PlayerRegistryContext>
+          </NoticesProvider>
+        </SharedSavingProvider>
+      </NavigationActionsContext>
     </Provider>
   );
 }
@@ -125,13 +147,44 @@ function MainScreen({
   }
 }
 
+/** The settings page on top of the settings stack. */
+function SettingsPage({
+  navigation,
+  dispatchNavigation,
+}: {
+  navigation: Extract<Navigation, { screen: "settings" }>;
+  dispatchNavigation: (action: NavigationAction) => void;
+}) {
+  const onBack = () => dispatchNavigation({ type: "closeSettings" });
+  switch (settingsPageOf(navigation)) {
+    case "general":
+      return (
+        <ConnectedSettingsScreen
+          onBack={onBack}
+          onOpenDictionaries={() =>
+            dispatchNavigation({ type: "openDictionaries" })
+          }
+        />
+      );
+    case "dictionaries":
+      return <DictionariesScreen onBack={onBack} />;
+  }
+}
+
 /** The Settings screen with the converted-videos status from the server and the bundled license notices. */
-function ConnectedSettingsScreen({ onBack }: { onBack: () => void }) {
+function ConnectedSettingsScreen({
+  onBack,
+  onOpenDictionaries,
+}: {
+  onBack: () => void;
+  onOpenDictionaries: () => void;
+}) {
   return (
     <SettingsScreen
       onBack={onBack}
+      onOpenDictionaries={onOpenDictionaries}
       conversionCache={useConversionCacheControls()}
-      licenseNotices={ffmpegNotices}
+      licenseNotices={useLicenseNotices()}
     />
   );
 }

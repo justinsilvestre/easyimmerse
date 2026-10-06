@@ -8,7 +8,7 @@ const meta = {
   argTypes: {
     tone: {
       control: "inline-radio",
-      options: ["neutral", "accent", "success", "warning", "danger"],
+      options: ["neutral", "accent", "success", "warning", "danger", "info"],
     },
   },
 } satisfies Meta<typeof Badge>;
@@ -30,4 +30,8 @@ export const Warning: Story = {
 
 export const Danger: Story = {
   args: { tone: "danger", children: "Unreachable" },
+};
+
+export const Info: Story = {
+  args: { tone: "info", children: "Name" },
 };

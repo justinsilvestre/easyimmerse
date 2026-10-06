@@ -146,8 +146,18 @@ fn open_storage(path: &Path) -> Result<Storage, EmbeddedServerError> {
     // developer then deletes the database to start over. Release builds start empty.
     if cfg!(debug_assertions) {
         storage.seed_placeholder_projects()?;
+        seed_sample_content(&storage);
     }
     Ok(storage)
+}
+
+/// Adds sample media and dictionaries from the repository's fixtures.
+/// A failure is only logged, because the app works without them.
+fn seed_sample_content(storage: &Storage) {
+    let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../fixtures");
+    if let Err(error) = storage.seed_sample_content(&fixtures_dir) {
+        tracing::warn!("could not add the sample content: {error}");
+    }
 }
 
 fn create_cache_dir(app: &AppHandle) -> Result<PathBuf, EmbeddedServerError> {
@@ -200,5 +210,40 @@ mod tests {
     fn chooses_nothing_for_an_empty_value() {
         let path = resolve_database_override(OsStr::new(""), Path::new("/repo"));
         assert_eq!(path, None);
+    }
+}
+
+/// The pages show images, fonts and sounds that the embedded server serves, such as those stored with dictionaries.
+#[cfg(test)]
+mod content_security_policy_tests {
+    use std::path::Path;
+
+    const SERVER_SOURCE: &str = "http://127.0.0.1:*";
+
+    fn allows_the_server(directive: &str) -> bool {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tauri.conf.json");
+        let config: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let sources = config["app"]["security"]["csp"][directive]
+            .as_str()
+            .unwrap_or_default();
+        sources
+            .split_whitespace()
+            .any(|source| source == SERVER_SOURCE)
+    }
+
+    #[test]
+    fn allows_images_from_the_server() {
+        assert!(allows_the_server("img-src"));
+    }
+
+    #[test]
+    fn allows_fonts_from_the_server() {
+        assert!(allows_the_server("font-src"));
+    }
+
+    #[test]
+    fn allows_sounds_and_video_from_the_server() {
+        assert!(allows_the_server("media-src"));
     }
 }

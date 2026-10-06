@@ -2,6 +2,21 @@
 
 export type LookupQuery = { 
 /**
- * The exact term or reading to find.
+ * The text from the looked-up character onwards. Lookup reads at most 20 characters of it.
  */
-term: string, };
+text: string, 
+/**
+ * The language of the text, as a BCP 47 tag, which decides how inflections are undone.
+ */
+language: string, 
+/**
+ * The text around the looked-up character, such as its subtitle cue or paragraph.
+ * In German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an".
+ */
+context?: string, 
+/**
+ * The position of the looked-up character in `context`, counted in characters (Unicode scalar values).
+ * A JavaScript string index counts UTF-16 code units instead, and differs after any emoji or other character
+ * outside the Basic Multilingual Plane, so a web client converts it with `[...context.slice(0, index)].length`.
+ */
+offset?: number, };

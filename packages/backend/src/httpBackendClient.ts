@@ -20,12 +20,13 @@ export function createHttpBackendClient(
 ): BackendClient {
   const fetchFn = options.fetch ?? globalThis.fetch;
   return {
-    send: async (request) => {
+    send: async (request, signal) => {
       try {
         const response = await fetchFn(buildUrl(options.serverUrl, request), {
           method: request.method,
           headers: buildHeaders(options, request.body),
           body: serializeBody(request.body),
+          signal,
         });
         return readResponse(response);
       } catch (cause) {

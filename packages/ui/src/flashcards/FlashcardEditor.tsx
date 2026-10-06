@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useId } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
@@ -25,6 +26,7 @@ export function FlashcardEditor({
   languages,
   waveform,
   screenshotUrl = null,
+  saveStatus = "idle",
   onSave,
   onDelete,
   onClose,
@@ -36,23 +38,36 @@ export function FlashcardEditor({
   waveform: MediaWaveform | null;
   /** The image of the screenshot at its current time. Without it, no screenshot is shown. */
   screenshotUrl?: string | null;
+  /**
+   * Whether a save the user asked for waits for definitions still on their way, or is under way.
+   * Meanwhile Save, Close and Delete do nothing and the fields are read-only, so that what is saved is what is shown.
+   */
+  saveStatus?: "idle" | "waitingForDefinitions" | "saving";
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
 }) {
   const { content, includedFields } = state;
+  const saveStatusId = useId();
+  const isSaveInert = saveStatus !== "idle";
   return (
     <form
       aria-label="Flashcard"
       className="flex h-full w-full flex-col rounded-lg border border-line bg-surface text-fg"
       onSubmit={(event) => {
         event.preventDefault();
-        onSave();
+        if (!isSaveInert) onSave();
       }}
     >
       <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
         <h2 className="font-semibold">Flashcard</h2>
-        <IconButton label="Close without saving" onClick={onClose}>
+        <IconButton
+          label="Close without saving"
+          aria-disabled={isSaveInert || undefined}
+          onClick={() => {
+            if (!isSaveInert) onClose();
+          }}
+        >
           <X className="size-4" />
         </IconButton>
       </div>
@@ -61,47 +76,75 @@ export function FlashcardEditor({
           state={state}
           languages={languages}
           dispatch={dispatch}
+          isReadOnly={isSaveInert}
         />
         <MediaFields
           state={state}
           waveform={waveform}
           screenshotUrl={screenshotUrl}
           dispatch={dispatch}
+          isReadOnly={isSaveInert}
         />
         {includedFields.includes("tags") && (
           <TagsField
             label="Tags"
             isLabelBeside
+            isReadOnly={isSaveInert}
             className="shrink-0"
             tags={content.tags}
             onChange={(tags) => dispatch({ type: "tagsChanged", tags })}
           />
         )}
       </div>
-      <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2">
-        <MenuButton
-          label="More fields"
-          opensUpward
-          items={flashcardFieldDefinitions
-            .filter((field) => field.key !== "screenshot")
-            .map((field) => ({
-              label: field.label(languages),
-              isChecked: includedFields.includes(field.key),
-              onSelect: () =>
-                dispatch({ type: "fieldToggled", key: field.key }),
-            }))}
-        >
-          More fields
-        </MenuButton>
-        <div className="flex gap-2">
-          <Button variant="danger" onClick={onDelete}>
-            Delete
-          </Button>
-          <Button variant="primary" type="submit">
-            Save
-          </Button>
+      <div className="flex flex-col border-t border-line px-4 py-2">
+        {/* Always shown, even while empty, so that its text is announced when it appears. */}
+        <p id={saveStatusId} role="status" className="text-xs text-fg-muted">
+          {saveStatusTexts[saveStatus]}
+        </p>
+        <div className="flex items-center justify-between gap-2">
+          <MenuButton
+            label="More fields"
+            opensUpward
+            isUnavailable={isSaveInert}
+            items={flashcardFieldDefinitions
+              .filter((field) => field.key !== "screenshot")
+              .map((field) => ({
+                label: field.label(languages),
+                isChecked: includedFields.includes(field.key),
+                onSelect: () =>
+                  dispatch({ type: "fieldToggled", key: field.key }),
+              }))}
+          >
+            More fields
+          </MenuButton>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="danger"
+              aria-disabled={isSaveInert || undefined}
+              onClick={() => {
+                if (!isSaveInert) onDelete();
+              }}
+            >
+              Delete
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              // Not `disabled`, which would move keyboard focus away from the button.
+              aria-disabled={isSaveInert || undefined}
+              aria-describedby={saveStatusId}
+            >
+              Save
+            </Button>
+          </div>
         </div>
       </div>
     </form>
   );
 }
+
+const saveStatusTexts = {
+  idle: "",
+  waitingForDefinitions: "Waiting for definitions…",
+  saving: "Saving…",
+};

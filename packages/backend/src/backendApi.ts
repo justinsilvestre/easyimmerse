@@ -13,17 +13,22 @@ import type {
   ListFlashcardsResponse,
   ListMediaFilesResponse,
   ListProjectsResponse,
+  LookupQuery,
   LookupResponse,
   MediaFile,
+  NewFlashcard,
   ParseLocalDocumentRequest,
   ParseTimedTextRequest,
   PlaybackRequest,
   PlaybackResponse,
+  PreviewLocalDictionaryTableRequest,
   Project,
   ProjectSettings,
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
+  TableLayout,
+  TablePreview,
   TimedTextTrack,
   TrackSelection,
   TracksResponse,
@@ -36,6 +41,18 @@ type ParseDocumentArgs = {
   bytes: Uint8Array | Blob;
   format: DocumentFormat | null;
   contentType: string;
+};
+
+type ImportDictionaryArgs = {
+  fileName: string;
+  bytes: Uint8Array | Blob;
+  /** Replaces the detected layout of a CSV, TSV or Tabfile table. */
+  tableLayout?: TableLayout | null;
+};
+
+type PreviewDictionaryTableArgs = {
+  fileName: string;
+  bytes: Uint8Array | Blob;
 };
 
 type ProjectArgs = { projectId: string; settings: ProjectSettings };
@@ -59,6 +76,26 @@ type AddSubtitleTrackArgs = MediaFileArgs & {
 type SubtitleTrackArgs = MediaFileArgs & { trackId: string };
 
 type SubtitleSelectionArgs = MediaFileArgs & { selection: SubtitleSelection };
+
+/** Encodes a table layout as the `columns` and `hasHeader` query parameters of an import. */
+const tableLayoutQuery = (
+  layout: TableLayout | null,
+): Record<string, string> =>
+  layout === null
+    ? {}
+    : {
+        columns: layout.columns.join(","),
+        hasHeader: String(layout.hasHeader),
+      };
+
+/** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
+const lookupContextQuery = (
+  context: string | undefined,
+  offset: number | undefined,
+): Record<string, string> =>
+  context === undefined || offset === undefined
+    ? {}
+    : { context, offset: String(offset) };
 
 const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
   `/projects/${projectId}/media/${mediaFileId}`;
@@ -129,12 +166,12 @@ export const backendApi = createApi({
     }),
     createFlashcard: build.mutation<
       Flashcard,
-      { projectId: string; draft: FlashcardDraft }
+      { projectId: string; flashcard: NewFlashcard }
     >({
-      query: ({ projectId, draft }) => ({
+      query: ({ projectId, flashcard }) => ({
         method: "POST",
         path: `/projects/${projectId}/flashcards`,
-        body: { kind: "json", value: draft },
+        body: { kind: "json", value: flashcard },
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
@@ -337,14 +374,51 @@ export const backendApi = createApi({
         body: { kind: "json", value: request },
       }),
     }),
-    importDictionary: build.mutation<DictionarySummary, { bytes: Uint8Array }>({
-      query: ({ bytes }) => ({
+    importDictionary: build.mutation<DictionarySummary, ImportDictionaryArgs>({
+      query: ({ fileName, bytes, tableLayout = null }) => ({
         method: "POST",
         path: "/dictionaries",
-        body: { kind: "bytes", value: bytes, contentType: "application/zip" },
-        offlineOperation: { kind: "parseDictionary", bytes },
+        query: { fileName, ...tableLayoutQuery(tableLayout) },
+        body: {
+          kind: "bytes",
+          value: bytes,
+          contentType: "application/octet-stream",
+        },
+        offlineOperation:
+          bytes instanceof Uint8Array
+            ? { kind: "parseDictionary", fileName, bytes, tableLayout }
+            : undefined,
       }),
       invalidatesTags: ["Dictionaries"],
+    }),
+    previewDictionaryTable: build.mutation<
+      TablePreview,
+      PreviewDictionaryTableArgs
+    >({
+      query: ({ fileName, bytes }) => ({
+        method: "POST",
+        path: "/dictionaries/preview",
+        query: { fileName },
+        body: {
+          kind: "bytes",
+          value: bytes,
+          contentType: "application/octet-stream",
+        },
+        offlineOperation:
+          bytes instanceof Uint8Array
+            ? { kind: "previewDictionaryTable", fileName, bytes }
+            : undefined,
+      }),
+    }),
+    previewLocalDictionaryTable: build.mutation<
+      TablePreview,
+      PreviewLocalDictionaryTableRequest
+    >({
+      query: (request) => ({
+        method: "POST",
+        path: "/dictionaries/preview-local",
+        body: { kind: "json", value: request },
+      }),
     }),
     importLocalDictionary: build.mutation<
       DictionarySummary,
@@ -361,12 +435,20 @@ export const backendApi = createApi({
       query: () => ({ method: "GET", path: "/dictionaries" }),
       providesTags: ["Dictionaries"],
     }),
-    lookupTerm: build.query<LookupResponse, { id: string; term: string }>({
-      query: ({ id, term }) => ({
-        method: "GET",
-        path: `/dictionaries/${id}/lookup`,
-        query: { term },
+    deleteDictionary: build.mutation<void, string>({
+      query: (id) => ({
+        method: "DELETE",
+        path: `/dictionaries/${encodeURIComponent(id)}`,
       }),
+      invalidatesTags: ["Dictionaries"],
+    }),
+    lookupText: build.query<LookupResponse, LookupQuery>({
+      query: ({ text, language, context, offset }) => ({
+        method: "GET",
+        path: "/dictionaries/lookup",
+        query: { text, language, ...lookupContextQuery(context, offset) },
+      }),
+      providesTags: ["Dictionaries"],
     }),
   }),
 });
@@ -399,7 +481,11 @@ export const {
   useParseDocumentMutation,
   useParseLocalDocumentMutation,
   useImportDictionaryMutation,
+  usePreviewDictionaryTableMutation,
+  usePreviewLocalDictionaryTableMutation,
   useImportLocalDictionaryMutation,
   useListDictionariesQuery,
-  useLookupTermQuery,
+  useDeleteDictionaryMutation,
+  useLookupTextQuery,
+  useLazyLookupTextQuery,
 } = backendApi;

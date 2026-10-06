@@ -1,9 +1,12 @@
 pub mod conversion_cache;
 pub mod conversions;
 pub mod dictionaries;
+pub mod dictionary_lookup;
+pub mod dictionary_media;
 pub mod documents;
 pub mod flashcards;
 pub mod health;
+pub mod local_dictionaries;
 pub mod media;
 pub mod media_frame;
 pub mod media_playback;

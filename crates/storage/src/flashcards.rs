@@ -5,7 +5,7 @@ use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
 use crate::media_files::ensure_media_file_in_project;
-use crate::new_row::{generate_id, now_ms};
+use crate::new_row::now_ms;
 use crate::projects::ensure_project_exists;
 use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 
@@ -37,19 +37,25 @@ pub fn get_flashcard(conn: &Connection, id: &FlashcardId) -> Result<Flashcard, S
     .ok_or_else(|| StorageError::FlashcardNotFound(id.0.clone()))
 }
 
-/// Saves a new flashcard in the project. Its media file, when named, must belong to the same project.
+/// Saves a flashcard in the project under the id the client chose for it.
+/// Saving again under an id the project already holds replaces that flashcard, so that a retried request leaves one flashcard.
+/// Its media file, when named, must belong to the same project.
 pub fn create_flashcard(
     conn: &Connection,
     project_id: &ProjectId,
+    id: &FlashcardId,
     draft: &FlashcardDraft,
 ) -> Result<Flashcard, StorageError> {
     ensure_project_exists(conn, project_id)?;
     ensure_media_file_matches(conn, project_id, draft.media_file_id.as_ref())?;
-    let id = FlashcardId(generate_id());
     let now = to_stored_integer(now_ms());
-    conn.execute(
+    let saved = conn.execute(
         &format!(
-            "INSERT INTO flashcards ({FLASHCARD_COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)"
+            "INSERT INTO flashcards ({FLASHCARD_COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7) \
+             ON CONFLICT(id) DO UPDATE SET media_file_id = excluded.media_file_id, \
+             cue_index = excluded.cue_index, content_json = excluded.content_json, \
+             included_fields_json = excluded.included_fields_json, updated_at_ms = excluded.updated_at_ms \
+             WHERE flashcards.project_id = excluded.project_id"
         ),
         params![
             id.0,
@@ -61,7 +67,10 @@ pub fn create_flashcard(
             now,
         ],
     )?;
-    get_flashcard(conn, &id)
+    if saved == 0 {
+        return Err(StorageError::FlashcardIdTaken(id.0.clone()));
+    }
+    get_flashcard(conn, id)
 }
 
 /// Replaces a flashcard's content and fields and returns it as it now stands.
@@ -150,6 +159,10 @@ mod tests {
             .id
     }
 
+    fn new_id() -> FlashcardId {
+        FlashcardId(crate::new_row::generate_id())
+    }
+
     fn draft(media_file_id: Option<MediaFileId>, word: &str) -> FlashcardDraft {
         FlashcardDraft {
             media_file_id,
@@ -185,7 +198,7 @@ mod tests {
     fn a_created_flashcard_keeps_its_content() {
         let storage = seeded_storage();
         let created = storage
-            .create_flashcard(&project(), &draft(None, "fressen"))
+            .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
             .unwrap();
         assert_eq!(created.content, draft(None, "fressen").content);
     }
@@ -194,19 +207,59 @@ mod tests {
     fn a_created_flashcard_is_listed() {
         let storage = seeded_storage();
         let created = storage
-            .create_flashcard(&project(), &draft(None, "fressen"))
+            .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
             .unwrap();
         assert_eq!(storage.list_flashcards(&project()).unwrap(), vec![created]);
+    }
+
+    #[test]
+    fn creating_again_under_the_same_id_leaves_one_flashcard() {
+        let storage = seeded_storage();
+        let id = new_id();
+        storage
+            .create_flashcard(&project(), &id, &draft(None, "fressen"))
+            .unwrap();
+        storage
+            .create_flashcard(&project(), &id, &draft(None, "fressen"))
+            .unwrap();
+        assert_eq!(storage.list_flashcards(&project()).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn creating_again_under_the_same_id_keeps_the_latest_content() {
+        let storage = seeded_storage();
+        let id = new_id();
+        storage
+            .create_flashcard(&project(), &id, &draft(None, "fressen"))
+            .unwrap();
+        let again = storage
+            .create_flashcard(&project(), &id, &draft(None, "essen"))
+            .unwrap();
+        assert_eq!(again.content.word, "essen");
+    }
+
+    #[test]
+    fn refuses_an_id_that_belongs_to_another_project() {
+        let storage = seeded_storage();
+        let id = new_id();
+        storage
+            .create_flashcard(&project(), &id, &draft(None, "fressen"))
+            .unwrap();
+        let other = ProjectId("placeholder-2".to_string());
+        assert!(matches!(
+            storage.create_flashcard(&other, &id, &draft(None, "fressen")),
+            Err(StorageError::FlashcardIdTaken(_))
+        ));
     }
 
     #[test]
     fn lists_the_oldest_flashcard_first() {
         let storage = seeded_storage();
         storage
-            .create_flashcard(&project(), &draft(None, "first"))
+            .create_flashcard(&project(), &new_id(), &draft(None, "first"))
             .unwrap();
         storage
-            .create_flashcard(&project(), &draft(None, "second"))
+            .create_flashcard(&project(), &new_id(), &draft(None, "second"))
             .unwrap();
         let words: Vec<_> = storage
             .list_flashcards(&project())
@@ -219,8 +272,11 @@ mod tests {
 
     #[test]
     fn refuses_a_flashcard_for_an_unknown_project() {
-        let result =
-            seeded_storage().create_flashcard(&ProjectId("missing".to_string()), &draft(None, "x"));
+        let result = seeded_storage().create_flashcard(
+            &ProjectId("missing".to_string()),
+            &new_id(),
+            &draft(None, "x"),
+        );
         assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 
@@ -228,7 +284,7 @@ mod tests {
     fn refuses_a_media_file_of_another_project() {
         let storage = seeded_storage();
         let other = add_media(&storage, &ProjectId("placeholder-2".to_string()));
-        let result = storage.create_flashcard(&project(), &draft(Some(other), "x"));
+        let result = storage.create_flashcard(&project(), &new_id(), &draft(Some(other), "x"));
         assert!(matches!(result, Err(StorageError::MediaFileNotFound(_))));
     }
 
@@ -236,7 +292,7 @@ mod tests {
     fn updating_replaces_the_content() {
         let storage = seeded_storage();
         let created = storage
-            .create_flashcard(&project(), &draft(None, "fressen"))
+            .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
             .unwrap();
         let updated = storage
             .update_flashcard(&created.id, &draft(None, "essen"))
@@ -255,7 +311,7 @@ mod tests {
     fn deletes_a_flashcard() {
         let storage = seeded_storage();
         let created = storage
-            .create_flashcard(&project(), &draft(None, "fressen"))
+            .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
             .unwrap();
         storage.delete_flashcard(&created.id).unwrap();
         assert_eq!(storage.list_flashcards(&project()).unwrap(), vec![]);
@@ -272,7 +328,11 @@ mod tests {
         let storage = seeded_storage();
         let media = add_media(&storage, &project());
         let created = storage
-            .create_flashcard(&project(), &draft(Some(media.clone()), "fressen"))
+            .create_flashcard(
+                &project(),
+                &new_id(),
+                &draft(Some(media.clone()), "fressen"),
+            )
             .unwrap();
         storage.remove_media_file(&media).unwrap();
         assert_eq!(
@@ -285,7 +345,7 @@ mod tests {
     fn counts_the_flashcards_of_the_project() {
         let storage = seeded_storage();
         storage
-            .create_flashcard(&project(), &draft(None, "fressen"))
+            .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
             .unwrap();
         assert_eq!(storage.get_project(&project()).unwrap().flashcard_count, 1);
     }

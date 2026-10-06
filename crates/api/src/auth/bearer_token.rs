@@ -9,12 +9,13 @@ use serde::Deserialize;
 use crate::auth::error_body::unauthorized;
 use crate::auth::token_kind::TokenKind;
 use crate::config::ApiConfig;
+use crate::routes::dictionary_media::DICTIONARY_MEDIA_ROUTE_PATH;
 use crate::routes::media_frame::FRAME_ROUTE_PATH;
 use crate::routes::media_stream::STREAM_ROUTE_PATH;
 
 /// Requires `Authorization: Bearer <token>` and records the token's kind on the request.
 ///
-/// The media stream and frame routes alone also accept the token as the `token` query parameter,
+/// The media stream, frame and dictionary media routes also accept the token as the `token` query parameter,
 /// because media and image elements cannot send headers.
 /// No other route does, since a token in a URL ends up in logs and browser history more easily than one in a header.
 pub async fn require_bearer_token(
@@ -66,7 +67,12 @@ fn accepts_query_token(request: &Request) -> bool {
         .extensions()
         .get::<MatchedPath>()
         .is_some_and(|matched| {
-            matched.as_str() == STREAM_ROUTE_PATH || matched.as_str() == FRAME_ROUTE_PATH
+            [
+                STREAM_ROUTE_PATH,
+                FRAME_ROUTE_PATH,
+                DICTIONARY_MEDIA_ROUTE_PATH,
+            ]
+            .contains(&matched.as_str())
         })
 }
 
@@ -102,6 +108,7 @@ mod tests {
             )
             .route(STREAM_ROUTE_PATH, get(|| async { "streamed" }))
             .route(FRAME_ROUTE_PATH, get(|| async { "framed" }))
+            .route(DICTIONARY_MEDIA_ROUTE_PATH, get(|| async { "image" }))
             .route("/other/{id}", get(|| async { "other" }))
             .layer(from_fn_with_state(config, require_bearer_token))
     }
@@ -192,6 +199,18 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn accepts_a_query_token_on_the_dictionary_media_route() {
+        let response = app()
+            .oneshot(request_to(
+                "/dictionaries/d/media/img%2Fa.png?token=secret",
+                None,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
     #[tokio::test]

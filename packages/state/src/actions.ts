@@ -1,6 +1,10 @@
 import type { Action } from "redux";
 import type { AppState, PreferenceKey } from "./appState.ts";
-import type { PickedFile, PickedMediaFile } from "./effects.ts";
+import type {
+  PickedDictionaryFile,
+  PickedFile,
+  PickedMediaFile,
+} from "./effects.ts";
 import type { Theme } from "./theme.ts";
 
 export const actions = {
@@ -11,6 +15,8 @@ export const actions = {
   playerDurationChanged: (seconds: number) =>
     ({ type: "playerDurationChanged", seconds }) as const,
   playToggleRequested: () => ({ type: "playToggleRequested" }) as const,
+  playRequested: () => ({ type: "playRequested" }) as const,
+  pauseRequested: () => ({ type: "pauseRequested" }) as const,
   playerPlayingChanged: (isPlaying: boolean) =>
     ({ type: "playerPlayingChanged", isPlaying }) as const,
   volumeChangeRequested: (volume: number) =>
@@ -31,6 +37,13 @@ export const actions = {
   mediaFileAddFailed: () => ({ type: "mediaFileAddFailed" }) as const,
   mediaFileRemoved: (mediaFileId: string) =>
     ({ type: "mediaFileRemoved", mediaFileId }) as const,
+  dictionaryFilePickRequested: () =>
+    ({ type: "dictionaryFilePickRequested" }) as const,
+  dictionaryFileChosen: (file: PickedDictionaryFile) =>
+    ({ type: "dictionaryFileChosen", file }) as const,
+  dictionaryFilePickCancelled: () =>
+    ({ type: "dictionaryFilePickCancelled" }) as const,
+  dictionaryFileHandled: () => ({ type: "dictionaryFileHandled" }) as const,
   openMedia: (mediaFileId: string) =>
     ({ type: "openMedia", mediaFileId }) as const,
   closeMedia: () => ({ type: "closeMedia" }) as const,
@@ -44,6 +57,9 @@ export const actions = {
     ({ type: "preferencesLoaded", preferences }) as const,
   notificationRequested: (message: string) =>
     ({ type: "notificationRequested", message }) as const,
+  /** Work that closing the app would lose has begun, such as a flashcard save or unsaved changes; the app warns before closing until all of it ends. */
+  unsavedWorkBegan: () => ({ type: "unsavedWorkBegan" }) as const,
+  unsavedWorkEnded: () => ({ type: "unsavedWorkEnded" }) as const,
   externalLinkRequested: (url: string) =>
     ({ type: "externalLinkRequested", url }) as const,
   systemThemeChanged: (theme: Theme) =>

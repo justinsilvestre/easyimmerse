@@ -75,6 +75,19 @@ describe("effectsMiddleware", () => {
     });
   });
 
+  it("dispatches dictionaryFileChosen once the dictionary file pick resolves", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(effects, server);
+    store.dispatch(actions.dictionaryFilePickRequested());
+    effects.resolvePickDictionaryFile(pickedMediaFile);
+    await vi.waitFor(() => {
+      expect(server.dispatchedActions).toContainEqual(
+        actions.dictionaryFileChosen(pickedMediaFile),
+      );
+    });
+  });
+
   it("dispatches mediaFilePickCancelled once the media file pick resolves to null", async () => {
     const effects = createRecordingEffects();
     const server = createFakeServerStoreParts();

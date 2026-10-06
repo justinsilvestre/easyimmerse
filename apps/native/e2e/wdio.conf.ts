@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { TauriCapabilities } from "@wdio/tauri-service";
 
-// The debug build that `tauri build --debug --no-bundle` writes. Only debug builds can serve WebDriver.
+// The debug build that `tauri build --debug --no-bundle` writes. Only debug builds with the webdriver feature can serve WebDriver.
 const binaryName =
   process.platform === "win32"
     ? "easyimmerse-native.exe"

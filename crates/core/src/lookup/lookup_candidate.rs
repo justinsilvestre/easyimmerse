@@ -1,0 +1,210 @@
+use std::cmp::Ordering;
+
+use super::separated_verb::SeparatedVerb;
+use super::word_boundary::is_word_boundary;
+use crate::deinflection::{Deinflection, deinflect, is_bare_form, is_fallback};
+
+/// The most characters of the looked-up text that lookup considers.
+const MAX_MATCHED_CHARACTERS: usize = 20;
+
+/// A dictionary form that the beginning of the looked-up text may stand for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LookupCandidate {
+    /// The beginning of the looked-up text that the candidate covers.
+    pub matched_text: String,
+    pub deinflection: Deinflection,
+    /// Whether the deinflection only takes a word back from a bare form, such as 書き or 書け from 書く.
+    pub is_bare_form: bool,
+    /// The finite verb and the particle, when the candidate is a particle verb whose parts stand apart in the context.
+    /// The matched text is then the one of the two that was looked up.
+    pub separated_verb: Option<SeparatedVerb>,
+}
+
+impl LookupCandidate {
+    pub fn is_inflected(&self) -> bool {
+        !self.deinflection.inflections.is_empty()
+    }
+
+    pub fn matched_length(&self) -> usize {
+        self.matched_text.chars().count()
+    }
+
+    pub fn inflection_count(&self) -> usize {
+        self.deinflection.inflections.len()
+    }
+
+    /// Whether the candidate comes from a rule that fits almost any word, and so ranks below its equals.
+    pub fn is_fallback(&self) -> bool {
+        is_fallback(&self.deinflection)
+    }
+
+    /// Orders candidates from the most to the least preferred:
+    /// longer matched text first, then fewer inflections, then bare forms, then candidates that are not fallbacks.
+    pub fn preference(&self, other: &Self) -> Ordering {
+        other
+            .matched_length()
+            .cmp(&self.matched_length())
+            .then_with(|| self.inflection_count().cmp(&other.inflection_count()))
+            .then_with(|| other.is_bare_form.cmp(&self.is_bare_form))
+            .then_with(|| self.is_fallback().cmp(&other.is_fallback()))
+    }
+}
+
+/// Lists the dictionary forms that the beginning of `text` may stand for, longest match first.
+///
+/// Each prefix of `text` is deinflected for the language with the given BCP 47 tag.
+/// Lookup considers at most 20 characters, and stops at the first space or punctuation mark.
+pub fn lookup_candidates(text: &str, language: &str) -> Vec<LookupCandidate> {
+    let mut candidates: Vec<LookupCandidate> = Vec::new();
+    for prefix in prefixes(text) {
+        for deinflection in deinflect(language, prefix) {
+            if !candidates
+                .iter()
+                .any(|known| known.deinflection == deinflection)
+            {
+                candidates.push(LookupCandidate {
+                    matched_text: prefix.to_string(),
+                    is_bare_form: is_bare_form(language, &deinflection),
+                    deinflection,
+                    separated_verb: None,
+                });
+            }
+        }
+    }
+    candidates
+}
+
+/// Lists the distinct headwords that storage must search for to find every candidate.
+pub fn candidate_headwords(candidates: &[LookupCandidate]) -> Vec<String> {
+    let mut headwords: Vec<String> = Vec::new();
+    for candidate in candidates {
+        if !headwords.contains(&candidate.deinflection.term) {
+            headwords.push(candidate.deinflection.term.clone());
+        }
+    }
+    headwords
+}
+
+fn prefixes(text: &str) -> Vec<&str> {
+    let ends: Vec<usize> = text
+        .char_indices()
+        .take_while(|(_, character)| !is_word_boundary(*character))
+        .take(MAX_MATCHED_CHARACTERS)
+        .map(|(start, character)| start + character.len_utf8())
+        .collect();
+    ends.into_iter().rev().map(|end| &text[..end]).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The distinct matched texts of the candidates, in order.
+    fn matched_texts(text: &str) -> Vec<String> {
+        let mut texts: Vec<String> = lookup_candidates(text, "ja")
+            .into_iter()
+            .map(|candidate| candidate.matched_text)
+            .collect();
+        texts.dedup();
+        texts
+    }
+
+    fn candidate(matched_text: &str, inflections: &[&str]) -> LookupCandidate {
+        LookupCandidate {
+            matched_text: matched_text.to_string(),
+            deinflection: Deinflection {
+                term: matched_text.to_string(),
+                word_classes: Vec::new(),
+                inflections: inflections.iter().map(|name| name.to_string()).collect(),
+            },
+            is_bare_form: false,
+            separated_verb: None,
+        }
+    }
+
+    fn bare(matched_text: &str, inflections: &[&str]) -> LookupCandidate {
+        LookupCandidate {
+            is_bare_form: true,
+            ..candidate(matched_text, inflections)
+        }
+    }
+
+    #[test]
+    fn lists_every_prefix_longest_first() {
+        assert_eq!(matched_texts("猫が"), vec!["猫が", "猫"]);
+    }
+
+    #[test]
+    fn stops_at_whitespace() {
+        assert_eq!(matched_texts("ab cd"), vec!["ab", "a"]);
+    }
+
+    #[test]
+    fn stops_at_punctuation() {
+        assert_eq!(matched_texts("猫。犬"), vec!["猫"]);
+    }
+
+    #[test]
+    fn considers_at_most_twenty_characters() {
+        assert_eq!(matched_texts(&"あ".repeat(30)).len(), 20);
+    }
+
+    #[test]
+    fn finds_nothing_in_text_that_starts_with_punctuation() {
+        assert!(lookup_candidates("。猫", "ja").is_empty());
+    }
+
+    #[test]
+    fn passes_each_prefix_through_deinflection() {
+        let candidates = lookup_candidates("猫", "ja");
+        assert_eq!(candidates[0].deinflection, Deinflection::unchanged("猫"));
+    }
+
+    #[test]
+    fn lists_each_headword_once() {
+        let candidates = vec![candidate("ab", &[]), candidate("ab", &["past"])];
+        assert_eq!(candidate_headwords(&candidates), vec!["ab"]);
+    }
+
+    fn is_bare_candidate(text: &str, term: &str) -> bool {
+        lookup_candidates(text, "ja")
+            .into_iter()
+            .find(|candidate| candidate.deinflection.term == term)
+            .is_some_and(|candidate| candidate.is_bare_form)
+    }
+
+    #[test]
+    fn marks_a_godan_imperative_as_a_bare_form() {
+        assert!(is_bare_candidate("行け", "行く"));
+    }
+
+    #[test]
+    fn does_not_mark_an_unchanged_word_as_a_bare_form() {
+        assert!(!is_bare_candidate("行け", "行け"));
+    }
+
+    #[test]
+    fn prefers_a_bare_form_among_chains_of_equal_length() {
+        let ordering = bare("ab", &["continuative"]).preference(&candidate("ab", &["imperative"]));
+        assert_eq!(ordering, Ordering::Less);
+    }
+
+    #[test]
+    fn prefers_a_longer_match() {
+        let ordering = candidate("abc", &["past"]).preference(&candidate("ab", &[]));
+        assert_eq!(ordering, Ordering::Less);
+    }
+
+    #[test]
+    fn prefers_a_reading_that_is_not_a_fallback() {
+        let ordering =
+            candidate("ab", &["imperative sg"]).preference(&candidate("ab", &["plural"]));
+        assert_eq!(ordering, Ordering::Greater);
+    }
+
+    #[test]
+    fn prefers_fewer_inflections_for_matches_of_equal_length() {
+        let ordering = candidate("ab", &["past"]).preference(&candidate("ab", &[]));
+        assert_eq!(ordering, Ordering::Greater);
+    }
+}

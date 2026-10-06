@@ -29,6 +29,9 @@ export const selectCurrentMediaFileId = (state: RootState) =>
 export const selectChosenMediaFile = (state: RootState) =>
   state.app.chosenMediaFile;
 
+export const selectChosenDictionaryFile = (state: RootState) =>
+  state.app.chosenDictionaryFile;
+
 /** Returns the theme the app shows: the one the user chose, or else the operating system's. */
 export const selectTheme = (state: RootState) => chooseTheme(state.app.theme);
 

@@ -1,0 +1,319 @@
+import type {
+  KanjiResult,
+  LookupResult,
+  StructuredContent,
+  TagDefinition,
+} from "@easyimmerse/types";
+import { exampleTermEntry } from "./exampleTermEntry.ts";
+
+const jitendexTags: TagDefinition[] = [
+  {
+    name: "★",
+    category: "popular",
+    order: -10,
+    notes: "Common word",
+    score: 0,
+  },
+  {
+    name: "v1",
+    category: "partOfSpeech",
+    order: 0,
+    notes: "Ichidan verb",
+    score: 0,
+  },
+  {
+    name: "vt",
+    category: "partOfSpeech",
+    order: 1,
+    notes: "Transitive verb",
+    score: 0,
+  },
+  { name: "n", category: "partOfSpeech", order: 0, notes: "Noun", score: 0 },
+];
+
+const tagPill = (text: string, title: string): StructuredContent => ({
+  tag: "span",
+  title,
+  data: { class: "tag" },
+  style: {
+    fontSize: "0.75em",
+    fontWeight: "bold",
+    padding: "0.1em 0.35em",
+    borderRadius: "0.3em",
+    backgroundColor: "#56689a",
+    color: "white",
+    marginRight: 0.25,
+    verticalAlign: "text-bottom",
+  },
+  content: text,
+});
+
+const taberuContent: StructuredContent = [
+  {
+    tag: "ul",
+    data: { content: "glossary" },
+    content: [
+      { tag: "li", content: [tagPill("v1", "Ichidan verb"), "to eat"] },
+      {
+        tag: "li",
+        content: [
+          "to live on (e.g. a salary); to subsist on ",
+          {
+            tag: "img",
+            path: "jitendex/glyphs/taberu.svg",
+            width: 1,
+            height: 1,
+            sizeUnits: "em",
+            appearance: "monochrome",
+            title: "Glyph",
+            verticalAlign: "middle",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    tag: "div",
+    data: { content: "example-sentence" },
+    lang: "ja",
+    style: { marginLeft: 0.5, fontSize: "0.9em" },
+    content: [
+      { tag: "ruby", content: ["朝", { tag: "rt", content: "あさ" }] },
+      "ご飯を食べる。",
+      { tag: "br" },
+      { tag: "span", style: { color: "#888" }, content: "I eat breakfast." },
+    ],
+  },
+  {
+    tag: "div",
+    style: { marginTop: 0.5, fontSize: "0.85em" },
+    content: [
+      "See also ",
+      { tag: "a", href: "?query=食う&wildcards=off", content: "食う" },
+      " · Source: ",
+      {
+        tag: "a",
+        href: "https://www.edrdg.org/jmdict/j_jmdict.html",
+        content: "JMdict",
+      },
+    ],
+  },
+  {
+    tag: "img",
+    path: "jitendex/graphics/taberu.svg",
+    width: 120,
+    height: 80,
+    sizeUnits: "px",
+    title: "A bowl of rice with chopsticks",
+    collapsible: true,
+    collapsed: true,
+  },
+];
+
+/** A verb found by undoing two inflections, from a Yomitan dictionary with structured content and images, with a frequency and a pitch accent. */
+export const exampleInflectedResult: LookupResult = {
+  matchedText: "食べなかった",
+  term: "食べる",
+  reading: "たべる",
+  inflectionChains: [["past", "negative"]],
+  definitions: [
+    {
+      dictionaryId: "jitendex",
+      dictionaryTitle: "Jitendex",
+      entry: exampleTermEntry({
+        term: "食べる",
+        reading: "たべる",
+        wordClasses: ["v1"],
+        termTags: ["★"],
+        definitionTags: ["v1", "vt"],
+        definitions: [{ kind: "structured", content: taberuContent }],
+      }),
+      tags: jitendexTags,
+    },
+  ],
+  frequencies: [
+    {
+      dictionaryId: "jpdb",
+      dictionaryTitle: "JPDB",
+      reading: "たべる",
+      frequency: { value: 512, display: null },
+    },
+  ],
+  pronunciations: [
+    {
+      dictionaryId: "nhk",
+      dictionaryTitle: "NHK",
+      reading: "たべる",
+      data: {
+        kind: "pitch",
+        pitches: [{ position: 2, nasal: [], devoice: [], tags: [] }],
+      },
+    },
+  ],
+};
+
+/** A verb form with two equally good analyses: the causative of 食べる made passive or potential by られる. */
+export const exampleAmbiguousInflectionResult: LookupResult = {
+  ...exampleInflectedResult,
+  matchedText: "食べさせられなかった",
+  inflectionChains: [
+    ["past", "negative", "passive", "causative"],
+    ["past", "negative", "potential", "causative"],
+  ],
+};
+
+/** An inflected form whose dictionary entry only points to its base form. */
+export const exampleFormOfResult: LookupResult = {
+  matchedText: "行かなかった",
+  term: "行かない",
+  reading: "いかない",
+  inflectionChains: [["past"]],
+  definitions: [
+    {
+      dictionaryId: "kaikki-ja",
+      dictionaryTitle: "Kaikki Japanese",
+      entry: exampleTermEntry({
+        term: "行かない",
+        reading: "いかない",
+        definitions: [
+          { kind: "formOf", base: "行く", inflections: ["negative"] },
+        ],
+      }),
+      tags: [],
+    },
+  ],
+  frequencies: [],
+  pronunciations: [],
+};
+
+/** A noun with frequencies from several dictionaries and pitch accents written both ways. */
+export const examplePronunciationResult: LookupResult = {
+  matchedText: "学生",
+  term: "学生",
+  reading: "がくせい",
+  inflectionChains: [],
+  definitions: [
+    {
+      dictionaryId: "jitendex",
+      dictionaryTitle: "Jitendex",
+      entry: exampleTermEntry({
+        term: "学生",
+        reading: "がくせい",
+        termTags: ["★"],
+        definitionTags: ["n"],
+        definitions: [
+          { kind: "text", text: "student (esp. a university student)" },
+        ],
+      }),
+      tags: jitendexTags,
+    },
+  ],
+  frequencies: [
+    {
+      dictionaryId: "jpdb",
+      dictionaryTitle: "JPDB",
+      reading: "がくせい",
+      frequency: { value: 734, display: null },
+    },
+    {
+      dictionaryId: "innocent",
+      dictionaryTitle: "Innocent Corpus",
+      reading: null,
+      frequency: { value: 2841, display: null },
+    },
+    {
+      dictionaryId: "bccwj",
+      dictionaryTitle: "BCCWJ",
+      reading: null,
+      frequency: { value: 1210, display: "1210㋕" },
+    },
+  ],
+  pronunciations: [
+    {
+      dictionaryId: "nhk",
+      dictionaryTitle: "NHK",
+      reading: "がくせい",
+      data: {
+        kind: "pitch",
+        pitches: [{ position: 0, nasal: [], devoice: [2], tags: ["n"] }],
+      },
+    },
+    {
+      dictionaryId: "kanjium",
+      dictionaryTitle: "Kanjium",
+      reading: "がくせい",
+      data: {
+        kind: "pitch",
+        pitches: [{ position: "LHHHH", nasal: [], devoice: [], tags: [] }],
+      },
+    },
+    {
+      dictionaryId: "wiktionary-ja-ipa",
+      dictionaryTitle: "Wiktionary IPA",
+      reading: "がくせい",
+      data: {
+        kind: "ipa",
+        transcriptions: [{ ipa: "[ɡa̠kɯ̟̊se̞ː]", tags: ["Tokyo"] }],
+      },
+    },
+  ],
+};
+
+/** A kanji from a KANJIDIC-style dictionary, with stats labelled by its tags. */
+export const exampleKanjiResult: KanjiResult = {
+  dictionaryId: "kanjidic",
+  dictionaryTitle: "KANJIDIC",
+  entry: {
+    character: "食",
+    onyomi: ["ショク", "ジキ"],
+    kunyomi: ["く.う", "く.らう", "た.べる", "は.む"],
+    tags: ["jouyou"],
+    meanings: ["eat", "food"],
+    stats: { strokes: "9", grade: "2", freq: "328", heisig6: "1584" },
+  },
+  tags: [
+    {
+      name: "jouyou",
+      category: "frequent",
+      order: 0,
+      notes: "Jōyō kanji",
+      score: 0,
+    },
+    {
+      name: "strokes",
+      category: "misc",
+      order: 0,
+      notes: "Stroke count",
+      score: 0,
+    },
+    {
+      name: "grade",
+      category: "misc",
+      order: 1,
+      notes: "School grade",
+      score: 0,
+    },
+    {
+      name: "freq",
+      category: "misc",
+      order: 2,
+      notes: "Newspaper frequency rank",
+      score: 0,
+    },
+    {
+      name: "heisig6",
+      category: "index",
+      order: 10,
+      notes: "Remembering the Kanji, 6th edition",
+      score: 0,
+    },
+  ],
+  frequencies: [
+    {
+      dictionaryId: "jpdb-kanji",
+      dictionaryTitle: "JPDB Kanji",
+      reading: null,
+      frequency: { value: 156, display: null },
+    },
+  ],
+};

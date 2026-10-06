@@ -8,7 +8,7 @@ const meta = {
   component: SettingsScreen,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
-  args: { onBack: fn() },
+  args: { onBack: fn(), onOpenDictionaries: fn() },
 } satisfies Meta<typeof SettingsScreen>;
 
 export default meta;
@@ -32,9 +32,20 @@ export const WithConvertedVideos: Story = {
       onClear: fn(),
       clearStatus: "",
     },
-    licenseNotices: [
-      { title: "ffmpeg (LGPL build) — notice", text: "Version and origin." },
-    ],
+    licenseNotices: {
+      status: "loaded",
+      groups: [
+        {
+          title: "FFmpeg",
+          notices: [
+            {
+              title: "ffmpeg (LGPL build) — notice",
+              text: "Version and origin.",
+            },
+          ],
+        },
+      ],
+    },
   },
 };
 

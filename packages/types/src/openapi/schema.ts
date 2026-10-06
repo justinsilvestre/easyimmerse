@@ -117,14 +117,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/dictionaries/{id}/lookup": {
+    "/dictionaries/lookup": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["lookupTerm"];
+        get: operations["lookupText"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Detects what each column of a table holds and returns that layout with the table's first rows,
+         *     so that the user can check it before importing.
+         */
+        post: operations["previewDictionaryTable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/preview-local": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Detects what each column of a table at a local path holds and returns that layout with the table's first rows,
+         *     so that the user can check it before importing the same path. Of a table file, only the start is read.
+         */
+        post: operations["previewLocalDictionaryTable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteDictionary"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/{id}/media/{path}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getDictionaryMedia"];
         put?: never;
         post?: never;
         delete?: never;
@@ -268,7 +340,10 @@ export interface paths {
         };
         get: operations["listFlashcards"];
         put?: never;
-        /** Saves a new flashcard. Its media file, when named, must belong to the project. */
+        /**
+         * Saves a new flashcard under the id the client chose for it. Sending the same id again replaces that flashcard,
+         *     so that a retried request cannot create a second one. Its media file, when named, must belong to the project.
+         */
         post: operations["createFlashcard"];
         delete?: never;
         options?: never;
@@ -612,6 +687,11 @@ export interface components {
             paragraphs: string[];
             title?: string | null;
         };
+        /**
+         * @description What a column of a table holds, as a person choosing the columns of a table sees it.
+         * @enum {string}
+         */
+        ColumnRole: "term" | "reading" | "definition" | "alternates" | "tags" | "frequency" | "ignored";
         /** @enum {string} */
         ContainerFormat: "mp4" | "matroska" | "mp3" | "ogg" | "wav" | "flac" | "adts" | "mpeg_ts" | "avi";
         ContainerInfo: {
@@ -626,6 +706,12 @@ export interface components {
             /** Format: int64 */
             start_ms?: number | null;
             tracks: components["schemas"]["TrackInfo"][];
+        };
+        /** @description A word as written in the context of a lookup. */
+        ContextWord: {
+            /** @description The position of the word's first character in the context, counted in characters (Unicode scalar values). */
+            start: number;
+            text: string;
         };
         /** @description Sizes are in bytes. */
         ConversionCacheStatus: {
@@ -671,10 +757,79 @@ export interface components {
             start_ms: number;
             text: string;
         };
+        /** @description One definition of an entry, kept in the form its dictionary supplies so that display can stay faithful to it. */
+        Definition: {
+            /** @enum {string} */
+            kind: "text";
+            text: string;
+        } | {
+            content: unknown;
+            /** @enum {string} */
+            kind: "structured";
+        } | {
+            html: string;
+            /** @enum {string} */
+            kind: "html";
+        } | {
+            dialect: components["schemas"]["MarkupDialect"];
+            /** @enum {string} */
+            kind: "markup";
+            markup: string;
+        } | {
+            base: string;
+            inflections: string[];
+            /** @enum {string} */
+            kind: "formOf";
+        };
+        /** @description One dictionary's entry for a result, with the meaning of each tag it uses. */
+        DictionaryDefinitions: {
+            dictionaryId: string;
+            dictionaryTitle: string;
+            entry: components["schemas"]["TermEntry"];
+            tags: components["schemas"]["TagDefinition"][];
+        };
+        /** @enum {string} */
+        DictionaryFormatKind: "yomitan" | "stardict" | "mdict" | "csv";
+        DictionaryFrequency: {
+            dictionaryId: string;
+            dictionaryTitle: string;
+            frequency: components["schemas"]["Frequency"];
+            reading?: string | null;
+        };
+        /** @description A pitch accent or IPA transcription from one dictionary. */
+        DictionaryPronunciation: {
+            data: components["schemas"]["TermMetaData"];
+            dictionaryId: string;
+            dictionaryTitle: string;
+            reading?: string | null;
+        };
+        /**
+         * @description The CSS that a dictionary ships for its own entries, unsanitized.
+         *     Displays must sanitize it and confine it to that dictionary's entries before applying it.
+         */
+        DictionaryStylesheet: {
+            css: string;
+            dictionaryId: string;
+        };
         DictionarySummary: {
             /** Format: int64 */
             entry_count: number;
+            format: components["schemas"]["DictionaryFormatKind"];
             id: string;
+            /** Format: int64 */
+            kanji_count: number;
+            /** Format: int64 */
+            kanji_meta_count: number;
+            /** Format: int64 */
+            media_count: number;
+            /** @description The language of the words looked up, as a BCP 47 tag, when the dictionary states it. */
+            source_language?: string | null;
+            /** Format: int64 */
+            tag_count: number;
+            /** @description The language of the definitions, as a BCP 47 tag, when the dictionary states it. */
+            target_language?: string | null;
+            /** Format: int64 */
+            term_meta_count: number;
             title: string;
         };
         Document: {
@@ -738,11 +893,52 @@ export interface components {
          */
         FlashcardFieldKey: "word" | "word_pronunciation" | "l1_definition" | "l2_definition" | "text_context" | "text_context_translation" | "text_context_pronunciation" | "audio_context" | "screenshot" | "tags";
         FlashcardId: string;
+        /** @description How common a term is. The dictionary's `FrequencyMode` says whether higher values mean more or less common. */
+        Frequency: {
+            /** @description The text to show in place of the value, if the dictionary gives one. */
+            display?: string | null;
+            /**
+             * Format: double
+             * @description The number to sort by, if the dictionary gives one.
+             */
+            value?: number | null;
+        };
         HealthResponse: {
             status: string;
         };
         ImportLocalDictionaryRequest: {
+            /**
+             * @description A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files.
+             *     A CSV, TSV or Tabfile table file is imported on its own.
+             */
             path: string;
+            tableLayout?: components["schemas"]["TableLayout"] | null;
+        };
+        IpaTranscription: {
+            ipa: string;
+            tags: string[];
+        };
+        /** @description A single kanji character with its readings and meanings. */
+        KanjiEntry: {
+            character: string;
+            /** @description Native Japanese readings, written in hiragana. */
+            kunyomi: string[];
+            meanings: string[];
+            /** @description Readings borrowed from Chinese, written in katakana. */
+            onyomi: string[];
+            /** @description Facts such as stroke count or grade, keyed by the name of the tag that labels them. */
+            stats: {
+                [key: string]: string;
+            };
+            tags: string[];
+        };
+        /** @description One dictionary's entry for a single kanji character. */
+        KanjiResult: {
+            dictionaryId: string;
+            dictionaryTitle: string;
+            entry: components["schemas"]["KanjiEntry"];
+            frequencies: components["schemas"]["DictionaryFrequency"][];
+            tags: components["schemas"]["TagDefinition"][];
         };
         ListDictionariesResponse: {
             dictionaries: components["schemas"]["DictionarySummary"][];
@@ -757,8 +953,31 @@ export interface components {
             projects: components["schemas"]["Project"][];
         };
         LookupResponse: {
-            entries: components["schemas"]["TermEntry"][];
+            /** @description The kanji dictionary entries for the first character, when it is a kanji. */
+            kanji: components["schemas"]["KanjiResult"][];
+            /** @description The terms that the text may begin with, best first. */
+            results: components["schemas"]["LookupResult"][];
+            /** @description The stylesheets of the dictionaries whose definitions appear in `results`, each once. */
+            stylesheets: components["schemas"]["DictionaryStylesheet"][];
         };
+        /** @description The entries of every dictionary for one term and reading that the looked-up text may stand for. */
+        LookupResult: {
+            definitions: components["schemas"]["DictionaryDefinitions"][];
+            frequencies: components["schemas"]["DictionaryFrequency"][];
+            /**
+             * @description The equally good chains of inflections that lead from the term to the matched text, the most plausible first.
+             *     Each chain names its inflections outermost first. The list is empty when no inflection was undone.
+             */
+            inflectionChains: string[][];
+            /** @description The beginning of the looked-up text that this result covers. */
+            matchedText: string;
+            pronunciations: components["schemas"]["DictionaryPronunciation"][];
+            reading?: string | null;
+            separatedVerb?: components["schemas"]["SeparatedVerb"] | null;
+            term: string;
+        };
+        /** @enum {string} */
+        MarkupDialect: "pango" | "xdxf";
         /** @description A video or audio file added to a project. */
         MediaFile: {
             /**
@@ -800,6 +1019,15 @@ export interface components {
             /** Format: int64 */
             size: number;
         };
+        /**
+         * @description What the client sends to create a flashcard: the id it chose for the flashcard, and its draft.
+         *     Sending the same id again replaces that flashcard, so that a retried request cannot create a second one.
+         */
+        NewFlashcard: {
+            draft: components["schemas"]["FlashcardDraft"];
+            /** @description Thirty-two lowercase hexadecimal digits, as in the ids the app makes. */
+            id: components["schemas"]["FlashcardId"];
+        };
         ParseLocalDocumentRequest: {
             format?: components["schemas"]["DocumentFormat"] | null;
             path: string;
@@ -815,6 +1043,16 @@ export interface components {
             /** Format: int32 */
             width: number;
         };
+        /** @description The pitch accent of one reading of a Japanese term. */
+        PitchAccent: {
+            /** @description Mora positions, counted from 1, that are devoiced. */
+            devoice: number[];
+            /** @description Mora positions, counted from 1, that are pronounced nasally. */
+            nasal: number[];
+            position: components["schemas"]["PitchPosition"];
+            tags: string[];
+        };
+        PitchPosition: number | string;
         /**
          * @description The browser engine behind the media element, decided from the user agent.
          * @enum {string}
@@ -851,6 +1089,10 @@ export interface components {
         /** @description A preference value. `null` means the preference has not been set. */
         PreferenceValue: {
             value?: string | null;
+        };
+        PreviewLocalDictionaryTableRequest: {
+            /** @description A CSV, TSV or Tabfile table, or a directory holding one, read as an import of the same path would read it. */
+            path: string;
         };
         /** @description A project with its settings and the counts the home screen shows. */
         Project: {
@@ -900,6 +1142,11 @@ export interface components {
             /** Format: int64 */
             at_ms: number;
         };
+        /** @description A particle verb whose finite verb and particle stand apart, as rufe and an in „Ich rufe dich morgen an". */
+        SeparatedVerb: {
+            particle: components["schemas"]["ContextWord"];
+            verb: components["schemas"]["ContextWord"];
+        };
         /**
          * @description Which role a subtitle track plays for its media file.
          * @enum {string}
@@ -930,11 +1177,66 @@ export interface components {
             selection: components["schemas"]["SubtitleSelection"];
             tracks: components["schemas"]["SubtitleTrack"][];
         };
+        /** @description What each column of a table holds, and whether its first row is a header. */
+        TableLayout: {
+            columns: components["schemas"]["ColumnRole"][];
+            hasHeader: boolean;
+        };
+        /** @description The layout detected in a table, with its first rows, for a person to check before importing. */
+        TablePreview: {
+            layout: components["schemas"]["TableLayout"];
+            /** @description The first rows of the table, including any header row, split into cells. */
+            rows: string[][];
+        };
+        /** @description The meaning of a tag that a dictionary attaches to its entries. */
+        TagDefinition: {
+            /** @description A grouping such as `partOfSpeech` or `frequent`, which display uses to color the tag. */
+            category: string;
+            name: string;
+            /** @description A longer description of the tag. */
+            notes: string;
+            /**
+             * Format: int64
+             * @description The position of the tag among others; lower comes first.
+             */
+            order: number;
+            /** Format: int64 */
+            score: number;
+        };
+        /** @description One headword of a dictionary with its definitions. */
         TermEntry: {
-            definitions: string[];
+            /** @description Other spellings under which the entry is found, such as StarDict synonyms or MDict redirects. */
+            alternates: string[];
+            definitionTags: string[];
+            definitions: components["schemas"]["Definition"][];
+            /** @description How the term is read, for scripts such as kanji where the spelling does not show it. */
             reading?: string | null;
-            tags: string[];
+            /**
+             * Format: int64
+             * @description The dictionary's own ranking among entries with the same headword; higher comes first.
+             */
+            score: number;
+            /**
+             * Format: int64
+             * @description An identifier shared by entries that the dictionary treats as one word.
+             */
+            sequence?: number | null;
             term: string;
+            termTags: string[];
+            /** @description The inflection classes of the term, such as `v1` or `adj-i`, which deinflection matches against. */
+            wordClasses: string[];
+        };
+        TermMetaData: (components["schemas"]["Frequency"] & {
+            /** @enum {string} */
+            kind: "frequency";
+        }) | {
+            /** @enum {string} */
+            kind: "pitch";
+            pitches: components["schemas"]["PitchAccent"][];
+        } | {
+            /** @enum {string} */
+            kind: "ipa";
+            transcriptions: components["schemas"]["IpaTranscription"][];
         };
         /**
          * @description Where the text of a request comes from.
@@ -1373,7 +1675,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Every imported dictionary */
+            /** @description Every imported dictionary, in import order */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1404,15 +1706,22 @@ export interface operations {
     };
     importDictionary: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description The name of the uploaded file, whose extension tells formats such as MDict and CSV apart. */
+                fileName: string;
+                /** @description What each column of a table holds, as column roles separated by commas, in place of the detected layout. */
+                columns?: string;
+                /** @description Whether the first row of a table is a header. Read only together with `columns`; false when left out. */
+                hasHeader?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description The dictionary archive */
+        /** @description One dictionary file: a zip or tar archive, an MDict `.mdx`, a CSV or TSV file, and so on */
         requestBody?: {
             content: {
-                "application/zip": unknown;
+                "application/octet-stream": unknown;
             };
         };
         responses: {
@@ -1425,7 +1734,7 @@ export interface operations {
                     "application/json": components["schemas"]["DictionarySummary"];
                 };
             };
-            /** @description The archive could not be parsed */
+            /** @description The file could not be read as a dictionary */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1476,7 +1785,7 @@ export interface operations {
                     "application/json": components["schemas"]["DictionarySummary"];
                 };
             };
-            /** @description The archive could not be parsed */
+            /** @description The files could not be read as a dictionary */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1503,7 +1812,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No file at the given path */
+            /** @description Nothing at the given path */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1523,22 +1832,32 @@ export interface operations {
             };
         };
     };
-    lookupTerm: {
+    lookupText: {
         parameters: {
             query: {
-                /** @description The exact term or reading to find. */
-                term: string;
+                /** @description The text from the looked-up character onwards. Lookup reads at most 20 characters of it. */
+                text: string;
+                /** @description The language of the text, as a BCP 47 tag, which decides how inflections are undone. */
+                language: string;
+                /**
+                 * @description The text around the looked-up character, such as its subtitle cue or paragraph.
+                 *     In German, it lets lookup find a particle verb whose parts stand apart, as in „Ich rufe dich morgen an".
+                 */
+                context?: string;
+                /**
+                 * @description The position of the looked-up character in `context`, counted in characters (Unicode scalar values).
+                 *     A JavaScript string index counts UTF-16 code units instead, and differs after any emoji or other character
+                 *     outside the Basic Multilingual Plane, so a web client converts it with `[...context.slice(0, index)].length`.
+                 */
+                offset?: number;
             };
             header?: never;
-            path: {
-                /** @description The dictionary id */
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description The entries matching the term exactly */
+            /** @description The entries of every dictionary for the beginning of the text */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1556,7 +1875,225 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    previewDictionaryTable: {
+        parameters: {
+            query: {
+                /** @description The name of the uploaded file, whose extension marks it as a CSV, TSV or Tabfile table. */
+                fileName: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A CSV, TSV or Tabfile table, or an archive holding one */
+        requestBody?: {
+            content: {
+                "application/octet-stream": unknown;
+            };
+        };
+        responses: {
+            /** @description The detected layout and the first rows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TablePreview"];
+                };
+            };
+            /** @description The file could not be read as a table */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    previewLocalDictionaryTable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewLocalDictionaryTableRequest"];
+            };
+        };
+        responses: {
+            /** @description The detected layout and the first rows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TablePreview"];
+                };
+            };
+            /** @description The files could not be read as a table */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The token may not read local paths */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Nothing at the given path */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteDictionary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dictionary and everything it stored were deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
             /** @description No dictionary has the id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getDictionaryMedia: {
+        parameters: {
+            query?: {
+                /** @description The bearer token, for image elements, which cannot send headers. */
+                token?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The dictionary id */
+                id: string;
+                /** @description The file's path within the dictionary, percent-encoded as one segment, so that `/` is written `%2F` */
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file, with its media type */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": number[];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such dictionary, or no file at the path */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2155,7 +2692,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["FlashcardDraft"];
+                "application/json": components["schemas"]["NewFlashcard"];
             };
         };
         responses: {
@@ -2166,6 +2703,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Flashcard"];
+                };
+            };
+            /** @description The id is not 32 lowercase hexadecimal digits */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Missing or invalid token */
@@ -2179,6 +2725,15 @@ export interface operations {
             };
             /** @description No such project, or no such media file in it */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The id belongs to a flashcard of another project */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
