@@ -1,6 +1,7 @@
 //! The installed plugins, and adding media to a project through a media-source plugin.
+//! The fetch runs as a job, since it takes as long as a download; the client polls it.
 
-use std::path::{Path as FsPath, PathBuf};
+use std::path::Path as FsPath;
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -18,6 +19,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
+use crate::media_source_jobs::{MediaSourceJob, MediaSourceJobId, output_dir_for};
 use crate::plugins::resolve_media;
 use crate::state::AppState;
 
@@ -91,10 +93,11 @@ fn kind_name(kind: easyimmerse_plugins::PluginKind) -> &'static str {
     }
 }
 
-/// Asks a media-source plugin to fetch the media at a locator, such as a URL, into the
-/// server's media directory, then adds it to the project with the subtitle files the plugin
-/// fetched beside it. A subtitle file in the project's target language or translation
-/// language takes that role at once. The request lasts as long as the fetch.
+/// Starts fetching the media at a locator, such as a URL, through a media-source plugin
+/// into the server's media directory. The answer is the running job; poll it with
+/// `getMediaSourceJob` until it is done or has failed. Once done, the media file is in
+/// the project with the subtitle files the plugin fetched beside it, and a subtitle file in
+/// the project's target language or translation language has that role at once.
 #[utoipa::path(
     post,
     path = "/projects/{id}/media/from-source",
@@ -104,12 +107,10 @@ fn kind_name(kind: easyimmerse_plugins::PluginKind) -> &'static str {
     params(("id" = String, Path, description = "The project id")),
     request_body = AddMediaFromSourceRequest,
     responses(
-        (status = 201, description = "The added media file", body = MediaFile),
-        (status = 400, description = "The plugin did not understand the locator (code `invalid_locator`)", body = ApiError),
+        (status = 202, description = "The job fetching the media, still running", body = MediaSourceJob),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such project, or no installed media-source plugin of that name", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
-        (status = 502, description = "The plugin failed to fetch the media (code `media_source_failed`)", body = ApiError),
         (status = 503, description = "The server has no media directory for plugins to fetch into (code `media_dir_unavailable`)", body = ApiError),
     ),
 )]
@@ -117,7 +118,7 @@ pub async fn add_media_from_source(
     State(state): State<AppState>,
     Path(project_id): Path<ProjectId>,
     Json(request): Json<AddMediaFromSourceRequest>,
-) -> Result<(StatusCode, Json<MediaFile>), ApiFailure> {
+) -> Result<(StatusCode, Json<MediaSourceJob>), ApiFailure> {
     let settings = {
         let project_id = project_id.clone();
         state
@@ -130,19 +131,125 @@ pub async fn add_media_from_source(
         .media_source(&request.plugin)
         .cloned()
         .ok_or_else(|| not_found(format!("no media-source plugin {:?}", request.plugin)))?;
-    let output_dir = create_output_dir(&state, &package).await?;
-    let resolved = run_plugin(&package, &request.locator, &output_dir).await;
-    let resolved = match resolved {
-        Ok(resolved) => resolved,
-        Err(failure) => {
-            discard_output_dir(&output_dir).await;
-            return Err(failure);
+    let media_dir = state.media_dir.clone().ok_or_else(|| {
+        ApiFailure::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "media_dir_unavailable",
+            "this server has no media directory, so plugins cannot fetch media",
+        )
+    })?;
+    let job = MediaSourceJob::start(project_id, &package.manifest.name, request.locator);
+    let output_dir = output_dir_for(&media_dir, &job);
+    tokio::fs::create_dir_all(&output_dir)
+        .await
+        .map_err(|error| {
+            internal(format!(
+                "could not create {}: {error}",
+                output_dir.display()
+            ))
+        })?;
+    tracing::info!(
+        job = job.id.0,
+        plugin = job.plugin,
+        locator = job.locator.0,
+        output_dir = %output_dir.display(),
+        "fetching media through a plugin"
+    );
+    state.media_source_jobs.insert(job.clone());
+    tokio::spawn(run_job(state, job.clone(), settings, package, output_dir));
+    Ok((StatusCode::ACCEPTED, Json(job)))
+}
+
+#[utoipa::path(
+    get,
+    path = "/projects/{id}/media/from-source/{job_id}",
+    tag = "media",
+    operation_id = "getMediaSourceJob",
+    security(("bearer_token" = [])),
+    params(
+        ("id" = String, Path, description = "The project id"),
+        ("job_id" = String, Path, description = "The job id, from the answer that started it"),
+    ),
+    responses(
+        (status = 200, description = "The job, with its progress and log so far, and its outcome once it has one", body = MediaSourceJob),
+        (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 404, description = "No such job in the project; the server forgets old finished jobs and all jobs when it restarts", body = ApiError),
+        (status = 421, description = "Unexpected Host header", body = ApiError),
+    ),
+)]
+pub async fn get_media_source_job(
+    State(state): State<AppState>,
+    Path((project_id, job_id)): Path<(ProjectId, MediaSourceJobId)>,
+) -> Result<Json<MediaSourceJob>, ApiFailure> {
+    state
+        .media_source_jobs
+        .get(&job_id)
+        .filter(|job| job.project_id == project_id)
+        .map(Json)
+        .ok_or_else(|| {
+            not_found(format!(
+                "no media-source job {:?} in project {:?}",
+                job_id.0, project_id.0
+            ))
+        })
+}
+
+/// Runs the plugin and stores what it fetched, recording the outcome on the job.
+async fn run_job(
+    state: AppState,
+    job: MediaSourceJob,
+    settings: ProjectSettings,
+    package: PluginPackage,
+    output_dir: std::path::PathBuf,
+) {
+    let started = std::time::Instant::now();
+    let outcome = fetch_and_store(&state, &job, &settings, &package, &output_dir).await;
+    let elapsed_ms = started.elapsed().as_millis() as u64;
+    match outcome {
+        Ok(media_file) => {
+            tracing::info!(
+                job = job.id.0,
+                plugin = job.plugin,
+                media_file = media_file.id.0,
+                name = media_file.name,
+                elapsed_ms,
+                "the plugin fetched the media"
+            );
+            state
+                .media_source_jobs
+                .update(&job.id, |job| job.finish_with(media_file));
         }
-    };
-    ensure_inside(&output_dir, &resolved)?;
+        Err(failure) => {
+            tracing::warn!(
+                job = job.id.0,
+                plugin = job.plugin,
+                locator = job.locator.0,
+                code = failure.error.code,
+                elapsed_ms,
+                "the fetch failed: {}",
+                failure.error.message
+            );
+            discard_output_dir(&output_dir).await;
+            state
+                .media_source_jobs
+                .update(&job.id, |job| job.fail_with(failure.error));
+        }
+    }
+}
+
+async fn fetch_and_store(
+    state: &AppState,
+    job: &MediaSourceJob,
+    settings: &ProjectSettings,
+    package: &PluginPackage,
+    output_dir: &FsPath,
+) -> Result<MediaFile, ApiFailure> {
+    let resolved = run_plugin(state, job, package, output_dir).await?;
+    ensure_inside(output_dir, &resolved)?;
     let name = media_name(&resolved);
-    let subtitles = read_subtitles(&resolved.subtitles, &settings).await;
-    let media_file = state
+    let subtitles = read_subtitles(&resolved.subtitles, settings).await;
+    let project_id = job.project_id.clone();
+    state
         .with_storage(move |storage| {
             let source = MediaFileSource::Path {
                 path: resolved.media_path,
@@ -158,46 +265,24 @@ pub async fn add_media_from_source(
             storage.set_subtitle_selection(&media_file.id, &selection)?;
             Ok(media_file)
         })
-        .await?;
-    Ok((StatusCode::CREATED, Json(media_file)))
-}
-
-/// A fresh directory for one fetch, under the plugin's own directory in the media directory.
-async fn create_output_dir(
-    state: &AppState,
-    package: &PluginPackage,
-) -> Result<PathBuf, ApiFailure> {
-    let media_dir = state.media_dir.clone().ok_or_else(|| {
-        ApiFailure::new(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "media_dir_unavailable",
-            "this server has no media directory, so plugins cannot fetch media",
-        )
-    })?;
-    let output_dir = media_dir
-        .join(&package.manifest.name)
-        .join(hex::encode(rand::random::<[u8; 16]>()));
-    tokio::fs::create_dir_all(&output_dir)
         .await
-        .map_err(|error| {
-            internal(format!(
-                "could not create {}: {error}",
-                output_dir.display()
-            ))
-        })?;
-    Ok(output_dir)
 }
 
 /// Runs the plugin on the blocking pool, since compiling and running it takes a while and
-/// the fetch itself may take minutes.
+/// the fetch itself may take minutes. The job records what the plugin reports meanwhile.
 async fn run_plugin(
+    state: &AppState,
+    job: &MediaSourceJob,
     package: &PluginPackage,
-    locator: &MediaLocator,
     output_dir: &FsPath,
 ) -> Result<ResolvedMedia, ApiFailure> {
-    let (package, locator, output_dir) =
-        (package.clone(), locator.0.clone(), output_dir.to_path_buf());
-    tokio::task::spawn_blocking(move || resolve_media(&package, &locator, &output_dir))
+    let listener = state.media_source_jobs.listener(job.id.clone());
+    let (package, locator, output_dir) = (
+        package.clone(),
+        job.locator.0.clone(),
+        output_dir.to_path_buf(),
+    );
+    tokio::task::spawn_blocking(move || resolve_media(&package, &locator, &output_dir, listener))
         .await
         .map_err(|error| internal(format!("plugin task failed: {error}")))?
         .map_err(plugin_failure)

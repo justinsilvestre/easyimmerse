@@ -6,6 +6,7 @@ pub mod config;
 pub mod local_dictionary_files;
 pub mod local_path;
 pub mod local_table_file;
+pub mod media_source_jobs;
 pub mod plugins;
 pub mod router;
 pub mod routes;

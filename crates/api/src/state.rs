@@ -6,6 +6,7 @@ use easyimmerse_storage::{Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
+use crate::media_source_jobs::MediaSourceJobs;
 use crate::plugins::PluginRegistry;
 
 #[derive(Clone)]
@@ -18,6 +19,8 @@ pub struct AppState {
     pub conversion: Option<ConversionService>,
     /// The installed plugins. Empty without a plugin directory.
     pub plugins: Arc<PluginRegistry>,
+    /// The fetches through media-source plugins since the server started.
+    pub media_source_jobs: Arc<MediaSourceJobs>,
     /// Where media-source plugins put what they fetch. None when the server has no media
     /// directory, in which case media cannot be added through a plugin.
     pub media_dir: Option<PathBuf>,
@@ -36,6 +39,7 @@ impl AppState {
             probes: probes.map(Arc::new),
             conversion,
             plugins: Arc::new(PluginRegistry::default()),
+            media_source_jobs: Arc::new(MediaSourceJobs::default()),
             media_dir: None,
         }
     }

@@ -83,6 +83,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(media::list_media_files, media::add_media_file))
         .routes(routes!(media::remove_media_file))
         .routes(routes!(plugins::add_media_from_source))
+        .routes(routes!(plugins::get_media_source_job))
         .routes(routes!(plugins::list_plugins))
         .routes(routes!(media_stream::stream_media_file))
         .routes(routes!(media_frame::get_media_frame))

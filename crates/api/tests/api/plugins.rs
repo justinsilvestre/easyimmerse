@@ -3,6 +3,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use easyimmerse_api::ServeOptions;
 use serde_json::{Value, json};
@@ -47,16 +48,42 @@ impl Fixture {
         format!("{}/sample", self.fixtures.base_url)
     }
 
-    async fn add(&self) -> Value {
+    /// Starts a fetch of `locator` and returns the running job.
+    async fn start_fetch(&self, locator: &str) -> Value {
         let response = self
             .server
             .post_json(
                 &format!("/projects/{PROJECT}/media/from-source"),
-                &json!({ "plugin": PLUGIN, "locator": self.locator() }),
+                &json!({ "plugin": PLUGIN, "locator": locator }),
             )
             .await;
-        assert_eq!(response.status, 201, "{}", response.text());
+        assert_eq!(response.status, 202, "{}", response.text());
         response.json()
+    }
+
+    /// Polls the job until it is done or has failed.
+    async fn finished(&self, job: &Value) -> Value {
+        let path = format!(
+            "/projects/{PROJECT}/media/from-source/{}",
+            job["id"].as_str().expect("a job id")
+        );
+        let deadline = Instant::now() + Duration::from_secs(30);
+        loop {
+            let job = self.server.get(&path).await.json();
+            if job["status"] != "running" {
+                return job;
+            }
+            assert!(Instant::now() < deadline, "the job did not finish: {job}");
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+    }
+
+    /// Fetches the sample locator and returns the added media file.
+    async fn add(&self) -> Value {
+        let job = self.start_fetch(&self.locator()).await;
+        let job = self.finished(&job).await;
+        assert_eq!(job["status"], "done", "{job}");
+        job["media_file"].clone()
     }
 }
 
@@ -134,31 +161,91 @@ async fn refuses_a_project_that_does_not_exist() {
     assert_eq!(response.status, 404);
 }
 
+#[tokio::test(flavor = "multi_thread")]
+async fn answers_with_the_running_job() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch(&fixture.locator()).await;
+    assert_eq!(
+        (
+            job["status"].clone(),
+            job["plugin"].clone(),
+            job["media_file"].clone()
+        ),
+        (json!("running"), json!(PLUGIN), Value::Null)
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn answers_404_for_a_job_of_another_project() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch(&fixture.locator()).await;
+    let response = fixture
+        .server
+        .get(&format!(
+            "/projects/placeholder-2/media/from-source/{}",
+            job["id"].as_str().unwrap()
+        ))
+        .await;
+    assert_eq!(response.status, 404);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_finished_job_carries_the_plugins_last_progress_report() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch(&fixture.locator()).await;
+    let job = fixture.finished(&job).await;
+    assert_eq!(job["progress"]["fraction"], 1.0);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_finished_job_logs_the_command_the_plugin_ran() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch(&fixture.locator()).await;
+    let job = fixture.finished(&job).await;
+    let messages: Vec<&str> = job["log"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|line| line["message"].as_str())
+        .collect();
+    assert!(
+        messages
+            .iter()
+            .any(|message| message.starts_with("running fetch-locator ")),
+        "{messages:?}"
+    );
+}
+
 /// The fixture plugin may only fetch from the loopback interface, so a locator elsewhere
 /// makes the host refuse its request and the plugin report that.
 #[tokio::test(flavor = "multi_thread")]
-async fn reports_a_fetch_the_plugin_could_not_complete() {
+async fn a_fetch_the_plugin_could_not_complete_fails_the_job() {
     let fixture = Fixture::start(false).await;
-    let response = fixture
-        .server
-        .post_json(
-            &format!("/projects/{PROJECT}/media/from-source"),
-            &json!({ "plugin": PLUGIN, "locator": "http://example.com/sample" }),
-        )
-        .await;
-    assert_eq!(response.status, 502, "{}", response.text());
+    let job = fixture.start_fetch("http://example.com/sample").await;
+    let job = fixture.finished(&job).await;
+    assert_eq!(
+        (job["status"].clone(), job["error"]["code"].clone()),
+        (json!("failed"), json!("media_source_failed"))
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_failed_job_ends_its_log_with_the_error() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch("http://example.com/sample").await;
+    let job = fixture.finished(&job).await;
+    let last = job["log"].as_array().unwrap().last().cloned().unwrap();
+    assert_eq!(
+        (last["level"].clone(), last["message"].clone()),
+        (json!("error"), job["error"]["message"].clone())
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn leaves_nothing_in_the_media_dir_after_a_failed_fetch() {
     let fixture = Fixture::start(false).await;
-    fixture
-        .server
-        .post_json(
-            &format!("/projects/{PROJECT}/media/from-source"),
-            &json!({ "plugin": PLUGIN, "locator": "http://example.com/sample" }),
-        )
-        .await;
+    let job = fixture.start_fetch("http://example.com/sample").await;
+    fixture.finished(&job).await;
     let plugin_dir = fixture.media_dir.path().join(PLUGIN);
     let items = std::fs::read_dir(&plugin_dir)
         .map(Iterator::count)
