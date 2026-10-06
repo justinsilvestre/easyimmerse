@@ -39,7 +39,7 @@ const elements = {
   blockquote: ["blockquote", "my-1 border-l-2 border-line pl-3"],
   pre: ["pre", "font-mono text-xs whitespace-pre-wrap"],
   ul: ["ul", "list-disc pl-5"],
-  ol: ["ol", "list-decimal pl-5"],
+  ol: ["ol", "list-decimal pl-6"],
   li: ["li", ""],
   dl: ["dl", ""],
   dt: ["dt", "font-semibold"],
