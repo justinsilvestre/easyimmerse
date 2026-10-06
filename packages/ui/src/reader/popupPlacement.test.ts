@@ -24,6 +24,26 @@ describe("popupPlacement", () => {
     ).toBe(208);
   });
 
+  it("lets a pop-up below a word reach down to the window's bottom edge", () => {
+    expect(
+      popupPlacement(
+        { top: 100, bottom: 120, left: 400, width: 50 },
+        300,
+        viewport,
+      ).bottom,
+    ).toBe(8);
+  });
+
+  it("lets a pop-up above a word reach up to the window's top edge", () => {
+    expect(
+      popupPlacement(
+        { top: 600, bottom: 620, left: 400, width: 50 },
+        300,
+        viewport,
+      ).top,
+    ).toBe(8);
+  });
+
   it("centers on the word", () => {
     expect(
       popupPlacement(

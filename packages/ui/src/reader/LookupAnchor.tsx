@@ -1,8 +1,9 @@
+import clsx from "clsx";
 import type { ReactNode } from "react";
 import { popupPlacement } from "./popupPlacement.ts";
 
-/** The width of the dictionary pop-up, which sets where it can be centered. */
-const popupWidthPx = 352;
+/** The width of the dictionary pop-up, 26rem, which sets where it can be centered. */
+const popupWidthPx = 416;
 
 /**
  * Holds the dictionary pop-up beside the word it is about.
@@ -29,7 +30,7 @@ export function LookupAnchor({
     return (
       <div
         {...pointerProps}
-        className="pointer-events-none fixed inset-x-2 bottom-2 z-30 flex max-h-[60dvh] justify-center *:pointer-events-auto"
+        className="pointer-events-none fixed inset-x-2 bottom-2 z-30 flex h-[60dvh] flex-col items-center justify-end *:pointer-events-auto"
       >
         {children}
       </div>
@@ -41,13 +42,14 @@ export function LookupAnchor({
   return (
     <div
       {...pointerProps}
-      className="pointer-events-none fixed z-30 flex font-sans *:pointer-events-auto transition-[top,bottom,left] duration-150"
+      className={clsx(
+        "pointer-events-none fixed z-30 flex flex-col font-sans *:pointer-events-auto transition-[top,bottom,left] duration-150",
+        placement.side === "above" ? "justify-end" : "justify-start",
+      )}
       style={{
         left: placement.left,
         top: placement.top,
         bottom: placement.bottom,
-        maxHeight: placement.maxHeight,
-        alignItems: placement.top === undefined ? "flex-end" : "flex-start",
       }}
     >
       {children}

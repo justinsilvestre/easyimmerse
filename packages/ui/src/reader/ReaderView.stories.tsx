@@ -30,6 +30,22 @@ import type { ReaderWord } from "./useWordPointer.ts";
 
 type ReaderViewProps = ComponentProps<typeof ReaderView>;
 
+/** Enough senses that the pop-up must scroll to show them all. */
+const longEntrySenses = [
+  "vermin; pests (insects, rodents and the like)",
+  "(collective) creatures regarded as harmful to people, crops or livestock",
+  "(figurative, derogatory) people regarded as worthless or harmful",
+  "(archaic) an unclean animal, unfit for sacrifice",
+  "(in Kafka) the unnamed creature Gregor Samsa wakes up as",
+  "(agriculture) pests that damage stored grain",
+  "(household) insects such as cockroaches, bedbugs and lice",
+  "(hunting) small predators that threaten game",
+  "(colloquial) a nuisance; something unwanted that keeps coming back",
+  "(historical) a term used in propaganda to dehumanize groups of people",
+  "(biology, informal) parasites living on a host",
+  "(regional) mice and rats in a house or barn",
+];
+
 const ungezieferResult: LookupResult = {
   matchedText: "Ungeziefer",
   term: "Ungeziefer",
@@ -42,12 +58,7 @@ const ungezieferResult: LookupResult = {
       entry: exampleTermEntry({
         term: "Ungeziefer",
         termTags: ["noun"],
-        definitions: [
-          {
-            kind: "text",
-            text: "vermin; pests (insects, rodents and the like)",
-          },
-        ],
+        definitions: longEntrySenses.map((text) => ({ kind: "text", text })),
       }),
       tags: [],
     },
