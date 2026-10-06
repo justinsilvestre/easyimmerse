@@ -24,7 +24,15 @@ mise run web-dev
 
 Open a project, choose "Add from URL", and paste a video URL or id. The request lasts as long as the download, which the dialog says while it waits. The video lands in `.dev/media/youtube-media-source/`, and the server streams it from there without `--allow-local-paths`, because it fetched the file itself.
 
-The desktop app reads its plugins from the `plugins/` directory beside its database (see the root README for where that is); copy `dist/` there as `plugins/youtube-media-source/` instead.
+The desktop app reads its plugins from the `plugins/` directory beside its database (see the root README for where that is); copy `dist/` there as `plugins/youtube-media-source/` instead. A copy does not follow later builds, so after pulling or changing the plugin, rebuild and copy again, then restart the app; the symlink above needs only the rebuild. On macOS:
+
+```sh
+mise run plugins:build
+rm -rf "$HOME/Library/Application Support/com.easyimmerse.app/plugins/youtube-media-source"
+cp -R plugins/youtube-media-source/dist "$HOME/Library/Application Support/com.easyimmerse.app/plugins/youtube-media-source"
+```
+
+Each fetch's log starts with the plugin's name, version, and the first characters of its component's digest, which match `sha256sum dist/plugin.wasm` when the installed copy is current.
 
 ## Limits of the proof of concept
 
