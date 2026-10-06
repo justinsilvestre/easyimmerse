@@ -16,6 +16,8 @@ mod dictionaries;
 /// Marks a database that already received the sample content, so that what the user removes stays removed.
 const SEEDED_PREFERENCE: &str = "sample_content_seeded";
 const VIDEO_NAME: &str = "sample.mp4";
+const BOOK_NAME: &str = "ginga-tetsudo-no-yoru.epub";
+const BOOK_PROJECT_ID: &str = "placeholder-2";
 const TRANSLATION_NAME: &str = "sample.srt";
 
 struct SampleProject {
@@ -61,14 +63,30 @@ pub fn seed_sample_content(
     for project in &SAMPLE_PROJECTS {
         add_sample_media(storage, project, &fixtures)?;
     }
+    add_sample_book(storage, &fixtures)?;
     dictionaries::import_sample_dictionaries(storage, fixtures.dictionary)?;
     Ok(storage.set_preference(SEEDED_PREFERENCE, "true")?)
+}
+
+/// Adds a Japanese novel to the Japanese placeholder project, unless the project is gone.
+fn add_sample_book(storage: &Storage, fixtures: &Fixtures) -> Result<(), SampleContentError> {
+    let project_id = ProjectId(BOOK_PROJECT_ID.to_string());
+    match storage.get_project(&project_id) {
+        Err(StorageError::ProjectNotFound(_)) => return Ok(()),
+        result => result?,
+    };
+    let source = MediaFileSource::Path {
+        path: fixtures.book_path.clone(),
+    };
+    storage.add_media_file(&project_id, BOOK_NAME, &source)?;
+    Ok(())
 }
 
 /// The files that the sample content takes from the repository's fixtures.
 /// They are read before anything is written, so that a build without the repository adds nothing.
 struct Fixtures {
     video_path: String,
+    book_path: String,
     translation: String,
     dictionary: Vec<u8>,
 }
@@ -79,9 +97,12 @@ fn read_fixtures(dir: &Path) -> Result<Fixtures, SampleContentError> {
         .map_err(|source| fixture_error(dir, source))?;
     let video = dir.join(VIDEO_NAME);
     std::fs::metadata(&video).map_err(|source| fixture_error(&video, source))?;
+    let book = dir.join(BOOK_NAME);
+    std::fs::metadata(&book).map_err(|source| fixture_error(&book, source))?;
     let translation = read_fixture(&dir.join(TRANSLATION_NAME))?;
     Ok(Fixtures {
         video_path: video.to_string_lossy().into_owned(),
+        book_path: book.to_string_lossy().into_owned(),
         translation: String::from_utf8_lossy(&translation).into_owned(),
         dictionary: read_fixture(&dir.join(dictionaries::FIXTURE_DICTIONARY))?,
     })

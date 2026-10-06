@@ -27,6 +27,10 @@ fn spanish_project() -> ProjectId {
     ProjectId("placeholder-1".to_string())
 }
 
+fn japanese_project() -> ProjectId {
+    ProjectId("placeholder-2".to_string())
+}
+
 fn media_names(storage: &Storage, project_id: &ProjectId) -> Vec<String> {
     let media_files = storage.list_media_files(project_id).unwrap();
     media_files.into_iter().map(|media| media.name).collect()
@@ -46,10 +50,12 @@ fn dictionary_titles(storage: &Storage) -> Vec<String> {
 }
 
 #[test]
-fn gives_the_japanese_project_the_sample_video() {
+fn gives_the_japanese_project_the_sample_video_and_book() {
     let storage = seeded_storage();
-    let japanese_project = ProjectId("placeholder-2".to_string());
-    assert_eq!(media_names(&storage, &japanese_project), vec!["sample.mp4"]);
+    assert_eq!(
+        media_names(&storage, &japanese_project()),
+        vec!["sample.mp4", "ginga-tetsudo-no-yoru.epub"]
+    );
 }
 
 #[test]
