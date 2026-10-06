@@ -55,6 +55,16 @@ Then edit the tree and package it again (the `mimetype` entry must come first an
 cd fixtures/die-verwandlung-epub && rm -f ../die-verwandlung.epub && zip -X0 ../die-verwandlung.epub mimetype && zip -Xr9D ../die-verwandlung.epub META-INF OEBPS
 ```
 
+## ginga-tetsudo-no-yoru.epub
+
+Kenji Miyazawa's 銀河鉄道の夜 (Night on the Galactic Railroad, in the public domain), a whole Japanese novel for exercising the reader and lookups in a language written without spaces. The development seed adds it to the Japanese placeholder project. It is an EPUB 3 book with one XHTML file per chapter and a last file holding Aozora Bunko's credits. The ruby readings of the source are left out, since the reader shows only the base text.
+
+`build-ginga-tetsudo-no-yoru.py` builds it from Aozora Bunko's XHTML edition (card 456). To regenerate it:
+
+```sh
+curl -sL -o /tmp/456_15050.html https://www.aozora.gr.jp/cards/000081/files/456_15050.html && python3 fixtures/build-ginga-tetsudo-no-yoru.py /tmp/456_15050.html
+```
+
 ## sample-yomitan/ and sample-yomitan.zip
 
 A Yomitan dictionary in format version 3. It holds five term entries: 猫 (cat), 犬 (dog), 食べる (to eat, word class `v1`), 本 (book, with structured content and an image), and 食べた, which points to 食べる as an inflected form. It also has a tag bank, frequency and pitch-accent rows, a kanji entry with its own metadata, a stylesheet, and the image under `images/`. The sample subtitles mention the same words.
