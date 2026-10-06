@@ -112,6 +112,7 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
 };
 
 export const fixtureResponses = {
+  "GET /plugins": { plugins: [] },
   "GET /projects": fixtureProjects,
   "GET /projects/p1": fixtureProject,
   "POST /projects/p1/opened": undefined,

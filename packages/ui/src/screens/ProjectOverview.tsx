@@ -1,13 +1,18 @@
+import type { BackendError } from "@easyimmerse/backend";
 import {
+  useAddMediaFromSourceMutation,
   useListDictionariesQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
+  useListPluginsQuery,
   useRemoveMediaFileMutation,
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
+import { useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useNavigationActions } from "../navigationContext.ts";
+import { AddMediaFromUrlDialog } from "../projects/AddMediaFromUrlDialog.tsx";
 import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
 import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
@@ -35,6 +40,8 @@ export function ProjectOverview({
     notify("Reviewing and exporting flashcards is not available yet.");
   const media = useMediaItems(project.id);
   const [removeMediaFile] = useRemoveMediaFileMutation();
+  const mediaSources = useMediaSources();
+  const fromUrl = useAddMediaFromUrl(project.id);
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
   const { openDictionaries } = useNavigationActions();
   const { settings } = project;
@@ -58,6 +65,7 @@ export function ProjectOverview({
         <MediaSection
           media={media.items}
           onAddMedia={() => dispatch(actions.mediaFilePickRequested())}
+          onAddMediaFromUrl={mediaSources.length > 0 ? fromUrl.open : null}
           onOpenMedia={(mediaFileId) =>
             dispatch(actions.openMedia(mediaFileId))
           }
@@ -67,6 +75,15 @@ export function ProjectOverview({
               .then(() => dispatch(actions.mediaFileRemoved(mediaFileId)))
               .catch(() => notify("The media file could not be removed"))
           }
+        />
+      )}
+      {fromUrl.isOpen && (
+        <AddMediaFromUrlDialog
+          sources={mediaSources}
+          isAdding={fromUrl.isAdding}
+          error={fromUrl.error}
+          onAdd={fromUrl.add}
+          onCancel={fromUrl.close}
         />
       )}
       <FlashcardSyncPanel
@@ -83,6 +100,47 @@ export function ProjectOverview({
       />
     </ProjectView>
   );
+}
+
+/** The installed plugins that fetch media from a URL, by name. */
+function useMediaSources() {
+  const plugins = useListPluginsQuery().data?.plugins ?? [];
+  return plugins
+    .filter((plugin) => plugin.kind === "media-source")
+    .map((plugin) => ({ name: plugin.name }));
+}
+
+/**
+ * The dialog for adding media from a URL: whether it shows, and the fetch it started.
+ * A fetched media file opens at once, as a picked file does.
+ */
+function useAddMediaFromUrl(projectId: string) {
+  const dispatch = useAppDispatch();
+  const [isOpen, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [addMediaFromSource, { isLoading }] = useAddMediaFromSourceMutation();
+  return {
+    isOpen,
+    isAdding: isLoading,
+    error,
+    open: () => {
+      setError(null);
+      setOpen(true);
+    },
+    close: () => setOpen(false),
+    add: (plugin: string, locator: string) => {
+      setError(null);
+      addMediaFromSource({ projectId, request: { plugin, locator } })
+        .unwrap()
+        .then((mediaFile) => {
+          setOpen(false);
+          dispatch(actions.mediaFileAdded(mediaFile.id));
+        })
+        .catch((failure: BackendError) =>
+          setError(failure.message ?? "The media could not be added."),
+        );
+    },
+  };
 }
 
 function useMediaItems(projectId: string) {

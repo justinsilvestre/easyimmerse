@@ -68,6 +68,7 @@ function sections(
       <MediaSection
         media={mediaItems}
         onAddMedia={fn()}
+        onAddMediaFromUrl={fn()}
         onOpenMedia={fn()}
         onDeleteMedia={fn()}
       />

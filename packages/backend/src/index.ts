@@ -1,6 +1,7 @@
 export { skipToken } from "@reduxjs/toolkit/query";
 export {
   useAddMediaFileMutation,
+  useAddMediaFromSourceMutation,
   useAddSubtitleTrackMutation,
   useClearConversionCacheMutation,
   useCreateFlashcardMutation,
@@ -19,6 +20,7 @@ export {
   useListEmbeddedSubtitleTracksQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
+  useListPluginsQuery,
   useListProjectsQuery,
   useListSubtitleTracksQuery,
   useLookupTextQuery,

@@ -1,5 +1,6 @@
 import type {
   AddMediaFileRequest,
+  AddMediaFromSourceRequest,
   AddSubtitleTrackRequest,
   ConversionCacheStatus,
   DictionarySummary,
@@ -12,6 +13,7 @@ import type {
   ListDictionariesResponse,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
+  ListPluginsResponse,
   ListProjectsResponse,
   LookupQuery,
   LookupResponse,
@@ -61,6 +63,11 @@ type FlashcardArgs = { projectId: string; flashcardId: string };
 
 type AddMediaFileArgs = { projectId: string; request: AddMediaFileRequest };
 
+type AddMediaFromSourceArgs = {
+  projectId: string;
+  request: AddMediaFromSourceRequest;
+};
+
 type MediaFileArgs = { projectId: string; mediaFileId: string };
 
 type PlanPlaybackArgs = MediaFileArgs & { request: PlaybackRequest };
@@ -102,6 +109,43 @@ const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
 
 const subtitleTracksTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "SubtitleTracks", id: mediaFileId }] as const;
+
+/**
+ * Puts a media file the server just added into the project's list.
+ * The new file's entry decides which screen opens it, so it joins the list at once.
+ * The refetch that the invalidation starts can wait for other requests to finish.
+ */
+async function listAddedMediaFileAtOnce(
+  { projectId }: { projectId: string },
+  {
+    dispatch,
+    queryFulfilled,
+  }: {
+    dispatch: (action: unknown) => unknown;
+    queryFulfilled: Promise<{ data: MediaFile }>;
+  },
+) {
+  const result = await queryFulfilled.catch(() => null);
+  if (result === null) return;
+  const added = result.data;
+  dispatch(
+    backendApi.util.updateQueryData("listMediaFiles", projectId, (list) => {
+      if (!list.media_files.some(({ id }) => id === added.id))
+        list.media_files.push(added);
+    }),
+  );
+}
+
+const mediaFileAddedTags = (
+  _result: unknown,
+  _error: unknown,
+  { projectId }: { projectId: string },
+) =>
+  [
+    { type: "MediaFiles", id: projectId },
+    { type: "Projects", id: projectId },
+    "Projects",
+  ] as const;
 
 /** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
@@ -222,6 +266,9 @@ export const backendApi = createApi({
         "Projects",
       ],
     }),
+    listPlugins: build.query<ListPluginsResponse, void>({
+      query: () => ({ method: "GET", path: "/plugins" }),
+    }),
     listMediaFiles: build.query<ListMediaFilesResponse, string>({
       query: (projectId) => ({
         method: "GET",
@@ -237,28 +284,17 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/media`,
         body: { kind: "json", value: request },
       }),
-      // The new file's entry decides which screen opens it, so it joins the list at once.
-      // The refetch that the invalidation starts can wait for other requests to finish.
-      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
-        const result = await queryFulfilled.catch(() => null);
-        if (result === null) return;
-        const added = result.data;
-        dispatch(
-          backendApi.util.updateQueryData(
-            "listMediaFiles",
-            projectId,
-            (list) => {
-              if (!list.media_files.some(({ id }) => id === added.id))
-                list.media_files.push(added);
-            },
-          ),
-        );
-      },
-      invalidatesTags: (_result, _error, { projectId }) => [
-        { type: "MediaFiles", id: projectId },
-        { type: "Projects", id: projectId },
-        "Projects",
-      ],
+      onQueryStarted: listAddedMediaFileAtOnce,
+      invalidatesTags: mediaFileAddedTags,
+    }),
+    addMediaFromSource: build.mutation<MediaFile, AddMediaFromSourceArgs>({
+      query: ({ projectId, request }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/media/from-source`,
+        body: { kind: "json", value: request },
+      }),
+      onQueryStarted: listAddedMediaFileAtOnce,
+      invalidatesTags: mediaFileAddedTags,
     }),
     removeMediaFile: build.mutation<void, MediaFileArgs>({
       query: ({ projectId, mediaFileId }) => ({
@@ -482,6 +518,8 @@ export const {
   useDeleteFlashcardMutation,
   useListMediaFilesQuery,
   useAddMediaFileMutation,
+  useAddMediaFromSourceMutation,
+  useListPluginsQuery,
   useRemoveMediaFileMutation,
   useGetMediaTracksQuery,
   usePlanPlaybackQuery,
