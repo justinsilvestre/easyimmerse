@@ -170,7 +170,26 @@ fn run(args: &[&str]) -> Result<String, PluginError> {
     if message.contains("is not a valid URL") || message.contains("Unsupported URL") {
         Err(PluginError::InvalidInput(message))
     } else {
-        Err(PluginError::Other(message))
+        Err(PluginError::Other(with_hint(message, &output.stderr)))
+    }
+}
+
+/// Adds what to do about a failure whose cause lies in the yt-dlp installation rather
+/// than in the video, which yt-dlp's own message does not say.
+fn with_hint(message: String, stderr: &str) -> String {
+    if message.contains("HTTP Error 403") {
+        let impersonation = if stderr.contains("no impersonate target is available") {
+            " and it could not impersonate a browser, which this video needed (install \
+             curl_cffi: pip install \"yt-dlp[default,curl-cffi]\")"
+        } else {
+            ""
+        };
+        format!(
+            "{message} (YouTube refused the stream to this yt-dlp; this usually means \
+             yt-dlp is out of date{impersonation}; update it and try again)"
+        )
+    } else {
+        message
     }
 }
 

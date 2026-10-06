@@ -185,3 +185,22 @@ fn passes_on_the_tools_error_for_a_video_it_cannot_fetch() {
         other => panic!("got {other:?}"),
     }
 }
+
+/// YouTube answers 403 to a yt-dlp that is out of date or cannot impersonate a browser,
+/// which yt-dlp's own message does not say.
+#[test]
+fn says_what_to_do_when_youtube_refuses_the_stream() {
+    let mut fixture = Fixture::start();
+    let error = fixture
+        .resolve("https://www.youtube.com/watch?v=forbidden0")
+        .unwrap_err();
+    match error {
+        PluginError::Plugin(PluginErrorKind::Other(message)) => assert!(
+            message.contains("HTTP Error 403")
+                && message.contains("out of date")
+                && message.contains("curl_cffi"),
+            "{message}"
+        ),
+        other => panic!("got {other:?}"),
+    }
+}

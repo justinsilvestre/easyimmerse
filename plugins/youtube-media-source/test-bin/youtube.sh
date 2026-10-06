@@ -4,7 +4,9 @@
 # a download that copies the repository's sample video and subtitles into the requested
 # place while printing progress lines as yt-dlp does. A URL containing "unavailable" fails
 # as yt-dlp does for a video it cannot fetch; one containing "nosubs" describes a video
-# without subtitles, for which yt-dlp leaves the subtitle fields out of its report.
+# without subtitles, for which yt-dlp leaves the subtitle fields out of its report; one
+# containing "forbidden" describes fine but is refused the stream, as YouTube does to an
+# outdated yt-dlp that cannot impersonate a browser.
 fixtures="$(dirname "$0")/../../../fixtures"
 url=""
 for arg in "$@"; do url="$arg"; done
@@ -43,6 +45,14 @@ for arg in "$@"; do
   previous="$arg"
 done
 dir=$(dirname "$template")
+case "$url" in
+  *forbidden*)
+    echo "WARNING: The extractor specified to use impersonation for this download, but no impersonate target is available." >&2
+    echo "[download] 100% of  170.09KiB in 00:00:00 at 1.92MiB/s"
+    echo "ERROR: unable to download video data: HTTP Error 403: Forbidden" >&2
+    exit 1
+    ;;
+esac
 echo "[download]  50.0% of   47.68KiB at   10.00MiB/s ETA 00:00"
 cp "$fixtures/sample.mp4" "$dir/media.mp4"
 echo "[download] 100% of   47.68KiB in 00:00:00 at 14.64MiB/s"
