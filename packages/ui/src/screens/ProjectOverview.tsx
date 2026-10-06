@@ -1,6 +1,8 @@
 import type { BackendError } from "@easyimmerse/backend";
 import {
+  skipToken,
   useAddMediaFromSourceMutation,
+  useGetMediaSourceJobQuery,
   useListDictionariesQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
@@ -9,7 +11,7 @@ import {
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import { AddMediaFromUrlDialog } from "../projects/AddMediaFromUrlDialog.tsx";
@@ -80,7 +82,8 @@ export function ProjectOverview({
       {fromUrl.isOpen && (
         <AddMediaFromUrlDialog
           sources={mediaSources}
-          isAdding={fromUrl.isAdding}
+          isStarting={fromUrl.isStarting}
+          job={fromUrl.job}
           error={fromUrl.error}
           onAdd={fromUrl.add}
           onCancel={fromUrl.close}
@@ -110,32 +113,55 @@ function useMediaSources() {
     .map((plugin) => ({ name: plugin.name }));
 }
 
+/** How often the dialog asks the server about the fetch while it runs. */
+const JOB_POLLING_INTERVAL_MS = 1000;
+
 /**
- * The dialog for adding media from a URL: whether it shows, and the fetch it started.
- * A fetched media file opens at once, as a picked file does.
+ * The dialog for adding media from a URL: whether it shows, and the fetch it started,
+ * which the server runs as a job that is polled while it runs.
+ * A fetched media file opens at once, as a picked file does. Closing the dialog stops
+ * watching the fetch; the server finishes it anyway.
  */
 function useAddMediaFromUrl(projectId: string) {
   const dispatch = useAppDispatch();
   const [isOpen, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [addMediaFromSource, { isLoading }] = useAddMediaFromSourceMutation();
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [addMediaFromSource, { isLoading: isStarting }] =
+    useAddMediaFromSourceMutation();
+  const { data: job } = useGetMediaSourceJobQuery(
+    jobId === null ? skipToken : { projectId, jobId },
+    { pollingInterval: JOB_POLLING_INTERVAL_MS },
+  );
+  const watched = job?.id === jobId ? job : null;
+  const addedId =
+    watched?.status === "done" ? (watched.media_file?.id ?? null) : null;
+  useEffect(() => {
+    if (addedId === null) return;
+    setOpen(false);
+    setJobId(null);
+    dispatch(actions.mediaFileAdded(addedId));
+  }, [addedId, dispatch]);
   return {
     isOpen,
-    isAdding: isLoading,
+    isStarting,
+    job: watched,
     error,
     open: () => {
       setError(null);
+      setJobId(null);
       setOpen(true);
     },
-    close: () => setOpen(false),
+    close: () => {
+      setOpen(false);
+      setJobId(null);
+    },
     add: (plugin: string, locator: string) => {
       setError(null);
+      setJobId(null);
       addMediaFromSource({ projectId, request: { plugin, locator } })
         .unwrap()
-        .then((mediaFile) => {
-          setOpen(false);
-          dispatch(actions.mediaFileAdded(mediaFile.id));
-        })
+        .then((job) => setJobId(job.id))
         .catch((failure: BackendError) =>
           setError(failure.message ?? "The media could not be added."),
         );

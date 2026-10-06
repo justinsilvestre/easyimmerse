@@ -12,6 +12,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSharedSaving } from "../flashcards/sharedSaving.ts";
 import { exampleUnsavedCard } from "../flashcards/unsaved/exampleUnsavedCard.ts";
+import { exampleRunningJob } from "../projects/exampleMediaSourceJob.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import {
@@ -174,7 +175,12 @@ describe("ProjectScreen", () => {
     expect(screen.queryByRole("button", { name: "Add from URL" })).toBeNull();
   });
 
-  it("adds media from a URL through a media-source plugin and opens it", async () => {
+  it("adds media from a URL through a media-source plugin and opens it once the fetch is done", async () => {
+    const job = {
+      ...exampleRunningJob,
+      id: "j1",
+      locator: "https://videos.example.com/abc",
+    };
     const client = createFakeBackendClient(
       {
         ...fixtureResponses,
@@ -184,7 +190,12 @@ describe("ProjectScreen", () => {
             { name: "video-site", version: "0.1.0", kind: "media-source" },
           ],
         },
-        "POST /projects/p1/media/from-source": fixtureMediaFiles.media_files[0],
+        "POST /projects/p1/media/from-source": job,
+        "GET /projects/p1/media/from-source/j1": {
+          ...job,
+          status: "done",
+          media_file: fixtureMediaFiles.media_files[0],
+        },
       },
       directPlaybackRoutes,
     );
@@ -217,6 +228,43 @@ describe("ProjectScreen", () => {
         locator: "https://videos.example.com/abc",
       },
     });
+  });
+
+  it("shows the fetch's progress while it runs", async () => {
+    const job = { ...exampleRunningJob, id: "j1" };
+    const client = createFakeBackendClient(
+      {
+        ...fixtureResponses,
+        "GET /dictionaries": { dictionaries: [] },
+        "GET /plugins": {
+          plugins: [
+            { name: "video-site", version: "0.1.0", kind: "media-source" },
+          ],
+        },
+        "POST /projects/p1/media/from-source": job,
+        "GET /projects/p1/media/from-source/j1": job,
+      },
+      directPlaybackRoutes,
+    );
+    renderWithAppStore(
+      <ProjectScreen
+        projectId="p1"
+        onBack={() => undefined}
+        onEditSettings={() => undefined}
+      />,
+      client,
+      { server: fakeServer },
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add from URL" }),
+    );
+    fireEvent.change(screen.getByLabelText("URL or ID"), {
+      target: { value: "https://videos.example.com/abc" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    expect((await screen.findByRole("status")).textContent).toContain(
+      "downloading the video and subtitles",
+    );
   });
 
   it("opens the project's settings", async () => {

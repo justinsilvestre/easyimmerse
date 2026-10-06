@@ -18,6 +18,7 @@ import type {
   LookupQuery,
   LookupResponse,
   MediaFile,
+  MediaSourceJob,
   NewFlashcard,
   ParseLocalDocumentRequest,
   ParseTimedTextRequest,
@@ -68,6 +69,8 @@ type AddMediaFromSourceArgs = {
   request: AddMediaFromSourceRequest;
 };
 
+type MediaSourceJobArgs = { projectId: string; jobId: string };
+
 type MediaFileArgs = { projectId: string; mediaFileId: string };
 
 type PlanPlaybackArgs = MediaFileArgs & { request: PlaybackRequest };
@@ -111,23 +114,15 @@ const subtitleTracksTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "SubtitleTracks", id: mediaFileId }] as const;
 
 /**
- * Puts a media file the server just added into the project's list.
+ * Puts a media file the server added into the project's list.
  * The new file's entry decides which screen opens it, so it joins the list at once.
  * The refetch that the invalidation starts can wait for other requests to finish.
  */
-async function listAddedMediaFileAtOnce(
-  { projectId }: { projectId: string },
-  {
-    dispatch,
-    queryFulfilled,
-  }: {
-    dispatch: (action: unknown) => unknown;
-    queryFulfilled: Promise<{ data: MediaFile }>;
-  },
+function listMediaFileAtOnce(
+  dispatch: (action: unknown) => unknown,
+  projectId: string,
+  added: MediaFile,
 ) {
-  const result = await queryFulfilled.catch(() => null);
-  if (result === null) return;
-  const added = result.data;
   dispatch(
     backendApi.util.updateQueryData("listMediaFiles", projectId, (list) => {
       if (!list.media_files.some(({ id }) => id === added.id))
@@ -136,11 +131,7 @@ async function listAddedMediaFileAtOnce(
   );
 }
 
-const mediaFileAddedTags = (
-  _result: unknown,
-  _error: unknown,
-  { projectId }: { projectId: string },
-) =>
+const mediaFileAddedTags = (projectId: string) =>
   [
     { type: "MediaFiles", id: projectId },
     { type: "Projects", id: projectId },
@@ -284,17 +275,37 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/media`,
         body: { kind: "json", value: request },
       }),
-      onQueryStarted: listAddedMediaFileAtOnce,
-      invalidatesTags: mediaFileAddedTags,
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        const result = await queryFulfilled.catch(() => null);
+        if (result !== null)
+          listMediaFileAtOnce(dispatch, projectId, result.data);
+      },
+      invalidatesTags: (_result, _error, { projectId }) =>
+        mediaFileAddedTags(projectId),
     }),
-    addMediaFromSource: build.mutation<MediaFile, AddMediaFromSourceArgs>({
+    /** Starts a fetch through a media-source plugin; the job it answers with is polled through `getMediaSourceJob`. */
+    addMediaFromSource: build.mutation<MediaSourceJob, AddMediaFromSourceArgs>({
       query: ({ projectId, request }) => ({
         method: "POST",
         path: `/projects/${projectId}/media/from-source`,
         body: { kind: "json", value: request },
       }),
-      onQueryStarted: listAddedMediaFileAtOnce,
-      invalidatesTags: mediaFileAddedTags,
+    }),
+    /** A fetch through a media-source plugin. Once it is done, its media file joins the project's list. */
+    getMediaSourceJob: build.query<MediaSourceJob, MediaSourceJobArgs>({
+      query: ({ projectId, jobId }) => ({
+        method: "GET",
+        path: `/projects/${projectId}/media/from-source/${jobId}`,
+      }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        const result = await queryFulfilled.catch(() => null);
+        const added = result?.data.media_file;
+        if (result?.data.status !== "done" || !added) return;
+        listMediaFileAtOnce(dispatch, projectId, added);
+        dispatch(
+          backendApi.util.invalidateTags([...mediaFileAddedTags(projectId)]),
+        );
+      },
     }),
     removeMediaFile: build.mutation<void, MediaFileArgs>({
       query: ({ projectId, mediaFileId }) => ({
@@ -519,6 +530,7 @@ export const {
   useListMediaFilesQuery,
   useAddMediaFileMutation,
   useAddMediaFromSourceMutation,
+  useGetMediaSourceJobQuery,
   useListPluginsQuery,
   useRemoveMediaFileMutation,
   useGetMediaTracksQuery,
