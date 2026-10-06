@@ -37,12 +37,11 @@ export function useUnsavedCardActions() {
     offersUndo: boolean,
   ) {
     const before = queued.beforeOf(card);
-    const saving = queued.send(card, projectId);
+    const saving = queued.send(card, projectId, () => unlistSaved(card));
     if (!saving) return;
     queued.track(
       saving.then(
         (saved) => {
-          unlistSaved(card);
           if (offersUndo) queued.undo.offer(card, saved, before);
         },
         (error: unknown) => listFailure(card, projectId, error),

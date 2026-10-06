@@ -30,9 +30,15 @@ export function useUnsavedCardRetry({ listFailure, unlistSaved }: Listing) {
     if (listed.card === sent.card) return unlistSaved(sent.card);
     store.put(createUnsavedCard(listed.card, sent.projectId));
   }
-  /** Sends a listed card again, and tells whether anything was sent. */
+  /**
+   * Sends a listed card again, and tells whether anything was sent.
+   * When its turn in the queue comes, the save is dropped unless the card is still listed and being retried,
+   * so that it cannot overwrite a newer save, from the editor, that took the card off the list.
+   */
   function resend(sent: UnsavedCard): boolean {
-    const saving = queued.send(sent.card, sent.projectId);
+    const isStillWanted = () =>
+      store.find(sent.flashcardId)?.isRetrying === true;
+    const saving = queued.resend(sent.card, sent.projectId, isStillWanted);
     if (!saving) return false;
     queued.track(
       saving.then(

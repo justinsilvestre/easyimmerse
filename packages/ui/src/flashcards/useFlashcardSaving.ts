@@ -93,7 +93,6 @@ export function useFlashcardSaving(
       saving.then(
         () => {
           const wasOnScreen = isOnScreen(card);
-          offScreen.unlistSaved(card);
           dispatchEdited({ type: "saved", session: card.session });
           if (wasOnScreen) setSaved(true);
         },

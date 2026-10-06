@@ -30,11 +30,14 @@ export function useOffScreenSaving(
     replace: queued.replace,
     latestOf: queued.latestOf,
     track: queued.track,
-    /** Sends a card's save, or returns undefined when this opening's save is already under way. */
-    send: (card: EditedFlashcard) => queued.send(card, projectId),
+    /**
+     * Sends a card's save, or returns undefined when this opening's save is already under way.
+     * Once it lands, the card leaves the list of unsaved flashcards, before any later work on it starts.
+     */
+    send: (card: EditedFlashcard) =>
+      queued.send(card, projectId, () => unsaved.unlistSaved(card)),
     listFailure: (card: EditedFlashcard, error: unknown) =>
       unsaved.listFailure(card, projectId, error),
-    unlistSaved: unsaved.unlistSaved,
     save,
     saveAfterLookup: lateLookups.saveAfterLookup,
     rememberLookup: lateLookups.rememberLookup,

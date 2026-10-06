@@ -773,6 +773,42 @@ describe("useMediaFlashcards", () => {
         await flushPendingWork();
         expect(listedEndMs(rendered)).toBe(4000);
       });
+
+      it("takes the Retry back once the opened card is closed without saving", async () => {
+        const rendered = await retryHündin();
+        act(() => rendered.result.current.open(savedFlashcard.id));
+        act(() => rendered.result.current.close());
+        rendered.letSavesSucceed();
+        await vi.waitFor(async () => {
+          await rendered.letSavesThrough();
+          expect(rendered.puts()).toHaveLength(3);
+        });
+        expect(sentWord(rendered.puts()[2])).toBe(savedFlashcard.content.word);
+      });
+    });
+
+    it("drops a Retry that waited behind a newer save from the form, which took the card off the list", async () => {
+      const rendered = renderFlashcards({ savesFail: true });
+      const { result, held, letSavesThrough, puts } = rendered;
+      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+      act(() => result.current.open(savedFlashcard.id));
+      act(() => result.current.edit(typeWord("Hündin")));
+      act(() => result.current.open(savedFlashcard.id));
+      act(() => result.current.edit(typeWord("Rüde")));
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      await vi.waitFor(() =>
+        expect(rendered.unsavedWords()).toEqual(["Hündin"]),
+      );
+      rendered.letSavesSucceed();
+      act(() => result.current.save());
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      rendered.actOnUnsaved("Hündin", "retry");
+      await letSavesThrough();
+      await flushPendingWork();
+      await letSavesThrough();
+      await flushPendingWork();
+      expect(puts().map(sentWord)).toEqual(["Hündin", "Rüde"]);
     });
   });
 
