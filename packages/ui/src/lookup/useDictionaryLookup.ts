@@ -1,8 +1,8 @@
 import {
   buildDictionaryMediaUrl,
   getServerConfig,
+  lookUpTextAhead,
   skipToken,
-  useLazyLookupTextQuery,
   useListDictionariesQuery,
   useLookupTextQuery,
 } from "@easyimmerse/backend";
@@ -13,6 +13,7 @@ import type {
 } from "@easyimmerse/types";
 import { useReducer } from "react";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import {
   type LookupPopup,
@@ -44,8 +45,7 @@ export function useDictionaryLookup<S>(language: string) {
       ? lookupQueryOf(request, language)
       : skipToken,
   );
-  const [lookUpLazily] = useLazyLookupTextQuery();
-  const [prefetchLazily] = useLazyLookupTextQuery();
+  const storeDispatch = useAppDispatch();
   return {
     popup,
     request,
@@ -59,20 +59,22 @@ export function useDictionaryLookup<S>(language: string) {
     /**
      * Looks a word up without showing it, and resolves its results, or null when the lookup fails or no dictionary covers the language.
      * A lookup the pop-up already made or is making for the same word is reused.
+     * Neither this nor `prefetch` renders the component again.
      */
     lookUp: (
       wanted: LookupRequest<S>,
     ): Promise<readonly LookupResult[] | null> =>
       isMissingDictionary
         ? Promise.resolve(null)
-        : lookUpLazily(lookupQueryOf(wanted, language), true)
-            .unwrap()
+        : lookUpTextAhead(storeDispatch, lookupQueryOf(wanted, language))
             .then((response) => response.results)
             .catch(() => null),
     /** Starts looking a word up, so that its results are at hand when the pop-up shows it. */
     prefetch: (wanted: LookupRequest<S>) => {
       if (!isMissingDictionary)
-        prefetchLazily(lookupQueryOf(wanted, language), true);
+        lookUpTextAhead(storeDispatch, lookupQueryOf(wanted, language)).catch(
+          () => undefined,
+        );
     },
     chooseWord: (chosen: LookupRequest<S>) =>
       dispatch({ type: "wordChosen", request: chosen }),

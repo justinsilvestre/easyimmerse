@@ -27,6 +27,7 @@ import type { ReaderWord } from "../reader/useWordPointer.ts";
  * The screen for reading one of the project's ebooks or text files.
  * The book opens where it was last left, in the appearance last chosen.
  * Words are looked up in the dictionary pop-up as in the subtitles, and a flashcard made from one is filled from its lookup, with its sentence as context.
+ * The L key looks up the word under the mouse, or opens the pop-up's search field when the mouse is on no word.
  */
 export function ReaderScreen({
   project,
@@ -133,6 +134,7 @@ function BookReader({
         ...lookup.wordGestures,
         onBack: () => dispatch(actions.closeMedia()),
         onLookup: lookup.openSearch,
+        onLookupKey: lookup.lookUpPointedWord,
         onDismissLookup: lookup.close,
         onPointerInsideLookupChange: lookup.popup?.onPointerInsideChange,
         onLocationChange: (location) =>

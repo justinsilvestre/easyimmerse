@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 import type { ViewportPoint } from "../components/characterAtPoint.ts";
-import { hoverIntentMs } from "../components/gestureTiming.ts";
+import { hoverMs } from "../components/gestureTiming.ts";
 import {
   clickableWordAttribute,
   lookupTriggerAttribute,
@@ -25,8 +25,15 @@ export type ReaderWordGestures = {
   onWordClick: (word: ReaderWord, input: "mouse" | "touch") => void;
   /** The second click of a double-click or the second tap of a double tap, reported for the word of the first. */
   onWordDoubleClick: (word: ReaderWord) => void;
-  /** A mouse pointer resting on the word for a moment. Passing over it reports nothing. */
-  onWordHoverIntent: (word: ReaderWord) => void;
+  /** The word the mouse pointer is over, reported at once each time it changes, and as null when it leaves the words. */
+  onWordPointed?: (word: ReaderWord | null) => void;
+  /**
+   * A mouse pointer that has stayed on the word for the brief moment that tells pointing at it from sweeping across the text.
+   * It may answer with a promise, such as that of the word's lookup, for `onWordHoverAnswered` to wait for.
+   */
+  onWordHover: (word: ReaderWord) => unknown;
+  /** The answer of `onWordHover` settling while the mouse is still on the word; at once when there is none to wait for. */
+  onWordHoverAnswered?: (word: ReaderWord) => void;
   /** A touch held on the word. The click that ends it is not reported. */
   onWordHold: (word: ReaderWord) => void;
 };
@@ -58,6 +65,9 @@ export function useWordPointer(
   const hovered = useRef<ReaderWord | null>(null);
   const findWord = (point: ViewportPoint) =>
     wordAtPoint(point, chapterIndex, language);
+  const reportAnswer = (word: ReaderWord) => {
+    if (hovered.current === word) latest.current.onWordHoverAnswered?.(word);
+  };
   const reportClick = (
     event: MouseEvent<HTMLElement>,
     word: ReaderWord,
@@ -102,12 +112,20 @@ export function useWordPointer(
       const word = findWord(pointOf(event));
       if (isSameWord(word, hovered.current)) return;
       hovered.current = word;
+      latest.current.onWordPointed?.(word);
       if (!word) return hoverTimer.cancel();
-      hoverTimer.restart(hoverIntentMs, () =>
-        latest.current.onWordHoverIntent(word),
-      );
+      hoverTimer.restart(hoverMs, () => {
+        const answer = latest.current.onWordHover(word);
+        if (answer instanceof Promise)
+          answer.then(
+            () => reportAnswer(word),
+            () => reportAnswer(word),
+          );
+        else reportAnswer(word);
+      });
     },
     onPointerLeave: () => {
+      if (hovered.current !== null) latest.current.onWordPointed?.(null);
       hovered.current = null;
       hoverTimer.cancel();
       press.cancelHold();

@@ -45,7 +45,7 @@ function renderReader(
         onLookup: ignore,
         onWordClick: ignore,
         onWordDoubleClick: ignore,
-        onWordHoverIntent: ignore,
+        onWordHover: ignore,
         onWordHold: ignore,
         onDismissLookup: ignore,
         onLocationChange: overrides.onLocationChange ?? ignore,

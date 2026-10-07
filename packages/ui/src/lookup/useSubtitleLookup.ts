@@ -1,9 +1,10 @@
 import type { Cue } from "@easyimmerse/types";
-import type { ComponentProps, RefObject } from "react";
+import { type ComponentProps, type RefObject, useMemo, useRef } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { usePlaybackPause } from "../hooks/usePlaybackPause.ts";
+import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import type {
   ActiveCueWord,
   CueWordGestures,
@@ -20,8 +21,11 @@ import {
 /**
  * Looks up words of the subtitles in the dictionary pop-up, which pauses playback while it is open
  * and resumes it when closed, unless the lookup led on to a flashcard or to the dictionaries settings.
- * The L key opens the pop-up's search field while the screen that `screenRef` marks is in reach.
- * Returns the gestures for the subtitles' words, and the pop-up's props, or null while it is closed.
+ * While the screen that `screenRef` marks is in reach, the L key looks up the word under the mouse as a click on it would,
+ * or opens the pop-up's search field when the mouse is on no word.
+ * Returns the gestures for the subtitles' words, which keep their identity across renders,
+ * the word the pop-up shows, which keeps its identity while it shows the same word,
+ * and the pop-up's props, or null while it is closed.
  */
 export function useSubtitleLookup(
   languages: { target: string; translation: string },
@@ -35,7 +39,14 @@ export function useSubtitleLookup(
     hold: { hold: pause.pause, release: pause.resume, forget: pause.forget },
     startFlashcard,
   });
-  useKeyboardShortcut("l", lookup.openSearch, screenRef);
+  const pointed = useRef<{ hit: WordHit; cue: Cue } | null>(null);
+  const lookUpPointedWord = () => {
+    const current = pointed.current;
+    if (current?.hit.element.isConnected)
+      lookup.clickWord(requestFor(current.hit, current.cue), "keyboard");
+    else lookup.openSearch();
+  };
+  useKeyboardShortcut("l", lookUpPointedWord, screenRef);
   const popup = lookup.popup && {
     anchored: lookup.popup.anchored,
     props: {
@@ -43,29 +54,42 @@ export function useSubtitleLookup(
       onSetUpDictionary: () => lookup.leaveFor(openDictionaries),
     } satisfies ComponentProps<typeof DictionaryPopup>,
   };
-  const wordGestures: CueWordGestures = {
+  const wordGestures = useStableCallbacks<Required<CueWordGestures>>({
     onWordClick: (hit, cue) =>
       lookup.clickWord(requestFor(hit, cue), hit.input),
+    onWordPointed: (hit, cue) => {
+      pointed.current = hit && { hit, cue };
+    },
     onWordHover: (hit, cue) => lookup.hoverWord(requestFor(hit, cue)),
-    onWordHoverIntent: (hit, cue) => lookup.restOnWord(requestFor(hit, cue)),
+    onWordHoverAnswered: (hit, _matchedLength, cue) =>
+      lookup.restOnWord(requestFor(hit, cue)),
     onWordDoubleClick: (hit, cue) =>
       lookup.startFlashcardFor(requestFor(hit, cue)),
     onWordHold: (hit, cue) => lookup.startFlashcardFor(requestFor(hit, cue)),
-  };
+  });
   return {
-    activeWord: activeCueWordOf(lookup.activeOccurrence),
+    activeWord: useActiveCueWord(lookup.activeOccurrence),
     popup,
     openSearch: lookup.openSearch,
     wordGestures,
   };
 }
 
-function activeCueWordOf(
+/** The word of a cue the pop-up shows, as one object for as long as it shows the same word with the same match. */
+function useActiveCueWord(
   occurrence: ReturnType<typeof useWordLookup<Cue>>["activeOccurrence"],
 ): ActiveCueWord | undefined {
-  if (!occurrence?.source) return undefined;
-  const { source, start, length, popupId } = occurrence;
-  return { cueIndex: source.index, start, length, popupId };
+  const cueIndex = occurrence?.source?.index;
+  const start = occurrence?.start;
+  const length = occurrence?.length;
+  const popupId = occurrence?.popupId;
+  return useMemo(
+    () =>
+      cueIndex === undefined || start === undefined || popupId === undefined
+        ? undefined
+        : { cueIndex, start, length, popupId },
+    [cueIndex, start, length, popupId],
+  );
 }
 
 function requestFor(hit: WordHit, cue: Cue): LookupRequest<Cue> {

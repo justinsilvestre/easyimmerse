@@ -362,9 +362,21 @@ describe("DictionaryPopup size", () => {
 
   it("offers to show more of the entries while compact", () => {
     renderSized("compact");
+    expect(screen.getByRole("button", { name: "Show more" })).toBeDefined();
+  });
+
+  it("puts the toggle in a bar below the entries, out of the header", () => {
+    renderSized("compact");
     expect(
-      screen.getByRole("button", { name: "Show more of the entries" }),
-    ).toBeDefined();
+      screen.getByRole("button", { name: "Show more" }).closest("header"),
+    ).toBeNull();
+  });
+
+  it("puts the toggle last in the pop-up", () => {
+    renderSized("compact");
+    expect(
+      screen.getByRole("dialog", { name: "Dictionary" }).lastElementChild,
+    ).toBe(screen.getByRole("button", { name: "Show more" }));
   });
 
   it("offers to show less while expanded", () => {
@@ -384,9 +396,7 @@ describe("DictionaryPopup size", () => {
   it("asks to change size when the toggle is pressed", () => {
     let toggled = 0;
     renderSized("compact", () => (toggled += 1));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Show more of the entries" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Show more" }));
     expect(toggled).toBe(1);
   });
 
@@ -397,6 +407,20 @@ describe("DictionaryPopup size", () => {
         .getByRole("dialog", { name: "Dictionary" })
         .getAttribute("data-size"),
     ).toBe("expanded");
+  });
+
+  it("fills the band it is placed in while expanded", () => {
+    renderSized("expanded");
+    expect(
+      screen.getByRole("dialog", { name: "Dictionary" }).style.height,
+    ).toBe("100%");
+  });
+
+  it("grows only as tall as its entries while compact", () => {
+    renderSized("compact");
+    expect(
+      screen.getByRole("dialog", { name: "Dictionary" }).style.height,
+    ).toBe("");
   });
 });
 

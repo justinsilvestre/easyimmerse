@@ -1,10 +1,11 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { FilePlus, Layers, LocateFixed, Sparkles } from "lucide-react";
-import { type MouseEvent, useMemo } from "react";
+import { type MouseEvent, memo, useMemo } from "react";
 import { Button } from "../components/Button.tsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
+import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import {
   type ActiveCueWord,
   activeWordIn,
@@ -19,6 +20,8 @@ import { useFollowsPlayback } from "./useFollowsPlayback.ts";
  * The collapsible panel with one card per cue, which follows playback.
  * A click anywhere on a card seeks to its cue, except on its words, which keep their own gestures, and on its buttons.
  * Once the user scrolls the current line out of view, the panel stops following and offers a button back to it.
+ * A card renders again only when its own cue, state or word changes, so that playback and lookups stay quick with many cues;
+ * for that, `wordGestures` must keep its identity across renders.
  */
 export function CuePanel({
   cues,
@@ -55,6 +58,14 @@ export function CuePanel({
   );
   const { listRef, isFollowing, resume, follow } =
     useFollowsPlayback(activeCueIndex);
+  const handlers = useStableCallbacks({
+    seek: (ms: number) => {
+      follow();
+      onSeek(ms);
+    },
+    openFlashcardForCue: (cueIndex: number) =>
+      onOpenFlashcardForCue?.(cueIndex),
+  });
   if (cues.length === 0) {
     return (
       <div className="p-3">
@@ -91,14 +102,11 @@ export function CuePanel({
             translation={translation}
             isActive={cue.index === activeCueIndex}
             hasFlashcard={flashcardCueIndexes.includes(cue.index)}
-            activeWord={activeWord}
-            onSeek={(ms) => {
-              follow();
-              onSeek(ms);
-            }}
+            activeWord={activeWordIn(activeWord, cue)}
+            onSeek={handlers.seek}
             wordGestures={wordGestures}
-            onOpenFlashcard={
-              onOpenFlashcardForCue && (() => onOpenFlashcardForCue(cue.index))
+            onOpenFlashcardForCue={
+              onOpenFlashcardForCue && handlers.openFlashcardForCue
             }
           />
         ))}
@@ -117,7 +125,7 @@ export function CuePanel({
   );
 }
 
-function CueCard({
+const CueCard = memo(function CueCard({
   cue,
   translation,
   isActive,
@@ -125,17 +133,18 @@ function CueCard({
   activeWord,
   onSeek,
   wordGestures,
-  onOpenFlashcard,
+  onOpenFlashcardForCue,
 }: {
   cue: Cue;
   translation: Cue | null;
   isActive: boolean;
   hasFlashcard: boolean;
-  activeWord?: ActiveCueWord;
+  /** The word the pop-up shows, when it lies in this cue. */
+  activeWord?: { start: number; length?: number; popupId: string };
   onSeek: (ms: number) => void;
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
-  onOpenFlashcard?: () => void;
+  onOpenFlashcardForCue?: (cueIndex: number) => void;
 }) {
   const seekOnClick = (event: MouseEvent<HTMLLIElement>) => {
     if (event.target instanceof Element && event.target.closest("button"))
@@ -173,12 +182,12 @@ function CueCard({
           {formatTimestamp(cue.start_ms)}
         </button>
         {hasFlashcard &&
-          (onOpenFlashcard ? (
+          (onOpenFlashcardForCue ? (
             <button
               type="button"
               aria-label="Open the flashcard"
               title="Open the flashcard"
-              onClick={onOpenFlashcard}
+              onClick={() => onOpenFlashcardForCue(cue.index)}
               className="-my-1 inline-flex items-center rounded p-1 text-accent-fg pointer-coarse:-my-4 pointer-coarse:p-4 hover:bg-surface-strong focus-visible:outline-2 focus-visible:outline-accent"
             >
               <Layers className="size-3" aria-hidden />
@@ -195,7 +204,7 @@ function CueCard({
       <p className="text-base">
         <ClickableText
           text={stripMarkup(cue.text)}
-          activeWord={activeWordIn(activeWord, cue)}
+          activeWord={activeWord}
           gestures={gesturesForCue(wordGestures, cue)}
         />
       </p>
@@ -206,4 +215,4 @@ function CueCard({
       )}
     </li>
   );
-}
+});

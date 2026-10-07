@@ -1,6 +1,5 @@
 import type { DictionaryStylesheet } from "@easyimmerse/types";
-import clsx from "clsx";
-import { BookOpen, Maximize2, Minimize2, Search, X } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
@@ -10,7 +9,7 @@ import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import { KanjiCard } from "./KanjiCard.tsx";
 import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupState } from "./lookupState.ts";
-import { type PopupSize, popupWidth } from "./popupSize.ts";
+import { type PopupSize, popupHeight, popupWidth } from "./popupSize.ts";
 import { type PopupWordActions, PopupWordContext } from "./popupWordContext.ts";
 import { DictionaryStylesheets } from "./stylesheet/DictionaryStylesheets.tsx";
 import { usePopupDismissal } from "./usePopupDismissal.ts";
@@ -23,7 +22,7 @@ import { usePopupDismissal } from "./usePopupDismissal.ts";
  * and, through `wordActions`, from a word inside the pop-up that is double-clicked or held.
  * When no dictionary has an entry for the word, the header button still makes a flashcard, with the word and its sentence only.
  * While such a flashcard waits for its word's lookup, `pendingFlashcard` names the word.
- * A header button asks, through `onToggleSize`, to switch the pop-up between its two `size`s, to show more or less of the entries.
+ * A thin bar along its bottom edge asks, through `onToggleSize`, to switch the pop-up between its two `size`s, to show more or less of the entries.
  * Escape, or pressing outside the pop-up and not on a word marked as a lookup trigger, closes it.
  * Images in definitions are found through `resolveMediaUrl`.
  */
@@ -66,11 +65,8 @@ export function DictionaryPopup({
       role="dialog"
       aria-label="Dictionary"
       data-size={size}
-      style={{ width: popupWidth(size) }}
-      className={clsx(
-        "flex flex-col rounded-lg border border-line bg-surface text-fg shadow-xl",
-        isExpanded ? "max-h-full" : "max-h-[min(24rem,100%)]",
-      )}
+      style={{ width: popupWidth(size), ...popupHeight(size) }}
+      className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface text-fg shadow-xl"
     >
       <header className="flex items-center gap-2 border-b border-line px-3 py-2">
         <TermField
@@ -88,17 +84,6 @@ export function DictionaryPopup({
             <NewFlashcardIcon className="size-4" />
           </IconButton>
         )}
-        <IconButton
-          label={isExpanded ? "Show less" : "Show more of the entries"}
-          pressed={isExpanded}
-          onClick={onToggleSize}
-        >
-          {isExpanded ? (
-            <Minimize2 className="size-4" />
-          ) : (
-            <Maximize2 className="size-4" />
-          )}
-        </IconButton>
         <IconButton label="Close" onClick={onClose}>
           <X className="size-4" />
         </IconButton>
@@ -119,7 +104,32 @@ export function DictionaryPopup({
           />
         </PopupWordContext>
       </div>
+      <SizeToggle isExpanded={isExpanded} onToggle={onToggleSize} />
     </section>
+  );
+}
+
+/** The thin bar along the pop-up's bottom edge that shows more or less of the entries. */
+function SizeToggle({
+  isExpanded,
+  onToggle,
+}: {
+  isExpanded: boolean;
+  onToggle?: () => void;
+}) {
+  const label = isExpanded ? "Show less" : "Show more";
+  const Chevron = isExpanded ? ChevronUp : ChevronDown;
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={isExpanded}
+      title={label}
+      onClick={onToggle}
+      className="flex h-4 w-full shrink-0 items-center justify-center border-t border-line text-fg-faint hover:bg-surface-muted hover:text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+    >
+      <Chevron className="size-3" aria-hidden />
+    </button>
   );
 }
 

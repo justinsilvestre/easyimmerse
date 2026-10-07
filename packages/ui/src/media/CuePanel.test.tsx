@@ -47,7 +47,7 @@ function panel(
       wordGestures={{
         onWordClick,
         onWordDoubleClick: vi.fn(),
-        onWordHoverIntent: vi.fn(),
+        onWordHoverAnswered: vi.fn(),
         onWordHold: vi.fn(),
       }}
       onAddSubtitlesFile={vi.fn()}

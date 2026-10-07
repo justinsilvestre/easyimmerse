@@ -1,10 +1,7 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import type { PopupSize } from "../lookup/popupSize.ts";
+import { type PopupSize, popupWidthRem } from "../lookup/popupSize.ts";
 import { popupPlacement } from "./popupPlacement.ts";
-
-/** The width of the dictionary pop-up at each size, 26rem and 40rem, which sets where it can be centered. */
-const popupWidthPx: Record<PopupSize, number> = { compact: 416, expanded: 640 };
 
 /**
  * Holds the dictionary pop-up beside the word it is about.
@@ -41,7 +38,7 @@ export function LookupAnchor({
         {children}
       </div>
     );
-  const placement = popupPlacement(wordRect, popupWidthPx[size], {
+  const placement = popupPlacement(wordRect, popupWidthPx(size), {
     width: window.innerWidth,
     height: window.innerHeight,
   });
@@ -61,4 +58,12 @@ export function LookupAnchor({
       {children}
     </div>
   );
+}
+
+/** The width of the dictionary pop-up at a size, in CSS pixels at the page's current text size, which sets where it can be centred. */
+function popupWidthPx(size: PopupSize): number {
+  const remPx = Number.parseFloat(
+    getComputedStyle(document.documentElement).fontSize,
+  );
+  return popupWidthRem[size] * (remPx || 16);
 }

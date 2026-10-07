@@ -82,8 +82,9 @@ export function stripMarkup(text: string): string {
 /**
  * Renders text with each word as a button, so that a word can be looked up or turned into a flashcard.
  * `gestures` receives what the user does to each word: click, double-click, hover or a held tap.
- * The unit under the mouse is highlighted: a word written with spaces whole, and in a run of a script written without spaces
- * the character the pointer is over, growing to the text a lookup from it matched once the hover has answered with the match.
+ * The unit under the mouse is highlighted once its hover has answered: a word written with spaces whole,
+ * and in a run of a script written without spaces the text a lookup from the character under the pointer matched,
+ * or that character alone when nothing matched. The highlight stays while the mouse moves within it, and goes when it moves elsewhere.
  * The word the pop-up shows is highlighted the same way.
  * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
  * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
@@ -102,24 +103,15 @@ export function ClickableText({
   gestures?: WordGestures;
 }) {
   const [hovered, setHovered] = useState<HoveredWord | null>(null);
-  /** Grows the highlight of the unit at `start` to the text its lookup matched, unless the mouse has moved on. */
-  const growHighlight = (start: number, length: number | null) => {
-    if (length === null) return;
-    setHovered((current) =>
-      current?.start === start ? { start, length } : current,
-    );
-  };
   const { handlersFor, keyboardStart } = useWordGestures({
     ...gestures,
     onWordPointed: (hit) => {
-      setHovered(hit && { start: hit.start });
+      setHovered((current) => keptHighlight(current, hit?.start ?? null));
       gestures.onWordPointed?.(hit);
     },
-    onWordHover: (hit) => {
-      const answer = gestures.onWordHover?.(hit);
-      if (answer instanceof Promise)
-        answer.then((length) => growHighlight(hit.start, length));
-      return undefined;
+    onWordHoverAnswered: (hit, matchedLength) => {
+      setHovered({ start: hit.start, length: matchedLength ?? undefined });
+      gestures.onWordHoverAnswered?.(hit, matchedLength);
     },
   });
   const parts = splitIntoWords(text);
@@ -188,8 +180,18 @@ export function ClickableText({
 
 type ActiveWord = { start: number; length?: number; popupId: string };
 
-/** The unit under the mouse, by its offset in the text, with the length of the text a lookup from it matched once known. */
+/** The highlighted unit under the mouse, by its offset in the text, with the length of the text a lookup from it matched, if any. */
 type HoveredWord = { start: number; length?: number };
+
+/** The highlight, kept while the mouse stays within the text it covers, or null once the mouse is elsewhere. */
+function keptHighlight(
+  current: HoveredWord | null,
+  pointedStart: number | null,
+): HoveredWord | null {
+  if (current === null || pointedStart === null) return null;
+  const end = current.start + (current.length ?? 1);
+  return pointedStart >= current.start && pointedStart < end ? current : null;
+}
 
 const noGestures: WordGestures = {};
 
