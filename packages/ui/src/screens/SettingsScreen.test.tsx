@@ -1,5 +1,5 @@
 import { resetBackend } from "@easyimmerse/backend";
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { SettingsOpenContext } from "../navigationContext.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
@@ -53,6 +53,21 @@ describe("SettingsScreen", () => {
         .getByRole("button", { name: "Settings" })
         .getAttribute("aria-current"),
     ).toBe("page");
+  });
+
+  it("shows the subtitle appearance controls in a Subtitles section", () => {
+    renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
+    );
+    expect(
+      within(screen.getByRole("region", { name: "Subtitles" })).getByRole(
+        "slider",
+        { name: "Background opacity" },
+      ),
+    ).toBeDefined();
   });
 
   it("treats conversion as unavailable until told otherwise", () => {

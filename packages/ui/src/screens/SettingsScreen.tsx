@@ -7,6 +7,7 @@ import {
 } from "../components/LicensesPage.tsx";
 import { PreferenceToggle } from "../components/PreferenceToggle.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { SubtitleAppearanceSection } from "../media/SubtitleAppearanceSection.tsx";
 
 const unavailableConversionCache: ConversionCacheControls = {
   cache: { kind: "unavailable" },
@@ -44,6 +45,7 @@ export function SettingsScreen({
         </span>
         <ChevronRight className="size-4 text-fg-muted" aria-hidden />
       </button>
+      <SubtitleAppearanceSection />
       <section
         aria-labelledby="settings-conversion"
         className="flex flex-col gap-3"
