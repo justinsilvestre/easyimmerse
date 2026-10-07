@@ -10,7 +10,7 @@ import { focusInitialMenuItem, moveMenuFocusForKey } from "./menuFocus.ts";
  * A button that opens a small menu of actions below it. With children it is a text button showing them;
  * without, it is an icon button showing `badge`, a few characters such as the current value, or else `icon`, or three dots.
  * Opening the menu focuses its selected item, or its first, and the up and down arrows, Home, and End move between the items.
- * The menu closes on Escape, on a choice, when focus leaves it,
+ * The menu closes on Escape, on a choice, when focus moves to an element outside it,
  * or when the pointer presses anywhere outside it, which matters on browsers that give a clicked button no focus.
  * It opens downward unless told to open upward, for a button near the bottom of a scrolling area.
  * A text button's menu lines up with its start, and an icon button's with its end, unless `align` says otherwise.
@@ -69,8 +69,10 @@ export function MenuButton({
       ref={ref}
       className="relative"
       onBlur={(event) => {
-        if (!ref.current?.contains(event.relatedTarget as Node | null))
-          setOpen(false);
+        // Safari and the macOS desktop app give a pressed button no focus, so a press inside the menu blurs it with no
+        // element to receive the focus. Only a move of the focus to another element closes the menu; presses outside close it above.
+        const next = event.relatedTarget as Node | null;
+        if (next !== null && !ref.current?.contains(next)) setOpen(false);
       }}
       onKeyDown={(event) => {
         if (event.key === "Escape") closeAndFocusButton();
@@ -116,6 +118,8 @@ export function MenuButton({
           id={menuId}
           role="menu"
           aria-label={label}
+          // Keeps the focus on the focused item while an item is pressed, for keys to work after a checkbox is toggled.
+          onMouseDown={(event) => event.preventDefault()}
           className={clsx(
             "absolute z-20 min-w-40 rounded-md border border-line bg-surface py-1 text-sm text-fg shadow-lg",
             opensUpward ? "bottom-full mb-1" : "top-full mt-1",

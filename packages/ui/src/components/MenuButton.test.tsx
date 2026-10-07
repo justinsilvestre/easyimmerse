@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MenuButton } from "./MenuButton.tsx";
 
@@ -15,6 +21,19 @@ function renderMenu(onSelect: () => void = () => undefined) {
 
 const openMenu = () =>
   fireEvent.click(screen.getByRole("button", { name: "Actions" }));
+
+/**
+ * Presses an element with the pointer as Safari and the macOS desktop app do.
+ * They give a pressed button no focus, so the press takes the focus off whatever held it.
+ */
+function pressWithoutFocusing(element: HTMLElement) {
+  fireEvent.pointerDown(element);
+  if (fireEvent.mouseDown(element))
+    act(() => (document.activeElement as HTMLElement | null)?.blur());
+  fireEvent.pointerUp(element);
+  fireEvent.mouseUp(element);
+  fireEvent.click(element);
+}
 
 describe("MenuButton", () => {
   it("lines the menu up with the start of an icon button when told to", () => {
@@ -196,5 +215,47 @@ describe("MenuButton arrow keys", () => {
     expect(document.activeElement).toBe(
       screen.getByRole("menuitemradio", { name: "Slow" }),
     );
+  });
+});
+
+describe("MenuButton pressed with a pointer that does not focus buttons", () => {
+  it("runs the action of a chosen item of which one is selected", () => {
+    let chosen = 0;
+    renderChoices(() => {
+      chosen += 1;
+    });
+    openChoices();
+    pressWithoutFocusing(screen.getByRole("menuitemradio", { name: "Fast" }));
+    expect(chosen).toBe(1);
+  });
+
+  it("runs the action of a checkbox item", () => {
+    let toggled = 0;
+    render(
+      <MenuButton
+        label="Options"
+        items={[
+          {
+            label: "Show subtitles",
+            isChecked: true,
+            onSelect: () => {
+              toggled += 1;
+            },
+          },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Options" }));
+    pressWithoutFocusing(
+      screen.getByRole("menuitemcheckbox", { name: "Show subtitles" }),
+    );
+    expect(toggled).toBe(1);
+  });
+
+  it("closes the menu when its button is pressed again", () => {
+    renderMenu();
+    openMenu();
+    pressWithoutFocusing(screen.getByRole("button", { name: "Actions" }));
+    expect(screen.queryByRole("menu")).toBeNull();
   });
 });
