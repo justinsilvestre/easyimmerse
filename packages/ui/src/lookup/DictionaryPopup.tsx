@@ -101,7 +101,10 @@ export function DictionaryPopup({
   );
 }
 
+/** The word the pop-up shows: the text its best result matched, once found, since a run of Japanese is looked up from a character to the run's end. */
 function termOf(state: LookupState | null): string {
+  if (state?.kind === "found")
+    return state.results[0]?.matchedText ?? state.term;
   return state?.term ?? "";
 }
 

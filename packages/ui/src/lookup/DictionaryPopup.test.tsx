@@ -225,6 +225,17 @@ describe("DictionaryPopup states", () => {
     ).toHaveProperty("value", "Hund");
   });
 
+  it("fills its field with the text the lookup matched, once found", () => {
+    renderState({
+      kind: "found",
+      term: "映画を見る",
+      results: [{ ...exampleInflectedResult, matchedText: "映画" }],
+    });
+    expect(
+      screen.getByRole("textbox", { name: "Word to look up" }),
+    ).toHaveProperty("value", "映画");
+  });
+
   it("fills its field with the word shown", () => {
     renderState({ kind: "loading", term: "fressen" });
     expect(
