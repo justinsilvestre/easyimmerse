@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import { characterLength } from "./useKeyboardStart.ts";
 
 /** A stretch of text, in UTF-16 code units from its start. */
 export type Range = { from: number; to: number };
@@ -7,33 +6,24 @@ export type Range = { from: number; to: number };
 /**
  * The text of a run written without spaces, or of a word that holds a word a flashcard was made from.
  * The characters a lookup matched are highlighted,
- * as are the character under the mouse or the text a lookup from it matched.
- * While the run has keyboard focus, the character a lookup from the keyboard would start from is marked.
+ * as is the text a lookup from the lookup cursor matched, wherever the mouse or the keyboard put it.
  * The words that flashcards were made from are underlined.
  */
 export function RunText({
   text,
   matched,
   hovered = null,
-  keyboardStart,
   flashcardWords = [],
 }: {
   text: string;
   matched: Range | null;
+  /** The text the lookup cursor highlights. */
   hovered?: Range | null;
-  keyboardStart: number | null;
   flashcardWords?: readonly Range[];
 }) {
-  const marked =
-    keyboardStart === null
-      ? null
-      : {
-          from: keyboardStart,
-          to: keyboardStart + characterLength(text, keyboardStart),
-        };
   return (
     <>
-      {piecesOf(text, [matched, hovered, marked, ...flashcardWords]).map(
+      {piecesOf(text, [matched, hovered, ...flashcardWords]).map(
         ({ from, to }) => {
           const isFlashcardWord = flashcardWords.some((range) =>
             isWithin(from, range),
@@ -43,14 +33,11 @@ export function RunText({
               key={from}
               data-matched={isWithin(from, matched) || undefined}
               data-hovered={isWithin(from, hovered) || undefined}
-              data-keyboard-start={isWithin(from, marked) || undefined}
               data-flashcard-word={isFlashcardWord || undefined}
               className={clsx(
                 (isWithin(from, matched) || isWithin(from, hovered)) &&
                   "rounded-sm bg-accent-soft text-accent-fg",
                 isFlashcardWord && flashcardWordClassName,
-                isWithin(from, marked) &&
-                  "underline decoration-solid decoration-2 underline-offset-4",
               )}
             >
               {text.slice(from, to)}

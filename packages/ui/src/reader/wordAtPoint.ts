@@ -1,6 +1,6 @@
 import { isUnspacedLetter } from "../components/ClickableText.tsx";
 import type { ViewportPoint } from "../components/characterAtPoint.ts";
-import { characterLength } from "../components/useKeyboardStart.ts";
+import { characterLength } from "../components/characterLength.ts";
 import type { LookupText } from "../lookup/lookupTextAt.ts";
 import type { ReaderLocation } from "./readingProgress.ts";
 import { sentenceLookupAt } from "./sentenceLookupAt.ts";
