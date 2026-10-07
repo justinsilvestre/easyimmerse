@@ -256,7 +256,10 @@ type Story = StoryObj<typeof meta>;
 
 export const VideoWithDualSubtitles: Story = {};
 
-/** A large phone, where the subtitle box spans the narrow stage under the lookup buttons. */
+/**
+ * A large phone, where the subtitles and controls sit under the picture at the top of the screen,
+ * and the subtitles panel takes the rest of the height.
+ */
 export const OnAPhone: Story = {
   globals: { viewport: { value: "mobile2", isRotated: false } },
 };
@@ -267,6 +270,33 @@ export const OnASmallPhone: Story = {
   globals: { viewport: { value: "iphonex", isRotated: false } },
   args: {
     playerCallbacks: { ...meta.args.playerCallbacks, onOpenTracks: fn() },
+  },
+};
+
+/** A window too short for the subtitles to sit under the picture, so that they lie over its lower edge. */
+export const OnAShortWideWindow: Story = {
+  parameters: {
+    viewport: {
+      options: {
+        shortWide: {
+          name: "Short, wide window",
+          styles: { width: "830px", height: "420px" },
+        },
+      },
+    },
+  },
+  globals: { viewport: { value: "shortWide", isRotated: false } },
+};
+
+/** A cue longer than the two lines the subtitle box keeps room for, which grows upward over the picture. */
+export const FourLineCue: Story = {
+  args: {
+    shownCue: {
+      index: 3,
+      start_ms: 5400,
+      end_ms: 8200,
+      text: "Der Hund will fressen.\nEr hat Hunger.\nGib ihm etwas,\nbevor er bellt.",
+    },
   },
 };
 

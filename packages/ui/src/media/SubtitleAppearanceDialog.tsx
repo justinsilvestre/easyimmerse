@@ -9,7 +9,10 @@ import {
   subtitleTextScales,
   textColors,
 } from "./subtitleAppearance.ts";
-import { subtitleBoxStyles } from "./subtitleBoxStyles.ts";
+import {
+  subtitleBackdropStyles,
+  subtitleBoxStyles,
+} from "./subtitleBoxStyles.ts";
 
 const boxColorNames: Record<SubtitleAppearance["boxColor"], string> = {
   black: "Black",
@@ -126,7 +129,10 @@ function Preview({ appearance }: { appearance: SubtitleAppearance }) {
       <div className="h-16" />
       <div
         data-testid="subtitle-preview"
-        style={styles.box}
+        style={{
+          ...styles.box,
+          ...subtitleBackdropStyles(appearance).backdrop,
+        }}
         className="flex items-center justify-center px-4 text-center"
       >
         <p style={styles.target} className="font-medium">

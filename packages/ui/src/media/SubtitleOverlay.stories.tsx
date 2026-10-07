@@ -6,6 +6,7 @@ import {
   exampleFlashcardWordRanges,
   exampleTranslationCues,
 } from "./exampleCues.ts";
+import { SubtitleBand } from "./SubtitleBand.tsx";
 import { SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import { defaultSubtitleAppearance } from "./subtitleAppearance.ts";
 
@@ -15,12 +16,14 @@ const meta = {
   title: "Media/SubtitleOverlay",
   component: SubtitleOverlay,
   decorators: [
-    (Story) => (
+    (Story, { args }) => (
       <div
         data-theme="dark"
-        className="@container relative flex h-80 w-full max-w-3xl flex-col justify-end bg-linear-to-br from-sky-800 via-slate-500 to-amber-200"
+        className="@container relative flex h-80 w-3xl max-w-full flex-col justify-end bg-linear-to-br from-sky-800 via-slate-500 to-amber-200"
       >
-        <Story />
+        <SubtitleBand placement="overlay" appearance={args.appearance}>
+          <Story />
+        </SubtitleBand>
       </div>
     ),
   ],
@@ -60,6 +63,36 @@ export const HighContrast: Story = {
       textShadow: "none",
       textSizeStep: 4,
       textColor: "black",
+    },
+  },
+};
+
+/** Japanese, whose words are buttons that must keep the shadow of the text around them. */
+export const JapaneseCue: Story = {
+  args: {
+    targetCue: {
+      index: 1,
+      start_ms: 0,
+      end_ms: 3000,
+      text: "今日はいい天気ですね。\n散歩に行きましょうか？",
+    },
+    translationCue: {
+      index: 1,
+      start_ms: 0,
+      end_ms: 3000,
+      text: "Nice weather today. Shall we go for a walk?",
+    },
+  },
+};
+
+/** A cue longer than the two lines the box keeps room for, which grows upward over the picture. */
+export const FourLineCue: Story = {
+  args: {
+    targetCue: {
+      index: 3,
+      start_ms: 5400,
+      end_ms: 8200,
+      text: "Der Hund will fressen.\nEr hat Hunger.\nGib ihm etwas,\nbevor er bellt.",
     },
   },
 };

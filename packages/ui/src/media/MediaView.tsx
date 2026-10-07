@@ -1,10 +1,11 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ArrowLeft } from "lucide-react";
-import type { PointerEvent, ReactNode, Ref } from "react";
+import { type PointerEvent, type ReactNode, type Ref, useRef } from "react";
 import { AppFooter } from "../components/AppFooter.tsx";
 import { Button } from "../components/Button.tsx";
 import type { Range } from "../components/RunText.tsx";
+import { useElementSize } from "../hooks/useElementSize.ts";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
 import { findTranslationOf } from "./findCue.ts";
@@ -16,11 +17,16 @@ import {
 } from "./PlayerControls.tsx";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
 import { SubtitleAppearanceDialog } from "./SubtitleAppearanceDialog.tsx";
+import { SubtitleBand } from "./SubtitleBand.tsx";
 import { SubtitleLookupButtons } from "./SubtitleLookupButtons.tsx";
 import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
-
 import type { SubtitleAppearance } from "./subtitleAppearance.ts";
+import {
+  pictureHeightAt,
+  subtitleBandPlacement,
+} from "./subtitleBandPlacement.ts";
+import { usePictureAspectRatio } from "./usePictureAspectRatio.ts";
 import { useStageClicks } from "./useStageClicks.ts";
 
 type MediaViewProps = {
@@ -70,8 +76,11 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  * The screen for watching or listening to one media file.
  * The stage is dark in both themes, like a cinema, so that the bars laid over the picture stay readable;
  * the panels around it, the footer and the dictionary pop-up follow the app theme.
- * The header lies over the top of the stage and the controls over its bottom.
+ * The header lies over the top of the stage.
  * The subtitles sit in a box across the stage, right above the controls, with the lookup buttons over the box's right end.
+ * Subtitles and controls form one band, which takes rows of its own under the picture when the stage has room for it there,
+ * and otherwise lies over the picture's lower edge, so that a short, wide stage does not shrink the picture.
+ * When the side panel sits under the stage, the stage is only as tall as the picture and the band need, and the panel takes the rest.
  * The header, controls and lookup buttons show while playback is paused or the pointer moves over the picture,
  * and fold away otherwise, taking the pointer with them.
  * Moving over the subtitles or the pop-up does not count, and a pause the open pop-up caused does not bring them back,
@@ -97,24 +106,34 @@ export function MediaView(props: MediaViewProps) {
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
     if (!isOverLookupSurface(event)) pointer.onPointerMove(event);
   };
+  const layout = useStageLayout();
   return (
     <div
       ref={props.ref}
       className="flex h-dvh flex-col overflow-hidden bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-fg"
     >
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <main
+          className={clsx(
+            "flex min-h-0 min-w-0 flex-col md:flex-1",
+            props.sidePanel == null && "flex-1",
+          )}
+        >
           {props.headerContent && (
             <div className="border-b border-line px-3 py-2">
               {props.headerContent}
             </div>
           )}
           {/* The pop-up is a sibling of the dark stage, positioned against this frame, so that it follows the app theme. */}
-          <div className="relative flex min-h-40 flex-1 flex-col">
+          <div
+            className="relative flex min-h-40 shrink grow flex-col"
+            style={{ flexBasis: layout.stageBasis }}
+          >
             <div
+              ref={layout.stageRef}
               data-theme="dark"
               className={clsx(
-                "@container relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black",
+                "@container relative flex min-h-0 flex-1 flex-col overflow-hidden bg-black",
                 !showsChrome && "cursor-none",
               )}
               onPointerMove={onPointerMove}
@@ -123,7 +142,9 @@ export function MediaView(props: MediaViewProps) {
               {/* biome-ignore lint/a11y/noStaticElementInteractions: see above */}
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: see above */}
               <div
-                className="flex h-full w-full items-center justify-center"
+                ref={layout.pictureRef}
+                className="flex min-h-0 w-full shrink grow items-center justify-center"
+                style={{ flexBasis: layout.pictureBasis }}
                 onClick={onStageClick}
               >
                 {props.stage}
@@ -134,7 +155,11 @@ export function MediaView(props: MediaViewProps) {
               >
                 <Header {...props} />
               </Fading>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col">
+              <SubtitleBand
+                ref={layout.bandRef}
+                placement={layout.placement}
+                appearance={showsSubtitles ? props.subtitleAppearance : null}
+              >
                 <div className="relative">
                   <Fading
                     isShown={showsChrome}
@@ -179,14 +204,14 @@ export function MediaView(props: MediaViewProps) {
                     callbacks={props.playerCallbacks}
                   />
                 </Fading>
-              </div>
+              </SubtitleBand>
             </div>
             {props.lookup}
           </div>
           {panels.waveform && props.waveform}
         </main>
         {props.sidePanel != null && (
-          <aside className="flex max-h-[45dvh] min-h-0 shrink-0 flex-col overflow-hidden border-t border-line bg-canvas md:h-full md:max-h-none md:w-96 md:border-t-0 md:border-l">
+          <aside className="flex min-h-[40dvh] flex-1 flex-col overflow-hidden border-t border-line bg-canvas md:h-full md:min-h-0 md:w-96 md:flex-none md:border-t-0 md:border-l">
             {props.sidePanel}
           </aside>
         )}
@@ -203,6 +228,31 @@ export function MediaView(props: MediaViewProps) {
       )}
     </div>
   );
+}
+
+/**
+ * Measures the stage, the picture's proportions and the band of subtitles and controls, and lays them out:
+ * where the band goes, and how tall the picture and the stage would be with the picture as wide as the stage.
+ * Those natural heights let the stage fit its content when the side panel sits under it.
+ * They do not depend on where the band goes, so that the placement cannot change the measurements it was made from.
+ */
+function useStageLayout() {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const pictureRef = useRef<HTMLDivElement>(null);
+  const bandRef = useRef<HTMLDivElement>(null);
+  const stage = useElementSize(stageRef);
+  const band = useElementSize(bandRef);
+  const aspectRatio = usePictureAspectRatio(pictureRef);
+  const pictureHeight =
+    aspectRatio === null ? null : pictureHeightAt(stage.width, aspectRatio);
+  return {
+    stageRef,
+    pictureRef,
+    bandRef,
+    placement: subtitleBandPlacement(stage, aspectRatio, band.height),
+    pictureBasis: pictureHeight ?? "auto",
+    stageBasis: pictureHeight === null ? "auto" : pictureHeight + band.height,
+  };
 }
 
 /** The subtitles to show of those the user chose, leaving out a language that has no subtitles. */
