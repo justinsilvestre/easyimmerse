@@ -113,7 +113,9 @@ describe("MediaFields' Play button", () => {
 
   it("is offered beside the waveform", () => {
     renderClip({ waveform: { peaks: [0.1, 0.5, 0.9], durationMs: 24_000 } });
-    expect(screen.queryByRole("button", { name: "Play the clip" })).not.toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Play the clip" }),
+    ).not.toBeNull();
   });
 
   it("pauses the player once playback reaches the clip's end", () => {
