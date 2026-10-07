@@ -1,15 +1,12 @@
-import type {
-  MediaDescription,
-  MediaSourceJob,
-  MediaSourceLogLine,
-} from "@easyimmerse/types";
+import type { MediaDescription, MediaSourceJob } from "@easyimmerse/types";
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { formatPlayerTime } from "../components/formatPlayerTime.ts";
 import { ModalDialog } from "../components/ModalDialog.tsx";
 import { SelectField } from "../components/SelectField.tsx";
 import { TextField } from "../components/TextField.tsx";
+import { FetchLog } from "./FetchLog.tsx";
 import { SourceSubtitlesChoice } from "./SourceSubtitlesChoice.tsx";
 import {
   defaultSubtitleChoice,
@@ -242,48 +239,4 @@ function ProgressBar({ fraction }: { fraction: number | null }) {
       />
     </div>
   );
-}
-
-/** The log lines, newest at the bottom, kept scrolled to the latest while they arrive. */
-function FetchLog({ lines }: { lines: readonly MediaSourceLogLine[] }) {
-  const listRef = useRef<HTMLOListElement>(null);
-  const count = lines.length;
-  useEffect(() => {
-    const list = listRef.current;
-    if (list && count > 0) list.scrollTop = list.scrollHeight;
-  }, [count]);
-  return (
-    <ol
-      ref={listRef}
-      aria-label="Log"
-      className="mt-1 max-h-40 overflow-y-auto rounded border border-line bg-surface-muted p-2 font-mono whitespace-pre-wrap"
-    >
-      {withKeys(lines).map(({ line, key }) => (
-        <li
-          key={key}
-          className={clsx(
-            line.level === "output" && "text-fg-muted",
-            line.level === "warn" && "text-warning-fg",
-            line.level === "error" && "text-danger-fg",
-          )}
-        >
-          {line.message}
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-/**
- * Keys each line by its time and text, counting repeats apart, since a download reports
- * the same progress line more than once within a millisecond.
- */
-function withKeys(lines: readonly MediaSourceLogLine[]) {
-  const seen = new Map<string, number>();
-  return lines.map((line) => {
-    const text = `${line.at_ms} ${line.level} ${line.message}`;
-    const repeats = seen.get(text) ?? 0;
-    seen.set(text, repeats + 1);
-    return { line, key: `${text} #${repeats}` };
-  });
 }
