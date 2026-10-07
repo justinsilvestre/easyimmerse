@@ -98,6 +98,12 @@ describe("AnchoredPopup", () => {
     expect(style.size()).toBe("expanded");
   });
 
+  it("covers its word once expanded, reaching down to the viewport's bottom margin", () => {
+    const { word } = createWord(lowWord);
+    const bottomOf = renderAt(word, "expanded");
+    expect(bottomOf()).toBe("8px");
+  });
+
   it("stands above a word low on the screen", () => {
     const { word } = createWord(lowWord);
     const bottomOf = renderAt(word);

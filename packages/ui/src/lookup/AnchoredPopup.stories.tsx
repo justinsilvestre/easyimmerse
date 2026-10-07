@@ -7,23 +7,26 @@ import { exampleResults } from "./exampleLookup.ts";
 import { resolveExampleMediaUrl } from "./exampleMedia.ts";
 import type { PopupSize } from "./popupSize.ts";
 
-/** A word at a place on the page, with the pop-up standing at it. The bar along its bottom switches its size. */
+/**
+ * A word at a place on the page, given as CSS offsets, with the pop-up standing at it.
+ * The bar along the pop-up's bottom switches its size, and so does Escape while it is expanded.
+ */
 function PopupAtWord({
-  wordTop,
+  wordAt,
   initialSize,
 }: {
-  wordTop: string | null;
+  wordAt: { top: string; left: string } | null;
   initialSize: PopupSize;
 }) {
   const [word, setWord] = useState<HTMLElement | null>(null);
   const [size, setSize] = useState(initialSize);
   return (
     <div className="relative h-dvh">
-      {wordTop && (
+      {wordAt && (
         <span
           ref={setWord}
-          style={{ top: wordTop }}
-          className="absolute left-1/3 rounded-sm bg-accent-soft px-1"
+          style={wordAt}
+          className="absolute rounded-sm bg-accent-soft px-1"
         >
           fressen
         </span>
@@ -31,7 +34,7 @@ function PopupAtWord({
       <AnchoredPopup anchor={word} size={size}>
         <DictionaryPopup
           state={{ kind: "found", term: "fressen", results: exampleResults }}
-          mode={wordTop ? "word" : "search"}
+          mode={wordAt ? "word" : "search"}
           size={size}
           resolveMediaUrl={resolveExampleMediaUrl}
           onSearch={fn()}
@@ -92,7 +95,7 @@ const meta = {
   title: "Lookup/AnchoredPopup",
   component: PopupAtWord,
   parameters: { layout: "fullscreen" },
-  args: { wordTop: "80%", initialSize: "compact" },
+  args: { wordAt: { top: "80%", left: "33%" }, initialSize: "compact" },
 } satisfies Meta<typeof PopupAtWord>;
 
 export default meta;
@@ -102,13 +105,33 @@ type Story = StoryObj<typeof meta>;
 export const AboveWord: Story = {};
 
 /** At a word high on the screen, as at the top of the subtitles panel. */
-export const BelowWord: Story = { args: { wordTop: "10%" } };
+export const BelowWord: Story = {
+  args: { wordAt: { top: "10%", left: "33%" } },
+};
 
-/** Enlarged to show more of the entries, filling the room on the word's far side. */
+/** At a word by the window's left edge, shifted right to stay inside the window. */
+export const AtLeftEdge: Story = {
+  args: { wordAt: { top: "50%", left: "4px" } },
+};
+
+/** At a word by the window's right edge, as in the subtitles panel, shifted left to stay inside the window. */
+export const AtRightEdge: Story = {
+  args: { wordAt: { top: "30%", left: "calc(100% - 4rem)" } },
+};
+
+/** Enlarged to show more of the entries, spanning the window's height over the word. */
 export const Expanded: Story = { args: { initialSize: "expanded" } };
 
+/** Enlarged at a word in the window's top right corner, shifted left and covering the word. */
+export const ExpandedAtTopRight: Story = {
+  args: {
+    wordAt: { top: "8px", left: "calc(100% - 4rem)" },
+    initialSize: "expanded",
+  },
+};
+
 /** Opened on its search field, with no word to stand at. */
-export const WithoutWord: Story = { args: { wordTop: null } };
+export const WithoutWord: Story = { args: { wordAt: null } };
 
 /** Following the mouse from word to word: it glides between words on the same side and changes sides at once. */
 export const FollowingWords: Story = {
