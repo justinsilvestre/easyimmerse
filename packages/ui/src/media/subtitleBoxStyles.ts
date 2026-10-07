@@ -1,6 +1,5 @@
 import type { CSSProperties } from "react";
 import {
-  boxColorChannels,
   type SubtitleAppearance,
   subtitleTextScales,
   textColors,
@@ -21,6 +20,9 @@ const lineHeight = 1.35;
 /** The vertical padding of the box, in rem. */
 const boxPaddingRem = 0.5;
 
+/** The red, green and blue channels of the background's neutral dark, as in an `rgb()` color. */
+const backgroundChannels = "0 0 0";
+
 /**
  * The styles that give the subtitle box the user's appearance, with a height that fits the given lines
  * whatever the cue, so that the box keeps its size from one cue to the next.
@@ -32,8 +34,8 @@ export function subtitleBoxStyles(
   lines: SubtitleBoxLines,
 ): SubtitleBoxStyles {
   const scale = subtitleTextScales[appearance.textSizeStep] ?? 1;
-  const targetSize = `calc(clamp(1rem, 2.2cqw + 0.5rem, 2.5rem) * ${scale})`;
-  const translationSize = `calc(clamp(0.875rem, 1.5cqw + 0.375rem, 1.75rem) * ${scale})`;
+  const targetSize = `calc(clamp(1.5rem, 3.3cqw + 0.75rem, 3.75rem) * ${scale})`;
+  const translationSize = `calc(clamp(1.3125rem, 2.25cqw + 0.5625rem, 2.625rem) * ${scale})`;
   return {
     box: {
       height: `calc(${lines.target * lineHeight} * ${targetSize} + ${lines.translation * lineHeight} * ${translationSize} + ${2 * boxPaddingRem}rem)`,
@@ -48,19 +50,18 @@ export function subtitleBoxStyles(
 }
 
 /**
- * The styles of the backdrop behind the subtitle box, in the user's box color and opacity,
+ * The styles of the backdrop behind the subtitle box, a neutral dark at the user's opacity,
  * and of the feathered edge that fades the backdrop in above it.
  */
 export function subtitleBackdropStyles(appearance: SubtitleAppearance): {
   backdrop: CSSProperties;
   feather: CSSProperties;
 } {
-  const channels = boxColorChannels[appearance.boxColor];
-  const opacity = appearance.boxOpacity / 100;
+  const opacity = appearance.backgroundOpacity / 100;
   return {
-    backdrop: { backgroundColor: `rgb(${channels} / ${opacity})` },
+    backdrop: { backgroundColor: `rgb(${backgroundChannels} / ${opacity})` },
     feather: {
-      backgroundImage: `linear-gradient(to bottom, rgb(${channels} / 0), rgb(${channels} / ${opacity}))`,
+      backgroundImage: `linear-gradient(to bottom, rgb(${backgroundChannels} / 0), rgb(${backgroundChannels} / ${opacity}))`,
     },
   };
 }
@@ -71,9 +72,11 @@ function textShadowOf(appearance: SubtitleAppearance): string {
   switch (appearance.textShadow) {
     case "none":
       return "none";
-    case "soft":
+    case "light":
       return `0 1px 3px rgb(${channels} / 0.8)`;
-    case "strong":
+    case "medium":
       return `0 0 2px rgb(${channels}), 0 0 3px rgb(${channels}), 0 2px 4px rgb(${channels})`;
+    case "heavy":
+      return `-1px -1px 0 rgb(${channels}), 1px -1px 0 rgb(${channels}), -1px 1px 0 rgb(${channels}), 1px 1px 0 rgb(${channels}), 0 0 4px rgb(${channels}), 0 2px 6px rgb(${channels})`;
   }
 }

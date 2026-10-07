@@ -1,32 +1,30 @@
-/** How the subtitles over the video look: the box behind them and their text. */
+/** How the subtitles over the video look: the dark background behind them and their text. */
 export type SubtitleAppearance = {
-  boxColor: "black" | "grey" | "white";
-  /** How opaque the box is, as a whole percentage. */
-  boxOpacity: number;
-  textShadow: "none" | "soft" | "strong";
+  /** How opaque the background is, as a whole percentage. */
+  backgroundOpacity: number;
+  textShadow: (typeof subtitleTextShadows)[number];
   /** An index into `subtitleTextScales`. */
   textSizeStep: number;
   textColor: "white" | "yellow" | "black";
 };
 
+/** The text shadows on offer, from none to the heaviest. */
+export const subtitleTextShadows = [
+  "none",
+  "light",
+  "medium",
+  "heavy",
+] as const;
+
+/** The text sizes on offer, as multiples of the default size. */
+export const subtitleTextScales = [0.5, 0.75, 1, 1.25, 1.5];
+
 export const defaultSubtitleAppearance: SubtitleAppearance = {
-  boxColor: "black",
-  boxOpacity: 40,
-  textShadow: "soft",
+  backgroundOpacity: 25,
+  textShadow: "medium",
   textSizeStep: 2,
   textColor: "white",
 };
-
-/** The text sizes on offer, as multiples of the default size. */
-export const subtitleTextScales = [0.75, 0.875, 1, 1.125, 1.25, 1.5];
-
-/** The colors of the box, as the red, green and blue channels of an `rgb()` color. */
-export const boxColorChannels: Record<SubtitleAppearance["boxColor"], string> =
-  {
-    black: "0 0 0",
-    grey: "55 65 81",
-    white: "255 255 255",
-  };
 
 export const textColors: Record<SubtitleAppearance["textColor"], string> = {
   white: "#ffffff",
@@ -47,9 +45,8 @@ export function parseSubtitleAppearance(
       ? (stored[key] as SubtitleAppearance[Key])
       : defaultSubtitleAppearance[key];
   return {
-    boxColor: pick("boxColor", isOneOf(Object.keys(boxColorChannels))),
-    boxOpacity: pick("boxOpacity", isWholeNumberUpTo(100)),
-    textShadow: pick("textShadow", isOneOf(["none", "soft", "strong"])),
+    backgroundOpacity: pick("backgroundOpacity", isWholeNumberUpTo(100)),
+    textShadow: pick("textShadow", isOneOf(subtitleTextShadows)),
     textSizeStep: pick(
       "textSizeStep",
       isWholeNumberUpTo(subtitleTextScales.length - 1),

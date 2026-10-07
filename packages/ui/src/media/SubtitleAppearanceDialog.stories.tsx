@@ -18,26 +18,25 @@ type Story = StoryObj<typeof meta>;
 
 export const Defaults: Story = {};
 
-/** Black text on an opaque white box, with a strong shadow and larger text. */
+/** Large text on an opaque background, with the heaviest shadow. */
 export const HighContrast: Story = {
   args: {
     appearance: {
-      boxColor: "white",
-      boxOpacity: 100,
-      textShadow: "strong",
+      backgroundOpacity: 100,
+      textShadow: "heavy",
       textSizeStep: 4,
-      textColor: "black",
+      textColor: "white",
     },
   },
 };
 
-/** Yellow text with no box at all, as on television. */
-export const NoBox: Story = {
+/** Yellow text with no background at all, as on television. */
+export const NoBackground: Story = {
   args: {
     appearance: {
       ...defaultSubtitleAppearance,
-      boxOpacity: 0,
-      textShadow: "strong",
+      backgroundOpacity: 0,
+      textShadow: "heavy",
       textColor: "yellow",
     },
   },

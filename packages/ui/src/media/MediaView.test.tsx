@@ -219,7 +219,7 @@ describe("MediaView subtitle box", () => {
 
   it("lies on a backdrop of the chosen appearance", () => {
     renderView({
-      subtitleAppearance: { ...defaultSubtitleAppearance, boxOpacity: 0 },
+      subtitleAppearance: { ...defaultSubtitleAppearance, backgroundOpacity: 0 },
     });
     expect(screen.getByTestId("subtitle-band").style.backgroundColor).toBe(
       "rgb(0 0 0 / 0)",

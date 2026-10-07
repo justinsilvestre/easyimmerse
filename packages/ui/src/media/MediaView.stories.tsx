@@ -306,15 +306,15 @@ export const SubtitlesHidden: Story = {
   },
 };
 
-/** Yellow text with a strong shadow and no box, as the appearance dialog can set. */
+/** Yellow text with a heavy shadow and no background, as the appearance dialog can set. */
 export const CustomSubtitleAppearance: Story = {
   args: {
     subtitleAppearance: {
       ...defaultSubtitleAppearance,
-      boxOpacity: 0,
-      textShadow: "strong",
+      backgroundOpacity: 0,
+      textShadow: "heavy",
       textColor: "yellow",
-      textSizeStep: 4,
+      textSizeStep: 3,
     },
   },
 };

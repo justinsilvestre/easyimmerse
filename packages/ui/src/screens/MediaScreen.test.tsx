@@ -338,12 +338,12 @@ describe("MediaScreen", () => {
     fireEvent.click(
       screen.getByRole("menuitem", { name: "Subtitle appearance…" }),
     );
-    fireEvent.click(screen.getByRole("radio", { name: "Strong" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Heavy" }));
     expect(
       JSON.parse(
         selectPreference("subtitleAppearance")(store.getState()) ?? "{}",
       ).textShadow,
-    ).toBe("strong");
+    ).toBe("heavy");
   });
 
   it("seeks to a new flashcard's clip start once it opens", async () => {

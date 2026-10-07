@@ -65,11 +65,10 @@ export const WithFlashcardWord: Story = {
 export const HighContrast: Story = {
   args: {
     appearance: {
-      boxColor: "white",
-      boxOpacity: 100,
-      textShadow: "none",
-      textSizeStep: 4,
-      textColor: "black",
+      backgroundOpacity: 100,
+      textShadow: "heavy",
+      textSizeStep: 3,
+      textColor: "yellow",
     },
   },
 };
