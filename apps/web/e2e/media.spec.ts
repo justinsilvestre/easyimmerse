@@ -83,5 +83,5 @@ test("a word double-clicked in the subtitles becomes a saved flashcard", async (
     .getByRole("button", { name: "cat" })
     .dblclick();
   await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText("Flashcard saved to the project.")).toBeVisible();
+  await expect(page.getByText(/^Saved the flashcard for /)).toBeVisible();
 });
