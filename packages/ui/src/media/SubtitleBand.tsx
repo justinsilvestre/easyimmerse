@@ -6,7 +6,7 @@ import { subtitleBackdropStyles } from "./subtitleBoxStyles.ts";
 
 /**
  * The band that holds the subtitles and the player controls under them.
- * Placed below the picture, the band takes rows of its own right under it, on the same surface as the controls.
+ * Placed below the picture, the band takes rows of its own right under it, on black like the video.
  * Placed over the picture, it lies across the picture's lower edge on a backdrop at the opacity the user chose,
  * which fades in above the subtitles rather than ending in a hard line.
  * Either backdrop covers the controls' place too, so that no gap opens under the subtitles when the controls fold away.
@@ -38,7 +38,7 @@ export function SubtitleBand({
         placement === "overlay"
           ? "absolute inset-x-0 bottom-0"
           : "relative shrink-0",
-        appearance && placement === "below" && "bg-surface",
+        appearance && placement === "below" && "bg-black",
       )}
     >
       {overlayStyles && (

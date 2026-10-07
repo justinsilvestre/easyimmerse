@@ -38,8 +38,8 @@ describe("SubtitleBand", () => {
   });
 
   describe("under the picture", () => {
-    it("lies on the surface of the player controls", () => {
-      expect(renderBand("below").classList.contains("bg-surface")).toBe(true);
+    it("lies on black, like the video", () => {
+      expect(renderBand("below").classList.contains("bg-black")).toBe(true);
     });
 
     it("ignores the chosen opacity", () => {
@@ -47,7 +47,7 @@ describe("SubtitleBand", () => {
     });
 
     it("draws no backdrop without an appearance", () => {
-      expect(renderBand("below", null).classList.contains("bg-surface")).toBe(
+      expect(renderBand("below", null).classList.contains("bg-black")).toBe(
         false,
       );
     });

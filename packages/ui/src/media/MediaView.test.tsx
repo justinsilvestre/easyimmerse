@@ -217,10 +217,10 @@ describe("MediaView subtitle box", () => {
     expect(subtitleBox().style.height).not.toBe(targetOnly);
   });
 
-  it("lies on the controls' surface under the picture", () => {
+  it("lies on black under the picture, like the video", () => {
     renderView();
     expect(
-      screen.getByTestId("subtitle-band").classList.contains("bg-surface"),
+      screen.getByTestId("subtitle-band").classList.contains("bg-black"),
     ).toBe(true);
   });
 
@@ -229,7 +229,7 @@ describe("MediaView subtitle box", () => {
       panels: { cues: false, waveform: false, areSubtitlesHidden: true },
     });
     expect(
-      screen.getByTestId("subtitle-band").classList.contains("bg-surface"),
+      screen.getByTestId("subtitle-band").classList.contains("bg-black"),
     ).toBe(false);
   });
 
