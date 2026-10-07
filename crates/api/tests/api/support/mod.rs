@@ -2,7 +2,8 @@
 
 #![allow(dead_code)]
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use easyimmerse_api::{ApiConfig, ServeOptions, ServerHandle, serve};
 use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
@@ -123,6 +124,21 @@ pub fn ffmpeg_available() -> bool {
         eprintln!("skipped: ffmpeg or ffprobe not found");
     }
     available
+}
+
+/// Whether the given ffmpeg binary lists a SubRip muxer, which extracting embedded subtitles needs.
+pub fn has_srt_muxer(ffmpeg: &Path) -> bool {
+    Command::new(ffmpeg)
+        .args(["-hide_banner", "-muxers"])
+        .output()
+        .is_ok_and(|output| lists_srt_muxer(&String::from_utf8_lossy(&output.stdout)))
+}
+
+/// Reads the output of `ffmpeg -muxers`, whose lines hold the capability flags, then the name.
+fn lists_srt_muxer(muxers: &str) -> bool {
+    muxers
+        .lines()
+        .any(|line| line.split_whitespace().nth(1) == Some("srt"))
 }
 
 impl TestServer {
