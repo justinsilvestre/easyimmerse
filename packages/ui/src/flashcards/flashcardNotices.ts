@@ -2,10 +2,12 @@ import type { NoticeContent } from "../notices/noticeStore.ts";
 
 /** The notices a flashcard's save or discard leaves behind once the card has left the editor. */
 export const flashcardNotices = {
-  /** A card left for another, or by leaving the screen, was saved; Undo takes the save back. */
+  /** A card was saved; Undo takes the save back. A card may have no word yet, as one made from a subtitle alone. */
   savedWithUndo: (word: string, undo: () => void): NoticeContent => ({
     tone: "success",
-    message: `Saved the flashcard for “${word}”.`,
+    message: word
+      ? `Saved the flashcard for “${word}”.`
+      : "Saved a flashcard without a word.",
     actions: [{ label: "Undo", onSelect: undo }],
     isTransient: true,
   }),
