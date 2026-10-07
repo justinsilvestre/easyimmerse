@@ -1,14 +1,12 @@
 import {
   AudioLines,
   AudioWaveform,
-  Expand,
   Languages,
   Maximize,
   Minimize,
   PanelRight,
   Pause,
   Play,
-  Shrink,
   SkipBack,
   SkipForward,
   Volume2,
@@ -29,7 +27,6 @@ export type PlayerCallbacks = {
   onToggleSubtitleDisplay: () => void;
   onToggleCuePanel: () => void;
   onToggleWaveform: () => void;
-  onToggleDistractionFree: () => void;
   /** Fills the screen with the app, or leaves it. Absent where the browser offers no fullscreen. */
   onToggleFullscreen?: () => void;
   /** Opens the track choice dialog. Absent when the file offers nothing to choose. */
@@ -40,7 +37,6 @@ export type PlayerCallbacks = {
 export type PlayerPanelsState = {
   cues: boolean;
   waveform: boolean;
-  distractionFree: boolean;
   /** Tells that the flashcard editor holds the side panel, so that the subtitles panel cannot show and its toggle is marked unavailable. */
   isCuePanelTakenByEditor?: boolean;
   isFullscreen?: boolean;
@@ -216,7 +212,7 @@ function BufferedTrack({ playback }: { playback: PlayerControlsState }) {
   );
 }
 
-/** The toggles for the subtitles panel, the waveform, distraction-free mode and fullscreen, each labelled for what it does now. */
+/** The toggles for the subtitles panel, the waveform and fullscreen, each labelled for what it does now. */
 function PanelToggles({
   panels,
   callbacks,
@@ -251,20 +247,6 @@ function PanelToggles({
         onClick={callbacks.onToggleWaveform}
       >
         <AudioWaveform className="size-4" />
-      </IconButton>
-      <IconButton
-        label={
-          panels.distractionFree
-            ? "Leave distraction-free mode (Esc)"
-            : "Enter distraction-free mode"
-        }
-        onClick={callbacks.onToggleDistractionFree}
-      >
-        {panels.distractionFree ? (
-          <Shrink className="size-4" />
-        ) : (
-          <Expand className="size-4" />
-        )}
       </IconButton>
       {callbacks.onToggleFullscreen && (
         <IconButton

@@ -4,21 +4,18 @@ import type { SubtitleDisplay } from "./SubtitleOverlay.tsx";
 export type MediaPanels = {
   cues: boolean;
   waveform: boolean;
-  distractionFree: boolean;
   subtitleDisplay: SubtitleDisplay;
 };
 
 export type MediaPanelsAction =
   | { type: "cuePanelToggled" }
   | { type: "waveformToggled" }
-  | { type: "distractionFreeToggled" }
   | { type: "subtitleDisplayCycled" };
 
 /** The subtitles panel starts open and the waveform closed, since the waveform matters only when editing a flashcard's clip. */
 export const initialMediaPanels: MediaPanels = {
   cues: true,
   waveform: false,
-  distractionFree: false,
   subtitleDisplay: "both",
 };
 
@@ -37,8 +34,6 @@ export function reduceMediaPanels(
       return { ...panels, cues: !panels.cues };
     case "waveformToggled":
       return { ...panels, waveform: !panels.waveform };
-    case "distractionFreeToggled":
-      return { ...panels, distractionFree: !panels.distractionFree };
     case "subtitleDisplayCycled":
       return {
         ...panels,

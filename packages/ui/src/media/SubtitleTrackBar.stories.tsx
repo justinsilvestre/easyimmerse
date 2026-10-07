@@ -7,7 +7,7 @@ const meta = {
   component: SubtitleTrackBar,
   decorators: [
     (Story) => (
-      <div data-theme="dark" className="w-96 bg-canvas text-fg">
+      <div className="w-96 bg-canvas text-fg">
         <Story />
       </div>
     ),

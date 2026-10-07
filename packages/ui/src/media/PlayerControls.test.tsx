@@ -27,7 +27,7 @@ function renderControls(
         targetSubtitlesId: null,
         translationSubtitlesId: null,
       }}
-      panels={{ cues: true, waveform: false, distractionFree: false }}
+      panels={{ cues: true, waveform: false }}
       callbacks={{
         onTogglePlay: ignore,
         onSeek: ignore,
@@ -37,7 +37,6 @@ function renderControls(
         onToggleSubtitleDisplay: ignore,
         onToggleCuePanel: ignore,
         onToggleWaveform: ignore,
-        onToggleDistractionFree: ignore,
       }}
       {...overrides}
     />,
@@ -53,20 +52,18 @@ describe("PlayerControls", () => {
     expect(stretch?.style.width).toBe("50%");
   });
 
-  it("names the distraction-free toggle for entering the mode", () => {
+  it("names the waveform toggle for showing the waveform", () => {
     renderControls();
     expect(
-      screen.getByRole("button", { name: "Enter distraction-free mode" }),
-    ).toBeDefined();
+      screen.getByRole("button", { name: "Waveform" }).getAttribute("title"),
+    ).toBe("Show the waveform");
   });
 
-  it("names the distraction-free toggle for leaving the mode", () => {
-    renderControls({
-      panels: { cues: false, waveform: false, distractionFree: true },
-    });
+  it("offers no distraction-free toggle", () => {
+    renderControls();
     expect(
-      screen.getByRole("button", { name: "Leave distraction-free mode (Esc)" }),
-    ).toBeDefined();
+      screen.queryByRole("button", { name: /distraction-free/ }),
+    ).toBeNull();
   });
 
   it("offers no fullscreen toggle where the browser has none", () => {
@@ -76,12 +73,7 @@ describe("PlayerControls", () => {
 
   it("names the fullscreen toggle for leaving fullscreen", () => {
     renderControls({
-      panels: {
-        cues: true,
-        waveform: false,
-        distractionFree: false,
-        isFullscreen: true,
-      },
+      panels: { cues: true, waveform: false, isFullscreen: true },
       callbacks: {
         onTogglePlay: ignore,
         onSeek: ignore,
@@ -91,7 +83,6 @@ describe("PlayerControls", () => {
         onToggleSubtitleDisplay: ignore,
         onToggleCuePanel: ignore,
         onToggleWaveform: ignore,
-        onToggleDistractionFree: ignore,
         onToggleFullscreen: ignore,
       },
     });

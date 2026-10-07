@@ -1,12 +1,10 @@
 import { actions, selectCurrentTime } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
-import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
-import { IconButton } from "./IconButton.tsx";
 import type { FlashcardSegment } from "./waveform/flashcardSegment.ts";
 import { useWaveformFetch } from "./waveform/useWaveformFetch.ts";
 import { useWaveformWindows } from "./waveform/useWaveformWindows.ts";
@@ -45,7 +43,6 @@ export function PlayerWaveform({
   flashcardSegments = [],
   editableSegmentId = null,
   segmentHandlers = ignoreSegments,
-  onHide,
 }: {
   projectId: string;
   mediaFileId: string;
@@ -54,8 +51,6 @@ export function PlayerWaveform({
   /** The segment of the flashcard open in the editor, the only one whose clip and screenshot time can be dragged. */
   editableSegmentId?: string | null;
   segmentHandlers?: FlashcardSegmentHandlers;
-  /** Hides the strip. Without it, the strip offers no way to hide itself. */
-  onHide?: () => void;
 }) {
   const dispatch = useAppDispatch();
   const mediaFile = useMediaFile(projectId, mediaFileId);
@@ -76,7 +71,7 @@ export function PlayerWaveform({
     durationMs,
   });
   return (
-    <div className="relative border-t border-line bg-surface px-3 py-2">
+    <div className="border-t border-line bg-surface px-3 py-2">
       <WaveformStrip
         durationMs={durationMs}
         currentTimeMs={currentTimeMs}
@@ -89,17 +84,6 @@ export function PlayerWaveform({
         onSeek={(timeMs) => dispatch(actions.seekRequested(timeMs / 1000))}
         {...segmentHandlers}
       />
-      {onHide && (
-        <span className="absolute right-4 bottom-3 rounded-md bg-surface/80">
-          <IconButton
-            label="Hide the waveform"
-            className="size-6 pointer-coarse:size-6"
-            onClick={onHide}
-          >
-            <ChevronDown className="size-3.5" />
-          </IconButton>
-        </span>
-      )}
     </div>
   );
 }
