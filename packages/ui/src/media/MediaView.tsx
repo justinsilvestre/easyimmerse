@@ -4,9 +4,11 @@ import { ArrowLeft } from "lucide-react";
 import { type PointerEvent, type ReactNode, type Ref, useRef } from "react";
 import { AppFooter } from "../components/AppFooter.tsx";
 import { Button } from "../components/Button.tsx";
+import type { LineStep } from "../components/cursorKeys.ts";
 import type { Range } from "../components/RunText.tsx";
 import { useElementSize } from "../hooks/useElementSize.ts";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
+import type { CueTextCursor } from "./cueCursor.ts";
 import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
 import { findTranslationOf } from "./findCue.ts";
 import { PanelToggles } from "./PanelToggles.tsx";
@@ -55,10 +57,14 @@ type MediaViewProps = {
   flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
   /** The word the dictionary pop-up shows, which is highlighted in the subtitles. */
   activeWord?: ActiveCueWord;
+  /** The lookup cursor of the subtitles, which is highlighted in them; null when there is none. */
+  cursor?: CueTextCursor | null;
   playerCallbacks: PlayerCallbacks;
   onBack: () => void;
   /** What the user does to the words of the subtitles over the stage. */
   wordGestures: CueWordGestures;
+  /** Moves from a cue of the subtitles over the stage to the previous or next one; it must keep its identity across renders. */
+  onCueStep?: (cue: Cue, step: LineStep) => void;
   onLookup: () => void;
   onAddFlashcard: () => void;
   /** Notices to show above the stage, such as the unsaved-work banner. */
@@ -191,7 +197,9 @@ export function MediaView(props: MediaViewProps) {
                             : undefined
                         }
                         activeWord={props.activeWord}
+                        cursor={props.cursor}
                         wordGestures={props.wordGestures}
+                        onCueStep={props.onCueStep}
                       />
                     </div>
                   )}

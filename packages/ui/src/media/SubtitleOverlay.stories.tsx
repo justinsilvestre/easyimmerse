@@ -51,6 +51,13 @@ export const OneLineCue: Story = {
 
 export const TargetOnly: Story = { args: { display: "target" } };
 
+/** The lookup cursor on "Hund", where Right moved it from a focused word; the mouse's cursor looks the same. */
+export const WithLookupCursor: Story = {
+  args: {
+    cursor: { cueIndex: 3, start: 4, input: "keyboard", matchedLength: 4 },
+  },
+};
+
 export const WithFlashcardWord: Story = {
   args: { flashcardWordRanges: exampleFlashcardWordRanges.get(3) },
 };

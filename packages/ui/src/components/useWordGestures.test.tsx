@@ -437,81 +437,140 @@ describe("useWordGestures", () => {
     });
   });
 
-  describe("with the keyboard in a run of Japanese", () => {
-    function focusRun(text: string) {
-      const run = word(text);
-      fireEvent.focus(run);
-      return run;
+  describe("with the keyboard", () => {
+    function focusWord(name: string) {
+      const button = word(name);
+      fireEvent.focus(button);
+      return button;
     }
 
-    const press = (run: HTMLElement, key: string, times = 1) => {
+    const press = (button: HTMLElement, key: string, times = 1) => {
       for (let count = 0; count < times; count += 1)
-        fireEvent.keyDown(run, { key });
+        fireEvent.keyDown(button, { key });
     };
+
+    /** The gestures other than the hovers that pointing with the keyboard reports along the way. */
+    const actionsIn = (gestures: string[]) =>
+      gestures.filter((gesture) => !gesture.startsWith("hover"));
 
     it("looks up from the character Right has moved to", () => {
       const gestures = renderSentence("映画を見る");
-      const run = focusRun("映画を見る");
+      const run = focusWord("映画を見る");
       press(run, "ArrowRight", 3);
       fireEvent.click(run, { detail: 0 });
-      expect(gestures).toEqual(["click 見る"]);
+      expect(actionsIn(gestures)).toEqual(["click 見る"]);
     });
 
     it("moves back with Left", () => {
       const gestures = renderSentence("映画を見る");
-      const run = focusRun("映画を見る");
+      const run = focusWord("映画を見る");
       press(run, "ArrowRight", 3);
       press(run, "ArrowLeft");
       fireEvent.click(run, { detail: 0 });
-      expect(gestures).toEqual(["click を見る"]);
+      expect(actionsIn(gestures)).toEqual(["click を見る"]);
     });
 
     it("starts a flashcard from that character with Shift+Enter", () => {
       const gestures = renderSentence("映画を見る");
-      const run = focusRun("映画を見る");
+      const run = focusWord("映画を見る");
       press(run, "ArrowRight", 3);
       fireEvent.click(run, { detail: 0, shiftKey: true });
-      expect(gestures).toEqual(["doubleClick 見る"]);
+      expect(actionsIn(gestures)).toEqual(["doubleClick 見る"]);
     });
 
     it("steps over a character outside the Basic Multilingual Plane whole", () => {
       const gestures = renderSentence("𠮷野家");
-      const run = focusRun("𠮷野家");
+      const run = focusWord("𠮷野家");
       press(run, "ArrowRight");
       fireEvent.click(run, { detail: 0 });
-      expect(gestures).toEqual(["click 野家"]);
+      expect(actionsIn(gestures)).toEqual(["click 野家"]);
     });
 
-    it("stops at the last character", () => {
+    it("stops at the last character of the text", () => {
       const gestures = renderSentence("見る");
-      const run = focusRun("見る");
+      const run = focusWord("見る");
       press(run, "ArrowRight", 5);
       fireEvent.click(run, { detail: 0 });
-      expect(gestures).toEqual(["click る"]);
+      expect(actionsIn(gestures)).toEqual(["click る"]);
     });
 
-    it("stops at the first character", () => {
+    it("stops at the first character of the text", () => {
       const gestures = renderSentence("見る");
-      const run = focusRun("見る");
+      const run = focusWord("見る");
       press(run, "ArrowLeft");
       fireEvent.click(run, { detail: 0 });
-      expect(gestures).toEqual(["click 見る"]);
+      expect(actionsIn(gestures)).toEqual(["click 見る"]);
     });
 
     it("starts from the first character again once focus has left", () => {
       const gestures = renderSentence("映画を見る");
-      const run = focusRun("映画を見る");
+      const run = focusWord("映画を見る");
       press(run, "ArrowRight", 3);
       fireEvent.blur(run);
       fireEvent.focus(run);
       fireEvent.click(run, { detail: 0 });
-      expect(gestures).toEqual(["click 映画を見る"]);
+      expect(actionsIn(gestures)).toEqual(["click 映画を見る"]);
     });
 
-    it("leaves the arrow keys alone in a word of a spaced script", () => {
+    it("moves focus to the next word written with spaces on Right", () => {
+      renderSentence();
+      press(focusWord("Ich"), "ArrowRight");
+      expect(document.activeElement).toBe(word("rufe"));
+    });
+
+    it("moves on from the last character of a run to the next word", () => {
+      renderSentence("見る、Netflix");
+      press(focusWord("見る"), "ArrowRight", 2);
+      expect(document.activeElement).toBe(word("Netflix"));
+    });
+
+    it("looks the word it moves to up at once, as a mouse resting on it would", () => {
+      const gestures = renderSentence();
+      press(focusWord("Ich"), "ArrowRight");
+      expect(gestures).toContain("hover rufe");
+    });
+
+    it("points at the same place as the mouse on the same character", () => {
+      const pointed: string[] = [];
+      render(
+        <ClickableText
+          text="映画を見る"
+          gestures={{
+            onWordPointed: (hit) => {
+              if (hit) pointed.push(`${hit.word} at ${hit.start}`);
+            },
+          }}
+        />,
+      );
+      layOutCharacters();
+      const run = word("映画を見る");
+      fireEvent.pointerEnter(run, {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
+      fireEvent.pointerLeave(run, { pointerType: "mouse" });
+      press(focusWord("映画を見る"), "ArrowRight", 3);
+      vi.restoreAllMocks();
+      expect(pointed.at(-1)).toBe(pointed[0]);
+    });
+
+    it("takes the arrow keys from the page's own shortcuts", () => {
       renderSentence();
       const event = new KeyboardEvent("keydown", {
         key: "ArrowRight",
+        bubbles: true,
+        cancelable: true,
+      });
+      word("rufe").dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it("leaves Shift with an arrow to text selection", () => {
+      renderSentence();
+      const event = new KeyboardEvent("keydown", {
+        key: "ArrowRight",
+        shiftKey: true,
         bubbles: true,
         cancelable: true,
       });

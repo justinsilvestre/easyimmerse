@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { characterLength } from "../components/useKeyboardStart.ts";
+import { characterLength } from "../components/characterLength.ts";
 import { clearWordHighlight, highlightWord } from "./readerWordHighlight.ts";
 import type { ReaderWord } from "./wordAtPoint.ts";
 

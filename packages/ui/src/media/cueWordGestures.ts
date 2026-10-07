@@ -10,7 +10,11 @@ type CueWordHandler = (hit: WordHit, cue: Cue) => void;
 export type CueWordGestures = {
   onWordClick?: CueWordHandler;
   onWordDoubleClick?: CueWordHandler;
-  onWordPointed?: (hit: WordHit | null, cue: Cue) => void;
+  onWordPointed?: (
+    hit: WordHit | null,
+    input: WordHit["input"],
+    cue: Cue,
+  ) => void;
   // A handler with nothing to answer returns nothing, as the other handlers do.
   // biome-ignore lint/suspicious/noConfusingVoidType: see above
   onWordHover?: (hit: WordHit, cue: Cue) => void | Promise<number | null>;
@@ -29,11 +33,12 @@ export function gesturesForCue(
 ): WordGestures {
   const bind = <H, R>(handler: ((hit: H, cue: Cue) => R) | undefined) =>
     handler && ((hit: H) => handler(hit, cue));
-  const { onWordHoverAnswered } = gestures;
+  const { onWordPointed, onWordHoverAnswered } = gestures;
   return {
     onWordClick: bind(gestures.onWordClick),
     onWordDoubleClick: bind(gestures.onWordDoubleClick),
-    onWordPointed: bind(gestures.onWordPointed),
+    onWordPointed:
+      onWordPointed && ((hit, input) => onWordPointed(hit, input, cue)),
     onWordHover: bind(gestures.onWordHover),
     onWordHoverAnswered:
       onWordHoverAnswered &&

@@ -3,8 +3,8 @@ import { isOutOfReach } from "./isOutOfReach.ts";
 
 /**
  * Calls `onPress` when a key is pressed without modifiers anywhere on the page,
- * except while the user types into a field, or while the screen that `scopeRef` marks
- * lies beneath another or under a modal dialog.
+ * except while the user types into a field, when the focused element has already handled the key,
+ * or while the screen that `scopeRef` marks lies beneath another or under a modal dialog.
  * `keys` names one key or several that do the same thing, as `KeyboardEvent.key` spells them, so " " is Space.
  * Space is left to a focused button or link, which it already presses.
  */
@@ -17,6 +17,7 @@ export function useKeyboardShortcut(
   latest.current = { keys, onPress };
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
       if (!isShortcut(event, latest.current.keys)) return;
       if (isOutOfReach(scopeRef.current)) return;
       event.preventDefault();

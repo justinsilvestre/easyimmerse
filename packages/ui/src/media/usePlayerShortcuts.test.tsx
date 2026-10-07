@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useRef } from "react";
 import { afterEach, describe, expect, it } from "vitest";
+import { ClickableText } from "../components/ClickableText.tsx";
 import { usePlayerShortcuts } from "./usePlayerShortcuts.ts";
 
 afterEach(cleanup);
@@ -20,6 +21,7 @@ function PlayerShortcutsProbe({ onCall }: { onCall: (call: string) => void }) {
     <div ref={scopeRef}>
       <button type="button">Next cue</button>
       <input type="range" aria-label="Volume" />
+      <ClickableText text="Der Hund will fressen." />
     </div>
   );
 }
@@ -75,6 +77,14 @@ describe("usePlayerShortcuts", () => {
   it("leaves the arrows to a focused slider", () => {
     const calls = renderProbe();
     fireEvent.keyDown(screen.getByRole("slider", { name: "Volume" }), {
+      key: "ArrowRight",
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it("leaves the arrows to a focused word of the subtitles, which move the lookup cursor", () => {
+    const calls = renderProbe();
+    fireEvent.keyDown(screen.getByRole("button", { name: "Hund" }), {
       key: "ArrowRight",
     });
     expect(calls).toEqual([]);

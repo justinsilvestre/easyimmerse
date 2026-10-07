@@ -9,6 +9,9 @@ import {
   exampleTranslationCues,
 } from "./exampleCues.ts";
 
+/** How far apart the repeats of the example scene start, just past its last line. */
+const sceneMs = 24_000;
+
 const meta = {
   title: "Media/CuePanel",
   component: CuePanel,
@@ -52,6 +55,13 @@ export const WithFlashcards: Story = {
 
 export const TargetOnly: Story = { args: { translationCues: [] } };
 
+/** The lookup cursor on "gib", where Right moved it from a focused word; the mouse's cursor looks the same. */
+export const WithLookupCursor: Story = {
+  args: {
+    cursor: { cueIndex: 4, start: 5, input: "keyboard", matchedLength: 3 },
+  },
+};
+
 export const WordInPopup: Story = {
   args: { activeWord: { cueIndex: 3, start: 13, popupId: "dictionary" } },
 };
@@ -66,9 +76,6 @@ export const LongScene: Story = {
 };
 
 export const NoSubtitles: Story = { args: { cues: [] } };
-
-/** How far apart the repeats of the example scene start, just past its last line. */
-const sceneMs = 24_000;
 
 function repeatScene(cues: readonly Cue[], times: number): Cue[] {
   return Array.from({ length: times }, (_, round) =>

@@ -1,6 +1,11 @@
 import type { Cue } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import { findCueAt, findCueShownAt, findTranslationOf } from "./findCue.ts";
+import {
+  findAdjacentCue,
+  findCueAt,
+  findCueShownAt,
+  findTranslationOf,
+} from "./findCue.ts";
 
 const cues: Cue[] = [
   { index: 1, start_ms: 500, end_ms: 1500, text: "Eins" },
@@ -32,6 +37,20 @@ describe("findCueShownAt", () => {
 
   it("is null before the first cue", () => {
     expect(findCueShownAt(cues, 100)).toBeNull();
+  });
+});
+
+describe("findAdjacentCue", () => {
+  it("finds the next cue", () => {
+    expect(findAdjacentCue(cues, cues[0] as Cue, "next")?.index).toBe(2);
+  });
+
+  it("finds the previous cue", () => {
+    expect(findAdjacentCue(cues, cues[1] as Cue, "previous")?.index).toBe(1);
+  });
+
+  it("is null after the last cue", () => {
+    expect(findAdjacentCue(cues, cues[1] as Cue, "next")).toBeNull();
   });
 });
 

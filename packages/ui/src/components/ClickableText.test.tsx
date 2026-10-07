@@ -424,11 +424,9 @@ describe("ClickableText", () => {
       return container;
     }
 
-    it("marks the character a lookup would start from", () => {
+    it("highlights the character a lookup would start from, as the mouse's highlight does", () => {
       const container = focusAndMoveRight(3);
-      expect(
-        container.querySelector("[data-keyboard-start]")?.textContent,
-      ).toBe("見");
+      expect(container.querySelector("[data-hovered]")?.textContent).toBe("見");
     });
 
     it("announces the character a lookup would start from", () => {
@@ -489,7 +487,7 @@ describe("ClickableText", () => {
       expect(clicks).toEqual(["今日は"]);
     });
 
-    it("forgets the start once the run's button is gone", () => {
+    it("forgets the cursor once the text has changed", () => {
       const { container, rerender } = render(
         <ClickableText text="映画を見る" />,
       );
@@ -498,7 +496,29 @@ describe("ClickableText", () => {
       fireEvent.keyDown(run, { key: "ArrowRight" });
       rerender(<ClickableText text="Hund" />);
       rerender(<ClickableText text="映画を見る" />);
-      expect(container.querySelector("[data-keyboard-start]")).toBeNull();
+      expect(container.querySelector("[data-hovered]")).toBeNull();
+    });
+
+    it("highlights the cursor it is given rather than one of its own", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          cursor={{ start: 3, input: "keyboard", matchedLength: 2 }}
+        />,
+      );
+      expect(container.querySelector("[data-hovered]")?.textContent).toBe(
+        "見る",
+      );
+    });
+
+    it("highlights a cursor it is given only once its lookup has answered", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          cursor={{ start: 3, input: "keyboard" }}
+        />,
+      );
+      expect(container.querySelector("[data-hovered]")).toBeNull();
     });
 
     it("keeps the run's name whole while a character is marked", () => {

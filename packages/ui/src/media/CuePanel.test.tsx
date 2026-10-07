@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CuePanel } from "./CuePanel.tsx";
+import type { CueTextCursor } from "./cueCursor.ts";
 import { exampleCues } from "./exampleCues.ts";
 
 const scrollIntoView = vi.fn();
@@ -30,10 +31,12 @@ function panel(
     onSeek = vi.fn(),
     onWordClick = vi.fn(),
     onOpenFlashcardForCue = vi.fn(),
+    cursor,
   }: {
     onSeek?: (ms: number) => void;
     onWordClick?: () => void;
     onOpenFlashcardForCue?: (cueIndex: number) => void;
+    cursor?: CueTextCursor;
   } = {},
 ) {
   return (
@@ -41,6 +44,7 @@ function panel(
       cues={exampleCues}
       translationCues={[]}
       activeCueIndex={activeCueIndex}
+      cursor={cursor}
       flashcardCueIndexes={[flashcardCue.index]}
       flashcardWordRanges={
         new Map([[flashcardCue.index, [{ from: 5, to: 8 }]]])
@@ -252,5 +256,27 @@ describe("CuePanel", () => {
     expect(
       cardStartingAt("0:05").querySelector("[data-flashcard-word]"),
     ).toBeNull();
+  });
+
+  it("highlights the lookup cursor in the card of its cue", () => {
+    render(
+      panel(null, {
+        cursor: { cueIndex: 3, start: 4, input: "keyboard", matchedLength: 4 },
+      }),
+    );
+    expect(
+      screen
+        .getByRole("button", { name: "Hund" })
+        .classList.contains("bg-accent-soft"),
+    ).toBe(true);
+  });
+
+  it("seeks to the previous cue on Up from a focused word", () => {
+    const onSeek = vi.fn();
+    render(panel(null, { onSeek }));
+    fireEvent.keyDown(screen.getByRole("button", { name: "Hund" }), {
+      key: "ArrowUp",
+    });
+    expect(onSeek).toHaveBeenCalledWith(2800);
   });
 });
