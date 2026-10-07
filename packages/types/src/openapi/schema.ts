@@ -419,7 +419,8 @@ export interface paths {
         put?: never;
         /**
          * Adds a media file to a project. A `path` source must name an existing file on the
-         *     server's machine, which only a token allowed to read local paths may do.
+         *     server's machine, which only a token allowed to read local paths may do; subtitle files
+         *     beside it that share its name are added as its subtitle tracks.
          */
         post: operations["addMediaFile"];
         delete?: never;

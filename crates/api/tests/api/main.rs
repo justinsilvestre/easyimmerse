@@ -7,6 +7,7 @@ mod media_conversion;
 mod openapi;
 mod preferences;
 mod projects;
+mod sidecar_subtitles;
 mod subtitles;
 mod support;
 mod timed_text;

@@ -11,6 +11,7 @@ pub mod local_table_file;
 pub mod router;
 pub mod routes;
 pub mod serve;
+pub mod sidecar_subtitle_tracks;
 pub mod state;
 
 pub use auth::error_body::{ApiError, ApiFailure};

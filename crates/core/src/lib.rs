@@ -6,6 +6,7 @@ pub mod lookup;
 pub mod media_file;
 pub mod project;
 pub mod providers;
+pub mod sidecar_subtitles;
 pub mod subtitle_track;
 pub mod text_source;
 pub mod timed_text;
