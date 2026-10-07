@@ -5,6 +5,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::project::ProjectId;
+use crate::providers::media_source::MediaLocator;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
 #[serde(transparent)]
@@ -20,6 +21,8 @@ pub struct MediaFile {
     /// The name shown in the project's media list, usually the file name.
     pub name: String,
     pub source: MediaFileSource,
+    /// Where the file was fetched from, when a media-source plugin fetched it.
+    pub origin: Option<MediaOrigin>,
     /// Milliseconds since the Unix epoch.
     pub created_at_ms: u64,
     /// The user's saved choice of video and audio tracks, as the JSON the media crate
@@ -44,6 +47,16 @@ pub enum MediaFileSource {
         /// The file's modification time in milliseconds since the Unix epoch.
         last_modified_ms: u64,
     },
+}
+
+/// The external source a media-source plugin fetched a media file from, kept so that
+/// the same plugin can fetch more of what the source offers for it, such as subtitles.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct MediaOrigin {
+    /// The name of the media-source plugin.
+    pub plugin: String,
+    pub locator: MediaLocator,
 }
 
 #[cfg(test)]

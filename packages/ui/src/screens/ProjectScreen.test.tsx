@@ -12,7 +12,10 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSharedSaving } from "../flashcards/sharedSaving.ts";
 import { exampleUnsavedCard } from "../flashcards/unsaved/exampleUnsavedCard.ts";
-import { exampleRunningJob } from "../projects/exampleMediaSourceJob.ts";
+import {
+  exampleMediaDescription,
+  exampleRunningJob,
+} from "../projects/exampleMediaSourceJob.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import {
@@ -115,6 +118,7 @@ describe("ProjectScreen", () => {
       source: { kind: "path", path: "/books/sample.epub" },
       created_at_ms: 0,
       track_selection_json: null,
+      origin: null,
     };
     const client = createFakeBackendClient({
       ...fixtureResponses,
@@ -190,6 +194,7 @@ describe("ProjectScreen", () => {
             { name: "video-site", version: "0.1.0", kind: "media-source" },
           ],
         },
+        "POST /plugins/video-site/describe": exampleMediaDescription,
         "POST /projects/p1/media/from-source": job,
         "GET /projects/p1/media/from-source/j1": {
           ...job,
@@ -214,7 +219,8 @@ describe("ProjectScreen", () => {
     fireEvent.change(screen.getByLabelText("URL or ID"), {
       target: { value: "https://videos.example.com/abc" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    fireEvent.click(screen.getByRole("button", { name: "Look up" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Add" }));
     await vi.waitFor(() =>
       expect(selectCurrentMediaFileId(store.getState())).toBe("m1"),
     );
@@ -226,6 +232,7 @@ describe("ProjectScreen", () => {
       value: {
         plugin: "video-site",
         locator: "https://videos.example.com/abc",
+        subtitles: ["en"],
       },
     });
   });
@@ -241,6 +248,7 @@ describe("ProjectScreen", () => {
             { name: "video-site", version: "0.1.0", kind: "media-source" },
           ],
         },
+        "POST /plugins/video-site/describe": exampleMediaDescription,
         "POST /projects/p1/media/from-source": job,
         "GET /projects/p1/media/from-source/j1": job,
       },
@@ -261,9 +269,12 @@ describe("ProjectScreen", () => {
     fireEvent.change(screen.getByLabelText("URL or ID"), {
       target: { value: "https://videos.example.com/abc" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Add" }));
-    expect((await screen.findByRole("status")).textContent).toContain(
-      "downloading the video and subtitles",
+    fireEvent.click(screen.getByRole("button", { name: "Look up" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Add" }));
+    await vi.waitFor(() =>
+      expect(screen.getByRole("status").textContent).toContain(
+        "downloading the video and subtitles",
+      ),
     );
   });
 

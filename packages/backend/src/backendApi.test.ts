@@ -139,6 +139,7 @@ const addedBook: MediaFile = {
   source: { kind: "path", path: "/book.epub" },
   created_at_ms: 0,
   track_selection_json: null,
+  origin: null,
 };
 
 /** Lists no media files at first, adds a book, and leaves the list's refetch pending. */

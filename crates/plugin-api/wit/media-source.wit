@@ -3,7 +3,16 @@ package easyimmerse:plugin@0.1.0;
 /// Resolve an external locator, such as a URL, to media and subtitles written
 /// into a directory the host has granted.
 interface media-source {
-    use types.{plugin-error, resolved-media};
+    use types.{plugin-error, media-description, resolved-media, fetched-subtitle};
 
-    resolve: func(locator: string, output-dir: string) -> result<resolved-media, plugin-error>;
+    /// What the source has for the locator: the media's metadata and the subtitle
+    /// tracks it offers, without fetching anything.
+    describe: func(locator: string) -> result<media-description, plugin-error>;
+
+    /// Fetches the media and the subtitle tracks with the given ids into `output-dir`.
+    resolve: func(locator: string, output-dir: string, subtitles: list<string>) -> result<resolved-media, plugin-error>;
+
+    /// Fetches only the subtitle tracks with the given ids into `output-dir`, for media
+    /// fetched earlier.
+    fetch-subtitles: func(locator: string, output-dir: string, subtitles: list<string>) -> result<list<fetched-subtitle>, plugin-error>;
 }

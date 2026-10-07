@@ -32,6 +32,10 @@ type Story = StoryObj<typeof meta>;
 
 export const DualSubtitles: Story = {};
 
+export const FetchedFromASource: Story = {
+  args: { onFetchFromSource: fn() },
+};
+
 export const NoTracks: Story = {
   args: {
     tracks: {

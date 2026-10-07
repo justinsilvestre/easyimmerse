@@ -3,6 +3,7 @@ import type {
   AddMediaFromSourceRequest,
   AddSubtitleTrackRequest,
   ConversionCacheStatus,
+  DescribeMediaSourceRequest,
   DictionarySummary,
   Document,
   DocumentFormat,
@@ -17,6 +18,7 @@ import type {
   ListProjectsResponse,
   LookupQuery,
   LookupResponse,
+  MediaDescription,
   MediaFile,
   MediaSourceJob,
   NewFlashcard,
@@ -27,6 +29,7 @@ import type {
   PreviewLocalDictionaryTableRequest,
   Project,
   ProjectSettings,
+  SourceSubtitlesResponse,
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
@@ -70,6 +73,13 @@ type AddMediaFromSourceArgs = {
 };
 
 type MediaSourceJobArgs = { projectId: string; jobId: string };
+
+type DescribeMediaSourceArgs = {
+  plugin: string;
+  request: DescribeMediaSourceRequest;
+};
+
+type FetchSourceSubtitlesArgs = MediaFileArgs & { subtitles: string[] };
 
 type MediaFileArgs = { projectId: string; mediaFileId: string };
 
@@ -260,6 +270,17 @@ export const backendApi = createApi({
     listPlugins: build.query<ListPluginsResponse, void>({
       query: () => ({ method: "GET", path: "/plugins" }),
     }),
+    /** Asks a media-source plugin what it has for a locator, without fetching anything. */
+    describeMediaSource: build.mutation<
+      MediaDescription,
+      DescribeMediaSourceArgs
+    >({
+      query: ({ plugin, request }) => ({
+        method: "POST",
+        path: `/plugins/${plugin}/describe`,
+        body: { kind: "json", value: request },
+      }),
+    }),
     listMediaFiles: build.query<ListMediaFilesResponse, string>({
       query: (projectId) => ({
         method: "GET",
@@ -364,6 +385,25 @@ export const backendApi = createApi({
         path: `${mediaFilePath(args)}/subtitles`,
       }),
       providesTags: (_result, _error, args) => subtitleTracksTag(args),
+    }),
+    /** The subtitle tracks the source of a fetched media file offers; asked of its plugin each time. */
+    listSourceSubtitles: build.query<SourceSubtitlesResponse, MediaFileArgs>({
+      query: (args) => ({
+        method: "GET",
+        path: `${mediaFilePath(args)}/source-subtitles`,
+      }),
+    }),
+    /** Fetches subtitle tracks from a fetched media file's source and adds them to it. */
+    fetchSourceSubtitles: build.mutation<
+      SubtitleTracksResponse,
+      FetchSourceSubtitlesArgs
+    >({
+      query: ({ subtitles, ...args }) => ({
+        method: "POST",
+        path: `${mediaFilePath(args)}/source-subtitles`,
+        body: { kind: "json", value: { subtitles } },
+      }),
+      invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
     }),
     addSubtitleTrack: build.mutation<SubtitleTrack, AddSubtitleTrackArgs>({
       query: ({ request, ...args }) => ({
@@ -530,6 +570,7 @@ export const {
   useListMediaFilesQuery,
   useAddMediaFileMutation,
   useAddMediaFromSourceMutation,
+  useDescribeMediaSourceMutation,
   useGetMediaSourceJobQuery,
   useListPluginsQuery,
   useRemoveMediaFileMutation,
@@ -539,6 +580,8 @@ export const {
   useLazyGetWaveformWindowQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
+  useLazyListSourceSubtitlesQuery,
+  useFetchSourceSubtitlesMutation,
   useAddSubtitleTrackMutation,
   useGetSubtitleCuesQuery,
   useSetSubtitleSelectionMutation,

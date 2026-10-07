@@ -38,6 +38,7 @@ const bookFile: MediaFile = {
   source: { kind: "path", path: "/books/sample.epub" },
   created_at_ms: 0,
   track_selection_json: null,
+  origin: null,
 };
 
 const secondChapter = { chapterIndex: 1, paragraphIndex: 1, offset: 4 };

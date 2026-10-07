@@ -19,6 +19,7 @@ export function SubtitlesSidePanel({
   flashcardCueIndexes,
   activeWord,
   wordGestures,
+  onFetchFromSource,
 }: {
   subtitles: ReturnType<typeof useMediaSubtitles>;
   tracks: SubtitleTrackChoices;
@@ -27,6 +28,8 @@ export function SubtitlesSidePanel({
   /** The word the dictionary pop-up shows. */
   activeWord?: ActiveCueWord;
   wordGestures: CueWordGestures;
+  /** Null when the media did not come from a source that can offer subtitles. */
+  onFetchFromSource: (() => void) | null;
 }) {
   const dispatch = useAppDispatch();
   const activeCue: Cue | null = findCueAt(subtitles.cues, currentMs);
@@ -39,6 +42,7 @@ export function SubtitlesSidePanel({
           subtitles.choose("translation", trackId)
         }
         onAddFile={subtitles.requestFile}
+        onFetchFromSource={onFetchFromSource}
       />
       {subtitles.hasFailed && (
         <p role="alert" className="px-3 py-2 text-sm text-danger-fg">

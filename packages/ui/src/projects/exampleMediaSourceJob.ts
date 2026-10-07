@@ -1,4 +1,8 @@
-import type { MediaSourceJob, MediaSourceLogLine } from "@easyimmerse/types";
+import type {
+  MediaDescription,
+  MediaSourceJob,
+  MediaSourceLogLine,
+} from "@easyimmerse/types";
 
 const startedAtMs = 1767225600000;
 
@@ -78,4 +82,16 @@ export const exampleFailedJob: MediaSourceJob = {
       "ERROR: [video-site] abc123def45: Private video. Sign in if you've been granted access to this video",
   },
   finished_at_ms: startedAtMs + 1200,
+};
+
+/** What a video-site plugin answers when asked about a video before fetching it. */
+export const exampleMediaDescription: MediaDescription = {
+  title: "A walk through the old town",
+  duration_ms: 754_000,
+  subtitles: [
+    { id: "ja", language: "ja", name: "Japanese" },
+    { id: "ja-orig", language: "ja", name: "Japanese (automatic)" },
+    { id: "en", language: "en", name: "English (automatic)" },
+    { id: "fr", language: "fr", name: "French (automatic)" },
+  ],
 };

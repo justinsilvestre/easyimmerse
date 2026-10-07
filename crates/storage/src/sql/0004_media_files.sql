@@ -8,6 +8,8 @@ CREATE TABLE media_files (
     browser_file_last_modified_ms INTEGER,
     created_at_ms INTEGER NOT NULL,
     track_selection_json TEXT,
+    origin_plugin TEXT,
+    origin_locator TEXT,
     target_subtitle_track_id TEXT,
     translation_subtitle_track_id TEXT
 );

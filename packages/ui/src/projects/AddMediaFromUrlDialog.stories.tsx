@@ -3,6 +3,7 @@ import { fn } from "storybook/test";
 import { AddMediaFromUrlDialog } from "./AddMediaFromUrlDialog.tsx";
 import {
   exampleFailedJob,
+  exampleMediaDescription,
   exampleRunningJob,
 } from "./exampleMediaSourceJob.ts";
 
@@ -12,9 +13,12 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     sources: [{ name: "video-site-media-source" }],
+    languages: { target: "ja", translation: "en" },
+    lookup: { isLooking: false, description: null, error: null },
     isStarting: false,
     job: null,
     error: null,
+    onLookUp: fn(),
     onAdd: fn(),
     onCancel: fn(),
   },
@@ -28,6 +32,21 @@ export const OneSource: Story = {};
 export const SeveralSources: Story = {
   args: {
     sources: [{ name: "video-site-media-source" }, { name: "podcast-feed" }],
+  },
+};
+
+export const LookingUp: Story = {
+  args: { lookup: { isLooking: true, description: null, error: null } },
+};
+
+/** The subtitle choice shows once a typed locator has been looked up; type one and press Look up. */
+export const LookedUp: Story = {
+  args: {
+    lookup: {
+      isLooking: false,
+      description: exampleMediaDescription,
+      error: null,
+    },
   },
 };
 

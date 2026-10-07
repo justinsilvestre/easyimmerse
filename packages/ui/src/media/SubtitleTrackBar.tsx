@@ -1,21 +1,27 @@
-import { FilePlus } from "lucide-react";
+import { CloudDownload, FilePlus } from "lucide-react";
 import { IconButton } from "../components/IconButton.tsx";
 import type {
   SubtitleTrackChoices,
   SubtitleTrackOption,
 } from "./SubtitleTrackChoices.ts";
 
-/** The row at the top of the subtitles panel for choosing the subtitle tracks and adding a subtitles file. */
+/**
+ * The row at the top of the subtitles panel for choosing the subtitle tracks and adding a subtitles file,
+ * or fetching one from the source the media came from, when it came from one.
+ */
 export function SubtitleTrackBar({
   tracks,
   onTargetChange,
   onTranslationChange,
   onAddFile,
+  onFetchFromSource = null,
 }: {
   tracks: SubtitleTrackChoices;
   onTargetChange: (trackId: string | null) => void;
   onTranslationChange: (trackId: string | null) => void;
   onAddFile: () => void;
+  /** Null when the media did not come from a source that can offer subtitles. */
+  onFetchFromSource?: (() => void) | null;
 }) {
   return (
     <div className="flex items-center gap-1.5 border-b border-line px-2 py-1.5">
@@ -36,6 +42,14 @@ export function SubtitleTrackBar({
       <IconButton label="Add a subtitles file" onClick={onAddFile}>
         <FilePlus className="size-4" />
       </IconButton>
+      {onFetchFromSource && (
+        <IconButton
+          label="Fetch subtitles from the source"
+          onClick={onFetchFromSource}
+        >
+          <CloudDownload className="size-4" />
+        </IconButton>
+      )}
     </div>
   );
 }

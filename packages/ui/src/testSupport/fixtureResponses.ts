@@ -95,6 +95,7 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       source: { kind: "path", path: "/videos/episode.mkv" },
       created_at_ms: 1767225600000,
       track_selection_json: null,
+      origin: null,
     },
     {
       id: "m2",
@@ -107,6 +108,7 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       },
       created_at_ms: 1767312000000,
       track_selection_json: null,
+      origin: null,
     },
   ],
 };

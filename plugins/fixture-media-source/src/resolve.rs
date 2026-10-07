@@ -2,8 +2,14 @@ use serde::Deserialize;
 
 use crate::easyimmerse::plugin::{
     fs, http, log, run_command,
-    types::{MediaMetadata, PluginError, ProgressEvent, ResolvedMedia, SubtitleTrack},
+    types::{
+        AvailableSubtitle, FetchedSubtitle, MediaDescription, MediaMetadata, PluginError,
+        ProgressEvent, ResolvedMedia,
+    },
 };
+
+/// The id the fixture offers its one English subtitle track under.
+const SUBTITLE_ID: &str = "en";
 
 /// The JSON that the bundled `fetch-locator` script prints for a locator.
 #[derive(Deserialize)]
@@ -13,16 +19,75 @@ struct LocatorInfo {
     title: String,
 }
 
-pub fn resolve(locator: &str, output_dir: &str) -> Result<ResolvedMedia, PluginError> {
+pub fn describe(locator: &str) -> Result<MediaDescription, PluginError> {
+    let info = fetch_locator(locator)?;
+    Ok(MediaDescription {
+        metadata: metadata(&info),
+        subtitles: vec![AvailableSubtitle {
+            id: SUBTITLE_ID.to_string(),
+            language: Some("en".to_string()),
+            name: "English".to_string(),
+        }],
+    })
+}
+
+pub fn resolve(
+    locator: &str,
+    output_dir: &str,
+    subtitles: &[String],
+) -> Result<ResolvedMedia, PluginError> {
     let info = fetch_locator(locator)?;
     report(0.0, "resolved locator");
     let media_path = format!("{output_dir}/media.mp4");
     download(&info.media_url, &media_path)?;
     report(0.5, "downloaded media");
-    let subtitle_path = format!("{output_dir}/subtitles.srt");
-    download(&info.subtitle_url, &subtitle_path)?;
+    let subtitles = write_subtitles(&info, output_dir, subtitles)?;
     report(1.0, "downloaded subtitles");
-    Ok(resolved_media(info, media_path, subtitle_path))
+    Ok(ResolvedMedia {
+        metadata: metadata(&info),
+        media_path,
+        subtitles,
+    })
+}
+
+pub fn fetch_subtitles(
+    locator: &str,
+    output_dir: &str,
+    subtitles: &[String],
+) -> Result<Vec<FetchedSubtitle>, PluginError> {
+    let info = fetch_locator(locator)?;
+    write_subtitles(&info, output_dir, subtitles)
+}
+
+/// Writes the one subtitle track when it was asked for; any other id is unknown.
+fn write_subtitles(
+    info: &LocatorInfo,
+    output_dir: &str,
+    subtitles: &[String],
+) -> Result<Vec<FetchedSubtitle>, PluginError> {
+    let mut fetched = Vec::new();
+    for id in subtitles {
+        if id != SUBTITLE_ID {
+            return Err(PluginError::NotFound(format!("no subtitle track {id:?}")));
+        }
+        let path = format!("{output_dir}/subtitles.srt");
+        download(&info.subtitle_url, &path)?;
+        fetched.push(FetchedSubtitle {
+            id: id.clone(),
+            language: Some("en".to_string()),
+            name: "English".to_string(),
+            path,
+        });
+    }
+    Ok(fetched)
+}
+
+fn metadata(info: &LocatorInfo) -> MediaMetadata {
+    MediaMetadata {
+        title: info.title.clone(),
+        duration_ms: None,
+        media_url: info.media_url.clone(),
+    }
 }
 
 fn fetch_locator(locator: &str) -> Result<LocatorInfo, PluginError> {
@@ -41,20 +106,4 @@ fn report(fraction: f32, message: &str) {
         fraction,
         message: message.to_string(),
     });
-}
-
-fn resolved_media(info: LocatorInfo, media_path: String, subtitle_path: String) -> ResolvedMedia {
-    ResolvedMedia {
-        metadata: MediaMetadata {
-            title: info.title,
-            duration_ms: None,
-            media_url: info.media_url,
-        },
-        subtitle_tracks: vec![SubtitleTrack {
-            language: Some("en".to_string()),
-            url: info.subtitle_url,
-        }],
-        media_path,
-        subtitle_paths: vec![subtitle_path],
-    }
 }

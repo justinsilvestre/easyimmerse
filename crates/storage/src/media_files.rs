@@ -1,5 +1,6 @@
-use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
+use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, MediaOrigin};
 use easyimmerse_core::project::ProjectId;
+use easyimmerse_core::providers::media_source::MediaLocator;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
@@ -8,7 +9,8 @@ use crate::projects::ensure_project_exists;
 use crate::stored_integer::{read_unsigned, to_stored_integer};
 
 const MEDIA_FILE_COLUMNS: &str = "id, project_id, name, source_kind, source_path, browser_file_size, \
-     browser_file_last_modified_ms, created_at_ms, track_selection_json";
+     browser_file_last_modified_ms, created_at_ms, track_selection_json, origin_plugin, \
+     origin_locator";
 
 /// Lists a project's media files, oldest first.
 pub fn list_media_files(
@@ -48,11 +50,25 @@ pub fn add_media_file(
         project_id: project_id.clone(),
         name: name.to_string(),
         source: source.clone(),
+        origin: None,
         created_at_ms: now_ms(),
         track_selection_json: None,
     };
     insert_media_file(conn, &media_file)?;
     Ok(media_file)
+}
+
+/// Records where a media-source plugin fetched the media file from.
+pub fn set_media_file_origin(
+    conn: &Connection,
+    id: &MediaFileId,
+    origin: &MediaOrigin,
+) -> Result<(), StorageError> {
+    let updated = conn.execute(
+        "UPDATE media_files SET origin_plugin = ?2, origin_locator = ?3 WHERE id = ?1",
+        params![id.0, origin.plugin, origin.locator.0],
+    )?;
+    ensure_one_row_changed(updated, id)
 }
 
 pub fn remove_media_file(conn: &Connection, id: &MediaFileId) -> Result<(), StorageError> {
@@ -107,7 +123,7 @@ fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), St
     conn.execute(
         &format!(
             "INSERT INTO media_files ({MEDIA_FILE_COLUMNS}) \
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"
         ),
         params![
             media_file.id.0,
@@ -119,6 +135,8 @@ fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), St
             last_modified_ms,
             to_stored_integer(media_file.created_at_ms),
             media_file.track_selection_json,
+            media_file.origin.as_ref().map(|origin| &origin.plugin),
+            media_file.origin.as_ref().map(|origin| &origin.locator.0),
         ],
     )?;
     Ok(())
@@ -147,9 +165,19 @@ fn read_media_file(row: &Row) -> rusqlite::Result<MediaFile> {
         project_id: ProjectId(row.get(1)?),
         name: row.get(2)?,
         source: read_source(row)?,
+        origin: read_origin(row)?,
         created_at_ms: read_unsigned(row, 7)?,
         track_selection_json: row.get(8)?,
     })
+}
+
+fn read_origin(row: &Row) -> rusqlite::Result<Option<MediaOrigin>> {
+    let plugin: Option<String> = row.get(9)?;
+    let locator: Option<String> = row.get(10)?;
+    Ok(plugin.zip(locator).map(|(plugin, locator)| MediaOrigin {
+        plugin,
+        locator: MediaLocator(locator),
+    }))
 }
 
 fn read_source(row: &Row) -> rusqlite::Result<MediaFileSource> {
@@ -219,6 +247,43 @@ mod tests {
             .add_media_file(&project(), "a.mp4", &path_source("/a.mp4"))
             .unwrap();
         assert_eq!(storage.list_media_files(&project()).unwrap(), vec![added]);
+    }
+
+    #[test]
+    fn a_new_media_file_has_no_origin() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(&project(), "a.mp4", &path_source("/a.mp4"))
+            .unwrap();
+        assert_eq!(added.origin, None);
+    }
+
+    #[test]
+    fn keeps_the_origin_once_set() {
+        let storage = seeded_storage();
+        let added = storage
+            .add_media_file(&project(), "a.mp4", &path_source("/a.mp4"))
+            .unwrap();
+        let origin = MediaOrigin {
+            plugin: "source".to_string(),
+            locator: MediaLocator("https://example.com/a".to_string()),
+        };
+        storage.set_media_file_origin(&added.id, &origin).unwrap();
+        assert_eq!(
+            storage.get_media_file(&added.id).unwrap().origin,
+            Some(origin)
+        );
+    }
+
+    #[test]
+    fn refuses_an_origin_for_an_unknown_media_file() {
+        let storage = seeded_storage();
+        let origin = MediaOrigin {
+            plugin: "source".to_string(),
+            locator: MediaLocator("x".to_string()),
+        };
+        let result = storage.set_media_file_origin(&MediaFileId("missing".to_string()), &origin);
+        assert!(matches!(result, Err(StorageError::MediaFileNotFound(_))));
     }
 
     #[test]

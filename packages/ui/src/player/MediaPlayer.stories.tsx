@@ -79,6 +79,7 @@ const browserFileClient = createFakeBackendClient({
         source: heldSource,
         created_at_ms: 0,
         track_selection_json: null,
+        origin: null,
       },
     ],
   }),

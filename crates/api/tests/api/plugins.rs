@@ -54,11 +54,47 @@ impl Fixture {
             .server
             .post_json(
                 &format!("/projects/{PROJECT}/media/from-source"),
-                &json!({ "plugin": PLUGIN, "locator": locator }),
+                &json!({ "plugin": PLUGIN, "locator": locator, "subtitles": ["en"] }),
             )
             .await;
         assert_eq!(response.status, 202, "{}", response.text());
         response.json()
+    }
+
+    /// Starts a fetch of the sample locator with the given subtitle tracks.
+    async fn start_fetch_with_subtitles(&self, subtitles: &[&str]) -> Value {
+        let response = self
+            .server
+            .post_json(
+                &format!("/projects/{PROJECT}/media/from-source"),
+                &json!({ "plugin": PLUGIN, "locator": self.locator(), "subtitles": subtitles }),
+            )
+            .await;
+        assert_eq!(response.status, 202, "{}", response.text());
+        response.json()
+    }
+
+    /// Asks the plugin what it has for the sample locator.
+    async fn describe(&self) -> Value {
+        let response = self
+            .server
+            .post_json(
+                &format!("/plugins/{PLUGIN}/describe"),
+                &json!({ "locator": self.locator() }),
+            )
+            .await;
+        assert_eq!(response.status, 200, "{}", response.text());
+        response.json()
+    }
+
+    async fn subtitle_tracks(&self, media_file: &Value) -> Value {
+        self.server
+            .get(&format!(
+                "/projects/{PROJECT}/media/{}/subtitles",
+                media_id(media_file)
+            ))
+            .await
+            .json()
     }
 
     /// Polls the job until it is done or has failed.
@@ -133,6 +169,176 @@ async fn lists_an_installed_plugin_with_its_kind() {
         response.json(),
         json!({ "plugins": [{ "name": PLUGIN, "version": "0.1.0", "kind": "media-source" }] })
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn describes_the_subtitle_tracks_the_source_offers() {
+    let fixture = Fixture::start(false).await;
+    let description = fixture.describe().await;
+    assert_eq!(
+        description["subtitles"],
+        json!([{ "id": "en", "language": "en", "name": "English" }])
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn describes_the_title() {
+    let fixture = Fixture::start(false).await;
+    assert_eq!(fixture.describe().await["title"], "Fixture");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_to_describe_through_a_plugin_that_is_not_installed() {
+    let fixture = Fixture::start(false).await;
+    let response = fixture
+        .server
+        .post_json("/plugins/missing/describe", &json!({ "locator": "x" }))
+        .await;
+    assert_eq!(response.status, 404);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn records_where_the_media_was_fetched_from() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add().await;
+    assert_eq!(
+        added["origin"],
+        json!({ "plugin": PLUGIN, "locator": fixture.locator() })
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn adds_no_subtitles_when_none_are_chosen() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch_with_subtitles(&[]).await;
+    let job = fixture.finished(&job).await;
+    let tracks = fixture.subtitle_tracks(&job["media_file"]).await;
+    assert_eq!(tracks["tracks"].as_array().map(Vec::len), Some(0));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn names_a_fetched_track_as_the_source_does() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add().await;
+    let tracks = fixture.subtitle_tracks(&added).await;
+    assert_eq!(tracks["tracks"][0]["name"], "English");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn lists_the_source_subtitles_of_a_fetched_media_file() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add().await;
+    let response = fixture
+        .server
+        .get(&format!(
+            "/projects/{PROJECT}/media/{}/source-subtitles",
+            media_id(&added)
+        ))
+        .await;
+    assert_eq!(
+        (
+            response.status,
+            response.json()["subtitles"][0]["id"].clone()
+        ),
+        (200, json!("en"))
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn fetches_more_subtitles_from_the_source_later() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch_with_subtitles(&[]).await;
+    let job = fixture.finished(&job).await;
+    let response = fixture
+        .server
+        .post_json(
+            &format!(
+                "/projects/{PROJECT}/media/{}/source-subtitles",
+                media_id(&job["media_file"])
+            ),
+            &json!({ "subtitles": ["en"] }),
+        )
+        .await;
+    let body = response.json();
+    assert_eq!(
+        (response.status, body["tracks"].as_array().map(Vec::len)),
+        (201, Some(1)),
+        "{body}"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn later_fetched_subtitles_take_a_free_role() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch_with_subtitles(&[]).await;
+    let job = fixture.finished(&job).await;
+    let response = fixture
+        .server
+        .post_json(
+            &format!(
+                "/projects/{PROJECT}/media/{}/source-subtitles",
+                media_id(&job["media_file"])
+            ),
+            &json!({ "subtitles": ["en"] }),
+        )
+        .await;
+    let body = response.json();
+    assert_eq!(
+        body["selection"]["translation_track_id"],
+        body["tracks"][0]["id"]
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn later_fetched_subtitles_land_beside_the_media() {
+    let fixture = Fixture::start(false).await;
+    let job = fixture.start_fetch_with_subtitles(&[]).await;
+    let job = fixture.finished(&job).await;
+    let media_path = PathBuf::from(job["media_file"]["source"]["path"].as_str().unwrap());
+    let response = fixture
+        .server
+        .post_json(
+            &format!(
+                "/projects/{PROJECT}/media/{}/source-subtitles",
+                media_id(&job["media_file"])
+            ),
+            &json!({ "subtitles": ["en"] }),
+        )
+        .await;
+    assert_eq!(response.status, 201, "{}", response.text());
+    let item_dir = media_path.parent().unwrap();
+    let written = std::fs::read_dir(item_dir)
+        .unwrap()
+        .filter_map(|entry| entry.ok())
+        .find(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("subtitles-")
+        })
+        .map(|entry| entry.path().join("subtitles.srt").is_file());
+    assert_eq!(written, Some(true));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_source_subtitles_for_a_media_file_without_an_origin() {
+    let fixture = Fixture::start(true).await;
+    let response = fixture
+        .server
+        .post_json(
+            &format!("/projects/{PROJECT}/media"),
+            &json!({ "name": "a.mp4", "source": { "kind": "path", "path": fixture_path("sample.mp4").to_string_lossy() } }),
+        )
+        .await;
+    let added = response.json();
+    let response = fixture
+        .server
+        .get(&format!(
+            "/projects/{PROJECT}/media/{}/source-subtitles",
+            media_id(&added)
+        ))
+        .await;
+    assert_eq!(response.status, 409, "{}", response.text());
 }
 
 #[tokio::test(flavor = "multi_thread")]

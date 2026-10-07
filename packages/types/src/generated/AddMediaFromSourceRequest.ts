@@ -5,4 +5,8 @@ export type AddMediaFromSourceRequest = {
 /**
  * The name of an installed media-source plugin.
  */
-plugin: string, locator: MediaLocator, };
+plugin: string, locator: MediaLocator, 
+/**
+ * The ids of the subtitle tracks to fetch with the media, from `describeMediaSource`.
+ */
+subtitles: Array<string>, };

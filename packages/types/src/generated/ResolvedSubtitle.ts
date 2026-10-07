@@ -3,8 +3,16 @@
 /**
  * A subtitle file a media-source plugin wrote, with its language when the source names one.
  */
-export type ResolvedSubtitle = { path: string, 
+export type ResolvedSubtitle = { 
+/**
+ * The id the source offered the track under.
+ */
+id: string, path: string, 
 /**
  * A language tag such as "en" or "ja", as the source reports it.
  */
-language: string | null, };
+language: string | null, 
+/**
+ * What the source calls the track.
+ */
+name: string, };

@@ -25,7 +25,9 @@ import { skipTarget } from "../media/skipTarget.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
+import { FetchSourceSubtitlesDialog } from "../subtitles/FetchSourceSubtitlesDialog.tsx";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
+import { useFetchSourceSubtitles } from "../subtitles/useFetchSourceSubtitles.ts";
 import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
 
 /**
@@ -50,6 +52,7 @@ export function MediaScreen({
   const durationMs = useMediaDurationMs(projectId, mediaFile);
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
+  const sourceSubtitles = useFetchSourceSubtitles(projectId, mediaFile);
   const hasScreenshots = screenshotSource !== null;
   const flashcards = useMediaFlashcards(projectId, mediaFileId, hasScreenshots);
   const [panels, dispatchPanels] = useReducer(
@@ -124,89 +127,103 @@ export function MediaScreen({
       dispatchPanels({ type: "distractionFreeToggled" }),
   };
   return (
-    <MediaView
-      ref={screenRef}
-      media={{
-        title: mediaFile?.name ?? "",
-        language: settings.target_language,
-      }}
-      stage={<MediaPlayer projectId={projectId} />}
-      playback={{
-        isPlaying: player.isPlaying,
-        currentMs,
-        durationMs,
-        volume: player.volume,
-        speed: player.speed,
-      }}
-      tracks={tracks}
-      cues={subtitles.cues}
-      translationCues={subtitles.translationCues}
-      waveform={
-        <PlayerWaveform
-          projectId={projectId}
-          mediaFileId={mediaFileId}
-          cues={subtitles.cues}
-          flashcardSegments={flashcards.segments}
-          segmentHandlers={{
-            onOpenFlashcardSegment: flashcards.open,
-            onClipEndpointMoved: flashcards.moveClipEndpoint,
-            onScreenshotMarkerMoved: flashcards.moveScreenshot,
-          }}
-          onHide={() => dispatchPanels({ type: "waveformToggled" })}
+    <>
+      {sourceSubtitles.isOpen && (
+        <FetchSourceSubtitlesDialog
+          subtitles={sourceSubtitles.subtitles}
+          error={sourceSubtitles.error}
+          existingNames={subtitles.options.map((track) => track.label)}
+          languages={languages}
+          isFetching={sourceSubtitles.isFetching}
+          onFetch={sourceSubtitles.fetch}
+          onCancel={sourceSubtitles.close}
         />
-      }
-      panels={panels}
-      subtitleDisplay={panels.subtitleDisplay}
-      playerCallbacks={playerCallbacks}
-      onBack={() => dispatch(actions.closeMedia())}
-      activeWord={lookup.activeWord}
-      wordGestures={lookup.wordGestures}
-      onLookup={lookup.openSearch}
-      onAddFlashcard={() => startFlashcard("", null, null)}
-      lookup={
-        lookup.popup && (
-          <AnchoredPopup {...lookup.popup.anchored}>
-            <DictionaryPopup {...lookup.popup.props} />
-          </AnchoredPopup>
-        )
-      }
-      headerContent={
-        flashcards.isSaved ? (
-          <FlashcardSaveNotice
-            outcome="savedInProject"
-            onDismiss={flashcards.dismissSaved}
+      )}
+      <MediaView
+        ref={screenRef}
+        media={{
+          title: mediaFile?.name ?? "",
+          language: settings.target_language,
+        }}
+        stage={<MediaPlayer projectId={projectId} />}
+        playback={{
+          isPlaying: player.isPlaying,
+          currentMs,
+          durationMs,
+          volume: player.volume,
+          speed: player.speed,
+        }}
+        tracks={tracks}
+        cues={subtitles.cues}
+        translationCues={subtitles.translationCues}
+        waveform={
+          <PlayerWaveform
+            projectId={projectId}
+            mediaFileId={mediaFileId}
+            cues={subtitles.cues}
+            flashcardSegments={flashcards.segments}
+            segmentHandlers={{
+              onOpenFlashcardSegment: flashcards.open,
+              onClipEndpointMoved: flashcards.moveClipEndpoint,
+              onScreenshotMarkerMoved: flashcards.moveScreenshot,
+            }}
+            onHide={() => dispatchPanels({ type: "waveformToggled" })}
           />
-        ) : undefined
-      }
-      sidePanel={
-        flashcards.edited !== null ? (
-          <FlashcardEditor
-            key={
-              flashcards.edited.kind === "new"
-                ? "new"
-                : flashcards.edited.flashcard.id
-            }
-            state={flashcards.edited.editor}
-            dispatch={flashcards.edit}
-            languages={languages}
-            waveform={clipWaveform}
-            screenshotUrl={screenshotUrl}
-            saveStatus={saveStatusOf(flashcards.edited.stage)}
-            onSave={flashcards.save}
-            onDelete={flashcards.remove}
-            onClose={flashcards.close}
-          />
-        ) : panels.cues ? (
-          <SubtitlesSidePanel
-            subtitles={subtitles}
-            tracks={tracks}
-            currentMs={currentMs}
-            flashcardCueIndexes={flashcards.cueIndexes}
-            activeWord={lookup.activeWord}
-            wordGestures={lookup.wordGestures}
-          />
-        ) : undefined
-      }
-    />
+        }
+        panels={panels}
+        subtitleDisplay={panels.subtitleDisplay}
+        playerCallbacks={playerCallbacks}
+        onBack={() => dispatch(actions.closeMedia())}
+        activeWord={lookup.activeWord}
+        wordGestures={lookup.wordGestures}
+        onLookup={lookup.openSearch}
+        onAddFlashcard={() => startFlashcard("", null, null)}
+        lookup={
+          lookup.popup && (
+            <AnchoredPopup {...lookup.popup.anchored}>
+              <DictionaryPopup {...lookup.popup.props} />
+            </AnchoredPopup>
+          )
+        }
+        headerContent={
+          flashcards.isSaved ? (
+            <FlashcardSaveNotice
+              outcome="savedInProject"
+              onDismiss={flashcards.dismissSaved}
+            />
+          ) : undefined
+        }
+        sidePanel={
+          flashcards.edited !== null ? (
+            <FlashcardEditor
+              key={
+                flashcards.edited.kind === "new"
+                  ? "new"
+                  : flashcards.edited.flashcard.id
+              }
+              state={flashcards.edited.editor}
+              dispatch={flashcards.edit}
+              languages={languages}
+              waveform={clipWaveform}
+              screenshotUrl={screenshotUrl}
+              saveStatus={saveStatusOf(flashcards.edited.stage)}
+              onSave={flashcards.save}
+              onDelete={flashcards.remove}
+              onClose={flashcards.close}
+            />
+          ) : panels.cues ? (
+            <SubtitlesSidePanel
+              subtitles={subtitles}
+              tracks={tracks}
+              currentMs={currentMs}
+              flashcardCueIndexes={flashcards.cueIndexes}
+              activeWord={lookup.activeWord}
+              wordGestures={lookup.wordGestures}
+              onFetchFromSource={sourceSubtitles.open}
+            />
+          ) : undefined
+        }
+      />
+    </>
   );
 }

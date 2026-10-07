@@ -1,6 +1,10 @@
-use easyimmerse_core::providers::media_source::{ProgressEvent, ResolvedMedia, ResolvedSubtitle};
+use easyimmerse_core::providers::media_source::{
+    AvailableSubtitle, MediaDescription, ProgressEvent, ResolvedMedia, ResolvedSubtitle,
+};
 use easyimmerse_plugin_api::base::easyimmerse::plugin::types::{
-    PluginError as WitPluginError, ResolvedMedia as WitResolvedMedia,
+    AvailableSubtitle as WitAvailableSubtitle, FetchedSubtitle as WitFetchedSubtitle,
+    MediaDescription as WitMediaDescription, PluginError as WitPluginError,
+    ResolvedMedia as WitResolvedMedia,
 };
 use easyimmerse_plugin_api::media_source::MediaSourcePlugin as MediaSourceBindings;
 use wasmtime::Store;
@@ -13,8 +17,8 @@ use crate::host_state::{HostEvent, HostState, LogEntry};
 use crate::limits::{HostLimits, reset_fuel};
 use crate::package::PluginPackage;
 
-/// A loaded plugin of the `media-source-plugin` world, which resolves a locator such as
-/// a URL into media and subtitle files inside a directory the host has granted.
+/// A loaded plugin of the `media-source-plugin` world, which describes a locator such as
+/// a URL and fetches its media and subtitle files into a directory the host has granted.
 pub struct MediaSourcePlugin {
     store: Store<HostState>,
     bindings: MediaSourceBindings,
@@ -47,21 +51,49 @@ impl MediaSourcePlugin {
         })
     }
 
-    /// Resolves `locator` into `output_dir` and returns the result with the
-    /// progress events the plugin reported along the way.
+    /// Asks what the source has for `locator`, without fetching anything.
+    pub fn describe(&mut self, locator: &str) -> Result<MediaDescription, PluginError> {
+        reset_fuel(&mut self.store, &self.limits)?;
+        let outcome = self
+            .bindings
+            .easyimmerse_plugin_media_source()
+            .call_describe(&mut self.store, locator)?;
+        Ok(to_description(outcome.map_err(to_error_kind)?))
+    }
+
+    /// Fetches the media at `locator` and the subtitle tracks with the given ids into
+    /// `output_dir`, and returns the result with the progress events the plugin reported
+    /// along the way.
     pub fn resolve(
         &mut self,
         locator: &str,
         output_dir: &str,
+        subtitle_ids: &[String],
     ) -> Result<(ResolvedMedia, Vec<ProgressEvent>), PluginError> {
         reset_fuel(&mut self.store, &self.limits)?;
         let outcome = self
             .bindings
             .easyimmerse_plugin_media_source()
-            .call_resolve(&mut self.store, locator, output_dir)?;
+            .call_resolve(&mut self.store, locator, output_dir, subtitle_ids)?;
         let progress = self.store.data_mut().take_progress();
         let resolved = outcome.map_err(to_error_kind)?;
         Ok((to_resolved_media(resolved), progress))
+    }
+
+    /// Fetches only the subtitle tracks with the given ids into `output_dir`.
+    pub fn fetch_subtitles(
+        &mut self,
+        locator: &str,
+        output_dir: &str,
+        subtitle_ids: &[String],
+    ) -> Result<Vec<ResolvedSubtitle>, PluginError> {
+        reset_fuel(&mut self.store, &self.limits)?;
+        let outcome = self
+            .bindings
+            .easyimmerse_plugin_media_source()
+            .call_fetch_subtitles(&mut self.store, locator, output_dir, subtitle_ids)?;
+        let fetched = outcome.map_err(to_error_kind)?;
+        Ok(fetched.into_iter().map(to_resolved_subtitle).collect())
     }
 
     /// Installs the listener that hears each log entry, progress report, and command of
@@ -87,81 +119,44 @@ pub(crate) fn to_error_kind(error: WitPluginError) -> PluginErrorKind {
     }
 }
 
-/// The plugin interface lists the subtitle files and their descriptions side by side,
-/// in the same order; a description without a file, or the reverse, is dropped.
+fn to_description(description: WitMediaDescription) -> MediaDescription {
+    MediaDescription {
+        title: description.metadata.title,
+        duration_ms: description.metadata.duration_ms,
+        subtitles: description
+            .subtitles
+            .into_iter()
+            .map(to_available_subtitle)
+            .collect(),
+    }
+}
+
+fn to_available_subtitle(subtitle: WitAvailableSubtitle) -> AvailableSubtitle {
+    AvailableSubtitle {
+        id: subtitle.id,
+        language: subtitle.language,
+        name: subtitle.name,
+    }
+}
+
 fn to_resolved_media(resolved: WitResolvedMedia) -> ResolvedMedia {
-    let subtitles = resolved
-        .subtitle_paths
-        .into_iter()
-        .zip(resolved.subtitle_tracks)
-        .map(|(path, track)| ResolvedSubtitle {
-            path,
-            language: track.language,
-        })
-        .collect();
     ResolvedMedia {
         title: resolved.metadata.title,
         media_path: resolved.media_path,
-        subtitles,
+        subtitles: resolved
+            .subtitles
+            .into_iter()
+            .map(to_resolved_subtitle)
+            .collect(),
         duration_ms: resolved.metadata.duration_ms,
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use easyimmerse_plugin_api::base::easyimmerse::plugin::types::{
-        MediaMetadata, SubtitleTrack as WitSubtitleTrack,
-    };
-
-    use super::*;
-
-    fn wit_media(tracks: Vec<WitSubtitleTrack>, paths: Vec<&str>) -> WitResolvedMedia {
-        WitResolvedMedia {
-            metadata: MediaMetadata {
-                title: "t".to_string(),
-                duration_ms: Some(1),
-                media_url: "u".to_string(),
-            },
-            subtitle_tracks: tracks,
-            media_path: "/out/media.mp4".to_string(),
-            subtitle_paths: paths.into_iter().map(str::to_string).collect(),
-        }
-    }
-
-    fn track(language: Option<&str>) -> WitSubtitleTrack {
-        WitSubtitleTrack {
-            language: language.map(str::to_string),
-            url: "u".to_string(),
-        }
-    }
-
-    #[test]
-    fn pairs_each_subtitle_path_with_its_language() {
-        let resolved = to_resolved_media(wit_media(
-            vec![track(Some("ja")), track(None)],
-            vec!["/out/a.vtt", "/out/b.vtt"],
-        ));
-        assert_eq!(
-            resolved.subtitles,
-            vec![
-                ResolvedSubtitle {
-                    path: "/out/a.vtt".to_string(),
-                    language: Some("ja".to_string()),
-                },
-                ResolvedSubtitle {
-                    path: "/out/b.vtt".to_string(),
-                    language: None,
-                },
-            ]
-        );
-    }
-
-    #[test]
-    fn drops_a_subtitle_description_without_a_file() {
-        let resolved = to_resolved_media(wit_media(
-            vec![track(Some("ja")), track(Some("en"))],
-            vec!["/out/a.vtt"],
-        ));
-        assert_eq!(resolved.subtitles.len(), 1);
+fn to_resolved_subtitle(subtitle: WitFetchedSubtitle) -> ResolvedSubtitle {
+    ResolvedSubtitle {
+        id: subtitle.id,
+        path: subtitle.path,
+        language: subtitle.language,
+        name: subtitle.name,
     }
 }

@@ -65,6 +65,7 @@ function renderBrowserVideoScreen(
         : registry.register(file),
     created_at_ms: 1,
     track_selection_json: null,
+    origin: null,
   };
   const client = createFakeBackendClient({
     ...fixtureResponses,

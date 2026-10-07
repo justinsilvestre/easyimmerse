@@ -71,6 +71,11 @@ impl Fixture {
     }
 }
 
+/// The id of the fixture's one subtitle track.
+fn english() -> Vec<String> {
+    vec!["en".to_string()]
+}
+
 #[cfg(windows)]
 const UNBUNDLED_COMMAND: &str = "cmd";
 #[cfg(not(windows))]
@@ -108,7 +113,7 @@ fn reports_progress_while_resolving() {
     let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
     let (_, progress) = fixture
         .media_source()
-        .resolve(&locator, &output_dir)
+        .resolve(&locator, &output_dir, &english())
         .expect("resolve");
     assert!(progress.len() >= 2, "got {progress:?}");
 }
@@ -119,7 +124,7 @@ fn writes_the_media_and_subtitles_into_the_granted_dir() {
     let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
     fixture
         .media_source()
-        .resolve(&locator, &output_dir)
+        .resolve(&locator, &output_dir, &english())
         .expect("resolve");
     assert!(
         files_match(
@@ -133,12 +138,91 @@ fn writes_the_media_and_subtitles_into_the_granted_dir() {
 }
 
 #[test]
+fn describes_the_subtitle_tracks_the_source_offers() {
+    let fixture = Fixture::start();
+    let description = fixture
+        .media_source()
+        .describe(&fixture.locator())
+        .expect("describe");
+    let names: Vec<_> = description
+        .subtitles
+        .iter()
+        .map(|subtitle| (subtitle.id.as_str(), subtitle.name.as_str()))
+        .collect();
+    assert_eq!(names, vec![("en", "English")]);
+}
+
+#[test]
+fn describes_the_title_without_writing_anything() {
+    let fixture = Fixture::start();
+    let description = fixture
+        .media_source()
+        .describe(&fixture.locator())
+        .expect("describe");
+    let written = std::fs::read_dir(fixture.output_dir.path())
+        .expect("read the output dir")
+        .count();
+    assert_eq!((description.title.as_str(), written), ("Fixture", 0));
+}
+
+#[test]
+fn fetches_no_subtitles_when_none_are_chosen() {
+    let fixture = Fixture::start();
+    let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
+    let (resolved, _) = fixture
+        .media_source()
+        .resolve(&locator, &output_dir, &[])
+        .expect("resolve");
+    assert!(
+        resolved.subtitles.is_empty(),
+        "got {:?}",
+        resolved.subtitles
+    );
+}
+
+#[test]
+fn fetches_subtitles_on_their_own() {
+    let fixture = Fixture::start();
+    let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
+    let fetched = fixture
+        .media_source()
+        .fetch_subtitles(&locator, &output_dir, &english())
+        .expect("fetch subtitles");
+    assert!(
+        files_match(
+            &fetched[0].path,
+            &crate::support::fixtures_dir().join("sample.srt")
+        ),
+        "got {fetched:?}"
+    );
+}
+
+#[test]
+fn refuses_to_fetch_a_subtitle_track_the_source_does_not_offer() {
+    let fixture = Fixture::start();
+    let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
+    let outcome =
+        fixture
+            .media_source()
+            .fetch_subtitles(&locator, &output_dir, &["xx".to_string()]);
+    assert!(
+        matches!(
+            outcome,
+            Err(easyimmerse_plugins::PluginError::Plugin(
+                PluginErrorKind::NotFound(_)
+            ))
+        ),
+        "got {outcome:?}"
+    );
+}
+
+#[test]
 fn reports_the_language_of_each_subtitle_file() {
     let fixture = Fixture::start();
     let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
     let (resolved, _) = fixture
         .media_source()
-        .resolve(&locator, &output_dir)
+        .resolve(&locator, &output_dir, &english())
         .expect("resolve");
     let languages: Vec<_> = resolved
         .subtitles
@@ -155,7 +239,7 @@ fn events_while_resolving(fixture: &Fixture) -> Vec<HostEvent> {
     let mut plugin = fixture.media_source();
     plugin.listen(move |event| heard.lock().unwrap().push(event));
     plugin
-        .resolve(&fixture.locator(), &fixture.output_path(""))
+        .resolve(&fixture.locator(), &fixture.output_path(""), &english())
         .expect("resolve");
     // Cloned out of the lock before the guard is dropped at the end of the statement.
     events.lock().unwrap().clone()

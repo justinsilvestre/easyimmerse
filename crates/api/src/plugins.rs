@@ -2,7 +2,9 @@
 
 use std::path::{Path, PathBuf};
 
-use easyimmerse_core::providers::media_source::ResolvedMedia;
+use easyimmerse_core::providers::media_source::{
+    MediaDescription, ResolvedMedia, ResolvedSubtitle,
+};
 use easyimmerse_plugins::{
     CapabilityGrants, ExecutionMode, HostEvent, HostLimits, MediaSourcePlugin, PluginError,
     PluginKind, PluginPackage,
@@ -60,6 +62,15 @@ fn package_dirs(dir: &Path) -> Vec<PathBuf> {
     dirs
 }
 
+/// Asks the plugin what the source has for `locator`, granting it no directory to write
+/// into, since describing fetches nothing.
+pub fn describe_media(
+    package: &PluginPackage,
+    locator: &str,
+) -> Result<MediaDescription, PluginError> {
+    load_plugin(package, &[])?.describe(locator)
+}
+
 /// Runs the plugin's `resolve` on the current thread, granting it `output_dir` to write
 /// into, the hosts its manifest lists, and the executables it bundles. The listener hears
 /// what the plugin and its commands report as it happens; the host logs it as well.
@@ -67,11 +78,40 @@ pub fn resolve_media(
     package: &PluginPackage,
     locator: &str,
     output_dir: &Path,
+    subtitle_ids: &[String],
     listener: impl FnMut(HostEvent) + Send + 'static,
 ) -> Result<ResolvedMedia, PluginError> {
+    let mut plugin = load_plugin(package, &[output_dir.to_path_buf()])?;
+    plugin.listen(listener);
+    let (resolved, _progress) =
+        plugin.resolve(locator, &output_dir.to_string_lossy(), subtitle_ids)?;
+    Ok(resolved)
+}
+
+/// Runs the plugin's `fetch-subtitles` on the current thread, granting it `output_dir`
+/// to write into.
+pub fn fetch_subtitles(
+    package: &PluginPackage,
+    locator: &str,
+    output_dir: &Path,
+    subtitle_ids: &[String],
+) -> Result<Vec<ResolvedSubtitle>, PluginError> {
+    load_plugin(package, &[output_dir.to_path_buf()])?.fetch_subtitles(
+        locator,
+        &output_dir.to_string_lossy(),
+        subtitle_ids,
+    )
+}
+
+/// Loads the plugin with the hosts its manifest lists, the executables it bundles, and
+/// `granted_dirs` to write into.
+fn load_plugin(
+    package: &PluginPackage,
+    granted_dirs: &[PathBuf],
+) -> Result<MediaSourcePlugin, PluginError> {
     let grants = CapabilityGrants {
         allowed_hosts: package.manifest.allowed_hosts.clone(),
-        granted_dirs: vec![output_dir.to_path_buf()],
+        granted_dirs: granted_dirs.to_vec(),
         bundled_bin_dir: package.bin_dir.clone(),
         ..CapabilityGrants::default()
     };
@@ -86,10 +126,7 @@ pub fn resolve_media(
         mode = mode.name(),
         "loading the plugin"
     );
-    let mut plugin = MediaSourcePlugin::load(package, grants, mode, limits)?;
-    plugin.listen(listener);
-    let (resolved, _progress) = plugin.resolve(locator, &output_dir.to_string_lossy())?;
-    Ok(resolved)
+    MediaSourcePlugin::load(package, grants, mode, limits)
 }
 
 /// The directory a plugin fetched `path` into, when `path` lies in one: the media directory

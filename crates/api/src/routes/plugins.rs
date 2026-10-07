@@ -6,9 +6,11 @@ use std::path::Path as FsPath;
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
+use easyimmerse_core::media_file::{MediaFile, MediaFileSource, MediaOrigin};
 use easyimmerse_core::project::{ProjectId, ProjectSettings};
-use easyimmerse_core::providers::media_source::{MediaLocator, ResolvedMedia, ResolvedSubtitle};
+use easyimmerse_core::providers::media_source::{
+    MediaDescription, MediaLocator, ResolvedMedia, ResolvedSubtitle,
+};
 use easyimmerse_core::subtitle_track::{SubtitleRole, SubtitleSelection};
 use easyimmerse_core::text_source::TextSource;
 use easyimmerse_core::timed_text::{detect_format, parse_timed_text};
@@ -20,7 +22,7 @@ use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
 use crate::media_source_jobs::{MediaSourceJob, MediaSourceJobId, output_dir_for};
-use crate::plugins::resolve_media;
+use crate::plugins::{describe_media, resolve_media};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -44,6 +46,15 @@ pub struct InstalledPlugin {
 pub struct AddMediaFromSourceRequest {
     /// The name of an installed media-source plugin.
     pub plugin: String,
+    pub locator: MediaLocator,
+    /// The ids of the subtitle tracks to fetch with the media, from `describeMediaSource`.
+    #[serde(default)]
+    pub subtitles: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct DescribeMediaSourceRequest {
     pub locator: MediaLocator,
 }
 
@@ -93,8 +104,54 @@ fn kind_name(kind: easyimmerse_plugins::PluginKind) -> &'static str {
     }
 }
 
+/// Asks a media-source plugin what it has for a locator: the media's title and duration,
+/// and the subtitle tracks that can be fetched with it. Nothing is fetched. The plugin
+/// may take a few seconds to answer, as it usually asks the source.
+#[utoipa::path(
+    post,
+    path = "/plugins/{plugin}/describe",
+    tag = "plugins",
+    operation_id = "describeMediaSource",
+    security(("bearer_token" = [])),
+    params(("plugin" = String, Path, description = "The name of an installed media-source plugin")),
+    request_body = DescribeMediaSourceRequest,
+    responses(
+        (status = 200, description = "What the source has for the locator", body = MediaDescription),
+        (status = 400, description = "The plugin does not understand the locator (code `invalid_locator`)", body = ApiError),
+        (status = 401, description = "Missing or invalid token", body = ApiError),
+        (status = 404, description = "No installed media-source plugin of that name", body = ApiError),
+        (status = 421, description = "Unexpected Host header", body = ApiError),
+        (status = 502, description = "The plugin could not describe the locator (code `media_source_failed`)", body = ApiError),
+    ),
+)]
+pub async fn describe_media_source(
+    State(state): State<AppState>,
+    Path(plugin): Path<String>,
+    Json(request): Json<DescribeMediaSourceRequest>,
+) -> Result<Json<MediaDescription>, ApiFailure> {
+    let package = media_source_package(&state, &plugin)?;
+    let locator = request.locator.0;
+    let description = tokio::task::spawn_blocking(move || describe_media(&package, &locator))
+        .await
+        .map_err(|error| internal(format!("plugin task failed: {error}")))?
+        .map_err(plugin_failure)?;
+    Ok(Json(description))
+}
+
+/// The installed media-source plugin called `name`.
+pub(crate) fn media_source_package(
+    state: &AppState,
+    name: &str,
+) -> Result<PluginPackage, ApiFailure> {
+    state
+        .plugins
+        .media_source(name)
+        .cloned()
+        .ok_or_else(|| not_found(format!("no media-source plugin {name:?}")))
+}
+
 /// Starts fetching the media at a locator, such as a URL, through a media-source plugin
-/// into the server's media directory. The answer is the running job; poll it with
+/// into the server's media directory, with the chosen subtitle tracks. The answer is the running job; poll it with
 /// `getMediaSourceJob` until it is done or has failed. Once done, the media file is in
 /// the project with the subtitle files the plugin fetched beside it, and a subtitle file in
 /// the project's target language or translation language has that role at once.
@@ -126,18 +183,8 @@ pub async fn add_media_from_source(
             .await?
             .settings
     };
-    let package = state
-        .plugins
-        .media_source(&request.plugin)
-        .cloned()
-        .ok_or_else(|| not_found(format!("no media-source plugin {:?}", request.plugin)))?;
-    let media_dir = state.media_dir.clone().ok_or_else(|| {
-        ApiFailure::new(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "media_dir_unavailable",
-            "this server has no media directory, so plugins cannot fetch media",
-        )
-    })?;
+    let package = media_source_package(&state, &request.plugin)?;
+    let media_dir = media_dir(&state)?;
     let mut job = MediaSourceJob::start(project_id, &package.manifest.name, request.locator);
     // Which build of the plugin runs is the first thing to check when a fetch misbehaves,
     // and the version alone does not tell a rebuilt plugin from a stale copy.
@@ -160,8 +207,33 @@ pub async fn add_media_from_source(
         "fetching media through a plugin"
     );
     state.media_source_jobs.insert(job.clone());
-    tokio::spawn(run_job(state, job.clone(), settings, package, output_dir));
+    let fetch = Fetch {
+        settings,
+        package,
+        output_dir,
+        subtitle_ids: request.subtitles,
+    };
+    tokio::spawn(run_job(state, job.clone(), fetch));
     Ok((StatusCode::ACCEPTED, Json(job)))
+}
+
+/// The directory plugins fetch into, which a server without one cannot offer.
+pub(crate) fn media_dir(state: &AppState) -> Result<std::path::PathBuf, ApiFailure> {
+    state.media_dir.clone().ok_or_else(|| {
+        ApiFailure::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "media_dir_unavailable",
+            "this server has no media directory, so plugins cannot fetch media",
+        )
+    })
+}
+
+/// What one job fetches, and with what.
+struct Fetch {
+    settings: ProjectSettings,
+    package: PluginPackage,
+    output_dir: std::path::PathBuf,
+    subtitle_ids: Vec<String>,
 }
 
 #[utoipa::path(
@@ -212,15 +284,9 @@ fn plugin_build(package: &PluginPackage) -> String {
 }
 
 /// Runs the plugin and stores what it fetched, recording the outcome on the job.
-async fn run_job(
-    state: AppState,
-    job: MediaSourceJob,
-    settings: ProjectSettings,
-    package: PluginPackage,
-    output_dir: std::path::PathBuf,
-) {
+async fn run_job(state: AppState, job: MediaSourceJob, fetch: Fetch) {
     let started = std::time::Instant::now();
-    let outcome = fetch_and_store(&state, &job, &settings, &package, &output_dir).await;
+    let outcome = fetch_and_store(&state, &job, &fetch).await;
     let elapsed_ms = started.elapsed().as_millis() as u64;
     match outcome {
         Ok(media_file) => {
@@ -246,7 +312,7 @@ async fn run_job(
                 "the fetch failed: {}",
                 failure.error.message
             );
-            discard_output_dir(&output_dir).await;
+            discard_output_dir(&fetch.output_dir).await;
             state
                 .media_source_jobs
                 .update(&job.id, |job| job.fail_with(failure.error));
@@ -257,21 +323,36 @@ async fn run_job(
 async fn fetch_and_store(
     state: &AppState,
     job: &MediaSourceJob,
-    settings: &ProjectSettings,
-    package: &PluginPackage,
-    output_dir: &FsPath,
+    fetch: &Fetch,
 ) -> Result<MediaFile, ApiFailure> {
-    let resolved = run_plugin(state, job, package, output_dir).await?;
-    ensure_inside(output_dir, &resolved)?;
+    let resolved = run_plugin(state, job, fetch).await?;
+    let paths = std::iter::once(resolved.media_path.as_str()).chain(
+        resolved
+            .subtitles
+            .iter()
+            .map(|subtitle| subtitle.path.as_str()),
+    );
+    ensure_inside(&fetch.output_dir, paths)?;
     let name = media_name(&resolved);
-    let subtitles = read_subtitles(&resolved.subtitles, settings).await;
+    let subtitles = read_subtitles(
+        &resolved.subtitles,
+        &fetch.settings,
+        SubtitleSelection::default(),
+    )
+    .await;
     let project_id = job.project_id.clone();
+    let origin = MediaOrigin {
+        plugin: job.plugin.clone(),
+        locator: job.locator.clone(),
+    };
     state
         .with_storage(move |storage| {
             let source = MediaFileSource::Path {
                 path: resolved.media_path,
             };
-            let media_file = storage.add_media_file(&project_id, &name, &source)?;
+            let mut media_file = storage.add_media_file(&project_id, &name, &source)?;
+            storage.set_media_file_origin(&media_file.id, &origin)?;
+            media_file.origin = Some(origin);
             let mut selection = SubtitleSelection::default();
             for (track, role) in subtitles {
                 let added = storage.add_subtitle_track(&media_file.id, &track)?;
@@ -290,22 +371,24 @@ async fn fetch_and_store(
 async fn run_plugin(
     state: &AppState,
     job: &MediaSourceJob,
-    package: &PluginPackage,
-    output_dir: &FsPath,
+    fetch: &Fetch,
 ) -> Result<ResolvedMedia, ApiFailure> {
     let listener = state.media_source_jobs.listener(job.id.clone());
-    let (package, locator, output_dir) = (
-        package.clone(),
+    let (package, locator, output_dir, subtitle_ids) = (
+        fetch.package.clone(),
         job.locator.0.clone(),
-        output_dir.to_path_buf(),
+        fetch.output_dir.clone(),
+        fetch.subtitle_ids.clone(),
     );
-    tokio::task::spawn_blocking(move || resolve_media(&package, &locator, &output_dir, listener))
-        .await
-        .map_err(|error| internal(format!("plugin task failed: {error}")))?
-        .map_err(plugin_failure)
+    tokio::task::spawn_blocking(move || {
+        resolve_media(&package, &locator, &output_dir, &subtitle_ids, listener)
+    })
+    .await
+    .map_err(|error| internal(format!("plugin task failed: {error}")))?
+    .map_err(plugin_failure)
 }
 
-fn plugin_failure(error: PluginError) -> ApiFailure {
+pub(crate) fn plugin_failure(error: PluginError) -> ApiFailure {
     match error {
         PluginError::Plugin(PluginErrorKind::InvalidInput(message)) => {
             ApiFailure::new(StatusCode::BAD_REQUEST, "invalid_locator", message)
@@ -327,19 +410,16 @@ async fn discard_output_dir(output_dir: &FsPath) {
 
 /// Refuses a result naming files outside the directory the plugin was granted, so that a
 /// plugin cannot make the project point at any other file on the machine.
-fn ensure_inside(output_dir: &FsPath, resolved: &ResolvedMedia) -> Result<(), ApiFailure> {
+pub(crate) fn ensure_inside<'a>(
+    output_dir: &FsPath,
+    paths: impl Iterator<Item = &'a str>,
+) -> Result<(), ApiFailure> {
     let output_dir = output_dir.canonicalize().map_err(|error| {
         internal(format!(
             "could not resolve {}: {error}",
             output_dir.display()
         ))
     })?;
-    let paths = std::iter::once(resolved.media_path.as_str()).chain(
-        resolved
-            .subtitles
-            .iter()
-            .map(|subtitle| subtitle.path.as_str()),
-    );
     for path in paths {
         let is_inside = FsPath::new(path)
             .canonicalize()
@@ -374,14 +454,15 @@ fn file_name(path: &FsPath) -> String {
 }
 
 /// Parses each subtitle file once, as adding a subtitle track by hand does, and gives the
-/// first file in each of the project's languages that language's role. A file that cannot
-/// be read or parsed is left out with a warning.
-async fn read_subtitles(
+/// first file in each of the project's languages that language's role, unless `taken`
+/// already fills it. A file that cannot be read or parsed is left out with a warning.
+pub(crate) async fn read_subtitles(
     subtitles: &[ResolvedSubtitle],
     settings: &ProjectSettings,
+    taken: SubtitleSelection,
 ) -> Vec<(NewSubtitleTrack, Option<SubtitleRole>)> {
     let mut tracks = Vec::new();
-    let mut selection = SubtitleSelection::default();
+    let mut selection = taken;
     for subtitle in subtitles {
         let Some(track) = read_subtitle(subtitle).await else {
             continue;
@@ -417,13 +498,23 @@ async fn read_subtitle(subtitle: &ResolvedSubtitle) -> Option<NewSubtitleTrack> 
         }
     };
     Some(NewSubtitleTrack {
-        name: file_name(FsPath::new(&subtitle.path)),
+        name: track_name(subtitle),
         format,
         source: TextSource::Path {
             path: subtitle.path.clone(),
         },
         sample: parsed.cues.first().map(|cue| cue.text.clone()),
     })
+}
+
+/// What the source calls the track, or its file name when the source gave no name.
+fn track_name(subtitle: &ResolvedSubtitle) -> String {
+    let name = subtitle.name.trim();
+    if name.is_empty() {
+        file_name(FsPath::new(&subtitle.path))
+    } else {
+        name.to_string()
+    }
 }
 
 /// The role a subtitle file in `language` takes: target when it is the first in the
@@ -534,10 +625,8 @@ mod tests {
         let other = tempfile::tempdir().unwrap();
         let outside = other.path().join("media.mp4");
         std::fs::write(&outside, "").unwrap();
-        let result = ensure_inside(
-            output_dir.path(),
-            &resolved("t", &outside.to_string_lossy()),
-        );
+        let outside = outside.to_string_lossy();
+        let result = ensure_inside(output_dir.path(), std::iter::once(outside.as_ref()));
         assert_eq!(result.unwrap_err().status, StatusCode::BAD_REQUEST);
     }
 
@@ -546,7 +635,33 @@ mod tests {
         let output_dir = tempfile::tempdir().unwrap();
         let inside = output_dir.path().join("media.mp4");
         std::fs::write(&inside, "").unwrap();
-        let result = ensure_inside(output_dir.path(), &resolved("t", &inside.to_string_lossy()));
+        let inside = inside.to_string_lossy();
+        let result = ensure_inside(output_dir.path(), std::iter::once(inside.as_ref()));
         assert_eq!(result, Ok(()));
+    }
+
+    fn subtitle(name: &str, path: &str) -> ResolvedSubtitle {
+        ResolvedSubtitle {
+            id: "en".to_string(),
+            path: path.to_string(),
+            language: Some("en".to_string()),
+            name: name.to_string(),
+        }
+    }
+
+    #[test]
+    fn names_a_track_as_the_source_does() {
+        assert_eq!(
+            track_name(&subtitle("English", "/out/media.en.vtt")),
+            "English"
+        );
+    }
+
+    #[test]
+    fn names_a_track_after_its_file_when_the_source_gave_no_name() {
+        assert_eq!(
+            track_name(&subtitle(" ", "/out/media.en.vtt")),
+            "media.en.vtt"
+        );
     }
 }

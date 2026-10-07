@@ -18,5 +18,6 @@ pub mod openapi;
 pub mod plugins;
 pub mod preferences;
 pub mod projects;
+pub mod source_subtitles;
 pub mod subtitles;
 pub mod timed_text;
