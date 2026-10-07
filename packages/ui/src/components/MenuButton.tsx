@@ -1,26 +1,16 @@
 import clsx from "clsx";
-import { Check, ChevronDown, MoreHorizontal } from "lucide-react";
+import { ChevronDown, MoreHorizontal } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Button } from "./Button.tsx";
 import { IconButton } from "./IconButton.tsx";
-
-/**
- * One action in a menu. A destructive action is drawn in the danger color.
- * An item with `isChecked` set is a checkbox that stays in the menu when toggled.
- */
-export type MenuItem = {
-  label: string;
-  icon?: ReactNode;
-  isDestructive?: boolean;
-  isChecked?: boolean;
-  /** Closes the menu when a checkbox item is chosen, as for choices of which only one can be checked. */
-  closesOnSelect?: boolean;
-  onSelect: () => void;
-};
+import { type MenuItem, MenuItemButton } from "./MenuItemButton.tsx";
+import { focusInitialMenuItem, moveMenuFocusForKey } from "./menuFocus.ts";
 
 /**
  * A button that opens a small menu of actions below it. With children it is a text button showing them;
- * without, it is an icon button showing `icon`, or three dots. The menu closes on Escape, on a choice, when focus leaves it,
+ * without, it is an icon button showing `badge`, a few characters such as the current value, or else `icon`, or three dots.
+ * Opening the menu focuses its selected item, or its first, and the up and down arrows, Home, and End move between the items.
+ * The menu closes on Escape, on a choice, when focus leaves it,
  * or when the pointer presses anywhere outside it, which matters on browsers that give a clicked button no focus.
  * It opens downward unless told to open upward, for a button near the bottom of a scrolling area.
  * A text button's menu lines up with its start, and an icon button's with its end, unless `align` says otherwise.
@@ -28,6 +18,7 @@ export type MenuItem = {
 export function MenuButton({
   label,
   icon = <MoreHorizontal className="size-4" />,
+  badge,
   size = "sm",
   items,
   opensUpward = false,
@@ -37,6 +28,7 @@ export function MenuButton({
 }: {
   label: string;
   icon?: ReactNode;
+  badge?: string;
   /** The size of a text button, as `Button` sizes it. */
   size?: "sm" | "md";
   items: readonly MenuItem[];
@@ -53,6 +45,14 @@ export function MenuButton({
   };
   const menuId = useId();
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const closeAndFocusButton = () => {
+    setOpen(false);
+    ref.current?.querySelector<HTMLElement>("[aria-haspopup]")?.focus();
+  };
+  useEffect(() => {
+    if (isOpen && menuRef.current) focusInitialMenuItem(menuRef.current);
+  }, [isOpen]);
   useEffect(() => {
     if (!isOpen) return;
     const closeOnOutsidePress = (event: PointerEvent) => {
@@ -73,7 +73,12 @@ export function MenuButton({
           setOpen(false);
       }}
       onKeyDown={(event) => {
-        if (event.key === "Escape") setOpen(false);
+        if (event.key === "Escape") closeAndFocusButton();
+        else if (
+          menuRef.current &&
+          moveMenuFocusForKey(menuRef.current, event.key)
+        )
+          event.preventDefault();
       }}
     >
       {children ? (
@@ -97,12 +102,17 @@ export function MenuButton({
           aria-controls={isOpen ? menuId : undefined}
           aria-disabled={isUnavailable || undefined}
           onClick={toggle}
+          className={clsx(
+            badge !== undefined &&
+              "w-auto min-w-8 px-1.5 text-xs font-semibold tabular-nums pointer-coarse:w-auto pointer-coarse:min-w-11",
+          )}
         >
-          {icon}
+          {badge ?? icon}
         </IconButton>
       )}
       {isOpen && !isUnavailable && (
         <div
+          ref={menuRef}
           id={menuId}
           role="menu"
           aria-label={label}
@@ -116,51 +126,11 @@ export function MenuButton({
         >
           {items.map((item) => (
             <div key={item.label} role="none">
-              {item.isChecked === undefined ? (
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    setOpen(false);
-                    item.onSelect();
-                  }}
-                  className={itemClassName(item)}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  role="menuitemcheckbox"
-                  aria-checked={item.isChecked}
-                  onClick={() => {
-                    if (item.closesOnSelect) setOpen(false);
-                    item.onSelect();
-                  }}
-                  className={itemClassName(item)}
-                >
-                  <Check
-                    className={clsx("size-4", !item.isChecked && "invisible")}
-                    aria-hidden
-                  />
-                  {item.icon}
-                  {item.label}
-                </button>
-              )}
+              <MenuItemButton item={item} onClose={closeAndFocusButton} />
             </div>
           ))}
         </div>
       )}
     </div>
-  );
-}
-
-function itemClassName(item: MenuItem): string {
-  return clsx(
-    "flex w-full items-center gap-2 px-3 py-1.5 text-left whitespace-nowrap focus-visible:outline-none",
-    item.isDestructive
-      ? "text-danger-fg hover:bg-danger-soft focus-visible:bg-danger-soft"
-      : "hover:bg-surface-muted focus-visible:bg-surface-muted",
   );
 }
