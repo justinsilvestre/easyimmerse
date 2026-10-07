@@ -102,11 +102,16 @@ pub async fn set_conversion_cache_budget(
     Json(budget): Json<ConversionCacheBudget>,
 ) -> Result<Json<ConversionCacheStatus>, ApiFailure> {
     let conversion = require_conversion(&state)?.clone();
-    let stored = budget.budget_bytes.map_or_else(|| "auto".to_string(), |bytes| bytes.to_string());
+    let stored = budget
+        .budget_bytes
+        .map_or_else(|| "auto".to_string(), |bytes| bytes.to_string());
     state
         .with_storage(move |storage| storage.set_preference(CACHE_BUDGET_PREFERENCE, &stored))
         .await?;
     conversion.set_cache_budget(budget.budget_bytes);
-    let status = conversion.cache_status().await.map_err(conversion_failure)?;
+    let status = conversion
+        .cache_status()
+        .await
+        .map_err(conversion_failure)?;
     Ok(Json(status))
 }

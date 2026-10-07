@@ -382,7 +382,10 @@ async fn setting_the_budget_answers_with_the_status_under_it() {
     }
     let (server, _cache_dir, _) = converting_server().await;
     let response = server
-        .put_json("/conversion-cache/budget", &json!({ "budget_bytes": 5_000_000_000u64 }))
+        .put_json(
+            "/conversion-cache/budget",
+            &json!({ "budget_bytes": 5_000_000_000u64 }),
+        )
         .await;
     assert_eq!(
         (response.status, response.json()["budget_bytes"].as_u64()),
@@ -397,7 +400,10 @@ async fn the_chosen_budget_is_kept_in_the_preferences() {
     }
     let (server, _cache_dir, _) = converting_server().await;
     server
-        .put_json("/conversion-cache/budget", &json!({ "budget_bytes": 5_000_000_000u64 }))
+        .put_json(
+            "/conversion-cache/budget",
+            &json!({ "budget_bytes": 5_000_000_000u64 }),
+        )
         .await;
     let response = server.get("/preferences/conversionCacheBudgetBytes").await;
     assert_eq!(response.json()["value"], "5000000000");

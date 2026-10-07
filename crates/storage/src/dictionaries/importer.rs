@@ -81,7 +81,9 @@ impl DictionaryImporter<'_> {
         metadata: &DictionaryMetadata,
     ) -> Result<StartedDictionary, StorageError> {
         if self.has_dictionary_titled(&metadata.title)? {
-            return Err(StorageError::DictionaryAlreadyImported(metadata.title.clone()));
+            return Err(StorageError::DictionaryAlreadyImported(
+                metadata.title.clone(),
+            ));
         }
         let id = DictionaryId::generate();
         let frequency_mode = metadata

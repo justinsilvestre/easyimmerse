@@ -36,8 +36,9 @@ pub fn cache_status(
     disk: DiskSpace,
     chosen_budget_bytes: Option<u64>,
 ) -> ConversionCacheStatus {
-    let budget_bytes = chosen_budget_bytes
-        .unwrap_or_else(|| (disk.capacity_bytes / DISK_SHARE_DIVISOR).clamp(MIN_BUDGET, MAX_BUDGET));
+    let budget_bytes = chosen_budget_bytes.unwrap_or_else(|| {
+        (disk.capacity_bytes / DISK_SHARE_DIVISOR).clamp(MIN_BUDGET, MAX_BUDGET)
+    });
     let reserve_bytes = (disk.capacity_bytes / DISK_SHARE_DIVISOR).clamp(MIN_RESERVE, MAX_RESERVE);
     let limit_bytes =
         budget_bytes.min((usage_bytes + disk.available_bytes).saturating_sub(reserve_bytes));
@@ -64,7 +65,10 @@ mod tests {
 
     #[test]
     fn budgets_five_percent_of_a_one_terabyte_disk() {
-        assert_eq!(cache_status(0, disk(1000, 500), None).budget_bytes, 50 * GIB);
+        assert_eq!(
+            cache_status(0, disk(1000, 500), None).budget_bytes,
+            50 * GIB
+        );
     }
 
     #[test]
@@ -74,7 +78,10 @@ mod tests {
 
     #[test]
     fn budgets_at_most_one_hundred_gibibytes() {
-        assert_eq!(cache_status(0, disk(4000, 2000), None).budget_bytes, 100 * GIB);
+        assert_eq!(
+            cache_status(0, disk(4000, 2000), None).budget_bytes,
+            100 * GIB
+        );
     }
 
     #[test]

@@ -90,7 +90,10 @@ pub(crate) fn start_import(
     let (storage, jobs) = (Arc::clone(&state.storage), Arc::clone(&state.import_jobs));
     let job_id = id.clone();
     tokio::spawn(async move {
-        let file_name = files.first().map(|file| file.name.clone()).unwrap_or_default();
+        let file_name = files
+            .first()
+            .map(|file| file.name.clone())
+            .unwrap_or_default();
         let result = tokio::task::spawn_blocking(move || {
             import_into(&storage, files, table_layout, progress)
         })

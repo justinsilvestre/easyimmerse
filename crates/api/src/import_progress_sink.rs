@@ -18,7 +18,11 @@ impl<'a> ImportProgressSink<'a> {
         Self { inner, progress }
     }
 
-    fn count(&self, result: SinkResult, counter: fn(&mut ImportProgress) -> &mut u64) -> SinkResult {
+    fn count(
+        &self,
+        result: SinkResult,
+        counter: fn(&mut ImportProgress) -> &mut u64,
+    ) -> SinkResult {
         result?;
         *counter(&mut lock(&self.progress)) += 1;
         Ok(())
