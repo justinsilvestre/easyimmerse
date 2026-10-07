@@ -1,18 +1,16 @@
 import {
   AudioLines,
-  AudioWaveform,
   Languages,
-  Maximize,
-  Minimize,
-  PanelRight,
   Pause,
   Play,
+  Settings2,
   SkipBack,
   SkipForward,
   Volume2,
   VolumeX,
 } from "lucide-react";
 import { IconButton } from "../components/IconButton.tsx";
+import { MenuButton } from "../components/MenuButton.tsx";
 import { formatTimestamp } from "./formatTimestamp.ts";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
@@ -27,6 +25,8 @@ export type PlayerCallbacks = {
   onSpeedChange: (speed: number) => void;
   /** Cycles which subtitles lie over the video: both, the target language, or the translation. */
   onToggleSubtitleDisplay: () => void;
+  /** Hides the subtitles over the video, or shows them again. */
+  onToggleSubtitles: () => void;
   onToggleCuePanel: () => void;
   onToggleWaveform: () => void;
   /** Fills the screen with the app, or leaves it. Absent where the browser offers no fullscreen. */
@@ -35,10 +35,11 @@ export type PlayerCallbacks = {
   onOpenTracks?: () => void;
 };
 
-/** Which panels are open, and whether the app fills the screen. */
+/** Which panels are open, whether the subtitles over the video are hidden, and whether the app fills the screen. */
 export type PlayerPanelsState = {
   cues: boolean;
   waveform: boolean;
+  areSubtitlesHidden?: boolean;
   /** Tells that the flashcard editor holds the side panel, so that the subtitles panel cannot show and its toggle is marked unavailable. */
   isCuePanelTakenByEditor?: boolean;
   isFullscreen?: boolean;
@@ -47,8 +48,9 @@ export type PlayerPanelsState = {
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 /**
- * The bar over the bottom of the player: the position, transport, volume, and speed, with the toggles for the panels around it.
- * The buttons name their keys in their labels, which show as tooltips, and the toggles say what pressing them does now.
+ * The bar over the bottom of the player: the position, transport and volume, with the playback speed
+ * and the subtitles over the video in a menu, so that the bar fits on one row on a phone.
+ * The buttons name their keys in their labels, which show as tooltips.
  */
 export function PlayerControls({
   playback,
@@ -64,7 +66,7 @@ export function PlayerControls({
   return (
     <div className="flex flex-col gap-1.5 bg-surface/90 px-3 py-2 backdrop-blur-sm">
       <PositionBar playback={playback} onSeek={callbacks.onSeek} />
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-nowrap items-center gap-1">
         <IconButton
           label="Previous cue (←)"
           onClick={() => callbacks.onSkip("back")}
@@ -99,7 +101,7 @@ export function PlayerControls({
           )}
         </IconButton>
         {/* Phones and tablets set the volume with their own buttons, so the slider shows only for fine pointers. */}
-        <label className="hidden items-center text-fg-muted pointer-fine:flex">
+        <label className="hidden min-w-0 items-center text-fg-muted pointer-fine:flex">
           <input
             type="range"
             aria-label="Volume"
@@ -110,19 +112,10 @@ export function PlayerControls({
             onChange={(event) =>
               callbacks.onVolumeChange(Number(event.target.value))
             }
-            className="w-20 accent-accent"
+            className="w-20 min-w-0 accent-accent"
           />
         </label>
-        <CompactSelect
-          label="Playback speed"
-          value={String(playback.speed)}
-          options={speeds.map((speed) => ({
-            value: String(speed),
-            label: `${speed}×`,
-          }))}
-          onChange={(value) => callbacks.onSpeedChange(Number(value))}
-        />
-        <span className="ml-auto flex items-center gap-1">
+        <span className="ml-auto flex shrink-0 items-center gap-1">
           {callbacks.onOpenTracks && (
             <IconButton label="Tracks" onClick={callbacks.onOpenTracks}>
               <AudioLines className="size-4" />
@@ -136,10 +129,46 @@ export function PlayerControls({
               <Languages className="size-4" />
             </IconButton>
           )}
-          <PanelToggles panels={panels} callbacks={callbacks} />
+          <PlaybackOptions
+            playback={playback}
+            panels={panels}
+            callbacks={callbacks}
+          />
         </span>
       </div>
     </div>
+  );
+}
+
+/** The menu of the playback speeds, of which one is checked, and of whether the subtitles show over the video. */
+function PlaybackOptions({
+  playback,
+  panels,
+  callbacks,
+}: {
+  playback: PlayerControlsState;
+  panels: PlayerPanelsState;
+  callbacks: PlayerCallbacks;
+}) {
+  return (
+    <MenuButton
+      label="Playback options"
+      icon={<Settings2 className="size-4" />}
+      opensUpward
+      items={[
+        ...speeds.map((speed) => ({
+          label: `${speed}× speed`,
+          isChecked: playback.speed === speed,
+          closesOnSelect: true,
+          onSelect: () => callbacks.onSpeedChange(speed),
+        })),
+        {
+          label: "Show subtitles",
+          isChecked: panels.areSubtitlesHidden !== true,
+          onSelect: callbacks.onToggleSubtitles,
+        },
+      ]}
+    />
   );
 }
 
@@ -221,89 +250,5 @@ function BufferedTrack({ playback }: { playback: PlayerControlsState }) {
         style={span(0, playback.currentMs)}
       />
     </span>
-  );
-}
-
-/** The toggles for the subtitles panel, the waveform and fullscreen, each labelled for what it does now. */
-function PanelToggles({
-  panels,
-  callbacks,
-}: {
-  panels: PlayerPanelsState;
-  callbacks: PlayerCallbacks;
-}) {
-  const isCueToggleUnavailable = panels.isCuePanelTakenByEditor === true;
-  return (
-    <>
-      <IconButton
-        label="Subtitles panel"
-        pressed={panels.cues && !isCueToggleUnavailable}
-        aria-disabled={isCueToggleUnavailable || undefined}
-        title={
-          isCueToggleUnavailable
-            ? "Close the flashcard to show the subtitles"
-            : panels.cues
-              ? "Hide the subtitles panel"
-              : "Show the subtitles panel"
-        }
-        onClick={() => {
-          if (!isCueToggleUnavailable) callbacks.onToggleCuePanel();
-        }}
-      >
-        <PanelRight className="size-4" />
-      </IconButton>
-      <IconButton
-        label="Waveform"
-        pressed={panels.waveform}
-        title={panels.waveform ? "Hide the waveform" : "Show the waveform"}
-        onClick={callbacks.onToggleWaveform}
-      >
-        <AudioWaveform className="size-4" />
-      </IconButton>
-      {callbacks.onToggleFullscreen && (
-        <IconButton
-          label={
-            panels.isFullscreen
-              ? "Leave fullscreen (F)"
-              : "Enter fullscreen (F)"
-          }
-          onClick={callbacks.onToggleFullscreen}
-        >
-          {panels.isFullscreen ? (
-            <Minimize className="size-4" />
-          ) : (
-            <Maximize className="size-4" />
-          )}
-        </IconButton>
-      )}
-    </>
-  );
-}
-
-function CompactSelect({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: readonly { value: string; label: string }[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <select
-      aria-label={label}
-      title={label}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="max-w-36 rounded-md border border-line bg-surface px-1.5 py-1 text-xs text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
   );
 }

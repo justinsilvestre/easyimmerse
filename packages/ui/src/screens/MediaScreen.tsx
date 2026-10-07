@@ -38,7 +38,8 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
  * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
  * double-clicking a word starts a flashcard for it at once.
- * Space or K plays and pauses, the arrow keys skip between cues, R replays the cue shown now, M mutes, and F fills the screen.
+ * Space or K plays and pauses, the arrow keys skip between cues, R replays the cue shown now, M mutes, and F fills the screen,
+ * as does double-clicking the picture.
  * The file resumes where playback last was, as `useResumePlayback` describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `useClipLoop` describes.
  * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
@@ -75,7 +76,7 @@ export function MediaScreen({
   );
   const isEditorOpen = flashcards.edited !== null;
   const fullscreen = useFullscreen();
-  // Passed through MediaView to the player controls, which mark the subtitles panel's toggle unavailable meanwhile.
+  // Passed through MediaView to the panel toggles, which mark the subtitles panel's toggle unavailable meanwhile.
   const shownPanels = {
     ...panels,
     isCuePanelTakenByEditor: isEditorOpen,
@@ -149,6 +150,7 @@ export function MediaScreen({
     onSpeedChange: (speed) => dispatch(actions.speedChangeRequested(speed)),
     onToggleSubtitleDisplay: () =>
       dispatchPanels({ type: "subtitleDisplayCycled" }),
+    onToggleSubtitles: () => dispatchPanels({ type: "subtitlesToggled" }),
     onToggleCuePanel: () => {
       if (!isEditorOpen) dispatchPanels({ type: "cuePanelToggled" });
     },

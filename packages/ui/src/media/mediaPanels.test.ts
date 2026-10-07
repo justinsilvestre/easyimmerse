@@ -10,6 +10,10 @@ describe("initialMediaPanels", () => {
     expect(initialMediaPanels.waveform).toBe(false);
   });
 
+  it("shows the subtitles over the stage", () => {
+    expect(initialMediaPanels.areSubtitlesHidden).toBe(false);
+  });
+
   it("knows no distraction-free mode", () => {
     expect("distractionFree" in initialMediaPanels).toBe(false);
   });
@@ -52,5 +56,21 @@ describe("reduceMediaPanels", () => {
         { type: "subtitleDisplayCycled" },
       ).subtitleDisplay,
     ).toBe("both");
+  });
+
+  it("hides the subtitles over the stage when they are shown", () => {
+    expect(
+      reduceMediaPanels(initialMediaPanels, { type: "subtitlesToggled" })
+        .areSubtitlesHidden,
+    ).toBe(true);
+  });
+
+  it("keeps the subtitle display when the subtitles are hidden", () => {
+    expect(
+      reduceMediaPanels(
+        { ...initialMediaPanels, subtitleDisplay: "target" },
+        { type: "subtitlesToggled" },
+      ).subtitleDisplay,
+    ).toBe("target");
   });
 });

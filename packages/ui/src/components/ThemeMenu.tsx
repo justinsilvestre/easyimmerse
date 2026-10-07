@@ -22,7 +22,10 @@ const choiceIcons: Record<ThemeChoice, ReactNode> = {
   dark: <Moon className="size-4" />,
 };
 
-/** An icon showing the theme choice in force, which opens a menu to follow the system, or to use the light or the dark theme for good. */
+/**
+ * An icon showing the theme choice in force, which opens a menu to follow the system, or to use the light or the dark theme for good.
+ * The menu opens upward and to the right, as the button sits at the left end of the app footer.
+ */
 export function ThemeMenu() {
   const dispatch = useAppDispatch();
   const choice = useAppSelector(selectThemeChoice);
@@ -31,6 +34,7 @@ export function ThemeMenu() {
       label={`Theme: ${choiceLabels[choice]}`}
       icon={choiceIcons[choice]}
       opensUpward
+      align="start"
       items={themeChoices.map((option) => ({
         label: choiceLabels[option],
         icon: choiceIcons[option],

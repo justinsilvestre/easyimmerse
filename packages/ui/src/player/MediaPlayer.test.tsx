@@ -30,6 +30,7 @@ import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { createFakeHls } from "./fakeHls.ts";
 import { HlsLoaderContext } from "./hlsLoaderContext.ts";
 import { MediaPlayer } from "./MediaPlayer.tsx";
+import { stagePictureAttribute } from "./stagePicture.ts";
 import { TrackChoiceContext } from "./trackChoiceContext.ts";
 
 afterEach(() => {
@@ -208,10 +209,11 @@ describe("MediaPlayer", () => {
       ]);
     });
 
-    it("plays or pauses when the picture is clicked", async () => {
-      const { effects } = renderPlayer(directPlaybackRoutes);
-      fireEvent.click(await findVideo());
-      expect(effects.calls).toContainEqual({ type: "togglePlayer" });
+    it("marks the video as the stage's picture", async () => {
+      renderPlayer(directPlaybackRoutes);
+      expect(
+        (await findVideo()).closest(`[${stagePictureAttribute}]`),
+      ).not.toBeNull();
     });
 
     it("offers no track choice for a file with one track of each kind", async () => {
@@ -583,16 +585,17 @@ describe("MediaPlayer", () => {
       );
     });
 
-    it("plays or pauses when the artwork is clicked", async () => {
+    it("marks the artwork as the stage's picture", async () => {
       const { registry, mediaFiles } = registryHolding(audioFile());
-      const { effects } = renderPlayer([], {
+      renderPlayer([], {
         mediaFiles,
         mediaFileId: "m2",
         browserFileRegistry: registry,
       });
       await screen.findByLabelText("Audio");
-      fireEvent.click(screen.getByText("interview.mp3"));
-      expect(effects.calls).toContainEqual({ type: "togglePlayer" });
+      expect(
+        screen.getByText("interview.mp3").closest(`[${stagePictureAttribute}]`),
+      ).not.toBeNull();
     });
 
     it("explains when the browser no longer holds the file", async () => {

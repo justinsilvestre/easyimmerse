@@ -10,6 +10,7 @@ import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
 import { findCueShownAt, findTranslationOf } from "./findCue.ts";
+import { PanelToggles } from "./PanelToggles.tsx";
 import {
   type PlayerCallbacks,
   PlayerControls,
@@ -18,6 +19,7 @@ import {
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
 import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
+import { useStageClicks } from "./useStageClicks.ts";
 
 type MediaViewProps = {
   /** The screen's root element, which keyboard shortcuts check to tell whether the screen is in reach. */
@@ -62,6 +64,8 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  * Moving over the subtitles or the pop-up does not count, and a pause the open pop-up caused does not bring them back,
  * so that looking words up with the mouse leaves the picture clear.
  * The controls keep their place while hidden, so the subtitles above them never move.
+ * A click on the picture plays or pauses, and a double-click fills the screen or leaves it.
+ * The toggles for the panels around the stage and for fullscreen sit in the app footer, which stays in fullscreen.
  * On a phone with a notch or a home indicator, the screen keeps clear of them.
  * The panels around the stage come in as children, so that each can be wired to the store on its own.
  */
@@ -69,6 +73,10 @@ export function MediaView(props: MediaViewProps) {
   const { playback, cues, translationCues, panels } = props;
   const activeCue = findCueShownAt(cues, playback.currentMs);
   const pointer = usePointerActivity();
+  const onStageClick = useStageClicks(
+    props.playerCallbacks.onTogglePlay,
+    props.playerCallbacks.onToggleFullscreen,
+  );
   const isPausedByUser = !playback.isPlaying && props.lookup == null;
   const showsChrome = isPausedByUser || pointer.isActive;
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
@@ -96,7 +104,15 @@ export function MediaView(props: MediaViewProps) {
               )}
               onPointerMove={onPointerMove}
             >
-              {props.stage}
+              {/* Space and K play and pause, and F fills the screen, from the keyboard; the clicks are the pointer's way to do the same. */}
+              {/* biome-ignore lint/a11y/noStaticElementInteractions: see above */}
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: see above */}
+              <div
+                className="flex h-full w-full items-center justify-center"
+                onClick={onStageClick}
+              >
+                {props.stage}
+              </div>
               <Fading
                 isShown={showsChrome}
                 className="absolute inset-x-0 top-0 z-10"
@@ -109,17 +125,19 @@ export function MediaView(props: MediaViewProps) {
                     className="col-start-2 min-w-0 cursor-auto"
                     {...{ [lookupSurfaceAttribute]: "" }}
                   >
-                    <SubtitleOverlay
-                      targetCue={activeCue}
-                      translationCue={
-                        activeCue
-                          ? findTranslationOf(activeCue, translationCues)
-                          : null
-                      }
-                      display={props.subtitleDisplay}
-                      activeWord={props.activeWord}
-                      wordGestures={props.wordGestures}
-                    />
+                    {!panels.areSubtitlesHidden && (
+                      <SubtitleOverlay
+                        targetCue={activeCue}
+                        translationCue={
+                          activeCue
+                            ? findTranslationOf(activeCue, translationCues)
+                            : null
+                        }
+                        display={props.subtitleDisplay}
+                        activeWord={props.activeWord}
+                        wordGestures={props.wordGestures}
+                      />
+                    )}
                   </div>
                   <Fading isShown={showsChrome} className="justify-self-end">
                     <span className="flex items-center gap-1 rounded-md bg-black/50">
@@ -159,7 +177,9 @@ export function MediaView(props: MediaViewProps) {
           </aside>
         )}
       </div>
-      <AppFooter />
+      <AppFooter>
+        <PanelToggles panels={panels} callbacks={props.playerCallbacks} />
+      </AppFooter>
     </div>
   );
 }

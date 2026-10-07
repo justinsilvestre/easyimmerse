@@ -2,6 +2,7 @@ import type { Cue } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Music } from "lucide-react";
 import { fn } from "storybook/test";
+import { INITIAL_VIEWPORTS } from "storybook/viewport";
 import {
   exampleWaveformWindows,
   windowStartsUpTo,
@@ -208,9 +209,11 @@ const meta = {
       onVolumeChange: fn(),
       onSpeedChange: fn(),
       onToggleSubtitleDisplay: fn(),
+      onToggleSubtitles: fn(),
       onToggleCuePanel: fn(),
       onToggleWaveform: fn(),
       onToggleMute: fn(),
+      onToggleFullscreen: fn(),
     },
     onBack: fn(),
     wordGestures: {
@@ -230,9 +233,24 @@ type Story = StoryObj<typeof meta>;
 
 export const VideoWithDualSubtitles: Story = {};
 
-/** A large phone, where the subtitles give way to the lookup buttons beside them and the controls wrap onto two rows. */
+/** A large phone, where the subtitles give way to the lookup buttons beside them. */
 export const OnAPhone: Story = {
   globals: { viewport: { value: "mobile2", isRotated: false } },
+};
+
+/** A phone 375 px wide, the narrowest the control bar must fit on one row, here with the Tracks button as well. */
+export const OnASmallPhone: Story = {
+  parameters: { viewport: { options: INITIAL_VIEWPORTS } },
+  globals: { viewport: { value: "iphonex", isRotated: false } },
+  args: {
+    playerCallbacks: { ...meta.args.playerCallbacks, onOpenTracks: fn() },
+  },
+};
+
+export const SubtitlesHidden: Story = {
+  args: {
+    panels: { cues: true, waveform: false, areSubtitlesHidden: true },
+  },
 };
 
 export const LookingUpAWord: Story = {

@@ -1,10 +1,6 @@
 import type { Cue } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import {
-  findCueAt,
-  findCueShownAt,
-  findTranslationOf,
-} from "./findCue.ts";
+import { findCueAt, findCueShownAt, findTranslationOf } from "./findCue.ts";
 
 const cues: Cue[] = [
   { index: 1, start_ms: 500, end_ms: 1500, text: "Eins" },

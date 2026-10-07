@@ -17,6 +17,18 @@ const openMenu = () =>
   fireEvent.click(screen.getByRole("button", { name: "Actions" }));
 
 describe("MenuButton", () => {
+  it("lines the menu up with the start of an icon button when told to", () => {
+    render(
+      <MenuButton
+        label="Actions"
+        align="start"
+        items={[{ label: "Delete", onSelect: () => undefined }]}
+      />,
+    );
+    openMenu();
+    expect(screen.getByRole("menu").classList.contains("left-0")).toBe(true);
+  });
+
   it("keeps the menu closed at first", () => {
     renderMenu();
     expect(screen.queryByRole("menu")).toBeNull();

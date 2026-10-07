@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   NavigationActionsContext,
@@ -9,7 +10,13 @@ import { AppFooter } from "./AppFooter.tsx";
 
 afterEach(cleanup);
 
-function renderFooter({ isSettingsOpen = false } = {}) {
+function renderFooter({
+  isSettingsOpen = false,
+  children,
+}: {
+  isSettingsOpen?: boolean;
+  children?: ReactNode;
+} = {}) {
   const openSettings = vi.fn();
   renderWithAppStore(
     <NavigationActionsContext
@@ -20,7 +27,7 @@ function renderFooter({ isSettingsOpen = false } = {}) {
       }}
     >
       <SettingsOpenContext value={isSettingsOpen}>
-        <AppFooter />
+        <AppFooter>{children}</AppFooter>
       </SettingsOpenContext>
     </NavigationActionsContext>,
   );
@@ -37,6 +44,35 @@ describe("AppFooter", () => {
     const { openSettings } = renderFooter();
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(openSettings).toHaveBeenCalledOnce();
+  });
+
+  it("shows the theme menu", () => {
+    renderFooter();
+    expect(screen.getByRole("button", { name: /^Theme:/ })).toBeDefined();
+  });
+
+  describe("with a screen's own buttons", () => {
+    const pinButton = <button type="button">Pin</button>;
+
+    it("keeps the gear button", () => {
+      renderFooter({ children: pinButton });
+      expect(screen.getByRole("button", { name: "Settings" })).toBeDefined();
+    });
+
+    it("keeps the theme menu", () => {
+      renderFooter({ children: pinButton });
+      expect(screen.getByRole("button", { name: /^Theme:/ })).toBeDefined();
+    });
+
+    it("places them after the gear button and the theme menu", () => {
+      renderFooter({ children: pinButton });
+      const buttonNames = screen
+        .getAllByRole("button")
+        .map(
+          (button) => button.getAttribute("aria-label") ?? button.textContent,
+        );
+      expect(buttonNames.at(-1)).toBe("Pin");
+    });
   });
 
   describe("while Settings is open", () => {

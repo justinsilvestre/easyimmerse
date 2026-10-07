@@ -1,6 +1,6 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-import { PlayerControls } from "./PlayerControls.tsx";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { type PlayerCallbacks, PlayerControls } from "./PlayerControls.tsx";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
 
 afterEach(cleanup);
@@ -16,33 +16,42 @@ const playback: PlayerControlsState = {
 
 const ignore = () => undefined;
 
+function callbacks(): PlayerCallbacks {
+  return {
+    onTogglePlay: ignore,
+    onSeek: ignore,
+    onSkip: ignore,
+    onVolumeChange: ignore,
+    onSpeedChange: vi.fn(),
+    onToggleSubtitleDisplay: ignore,
+    onToggleSubtitles: vi.fn(),
+    onToggleCuePanel: ignore,
+    onToggleWaveform: ignore,
+    onToggleMute: ignore,
+    onToggleFullscreen: ignore,
+  };
+}
+
 function renderControls(
   overrides: Partial<Parameters<typeof PlayerControls>[0]> = {},
 ) {
-  render(
-    <PlayerControls
-      playback={playback}
-      tracks={{
-        subtitles: [],
-        targetSubtitlesId: null,
-        translationSubtitlesId: null,
-      }}
-      panels={{ cues: true, waveform: false }}
-      callbacks={{
-        onTogglePlay: ignore,
-        onSeek: ignore,
-        onSkip: ignore,
-        onVolumeChange: ignore,
-        onSpeedChange: ignore,
-        onToggleSubtitleDisplay: ignore,
-        onToggleCuePanel: ignore,
-        onToggleWaveform: ignore,
-        onToggleMute: ignore,
-      }}
-      {...overrides}
-    />,
-  );
+  const props = {
+    playback,
+    tracks: {
+      subtitles: [],
+      targetSubtitlesId: null,
+      translationSubtitlesId: null,
+    },
+    panels: { cues: true, waveform: false },
+    callbacks: callbacks(),
+    ...overrides,
+  };
+  render(<PlayerControls {...props} />);
+  return props.callbacks;
 }
+
+const openOptions = () =>
+  fireEvent.click(screen.getByRole("button", { name: "Playback options" }));
 
 describe("PlayerControls", () => {
   it("draws each loaded stretch behind the seek bar", () => {
@@ -53,44 +62,30 @@ describe("PlayerControls", () => {
     expect(stretch?.style.width).toBe("50%");
   });
 
-  it("names the waveform toggle for showing the waveform", () => {
+  it("keeps its buttons on one row", () => {
     renderControls();
     expect(
-      screen.getByRole("button", { name: "Waveform" }).getAttribute("title"),
-    ).toBe("Show the waveform");
+      screen
+        .getByRole("button", { name: "Play (Space)" })
+        .parentElement?.classList.contains("flex-nowrap"),
+    ).toBe(true);
   });
 
-  it("offers no distraction-free toggle", () => {
+  it("leaves the panel toggles to the app footer", () => {
     renderControls();
-    expect(
-      screen.queryByRole("button", { name: /distraction-free/ }),
-    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Waveform" })).toBeNull();
   });
 
-  it("offers no fullscreen toggle where the browser has none", () => {
+  it("offers no fullscreen toggle", () => {
     renderControls();
     expect(screen.queryByRole("button", { name: /fullscreen/ })).toBeNull();
   });
 
-  it("names the fullscreen toggle for leaving fullscreen", () => {
-    renderControls({
-      panels: { cues: true, waveform: false, isFullscreen: true },
-      callbacks: {
-        onTogglePlay: ignore,
-        onSeek: ignore,
-        onSkip: ignore,
-        onVolumeChange: ignore,
-        onSpeedChange: ignore,
-        onToggleSubtitleDisplay: ignore,
-        onToggleCuePanel: ignore,
-        onToggleWaveform: ignore,
-        onToggleMute: ignore,
-        onToggleFullscreen: ignore,
-      },
-    });
+  it("offers no playback speed list in the bar", () => {
+    renderControls();
     expect(
-      screen.getByRole("button", { name: "Leave fullscreen (F)" }),
-    ).toBeDefined();
+      screen.queryByRole("combobox", { name: "Playback speed" }),
+    ).toBeNull();
   });
 });
 
@@ -103,5 +98,62 @@ describe("PlayerControls mute button", () => {
   it("offers to unmute while muted", () => {
     renderControls({ playback: { ...playback, isMuted: true } });
     expect(screen.getByRole("button", { name: "Unmute (M)" })).toBeTruthy();
+  });
+});
+
+describe("PlayerControls playback options", () => {
+  it("checks the current speed", () => {
+    renderControls({ playback: { ...playback, speed: 1.5 } });
+    openOptions();
+    expect(
+      screen
+        .getByRole("menuitemcheckbox", { name: "1.5× speed" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
+  it("changes the speed to the one chosen", () => {
+    const { onSpeedChange } = renderControls();
+    openOptions();
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "2× speed" }));
+    expect(onSpeedChange).toHaveBeenCalledWith(2);
+  });
+
+  it("closes once a speed is chosen", () => {
+    renderControls();
+    openOptions();
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "2× speed" }));
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("checks Show subtitles while the subtitles show", () => {
+    renderControls();
+    openOptions();
+    expect(
+      screen
+        .getByRole("menuitemcheckbox", { name: "Show subtitles" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
+  it("unchecks Show subtitles while the subtitles are hidden", () => {
+    renderControls({
+      panels: { cues: true, waveform: false, areSubtitlesHidden: true },
+    });
+    openOptions();
+    expect(
+      screen
+        .getByRole("menuitemcheckbox", { name: "Show subtitles" })
+        .getAttribute("aria-checked"),
+    ).toBe("false");
+  });
+
+  it("hides or shows the subtitles from Show subtitles", () => {
+    const { onToggleSubtitles } = renderControls();
+    openOptions();
+    fireEvent.click(
+      screen.getByRole("menuitemcheckbox", { name: "Show subtitles" }),
+    );
+    expect(onToggleSubtitles).toHaveBeenCalledOnce();
   });
 });

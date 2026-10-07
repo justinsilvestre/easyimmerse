@@ -6,7 +6,7 @@ export type PlayerShortcutCallbacks = Pick<
   PlayerCallbacks,
   "onTogglePlay" | "onSkip" | "onToggleMute"
 > & {
-  /** Plays the cue shown now again from its start, or the last few seconds between cues. */
+  /** Plays the cue shown now again from its start, or the last few seconds before the first cue. */
   onReplay: () => void;
 };
 

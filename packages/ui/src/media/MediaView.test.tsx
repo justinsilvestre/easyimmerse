@@ -1,8 +1,11 @@
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { doubleClickMs } from "../components/gestureTiming.ts";
+import { stagePictureAttribute } from "../player/stagePicture.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { exampleCues, exampleTranslationCues } from "./exampleCues.ts";
 import { MediaView } from "./MediaView.tsx";
+import type { PlayerCallbacks } from "./PlayerControls.tsx";
 
 beforeEach(() => vi.useFakeTimers());
 
@@ -15,11 +18,33 @@ const ignore = () => undefined;
 
 type ViewProps = Parameters<typeof MediaView>[0];
 
+function playerCallbacks(): PlayerCallbacks {
+  return {
+    onTogglePlay: vi.fn(),
+    onSeek: ignore,
+    onSkip: ignore,
+    onVolumeChange: ignore,
+    onSpeedChange: ignore,
+    onToggleSubtitleDisplay: ignore,
+    onToggleSubtitles: ignore,
+    onToggleCuePanel: ignore,
+    onToggleWaveform: ignore,
+    onToggleMute: ignore,
+    onToggleFullscreen: vi.fn(),
+  };
+}
+
 function renderView(overrides: Partial<ViewProps> = {}) {
   renderWithAppStore(
     <MediaView
       media={{ title: "Episode 1", projectName: "Alpha" }}
-      stage={<div role="img" aria-label="Picture" />}
+      stage={
+        <div
+          role="img"
+          aria-label="Picture"
+          {...{ [stagePictureAttribute]: "" }}
+        />
+      }
       playback={{
         isPlaying: true,
         currentMs: 6_200,
@@ -37,17 +62,7 @@ function renderView(overrides: Partial<ViewProps> = {}) {
       waveform={null}
       panels={{ cues: false, waveform: false }}
       subtitleDisplay="both"
-      playerCallbacks={{
-        onTogglePlay: ignore,
-        onSeek: ignore,
-        onSkip: ignore,
-        onVolumeChange: ignore,
-        onSpeedChange: ignore,
-        onToggleSubtitleDisplay: ignore,
-        onToggleCuePanel: ignore,
-        onToggleWaveform: ignore,
-        onToggleMute: ignore,
-      }}
+      playerCallbacks={playerCallbacks()}
       onBack={ignore}
       wordGestures={{ onWordClick: ignore, onWordDoubleClick: ignore }}
       onLookup={ignore}
@@ -146,5 +161,74 @@ describe("MediaView", () => {
     expect(
       screen.getByRole("dialog").closest('[data-theme="dark"]'),
     ).toBeNull();
+  });
+
+  it("hides the subtitles over the video while they are hidden", () => {
+    renderView({
+      panels: { cues: false, waveform: false, areSubtitlesHidden: true },
+    });
+    expect(screen.queryByRole("button", { name: "Hund" })).toBeNull();
+  });
+
+  it("shows the panel toggles in the app footer", () => {
+    renderView();
+    expect(
+      screen.getByRole("button", { name: "Waveform" }).closest("footer"),
+    ).not.toBeNull();
+  });
+});
+
+describe("MediaView stage clicks", () => {
+  function renderWithSpies(callbacks: Partial<PlayerCallbacks> = {}) {
+    const spies = { ...playerCallbacks(), ...callbacks };
+    renderView({ playerCallbacks: spies });
+    return spies;
+  }
+
+  const waitOutDoubleClick = () =>
+    act(() => vi.advanceTimersByTime(doubleClickMs));
+
+  it("plays or pauses once a click on the picture is not followed by another", () => {
+    const { onTogglePlay } = renderWithSpies();
+    fireEvent.click(picture());
+    waitOutDoubleClick();
+    expect(onTogglePlay).toHaveBeenCalledOnce();
+  });
+
+  it("fills the screen when the picture is double-clicked", () => {
+    const { onToggleFullscreen } = renderWithSpies();
+    fireEvent.click(picture());
+    fireEvent.click(picture());
+    expect(onToggleFullscreen).toHaveBeenCalledOnce();
+  });
+
+  it("neither plays nor pauses when the picture is double-clicked", () => {
+    const { onTogglePlay } = renderWithSpies();
+    fireEvent.click(picture());
+    fireEvent.click(picture());
+    waitOutDoubleClick();
+    expect(onTogglePlay).not.toHaveBeenCalled();
+  });
+
+  it("plays or pauses at once where the screen cannot be filled", () => {
+    const { onTogglePlay } = renderWithSpies({
+      onToggleFullscreen: undefined,
+    });
+    fireEvent.click(picture());
+    expect(onTogglePlay).toHaveBeenCalledOnce();
+  });
+
+  it("leaves fullscreen alone when the subtitles are double-clicked", () => {
+    const { onToggleFullscreen } = renderWithSpies();
+    fireEvent.click(subtitleWord());
+    fireEvent.click(subtitleWord());
+    expect(onToggleFullscreen).not.toHaveBeenCalled();
+  });
+
+  it("leaves fullscreen alone when the header is double-clicked", () => {
+    const { onToggleFullscreen } = renderWithSpies();
+    fireEvent.click(screen.getByRole("heading", { name: "Episode 1" }));
+    fireEvent.click(screen.getByRole("heading", { name: "Episode 1" }));
+    expect(onToggleFullscreen).not.toHaveBeenCalled();
   });
 });

@@ -1,12 +1,11 @@
-import { actions } from "@easyimmerse/state";
 import type { Rational } from "@easyimmerse/types";
 import { Music } from "lucide-react";
 import { useRef, useState } from "react";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { MediaElement } from "./MediaElement.tsx";
 import { PlayerFailure } from "./PlayerFailure.tsx";
 import type { PlayerSource } from "./PlayerSource.ts";
 import type { PlayerStatus } from "./PlayerStatus.ts";
+import { stagePictureAttribute } from "./stagePicture.ts";
 
 /**
  * The player as it fills the media screen's black stage: the video, or artwork standing in for an audio file,
@@ -65,10 +64,7 @@ function PlayerBody({
 /** A failure belongs to the source it happened on; a new source starts clean. */
 type SourceFailure = { url: string; cause: string };
 
-/**
- * The video, or the artwork of an audio file, filling the stage. A click on the picture plays or pauses, as in other players;
- * the subtitles and pop-ups drawn over the stage are its siblings, so a click on them does not reach it.
- */
+/** The video, or the artwork of an audio file, filling the stage and marked as its picture, which the media screen makes clickable. */
 function PlayerMedia({
   name,
   source,
@@ -82,15 +78,11 @@ function PlayerMedia({
 }) {
   const elementRef = useRef<HTMLVideoElement>(null);
   const [failure, setFailure] = useState<SourceFailure | null>(null);
-  const dispatch = useAppDispatch();
   return (
     <>
-      {/* Space and K play and pause from the keyboard; the click is the pointer's way to do the same. */}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: see above */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: see above */}
       <div
         className="flex h-full w-full items-center justify-center"
-        onClick={() => dispatch(actions.playToggleRequested())}
+        {...{ [stagePictureAttribute]: "" }}
       >
         <MediaElement
           source={source}
