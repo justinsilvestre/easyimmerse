@@ -58,22 +58,23 @@ export function useWordLookup<S>({
     entryIndex: number | null,
     dictionaries: readonly DictionarySummary[],
   ) => flashcardFieldsFromLookup(results, entryIndex, languages, dictionaries);
-  const endInFlashcard = (
-    word: string,
-    source: S | null,
-    lookupFields: LookupFlashcardFields | null,
-    lateFields?: Promise<LookupFlashcardFields | null>,
-  ) =>
-    control.leaveFor(() =>
-      startFlashcard(
-        lookupFields?.word ?? word,
-        source,
-        lookupFields,
-        lateFields,
-      ),
-    );
-  /** Turns a word into a flashcard once its lookup answers, showing the word in the pop-up meanwhile when it comes from the text. */
-  const startFlashcardFor = (request: LookupRequest<S>) => {
+  /** Closes the pop-up for a flashcard that `start` starts, taking its word from the lookup when one answered. */
+  const endingIn =
+    (start: StartFlashcardFromLookup<S>): StartFlashcardFromLookup<S> =>
+    (word, source, lookupFields, lateFields) =>
+      control.leaveFor(() =>
+        start(lookupFields?.word ?? word, source, lookupFields, lateFields),
+      );
+  const endInFlashcard = endingIn(startFlashcard);
+  /**
+   * Turns a word into a flashcard once its lookup answers, showing the word in the pop-up meanwhile when it comes from the text.
+   * `start` starts the flashcard, in place of the `startFlashcard` the hook was given.
+   */
+  const startFlashcardFor = (
+    request: LookupRequest<S>,
+    start: StartFlashcardFromLookup<S> = startFlashcard,
+  ) => {
+    const end = endingIn(start);
     control.keepOpen();
     if (request.occurrence !== null && !control.showsOccurrence(request))
       control.open(request);
@@ -90,13 +91,8 @@ export function useWordLookup<S>({
       ),
       (results) =>
         results === tooSlow
-          ? endInFlashcard(
-              request.term,
-              request.source,
-              null,
-              answer.then(fieldsOf),
-            )
-          : endInFlashcard(request.term, request.source, fieldsOf(results)),
+          ? end(request.term, request.source, null, answer.then(fieldsOf))
+          : end(request.term, request.source, fieldsOf(results)),
     );
   };
   return {

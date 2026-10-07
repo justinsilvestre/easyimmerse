@@ -2,6 +2,7 @@ import { resetBackend } from "@easyimmerse/backend";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  findCreatedDraft,
   findSubtitles,
   renderMediaScreen,
 } from "../testSupport/renderMediaScreen.tsx";
@@ -56,6 +57,23 @@ describe("MediaScreen lookup cursor", () => {
       renderMediaScreen();
       focusAndPress(await cardWord(1, "The"), "ArrowRight", "l");
       await vi.waitFor(() => expect(fieldValue()).toBe("cat"));
+    });
+
+    it("saves a flashcard from the sentence of the word it moved to with C", async () => {
+      const { client } = renderMediaScreen();
+      focusAndPress(await cardWord(2, "The"), "ArrowRight", "c");
+      expect(await findCreatedDraft(client)).toMatchObject({
+        content: { text_context: "The dog wants to eat.\nIt is hungry." },
+      });
+    });
+
+    it("opens a flashcard for the word it moved to with E", async () => {
+      renderMediaScreen();
+      focusAndPress(await cardWord(2, "The"), "ArrowRight", "e");
+      expect(
+        ((await screen.findByLabelText("Sentence (de)")) as HTMLTextAreaElement)
+          .value,
+      ).toBe("The dog wants to eat.\nIt is hungry.");
     });
   });
 

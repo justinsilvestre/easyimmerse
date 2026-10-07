@@ -7,13 +7,13 @@ import type {
   LookupResponse,
   NewFlashcard,
 } from "@easyimmerse/types";
-import { act, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
+import { vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { NavigationActionsContext } from "../navigationContext.ts";
 import { MediaScreen } from "../screens/MediaScreen.tsx";
 import { createFakeBackendClient } from "./createFakeBackendClient.ts";
-import { doubleClick } from "./doubleClick.ts";
 import { fixtureProject, fixtureResponses } from "./fixtureResponses.ts";
 import { directPlaybackRoutes, fakeServer } from "./mediaFixtureResponses.ts";
 import { renderWithAppStore } from "./renderWithAppStore.tsx";
@@ -188,10 +188,24 @@ export function createdDraftOf(
   return (bodyOf(request) as NewFlashcard | undefined)?.draft;
 }
 
-/** Double-clicks a word and waits for the flashcard editor, which opens once the word's lookup answers. */
-export async function doubleClickWord(element: HTMLElement) {
-  doubleClick(element);
+/** Starts a flashcard for a word with the E key while the mouse is on it, and waits for the editor, which opens once the word's lookup answers. */
+export async function openFlashcardFor(element: HTMLElement) {
+  fireEvent.pointerEnter(element, { pointerType: "mouse" });
+  fireEvent.keyDown(document.body, { key: "e" });
   await screen.findByRole("form", { name: "Flashcard" });
+}
+
+/** The draft of the first flashcard the screen created, once its request has been sent. */
+export async function findCreatedDraft(
+  client: ReturnType<typeof createFakeBackendClient>,
+) {
+  return vi.waitFor(() => {
+    const draft = createdDraftOf(
+      requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
+    );
+    if (!draft) throw new Error("No flashcard has been created yet.");
+    return draft;
+  });
 }
 
 /** The play and pause requests made so far, in order. */

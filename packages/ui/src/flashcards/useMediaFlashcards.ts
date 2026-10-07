@@ -9,6 +9,7 @@ import {
   createFlashcardId,
   flashcardsOnWaveform,
   segmentIdOf,
+  startedFlashcard,
 } from "./editedFlashcard.ts";
 import type { EditorAction } from "./editFlashcard.ts";
 import { flashcardRetiming } from "./flashcardRetiming.ts";
@@ -125,6 +126,25 @@ export function useMediaFlashcards(
             ? dispatchEdited({ type: "lookupAnswered", draft, fields })
             : fail(),
         fail,
+      );
+    },
+    /**
+     * Saves a new card at once, without opening it, and offers Undo once it is saved, leaving the open card as it is.
+     * `lateFields` is as for `start`: the save waits for them as a save from the editor would.
+     */
+    create: (
+      draft: FlashcardDraft,
+      lateFields?: Promise<LookupFlashcardFields | null>,
+    ) => {
+      if (lateFields) saving.rememberLookup(draft, lateFields);
+      saving.saveUnopened(
+        startedFlashcard({
+          type: "started",
+          draft,
+          awaitsLookup: !!lateFields,
+          flashcardId: createFlashcardId(),
+          session: createCardSession(),
+        }),
       );
     },
     open,

@@ -22,6 +22,7 @@ import type { FrameSource } from "../player/captureVideoFrame.ts";
 import { FrameCapturerContext } from "../player/frameCapturerContext.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { createFakeFrameCapturer } from "../testSupport/createFakeFrameCapturer.ts";
+import { doubleClick } from "../testSupport/doubleClick.ts";
 import {
   fixtureProject,
   fixtureResponses,
@@ -32,8 +33,9 @@ import { fakeServer } from "../testSupport/mediaFixtureResponses.ts";
 import {
   bodyOf,
   createdDraftOf,
-  doubleClickWord,
+  findCreatedDraft,
   findSubtitles,
+  openFlashcardFor,
   renderMediaScreen,
   requestsTo,
   savedFlashcard,
@@ -110,7 +112,7 @@ async function startFlashcardBeforeProbe(hasPictures: boolean) {
   const { capturer, answer } = createWaitingFrameCapturer();
   const rendered = renderBrowserVideoScreen(file, capturer);
   const list = await findSubtitles();
-  await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+  await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
   answer(hasPictures);
   await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(hasPictures));
   // The screen learns the answer only after the probe's own callback, which may run after the check above.
@@ -136,7 +138,7 @@ async function savedScreenshotOfNewFlashcard(
   client: ReturnType<typeof createFakeBackendClient>,
 ) {
   const list = await findSubtitles();
-  await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+  await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
   return saveOpenFlashcard(client);
 }
 
@@ -248,19 +250,19 @@ describe("MediaScreen", () => {
     );
   });
 
-  it("opens the flashcard editor with a word double-clicked in the subtitles", async () => {
+  it("opens the flashcard editor for the word under the mouse with the E key", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+    await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
     expect(
       (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
     ).toBe("fressen");
   });
 
-  it("takes a new flashcard's sentence from the cue whose word was double-clicked", async () => {
+  it("takes a new flashcard's sentence from the cue of the word it was started from", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
-    await doubleClickWord(within(list).getByRole("button", { name: "dog" }));
+    await openFlashcardFor(within(list).getByRole("button", { name: "dog" }));
     expect(
       (screen.getByLabelText("Sentence (de)") as HTMLTextAreaElement).value,
     ).toBe("The dog wants to eat.\nIt is hungry.");
@@ -269,25 +271,140 @@ describe("MediaScreen", () => {
   it("saves a new flashcard in the project", async () => {
     const { client } = renderMediaScreen();
     const list = await findSubtitles();
-    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+    await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await vi.waitFor(() =>
-      expect(
-        createdDraftOf(
-          requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
-        ),
-      ).toMatchObject({ media_file_id: "m1", content: { word: "fressen" } }),
-    );
+    expect(await findCreatedDraft(client)).toMatchObject({
+      media_file_id: "m1",
+      content: { word: "fressen" },
+    });
   });
 
-  it("tells the user once the flashcard is saved", async () => {
-    renderMediaScreen();
-    const list = await findSubtitles();
-    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(
-      await screen.findByText("Saved the flashcard for “fressen”."),
-    ).toBeDefined();
+  describe("on a double-click on a word of the subtitles", () => {
+    async function doubleClickWord(word: string) {
+      const rendered = renderMediaScreen();
+      const list = await findSubtitles();
+      doubleClick(within(list).getByRole("button", { name: word }));
+      return rendered;
+    }
+
+    it("saves a flashcard for it filled from its lookup", async () => {
+      const { client } = await doubleClickWord("cat");
+      expect(await findCreatedDraft(client)).toMatchObject({
+        media_file_id: "m1",
+        content: { word: "fressen" },
+      });
+    });
+
+    it("takes the flashcard's sentence from the word's cue", async () => {
+      const { client } = await doubleClickWord("dog");
+      expect(await findCreatedDraft(client)).toMatchObject({
+        content: { text_context: "The dog wants to eat.\nIt is hungry." },
+      });
+    });
+
+    it("tells the user once the flashcard is saved", async () => {
+      await doubleClickWord("cat");
+      expect(
+        await screen.findByText("Saved the flashcard for “fressen”."),
+      ).toBeDefined();
+    });
+
+    it("opens no flashcard in the editor", async () => {
+      await doubleClickWord("cat");
+      await screen.findByText("Saved the flashcard for “fressen”.");
+      expect(screen.queryByRole("form", { name: "Flashcard" })).toBeNull();
+    });
+
+    it("shows no lasting bar above the video once the flashcard is saved", async () => {
+      await doubleClickWord("cat");
+      await screen.findByText("Saved the flashcard for “fressen”.");
+      expect(screen.queryByText("Flashcard saved to the project.")).toBeNull();
+    });
+  });
+
+  it("saves a flashcard for no word from the subtitle shown with the New flashcard button", async () => {
+    const { client } = renderMediaScreen();
+    await findSubtitles();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "New flashcard from this subtitle (C)",
+      }),
+    );
+    expect(await findCreatedDraft(client)).toMatchObject({
+      content: { word: "" },
+    });
+  });
+
+  describe("with the C key", () => {
+    it("saves a flashcard for the word under the mouse, filled from its lookup", async () => {
+      const { client } = renderMediaScreen();
+      const list = await findSubtitles();
+      fireEvent.pointerEnter(
+        within(list).getByRole("button", { name: "dog" }),
+        {
+          pointerType: "mouse",
+        },
+      );
+      fireEvent.keyDown(document.body, { key: "c" });
+      expect(await findCreatedDraft(client)).toMatchObject({
+        content: {
+          word: "fressen",
+          text_context: "The dog wants to eat.\nIt is hungry.",
+        },
+      });
+    });
+
+    it("saves a flashcard for no word while the mouse is on no word", async () => {
+      const { client } = renderMediaScreen();
+      await findSubtitles();
+      fireEvent.keyDown(document.body, { key: "c" });
+      expect(await findCreatedDraft(client)).toMatchObject({
+        content: { word: "" },
+      });
+    });
+
+    it("leaves the flashcard open in the editor as it is", async () => {
+      const { client } = renderMediaScreen();
+      const list = await findSubtitles();
+      await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
+      fireEvent.pointerEnter(
+        within(list).getByRole("button", { name: "dog" }),
+        {
+          pointerType: "mouse",
+        },
+      );
+      fireEvent.keyDown(document.body, { key: "c" });
+      await findCreatedDraft(client);
+      expect(
+        (screen.getByLabelText("Sentence (de)") as HTMLTextAreaElement).value,
+      ).toBe("The cat is sleeping.");
+    });
+  });
+
+  describe("with the E key", () => {
+    it("opens a flashcard for no word while the mouse is on no word", async () => {
+      renderMediaScreen();
+      await findSubtitles();
+      fireEvent.keyDown(document.body, { key: "e" });
+      expect(
+        ((await screen.findByLabelText("Word (de)")) as HTMLTextAreaElement)
+          .value,
+      ).toBe("");
+    });
+
+    it("starts nothing while a flashcard is open in the editor", async () => {
+      renderMediaScreen();
+      const list = await findSubtitles();
+      await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
+      fireEvent.pointerEnter(
+        within(list).getByRole("button", { name: "dog" }),
+        {
+          pointerType: "mouse",
+        },
+      );
+      fireEvent.keyDown(document.body, { key: "e" });
+      expect(screen.queryByRole("dialog", { name: "Dictionary" })).toBeNull();
+    });
   });
 
   it("starts with the waveform strip hidden", () => {
@@ -295,15 +412,6 @@ describe("MediaScreen", () => {
     expect(
       screen.queryByRole("slider", { name: "Playback position" }),
     ).toBeNull();
-  });
-
-  it("shows no lasting bar above the video once a flashcard is saved", async () => {
-    renderMediaScreen();
-    const list = await findSubtitles();
-    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await screen.findByText("Saved the flashcard for “fressen”.");
-    expect(screen.queryByText("Flashcard saved to the project.")).toBeNull();
   });
 
   it("opens a saved flashcard from the mark on its cue's card", async () => {
@@ -349,7 +457,7 @@ describe("MediaScreen", () => {
   it("seeks to a new flashcard's clip start once it opens", async () => {
     const { effects } = renderMediaScreen();
     const list = await findSubtitles();
-    await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+    await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
     await vi.waitFor(() =>
       expect(
         effects.calls.filter((call) => call.type === "seekPlayer").at(-1),
@@ -364,7 +472,7 @@ describe("MediaScreen", () => {
     async function openFlashcard() {
       const rendered = renderMediaScreen();
       const list = await findSubtitles();
-      await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+      await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
       return rendered;
     }
 
@@ -562,7 +670,7 @@ describe("MediaScreen", () => {
 
     it("moves the clip of a new flashcard that is not saved yet", async () => {
       const { client } = await renderWithWaveform();
-      await doubleClickWord(
+      await openFlashcardFor(
         within(screen.getByRole("list", { name: "Subtitles" })).getByRole(
           "button",
           { name: "cat" },
@@ -591,7 +699,7 @@ describe("MediaScreen", () => {
     it("shows the screenshot captured from the file", async () => {
       renderBrowserVideoScreen(browserVideo());
       const list = await findSubtitles();
-      await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+      await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
       const thumbnail = await screen.findByAltText("Screenshot from the video");
       expect(thumbnail.getAttribute("src")).toBe("frame-at-1");
     });
@@ -618,7 +726,7 @@ describe("MediaScreen", () => {
       const { capturer } = createWaitingFrameCapturer();
       renderBrowserVideoScreen(browserVideo(), capturer);
       const list = await findSubtitles();
-      await doubleClickWord(within(list).getByRole("button", { name: "cat" }));
+      await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
       expect(screen.queryByLabelText("Include the screenshot")).toBeNull();
     });
 

@@ -29,7 +29,8 @@ import {
  * and resumes it when closed, unless the lookup led on to a flashcard or to the dictionaries settings.
  * Keeps the one lookup cursor of the subtitles, which the mouse and the keyboard move alike, wherever the subtitles are shown.
  * While the screen that `screenRef` marks is in reach, the L key looks up from the cursor as a click there would,
- * or opens the pop-up's search field when there is no cursor.
+ * or opens the pop-up's search field when there is no cursor,
+ * and the C key starts a flashcard through `startFlashcard` from the cursor as a double-click there would, or for no word when there is no cursor.
  * Returns the gestures for the subtitles' words, which keep their identity across renders,
  * the word the pop-up shows, which keeps its identity while it shows the same word and is highlighted only while there is no cursor,
  * the cursor's place, which keeps its identity while the cursor stays,
@@ -54,6 +55,16 @@ export function useSubtitleLookup(
     else lookup.openSearch();
   };
   useKeyboardShortcut("l", lookUpCursor, screenRef);
+  const startFlashcardAtCursor = (start: StartFlashcardFromLookup<Cue>) => {
+    if (cursor?.hit.element.isConnected)
+      lookup.startFlashcardFor(requestFor(cursor.hit, cursor.cue), start);
+    else start("", null, null);
+  };
+  useKeyboardShortcut(
+    "c",
+    () => startFlashcardAtCursor(startFlashcard),
+    screenRef,
+  );
   const popup = lookup.popup && {
     anchored: lookup.popup.anchored,
     props: {
@@ -82,6 +93,11 @@ export function useSubtitleLookup(
     cursor: cursor?.position ?? null,
     popup,
     openSearch: lookup.openSearch,
+    /**
+     * Starts a flashcard through `start` for the word at the cursor once its lookup answers, as a double-click there would,
+     * or, when there is no cursor, for no word.
+     */
+    startFlashcardAtCursor,
     wordGestures,
   };
 }

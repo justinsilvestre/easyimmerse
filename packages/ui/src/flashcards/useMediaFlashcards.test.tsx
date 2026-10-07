@@ -307,6 +307,81 @@ describe("useMediaFlashcards", () => {
     await waitUntil(() => expect(held).toHaveLength(1));
   });
 
+  describe("when a card is created to be saved at once", () => {
+    it("opens nothing in the editor", () => {
+      const { result } = renderFlashcards();
+      act(() => result.current.create(createDraft("Hund")));
+      expect(result.current.edited).toBeNull();
+    });
+
+    it("sends the card", async () => {
+      const { result, held } = renderFlashcards();
+      act(() => result.current.create(createDraft("Hund")));
+      await waitUntil(() => expect(held).toHaveLength(1));
+    });
+
+    it("offers Undo once the card is saved", async () => {
+      const { result, held, letSavesThrough, notices } = renderFlashcards();
+      act(() => result.current.create(createDraft("Hund")));
+      await waitUntil(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      await waitUntil(() =>
+        expect(notices()).toEqual([
+          ["Saved the flashcard for “Hund”.", "Undo"],
+        ]),
+      );
+    });
+
+    it("leaves the open card open", async () => {
+      const { result, held } = renderFlashcards();
+      act(() => result.current.start(createDraft("Katze")));
+      act(() => result.current.create(createDraft("Hund")));
+      await waitUntil(() => expect(held).toHaveLength(1));
+      expect(result.current.edited?.editor.content.word).toBe("Katze");
+    });
+
+    it("lists the card among the flashcards not saved when its save fails", async () => {
+      const { result, held, letSavesThrough, unsavedWords } = renderFlashcards({
+        savesFail: true,
+      });
+      act(() => result.current.create(createDraft("Hund")));
+      await waitUntil(() => expect(held).toHaveLength(1));
+      await letSavesThrough();
+      await waitUntil(() => expect(unsavedWords()).toEqual(["Hund"]));
+    });
+
+    describe("while its word's lookup has yet to answer", () => {
+      function createWaitingCard() {
+        const rendered = renderFlashcards();
+        const lookup = createLateLookup();
+        act(() =>
+          rendered.result.current.create(createDraft("Hund"), lookup.fields),
+        );
+        return { ...rendered, lookup };
+      }
+
+      it("sends nothing", async () => {
+        const { held } = createWaitingCard();
+        await flushPendingWork();
+        expect(held).toHaveLength(0);
+      });
+
+      it("saves the card filled from the lookup once it answers", async () => {
+        const { held, letSavesThrough, posts, lookup } = createWaitingCard();
+        await lookup.answer(lookedUp);
+        await waitUntil(() => expect(held).toHaveLength(1));
+        await letSavesThrough();
+        expect(sentWord(posts()[0])).toBe("Hündchen");
+      });
+
+      it("saves the card as it is once the save has waited its limit", async () => {
+        const { held } = createWaitingCard();
+        await act(() => vi.advanceTimersByTimeAsync(saveLookupWaitMs));
+        expect(held).toHaveLength(1);
+      });
+    });
+  });
+
   describe("when another card is started while a save waits for its lookup", () => {
     async function startAnotherWhileWaiting() {
       const rendered = renderFlashcards();
