@@ -185,13 +185,9 @@ describe("MediaView stage clicks", () => {
     return spies;
   }
 
-  const waitOutDoubleClick = () =>
-    act(() => vi.advanceTimersByTime(doubleClickMs));
-
-  it("plays or pauses once a click on the picture is not followed by another", () => {
+  it("plays or pauses at once when the picture is clicked", () => {
     const { onTogglePlay } = renderWithSpies();
     fireEvent.click(picture());
-    waitOutDoubleClick();
     expect(onTogglePlay).toHaveBeenCalledOnce();
   });
 
@@ -202,12 +198,19 @@ describe("MediaView stage clicks", () => {
     expect(onToggleFullscreen).toHaveBeenCalledOnce();
   });
 
-  it("neither plays nor pauses when the picture is double-clicked", () => {
+  it("plays or pauses back when the picture is double-clicked", () => {
     const { onTogglePlay } = renderWithSpies();
     fireEvent.click(picture());
     fireEvent.click(picture());
-    waitOutDoubleClick();
-    expect(onTogglePlay).not.toHaveBeenCalled();
+    expect(onTogglePlay).toHaveBeenCalledTimes(2);
+  });
+
+  it("takes two clicks further apart than a double-click as two single clicks", () => {
+    const { onToggleFullscreen } = renderWithSpies();
+    fireEvent.click(picture());
+    act(() => vi.advanceTimersByTime(doubleClickMs));
+    fireEvent.click(picture());
+    expect(onToggleFullscreen).not.toHaveBeenCalled();
   });
 
   it("plays or pauses at once where the screen cannot be filled", () => {

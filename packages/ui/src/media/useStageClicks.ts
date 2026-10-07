@@ -5,9 +5,8 @@ import { stagePictureAttribute } from "../player/stagePicture.ts";
 
 /**
  * Returns the click handler for the stage, which acts only on clicks on its picture:
- * a click plays or pauses, and a double-click fills the screen or leaves it.
- * Where the screen cannot be filled, a click plays or pauses at once; elsewhere it waits out the double-click interval,
- * so that a double-click does not also play and pause.
+ * a click plays or pauses at once, and a double-click fills the screen or leaves it.
+ * The second click of a double-click plays or pauses once more, so that a double-click leaves playback as it was.
  */
 export function useStageClicks(
   onTogglePlay: () => void,
@@ -16,13 +15,13 @@ export function useStageClicks(
   const timer = useTimer();
   return (event: MouseEvent<HTMLElement>) => {
     if (!isOnPicture(event)) return;
-    if (onToggleFullscreen === undefined) {
-      onTogglePlay();
-    } else if (timer.isPending()) {
+    onTogglePlay();
+    if (onToggleFullscreen === undefined) return;
+    if (timer.isPending()) {
       timer.cancel();
       onToggleFullscreen();
     } else {
-      timer.restart(doubleClickMs, onTogglePlay);
+      timer.restart(doubleClickMs, () => undefined);
     }
   };
 }
