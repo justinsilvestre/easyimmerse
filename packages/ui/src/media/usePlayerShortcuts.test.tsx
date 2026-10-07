@@ -12,6 +12,7 @@ function PlayerShortcutsProbe({ onCall }: { onCall: (call: string) => void }) {
       onTogglePlay: () => onCall("togglePlay"),
       onSkip: (direction) => onCall(`skip ${direction}`),
       onReplay: () => onCall("replay"),
+      onToggleMute: () => onCall("toggleMute"),
     },
     scopeRef,
   );

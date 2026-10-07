@@ -7,7 +7,7 @@ import { exampleResults } from "./exampleLookup.ts";
 import { resolveExampleMediaUrl } from "./exampleMedia.ts";
 import type { PopupSize } from "./popupSize.ts";
 
-/** A word at a place on the page, with the pop-up standing at it. Its header's toggle switches its size. */
+/** A word at a place on the page, with the pop-up standing at it. The bar along its bottom switches its size. */
 function PopupAtWord({
   wordTop,
   initialSize,

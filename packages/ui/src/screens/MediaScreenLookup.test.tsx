@@ -82,7 +82,7 @@ async function holdTouch(element: HTMLElement) {
   fireEvent.click(element, { detail: 1 });
 }
 
-/** Rests the mouse on an element for as long as it takes to count as pointing at it. */
+/** Rests the mouse on an element for longer than it takes to look its word up. */
 async function restMouseOn(element: HTMLElement) {
   fireEvent.pointerEnter(element, { pointerType: "mouse" });
   await advance(150);
@@ -133,12 +133,22 @@ describe("MediaScreen lookup gestures", () => {
     expect(await findPopupShowing("dog")).toBeDefined();
   });
 
-  it("stays on its word when the mouse passes quickly over another", async () => {
+  it("stays on its word when the mouse sweeps over another", async () => {
     renderMediaScreen();
     const popup = await lookUpInPanel("cat");
     fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
-    await advance(100);
+    await advance(20);
     fireEvent.pointerLeave(panelWord("dog"), { pointerType: "mouse" });
+    await advance(200);
+    expect(shownWord(popup)).toBe("cat");
+  });
+
+  it("follows the mouse only once the word's lookup answers", async () => {
+    renderMediaScreen({
+      slowLookups: { "dog wants to eat.\nIt is hungry.": 300 },
+    });
+    const popup = await lookUpInPanel("cat");
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
     await advance(200);
     expect(shownWord(popup)).toBe("cat");
   });
@@ -685,5 +695,35 @@ describe("MediaScreen lookup", () => {
     expect(
       screen.getByRole("textbox", { name: "Word to look up" }),
     ).toBeDefined();
+  });
+
+  describe("with the L key while the mouse is on a word", () => {
+    it("looks the word up", async () => {
+      renderMediaScreen();
+      await findSubtitles();
+      fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+      fireEvent.keyDown(document.body, { key: "l" });
+      expect(await findPopupShowing("dog")).toBeDefined();
+    });
+
+    it("closes the pop-up when it shows that word", async () => {
+      renderMediaScreen();
+      await lookUpInPanel("cat");
+      fireEvent.pointerEnter(panelWord("cat"), { pointerType: "mouse" });
+      fireEvent.keyDown(document.body, { key: "l" });
+      expect(queryPopup()).toBeNull();
+    });
+  });
+
+  it("opens the pop-up's search field with the L key once the mouse has left the words", async () => {
+    renderMediaScreen();
+    await findSubtitles();
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    fireEvent.pointerLeave(panelWord("dog"), { pointerType: "mouse" });
+    fireEvent.keyDown(document.body, { key: "l" });
+    expect(
+      screen.getByRole<HTMLInputElement>("textbox", { name: "Word to look up" })
+        .value,
+    ).toBe("");
   });
 });

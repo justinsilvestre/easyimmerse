@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import { type ComponentProps, useRef } from "react";
 import { useNavigationActions } from "../navigationContext.ts";
 import type {
   ReaderWord,
@@ -22,7 +22,8 @@ const noHold: PopupHold = {
 /**
  * Looks up words of an ebook or text in the dictionary pop-up, with the same gestures as the subtitles' words.
  * Returns the gestures for the text's words, the pop-up's props, or null while it is closed,
- * and the words of the text the pop-up stands beside and highlights.
+ * the words of the text the pop-up stands beside and highlights,
+ * and what the L key does: look up the word under the mouse as a click on it would, or else open the search field.
  */
 export function useReaderLookup(
   languages: { target: string; translation: string },
@@ -43,14 +44,14 @@ export function useReaderLookup(
     } satisfies ComponentProps<typeof DictionaryPopup>,
   };
   const occurrence = lookup.activeOccurrence;
-  // The reader reports only hover intent, so the lookup ahead of a click starts then too.
-  const lookUpAndRestOn = (request: LookupRequest<ReaderWord>) => {
-    void lookup.hoverWord(request);
-    lookup.restOnWord(request);
-  };
+  const pointed = useRef<ReaderWord | null>(null);
   const wordGestures: ReaderWordGestures = {
     onWordClick: (word, input) => lookup.clickWord(requestFor(word), input),
-    onWordHoverIntent: (word) => lookUpAndRestOn(requestFor(word)),
+    onWordPointed: (word) => {
+      pointed.current = word;
+    },
+    onWordHover: (word) => lookup.hoverWord(requestFor(word)),
+    onWordHoverAnswered: (word) => lookup.restOnWord(requestFor(word)),
     onWordDoubleClick: (word) => lookup.startFlashcardFor(requestFor(word)),
     onWordHold: (word) => lookup.startFlashcardFor(requestFor(word)),
   };
@@ -62,6 +63,11 @@ export function useReaderLookup(
       ? { word: occurrence.source, matchedLength: occurrence.length }
       : undefined,
     openSearch: lookup.openSearch,
+    lookUpPointedWord: () => {
+      if (pointed.current)
+        lookup.clickWord(requestFor(pointed.current), "keyboard");
+      else lookup.openSearch();
+    },
     close: lookup.close,
   };
 }

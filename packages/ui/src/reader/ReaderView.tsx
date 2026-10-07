@@ -65,6 +65,8 @@ export type ReaderCallbacks = ReaderWordGestures & {
   onBack: () => void;
   /** Opens the dictionary pop-up with a field to type a word into. */
   onLookup: () => void;
+  /** The L key, which does what `onLookup` does unless this says otherwise, as looking up the word under the mouse. */
+  onLookupKey?: () => void;
   /** Escape, or a click or tap beside the dictionary pop-up and off the words, which closes it. */
   onDismissLookup: () => void;
   /** The pointer entering or leaving the dictionary pop-up. */
@@ -206,14 +208,16 @@ export function ReaderView(props: ReaderViewProps) {
       searchInput.current?.focus();
       searchInput.current?.select();
     },
-    onLookup: callbacks.onLookup,
+    onLookup: callbacks.onLookupKey ?? callbacks.onLookup,
     onEscape: callbacks.onDismissLookup,
   });
 
   const wordPointer = useWordPointer(chapterIndex, props.language, {
     onWordClick: callbacks.onWordClick,
     onWordDoubleClick: callbacks.onWordDoubleClick,
-    onWordHoverIntent: callbacks.onWordHoverIntent,
+    onWordPointed: callbacks.onWordPointed,
+    onWordHover: callbacks.onWordHover,
+    onWordHoverAnswered: callbacks.onWordHoverAnswered,
     onWordHold: callbacks.onWordHold,
     onBlankClick: (event) => {
       if (hasLookup) return callbacks.onDismissLookup();

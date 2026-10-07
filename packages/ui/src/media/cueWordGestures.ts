@@ -4,16 +4,21 @@ import type { WordGestures, WordHit } from "../components/useWordGestures.ts";
 type CueWordHandler = (hit: WordHit, cue: Cue) => void;
 
 /**
- * What the user can do to a word of a subtitle cue, each reported with the cue. Offsets count in the cue's text without markup.
- * A hover may answer with the length of the text its lookup matched, as `WordGestures` describes.
+ * What the user can do to a word of a subtitle cue, each reported with the cue, as `WordGestures` describes.
+ * Offsets count in the cue's text without markup.
  */
 export type CueWordGestures = {
   onWordClick?: CueWordHandler;
   onWordDoubleClick?: CueWordHandler;
+  onWordPointed?: (hit: WordHit | null, cue: Cue) => void;
   // A handler with nothing to answer returns nothing, as the other handlers do.
   // biome-ignore lint/suspicious/noConfusingVoidType: see above
   onWordHover?: (hit: WordHit, cue: Cue) => void | Promise<number | null>;
-  onWordHoverIntent?: CueWordHandler;
+  onWordHoverAnswered?: (
+    hit: WordHit,
+    matchedLength: number | null,
+    cue: Cue,
+  ) => void;
   onWordHold?: CueWordHandler;
 };
 
@@ -22,13 +27,17 @@ export function gesturesForCue(
   gestures: CueWordGestures,
   cue: Cue,
 ): WordGestures {
-  const bind = <R>(handler: ((hit: WordHit, cue: Cue) => R) | undefined) =>
-    handler && ((hit: WordHit) => handler(hit, cue));
+  const bind = <H, R>(handler: ((hit: H, cue: Cue) => R) | undefined) =>
+    handler && ((hit: H) => handler(hit, cue));
+  const { onWordHoverAnswered } = gestures;
   return {
     onWordClick: bind(gestures.onWordClick),
     onWordDoubleClick: bind(gestures.onWordDoubleClick),
+    onWordPointed: bind(gestures.onWordPointed),
     onWordHover: bind(gestures.onWordHover),
-    onWordHoverIntent: bind(gestures.onWordHoverIntent),
+    onWordHoverAnswered:
+      onWordHoverAnswered &&
+      ((hit, matchedLength) => onWordHoverAnswered(hit, matchedLength, cue)),
     onWordHold: bind(gestures.onWordHold),
   };
 }

@@ -209,22 +209,12 @@ describe("ClickableText", () => {
       expect(matchedText(container)).toBe("𠮷");
     });
 
-    it("highlights the character under the mouse", () => {
-      const { container } = render(<ClickableText text="映画を見る" />);
-      layOutCharacters();
-      fireEvent.pointerEnter(screen.getByRole("button"), {
-        pointerType: "mouse",
-        clientX: 50,
-        clientY: 10,
-      });
-      expect(hoveredText(container)).toBe("見");
-    });
-
-    it("grows the highlight to the text that the hover's lookup matched, within 40 ms", async () => {
-      const { container } = render(
+    /** Renders a run whose hover lookups answer with the given length, and rests the mouse on 見 until the answer. */
+    async function hoverAnswering(length: number | null) {
+      const rendered = render(
         <ClickableText
           text="映画を見る"
-          gestures={{ onWordHover: () => Promise.resolve(2) }}
+          gestures={{ onWordHover: () => Promise.resolve(length) }}
         />,
       );
       layOutCharacters();
@@ -234,7 +224,66 @@ describe("ClickableText", () => {
         clientY: 10,
       });
       await act(() => vi.advanceTimersByTimeAsync(40));
+      return rendered;
+    }
+
+    it("highlights nothing under the mouse before the hover's lookup answers", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          gestures={{ onWordHover: () => new Promise(() => undefined) }}
+        />,
+      );
+      layOutCharacters();
+      fireEvent.pointerEnter(screen.getByRole("button"), {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
+      act(() => vi.advanceTimersByTime(200));
+      expect(hoveredText(container)).toBeUndefined();
+    });
+
+    it("highlights the text that the hover's lookup matched, within 40 ms", async () => {
+      const { container } = await hoverAnswering(2);
       expect(hoveredText(container)).toBe("見る");
+    });
+
+    it("highlights the character under the mouse when the lookup matched nothing", async () => {
+      const { container } = await hoverAnswering(null);
+      expect(hoveredText(container)).toBe("見");
+    });
+
+    it("highlights the character under the mouse once it rests there, when nothing is looked up", () => {
+      const { container } = render(<ClickableText text="映画を見る" />);
+      layOutCharacters();
+      fireEvent.pointerEnter(screen.getByRole("button"), {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
+      act(() => vi.advanceTimersByTime(40));
+      expect(hoveredText(container)).toBe("見");
+    });
+
+    it("keeps the highlight while the mouse moves within the matched text", async () => {
+      const { container } = await hoverAnswering(2);
+      fireEvent.pointerMove(screen.getByRole("button"), {
+        pointerType: "mouse",
+        clientX: 70,
+        clientY: 10,
+      });
+      expect(hoveredText(container)).toBe("見る");
+    });
+
+    it("drops the highlight when the mouse moves beyond the matched text", async () => {
+      const { container } = await hoverAnswering(2);
+      fireEvent.pointerMove(screen.getByRole("button"), {
+        pointerType: "mouse",
+        clientX: 5,
+        clientY: 10,
+      });
+      expect(hoveredText(container)).toBeUndefined();
     });
 
     it("ignores a lookup's answer for a character the mouse has left", async () => {
@@ -265,21 +314,17 @@ describe("ClickableText", () => {
         clientX: 5,
         clientY: 10,
       });
+      await act(() => vi.advanceTimersByTimeAsync(40));
       await act(async () => answer(2));
       expect(hoveredText(container)).toBe("映");
     });
 
-    it("drops the highlight once the mouse leaves", () => {
-      const { container } = render(<ClickableText text="映画を見る" />);
-      layOutCharacters();
-      const run = screen.getByRole("button");
-      fireEvent.pointerEnter(run, {
+    it("drops the highlight once the mouse leaves", async () => {
+      await hoverAnswering(2);
+      fireEvent.pointerLeave(screen.getByRole("button"), {
         pointerType: "mouse",
-        clientX: 50,
-        clientY: 10,
       });
-      fireEvent.pointerLeave(run, { pointerType: "mouse" });
-      expect(hoveredText(container)).toBeUndefined();
+      expect(hoveredText(document.body)).toBeUndefined();
     });
 
     it("keeps the run one button for assistive technology", () => {

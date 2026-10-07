@@ -35,7 +35,7 @@ type Story = StoryObj<typeof meta>;
 
 export const EntriesFound: Story = {};
 
-/** Enlarged to show more of the entries, as the header's toggle makes it. */
+/** Enlarged to show more of the entries, as the bar along its bottom makes it. */
 export const Expanded: Story = {
   args: { size: "expanded" },
 };

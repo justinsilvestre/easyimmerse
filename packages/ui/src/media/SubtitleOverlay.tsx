@@ -1,4 +1,5 @@
 import type { Cue } from "@easyimmerse/types";
+import { memo } from "react";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
 import {
   type ActiveCueWord,
@@ -14,8 +15,9 @@ export type SubtitleDisplay = "both" | "target" | "translation";
  * The subtitles drawn over the video, with the words of the target language ready to be looked up.
  * The player places them, above its controls, inside a stage that is a CSS container:
  * the text grows with the stage's width, so that the words are easy to aim at on a large screen.
+ * It renders again only when its props change, so `wordGestures` must keep its identity across renders.
  */
-export function SubtitleOverlay({
+export const SubtitleOverlay = memo(function SubtitleOverlay({
   targetCue,
   translationCue,
   display,
@@ -48,4 +50,4 @@ export function SubtitleOverlay({
       )}
     </div>
   );
-}
+});

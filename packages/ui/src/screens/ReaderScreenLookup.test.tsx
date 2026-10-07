@@ -188,6 +188,24 @@ describe("ReaderScreen lookup", () => {
     ).toBeDefined();
   });
 
+  it("looks up the word under the mouse with the L key", async () => {
+    await renderReader();
+    pointAt("cat");
+    fireEvent.pointerMove(screen.getByRole("main"), {
+      ...point,
+      pointerType: "mouse",
+    });
+    fireEvent.keyDown(document.body, { key: "l" });
+    const popup = await findPopup();
+    await vi.waitFor(() =>
+      expect(
+        within(popup).getByRole<HTMLInputElement>("textbox", {
+          name: "Word to look up",
+        }).value,
+      ).toBe("cat"),
+    );
+  });
+
   it("starts a flashcard filled from the lookup on a double-click", async () => {
     await renderReader();
     pointAt("cat");

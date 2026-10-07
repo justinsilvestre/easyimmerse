@@ -8,7 +8,7 @@ const meta = {
   component: KanjiCard,
   decorators: [
     (Story) => (
-      <div className="w-[26rem] rounded-lg border border-line bg-surface p-3 text-fg">
+      <div className="w-[32rem] rounded-lg border border-line bg-surface p-3 text-fg">
         <Story />
       </div>
     ),
