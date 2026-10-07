@@ -4566,6 +4566,15 @@
             "format": "int64",
             "description": "Milliseconds since the Unix epoch.",
             "minimum": 0
+          },
+          "word_start": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.\nNull when that is not known, as for a card whose word was not taken from a cue.",
+            "minimum": 0
           }
         }
       },
@@ -4666,6 +4675,15 @@
                 "type": "null"
               }
             ]
+          },
+          "word_start": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.\nNull when that is not known, as for a card whose word was not taken from a cue.",
+            "minimum": 0
           }
         }
       },

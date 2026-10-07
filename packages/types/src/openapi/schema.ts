@@ -918,6 +918,12 @@ export interface components {
              * @description Milliseconds since the Unix epoch.
              */
             updated_at_ms: number;
+            /**
+             * Format: int32
+             * @description Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.
+             *     Null when that is not known, as for a card whose word was not taken from a cue.
+             */
+            word_start?: number | null;
         };
         /** @description Everything a flashcard can hold. L1 is the language the user already knows; L2 is the one they are learning. */
         FlashcardContent: {
@@ -939,6 +945,12 @@ export interface components {
             cue_index?: number | null;
             included_fields: components["schemas"]["FlashcardFieldKey"][];
             media_file_id?: components["schemas"]["MediaFileId"] | null;
+            /**
+             * Format: int32
+             * @description Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.
+             *     Null when that is not known, as for a card whose word was not taken from a cue.
+             */
+            word_start?: number | null;
         };
         /**
          * @description The fields of a flashcard, named as the keys of `FlashcardContent`.

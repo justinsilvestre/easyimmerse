@@ -8,6 +8,7 @@ fn draft(word: &str, media_file_id: Option<&str>) -> Value {
     json!({
         "media_file_id": media_file_id,
         "cue_index": 3,
+        "word_start": 8,
         "content": {
             "word": word,
             "word_pronunciation": "",
@@ -74,6 +75,13 @@ async fn a_created_flashcard_carries_its_content() {
     let server = spawn_test_server(false).await;
     let created = create(&server, "fressen").await;
     assert_eq!(created["content"], draft("fressen", None)["content"]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_created_flashcard_carries_where_its_word_begins() {
+    let server = spawn_test_server(false).await;
+    let created = create(&server, "fressen").await;
+    assert_eq!(created["word_start"], json!(8));
 }
 
 #[tokio::test(flavor = "multi_thread")]

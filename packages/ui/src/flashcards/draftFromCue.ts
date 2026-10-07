@@ -14,9 +14,12 @@ import { addTags } from "./parseTags.ts";
  * Starts a flashcard for a word from a subtitle cue under the project's flashcard settings:
  * the cue is the sentence, its timing the audio clip, and its middle the moment of the screenshot when the media file is known to show pictures.
  * The word's pronunciation and definitions are left empty, for the caller to fill from a dictionary or the user to type.
+ * `wordStart` is where the word was taken from in the cue's text without markup, in UTF-16 code units;
+ * the draft keeps it only when the cue holds the word there.
  */
 export function draftFromCue({
   word,
+  wordStart,
   cue,
   translationCue,
   mediaFile,
@@ -24,21 +27,24 @@ export function draftFromCue({
   hasScreenshots,
 }: {
   word: string;
+  wordStart: number | null;
   cue: Cue | null;
   translationCue: Cue | null;
   mediaFile: MediaFile;
   settings: ProjectSettings;
   hasScreenshots: boolean;
 }): FlashcardDraft {
+  const text = cue ? stripMarkup(cue.text) : "";
   return {
     media_file_id: mediaFile.id,
     cue_index: cue?.index ?? null,
+    word_start: isWordAt(text, word, wordStart) ? wordStart : null,
     content: {
       word,
       word_pronunciation: "",
       l1_definition: "",
       l2_definition: "",
-      text_context: cue ? stripMarkup(cue.text) : "",
+      text_context: text,
       text_context_translation: translationCue
         ? stripMarkup(translationCue.text)
         : "",
@@ -53,6 +59,14 @@ export function draftFromCue({
     },
     included_fields: [...settings.flashcard_fields],
   };
+}
+
+function isWordAt(
+  text: string,
+  word: string,
+  start: number | null,
+): start is number {
+  return start !== null && word !== "" && text.startsWith(word, start);
 }
 
 /** The screenshot a new flashcard starts with: the frame in the middle of its clip. */

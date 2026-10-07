@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import { exampleCues } from "./exampleCues.ts";
 import { flashcardWordRanges } from "./flashcardWordRanges.ts";
 
-function card(cueIndex: number | null, word: string) {
-  return { cue_index: cueIndex, content: { word } };
+function card(cueIndex: number | null, word: string, wordStart?: number) {
+  return {
+    cue_index: cueIndex,
+    word_start: wordStart ?? null,
+    content: { word },
+  };
 }
 
 describe("flashcardWordRanges", () => {
@@ -19,6 +23,16 @@ describe("flashcardWordRanges", () => {
 
   it("takes the first occurrence of the word", () => {
     const ranges = flashcardWordRanges([card(2, "e")], exampleCues);
+    expect(ranges.get(2)).toEqual([{ from: 1, to: 2 }]);
+  });
+
+  it("takes the occurrence at the card's word start", () => {
+    const ranges = flashcardWordRanges([card(2, "e", 18)], exampleCues);
+    expect(ranges.get(2)).toEqual([{ from: 18, to: 19 }]);
+  });
+
+  it("takes the first occurrence when the word start no longer points at the word", () => {
+    const ranges = flashcardWordRanges([card(2, "e", 19)], exampleCues);
     expect(ranges.get(2)).toEqual([{ from: 1, to: 2 }]);
   });
 

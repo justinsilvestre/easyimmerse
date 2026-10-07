@@ -132,11 +132,12 @@ export function MediaScreen({
    */
   const flashcardStarter =
     (start: typeof flashcards.start): StartFlashcardFromLookup<Cue> =>
-    (word, wordCue, lookupFields, lateFields) => {
+    (word, place, lookupFields, lateFields) => {
       if (mediaFile === null) return;
-      const cue = wordCue ?? shownCue;
+      const cue = place?.source ?? shownCue;
       const draft = draftFromCue({
         word,
+        wordStart: place?.start ?? null,
         cue,
         translationCue: cue
           ? findTranslationOf(cue, subtitles.translationCues)

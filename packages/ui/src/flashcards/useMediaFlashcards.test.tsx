@@ -100,6 +100,7 @@ function createDraft(word: string): FlashcardDraft {
   return {
     media_file_id: "m1",
     cue_index: 1,
+    word_start: null,
     content: { ...exampleFlashcard, word },
     included_fields: ["word"],
   };

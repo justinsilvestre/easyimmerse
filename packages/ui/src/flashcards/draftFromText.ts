@@ -24,6 +24,7 @@ export function draftFromText({
   return {
     media_file_id: mediaFile.id,
     cue_index: null,
+    word_start: null,
     content: {
       word,
       word_pronunciation: "",
