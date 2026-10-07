@@ -1,18 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { defaultSubtitleAppearance } from "./subtitleAppearance.ts";
-import { subtitleBoxStyles } from "./subtitleBoxStyles.ts";
+import {
+  subtitleBackdropStyles,
+  subtitleBoxStyles,
+} from "./subtitleBoxStyles.ts";
 
 const bothLanguages = { target: 2, translation: 1 };
 
 describe("subtitleBoxStyles", () => {
-  it("draws the box in the chosen color at the chosen opacity", () => {
-    const styles = subtitleBoxStyles(
-      { ...defaultSubtitleAppearance, boxColor: "white", boxOpacity: 25 },
-      bothLanguages,
-    );
-    expect(styles.box.backgroundColor).toBe("rgb(255 255 255 / 0.25)");
-  });
-
   it("draws no shadow when the shadow is off", () => {
     const styles = subtitleBoxStyles(
       { ...defaultSubtitleAppearance, textShadow: "none" },
@@ -44,5 +39,23 @@ describe("subtitleBoxStyles", () => {
       translation: 0,
     });
     expect(targetOnly.box.height).not.toBe(both.box.height);
+  });
+});
+
+describe("subtitleBackdropStyles", () => {
+  it("draws the backdrop in the chosen color at the chosen opacity", () => {
+    const styles = subtitleBackdropStyles({
+      ...defaultSubtitleAppearance,
+      boxColor: "white",
+      boxOpacity: 25,
+    });
+    expect(styles.backdrop.backgroundColor).toBe("rgb(255 255 255 / 0.25)");
+  });
+
+  it("fades the feathered edge in from transparent to the backdrop's color", () => {
+    const styles = subtitleBackdropStyles(defaultSubtitleAppearance);
+    expect(styles.feather.backgroundImage).toBe(
+      "linear-gradient(to bottom, rgb(0 0 0 / 0), rgb(0 0 0 / 0.4))",
+    );
   });
 });

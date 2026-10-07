@@ -153,7 +153,8 @@ export function ClickableText({
             className={clsx(
               // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu,
               // and a double tap must not zoom the page.
-              "touch-manipulation rounded-sm px-px focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
+              // Browsers give buttons no text shadow of their own, so the word takes the shadow of the text around it.
+              "touch-manipulation rounded-sm px-px [text-shadow:inherit] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
               // A run highlights only the characters concerned, inside itself.
               !part.isUnspaced &&
                 (isActive || isHovered) &&

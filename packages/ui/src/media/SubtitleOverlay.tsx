@@ -15,8 +15,8 @@ import { subtitleBoxStyles } from "./subtitleBoxStyles.ts";
 export type SubtitleDisplay = "both" | "target" | "translation";
 
 /**
- * The subtitles drawn over the video, in a box across the whole width of the stage,
- * with the words of the target language ready to be looked up.
+ * The subtitles of the media screen, in a clear box across the whole width of the stage,
+ * with the words of the target language ready to be looked up. `SubtitleBand` draws the backdrop behind it.
  * The box keeps room for two lines of the target language and one of the translation, or only those the display shows,
  * so that its height stays the same from cue to cue.
  * The text sits at the foot of the box, so that a cue longer than that room grows upward over the picture rather than over the controls.

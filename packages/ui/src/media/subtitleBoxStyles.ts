@@ -25,6 +25,7 @@ const boxPaddingRem = 0.5;
  * The styles that give the subtitle box the user's appearance, with a height that fits the given lines
  * whatever the cue, so that the box keeps its size from one cue to the next.
  * The text grows with the width of the nearest CSS container.
+ * The box itself is clear, so that the backdrop from `subtitleBackdropStyles` can reach beyond it.
  */
 export function subtitleBoxStyles(
   appearance: SubtitleAppearance,
@@ -37,13 +38,30 @@ export function subtitleBoxStyles(
     box: {
       height: `calc(${lines.target * lineHeight} * ${targetSize} + ${lines.translation * lineHeight} * ${translationSize} + ${2 * boxPaddingRem}rem)`,
       paddingBlock: `${boxPaddingRem}rem`,
-      backgroundColor: `rgb(${boxColorChannels[appearance.boxColor]} / ${appearance.boxOpacity / 100})`,
       color: textColors[appearance.textColor],
       textShadow: textShadowOf(appearance),
       lineHeight,
     },
     target: { fontSize: targetSize },
     translation: { fontSize: translationSize },
+  };
+}
+
+/**
+ * The styles of the backdrop behind the subtitle box, in the user's box color and opacity,
+ * and of the feathered edge that fades the backdrop in above it.
+ */
+export function subtitleBackdropStyles(appearance: SubtitleAppearance): {
+  backdrop: CSSProperties;
+  feather: CSSProperties;
+} {
+  const channels = boxColorChannels[appearance.boxColor];
+  const opacity = appearance.boxOpacity / 100;
+  return {
+    backdrop: { backgroundColor: `rgb(${channels} / ${opacity})` },
+    feather: {
+      backgroundImage: `linear-gradient(to bottom, rgb(${channels} / 0), rgb(${channels} / ${opacity}))`,
+    },
   };
 }
 
