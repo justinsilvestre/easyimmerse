@@ -23,17 +23,37 @@ import { createSharedSaving } from "./sharedSaving.ts";
 import { useUnsavedCardActions } from "./unsaved/useUnsavedCardActions.ts";
 import { useMediaFlashcards } from "./useMediaFlashcards.ts";
 
-// Unmounting saves any card still waiting for its lookup after a delay,
-// so timers stay fake until the hook has unmounted.
+// The backend client is shared by the whole file, so a timer left by one test, such as a card's wait for its lookup,
+// would send its save to the client of whichever test runs when it fires.
+// Timers therefore stay fake until the hook has unmounted, and are dropped with the fake clock.
+beforeEach(() => vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }));
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
   resetBackend();
 });
 
-/** Lets every request and promise already under way run, without waiting on the clock. */
-const flushPendingWork = () =>
-  act(() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
+/** Lets every request and promise already under way run, without moving the clock. */
+const flushPendingWork = () => act(() => vi.advanceTimersByTimeAsync(0));
+
+/** The most turns of the event loop that `waitUntil` lets pass, far more than any test here needs. */
+const maxTurns = 100;
+
+/**
+ * Lets pending work run, a turn of the event loop at a time, until `check` passes, without moving the clock.
+ * It gives up after a number of turns rather than a span of time, so that a busy machine cannot make it fail.
+ */
+async function waitUntil(check: () => unknown) {
+  for (let turn = 1; ; turn++) {
+    try {
+      return await check();
+    } catch (error) {
+      if (turn >= maxTurns) throw error;
+    }
+    await flushPendingWork();
+  }
+}
 
 /** A lookup that answers when the test says so. */
 function createLateLookup() {
@@ -246,7 +266,7 @@ describe("useMediaFlashcards", () => {
     const { result, held, letSavesThrough, posts } = renderFlashcards();
     act(() => result.current.start(createDraft("Hund")));
     act(() => result.current.save());
-    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await waitUntil(() => expect(held).toHaveLength(1));
     act(() => result.current.save());
     await letSavesThrough();
     expect(posts()).toHaveLength(1);
@@ -258,13 +278,11 @@ describe("useMediaFlashcards", () => {
     });
     act(() => result.current.start(createDraft("Hund")));
     act(() => result.current.save());
-    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await waitUntil(() => expect(held).toHaveLength(1));
     await letSavesThrough();
-    await vi.waitFor(() =>
-      expect(result.current.edited?.stage).toBe("editing"),
-    );
+    await waitUntil(() => expect(result.current.edited?.stage).toBe("editing"));
     act(() => result.current.save());
-    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await waitUntil(() => expect(held).toHaveLength(1));
     await letSavesThrough();
     expect(posts()).toHaveLength(2);
   });
@@ -273,7 +291,7 @@ describe("useMediaFlashcards", () => {
     const { result, held, letSavesThrough } = renderFlashcards();
     act(() => result.current.start(createDraft("Hund")));
     act(() => result.current.save());
-    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await waitUntil(() => expect(held).toHaveLength(1));
     act(() => result.current.start(createDraft("Katze")));
     await letSavesThrough();
     expect(result.current.edited?.editor.content.word).toBe("Katze");
@@ -286,7 +304,7 @@ describe("useMediaFlashcards", () => {
     );
     act(() => result.current.start(createDraft("Hund"), lateFields));
     act(() => result.current.save());
-    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await waitUntil(() => expect(held).toHaveLength(1));
   });
 
   describe("when another card is started while a save waits for its lookup", () => {
@@ -311,7 +329,7 @@ describe("useMediaFlashcards", () => {
       const { held, letSavesThrough, posts, lookup } =
         await startAnotherWhileWaiting();
       await lookup.answer(lookedUp);
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
       expect(sentWord(posts()[0])).toBe("Hündchen");
     });
@@ -320,7 +338,7 @@ describe("useMediaFlashcards", () => {
       const { held, letSavesThrough, lookup, notices } =
         await startAnotherWhileWaiting();
       await lookup.answer(lookedUp);
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
       expect(notices()).toEqual([]);
     });
@@ -329,7 +347,7 @@ describe("useMediaFlashcards", () => {
       const { result, held, letSavesThrough, lookup } =
         await startAnotherWhileWaiting();
       await lookup.answer(lookedUp);
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
       expect(result.current.edited?.editor.content.word).toBe("Katze");
     });
@@ -370,16 +388,16 @@ describe("useMediaFlashcards", () => {
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.edit(typeWord("Hündin")));
       act(() => result.current.start(createDraft("Katze")));
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      await vi.waitFor(() => expect(rendered.unsavedWords()).toHaveLength(1));
+      await waitUntil(() => expect(rendered.unsavedWords()).toHaveLength(1));
       return rendered;
     }
 
     /** Retries the listed card for “Hündin” and lets the retry through. */
     async function retryHündin(rendered: ReturnType<typeof renderFlashcards>) {
       rendered.actOnUnsaved("Hündin", "retry");
-      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await waitUntil(() => expect(rendered.held).toHaveLength(1));
       await rendered.letSavesThrough();
       await flushPendingWork();
     }
@@ -444,7 +462,7 @@ describe("useMediaFlashcards", () => {
       actOnUnsaved("Hündin", "open");
       act(() => result.current.save());
       // The untouched card the opened one replaces is saved in the background too.
-      await vi.waitFor(() => expect(held).toHaveLength(2));
+      await waitUntil(() => expect(held).toHaveLength(2));
       await letSavesThrough();
       const [first, again] = posts().filter(
         (request) => sentWord(request) === "Hündin",
@@ -469,7 +487,7 @@ describe("useMediaFlashcards", () => {
         await failOffScreen();
       act(() => result.current.edit(typeWord("Kater")));
       actOnUnsaved("Hündin", "open");
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
       expect(sentWord(posts()[1])).toBe("Kater");
     });
@@ -545,7 +563,7 @@ describe("useMediaFlashcards", () => {
         const rendered = await failAndClose();
         rendered.actOnUnsaved("Hündin", "retry");
         // The untouched card that was open when the screen closed is saved in the background too.
-        await vi.waitFor(() => expect(rendered.held).toHaveLength(2));
+        await waitUntil(() => expect(rendered.held).toHaveLength(2));
         await rendered.letSavesThrough();
         expect(
           rendered.posts().filter((request) => sentWord(request) === "Hündin"),
@@ -580,9 +598,9 @@ describe("useMediaFlashcards", () => {
       const { result, held, letSavesThrough } = rendered;
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.start(createDraft("Katze")));
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      await vi.waitFor(() => expect(rendered.unsavedWords()).toEqual(["Hund"]));
+      await waitUntil(() => expect(rendered.unsavedWords()).toEqual(["Hund"]));
       rendered.actOnUnsaved("Hund", "open");
       act(() => result.current.close());
       expect(rendered.notices()).toContainEqual([
@@ -596,9 +614,9 @@ describe("useMediaFlashcards", () => {
       act(() => rendered.result.current.start(createDraft("Hund")));
       act(() => rendered.result.current.edit(typeWord("Hündin")));
       rendered.unmount();
-      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await waitUntil(() => expect(rendered.held).toHaveLength(1));
       await rendered.letSavesThrough();
-      await vi.waitFor(() =>
+      await waitUntil(() =>
         expect(rendered.unsavedWords()).toEqual(["Hündin"]),
       );
     });
@@ -611,9 +629,9 @@ describe("useMediaFlashcards", () => {
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.edit(typeWord("Hündin")));
       act(() => result.current.start(createDraft("Katze")));
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      await vi.waitFor(() => expect(rendered.unsavedWords()).toHaveLength(1));
+      await waitUntil(() => expect(rendered.unsavedWords()).toHaveLength(1));
       return rendered;
     }
 
@@ -667,9 +685,9 @@ describe("useMediaFlashcards", () => {
         result.current.start({ ...createDraft("Hund"), media_file_id: null }),
       );
       act(() => result.current.start(createDraft("Katze")));
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      await vi.waitFor(() =>
+      await waitUntil(() =>
         expect(rendered.notices()).toEqual([
           ["The server refused the flashcard for “Hund”.", "Discard"],
         ]),
@@ -682,13 +700,13 @@ describe("useMediaFlashcards", () => {
     async function failSavedCard() {
       const rendered = renderFlashcards({ savesFail: true });
       const { result, held, letSavesThrough } = rendered;
-      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+      await waitUntil(() => expect(result.current.flashcards).toHaveLength(1));
       act(() => result.current.open(savedFlashcard.id));
       act(() => result.current.edit(typeWord("Hündin")));
       act(() => result.current.start(createDraft("Katze")));
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      await vi.waitFor(() =>
+      await waitUntil(() =>
         expect(rendered.unsavedWords()).toEqual(["Hündin"]),
       );
       return rendered;
@@ -710,7 +728,7 @@ describe("useMediaFlashcards", () => {
       async function retryHündin() {
         const rendered = await failSavedCard();
         rendered.actOnUnsaved("Hündin", "retry");
-        await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+        await waitUntil(() => expect(rendered.held).toHaveLength(1));
         return rendered;
       }
 
@@ -750,7 +768,7 @@ describe("useMediaFlashcards", () => {
         act(() => rendered.result.current.open(savedFlashcard.id));
         act(() => rendered.result.current.close());
         rendered.letSavesSucceed();
-        await vi.waitFor(async () => {
+        await waitUntil(async () => {
           await rendered.letSavesThrough();
           expect(rendered.puts()).toHaveLength(3);
         });
@@ -761,19 +779,19 @@ describe("useMediaFlashcards", () => {
     it("drops a Retry that waited behind a newer save from the form, which took the card off the list", async () => {
       const rendered = renderFlashcards({ savesFail: true });
       const { result, held, letSavesThrough, puts } = rendered;
-      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+      await waitUntil(() => expect(result.current.flashcards).toHaveLength(1));
       act(() => result.current.open(savedFlashcard.id));
       act(() => result.current.edit(typeWord("Hündin")));
       act(() => result.current.open(savedFlashcard.id));
       act(() => result.current.edit(typeWord("Rüde")));
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      await vi.waitFor(() =>
+      await waitUntil(() =>
         expect(rendered.unsavedWords()).toEqual(["Hündin"]),
       );
       rendered.letSavesSucceed();
       act(() => result.current.save());
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       rendered.actOnUnsaved("Hündin", "retry");
       await letSavesThrough();
       await flushPendingWork();
@@ -786,19 +804,19 @@ describe("useMediaFlashcards", () => {
   it("takes a listed card off the list once a later save of it from the screen succeeds", async () => {
     const rendered = renderFlashcards({ savesFail: true });
     const { result, held, letSavesThrough } = rendered;
-    await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+    await waitUntil(() => expect(result.current.flashcards).toHaveLength(1));
     act(() => result.current.open(savedFlashcard.id));
     act(() => result.current.edit(typeWord("Hündin")));
     act(() => result.current.open(savedFlashcard.id));
     act(() => result.current.edit(typeWord("Rüde")));
     act(() => result.current.save());
-    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await waitUntil(() => expect(held).toHaveLength(1));
     await letSavesThrough();
-    await vi.waitFor(() => expect(rendered.unsavedWords()).toEqual(["Hündin"]));
+    await waitUntil(() => expect(rendered.unsavedWords()).toEqual(["Hündin"]));
     rendered.letSavesSucceed();
-    await vi.waitFor(() => expect(held).toHaveLength(1));
+    await waitUntil(() => expect(held).toHaveLength(1));
     await letSavesThrough();
-    await vi.waitFor(() => expect(rendered.unsavedWords()).toEqual([]));
+    await waitUntil(() => expect(rendered.unsavedWords()).toEqual([]));
   });
 
   describe("when a save finishes after its card has left the screen", () => {
@@ -807,7 +825,7 @@ describe("useMediaFlashcards", () => {
       const { result, held, letSavesThrough } = rendered;
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.save());
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       act(() => result.current.start(createDraft("Katze")));
       await letSavesThrough();
       return rendered;
@@ -815,14 +833,14 @@ describe("useMediaFlashcards", () => {
 
     it("says nothing of its success", async () => {
       const { notices, posts } = await leaveWhileSending();
-      await vi.waitFor(() => expect(posts()).toHaveLength(1));
+      await waitUntil(() => expect(posts()).toHaveLength(1));
       await flushPendingWork();
       expect(notices()).toEqual([]);
     });
 
     it("lists the card among the flashcards not saved when it fails", async () => {
       const { unsavedWords } = await leaveWhileSending({ savesFail: true });
-      await vi.waitFor(() => expect(unsavedWords()).toEqual(["Hund"]));
+      await waitUntil(() => expect(unsavedWords()).toEqual(["Hund"]));
     });
   });
 
@@ -831,9 +849,9 @@ describe("useMediaFlashcards", () => {
       const rendered = renderFlashcards();
       act(() => rendered.result.current.start(createDraft("Hund")));
       act(() => rendered.result.current.save());
-      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await waitUntil(() => expect(rendered.held).toHaveLength(1));
       await rendered.letSavesThrough();
-      await vi.waitFor(() => expect(rendered.notices()).toHaveLength(1));
+      await waitUntil(() => expect(rendered.notices()).toHaveLength(1));
       return rendered;
     }
 
@@ -850,21 +868,21 @@ describe("useMediaFlashcards", () => {
     it("deletes a new card on Undo", async () => {
       const { choose, deletes } = await saveHund();
       choose("Undo");
-      await vi.waitFor(() => expect(deletes()).toHaveLength(1));
+      await waitUntil(() => expect(deletes()).toHaveLength(1));
     });
 
     it("puts back a saved card's earlier content on Undo", async () => {
       const rendered = renderFlashcards();
       const { result, held, letSavesThrough, puts } = rendered;
-      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+      await waitUntil(() => expect(result.current.flashcards).toHaveLength(1));
       act(() => result.current.open(savedFlashcard.id));
       act(() => result.current.edit(typeWord("Hündin")));
       act(() => result.current.save());
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      await vi.waitFor(() => expect(rendered.notices()).toHaveLength(1));
+      await waitUntil(() => expect(rendered.notices()).toHaveLength(1));
       rendered.choose("Undo");
-      await vi.waitFor(async () => {
+      await waitUntil(async () => {
         await letSavesThrough();
         expect(puts()).toHaveLength(2);
       });
@@ -877,9 +895,9 @@ describe("useMediaFlashcards", () => {
       const rendered = renderFlashcards({ savesFail: true });
       act(() => rendered.result.current.start(createDraft("Hund")));
       act(() => rendered.result.current.save());
-      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await waitUntil(() => expect(rendered.held).toHaveLength(1));
       await rendered.letSavesThrough();
-      await vi.waitFor(() =>
+      await waitUntil(() =>
         expect(rendered.result.current.saveFailed).toBe(true),
       );
       return rendered;
@@ -899,7 +917,7 @@ describe("useMediaFlashcards", () => {
     it("stops telling of the failure once Save is pressed again", async () => {
       const { result, held } = await failHund();
       act(() => result.current.save());
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       expect(result.current.saveFailed).toBe(false);
     });
 
@@ -931,7 +949,7 @@ describe("useMediaFlashcards", () => {
       const { result, actOnUnsaved } = await failHund();
       act(() => result.current.close());
       actOnUnsaved("Hund", "open");
-      await vi.waitFor(() =>
+      await waitUntil(() =>
         expect(result.current.edited?.editor.content.word).toBe("Hund"),
       );
     });
@@ -941,7 +959,7 @@ describe("useMediaFlashcards", () => {
     async function reopenWhileSaving() {
       const rendered = renderFlashcards();
       const { result, held } = rendered;
-      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+      await waitUntil(() => expect(result.current.flashcards).toHaveLength(1));
       act(() => result.current.open(savedFlashcard.id));
       act(() =>
         result.current.edit({
@@ -951,7 +969,7 @@ describe("useMediaFlashcards", () => {
         }),
       );
       act(() => result.current.save());
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       act(() => result.current.open(savedFlashcard.id));
       act(() =>
         result.current.edit({
@@ -973,7 +991,7 @@ describe("useMediaFlashcards", () => {
       const { result, held, letSavesThrough, puts } = await reopenWhileSaving();
       act(() => result.current.save());
       await letSavesThrough();
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
       expect(puts()).toHaveLength(2);
     });
@@ -981,7 +999,7 @@ describe("useMediaFlashcards", () => {
 
   it("ignores a retiming of a card not open in the editor, whose handles the waveform does not offer", async () => {
     const { result, held } = renderFlashcards();
-    await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+    await waitUntil(() => expect(result.current.flashcards).toHaveLength(1));
     act(() => result.current.moveClipEndpoint(savedFlashcard.id, "end", 4000));
     await flushPendingWork();
     expect(held).toHaveLength(0);
@@ -989,14 +1007,14 @@ describe("useMediaFlashcards", () => {
 
   it("gives the open card's segment as the one that can be retimed", async () => {
     const { result } = renderFlashcards();
-    await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+    await waitUntil(() => expect(result.current.flashcards).toHaveLength(1));
     act(() => result.current.open(savedFlashcard.id));
     expect(result.current.editedSegmentId).toBe(savedFlashcard.id);
   });
 
   it("opens nothing for a cue no flashcard was made from", async () => {
     const { result } = renderFlashcards();
-    await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+    await waitUntil(() => expect(result.current.flashcards).toHaveLength(1));
     act(() => result.current.openForCue(7));
     expect(result.current.edited).toBeNull();
   });
@@ -1008,9 +1026,9 @@ describe("useMediaFlashcards", () => {
       const rendered = renderFlashcards();
       change(rendered);
       act(() => rendered.result.current.start(createDraft("Katze")));
-      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await waitUntil(() => expect(rendered.held).toHaveLength(1));
       await rendered.letSavesThrough();
-      await vi.waitFor(() => expect(rendered.notices()).toHaveLength(1));
+      await waitUntil(() => expect(rendered.notices()).toHaveLength(1));
       return rendered;
     }
 
@@ -1042,7 +1060,7 @@ describe("useMediaFlashcards", () => {
     it("deletes a new card on Undo", async () => {
       const { choose, deletes } = await moveOnFrom(startChanged);
       choose("Undo");
-      await vi.waitFor(() => expect(deletes()).toHaveLength(1));
+      await waitUntil(() => expect(deletes()).toHaveLength(1));
     });
 
     it("opens the other card at once", () => {
@@ -1056,15 +1074,15 @@ describe("useMediaFlashcards", () => {
       async function moveOnFromSavedCard() {
         const rendered = renderFlashcards();
         const { result } = rendered;
-        await vi.waitFor(() =>
+        await waitUntil(() =>
           expect(result.current.flashcards).toHaveLength(1),
         );
         act(() => result.current.open(savedFlashcard.id));
         act(() => result.current.edit(typeWord("Hündin")));
         act(() => result.current.start(createDraft("Katze")));
-        await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+        await waitUntil(() => expect(rendered.held).toHaveLength(1));
         await rendered.letSavesThrough();
-        await vi.waitFor(() => expect(rendered.notices()).toHaveLength(1));
+        await waitUntil(() => expect(rendered.notices()).toHaveLength(1));
         return rendered;
       }
 
@@ -1077,7 +1095,7 @@ describe("useMediaFlashcards", () => {
         const { choose, held, letSavesThrough, puts } =
           await moveOnFromSavedCard();
         choose("Undo");
-        await vi.waitFor(() => expect(held).toHaveLength(1));
+        await waitUntil(() => expect(held).toHaveLength(1));
         await letSavesThrough();
         expect(sentWord(puts()[1])).toBe(savedFlashcard.content.word);
       });
@@ -1091,13 +1109,13 @@ describe("useMediaFlashcards", () => {
       it("holds a deletion of the flashcard until its save has settled", async () => {
         const rendered = renderFlashcards();
         const { result, held, deletes } = rendered;
-        await vi.waitFor(() =>
+        await waitUntil(() =>
           expect(result.current.flashcards).toHaveLength(1),
         );
         act(() => result.current.open(savedFlashcard.id));
         act(() => result.current.edit(typeWord("Hündin")));
         act(() => result.current.start(createDraft("Katze")));
-        await vi.waitFor(() => expect(held).toHaveLength(1));
+        await waitUntil(() => expect(held).toHaveLength(1));
         act(() => result.current.open(savedFlashcard.id));
         act(() => result.current.remove());
         await flushPendingWork();
@@ -1107,7 +1125,7 @@ describe("useMediaFlashcards", () => {
       it("holds a later save of the flashcard until its Undo has settled", async () => {
         const { result, choose, held } = await moveOnFromSavedCard();
         choose("Undo");
-        await vi.waitFor(() => expect(held).toHaveLength(1));
+        await waitUntil(() => expect(held).toHaveLength(1));
         // Closes the untouched card the user moved on to, which would otherwise be saved as it leaves.
         act(() => result.current.close());
         act(() => result.current.open(savedFlashcard.id));
@@ -1129,13 +1147,13 @@ describe("useMediaFlashcards", () => {
       async function reopenDuringSaves() {
         const rendered = renderFlashcards();
         const { result, held } = rendered;
-        await vi.waitFor(() =>
+        await waitUntil(() =>
           expect(result.current.flashcards).toHaveLength(1),
         );
         act(() => result.current.open(savedFlashcard.id));
         act(() => result.current.edit(typeWord("Hündin")));
         act(() => result.current.open(savedFlashcard.id));
-        await vi.waitFor(() => expect(held).toHaveLength(1));
+        await waitUntil(() => expect(held).toHaveLength(1));
         act(() => result.current.edit(typeWord("Hündchen")));
         act(() => result.current.open(savedFlashcard.id));
         return rendered;
@@ -1146,7 +1164,7 @@ describe("useMediaFlashcards", () => {
         { held, puts }: ReturnType<typeof renderFlashcards>,
         count: number,
       ) =>
-        vi.waitFor(async () => {
+        waitUntil(async () => {
           for (const resolve of held.splice(0)) resolve();
           await Promise.resolve();
           expect(puts()).toHaveLength(count);
@@ -1163,7 +1181,7 @@ describe("useMediaFlashcards", () => {
         act(() => result.current.edit(typeWord("Welpe")));
         act(() => result.current.start(createDraft("Katze")));
         await letPutsThrough(rendered, 3);
-        await vi.waitFor(() =>
+        await waitUntil(() =>
           expect(rendered.notices().flat()).toContain(
             "Saved the flashcard for “Welpe”.",
           ),
@@ -1176,7 +1194,7 @@ describe("useMediaFlashcards", () => {
 
     it("leaves an unchanged saved card as it is", async () => {
       const { result, held } = renderFlashcards();
-      await vi.waitFor(() => expect(result.current.flashcards).toHaveLength(1));
+      await waitUntil(() => expect(result.current.flashcards).toHaveLength(1));
       act(() => result.current.open(savedFlashcard.id));
       act(() => result.current.start(createDraft("Katze")));
       await flushPendingWork();
@@ -1187,9 +1205,9 @@ describe("useMediaFlashcards", () => {
       const rendered = renderFlashcards();
       startChanged(rendered);
       rendered.unmount();
-      await vi.waitFor(() => expect(rendered.held).toHaveLength(1));
+      await waitUntil(() => expect(rendered.held).toHaveLength(1));
       await rendered.letSavesThrough();
-      await vi.waitFor(() =>
+      await waitUntil(() =>
         expect(rendered.notices()).toEqual([
           ["Saved the flashcard for “Hündin”.", "Undo"],
         ]),
@@ -1253,7 +1271,7 @@ describe("useMediaFlashcards", () => {
       const { result, held, effects } = renderFlashcards();
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.save());
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       expect(guardCalls(effects)).toEqual([
         { type: "guardClose", isActive: true },
       ]);
@@ -1314,9 +1332,9 @@ describe("useMediaFlashcards", () => {
       const { result, held, letSavesThrough, effects } = renderFlashcards();
       act(() => result.current.start(createDraft("Hund")));
       act(() => result.current.save());
-      await vi.waitFor(() => expect(held).toHaveLength(1));
+      await waitUntil(() => expect(held).toHaveLength(1));
       await letSavesThrough();
-      await vi.waitFor(() =>
+      await waitUntil(() =>
         expect(guardCalls(effects)).toEqual([
           { type: "guardClose", isActive: true },
           { type: "guardClose", isActive: false },
@@ -1326,10 +1344,6 @@ describe("useMediaFlashcards", () => {
   });
 
   describe("when a save request never settles", () => {
-    beforeEach(() =>
-      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }),
-    );
-
     async function hangSave() {
       const rendered = renderFlashcards();
       act(() => rendered.result.current.start(createDraft("Hund")));
@@ -1352,7 +1366,7 @@ describe("useMediaFlashcards", () => {
       it("deletes a new card once it is discarded", async () => {
         const { actOnUnsaved, deletes } = await hangBackgroundSave();
         actOnUnsaved("Hündin", "discard");
-        await act(() => vi.advanceTimersByTimeAsync(0));
+        await flushPendingWork();
         expect(deletes()).toHaveLength(1);
       });
 
@@ -1361,27 +1375,27 @@ describe("useMediaFlashcards", () => {
         act(() => rendered.result.current.start(createDraft("Hund")));
         act(() => rendered.result.current.edit(typeWord("Hündin")));
         act(() => rendered.result.current.start(createDraft("Katze")));
-        await act(() => vi.advanceTimersByTimeAsync(0));
+        await flushPendingWork();
         await rendered.letSavesThrough();
-        await act(() => vi.advanceTimersByTimeAsync(0));
+        await flushPendingWork();
         rendered.actOnUnsaved("Hündin", "discard");
-        await act(() => vi.advanceTimersByTimeAsync(0));
+        await flushPendingWork();
         expect(rendered.deletes()).toHaveLength(0);
       });
 
       it("puts back a saved card's earlier content once it is closed and then discarded from the list", async () => {
         const rendered = renderFlashcards();
         const { result } = rendered;
-        await act(() => vi.advanceTimersByTimeAsync(0));
+        await flushPendingWork();
         act(() => result.current.open(savedFlashcard.id));
         act(() => result.current.edit(typeWord("Hündin")));
         act(() => result.current.save());
         await act(() => vi.advanceTimersByTimeAsync(saveRequestLimitMs));
         act(() => result.current.close());
         rendered.actOnUnsaved("Hündin", "discard");
-        await act(() => vi.advanceTimersByTimeAsync(0));
+        await flushPendingWork();
         await rendered.letSavesThrough();
-        await act(() => vi.advanceTimersByTimeAsync(0));
+        await flushPendingWork();
         expect(sentWord(rendered.puts().at(-1))).toBe(
           savedFlashcard.content.word,
         );
@@ -1428,10 +1442,6 @@ describe("useMediaFlashcards", () => {
   });
 
   describe("when the lookup never settles", () => {
-    beforeEach(() =>
-      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }),
-    );
-
     it("saves the card as it is once the save has waited its limit", async () => {
       const { result, held } = renderFlashcards();
       const never = new Promise<LookupFlashcardFields | null>(() => undefined);
