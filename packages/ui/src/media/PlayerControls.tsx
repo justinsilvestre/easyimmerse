@@ -13,6 +13,7 @@ import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
 import { formatTimestamp } from "./formatTimestamp.ts";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
+import { SpeedMenu } from "./SpeedMenu.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 
 export type PlayerCallbacks = {
@@ -47,10 +48,8 @@ export type PlayerPanelsState = {
   isFullscreen?: boolean;
 };
 
-const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
-
 /**
- * The bar over the bottom of the player: the position, transport and volume, with the playback speed
+ * The bar over the bottom of the player: the position, transport and volume, the playback speed in a menu of its own,
  * and the subtitles over the video in a menu, so that the bar fits on one row on a phone.
  * The buttons name their keys in their labels, which show as tooltips.
  */
@@ -131,24 +130,22 @@ export function PlayerControls({
               <Languages className="size-4" />
             </IconButton>
           )}
-          <PlaybackOptions
-            playback={playback}
-            panels={panels}
-            callbacks={callbacks}
+          <SpeedMenu
+            speed={playback.speed}
+            onSpeedChange={callbacks.onSpeedChange}
           />
+          <PlaybackOptions panels={panels} callbacks={callbacks} />
         </span>
       </div>
     </div>
   );
 }
 
-/** The menu of the playback speeds, of which one is checked, of whether the subtitles show over the video, and of how they look. */
+/** The menu of whether the subtitles show over the video, and of how they look. */
 function PlaybackOptions({
-  playback,
   panels,
   callbacks,
 }: {
-  playback: PlayerControlsState;
   panels: PlayerPanelsState;
   callbacks: PlayerCallbacks;
 }) {
@@ -158,12 +155,6 @@ function PlaybackOptions({
       icon={<Settings2 className="size-4" />}
       opensUpward
       items={[
-        ...speeds.map((speed) => ({
-          label: `${speed}× speed`,
-          isChecked: playback.speed === speed,
-          closesOnSelect: true,
-          onSelect: () => callbacks.onSpeedChange(speed),
-        })),
         {
           label: "Show subtitles",
           isChecked: panels.areSubtitlesHidden !== true,

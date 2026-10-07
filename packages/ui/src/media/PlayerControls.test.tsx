@@ -82,11 +82,11 @@ describe("PlayerControls", () => {
     expect(screen.queryByRole("button", { name: /fullscreen/ })).toBeNull();
   });
 
-  it("offers no playback speed list in the bar", () => {
-    renderControls();
+  it("shows the playback speed on its menu button", () => {
+    renderControls({ playback: { ...playback, speed: 1.5 } });
     expect(
-      screen.queryByRole("combobox", { name: "Playback speed" }),
-    ).toBeNull();
+      screen.getByRole("button", { name: "Playback speed: 1.5×" }).textContent,
+    ).toBe("1.5×");
   });
 });
 
@@ -103,28 +103,10 @@ describe("PlayerControls mute button", () => {
 });
 
 describe("PlayerControls playback options", () => {
-  it("checks the current speed", () => {
-    renderControls({ playback: { ...playback, speed: 1.5 } });
-    openOptions();
-    expect(
-      screen
-        .getByRole("menuitemcheckbox", { name: "1.5× speed" })
-        .getAttribute("aria-checked"),
-    ).toBe("true");
-  });
-
-  it("changes the speed to the one chosen", () => {
-    const { onSpeedChange } = renderControls();
-    openOptions();
-    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "2× speed" }));
-    expect(onSpeedChange).toHaveBeenCalledWith(2);
-  });
-
-  it("closes once a speed is chosen", () => {
+  it("offers no playback speeds", () => {
     renderControls();
     openOptions();
-    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "2× speed" }));
-    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.queryByRole("menuitemradio")).toBeNull();
   });
 
   it("checks Show subtitles while the subtitles show", () => {

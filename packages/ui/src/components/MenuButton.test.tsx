@@ -77,4 +77,124 @@ describe("MenuButton", () => {
     fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
     expect(screen.queryByRole("menu")).toBeNull();
   });
+
+  it("gives its button back the focus on Escape", () => {
+    renderMenu();
+    openMenu();
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Actions" }),
+    );
+  });
+
+  it("closes the menu when its button is clicked again", () => {
+    renderMenu();
+    openMenu();
+    openMenu();
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("shows a badge in place of the icon", () => {
+    render(
+      <MenuButton
+        label="Playback speed: 1.5×"
+        badge="1.5×"
+        items={[{ label: "1×", onSelect: () => undefined }]}
+      />,
+    );
+    expect(screen.getByRole("button").textContent).toBe("1.5×");
+  });
+});
+
+function renderChoices(onSelect: () => void = () => undefined) {
+  render(
+    <MenuButton
+      label="Speed"
+      items={["Slow", "Normal", "Fast"].map((label) => ({
+        label,
+        isSelected: label === "Normal",
+        onSelect,
+      }))}
+    />,
+  );
+}
+
+const openChoices = () =>
+  fireEvent.click(screen.getByRole("button", { name: "Speed" }));
+
+describe("MenuButton with items of which one is selected", () => {
+  it("marks the selected item as checked", () => {
+    renderChoices();
+    openChoices();
+    expect(
+      screen
+        .getByRole("menuitemradio", { name: "Normal" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
+  it("marks the other items as unchecked", () => {
+    renderChoices();
+    openChoices();
+    expect(
+      screen
+        .getByRole("menuitemradio", { name: "Fast" })
+        .getAttribute("aria-checked"),
+    ).toBe("false");
+  });
+
+  it("runs the chosen item's action", () => {
+    let chosen = 0;
+    renderChoices(() => {
+      chosen += 1;
+    });
+    openChoices();
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Fast" }));
+    expect(chosen).toBe(1);
+  });
+
+  it("closes the menu after a choice", () => {
+    renderChoices();
+    openChoices();
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Fast" }));
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("focuses the selected item when the menu opens", () => {
+    renderChoices();
+    openChoices();
+    expect(document.activeElement).toBe(
+      screen.getByRole("menuitemradio", { name: "Normal" }),
+    );
+  });
+});
+
+describe("MenuButton arrow keys", () => {
+  it("move the focus down to the next item", () => {
+    renderChoices();
+    openChoices();
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "ArrowDown" });
+    expect(document.activeElement).toBe(
+      screen.getByRole("menuitemradio", { name: "Fast" }),
+    );
+  });
+
+  it("move the focus up to the previous item", () => {
+    renderChoices();
+    openChoices();
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "ArrowUp" });
+    expect(document.activeElement).toBe(
+      screen.getByRole("menuitemradio", { name: "Slow" }),
+    );
+  });
+
+  it("wrap from the last item to the first", () => {
+    renderChoices();
+    openChoices();
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "End" });
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "ArrowDown" });
+    expect(document.activeElement).toBe(
+      screen.getByRole("menuitemradio", { name: "Slow" }),
+    );
+  });
 });
