@@ -258,6 +258,16 @@ describe("CuePanel", () => {
     ).toBeNull();
   });
 
+  it("shows the words of a cue in a large size", () => {
+    render(panel(2));
+    expect(
+      screen
+        .getByRole("button", { name: "Hund" })
+        .closest("p")
+        ?.classList.contains("text-lg"),
+    ).toBe(true);
+  });
+
   it("highlights the lookup cursor in the card of its cue", () => {
     render(
       panel(null, {
