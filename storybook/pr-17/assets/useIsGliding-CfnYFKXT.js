@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{n as t}from"./iframe-BFxhz7lO.js";function n(e){let t=e&&JSON.stringify(e),[n,i]=(0,r.useState)({key:t,side:e?.side,isGliding:!1});if(n.key===t)return n.isGliding;let a=e!==null&&n.side===e.side;return i({key:t,side:e?.side,isGliding:a}),a}var r;function i(){return(i=e((()=>{r=t()})))()}export{n,i as t};
