@@ -71,7 +71,7 @@ pub async fn get_media_tracks(
         ("media_id" = String, Path, description = "The media file id"),
     ),
     responses(
-        (status = 200, description = "The subtitle tracks embedded in the file, which cannot be shown yet", body = EmbeddedSubtitleTracksResponse),
+        (status = 200, description = "The subtitle tracks embedded in the file. Adding the file by path adds its text tracks among its subtitle tracks.",body = EmbeddedSubtitleTracksResponse),
         (status = 400, description = "The file could not be probed", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The token may not read local paths", body = ApiError),

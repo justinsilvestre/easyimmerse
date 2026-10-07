@@ -12,6 +12,7 @@ use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
+use crate::embedded_subtitle_tracks::add_embedded_subtitle_tracks;
 use crate::local_path::ensure_local_file_exists;
 use crate::sidecar_subtitle_tracks::add_sidecar_subtitle_tracks;
 use crate::state::AppState;
@@ -54,8 +55,9 @@ pub async fn list_media_files(
 }
 
 /// Adds a media file to a project. A `path` source must name an existing file on the
-/// server's machine, which only a token allowed to read local paths may do; subtitle files
-/// beside it that share its name are added as its subtitle tracks.
+/// server's machine, which only a token allowed to read local paths may do; the text
+/// subtitle tracks inside it and the subtitle files beside it that share its name are added
+/// as its subtitle tracks.
 #[utoipa::path(
     post,
     path = "/projects/{id}/media",
@@ -87,15 +89,32 @@ pub async fn add_media_file(
             storage.add_media_file(&project_id, &request.name, &request.source)
         })
         .await?;
-    if let MediaFileSource::Path { path } = source
-        && let Err(failure) = add_sidecar_subtitle_tracks(&state, token, &media_file, &path).await
-    {
+    if let MediaFileSource::Path { path } = source {
+        add_found_subtitle_tracks(&state, token, &media_file, &path).await;
+    }
+    Ok((StatusCode::CREATED, Json(media_file)))
+}
+
+/// Adds the subtitle tracks inside the media file, then the subtitle files beside it.
+/// A failure only skips the tracks it concerns, so it is logged rather than returned.
+async fn add_found_subtitle_tracks(
+    state: &AppState,
+    token: TokenKind,
+    media_file: &MediaFile,
+    path: &str,
+) {
+    if let Err(failure) = add_embedded_subtitle_tracks(state, token, media_file, path).await {
+        tracing::warn!(
+            "could not add the subtitles inside {path:?}: {}",
+            failure.error.message
+        );
+    }
+    if let Err(failure) = add_sidecar_subtitle_tracks(state, token, media_file, path).await {
         tracing::warn!(
             "could not add the subtitles beside {path:?}: {}",
             failure.error.message
         );
     }
-    Ok((StatusCode::CREATED, Json(media_file)))
 }
 
 #[utoipa::path(

@@ -3,6 +3,7 @@
 
 pub mod auth;
 pub mod config;
+pub mod embedded_subtitle_tracks;
 pub mod import_jobs;
 pub mod import_progress_sink;
 pub mod local_dictionary_files;

@@ -5,6 +5,7 @@
 use std::path::PathBuf;
 
 use easyimmerse_api::{ApiConfig, ServeOptions, ServerHandle, serve};
+use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use easyimmerse_storage::Storage;
 use serde_json::Value;
 use tempfile::TempDir;
@@ -111,6 +112,17 @@ pub fn fixture_path(name: &str) -> PathBuf {
 
 pub fn read_fixture(name: &str) -> Vec<u8> {
     std::fs::read(fixture_path(name)).expect("fixture should be readable")
+}
+
+/// Whether ffmpeg and ffprobe can be found, for tests that skip without them.
+pub fn ffmpeg_available() -> bool {
+    let paths = FfmpegPaths::default();
+    let available = locate_binary(BinaryName::Ffmpeg, &paths).is_ok()
+        && locate_binary(BinaryName::Ffprobe, &paths).is_ok();
+    if !available {
+        eprintln!("skipped: ffmpeg or ffprobe not found");
+    }
+    available
 }
 
 impl TestServer {
