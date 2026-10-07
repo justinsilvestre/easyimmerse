@@ -8,6 +8,7 @@ import clsx from "clsx";
 import { Minus, Play, Plus, X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef } from "react";
 import { AutoGrowTextarea } from "../components/AutoGrowTextarea.tsx";
+import { FocusExpandingBox } from "../components/FocusExpandingBox.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { ClipEditor } from "./ClipEditor.tsx";
@@ -109,7 +110,10 @@ function Block({
   );
 }
 
-/** One field inside a block: its caption above a borderless input that wraps and grows with its text. A single-line field takes no line breaks. */
+/**
+ * One field inside a block: its caption above a borderless input that wraps and grows with its text.
+ * A long text is cut off, with its bottom edge faded, until the field has focus. A single-line field takes no line breaks.
+ */
 function Cell({
   fieldKey,
   state,
@@ -127,23 +131,26 @@ function Cell({
       <label htmlFor={id} className="text-xs leading-4 text-fg-muted">
         {field.label(languages)}
       </label>
-      <AutoGrowTextarea
-        id={id}
-        value={state.content[fieldKey]}
-        readOnly={isReadOnly}
-        placeholder={showsLookupWait ? "Looking up…" : undefined}
-        className="w-full resize-none overflow-hidden bg-transparent text-sm wrap-anywhere text-fg outline-none placeholder:text-fg-faint placeholder:italic"
-        onChange={(event) =>
-          dispatch({
-            type: "textChanged",
-            key: fieldKey,
-            value: event.target.value,
-          })
-        }
-        onKeyDown={(event) => {
-          if (!field.multiline && event.key === "Enter") event.preventDefault();
-        }}
-      />
+      <FocusExpandingBox>
+        <AutoGrowTextarea
+          id={id}
+          value={state.content[fieldKey]}
+          readOnly={isReadOnly}
+          placeholder={showsLookupWait ? "Looking up…" : undefined}
+          className="block w-full resize-none overflow-hidden bg-transparent text-sm wrap-anywhere text-fg outline-none placeholder:text-fg-faint placeholder:italic"
+          onChange={(event) =>
+            dispatch({
+              type: "textChanged",
+              key: fieldKey,
+              value: event.target.value,
+            })
+          }
+          onKeyDown={(event) => {
+            if (!field.multiline && event.key === "Enter")
+              event.preventDefault();
+          }}
+        />
+      </FocusExpandingBox>
     </div>
   );
 }
