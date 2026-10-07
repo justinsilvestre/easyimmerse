@@ -24,6 +24,7 @@ export const actions = {
     ({ type: "playerPlayingChanged", isPlaying }) as const,
   volumeChangeRequested: (volume: number) =>
     ({ type: "volumeChangeRequested", volume }) as const,
+  muteToggleRequested: () => ({ type: "muteToggleRequested" }) as const,
   speedChangeRequested: (speed: number) =>
     ({ type: "speedChangeRequested", speed }) as const,
   filePickRequested: () => ({ type: "filePickRequested" }) as const,

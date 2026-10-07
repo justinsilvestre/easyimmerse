@@ -12,9 +12,9 @@ type MediaEvent = SyntheticEvent<HTMLMediaElement>;
 
 /**
  * Makes the media element the app's current player.
- * Seeks from the store land on it half a frame after the wanted moment, play, volume, and speed requests reach it,
+ * Seeks from the store land on it half a frame after the wanted moment, play, volume, mute, and speed requests reach it,
  * and its time, duration, loaded stretches, and playing state flow back into the store.
- * The element starts at the volume and speed the store holds.
+ * The element starts at the volume, mute state, and speed the store holds.
  * Returns the event handlers to put on the element.
  */
 export function useRegisteredPlayer(
@@ -41,6 +41,8 @@ export function useRegisteredPlayer(
       pause: withElement((element) => element.pause()),
       setVolume: (volume) =>
         withElement((element) => applySettings(element, { volume }))(),
+      setMuted: (isMuted) =>
+        withElement((element) => applySettings(element, { isMuted }))(),
       setSpeed: (speed) =>
         withElement((element) => applySettings(element, { speed }))(),
     });
@@ -84,9 +86,10 @@ function play(element: HTMLMediaElement): void {
 /** The default rate is set too, because loading a new source resets the rate to it. */
 function applySettings(
   element: HTMLMediaElement,
-  settings: { volume?: number; speed?: number },
+  settings: { volume?: number; isMuted?: boolean; speed?: number },
 ): void {
   if (settings.volume !== undefined) element.volume = settings.volume;
+  if (settings.isMuted !== undefined) element.muted = settings.isMuted;
   if (settings.speed !== undefined) {
     element.defaultPlaybackRate = settings.speed;
     element.playbackRate = settings.speed;

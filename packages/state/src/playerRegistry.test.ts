@@ -8,6 +8,7 @@ const createHandle = (): PlayerHandle => ({
   play: () => undefined,
   pause: () => undefined,
   setVolume: () => undefined,
+  setMuted: () => undefined,
   setSpeed: () => undefined,
 });
 

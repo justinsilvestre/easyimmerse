@@ -307,6 +307,39 @@ describe("update", () => {
     expect(state.player).toEqual(initialAppState.player);
   });
 
+  it("flips isMuted for muteToggleRequested", () => {
+    const [state] = update(initialAppState, actions.muteToggleRequested());
+    expect(state.player.isMuted).toBe(true);
+  });
+
+  it("flips isMuted back for a second muteToggleRequested", () => {
+    const [muted] = update(initialAppState, actions.muteToggleRequested());
+    const [state] = update(muted, actions.muteToggleRequested());
+    expect(state.player.isMuted).toBe(false);
+  });
+
+  it("returns a setPlayerMuted effect for muteToggleRequested", () => {
+    const [, effects] = update(initialAppState, actions.muteToggleRequested());
+    expect(effects).toEqual([{ type: "setPlayerMuted", isMuted: true }]);
+  });
+
+  it("returns an unmuting setPlayerMuted effect when muted", () => {
+    const [muted] = update(initialAppState, actions.muteToggleRequested());
+    const [, effects] = update(muted, actions.muteToggleRequested());
+    expect(effects).toEqual([{ type: "setPlayerMuted", isMuted: false }]);
+  });
+
+  it("keeps the volume for muteToggleRequested", () => {
+    const [state] = update(initialAppState, actions.muteToggleRequested());
+    expect(state.player.volume).toBe(initialAppState.player.volume);
+  });
+
+  it("keeps the mute state for closeMedia", () => {
+    const [muted] = update(initialAppState, actions.muteToggleRequested());
+    const [state] = update(muted, actions.closeMedia());
+    expect(state.player.isMuted).toBe(true);
+  });
+
   it("keeps the volume and speed for closeMedia", () => {
     const playing = {
       ...initialAppState,

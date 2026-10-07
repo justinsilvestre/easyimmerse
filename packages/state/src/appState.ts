@@ -37,6 +37,8 @@ export type PlayerState = {
   buffered: readonly BufferedRange[];
   isPlaying: boolean;
   volume: number;
+  /** Silences the player without changing its volume. */
+  isMuted: boolean;
   speed: number;
 };
 
@@ -46,6 +48,7 @@ export const initialPlayerState: PlayerState = {
   buffered: [],
   isPlaying: false,
   volume: 1,
+  isMuted: false,
   speed: 1,
 };
 

@@ -7,5 +7,6 @@ export type PlayerControlsState = {
   durationMs: number;
   buffered?: readonly BufferedRange[];
   volume: number;
+  isMuted?: boolean;
   speed: number;
 };
