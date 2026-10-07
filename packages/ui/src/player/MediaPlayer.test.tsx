@@ -154,6 +154,11 @@ describe("MediaPlayer", () => {
       expect((await findVideo()).getAttribute("crossorigin")).toBe("anonymous");
     });
 
+    it("refuses the browser's context menu on the video", async () => {
+      renderPlayer(directPlaybackRoutes);
+      expect(fireEvent.contextMenu(await findVideo())).toBe(false);
+    });
+
     it("seeks half a frame past the asked time", async () => {
       const { playerRegistry } = renderPlayer(directPlaybackRoutes);
       const video = await findVideo();

@@ -21,6 +21,7 @@ import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
 import type { LookupState } from "../lookup/lookupState.ts";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { CuePanel } from "./CuePanel.tsx";
 import {
   exampleCues,
@@ -65,6 +66,27 @@ const flashcardSegments: FlashcardSegment[] = exampleCues
     endMs: cue.end_ms,
     screenshotMs: (cue.start_ms + cue.end_ms) / 2,
   }));
+
+const longFileCueCount = 340;
+
+const longFileDurationMs = longFileCueCount * 4_000;
+
+/** The example scene repeated through an episode's length, each cue numbered so that the list can be told apart. */
+function repeatCues(cues: readonly Cue[]): Cue[] {
+  return Array.from({ length: longFileCueCount }, (_, position) => {
+    const example = cues[position % cues.length] as Cue;
+    return {
+      index: position + 1,
+      start_ms: position * 4_000 + 500,
+      end_ms: position * 4_000 + 3_500,
+      text: `${position + 1}. ${example.text}`,
+    };
+  });
+}
+
+const longFileCues = repeatCues(exampleCues);
+
+const longFileTranslationCues = repeatCues(exampleTranslationCues);
 
 function videoStage() {
   return (
@@ -158,12 +180,12 @@ function lookupPopup(state: LookupState | null, mode: "word" | "search") {
 const meta = {
   title: "Media/MediaView",
   component: MediaView,
+  decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
     media: {
       projectName: "German series",
       title: "Dark S01E01 - Geheimnisse.mkv",
-      language: "de",
     },
     stage: videoStage(),
     playback: {
@@ -177,7 +199,7 @@ const meta = {
     cues: exampleCues,
     translationCues: exampleTranslationCues,
     waveform: waveform(),
-    panels: { cues: true, waveform: false, distractionFree: false },
+    panels: { cues: true, waveform: false },
     subtitleDisplay: "both",
     playerCallbacks: {
       onTogglePlay: fn(),
@@ -188,7 +210,6 @@ const meta = {
       onToggleSubtitleDisplay: fn(),
       onToggleCuePanel: fn(),
       onToggleWaveform: fn(),
-      onToggleDistractionFree: fn(),
     },
     onBack: fn(),
     wordGestures: {
@@ -280,7 +301,6 @@ export const AudioWithTranscript: Story = {
     media: {
       projectName: "German series",
       title: "Die Verwandlung, Kapitel 1",
-      language: "de",
     },
     stage: audioStage("Die Verwandlung, Kapitel 1"),
     translationCues: [],
@@ -301,9 +321,21 @@ export const Playing: Story = {
 };
 
 export const WaveformShown: Story = {
-  args: { panels: { cues: true, waveform: true, distractionFree: false } },
+  args: { panels: { cues: true, waveform: true } },
 };
 
-export const DistractionFree: Story = {
-  args: { panels: { cues: false, waveform: false, distractionFree: true } },
+/** A whole episode, whose subtitles panel must scroll on its own while the screen stays the size of the window. */
+export const LongFile: Story = {
+  args: {
+    cues: longFileCues,
+    translationCues: longFileTranslationCues,
+    playback: {
+      isPlaying: false,
+      currentMs: 6_200,
+      durationMs: longFileDurationMs,
+      volume: 0.8,
+      speed: 1,
+    },
+    sidePanel: subtitlesPanel(longFileCues, longFileTranslationCues),
+  },
 };

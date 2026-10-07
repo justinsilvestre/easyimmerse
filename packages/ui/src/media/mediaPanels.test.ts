@@ -9,9 +9,19 @@ describe("initialMediaPanels", () => {
   it("closes the waveform panel", () => {
     expect(initialMediaPanels.waveform).toBe(false);
   });
+
+  it("knows no distraction-free mode", () => {
+    expect("distractionFree" in initialMediaPanels).toBe(false);
+  });
 });
 
 describe("reduceMediaPanels", () => {
+  it("closes the subtitles panel when it is open", () => {
+    expect(
+      reduceMediaPanels(initialMediaPanels, { type: "cuePanelToggled" }).cues,
+    ).toBe(false);
+  });
+
   it("shows the waveform when it is hidden", () => {
     expect(
       reduceMediaPanels(initialMediaPanels, { type: "waveformToggled" })

@@ -162,7 +162,7 @@ async function renderWithWaveform() {
   const rendered = renderMediaScreen({ flashcards: [savedFlashcard] });
   act(() => rendered.store.dispatch(actions.playerDurationChanged(10)));
   await findSubtitles();
-  fireEvent.click(screen.getByRole("button", { name: "Show the waveform" }));
+  fireEvent.click(screen.getByRole("button", { name: "Waveform" }));
   return rendered;
 }
 

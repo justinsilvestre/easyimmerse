@@ -13,10 +13,7 @@ const meta = {
   component: CuePanel,
   decorators: [
     (Story) => (
-      <div
-        data-theme="dark"
-        className="flex h-[32rem] w-96 flex-col overflow-hidden rounded-lg bg-canvas text-fg"
-      >
+      <div className="flex h-[32rem] w-96 flex-col overflow-hidden rounded-lg bg-canvas text-fg">
         <Story />
       </div>
     ),
