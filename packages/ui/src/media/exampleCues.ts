@@ -69,8 +69,8 @@ export const exampleFlashcardCueIndexes: readonly number[] = [3, 6];
 /** Where the example cues hold the words of their flashcards. */
 export const exampleFlashcardWordRanges = flashcardWordRanges(
   [
-    { cue_index: 3, content: { word: "fressen" } },
-    { cue_index: 6, content: { word: "Schlüssel" } },
+    { cue_index: 3, word_start: 14, content: { word: "fressen" } },
+    { cue_index: 6, word_start: 12, content: { word: "Schlüssel" } },
   ],
   exampleCues,
 );
