@@ -39,7 +39,7 @@ function PopupAtWord({
           onToggleSize={() =>
             setSize(size === "compact" ? "expanded" : "compact")
           }
-          wordActions={{ onFlashcard: fn(), onLookupStarted: fn() }}
+          wordActions={{ onFlashcard: fn() }}
           onClose={fn()}
           onSetUpDictionary={fn()}
         />

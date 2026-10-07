@@ -7,7 +7,7 @@ afterEach(cleanup);
 
 function renderCard() {
   return render(
-    <KanjiCard result={exampleKanjiResult} onWordClick={() => undefined} />,
+    <KanjiCard result={exampleKanjiResult} onWordLookup={() => undefined} />,
   );
 }
 

@@ -14,12 +14,12 @@ import { TagList } from "./TagList.tsx";
 export function DictionaryDefinitionsSection({
   dictionaryDefinitions: { dictionaryId, dictionaryTitle, entry, tags },
   resolveMediaUrl,
-  onWordClick,
+  onWordLookup,
   onLookup,
 }: {
   dictionaryDefinitions: DictionaryDefinitions;
   resolveMediaUrl: ResolveMediaUrl;
-  onWordClick: (word: string) => void;
+  onWordLookup: (word: string) => void;
   onLookup: (term: string) => void;
 }) {
   return (
@@ -53,7 +53,7 @@ export function DictionaryDefinitionsSection({
                     definition={definition}
                     dictionaryId={dictionaryId}
                     resolveMediaUrl={resolveMediaUrl}
-                    onWordClick={onWordClick}
+                    onWordLookup={onWordLookup}
                     onLookup={onLookup}
                   />
                 </div>

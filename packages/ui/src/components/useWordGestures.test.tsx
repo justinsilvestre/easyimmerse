@@ -7,7 +7,6 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ClickableText } from "./ClickableText.tsx";
-import type { WordGestures } from "./useWordGestures.ts";
 import { WordClickMemoryProvider } from "./wordClickMemoryContext.tsx";
 
 beforeEach(() => vi.useFakeTimers());
@@ -17,19 +16,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-type Gesture =
-  | "click"
-  | "clickStarted"
-  | "doubleClick"
-  | "hover"
-  | "hoverAnswered"
-  | "hold";
+type Gesture = "click" | "doubleClick" | "hover" | "hoverAnswered" | "hold";
 
 /** Renders a sentence whose word gestures are recorded as `gesture word`. */
-function renderSentence(
-  options: Pick<WordGestures, "defersClick"> = {},
-  text = "Ich rufe an.",
-) {
+function renderSentence(text = "Ich rufe an.") {
   const gestures: string[] = [];
   const record = (gesture: Gesture) => (hit: { word: string }) => {
     gestures.push(`${gesture} ${hit.word}`);
@@ -43,8 +33,6 @@ function renderSentence(
         onWordHover: record("hover"),
         onWordHoverAnswered: record("hoverAnswered"),
         onWordHold: record("hold"),
-        onWordClickStarted: record("clickStarted"),
-        ...options,
       }}
     />,
   );
@@ -122,7 +110,7 @@ describe("useWordGestures", () => {
   });
 
   it("reports a key press on a word as a click", () => {
-    const gestures = renderSentence({ defersClick: true });
+    const gestures = renderSentence();
     fireEvent.click(word("rufe"), { detail: 0 });
     expect(gestures).toEqual(["click rufe"]);
   });
@@ -198,28 +186,6 @@ describe("useWordGestures", () => {
     word("rufe").remove();
     act(() => vi.advanceTimersByTime(200));
     expect(gestures).toEqual([]);
-  });
-
-  describe("when clicks are deferred", () => {
-    it("reports at once that a click has begun", () => {
-      const gestures = renderSentence({ defersClick: true });
-      fireEvent.click(word("rufe"), { detail: 1 });
-      expect(gestures).toEqual(["clickStarted rufe"]);
-    });
-
-    it("reports a lone click once the double-click interval has passed", () => {
-      const gestures = renderSentence({ defersClick: true });
-      fireEvent.click(word("rufe"), { detail: 1 });
-      act(() => vi.advanceTimersByTime(500));
-      expect(gestures).toEqual(["clickStarted rufe", "click rufe"]);
-    });
-
-    it("reports only the double-click of a double-click", () => {
-      const gestures = renderSentence({ defersClick: true });
-      doubleClick(word("rufe"));
-      act(() => vi.advanceTimersByTime(500));
-      expect(gestures).toEqual(["clickStarted rufe", "doubleClick rufe"]);
-    });
   });
 
   it("reports a hover as soon as the mouse has stayed on a word for 40 ms", () => {
@@ -349,7 +315,7 @@ describe("useWordGestures", () => {
     afterEach(() => vi.restoreAllMocks());
 
     it("reports a click from the character under the pointer", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       layOutCharacters();
       fireEvent.click(word("映画を見る"), {
         detail: 1,
@@ -360,28 +326,28 @@ describe("useWordGestures", () => {
     });
 
     it("reports a click from a character after one outside the Basic Multilingual Plane", () => {
-      const gestures = renderSentence({}, "𠮷野家");
+      const gestures = renderSentence("𠮷野家");
       layOutCharacters();
       fireEvent.click(word("𠮷野家"), { detail: 1, clientX: 40, clientY: 10 });
       expect(gestures).toEqual(["click 野家"]);
     });
 
     it("reports a click on the right half of a character outside the Basic Multilingual Plane from that character", () => {
-      const gestures = renderSentence({}, "𠮷野家");
+      const gestures = renderSentence("𠮷野家");
       layOutCharacters();
       fireEvent.click(word("𠮷野家"), { detail: 1, clientX: 30, clientY: 10 });
       expect(gestures).toEqual(["click 𠮷野家"]);
     });
 
     it("reports a key press from the start of the run", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       layOutCharacters();
       fireEvent.click(word("映画を見る"), { detail: 0 });
       expect(gestures).toEqual(["click 映画を見る"]);
     });
 
     it("reports a click from the start of the run when no character lies under the pointer", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       fireEvent.click(word("映画を見る"), {
         detail: 1,
         clientX: 50,
@@ -391,7 +357,7 @@ describe("useWordGestures", () => {
     });
 
     it("waits for the mouse to rest on the character it has moved to", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       layOutCharacters();
       const run = word("映画を見る");
       fireEvent.pointerEnter(run, {
@@ -413,7 +379,7 @@ describe("useWordGestures", () => {
     });
 
     it("looks up only the character the mouse comes to rest on, not those it sweeps over", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       layOutCharacters();
       const run = word("映画を見る");
       fireEvent.pointerEnter(run, {
@@ -434,7 +400,7 @@ describe("useWordGestures", () => {
     });
 
     it("reports a held tap from the character under the finger", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       layOutCharacters();
       fireEvent.pointerDown(word("映画を見る"), {
         pointerType: "touch",
@@ -446,7 +412,7 @@ describe("useWordGestures", () => {
     });
 
     it("reports a tap from where the finger came down, as a held tap would", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       layOutCharacters();
       const run = word("映画を見る");
       fireEvent.pointerDown(run, {
@@ -464,7 +430,7 @@ describe("useWordGestures", () => {
     });
 
     it("reports a Latin word next to the run from its start", () => {
-      const gestures = renderSentence({}, "今日はNetflixで");
+      const gestures = renderSentence("今日はNetflixで");
       layOutCharacters();
       fireEvent.click(word("Netflix"), { detail: 1, clientX: 50, clientY: 10 });
       expect(gestures).toEqual(["click Netflix"]);
@@ -484,7 +450,7 @@ describe("useWordGestures", () => {
     };
 
     it("looks up from the character Right has moved to", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       const run = focusRun("映画を見る");
       press(run, "ArrowRight", 3);
       fireEvent.click(run, { detail: 0 });
@@ -492,7 +458,7 @@ describe("useWordGestures", () => {
     });
 
     it("moves back with Left", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       const run = focusRun("映画を見る");
       press(run, "ArrowRight", 3);
       press(run, "ArrowLeft");
@@ -501,7 +467,7 @@ describe("useWordGestures", () => {
     });
 
     it("starts a flashcard from that character with Shift+Enter", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       const run = focusRun("映画を見る");
       press(run, "ArrowRight", 3);
       fireEvent.click(run, { detail: 0, shiftKey: true });
@@ -509,7 +475,7 @@ describe("useWordGestures", () => {
     });
 
     it("steps over a character outside the Basic Multilingual Plane whole", () => {
-      const gestures = renderSentence({}, "𠮷野家");
+      const gestures = renderSentence("𠮷野家");
       const run = focusRun("𠮷野家");
       press(run, "ArrowRight");
       fireEvent.click(run, { detail: 0 });
@@ -517,7 +483,7 @@ describe("useWordGestures", () => {
     });
 
     it("stops at the last character", () => {
-      const gestures = renderSentence({}, "見る");
+      const gestures = renderSentence("見る");
       const run = focusRun("見る");
       press(run, "ArrowRight", 5);
       fireEvent.click(run, { detail: 0 });
@@ -525,7 +491,7 @@ describe("useWordGestures", () => {
     });
 
     it("stops at the first character", () => {
-      const gestures = renderSentence({}, "見る");
+      const gestures = renderSentence("見る");
       const run = focusRun("見る");
       press(run, "ArrowLeft");
       fireEvent.click(run, { detail: 0 });
@@ -533,7 +499,7 @@ describe("useWordGestures", () => {
     });
 
     it("starts from the first character again once focus has left", () => {
-      const gestures = renderSentence({}, "映画を見る");
+      const gestures = renderSentence("映画を見る");
       const run = focusRun("映画を見る");
       press(run, "ArrowRight", 3);
       fireEvent.blur(run);

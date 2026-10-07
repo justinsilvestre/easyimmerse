@@ -11,7 +11,6 @@ function firstClickOn(word: string, input: WordHit["input"] = "mouse") {
     hit: { word, start: 0, element: document.createElement("button"), input },
     point: { x: 0, y: 0 },
     onDoubleClick: undefined,
-    cancel: () => undefined,
   };
 }
 

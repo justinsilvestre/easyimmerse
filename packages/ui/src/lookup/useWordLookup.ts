@@ -38,7 +38,7 @@ type Languages = { target: string; translation: string };
  * a click opens it at the word, or closes it when it shows that word already;
  * a hover looks the word up ahead of a click, and once that lookup answers an open pop-up moves to the word, unless the pointer is inside it;
  * and a double-click or held tap turns the word into a flashcard filled from its lookup.
- * Words inside the pop-up are looked up in it, or turned into flashcards the same way.
+ * Words inside the pop-up are looked up in it with a double-click, or turned into flashcards with a held tap.
  * `S` is the kind of passage words come from, such as a subtitle cue.
  */
 export function useWordLookup<S>({
@@ -201,10 +201,7 @@ function popupOf<S>(
       resolveMediaUrl: lookup.resolveMediaUrl,
       pendingFlashcard: pending.term,
       onSearch: control.search,
-      wordActions: {
-        onFlashcard: flashcards.onWordFlashcard,
-        onLookupStarted: (term) => lookup.prefetch(wordInPopup(control, term)),
-      },
+      wordActions: { onFlashcard: flashcards.onWordFlashcard },
       onCreateFlashcard: flashcards.onCreateFlashcard,
       onClose: control.close,
     },

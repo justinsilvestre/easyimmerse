@@ -10,8 +10,6 @@ export type FirstClick = {
   hit: WordHit;
   point: ClickPoint;
   onDoubleClick: ((hit: WordHit) => void) | undefined;
-  /** Drops the first click's own report, when it waits for the double-click interval. */
-  cancel: () => void;
 };
 
 /** How far apart the two taps of a double tap may land. */
