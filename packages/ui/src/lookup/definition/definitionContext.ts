@@ -12,7 +12,8 @@ export type ResolveMediaUrl = (
 type DefinitionContextValue = {
   dictionaryId: string;
   resolveMediaUrl: ResolveMediaUrl;
-  onWordClick: (word: string) => void;
+  /** Looks up a word of the definition that was double-clicked. */
+  onWordLookup: (word: string) => void;
   /** Looks up a term that a link in the definition points to. */
   onLookup: (term: string) => void;
   /** Whether text renders without clickable words, as inside a link or a reading above a word. */

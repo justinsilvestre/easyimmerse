@@ -1,6 +1,13 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { doubleClick } from "../testSupport/doubleClick.ts";
 import { DictionaryPopup } from "./DictionaryPopup.tsx";
 import {
   exampleInflectedResult,
@@ -87,11 +94,78 @@ describe("DictionaryPopup", () => {
     expect(screen.queryByRole("button", { name: "New flashcard" })).toBeNull();
   });
 
-  it("looks up a word clicked inside a definition", () => {
+  it("looks up a word double-clicked inside a definition", () => {
     const searched: string[] = [];
     renderPopup({ onSearch: (term) => searched.push(term) });
-    fireEvent.click(screen.getByRole("button", { name: "devour" }));
+    doubleClick(screen.getByRole("button", { name: "devour" }));
     expect(searched).toEqual(["devour"]);
+  });
+
+  it("looks nothing up for a word clicked once inside a definition", () => {
+    const searched: string[] = [];
+    renderPopup({ onSearch: (term) => searched.push(term) });
+    fireEvent.click(screen.getByRole("button", { name: "devour" }), {
+      detail: 1,
+    });
+    expect(searched).toEqual([]);
+  });
+
+  it("looks nothing up for a word inside a definition on Enter", () => {
+    const searched: string[] = [];
+    renderPopup({ onSearch: (term) => searched.push(term) });
+    fireEvent.click(screen.getByRole("button", { name: "devour" }), {
+      detail: 0,
+    });
+    expect(searched).toEqual([]);
+  });
+
+  it("looks up a word inside a definition on Shift+Enter", () => {
+    const searched: string[] = [];
+    renderPopup({ onSearch: (term) => searched.push(term) });
+    fireEvent.click(screen.getByRole("button", { name: "devour" }), {
+      detail: 0,
+      shiftKey: true,
+    });
+    expect(searched).toEqual(["devour"]);
+  });
+
+  it("looks up a double-clicked meaning of a kanji", () => {
+    const searched: string[] = [];
+    renderPopup({
+      state: {
+        kind: "found",
+        term: "食べなかった",
+        results: [exampleInflectedResult],
+        kanji: [exampleKanjiResult],
+      },
+      onSearch: (term) => searched.push(term),
+    });
+    doubleClick(
+      within(screen.getByRole("article", { name: "Kanji 食" })).getByRole(
+        "button",
+        { name: "eat" },
+      ),
+    );
+    expect(searched).toEqual(["eat"]);
+  });
+
+  it("makes a flashcard of a word held inside a definition", async () => {
+    const flashcards: string[] = [];
+    render(
+      <DictionaryPopup
+        state={foundState}
+        resolveMediaUrl={() => null}
+        mode="word"
+        wordActions={{ onFlashcard: (word) => flashcards.push(word) }}
+        onSearch={() => undefined}
+        onCreateFlashcard={() => undefined}
+        onClose={() => undefined}
+        onSetUpDictionary={() => undefined}
+      />,
+    );
+    const word = screen.getByRole("button", { name: "devour" });
+    fireEvent.pointerDown(word, { pointerType: "touch" });
+    await vi.waitFor(() => expect(flashcards).toEqual(["devour"]));
   });
 });
 

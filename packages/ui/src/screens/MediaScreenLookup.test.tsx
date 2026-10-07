@@ -9,10 +9,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import { doubleClick } from "../testSupport/doubleClick.ts";
 import {
   createdDraftOf,
   dictionarySummary,
-  doubleClick,
   findSubtitles,
   playbackCalls,
   renderMediaScreen,
@@ -498,49 +498,54 @@ describe("MediaScreen lookup gestures", () => {
       return within(popup).findByRole("button", { name: "devour" });
     }
 
-    it("starts looking a clicked word up at once", async () => {
+    it("looks nothing up on a single click", async () => {
       const { client } = renderMediaScreen();
       fireEvent.click(await findDevour(), { detail: 1 });
-      expect(lookupTexts(client)).toEqual(["cat is sleeping.", "devour"]);
+      await advance(500);
+      expect(lookupTexts(client)).toEqual(["cat is sleeping."]);
     });
 
-    it("keeps showing the first word during the double-click interval", async () => {
-      renderMediaScreen();
-      fireEvent.click(await findDevour(), { detail: 1 });
-      await advance(450);
-      expect(shownWord(queryPopup() as HTMLElement)).toBe("cat");
-    });
-
-    it("shows a clicked word once the double-click interval has passed", async () => {
+    it("keeps showing the first word after a single click", async () => {
       renderMediaScreen();
       fireEvent.click(await findDevour(), { detail: 1 });
       await advance(500);
+      expect(shownWord(queryPopup() as HTMLElement)).toBe("cat");
+    });
+
+    it("shows a double-clicked word", async () => {
+      renderMediaScreen();
+      doubleClick(await findDevour());
       expect(await findPopupShowing("devour")).toBeDefined();
     });
 
-    it("starts a flashcard from its lookup on a double-click", async () => {
-      const { client } = renderMediaScreen();
+    it("shows a double-tapped word", async () => {
+      renderMediaScreen();
+      const devour = await findDevour();
+      tap(devour);
+      await advance(250);
+      tap(devour);
+      expect(await findPopupShowing("devour")).toBeDefined();
+    });
+
+    it("starts no flashcard on a double-click", async () => {
+      renderMediaScreen();
       doubleClick(await findDevour());
+      await findPopupShowing("devour");
+      expect(editor()).toBeNull();
+    });
+
+    it("starts a flashcard from its lookup on a held tap", async () => {
+      const { client } = renderMediaScreen();
+      await holdTouch(await findDevour());
       await screen.findByRole("form", { name: "Flashcard" });
       expect(lookupTexts(client)).toEqual(["cat is sleeping.", "devour"]);
     });
 
     it("says that it is making a flashcard while the lookup has not answered", async () => {
       renderMediaScreen({ unansweredLookups: ["devour"] });
-      doubleClick(await findDevour());
+      await holdTouch(await findDevour());
       expect(
         await screen.findByText("Making a flashcard for “devour”…"),
-      ).toBeDefined();
-    });
-
-    it("starts a flashcard on a double tap", async () => {
-      renderMediaScreen();
-      const devour = await findDevour();
-      tap(devour);
-      await advance(250);
-      tap(devour);
-      expect(
-        await screen.findByRole("form", { name: "Flashcard" }),
       ).toBeDefined();
     });
 

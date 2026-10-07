@@ -33,7 +33,7 @@ function renderSection(definitions: Definition[] = [structured]) {
         ],
       }}
       resolveMediaUrl={() => null}
-      onWordClick={() => undefined}
+      onWordLookup={() => undefined}
       onLookup={() => undefined}
     />,
   );

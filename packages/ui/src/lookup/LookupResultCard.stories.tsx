@@ -29,7 +29,7 @@ const meta = {
   args: {
     result: exampleInflectedResult,
     resolveMediaUrl: resolveExampleMediaUrl,
-    onWordClick: fn(),
+    onWordLookup: fn(),
     onLookup: fn(),
     onCreateFlashcard: fn(),
   },

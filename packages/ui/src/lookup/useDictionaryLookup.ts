@@ -59,7 +59,7 @@ export function useDictionaryLookup<S>(language: string) {
     /**
      * Looks a word up without showing it, and resolves its results, or null when the lookup fails or no dictionary covers the language.
      * A lookup the pop-up already made or is making for the same word is reused.
-     * Neither this nor `prefetch` renders the component again.
+     * It does not render the component again.
      */
     lookUp: (
       wanted: LookupRequest<S>,
@@ -69,13 +69,6 @@ export function useDictionaryLookup<S>(language: string) {
         : lookUpTextAhead(storeDispatch, lookupQueryOf(wanted, language))
             .then((response) => response.results)
             .catch(() => null),
-    /** Starts looking a word up, so that its results are at hand when the pop-up shows it. */
-    prefetch: (wanted: LookupRequest<S>) => {
-      if (!isMissingDictionary)
-        lookUpTextAhead(storeDispatch, lookupQueryOf(wanted, language)).catch(
-          () => undefined,
-        );
-    },
     chooseWord: (chosen: LookupRequest<S>) =>
       dispatch({ type: "wordChosen", request: chosen }),
     openSearch: () => dispatch({ type: "searchOpened" }),

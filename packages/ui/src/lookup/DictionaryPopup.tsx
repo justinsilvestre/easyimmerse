@@ -17,9 +17,10 @@ import { usePopupDismissal } from "./usePopupDismissal.ts";
 /**
  * The dictionary pop-up. In `word` mode it opens on the word chosen in the text, which fills its field; in `search` mode the field opens empty, with focus.
  * Either way the field can be edited and submitted to look something else up.
- * Clicking a word inside the pop-up, or following a link to another headword, looks it up in turn.
+ * Double-clicking a word inside the pop-up, or following a link to another headword, looks it up in turn;
+ * a single click on a word does nothing, so that it reaches the entry's own clickable elements.
  * A flashcard comes from every result with the header button (`entryIndex` null) or from one result with its own button,
- * and, through `wordActions`, from a word inside the pop-up that is double-clicked or held.
+ * and, through `wordActions`, from a word inside the pop-up that is held on a touch screen.
  * When no dictionary has an entry for the word, the header button still makes a flashcard, with the word and its sentence only.
  * While such a flashcard waits for its word's lookup, `pendingFlashcard` names the word.
  * A thin bar along its bottom edge asks, through `onToggleSize`, to switch the pop-up between its two `size`s, to show more or less of the entries.
@@ -66,7 +67,7 @@ export function DictionaryPopup({
       aria-label="Dictionary"
       data-size={size}
       style={{ width: popupWidth(size), ...popupHeight(size) }}
-      className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface text-fg shadow-xl"
+      className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface text-fg shadow-xl transition-[width] duration-150 ease-out motion-reduce:transition-none"
     >
       <header className="flex items-center gap-2 border-b border-line px-3 py-2">
         <TermField
@@ -255,7 +256,7 @@ function Body({
               key={index}
               result={result}
               resolveMediaUrl={resolveMediaUrl}
-              onWordClick={onSearch}
+              onWordLookup={onSearch}
               onLookup={onSearch}
               onCreateFlashcard={() => onCreateFlashcard(index)}
             />
@@ -264,7 +265,7 @@ function Body({
             <KanjiCard
               key={`${kanji.dictionaryId}-${kanji.entry.character}`}
               result={kanji}
-              onWordClick={onSearch}
+              onWordLookup={onSearch}
             />
           ))}
         </>

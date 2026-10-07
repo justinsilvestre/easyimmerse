@@ -1,6 +1,7 @@
 import type { ImageElement, StructuredContent } from "@easyimmerse/types";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { doubleClick } from "../../testSupport/doubleClick.ts";
 import {
   renderDefinition,
   resolveFakeMediaUrl,
@@ -89,11 +90,11 @@ describe("StructuredContentView", () => {
     );
   });
 
-  it("makes the words of text clickable", () => {
-    const clicked: string[] = [];
-    renderContent("to eat", { onWordClick: (word) => clicked.push(word) });
-    fireEvent.click(screen.getByRole("button", { name: "eat" }));
-    expect(clicked).toEqual(["eat"]);
+  it("looks up a double-clicked word of text", () => {
+    const looked: string[] = [];
+    renderContent("to eat", { onWordLookup: (word) => looked.push(word) });
+    doubleClick(screen.getByRole("button", { name: "eat" }));
+    expect(looked).toEqual(["eat"]);
   });
 
   it("does not make the words of a reading clickable", () => {

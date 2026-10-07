@@ -13,18 +13,18 @@ import { TagList } from "./TagList.tsx";
 /**
  * One result in the dictionary pop-up: the term and its reading, each equally good chain of inflections that leads to the looked-up text,
  * its tags, frequencies and pronunciations, and then each dictionary's definitions.
- * Clicked words go to `onWordClick`; links to other headwords go to `onLookup`.
+ * Double-clicked words go to `onWordLookup`; links to other headwords go to `onLookup`.
  */
 export function LookupResultCard({
   result,
   resolveMediaUrl,
-  onWordClick,
+  onWordLookup,
   onLookup,
   onCreateFlashcard,
 }: {
   result: LookupResult;
   resolveMediaUrl: ResolveMediaUrl;
-  onWordClick: (word: string) => void;
+  onWordLookup: (word: string) => void;
   onLookup: (term: string) => void;
   onCreateFlashcard: () => void;
 }) {
@@ -66,7 +66,7 @@ export function LookupResultCard({
           key={index}
           dictionaryDefinitions={dictionaryDefinitions}
           resolveMediaUrl={resolveMediaUrl}
-          onWordClick={onWordClick}
+          onWordLookup={onWordLookup}
           onLookup={onLookup}
         />
       ))}

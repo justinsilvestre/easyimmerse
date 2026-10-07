@@ -24,7 +24,7 @@ const meta = {
     onSearch: fn(),
     onCreateFlashcard: fn(),
     onToggleSize: fn(),
-    wordActions: { onFlashcard: fn(), onLookupStarted: fn() },
+    wordActions: { onFlashcard: fn() },
     onClose: fn(),
     onSetUpDictionary: fn(),
   },

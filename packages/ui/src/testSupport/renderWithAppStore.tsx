@@ -24,14 +24,21 @@ export function renderWithAppStore(
   );
   for (const [key, value] of Object.entries(options.storedPreferences ?? {}))
     effects.preferences.set(key, value);
-  render(
+  const withProviders = (child: ReactNode) => (
     <AppStoreProviders
       store={store}
       playerRegistry={playerRegistry}
       browserFileRegistry={options.browserFileRegistry ?? null}
     >
-      {element}
-    </AppStoreProviders>,
+      {child}
+    </AppStoreProviders>
   );
-  return { effects, store, playerRegistry };
+  const { rerender } = render(withProviders(element));
+  return {
+    effects,
+    store,
+    playerRegistry,
+    /** Renders another element in place of the first, inside the same store. */
+    rerender: (next: ReactNode) => rerender(withProviders(next)),
+  };
 }

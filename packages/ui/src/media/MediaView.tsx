@@ -7,7 +7,7 @@ import { Button } from "../components/Button.tsx";
 import type { Range } from "../components/RunText.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
-import { findCueShownAt, findTranslationOf } from "./findCue.ts";
+import { findTranslationOf } from "./findCue.ts";
 import { PanelToggles } from "./PanelToggles.tsx";
 import {
   type PlayerCallbacks,
@@ -19,7 +19,10 @@ import { SubtitleAppearanceDialog } from "./SubtitleAppearanceDialog.tsx";
 import { SubtitleLookupButtons } from "./SubtitleLookupButtons.tsx";
 import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
+
 import type { SubtitleAppearance } from "./subtitleAppearance.ts";
+import { useShownCue } from "./useShownCue.ts";
+
 import { useStageClicks } from "./useStageClicks.ts";
 
 type MediaViewProps = {
@@ -81,7 +84,7 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  */
 export function MediaView(props: MediaViewProps) {
   const { playback, cues, translationCues, panels } = props;
-  const activeCue = findCueShownAt(cues, playback.currentMs);
+  const activeCue = useShownCue(cues, playback.currentMs);
   const pointer = usePointerActivity();
   const onStageClick = useStageClicks(
     props.playerCallbacks.onTogglePlay,

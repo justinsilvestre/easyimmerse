@@ -1,10 +1,12 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import { type PopupSize, popupWidthRem } from "../lookup/popupSize.ts";
+import { useIsGliding } from "../lookup/useIsGliding.ts";
 import { popupPlacement } from "./popupPlacement.ts";
 
 /**
  * Holds the dictionary pop-up beside the word it is about.
+ * It glides from one word to the next on the same side, and appears at once where it first opens or when it changes sides.
  * On a phone, or when it opens on its search field, it sits at the bottom of the window instead.
  * `onPointerInsideChange` reports the pointer entering and leaving the pop-up.
  */
@@ -26,7 +28,15 @@ export function LookupAnchor({
     onPointerEnter: () => onPointerInsideChange?.(true),
     onPointerLeave: () => onPointerInsideChange?.(false),
   };
-  if (!isWide || !wordRect)
+  const place =
+    isWide && wordRect
+      ? popupPlacement(wordRect, popupWidthPx(size), {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        })
+      : null;
+  const isGliding = useIsGliding(place);
+  if (!place)
     return (
       <div
         {...pointerProps}
@@ -38,22 +48,17 @@ export function LookupAnchor({
         {children}
       </div>
     );
-  const placement = popupPlacement(wordRect, popupWidthPx(size), {
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
+  const { side, ...style } = place;
   return (
     <div
       {...pointerProps}
       className={clsx(
-        "pointer-events-none fixed z-30 flex flex-col font-sans *:pointer-events-auto transition-[top,bottom,left] duration-150",
-        placement.side === "above" ? "justify-end" : "justify-start",
+        "pointer-events-none fixed z-30 flex flex-col font-sans *:pointer-events-auto",
+        side === "above" ? "justify-end" : "justify-start",
+        isGliding &&
+          "transition-[top,bottom,left] duration-150 ease-out motion-reduce:transition-none",
       )}
-      style={{
-        left: placement.left,
-        top: placement.top,
-        bottom: placement.bottom,
-      }}
+      style={style}
     >
       {children}
     </div>

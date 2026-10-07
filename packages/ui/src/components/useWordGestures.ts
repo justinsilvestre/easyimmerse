@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useTimer } from "../hooks/useTimer.ts";
 import { characterOffsetAt, type ViewportPoint } from "./characterAtPoint.ts";
-import { doubleClickMs, hoverMs } from "./gestureTiming.ts";
+import { hoverMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
 import { useKeyboardStart } from "./useKeyboardStart.ts";
 import type { ClickPoint, WordClickMemory } from "./wordClickMemory.ts";
@@ -55,13 +55,6 @@ export type WordGestures = {
   onWordHoverAnswered?: (hit: WordHit, matchedLength: number | null) => void;
   /** A touch held on the word. The click that ends it is not reported. */
   onWordHold?: (hit: WordHit) => void;
-  /**
-   * Holds a pointer click back until the double-click interval has passed, and drops it when a double-click follows.
-   * Use it where a click changes the text under the pointer, so that the second click of a double-click still lands on the word.
-   */
-  defersClick?: boolean;
-  /** A click that `defersClick` holds back, reported at once, so that work such as a lookup can begin. */
-  onWordClickStarted?: (hit: WordHit) => void;
 };
 
 /**
@@ -76,7 +69,6 @@ export function useWordGestures(gestures: WordGestures) {
   const latest = useRef(gestures);
   latest.current = gestures;
   const hoverTimer = useTimer();
-  const clickTimer = useTimer();
   const [press] = useState(createPressTracker);
   useEffect(() => press.cancelHold, [press]);
   const memory = useWordClickMemory();
@@ -88,27 +80,21 @@ export function useWordGestures(gestures: WordGestures) {
     input: WordHit["input"],
   ) => hitAt(part, element, offsetAtPoint(part, element, point), input);
   const reportClick = (event: MouseEvent<HTMLElement>, hit: WordHit) => {
-    const { onWordClick, onWordDoubleClick, defersClick } = latest.current;
+    const { onWordClick, onWordDoubleClick } = latest.current;
     if (hit.input === "keyboard")
       return (
         event.shiftKey && onWordDoubleClick ? onWordDoubleClick : onWordClick
       )?.(hit);
     const point = pointOf(event);
     const first = firstClickCompletedBy(memory, event, hit, point);
-    if (first) {
-      first.cancel();
-      return first.onDoubleClick?.(first.hit);
-    }
+    if (first) return first.onDoubleClick?.(first.hit);
     // A second click whose first landed on no word, or too long ago, counts as a click of its own.
     memory.remember({
       hit,
       point,
       onDoubleClick: onWordDoubleClick ?? onWordClick,
-      cancel: clickTimer.cancel,
     });
-    if (!defersClick) return onWordClick?.(hit);
-    latest.current.onWordClickStarted?.(hit);
-    clickTimer.restart(doubleClickMs, () => latest.current.onWordClick?.(hit));
+    onWordClick?.(hit);
   };
   const hovered = useRef<WordHit | null>(null);
   const reportAnswer = (hit: WordHit, matchedLength: number | null) => {

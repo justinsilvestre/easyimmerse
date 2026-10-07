@@ -13,7 +13,7 @@ const meta = {
       </div>
     ),
   ],
-  args: { result: exampleKanjiResult, onWordClick: fn() },
+  args: { result: exampleKanjiResult, onWordLookup: fn() },
 } satisfies Meta<typeof KanjiCard>;
 
 export default meta;

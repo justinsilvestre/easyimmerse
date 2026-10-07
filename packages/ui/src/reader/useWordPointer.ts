@@ -91,7 +91,6 @@ export function useWordPointer(
       hit,
       point,
       onDoubleClick: () => latest.current.onWordDoubleClick(word),
-      cancel: () => undefined,
     });
     latest.current.onWordClick(word, input);
   };

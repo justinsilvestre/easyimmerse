@@ -34,6 +34,7 @@ function createWord(rect: AnchorRect) {
 
 const lowWord = { top: 700, bottom: 720, left: 100, right: 140 };
 const higherWord = { top: 620, bottom: 640, left: 100, right: 140 };
+const topWord = { top: 40, bottom: 60, left: 100, right: 140 };
 
 function renderAt(word: Element, size?: "compact" | "expanded") {
   const { container } = render(
@@ -45,10 +46,52 @@ function renderAt(word: Element, size?: "compact" | "expanded") {
     container.querySelector("[data-side]") as HTMLElement | null;
   return Object.assign(() => wrapper()?.style.bottom, {
     size: () => wrapper()?.getAttribute("data-size"),
+    isGliding: () => wrapper()?.className.includes("transition-"),
+  });
+}
+
+/** Lets the pop-up measure its word again, as it does when the window is resized. */
+function remeasure() {
+  act(() => {
+    window.dispatchEvent(new Event("resize"));
   });
 }
 
 describe("AnchoredPopup", () => {
+  it("appears at its first place at once", () => {
+    const { word } = createWord(lowWord);
+    const style = renderAt(word);
+    expect(style.isGliding()).toBe(false);
+  });
+
+  it("glides to its word's new place on the same side", () => {
+    const { word, moveTo } = createWord(lowWord);
+    const style = renderAt(word);
+    moveTo(higherWord);
+    remeasure();
+    expect(style.isGliding()).toBe(true);
+  });
+
+  it("moves at once to its word's other side", () => {
+    const { word, moveTo } = createWord(lowWord);
+    const style = renderAt(word);
+    moveTo(higherWord);
+    remeasure();
+    moveTo(topWord);
+    remeasure();
+    expect(style.isGliding()).toBe(false);
+  });
+
+  it("glides again once it has moved on the side it changed to", () => {
+    const { word, moveTo } = createWord(lowWord);
+    const style = renderAt(word);
+    moveTo(topWord);
+    remeasure();
+    moveTo({ ...topWord, top: 60, bottom: 80 });
+    remeasure();
+    expect(style.isGliding()).toBe(true);
+  });
+
   it("takes the pop-up's size, so that it is centred by that width", () => {
     const { word } = createWord(lowWord);
     const style = renderAt(word, "expanded");

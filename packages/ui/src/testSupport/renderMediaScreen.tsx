@@ -7,12 +7,13 @@ import type {
   LookupResponse,
   NewFlashcard,
 } from "@easyimmerse/types";
-import { act, fireEvent, screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { NavigationActionsContext } from "../navigationContext.ts";
 import { MediaScreen } from "../screens/MediaScreen.tsx";
 import { createFakeBackendClient } from "./createFakeBackendClient.ts";
+import { doubleClick } from "./doubleClick.ts";
 import { fixtureProject, fixtureResponses } from "./fixtureResponses.ts";
 import { directPlaybackRoutes, fakeServer } from "./mediaFixtureResponses.ts";
 import { renderWithAppStore } from "./renderWithAppStore.tsx";
@@ -185,13 +186,6 @@ export function createdDraftOf(
   request: BackendRequest | undefined,
 ): FlashcardDraft | undefined {
   return (bodyOf(request) as NewFlashcard | undefined)?.draft;
-}
-
-/** Fires what a browser fires for a double-click: two clicks counting up, then dblclick. */
-export function doubleClick(element: HTMLElement) {
-  fireEvent.click(element, { detail: 1 });
-  fireEvent.click(element, { detail: 2 });
-  fireEvent.doubleClick(element, { detail: 2 });
 }
 
 /** Double-clicks a word and waits for the flashcard editor, which opens once the word's lookup answers. */
