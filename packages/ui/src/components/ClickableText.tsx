@@ -84,11 +84,13 @@ export function stripMarkup(text: string): string {
 /**
  * Renders text with each word as a button, so that a word can be looked up or turned into a flashcard.
  * `gestures` receives what the user does to each word: click, double-click, hover or a held tap.
- * The lookup cursor, which the mouse and the keyboard move alike, is highlighted once the lookup from it has answered:
- * a word written with spaces whole, and in a run of a script written without spaces the text that lookup matched,
- * or the character alone when nothing matched. The highlight stays while the mouse moves within it, and goes when it moves elsewhere.
- * Left and Right move the cursor from the focused word along the text, as `useKeyboardCursor` describes.
- * The word the pop-up shows is highlighted the same way.
+ * The lookup cursor, which the mouse and the keyboard move alike, is highlighted as soon as it moves:
+ * a word written with spaces whole, and in a run of a script written without spaces the character it lies on,
+ * which grows to the text the lookup from it matched once that lookup answers.
+ * The highlight stays while the mouse moves within it, and moves when the mouse moves elsewhere.
+ * Left and Right move the cursor from the focused word along the text by a word, and with Shift by a character of a run,
+ * as `useKeyboardCursor` describes.
+ * The word the pop-up shows is highlighted the same way while there is no cursor, so that only one word is ever highlighted.
  * The words that flashcards were made from are underlined, and in a run only their characters.
  * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
  * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
@@ -101,10 +103,6 @@ export function ClickableText({
   gestures = noGestures,
 }: {
   text: string;
-  /**
-   * The word the dictionary pop-up shows, by its offset in the text, and the pop-up's id.
-   * `length` is how much of the text the lookup matched, which a run written without spaces highlights.
-   */
   activeWord?: ActiveWord;
   /**
    * The lookup cursor, or null while it lies elsewhere, for a screen that keeps one cursor across several texts;
@@ -120,7 +118,7 @@ export function ClickableText({
   const cursorStart = cursor?.start ?? null;
   const pointer = useWordGestures(textCursor.gestures, cursorStart);
   const parts = splitIntoWords(text);
-  const keyboard = useKeyboardCursor(parts, cursorStart, pointer);
+  const keyboard = useKeyboardCursor(parts, cursor, pointer);
   const highlighted = highlightOf(cursor);
   return (
     // Positioned, so that the announcement region below, which is positioned off screen, stays inside this text
@@ -130,6 +128,8 @@ export function ClickableText({
         if (!part.isWord) return part.text;
         const isActive =
           activeWord !== undefined && contains(part, activeWord.start);
+        const isActiveHighlighted =
+          isActive && cursor === null && activeWord?.isHighlighted !== false;
         const isHighlighted =
           highlighted !== null && contains(part, highlighted.start);
         const flashcardWords = rangesWithin(part, markedRanges);
@@ -140,7 +140,9 @@ export function ClickableText({
             type="button"
             // The highlight splits a run into pieces, which must not split its name.
             aria-label={part.isUnspaced ? part.text : undefined}
-            aria-keyshortcuts="ArrowLeft ArrowRight"
+            aria-keyshortcuts={
+              part.isUnspaced ? runKeyShortcuts : wordKeyShortcuts
+            }
             aria-haspopup="dialog"
             aria-expanded={isActive || undefined}
             aria-controls={isActive ? activeWord?.popupId : undefined}
@@ -155,7 +157,7 @@ export function ClickableText({
               "touch-manipulation rounded-sm px-px [text-shadow:inherit] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
               // A run highlights only the characters concerned, inside itself.
               !part.isUnspaced &&
-                (isActive || isHighlighted) &&
+                (isActiveHighlighted || isHighlighted) &&
                 "bg-accent-soft text-accent-fg",
             )}
           >
@@ -163,7 +165,9 @@ export function ClickableText({
               <RunText
                 text={part.text}
                 matched={
-                  isActive && activeWord ? matchedRange(part, activeWord) : null
+                  isActiveHighlighted && activeWord
+                    ? matchedRange(part, activeWord)
+                    : null
                 }
                 hovered={
                   isHighlighted && highlighted
@@ -186,13 +190,21 @@ export function ClickableText({
   );
 }
 
-type ActiveWord = { start: number; length?: number; popupId: string };
+/** The word the dictionary pop-up shows, by its offset in the text, and the pop-up's id. */
+export type ActiveWord = {
+  start: number;
+  /** How much of the text the lookup matched, which a run written without spaces highlights. */
+  length?: number;
+  popupId: string;
+  /** False while a lookup cursor lies in another text, whose highlight takes the place of this word's. */
+  isHighlighted?: boolean;
+};
 
-/** The text the cursor highlights, by its offset, with the length its lookup matched; nothing until that lookup answers. */
+/** The text the cursor highlights, by its offset, with the length its lookup matched once that lookup has answered with a match. */
 function highlightOf(
   cursor: TextCursor | null,
 ): { start: number; length?: number } | null {
-  if (cursor?.matchedLength === undefined) return null;
+  if (cursor === null) return null;
   return { start: cursor.start, length: cursor.matchedLength ?? undefined };
 }
 
@@ -213,6 +225,10 @@ function announcementOf(
   );
   return `Looks up from ${character}`;
 }
+
+const wordKeyShortcuts = "ArrowLeft ArrowRight";
+
+const runKeyShortcuts = "ArrowLeft ArrowRight Shift+ArrowLeft Shift+ArrowRight";
 
 const noGestures: WordGestures = {};
 

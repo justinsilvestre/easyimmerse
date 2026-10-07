@@ -1,50 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitIntoWords } from "./ClickableText.tsx";
-import { reduceTextCursor, stepTextCursor } from "./textCursor.ts";
-
-describe("stepTextCursor", () => {
-  it("moves forward to the next word written with spaces", () => {
-    expect(stepTextCursor(splitIntoWords("Ich rufe an."), 0, "forward")).toBe(
-      4,
-    );
-  });
-
-  it("moves backward to the previous word written with spaces", () => {
-    expect(stepTextCursor(splitIntoWords("Ich rufe an."), 9, "backward")).toBe(
-      4,
-    );
-  });
-
-  it("moves forward one character within a run written without spaces", () => {
-    expect(stepTextCursor(splitIntoWords("映画を見る"), 2, "forward")).toBe(3);
-  });
-
-  it("steps over a character outside the Basic Multilingual Plane whole", () => {
-    expect(stepTextCursor(splitIntoWords("𠮷野家"), 0, "forward")).toBe(2);
-  });
-
-  it("moves from the end of a run to the next word", () => {
-    expect(stepTextCursor(splitIntoWords("見る、Netflix"), 1, "forward")).toBe(
-      3,
-    );
-  });
-
-  it("skips punctuation, which holds nothing to look up", () => {
-    expect(stepTextCursor(splitIntoWords("見る。今日"), 3, "backward")).toBe(1);
-  });
-
-  it("stays at the last word", () => {
-    expect(stepTextCursor(splitIntoWords("Ich rufe an."), 9, "forward")).toBe(
-      9,
-    );
-  });
-
-  it("stays at the first word", () => {
-    expect(stepTextCursor(splitIntoWords("Ich rufe an."), 0, "backward")).toBe(
-      0,
-    );
-  });
-});
+import { reduceTextCursor } from "./textCursor.ts";
 
 describe("reduceTextCursor", () => {
   it("points at where the mouse is", () => {

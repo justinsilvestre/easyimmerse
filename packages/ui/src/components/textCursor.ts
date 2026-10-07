@@ -1,5 +1,3 @@
-import { characterLength } from "./characterLength.ts";
-import type { TextStep } from "./cursorKeys.ts";
 import type { WordHit } from "./useWordGestures.ts";
 
 /**
@@ -14,7 +12,7 @@ export type TextCursor = {
   input: WordHit["input"];
   /**
    * How much of the text the lookup from `start` matched, or null when it matched nothing.
-   * It is unset until that lookup answers, and the cursor is highlighted only once it is set.
+   * It is unset until that lookup answers; meanwhile the cursor highlights the word or character it lies on.
    */
   matchedLength?: number | null;
 };
@@ -67,44 +65,4 @@ function keepsCursor(
     return false;
   const end = cursor.start + (cursor.matchedLength ?? 1);
   return pointed.start >= cursor.start && pointed.start < end;
-}
-
-/** A part of a text, as `splitIntoWords` finds it. */
-type TextPart = {
-  text: string;
-  start: number;
-  isWord: boolean;
-  isUnspaced: boolean;
-};
-
-/**
- * Where the cursor lands from `offset` after one step along the text:
- * the next or previous word written with spaces, or character of a run written without them.
- * Punctuation and spaces hold no place, and at either end of the text the cursor stays.
- */
-export function stepTextCursor(
-  parts: readonly TextPart[],
-  offset: number,
-  step: TextStep,
-): number {
-  const places = parts.flatMap(cursorPlacesIn);
-  const landing =
-    step === "forward"
-      ? places.find((place) => place > offset)
-      : places.findLast((place) => place < offset);
-  return landing ?? offset;
-}
-
-/** The offsets in the text where the cursor can lie within one part of it. */
-function cursorPlacesIn(part: TextPart): number[] {
-  if (!part.isWord) return [];
-  if (!part.isUnspaced) return [part.start];
-  const places: number[] = [];
-  for (
-    let offset = 0;
-    offset < part.text.length;
-    offset += characterLength(part.text, offset)
-  )
-    places.push(part.start + offset);
-  return places;
 }

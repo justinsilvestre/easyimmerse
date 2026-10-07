@@ -31,7 +31,7 @@ import {
  * While the screen that `screenRef` marks is in reach, the L key looks up from the cursor as a click there would,
  * or opens the pop-up's search field when there is no cursor.
  * Returns the gestures for the subtitles' words, which keep their identity across renders,
- * the word the pop-up shows, which keeps its identity while it shows the same word,
+ * the word the pop-up shows, which keeps its identity while it shows the same word and is highlighted only while there is no cursor,
  * the cursor's place, which keeps its identity while the cursor stays,
  * and the pop-up's props, or null while it is closed.
  */
@@ -78,7 +78,7 @@ export function useSubtitleLookup(
     onWordHold: (hit, cue) => lookup.startFlashcardFor(requestFor(hit, cue)),
   });
   return {
-    activeWord: useActiveCueWord(lookup.activeOccurrence),
+    activeWord: useActiveCueWord(lookup.activeOccurrence, cursor === null),
     cursor: cursor?.position ?? null,
     popup,
     openSearch: lookup.openSearch,
@@ -86,9 +86,13 @@ export function useSubtitleLookup(
   };
 }
 
-/** The word of a cue the pop-up shows, as one object for as long as it shows the same word with the same match. */
+/**
+ * The word of a cue the pop-up shows, as one object for as long as it shows the same word with the same match
+ * and its highlight stays on or off.
+ */
 function useActiveCueWord(
   occurrence: ReturnType<typeof useWordLookup<Cue>>["activeOccurrence"],
+  isHighlighted: boolean,
 ): ActiveCueWord | undefined {
   const cueIndex = occurrence?.source?.index;
   const start = occurrence?.start;
@@ -98,8 +102,8 @@ function useActiveCueWord(
     () =>
       cueIndex === undefined || start === undefined || popupId === undefined
         ? undefined
-        : { cueIndex, start, length, popupId },
-    [cueIndex, start, length, popupId],
+        : { cueIndex, start, length, popupId, isHighlighted },
+    [cueIndex, start, length, popupId, isHighlighted],
   );
 }
 

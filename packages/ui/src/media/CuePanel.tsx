@@ -3,7 +3,11 @@ import clsx from "clsx";
 import { FilePlus, Layers, LocateFixed, Sparkles } from "lucide-react";
 import { type KeyboardEvent, type MouseEvent, memo, useMemo } from "react";
 import { Button } from "../components/Button.tsx";
-import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
+import {
+  type ActiveWord,
+  ClickableText,
+  stripMarkup,
+} from "../components/ClickableText.tsx";
 import { lineStepOfKey } from "../components/cursorKeys.ts";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { clickableWordAttribute } from "../components/lookupTrigger.ts";
@@ -188,7 +192,7 @@ const CueCard = memo(function CueCard({
   hasFlashcard: boolean;
   flashcardWordRanges: readonly Range[];
   /** The word the pop-up shows, when it lies in this cue. */
-  activeWord?: { start: number; length?: number; popupId: string };
+  activeWord?: ActiveWord;
   /** The lookup cursor, when it lies in this cue, as `ClickableText` takes it. */
   cursor?: TextCursor | null;
   onSeek: (ms: number) => void;
