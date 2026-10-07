@@ -9,7 +9,7 @@ import { lookupTriggerAttribute } from "../components/lookupTrigger.ts";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
-import { findCueAt, findTranslationOf } from "./findCue.ts";
+import { findCueShownAt, findTranslationOf } from "./findCue.ts";
 import {
   type PlayerCallbacks,
   PlayerControls,
@@ -67,7 +67,7 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  */
 export function MediaView(props: MediaViewProps) {
   const { playback, cues, translationCues, panels } = props;
-  const activeCue = findCueAt(cues, playback.currentMs);
+  const activeCue = findCueShownAt(cues, playback.currentMs);
   const pointer = usePointerActivity();
   const isPausedByUser = !playback.isPlaying && props.lookup == null;
   const showsChrome = isPausedByUser || pointer.isActive;

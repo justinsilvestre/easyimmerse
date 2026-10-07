@@ -2,7 +2,7 @@ import { actions, selectPlayer } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
 import { useCallback, useReducer, useRef, useState } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
-import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
+import { draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { isAwaitingLookup, saveStatusOf } from "../flashcards/saveStage.ts";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
@@ -17,7 +17,7 @@ import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
-import { findTranslationOf } from "../media/findCue.ts";
+import { findCueShownAt, findTranslationOf } from "../media/findCue.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
@@ -113,7 +113,7 @@ export function MediaScreen({
     lateFields?: Promise<LookupFlashcardFields | null>,
   ) => {
     if (mediaFile === null) return;
-    const cue = wordCue ?? cueForFlashcard(subtitles.cues, currentMs);
+    const cue = wordCue ?? findCueShownAt(subtitles.cues, currentMs);
     const draft = draftFromCue({
       word,
       cue,

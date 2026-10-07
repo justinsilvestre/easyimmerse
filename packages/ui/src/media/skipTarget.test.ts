@@ -29,7 +29,11 @@ describe("replayTarget", () => {
     expect(replayTarget(exampleCues, 7_000)).toBe(5_400);
   });
 
-  it("goes back a few seconds between cues", () => {
+  it("goes back to the start of the cue still shown after it ends", () => {
+    expect(replayTarget(exampleCues, 8_400)).toBe(5_400);
+  });
+
+  it("goes back a few seconds without cues", () => {
     expect(replayTarget([], 12_000)).toBe(7_000);
   });
 

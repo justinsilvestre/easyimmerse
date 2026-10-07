@@ -128,6 +128,19 @@ describe("MediaView", () => {
     expect(areControlsFolded()).toBe(true);
   });
 
+  it("keeps a subtitle over the video until the next one starts", () => {
+    renderView({
+      playback: {
+        isPlaying: true,
+        currentMs: 8_400,
+        durationMs: 24_000,
+        volume: 1,
+        speed: 1,
+      },
+    });
+    expect(subtitleWord()).toBeDefined();
+  });
+
   it("keeps the dictionary pop-up out of the dark stage", () => {
     renderView({ lookup: <div role="dialog" aria-label="Dictionary" /> });
     expect(

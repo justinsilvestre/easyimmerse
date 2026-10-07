@@ -7,16 +7,8 @@ import type {
   Screenshot,
 } from "@easyimmerse/types";
 import { stripMarkup } from "../components/ClickableText.tsx";
-import { findCueAt } from "../media/findCue.ts";
 import { mediaNameTag } from "./mediaNameTag.ts";
 import { addTags } from "./parseTags.ts";
-
-/** The cue a new flashcard is made from: the one shown at the time, else the last one before it. */
-export function cueForFlashcard(cues: readonly Cue[], ms: number): Cue | null {
-  return (
-    findCueAt(cues, ms) ?? cues.filter((cue) => cue.end_ms <= ms).at(-1) ?? null
-  );
-}
 
 /**
  * Starts a flashcard for a word from a subtitle cue under the project's flashcard settings:

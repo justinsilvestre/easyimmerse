@@ -6,7 +6,7 @@ import type {
   ActiveCueWord,
   CueWordGestures,
 } from "../media/cueWordGestures.ts";
-import { findCueAt } from "../media/findCue.ts";
+import { findCueShownAt } from "../media/findCue.ts";
 import { SubtitleTrackBar } from "../media/SubtitleTrackBar.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import type { useMediaSubtitles } from "./useMediaSubtitles.ts";
@@ -35,7 +35,7 @@ export function SubtitlesSidePanel({
   onOpenFlashcardForCue?: (cueIndex: number) => void;
 }) {
   const dispatch = useAppDispatch();
-  const activeCue: Cue | null = findCueAt(subtitles.cues, currentMs);
+  const activeCue: Cue | null = findCueShownAt(subtitles.cues, currentMs);
   return (
     <>
       <SubtitleTrackBar

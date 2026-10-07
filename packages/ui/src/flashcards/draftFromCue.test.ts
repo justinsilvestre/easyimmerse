@@ -2,7 +2,7 @@ import type { MediaFile, ProjectSettings } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { exampleCues, exampleTranslationCues } from "../media/exampleCues.ts";
 import { defaultProjectSettings } from "../projects/newProjectSettings.ts";
-import { cueForFlashcard, draftFromCue } from "./draftFromCue.ts";
+import { draftFromCue } from "./draftFromCue.ts";
 
 const mediaFile: MediaFile = {
   id: "m1",
@@ -28,20 +28,6 @@ function draft(
     hasScreenshots,
   });
 }
-
-describe("cueForFlashcard", () => {
-  it("takes the cue shown at the time", () => {
-    expect(cueForFlashcard(exampleCues, 6_000)?.index).toBe(3);
-  });
-
-  it("takes the last cue before a pause", () => {
-    expect(cueForFlashcard(exampleCues, 8_400)?.index).toBe(3);
-  });
-
-  it("finds none before the first cue", () => {
-    expect(cueForFlashcard(exampleCues, 100)).toBeNull();
-  });
-});
 
 describe("draftFromCue", () => {
   it("takes the cue's text as the sentence", () => {
