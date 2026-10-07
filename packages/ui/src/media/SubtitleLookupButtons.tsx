@@ -3,7 +3,7 @@ import { IconButton } from "../components/IconButton.tsx";
 import { lookupTriggerAttribute } from "../components/lookupTrigger.ts";
 import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
 
-/** The buttons over the subtitles that search the dictionary and start a flashcard from the subtitle shown. */
+/** The buttons in the corner of the subtitles that search the dictionary and start a flashcard from the subtitle shown. */
 export function SubtitleLookupButtons({
   onLookup,
   onAddFlashcard,

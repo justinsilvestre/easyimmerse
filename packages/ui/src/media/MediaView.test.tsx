@@ -247,6 +247,24 @@ describe("MediaView subtitle box", () => {
     ).toBeNull();
   });
 
+  it("keeps the lookup buttons in its band rather than above it", () => {
+    renderView();
+    expect(
+      screen
+        .getByRole("button", { name: "Look up a word (L)" })
+        .closest(".bottom-full"),
+    ).toBeNull();
+  });
+
+  it("gives the lookup buttons a row of their own when no subtitles show", () => {
+    renderView({ cues: [], translationCues: [] });
+    expect(
+      screen
+        .getByRole("button", { name: "Look up a word (L)" })
+        .closest(".absolute"),
+    ).toBeNull();
+  });
+
   it("marks the word of the shown cue that a flashcard was made from", () => {
     renderView({ flashcardWordRanges: new Map([[3, [{ from: 4, to: 8 }]]]) });
     expect(

@@ -83,7 +83,7 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  * The stage is dark in both themes, like a cinema, so that the bars laid over the picture stay readable;
  * the panels around it, the footer and the dictionary pop-up follow the app theme.
  * The header lies over the top of the stage.
- * The subtitles sit in a box across the stage, right above the controls, with the lookup buttons over the box's right end.
+ * The subtitles sit in a box across the stage, right above the controls, with the lookup buttons in the top-right corner of their band.
  * Subtitles and controls form one band, which takes rows of its own under the picture when the stage has room for it there,
  * and otherwise lies over the picture's lower edge, so that a short, wide stage does not shrink the picture.
  * Under the picture, the band follows it directly and the two are centred in the stage together,
@@ -174,7 +174,11 @@ export function MediaView(props: MediaViewProps) {
                 <div className="relative">
                   <Fading
                     isShown={showsChrome}
-                    className="absolute right-2 bottom-full mb-2"
+                    className={
+                      showsSubtitles
+                        ? "absolute top-2 right-2 z-10"
+                        : "flex justify-end p-2"
+                    }
                   >
                     <SubtitleLookupButtons
                       onLookup={props.onLookup}
