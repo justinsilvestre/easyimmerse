@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";function t(e){let t=Math.floor(Math.max(0,e)/1e3),r=t%60,i=Math.floor(t/60)%60,a=Math.floor(t/3600),o=`${a>0?n(i):i}:${n(r)}`;return a>0?`${a}:${o}`:o}function n(e){return e.toString().padStart(2,`0`)}function r(){return(r=e((()=>{})))()}export{r as n,t};
