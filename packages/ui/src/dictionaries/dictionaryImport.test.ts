@@ -44,6 +44,39 @@ describe("reduceDictionaryImport", () => {
     ).toBeNull();
   });
 
+  it("remembers the job once the server has started it", () => {
+    const started = reduceDictionaryImport(initialDictionaryImport, {
+      type: "started",
+      fileName: "a.zip",
+    });
+    expect(
+      reduceDictionaryImport(started, { type: "jobStarted", jobId: "j1" })
+        .jobId,
+    ).toBe("j1");
+  });
+
+  it("stops adding once the import has failed", () => {
+    const started = reduceDictionaryImport(initialDictionaryImport, {
+      type: "started",
+      fileName: "a.zip",
+    });
+    expect(
+      reduceDictionaryImport(started, { type: "failed", message: "broken" })
+        .addingFile,
+    ).toBeNull();
+  });
+
+  it("forgets an earlier failure once another file is added", () => {
+    const failed = reduceDictionaryImport(initialDictionaryImport, {
+      type: "failed",
+      message: "broken",
+    });
+    expect(
+      reduceDictionaryImport(failed, { type: "started", fileName: "a.zip" })
+        .importFailure,
+    ).toBeNull();
+  });
+
   it("keeps the refused file to name it", () => {
     expect(
       reduceDictionaryImport(initialDictionaryImport, {

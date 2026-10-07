@@ -2,12 +2,13 @@ import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
   ConversionCacheStatus,
-  DictionarySummary,
   Document,
   DocumentFormat,
   EmbeddedSubtitleTracksResponse,
   Flashcard,
   FlashcardDraft,
+  ImportJobStarted,
+  ImportJobStatus,
   ImportLocalDictionaryRequest,
   ListDictionariesResponse,
   ListFlashcardsResponse,
@@ -391,7 +392,7 @@ export const backendApi = createApi({
         body: { kind: "json", value: request },
       }),
     }),
-    importDictionary: build.mutation<DictionarySummary, ImportDictionaryArgs>({
+    importDictionary: build.mutation<ImportJobStarted, ImportDictionaryArgs>({
       query: ({ fileName, bytes, tableLayout = null }) => ({
         method: "POST",
         path: "/dictionaries",
@@ -403,10 +404,9 @@ export const backendApi = createApi({
         },
         offlineOperation:
           bytes instanceof Uint8Array
-            ? { kind: "parseDictionary", fileName, bytes, tableLayout }
+            ? { kind: "importDictionary", fileName, bytes, tableLayout }
             : undefined,
       }),
-      invalidatesTags: ["Dictionaries"],
     }),
     previewDictionaryTable: build.mutation<
       TablePreview,
@@ -438,7 +438,7 @@ export const backendApi = createApi({
       }),
     }),
     importLocalDictionary: build.mutation<
-      DictionarySummary,
+      ImportJobStarted,
       ImportLocalDictionaryRequest
     >({
       query: (request) => ({
@@ -446,7 +446,19 @@ export const backendApi = createApi({
         path: "/dictionaries/import-local",
         body: { kind: "json", value: request },
       }),
-      invalidatesTags: ["Dictionaries"],
+    }),
+    getImportJob: build.query<ImportJobStatus, string>({
+      query: (id) => ({
+        method: "GET",
+        path: `/dictionaries/imports/${encodeURIComponent(id)}`,
+        offlineOperation: { kind: "importJobStatus", id },
+      }),
+      /** Once the import is done, the list of dictionaries and the lookups that read them are stale. */
+      async onQueryStarted(_id, { dispatch, queryFulfilled }) {
+        const { data } = await queryFulfilled.catch(() => ({ data: null }));
+        if (data?.state === "done")
+          dispatch(backendApi.util.invalidateTags(["Dictionaries"]));
+      },
     }),
     listDictionaries: build.query<ListDictionariesResponse, void>({
       query: () => ({ method: "GET", path: "/dictionaries" }),
@@ -501,6 +513,7 @@ export const {
   usePreviewDictionaryTableMutation,
   usePreviewLocalDictionaryTableMutation,
   useImportLocalDictionaryMutation,
+  useGetImportJobQuery,
   useListDictionariesQuery,
   useDeleteDictionaryMutation,
   useLookupTextQuery,

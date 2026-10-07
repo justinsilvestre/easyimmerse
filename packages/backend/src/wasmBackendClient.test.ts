@@ -1,3 +1,4 @@
+import type { ImportJobStarted, ImportJobStatus } from "@easyimmerse/types";
 import type { OfflineWasm } from "@easyimmerse/wasm";
 import { describe, expect, it } from "vitest";
 import { createWasmBackendClient } from "./wasmBackendClient.ts";
@@ -13,8 +14,28 @@ function createFakeWasm(): OfflineWasm {
       ],
     }),
     parseDocument: () => ({ title: "Doc", language: null, chapters: [] }),
-    parseDictionary: () => {
-      throw new Error("not a zip archive");
+    parseDictionary: (fileName) => {
+      if (fileName === "a.zip") throw new Error("not a zip archive");
+      return {
+        metadata: {
+          title: "Words",
+          revision: null,
+          format: "csv",
+          description: null,
+          author: null,
+          attribution: null,
+          url: null,
+          sourceLanguage: "de",
+          targetLanguage: null,
+          frequencyMode: null,
+          stylesheet: null,
+        },
+        entries: [],
+        termMeta: [],
+        tags: [],
+        kanjiEntries: [],
+        kanjiMeta: [],
+      };
     },
     previewDictionaryTable: () => ({
       layout: { columns: ["term", "definition"], hasHeader: false },
@@ -53,13 +74,44 @@ describe("createWasmBackendClient", () => {
     });
   });
 
+  it("answers an import with a job that is already done", async () => {
+    const client = createWasmBackendClient(createFakeWasm());
+    const started = await client.send<ImportJobStarted>({
+      method: "POST",
+      path: "/dictionaries",
+      offlineOperation: {
+        kind: "importDictionary",
+        fileName: "words.csv",
+        bytes: new Uint8Array(),
+        tableLayout: null,
+      },
+    });
+    if (!("data" in started)) throw new Error("The import was refused.");
+    const status = await client.send<ImportJobStatus>({
+      method: "GET",
+      path: `/dictionaries/imports/${started.data.id}`,
+      offlineOperation: { kind: "importJobStatus", id: started.data.id },
+    });
+    expect("data" in status && status.data.dictionary?.title).toBe("Words");
+  });
+
+  it("finds no job for an unknown id", async () => {
+    const client = createWasmBackendClient(createFakeWasm());
+    const status = await client.send({
+      method: "GET",
+      path: "/dictionaries/imports/missing",
+      offlineOperation: { kind: "importJobStatus", id: "missing" },
+    });
+    expect("error" in status && status.error.status).toBe(404);
+  });
+
   it("maps a failure inside the module to a 400 error", async () => {
     const client = createWasmBackendClient(createFakeWasm());
     const result = await client.send({
       method: "POST",
       path: "/dictionaries",
       offlineOperation: {
-        kind: "parseDictionary",
+        kind: "importDictionary",
         fileName: "a.zip",
         bytes: new Uint8Array(),
         tableLayout: null,
