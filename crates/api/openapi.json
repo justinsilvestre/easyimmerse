@@ -456,6 +456,7 @@
         "tags": [
           "dictionaries"
         ],
+        "summary": "Starts importing the file and answers with the job to poll at `/dictionaries/imports/{id}`,\nsince a large dictionary takes longer to store than a browser waits for a response.",
         "operationId": "importDictionary",
         "parameters": [
           {
@@ -493,18 +494,18 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "The dictionary was imported",
+          "202": {
+            "description": "The import was started",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DictionarySummary"
+                  "$ref": "#/components/schemas/ImportJobStarted"
                 }
               }
             }
           },
           "400": {
-            "description": "The file could not be read as a dictionary",
+            "description": "The chosen columns are not column roles",
             "content": {
               "application/json": {
                 "schema": {
@@ -546,6 +547,7 @@
         "tags": [
           "dictionaries"
         ],
+        "summary": "Reads the files at the path, then starts importing them and answers with the job to poll\nat `/dictionaries/imports/{id}`.",
         "operationId": "importLocalDictionary",
         "requestBody": {
           "content": {
@@ -558,18 +560,18 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "The dictionary was imported",
+          "202": {
+            "description": "The import was started",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DictionarySummary"
+                  "$ref": "#/components/schemas/ImportJobStarted"
                 }
               }
             }
           },
           "400": {
-            "description": "The files could not be read as a dictionary",
+            "description": "The files could not be read",
             "content": {
               "application/json": {
                 "schema": {
@@ -600,6 +602,72 @@
           },
           "404": {
             "description": "Nothing at the given path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/imports/{id}": {
+      "get": {
+        "tags": [
+          "dictionaries"
+        ],
+        "operationId": "getImportJob",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The import job id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Where the import stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportJobStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No import job has the id, or its outcome has been forgotten",
             "content": {
               "application/json": {
                 "schema": {
@@ -4563,6 +4631,62 @@
           }
         }
       },
+      "ImportJobStarted": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "ImportJobState": {
+        "type": "string",
+        "enum": [
+          "running",
+          "done",
+          "failed"
+        ]
+      },
+      "ImportJobStatus": {
+        "type": "object",
+        "required": [
+          "state",
+          "progress"
+        ],
+        "properties": {
+          "dictionary": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DictionarySummary",
+                "description": "The stored dictionary, once the job is done."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ApiError",
+                "description": "Why the import failed, once the job has failed."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ImportProgress"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ImportJobState"
+          }
+        }
+      },
       "ImportLocalDictionaryRequest": {
         "type": "object",
         "required": [
@@ -4583,6 +4707,50 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "ImportProgress": {
+        "type": "object",
+        "description": "How many items of each kind the import has stored so far.",
+        "required": [
+          "entries",
+          "term_meta",
+          "kanji",
+          "kanji_meta",
+          "tags",
+          "media"
+        ],
+        "properties": {
+          "entries": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "kanji": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "kanji_meta": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "media": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "tags": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "term_meta": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           }
         }
       },

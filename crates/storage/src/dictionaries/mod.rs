@@ -18,7 +18,7 @@ mod term_lookup;
 #[cfg(test)]
 mod tests;
 
-pub use importer::import_dictionary;
+pub use importer::{import_dictionary, import_with};
 pub use kanji_lookup::{find_kanji, find_kanji_meta};
 pub use listing::{delete_dictionary, get_dictionary, list_dictionaries};
 pub use media::get_media;

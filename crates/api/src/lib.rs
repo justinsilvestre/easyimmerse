@@ -3,6 +3,8 @@
 
 pub mod auth;
 pub mod config;
+pub mod import_jobs;
+pub mod import_progress_sink;
 pub mod local_dictionary_files;
 pub mod local_path;
 pub mod local_table_file;
