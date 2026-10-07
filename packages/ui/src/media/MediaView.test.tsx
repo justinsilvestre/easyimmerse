@@ -34,8 +34,9 @@ function playerCallbacks(): PlayerCallbacks {
   };
 }
 
+/** Renders the view, and returns a function that renders it again at another playback time. */
 function renderView(overrides: Partial<ViewProps> = {}) {
-  renderWithAppStore(
+  const view = (props: Partial<ViewProps>) => (
     <MediaView
       media={{ title: "Episode 1", projectName: "Alpha" }}
       stage={
@@ -67,9 +68,22 @@ function renderView(overrides: Partial<ViewProps> = {}) {
       wordGestures={{ onWordClick: ignore, onWordDoubleClick: ignore }}
       onLookup={ignore}
       onAddFlashcard={ignore}
-      {...overrides}
-    />,
+      {...props}
+    />
   );
+  const { rerender } = renderWithAppStore(view(overrides));
+  return (currentMs: number) =>
+    rerender(view({ ...overrides, playback: playingAt(currentMs) }));
+}
+
+function playingAt(currentMs: number): ViewProps["playback"] {
+  return {
+    isPlaying: true,
+    currentMs,
+    durationMs: 24_000,
+    volume: 1,
+    speed: 1,
+  };
 }
 
 const letPointerRest = () => act(() => vi.advanceTimersByTime(3000));
@@ -143,17 +157,17 @@ describe("MediaView", () => {
     expect(areControlsFolded()).toBe(true);
   });
 
-  it("keeps a subtitle over the video until the next one starts", () => {
-    renderView({
-      playback: {
-        isPlaying: true,
-        currentMs: 8_400,
-        durationMs: 24_000,
-        volume: 1,
-        speed: 1,
-      },
-    });
+  it("keeps a subtitle over the video after its end while playback carries on from it", () => {
+    const playTo = renderView({ playback: playingAt(8_000) });
+    playTo(8_250);
+    playTo(8_400);
     expect(subtitleWord()).toBeDefined();
+  });
+
+  it("shows no subtitle over the video after a seek into the gap after one", () => {
+    const seekTo = renderView({ playback: playingAt(1_000) });
+    seekTo(8_400);
+    expect(screen.queryByRole("button", { name: "Hund" })).toBeNull();
   });
 
   it("keeps the dictionary pop-up out of the dark stage", () => {

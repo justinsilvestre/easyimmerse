@@ -17,7 +17,7 @@ import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
-import { findCueShownAt, findTranslationOf } from "../media/findCue.ts";
+import { findTranslationOf } from "../media/findCue.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
@@ -25,6 +25,7 @@ import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
 import { useClipLoop } from "../media/useClipLoop.ts";
 import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
+import { useShownCue } from "../media/useShownCue.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { TrackChoiceContext } from "../player/trackChoiceContext.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
@@ -61,6 +62,7 @@ export function MediaScreen({
   const durationMs = useMediaDurationMs(projectId, mediaFile);
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
+  const shownCue = useShownCue(subtitles.cues, currentMs);
   const hasScreenshots = screenshotSource !== null;
   const flashcards = useMediaFlashcards(projectId, mediaFileId, hasScreenshots);
   const [panels, dispatchPanels] = useReducer(
@@ -114,7 +116,7 @@ export function MediaScreen({
     lateFields?: Promise<LookupFlashcardFields | null>,
   ) => {
     if (mediaFile === null) return;
-    const cue = wordCue ?? findCueShownAt(subtitles.cues, currentMs);
+    const cue = wordCue ?? shownCue;
     const draft = draftFromCue({
       word,
       cue,
