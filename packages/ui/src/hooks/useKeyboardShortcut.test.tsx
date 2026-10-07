@@ -44,6 +44,14 @@ describe("useKeyboardShortcut", () => {
     expect(pressCount()).toBe(1);
   });
 
+  it("leaves a key that the focused element has already handled", () => {
+    const pressCount = renderProbe();
+    const button = screen.getByRole("button", { name: "Save" });
+    button.addEventListener("keydown", (event) => event.preventDefault());
+    fireEvent.keyDown(button, { key: "l" });
+    expect(pressCount()).toBe(0);
+  });
+
   it("ignores the key while the user types into a field", () => {
     const pressCount = renderProbe();
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Notes" }), {
