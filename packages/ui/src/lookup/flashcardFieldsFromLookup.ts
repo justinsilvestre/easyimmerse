@@ -5,7 +5,7 @@ import type {
   LookupResult,
 } from "@easyimmerse/types";
 import { isSameLanguage } from "../dictionaries/dictionaryLanguages.ts";
-import { definitionPlainText } from "./definitionPlainText.ts";
+import { definitionMarkdown } from "./definitionMarkdown.ts";
 
 export type LookupFlashcardFields = Pick<
   FlashcardContent,
@@ -16,7 +16,7 @@ type ProjectLanguages = { target: string; translation: string };
 
 /**
  * Fills the word fields of a flashcard from a lookup: the word and its reading from the dictionary's headword,
- * and the definitions sorted into L1 (in the translation language) and L2 (in the target language) by each dictionary's stated language.
+ * and the definitions, written as Markdown, sorted into L1 (in the translation language) and L2 (in the target language) by each dictionary's stated language.
  * Definitions in any other language are left out.
  * Without an `entryIndex`, every result for the longest matched text contributes; with one, only that result does.
  * A dictionary that does not state its language counts as defining in the translation language.
@@ -68,11 +68,11 @@ function definitionField(
   return isSameLanguage(language, languages.target) ? "l2" : null;
 }
 
-/** Puts each definition on its own line, each distinct text once. */
+/** Puts each definition's Markdown on lines of its own, each distinct text once. */
 function joinDefinitions(sections: readonly DictionaryDefinitions[]): string {
   const texts = sections
     .flatMap((section) => section.entry.definitions)
-    .map(definitionPlainText)
+    .map(definitionMarkdown)
     .filter((text) => text !== "");
   return [...new Set(texts)].join("\n");
 }
