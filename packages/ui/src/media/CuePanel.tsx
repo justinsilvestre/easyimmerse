@@ -255,7 +255,7 @@ const CueCard = memo(function CueCard({
             </span>
           ))}
       </div>
-      <p className="text-base">
+      <p className="text-lg">
         <ClickableText
           text={stripMarkup(cue.text)}
           activeWord={activeWord}
@@ -265,7 +265,7 @@ const CueCard = memo(function CueCard({
         />
       </p>
       {translation && (
-        <p className="whitespace-pre-line text-fg-muted">
+        <p className="text-base whitespace-pre-line text-fg-muted">
           {stripMarkup(translation.text)}
         </p>
       )}

@@ -9,6 +9,8 @@ import type { SubtitleBandPlacement } from "./subtitleBandPlacement.ts";
 
 afterEach(cleanup);
 
+const controlsHeight = 70;
+
 function renderBand(
   placement: SubtitleBandPlacement,
   appearance: SubtitleAppearance | null = {
@@ -17,7 +19,11 @@ function renderBand(
   },
 ) {
   render(
-    <SubtitleBand placement={placement} appearance={appearance}>
+    <SubtitleBand
+      placement={placement}
+      appearance={appearance}
+      controlsHeight={controlsHeight}
+    >
       Subtitles
     </SubtitleBand>,
   );
@@ -35,11 +41,26 @@ describe("SubtitleBand", () => {
     it("draws no backdrop without an appearance", () => {
       expect(renderBand("overlay", null).style.backgroundColor).toBe("");
     });
+
+    it("rises above the controls", () => {
+      expect(renderBand("overlay").style.bottom).toBe("70px");
+    });
+
+    it("reaches its backdrop down behind the controls", () => {
+      renderBand("overlay");
+      expect(screen.getByTestId("subtitle-band-foot").style.height).toBe(
+        "70px",
+      );
+    });
   });
 
   describe("under the picture", () => {
-    it("lies on the surface of the player controls", () => {
-      expect(renderBand("below").classList.contains("bg-surface")).toBe(true);
+    it("lies on black, like the video", () => {
+      expect(renderBand("below").classList.contains("bg-black")).toBe(true);
+    });
+
+    it("leaves the controls' place to the stage", () => {
+      expect(renderBand("below").style.bottom).toBe("");
     });
 
     it("ignores the chosen opacity", () => {
@@ -47,7 +68,7 @@ describe("SubtitleBand", () => {
     });
 
     it("draws no backdrop without an appearance", () => {
-      expect(renderBand("below", null).classList.contains("bg-surface")).toBe(
+      expect(renderBand("below", null).classList.contains("bg-black")).toBe(
         false,
       );
     });

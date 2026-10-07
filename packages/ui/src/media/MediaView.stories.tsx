@@ -288,6 +288,19 @@ export const OnAShortWideWindow: Story = {
   globals: { viewport: { value: "shortWide", isRotated: false } },
 };
 
+/** Fullscreen while paused, with the footer laid under the controls at the bottom of the stage. */
+export const InFullscreen: Story = {
+  args: { panels: { ...meta.args.panels, isFullscreen: true } },
+};
+
+/** Fullscreen during playback, where the header, controls and footer fold away once the pointer rests. */
+export const InFullscreenWhilePlaying: Story = {
+  args: {
+    panels: { ...meta.args.panels, isFullscreen: true },
+    playback: { ...meta.args.playback, isPlaying: true },
+  },
+};
+
 /** A cue longer than the two lines the subtitle box keeps room for, which grows upward over the picture. */
 export const FourLineCue: Story = {
   args: {

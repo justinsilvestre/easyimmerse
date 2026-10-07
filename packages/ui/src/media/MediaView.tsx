@@ -81,21 +81,23 @@ const lookupSurfaceAttribute = "data-lookup-surface";
 /**
  * The screen for watching or listening to one media file.
  * The stage is dark in both themes, like a cinema, so that the bars laid over the picture stay readable;
- * the panels around it, the footer and the dictionary pop-up follow the app theme.
+ * the panels around it, the dictionary pop-up and, outside fullscreen, the footer follow the app theme.
  * The header lies over the top of the stage.
- * The subtitles sit in a box across the stage, right above the controls, with the lookup buttons over the box's right end.
- * Subtitles and controls form one band, which takes rows of its own under the picture when the stage has room for it there,
- * and otherwise lies over the picture's lower edge, so that a short, wide stage does not shrink the picture.
- * Under the picture, the band follows it directly and the two are centred in the stage together,
+ * The controls sit at the bottom of the stage.
+ * The subtitles sit in a box across the stage, in a band with the lookup buttons in its top-right corner.
+ * The band takes rows of its own under the picture when the stage has room for it and the controls there,
+ * and otherwise lies over the picture's lower edge, above the controls, so that a short, wide stage does not shrink the picture.
+ * Under the picture, the band follows it directly and the two are centred together in the stage above the controls,
  * so that the eyes need not travel far from the picture to the subtitles.
- * When the side panel sits under the stage, the stage is only as tall as the picture and the band need, and the panel takes the rest.
+ * When the side panel sits under the stage, the stage is only as tall as the picture, the band and the controls need, and the panel takes the rest.
  * The header, controls and lookup buttons show while playback is paused or the pointer moves over the picture,
  * and fold away otherwise, taking the pointer with them.
  * Moving over the subtitles or the pop-up does not count, and a pause the open pop-up caused does not bring them back,
  * so that looking words up with the mouse leaves the picture clear.
- * The controls keep their place while hidden, so the subtitles above them never move.
+ * The controls keep their place while hidden, so neither the picture nor the subtitles move.
  * A click on the picture plays or pauses, and a double-click fills the screen or leaves it.
- * The toggles for the panels around the stage and for fullscreen sit in the app footer, which stays in fullscreen.
+ * The toggles for the panels around the stage and for fullscreen sit in the app footer.
+ * In fullscreen, the footer moves under the controls at the bottom of the stage and shows and hides with them.
  * On a phone with a notch or a home indicator, the screen keeps clear of them.
  * The panels around the stage come in as children, so that each can be wired to the store on its own.
  */
@@ -115,6 +117,11 @@ export function MediaView(props: MediaViewProps) {
     if (!isOverLookupSurface(event)) pointer.onPointerMove(event);
   };
   const layout = useStageLayout();
+  const footer = (
+    <AppFooter>
+      <PanelToggles panels={panels} callbacks={props.playerCallbacks} />
+    </AppFooter>
+  );
   return (
     <div
       ref={props.ref}
@@ -144,6 +151,7 @@ export function MediaView(props: MediaViewProps) {
                 "@container relative flex min-h-0 flex-1 flex-col justify-center overflow-hidden bg-black",
                 !showsChrome && "cursor-none",
               )}
+              style={{ paddingBottom: layout.stagePaddingBottom }}
               onPointerMove={onPointerMove}
             >
               {/* Space and K play and pause, and F fills the screen, from the keyboard; the clicks are the pointer's way to do the same. */}
@@ -169,12 +177,17 @@ export function MediaView(props: MediaViewProps) {
               <SubtitleBand
                 ref={layout.bandRef}
                 placement={layout.placement}
+                controlsHeight={layout.controlsHeight}
                 appearance={showsSubtitles ? props.subtitleAppearance : null}
               >
                 <div className="relative">
                   <Fading
                     isShown={showsChrome}
-                    className="absolute right-2 bottom-full mb-2"
+                    className={
+                      showsSubtitles
+                        ? "absolute top-2 right-2 z-10"
+                        : "flex justify-end p-2"
+                    }
                   >
                     <SubtitleLookupButtons
                       onLookup={props.onLookup}
@@ -209,6 +222,11 @@ export function MediaView(props: MediaViewProps) {
                     </div>
                   )}
                 </div>
+              </SubtitleBand>
+              <div
+                ref={layout.controlsRef}
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
+              >
                 <Fading isShown={showsChrome}>
                   <PlayerControls
                     playback={playback}
@@ -216,8 +234,9 @@ export function MediaView(props: MediaViewProps) {
                     panels={panels}
                     callbacks={props.playerCallbacks}
                   />
+                  {panels.isFullscreen && footer}
                 </Fading>
-              </SubtitleBand>
+              </div>
             </div>
             {props.lookup}
           </div>
@@ -229,9 +248,7 @@ export function MediaView(props: MediaViewProps) {
           </aside>
         )}
       </div>
-      <AppFooter>
-        <PanelToggles panels={panels} callbacks={props.playerCallbacks} />
-      </AppFooter>
+      {!panels.isFullscreen && footer}
       {props.isSubtitleAppearanceOpen && (
         <SubtitleAppearanceDialog
           appearance={props.subtitleAppearance}
@@ -244,8 +261,10 @@ export function MediaView(props: MediaViewProps) {
 }
 
 /**
- * Measures the stage, the picture's proportions and the band of subtitles and controls, and lays them out:
+ * Measures the stage, the picture's proportions, the band of subtitles and the controls, with the footer under them in fullscreen,
+ * and lays them out:
  * where the band goes, whether the picture's box fills the stage's spare height,
+ * how much of the stage's foot is kept for the controls,
  * and how tall the picture and the stage would be with the picture as wide as the stage.
  * Those natural heights let the stage fit its content when the side panel sits under it.
  * They do not depend on where the band goes, so that the placement cannot change the measurements it was made from.
@@ -254,20 +273,34 @@ function useStageLayout() {
   const stageRef = useRef<HTMLDivElement>(null);
   const pictureRef = useRef<HTMLDivElement>(null);
   const bandRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
   const stage = useElementSize(stageRef);
   const band = useElementSize(bandRef);
+  const controls = useElementSize(controlsRef);
   const aspectRatio = usePictureAspectRatio(pictureRef);
   const pictureHeight =
     aspectRatio === null ? null : pictureHeightAt(stage.width, aspectRatio);
-  const placement = subtitleBandPlacement(stage, aspectRatio, band.height);
+  const placement = subtitleBandPlacement(
+    stage,
+    aspectRatio,
+    band.height,
+    controls.height,
+  );
   return {
     stageRef,
     pictureRef,
     bandRef,
+    controlsRef,
     placement,
+    controlsHeight: controls.height,
+    // Over the picture, the controls lie on its lower edge like the band; under it, they keep a row of their own.
+    stagePaddingBottom: placement === "below" ? controls.height : 0,
     isPictureFillingStage: placement === "overlay" || pictureHeight === null,
     pictureBasis: pictureHeight ?? "auto",
-    stageBasis: pictureHeight === null ? "auto" : pictureHeight + band.height,
+    stageBasis:
+      pictureHeight === null
+        ? "auto"
+        : pictureHeight + band.height + controls.height,
   };
 }
 
@@ -315,7 +348,7 @@ function Fading({
 /** The bar over the top of the stage: the way back to the project, named after it, and the file's name. */
 function Header({ media, onBack }: MediaViewProps) {
   return (
-    <header className="flex items-center gap-3 bg-surface/90 px-3 py-2 backdrop-blur-sm">
+    <header className="flex items-center gap-3 bg-black/90 px-3 py-2 backdrop-blur-sm">
       <Button
         variant="subtle"
         aria-label={`Back to ${media.projectName}`}

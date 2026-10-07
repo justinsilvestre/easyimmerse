@@ -55,6 +55,15 @@ const openOptions = () =>
   fireEvent.click(screen.getByRole("button", { name: "Subtitle options" }));
 
 describe("PlayerControls", () => {
+  it("lies on translucent black, like the video", () => {
+    renderControls();
+    expect(
+      screen
+        .getByRole("slider", { name: "Position" })
+        .closest(".bg-black\\/90"),
+    ).not.toBeNull();
+  });
+
   it("draws each loaded stretch behind the seek bar", () => {
     renderControls();
     const stretch = screen

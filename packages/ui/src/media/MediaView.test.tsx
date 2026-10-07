@@ -168,6 +168,24 @@ describe("MediaView", () => {
     expect(areControlsFolded()).toBe(true);
   });
 
+  it("keeps the controls out of the subtitle band", () => {
+    renderView();
+    expect(
+      screen
+        .getByRole("button", { name: /\(Space\)$/ })
+        .closest('[data-testid="subtitle-band"]'),
+    ).toBeNull();
+  });
+
+  it("keeps the controls on the dark stage", () => {
+    renderView();
+    expect(
+      screen
+        .getByRole("button", { name: /\(Space\)$/ })
+        .closest('[data-theme="dark"]'),
+    ).not.toBeNull();
+  });
+
   it("shows no subtitle over the video while no cue is shown", () => {
     renderView({ shownCue: null });
     expect(screen.queryByRole("button", { name: "Hund" })).toBeNull();
@@ -187,11 +205,55 @@ describe("MediaView", () => {
     expect(screen.queryByRole("button", { name: "Hund" })).toBeNull();
   });
 
+  it("lays the header on translucent black, like the controls", () => {
+    renderView();
+    expect(
+      screen
+        .getByRole("heading", { name: "Episode 1" })
+        .closest("header")
+        ?.classList.contains("bg-black/90"),
+    ).toBe(true);
+  });
+
   it("shows the panel toggles in the app footer", () => {
     renderView();
     expect(
       screen.getByRole("button", { name: "Waveform" }).closest("footer"),
     ).not.toBeNull();
+  });
+});
+
+describe("MediaView footer", () => {
+  const fullscreenPanels = { cues: false, waveform: false, isFullscreen: true };
+
+  const footer = () =>
+    screen.getByRole("button", { name: "Waveform" }).closest("footer");
+
+  it("stays off the stage outside fullscreen", () => {
+    renderView();
+    expect(footer()?.closest('[data-theme="dark"]')).toBeNull();
+  });
+
+  it("stays shown outside fullscreen while the controls fold away", () => {
+    renderView();
+    letPointerRest();
+    expect(footer()?.closest(".opacity-0")).toBeNull();
+  });
+
+  it("lies over the foot of the stage in fullscreen", () => {
+    renderView({ panels: fullscreenPanels });
+    expect(footer()?.closest('[data-theme="dark"]')).not.toBeNull();
+  });
+
+  it("folds away with the controls in fullscreen", () => {
+    renderView({ panels: fullscreenPanels });
+    letPointerRest();
+    expect(footer()?.closest(".opacity-0")).not.toBeNull();
+  });
+
+  it("shows with the controls in fullscreen", () => {
+    renderView({ panels: fullscreenPanels });
+    expect(footer()?.closest(".opacity-0")).toBeNull();
   });
 });
 
@@ -217,10 +279,10 @@ describe("MediaView subtitle box", () => {
     expect(subtitleBox().style.height).not.toBe(targetOnly);
   });
 
-  it("lies on the controls' surface under the picture", () => {
+  it("lies on black under the picture, like the video", () => {
     renderView();
     expect(
-      screen.getByTestId("subtitle-band").classList.contains("bg-surface"),
+      screen.getByTestId("subtitle-band").classList.contains("bg-black"),
     ).toBe(true);
   });
 
@@ -229,7 +291,7 @@ describe("MediaView subtitle box", () => {
       panels: { cues: false, waveform: false, areSubtitlesHidden: true },
     });
     expect(
-      screen.getByTestId("subtitle-band").classList.contains("bg-surface"),
+      screen.getByTestId("subtitle-band").classList.contains("bg-black"),
     ).toBe(false);
   });
 
@@ -244,6 +306,24 @@ describe("MediaView subtitle box", () => {
       screen
         .getByRole("button", { name: "Look up a word (L)" })
         .closest('[data-testid="subtitle-box"]'),
+    ).toBeNull();
+  });
+
+  it("keeps the lookup buttons in its band rather than above it", () => {
+    renderView();
+    expect(
+      screen
+        .getByRole("button", { name: "Look up a word (L)" })
+        .closest(".bottom-full"),
+    ).toBeNull();
+  });
+
+  it("gives the lookup buttons a row of their own when no subtitles show", () => {
+    renderView({ cues: [], translationCues: [] });
+    expect(
+      screen
+        .getByRole("button", { name: "Look up a word (L)" })
+        .closest(".absolute"),
     ).toBeNull();
   });
 
