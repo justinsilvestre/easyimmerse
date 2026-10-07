@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useId, useState, useSyncExternalStore } from "react";
 import { Button } from "../../components/Button.tsx";
 import { IconButton } from "../../components/IconButton.tsx";
+import { useNotices } from "../../notices/NoticesContext.tsx";
 import { useUnsavedCards } from "../SharedSavingContext.tsx";
 import type { ListedUnsavedCard } from "./unsavedCardStore.ts";
 import { useUnsavedCardActions } from "./useUnsavedCardActions.ts";
@@ -9,10 +10,10 @@ import { useUnsavedCardActions } from "./useUnsavedCardActions.ts";
 /**
  * One lasting line that counts the flashcards that could not be saved, and expands into a list of them,
  * each with Retry, Open and Discard. The count is a live region, announced when it first appears and when it changes.
+ * A card whose own notice is showing, as a refused save's is, is left to that notice, so that one failure shows once.
  */
 export function UnsavedCardsStatus() {
-  const store = useUnsavedCards();
-  const cards = useSyncExternalStore(store.subscribe, store.list);
+  const cards = useCardsWithoutOwnNotice();
   const actions = useUnsavedCardActions();
   const [isExpanded, setExpanded] = useState(false);
   const listId = useId();
@@ -119,6 +120,18 @@ function UnsavedCardItem({ card }: { card: ListedUnsavedCard }) {
         Discard
       </Button>
     </li>
+  );
+}
+
+/** The listed cards, less those whose own notice is showing. */
+function useCardsWithoutOwnNotice(): readonly ListedUnsavedCard[] {
+  const store = useUnsavedCards();
+  const notices = useNotices();
+  const cards = useSyncExternalStore(store.subscribe, store.list);
+  const shown = useSyncExternalStore(notices.subscribe, notices.list);
+  const shownIds = new Set(shown.map((notice) => notice.id));
+  return cards.filter(
+    (card) => card.noticeId === undefined || !shownIds.has(card.noticeId),
   );
 }
 
