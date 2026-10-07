@@ -3,78 +3,25 @@ import type { FlashcardSegment } from "./flashcardSegment.ts";
 import { waveformColors } from "./waveformColors.ts";
 import { cueBandHeightPx } from "./waveformCueHit.ts";
 import type { WaveformView } from "./waveformGeometry.ts";
-import { timeAtX, xAtTime } from "./waveformGeometry.ts";
+import { xAtTime } from "./waveformGeometry.ts";
 import { screenshotMarkerHeightPx } from "./waveformHitTest.ts";
-import {
-  waveformPeaksPerSecond,
-  windowStartOf,
-} from "./waveformWindowPolicy.ts";
 
 export type WaveformScene = {
   view: WaveformView;
   heightPx: number;
   currentTimeMs: number;
-  windows: ReadonlyMap<number, Uint8Array>;
   cues: readonly Cue[];
   segments: readonly FlashcardSegment[];
 };
 
-const peakMs = 1000 / waveformPeaksPerSecond;
-
-export function drawWaveform(
+/** Draws the cues, flashcard segments, and playhead on a clear canvas laid over the waveform's bars. */
+export function drawWaveformOverlay(
   ctx: CanvasRenderingContext2D,
   scene: WaveformScene,
 ): void {
-  ctx.fillStyle = waveformColors.background;
-  ctx.fillRect(0, 0, scene.view.widthPx, scene.heightPx);
-  drawPeaks(ctx, scene);
   drawCues(ctx, scene);
   for (const segment of scene.segments) drawSegment(ctx, scene, segment);
   drawPlayhead(ctx, scene);
-}
-
-function drawPeaks(ctx: CanvasRenderingContext2D, scene: WaveformScene): void {
-  const middle = scene.heightPx / 2;
-  for (let x = 0; x < scene.view.widthPx; x += 1) {
-    const peak = loudestPeak(
-      scene,
-      timeAtX(scene.view, x),
-      timeAtX(scene.view, x + 1),
-    );
-    if (peak === null) {
-      ctx.fillStyle = waveformColors.placeholder;
-      ctx.fillRect(x, middle - 0.5, 1, 1);
-    } else {
-      const half = Math.max(0.5, (peak / 255) * (middle - 2));
-      ctx.fillStyle = waveformColors.peaks;
-      ctx.fillRect(x, middle - half, 1, half * 2);
-    }
-  }
-}
-
-/** The loudest peak between the two times, or null when no loaded window covers them. */
-function loudestPeak(
-  scene: WaveformScene,
-  fromMs: number,
-  toMs: number,
-): number | null {
-  let loudest: number | null = null;
-  const lastMs = Math.max(fromMs, toMs - peakMs);
-  for (let ms = fromMs; ms <= lastMs; ms += peakMs) {
-    const peak = peakAt(scene.windows, ms);
-    if (peak !== null) loudest = Math.max(loudest ?? 0, peak);
-  }
-  return loudest;
-}
-
-function peakAt(
-  windows: ReadonlyMap<number, Uint8Array>,
-  ms: number,
-): number | null {
-  const start = windowStartOf(ms);
-  const peaks = windows.get(start);
-  if (peaks === undefined) return null;
-  return peaks[Math.floor((ms - start) / peakMs)] ?? null;
 }
 
 function drawCues(ctx: CanvasRenderingContext2D, scene: WaveformScene): void {
