@@ -1,6 +1,7 @@
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  ConversionCacheBudget,
   ConversionCacheStatus,
   Document,
   DocumentFormat,
@@ -365,6 +366,17 @@ export const backendApi = createApi({
       query: () => ({ method: "POST", path: "/conversion-cache/clear" }),
       invalidatesTags: ["ConversionCache"],
     }),
+    setConversionCacheBudget: build.mutation<
+      ConversionCacheStatus,
+      ConversionCacheBudget
+    >({
+      query: (budget) => ({
+        method: "PUT",
+        path: "/conversion-cache/budget",
+        body: { kind: "json", value: budget },
+      }),
+      invalidatesTags: ["ConversionCache"],
+    }),
     parseTimedText: build.mutation<TimedTextTrack, ParseTimedTextRequest>({
       query: (request) => ({
         method: "POST",
@@ -506,6 +518,7 @@ export const {
   useSetSubtitleSelectionMutation,
   useGetConversionCacheStatusQuery,
   useClearConversionCacheMutation,
+  useSetConversionCacheBudgetMutation,
   useParseTimedTextMutation,
   useParseDocumentMutation,
   useParseLocalDocumentMutation,

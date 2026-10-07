@@ -376,6 +376,34 @@ async fn clearing_the_cache_answers_with_the_status() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn setting_the_budget_answers_with_the_status_under_it() {
+    if !ffmpeg_available() {
+        return;
+    }
+    let (server, _cache_dir, _) = converting_server().await;
+    let response = server
+        .put_json("/conversion-cache/budget", &json!({ "budget_bytes": 5_000_000_000u64 }))
+        .await;
+    assert_eq!(
+        (response.status, response.json()["budget_bytes"].as_u64()),
+        (200, Some(5_000_000_000))
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_chosen_budget_is_kept_in_the_preferences() {
+    if !ffmpeg_available() {
+        return;
+    }
+    let (server, _cache_dir, _) = converting_server().await;
+    server
+        .put_json("/conversion-cache/budget", &json!({ "budget_bytes": 5_000_000_000u64 }))
+        .await;
+    let response = server.get("/preferences/conversionCacheBudgetBytes").await;
+    assert_eq!(response.json()["value"], "5000000000");
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn removing_a_media_file_removes_its_conversions() {
     if !ffmpeg_available() {
         return;

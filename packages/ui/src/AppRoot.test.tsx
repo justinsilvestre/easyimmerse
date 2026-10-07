@@ -164,7 +164,7 @@ describe("AppRoot", () => {
       openSettingsFromFooter();
       expect(
         await screen.findByText(
-          "Video conversion is unavailable, so no converted videos are stored.",
+          "Media conversion is unavailable, so there is no cache.",
         ),
       ).toBeDefined();
     });

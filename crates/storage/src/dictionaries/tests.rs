@@ -149,6 +149,25 @@ fn fixture_source() -> DictionarySource {
 }
 
 #[test]
+fn refuses_to_import_a_dictionary_twice() {
+    let storage = Storage::open_in_memory().unwrap();
+    storage.import_dictionary(&mut fixture_source()).unwrap();
+    let again = storage.import_dictionary(&mut fixture_source());
+    assert!(
+        matches!(again, Err(StorageError::DictionaryAlreadyImported(_))),
+        "{again:?}"
+    );
+}
+
+#[test]
+fn keeps_the_first_dictionary_when_a_second_import_is_refused() {
+    let storage = Storage::open_in_memory().unwrap();
+    storage.import_dictionary(&mut fixture_source()).unwrap();
+    let _ = storage.import_dictionary(&mut fixture_source());
+    assert_eq!(storage.list_dictionaries().unwrap().len(), 1);
+}
+
+#[test]
 fn imports_the_yomitan_fixture_with_its_title() {
     let storage = Storage::open_in_memory().unwrap();
     let id = storage.import_dictionary(&mut fixture_source()).unwrap();

@@ -5,7 +5,12 @@ import { ConversionCacheSection } from "./ConversionCacheSection.tsx";
 const meta = {
   title: "Components/ConversionCacheSection",
   component: ConversionCacheSection,
-  args: { cache: { kind: "unavailable" }, onClear: fn(), clearStatus: "" },
+  args: {
+    cache: { kind: "unavailable" },
+    onClear: fn(),
+    clearStatus: "",
+    onBudgetChange: fn(),
+  },
   decorators: [
     (Story) => (
       <div className="w-[36rem] max-w-full">
@@ -36,6 +41,7 @@ export const InUse: Story = {
         budget_bytes: 5_000_000_000,
         free_bytes: 40_000_000_000,
         space_low: false,
+        chosen_budget_bytes: null,
       },
     },
   },
@@ -51,6 +57,7 @@ export const LowDiskSpace: Story = {
         budget_bytes: 5_000_000_000,
         free_bytes: 2_200_000_000,
         space_low: true,
+        chosen_budget_bytes: null,
       },
     },
   },
@@ -66,6 +73,7 @@ export const AfterClearing: Story = {
         budget_bytes: 5_000_000_000,
         free_bytes: 41_000_000_000,
         space_low: false,
+        chosen_budget_bytes: null,
       },
     },
     clearStatus: "Cleared 1.2 GB.",

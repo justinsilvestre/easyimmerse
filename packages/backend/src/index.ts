@@ -32,6 +32,7 @@ export {
   usePreviewLocalDictionaryTableMutation,
   useRemoveMediaFileMutation,
   useSaveTrackSelectionMutation,
+  useSetConversionCacheBudgetMutation,
   useSetSubtitleSelectionMutation,
   useUpdateFlashcardMutation,
   useUpdateProjectMutation,

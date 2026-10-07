@@ -121,6 +121,7 @@ function BookReader({
     <ReaderView
       document={document}
       title={document.title || mediaFile.name}
+      projectName={settings.name}
       language={document.language ?? settings.target_language}
       preferences={preferences}
       initialLocation={initialLocation}

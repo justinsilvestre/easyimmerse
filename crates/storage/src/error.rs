@@ -18,6 +18,8 @@ pub enum StorageError {
     Dictionary(DictionaryError),
     #[error("the dictionary format sent content before its metadata")]
     ImportOutOfOrder,
+    #[error("“{0}” is already in your dictionaries. Remove it first to import it again.")]
+    DictionaryAlreadyImported(String),
     #[error("no dictionary has the id {0:?}")]
     DictionaryNotFound(String),
     #[error("the dictionary {dictionary_id:?} has no file at {path:?}")]

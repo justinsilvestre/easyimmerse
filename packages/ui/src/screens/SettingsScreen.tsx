@@ -12,6 +12,7 @@ const unavailableConversionCache: ConversionCacheControls = {
   cache: { kind: "unavailable" },
   onClear: () => undefined,
   clearStatus: "",
+  onBudgetChange: () => undefined,
 };
 
 export function SettingsScreen({
@@ -27,7 +28,7 @@ export function SettingsScreen({
   licenseNotices?: LicenseNoticesState;
 }) {
   return (
-    <ScreenLayout onBack={onBack} showSettingsLink={false}>
+    <ScreenLayout onBack={onBack}>
       <h1 className="text-xl font-semibold">Settings</h1>
       <button
         type="button"

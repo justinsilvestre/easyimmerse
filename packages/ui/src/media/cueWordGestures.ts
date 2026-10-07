@@ -10,10 +10,9 @@ type CueWordHandler = (hit: WordHit, cue: Cue) => void;
 export type CueWordGestures = {
   onWordClick?: CueWordHandler;
   onWordDoubleClick?: CueWordHandler;
-  onWordHoverIntent?: (
-    hit: WordHit,
-    cue: Cue,
-  ) => undefined | Promise<number | null>;
+  // A handler with nothing to answer returns nothing, as the other handlers do.
+  // biome-ignore lint/suspicious/noConfusingVoidType: see above
+  onWordHoverIntent?: (hit: WordHit, cue: Cue) => void | Promise<number | null>;
   onWordHold?: CueWordHandler;
 };
 

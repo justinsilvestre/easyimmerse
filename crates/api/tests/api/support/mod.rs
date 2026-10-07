@@ -134,6 +134,10 @@ impl TestServer {
         self.request("POST", path).json(body).send().await
     }
 
+    pub async fn put_json(&self, path: &str, body: &Value) -> TestResponse {
+        self.request("PUT", path).json(body).send().await
+    }
+
     pub async fn delete(&self, path: &str) -> TestResponse {
         self.request("DELETE", path).send().await
     }

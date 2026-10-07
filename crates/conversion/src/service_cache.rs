@@ -23,9 +23,10 @@ const EVICTION_INTERVAL: Duration = Duration::from_secs(60);
 impl ConversionService {
     pub async fn cache_status(&self) -> Result<ConversionCacheStatus, ConversionError> {
         let layout = self.inner.layout.clone();
+        let budget = self.cache_budget();
         tokio::task::spawn_blocking(move || {
             let usage = layout.usage_bytes()?;
-            Ok(cache_status(usage, disk_space(&layout)?))
+            Ok(cache_status(usage, disk_space(&layout)?, budget))
         })
         .await?
     }
@@ -144,13 +145,14 @@ impl ConversionService {
     pub async fn evict(&self) -> Result<(), ConversionError> {
         let in_use = self.in_use_keys().await;
         let layout = self.inner.layout.clone();
+        let budget = self.cache_budget();
         let evicted = tokio::task::spawn_blocking(move || {
             let candidates = eviction_candidates(&layout, &in_use)?;
             let usage: u64 = candidates
                 .iter()
                 .map(|candidate| candidate.size_bytes)
                 .sum();
-            let status = cache_status(usage, disk_space(&layout)?);
+            let status = cache_status(usage, disk_space(&layout)?, budget);
             let keys = select_evictions(candidates, usage, status.limit_bytes);
             for key in &keys {
                 layout.remove_entry(key)?;

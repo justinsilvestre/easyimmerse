@@ -65,6 +65,72 @@
         ]
       }
     },
+    "/conversion-cache/budget": {
+      "put": {
+        "tags": [
+          "conversions"
+        ],
+        "summary": "Sets how large the cache may grow, keeps the choice for later runs, and answers with the status under it.",
+        "operationId": "setConversionCacheBudget",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversionCacheBudget"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The cache's usage and limits under the new budget",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversionCacheStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server does not convert media (code `conversion_unavailable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/conversion-cache/clear": {
       "post": {
         "tags": [
@@ -3979,6 +4045,20 @@
           }
         }
       },
+      "ConversionCacheBudget": {
+        "type": "object",
+        "description": "How large the conversion cache may grow. `null` lets the budget follow the disk's size.",
+        "properties": {
+          "budget_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
       "ConversionCacheStatus": {
         "type": "object",
         "description": "Sizes are in bytes.",
@@ -3994,6 +4074,15 @@
             "type": "integer",
             "format": "int64",
             "description": "The size the cache may grow to when disk space allows.",
+            "minimum": 0
+          },
+          "chosen_budget_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The budget the user chose, or None while the budget follows the disk's size.",
             "minimum": 0
           },
           "free_bytes": {

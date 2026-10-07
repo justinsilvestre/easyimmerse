@@ -160,7 +160,7 @@ export function MediaView(props: MediaViewProps) {
           </aside>
         )}
       </div>
-      {!panels.distractionFree && <AppFooter settingsControl="icon" compact />}
+      {!panels.distractionFree && <AppFooter settingsControl="icon" />}
     </div>
   );
 }

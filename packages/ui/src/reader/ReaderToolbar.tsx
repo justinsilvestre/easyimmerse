@@ -11,6 +11,7 @@ import type { ReaderPanel } from "./readerState.ts";
  */
 export function ReaderToolbar({
   title,
+  projectName,
   chapterTitle,
   isVisible,
   panel,
@@ -22,6 +23,8 @@ export function ReaderToolbar({
   onReveal,
 }: {
   title: string;
+  /** The name of the project the book belongs to, which the way back is named after. */
+  projectName: string;
   chapterTitle: string | null;
   isVisible: boolean;
   panel: ReaderPanel | null;
@@ -45,9 +48,14 @@ export function ReaderToolbar({
       onFocus={onReveal}
     >
       <div className="flex h-12 items-center gap-1 px-2">
-        <Button variant="subtle" onClick={onBack}>
-          <ArrowLeft className="size-4" aria-hidden />
-          <span className="hidden sm:inline">Project</span>
+        <Button
+          variant="subtle"
+          aria-label={`Back to ${projectName}`}
+          className="min-w-0 shrink"
+          onClick={onBack}
+        >
+          <ArrowLeft className="size-4 shrink-0" aria-hidden />
+          <span className="hidden truncate sm:inline">{projectName}</span>
         </Button>
         {hasContents && (
           <IconButton

@@ -145,6 +145,7 @@ const meta = {
   args: {
     document: exampleNovel,
     title: "Die Verwandlung",
+    projectName: "German reading",
     language: "de",
     preferences: defaultReaderPreferences,
     callbacks: {

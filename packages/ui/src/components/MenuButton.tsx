@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Check, ChevronDown, MoreHorizontal } from "lucide-react";
-import { type ReactNode, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Button } from "./Button.tsx";
 import { IconButton } from "./IconButton.tsx";
 
@@ -20,12 +20,14 @@ export type MenuItem = {
 
 /**
  * A button that opens a small menu of actions below it. With children it is a text button showing them;
- * without, it is an icon button showing `icon`, or three dots. The menu closes on Escape, on a choice, or when focus leaves it.
+ * without, it is an icon button showing `icon`, or three dots. The menu closes on Escape, on a choice, when focus leaves it,
+ * or when the pointer presses anywhere outside it, which matters on browsers that give a clicked button no focus.
  * It opens downward unless told to open upward, for a button near the bottom of a scrolling area.
  */
 export function MenuButton({
   label,
   icon = <MoreHorizontal className="size-4" />,
+  size = "sm",
   items,
   opensUpward = false,
   isUnavailable = false,
@@ -33,6 +35,8 @@ export function MenuButton({
 }: {
   label: string;
   icon?: ReactNode;
+  /** The size of a text button, as `Button` sizes it. */
+  size?: "sm" | "md";
   items: readonly MenuItem[];
   opensUpward?: boolean;
   /** Keeps the menu closed and marks its button unavailable, keeping keyboard focus on it. */
@@ -45,6 +49,15 @@ export function MenuButton({
   };
   const menuId = useId();
   const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnOutsidePress = (event: PointerEvent) => {
+      if (!ref.current?.contains(event.target as Node | null)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePress);
+    return () =>
+      document.removeEventListener("pointerdown", closeOnOutsidePress);
+  }, [isOpen]);
   return (
     // The handlers only close the menu; the button and the items inside are the interactive elements.
     // biome-ignore lint/a11y/noStaticElementInteractions: see above
@@ -61,7 +74,7 @@ export function MenuButton({
     >
       {children ? (
         <Button
-          size="sm"
+          size={size}
           variant="subtle"
           aria-haspopup="menu"
           aria-expanded={isOpen}

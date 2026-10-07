@@ -45,6 +45,20 @@ describe("MenuButton", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
+  it("closes the menu when the pointer presses outside it", () => {
+    renderMenu();
+    openMenu();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("keeps the menu open when the pointer presses inside it", () => {
+    renderMenu();
+    openMenu();
+    fireEvent.pointerDown(screen.getByRole("menu"));
+    expect(screen.getByRole("menu")).toBeDefined();
+  });
+
   it("closes the menu on Escape", () => {
     renderMenu();
     openMenu();

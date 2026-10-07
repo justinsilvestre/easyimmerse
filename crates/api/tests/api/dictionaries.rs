@@ -142,6 +142,17 @@ async fn importing_something_that_is_not_a_dictionary_fails_the_job() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn importing_the_same_dictionary_again_is_refused() {
+    let server = spawn_test_server(false).await;
+    import_fixture(&server).await;
+    let started = start_fixture_import(&server).await;
+    assert_eq!(
+        finished(&server, started).await["error"]["code"],
+        "dictionary_already_imported"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn importing_a_file_in_an_unsupported_format_says_so() {
     let server = spawn_test_server(false).await;
     let started = server
@@ -243,7 +254,14 @@ async fn looks_up_a_term_by_its_reading() {
 async fn looks_up_a_term_in_every_dictionary() {
     let server = spawn_test_server(false).await;
     import_fixture(&server).await;
-    import_fixture(&server).await;
+    let started = server
+        .post_bytes(
+            "/dictionaries?fileName=cats.csv&columns=term,reading,definition",
+            "application/octet-stream",
+            "猫,ねこ,cat\n".as_bytes().to_vec(),
+        )
+        .await;
+    finished(&server, started).await;
     let response = look_up(&server, "猫").await;
     let definitions = response["results"][0]["definitions"].as_array().unwrap();
     assert_eq!(definitions.len(), 2);

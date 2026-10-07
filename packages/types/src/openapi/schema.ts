@@ -20,6 +20,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/conversion-cache/budget": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Sets how large the cache may grow, keeps the choice for later runs, and answers with the status under it. */
+        put: operations["setConversionCacheBudget"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/conversion-cache/clear": {
         parameters: {
             query?: never;
@@ -737,6 +754,11 @@ export interface components {
             start: number;
             text: string;
         };
+        /** @description How large the conversion cache may grow. `null` lets the budget follow the disk's size. */
+        ConversionCacheBudget: {
+            /** Format: int64 */
+            budget_bytes?: number | null;
+        };
         /** @description Sizes are in bytes. */
         ConversionCacheStatus: {
             /**
@@ -744,6 +766,11 @@ export interface components {
              * @description The size the cache may grow to when disk space allows.
              */
             budget_bytes: number;
+            /**
+             * Format: int64
+             * @description The budget the user chose, or None while the budget follows the disk's size.
+             */
+            chosen_budget_bytes?: number | null;
             /** Format: int64 */
             free_bytes: number;
             /**
@@ -1417,6 +1444,57 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The cache's usage and limits */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversionCacheStatus"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server does not convert media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setConversionCacheBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversionCacheBudget"];
+            };
+        };
+        responses: {
+            /** @description The cache's usage and limits under the new budget */
             200: {
                 headers: {
                     [name: string]: unknown;

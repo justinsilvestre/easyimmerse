@@ -76,6 +76,8 @@ type ReaderViewProps = {
   document: Document;
   /** The book's title, or the file's name when the book has none. */
   title: string;
+  /** The name of the project the book belongs to, which the way back is named after. */
+  projectName: string;
   /** The language of the text, which sets its word boundaries and hyphenation. */
   language: string;
   preferences: ReaderPreferences;
@@ -254,6 +256,7 @@ export function ReaderView(props: ReaderViewProps) {
     >
       <ReaderToolbar
         title={props.title}
+        projectName={props.projectName}
         chapterTitle={chapterTitle}
         isVisible={state.isChromeVisible}
         panel={state.panel}

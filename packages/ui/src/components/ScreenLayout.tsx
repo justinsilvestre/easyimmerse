@@ -9,7 +9,7 @@ import { Button } from "./Button.tsx";
  * A screen with a way back passes `onBack`; its button sits at the left of the header, before the wordmark,
  * as on the media and reader screens. `backLabel` names where it leads, such as "Projects", and is hidden on a phone,
  * where the arrow alone stands for it.
- * The wide layout suits forms with a side column. The Settings screen hides the footer's link to itself.
+ * The wide layout suits forms with a side column. The footer stays at the bottom of the window.
  * On a phone with a notch or a home indicator, the header and footer keep clear of them.
  */
 export function ScreenLayout({
@@ -17,19 +17,17 @@ export function ScreenLayout({
   backLabel = "Back",
   headerActions,
   wide = false,
-  showSettingsLink = true,
   children,
 }: {
   onBack?: () => void;
   backLabel?: string;
   headerActions?: ReactNode;
   wide?: boolean;
-  showSettingsLink?: boolean;
   children: ReactNode;
 }) {
   const width = wide ? "max-w-5xl" : "max-w-3xl";
   return (
-    <div className="flex min-h-screen flex-col bg-canvas pb-[env(safe-area-inset-bottom)] text-fg">
+    <div className="flex min-h-dvh flex-col bg-canvas pb-[env(safe-area-inset-bottom)] text-fg">
       <header className="border-b border-line bg-surface pt-[env(safe-area-inset-top)]">
         <div
           className={clsx(
@@ -59,10 +57,7 @@ export function ScreenLayout({
       >
         {children}
       </main>
-      <AppFooter
-        contentClassName={clsx("mx-auto", width)}
-        showSettingsLink={showSettingsLink}
-      />
+      <AppFooter contentClassName={clsx("mx-auto", width)} />
     </div>
   );
 }

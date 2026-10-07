@@ -89,6 +89,18 @@ describe("ProjectScreen", () => {
     ).toBeDefined();
   });
 
+  it("narrows the media list to one kind of file from its heading menu", async () => {
+    renderProject();
+    await screen.findByRole("button", { name: "Audio interview.mp3" });
+    fireEvent.click(screen.getByRole("button", { name: "Media" }));
+    fireEvent.click(
+      screen.getByRole("menuitemcheckbox", { name: "Audio (1)" }),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Video episode.mkv" }),
+    ).toBeNull();
+  });
+
   it("opens a media file when it is clicked", async () => {
     const { store } = renderProject();
     fireEvent.click(

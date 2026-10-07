@@ -105,6 +105,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(conversions::get_conversion_segment))
         .routes(routes!(conversion_cache::get_conversion_cache))
         .routes(routes!(conversion_cache::clear_conversion_cache))
+        .routes(routes!(conversion_cache::set_conversion_cache_budget))
         .routes(routes!(
             preferences::get_preference,
             preferences::set_preference

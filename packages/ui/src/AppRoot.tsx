@@ -29,7 +29,10 @@ import {
   settingsPageOf,
 } from "./navigation.ts";
 import { createNavigationActions } from "./navigationActions.ts";
-import { NavigationActionsContext } from "./navigationContext.ts";
+import {
+  NavigationActionsContext,
+  SettingsOpenContext,
+} from "./navigationContext.ts";
 import { NoticesProvider } from "./notices/NoticesContext.tsx";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
@@ -192,9 +195,11 @@ function ConnectedSettingsScreen({
 /** Covers the main screen without unmounting it, so that what is beneath keeps its state. */
 function SettingsOverlay({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-10 overflow-y-auto overscroll-contain bg-canvas">
-      {children}
-    </div>
+    <SettingsOpenContext value={true}>
+      <div className="fixed inset-0 z-10 overflow-y-auto overscroll-contain bg-canvas">
+        {children}
+      </div>
+    </SettingsOpenContext>
   );
 }
 

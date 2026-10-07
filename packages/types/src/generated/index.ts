@@ -14,6 +14,7 @@ export type * from "./ContainerElement";
 export type * from "./ContainerFormat";
 export type * from "./ContainerInfo";
 export type * from "./ContextWord";
+export type * from "./ConversionCacheBudget";
 export type * from "./ConversionCacheStatus";
 export type * from "./ConversionPlan";
 export type * from "./ConversionReason";

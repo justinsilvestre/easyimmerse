@@ -30,8 +30,9 @@ function renderSentence(
   text = "Ich rufe an.",
 ) {
   const gestures: string[] = [];
-  const record = (gesture: Gesture) => (hit: { word: string }) =>
+  const record = (gesture: Gesture) => (hit: { word: string }) => {
     gestures.push(`${gesture} ${hit.word}`);
+  };
   render(
     <ClickableText
       text={text}

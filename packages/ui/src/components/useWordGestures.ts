@@ -38,7 +38,9 @@ export type WordGestures = {
    * The handler may answer with the length of the text, in UTF-16 code units from the hit, that a lookup from the hit matched,
    * or null when nothing matched, so that the text can highlight the match.
    */
-  onWordHoverIntent?: (hit: WordHit) => undefined | Promise<number | null>;
+  // A handler with nothing to answer returns nothing, as the other handlers do.
+  // biome-ignore lint/suspicious/noConfusingVoidType: see above
+  onWordHoverIntent?: (hit: WordHit) => void | Promise<number | null>;
   /**
    * The word, or in a run of a script written without spaces the character, that the mouse pointer is over,
    * reported each time it changes, and as null when the pointer leaves. A touch reports nothing.

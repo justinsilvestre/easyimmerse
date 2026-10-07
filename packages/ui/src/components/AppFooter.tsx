@@ -1,46 +1,57 @@
 import clsx from "clsx";
 import { Settings } from "lucide-react";
-import { useNavigationActions } from "../navigationContext.ts";
+import {
+  useIsSettingsOpen,
+  useNavigationActions,
+} from "../navigationContext.ts";
 import { Button } from "./Button.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { ThemeMenu } from "./ThemeMenu.tsx";
 
 /**
- * Shows the way to Settings and the theme menu at the bottom of a screen.
+ * A thin bar that stays at the bottom of the window, with the way to Settings and the theme menu.
+ * While Settings is open, its control stands for the page already open and does nothing.
  * `contentClassName` lets it line up with the screen's content. `settingsControl` chooses between a Settings link
- * and a gear icon, which the media screen uses to keep the footer low. `compact` halves the footer's height.
+ * and a gear icon, which the media screen uses.
  */
 export function AppFooter({
   contentClassName,
-  showSettingsLink = true,
   settingsControl = "link",
-  compact = false,
 }: {
   contentClassName?: string;
-  showSettingsLink?: boolean;
   settingsControl?: "link" | "icon";
-  compact?: boolean;
 }) {
   const { openSettings } = useNavigationActions();
+  const isSettingsOpen = useIsSettingsOpen();
+  const current = isSettingsOpen ? ("page" as const) : undefined;
   return (
-    <footer className="border-t border-line">
+    <footer className="sticky bottom-0 border-t border-line bg-surface">
       <div
         className={clsx(
-          "flex items-center justify-end gap-4 px-4",
-          compact ? "py-1" : "py-3",
+          "flex items-center justify-end gap-2 px-4 py-0.5",
           contentClassName,
         )}
       >
-        {showSettingsLink &&
-          (settingsControl === "icon" ? (
-            <IconButton label="Settings" onClick={openSettings}>
-              <Settings className="size-4" />
-            </IconButton>
-          ) : (
-            <Button variant="subtle" onClick={openSettings}>
-              Settings
-            </Button>
-          ))}
+        {settingsControl === "icon" ? (
+          <IconButton
+            label="Settings"
+            aria-current={current}
+            aria-disabled={isSettingsOpen || undefined}
+            onClick={isSettingsOpen ? undefined : openSettings}
+          >
+            <Settings className="size-4" />
+          </IconButton>
+        ) : (
+          <Button
+            variant="subtle"
+            size="sm"
+            aria-current={current}
+            aria-disabled={isSettingsOpen || undefined}
+            onClick={isSettingsOpen ? undefined : openSettings}
+          >
+            Settings
+          </Button>
+        )}
         <ThemeMenu />
       </div>
     </footer>
