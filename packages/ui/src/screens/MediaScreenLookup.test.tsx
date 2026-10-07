@@ -151,11 +151,22 @@ describe("MediaScreen lookup gestures", () => {
     expect(shownWord(popup)).toBe("cat");
   });
 
-  it("looks a word up ahead of a click once the mouse rests on it", async () => {
+  it("looks a word up ahead of a click once the mouse has stayed on it for 40 ms", async () => {
     const { client } = renderMediaScreen();
     await findSubtitles();
-    await restMouseOn(panelWord("dog"));
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    await advance(40);
     expect(lookupTexts(client)).toEqual(["dog wants to eat.\nIt is hungry."]);
+  });
+
+  it("looks nothing up for a word the mouse sweeps over", async () => {
+    const { client } = renderMediaScreen();
+    await findSubtitles();
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    await advance(20);
+    fireEvent.pointerLeave(panelWord("dog"), { pointerType: "mouse" });
+    await advance(200);
+    expect(lookupTexts(client)).toEqual([]);
   });
 
   it("looks nothing up for words hovered inside the pop-up", async () => {
@@ -561,7 +572,7 @@ describe("MediaScreen lookup", () => {
     renderMediaScreen();
     const popup = await lookUpInPanel("cat");
     fireEvent.click(
-      await within(popup).findByRole("button", { name: "Flashcard" }),
+      await within(popup).findByRole("button", { name: "New flashcard" }),
     );
     expect(
       (screen.getByLabelText("Definition (en)") as HTMLTextAreaElement).value,
@@ -572,7 +583,7 @@ describe("MediaScreen lookup", () => {
     renderMediaScreen();
     const popup = await lookUpInPanel("cat");
     fireEvent.click(
-      await within(popup).findByRole("button", { name: "Flashcard" }),
+      await within(popup).findByRole("button", { name: "New flashcard" }),
     );
     expect(
       (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
@@ -615,7 +626,7 @@ describe("MediaScreen lookup", () => {
     const popup = await lookUpInPanel("cat");
     act(() => store.dispatch(actions.playerPlayingChanged(false)));
     fireEvent.click(
-      await within(popup).findByRole("button", { name: "Flashcard" }),
+      await within(popup).findByRole("button", { name: "New flashcard" }),
     );
     fireEvent.click(screen.getByRole("heading", { name: "episode.mkv" }));
     expect(playbackCalls(effects)).toEqual(["pausePlayer"]);

@@ -126,6 +126,7 @@ function BookReader({
       preferences={preferences}
       initialLocation={initialLocation}
       lookup={lookup.popup && <DictionaryPopup {...lookup.popup.props} />}
+      lookupSize={lookup.popup?.size}
       lookupWord={lookup.lookupWord}
       highlightedWord={lookup.highlightedWord}
       callbacks={{

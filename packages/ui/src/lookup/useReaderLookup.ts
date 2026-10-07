@@ -35,6 +35,7 @@ export function useReaderLookup(
     startFlashcard,
   });
   const popup = lookup.popup && {
+    size: lookup.popup.anchored.size,
     onPointerInsideChange: lookup.popup.anchored.onPointerInsideChange,
     props: {
       ...lookup.popup.props,
@@ -42,9 +43,14 @@ export function useReaderLookup(
     } satisfies ComponentProps<typeof DictionaryPopup>,
   };
   const occurrence = lookup.activeOccurrence;
+  // The reader reports only hover intent, so the lookup ahead of a click starts then too.
+  const lookUpAndRestOn = (request: LookupRequest<ReaderWord>) => {
+    void lookup.hoverWord(request);
+    lookup.restOnWord(request);
+  };
   const wordGestures: ReaderWordGestures = {
     onWordClick: (word, input) => lookup.clickWord(requestFor(word), input),
-    onWordHoverIntent: (word) => lookup.hoverWord(requestFor(word)),
+    onWordHoverIntent: (word) => lookUpAndRestOn(requestFor(word)),
     onWordDoubleClick: (word) => lookup.startFlashcardFor(requestFor(word)),
     onWordHold: (word) => lookup.startFlashcardFor(requestFor(word)),
   };

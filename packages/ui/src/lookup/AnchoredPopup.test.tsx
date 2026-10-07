@@ -35,18 +35,26 @@ function createWord(rect: AnchorRect) {
 const lowWord = { top: 700, bottom: 720, left: 100, right: 140 };
 const higherWord = { top: 620, bottom: 640, left: 100, right: 140 };
 
-function renderAt(word: Element) {
+function renderAt(word: Element, size?: "compact" | "expanded") {
   const { container } = render(
-    <AnchoredPopup anchor={word}>
+    <AnchoredPopup anchor={word} size={size}>
       <section aria-label="Dictionary" />
     </AnchoredPopup>,
   );
-  return () =>
-    (container.querySelector("[data-side]") as HTMLElement | null)?.style
-      .bottom;
+  const wrapper = () =>
+    container.querySelector("[data-side]") as HTMLElement | null;
+  return Object.assign(() => wrapper()?.style.bottom, {
+    size: () => wrapper()?.getAttribute("data-size"),
+  });
 }
 
 describe("AnchoredPopup", () => {
+  it("takes the pop-up's size, so that it is centred by that width", () => {
+    const { word } = createWord(lowWord);
+    const style = renderAt(word, "expanded");
+    expect(style.size()).toBe("expanded");
+  });
+
   it("stands above a word low on the screen", () => {
     const { word } = createWord(lowWord);
     const bottomOf = renderAt(word);

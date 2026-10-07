@@ -220,11 +220,11 @@ describe("ClickableText", () => {
       expect(hoveredText(container)).toBe("見");
     });
 
-    it("grows the highlight to the text that hover intent matched", async () => {
+    it("grows the highlight to the text that the hover's lookup matched, within 40 ms", async () => {
       const { container } = render(
         <ClickableText
           text="映画を見る"
-          gestures={{ onWordHoverIntent: () => Promise.resolve(2) }}
+          gestures={{ onWordHover: () => Promise.resolve(2) }}
         />,
       );
       layOutCharacters();
@@ -233,8 +233,40 @@ describe("ClickableText", () => {
         clientX: 50,
         clientY: 10,
       });
-      await act(() => vi.advanceTimersByTimeAsync(200));
+      await act(() => vi.advanceTimersByTimeAsync(40));
       expect(hoveredText(container)).toBe("見る");
+    });
+
+    it("ignores a lookup's answer for a character the mouse has left", async () => {
+      let answer: (length: number) => void = () => undefined;
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          gestures={{
+            onWordHover: (hit) =>
+              hit.start === 3
+                ? new Promise((resolve) => {
+                    answer = resolve;
+                  })
+                : Promise.resolve(null),
+          }}
+        />,
+      );
+      layOutCharacters();
+      const run = screen.getByRole("button");
+      fireEvent.pointerEnter(run, {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
+      await act(() => vi.advanceTimersByTimeAsync(40));
+      fireEvent.pointerMove(run, {
+        pointerType: "mouse",
+        clientX: 5,
+        clientY: 10,
+      });
+      await act(async () => answer(2));
+      expect(hoveredText(container)).toBe("映");
     });
 
     it("drops the highlight once the mouse leaves", () => {

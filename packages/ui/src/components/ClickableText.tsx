@@ -83,7 +83,7 @@ export function stripMarkup(text: string): string {
  * Renders text with each word as a button, so that a word can be looked up or turned into a flashcard.
  * `gestures` receives what the user does to each word: click, double-click, hover or a held tap.
  * The unit under the mouse is highlighted: a word written with spaces whole, and in a run of a script written without spaces
- * the character the pointer is over, growing to the text a lookup from it matched once hover intent has answered with the match.
+ * the character the pointer is over, growing to the text a lookup from it matched once the hover has answered with the match.
  * The word the pop-up shows is highlighted the same way.
  * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
  * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
@@ -102,23 +102,23 @@ export function ClickableText({
   gestures?: WordGestures;
 }) {
   const [hovered, setHovered] = useState<HoveredWord | null>(null);
+  /** Grows the highlight of the unit at `start` to the text its lookup matched, unless the mouse has moved on. */
+  const growHighlight = (start: number, length: number | null) => {
+    if (length === null) return;
+    setHovered((current) =>
+      current?.start === start ? { start, length } : current,
+    );
+  };
   const { handlersFor, keyboardStart } = useWordGestures({
     ...gestures,
     onWordPointed: (hit) => {
       setHovered(hit && { start: hit.start });
       gestures.onWordPointed?.(hit);
     },
-    onWordHoverIntent: (hit) => {
-      const answer = gestures.onWordHoverIntent?.(hit);
+    onWordHover: (hit) => {
+      const answer = gestures.onWordHover?.(hit);
       if (answer instanceof Promise)
-        answer.then((length) => {
-          if (length === null) return;
-          setHovered((current) =>
-            current?.start === hit.start
-              ? { start: hit.start, length }
-              : current,
-          );
-        });
+        answer.then((length) => growHighlight(hit.start, length));
       return undefined;
     },
   });

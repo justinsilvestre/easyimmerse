@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useTimer } from "../hooks/useTimer.ts";
 import { characterOffsetAt, type ViewportPoint } from "./characterAtPoint.ts";
-import { doubleClickMs, hoverIntentMs } from "./gestureTiming.ts";
+import { doubleClickMs, hoverIntentMs, hoverMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
 import { useKeyboardStart } from "./useKeyboardStart.ts";
 import type { ClickPoint, WordClickMemory } from "./wordClickMemory.ts";
@@ -34,18 +34,24 @@ export type WordGestures = {
    */
   onWordDoubleClick?: (hit: WordHit) => void;
   /**
-   * A mouse pointer resting on the word for a moment. Passing over it reports nothing.
-   * The handler may answer with the length of the text, in UTF-16 code units from the hit, that a lookup from the hit matched,
-   * or null when nothing matched, so that the text can highlight the match.
-   */
-  // A handler with nothing to answer returns nothing, as the other handlers do.
-  // biome-ignore lint/suspicious/noConfusingVoidType: see above
-  onWordHoverIntent?: (hit: WordHit) => void | Promise<number | null>;
-  /**
    * The word, or in a run of a script written without spaces the character, that the mouse pointer is over,
-   * reported each time it changes, and as null when the pointer leaves. A touch reports nothing.
+   * reported at once each time it changes, and as null when the pointer leaves. A touch reports nothing.
    */
   onWordPointed?: (hit: WordHit | null) => void;
+  /**
+   * A mouse pointer that has stayed on the word, or on a character of a run, for the brief moment
+   * that tells pointing at it from sweeping across the text.
+   * This is the one handler that answers: with the length of the text, in UTF-16 code units from the hit,
+   * that a lookup from the hit matched, or null when nothing matched, so that the text can highlight the match.
+   */
+  // A handler with nothing to look up returns nothing, as the other handlers do.
+  // biome-ignore lint/suspicious/noConfusingVoidType: see above
+  onWordHover?: (hit: WordHit) => void | Promise<number | null>;
+  /**
+   * A mouse pointer resting on the word for a longer moment, after which an open pop-up may follow it.
+   * Passing over the word reports nothing.
+   */
+  onWordHoverIntent?: (hit: WordHit) => void;
   /** A touch held on the word. The click that ends it is not reported. */
   onWordHold?: (hit: WordHit) => void;
   /**
@@ -63,12 +69,13 @@ export type WordGestures = {
  * and the character of a focused run that a lookup from the keyboard starts from.
  * In a run of a script written without spaces, each character can begin a word, so the hit starts at the character under the pointer,
  * or, from the keyboard, at the character that Left and Right have moved to;
- * and moving the mouse to another character of the run restarts the wait for hover intent.
+ * and moving the mouse to another character of the run restarts the waits for hover and hover intent.
  */
 export function useWordGestures(gestures: WordGestures) {
   const latest = useRef(gestures);
   latest.current = gestures;
   const hoverTimer = useTimer();
+  const hoverIntentTimer = useTimer();
   const clickTimer = useTimer();
   const [press] = useState(createPressTracker);
   useEffect(() => press.cancelHold, [press]);
@@ -104,14 +111,22 @@ export function useWordGestures(gestures: WordGestures) {
     clickTimer.restart(doubleClickMs, () => latest.current.onWordClick?.(hit));
   };
   const hovered = useRef<WordHit | null>(null);
-  /** Starts, or restarts for another character, the wait before a mouse resting on a word counts as hover intent. */
+  /** Starts, or restarts for another character, the waits before a mouse on a word counts as hovering and then as hover intent. */
   const restartHover = (hit: WordHit) => {
     if (hovered.current?.start === hit.start) return;
     hovered.current = hit;
     latest.current.onWordPointed?.(hit);
-    hoverTimer.restart(hoverIntentMs, () => {
+    hoverTimer.restart(hoverMs, () => {
+      if (hit.element.isConnected) latest.current.onWordHover?.(hit);
+    });
+    hoverIntentTimer.restart(hoverIntentMs, () => {
       if (hit.element.isConnected) latest.current.onWordHoverIntent?.(hit);
     });
+  };
+  const cancelHover = () => {
+    hovered.current = null;
+    hoverTimer.cancel();
+    hoverIntentTimer.cancel();
   };
   const handlersFor = (part: WordPart) => ({
     onPointerEnter: (event: PointerEvent<HTMLElement>) => {
@@ -123,8 +138,7 @@ export function useWordGestures(gestures: WordGestures) {
     },
     onPointerLeave: () => {
       if (hovered.current !== null) latest.current.onWordPointed?.(null);
-      hovered.current = null;
-      hoverTimer.cancel();
+      cancelHover();
       press.cancelHold();
     },
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
