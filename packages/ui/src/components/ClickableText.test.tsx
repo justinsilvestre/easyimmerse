@@ -129,6 +129,18 @@ describe("ClickableText", () => {
     ).toBe("dictionary");
   });
 
+  it("highlights a word written with spaces as soon as the mouse is on it", () => {
+    render(
+      <ClickableText
+        text="Ich rufe an."
+        gestures={{ onWordHover: () => new Promise(() => undefined) }}
+      />,
+    );
+    const word = screen.getByRole("button", { name: "rufe" });
+    fireEvent.pointerEnter(word, { pointerType: "mouse" });
+    expect(word.classList.contains("bg-accent-soft")).toBe(true);
+  });
+
   describe("with words that flashcards were made from", () => {
     it("marks such a word", () => {
       const { container } = render(
@@ -299,7 +311,7 @@ describe("ClickableText", () => {
       return rendered;
     }
 
-    it("highlights nothing under the mouse before the hover's lookup answers", () => {
+    it("highlights the character under the mouse at once, before the hover's lookup answers", () => {
       const { container } = render(
         <ClickableText
           text="映画を見る"
@@ -312,8 +324,7 @@ describe("ClickableText", () => {
         clientX: 50,
         clientY: 10,
       });
-      act(() => vi.advanceTimersByTime(200));
-      expect(hoveredText(container)).toBeUndefined();
+      expect(hoveredText(container)).toBe("見");
     });
 
     it("highlights the text that the hover's lookup matched, within 40 ms", async () => {
@@ -348,14 +359,14 @@ describe("ClickableText", () => {
       expect(hoveredText(container)).toBe("見る");
     });
 
-    it("drops the highlight when the mouse moves beyond the matched text", async () => {
+    it("moves the highlight at once when the mouse moves beyond the matched text", async () => {
       const { container } = await hoverAnswering(2);
       fireEvent.pointerMove(screen.getByRole("button"), {
         pointerType: "mouse",
         clientX: 5,
         clientY: 10,
       });
-      expect(hoveredText(container)).toBeUndefined();
+      expect(hoveredText(container)).toBe("映");
     });
 
     it("ignores a lookup's answer for a character the mouse has left", async () => {
@@ -511,14 +522,41 @@ describe("ClickableText", () => {
       );
     });
 
-    it("highlights a cursor it is given only once its lookup has answered", () => {
+    it("highlights the character of a cursor it is given before its lookup answers", () => {
       const { container } = render(
         <ClickableText
           text="映画を見る"
           cursor={{ start: 3, input: "keyboard" }}
         />,
       );
-      expect(container.querySelector("[data-hovered]")).toBeNull();
+      expect(container.querySelector("[data-hovered]")?.textContent).toBe("見");
+    });
+
+    it("leaves the pop-up's word unhighlighted while the cursor lies elsewhere in the text", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          activeWord={{ start: 0, length: 2, popupId: "dictionary" }}
+          cursor={{ start: 3, input: "mouse" }}
+        />,
+      );
+      expect(container.querySelector("[data-matched]")).toBeNull();
+    });
+
+    it("leaves the pop-up's word unhighlighted when told the cursor lies in another text", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          activeWord={{
+            start: 0,
+            length: 2,
+            popupId: "dictionary",
+            isHighlighted: false,
+          }}
+          cursor={null}
+        />,
+      );
+      expect(container.querySelector("[data-matched]")).toBeNull();
     });
 
     it("keeps the run's name whole while a character is marked", () => {

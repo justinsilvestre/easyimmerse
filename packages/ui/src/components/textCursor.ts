@@ -14,7 +14,7 @@ export type TextCursor = {
   input: WordHit["input"];
   /**
    * How much of the text the lookup from `start` matched, or null when it matched nothing.
-   * It is unset until that lookup answers, and the cursor is highlighted only once it is set.
+   * It is unset until that lookup answers; meanwhile the cursor highlights the word or character it lies on.
    */
   matchedLength?: number | null;
 };

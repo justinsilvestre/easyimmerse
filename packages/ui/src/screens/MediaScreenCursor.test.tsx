@@ -32,6 +32,9 @@ const fieldValue = () =>
 const isHighlighted = (word: HTMLElement) =>
   word.classList.contains("bg-accent-soft");
 
+/** The text a lookup from "dog" in the second cue sends. */
+const dogCueFromDog = "dog wants to eat.\nIt is hungry.";
+
 const seeks = (effects: { calls: { type: string }[] }) =>
   effects.calls.filter((call) => call.type === "seekPlayer");
 
@@ -63,6 +66,22 @@ describe("MediaScreen lookup cursor", () => {
     await vi.waitFor(() => expect(isHighlighted(dog)).toBe(true));
     fireEvent.pointerLeave(dog, { pointerType: "mouse" });
     expect(isHighlighted(dog)).toBe(false);
+  });
+
+  it("highlights a word as soon as the mouse is on it, before its lookup answers", async () => {
+    renderMediaScreen({ unansweredLookups: [dogCueFromDog] });
+    const dog = await cardWord(2, "dog");
+    fireEvent.pointerEnter(dog, { pointerType: "mouse" });
+    expect(isHighlighted(dog)).toBe(true);
+  });
+
+  it("leaves the pop-up's word unhighlighted while the mouse is on a word of another cue", async () => {
+    renderMediaScreen({ unansweredLookups: [dogCueFromDog] });
+    const cat = await cardWord(1, "cat");
+    fireEvent.click(cat, { detail: 1 });
+    await screen.findByRole("dialog", { name: "Dictionary" });
+    fireEvent.pointerEnter(await cardWord(2, "dog"), { pointerType: "mouse" });
+    expect(isHighlighted(cat)).toBe(false);
   });
 
   it("opens the search field with L once Escape has taken the cursor away", async () => {

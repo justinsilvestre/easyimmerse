@@ -1,4 +1,5 @@
 import type { Cue } from "@easyimmerse/types";
+import type { ActiveWord } from "../components/ClickableText.tsx";
 import type { WordGestures, WordHit } from "../components/useWordGestures.ts";
 
 type CueWordHandler = (hit: WordHit, cue: Cue) => void;
@@ -47,19 +48,16 @@ export function gesturesForCue(
   };
 }
 
-/** The word of a subtitle cue that the dictionary pop-up shows, and the pop-up's id. */
-export type ActiveCueWord = {
-  cueIndex: number;
-  start: number;
-  /** How much of the cue's text the lookup matched, once it has answered. */
-  length?: number;
-  popupId: string;
-};
+/**
+ * The word of a subtitle cue that the dictionary pop-up shows, and the pop-up's id, as `ClickableText` takes it within the cue.
+ * It is highlighted only while the subtitles have no lookup cursor.
+ */
+export type ActiveCueWord = ActiveWord & { cueIndex: number };
 
 /** The active word within one cue's text, if it lies there. */
 export function activeWordIn(
   activeWord: ActiveCueWord | undefined,
   cue: Cue,
-): { start: number; length?: number; popupId: string } | undefined {
+): ActiveWord | undefined {
   return activeWord?.cueIndex === cue.index ? activeWord : undefined;
 }

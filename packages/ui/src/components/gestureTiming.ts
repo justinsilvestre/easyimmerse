@@ -1,6 +1,6 @@
 /**
  * How long a mouse pointer stays on a word, or on a character of a run, before the word is looked up,
- * to be highlighted and followed by an open pop-up once the lookup answers:
+ * for its highlight to grow to the match and an open pop-up to follow once the lookup answers:
  * long enough that a sweep across the text does not look up every character it passes, and short enough to feel immediate.
  */
 export const hoverMs = 40;
