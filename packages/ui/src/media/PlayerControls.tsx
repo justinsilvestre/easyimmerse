@@ -135,7 +135,11 @@ export function PlayerControls({
   );
 }
 
-/** The seek bar with the time on either side. The arrows move a second at a time; a `step` would do the same, but would also round the position the bar shows. */
+/**
+ * The seek bar with the time on either side. The track behind the slider shows what the player has loaded, as a stream being
+ * converted arrives piece by piece, and the part played. The arrows move a second at a time; a `step` would do the same,
+ * but would also round the position the bar shows.
+ */
 function PositionBar({
   playback,
   onSeek,
@@ -146,35 +150,69 @@ function PositionBar({
   return (
     <div className="flex items-center gap-3 text-xs text-fg-muted tabular-nums">
       <span>{formatTimestamp(playback.currentMs)}</span>
-      <input
-        type="range"
-        aria-label="Position"
-        min={0}
-        max={playback.durationMs}
-        value={playback.currentMs}
-        aria-valuetext={formatTimestamp(playback.currentMs)}
-        onChange={(event) => onSeek(Number(event.target.value))}
-        onKeyDown={(event) => {
-          const directions: Partial<Record<string, number>> = {
-            ArrowLeft: -1,
-            ArrowDown: -1,
-            ArrowRight: 1,
-            ArrowUp: 1,
-          };
-          const direction = directions[event.key];
-          if (direction === undefined) return;
-          event.preventDefault();
-          onSeek(
-            Math.min(
-              Math.max(playback.currentMs + direction * 1000, 0),
-              playback.durationMs,
-            ),
-          );
-        }}
-        className="flex-1 accent-accent"
-      />
+      <span className="relative flex flex-1 items-center">
+        <BufferedTrack playback={playback} />
+        <input
+          type="range"
+          aria-label="Position"
+          min={0}
+          max={playback.durationMs}
+          value={playback.currentMs}
+          aria-valuetext={formatTimestamp(playback.currentMs)}
+          onChange={(event) => onSeek(Number(event.target.value))}
+          onKeyDown={(event) => {
+            const directions: Partial<Record<string, number>> = {
+              ArrowLeft: -1,
+              ArrowDown: -1,
+              ArrowRight: 1,
+              ArrowUp: 1,
+            };
+            const direction = directions[event.key];
+            if (direction === undefined) return;
+            event.preventDefault();
+            onSeek(
+              Math.min(
+                Math.max(playback.currentMs + direction * 1000, 0),
+                playback.durationMs,
+              ),
+            );
+          }}
+          // The native track is hidden, since the one drawn behind shows the loaded stretches; the thumb stays native.
+          className="relative w-full accent-accent [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:bg-transparent"
+        />
+      </span>
       <span>{formatTimestamp(playback.durationMs)}</span>
     </div>
+  );
+}
+
+/** The track behind the slider: the loaded stretches in a lighter shade and the part played in the accent color. */
+function BufferedTrack({ playback }: { playback: PlayerControlsState }) {
+  const percentOf = (ms: number) =>
+    playback.durationMs > 0 ? (100 * ms) / playback.durationMs : 0;
+  const span = (fromMs: number, toMs: number) => ({
+    left: `${percentOf(fromMs)}%`,
+    width: `${percentOf(toMs) - percentOf(fromMs)}%`,
+  });
+  return (
+    <span
+      aria-hidden
+      data-testid="buffered-track"
+      className="pointer-events-none absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full bg-surface-strong"
+    >
+      {(playback.buffered ?? []).map(({ startSeconds, endSeconds }) => (
+        <span
+          key={startSeconds}
+          data-buffered
+          className="absolute inset-y-0 bg-fg-faint"
+          style={span(startSeconds * 1000, endSeconds * 1000)}
+        />
+      ))}
+      <span
+        className="absolute inset-y-0 bg-accent"
+        style={span(0, playback.currentMs)}
+      />
+    </span>
   );
 }
 

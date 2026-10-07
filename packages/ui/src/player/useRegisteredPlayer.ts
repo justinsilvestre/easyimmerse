@@ -1,4 +1,4 @@
-import type { AppStore } from "@easyimmerse/state";
+import type { AppStore, BufferedRange } from "@easyimmerse/state";
 import { actions, selectPlayer } from "@easyimmerse/state";
 import type { Rational } from "@easyimmerse/types";
 import type { RefObject, SyntheticEvent } from "react";
@@ -13,7 +13,7 @@ type MediaEvent = SyntheticEvent<HTMLMediaElement>;
 /**
  * Makes the media element the app's current player.
  * Seeks from the store land on it half a frame after the wanted moment, play, volume, and speed requests reach it,
- * and its time, duration, and playing state flow back into the store.
+ * and its time, duration, loaded stretches, and playing state flow back into the store.
  * The element starts at the volume and speed the store holds.
  * Returns the event handlers to put on the element.
  */
@@ -53,9 +53,21 @@ export function useRegisteredPlayer(
       if (Number.isFinite(duration))
         dispatch(actions.playerDurationChanged(duration));
     },
+    onProgress: (event: MediaEvent) =>
+      dispatch(
+        actions.playerBufferedChanged(bufferedRangesOf(event.currentTarget)),
+      ),
     onPlay: () => dispatch(actions.playerPlayingChanged(true)),
     onPause: () => dispatch(actions.playerPlayingChanged(false)),
   };
+}
+
+function bufferedRangesOf(element: HTMLMediaElement): BufferedRange[] {
+  const { buffered } = element;
+  return Array.from({ length: buffered.length }, (_, index) => ({
+    startSeconds: buffered.start(index),
+    endSeconds: buffered.end(index),
+  }));
 }
 
 /** Plays a paused element and pauses a playing one. */

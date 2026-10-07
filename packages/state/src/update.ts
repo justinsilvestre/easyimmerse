@@ -37,6 +37,11 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         ? savePlaybackPosition(moved)
         : [moved, []];
     }
+    case "playerBufferedChanged":
+      return [
+        { ...state, player: { ...state.player, buffered: action.buffered } },
+        [],
+      ];
     case "playerDurationChanged":
       return [
         {

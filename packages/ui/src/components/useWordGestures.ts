@@ -33,8 +33,17 @@ export type WordGestures = {
    * Without this handler a double-click counts as another click.
    */
   onWordDoubleClick?: (hit: WordHit) => void;
-  /** A mouse pointer resting on the word for a moment. Passing over it reports nothing. */
-  onWordHoverIntent?: (hit: WordHit) => void;
+  /**
+   * A mouse pointer resting on the word for a moment. Passing over it reports nothing.
+   * The handler may answer with the length of the text, in UTF-16 code units from the hit, that a lookup from the hit matched,
+   * or null when nothing matched, so that the text can highlight the match.
+   */
+  onWordHoverIntent?: (hit: WordHit) => undefined | Promise<number | null>;
+  /**
+   * The word, or in a run of a script written without spaces the character, that the mouse pointer is over,
+   * reported each time it changes, and as null when the pointer leaves. A touch reports nothing.
+   */
+  onWordPointed?: (hit: WordHit | null) => void;
   /** A touch held on the word. The click that ends it is not reported. */
   onWordHold?: (hit: WordHit) => void;
   /**
@@ -97,6 +106,7 @@ export function useWordGestures(gestures: WordGestures) {
   const restartHover = (hit: WordHit) => {
     if (hovered.current?.start === hit.start) return;
     hovered.current = hit;
+    latest.current.onWordPointed?.(hit);
     hoverTimer.restart(hoverIntentMs, () => {
       if (hit.element.isConnected) latest.current.onWordHoverIntent?.(hit);
     });
@@ -110,6 +120,7 @@ export function useWordGestures(gestures: WordGestures) {
       );
     },
     onPointerLeave: () => {
+      if (hovered.current !== null) latest.current.onWordPointed?.(null);
       hovered.current = null;
       hoverTimer.cancel();
       press.cancelHold();

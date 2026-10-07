@@ -97,6 +97,15 @@ describe("update", () => {
     expect(state.player.durationSeconds).toBe(90);
   });
 
+  it("stores what the player has loaded for playerBufferedChanged", () => {
+    const buffered = [{ startSeconds: 0, endSeconds: 30 }];
+    const [state] = update(
+      initialAppState,
+      actions.playerBufferedChanged(buffered),
+    );
+    expect(state.player.buffered).toEqual(buffered);
+  });
+
   it("returns no effects for playerTimeChanged", () => {
     const [, effects] = update(initialAppState, actions.playerTimeChanged(3));
     expect(effects).toEqual([]);

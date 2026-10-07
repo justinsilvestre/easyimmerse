@@ -6,15 +6,18 @@ export type Range = { from: number; to: number };
 
 /**
  * The text of a run written without spaces, with the characters a lookup matched highlighted,
+ * the character under the mouse, or the text a lookup from it matched, highlighted the same way,
  * and, while the run has keyboard focus, the character a lookup from the keyboard would start from marked.
  */
 export function RunText({
   text,
   matched,
+  hovered = null,
   keyboardStart,
 }: {
   text: string;
   matched: Range | null;
+  hovered?: Range | null;
   keyboardStart: number | null;
 }) {
   const marked =
@@ -26,13 +29,14 @@ export function RunText({
         };
   return (
     <>
-      {piecesOf(text, [matched, marked]).map(({ from, to }) => (
+      {piecesOf(text, [matched, hovered, marked]).map(({ from, to }) => (
         <span
           key={from}
           data-matched={isWithin(from, matched) || undefined}
+          data-hovered={isWithin(from, hovered) || undefined}
           data-keyboard-start={isWithin(from, marked) || undefined}
           className={clsx(
-            isWithin(from, matched) &&
+            (isWithin(from, matched) || isWithin(from, hovered)) &&
               "rounded-sm bg-accent-soft text-accent-fg",
             isWithin(from, marked) &&
               "underline decoration-2 underline-offset-4",

@@ -194,6 +194,7 @@ export function MediaScreen({
         isPlaying: player.isPlaying,
         currentMs,
         durationMs,
+        buffered: player.buffered,
         volume: player.volume,
         speed: player.speed,
       }}

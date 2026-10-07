@@ -36,7 +36,7 @@ type Languages = { target: string; translation: string };
 /**
  * Drives the dictionary pop-up for words in a text, such as subtitles or an ebook:
  * a click opens it at the word, or closes it when it shows that word already;
- * hover intent moves it to another word, unless the pointer is inside it;
+ * hover intent looks the word up ahead of a click, and moves the pop-up to the word while it is open, unless the pointer is inside it;
  * and a double-click or held tap turns the word into a flashcard filled from its lookup.
  * Words inside the pop-up are looked up in it, or turned into flashcards the same way.
  * `S` is the kind of passage words come from, such as a subtitle cue.
@@ -126,14 +126,20 @@ export function useWordLookup<S>({
       if (input === "keyboard") control.close();
       else control.closeSoon();
     },
-    /** A word the mouse rests on in the text. */
-    hoverWord: (request: LookupRequest<S>) => {
+    /**
+     * A word the mouse rests on in the text. Its lookup starts at once, so that a click finds the answer ready,
+     * and resolves to the length of the text the best result matched, for the text to highlight, or null when nothing matched.
+     */
+    hoverWord: (request: LookupRequest<S>): Promise<number | null> => {
       const followsPointer =
         lookup.popup?.mode === "word" &&
         !control.isPointerInside.current &&
         !control.pending.isPending();
       if (followsPointer && !control.showsOccurrence(request))
         control.show(request);
+      return lookup
+        .lookUp(request)
+        .then((results) => results?.[0]?.matchedText.length ?? null);
     },
     /** The passage of the word the pop-up opened on, kept while it looks up words inside it; null when it opened on its search field. */
     shownSource: lookup.request?.source ?? null,

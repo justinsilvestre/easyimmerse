@@ -1,5 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ClickableText,
   splitIntoWords,
@@ -124,8 +130,54 @@ describe("ClickableText", () => {
   });
 
   describe("in a run of Japanese", () => {
+    beforeEach(() => vi.useFakeTimers());
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
     const matchedText = (container: HTMLElement) =>
       container.querySelector("[data-matched]")?.textContent;
+
+    const hoveredText = (container: HTMLElement) =>
+      container.querySelector("[data-hovered]")?.textContent;
+
+    /**
+     * Lays each character of a run out 16 pixels wide, as the characters' ranges would report.
+     * A highlight splits a run's text into several nodes, so a character's place counts from the run's start.
+     */
+    function layOutCharacters() {
+      vi.spyOn(Range.prototype, "getClientRects").mockImplementation(function (
+        this: Range,
+      ) {
+        const start = offsetInRun(this.startContainer) + this.startOffset;
+        const rect = new DOMRect(
+          start * 16,
+          0,
+          (this.endOffset - this.startOffset) * 16,
+          20,
+        );
+        return Object.assign([rect], {
+          item: () => rect,
+        }) as unknown as DOMRectList;
+      });
+    }
+
+    /** How many code units of the run's text come before the node, within the run's button. */
+    function offsetInRun(node: Node): number {
+      const button = node.parentElement?.closest("button");
+      if (!button) return 0;
+      const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+      let offset = 0;
+      for (
+        let text = walker.nextNode();
+        text && text !== node;
+        text = walker.nextNode()
+      )
+        offset += (text as Text).data.length;
+      return offset;
+    }
 
     it("highlights the characters the lookup matched", () => {
       const { container } = render(
@@ -155,6 +207,47 @@ describe("ClickableText", () => {
         />,
       );
       expect(matchedText(container)).toBe("𠮷");
+    });
+
+    it("highlights the character under the mouse", () => {
+      const { container } = render(<ClickableText text="映画を見る" />);
+      layOutCharacters();
+      fireEvent.pointerEnter(screen.getByRole("button"), {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
+      expect(hoveredText(container)).toBe("見");
+    });
+
+    it("grows the highlight to the text that hover intent matched", async () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          gestures={{ onWordHoverIntent: () => Promise.resolve(2) }}
+        />,
+      );
+      layOutCharacters();
+      fireEvent.pointerEnter(screen.getByRole("button"), {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
+      await act(() => vi.advanceTimersByTimeAsync(200));
+      expect(hoveredText(container)).toBe("見る");
+    });
+
+    it("drops the highlight once the mouse leaves", () => {
+      const { container } = render(<ClickableText text="映画を見る" />);
+      layOutCharacters();
+      const run = screen.getByRole("button");
+      fireEvent.pointerEnter(run, {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
+      fireEvent.pointerLeave(run, { pointerType: "mouse" });
+      expect(hoveredText(container)).toBeUndefined();
     });
 
     it("keeps the run one button for assistive technology", () => {

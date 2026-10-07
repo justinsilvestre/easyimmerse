@@ -75,12 +75,17 @@ function tap(element: HTMLElement, clientX: number, detail = 1) {
  * Lays text out as the browser would in a monospaced font, each UTF-16 code unit 16 px wide on one line 20 px high,
  * so that a character outside the Basic Multilingual Plane is 32 px wide.
  */
+/**
+ * Lays each character of a run out 16 pixels wide, as the characters' ranges would report.
+ * A highlight splits a run's text into several nodes, so a character's place counts from the run's start.
+ */
 function layOutCharacters() {
   vi.spyOn(Range.prototype, "getClientRects").mockImplementation(function (
     this: Range,
   ) {
+    const start = offsetInRun(this.startContainer) + this.startOffset;
     const rect = new DOMRect(
-      this.startOffset * 16,
+      start * 16,
       0,
       (this.endOffset - this.startOffset) * 16,
       20,
@@ -89,6 +94,21 @@ function layOutCharacters() {
       item: () => rect,
     }) as unknown as DOMRectList;
   });
+}
+
+/** How many code units of the run's text come before the node, within the run's button. */
+function offsetInRun(node: Node): number {
+  const button = node.parentElement?.closest("button");
+  if (!button) return 0;
+  const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+  let offset = 0;
+  for (
+    let text = walker.nextNode();
+    text && text !== node;
+    text = walker.nextNode()
+  )
+    offset += (text as Text).data.length;
+  return offset;
 }
 
 describe("useWordGestures", () => {
@@ -213,6 +233,60 @@ describe("useWordGestures", () => {
     fireEvent.pointerLeave(word("rufe"), { pointerType: "mouse" });
     act(() => vi.advanceTimersByTime(200));
     expect(gestures).toEqual([]);
+  });
+
+  describe("for the unit under the mouse", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    /** Renders a sentence that records the word or character the mouse is over, or "none" when it leaves. */
+    function renderPointed(text: string) {
+      const pointed: string[] = [];
+      render(
+        <ClickableText
+          text={text}
+          gestures={{
+            onWordPointed: (hit) => pointed.push(hit?.word ?? "none"),
+          }}
+        />,
+      );
+      return pointed;
+    }
+
+    it("reports the word the mouse enters", () => {
+      const pointed = renderPointed("Ich rufe an.");
+      fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
+      expect(pointed).toEqual(["rufe"]);
+    });
+
+    it("reports nothing for a finger", () => {
+      const pointed = renderPointed("Ich rufe an.");
+      fireEvent.pointerEnter(word("rufe"), { pointerType: "touch" });
+      expect(pointed).toEqual([]);
+    });
+
+    it("reports the mouse leaving the word", () => {
+      const pointed = renderPointed("Ich rufe an.");
+      fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
+      fireEvent.pointerLeave(word("rufe"), { pointerType: "mouse" });
+      expect(pointed).toEqual(["rufe", "none"]);
+    });
+
+    it("reports each character of a run the mouse moves to", () => {
+      const pointed = renderPointed("映画を見る");
+      layOutCharacters();
+      const run = word("映画を見る");
+      fireEvent.pointerEnter(run, {
+        pointerType: "mouse",
+        clientX: 5,
+        clientY: 10,
+      });
+      fireEvent.pointerMove(run, {
+        pointerType: "mouse",
+        clientX: 50,
+        clientY: 10,
+      });
+      expect(pointed).toEqual(["映画を見る", "見る"]);
+    });
   });
 
   describe("in a run of Japanese", () => {

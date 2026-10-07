@@ -1,5 +1,5 @@
 import type { Action } from "redux";
-import type { AppState, PreferenceKey } from "./appState.ts";
+import type { AppState, BufferedRange, PreferenceKey } from "./appState.ts";
 import type {
   PickedDictionaryFile,
   PickedFile,
@@ -15,6 +15,8 @@ export const actions = {
     ({ type: "playerTimeChanged", seconds }) as const,
   playerDurationChanged: (seconds: number) =>
     ({ type: "playerDurationChanged", seconds }) as const,
+  playerBufferedChanged: (buffered: readonly BufferedRange[]) =>
+    ({ type: "playerBufferedChanged", buffered }) as const,
   playToggleRequested: () => ({ type: "playToggleRequested" }) as const,
   playRequested: () => ({ type: "playRequested" }) as const,
   pauseRequested: () => ({ type: "pauseRequested" }) as const,

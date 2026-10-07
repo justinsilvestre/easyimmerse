@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   clickableWordAttribute,
   lookupTriggerAttribute,
@@ -82,6 +82,9 @@ export function stripMarkup(text: string): string {
 /**
  * Renders text with each word as a button, so that a word can be looked up or turned into a flashcard.
  * `gestures` receives what the user does to each word: click, double-click, hover or a held tap.
+ * The unit under the mouse is highlighted: a word written with spaces whole, and in a run of a script written without spaces
+ * the character the pointer is over, growing to the text a lookup from it matched once hover intent has answered with the match.
+ * The word the pop-up shows is highlighted the same way.
  * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
  * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
  */
@@ -98,7 +101,27 @@ export function ClickableText({
   activeWord?: ActiveWord;
   gestures?: WordGestures;
 }) {
-  const { handlersFor, keyboardStart } = useWordGestures(gestures);
+  const [hovered, setHovered] = useState<HoveredWord | null>(null);
+  const { handlersFor, keyboardStart } = useWordGestures({
+    ...gestures,
+    onWordPointed: (hit) => {
+      setHovered(hit && { start: hit.start });
+      gestures.onWordPointed?.(hit);
+    },
+    onWordHoverIntent: (hit) => {
+      const answer = gestures.onWordHoverIntent?.(hit);
+      if (answer instanceof Promise)
+        answer.then((length) => {
+          if (length === null) return;
+          setHovered((current) =>
+            current?.start === hit.start
+              ? { start: hit.start, length }
+              : current,
+          );
+        });
+      return undefined;
+    },
+  });
   const parts = splitIntoWords(text);
   const { keepWithin } = keyboardStart;
   useEffect(() => {
@@ -112,6 +135,7 @@ export function ClickableText({
         if (!part.isWord) return part.text;
         const isActive =
           activeWord !== undefined && contains(part, activeWord.start);
+        const isHovered = hovered !== null && contains(part, hovered.start);
         const runStart = part.isUnspaced ? keyboardStart.offsetIn(part) : null;
         return (
           <button
@@ -130,8 +154,11 @@ export function ClickableText({
             className={clsx(
               // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu,
               // and a double tap must not zoom the page.
-              "touch-manipulation rounded-sm px-px decoration-dotted underline-offset-4 hover:bg-accent-soft hover:underline focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
-              isActive && !part.isUnspaced && "bg-accent-soft text-accent-fg",
+              "touch-manipulation rounded-sm px-px focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
+              // A run highlights only the characters concerned, inside itself.
+              !part.isUnspaced &&
+                (isActive || isHovered) &&
+                "bg-accent-soft text-accent-fg",
             )}
           >
             {part.isUnspaced ? (
@@ -139,6 +166,9 @@ export function ClickableText({
                 text={part.text}
                 matched={
                   isActive && activeWord ? matchedRange(part, activeWord) : null
+                }
+                hovered={
+                  isHovered && hovered ? matchedRange(part, hovered) : null
                 }
                 keyboardStart={runStart}
               />
@@ -158,6 +188,9 @@ export function ClickableText({
 
 type ActiveWord = { start: number; length?: number; popupId: string };
 
+/** The unit under the mouse, by its offset in the text, with the length of the text a lookup from it matched once known. */
+type HoveredWord = { start: number; length?: number };
+
 const noGestures: WordGestures = {};
 
 function contains(part: { start: number; text: string }, offset: number) {
@@ -170,9 +203,9 @@ function contains(part: { start: number; text: string }, offset: number) {
  */
 function matchedRange(
   part: { start: number; text: string },
-  activeWord: ActiveWord,
+  word: { start: number; length?: number },
 ): Range {
-  const from = activeWord.start - part.start;
-  const length = activeWord.length ?? characterLength(part.text, from);
+  const from = word.start - part.start;
+  const length = word.length ?? characterLength(part.text, from);
   return { from, to: Math.min(from + length, part.text.length) };
 }

@@ -3,11 +3,17 @@ import type { WordGestures, WordHit } from "../components/useWordGestures.ts";
 
 type CueWordHandler = (hit: WordHit, cue: Cue) => void;
 
-/** What the user can do to a word of a subtitle cue, each reported with the cue. Offsets count in the cue's text without markup. */
+/**
+ * What the user can do to a word of a subtitle cue, each reported with the cue. Offsets count in the cue's text without markup.
+ * Hover intent may answer with the length of the text its lookup matched, as `WordGestures` describes.
+ */
 export type CueWordGestures = {
   onWordClick?: CueWordHandler;
   onWordDoubleClick?: CueWordHandler;
-  onWordHoverIntent?: CueWordHandler;
+  onWordHoverIntent?: (
+    hit: WordHit,
+    cue: Cue,
+  ) => undefined | Promise<number | null>;
   onWordHold?: CueWordHandler;
 };
 
@@ -16,7 +22,7 @@ export function gesturesForCue(
   gestures: CueWordGestures,
   cue: Cue,
 ): WordGestures {
-  const bind = (handler: CueWordHandler | undefined) =>
+  const bind = <R>(handler: ((hit: WordHit, cue: Cue) => R) | undefined) =>
     handler && ((hit: WordHit) => handler(hit, cue));
   return {
     onWordClick: bind(gestures.onWordClick),

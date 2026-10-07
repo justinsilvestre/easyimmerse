@@ -25,11 +25,16 @@ export const preferenceKeys: readonly PreferenceKey[] = [
   "theme",
 ];
 
+/** A stretch of the media the player holds ready, in seconds. */
+export type BufferedRange = { startSeconds: number; endSeconds: number };
+
 /** The player as the controls show it. Volume is 0 to 1; speed is a multiplier. */
 export type PlayerState = {
   currentTimeSeconds: number;
   /** Zero until the player has loaded a file. */
   durationSeconds: number;
+  /** What the player has loaded so far, which the seek bar shows, as a stream being converted arrives piece by piece. */
+  buffered: readonly BufferedRange[];
   isPlaying: boolean;
   volume: number;
   speed: number;
@@ -38,6 +43,7 @@ export type PlayerState = {
 export const initialPlayerState: PlayerState = {
   currentTimeSeconds: 0,
   durationSeconds: 0,
+  buffered: [],
   isPlaying: false,
   volume: 1,
   speed: 1,

@@ -6,6 +6,7 @@ import {
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
   selectCurrentTime,
+  selectPlayer,
   selectPlayerDuration,
 } from "@easyimmerse/state";
 import type { ListMediaFilesResponse, MediaFile } from "@easyimmerse/types";
@@ -174,6 +175,18 @@ describe("MediaPlayer", () => {
       Object.defineProperty(video, "duration", { value: 90 });
       fireEvent.durationChange(video);
       expect(selectPlayerDuration(store.getState())).toBe(90);
+    });
+
+    it("reports what the element has loaded to the store", async () => {
+      const { store } = renderPlayer(directPlaybackRoutes);
+      const video = await findVideo();
+      Object.defineProperty(video, "buffered", {
+        value: { length: 1, start: () => 0, end: () => 30 },
+      });
+      fireEvent.progress(video);
+      expect(selectPlayer(store.getState()).buffered).toEqual([
+        { startSeconds: 0, endSeconds: 30 },
+      ]);
     });
 
     it("plays or pauses when the picture is clicked", async () => {

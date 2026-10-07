@@ -151,6 +151,13 @@ describe("MediaScreen lookup gestures", () => {
     expect(shownWord(popup)).toBe("cat");
   });
 
+  it("looks a word up ahead of a click once the mouse rests on it", async () => {
+    const { client } = renderMediaScreen();
+    await findSubtitles();
+    await restMouseOn(panelWord("dog"));
+    expect(lookupTexts(client)).toEqual(["dog wants to eat.\nIt is hungry."]);
+  });
+
   it("looks nothing up for words hovered inside the pop-up", async () => {
     const { client } = renderMediaScreen();
     const popup = await lookUpInPanel("cat");
