@@ -95,3 +95,17 @@ export const NewFlashcard: Story = {
 export const SaveFailed: Story = {
   args: { hasSaveFailed: true },
 };
+
+/** A definition too long for its field, cut off with a faded edge until the field has focus. */
+export const LongDefinition: Story = {
+  args: {
+    state: {
+      content: {
+        ...exampleFlashcard,
+        l1_definition:
+          "1. (of an animal) to eat; to feed on. 2. (colloquial, derogatory, of a person) to eat greedily or in large amounts; to gobble, to wolf down. 3. (figurative) to use up or consume in large quantities, as a machine that eats electricity or a project that swallows all of one's savings. 4. (figurative) to take in eagerly, as a reader who devours books. 5. (idiom) jemanden gefressen haben: to be unable to stand someone. 6. (idiom) etwas gefressen haben: to have finally understood something. 7. (idiom) wie ein Scheunendrescher fressen: to eat like a horse.",
+      },
+      includedFields: fieldsOfPreset("intermediate"),
+    },
+  },
+};

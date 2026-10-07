@@ -392,6 +392,15 @@ describe("MediaScreen", () => {
       expect(toggle.getAttribute("aria-pressed")).toBe(before);
     });
 
+    it("leaves the editor's text fields as they are when the playback speed changes", async () => {
+      const { store } = await openFlashcard();
+      const form = screen.getByRole("form", { name: "Flashcard" });
+      const field = within(form).getAllByRole("textbox")[0];
+      if (field) field.style.height = "321px";
+      act(() => store.dispatch(actions.speedChangeRequested(1.5)));
+      expect(field?.style.height).toBe("321px");
+    });
+
     it("shows the subtitles again once it closes", async () => {
       await openFlashcard();
       fireEvent.click(

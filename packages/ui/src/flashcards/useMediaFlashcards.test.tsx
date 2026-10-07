@@ -1,7 +1,7 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
 import type { FlashcardDraft } from "@easyimmerse/types";
-import { act, cleanup, renderHook } from "@testing-library/react";
+import { act, cleanup, renderHook, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
@@ -84,6 +84,12 @@ function createDraft(word: string): FlashcardDraft {
     included_fields: ["word"],
   };
 }
+
+/** The text of the status line that counts the flashcards not saved. */
+const unsavedCountText = () =>
+  screen
+    .getByRole("region", { name: "Notifications" })
+    .querySelector("p[aria-live]")?.textContent;
 
 /** A backend that answers flashcard saves with success or, when `savesFail`, with failure. */
 type SaveOutcome = "succeed" | "fail" | "reject";
@@ -621,6 +627,17 @@ describe("useMediaFlashcards", () => {
     it("lists the card as refused", async () => {
       const { unsavedWords } = await rejectOffScreen();
       expect(unsavedWords()).toEqual(["Hündin"]);
+    });
+
+    it("shows no count of flashcards not saved beside its notice", async () => {
+      await rejectOffScreen();
+      expect(unsavedCountText()).toBe("");
+    });
+
+    it("counts the card among the flashcards not saved once its notice is dismissed", async () => {
+      const { dismissNotice } = await rejectOffScreen();
+      dismissNotice();
+      expect(unsavedCountText()).toBe("1 flashcard not saved");
     });
 
     it("keeps the card listed once its notice is dismissed", async () => {
