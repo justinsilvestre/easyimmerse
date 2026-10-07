@@ -36,12 +36,18 @@ async function lookUpInPanel(word: string) {
 
 const queryPopup = () => screen.queryByRole("dialog", { name: "Dictionary" });
 
-/** Waits for the pop-up to show the word in its header. */
-const findPopupShowing = async (word: string) =>
-  within(await screen.findByRole("dialog", { name: "Dictionary" })).findByText(
-    word,
-    { selector: "header *" },
-  );
+/** The word the pop-up shows, as its field holds it. */
+const shownWord = (popup: HTMLElement) =>
+  within(popup).getByRole<HTMLInputElement>("textbox", {
+    name: "Word to look up",
+  }).value;
+
+/** Waits for the pop-up to show the word in its field. */
+const findPopupShowing = async (word: string) => {
+  const popup = await screen.findByRole("dialog", { name: "Dictionary" });
+  await vi.waitFor(() => expect(shownWord(popup)).toBe(word));
+  return popup;
+};
 
 const panelWord = (word: string) =>
   within(screen.getByRole("list", { name: "Subtitles" })).getByRole("button", {
@@ -134,9 +140,7 @@ describe("MediaScreen lookup gestures", () => {
     await advance(100);
     fireEvent.pointerLeave(panelWord("dog"), { pointerType: "mouse" });
     await advance(200);
-    expect(
-      within(popup).getByText("cat", { selector: "header *" }),
-    ).toBeDefined();
+    expect(shownWord(popup)).toBe("cat");
   });
 
   it("does not follow the mouse while the pointer is inside the pop-up", async () => {
@@ -144,9 +148,7 @@ describe("MediaScreen lookup gestures", () => {
     const popup = await lookUpInPanel("cat");
     fireEvent.pointerEnter(popup, { pointerType: "mouse" });
     await restMouseOn(panelWord("dog"));
-    expect(
-      within(popup).getByText("cat", { selector: "header *" }),
-    ).toBeDefined();
+    expect(shownWord(popup)).toBe("cat");
   });
 
   it("looks nothing up for words hovered inside the pop-up", async () => {
@@ -478,11 +480,7 @@ describe("MediaScreen lookup gestures", () => {
       renderMediaScreen();
       fireEvent.click(await findDevour(), { detail: 1 });
       await advance(450);
-      expect(
-        within(queryPopup() as HTMLElement).getByText("cat", {
-          selector: "header *",
-        }),
-      ).toBeDefined();
+      expect(shownWord(queryPopup() as HTMLElement)).toBe("cat");
     });
 
     it("shows a clicked word once the double-click interval has passed", async () => {

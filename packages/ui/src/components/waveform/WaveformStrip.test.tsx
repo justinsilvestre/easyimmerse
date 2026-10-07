@@ -82,6 +82,15 @@ describe("WaveformStrip", () => {
     expect(calls).toEqual([["seek", 30_000]]);
   });
 
+  it("seeks to the start of the cue clicked in the cue band", () => {
+    const { canvas, calls } = renderStrip({
+      cues: [{ index: 1, start_ms: 12_300, end_ms: 15_000, text: "Hi" }],
+    });
+    pointer(canvas, "pointerDown", 140, 70);
+    pointer(canvas, "pointerUp", 140, 70);
+    expect(calls).toEqual([["seek", 12_300]]);
+  });
+
   it("does not seek when the pointer moved between press and release", () => {
     const { calls, canvas } = renderStrip();
     pointer(canvas, "pointerDown", 300);

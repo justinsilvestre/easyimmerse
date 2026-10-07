@@ -29,7 +29,17 @@ type FieldsProps = {
   dispatch: (action: EditorAction) => void;
   /** Whether the fields only show their text, as while the flashcard is being saved. */
   isReadOnly?: boolean;
+  /** Whether the word's lookup has yet to answer, which the fields it fills say while they are empty. */
+  isAwaitingLookup?: boolean;
 };
+
+/** The fields a word's lookup fills, which show that the lookup is on its way. */
+const lookupFilledKeys: readonly FlashcardTextFieldKey[] = [
+  "word",
+  "word_pronunciation",
+  "l1_definition",
+  "l2_definition",
+];
 
 /**
  * The text fields of the editor in two bordered blocks: the word with its pronunciation and definitions,
@@ -106,9 +116,12 @@ function Cell({
   languages,
   dispatch,
   isReadOnly = false,
+  isAwaitingLookup = false,
 }: FieldsProps & { fieldKey: FlashcardTextFieldKey }) {
   const id = useId();
   const field = findFlashcardField(fieldKey);
+  const showsLookupWait =
+    isAwaitingLookup && lookupFilledKeys.includes(fieldKey);
   return (
     <div className="flex min-w-0 flex-col px-2.5 pt-1 pb-1.5 focus-within:bg-accent-soft">
       <label htmlFor={id} className="text-xs leading-4 text-fg-muted">
@@ -118,7 +131,8 @@ function Cell({
         id={id}
         value={state.content[fieldKey]}
         readOnly={isReadOnly}
-        className="w-full resize-none overflow-hidden bg-transparent text-sm wrap-anywhere text-fg outline-none"
+        placeholder={showsLookupWait ? "Looking up…" : undefined}
+        className="w-full resize-none overflow-hidden bg-transparent text-sm wrap-anywhere text-fg outline-none placeholder:text-fg-faint placeholder:italic"
         onChange={(event) =>
           dispatch({
             type: "textChanged",

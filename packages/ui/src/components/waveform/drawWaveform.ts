@@ -1,6 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import { waveformColors } from "./waveformColors.ts";
+import { cueBandHeightPx } from "./waveformCueHit.ts";
 import type { WaveformView } from "./waveformGeometry.ts";
 import { timeAtX, xAtTime } from "./waveformGeometry.ts";
 import { screenshotMarkerHeightPx } from "./waveformHitTest.ts";
@@ -19,7 +20,6 @@ export type WaveformScene = {
 };
 
 const peakMs = 1000 / waveformPeaksPerSecond;
-const cueBandHeightPx = 6;
 
 export function drawWaveform(
   ctx: CanvasRenderingContext2D,

@@ -15,6 +15,7 @@ import type { useMediaSubtitles } from "./useMediaSubtitles.ts";
 export function SubtitlesSidePanel({
   subtitles,
   tracks,
+  languages,
   currentMs,
   flashcardCueIndexes,
   activeWord,
@@ -23,6 +24,8 @@ export function SubtitlesSidePanel({
 }: {
   subtitles: ReturnType<typeof useMediaSubtitles>;
   tracks: SubtitleTrackChoices;
+  /** The project's target and translation languages, which name the track choices. */
+  languages: { target: string; translation: string };
   currentMs: number;
   flashcardCueIndexes: readonly number[];
   /** The word the dictionary pop-up shows. */
@@ -37,6 +40,7 @@ export function SubtitlesSidePanel({
     <>
       <SubtitleTrackBar
         tracks={tracks}
+        languages={languages}
         onTargetChange={(trackId) => subtitles.choose("target", trackId)}
         onTranslationChange={(trackId) =>
           subtitles.choose("translation", trackId)

@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DictionaryPopup } from "./DictionaryPopup.tsx";
 import {
   exampleInflectedResult,
@@ -218,9 +218,65 @@ describe("DictionaryPopup states", () => {
     ).toBeDefined();
   });
 
-  it("names the chosen word in its header when no dictionary is set up", () => {
+  it("names the chosen word in its field when no dictionary is set up", () => {
     renderState({ kind: "noDictionary", language: "de", term: "Hund" });
-    expect(screen.getByText("Hund")).toBeDefined();
+    expect(
+      screen.getByRole("textbox", { name: "Word to look up" }),
+    ).toHaveProperty("value", "Hund");
+  });
+
+  it("fills its field with the word shown", () => {
+    renderState({ kind: "loading", term: "fressen" });
+    expect(
+      screen.getByRole("textbox", { name: "Word to look up" }),
+    ).toHaveProperty("value", "fressen");
+  });
+
+  it("looks up what is typed over the word shown", () => {
+    const searched: string[] = [];
+    renderPopup({ onSearch: (term) => searched.push(term) });
+    const field = screen.getByRole("textbox", { name: "Word to look up" });
+    fireEvent.change(field, { target: { value: "Katze" } });
+    fireEvent.submit(field);
+    expect(searched).toEqual(["Katze"]);
+  });
+
+  it("offers the dictionaries settings when nothing was found", () => {
+    let opened = 0;
+    render(
+      <DictionaryPopup
+        state={{ kind: "notFound", term: "Hundi" }}
+        mode="word"
+        resolveMediaUrl={() => null}
+        onSearch={() => undefined}
+        onCreateFlashcard={() => undefined}
+        onClose={() => undefined}
+        onSetUpDictionary={() => (opened += 1)}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Check your dictionaries" }),
+    );
+    expect(opened).toBe(1);
+  });
+
+  it("closes once its screen becomes inert beneath another", async () => {
+    let closeCount = 0;
+    render(
+      <div data-testid="screen">
+        <DictionaryPopup
+          state={null}
+          mode="word"
+          resolveMediaUrl={() => null}
+          onSearch={() => undefined}
+          onCreateFlashcard={() => undefined}
+          onClose={() => (closeCount += 1)}
+          onSetUpDictionary={() => undefined}
+        />
+      </div>,
+    );
+    screen.getByTestId("screen").setAttribute("inert", "");
+    await vi.waitFor(() => expect(closeCount).toBe(1));
   });
 
   it("offers to add a dictionary when none is set up", () => {

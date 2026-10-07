@@ -32,6 +32,7 @@ export function FlashcardEditor({
   saveStatus = "idle",
   isNew = false,
   hasSaveFailed = false,
+  isAwaitingLookup = false,
   onSave,
   onDelete,
   onClose,
@@ -52,6 +53,8 @@ export function FlashcardEditor({
   isNew?: boolean;
   /** Whether the last save failed, which the status line tells until Save is pressed again. */
   hasSaveFailed?: boolean;
+  /** Whether the word's lookup has yet to answer, which the fields it fills say while they are empty. */
+  isAwaitingLookup?: boolean;
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -89,6 +92,7 @@ export function FlashcardEditor({
             languages={languages}
             dispatch={dispatch}
             isReadOnly={isSaveInert}
+            isAwaitingLookup={isAwaitingLookup}
           />
           <MediaFields
             state={state}

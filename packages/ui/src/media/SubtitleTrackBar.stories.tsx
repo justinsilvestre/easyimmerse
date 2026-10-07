@@ -13,6 +13,7 @@ const meta = {
     ),
   ],
   args: {
+    languages: { target: "de", translation: "en" },
     tracks: {
       subtitles: [
         { id: "s1", label: "German", language: "de", sample: "Hallo." },

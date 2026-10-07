@@ -29,7 +29,8 @@ export type WaveformStripProps = WaveformGestureHandlers & {
 
 /**
  * Draws the audio peaks around the current time with the cues and flashcard segments over them.
- * Clicking seeks, double-clicking a segment opens it, and the open segment's handles drag; the wheel, a pinch, or the corner control zooms.
+ * Clicking seeks, to the start of a cue when one is clicked in the band along the bottom; double-clicking a segment opens it,
+ * and the open segment's handles drag; the wheel, a pinch, or the corner control zooms.
  */
 export function WaveformStrip(props: WaveformStripProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,7 +48,9 @@ export function WaveformStrip(props: WaveformStripProps) {
   const { drag, ...pointerHandlers } = useWaveformInteraction({
     canvasRef,
     view,
+    heightPx: waveformStripHeightPx,
     durationMs: props.durationMs,
+    cues: props.cues,
     segments: props.flashcardSegments,
     editableSegmentId: props.editableSegmentId ?? null,
     handlers: props,

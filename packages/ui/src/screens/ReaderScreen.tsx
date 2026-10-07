@@ -9,6 +9,7 @@ import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo } from "react";
 import { draftFromText } from "../flashcards/draftFromText.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
+import { isAwaitingLookup } from "../flashcards/saveStage.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -149,6 +150,7 @@ function BookReader({
             }
             state={flashcards.edited.editor}
             isNew={flashcards.edited.kind === "new"}
+            isAwaitingLookup={isAwaitingLookup(flashcards.edited.stage)}
             hasSaveFailed={flashcards.saveFailed}
             dispatch={flashcards.edit}
             languages={languages}

@@ -4,7 +4,7 @@ import { useCallback, useReducer, useRef, useState } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
-import { saveStatusOf } from "../flashcards/saveStage.ts";
+import { isAwaitingLookup, saveStatusOf } from "../flashcards/saveStage.ts";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
@@ -242,6 +242,7 @@ export function MediaScreen({
             screenshotUrl={screenshotUrl}
             saveStatus={saveStatusOf(flashcards.edited.stage)}
             isNew={flashcards.edited.kind === "new"}
+            isAwaitingLookup={isAwaitingLookup(flashcards.edited.stage)}
             hasSaveFailed={flashcards.saveFailed}
             onSave={flashcards.save}
             onDelete={flashcards.remove}
@@ -251,6 +252,7 @@ export function MediaScreen({
           <SubtitlesSidePanel
             subtitles={subtitles}
             tracks={tracks}
+            languages={languages}
             currentMs={currentMs}
             flashcardCueIndexes={flashcards.cueIndexes}
             activeWord={lookup.activeWord}

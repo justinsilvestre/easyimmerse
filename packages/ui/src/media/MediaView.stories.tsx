@@ -119,6 +119,7 @@ function subtitlesPanel(
     <>
       <SubtitleTrackBar
         tracks={tracks}
+        languages={{ target: "de", translation: "en" }}
         onTargetChange={fn()}
         onTranslationChange={fn()}
         onAddFile={fn()}

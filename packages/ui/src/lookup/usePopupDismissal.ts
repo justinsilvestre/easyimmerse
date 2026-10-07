@@ -3,7 +3,8 @@ import { lookupTriggerAttribute } from "../components/lookupTrigger.ts";
 import { isOutOfReach } from "../hooks/isOutOfReach.ts";
 
 /**
- * Closes a pop-up on Escape, or on a click outside it and not on an element that opens it.
+ * Closes a pop-up on Escape, or on a click outside it and not on an element that opens it,
+ * and as soon as its screen is made inert beneath another, such as Settings, where it could not be closed.
  * A click closes it only after the clicked control has acted, so that pressing Play while the pop-up is open plays.
  * Keys and clicks are ignored while the pop-up's screen lies beneath another or under a modal dialog.
  * When the pop-up closes, focus returns to where it was when the pop-up opened, if it was inside the pop-up.
@@ -36,10 +37,19 @@ export function usePopupDismissal(
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && isActive()) onCloseRef.current();
     };
+    const covered = new MutationObserver(() => {
+      if (popupRef.current?.closest("[inert]")) onCloseRef.current();
+    });
+    covered.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["inert"],
+      subtree: true,
+    });
     document.addEventListener("click", onClickStart, { capture: true });
     document.addEventListener("click", onClick);
     document.addEventListener("keydown", onKeyDown);
     return () => {
+      covered.disconnect();
       document.removeEventListener("click", onClickStart, { capture: true });
       document.removeEventListener("click", onClick);
       document.removeEventListener("keydown", onKeyDown);

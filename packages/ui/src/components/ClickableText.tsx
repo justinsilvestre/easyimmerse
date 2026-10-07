@@ -105,7 +105,9 @@ export function ClickableText({
     keepWithin(splitIntoWords(text).filter((part) => part.isUnspaced));
   }, [text, keepWithin]);
   return (
-    <span className="whitespace-pre-line">
+    // Positioned, so that the announcement region below, which is positioned off screen, stays inside this text
+    // rather than reaching out of a scrolling list and stretching the page.
+    <span className="relative whitespace-pre-line">
       {parts.map((part) => {
         if (!part.isWord) return part.text;
         const isActive =

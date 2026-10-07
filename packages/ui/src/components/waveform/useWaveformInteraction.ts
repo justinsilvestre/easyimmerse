@@ -1,3 +1,4 @@
+import type { Cue } from "@easyimmerse/types";
 import type { MouseEvent, RefObject } from "react";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import { useWaveformPointers } from "./useWaveformPointers.ts";
@@ -9,7 +10,9 @@ import { hitTest } from "./waveformHitTest.ts";
 type InteractionInput = {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   view: WaveformView;
+  heightPx: number;
   durationMs: number;
+  cues: readonly Cue[];
   segments: readonly FlashcardSegment[];
   /** The segment whose handles can be dragged, the flashcard open in the editor, or null when none is open. */
   editableSegmentId: string | null;

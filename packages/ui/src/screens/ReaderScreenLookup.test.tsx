@@ -8,7 +8,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { paragraphAttribute } from "../reader/textOffsets.ts";
@@ -160,11 +160,14 @@ describe("ReaderScreen lookup", () => {
     await findPopup();
     pointAt("windowsill");
     click();
-    expect(
-      await within(await findPopup()).findByText("windowsill", {
-        selector: "header *",
-      }),
-    ).toBeDefined();
+    const popup = await findPopup();
+    await vi.waitFor(() =>
+      expect(
+        within(popup).getByRole<HTMLInputElement>("textbox", {
+          name: "Word to look up",
+        }).value,
+      ).toBe("windowsill"),
+    );
   });
 
   it("closes the pop-up on a click beside the words", async () => {
