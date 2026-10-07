@@ -3,6 +3,7 @@ import {
   actions,
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
+  selectPreference,
 } from "@easyimmerse/state";
 import type { Flashcard, MediaFile } from "@easyimmerse/types";
 import {
@@ -313,6 +314,36 @@ describe("MediaScreen", () => {
     expect(
       await screen.findByRole("form", { name: "Flashcard" }),
     ).toBeDefined();
+  });
+
+  it("marks the word a saved flashcard was made from in its cue's card", async () => {
+    const card: Flashcard = {
+      ...savedFlashcard,
+      cue_index: 1,
+      content: { ...savedFlashcard.content, word: "cat" },
+    };
+    renderMediaScreen({ flashcards: [card] });
+    const list = await findSubtitles();
+    await vi.waitFor(() =>
+      expect(list.querySelector("[data-flashcard-word]")?.textContent).toBe(
+        "cat",
+      ),
+    );
+  });
+
+  it("stores the subtitle appearance chosen in its dialog", async () => {
+    const { store } = renderMediaScreen();
+    await findSubtitles();
+    fireEvent.click(screen.getByRole("button", { name: "Playback options" }));
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Subtitle appearance…" }),
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Strong" }));
+    expect(
+      JSON.parse(
+        selectPreference("subtitleAppearance")(store.getState()) ?? "{}",
+      ).textShadow,
+    ).toBe("strong");
   });
 
   it("seeks to a new flashcard's clip start once it opens", async () => {

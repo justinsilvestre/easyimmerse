@@ -389,6 +389,7 @@ describe("update", () => {
           "losslessAudio",
           "conversionNoticeDismissed",
           "readerPreferences",
+          "subtitleAppearance",
           "theme",
         ],
       },
@@ -401,6 +402,14 @@ describe("update", () => {
       actions.preferenceSet("conversionNoticeDismissed", "true"),
     );
     expect(state.preferences.conversionNoticeDismissed).toBe("true");
+  });
+
+  it("stores a structured preference as the given JSON for preferenceSet", () => {
+    const [state] = update(
+      initialAppState,
+      actions.preferenceSet("subtitleAppearance", '{"boxOpacity":40}'),
+    );
+    expect(state.preferences.subtitleAppearance).toBe('{"boxOpacity":40}');
   });
 
   it("returns a savePreference effect with the given value for preferenceSet", () => {

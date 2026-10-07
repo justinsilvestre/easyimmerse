@@ -27,12 +27,14 @@ import { CuePanel } from "./CuePanel.tsx";
 import {
   exampleCues,
   exampleFlashcardCueIndexes,
+  exampleFlashcardWordRanges,
   exampleTranslationCues,
 } from "./exampleCues.ts";
 import { generateExamplePeaks } from "./examplePeaks.ts";
 import { MediaView } from "./MediaView.tsx";
 import { SubtitleTrackBar } from "./SubtitleTrackBar.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
+import { defaultSubtitleAppearance } from "./subtitleAppearance.ts";
 
 const tracks: SubtitleTrackChoices = {
   subtitles: [
@@ -152,6 +154,7 @@ function subtitlesPanel(
         translationCues={translationCues}
         activeCueIndex={3}
         flashcardCueIndexes={exampleFlashcardCueIndexes}
+        flashcardWordRanges={exampleFlashcardWordRanges}
         onSeek={fn()}
         onOpenFlashcardForCue={fn()}
         wordGestures={{ onWordClick: fn(), onWordDoubleClick: fn() }}
@@ -202,6 +205,10 @@ const meta = {
     waveform: waveform(),
     panels: { cues: true, waveform: false },
     subtitleDisplay: "both",
+    subtitleAppearance: defaultSubtitleAppearance,
+    onSubtitleAppearanceChange: fn(),
+    onCloseSubtitleAppearance: fn(),
+    flashcardWordRanges: exampleFlashcardWordRanges,
     playerCallbacks: {
       onTogglePlay: fn(),
       onSeek: fn(),
@@ -210,6 +217,7 @@ const meta = {
       onSpeedChange: fn(),
       onToggleSubtitleDisplay: fn(),
       onToggleSubtitles: fn(),
+      onOpenSubtitleAppearance: fn(),
       onToggleCuePanel: fn(),
       onToggleWaveform: fn(),
       onToggleMute: fn(),
@@ -233,7 +241,7 @@ type Story = StoryObj<typeof meta>;
 
 export const VideoWithDualSubtitles: Story = {};
 
-/** A large phone, where the subtitles give way to the lookup buttons beside them. */
+/** A large phone, where the subtitle box spans the narrow stage under the lookup buttons. */
 export const OnAPhone: Story = {
   globals: { viewport: { value: "mobile2", isRotated: false } },
 };
@@ -251,6 +259,23 @@ export const SubtitlesHidden: Story = {
   args: {
     panels: { cues: true, waveform: false, areSubtitlesHidden: true },
   },
+};
+
+/** Yellow text with a strong shadow and no box, as the appearance dialog can set. */
+export const CustomSubtitleAppearance: Story = {
+  args: {
+    subtitleAppearance: {
+      ...defaultSubtitleAppearance,
+      boxOpacity: 0,
+      textShadow: "strong",
+      textColor: "yellow",
+      textSizeStep: 4,
+    },
+  },
+};
+
+export const ChangingSubtitleAppearance: Story = {
+  args: { isSubtitleAppearanceOpen: true },
 };
 
 export const LookingUpAWord: Story = {

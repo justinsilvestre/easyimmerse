@@ -5,6 +5,7 @@ import { type MouseEvent, memo, useMemo } from "react";
 import { Button } from "../components/Button.tsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
+import type { Range } from "../components/RunText.tsx";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import {
   type ActiveCueWord,
@@ -28,6 +29,7 @@ export function CuePanel({
   translationCues,
   activeCueIndex,
   flashcardCueIndexes,
+  flashcardWordRanges,
   activeWord,
   onSeek,
   wordGestures,
@@ -39,6 +41,11 @@ export function CuePanel({
   translationCues: readonly Cue[];
   activeCueIndex: number | null;
   flashcardCueIndexes: readonly number[];
+  /**
+   * Where each cue's text holds the words that flashcards were made from, by cue index.
+   * A card renders again when its own entry changes identity.
+   */
+  flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
   activeWord?: ActiveCueWord;
   onSeek: (ms: number) => void;
   /** What the user does to the words of each cue. */
@@ -102,6 +109,9 @@ export function CuePanel({
             translation={translation}
             isActive={cue.index === activeCueIndex}
             hasFlashcard={flashcardCueIndexes.includes(cue.index)}
+            flashcardWordRanges={
+              flashcardWordRanges?.get(cue.index) ?? noRanges
+            }
             activeWord={activeWordIn(activeWord, cue)}
             onSeek={handlers.seek}
             wordGestures={wordGestures}
@@ -125,11 +135,14 @@ export function CuePanel({
   );
 }
 
+const noRanges: readonly Range[] = [];
+
 const CueCard = memo(function CueCard({
   cue,
   translation,
   isActive,
   hasFlashcard,
+  flashcardWordRanges,
   activeWord,
   onSeek,
   wordGestures,
@@ -139,6 +152,7 @@ const CueCard = memo(function CueCard({
   translation: Cue | null;
   isActive: boolean;
   hasFlashcard: boolean;
+  flashcardWordRanges: readonly Range[];
   /** The word the pop-up shows, when it lies in this cue. */
   activeWord?: { start: number; length?: number; popupId: string };
   onSeek: (ms: number) => void;
@@ -205,6 +219,7 @@ const CueCard = memo(function CueCard({
         <ClickableText
           text={stripMarkup(cue.text)}
           activeWord={activeWord}
+          markedRanges={flashcardWordRanges}
           gestures={gesturesForCue(wordGestures, cue)}
         />
       </p>

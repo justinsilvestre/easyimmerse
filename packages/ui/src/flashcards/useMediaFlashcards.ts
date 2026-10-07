@@ -1,7 +1,7 @@
 import { useListFlashcardsQuery } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import {
@@ -41,8 +41,12 @@ export function useMediaFlashcards(
   const notify = (message: string) =>
     dispatch(actions.notificationRequested(message));
   const { data } = useListFlashcardsQuery(projectId);
-  const flashcards = (data?.flashcards ?? noFlashcards).filter(
-    (flashcard) => flashcard.media_file_id === mediaFileId,
+  const flashcards = useMemo(
+    () =>
+      (data?.flashcards ?? noFlashcards).filter(
+        (flashcard) => flashcard.media_file_id === mediaFileId,
+      ),
+    [data, mediaFileId],
   );
   const { edited, dispatchEdited, openSession } = useEditedFlashcard();
   useEffect(() => {
@@ -81,6 +85,7 @@ export function useMediaFlashcards(
     );
   };
   return {
+    /** The saved cards of the file, which keep their identity until the list changes. */
     flashcards,
     segments: flashcardSegmentsOf(
       flashcardsOnWaveform(flashcards, listedCards, edited),

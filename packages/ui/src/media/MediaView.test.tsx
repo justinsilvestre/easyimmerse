@@ -6,6 +6,7 @@ import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { exampleCues, exampleTranslationCues } from "./exampleCues.ts";
 import { MediaView } from "./MediaView.tsx";
 import type { PlayerCallbacks } from "./PlayerControls.tsx";
+import { defaultSubtitleAppearance } from "./subtitleAppearance.ts";
 
 beforeEach(() => vi.useFakeTimers());
 
@@ -27,6 +28,7 @@ function playerCallbacks(): PlayerCallbacks {
     onSpeedChange: ignore,
     onToggleSubtitleDisplay: ignore,
     onToggleSubtitles: ignore,
+    onOpenSubtitleAppearance: ignore,
     onToggleCuePanel: ignore,
     onToggleWaveform: ignore,
     onToggleMute: ignore,
@@ -62,6 +64,9 @@ function renderView(overrides: Partial<ViewProps> = {}) {
       waveform={null}
       panels={{ cues: false, waveform: false }}
       subtitleDisplay="both"
+      subtitleAppearance={defaultSubtitleAppearance}
+      onSubtitleAppearanceChange={ignore}
+      onCloseSubtitleAppearance={ignore}
       playerCallbacks={playerCallbacks()}
       onBack={ignore}
       wordGestures={{ onWordClick: ignore, onWordDoubleClick: ignore }}
@@ -106,6 +111,21 @@ describe("MediaView", () => {
     letPointerRest();
     fireEvent.pointerMove(subtitleWord());
     expect(areControlsFolded()).toBe(true);
+  });
+
+  it("keeps the controls folded while the pointer moves over the empty part of the subtitle box", () => {
+    renderView();
+    letPointerRest();
+    fireEvent.pointerMove(screen.getByTestId("subtitle-box"));
+    expect(areControlsFolded()).toBe(true);
+  });
+
+  it("keeps the pointer shown over the subtitle box while the controls are folded", () => {
+    renderView();
+    letPointerRest();
+    expect(
+      screen.getByTestId("subtitle-box").classList.contains("cursor-auto"),
+    ).toBe(true);
   });
 
   it("hides the pointer over the picture while the controls are folded", () => {
@@ -175,6 +195,79 @@ describe("MediaView", () => {
     expect(
       screen.getByRole("button", { name: "Waveform" }).closest("footer"),
     ).not.toBeNull();
+  });
+});
+
+describe("MediaView subtitle box", () => {
+  const subtitleBox = () => screen.getByTestId("subtitle-box");
+
+  const heightAt = (currentMs: number) => {
+    renderView({
+      playback: {
+        isPlaying: true,
+        currentMs,
+        durationMs: 24_000,
+        volume: 1,
+        speed: 1,
+      },
+    });
+    const { height } = subtitleBox().style;
+    cleanup();
+    return height;
+  };
+
+  it("keeps its height from a cue of two lines to a cue of one", () => {
+    expect(heightAt(6_200)).toBe(heightAt(9_000));
+  });
+
+  it("keeps less room when only the target language shows", () => {
+    renderView({ subtitleDisplay: "target" });
+    const targetOnly = subtitleBox().style.height;
+    cleanup();
+    renderView();
+    expect(subtitleBox().style.height).not.toBe(targetOnly);
+  });
+
+  it("takes the chosen appearance", () => {
+    renderView({
+      subtitleAppearance: { ...defaultSubtitleAppearance, boxOpacity: 0 },
+    });
+    expect(subtitleBox().style.backgroundColor).toBe("rgb(0 0 0 / 0)");
+  });
+
+  it("is left out for a file without subtitles", () => {
+    renderView({ cues: [], translationCues: [] });
+    expect(screen.queryByTestId("subtitle-box")).toBeNull();
+  });
+
+  it("keeps the lookup buttons outside it", () => {
+    renderView();
+    expect(
+      screen
+        .getByRole("button", { name: "Look up a word (L)" })
+        .closest('[data-testid="subtitle-box"]'),
+    ).toBeNull();
+  });
+
+  it("marks the word of the shown cue that a flashcard was made from", () => {
+    renderView({ flashcardWordRanges: new Map([[3, [{ from: 4, to: 8 }]]]) });
+    expect(
+      subtitleBox().querySelector("[data-flashcard-word]")?.textContent,
+    ).toBe("Hund");
+  });
+
+  it("shows the appearance dialog while it is open", () => {
+    renderView({ isSubtitleAppearanceOpen: true });
+    expect(
+      screen.getByRole("dialog", { name: "Subtitle appearance" }),
+    ).toBeDefined();
+  });
+
+  it("shows no appearance dialog while it is closed", () => {
+    renderView();
+    expect(
+      screen.queryByRole("dialog", { name: "Subtitle appearance" }),
+    ).toBeNull();
   });
 });
 

@@ -129,6 +129,78 @@ describe("ClickableText", () => {
     ).toBe("dictionary");
   });
 
+  describe("with words that flashcards were made from", () => {
+    it("marks such a word", () => {
+      const { container } = render(
+        <ClickableText
+          text="Der Hund will fressen."
+          markedRanges={[{ from: 4, to: 8 }]}
+        />,
+      );
+      expect(
+        container.querySelector("[data-flashcard-word]")?.textContent,
+      ).toBe("Hund");
+    });
+
+    it("tells that a marked word has a flashcard", () => {
+      render(
+        <ClickableText
+          text="Der Hund will fressen."
+          markedRanges={[{ from: 4, to: 8 }]}
+        />,
+      );
+      expect(
+        screen.getByRole("button", { name: "Hund" }).getAttribute("title"),
+      ).toBe("Has a flashcard");
+    });
+
+    it("leaves the other words unmarked", () => {
+      render(
+        <ClickableText
+          text="Der Hund will fressen."
+          markedRanges={[{ from: 4, to: 8 }]}
+        />,
+      );
+      expect(
+        screen
+          .getByRole("button", { name: "Der" })
+          .querySelector("[data-flashcard-word]"),
+      ).toBeNull();
+    });
+
+    it("marks each word of a marked phrase", () => {
+      const { container } = render(
+        <ClickableText
+          text="Der Hund will fressen."
+          markedRanges={[{ from: 4, to: 13 }]}
+        />,
+      );
+      expect(
+        [...container.querySelectorAll("[data-flashcard-word]")].map(
+          (word) => word.textContent,
+        ),
+      ).toEqual(["Hund", "will"]);
+    });
+
+    it("marks only the characters of a run of Japanese that the flashcard was made from", () => {
+      const { container } = render(
+        <ClickableText text="映画を見る" markedRanges={[{ from: 0, to: 2 }]} />,
+      );
+      expect(
+        container.querySelector("[data-flashcard-word]")?.textContent,
+      ).toBe("映画");
+    });
+
+    it("tells that a run holding a marked word has a flashcard", () => {
+      render(
+        <ClickableText text="映画を見る" markedRanges={[{ from: 0, to: 2 }]} />,
+      );
+      expect(screen.getByRole("button").getAttribute("title")).toBe(
+        "Has a flashcard",
+      );
+    });
+  });
+
   describe("in a run of Japanese", () => {
     beforeEach(() => vi.useFakeTimers());
 

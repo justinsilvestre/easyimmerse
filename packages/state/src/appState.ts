@@ -13,6 +13,8 @@ export type PreferenceKey =
   | "conversionNoticeDismissed"
   /** The reader's appearance, as JSON. */
   | "readerPreferences"
+  /** How the subtitles over the video look, as JSON. */
+  | "subtitleAppearance"
   /** The theme the user chose: "light", "dark", or anything else for the system's. */
   | "theme";
 
@@ -22,6 +24,7 @@ export const preferenceKeys: readonly PreferenceKey[] = [
   "losslessAudio",
   "conversionNoticeDismissed",
   "readerPreferences",
+  "subtitleAppearance",
   "theme",
 ];
 

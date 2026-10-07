@@ -27,6 +27,8 @@ export type PlayerCallbacks = {
   onToggleSubtitleDisplay: () => void;
   /** Hides the subtitles over the video, or shows them again. */
   onToggleSubtitles: () => void;
+  /** Opens the dialog where the user sets how the subtitles over the video look. */
+  onOpenSubtitleAppearance: () => void;
   onToggleCuePanel: () => void;
   onToggleWaveform: () => void;
   /** Fills the screen with the app, or leaves it. Absent where the browser offers no fullscreen. */
@@ -140,7 +142,7 @@ export function PlayerControls({
   );
 }
 
-/** The menu of the playback speeds, of which one is checked, and of whether the subtitles show over the video. */
+/** The menu of the playback speeds, of which one is checked, of whether the subtitles show over the video, and of how they look. */
 function PlaybackOptions({
   playback,
   panels,
@@ -166,6 +168,10 @@ function PlaybackOptions({
           label: "Show subtitles",
           isChecked: panels.areSubtitlesHidden !== true,
           onSelect: callbacks.onToggleSubtitles,
+        },
+        {
+          label: "Subtitle appearance…",
+          onSelect: callbacks.onOpenSubtitleAppearance,
         },
       ]}
     />

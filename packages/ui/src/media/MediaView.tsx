@@ -1,12 +1,10 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { PointerEvent, ReactNode, Ref } from "react";
 import { AppFooter } from "../components/AppFooter.tsx";
 import { Button } from "../components/Button.tsx";
-import { IconButton } from "../components/IconButton.tsx";
-import { lookupTriggerAttribute } from "../components/lookupTrigger.ts";
-import { NewFlashcardIcon } from "../flashcards/NewFlashcardIcon.tsx";
+import type { Range } from "../components/RunText.tsx";
 import { usePointerActivity } from "../hooks/usePointerActivity.ts";
 import type { ActiveCueWord, CueWordGestures } from "./cueWordGestures.ts";
 import { findCueShownAt, findTranslationOf } from "./findCue.ts";
@@ -17,8 +15,11 @@ import {
   type PlayerPanelsState,
 } from "./PlayerControls.tsx";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
+import { SubtitleAppearanceDialog } from "./SubtitleAppearanceDialog.tsx";
+import { SubtitleLookupButtons } from "./SubtitleLookupButtons.tsx";
 import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
+import type { SubtitleAppearance } from "./subtitleAppearance.ts";
 import { useStageClicks } from "./useStageClicks.ts";
 
 type MediaViewProps = {
@@ -36,6 +37,13 @@ type MediaViewProps = {
   waveform: ReactNode;
   panels: PlayerPanelsState;
   subtitleDisplay: SubtitleDisplay;
+  subtitleAppearance: SubtitleAppearance;
+  /** Shows the dialog where the user sets the subtitles' appearance, which the Playback options menu opens. */
+  isSubtitleAppearanceOpen?: boolean;
+  onSubtitleAppearanceChange: (appearance: SubtitleAppearance) => void;
+  onCloseSubtitleAppearance: () => void;
+  /** Where each cue's text holds the words that flashcards were made from, by cue index. */
+  flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
   /** The word the dictionary pop-up shows, which is highlighted in the subtitles. */
   activeWord?: ActiveCueWord;
   playerCallbacks: PlayerCallbacks;
@@ -59,8 +67,10 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  * The screen for watching or listening to one media file.
  * The stage is dark in both themes, like a cinema, so that the bars laid over the picture stay readable;
  * the panels around it, the footer and the dictionary pop-up follow the app theme.
- * The header lies over the top of the stage and the controls over its bottom, with the lookup buttons beside the subtitles.
- * These show while playback is paused or the pointer moves over the picture, and fold away otherwise, taking the pointer with them.
+ * The header lies over the top of the stage and the controls over its bottom.
+ * The subtitles sit in a box across the stage, right above the controls, with the lookup buttons over the box's right end.
+ * The header, controls and lookup buttons show while playback is paused or the pointer moves over the picture,
+ * and fold away otherwise, taking the pointer with them.
  * Moving over the subtitles or the pop-up does not count, and a pause the open pop-up caused does not bring them back,
  * so that looking words up with the mouse leaves the picture clear.
  * The controls keep their place while hidden, so the subtitles above them never move.
@@ -79,6 +89,9 @@ export function MediaView(props: MediaViewProps) {
   );
   const isPausedByUser = !playback.isPlaying && props.lookup == null;
   const showsChrome = isPausedByUser || pointer.isActive;
+  const showsSubtitles =
+    !panels.areSubtitlesHidden &&
+    (cues.length > 0 || translationCues.length > 0);
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
     if (!isOverLookupSurface(event)) pointer.onPointerMove(event);
   };
@@ -120,12 +133,18 @@ export function MediaView(props: MediaViewProps) {
                 <Header {...props} />
               </Fading>
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col">
-                <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2 p-2">
-                  <div
-                    className="col-start-2 min-w-0 cursor-auto"
-                    {...{ [lookupSurfaceAttribute]: "" }}
+                <div className="relative">
+                  <Fading
+                    isShown={showsChrome}
+                    className="absolute right-2 bottom-full mb-2"
                   >
-                    {!panels.areSubtitlesHidden && (
+                    <SubtitleLookupButtons
+                      onLookup={props.onLookup}
+                      onAddFlashcard={props.onAddFlashcard}
+                    />
+                  </Fading>
+                  {showsSubtitles && (
+                    <div {...{ [lookupSurfaceAttribute]: "" }}>
                       <SubtitleOverlay
                         targetCue={activeCue}
                         translationCue={
@@ -133,29 +152,22 @@ export function MediaView(props: MediaViewProps) {
                             ? findTranslationOf(activeCue, translationCues)
                             : null
                         }
-                        display={props.subtitleDisplay}
+                        display={shownDisplay(
+                          props.subtitleDisplay,
+                          cues.length > 0,
+                          translationCues.length > 0,
+                        )}
+                        appearance={props.subtitleAppearance}
+                        flashcardWordRanges={
+                          activeCue
+                            ? props.flashcardWordRanges?.get(activeCue.index)
+                            : undefined
+                        }
                         activeWord={props.activeWord}
                         wordGestures={props.wordGestures}
                       />
-                    )}
-                  </div>
-                  <Fading isShown={showsChrome} className="justify-self-end">
-                    <span className="flex items-center gap-1 rounded-md bg-black/50">
-                      <IconButton
-                        label="Look up a word (L)"
-                        {...{ [lookupTriggerAttribute]: "" }}
-                        onClick={props.onLookup}
-                      >
-                        <Search className="size-4" />
-                      </IconButton>
-                      <IconButton
-                        label="New flashcard from this subtitle"
-                        onClick={props.onAddFlashcard}
-                      >
-                        <NewFlashcardIcon className="size-4" />
-                      </IconButton>
-                    </span>
-                  </Fading>
+                    </div>
+                  )}
                 </div>
                 <Fading isShown={showsChrome}>
                   <PlayerControls
@@ -180,8 +192,25 @@ export function MediaView(props: MediaViewProps) {
       <AppFooter>
         <PanelToggles panels={panels} callbacks={props.playerCallbacks} />
       </AppFooter>
+      {props.isSubtitleAppearanceOpen && (
+        <SubtitleAppearanceDialog
+          appearance={props.subtitleAppearance}
+          onChange={props.onSubtitleAppearanceChange}
+          onClose={props.onCloseSubtitleAppearance}
+        />
+      )}
     </div>
   );
+}
+
+/** The subtitles to show of those the user chose, leaving out a language that has no subtitles. */
+function shownDisplay(
+  display: SubtitleDisplay,
+  hasTarget: boolean,
+  hasTranslation: boolean,
+): SubtitleDisplay {
+  if (display !== "both" || (hasTarget && hasTranslation)) return display;
+  return hasTarget ? "target" : "translation";
 }
 
 function isOverLookupSurface(event: PointerEvent<HTMLElement>): boolean {

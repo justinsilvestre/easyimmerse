@@ -42,6 +42,9 @@ function panel(
       translationCues={[]}
       activeCueIndex={activeCueIndex}
       flashcardCueIndexes={[flashcardCue.index]}
+      flashcardWordRanges={
+        new Map([[flashcardCue.index, [{ from: 5, to: 8 }]]])
+      }
       onSeek={onSeek}
       onOpenFlashcardForCue={onOpenFlashcardForCue}
       wordGestures={{
@@ -234,5 +237,20 @@ describe("CuePanel", () => {
     render(panel(2, { onSeek }));
     fireEvent.click(screen.getByRole("button", { name: "Open the flashcard" }));
     expect(onSeek).not.toHaveBeenCalled();
+  });
+
+  it("marks the word a flashcard was made from in its cue's card", () => {
+    render(panel(2));
+    expect(
+      cardStartingAt("0:08").querySelector("[data-flashcard-word]")
+        ?.textContent,
+    ).toBe("gib");
+  });
+
+  it("marks no word in the cards of other cues", () => {
+    render(panel(2));
+    expect(
+      cardStartingAt("0:05").querySelector("[data-flashcard-word]"),
+    ).toBeNull();
   });
 });

@@ -25,6 +25,7 @@ function callbacks(): PlayerCallbacks {
     onSpeedChange: vi.fn(),
     onToggleSubtitleDisplay: ignore,
     onToggleSubtitles: vi.fn(),
+    onOpenSubtitleAppearance: vi.fn(),
     onToggleCuePanel: ignore,
     onToggleWaveform: ignore,
     onToggleMute: ignore,
@@ -155,5 +156,14 @@ describe("PlayerControls playback options", () => {
       screen.getByRole("menuitemcheckbox", { name: "Show subtitles" }),
     );
     expect(onToggleSubtitles).toHaveBeenCalledOnce();
+  });
+
+  it("opens the subtitle appearance dialog from Subtitle appearance…", () => {
+    const { onOpenSubtitleAppearance } = renderControls();
+    openOptions();
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Subtitle appearance…" }),
+    );
+    expect(onOpenSubtitleAppearance).toHaveBeenCalledOnce();
   });
 });

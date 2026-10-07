@@ -1,24 +1,28 @@
 import clsx from "clsx";
 import { characterLength } from "./useKeyboardStart.ts";
 
-/** A stretch of a run, in UTF-16 code units from its start. */
+/** A stretch of text, in UTF-16 code units from its start. */
 export type Range = { from: number; to: number };
 
 /**
- * The text of a run written without spaces, with the characters a lookup matched highlighted,
- * the character under the mouse, or the text a lookup from it matched, highlighted the same way,
- * and, while the run has keyboard focus, the character a lookup from the keyboard would start from marked.
+ * The text of a run written without spaces, or of a word that holds a word a flashcard was made from.
+ * The characters a lookup matched are highlighted,
+ * as are the character under the mouse or the text a lookup from it matched.
+ * While the run has keyboard focus, the character a lookup from the keyboard would start from is marked.
+ * The words that flashcards were made from are underlined.
  */
 export function RunText({
   text,
   matched,
   hovered = null,
   keyboardStart,
+  flashcardWords = [],
 }: {
   text: string;
   matched: Range | null;
   hovered?: Range | null;
   keyboardStart: number | null;
+  flashcardWords?: readonly Range[];
 }) {
   const marked =
     keyboardStart === null
@@ -29,25 +33,38 @@ export function RunText({
         };
   return (
     <>
-      {piecesOf(text, [matched, hovered, marked]).map(({ from, to }) => (
-        <span
-          key={from}
-          data-matched={isWithin(from, matched) || undefined}
-          data-hovered={isWithin(from, hovered) || undefined}
-          data-keyboard-start={isWithin(from, marked) || undefined}
-          className={clsx(
-            (isWithin(from, matched) || isWithin(from, hovered)) &&
-              "rounded-sm bg-accent-soft text-accent-fg",
-            isWithin(from, marked) &&
-              "underline decoration-2 underline-offset-4",
-          )}
-        >
-          {text.slice(from, to)}
-        </span>
-      ))}
+      {piecesOf(text, [matched, hovered, marked, ...flashcardWords]).map(
+        ({ from, to }) => {
+          const isFlashcardWord = flashcardWords.some((range) =>
+            isWithin(from, range),
+          );
+          return (
+            <span
+              key={from}
+              data-matched={isWithin(from, matched) || undefined}
+              data-hovered={isWithin(from, hovered) || undefined}
+              data-keyboard-start={isWithin(from, marked) || undefined}
+              data-flashcard-word={isFlashcardWord || undefined}
+              className={clsx(
+                (isWithin(from, matched) || isWithin(from, hovered)) &&
+                  "rounded-sm bg-accent-soft text-accent-fg",
+                isFlashcardWord && flashcardWordClassName,
+                isWithin(from, marked) &&
+                  "underline decoration-solid decoration-2 underline-offset-4",
+              )}
+            >
+              {text.slice(from, to)}
+            </span>
+          );
+        },
+      )}
     </>
   );
 }
+
+/** The underline of a word that a flashcard was made from. */
+const flashcardWordClassName =
+  "underline decoration-accent decoration-dotted decoration-2 underline-offset-4";
 
 function isWithin(offset: number, range: Range | null): boolean {
   return range !== null && offset >= range.from && offset < range.to;

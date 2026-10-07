@@ -1,5 +1,6 @@
 import { actions } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
+import type { Range } from "../components/RunText.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { CuePanel } from "../media/CuePanel.tsx";
 import type {
@@ -18,6 +19,7 @@ export function SubtitlesSidePanel({
   languages,
   currentMs,
   flashcardCueIndexes,
+  flashcardWordRanges,
   activeWord,
   wordGestures,
   onOpenFlashcardForCue,
@@ -28,6 +30,8 @@ export function SubtitlesSidePanel({
   languages: { target: string; translation: string };
   currentMs: number;
   flashcardCueIndexes: readonly number[];
+  /** Where each cue's text holds the words that flashcards were made from, by cue index. */
+  flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
   /** The word the dictionary pop-up shows. */
   activeWord?: ActiveCueWord;
   wordGestures: CueWordGestures;
@@ -57,6 +61,7 @@ export function SubtitlesSidePanel({
         translationCues={subtitles.translationCues}
         activeCueIndex={activeCue?.index ?? null}
         flashcardCueIndexes={flashcardCueIndexes}
+        flashcardWordRanges={flashcardWordRanges}
         activeWord={activeWord}
         onSeek={(ms) => dispatch(actions.seekRequested(ms / 1000))}
         wordGestures={wordGestures}

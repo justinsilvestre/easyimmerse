@@ -5,6 +5,7 @@ import { CuePanel } from "./CuePanel.tsx";
 import {
   exampleCues,
   exampleFlashcardCueIndexes,
+  exampleFlashcardWordRanges,
   exampleTranslationCues,
 } from "./exampleCues.ts";
 
@@ -41,9 +42,12 @@ type Story = StoryObj<typeof meta>;
 
 export const DualSubtitles: Story = {};
 
-/** Some lines already have a flashcard, which opens from the mark beside their time. */
+/** Some lines already have a flashcard, which opens from the mark beside their time; the word it was made from is underlined. */
 export const WithFlashcards: Story = {
-  args: { flashcardCueIndexes: exampleFlashcardCueIndexes },
+  args: {
+    flashcardCueIndexes: exampleFlashcardCueIndexes,
+    flashcardWordRanges: exampleFlashcardWordRanges,
+  },
 };
 
 export const TargetOnly: Story = { args: { translationCues: [] } };

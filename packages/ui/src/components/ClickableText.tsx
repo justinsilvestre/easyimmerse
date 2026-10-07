@@ -86,12 +86,14 @@ export function stripMarkup(text: string): string {
  * and in a run of a script written without spaces the text a lookup from the character under the pointer matched,
  * or that character alone when nothing matched. The highlight stays while the mouse moves within it, and goes when it moves elsewhere.
  * The word the pop-up shows is highlighted the same way.
+ * The words that flashcards were made from are underlined, and in a run only their characters.
  * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
  * The text is shown as it is; strip subtitle markup with `stripMarkup` first.
  */
 export function ClickableText({
   text,
   activeWord,
+  markedRanges = noRanges,
   gestures = noGestures,
 }: {
   text: string;
@@ -100,6 +102,8 @@ export function ClickableText({
    * `length` is how much of the text the lookup matched, which a run written without spaces highlights.
    */
   activeWord?: ActiveWord;
+  /** Where the text holds the words that flashcards were made from. */
+  markedRanges?: readonly Range[];
   gestures?: WordGestures;
 }) {
   const [hovered, setHovered] = useState<HoveredWord | null>(null);
@@ -129,6 +133,8 @@ export function ClickableText({
           activeWord !== undefined && contains(part, activeWord.start);
         const isHovered = hovered !== null && contains(part, hovered.start);
         const runStart = part.isUnspaced ? keyboardStart.offsetIn(part) : null;
+        const flashcardWords = rangesWithin(part, markedRanges);
+        const hasFlashcard = flashcardWords.length > 0;
         return (
           <button
             key={part.start}
@@ -141,6 +147,7 @@ export function ClickableText({
             aria-haspopup="dialog"
             aria-expanded={isActive || undefined}
             aria-controls={isActive ? activeWord?.popupId : undefined}
+            title={hasFlashcard ? "Has a flashcard" : undefined}
             {...{ [lookupTriggerAttribute]: "", [clickableWordAttribute]: "" }}
             {...handlersFor(part)}
             className={clsx(
@@ -153,7 +160,7 @@ export function ClickableText({
                 "bg-accent-soft text-accent-fg",
             )}
           >
-            {part.isUnspaced ? (
+            {part.isUnspaced || hasFlashcard ? (
               <RunText
                 text={part.text}
                 matched={
@@ -163,6 +170,7 @@ export function ClickableText({
                   isHovered && hovered ? matchedRange(part, hovered) : null
                 }
                 keyboardStart={runStart}
+                flashcardWords={flashcardWords}
               />
             ) : (
               part.text
@@ -194,6 +202,22 @@ function keptHighlight(
 }
 
 const noGestures: WordGestures = {};
+
+const noRanges: readonly Range[] = [];
+
+/** The ranges that overlap a part of the text, cut to the part and counted from its start. */
+function rangesWithin(
+  part: { start: number; text: string },
+  ranges: readonly Range[],
+): Range[] {
+  const end = part.start + part.text.length;
+  return ranges
+    .map((range) => ({
+      from: Math.max(range.from, part.start) - part.start,
+      to: Math.min(range.to, end) - part.start,
+    }))
+    .filter((range) => range.from < range.to);
+}
 
 function contains(part: { start: number; text: string }, offset: number) {
   return offset >= part.start && offset < part.start + part.text.length;

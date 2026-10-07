@@ -1,6 +1,6 @@
-import { actions, selectPlayer } from "@easyimmerse/state";
+import { actions, selectPlayer, selectPreference } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
-import { useCallback, useReducer, useRef, useState } from "react";
+import { useCallback, useMemo, useReducer, useRef, useState } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
@@ -18,11 +18,13 @@ import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
 import { findCueShownAt, findTranslationOf } from "../media/findCue.ts";
+import { flashcardWordRanges } from "../media/flashcardWordRanges.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
+import { parseSubtitleAppearance } from "../media/subtitleAppearance.ts";
 import { useClipLoop } from "../media/useClipLoop.ts";
 import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
@@ -66,6 +68,18 @@ export function MediaScreen({
   const [panels, dispatchPanels] = useReducer(
     reduceMediaPanels,
     initialMediaPanels,
+  );
+  // Computed once per change of either list, so that each cue's ranges keep their identity and its memoised card does not render again.
+  const wordRanges = useMemo(
+    () => flashcardWordRanges(flashcards.flashcards, subtitles.cues),
+    [flashcards.flashcards, subtitles.cues],
+  );
+  const storedAppearance = useAppSelector(
+    selectPreference("subtitleAppearance"),
+  );
+  const subtitleAppearance = useMemo(
+    () => parseSubtitleAppearance(storedAppearance),
+    [storedAppearance],
   );
   const editedContent = flashcards.edited?.editor.content;
   useClipLoop(
@@ -151,6 +165,8 @@ export function MediaScreen({
     onToggleSubtitleDisplay: () =>
       dispatchPanels({ type: "subtitleDisplayCycled" }),
     onToggleSubtitles: () => dispatchPanels({ type: "subtitlesToggled" }),
+    onOpenSubtitleAppearance: () =>
+      dispatchPanels({ type: "subtitleAppearanceOpened" }),
     onToggleCuePanel: () => {
       if (!isEditorOpen) dispatchPanels({ type: "cuePanelToggled" });
     },
@@ -206,6 +222,20 @@ export function MediaScreen({
       }
       panels={shownPanels}
       subtitleDisplay={panels.subtitleDisplay}
+      subtitleAppearance={subtitleAppearance}
+      isSubtitleAppearanceOpen={panels.isSubtitleAppearanceOpen}
+      onSubtitleAppearanceChange={(appearance) =>
+        dispatch(
+          actions.preferenceSet(
+            "subtitleAppearance",
+            JSON.stringify(appearance),
+          ),
+        )
+      }
+      onCloseSubtitleAppearance={() =>
+        dispatchPanels({ type: "subtitleAppearanceClosed" })
+      }
+      flashcardWordRanges={wordRanges}
       playerCallbacks={playerCallbacks}
       onBack={() => dispatch(actions.closeMedia())}
       activeWord={lookup.activeWord}
@@ -247,6 +277,7 @@ export function MediaScreen({
             languages={languages}
             currentMs={currentMs}
             flashcardCueIndexes={flashcards.cueIndexes}
+            flashcardWordRanges={wordRanges}
             activeWord={lookup.activeWord}
             wordGestures={lookup.wordGestures}
             onOpenFlashcardForCue={flashcards.openForCue}

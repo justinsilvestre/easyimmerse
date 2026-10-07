@@ -14,6 +14,10 @@ describe("initialMediaPanels", () => {
     expect(initialMediaPanels.areSubtitlesHidden).toBe(false);
   });
 
+  it("keeps the subtitle appearance dialog closed", () => {
+    expect(initialMediaPanels.isSubtitleAppearanceOpen).toBe(false);
+  });
+
   it("knows no distraction-free mode", () => {
     expect("distractionFree" in initialMediaPanels).toBe(false);
   });
@@ -72,5 +76,22 @@ describe("reduceMediaPanels", () => {
         { type: "subtitlesToggled" },
       ).subtitleDisplay,
     ).toBe("target");
+  });
+
+  it("opens the subtitle appearance dialog", () => {
+    expect(
+      reduceMediaPanels(initialMediaPanels, {
+        type: "subtitleAppearanceOpened",
+      }).isSubtitleAppearanceOpen,
+    ).toBe(true);
+  });
+
+  it("closes the subtitle appearance dialog", () => {
+    expect(
+      reduceMediaPanels(
+        { ...initialMediaPanels, isSubtitleAppearanceOpen: true },
+        { type: "subtitleAppearanceClosed" },
+      ).isSubtitleAppearanceOpen,
+    ).toBe(false);
   });
 });
