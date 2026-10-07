@@ -187,6 +187,16 @@ describe("MediaView", () => {
     expect(screen.queryByRole("button", { name: "Hund" })).toBeNull();
   });
 
+  it("lays the header on translucent black, like the controls", () => {
+    renderView();
+    expect(
+      screen
+        .getByRole("heading", { name: "Episode 1" })
+        .closest("header")
+        ?.classList.contains("bg-black/90"),
+    ).toBe(true);
+  });
+
   it("shows the panel toggles in the app footer", () => {
     renderView();
     expect(

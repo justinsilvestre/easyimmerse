@@ -319,7 +319,7 @@ function Fading({
 /** The bar over the top of the stage: the way back to the project, named after it, and the file's name. */
 function Header({ media, onBack }: MediaViewProps) {
   return (
-    <header className="flex items-center gap-3 bg-surface/90 px-3 py-2 backdrop-blur-sm">
+    <header className="flex items-center gap-3 bg-black/90 px-3 py-2 backdrop-blur-sm">
       <Button
         variant="subtle"
         aria-label={`Back to ${media.projectName}`}

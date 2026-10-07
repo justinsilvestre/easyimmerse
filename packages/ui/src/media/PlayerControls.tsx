@@ -65,7 +65,7 @@ export function PlayerControls({
   callbacks: PlayerCallbacks;
 }) {
   return (
-    <div className="flex flex-col gap-1.5 bg-surface/90 px-3 py-2 backdrop-blur-sm">
+    <div className="flex flex-col gap-1.5 bg-black/90 px-3 py-2 backdrop-blur-sm">
       <PositionBar playback={playback} onSeek={callbacks.onSeek} />
       <div className="flex flex-nowrap items-center gap-1">
         <IconButton
