@@ -64,24 +64,27 @@ test("clicking the word the pop-up shows closes it", async ({ page }) => {
   await expect(popup).toBeHidden();
 });
 
-test("a word double-clicked in the subtitles opens the flashcard editor in place of the pop-up", async ({
+test("a word double-clicked in the subtitles becomes a saved flashcard at once", async ({
   page,
 }) => {
   await page
     .getByRole("list", { name: "Subtitles" })
     .getByRole("button", { name: "cat" })
     .dblclick();
-  await expect(page.getByRole("form", { name: "Flashcard" })).toBeVisible();
+  await expect(page.getByText(/^Saved the flashcard for /)).toBeVisible();
+  await expect(page.getByRole("form", { name: "Flashcard" })).toBeHidden();
   await expect(page.getByRole("dialog", { name: "Dictionary" })).toBeHidden();
 });
 
-test("a word double-clicked in the subtitles becomes a saved flashcard", async ({
+test("the E key opens a flashcard for the word under the mouse in the editor", async ({
   page,
 }) => {
   await page
     .getByRole("list", { name: "Subtitles" })
     .getByRole("button", { name: "cat" })
-    .dblclick();
+    .hover();
+  await page.keyboard.press("e");
+  await expect(page.getByRole("form", { name: "Flashcard" })).toBeVisible();
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText(/^Saved the flashcard for /)).toBeVisible();
 });

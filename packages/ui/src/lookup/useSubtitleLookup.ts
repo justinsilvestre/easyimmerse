@@ -54,6 +54,11 @@ export function useSubtitleLookup(
     else lookup.openSearch();
   };
   useKeyboardShortcut("l", lookUpCursor, screenRef);
+  const startFlashcardAtCursor = (start: StartFlashcardFromLookup<Cue>) => {
+    if (cursor?.hit.element.isConnected)
+      lookup.startFlashcardFor(requestFor(cursor.hit, cursor.cue), start);
+    else start("", null, null);
+  };
   const popup = lookup.popup && {
     anchored: lookup.popup.anchored,
     props: {
@@ -82,6 +87,11 @@ export function useSubtitleLookup(
     cursor: cursor?.position ?? null,
     popup,
     openSearch: lookup.openSearch,
+    /**
+     * Starts a flashcard through `start` for the word at the cursor once its lookup answers, as a double-click there would,
+     * or, when there is no cursor, for no word.
+     */
+    startFlashcardAtCursor,
     wordGestures,
   };
 }

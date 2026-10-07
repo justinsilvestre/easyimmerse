@@ -17,8 +17,8 @@ import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
-import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
+import type { StartFlashcardFromLookup } from "../lookup/useWordLookup.ts";
 import { findAdjacentCue, findTranslationOf } from "../media/findCue.ts";
 import { flashcardWordRanges } from "../media/flashcardWordRanges.ts";
 import { MediaView } from "../media/MediaView.tsx";
@@ -42,10 +42,13 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * The screen for watching or listening to one of the project's media files:
  * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
  * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
- * double-clicking a word starts a flashcard for it at once.
+ * double-clicking a word saves a flashcard for it at once, without opening the editor, as do the pop-up's flashcard buttons
+ * and the New flashcard button, which makes one for no word from the cue shown now. A card open in the editor stays open meanwhile.
  * Space or K plays and pauses, Left and Right skip between cues, R replays the cue shown now, M mutes, and F fills the screen,
  * as does double-clicking the picture. While a word of the subtitles has focus, Left and Right move the lookup cursor instead,
- * and Up and Down skip to the previous or next cue; L looks up from the cursor, wherever the mouse or the keyboard put it.
+ * and Up and Down skip to the previous or next cue. L looks up from the cursor, wherever the mouse or the keyboard put it;
+ * E opens a new flashcard from the cursor in the editor, unless a card is open there already:
+ * one made as a double-click there would make it, or as the New flashcard button would when there is no cursor.
  * The file resumes where playback last was, as `useResumePlayback` describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `useClipLoop` describes.
  * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
@@ -124,38 +127,44 @@ export function MediaScreen({
     translationSubtitlesId: subtitles.selection.translation_track_id,
   };
   /**
-   * Starts a flashcard for a word from its cue, or else from the cue at the current time,
+   * Hands `start` a flashcard for a word from its cue, or else from the cue at the current time,
    * filled from its lookup now or, through `lateFields`, once the lookup answers.
    */
-  const startFlashcard = (
-    word: string,
-    wordCue: Cue | null,
-    lookupFields: LookupFlashcardFields | null,
-    lateFields?: Promise<LookupFlashcardFields | null>,
-  ) => {
-    if (mediaFile === null) return;
-    const cue = wordCue ?? shownCue;
-    const draft = draftFromCue({
-      word,
-      cue,
-      translationCue: cue
-        ? findTranslationOf(cue, subtitles.translationCues)
-        : null,
-      mediaFile,
-      settings,
-      hasScreenshots,
-    });
-    const started = lookupFields
-      ? { ...draft, content: { ...draft.content, ...lookupFields } }
-      : draft;
-    flashcards.start(started, lateFields);
-  };
+  const flashcardStarter =
+    (start: typeof flashcards.start): StartFlashcardFromLookup<Cue> =>
+    (word, wordCue, lookupFields, lateFields) => {
+      if (mediaFile === null) return;
+      const cue = wordCue ?? shownCue;
+      const draft = draftFromCue({
+        word,
+        cue,
+        translationCue: cue
+          ? findTranslationOf(cue, subtitles.translationCues)
+          : null,
+        mediaFile,
+        settings,
+        hasScreenshots,
+      });
+      const started = lookupFields
+        ? { ...draft, content: { ...draft.content, ...lookupFields } }
+        : draft;
+      start(started, lateFields);
+    };
+  const createFlashcard = flashcardStarter(flashcards.create);
+  const openNewFlashcard = flashcardStarter(flashcards.start);
   const languages = {
     target: settings.target_language,
     translation: settings.translation_language,
   };
   const screenRef = useRef<HTMLDivElement>(null);
-  const lookup = useSubtitleLookup(languages, startFlashcard, screenRef);
+  const lookup = useSubtitleLookup(languages, createFlashcard, screenRef);
+  useKeyboardShortcut(
+    "e",
+    () => {
+      if (!isEditorOpen) lookup.startFlashcardAtCursor(openNewFlashcard);
+    },
+    screenRef,
+  );
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
     onSeek: (ms) => dispatch(actions.seekRequested(ms / 1000)),
@@ -256,7 +265,7 @@ export function MediaScreen({
       wordGestures={lookup.wordGestures}
       onCueStep={cueSteps.step}
       onLookup={lookup.openSearch}
-      onAddFlashcard={() => startFlashcard("", null, null)}
+      onAddFlashcard={() => createFlashcard("", null, null)}
       lookup={
         lookup.popup && (
           <AnchoredPopup {...lookup.popup.anchored}>

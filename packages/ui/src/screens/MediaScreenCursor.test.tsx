@@ -57,6 +57,15 @@ describe("MediaScreen lookup cursor", () => {
       focusAndPress(await cardWord(1, "The"), "ArrowRight", "l");
       await vi.waitFor(() => expect(fieldValue()).toBe("cat"));
     });
+
+    it("opens a flashcard for the word it moved to with E", async () => {
+      renderMediaScreen();
+      focusAndPress(await cardWord(2, "The"), "ArrowRight", "e");
+      expect(
+        ((await screen.findByLabelText("Sentence (de)")) as HTMLTextAreaElement)
+          .value,
+      ).toBe("The dog wants to eat.\nIt is hungry.");
+    });
   });
 
   it("highlights nothing once the mouse that placed the cursor has left", async () => {
