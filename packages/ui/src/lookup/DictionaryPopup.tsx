@@ -1,5 +1,6 @@
 import type { DictionaryStylesheet } from "@easyimmerse/types";
-import { BookOpen, Search, X } from "lucide-react";
+import clsx from "clsx";
+import { BookOpen, Maximize2, Minimize2, Search, X } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
@@ -9,6 +10,7 @@ import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import { KanjiCard } from "./KanjiCard.tsx";
 import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupState } from "./lookupState.ts";
+import { type PopupSize, popupWidth } from "./popupSize.ts";
 import { type PopupWordActions, PopupWordContext } from "./popupWordContext.ts";
 import { DictionaryStylesheets } from "./stylesheet/DictionaryStylesheets.tsx";
 import { usePopupDismissal } from "./usePopupDismissal.ts";
@@ -21,6 +23,7 @@ import { usePopupDismissal } from "./usePopupDismissal.ts";
  * and, through `wordActions`, from a word inside the pop-up that is double-clicked or held.
  * When no dictionary has an entry for the word, the header button still makes a flashcard, with the word and its sentence only.
  * While such a flashcard waits for its word's lookup, `pendingFlashcard` names the word.
+ * A header button asks, through `onToggleSize`, to switch the pop-up between its two `size`s, to show more or less of the entries.
  * Escape, or pressing outside the pop-up and not on a word marked as a lookup trigger, closes it.
  * Images in definitions are found through `resolveMediaUrl`.
  */
@@ -28,9 +31,11 @@ export function DictionaryPopup({
   id,
   state,
   mode,
+  size = "compact",
   resolveMediaUrl,
   onSearch,
   onCreateFlashcard,
+  onToggleSize,
   wordActions = null,
   pendingFlashcard = null,
   onClose,
@@ -40,9 +45,11 @@ export function DictionaryPopup({
   id?: string;
   state: LookupState | null;
   mode: "word" | "search";
+  size?: PopupSize;
   resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
   onCreateFlashcard: (entryIndex: number | null) => void;
+  onToggleSize?: () => void;
   wordActions?: PopupWordActions | null;
   pendingFlashcard?: string | null;
   onClose: () => void;
@@ -50,6 +57,7 @@ export function DictionaryPopup({
 }) {
   const ref = useRef<HTMLElement>(null);
   usePopupDismissal(ref, onClose);
+  const isExpanded = size === "expanded";
   return (
     <section
       ref={ref}
@@ -57,7 +65,12 @@ export function DictionaryPopup({
       // Not modal: the rest of the page stays usable, and words there move it to themselves.
       role="dialog"
       aria-label="Dictionary"
-      className="flex max-h-[min(24rem,100%)] w-[min(26rem,calc(100vw-1rem))] flex-col rounded-lg border border-line bg-surface text-fg shadow-xl"
+      data-size={size}
+      style={{ width: popupWidth(size) }}
+      className={clsx(
+        "flex flex-col rounded-lg border border-line bg-surface text-fg shadow-xl",
+        isExpanded ? "max-h-full" : "max-h-[min(24rem,100%)]",
+      )}
     >
       <header className="flex items-center gap-2 border-b border-line px-3 py-2">
         <TermField
@@ -68,15 +81,24 @@ export function DictionaryPopup({
           onSearch={onSearch}
         />
         {(state?.kind === "found" || state?.kind === "notFound") && (
-          <Button
-            size="sm"
-            variant="primary"
+          <IconButton
+            label="New flashcard"
             onClick={() => onCreateFlashcard(null)}
           >
-            <NewFlashcardIcon className="size-3.5" />
-            Flashcard
-          </Button>
+            <NewFlashcardIcon className="size-4" />
+          </IconButton>
         )}
+        <IconButton
+          label={isExpanded ? "Show less" : "Show more of the entries"}
+          pressed={isExpanded}
+          onClick={onToggleSize}
+        >
+          {isExpanded ? (
+            <Minimize2 className="size-4" />
+          ) : (
+            <Maximize2 className="size-4" />
+          )}
+        </IconButton>
         <IconButton label="Close" onClick={onClose}>
           <X className="size-4" />
         </IconButton>
@@ -112,7 +134,11 @@ function termOf(state: LookupState | null): string {
   return matched !== undefined && term.startsWith(matched) ? matched : term;
 }
 
-/** The field holding the word shown, which can be edited and submitted to look up something else. */
+/**
+ * The field holding the word shown, which can be edited and submitted to look up something else.
+ * Its magnifying glass submits what was typed once it differs from the word shown;
+ * until then it selects the word, to show that another can be typed over it.
+ */
 function TermField({
   term,
   autoFocus,
@@ -124,6 +150,8 @@ function TermField({
   onSearch: (term: string) => void;
 }) {
   const [typed, setTyped] = useState(term);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isNewTerm = typed.trim() !== term;
   return (
     <form
       className="flex flex-1 items-center gap-2"
@@ -132,8 +160,21 @@ function TermField({
         onSearch(typed);
       }}
     >
-      <Search className="size-4 shrink-0 text-fg-muted" aria-hidden />
+      {isNewTerm ? (
+        <IconButton label="Look up" type="submit" className="shrink-0">
+          <Search className="size-4" />
+        </IconButton>
+      ) : (
+        <IconButton
+          label="Edit the word"
+          className="shrink-0"
+          onClick={() => inputRef.current?.select()}
+        >
+          <Search className="size-4" />
+        </IconButton>
+      )}
       <input
+        ref={inputRef}
         // biome-ignore lint/a11y/noAutofocus: see the prop's description
         autoFocus={autoFocus}
         aria-label="Word to look up"

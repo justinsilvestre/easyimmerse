@@ -5,14 +5,15 @@ type CueWordHandler = (hit: WordHit, cue: Cue) => void;
 
 /**
  * What the user can do to a word of a subtitle cue, each reported with the cue. Offsets count in the cue's text without markup.
- * Hover intent may answer with the length of the text its lookup matched, as `WordGestures` describes.
+ * A hover may answer with the length of the text its lookup matched, as `WordGestures` describes.
  */
 export type CueWordGestures = {
   onWordClick?: CueWordHandler;
   onWordDoubleClick?: CueWordHandler;
   // A handler with nothing to answer returns nothing, as the other handlers do.
   // biome-ignore lint/suspicious/noConfusingVoidType: see above
-  onWordHoverIntent?: (hit: WordHit, cue: Cue) => void | Promise<number | null>;
+  onWordHover?: (hit: WordHit, cue: Cue) => void | Promise<number | null>;
+  onWordHoverIntent?: CueWordHandler;
   onWordHold?: CueWordHandler;
 };
 
@@ -26,6 +27,7 @@ export function gesturesForCue(
   return {
     onWordClick: bind(gestures.onWordClick),
     onWordDoubleClick: bind(gestures.onWordDoubleClick),
+    onWordHover: bind(gestures.onWordHover),
     onWordHoverIntent: bind(gestures.onWordHoverIntent),
     onWordHold: bind(gestures.onWordHold),
   };

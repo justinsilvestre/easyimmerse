@@ -21,6 +21,7 @@ type Gesture =
   | "click"
   | "clickStarted"
   | "doubleClick"
+  | "hover"
   | "hoverIntent"
   | "hold";
 
@@ -39,6 +40,7 @@ function renderSentence(
       gestures={{
         onWordClick: record("click"),
         onWordDoubleClick: record("doubleClick"),
+        onWordHover: record("hover"),
         onWordHoverIntent: record("hoverIntent"),
         onWordHold: record("hold"),
         onWordClickStarted: record("clickStarted"),
@@ -190,7 +192,7 @@ describe("useWordGestures", () => {
     expect(gestures).toEqual(["hold an", "click an"]);
   });
 
-  it("reports no hover intent for a word removed while the mouse rested on it", () => {
+  it("reports no hover for a word removed while the mouse rested on it", () => {
     const gestures = renderSentence();
     fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
     word("rufe").remove();
@@ -220,11 +222,27 @@ describe("useWordGestures", () => {
     });
   });
 
-  it("reports hover intent once the mouse has rested on a word", () => {
+  it("reports a hover, then hover intent, once the mouse has rested on a word", () => {
     const gestures = renderSentence();
     fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
     act(() => vi.advanceTimersByTime(200));
-    expect(gestures).toEqual(["hoverIntent rufe"]);
+    expect(gestures).toEqual(["hover rufe", "hoverIntent rufe"]);
+  });
+
+  it("reports a hover as soon as the mouse has stayed on a word for 40 ms", () => {
+    const gestures = renderSentence();
+    fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
+    act(() => vi.advanceTimersByTime(40));
+    expect(gestures).toEqual(["hover rufe"]);
+  });
+
+  it("reports no hover for a mouse that sweeps over a word", () => {
+    const gestures = renderSentence();
+    fireEvent.pointerEnter(word("rufe"), { pointerType: "mouse" });
+    act(() => vi.advanceTimersByTime(30));
+    fireEvent.pointerLeave(word("rufe"), { pointerType: "mouse" });
+    act(() => vi.advanceTimersByTime(200));
+    expect(gestures).toEqual([]);
   });
 
   it("reports no hover intent for a mouse that passes quickly over a word", () => {
@@ -233,7 +251,7 @@ describe("useWordGestures", () => {
     act(() => vi.advanceTimersByTime(100));
     fireEvent.pointerLeave(word("rufe"), { pointerType: "mouse" });
     act(() => vi.advanceTimersByTime(200));
-    expect(gestures).toEqual([]);
+    expect(gestures).toEqual(["hover rufe"]);
   });
 
   describe("for the unit under the mouse", () => {
@@ -351,7 +369,32 @@ describe("useWordGestures", () => {
         clientY: 10,
       });
       act(() => vi.advanceTimersByTime(150));
-      expect(gestures).toEqual(["hoverIntent 見る"]);
+      expect(gestures).toEqual([
+        "hover 映画を見る",
+        "hover 見る",
+        "hoverIntent 見る",
+      ]);
+    });
+
+    it("looks up only the character the mouse comes to rest on, not those it sweeps over", () => {
+      const gestures = renderSentence({}, "映画を見る");
+      layOutCharacters();
+      const run = word("映画を見る");
+      fireEvent.pointerEnter(run, {
+        pointerType: "mouse",
+        clientX: 5,
+        clientY: 10,
+      });
+      for (const clientX of [20, 40, 50]) {
+        act(() => vi.advanceTimersByTime(20));
+        fireEvent.pointerMove(run, {
+          pointerType: "mouse",
+          clientX,
+          clientY: 10,
+        });
+      }
+      act(() => vi.advanceTimersByTime(40));
+      expect(gestures).toEqual(["hover 見る"]);
     });
 
     it("reports a held tap from the character under the finger", () => {

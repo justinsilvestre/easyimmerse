@@ -52,7 +52,7 @@ describe("DictionaryPopup", () => {
   it("creates a flashcard from every entry with the header button", () => {
     const created: (number | null)[] = [];
     renderPopup({ onCreateFlashcard: (index) => created.push(index) });
-    fireEvent.click(screen.getByRole("button", { name: "Flashcard" }));
+    fireEvent.click(screen.getByRole("button", { name: "New flashcard" }));
     expect(created).toEqual([null]);
   });
 
@@ -73,18 +73,18 @@ describe("DictionaryPopup", () => {
       state: { kind: "notFound", term: "Hundi" },
       onCreateFlashcard: (index) => created.push(index),
     });
-    fireEvent.click(screen.getByRole("button", { name: "Flashcard" }));
+    fireEvent.click(screen.getByRole("button", { name: "New flashcard" }));
     expect(created).toEqual([null]);
   });
 
   it("offers no flashcard while the word is looked up", () => {
     renderPopup({ state: { kind: "loading", term: "Hundi" } });
-    expect(screen.queryByRole("button", { name: "Flashcard" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "New flashcard" })).toBeNull();
   });
 
   it("offers no flashcard while no dictionary is set up", () => {
     renderPopup({ state: { kind: "noDictionary", language: "de" } });
-    expect(screen.queryByRole("button", { name: "Flashcard" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "New flashcard" })).toBeNull();
   });
 
   it("looks up a word clicked inside a definition", () => {
@@ -120,7 +120,7 @@ describe("DictionaryPopup dismissal", () => {
   it("stays open on a click inside it that removes the clicked element before the click reaches the page", () => {
     let closeCount = 0;
     renderPopup({ onClose: () => (closeCount += 1) });
-    const button = screen.getByRole("button", { name: "Flashcard" });
+    const button = screen.getByRole("button", { name: "New flashcard" });
     // A browser re-renders between the element's own handler and the page's, as when a link inside is followed.
     button.addEventListener("click", () => button.remove());
     fireEvent.click(button);
@@ -252,6 +252,38 @@ describe("DictionaryPopup states", () => {
     expect(searched).toEqual(["Katze"]);
   });
 
+  it("offers to edit the word while the field holds the word shown", () => {
+    renderPopup({});
+    expect(screen.getByRole("button", { name: "Edit the word" })).toBeDefined();
+  });
+
+  it("selects the word shown when its magnifying glass is pressed", () => {
+    renderPopup({});
+    fireEvent.click(screen.getByRole("button", { name: "Edit the word" }));
+    const field = screen.getByRole<HTMLInputElement>("textbox", {
+      name: "Word to look up",
+    });
+    expect([field.selectionStart, field.selectionEnd]).toEqual([0, 7]);
+  });
+
+  it("offers to look up what is typed once it differs from the word shown", () => {
+    renderPopup({});
+    fireEvent.change(screen.getByRole("textbox", { name: "Word to look up" }), {
+      target: { value: "Katze" },
+    });
+    expect(screen.getByRole("button", { name: "Look up" })).toBeDefined();
+  });
+
+  it("looks up what is typed when its magnifying glass is pressed", () => {
+    const searched: string[] = [];
+    renderPopup({ onSearch: (term) => searched.push(term) });
+    fireEvent.change(screen.getByRole("textbox", { name: "Word to look up" }), {
+      target: { value: "Katze" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Look up" }));
+    expect(searched).toEqual(["Katze"]);
+  });
+
   it("offers the dictionaries settings when nothing was found", () => {
     let opened = 0;
     render(
@@ -305,6 +337,66 @@ describe("DictionaryPopup states", () => {
       kanji: [exampleKanjiResult],
     });
     expect(screen.getByRole("article", { name: "Kanji 食" })).toBeDefined();
+  });
+});
+
+describe("DictionaryPopup size", () => {
+  function renderSized(
+    size: "compact" | "expanded",
+    onToggleSize?: () => void,
+  ) {
+    render(
+      <DictionaryPopup
+        state={foundState}
+        mode="word"
+        size={size}
+        resolveMediaUrl={() => null}
+        onSearch={() => undefined}
+        onCreateFlashcard={() => undefined}
+        onToggleSize={onToggleSize}
+        onClose={() => undefined}
+        onSetUpDictionary={() => undefined}
+      />,
+    );
+  }
+
+  it("offers to show more of the entries while compact", () => {
+    renderSized("compact");
+    expect(
+      screen.getByRole("button", { name: "Show more of the entries" }),
+    ).toBeDefined();
+  });
+
+  it("offers to show less while expanded", () => {
+    renderSized("expanded");
+    expect(screen.getByRole("button", { name: "Show less" })).toBeDefined();
+  });
+
+  it("marks the toggle as pressed while expanded", () => {
+    renderSized("expanded");
+    expect(
+      screen
+        .getByRole("button", { name: "Show less" })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+  });
+
+  it("asks to change size when the toggle is pressed", () => {
+    let toggled = 0;
+    renderSized("compact", () => (toggled += 1));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show more of the entries" }),
+    );
+    expect(toggled).toBe(1);
+  });
+
+  it("takes the expanded size", () => {
+    renderSized("expanded");
+    expect(
+      screen
+        .getByRole("dialog", { name: "Dictionary" })
+        .getAttribute("data-size"),
+    ).toBe("expanded");
   });
 });
 

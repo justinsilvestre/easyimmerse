@@ -36,7 +36,7 @@ type Languages = { target: string; translation: string };
 /**
  * Drives the dictionary pop-up for words in a text, such as subtitles or an ebook:
  * a click opens it at the word, or closes it when it shows that word already;
- * hover intent looks the word up ahead of a click, and moves the pop-up to the word while it is open, unless the pointer is inside it;
+ * a hover looks the word up ahead of a click, and hover intent moves the pop-up to the word while it is open, unless the pointer is inside it;
  * and a double-click or held tap turns the word into a flashcard filled from its lookup.
  * Words inside the pop-up are looked up in it, or turned into flashcards the same way.
  * `S` is the kind of passage words come from, such as a subtitle cue.
@@ -127,19 +127,21 @@ export function useWordLookup<S>({
       else control.closeSoon();
     },
     /**
-     * A word the mouse rests on in the text. Its lookup starts at once, so that a click finds the answer ready,
+     * A word the mouse is on in the text. Its lookup starts at once, so that a click finds the answer ready,
      * and resolves to the length of the text the best result matched, for the text to highlight, or null when nothing matched.
      */
-    hoverWord: (request: LookupRequest<S>): Promise<number | null> => {
+    hoverWord: (request: LookupRequest<S>): Promise<number | null> =>
+      lookup
+        .lookUp(request)
+        .then((results) => results?.[0]?.matchedText.length ?? null),
+    /** A word the mouse rests on in the text, which an open pop-up follows, unless the pointer is inside it or a flashcard waits for its lookup. */
+    restOnWord: (request: LookupRequest<S>) => {
       const followsPointer =
         lookup.popup?.mode === "word" &&
         !control.isPointerInside.current &&
         !control.pending.isPending();
       if (followsPointer && !control.showsOccurrence(request))
         control.show(request);
-      return lookup
-        .lookUp(request)
-        .then((results) => results?.[0]?.matchedText.length ?? null);
     },
     /** The passage of the word the pop-up opened on, kept while it looks up words inside it; null when it opened on its search field. */
     shownSource: lookup.request?.source ?? null,
@@ -182,6 +184,7 @@ function popupOf<S>(
     anchored: {
       anchor:
         lookup.popup.mode === "word" ? (lookup.request?.anchor ?? null) : null,
+      size: control.size,
       onPointerInsideChange: (isInside) => {
         control.isPointerInside.current = isInside;
       },
@@ -190,6 +193,8 @@ function popupOf<S>(
       id: popupId,
       state: lookup.state,
       mode: lookup.popup.mode,
+      size: control.size,
+      onToggleSize: control.toggleSize,
       resolveMediaUrl: lookup.resolveMediaUrl,
       pendingFlashcard: pending.term,
       onSearch: control.search,

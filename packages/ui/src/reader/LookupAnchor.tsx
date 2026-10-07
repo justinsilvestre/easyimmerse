@@ -1,9 +1,10 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
+import type { PopupSize } from "../lookup/popupSize.ts";
 import { popupPlacement } from "./popupPlacement.ts";
 
-/** The width of the dictionary pop-up, 26rem, which sets where it can be centered. */
-const popupWidthPx = 416;
+/** The width of the dictionary pop-up at each size, 26rem and 40rem, which sets where it can be centered. */
+const popupWidthPx: Record<PopupSize, number> = { compact: 416, expanded: 640 };
 
 /**
  * Holds the dictionary pop-up beside the word it is about.
@@ -13,11 +14,13 @@ const popupWidthPx = 416;
 export function LookupAnchor({
   wordRect,
   isWide,
+  size = "compact",
   onPointerInsideChange,
   children,
 }: {
   wordRect: DOMRect | null;
   isWide: boolean;
+  size?: PopupSize;
   onPointerInsideChange?: (isInside: boolean) => void;
   children: ReactNode;
 }) {
@@ -30,12 +33,15 @@ export function LookupAnchor({
     return (
       <div
         {...pointerProps}
-        className="pointer-events-none fixed inset-x-2 bottom-2 z-30 flex h-[60dvh] flex-col items-center justify-end *:pointer-events-auto"
+        className={clsx(
+          "pointer-events-none fixed inset-x-2 bottom-2 z-30 flex flex-col items-center justify-end *:pointer-events-auto",
+          size === "expanded" ? "h-[calc(100dvh-1rem)]" : "h-[60dvh]",
+        )}
       >
         {children}
       </div>
     );
-  const placement = popupPlacement(wordRect, popupWidthPx, {
+  const placement = popupPlacement(wordRect, popupWidthPx[size], {
     width: window.innerWidth,
     height: window.innerHeight,
   });

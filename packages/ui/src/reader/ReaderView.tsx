@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
+import type { PopupSize } from "../lookup/popupSize.ts";
 import { AppearancePanel } from "./AppearancePanel.tsx";
 import { ChapterEnd } from "./ChapterEnd.tsx";
 import { ChapterText } from "./ChapterText.tsx";
@@ -89,6 +90,8 @@ type ReaderViewProps = {
   callbacks: ReaderCallbacks;
   /** The dictionary pop-up, placed beside `lookupWord`. */
   lookup?: ReactNode;
+  /** The pop-up's size, which sets how it is placed. */
+  lookupSize?: PopupSize;
   /** The word of the text the pop-up opened on, which it stands beside. */
   lookupWord?: ReaderWord;
   /**
@@ -346,6 +349,7 @@ export function ReaderView(props: ReaderViewProps) {
         <LookupAnchor
           wordRect={props.lookupWord?.rect ?? null}
           isWide={isWide}
+          size={props.lookupSize}
           onPointerInsideChange={callbacks.onPointerInsideLookupChange}
         >
           {props.lookup}
