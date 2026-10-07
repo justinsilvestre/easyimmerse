@@ -4,6 +4,7 @@ import { initialPlayerState, preferenceKeys } from "./appState.ts";
 import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import type { Effect } from "./effect.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
+import { crossesSaveInterval } from "./playbackPosition.ts";
 import { isSameParagraph, type ReaderLocation } from "./readingLocation.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
@@ -24,14 +25,18 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         },
         [{ type: "seekPlayer", seconds: action.seconds }],
       ];
-    case "playerTimeChanged":
-      return [
-        {
-          ...state,
-          player: { ...state.player, currentTimeSeconds: action.seconds },
-        },
-        [],
-      ];
+    case "playerTimeChanged": {
+      const moved = {
+        ...state,
+        player: { ...state.player, currentTimeSeconds: action.seconds },
+      };
+      return crossesSaveInterval(
+        state.player.currentTimeSeconds,
+        action.seconds,
+      )
+        ? savePlaybackPosition(moved)
+        : [moved, []];
+    }
     case "playerDurationChanged":
       return [
         {
@@ -46,11 +51,13 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       return [state, [{ type: "playPlayer" }]];
     case "pauseRequested":
       return [state, [{ type: "pausePlayer" }]];
-    case "playerPlayingChanged":
-      return [
-        { ...state, player: { ...state.player, isPlaying: action.isPlaying } },
-        [],
-      ];
+    case "playerPlayingChanged": {
+      const changed = {
+        ...state,
+        player: { ...state.player, isPlaying: action.isPlaying },
+      };
+      return action.isPlaying ? [changed, []] : savePlaybackPosition(changed);
+    }
     case "volumeChangeRequested":
       return [
         { ...state, player: { ...state.player, volume: action.volume } },
@@ -134,10 +141,11 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       return [{ ...state, chosenDictionaryFile: null }, []];
     case "openMedia":
       return [{ ...state, currentMediaFileId: action.mediaFileId }, []];
-    case "closeMedia":
+    case "closeMedia": {
+      const [remembered, effects] = savePlaybackPosition(state);
       return [
         {
-          ...state,
+          ...remembered,
           currentMediaFileId: null,
           chosenSubtitleFile: null,
           player: {
@@ -146,7 +154,26 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
             speed: state.player.speed,
           },
         },
-        saveOpenBookLocation(state),
+        [...saveOpenBookLocation(state), ...effects],
+      ];
+    }
+    case "playbackPositionLoadRequested":
+      return [
+        state,
+        state.playbackPositions[action.mediaFileId] === undefined
+          ? [{ type: "loadPlaybackPosition", mediaFileId: action.mediaFileId }]
+          : [],
+      ];
+    case "playbackPositionLoaded":
+      return [
+        {
+          ...state,
+          playbackPositions: {
+            ...state.playbackPositions,
+            [action.mediaFileId]: action.ms,
+          },
+        },
+        [],
       ];
     case "readingLocationLoadRequested":
       return [
@@ -260,6 +287,24 @@ function setReadingLocation(
     ...state,
     readingLocations: { ...state.readingLocations, [mediaFileId]: location },
   };
+}
+
+/**
+ * Remembers where playback is in the open media file and saves it, once the player has loaded the file.
+ * A book never loads the player, so its position is not saved.
+ */
+function savePlaybackPosition(state: AppState): [AppState, Effect[]] {
+  const mediaFileId = state.currentMediaFileId;
+  if (mediaFileId === null || state.player.durationSeconds === 0)
+    return [state, []];
+  const ms = state.player.currentTimeSeconds * 1000;
+  return [
+    {
+      ...state,
+      playbackPositions: { ...state.playbackPositions, [mediaFileId]: ms },
+    },
+    [{ type: "savePlaybackPosition", mediaFileId, ms }],
+  ];
 }
 
 /**

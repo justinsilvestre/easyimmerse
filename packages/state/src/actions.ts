@@ -56,6 +56,10 @@ export const actions = {
   ) => ({ type: "readingLocationLoaded", mediaFileId, location }) as const,
   readingLocationReported: (mediaFileId: string, location: ReaderLocation) =>
     ({ type: "readingLocationReported", mediaFileId, location }) as const,
+  playbackPositionLoadRequested: (mediaFileId: string) =>
+    ({ type: "playbackPositionLoadRequested", mediaFileId }) as const,
+  playbackPositionLoaded: (mediaFileId: string, ms: number | null) =>
+    ({ type: "playbackPositionLoaded", mediaFileId, ms }) as const,
   preferenceToggled: (key: PreferenceKey) =>
     ({ type: "preferenceToggled", key }) as const,
   preferenceSet: (key: PreferenceKey, value: string) =>

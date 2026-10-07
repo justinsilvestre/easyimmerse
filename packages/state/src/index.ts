@@ -33,6 +33,7 @@ export {
   selectCurrentMediaFileId,
   selectCurrentTime,
   selectPendingFilePick,
+  selectPlaybackPosition,
   selectPlayer,
   selectPlayerDuration,
   selectPreference,

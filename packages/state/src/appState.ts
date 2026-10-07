@@ -66,6 +66,8 @@ export type AppState = {
    * Null for a book with no stored place; absent until the stored place has been read.
    */
   readingLocations: Partial<Record<string, ReaderLocation | null>>;
+  /** Where playback last was in each media file, in milliseconds: null for a file never played, undefined until its stored position has been read. */
+  playbackPositions: Partial<Record<string, number | null>>;
 };
 
 export const initialAppState: AppState = {
@@ -80,4 +82,5 @@ export const initialAppState: AppState = {
   unsavedWorkCount: 0,
   systemTheme: "light",
   readingLocations: {},
+  playbackPositions: {},
 };

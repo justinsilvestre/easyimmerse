@@ -34,6 +34,11 @@ export const selectReadingLocation =
   (mediaFileId: string) => (state: RootState) =>
     state.app.readingLocations[mediaFileId];
 
+/** Returns where playback last was in a media file, null when it was never played, or undefined until its stored position has been read. */
+export const selectPlaybackPosition =
+  (mediaFileId: string) => (state: RootState) =>
+    state.app.playbackPositions[mediaFileId];
+
 export const selectChosenDictionaryFile = (state: RootState) =>
   state.app.chosenDictionaryFile;
 

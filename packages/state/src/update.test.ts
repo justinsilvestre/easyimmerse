@@ -516,3 +516,81 @@ describe("update", () => {
     });
   });
 });
+
+describe("update, for the playback position", () => {
+  const loaded: AppState = {
+    ...initialAppState,
+    currentMediaFileId: "m1",
+    player: {
+      ...initialAppState.player,
+      currentTimeSeconds: 14,
+      durationSeconds: 60,
+    },
+  };
+
+  it("returns a loadPlaybackPosition effect for playbackPositionLoadRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.playbackPositionLoadRequested("m1"),
+    );
+    expect(effects).toEqual([
+      { type: "loadPlaybackPosition", mediaFileId: "m1" },
+    ]);
+  });
+
+  it("returns no effects for playbackPositionLoadRequested once the position is known", () => {
+    const [, effects] = update(
+      { ...initialAppState, playbackPositions: { m1: null } },
+      actions.playbackPositionLoadRequested("m1"),
+    );
+    expect(effects).toEqual([]);
+  });
+
+  it("stores the loaded position for playbackPositionLoaded", () => {
+    const [state] = update(
+      initialAppState,
+      actions.playbackPositionLoaded("m1", 8000),
+    );
+    expect(state.playbackPositions.m1).toBe(8000);
+  });
+
+  it("saves the position when playback enters a new stretch for playerTimeChanged", () => {
+    const [, effects] = update(loaded, actions.playerTimeChanged(15.5));
+    expect(effects).toEqual([
+      { type: "savePlaybackPosition", mediaFileId: "m1", ms: 15_500 },
+    ]);
+  });
+
+  it("saves nothing within the same stretch for playerTimeChanged", () => {
+    const [, effects] = update(loaded, actions.playerTimeChanged(14.5));
+    expect(effects).toEqual([]);
+  });
+
+  it("saves the position when playback pauses for playerPlayingChanged", () => {
+    const [, effects] = update(loaded, actions.playerPlayingChanged(false));
+    expect(effects).toEqual([
+      { type: "savePlaybackPosition", mediaFileId: "m1", ms: 14_000 },
+    ]);
+  });
+
+  it("saves the position for closeMedia", () => {
+    const [, effects] = update(loaded, actions.closeMedia());
+    expect(effects).toEqual([
+      { type: "savePlaybackPosition", mediaFileId: "m1", ms: 14_000 },
+    ]);
+  });
+
+  it("remembers the saved position for closeMedia, so that reopening the file finds it", () => {
+    const [state] = update(loaded, actions.closeMedia());
+    expect(state.playbackPositions.m1).toBe(14_000);
+  });
+
+  it("saves nothing before the player has loaded the file", () => {
+    const unloaded = {
+      ...loaded,
+      player: { ...loaded.player, durationSeconds: 0 },
+    };
+    const [, effects] = update(unloaded, actions.closeMedia());
+    expect(effects).toEqual([]);
+  });
+});

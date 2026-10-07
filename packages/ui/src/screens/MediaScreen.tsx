@@ -29,6 +29,7 @@ import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { TrackChoiceContext } from "../player/trackChoiceContext.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
+import { useResumePlayback } from "../player/useResumePlayback.ts";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
 import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
 
@@ -39,6 +40,7 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * double-clicking a word starts a flashcard for it at once.
  * Space or K plays and pauses, the arrow keys skip between cues, R replays the cue shown now, F fills the screen,
  * and Escape leaves distraction-free mode once the dictionary pop-up is closed.
+ * The file resumes where playback last was, as `useResumePlayback` describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `useClipLoop` describes.
  * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
  */
@@ -53,6 +55,7 @@ export function MediaScreen({
   const projectId = project.id;
   const { settings } = project;
   const mediaFile = useMediaFile(projectId, mediaFileId);
+  useResumePlayback(mediaFileId);
   const player = useAppSelector(selectPlayer);
   const currentMs = player.currentTimeSeconds * 1000;
   const durationMs = useMediaDurationMs(projectId, mediaFile);

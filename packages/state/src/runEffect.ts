@@ -4,6 +4,10 @@ import type { AppState, PreferenceKey } from "./appState.ts";
 import type { Effect } from "./effect.ts";
 import type { Effects } from "./effects.ts";
 import {
+  parsePlaybackPosition,
+  playbackPositionKey,
+} from "./playbackPosition.ts";
+import {
   parseReadingLocation,
   type ReaderLocation,
   readingLocationKey,
@@ -86,6 +90,27 @@ export function runEffect(
         .savePreference(
           readingLocationKey(effect.mediaFileId),
           JSON.stringify(effect.location),
+        )
+        .catch(ignoreFailure);
+      return;
+    case "loadPlaybackPosition":
+      effects
+        .loadPreference(playbackPositionKey(effect.mediaFileId))
+        .catch(() => null)
+        .then((value) =>
+          dispatch(
+            actions.playbackPositionLoaded(
+              effect.mediaFileId,
+              parsePlaybackPosition(value),
+            ),
+          ),
+        );
+      return;
+    case "savePlaybackPosition":
+      effects
+        .savePreference(
+          playbackPositionKey(effect.mediaFileId),
+          String(Math.round(effect.ms)),
         )
         .catch(ignoreFailure);
       return;

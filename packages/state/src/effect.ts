@@ -20,6 +20,8 @@ export type Effect =
       mediaFileId: string;
       location: ReaderLocation;
     }
+  | { type: "loadPlaybackPosition"; mediaFileId: string }
+  | { type: "savePlaybackPosition"; mediaFileId: string; ms: number }
   | { type: "showNotification"; message: string }
   | { type: "openExternalUrl"; url: string }
   | { type: "guardClose"; isActive: boolean };
