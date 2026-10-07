@@ -1,6 +1,6 @@
 import { actions, selectPlayer } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
-import { useReducer, useRef } from "react";
+import { useCallback, useReducer, useRef, useState } from "react";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { cueForFlashcard, draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
@@ -11,6 +11,8 @@ import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
 import { useScreenshotUrl } from "../flashcards/useScreenshotUrl.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { useFullscreen } from "../hooks/useFullscreen.ts";
+import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
@@ -24,6 +26,7 @@ import { replayTarget, skipTarget } from "../media/skipTarget.ts";
 import { useClipLoop } from "../media/useClipLoop.ts";
 import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
+import { TrackChoiceContext } from "../player/trackChoiceContext.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
@@ -34,7 +37,8 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
  * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
  * double-clicking a word starts a flashcard for it at once.
- * Space or K plays and pauses, the arrow keys skip between cues, and R replays the cue shown now.
+ * Space or K plays and pauses, the arrow keys skip between cues, R replays the cue shown now, F fills the screen,
+ * and Escape leaves distraction-free mode once the dictionary pop-up is closed.
  * Opening a flashcard seeks to its clip, which loops while playing, as `useClipLoop` describes.
  * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
  */
@@ -68,8 +72,19 @@ export function MediaScreen({
     (ms) => dispatch(actions.seekRequested(ms / 1000)),
   );
   const isEditorOpen = flashcards.edited !== null;
+  const fullscreen = useFullscreen();
   // Passed through MediaView to the player controls, which mark the subtitles panel's toggle unavailable meanwhile.
-  const shownPanels = { ...panels, isCuePanelTakenByEditor: isEditorOpen };
+  const shownPanels = {
+    ...panels,
+    isCuePanelTakenByEditor: isEditorOpen,
+    isFullscreen: fullscreen.isFullscreen,
+  };
+  // The player offers the track choice once it knows the file's tracks; the control bar shows a Tracks button meanwhile.
+  const [openTracks, setOpenTracks] = useState<(() => void) | null>(null);
+  const offerTrackChoice = useCallback(
+    (open: (() => void) | null) => setOpenTracks(() => open),
+    [],
+  );
   const clipWaveform = useClipWaveform(
     projectId,
     mediaFile,
@@ -137,6 +152,8 @@ export function MediaScreen({
     onToggleWaveform: () => dispatchPanels({ type: "waveformToggled" }),
     onToggleDistractionFree: () =>
       dispatchPanels({ type: "distractionFreeToggled" }),
+    onToggleFullscreen: fullscreen.isSupported ? fullscreen.toggle : undefined,
+    onOpenTracks: openTracks ?? undefined,
   };
   usePlayerShortcuts(
     {
@@ -148,14 +165,28 @@ export function MediaScreen({
     },
     screenRef,
   );
+  useKeyboardShortcut("f", fullscreen.toggle, screenRef);
+  useKeyboardShortcut(
+    "Escape",
+    () => {
+      if (panels.distractionFree && lookup.popup === null)
+        dispatchPanels({ type: "distractionFreeToggled" });
+    },
+    screenRef,
+  );
   return (
     <MediaView
       ref={screenRef}
       media={{
         title: mediaFile?.name ?? "",
         language: settings.target_language,
+        projectName: settings.name,
       }}
-      stage={<MediaPlayer projectId={projectId} />}
+      stage={
+        <TrackChoiceContext value={offerTrackChoice}>
+          <MediaPlayer projectId={projectId} />
+        </TrackChoiceContext>
+      }
       playback={{
         isPlaying: player.isPlaying,
         currentMs,

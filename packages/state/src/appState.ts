@@ -4,8 +4,7 @@ import type {
   PickedMediaFile,
 } from "./effects.ts";
 import type { ReaderLocation } from "./readingLocation.ts";
-import type { ThemeState } from "./theme.ts";
-import { initialThemeState } from "./theme.ts";
+import type { Theme } from "./theme.ts";
 
 export type PreferenceKey =
   | "showTranslations"
@@ -13,7 +12,9 @@ export type PreferenceKey =
   | "losslessAudio"
   | "conversionNoticeDismissed"
   /** The reader's appearance, as JSON. */
-  | "readerPreferences";
+  | "readerPreferences"
+  /** The theme the user chose: "light", "dark", or anything else for the system's. */
+  | "theme";
 
 export const preferenceKeys: readonly PreferenceKey[] = [
   "showTranslations",
@@ -21,6 +22,7 @@ export const preferenceKeys: readonly PreferenceKey[] = [
   "losslessAudio",
   "conversionNoticeDismissed",
   "readerPreferences",
+  "theme",
 ];
 
 /** The player as the controls show it. Volume is 0 to 1; speed is a multiplier. */
@@ -57,7 +59,8 @@ export type AppState = {
   chosenDictionaryFile: PickedDictionaryFile | null;
   /** How many pieces of work closing the app would lose, such as flashcard saves under way or unsaved changes in the editor. */
   unsavedWorkCount: number;
-  theme: ThemeState;
+  /** The operating system's theme, which the app shows unless the user chose one. */
+  systemTheme: Theme;
   /**
    * The last reading place in each book opened since the app started, by media file id.
    * Null for a book with no stored place; absent until the stored place has been read.
@@ -75,6 +78,6 @@ export const initialAppState: AppState = {
   chosenMediaFile: null,
   chosenDictionaryFile: null,
   unsavedWorkCount: 0,
-  theme: initialThemeState,
+  systemTheme: "light",
   readingLocations: {},
 };

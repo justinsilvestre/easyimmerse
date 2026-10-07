@@ -347,6 +347,7 @@ describe("update", () => {
           "losslessAudio",
           "conversionNoticeDismissed",
           "readerPreferences",
+          "theme",
         ],
       },
     ]);

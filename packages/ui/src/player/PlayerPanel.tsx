@@ -1,8 +1,7 @@
 import { actions } from "@easyimmerse/state";
 import type { Rational } from "@easyimmerse/types";
-import { AudioLines, Music } from "lucide-react";
+import { Music } from "lucide-react";
 import { useRef, useState } from "react";
-import { IconButton } from "../components/IconButton.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { MediaElement } from "./MediaElement.tsx";
 import { PlayerFailure } from "./PlayerFailure.tsx";
@@ -16,19 +15,16 @@ import type { PlayerStatus } from "./PlayerStatus.ts";
 export function PlayerPanel({
   name,
   playback,
-  onOpenTracks,
 }: {
   name: string;
   playback: PlayerStatus;
-  /** Opens the track choice dialog. Absent when the file offers nothing to choose. */
-  onOpenTracks?: () => void;
 }) {
   return (
     <section
       aria-label="Player"
       className="flex h-full w-full items-center justify-center text-white"
     >
-      <PlayerBody name={name} playback={playback} onOpenTracks={onOpenTracks} />
+      <PlayerBody name={name} playback={playback} />
     </section>
   );
 }
@@ -36,11 +32,9 @@ export function PlayerPanel({
 function PlayerBody({
   name,
   playback,
-  onOpenTracks,
 }: {
   name: string;
   playback: PlayerStatus;
-  onOpenTracks?: () => void;
 }) {
   switch (playback.status) {
     case "loading":
@@ -63,7 +57,6 @@ function PlayerBody({
           source={playback.source}
           frameRate={playback.frameRate}
           hasVideo={playback.hasVideo}
-          onOpenTracks={onOpenTracks}
         />
       );
   }
@@ -74,20 +67,18 @@ type SourceFailure = { url: string; cause: string };
 
 /**
  * The video, or the artwork of an audio file, filling the stage. A click on the picture plays or pauses, as in other players;
- * the buttons, subtitles and pop-ups drawn over the stage are its siblings, so a click on them does not reach it.
+ * the subtitles and pop-ups drawn over the stage are its siblings, so a click on them does not reach it.
  */
 function PlayerMedia({
   name,
   source,
   frameRate,
   hasVideo,
-  onOpenTracks,
 }: {
   name: string;
   source: PlayerSource;
   frameRate: Rational | null;
   hasVideo: boolean;
-  onOpenTracks?: () => void;
 }) {
   const elementRef = useRef<HTMLVideoElement>(null);
   const [failure, setFailure] = useState<SourceFailure | null>(null);
@@ -114,13 +105,6 @@ function PlayerMedia({
         <div className="absolute inset-x-0 top-12 flex justify-center px-4">
           <PlayerFailure cause={failure.cause} />
         </div>
-      )}
-      {onOpenTracks && (
-        <span className="absolute top-2 left-2 z-10 rounded-md bg-black/50">
-          <IconButton label="Tracks" onClick={onOpenTracks}>
-            <AudioLines className="size-4" />
-          </IconButton>
-        </span>
       )}
     </>
   );

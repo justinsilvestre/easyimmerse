@@ -10,6 +10,7 @@ import {
 } from "@easyimmerse/state";
 import type { ListMediaFilesResponse, MediaFile } from "@easyimmerse/types";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import { type ReactNode, useCallback, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FakeRoute } from "../testSupport/createFakeBackendClient.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
@@ -28,6 +29,7 @@ import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { createFakeHls } from "./fakeHls.ts";
 import { HlsLoaderContext } from "./hlsLoaderContext.ts";
 import { MediaPlayer } from "./MediaPlayer.tsx";
+import { TrackChoiceContext } from "./trackChoiceContext.ts";
 
 afterEach(() => {
   cleanup();
@@ -50,6 +52,25 @@ type RenderOptions = {
   before?: ReturnType<(typeof actions)[keyof typeof actions]>[];
 };
 
+/** Stands in for the screen, which shows a Tracks button while the player offers a track choice. */
+function TrackChoiceProbe({ children }: { children: ReactNode }) {
+  const [openTracks, setOpenTracks] = useState<(() => void) | null>(null);
+  const offer = useCallback(
+    (open: (() => void) | null) => setOpenTracks(() => open),
+    [],
+  );
+  return (
+    <TrackChoiceContext value={offer}>
+      {children}
+      {openTracks && (
+        <button type="button" onClick={openTracks}>
+          Tracks
+        </button>
+      )}
+    </TrackChoiceContext>
+  );
+}
+
 function renderPlayer(
   routes: readonly FakeRoute[],
   options: RenderOptions = {},
@@ -64,7 +85,9 @@ function renderPlayer(
   const fakeHls = createFakeHls();
   const rendered = renderWithAppStore(
     <HlsLoaderContext value={async () => fakeHls.Hls}>
-      <MediaPlayer projectId="p1" />
+      <TrackChoiceProbe>
+        <MediaPlayer projectId="p1" />
+      </TrackChoiceProbe>
     </HlsLoaderContext>,
     client,
     {

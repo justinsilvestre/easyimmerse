@@ -1,10 +1,14 @@
 import {
+  AudioLines,
   AudioWaveform,
-  Captions,
   Expand,
   Languages,
+  Maximize,
+  Minimize,
+  PanelRight,
   Pause,
   Play,
+  Shrink,
   SkipBack,
   SkipForward,
   Volume2,
@@ -26,13 +30,27 @@ export type PlayerCallbacks = {
   onToggleCuePanel: () => void;
   onToggleWaveform: () => void;
   onToggleDistractionFree: () => void;
+  /** Fills the screen with the app, or leaves it. Absent where the browser offers no fullscreen. */
+  onToggleFullscreen?: () => void;
+  /** Opens the track choice dialog. Absent when the file offers nothing to choose. */
+  onOpenTracks?: () => void;
+};
+
+/** Which panels are open, and whether the app fills the screen. */
+export type PlayerPanelsState = {
+  cues: boolean;
+  waveform: boolean;
+  distractionFree: boolean;
+  /** Tells that the flashcard editor holds the side panel, so that the subtitles panel cannot show and its toggle is marked unavailable. */
+  isCuePanelTakenByEditor?: boolean;
+  isFullscreen?: boolean;
 };
 
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 /**
  * The bar over the bottom of the player: the position, transport, volume, and speed, with the toggles for the panels around it.
- * The transport buttons name their keys in their labels, which show as tooltips.
+ * The buttons name their keys in their labels, which show as tooltips, and the toggles say what pressing them does now.
  */
 export function PlayerControls({
   playback,
@@ -42,52 +60,12 @@ export function PlayerControls({
 }: {
   playback: PlayerControlsState;
   tracks: SubtitleTrackChoices;
-  /**
-   * Which panels are open. `isCuePanelTakenByEditor` tells that the flashcard editor holds the side panel,
-   * so that the subtitles panel cannot show and its toggle is marked unavailable, with a tooltip saying why.
-   */
-  panels: {
-    cues: boolean;
-    waveform: boolean;
-    isCuePanelTakenByEditor?: boolean;
-  };
+  panels: PlayerPanelsState;
   callbacks: PlayerCallbacks;
 }) {
-  const isCueToggleUnavailable = panels.isCuePanelTakenByEditor === true;
   return (
     <div className="flex flex-col gap-1.5 bg-surface/90 px-3 py-2 backdrop-blur-sm">
-      <div className="flex items-center gap-3 text-xs text-fg-muted tabular-nums">
-        <span>{formatTimestamp(playback.currentMs)}</span>
-        <input
-          type="range"
-          aria-label="Position"
-          min={0}
-          max={playback.durationMs}
-          value={playback.currentMs}
-          aria-valuetext={formatTimestamp(playback.currentMs)}
-          onChange={(event) => callbacks.onSeek(Number(event.target.value))}
-          // The arrows move a second at a time. A `step` would do the same, but it would also round the position the bar shows.
-          onKeyDown={(event) => {
-            const directions: Partial<Record<string, number>> = {
-              ArrowLeft: -1,
-              ArrowDown: -1,
-              ArrowRight: 1,
-              ArrowUp: 1,
-            };
-            const direction = directions[event.key];
-            if (direction === undefined) return;
-            event.preventDefault();
-            callbacks.onSeek(
-              Math.min(
-                Math.max(playback.currentMs + direction * 1000, 0),
-                playback.durationMs,
-              ),
-            );
-          }}
-          className="flex-1 accent-accent"
-        />
-        <span>{formatTimestamp(playback.durationMs)}</span>
-      </div>
+      <PositionBar playback={playback} onSeek={callbacks.onSeek} />
       <div className="flex flex-wrap items-center gap-1">
         <IconButton
           label="Previous cue (←)"
@@ -137,6 +115,11 @@ export function PlayerControls({
           onChange={(value) => callbacks.onSpeedChange(Number(value))}
         />
         <span className="ml-auto flex items-center gap-1">
+          {callbacks.onOpenTracks && (
+            <IconButton label="Tracks" onClick={callbacks.onOpenTracks}>
+              <AudioLines className="size-4" />
+            </IconButton>
+          )}
           {tracks.translationSubtitlesId !== null && (
             <IconButton
               label="Switch which subtitles are shown"
@@ -145,37 +128,123 @@ export function PlayerControls({
               <Languages className="size-4" />
             </IconButton>
           )}
-          <IconButton
-            label="Subtitles panel"
-            pressed={panels.cues && !isCueToggleUnavailable}
-            aria-disabled={isCueToggleUnavailable || undefined}
-            title={
-              isCueToggleUnavailable
-                ? "Close the flashcard to show the subtitles"
-                : "Subtitles panel"
-            }
-            onClick={() => {
-              if (!isCueToggleUnavailable) callbacks.onToggleCuePanel();
-            }}
-          >
-            <Captions className="size-4" />
-          </IconButton>
-          <IconButton
-            label="Waveform"
-            pressed={panels.waveform}
-            onClick={callbacks.onToggleWaveform}
-          >
-            <AudioWaveform className="size-4" />
-          </IconButton>
-          <IconButton
-            label="Distraction-free mode"
-            onClick={callbacks.onToggleDistractionFree}
-          >
-            <Expand className="size-4" />
-          </IconButton>
+          <PanelToggles panels={panels} callbacks={callbacks} />
         </span>
       </div>
     </div>
+  );
+}
+
+/** The seek bar with the time on either side. The arrows move a second at a time; a `step` would do the same, but would also round the position the bar shows. */
+function PositionBar({
+  playback,
+  onSeek,
+}: {
+  playback: PlayerControlsState;
+  onSeek: (ms: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 text-xs text-fg-muted tabular-nums">
+      <span>{formatTimestamp(playback.currentMs)}</span>
+      <input
+        type="range"
+        aria-label="Position"
+        min={0}
+        max={playback.durationMs}
+        value={playback.currentMs}
+        aria-valuetext={formatTimestamp(playback.currentMs)}
+        onChange={(event) => onSeek(Number(event.target.value))}
+        onKeyDown={(event) => {
+          const directions: Partial<Record<string, number>> = {
+            ArrowLeft: -1,
+            ArrowDown: -1,
+            ArrowRight: 1,
+            ArrowUp: 1,
+          };
+          const direction = directions[event.key];
+          if (direction === undefined) return;
+          event.preventDefault();
+          onSeek(
+            Math.min(
+              Math.max(playback.currentMs + direction * 1000, 0),
+              playback.durationMs,
+            ),
+          );
+        }}
+        className="flex-1 accent-accent"
+      />
+      <span>{formatTimestamp(playback.durationMs)}</span>
+    </div>
+  );
+}
+
+/** The toggles for the subtitles panel, the waveform, distraction-free mode and fullscreen, each labelled for what it does now. */
+function PanelToggles({
+  panels,
+  callbacks,
+}: {
+  panels: PlayerPanelsState;
+  callbacks: PlayerCallbacks;
+}) {
+  const isCueToggleUnavailable = panels.isCuePanelTakenByEditor === true;
+  return (
+    <>
+      <IconButton
+        label="Subtitles panel"
+        pressed={panels.cues && !isCueToggleUnavailable}
+        aria-disabled={isCueToggleUnavailable || undefined}
+        title={
+          isCueToggleUnavailable
+            ? "Close the flashcard to show the subtitles"
+            : panels.cues
+              ? "Hide the subtitles panel"
+              : "Show the subtitles panel"
+        }
+        onClick={() => {
+          if (!isCueToggleUnavailable) callbacks.onToggleCuePanel();
+        }}
+      >
+        <PanelRight className="size-4" />
+      </IconButton>
+      <IconButton
+        label="Waveform"
+        pressed={panels.waveform}
+        title={panels.waveform ? "Hide the waveform" : "Show the waveform"}
+        onClick={callbacks.onToggleWaveform}
+      >
+        <AudioWaveform className="size-4" />
+      </IconButton>
+      <IconButton
+        label={
+          panels.distractionFree
+            ? "Leave distraction-free mode (Esc)"
+            : "Enter distraction-free mode"
+        }
+        onClick={callbacks.onToggleDistractionFree}
+      >
+        {panels.distractionFree ? (
+          <Shrink className="size-4" />
+        ) : (
+          <Expand className="size-4" />
+        )}
+      </IconButton>
+      {callbacks.onToggleFullscreen && (
+        <IconButton
+          label={
+            panels.isFullscreen
+              ? "Leave fullscreen (F)"
+              : "Enter fullscreen (F)"
+          }
+          onClick={callbacks.onToggleFullscreen}
+        >
+          {panels.isFullscreen ? (
+            <Minimize className="size-4" />
+          ) : (
+            <Maximize className="size-4" />
+          )}
+        </IconButton>
+      )}
+    </>
   );
 }
 

@@ -13,22 +13,26 @@ export type MenuItem = {
   icon?: ReactNode;
   isDestructive?: boolean;
   isChecked?: boolean;
+  /** Closes the menu when a checkbox item is chosen, as for choices of which only one can be checked. */
+  closesOnSelect?: boolean;
   onSelect: () => void;
 };
 
 /**
  * A button that opens a small menu of actions below it. With children it is a text button showing them;
- * without, it is an icon button. The menu closes on Escape, on a choice, or when focus leaves it.
+ * without, it is an icon button showing `icon`, or three dots. The menu closes on Escape, on a choice, or when focus leaves it.
  * It opens downward unless told to open upward, for a button near the bottom of a scrolling area.
  */
 export function MenuButton({
   label,
+  icon = <MoreHorizontal className="size-4" />,
   items,
   opensUpward = false,
   isUnavailable = false,
   children,
 }: {
   label: string;
+  icon?: ReactNode;
   items: readonly MenuItem[];
   opensUpward?: boolean;
   /** Keeps the menu closed and marks its button unavailable, keeping keyboard focus on it. */
@@ -77,7 +81,7 @@ export function MenuButton({
           aria-disabled={isUnavailable || undefined}
           onClick={toggle}
         >
-          <MoreHorizontal className="size-4" />
+          {icon}
         </IconButton>
       )}
       {isOpen && !isUnavailable && (
@@ -111,7 +115,10 @@ export function MenuButton({
                   type="button"
                   role="menuitemcheckbox"
                   aria-checked={item.isChecked}
-                  onClick={item.onSelect}
+                  onClick={() => {
+                    if (item.closesOnSelect) setOpen(false);
+                    item.onSelect();
+                  }}
                   className={itemClassName(item)}
                 >
                   <Check

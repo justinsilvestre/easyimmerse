@@ -159,7 +159,11 @@ const meta = {
   component: MediaView,
   parameters: { layout: "fullscreen" },
   args: {
-    media: { title: "Dark S01E01 - Geheimnisse.mkv", language: "de" },
+    media: {
+      projectName: "German series",
+      title: "Dark S01E01 - Geheimnisse.mkv",
+      language: "de",
+    },
     stage: videoStage(),
     playback: {
       isPlaying: false,
@@ -272,7 +276,11 @@ export const NoSubtitles: Story = {
 
 export const AudioWithTranscript: Story = {
   args: {
-    media: { title: "Die Verwandlung, Kapitel 1", language: "de" },
+    media: {
+      projectName: "German series",
+      title: "Die Verwandlung, Kapitel 1",
+      language: "de",
+    },
     stage: audioStage("Die Verwandlung, Kapitel 1"),
     translationCues: [],
     sidePanel: subtitlesPanel(exampleCues, []),

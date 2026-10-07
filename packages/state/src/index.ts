@@ -40,6 +40,7 @@ export {
   selectReadingLocation,
   selectTextScale,
   selectTheme,
+  selectThemeChoice,
 } from "./selectors.ts";
 export {
   defaultTextScale,
@@ -47,5 +48,6 @@ export {
   smallerTextScale,
   textScales,
 } from "./textScale.ts";
-export type { Theme } from "./theme.ts";
+export type { Theme, ThemeChoice } from "./theme.ts";
+export { themeChoices } from "./theme.ts";
 export { update } from "./update.ts";

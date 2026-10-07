@@ -5,7 +5,6 @@ import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import type { Effect } from "./effect.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { isSameParagraph, type ReaderLocation } from "./readingLocation.ts";
-import { followSystemTheme, toggleTheme } from "./theme.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
 export type Update<S, A, E> = (
@@ -218,12 +217,7 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
     case "externalLinkRequested":
       return [state, [{ type: "openExternalUrl", url: action.url }]];
     case "systemThemeChanged":
-      return [
-        { ...state, theme: followSystemTheme(state.theme, action.theme) },
-        [],
-      ];
-    case "themeToggled":
-      return [{ ...state, theme: toggleTheme(state.theme) }, []];
+      return [{ ...state, systemTheme: action.theme }, []];
     case "textScaleChosen":
       return [
         setPreference(state, "textScale", String(action.scale)),

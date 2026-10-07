@@ -73,7 +73,6 @@ export const actions = {
     ({ type: "externalLinkRequested", url }) as const,
   systemThemeChanged: (theme: Theme) =>
     ({ type: "systemThemeChanged", theme }) as const,
-  themeToggled: () => ({ type: "themeToggled" }) as const,
   textScaleChosen: (scale: number) =>
     ({ type: "textScaleChosen", scale }) as const,
 };

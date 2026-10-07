@@ -384,7 +384,7 @@ describe("MediaScreen", () => {
 
   it("leaves Space to the focused button rather than toggling playback", () => {
     const { effects } = renderMediaScreen();
-    fireEvent.keyDown(screen.getByRole("button", { name: "Project" }), {
+    fireEvent.keyDown(screen.getByRole("button", { name: "Back to Alpha" }), {
       key: " ",
     });
     expect(effects.calls).not.toContainEqual({ type: "togglePlayer" });
@@ -396,9 +396,9 @@ describe("MediaScreen", () => {
     expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 0 });
   });
 
-  it("closes the media file when Project is clicked", () => {
+  it("closes the media file when the way back to the project is clicked", () => {
     const { store } = renderMediaScreen();
-    fireEvent.click(screen.getByRole("button", { name: "Project" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to Alpha" }));
     expect(selectCurrentMediaFileId(store.getState())).toBeNull();
   });
 
