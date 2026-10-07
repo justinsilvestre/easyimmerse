@@ -1,6 +1,7 @@
 import type { AudioClip } from "@easyimmerse/types";
 import { Camera } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
+import { WaveformBars } from "../components/waveform/WaveformBars.tsx";
 import {
   clamp,
   moveClipEnd,
@@ -12,7 +13,7 @@ import {
   viewIncludingAll,
 } from "./clipView.ts";
 import { formatClipTime } from "./formatClipTime.ts";
-import { Peaks, peaksBetween } from "./Peaks.tsx";
+import { peaksBetween } from "./peaksBetween.ts";
 import {
   type DraggableTime,
   type DragHandlers,
@@ -93,7 +94,7 @@ export function ClipEditor({
             className="absolute inset-y-0"
             style={between(peaksOnView.startMs, peaksOnView.endMs)}
           >
-            <Peaks
+            <WaveformBars
               peaks={peaksBetween(peaks, durationMs, view.startMs, view.endMs)}
             />
           </div>

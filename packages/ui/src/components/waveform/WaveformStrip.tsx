@@ -2,10 +2,13 @@ import type { Cue } from "@easyimmerse/types";
 import type { KeyboardEvent } from "react";
 import { useEffect, useRef } from "react";
 import { formatPlayerTime } from "../formatPlayerTime.ts";
-import { drawWaveform } from "./drawWaveform.ts";
+import { barPeaksInView } from "./barPeaksInView.ts";
+import { drawWaveformOverlay } from "./drawWaveformOverlay.ts";
+import { fitCanvas } from "./fitCanvas.ts";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
-import { useElementWidth } from "./useElementWidth.ts";
+import { useElementSize } from "./useElementSize.ts";
 import { useWaveformInteraction } from "./useWaveformInteraction.ts";
+import { WaveformBars } from "./WaveformBars.tsx";
 import { WaveformZoomControl } from "./WaveformZoomControl.tsx";
 import { applyDrag } from "./waveformDrag.ts";
 import type { WaveformView } from "./waveformGeometry.ts";
@@ -28,14 +31,14 @@ export type WaveformStripProps = WaveformGestureHandlers & {
 };
 
 /**
- * Draws the audio peaks around the current time with the cues and flashcard segments over them.
+ * Draws the audio peaks around the current time as bars, with the cues and flashcard segments over them.
  * Clicking seeks, to the start of a cue when one is clicked in the band along the bottom; double-clicking a segment opens it,
  * and the open segment's handles drag; the wheel, a pinch, or the corner control zooms.
  */
 export function WaveformStrip(props: WaveformStripProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const widthPx = useElementWidth(containerRef);
+  const { widthPx } = useElementSize(containerRef);
   const view: WaveformView = {
     startMs: computeViewStart(
       props.currentTimeMs,
@@ -60,12 +63,11 @@ export function WaveformStrip(props: WaveformStripProps) {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx || widthPx === 0) return;
-    fitCanvas(canvas, ctx, widthPx);
-    drawWaveform(ctx, {
+    fitCanvas(canvas, ctx, { widthPx, heightPx: waveformStripHeightPx });
+    drawWaveformOverlay(ctx, {
       view,
       heightPx: waveformStripHeightPx,
       currentTimeMs: props.currentTimeMs,
-      windows: props.windows,
       cues: props.cues,
       segments,
     });
@@ -76,6 +78,15 @@ export function WaveformStrip(props: WaveformStripProps) {
     );
   return (
     <div ref={containerRef} className="relative w-full select-none">
+      {/* The bars stay dark in both themes, as the colors drawn over them assume. */}
+      <div
+        data-theme="dark"
+        className="absolute inset-0 overflow-hidden rounded-md bg-surface-muted"
+      >
+        {widthPx > 0 && (
+          <WaveformBars {...barPeaksInView(props.windows, view)} />
+        )}
+      </div>
       <canvas
         ref={canvasRef}
         role="slider"
@@ -86,7 +97,7 @@ export function WaveformStrip(props: WaveformStripProps) {
         aria-valuenow={props.currentTimeMs / 1000}
         aria-valuetext={describePosition(props.currentTimeMs, props.durationMs)}
         onKeyDown={(event) => seekByKey(event, props)}
-        className="block w-full touch-none rounded bg-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="relative block w-full touch-none rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         style={{ height: waveformStripHeightPx }}
         {...pointerHandlers}
       />
@@ -98,18 +109,6 @@ export function WaveformStrip(props: WaveformStripProps) {
       />
     </div>
   );
-}
-
-/** Sizes the canvas's bitmap to the device's pixels so that one-pixel lines stay sharp. */
-function fitCanvas(
-  canvas: HTMLCanvasElement,
-  ctx: CanvasRenderingContext2D,
-  widthPx: number,
-) {
-  const ratio = window.devicePixelRatio || 1;
-  canvas.width = Math.round(widthPx * ratio);
-  canvas.height = Math.round(waveformStripHeightPx * ratio);
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
 
 function describePosition(currentTimeMs: number, durationMs: number): string {
