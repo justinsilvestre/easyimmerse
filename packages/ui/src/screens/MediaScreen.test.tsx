@@ -327,11 +327,57 @@ describe("MediaScreen", () => {
     await findSubtitles();
     fireEvent.click(
       screen.getByRole("button", {
-        name: "New flashcard from this subtitle",
+        name: "New flashcard from this subtitle (C)",
       }),
     );
     expect(await findCreatedDraft(client)).toMatchObject({
       content: { word: "" },
+    });
+  });
+
+  describe("with the C key", () => {
+    it("saves a flashcard for the word under the mouse, filled from its lookup", async () => {
+      const { client } = renderMediaScreen();
+      const list = await findSubtitles();
+      fireEvent.pointerEnter(
+        within(list).getByRole("button", { name: "dog" }),
+        {
+          pointerType: "mouse",
+        },
+      );
+      fireEvent.keyDown(document.body, { key: "c" });
+      expect(await findCreatedDraft(client)).toMatchObject({
+        content: {
+          word: "fressen",
+          text_context: "The dog wants to eat.\nIt is hungry.",
+        },
+      });
+    });
+
+    it("saves a flashcard for no word while the mouse is on no word", async () => {
+      const { client } = renderMediaScreen();
+      await findSubtitles();
+      fireEvent.keyDown(document.body, { key: "c" });
+      expect(await findCreatedDraft(client)).toMatchObject({
+        content: { word: "" },
+      });
+    });
+
+    it("leaves the flashcard open in the editor as it is", async () => {
+      const { client } = renderMediaScreen();
+      const list = await findSubtitles();
+      await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
+      fireEvent.pointerEnter(
+        within(list).getByRole("button", { name: "dog" }),
+        {
+          pointerType: "mouse",
+        },
+      );
+      fireEvent.keyDown(document.body, { key: "c" });
+      await findCreatedDraft(client);
+      expect(
+        (screen.getByLabelText("Sentence (de)") as HTMLTextAreaElement).value,
+      ).toBe("The cat is sleeping.");
     });
   });
 

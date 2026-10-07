@@ -21,7 +21,7 @@ export function SubtitleLookupButtons({
         <Search className="size-4" />
       </IconButton>
       <IconButton
-        label="New flashcard from this subtitle"
+        label="New flashcard from this subtitle (C)"
         onClick={onAddFlashcard}
       >
         <NewFlashcardIcon className="size-4" />
