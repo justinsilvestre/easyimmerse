@@ -455,28 +455,71 @@ describe("ClickableText", () => {
       expect(container.querySelector("[aria-live]")).not.toBeNull();
     });
 
-    it("tells assistive technology that Left and Right work in a run", () => {
+    it("tells assistive technology that Left and Right work in a run, with Shift too", () => {
       render(<ClickableText text="映画を見る" />);
       expect(
         screen
           .getByRole("button", { name: "映画を見る" })
           .getAttribute("aria-keyshortcuts"),
-      ).toBe("ArrowLeft ArrowRight");
+      ).toBe("ArrowLeft ArrowRight Shift+ArrowLeft Shift+ArrowRight");
     });
 
-    it("ignores Shift with Right, which belongs to text selection", () => {
-      const clicks: string[] = [];
-      render(
-        <ClickableText
-          text="映画を見る"
-          gestures={{ onWordClick: (hit) => clicks.push(hit.word) }}
-        />,
-      );
-      const run = screen.getByRole("button", { name: "映画を見る" });
-      fireEvent.focus(run);
-      fireEvent.keyDown(run, { key: "ArrowRight", shiftKey: true });
-      fireEvent.click(run, { detail: 0 });
-      expect(clicks).toEqual(["映画を見る"]);
+    describe("whose lookups match words", () => {
+      /** The lengths a dictionary would match from each offset of 映画を見るよ: 映画 / を / 見る / よ. */
+      const lengths: Record<number, number> = { 0: 2, 2: 1, 3: 2, 5: 1 };
+
+      /** Lets the lookups started so far answer, and the text take in their answers. */
+      const settle = () =>
+        act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+
+      /** Focuses the run of 映画を見るよ, whose lookups answer at once, and presses keys, letting the lookups answer after each. */
+      async function focusAndPress(
+        ...keys: { key: string; shiftKey?: boolean }[]
+      ) {
+        const { container } = render(
+          <ClickableText
+            text="映画を見るよ"
+            gestures={{
+              onWordHover: (hit) => Promise.resolve(lengths[hit.start] ?? null),
+            }}
+          />,
+        );
+        const run = screen.getByRole("button", { name: "映画を見るよ" });
+        fireEvent.focus(run);
+        await settle();
+        for (const key of keys) {
+          fireEvent.keyDown(run, key);
+          await settle();
+        }
+        return container;
+      }
+
+      const right = { key: "ArrowRight" };
+      const left = { key: "ArrowLeft" };
+
+      it("moves past the text the lookup matched with Right", async () => {
+        const container = await focusAndPress(right);
+        expect(container.querySelector("[data-hovered]")?.textContent).toBe(
+          "を",
+        );
+      });
+
+      it("moves back over the word before the cursor with Left", async () => {
+        const container = await focusAndPress(right, right, right, left);
+        expect(container.querySelector("[data-hovered]")?.textContent).toBe(
+          "見る",
+        );
+      });
+
+      it("moves one character with Shift and Right", async () => {
+        const container = await focusAndPress({
+          key: "ArrowRight",
+          shiftKey: true,
+        });
+        expect(container.querySelector("[data-hovered]")?.textContent).toBe(
+          "画",
+        );
+      });
     });
 
     it("starts from the first character of a run whose text changed under focus", () => {

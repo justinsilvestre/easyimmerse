@@ -42,6 +42,7 @@ export type WordGestures = {
    * that tells pointing at it from sweeping across the text; or the keyboard moving there, at once.
    * This is the one handler that answers: with the length of the text, in UTF-16 code units from the hit,
    * that a lookup from the hit matched, or null when nothing matched.
+   * It is also called for the characters of a run that the keyboard steps back over, to find where the run's words begin.
    */
   // A handler with nothing to look up returns nothing, as the other handlers do.
   // biome-ignore lint/suspicious/noConfusingVoidType: see above
@@ -59,7 +60,8 @@ export type WordGestures = {
 /**
  * Turns pointer, touch and keyboard events on words into the gestures of `WordGestures`.
  * Returns a function that builds the event handlers for one word's button,
- * and functions through which the keyboard points at a word, or stops pointing, as the mouse does.
+ * functions through which the keyboard points at a word, or stops pointing, as the mouse does,
+ * and one through which the keyboard looks up from a word without pointing at it.
  * In a run of a script written without spaces, each character can begin a word, so the hit starts at the character under the pointer;
  * and moving the mouse to another character of the run restarts the wait for a hover.
  * Enter or Space on a focused word looks up from `cursorStart`, the offset in the text where the lookup cursor lies,
@@ -128,6 +130,11 @@ export function useWordGestures(
     latest.current.onWordPointed?.(hit, "keyboard");
     hover(hit);
   };
+  /** Looks up from a hit without pointing at it, as `MatchedLengthAt` describes. */
+  const lookUpMatchedLength = (hit: WordHit) => {
+    const answer = latest.current.onWordHover?.(hit);
+    return answer instanceof Promise ? answer : null;
+  };
   const endKeyboardPointing = () => {
     if (hovered.current?.input === "keyboard") cancelHover();
     latest.current.onWordPointed?.(null, "keyboard");
@@ -188,7 +195,12 @@ export function useWordGestures(
       reportClick(event, pointerHit(part, event.currentTarget, point, input));
     },
   });
-  return { handlersFor, pointWithKeyboard, endKeyboardPointing };
+  return {
+    handlersFor,
+    pointWithKeyboard,
+    endKeyboardPointing,
+    lookUpMatchedLength,
+  };
 }
 
 /** A word of clickable text, as `splitIntoWords` finds it. */

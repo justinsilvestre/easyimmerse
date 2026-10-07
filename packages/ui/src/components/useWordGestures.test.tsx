@@ -566,7 +566,7 @@ describe("useWordGestures", () => {
       expect(event.defaultPrevented).toBe(true);
     });
 
-    it("leaves Shift with an arrow to text selection", () => {
+    it("takes Shift with an arrow from the page's own shortcuts", () => {
       renderSentence();
       const event = new KeyboardEvent("keydown", {
         key: "ArrowRight",
@@ -575,7 +575,7 @@ describe("useWordGestures", () => {
         cancelable: true,
       });
       word("rufe").dispatchEvent(event);
-      expect(event.defaultPrevented).toBe(false);
+      expect(event.defaultPrevented).toBe(true);
     });
   });
 

@@ -1,25 +1,42 @@
 import { describe, expect, it } from "vitest";
 import { lineStepOfKey, textStepOfKey } from "./cursorKeys.ts";
 
-const press = (key: string, shiftKey = false) => ({
+const press = (
+  key: string,
+  modifiers: { shiftKey?: boolean; altKey?: boolean } = {},
+) => ({
   key,
   altKey: false,
   ctrlKey: false,
   metaKey: false,
-  shiftKey,
+  shiftKey: false,
+  ...modifiers,
 });
 
 describe("textStepOfKey", () => {
-  it("moves forward on the right arrow", () => {
-    expect(textStepOfKey(press("ArrowRight"))).toBe("forward");
+  it("moves a word forward on the right arrow", () => {
+    expect(textStepOfKey(press("ArrowRight"))).toEqual({
+      direction: "forward",
+      unit: "word",
+    });
   });
 
-  it("moves backward on the left arrow", () => {
-    expect(textStepOfKey(press("ArrowLeft"))).toBe("backward");
+  it("moves a word backward on the left arrow", () => {
+    expect(textStepOfKey(press("ArrowLeft"))).toEqual({
+      direction: "backward",
+      unit: "word",
+    });
   });
 
-  it("leaves Shift with an arrow to text selection", () => {
-    expect(textStepOfKey(press("ArrowRight", true))).toBeNull();
+  it("moves a character forward on Shift with the right arrow", () => {
+    expect(textStepOfKey(press("ArrowRight", { shiftKey: true }))).toEqual({
+      direction: "forward",
+      unit: "character",
+    });
+  });
+
+  it("leaves Alt with an arrow to the system", () => {
+    expect(textStepOfKey(press("ArrowRight", { altKey: true }))).toBeNull();
   });
 
   it("ignores the up arrow", () => {

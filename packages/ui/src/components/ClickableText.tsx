@@ -88,7 +88,8 @@ export function stripMarkup(text: string): string {
  * a word written with spaces whole, and in a run of a script written without spaces the character it lies on,
  * which grows to the text the lookup from it matched once that lookup answers.
  * The highlight stays while the mouse moves within it, and moves when the mouse moves elsewhere.
- * Left and Right move the cursor from the focused word along the text, as `useKeyboardCursor` describes.
+ * Left and Right move the cursor from the focused word along the text by a word, and with Shift by a character of a run,
+ * as `useKeyboardCursor` describes.
  * The word the pop-up shows is highlighted the same way while there is no cursor, so that only one word is ever highlighted.
  * The words that flashcards were made from are underlined, and in a run only their characters.
  * The words are marked as lookup triggers, so that pressing one leaves an open dictionary pop-up open for it.
@@ -117,7 +118,7 @@ export function ClickableText({
   const cursorStart = cursor?.start ?? null;
   const pointer = useWordGestures(textCursor.gestures, cursorStart);
   const parts = splitIntoWords(text);
-  const keyboard = useKeyboardCursor(parts, cursorStart, pointer);
+  const keyboard = useKeyboardCursor(parts, cursor, pointer);
   const highlighted = highlightOf(cursor);
   return (
     // Positioned, so that the announcement region below, which is positioned off screen, stays inside this text
@@ -139,7 +140,9 @@ export function ClickableText({
             type="button"
             // The highlight splits a run into pieces, which must not split its name.
             aria-label={part.isUnspaced ? part.text : undefined}
-            aria-keyshortcuts="ArrowLeft ArrowRight"
+            aria-keyshortcuts={
+              part.isUnspaced ? runKeyShortcuts : wordKeyShortcuts
+            }
             aria-haspopup="dialog"
             aria-expanded={isActive || undefined}
             aria-controls={isActive ? activeWord?.popupId : undefined}
@@ -222,6 +225,10 @@ function announcementOf(
   );
   return `Looks up from ${character}`;
 }
+
+const wordKeyShortcuts = "ArrowLeft ArrowRight";
+
+const runKeyShortcuts = "ArrowLeft ArrowRight Shift+ArrowLeft Shift+ArrowRight";
 
 const noGestures: WordGestures = {};
 
