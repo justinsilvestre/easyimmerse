@@ -312,13 +312,15 @@ function ClipPlayback({ clip }: { clip: AudioClip }) {
   const playClip = usePlayClip(clip);
   return (
     <span className="flex items-center gap-1.5">
+      {/* Named for the clip, so that screen readers tell it apart from the player's own Play. */}
       <button
         type="button"
+        aria-label="Play the clip"
         onClick={playClip}
         className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium text-accent-fg pointer-coarse:py-2 hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent"
       >
         <Play className="size-3.5" aria-hidden />
-        Play clip
+        Play
       </button>
       <span title="Length of the clip">
         {formatClipDuration(clip.end_ms - clip.start_ms)}

@@ -94,10 +94,17 @@ describe("MediaFields without a waveform", () => {
   });
 });
 
-describe("MediaFields' Play clip button", () => {
+describe("MediaFields' Play button", () => {
+  it("reads Play", () => {
+    renderClip();
+    expect(
+      screen.getByRole("button", { name: "Play the clip" }).textContent,
+    ).toBe("Play");
+  });
+
   it("seeks to the clip's start and then plays", () => {
     const { playerCalls, press } = renderClip();
-    press("Play clip");
+    press("Play the clip");
     expect(playerCalls()).toEqual([
       { type: "seekPlayer", seconds: 1.75 },
       { type: "playPlayer" },
@@ -106,12 +113,12 @@ describe("MediaFields' Play clip button", () => {
 
   it("is offered beside the waveform", () => {
     renderClip({ waveform: { peaks: [0.1, 0.5, 0.9], durationMs: 24_000 } });
-    expect(screen.queryByRole("button", { name: "Play clip" })).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Play the clip" })).not.toBeNull();
   });
 
   it("pauses the player once playback reaches the clip's end", () => {
     const { playerCalls, press, reportPlayer } = renderClip();
-    press("Play clip");
+    press("Play the clip");
     reportPlayer(true, 2.5);
     reportPlayer(true, 3.1);
     expect(playerCalls().map((call) => call.type)).toEqual([
@@ -123,7 +130,7 @@ describe("MediaFields' Play clip button", () => {
 
   it("leaves playback alone once the user has moved away from the clip", () => {
     const { playerCalls, press, reportPlayer } = renderClip();
-    press("Play clip");
+    press("Play the clip");
     reportPlayer(true, 2.5);
     reportPlayer(true, 12);
     expect(playerCalls().map((call) => call.type)).toEqual([
