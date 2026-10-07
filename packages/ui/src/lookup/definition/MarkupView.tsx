@@ -3,20 +3,11 @@ import { dictionaryElementId } from "../stylesheet/dictionaryScope.ts";
 import { ContentLink, SoundControl } from "./ContentLink.tsx";
 import { ContentText } from "./ContentText.tsx";
 import { useDefinitionContext } from "./definitionContext.ts";
-import { htmlRule } from "./htmlRule.ts";
 import { MarkupImage } from "./MarkupImage.tsx";
-import {
-  drop,
-  droppedTags,
-  type MarkupLanguage,
-  type MarkupRule,
-} from "./markupRule.ts";
-import { pangoRule } from "./pangoRule.ts";
+import type { MarkupLanguage, MarkupRule } from "./markupRule.ts";
+import { markupRuleFor } from "./markupRuleFor.ts";
 import { parseMarkup } from "./parseMarkup.ts";
 import { RichElement, type RichKind } from "./RichElement.tsx";
-import { xdxfRule } from "./xdxfRule.ts";
-
-const rules = { html: htmlRule, pango: pangoRule, xdxf: xdxfRule };
 
 /** Kinds that start a new line, so that a line break in the text beside them would add an empty line. */
 const blockKinds = new Set<RichKind>([
@@ -128,7 +119,7 @@ function MarkupNode({
   }
   if (node.nodeType !== Node.ELEMENT_NODE) return null;
   const element = node as Element;
-  const rule = ruleFor(element, language);
+  const rule = markupRuleFor(element, language);
   const children = (
     <MarkupNodes
       nodes={childNodes(element, rule)}
@@ -167,17 +158,12 @@ function MarkupNode({
   }
 }
 
-function ruleFor(element: Element, language: MarkupLanguage): MarkupRule {
-  const tag = element.localName.toLowerCase();
-  return droppedTags.has(tag) ? drop : rules[language](element, tag);
-}
-
 /** Whether a node is only whitespace beside an element that is dropped or starts its own line, where it would show as an empty line. */
 function isSpacingBesideBlock(node: Node, language: MarkupLanguage): boolean {
   if (node.textContent?.trim()) return false;
   return [node.previousSibling, node.nextSibling].some((sibling) => {
     if (sibling?.nodeType !== Node.ELEMENT_NODE) return false;
-    const rule = ruleFor(sibling as Element, language);
+    const rule = markupRuleFor(sibling as Element, language);
     return (
       rule.action === "drop" ||
       (rule.action === "element" && blockKinds.has(rule.kind))
