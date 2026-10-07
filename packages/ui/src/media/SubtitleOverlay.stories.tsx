@@ -21,7 +21,11 @@ const meta = {
         data-theme="dark"
         className="@container relative flex h-80 w-3xl max-w-full flex-col justify-end bg-linear-to-br from-sky-800 via-slate-500 to-amber-200"
       >
-        <SubtitleBand placement="overlay" appearance={args.appearance}>
+        <SubtitleBand
+          placement="overlay"
+          appearance={args.appearance}
+          controlsHeight={0}
+        >
           <Story />
         </SubtitleBand>
       </div>

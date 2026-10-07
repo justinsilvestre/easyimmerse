@@ -168,6 +168,24 @@ describe("MediaView", () => {
     expect(areControlsFolded()).toBe(true);
   });
 
+  it("keeps the controls out of the subtitle band", () => {
+    renderView();
+    expect(
+      screen
+        .getByRole("button", { name: /\(Space\)$/ })
+        .closest('[data-testid="subtitle-band"]'),
+    ).toBeNull();
+  });
+
+  it("keeps the controls on the dark stage", () => {
+    renderView();
+    expect(
+      screen
+        .getByRole("button", { name: /\(Space\)$/ })
+        .closest('[data-theme="dark"]'),
+    ).not.toBeNull();
+  });
+
   it("shows no subtitle over the video while no cue is shown", () => {
     renderView({ shownCue: null });
     expect(screen.queryByRole("button", { name: "Hund" })).toBeNull();
