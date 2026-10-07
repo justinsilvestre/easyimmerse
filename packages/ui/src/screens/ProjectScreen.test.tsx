@@ -1,7 +1,7 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
 import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
-import type { MediaFile } from "@easyimmerse/types";
+import type { MediaFile, MediaSourceJob } from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -179,7 +179,11 @@ describe("ProjectScreen", () => {
     expect(screen.queryByRole("button", { name: "Add from URL" })).toBeNull();
   });
 
-  it("adds media from a URL through a media-source plugin and opens it once the fetch is done", async () => {
+  /**
+   * Adds media from a URL through a fake media-source plugin whose fetch ends as
+   * `finished` says, and waits for the media file to open.
+   */
+  async function addMediaFromUrl(finished: Partial<MediaSourceJob> = {}) {
     const job = {
       ...exampleRunningJob,
       id: "j1",
@@ -200,11 +204,12 @@ describe("ProjectScreen", () => {
           ...job,
           status: "done",
           media_file: fixtureMediaFiles.media_files[0],
+          ...finished,
         },
       },
       directPlaybackRoutes,
     );
-    const { store } = renderWithAppStore(
+    const { store, effects } = renderWithAppStore(
       <ProjectScreen
         projectId="p1"
         onBack={() => undefined}
@@ -224,6 +229,11 @@ describe("ProjectScreen", () => {
     await vi.waitFor(() =>
       expect(selectCurrentMediaFileId(store.getState())).toBe("m1"),
     );
+    return { client, effects };
+  }
+
+  it("adds media from a URL through a media-source plugin and opens it once the fetch is done", async () => {
+    const { client } = await addMediaFromUrl();
     const request = client.requests.find(
       ({ path }) => path === "/projects/p1/media/from-source",
     );
@@ -235,6 +245,19 @@ describe("ProjectScreen", () => {
         subtitles: ["en"],
       },
     });
+  });
+
+  it("names the chosen subtitles that a fetch from a URL did not add", async () => {
+    const { effects } = await addMediaFromUrl({
+      skipped_subtitles: [{ id: "en", reason: "the plugin did not fetch it" }],
+    });
+    expect(
+      effects.calls.flatMap((call) =>
+        call.type === "showNotification" ? [call.message] : [],
+      ),
+    ).toEqual([
+      "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+    ]);
   });
 
   it("shows the fetch's progress while it runs", async () => {

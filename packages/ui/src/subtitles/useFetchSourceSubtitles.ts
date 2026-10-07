@@ -5,11 +5,13 @@ import {
 } from "@easyimmerse/backend";
 import type { MediaFile } from "@easyimmerse/types";
 import { useState } from "react";
+import { skippedSubtitlesMessage } from "../projects/skippedSubtitlesMessage.ts";
 
 /**
  * The dialog for fetching more subtitles from a fetched media file's source: whether it
  * shows, the tracks the source offers once asked, and the fetch. A media file that no
- * plugin fetched has no source, so the dialog cannot open for it.
+ * plugin fetched has no source, so the dialog cannot open for it. When a chosen track is
+ * not added, the dialog stays open and says why.
  */
 export function useFetchSourceSubtitles(
   projectId: string,
@@ -42,7 +44,14 @@ export function useFetchSourceSubtitles(
       setError(null);
       fetchSubtitles({ ...args, subtitles })
         .unwrap()
-        .then(() => setOpen(false))
+        .then(({ skipped }) => {
+          const message = skippedSubtitlesMessage(
+            skipped,
+            listed.data?.subtitles ?? [],
+          );
+          if (message === null) setOpen(false);
+          else setError(message);
+        })
         .catch((failure: BackendError) =>
           setError(failure.message ?? "The subtitles could not be fetched."),
         );

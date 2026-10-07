@@ -25,6 +25,7 @@ import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
 import { MediaSection } from "../projects/MediaSection.tsx";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
 import { ProjectView } from "../projects/ProjectView.tsx";
+import { skippedSubtitlesMessage } from "../projects/skippedSubtitlesMessage.ts";
 
 /**
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
@@ -135,7 +136,8 @@ const noLookup: MediaLookup = {
 /**
  * The dialog for adding media from a URL: whether it shows, what the plugin found at the
  * typed locator, and the fetch it started, which the server runs as a job that is polled
- * while it runs. A fetched media file opens at once, as a picked file does. Closing the
+ * while it runs. A fetched media file opens at once, as a picked file does, with a
+ * notification naming any chosen subtitle tracks that were not added. Closing the
  * dialog stops watching the fetch; the server finishes it anyway.
  */
 function useAddMediaFromUrl(projectId: string) {
@@ -152,14 +154,22 @@ function useAddMediaFromUrl(projectId: string) {
     { pollingInterval: JOB_POLLING_INTERVAL_MS },
   );
   const watched = job?.id === jobId ? job : null;
-  const addedId =
-    watched?.status === "done" ? (watched.media_file?.id ?? null) : null;
+  const isDone = watched?.status === "done";
+  const addedId = isDone ? (watched.media_file?.id ?? null) : null;
+  const skippedMessage = isDone
+    ? skippedSubtitlesMessage(
+        watched.skipped_subtitles,
+        found.description?.subtitles ?? [],
+      )
+    : null;
   useEffect(() => {
     if (addedId === null) return;
     setOpen(false);
     setJobId(null);
     dispatch(actions.mediaFileAdded(addedId));
-  }, [addedId, dispatch]);
+    if (skippedMessage !== null)
+      dispatch(actions.notificationRequested(skippedMessage));
+  }, [addedId, skippedMessage, dispatch]);
   return {
     isOpen,
     lookup: { ...found, isLooking },

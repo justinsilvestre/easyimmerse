@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use easyimmerse_core::media_file::MediaFile;
 use easyimmerse_core::project::ProjectId;
-use easyimmerse_core::providers::media_source::{MediaLocator, ProgressEvent};
+use easyimmerse_core::providers::media_source::{MediaLocator, ProgressEvent, SkippedSubtitle};
 use easyimmerse_plugins::{HostEvent, LogLevel};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -78,6 +78,8 @@ pub struct MediaSourceJob {
     pub log: Vec<MediaSourceLogLine>,
     /// The added media file, once the job is done.
     pub media_file: Option<MediaFile>,
+    /// The subtitle tracks asked for that were not added, once the job is done.
+    pub skipped_subtitles: Vec<SkippedSubtitle>,
     /// Why the job failed, once it has.
     pub error: Option<ApiError>,
     /// Milliseconds since the Unix epoch.
@@ -96,6 +98,7 @@ impl MediaSourceJob {
             progress: None,
             log: Vec::new(),
             media_file: None,
+            skipped_subtitles: Vec::new(),
             error: None,
             started_at_ms: now_ms(),
             finished_at_ms: None,
@@ -159,7 +162,17 @@ impl MediaSourceJob {
         }
     }
 
-    pub fn finish_with(&mut self, media_file: MediaFile) {
+    pub fn finish_with(&mut self, media_file: MediaFile, skipped_subtitles: Vec<SkippedSubtitle>) {
+        for skipped in &skipped_subtitles {
+            self.push_line(
+                MediaSourceLogLevel::Warn,
+                format!(
+                    "the subtitles {:?} were not added: {}",
+                    skipped.id, skipped.reason
+                ),
+            );
+        }
+        self.skipped_subtitles = skipped_subtitles;
         self.status = MediaSourceJobStatus::Done;
         self.media_file = Some(media_file);
         self.finished_at_ms = Some(now_ms());
@@ -348,6 +361,36 @@ mod tests {
             message: "careful".to_string(),
         }));
         assert_eq!(job.log[0].level, MediaSourceLogLevel::Warn);
+    }
+
+    fn media_file() -> MediaFile {
+        MediaFile {
+            id: easyimmerse_core::media_file::MediaFileId("m".to_string()),
+            project_id: ProjectId("p".to_string()),
+            name: "media.mp4".to_string(),
+            source: easyimmerse_core::media_file::MediaFileSource::Path {
+                path: "/media/media.mp4".to_string(),
+            },
+            origin: None,
+            created_at_ms: 0,
+            track_selection_json: None,
+        }
+    }
+
+    #[test]
+    fn logs_a_skipped_subtitle_track_as_a_warning() {
+        let mut job = job();
+        job.finish_with(
+            media_file(),
+            vec![SkippedSubtitle {
+                id: "en".to_string(),
+                reason: "the plugin did not fetch it".to_string(),
+            }],
+        );
+        assert_eq!(
+            job.log[0].message,
+            "the subtitles \"en\" were not added: the plugin did not fetch it"
+        );
     }
 
     #[test]

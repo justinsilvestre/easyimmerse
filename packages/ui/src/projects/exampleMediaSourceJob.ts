@@ -49,6 +49,7 @@ export const exampleRunningJob: MediaSourceJob = {
     ),
   ],
   media_file: null,
+  skipped_subtitles: [],
   error: null,
   started_at_ms: startedAtMs,
   finished_at_ms: null,

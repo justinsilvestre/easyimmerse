@@ -9,18 +9,16 @@ use axum::http::StatusCode;
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource, MediaOrigin};
 use easyimmerse_core::project::{ProjectId, ProjectSettings};
 use easyimmerse_core::providers::media_source::{
-    MediaDescription, MediaLocator, ResolvedMedia, ResolvedSubtitle,
+    MediaDescription, MediaLocator, ResolvedMedia, SkippedSubtitle,
 };
-use easyimmerse_core::subtitle_track::{SubtitleRole, SubtitleSelection};
-use easyimmerse_core::text_source::TextSource;
-use easyimmerse_core::timed_text::{detect_format, parse_timed_text};
+use easyimmerse_core::subtitle_track::SubtitleSelection;
 use easyimmerse_plugins::{PluginError, PluginErrorKind, PluginPackage};
-use easyimmerse_storage::NewSubtitleTrack;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
+use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles};
 use crate::media_source_jobs::{MediaSourceJob, MediaSourceJobId, output_dir_for};
 use crate::plugins::{describe_media, resolve_media};
 use crate::state::AppState;
@@ -289,18 +287,19 @@ async fn run_job(state: AppState, job: MediaSourceJob, fetch: Fetch) {
     let outcome = fetch_and_store(&state, &job, &fetch).await;
     let elapsed_ms = started.elapsed().as_millis() as u64;
     match outcome {
-        Ok(media_file) => {
+        Ok((media_file, skipped)) => {
             tracing::info!(
                 job = job.id.0,
                 plugin = job.plugin,
                 media_file = media_file.id.0,
                 name = media_file.name,
+                skipped_subtitles = skipped.len(),
                 elapsed_ms,
                 "the plugin fetched the media"
             );
             state
                 .media_source_jobs
-                .update(&job.id, |job| job.finish_with(media_file));
+                .update(&job.id, |job| job.finish_with(media_file, skipped));
         }
         Err(failure) => {
             tracing::warn!(
@@ -320,11 +319,13 @@ async fn run_job(state: AppState, job: MediaSourceJob, fetch: Fetch) {
     }
 }
 
+/// Fetches the media and adds it with its subtitle tracks, returning it with the tracks
+/// that were asked for but not added.
 async fn fetch_and_store(
     state: &AppState,
     job: &MediaSourceJob,
     fetch: &Fetch,
-) -> Result<MediaFile, ApiFailure> {
+) -> Result<(MediaFile, Vec<SkippedSubtitle>), ApiFailure> {
     let resolved = run_plugin(state, job, fetch).await?;
     let paths = std::iter::once(resolved.media_path.as_str()).chain(
         resolved
@@ -334,7 +335,8 @@ async fn fetch_and_store(
     );
     ensure_inside(&fetch.output_dir, paths)?;
     let name = media_name(&resolved);
-    let subtitles = read_subtitles(
+    let FetchedTracks { tracks, skipped } = read_fetched_subtitles(
+        &fetch.subtitle_ids,
         &resolved.subtitles,
         &fetch.settings,
         SubtitleSelection::default(),
@@ -354,14 +356,14 @@ async fn fetch_and_store(
             storage.set_media_file_origin(&media_file.id, &origin)?;
             media_file.origin = Some(origin);
             let mut selection = SubtitleSelection::default();
-            for (track, role) in subtitles {
+            for (track, role) in tracks {
                 let added = storage.add_subtitle_track(&media_file.id, &track)?;
                 if let Some(role) = role {
                     selection = selection.with_role(role, added.id);
                 }
             }
             storage.set_subtitle_selection(&media_file.id, &selection)?;
-            Ok(media_file)
+            Ok((media_file, skipped))
         })
         .await
 }
@@ -453,113 +455,9 @@ fn file_name(path: &FsPath) -> String {
         .unwrap_or_default()
 }
 
-/// Parses each subtitle file once, as adding a subtitle track by hand does, and gives the
-/// first file in each of the project's languages that language's role, unless `taken`
-/// already fills it. A file that cannot be read or parsed is left out with a warning.
-pub(crate) async fn read_subtitles(
-    subtitles: &[ResolvedSubtitle],
-    settings: &ProjectSettings,
-    taken: SubtitleSelection,
-) -> Vec<(NewSubtitleTrack, Option<SubtitleRole>)> {
-    let mut tracks = Vec::new();
-    let mut selection = taken;
-    for subtitle in subtitles {
-        let Some(track) = read_subtitle(subtitle).await else {
-            continue;
-        };
-        let role = role_for(subtitle.language.as_deref(), settings, &selection);
-        if let Some(role) = role {
-            selection = selection.with_role(role, placeholder_track_id());
-        }
-        tracks.push((track, role));
-    }
-    tracks
-}
-
-/// Stands in for the ids of the tracks that will be added, while roles are chosen.
-fn placeholder_track_id() -> easyimmerse_core::subtitle_track::SubtitleTrackId {
-    easyimmerse_core::subtitle_track::SubtitleTrackId(String::new())
-}
-
-async fn read_subtitle(subtitle: &ResolvedSubtitle) -> Option<NewSubtitleTrack> {
-    let text = match tokio::fs::read_to_string(&subtitle.path).await {
-        Ok(text) => text,
-        Err(error) => {
-            tracing::warn!("skipping the subtitles at {}: {error}", subtitle.path);
-            return None;
-        }
-    };
-    let format = detect_format(&text);
-    let parsed = match parse_timed_text(&text, Some(format)) {
-        Ok(parsed) => parsed,
-        Err(error) => {
-            tracing::warn!("skipping the subtitles at {}: {error}", subtitle.path);
-            return None;
-        }
-    };
-    Some(NewSubtitleTrack {
-        name: track_name(subtitle),
-        format,
-        source: TextSource::Path {
-            path: subtitle.path.clone(),
-        },
-        sample: parsed.cues.first().map(|cue| cue.text.clone()),
-    })
-}
-
-/// What the source calls the track, or its file name when the source gave no name.
-fn track_name(subtitle: &ResolvedSubtitle) -> String {
-    let name = subtitle.name.trim();
-    if name.is_empty() {
-        file_name(FsPath::new(&subtitle.path))
-    } else {
-        name.to_string()
-    }
-}
-
-/// The role a subtitle file in `language` takes: target when it is the first in the
-/// project's target language, translation when it is the first in the translation language.
-fn role_for(
-    language: Option<&str>,
-    settings: &ProjectSettings,
-    selection: &SubtitleSelection,
-) -> Option<SubtitleRole> {
-    let language = language?;
-    if selection.target_track_id.is_none() && same_language(language, &settings.target_language) {
-        Some(SubtitleRole::Target)
-    } else if selection.translation_track_id.is_none()
-        && same_language(language, &settings.translation_language)
-    {
-        Some(SubtitleRole::Translation)
-    } else {
-        None
-    }
-}
-
-/// Compares the primary subtags of two language tags, so that `ja-JP` matches `ja`.
-fn same_language(a: &str, b: &str) -> bool {
-    primary_subtag(a).eq_ignore_ascii_case(primary_subtag(b))
-}
-
-fn primary_subtag(tag: &str) -> &str {
-    tag.split(['-', '_']).next().unwrap_or(tag)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn settings() -> ProjectSettings {
-        ProjectSettings {
-            name: "Japanese".to_string(),
-            target_language: "ja".to_string(),
-            translation_language: "en".to_string(),
-            flashcard_fields: Vec::new(),
-            default_tags: Vec::new(),
-            tags_media_name: false,
-            fills_audio_with_tts: false,
-        }
-    }
 
     fn resolved(title: &str, media_path: &str) -> ResolvedMedia {
         ResolvedMedia {
@@ -587,39 +485,6 @@ mod tests {
     }
 
     #[test]
-    fn gives_the_target_role_to_the_target_language() {
-        let role = role_for(Some("ja-JP"), &settings(), &SubtitleSelection::default());
-        assert_eq!(role, Some(SubtitleRole::Target));
-    }
-
-    #[test]
-    fn gives_the_translation_role_to_the_translation_language() {
-        let role = role_for(Some("EN"), &settings(), &SubtitleSelection::default());
-        assert_eq!(role, Some(SubtitleRole::Translation));
-    }
-
-    #[test]
-    fn gives_no_role_to_another_language() {
-        let role = role_for(Some("fr"), &settings(), &SubtitleSelection::default());
-        assert_eq!(role, None);
-    }
-
-    #[test]
-    fn gives_no_role_to_a_second_file_in_the_target_language() {
-        let taken =
-            SubtitleSelection::default().with_role(SubtitleRole::Target, placeholder_track_id());
-        assert_eq!(role_for(Some("ja"), &settings(), &taken), None);
-    }
-
-    #[test]
-    fn gives_no_role_without_a_language() {
-        assert_eq!(
-            role_for(None, &settings(), &SubtitleSelection::default()),
-            None
-        );
-    }
-
-    #[test]
     fn refuses_a_media_path_outside_the_output_dir() {
         let output_dir = tempfile::tempdir().unwrap();
         let other = tempfile::tempdir().unwrap();
@@ -638,30 +503,5 @@ mod tests {
         let inside = inside.to_string_lossy();
         let result = ensure_inside(output_dir.path(), std::iter::once(inside.as_ref()));
         assert_eq!(result, Ok(()));
-    }
-
-    fn subtitle(name: &str, path: &str) -> ResolvedSubtitle {
-        ResolvedSubtitle {
-            id: "en".to_string(),
-            path: path.to_string(),
-            language: Some("en".to_string()),
-            name: name.to_string(),
-        }
-    }
-
-    #[test]
-    fn names_a_track_as_the_source_does() {
-        assert_eq!(
-            track_name(&subtitle("English", "/out/media.en.vtt")),
-            "English"
-        );
-    }
-
-    #[test]
-    fn names_a_track_after_its_file_when_the_source_gave_no_name() {
-        assert_eq!(
-            track_name(&subtitle(" ", "/out/media.en.vtt")),
-            "media.en.vtt"
-        );
     }
 }

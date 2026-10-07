@@ -2959,7 +2959,7 @@
         "tags": [
           "subtitles"
         ],
-        "summary": "Fetches the chosen subtitle tracks from the media file's source and adds them to the\nmedia file, beside the files fetched with it. A track in a project language whose role\nis still free takes that role. The request lasts as long as the fetch.",
+        "summary": "Fetches the chosen subtitle tracks from the media file's source and adds them to the\nmedia file, beside the files fetched with it. A track in a project language whose role\nis still free takes that role. A track that could not be fetched or read is left out and\nlisted as skipped. The request lasts as long as the fetch.",
         "operationId": "fetchSourceSubtitles",
         "parameters": [
           {
@@ -2993,11 +2993,11 @@
         },
         "responses": {
           "201": {
-            "description": "The media file's subtitle tracks, with the fetched ones added",
+            "description": "The media file's subtitle tracks, with the fetched ones added, and the ones that were skipped",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SubtitleTracksResponse"
+                  "$ref": "#/components/schemas/FetchSourceSubtitlesResponse"
                 }
               }
             }
@@ -4937,6 +4937,33 @@
           }
         }
       },
+      "FetchSourceSubtitlesResponse": {
+        "type": "object",
+        "required": [
+          "tracks",
+          "selection",
+          "skipped"
+        ],
+        "properties": {
+          "selection": {
+            "$ref": "#/components/schemas/SubtitleSelection"
+          },
+          "skipped": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedSubtitle"
+            },
+            "description": "The tracks asked for that were not added."
+          },
+          "tracks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubtitleTrack"
+            },
+            "description": "The media file's subtitle tracks, with the fetched ones added."
+          }
+        }
+      },
       "Flashcard": {
         "type": "object",
         "description": "A flashcard saved in a project.",
@@ -5634,6 +5661,7 @@
           "locator",
           "status",
           "log",
+          "skipped_subtitles",
           "started_at_ms"
         ],
         "properties": {
@@ -5696,6 +5724,13 @@
           },
           "project_id": {
             "$ref": "#/components/schemas/ProjectId"
+          },
+          "skipped_subtitles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedSubtitle"
+            },
+            "description": "The subtitle tracks asked for that were not added, once the job is done."
           },
           "started_at_ms": {
             "type": "integer",
@@ -6209,6 +6244,23 @@
           },
           "verb": {
             "$ref": "#/components/schemas/ContextWord"
+          }
+        }
+      },
+      "SkippedSubtitle": {
+        "type": "object",
+        "description": "A subtitle track that was asked for but not added to the media file, and why.",
+        "required": [
+          "id",
+          "reason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The id the source offered the track under."
+          },
+          "reason": {
+            "type": "string"
           }
         }
       },

@@ -8,6 +8,7 @@ import type {
   Document,
   DocumentFormat,
   EmbeddedSubtitleTracksResponse,
+  FetchSourceSubtitlesResponse,
   Flashcard,
   FlashcardDraft,
   ImportLocalDictionaryRequest,
@@ -395,7 +396,7 @@ export const backendApi = createApi({
     }),
     /** Fetches subtitle tracks from a fetched media file's source and adds them to it. */
     fetchSourceSubtitles: build.mutation<
-      SubtitleTracksResponse,
+      FetchSourceSubtitlesResponse,
       FetchSourceSubtitlesArgs
     >({
       query: ({ subtitles, ...args }) => ({

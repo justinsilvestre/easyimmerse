@@ -8,19 +8,20 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, MediaOrigin};
 use easyimmerse_core::project::ProjectId;
-use easyimmerse_core::providers::media_source::{AvailableSubtitle, ResolvedSubtitle};
-use easyimmerse_core::subtitle_track::SubtitleTracksResponse;
+use easyimmerse_core::providers::media_source::{
+    AvailableSubtitle, ResolvedSubtitle, SkippedSubtitle,
+};
+use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack};
 use easyimmerse_plugins::PluginPackage;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, internal};
+use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles};
 use crate::plugins::{describe_media, fetch_subtitles, fetched_item_dir};
 use crate::routes::media::load_media_file;
-use crate::routes::plugins::{
-    ensure_inside, media_dir, media_source_package, plugin_failure, read_subtitles,
-};
+use crate::routes::plugins::{ensure_inside, media_dir, media_source_package, plugin_failure};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -35,6 +36,16 @@ pub struct SourceSubtitlesResponse {
 pub struct FetchSourceSubtitlesRequest {
     /// The ids of the subtitle tracks to fetch, from `listSourceSubtitles`.
     pub subtitles: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct FetchSourceSubtitlesResponse {
+    /// The media file's subtitle tracks, with the fetched ones added.
+    pub tracks: Vec<SubtitleTrack>,
+    pub selection: SubtitleSelection,
+    /// The tracks asked for that were not added.
+    pub skipped: Vec<SkippedSubtitle>,
 }
 
 /// Lists the subtitle tracks the media file's source offers, by asking the plugin that
@@ -77,7 +88,8 @@ pub async fn list_source_subtitles(
 
 /// Fetches the chosen subtitle tracks from the media file's source and adds them to the
 /// media file, beside the files fetched with it. A track in a project language whose role
-/// is still free takes that role. The request lasts as long as the fetch.
+/// is still free takes that role. A track that could not be fetched or read is left out and
+/// listed as skipped. The request lasts as long as the fetch.
 #[utoipa::path(
     post,
     path = "/projects/{id}/media/{media_id}/source-subtitles",
@@ -90,7 +102,7 @@ pub async fn list_source_subtitles(
     ),
     request_body = FetchSourceSubtitlesRequest,
     responses(
-        (status = 201, description = "The media file's subtitle tracks, with the fetched ones added", body = SubtitleTracksResponse),
+        (status = 201, description = "The media file's subtitle tracks, with the fetched ones added, and the ones that were skipped", body = FetchSourceSubtitlesResponse),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such media file in the project, or its plugin is no longer installed", body = ApiError),
         (status = 409, description = "The media file was not fetched through a plugin (code `no_origin`)", body = ApiError),
@@ -103,7 +115,7 @@ pub async fn fetch_source_subtitles(
     State(state): State<AppState>,
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
     Json(request): Json<FetchSourceSubtitlesRequest>,
-) -> Result<(StatusCode, Json<SubtitleTracksResponse>), ApiFailure> {
+) -> Result<(StatusCode, Json<FetchSourceSubtitlesResponse>), ApiFailure> {
     let settings = {
         let project_id = project_id.clone();
         state
@@ -123,7 +135,7 @@ pub async fn fetch_source_subtitles(
                 output_dir.display()
             ))
         })?;
-    let fetched = run_plugin(package, origin, &output_dir, request.subtitles).await?;
+    let fetched = run_plugin(package, origin, &output_dir, request.subtitles.clone()).await?;
     ensure_inside(
         &output_dir,
         fetched.iter().map(|subtitle| subtitle.path.as_str()),
@@ -134,7 +146,8 @@ pub async fn fetch_source_subtitles(
             .with_storage(move |storage| storage.get_subtitle_selection(&media_id))
             .await?
     };
-    let tracks = read_subtitles(&fetched, &settings, taken.clone()).await;
+    let FetchedTracks { tracks, skipped } =
+        read_fetched_subtitles(&request.subtitles, &fetched, &settings, taken.clone()).await;
     let response = state
         .with_storage(move |storage| {
             let mut selection = taken;
@@ -145,9 +158,10 @@ pub async fn fetch_source_subtitles(
                 }
             }
             storage.set_subtitle_selection(&media_id, &selection)?;
-            Ok(SubtitleTracksResponse {
+            Ok(FetchSourceSubtitlesResponse {
                 tracks: storage.list_subtitle_tracks(&media_id)?,
                 selection,
+                skipped,
             })
         })
         .await?;

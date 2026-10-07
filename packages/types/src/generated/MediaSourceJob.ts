@@ -7,6 +7,7 @@ import type { MediaSourceJobStatus } from "./MediaSourceJobStatus";
 import type { MediaSourceLogLine } from "./MediaSourceLogLine";
 import type { ProgressEvent } from "./ProgressEvent";
 import type { ProjectId } from "./ProjectId";
+import type { SkippedSubtitle } from "./SkippedSubtitle";
 
 /**
  * A fetch through a media-source plugin, from its start to the media file it added or the
@@ -25,6 +26,10 @@ log: Array<MediaSourceLogLine>,
  * The added media file, once the job is done.
  */
 media_file: MediaFile | null, 
+/**
+ * The subtitle tracks asked for that were not added, once the job is done.
+ */
+skipped_subtitles: Array<SkippedSubtitle>, 
 /**
  * Why the job failed, once it has.
  */

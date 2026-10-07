@@ -3,6 +3,7 @@
 
 pub mod auth;
 pub mod config;
+mod fetched_subtitles;
 pub mod local_dictionary_files;
 pub mod local_path;
 pub mod local_table_file;

@@ -54,6 +54,15 @@ pub struct ResolvedSubtitle {
     pub name: String,
 }
 
+/// A subtitle track that was asked for but not added to the media file, and why.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct SkippedSubtitle {
+    /// The id the source offered the track under.
+    pub id: String,
+    pub reason: String,
+}
+
 /// Progress of a long-running provider operation, with `fraction` between 0 and 1.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]

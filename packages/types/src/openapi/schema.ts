@@ -552,7 +552,8 @@ export interface paths {
         /**
          * Fetches the chosen subtitle tracks from the media file's source and adds them to the
          *     media file, beside the files fetched with it. A track in a project language whose role
-         *     is still free takes that role. The request lasts as long as the fetch.
+         *     is still free takes that role. A track that could not be fetched or read is left out and
+         *     listed as skipped. The request lasts as long as the fetch.
          */
         post: operations["fetchSourceSubtitles"];
         delete?: never;
@@ -965,6 +966,13 @@ export interface components {
             /** @description The ids of the subtitle tracks to fetch, from `listSourceSubtitles`. */
             subtitles: string[];
         };
+        FetchSourceSubtitlesResponse: {
+            selection: components["schemas"]["SubtitleSelection"];
+            /** @description The tracks asked for that were not added. */
+            skipped: components["schemas"]["SkippedSubtitle"][];
+            /** @description The media file's subtitle tracks, with the fetched ones added. */
+            tracks: components["schemas"]["SubtitleTrack"][];
+        };
         /** @description A flashcard saved in a project. */
         Flashcard: {
             content: components["schemas"]["FlashcardContent"];
@@ -1193,6 +1201,8 @@ export interface components {
             plugin: string;
             progress?: components["schemas"]["ProgressEvent"] | null;
             project_id: components["schemas"]["ProjectId"];
+            /** @description The subtitle tracks asked for that were not added, once the job is done. */
+            skipped_subtitles: components["schemas"]["SkippedSubtitle"][];
             /**
              * Format: int64
              * @description Milliseconds since the Unix epoch.
@@ -1348,6 +1358,12 @@ export interface components {
         SeparatedVerb: {
             particle: components["schemas"]["ContextWord"];
             verb: components["schemas"]["ContextWord"];
+        };
+        /** @description A subtitle track that was asked for but not added to the media file, and why. */
+        SkippedSubtitle: {
+            /** @description The id the source offered the track under. */
+            id: string;
+            reason: string;
         };
         SourceSubtitlesResponse: {
             /** @description The subtitle tracks the source offers for the media file. */
@@ -3786,13 +3802,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The media file's subtitle tracks, with the fetched ones added */
+            /** @description The media file's subtitle tracks, with the fetched ones added, and the ones that were skipped */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubtitleTracksResponse"];
+                    "application/json": components["schemas"]["FetchSourceSubtitlesResponse"];
                 };
             };
             /** @description Missing or invalid token */
