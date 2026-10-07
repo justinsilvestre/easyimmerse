@@ -86,6 +86,8 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  * The subtitles sit in a box across the stage, right above the controls, with the lookup buttons over the box's right end.
  * Subtitles and controls form one band, which takes rows of its own under the picture when the stage has room for it there,
  * and otherwise lies over the picture's lower edge, so that a short, wide stage does not shrink the picture.
+ * Under the picture, the band follows it directly and the two are centred in the stage together,
+ * so that the eyes need not travel far from the picture to the subtitles.
  * When the side panel sits under the stage, the stage is only as tall as the picture and the band need, and the panel takes the rest.
  * The header, controls and lookup buttons show while playback is paused or the pointer moves over the picture,
  * and fold away otherwise, taking the pointer with them.
@@ -139,7 +141,7 @@ export function MediaView(props: MediaViewProps) {
               ref={layout.stageRef}
               data-theme="dark"
               className={clsx(
-                "@container relative flex min-h-0 flex-1 flex-col overflow-hidden bg-black",
+                "@container relative flex min-h-0 flex-1 flex-col justify-center overflow-hidden bg-black",
                 !showsChrome && "cursor-none",
               )}
               onPointerMove={onPointerMove}
@@ -149,7 +151,10 @@ export function MediaView(props: MediaViewProps) {
               {/* biome-ignore lint/a11y/useKeyWithClickEvents: see above */}
               <div
                 ref={layout.pictureRef}
-                className="flex min-h-0 w-full shrink grow items-center justify-center"
+                className={clsx(
+                  "flex min-h-0 w-full shrink items-center justify-center",
+                  layout.isPictureFillingStage && "grow",
+                )}
                 style={{ flexBasis: layout.pictureBasis }}
                 onClick={onStageClick}
               >
@@ -240,7 +245,8 @@ export function MediaView(props: MediaViewProps) {
 
 /**
  * Measures the stage, the picture's proportions and the band of subtitles and controls, and lays them out:
- * where the band goes, and how tall the picture and the stage would be with the picture as wide as the stage.
+ * where the band goes, whether the picture's box fills the stage's spare height,
+ * and how tall the picture and the stage would be with the picture as wide as the stage.
  * Those natural heights let the stage fit its content when the side panel sits under it.
  * They do not depend on where the band goes, so that the placement cannot change the measurements it was made from.
  */
@@ -253,11 +259,13 @@ function useStageLayout() {
   const aspectRatio = usePictureAspectRatio(pictureRef);
   const pictureHeight =
     aspectRatio === null ? null : pictureHeightAt(stage.width, aspectRatio);
+  const placement = subtitleBandPlacement(stage, aspectRatio, band.height);
   return {
     stageRef,
     pictureRef,
     bandRef,
-    placement: subtitleBandPlacement(stage, aspectRatio, band.height),
+    placement,
+    isPictureFillingStage: placement === "overlay" || pictureHeight === null,
     pictureBasis: pictureHeight ?? "auto",
     stageBasis: pictureHeight === null ? "auto" : pictureHeight + band.height,
   };

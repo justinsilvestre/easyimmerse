@@ -217,20 +217,20 @@ describe("MediaView subtitle box", () => {
     expect(subtitleBox().style.height).not.toBe(targetOnly);
   });
 
-  it("lies on a backdrop of the chosen appearance", () => {
-    renderView({
-      subtitleAppearance: { ...defaultSubtitleAppearance, backgroundOpacity: 0 },
-    });
-    expect(screen.getByTestId("subtitle-band").style.backgroundColor).toBe(
-      "rgb(0 0 0 / 0)",
-    );
+  it("lies on the controls' surface under the picture", () => {
+    renderView();
+    expect(
+      screen.getByTestId("subtitle-band").classList.contains("bg-surface"),
+    ).toBe(true);
   });
 
   it("draws no backdrop while the subtitles are hidden", () => {
     renderView({
       panels: { cues: false, waveform: false, areSubtitlesHidden: true },
     });
-    expect(screen.getByTestId("subtitle-band").style.backgroundColor).toBe("");
+    expect(
+      screen.getByTestId("subtitle-band").classList.contains("bg-surface"),
+    ).toBe(false);
   });
 
   it("is left out for a file without subtitles", () => {
