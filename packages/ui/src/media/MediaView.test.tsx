@@ -223,6 +223,40 @@ describe("MediaView", () => {
   });
 });
 
+describe("MediaView footer", () => {
+  const fullscreenPanels = { cues: false, waveform: false, isFullscreen: true };
+
+  const footer = () =>
+    screen.getByRole("button", { name: "Waveform" }).closest("footer");
+
+  it("stays off the stage outside fullscreen", () => {
+    renderView();
+    expect(footer()?.closest('[data-theme="dark"]')).toBeNull();
+  });
+
+  it("stays shown outside fullscreen while the controls fold away", () => {
+    renderView();
+    letPointerRest();
+    expect(footer()?.closest(".opacity-0")).toBeNull();
+  });
+
+  it("lies over the foot of the stage in fullscreen", () => {
+    renderView({ panels: fullscreenPanels });
+    expect(footer()?.closest('[data-theme="dark"]')).not.toBeNull();
+  });
+
+  it("folds away with the controls in fullscreen", () => {
+    renderView({ panels: fullscreenPanels });
+    letPointerRest();
+    expect(footer()?.closest(".opacity-0")).not.toBeNull();
+  });
+
+  it("shows with the controls in fullscreen", () => {
+    renderView({ panels: fullscreenPanels });
+    expect(footer()?.closest(".opacity-0")).toBeNull();
+  });
+});
+
 describe("MediaView subtitle box", () => {
   const subtitleBox = () => screen.getByTestId("subtitle-box");
 

@@ -81,7 +81,7 @@ const lookupSurfaceAttribute = "data-lookup-surface";
 /**
  * The screen for watching or listening to one media file.
  * The stage is dark in both themes, like a cinema, so that the bars laid over the picture stay readable;
- * the panels around it, the footer and the dictionary pop-up follow the app theme.
+ * the panels around it, the dictionary pop-up and, outside fullscreen, the footer follow the app theme.
  * The header lies over the top of the stage.
  * The controls sit at the bottom of the stage.
  * The subtitles sit in a box across the stage, in a band with the lookup buttons in its top-right corner.
@@ -96,7 +96,8 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  * so that looking words up with the mouse leaves the picture clear.
  * The controls keep their place while hidden, so neither the picture nor the subtitles move.
  * A click on the picture plays or pauses, and a double-click fills the screen or leaves it.
- * The toggles for the panels around the stage and for fullscreen sit in the app footer, which stays in fullscreen.
+ * The toggles for the panels around the stage and for fullscreen sit in the app footer.
+ * In fullscreen, the footer moves under the controls at the bottom of the stage and shows and hides with them.
  * On a phone with a notch or a home indicator, the screen keeps clear of them.
  * The panels around the stage come in as children, so that each can be wired to the store on its own.
  */
@@ -116,6 +117,11 @@ export function MediaView(props: MediaViewProps) {
     if (!isOverLookupSurface(event)) pointer.onPointerMove(event);
   };
   const layout = useStageLayout();
+  const footer = (
+    <AppFooter>
+      <PanelToggles panels={panels} callbacks={props.playerCallbacks} />
+    </AppFooter>
+  );
   return (
     <div
       ref={props.ref}
@@ -228,6 +234,7 @@ export function MediaView(props: MediaViewProps) {
                     panels={panels}
                     callbacks={props.playerCallbacks}
                   />
+                  {panels.isFullscreen && footer}
                 </Fading>
               </div>
             </div>
@@ -241,9 +248,7 @@ export function MediaView(props: MediaViewProps) {
           </aside>
         )}
       </div>
-      <AppFooter>
-        <PanelToggles panels={panels} callbacks={props.playerCallbacks} />
-      </AppFooter>
+      {!panels.isFullscreen && footer}
       {props.isSubtitleAppearanceOpen && (
         <SubtitleAppearanceDialog
           appearance={props.subtitleAppearance}
@@ -256,7 +261,8 @@ export function MediaView(props: MediaViewProps) {
 }
 
 /**
- * Measures the stage, the picture's proportions, the band of subtitles and the controls, and lays them out:
+ * Measures the stage, the picture's proportions, the band of subtitles and the controls, with the footer under them in fullscreen,
+ * and lays them out:
  * where the band goes, whether the picture's box fills the stage's spare height,
  * how much of the stage's foot is kept for the controls,
  * and how tall the picture and the stage would be with the picture as wide as the stage.
