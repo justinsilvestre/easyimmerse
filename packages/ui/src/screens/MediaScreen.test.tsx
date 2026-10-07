@@ -401,6 +401,53 @@ describe("MediaScreen", () => {
     });
   });
 
+  describe("after the first cue's end", () => {
+    /** Moves the player through the given times in turn, as playback or seeks would. */
+    function moveThrough(
+      store: ReturnType<typeof renderMediaScreen>["store"],
+      seconds: number[],
+    ) {
+      for (const at of seconds)
+        act(() => store.dispatch(actions.playerTimeChanged(at)));
+    }
+
+    const toggleSubtitlesPanel = () =>
+      fireEvent.click(screen.getByRole("button", { name: "Subtitles panel" }));
+
+    const activeCard = () =>
+      screen
+        .getByRole("list", { name: "Subtitles" })
+        .querySelector<HTMLElement>("[aria-current]");
+
+    const catOverVideo = () =>
+      within(screen.getByTestId("subtitle-box")).queryByRole("button", {
+        name: "cat",
+      });
+
+    it("keeps the cue over the video while playback carries on from it", async () => {
+      const { store } = renderMediaScreen();
+      await findSubtitles();
+      moveThrough(store, [1, 1.4, 1.6]);
+      expect(catOverVideo()).not.toBeNull();
+    });
+
+    it("shows no cue over the video after a seek into the gap after it", async () => {
+      const { store } = renderMediaScreen();
+      await findSubtitles();
+      moveThrough(store, [4.6, 1.6]);
+      expect(catOverVideo()).toBeNull();
+    });
+
+    it("marks the held cue's card active when the subtitles panel opens meanwhile", async () => {
+      const { store } = renderMediaScreen();
+      await findSubtitles();
+      toggleSubtitlesPanel();
+      moveThrough(store, [1, 1.4, 1.6]);
+      toggleSubtitlesPanel();
+      expect(activeCard()?.textContent).toContain("cat");
+    });
+  });
+
   it("asks the player to play when Play is clicked", () => {
     const { effects } = renderMediaScreen();
     fireEvent.click(screen.getByRole("button", { name: "Play (Space)" }));

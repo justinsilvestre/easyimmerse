@@ -21,8 +21,6 @@ import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 
 import type { SubtitleAppearance } from "./subtitleAppearance.ts";
-import { useShownCue } from "./useShownCue.ts";
-
 import { useStageClicks } from "./useStageClicks.ts";
 
 type MediaViewProps = {
@@ -36,6 +34,8 @@ type MediaViewProps = {
   tracks: SubtitleTrackChoices;
   cues: readonly Cue[];
   translationCues: readonly Cue[];
+  /** The cue the subtitles over the stage show. */
+  shownCue: Cue | null;
   /** The waveform strip under the stage, shown while the waveform panel is open. */
   waveform: ReactNode;
   panels: PlayerPanelsState;
@@ -83,8 +83,7 @@ const lookupSurfaceAttribute = "data-lookup-surface";
  * The panels around the stage come in as children, so that each can be wired to the store on its own.
  */
 export function MediaView(props: MediaViewProps) {
-  const { playback, cues, translationCues, panels } = props;
-  const activeCue = useShownCue(cues, playback.currentMs);
+  const { playback, cues, translationCues, shownCue, panels } = props;
   const pointer = usePointerActivity();
   const onStageClick = useStageClicks(
     props.playerCallbacks.onTogglePlay,
@@ -149,10 +148,10 @@ export function MediaView(props: MediaViewProps) {
                   {showsSubtitles && (
                     <div {...{ [lookupSurfaceAttribute]: "" }}>
                       <SubtitleOverlay
-                        targetCue={activeCue}
+                        targetCue={shownCue}
                         translationCue={
-                          activeCue
-                            ? findTranslationOf(activeCue, translationCues)
+                          shownCue
+                            ? findTranslationOf(shownCue, translationCues)
                             : null
                         }
                         display={shownDisplay(
@@ -162,8 +161,8 @@ export function MediaView(props: MediaViewProps) {
                         )}
                         appearance={props.subtitleAppearance}
                         flashcardWordRanges={
-                          activeCue
-                            ? props.flashcardWordRanges?.get(activeCue.index)
+                          shownCue
+                            ? props.flashcardWordRanges?.get(shownCue.index)
                             : undefined
                         }
                         activeWord={props.activeWord}

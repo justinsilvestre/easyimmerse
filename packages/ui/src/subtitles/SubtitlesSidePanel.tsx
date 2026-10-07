@@ -9,7 +9,6 @@ import type {
 } from "../media/cueWordGestures.ts";
 import { SubtitleTrackBar } from "../media/SubtitleTrackBar.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
-import { useShownCue } from "../media/useShownCue.ts";
 import type { useMediaSubtitles } from "./useMediaSubtitles.ts";
 
 /** The subtitles panel beside the stage: the track choice above one card per cue of the target-language track. */
@@ -17,7 +16,7 @@ export function SubtitlesSidePanel({
   subtitles,
   tracks,
   languages,
-  currentMs,
+  shownCue,
   flashcardCueIndexes,
   flashcardWordRanges,
   activeWord,
@@ -28,7 +27,8 @@ export function SubtitlesSidePanel({
   tracks: SubtitleTrackChoices;
   /** The project's target and translation languages, which name the track choices. */
   languages: { target: string; translation: string };
-  currentMs: number;
+  /** The cue the screen shows now, whose card is active. */
+  shownCue: Cue | null;
   flashcardCueIndexes: readonly number[];
   /** Where each cue's text holds the words that flashcards were made from, by cue index. */
   flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
@@ -39,7 +39,6 @@ export function SubtitlesSidePanel({
   onOpenFlashcardForCue?: (cueIndex: number) => void;
 }) {
   const dispatch = useAppDispatch();
-  const activeCue: Cue | null = useShownCue(subtitles.cues, currentMs);
   return (
     <>
       <SubtitleTrackBar
@@ -59,7 +58,7 @@ export function SubtitlesSidePanel({
       <CuePanel
         cues={subtitles.cues}
         translationCues={subtitles.translationCues}
-        activeCueIndex={activeCue?.index ?? null}
+        activeCueIndex={shownCue?.index ?? null}
         flashcardCueIndexes={flashcardCueIndexes}
         flashcardWordRanges={flashcardWordRanges}
         activeWord={activeWord}

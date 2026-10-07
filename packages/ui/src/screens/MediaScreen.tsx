@@ -64,6 +64,7 @@ export function MediaScreen({
   const durationMs = useMediaDurationMs(projectId, mediaFile);
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
+  // Found here alone and passed down, since it depends on the times observed before: a panel opened later shows the same cue.
   const shownCue = useShownCue(subtitles.cues, currentMs);
   const hasScreenshots = screenshotSource !== null;
   const flashcards = useMediaFlashcards(projectId, mediaFileId, hasScreenshots);
@@ -208,6 +209,7 @@ export function MediaScreen({
       tracks={tracks}
       cues={subtitles.cues}
       translationCues={subtitles.translationCues}
+      shownCue={shownCue}
       waveform={
         <PlayerWaveform
           projectId={projectId}
@@ -277,7 +279,7 @@ export function MediaScreen({
             subtitles={subtitles}
             tracks={tracks}
             languages={languages}
-            currentMs={currentMs}
+            shownCue={shownCue}
             flashcardCueIndexes={flashcards.cueIndexes}
             flashcardWordRanges={wordRanges}
             activeWord={lookup.activeWord}

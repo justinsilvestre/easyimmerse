@@ -202,6 +202,7 @@ const meta = {
     tracks,
     cues: exampleCues,
     translationCues: exampleTranslationCues,
+    shownCue: exampleCues[2] ?? null,
     waveform: waveform(),
     panels: { cues: true, waveform: false },
     subtitleDisplay: "both",
@@ -330,6 +331,7 @@ export const NoSubtitles: Story = {
   args: {
     cues: [],
     translationCues: [],
+    shownCue: null,
     waveform: waveform([]),
     tracks: {
       subtitles: [],
@@ -373,6 +375,7 @@ export const LongFile: Story = {
   args: {
     cues: longFileCues,
     translationCues: longFileTranslationCues,
+    shownCue: longFileCues[1] ?? null,
     playback: {
       isPlaying: false,
       currentMs: 6_200,

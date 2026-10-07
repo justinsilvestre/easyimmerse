@@ -1,3 +1,4 @@
+import type { Cue } from "@easyimmerse/types";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { doubleClickMs } from "../components/gestureTiming.ts";
@@ -36,9 +37,11 @@ function playerCallbacks(): PlayerCallbacks {
   };
 }
 
-/** Renders the view, and returns a function that renders it again at another playback time. */
+/** The cue of `exampleCues` spoken at 6.2 seconds, where the view's playback stands. */
+const dogCue = exampleCues[2] ?? null;
+
 function renderView(overrides: Partial<ViewProps> = {}) {
-  const view = (props: Partial<ViewProps>) => (
+  renderWithAppStore(
     <MediaView
       media={{ title: "Episode 1", projectName: "Alpha" }}
       stage={
@@ -62,6 +65,7 @@ function renderView(overrides: Partial<ViewProps> = {}) {
       }}
       cues={exampleCues}
       translationCues={exampleTranslationCues}
+      shownCue={dogCue}
       waveform={null}
       panels={{ cues: false, waveform: false }}
       subtitleDisplay="both"
@@ -73,22 +77,9 @@ function renderView(overrides: Partial<ViewProps> = {}) {
       wordGestures={{ onWordClick: ignore, onWordDoubleClick: ignore }}
       onLookup={ignore}
       onAddFlashcard={ignore}
-      {...props}
-    />
+      {...overrides}
+    />,
   );
-  const { rerender } = renderWithAppStore(view(overrides));
-  return (currentMs: number) =>
-    rerender(view({ ...overrides, playback: playingAt(currentMs) }));
-}
-
-function playingAt(currentMs: number): ViewProps["playback"] {
-  return {
-    isPlaying: true,
-    currentMs,
-    durationMs: 24_000,
-    volume: 1,
-    speed: 1,
-  };
 }
 
 const letPointerRest = () => act(() => vi.advanceTimersByTime(3000));
@@ -177,16 +168,8 @@ describe("MediaView", () => {
     expect(areControlsFolded()).toBe(true);
   });
 
-  it("keeps a subtitle over the video after its end while playback carries on from it", () => {
-    const playTo = renderView({ playback: playingAt(8_000) });
-    playTo(8_250);
-    playTo(8_400);
-    expect(subtitleWord()).toBeDefined();
-  });
-
-  it("shows no subtitle over the video after a seek into the gap after one", () => {
-    const seekTo = renderView({ playback: playingAt(1_000) });
-    seekTo(8_400);
+  it("shows no subtitle over the video while no cue is shown", () => {
+    renderView({ shownCue: null });
     expect(screen.queryByRole("button", { name: "Hund" })).toBeNull();
   });
 
@@ -215,23 +198,15 @@ describe("MediaView", () => {
 describe("MediaView subtitle box", () => {
   const subtitleBox = () => screen.getByTestId("subtitle-box");
 
-  const heightAt = (currentMs: number) => {
-    renderView({
-      playback: {
-        isPlaying: true,
-        currentMs,
-        durationMs: 24_000,
-        volume: 1,
-        speed: 1,
-      },
-    });
+  const heightWith = (shownCue: Cue | null) => {
+    renderView({ shownCue });
     const { height } = subtitleBox().style;
     cleanup();
     return height;
   };
 
   it("keeps its height from a cue of two lines to a cue of one", () => {
-    expect(heightAt(6_200)).toBe(heightAt(9_000));
+    expect(heightWith(dogCue)).toBe(heightWith(exampleCues[3] ?? null));
   });
 
   it("keeps less room when only the target language shows", () => {
