@@ -1,9 +1,14 @@
 /// Splits text into groups of consecutive non-blank lines. Line endings may be LF or CRLF.
 pub(crate) fn split_blocks(text: &str) -> Vec<Vec<&str>> {
+    split_blocks_at(text, |line| line.trim().is_empty())
+}
+
+/// Splits text into groups of lines, ending a group at each line `is_separator` accepts.
+pub(crate) fn split_blocks_at(text: &str, is_separator: fn(&str) -> bool) -> Vec<Vec<&str>> {
     let mut blocks = Vec::new();
     let mut current = Vec::new();
     for line in text.lines() {
-        if line.trim().is_empty() {
+        if is_separator(line) {
             flush_block(&mut blocks, &mut current);
         } else {
             current.push(line);
