@@ -27,6 +27,7 @@ export function exampleUnsavedCard(
   const draft: FlashcardDraft = {
     media_file_id: mediaFileId,
     cue_index: 1,
+    word_start: null,
     content: { ...exampleFlashcard, word },
     included_fields: ["word"],
   };

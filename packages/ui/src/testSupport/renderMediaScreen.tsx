@@ -23,6 +23,7 @@ export const savedFlashcard: Flashcard = {
   project_id: "p1",
   media_file_id: "m1",
   cue_index: null,
+  word_start: null,
   content: { ...exampleFlashcard, screenshot: { at_ms: 2400 } },
   included_fields: ["word", "audio_context", "screenshot"],
   created_at_ms: 0,

@@ -23,6 +23,7 @@ afterEach(() => {
 const draft: FlashcardDraft = {
   media_file_id: "m1",
   cue_index: 1,
+  word_start: null,
   content: { ...exampleFlashcard, word: "Hund" },
   included_fields: ["word"],
 };

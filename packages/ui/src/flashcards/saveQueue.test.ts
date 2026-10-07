@@ -10,6 +10,7 @@ const flashcard: Flashcard = {
   project_id: "p1",
   media_file_id: "m1",
   cue_index: null,
+  word_start: null,
   content: exampleFlashcard,
   included_fields: ["word"],
   created_at_ms: 0,

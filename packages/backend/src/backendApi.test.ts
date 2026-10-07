@@ -54,6 +54,7 @@ const savedFlashcard: Flashcard = {
   project_id: "p1",
   media_file_id: "m1",
   cue_index: null,
+  word_start: null,
   content: {
     word: "Hund",
     word_pronunciation: "",
@@ -74,6 +75,7 @@ const savedFlashcard: Flashcard = {
 const movedClipDraft: FlashcardDraft = {
   media_file_id: "m1",
   cue_index: null,
+  word_start: null,
   content: {
     ...savedFlashcard.content,
     audio_context: { start_ms: 500, end_ms: 2000 },

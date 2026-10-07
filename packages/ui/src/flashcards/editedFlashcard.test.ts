@@ -18,6 +18,7 @@ function createFlashcard(id: string): Flashcard {
     project_id: "p1",
     media_file_id: "m1",
     cue_index: null,
+    word_start: null,
     content: exampleFlashcard,
     included_fields: ["word"],
     created_at_ms: 0,
@@ -29,6 +30,7 @@ function createDraft(): FlashcardDraft {
   return {
     media_file_id: "m1",
     cue_index: 1,
+    word_start: null,
     content: { ...exampleFlashcard, word: "Katze" },
     included_fields: ["word", "tags"],
   };

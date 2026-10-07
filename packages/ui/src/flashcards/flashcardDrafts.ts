@@ -6,6 +6,7 @@ export function draftOfFlashcard(flashcard: Flashcard): FlashcardDraft {
   return {
     media_file_id: flashcard.media_file_id,
     cue_index: flashcard.cue_index,
+    word_start: flashcard.word_start,
     content: flashcard.content,
     included_fields: flashcard.included_fields,
   };
