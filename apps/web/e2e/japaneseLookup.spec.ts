@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 
@@ -27,6 +29,11 @@ const dictionaryForAnyLanguage = {
   media_count: 0,
 };
 
+/**
+ * Opens the media screen on the subtitles above, in a media file of its own.
+ * The tests share one server, and a file with the name of one already in the project opens that one instead,
+ * with the subtitles another test gave it; so each run of a test adds the media under a name of its own.
+ */
 async function openJapaneseSubtitles(page: Page) {
   await page.route("**/dictionaries", (route) =>
     route.request().method() === "GET"
@@ -41,7 +48,11 @@ async function openJapaneseSubtitles(page: Page) {
     .click();
   const mediaChooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Add media" }).first().click();
-  await (await mediaChooser).setFiles(mediaFixture);
+  await (await mediaChooser).setFiles({
+    name: `japanese-${randomUUID()}.wav`,
+    mimeType: "audio/wav",
+    buffer: readFileSync(mediaFixture),
+  });
   await expect(page.getByRole("region", { name: "Player" })).toBeVisible();
   const subtitlesChooser = page.waitForEvent("filechooser");
   // The empty panel's button is the one shown on every layout; on a phone the track bar's is folded away.
@@ -91,24 +102,83 @@ test("a later character of a Japanese run is looked up from that character", asy
   expect([query.get("text"), query.get("offset")]).toEqual(["見る", "7"]);
 });
 
-test("Right moves a keyboard lookup to a later character of a Japanese run", async ({
-  page,
-}, testInfo) => {
-  test.skip(
-    !!testInfo.project.use.hasTouch,
-    "Keyboard lookups need a keyboard.",
-  );
+/** The words a dictionary would find in 𠮷野家で映画を見る, by the text a lookup starts from. */
+const japaneseWords = ["𠮷野家", "で", "映画", "を", "見る"];
+
+/** Answers each lookup with the word the text starts with, so that the run's words are known. */
+async function answerLookupsWithWords(page: Page) {
+  await page.route("**/dictionaries/lookup**", (route) => {
+    const text = new URL(route.request().url()).searchParams.get("text") ?? "";
+    const word = japaneseWords.find((each) => text.startsWith(each));
+    const results = word
+      ? [
+          {
+            matchedText: word,
+            term: word,
+            reading: null,
+            inflectionChains: [],
+            definitions: [],
+            frequencies: [],
+            pronunciations: [],
+          },
+        ]
+      : [];
+    return route.fulfill({ json: { results, kanji: [], stylesheets: [] } });
+  });
+}
+
+/** Focuses the Japanese run and waits until the lookup from its first character has answered with 𠮷野家. */
+async function focusJapaneseRun(page: Page) {
+  await answerLookupsWithWords(page);
   await openJapaneseSubtitles(page);
   const run = page
     .getByRole("list", { name: "Subtitles" })
     .getByRole("button", { name: "𠮷野家で映画を見る" });
   await run.focus();
-  for (let step = 0; step < 7; step += 1)
-    await page.keyboard.press("ArrowRight");
+  await expect(run.locator("[data-hovered]")).toHaveText("𠮷野家");
+  return run;
+}
+
+/** Presses a key and resolves to the text and offset of the lookup it sends. */
+async function lookupAfterPressing(page: Page, key: string) {
   const lookup = page.waitForRequest((request) =>
     request.url().includes("/dictionaries/lookup"),
   );
-  await page.keyboard.press("Enter");
+  await page.keyboard.press(key);
   const query = new URL((await lookup).url()).searchParams;
-  expect([query.get("text"), query.get("offset")]).toEqual(["見る", "7"]);
+  return [query.get("text"), query.get("offset")];
+}
+
+test.describe("with the keyboard in a Japanese run", () => {
+  test.skip(({ hasTouch }) => hasTouch, "Keyboard lookups need a keyboard.");
+
+  test("Right moves the lookup past the characters the lookup matched", async ({
+    page,
+  }) => {
+    await focusJapaneseRun(page);
+    expect(await lookupAfterPressing(page, "ArrowRight")).toEqual([
+      "で映画を見る",
+      "3",
+    ]);
+  });
+
+  test("Shift+Right moves the lookup one character", async ({ page }) => {
+    await focusJapaneseRun(page);
+    expect(await lookupAfterPressing(page, "Shift+ArrowRight")).toEqual([
+      "野家で映画を見る",
+      "1",
+    ]);
+  });
+
+  test("Left moves the lookup back to the start of the word before it", async ({
+    page,
+  }) => {
+    const run = await focusJapaneseRun(page);
+    for (const word of ["で", "映画", "を"]) {
+      await page.keyboard.press("ArrowRight");
+      await expect(run.locator("[data-hovered]")).toHaveText(word);
+    }
+    await page.keyboard.press("ArrowLeft");
+    await expect(run.locator("[data-hovered]")).toHaveText("映画");
+  });
 });
