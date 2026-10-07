@@ -164,6 +164,12 @@ export function useFlashcardSaving(
       offScreen.cleanUpAfterDiscard(card);
       if (card.isChanged) offScreen.showClosed(card);
     },
+    /** Saves a new card that never opened in the editor, once its word's lookup answers, fails or has been waited for `saveLookupWaitMs`. */
+    saveUnopened: (card: EditedFlashcard) => {
+      if (isAwaitingLookup(card.stage))
+        offScreen.saveAfterLookup(card, saveLookupWaitMs);
+      else offScreen.save(card);
+    },
     rememberLookup: offScreen.rememberLookup,
     latestOf: offScreen.latestOf,
     remove: offScreen.remove,
