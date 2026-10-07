@@ -126,8 +126,7 @@ mod tests {
         let _ = sink.begin(DictionaryMetadata::new("Words", DictionaryFormatKind::Csv));
         let _ = sink.term_entry(TermEntry::new("Hund", Vec::new()));
         let _ = sink.term_entry(TermEntry::new("Katze", Vec::new()));
-        let entries = lock(&progress).entries;
-        entries
+        lock(&progress).entries
     }
 
     #[test]

@@ -44,8 +44,9 @@ async function openJapaneseSubtitles(page: Page) {
   await (await mediaChooser).setFiles(mediaFixture);
   await expect(page.getByRole("region", { name: "Player" })).toBeVisible();
   const subtitlesChooser = page.waitForEvent("filechooser");
+  // The empty panel's button is the one shown on every layout; on a phone the track bar's is folded away.
   await page
-    .getByRole("button", { name: "Add a subtitles file" })
+    .getByRole("button", { name: /^Add a (subtitles )?file$/ })
     .first()
     .click();
   await (await subtitlesChooser).setFiles({
