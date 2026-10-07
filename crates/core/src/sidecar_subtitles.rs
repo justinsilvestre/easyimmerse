@@ -1,6 +1,7 @@
 //! Subtitle files that sit beside a media file and share its name, such as `Show.ja.srt`
 //! beside `Show.mkv`, and which roles they take when they are added with it.
 
+use crate::language_code::is_same_language;
 use crate::subtitle_track::{SubtitleSelection, SubtitleTrackId};
 use crate::timed_text::TimedTextFormat;
 
@@ -47,6 +48,17 @@ pub fn select_sidecar_tracks(
             translation_track_id: None,
         };
     }
+    select_tracks_by_language(tracks, target_language, translation_language)
+}
+
+/// Gives each role to the one track whose language matches it, leaving a role unset when no
+/// track or several tracks match it. A three-letter code such as `jpn` matches its two-letter
+/// equivalent `ja`.
+pub fn select_tracks_by_language(
+    tracks: &[(SubtitleTrackId, Option<String>)],
+    target_language: &str,
+    translation_language: &str,
+) -> SubtitleSelection {
     SubtitleSelection {
         target_track_id: only_track_in(tracks, target_language),
         translation_track_id: only_track_in(tracks, translation_language),
@@ -115,14 +127,6 @@ fn only_track_in(
         (Some((track_id, _)), None) => Some(track_id.clone()),
         _ => None,
     }
-}
-
-fn is_same_language(left: &str, right: &str) -> bool {
-    primary_subtag(left).eq_ignore_ascii_case(primary_subtag(right))
-}
-
-fn primary_subtag(tag: &str) -> &str {
-    tag.split(['-', '_']).next().unwrap_or(tag)
 }
 
 #[cfg(test)]
@@ -290,6 +294,15 @@ mod tests {
             assert_eq!(
                 select_sidecar_tracks(&tracks, "ja", "en-US").translation_track_id,
                 id("a")
+            );
+        }
+
+        #[test]
+        fn makes_a_track_tagged_with_a_three_letter_code_the_target() {
+            let tracks = [track("a", Some("en")), track("b", Some("jpn"))];
+            assert_eq!(
+                select_sidecar_tracks(&tracks, "ja", "en").target_track_id,
+                id("b")
             );
         }
 

@@ -6,6 +6,7 @@ use tempfile::TempDir;
 
 use crate::support::{TestServer, ffmpeg_available, read_fixture, spawn_test_server};
 
+/// A Spanish-learning project whose translation language is English.
 const PROJECT: &str = "placeholder-1";
 
 /// A folder holding only `Episode.mkv`, whose English SubRip track matches `sample.srt`.
@@ -74,4 +75,19 @@ async fn the_embedded_track_has_the_cues_of_the_subtitles_file() {
         .await
         .json();
     assert_eq!(cues["cues"], expected["cues"]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn makes_the_embedded_track_in_the_translation_language_the_translation() {
+    if !ffmpeg_available() {
+        return;
+    }
+    let server = spawn_test_server(true).await;
+    let folder = media_folder();
+    let media_id = add_episode(&server, &folder).await;
+    let listed = list_tracks(&server, &media_id).await;
+    assert_eq!(
+        listed["selection"]["translation_track_id"],
+        listed["tracks"][0]["id"]
+    );
 }

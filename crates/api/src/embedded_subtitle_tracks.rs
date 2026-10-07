@@ -3,8 +3,9 @@
 use std::path::Path;
 use std::process::Stdio;
 
+use easyimmerse_core::found_subtitle_tracks::FoundTrack;
 use easyimmerse_core::media_file::MediaFile;
-use easyimmerse_core::subtitle_track::AddSubtitleTrackRequest;
+use easyimmerse_core::subtitle_track::{AddSubtitleTrackRequest, SubtitleTrackId};
 use easyimmerse_core::text_source::TextSource;
 use easyimmerse_core::timed_text::{TimedTextFormat, clean_converted_srt};
 use easyimmerse_media::{TrackInfo, TrackKind, text_subtitle_format};
@@ -21,17 +22,18 @@ use crate::routes::subtitles::store_subtitle_track;
 use crate::state::AppState;
 
 /// Converts each text subtitle track in the media file at `path` to SubRip and adds it as a
-/// track of the media file, without giving it a role. Tracks made of pictures, such as PGS
-/// tracks, are skipped, as is any track that ffmpeg cannot convert.
+/// track of the media file, returning the added tracks with their language tags. Tracks made
+/// of pictures, such as PGS tracks, are skipped, as is any track that ffmpeg cannot convert.
 pub async fn add_embedded_subtitle_tracks(
     state: &AppState,
     token: TokenKind,
     media_file: &MediaFile,
     path: &str,
-) -> Result<(), ApiFailure> {
+) -> Result<Vec<FoundTrack>, ApiFailure> {
     let container = probe_media(state, path).await?;
     let ffmpeg = locate_binary(BinaryName::Ffmpeg, &FfmpegPaths::default())
         .map_err(|_| conversion_unavailable())?;
+    let mut added = Vec::new();
     for (position, track) in container.tracks_of_kind(TrackKind::Subtitle).enumerate() {
         let Some(format) = text_subtitle_format(track) else {
             continue;
@@ -46,7 +48,9 @@ pub async fn add_embedded_subtitle_tracks(
                     format: Some(TimedTextFormat::Srt),
                     role: None,
                 };
-                add_track(state, token, media_file, request).await;
+                if let Some(track_id) = add_track(state, token, media_file, request).await {
+                    added.push((track_id, track.language.clone()));
+                }
             }
             Err(error) => {
                 tracing::warn!(
@@ -56,7 +60,7 @@ pub async fn add_embedded_subtitle_tracks(
             }
         }
     }
-    Ok(())
+    Ok(added)
 }
 
 async fn extract_srt(
@@ -107,10 +111,14 @@ async fn add_track(
     token: TokenKind,
     media_file: &MediaFile,
     request: AddSubtitleTrackRequest,
-) {
+) -> Option<SubtitleTrackId> {
     let name = request.name.clone();
-    if let Err(failure) = store_subtitle_track(state, token, media_file.id.clone(), request).await {
-        tracing::warn!("skipped {name:?}: {}", failure.error.message);
+    match store_subtitle_track(state, token, media_file.id.clone(), request).await {
+        Ok(track) => Some(track.id),
+        Err(failure) => {
+            tracing::warn!("skipped {name:?}: {}", failure.error.message);
+            None
+        }
     }
 }
 

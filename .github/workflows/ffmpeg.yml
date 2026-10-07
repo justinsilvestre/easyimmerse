@@ -52,6 +52,10 @@ jobs:
       - name: Check that the binaries link only system libraries
         run: sh scripts/ffmpeg-build/check-macos-links.sh out/*/ffmpeg out/*/ffprobe
 
+      # The runner is an Apple silicon Mac, so only the arm64 build can run here.
+      - name: Check that ffmpeg can extract text subtitles
+        run: sh scripts/ffmpeg-build/check-subtitle-extraction.sh out/aarch64-apple-darwin/ffmpeg
+
       - name: Show the build
         run: |
           out/aarch64-apple-darwin/ffmpeg -version
@@ -110,6 +114,9 @@ jobs:
 
       - name: Check that the binaries link only glibc
         run: sh scripts/ffmpeg-build/check-linux-links.sh "out/$TRIPLE/ffmpeg" "out/$TRIPLE/ffprobe"
+
+      - name: Check that ffmpeg can extract text subtitles
+        run: sh scripts/ffmpeg-build/check-subtitle-extraction.sh "out/$TRIPLE/ffmpeg"
 
       - name: Show the build
         run: |
@@ -183,6 +190,9 @@ jobs:
 
       - name: Check that the binaries import only system DLLs
         run: sh scripts/ffmpeg-build/check-windows-links.sh "out/$TRIPLE/ffmpeg.exe" "out/$TRIPLE/ffprobe.exe"
+
+      - name: Check that ffmpeg can extract text subtitles
+        run: sh scripts/ffmpeg-build/check-subtitle-extraction.sh "out/$TRIPLE/ffmpeg.exe"
 
       - name: Show the build
         run: |

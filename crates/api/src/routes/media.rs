@@ -12,9 +12,8 @@ use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
-use crate::embedded_subtitle_tracks::add_embedded_subtitle_tracks;
+use crate::found_subtitle_tracks::add_found_subtitle_tracks;
 use crate::local_path::ensure_local_file_exists;
-use crate::sidecar_subtitle_tracks::add_sidecar_subtitle_tracks;
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -93,28 +92,6 @@ pub async fn add_media_file(
         add_found_subtitle_tracks(&state, token, &media_file, &path).await;
     }
     Ok((StatusCode::CREATED, Json(media_file)))
-}
-
-/// Adds the subtitle tracks inside the media file, then the subtitle files beside it.
-/// A failure only skips the tracks it concerns, so it is logged rather than returned.
-async fn add_found_subtitle_tracks(
-    state: &AppState,
-    token: TokenKind,
-    media_file: &MediaFile,
-    path: &str,
-) {
-    if let Err(failure) = add_embedded_subtitle_tracks(state, token, media_file, path).await {
-        tracing::warn!(
-            "could not add the subtitles inside {path:?}: {}",
-            failure.error.message
-        );
-    }
-    if let Err(failure) = add_sidecar_subtitle_tracks(state, token, media_file, path).await {
-        tracing::warn!(
-            "could not add the subtitles beside {path:?}: {}",
-            failure.error.message
-        );
-    }
 }
 
 #[utoipa::path(
