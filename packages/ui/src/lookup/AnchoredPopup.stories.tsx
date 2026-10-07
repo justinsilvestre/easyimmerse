@@ -48,6 +48,46 @@ function PopupAtWord({
   );
 }
 
+const followedWords = [
+  { text: "der", top: "78%", left: "15%" },
+  { text: "Hund", top: "82%", left: "45%" },
+  { text: "fressen", top: "70%", left: "75%" },
+  { text: "Katze", top: "12%", left: "30%" },
+  { text: "schlafen", top: "20%", left: "65%" },
+];
+
+/** Several words, with the pop-up moving to the one the mouse rests on, as it follows words in subtitles. */
+function PopupFollowingWords() {
+  const [word, setWord] = useState<HTMLElement | null>(null);
+  return (
+    <div className="relative h-dvh">
+      {followedWords.map(({ text, top, left }) => (
+        <span
+          key={text}
+          style={{ top, left }}
+          onPointerEnter={(event) => setWord(event.currentTarget)}
+          className="absolute rounded-sm bg-accent-soft px-1"
+        >
+          {text}
+        </span>
+      ))}
+      {word && (
+        <AnchoredPopup anchor={word}>
+          <DictionaryPopup
+            state={{ kind: "found", term: "fressen", results: exampleResults }}
+            mode="word"
+            resolveMediaUrl={resolveExampleMediaUrl}
+            onSearch={fn()}
+            onCreateFlashcard={fn()}
+            onClose={() => setWord(null)}
+            onSetUpDictionary={fn()}
+          />
+        </AnchoredPopup>
+      )}
+    </div>
+  );
+}
+
 const meta = {
   title: "Lookup/AnchoredPopup",
   component: PopupAtWord,
@@ -69,3 +109,8 @@ export const Expanded: Story = { args: { initialSize: "expanded" } };
 
 /** Opened on its search field, with no word to stand at. */
 export const WithoutWord: Story = { args: { wordTop: null } };
+
+/** Following the mouse from word to word: it glides between words on the same side and changes sides at once. */
+export const FollowingWords: Story = {
+  render: () => <PopupFollowingWords />,
+};

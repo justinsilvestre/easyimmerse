@@ -67,7 +67,7 @@ export function DictionaryPopup({
       aria-label="Dictionary"
       data-size={size}
       style={{ width: popupWidth(size), ...popupHeight(size) }}
-      className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface text-fg shadow-xl"
+      className="flex flex-col overflow-hidden rounded-lg border border-line bg-surface text-fg shadow-xl transition-[width] duration-150 ease-out motion-reduce:transition-none"
     >
       <header className="flex items-center gap-2 border-b border-line px-3 py-2">
         <TermField
