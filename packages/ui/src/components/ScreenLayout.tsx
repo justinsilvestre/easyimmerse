@@ -57,7 +57,7 @@ export function ScreenLayout({
       >
         {children}
       </main>
-      <AppFooter contentClassName={clsx("mx-auto", width)} />
+      <AppFooter />
     </div>
   );
 }

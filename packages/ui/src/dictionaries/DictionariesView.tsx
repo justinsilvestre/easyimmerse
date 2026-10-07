@@ -25,6 +25,7 @@ import { useRemovalConfirmation } from "./useRemovalConfirmation.ts";
  */
 export function DictionariesView({
   dictionaries,
+  removingIds = [],
   isLoading = false,
   loadFailed = false,
   addingFile = null,
@@ -44,6 +45,8 @@ export function DictionariesView({
   onCancelTable,
 }: {
   dictionaries: readonly DictionaryItem[];
+  /** The dictionaries whose removal has been confirmed but is not yet done. */
+  removingIds?: readonly string[];
   /** Whether the list has yet to arrive. */
   isLoading?: boolean;
   /** Whether the list could not be loaded, as when no server is connected. */
@@ -149,6 +152,7 @@ export function DictionariesView({
       ) : (
         <DictionaryList
           dictionaries={dictionaries}
+          removingIds={removingIds}
           onToggle={onToggle}
           onMove={onMove}
           onRemove={removal.ask}
