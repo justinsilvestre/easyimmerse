@@ -1,13 +1,15 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { type AnchorRect, placeAtAnchor } from "./placeAtAnchor.ts";
-import { type PopupSize, popupLeft, popupWidth } from "./popupSize.ts";
+import { useViewportSize } from "../hooks/useViewportSize.ts";
+import { placeAtAnchor } from "./placeAtAnchor.ts";
+import { type PopupSize, popupWidthPx } from "./popupSize.ts";
 import { useAnchorRect } from "./useAnchorRect.ts";
-import { type PopupPlace, useIsGliding } from "./useIsGliding.ts";
+import { useIsGliding } from "./useIsGliding.ts";
 
 /**
- * Holds the dictionary pop-up at the word it shows, on whichever side of the word has more room,
- * and inside the viewport, following the word as it moves.
+ * Holds the dictionary pop-up at the word it shows, following the word as it moves, inside the window less a margin.
+ * Compact, it stands on whichever side of the word has more room, without covering the word;
+ * expanded, it spans the window's height and may cover the word. Either way it is centred on the word as far as the window allows.
  * It glides from one word to the next on the same side, and appears at once where it first opens or when it changes sides.
  * Without a word, as when it opens on its search field, it sits above the player's controls.
  * The wrapper lets the pointer through beside the pop-up, so that only the pop-up itself counts as inside.
@@ -25,7 +27,8 @@ export function AnchoredPopup({
   children: ReactNode;
 }) {
   const rect = useAnchorRect(anchor);
-  const place = rect && placeOf(rect, size);
+  const viewport = useViewportSize();
+  const place = rect && placeAtAnchor(rect, popupWidthPx(size), viewport, size);
   const isGliding = useIsGliding(place);
   const { side, ...style } = place ?? {};
   return (
@@ -49,18 +52,4 @@ export function AnchoredPopup({
       {children}
     </div>
   );
-}
-
-function placeOf(rect: AnchorRect, size: PopupSize): PopupPlace {
-  const { side, top, bottom, centerX } = placeAtAnchor(
-    rect,
-    window.innerHeight,
-  );
-  return {
-    side,
-    top,
-    bottom,
-    left: popupLeft(size, centerX),
-    width: popupWidth(size),
-  };
 }

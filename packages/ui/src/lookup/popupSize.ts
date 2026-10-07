@@ -15,15 +15,17 @@ export function popupWidth(size: PopupSize): string {
   return `min(${popupWidthRem[size]}rem, 100vw - 1rem)`;
 }
 
-/** The left edge, as CSS, of a pop-up centred on a point of the viewport, as far as the viewport allows. */
-export function popupLeft(size: PopupSize, centerX: number): string {
-  const halfWidth = popupWidthRem[size] / 2;
-  return `clamp(0.5rem, ${centerX}px - min(${halfWidth}rem, 50vw - 0.5rem), 100vw - ${popupWidth(size)} - 0.5rem)`;
+/** The pop-up's width at a size, in CSS pixels at the page's current text size, before a narrow screen narrows it. */
+export function popupWidthPx(size: PopupSize): number {
+  const remPx = Number.parseFloat(
+    getComputedStyle(document.documentElement).fontSize,
+  );
+  return popupWidthRem[size] * (remPx || 16);
 }
 
 /**
- * The pop-up's height as CSS properties, within the band it is placed in beside its word:
- * compact, as tall as its entries up to a limit; expanded, the whole band, so that expanding always shows.
+ * The pop-up's height as CSS properties, within the band it is placed in:
+ * compact, as tall as its entries up to a limit; expanded, the whole band, which spans the viewport's height.
  */
 export function popupHeight(size: PopupSize): {
   height?: string;

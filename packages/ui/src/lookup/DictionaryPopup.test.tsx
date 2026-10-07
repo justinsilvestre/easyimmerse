@@ -543,3 +543,58 @@ describe("DictionaryPopup links", () => {
     expect(searched).toEqual(["食う"]);
   });
 });
+
+/** The pop-up with its size and its being open held as the media screen holds them, starting expanded. */
+function ExpandedPopup({ onClose }: { onClose: () => void }) {
+  const [size, setSize] = useState<"compact" | "expanded">("expanded");
+  const [isOpen, setIsOpen] = useState(true);
+  if (!isOpen) return null;
+  return (
+    <DictionaryPopup
+      state={foundState}
+      mode="word"
+      size={size}
+      resolveMediaUrl={() => null}
+      onSearch={() => undefined}
+      onCreateFlashcard={() => undefined}
+      onToggleSize={() =>
+        setSize((current) => (current === "compact" ? "expanded" : "compact"))
+      }
+      onClose={() => {
+        onClose();
+        setIsOpen(false);
+      }}
+      onSetUpDictionary={() => undefined}
+    />
+  );
+}
+
+describe("DictionaryPopup on Escape while expanded", () => {
+  it("collapses to its compact size", () => {
+    render(<ExpandedPopup onClose={() => undefined} />);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(
+      screen.getByRole("dialog", { name: "Dictionary" }).dataset.size,
+    ).toBe("compact");
+  });
+
+  it("stays open", () => {
+    let closeCount = 0;
+    render(<ExpandedPopup onClose={() => (closeCount += 1)} />);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(closeCount).toBe(0);
+  });
+
+  it("keeps the key from the page's own shortcuts", () => {
+    render(<ExpandedPopup onClose={() => undefined} />);
+    expect(fireEvent.keyDown(document.body, { key: "Escape" })).toBe(false);
+  });
+
+  it("closes on a second Escape", () => {
+    let closeCount = 0;
+    render(<ExpandedPopup onClose={() => (closeCount += 1)} />);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(closeCount).toBe(1);
+  });
+});

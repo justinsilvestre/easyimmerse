@@ -8,10 +8,12 @@ import { isOutOfReach } from "../hooks/isOutOfReach.ts";
  * A click closes it only after the clicked control has acted, so that pressing Play while the pop-up is open plays.
  * Keys and clicks are ignored while the pop-up's screen lies beneath another or under a modal dialog.
  * When the pop-up closes, focus returns to where it was when the pop-up opened, if it was inside the pop-up.
+ * Given `onEscape`, Escape calls it instead of closing the pop-up, and the key goes no further, to the page's own shortcuts.
  */
 export function usePopupDismissal(
   popupRef: RefObject<HTMLElement | null>,
   onClose: () => void,
+  onEscape?: () => void,
 ): void {
   // Read before the first commit, since a search field's autoFocus moves focus during the commit.
   const openerRef = useRef<Element | null>(null);
@@ -19,6 +21,8 @@ export function usePopupDismissal(
   // The listeners stay attached while the pop-up is open, so that focus is restored only once, when it closes.
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const onEscapeRef = useRef(onEscape);
+  onEscapeRef.current = onEscape;
   useEffect(() => {
     const opener = openerRef.current;
     const isActive = () => !isOutOfReach(popupRef.current);
@@ -35,7 +39,11 @@ export function usePopupDismissal(
       if (isActive() && event === outsideClick) onCloseRef.current();
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isActive()) onCloseRef.current();
+      if (event.key !== "Escape" || !isActive()) return;
+      const onEscapeNow = onEscapeRef.current;
+      if (!onEscapeNow) return onCloseRef.current();
+      event.preventDefault();
+      onEscapeNow();
     };
     const covered = new MutationObserver(() => {
       if (popupRef.current?.closest("[inert]")) onCloseRef.current();

@@ -1,8 +1,16 @@
 import type { Cue } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Music } from "lucide-react";
+import {
+  type ComponentProps,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { fn } from "storybook/test";
 import { INITIAL_VIEWPORTS } from "storybook/viewport";
+import type { WordHit } from "../components/useWordGestures.ts";
 import {
   exampleWaveformWindows,
   windowStartsUpTo,
@@ -22,8 +30,10 @@ import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
 import type { LookupState } from "../lookup/lookupState.ts";
+import type { PopupSize } from "../lookup/popupSize.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { CuePanel } from "./CuePanel.tsx";
+import type { CueWordGestures } from "./cueWordGestures.ts";
 import {
   exampleCues,
   exampleFlashcardCueIndexes,
@@ -139,6 +149,10 @@ function waveform(cues: readonly Cue[] = exampleCues) {
 function subtitlesPanel(
   cues: readonly Cue[] = exampleCues,
   translationCues: readonly Cue[] = exampleTranslationCues,
+  wordGestures: CueWordGestures = {
+    onWordClick: fn(),
+    onWordDoubleClick: fn(),
+  },
 ) {
   return (
     <>
@@ -157,7 +171,7 @@ function subtitlesPanel(
         flashcardWordRanges={exampleFlashcardWordRanges}
         onSeek={fn()}
         onOpenFlashcardForCue={fn()}
-        wordGestures={{ onWordClick: fn(), onWordDoubleClick: fn() }}
+        wordGestures={wordGestures}
         onAddSubtitlesFile={fn()}
         onGenerateSubtitles={fn()}
       />
@@ -385,4 +399,73 @@ export const LongFile: Story = {
     },
     sidePanel: subtitlesPanel(longFileCues, longFileTranslationCues),
   },
+};
+
+/**
+ * The media screen with the pop-up standing at a word of the subtitles panel, at first the word "Hund" of the current cue,
+ * and then at whichever word is clicked there.
+ */
+function LookupInSubtitlesPanel({
+  view,
+  initialSize,
+}: {
+  view: ComponentProps<typeof MediaView>;
+  initialSize: PopupSize;
+}) {
+  const [word, setWord] = useState<HTMLElement | null>(null);
+  const [size, setSize] = useState(initialSize);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => setWord(currentHund(panelRef.current)), []);
+  const wordGestures = useMemo(
+    () => ({ onWordClick: ({ element }: WordHit) => setWord(element) }),
+    [],
+  );
+  return (
+    <MediaView
+      {...view}
+      sidePanel={
+        <div ref={panelRef} className="contents">
+          {subtitlesPanel(exampleCues, exampleTranslationCues, wordGestures)}
+        </div>
+      }
+      lookup={
+        word && (
+          <AnchoredPopup anchor={word} size={size}>
+            <DictionaryPopup
+              state={{ kind: "found", term: "Hund", results: exampleResults }}
+              mode="word"
+              size={size}
+              resolveMediaUrl={resolveExampleMediaUrl}
+              onSearch={fn()}
+              onCreateFlashcard={fn()}
+              onToggleSize={() =>
+                setSize(size === "compact" ? "expanded" : "compact")
+              }
+              onClose={() => setWord(null)}
+              onSetUpDictionary={fn()}
+            />
+          </AnchoredPopup>
+        )
+      }
+    />
+  );
+}
+
+function currentHund(panel: HTMLElement | null): HTMLElement | null {
+  const words = panel?.querySelectorAll<HTMLElement>("[data-clickable-word]");
+  return [...(words ?? [])].find((word) => word.textContent === "Hund") ?? null;
+}
+
+/** A word looked up in the subtitles panel, with the pop-up beside it over the panel. */
+export const LookingUpAWordInTheSubtitlesPanel: Story = {
+  render: (args) => (
+    <LookupInSubtitlesPanel view={args} initialSize="compact" />
+  ),
+};
+
+/** The same pop-up expanded, spanning the window's height over the word and the panel. */
+export const ExpandedLookupInTheSubtitlesPanel: Story = {
+  render: (args) => (
+    <LookupInSubtitlesPanel view={args} initialSize="expanded" />
+  ),
 };

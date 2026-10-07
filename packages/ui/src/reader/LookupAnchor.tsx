@@ -1,11 +1,12 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { type PopupSize, popupWidthRem } from "../lookup/popupSize.ts";
+import { useViewportSize } from "../hooks/useViewportSize.ts";
+import { placeAtAnchor } from "../lookup/placeAtAnchor.ts";
+import { type PopupSize, popupWidthPx } from "../lookup/popupSize.ts";
 import { useIsGliding } from "../lookup/useIsGliding.ts";
-import { popupPlacement } from "./popupPlacement.ts";
 
 /**
- * Holds the dictionary pop-up beside the word it is about.
+ * Holds the dictionary pop-up beside the word it is about, placed as `placeAtAnchor` describes.
  * It glides from one word to the next on the same side, and appears at once where it first opens or when it changes sides.
  * On a phone, or when it opens on its search field, it sits at the bottom of the window instead.
  * `onPointerInsideChange` reports the pointer entering and leaving the pop-up.
@@ -28,12 +29,10 @@ export function LookupAnchor({
     onPointerEnter: () => onPointerInsideChange?.(true),
     onPointerLeave: () => onPointerInsideChange?.(false),
   };
+  const viewport = useViewportSize();
   const place =
     isWide && wordRect
-      ? popupPlacement(wordRect, popupWidthPx(size), {
-          width: window.innerWidth,
-          height: window.innerHeight,
-        })
+      ? placeAtAnchor(wordRect, popupWidthPx(size), viewport, size)
       : null;
   const isGliding = useIsGliding(place);
   if (!place)
@@ -56,19 +55,11 @@ export function LookupAnchor({
         "pointer-events-none fixed z-30 flex flex-col font-sans *:pointer-events-auto",
         side === "above" ? "justify-end" : "justify-start",
         isGliding &&
-          "transition-[top,bottom,left] duration-150 ease-out motion-reduce:transition-none",
+          "transition-[top,bottom,left,width] duration-150 ease-out motion-reduce:transition-none",
       )}
       style={style}
     >
       {children}
     </div>
   );
-}
-
-/** The width of the dictionary pop-up at a size, in CSS pixels at the page's current text size, which sets where it can be centred. */
-function popupWidthPx(size: PopupSize): number {
-  const remPx = Number.parseFloat(
-    getComputedStyle(document.documentElement).fontSize,
-  );
-  return popupWidthRem[size] * (remPx || 16);
 }

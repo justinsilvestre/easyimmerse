@@ -1,20 +1,12 @@
 import { useState } from "react";
-
-/** Where a pop-up stands beside its word: the side of the word, and its edges and width as inline styles. */
-export type PopupPlace = {
-  side: "above" | "below";
-  top: number | string;
-  bottom: number | string;
-  left: number | string;
-  width?: string;
-};
+import type { AnchorPlacement } from "./placeAtAnchor.ts";
 
 /**
  * Whether a pop-up should glide to the place it stands at now, rather than appear there at once.
  * It glides only from a place on the same side of a word:
  * its first place, and a move to the other side, where its top and bottom edges would both travel, take effect at once.
  */
-export function useIsGliding(place: PopupPlace | null): boolean {
+export function useIsGliding(place: AnchorPlacement | null): boolean {
   const key = place && JSON.stringify(place);
   const [shown, setShown] = useState({
     key,
