@@ -3,6 +3,7 @@ import {
   useListDictionariesQuery,
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
+import { useState } from "react";
 import { DictionariesView } from "../dictionaries/DictionariesView.tsx";
 import { useDictionaryImport } from "../dictionaries/useDictionaryImport.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -13,17 +14,22 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
   const list = useListDictionariesQuery();
   const [deleteDictionary] = useDeleteDictionaryMutation();
   const imports = useDictionaryImport();
-  const remove = (dictionaryId: string) =>
+  const [removingIds, setRemovingIds] = useState<readonly string[]>([]);
+  const remove = (dictionaryId: string) => {
+    setRemovingIds((ids) => [...ids, dictionaryId]);
     deleteDictionary(dictionaryId)
       .unwrap()
-      .catch(() =>
+      .catch(() => {
+        setRemovingIds((ids) => ids.filter((id) => id !== dictionaryId));
         dispatch(
           actions.notificationRequested("The dictionary could not be removed"),
-        ),
-      );
+        );
+      });
+  };
   return (
     <DictionariesView
       dictionaries={list.data?.dictionaries ?? []}
+      removingIds={removingIds}
       isLoading={list.isLoading}
       loadFailed={list.isError}
       addingFile={imports.addingFile}

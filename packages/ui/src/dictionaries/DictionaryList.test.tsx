@@ -22,3 +22,39 @@ describe("DictionaryList", () => {
     expect(screen.getAllByRole("region")).toHaveLength(1);
   });
 });
+
+describe("DictionaryList with a dictionary being removed", () => {
+  function renderRemoving() {
+    render(
+      <DictionaryList
+        dictionaries={exampleDictionaries}
+        removingIds={["d1"]}
+        onMove={() => undefined}
+        onRemove={() => undefined}
+      />,
+    );
+  }
+
+  const isDisabled = (name: string) =>
+    screen.getByRole("button", { name }).hasAttribute("disabled");
+
+  it("says the dictionary is being removed", () => {
+    renderRemoving();
+    expect(screen.getByRole("status").textContent).toBe("Removing…");
+  });
+
+  it("disables its remove button", () => {
+    renderRemoving();
+    expect(isDisabled("Remove German-English Wiktionary")).toBe(true);
+  });
+
+  it("disables its move button", () => {
+    renderRemoving();
+    expect(isDisabled("Move German-English Wiktionary down")).toBe(true);
+  });
+
+  it("leaves the other dictionaries' remove buttons enabled", () => {
+    renderRemoving();
+    expect(isDisabled("Remove DWDS Kernwortschatz")).toBe(false);
+  });
+});
