@@ -137,6 +137,20 @@ describe("MediaPlayer", () => {
       expect(video.currentTime).toBeCloseTo(1 + halfFrame, 9);
     });
 
+    it("mutes the element when the registered player is muted", async () => {
+      const { playerRegistry } = renderPlayer(directPlaybackRoutes);
+      const video = await findVideo();
+      act(() => playerRegistry.current()?.setMuted(true));
+      expect(video.muted).toBe(true);
+    });
+
+    it("starts the element muted when the store is muted", async () => {
+      renderPlayer(directPlaybackRoutes, {
+        before: [actions.preferencesLoaded({}), actions.muteToggleRequested()],
+      });
+      expect((await findVideo()).muted).toBe(true);
+    });
+
     it("reports the element's time to the store", async () => {
       const { store } = renderPlayer(directPlaybackRoutes);
       const video = await findVideo();

@@ -6,6 +6,7 @@ export type PlayerHandle = {
   play(): void;
   pause(): void;
   setVolume(volume: number): void;
+  setMuted(isMuted: boolean): void;
   setSpeed(speed: number): void;
 };
 

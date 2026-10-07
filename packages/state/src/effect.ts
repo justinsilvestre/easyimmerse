@@ -8,6 +8,7 @@ export type Effect =
   | { type: "playPlayer" }
   | { type: "pausePlayer" }
   | { type: "setPlayerVolume"; volume: number }
+  | { type: "setPlayerMuted"; isMuted: boolean }
   | { type: "setPlayerSpeed"; speed: number }
   | { type: "pickFile"; accept: readonly string[] }
   | { type: "pickMediaFile"; accept: readonly string[] }

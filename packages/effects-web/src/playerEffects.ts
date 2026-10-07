@@ -7,6 +7,7 @@ type PlayerEffects = Pick<
   | "playPlayer"
   | "pausePlayer"
   | "setPlayerVolume"
+  | "setPlayerMuted"
   | "setPlayerSpeed"
 >;
 
@@ -18,6 +19,7 @@ export function createPlayerEffects(registry: PlayerRegistry): PlayerEffects {
     playPlayer: () => registry.current()?.play(),
     pausePlayer: () => registry.current()?.pause(),
     setPlayerVolume: (volume) => registry.current()?.setVolume(volume),
+    setPlayerMuted: (isMuted) => registry.current()?.setMuted(isMuted),
     setPlayerSpeed: (speed) => registry.current()?.setSpeed(speed),
   };
 }

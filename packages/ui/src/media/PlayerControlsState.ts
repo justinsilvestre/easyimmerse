@@ -4,5 +4,6 @@ export type PlayerControlsState = {
   currentMs: number;
   durationMs: number;
   volume: number;
+  isMuted?: boolean;
   speed: number;
 };

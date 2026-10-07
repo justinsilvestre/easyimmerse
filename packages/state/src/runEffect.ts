@@ -31,6 +31,9 @@ export function runEffect(
     case "setPlayerVolume":
       effects.setPlayerVolume(effect.volume);
       return;
+    case "setPlayerMuted":
+      effects.setPlayerMuted(effect.isMuted);
+      return;
     case "setPlayerSpeed":
       effects.setPlayerSpeed(effect.speed);
       return;

@@ -30,6 +30,8 @@ export type PlayerState = {
   durationSeconds: number;
   isPlaying: boolean;
   volume: number;
+  /** Silences the player without changing its volume. */
+  isMuted: boolean;
   speed: number;
 };
 
@@ -38,6 +40,7 @@ export const initialPlayerState: PlayerState = {
   durationSeconds: 0,
   isPlaying: false,
   volume: 1,
+  isMuted: false,
   speed: 1,
 };
 

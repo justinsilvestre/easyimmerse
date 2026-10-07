@@ -57,6 +57,14 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         { ...state, player: { ...state.player, volume: action.volume } },
         [{ type: "setPlayerVolume", volume: action.volume }],
       ];
+    case "muteToggleRequested":
+      return [
+        {
+          ...state,
+          player: { ...state.player, isMuted: !state.player.isMuted },
+        },
+        [{ type: "setPlayerMuted", isMuted: !state.player.isMuted }],
+      ];
     case "speedChangeRequested":
       return [
         { ...state, player: { ...state.player, speed: action.speed } },
@@ -144,6 +152,7 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
           player: {
             ...initialPlayerState,
             volume: state.player.volume,
+            isMuted: state.player.isMuted,
             speed: state.player.speed,
           },
         },
