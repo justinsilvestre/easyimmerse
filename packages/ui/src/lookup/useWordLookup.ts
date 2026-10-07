@@ -18,15 +18,21 @@ import { withinTime } from "./withinTime.ts";
 export type { PopupHold } from "./useLookupPopupControl.ts";
 
 /**
- * Starts a flashcard for a word from its passage, with fields filled from its lookup when one answered,
+ * Starts a flashcard for a word from its place in a passage, with fields filled from its lookup when one answered,
  * or, through `lateFields`, once a lookup that was too slow to wait for answers.
  */
 export type StartFlashcardFromLookup<S> = (
   word: string,
-  source: S | null,
+  place: WordPlace<S> | null,
   lookupFields: LookupFlashcardFields | null,
   lateFields?: Promise<LookupFlashcardFields | null>,
 ) => void;
+
+/**
+ * The passage a word for a flashcard comes from, and, when the word was pointed at in the passage
+ * rather than typed or chosen in the pop-up, its offset there in UTF-16 code units.
+ */
+export type WordPlace<S> = { source: S; start: number | null };
 
 /** Stands for a lookup that has not answered within `flashcardLookupWaitMs`. */
 const tooSlow = Symbol("too slow");
@@ -61,9 +67,9 @@ export function useWordLookup<S>({
   /** Closes the pop-up for a flashcard that `start` starts, taking its word from the lookup when one answered. */
   const endingIn =
     (start: StartFlashcardFromLookup<S>): StartFlashcardFromLookup<S> =>
-    (word, source, lookupFields, lateFields) =>
+    (word, place, lookupFields, lateFields) =>
       control.leaveFor(() =>
-        start(lookupFields?.word ?? word, source, lookupFields, lateFields),
+        start(lookupFields?.word ?? word, place, lookupFields, lateFields),
       );
   const endInFlashcard = endingIn(startFlashcard);
   /**
@@ -82,6 +88,7 @@ export function useWordLookup<S>({
     const fieldsOf = (results: readonly LookupResult[] | null) =>
       results && fieldsFrom(results, null, dictionaries);
     const answer = lookup.lookUp(request);
+    const place = placeOf(request);
     control.pending.start(
       request.term,
       withinTime<readonly LookupResult[] | null | typeof tooSlow>(
@@ -91,8 +98,8 @@ export function useWordLookup<S>({
       ),
       (results) =>
         results === tooSlow
-          ? end(request.term, request.source, null, answer.then(fieldsOf))
-          : end(request.term, request.source, fieldsOf(results)),
+          ? end(request.term, place, null, answer.then(fieldsOf))
+          : end(request.term, place, fieldsOf(results)),
     );
   };
   return {
@@ -101,7 +108,7 @@ export function useWordLookup<S>({
       onCreateFlashcard: (entryIndex) =>
         endInFlashcard(
           lookup.request?.term ?? "",
-          lookup.request?.source ?? null,
+          placeOf(lookup.request),
           fieldsFrom(lookup.results, entryIndex, lookup.dictionaries),
         ),
     }),
@@ -152,6 +159,11 @@ export function useWordLookup<S>({
 }
 
 type Control<S> = ReturnType<typeof useLookupPopupControl<S>>;
+
+function placeOf<S>(request: LookupRequest<S> | null): WordPlace<S> | null {
+  if (request?.source == null) return null;
+  return { source: request.source, start: request.occurrence?.start ?? null };
+}
 
 /** A word inside the pop-up, looked up from its passage and shown at the same place. */
 function wordInPopup<S>(control: Control<S>, term: string): LookupRequest<S> {

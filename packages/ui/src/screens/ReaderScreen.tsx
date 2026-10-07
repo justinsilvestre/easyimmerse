@@ -16,6 +16,7 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { useReaderLookup } from "../lookup/useReaderLookup.ts";
+import type { WordPlace } from "../lookup/useWordLookup.ts";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { ReaderView } from "../reader/ReaderView.tsx";
 import { parseReaderPreferences } from "../reader/readerPreferences.ts";
@@ -102,13 +103,13 @@ function BookReader({
    */
   const startFlashcard = (
     word: string,
-    source: ReaderWord | null,
+    place: WordPlace<ReaderWord> | null,
     lookupFields: LookupFlashcardFields | null,
     lateFields?: Promise<LookupFlashcardFields | null>,
   ) => {
     const draft = draftFromText({
       word,
-      sentence: source?.sentence ?? "",
+      sentence: place?.source.sentence ?? "",
       mediaFile,
       settings,
     });

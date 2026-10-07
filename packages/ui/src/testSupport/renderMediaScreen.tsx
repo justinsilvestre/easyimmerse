@@ -1,6 +1,7 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type {
+  Cue,
   DictionarySummary,
   Flashcard,
   FlashcardDraft,
@@ -14,7 +15,11 @@ import { exampleResults } from "../lookup/exampleLookup.ts";
 import { NavigationActionsContext } from "../navigationContext.ts";
 import { MediaScreen } from "../screens/MediaScreen.tsx";
 import { createFakeBackendClient } from "./createFakeBackendClient.ts";
-import { fixtureProject, fixtureResponses } from "./fixtureResponses.ts";
+import {
+  fixtureProject,
+  fixtureResponses,
+  fixtureTrack,
+} from "./fixtureResponses.ts";
 import { directPlaybackRoutes, fakeServer } from "./mediaFixtureResponses.ts";
 import { renderWithAppStore } from "./renderWithAppStore.tsx";
 
@@ -63,6 +68,8 @@ const lookupResponse: LookupResponse = {
 
 type MediaScreenSetup = {
   flashcards?: Flashcard[];
+  /** The cues of the media file's subtitles, in place of the fixture track's. */
+  cues?: Cue[];
   dictionaries?: DictionarySummary[];
   /** The texts whose lookups never answer. Every other lookup finds the example results. */
   unansweredLookups?: readonly string[];
@@ -78,6 +85,7 @@ type MediaScreenSetup = {
  */
 export function renderMediaScreen({
   flashcards = [],
+  cues = fixtureTrack.cues,
   dictionaries = germanDictionaries,
   unansweredLookups = [],
   slowLookups = {},
@@ -90,6 +98,7 @@ export function renderMediaScreen({
         "GET /dictionaries": { dictionaries },
         "GET /dictionaries/lookup": lookupResponse,
         "GET /projects/p1/flashcards": { flashcards },
+        "GET /projects/p1/media/m1/subtitles/s1/cues": { format: "srt", cues },
         "PUT /projects/p1/flashcards/f1": savedFlashcard,
         "POST /projects/p1/media/m1/subtitles":
           fixtureResponses["GET /projects/p1/media/m1/subtitles"].tracks[0],

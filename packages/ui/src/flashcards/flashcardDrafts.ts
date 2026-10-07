@@ -12,13 +12,18 @@ export function draftOfFlashcard(flashcard: Flashcard): FlashcardDraft {
   };
 }
 
-/** The draft that saves a card as the editor holds it. */
+/**
+ * The draft that saves a card as the editor holds it.
+ * A card whose word was changed in the editor no longer says where in its cue the word was taken from.
+ */
 export function draftOfEdited(card: EditedFlashcard): FlashcardDraft {
   const base =
     card.kind === "new" ? card.draft : draftOfFlashcard(card.flashcard);
+  const { content } = card.editor;
   return {
     ...base,
-    content: card.editor.content,
+    word_start: content.word === base.content.word ? base.word_start : null,
+    content,
     included_fields: [...card.editor.includedFields],
   };
 }

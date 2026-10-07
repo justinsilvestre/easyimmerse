@@ -322,6 +322,20 @@ describe("MediaScreen", () => {
     });
   });
 
+  it("records which occurrence of a word in its cue a double-click made the flashcard from", async () => {
+    const { client } = renderMediaScreen({
+      cues: [{ index: 1, start_ms: 500, end_ms: 1500, text: "Go, go, go!" }],
+      dictionaries: [],
+    });
+    const list = await screen.findByRole("list", { name: "Subtitles" });
+    const goes = await within(list).findAllByRole("button", { name: "go" });
+    doubleClick(goes[1] as HTMLElement);
+    expect(await findCreatedDraft(client)).toMatchObject({
+      content: { word: "go" },
+      word_start: 8,
+    });
+  });
+
   it("saves a flashcard for no word from the subtitle shown with the New flashcard button", async () => {
     const { client } = renderMediaScreen();
     await findSubtitles();

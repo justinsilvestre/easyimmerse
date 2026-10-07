@@ -18,9 +18,11 @@ const cue = exampleCues[2] ?? null;
 function draft(
   settings: ProjectSettings = defaultProjectSettings,
   hasScreenshots = true,
+  wordStart: number | null = 14,
 ) {
   return draftFromCue({
     word: "fressen",
+    wordStart,
     cue,
     translationCue: exampleTranslationCues[2] ?? null,
     mediaFile,
@@ -34,6 +36,18 @@ describe("draftFromCue", () => {
     expect(draft().content.text_context).toBe(
       "Der Hund will fressen.\nEr hat Hunger.",
     );
+  });
+
+  it("records where in the cue the word was taken from", () => {
+    expect(draft().word_start).toBe(14);
+  });
+
+  it("records no word start when the cue does not hold the word there", () => {
+    expect(draft(defaultProjectSettings, true, 4).word_start).toBeNull();
+  });
+
+  it("records no word start for a word not taken from the cue", () => {
+    expect(draft(defaultProjectSettings, true, null).word_start).toBeNull();
   });
 
   it("takes the translation cue's text as the sentence translation", () => {
