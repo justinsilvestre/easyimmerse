@@ -1,9 +1,9 @@
 import {
   AudioLines,
+  Captions,
   Languages,
   Pause,
   Play,
-  Settings2,
   SkipBack,
   SkipForward,
   Volume2,
@@ -134,7 +134,7 @@ export function PlayerControls({
             speed={playback.speed}
             onSpeedChange={callbacks.onSpeedChange}
           />
-          <PlaybackOptions panels={panels} callbacks={callbacks} />
+          <SubtitleOptions panels={panels} callbacks={callbacks} />
         </span>
       </div>
     </div>
@@ -142,7 +142,7 @@ export function PlayerControls({
 }
 
 /** The menu of whether the subtitles show over the video, and of how they look. */
-function PlaybackOptions({
+function SubtitleOptions({
   panels,
   callbacks,
 }: {
@@ -151,8 +151,8 @@ function PlaybackOptions({
 }) {
   return (
     <MenuButton
-      label="Playback options"
-      icon={<Settings2 className="size-4" />}
+      label="Subtitle options"
+      icon={<Captions className="size-4" />}
       opensUpward
       items={[
         {

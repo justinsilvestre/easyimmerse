@@ -49,7 +49,7 @@ type MediaViewProps = {
   panels: PlayerPanelsState;
   subtitleDisplay: SubtitleDisplay;
   subtitleAppearance: SubtitleAppearance;
-  /** Shows the dialog where the user sets the subtitles' appearance, which the Playback options menu opens. */
+  /** Shows the dialog where the user sets the subtitles' appearance, which the Subtitle options menu opens. */
   isSubtitleAppearanceOpen?: boolean;
   onSubtitleAppearanceChange: (appearance: SubtitleAppearance) => void;
   onCloseSubtitleAppearance: () => void;

@@ -334,7 +334,7 @@ describe("MediaScreen", () => {
   it("stores the subtitle appearance chosen in its dialog", async () => {
     const { store } = renderMediaScreen();
     await findSubtitles();
-    fireEvent.click(screen.getByRole("button", { name: "Playback options" }));
+    fireEvent.click(screen.getByRole("button", { name: "Subtitle options" }));
     fireEvent.click(
       screen.getByRole("menuitem", { name: "Subtitle appearance…" }),
     );

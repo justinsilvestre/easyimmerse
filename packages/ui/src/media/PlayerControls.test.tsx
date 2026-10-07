@@ -52,7 +52,7 @@ function renderControls(
 }
 
 const openOptions = () =>
-  fireEvent.click(screen.getByRole("button", { name: "Playback options" }));
+  fireEvent.click(screen.getByRole("button", { name: "Subtitle options" }));
 
 describe("PlayerControls", () => {
   it("draws each loaded stretch behind the seek bar", () => {
