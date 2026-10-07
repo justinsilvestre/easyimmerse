@@ -2178,7 +2178,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Adds a media file to a project. A `path` source must name an existing file on the\nserver's machine, which only a token allowed to read local paths may do; subtitle files\nbeside it that share its name are added as its subtitle tracks.",
+        "summary": "Adds a media file to a project. A `path` source must name an existing file on the\nserver's machine, which only a token allowed to read local paths may do; the text\nsubtitle tracks inside it and the subtitle files beside it that share its name are added\nas its subtitle tracks.",
         "operationId": "addMediaFile",
         "parameters": [
           {
@@ -2356,7 +2356,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The subtitle tracks embedded in the file, which cannot be shown yet",
+            "description": "The subtitle tracks embedded in the file. Adding the file by path adds its text tracks among its subtitle tracks.",
             "content": {
               "application/json": {
                 "schema": {

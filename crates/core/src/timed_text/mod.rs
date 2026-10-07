@@ -1,11 +1,15 @@
 //! Text segments with time ranges, parsed from subtitle files.
 
+mod ass_leftovers;
+mod converted_srt;
 mod error;
 mod srt;
 mod timestamp;
 mod track;
 mod vtt;
 
+pub use ass_leftovers::ConvertedFrom;
+pub use converted_srt::clean_converted_srt;
 pub use error::TimedTextError;
 pub use srt::parse_srt;
 pub use timestamp::parse_timestamp;

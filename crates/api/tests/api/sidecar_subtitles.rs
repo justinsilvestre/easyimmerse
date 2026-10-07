@@ -8,10 +8,11 @@ const PROJECT: &str = "placeholder-1";
 
 /// A folder holding `Show.mp4` with a Spanish SubRip file, an English WebVTT file,
 /// a French file that does not parse, and the subtitles of another episode.
+/// `Show.mp4` has no subtitle track of its own.
 fn media_folder() -> TempDir {
     let folder = TempDir::new().expect("a temporary folder");
     let write = |name: &str, bytes: &[u8]| std::fs::write(folder.path().join(name), bytes);
-    write("Show.mp4", &read_fixture("sample.mp4")).unwrap();
+    write("Show.mp4", &read_fixture("conversion-h264-aac.mp4")).unwrap();
     write("Show.es.srt", &read_fixture("sample.srt")).unwrap();
     write("Show.en.vtt", &read_fixture("sample.vtt")).unwrap();
     write("Show.fr.vtt", b"not subtitles").unwrap();

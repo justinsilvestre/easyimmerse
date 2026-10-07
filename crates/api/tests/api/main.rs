@@ -1,6 +1,7 @@
 mod auth;
 mod dictionaries;
 mod documents;
+mod embedded_subtitles;
 mod flashcards;
 mod media;
 mod media_conversion;
