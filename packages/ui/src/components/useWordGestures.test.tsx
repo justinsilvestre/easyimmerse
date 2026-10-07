@@ -580,6 +580,24 @@ describe("useWordGestures", () => {
   });
 
   describe("on a touch screen", () => {
+    it("looks nothing up from the start of a run when a tap focuses it after the finger lifts", () => {
+      const gestures = renderSentence("映画を見る");
+      const run = word("映画を見る");
+      fireEvent.pointerDown(run, { pointerType: "touch" });
+      fireEvent.pointerUp(run, { pointerType: "touch" });
+      fireEvent.focus(run);
+      expect(gestures).toEqual([]);
+    });
+
+    it("lets a later keyboard focus point at the word once a touch was cancelled", () => {
+      const gestures = renderSentence("映画を見る");
+      const run = word("映画を見る");
+      fireEvent.pointerDown(run, { pointerType: "touch" });
+      fireEvent.pointerCancel(run, { pointerType: "touch" });
+      fireEvent.focus(run);
+      expect(gestures).toContain("hover 映画を見る");
+    });
+
     it("reports two quick taps on a word as a double-click", () => {
       const gestures = renderSentence();
       tap(word("rufe"), 40);

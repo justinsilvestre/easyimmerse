@@ -37,6 +37,7 @@ export function useKeyboardCursor(
 ) {
   const [hasFocus, setHasFocus] = useState(false);
   // A press focuses the word under the pointer, which the pointer already points at.
+  // A mouse focuses on pressing, but a tap only once the finger has lifted, so the press counts until its click.
   const isPressing = useRef(false);
   const isStepping = useRef(false);
   const cursorStart = cursor?.start ?? null;
@@ -89,7 +90,10 @@ export function useKeyboardCursor(
       onPointerDownCapture: () => {
         isPressing.current = true;
       },
-      onPointerUpCapture: () => {
+      onPointerCancelCapture: () => {
+        isPressing.current = false;
+      },
+      onClickCapture: () => {
         isPressing.current = false;
       },
       onFocus: () => setHasFocus(true),
