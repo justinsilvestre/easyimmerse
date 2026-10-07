@@ -14,7 +14,8 @@ export function draftOfFlashcard(flashcard: Flashcard): FlashcardDraft {
 
 /**
  * The draft that saves a card as the editor holds it.
- * A card whose word was changed in the editor no longer says where in its cue the word was taken from.
+ * A card whose word was changed in the editor keeps where in its cue the word was taken from
+ * only while its sentence still holds the new word there.
  */
 export function draftOfEdited(card: EditedFlashcard): FlashcardDraft {
   const base =
@@ -22,10 +23,15 @@ export function draftOfEdited(card: EditedFlashcard): FlashcardDraft {
   const { content } = card.editor;
   return {
     ...base,
-    word_start: content.word === base.content.word ? base.word_start : null,
+    word_start: isWordAtStart(base, content.word) ? base.word_start : null,
     content,
     included_fields: [...card.editor.includedFields],
   };
+}
+
+function isWordAtStart(draft: FlashcardDraft, word: string): boolean {
+  const start = draft.word_start;
+  return start !== null && draft.content.text_context.startsWith(word, start);
 }
 
 /** The flashcard as `draft` would leave it. */

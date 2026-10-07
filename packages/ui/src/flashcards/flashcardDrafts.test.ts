@@ -15,7 +15,11 @@ function createDraft(): FlashcardDraft {
     media_file_id: "m1",
     cue_index: 1,
     word_start: 4,
-    content: { ...exampleFlashcard, word: "Katze" },
+    content: {
+      ...exampleFlashcard,
+      word: "Katze",
+      text_context: "Die Katze schläft.",
+    },
     included_fields: ["word"],
   };
 }
@@ -42,7 +46,16 @@ describe("draftOfEdited", () => {
     expect(draftOfEdited(card).word_start).toBe(4);
   });
 
-  it("drops where the word was taken from once the word is changed", () => {
+  it("keeps where the word was taken from when the changed word is still there", () => {
+    const card = startedThenEdited({
+      type: "textChanged",
+      key: "word",
+      value: "Kat",
+    });
+    expect(draftOfEdited(card).word_start).toBe(4);
+  });
+
+  it("drops where the word was taken from once the word is changed to one not there", () => {
     const card = startedThenEdited({
       type: "textChanged",
       key: "word",
