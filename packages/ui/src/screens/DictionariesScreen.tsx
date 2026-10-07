@@ -27,12 +27,15 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
       isLoading={list.isLoading}
       loadFailed={list.isError}
       addingFile={imports.addingFile}
+      importProgress={imports.progress}
       unsupportedFile={imports.unsupportedFile}
+      importFailure={imports.importFailure}
       pendingTable={imports.pendingTable}
       onBack={onBack}
       onAddFromFile={() => dispatch(actions.dictionaryFilePickRequested())}
       onRemove={remove}
       onDismissUnsupportedFile={imports.dismissUnsupported}
+      onDismissImportFailure={imports.dismissFailure}
       onImportTable={imports.importTable}
       onCancelTable={imports.cancelTable}
     />

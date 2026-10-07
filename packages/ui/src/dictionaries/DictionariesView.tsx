@@ -1,14 +1,19 @@
-import type { TableLayout, TablePreview } from "@easyimmerse/types";
-import { AlertTriangle, BookOpen, FolderOpen, Globe, X } from "lucide-react";
+import type {
+  ImportProgress,
+  TableLayout,
+  TablePreview,
+} from "@easyimmerse/types";
+import { BookOpen, FolderOpen, Globe } from "lucide-react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
-import { IconButton } from "../components/IconButton.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import { DictionaryList } from "./DictionaryList.tsx";
 import {
-  type DictionaryItem,
-  dictionaryFormatLabels,
-} from "./dictionaryItem.ts";
+  FailedImportNotice,
+  UnsupportedFileNotice,
+} from "./DictionaryImportNotices.tsx";
+import { DictionaryImportProgress } from "./DictionaryImportProgress.tsx";
+import { DictionaryList } from "./DictionaryList.tsx";
+import type { DictionaryItem } from "./dictionaryItem.ts";
 import { RemoveDictionaryDialog } from "./RemoveDictionaryDialog.tsx";
 import { TableColumnsDialog } from "./TableColumnsDialog.tsx";
 import { useRemovalConfirmation } from "./useRemovalConfirmation.ts";
@@ -23,7 +28,9 @@ export function DictionariesView({
   isLoading = false,
   loadFailed = false,
   addingFile = null,
+  importProgress = null,
   unsupportedFile,
+  importFailure = null,
   pendingTable,
   onBack,
   onAddFromRegistry,
@@ -32,6 +39,7 @@ export function DictionariesView({
   onMove,
   onRemove,
   onDismissUnsupportedFile,
+  onDismissImportFailure,
   onImportTable,
   onCancelTable,
 }: {
@@ -42,8 +50,12 @@ export function DictionariesView({
   loadFailed?: boolean;
   /** The file being added, until it is imported or fails. */
   addingFile?: string | null;
+  /** What the import of `addingFile` has stored so far, once the server reports it. */
+  importProgress?: ImportProgress | null;
   /** The file the user last tried to add in a format the app cannot read, until dismissed. */
   unsupportedFile: string | null;
+  /** Why the last file could not be added for another reason, until dismissed. */
+  importFailure?: string | null;
   /** The table file the user is adding, with its first rows and detected columns, until imported or cancelled. */
   pendingTable: { fileName: string; preview: TablePreview } | null;
   /** Leaves for wherever the dictionaries were opened from, such as Settings or a word's pop-up, so its button says only Back. */
@@ -54,6 +66,7 @@ export function DictionariesView({
   onMove?: (dictionaryId: string, direction: "up" | "down") => void;
   onRemove: (dictionaryId: string) => void;
   onDismissUnsupportedFile: () => void;
+  onDismissImportFailure: () => void;
   onImportTable: (layout: TableLayout) => void;
   onCancelTable: () => void;
 }) {
@@ -100,14 +113,21 @@ export function DictionariesView({
         )}
       </div>
       {addingFile && (
-        <p role="status" className="text-sm text-fg-muted">
-          Adding {addingFile}…
-        </p>
+        <DictionaryImportProgress
+          fileName={addingFile}
+          progress={importProgress}
+        />
       )}
       {unsupportedFile && (
         <UnsupportedFileNotice
           fileName={unsupportedFile}
           onDismiss={onDismissUnsupportedFile}
+        />
+      )}
+      {importFailure && (
+        <FailedImportNotice
+          message={importFailure}
+          onDismiss={onDismissImportFailure}
         />
       )}
       {isLoading ? (
@@ -156,30 +176,5 @@ export function DictionariesView({
         />
       )}
     </ScreenLayout>
-  );
-}
-
-function UnsupportedFileNotice({
-  fileName,
-  onDismiss,
-}: {
-  fileName: string;
-  onDismiss: () => void;
-}) {
-  const formats = Object.values(dictionaryFormatLabels).join(", ");
-  return (
-    <div
-      role="alert"
-      className="flex items-start gap-3 rounded-lg border border-danger-line bg-danger-soft px-3 py-2 text-sm text-danger-fg"
-    >
-      <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <span className="flex-1">
-        <strong>{fileName}</strong> is not in a format the app can read.
-        Supported formats: {formats}. A plugin may add support for others.
-      </span>
-      <IconButton label="Dismiss" onClick={onDismiss}>
-        <X className="size-4" />
-      </IconButton>
-    </div>
   );
 }

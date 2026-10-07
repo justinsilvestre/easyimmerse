@@ -94,6 +94,10 @@ export interface paths {
         };
         get: operations["listDictionaries"];
         put?: never;
+        /**
+         * Starts importing the file and answers with the job to poll at `/dictionaries/imports/{id}`,
+         *     since a large dictionary takes longer to store than a browser waits for a response.
+         */
         post: operations["importDictionary"];
         delete?: never;
         options?: never;
@@ -110,7 +114,27 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Reads the files at the path, then starts importing them and answers with the job to poll
+         *     at `/dictionaries/imports/{id}`.
+         */
         post: operations["importLocalDictionary"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/imports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getImportJob"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -906,6 +930,17 @@ export interface components {
         HealthResponse: {
             status: string;
         };
+        ImportJobStarted: {
+            id: string;
+        };
+        /** @enum {string} */
+        ImportJobState: "running" | "done" | "failed";
+        ImportJobStatus: {
+            dictionary?: components["schemas"]["DictionarySummary"] | null;
+            error?: components["schemas"]["ApiError"] | null;
+            progress: components["schemas"]["ImportProgress"];
+            state: components["schemas"]["ImportJobState"];
+        };
         ImportLocalDictionaryRequest: {
             /**
              * @description A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files.
@@ -913,6 +948,21 @@ export interface components {
              */
             path: string;
             tableLayout?: components["schemas"]["TableLayout"] | null;
+        };
+        /** @description How many items of each kind the import has stored so far. */
+        ImportProgress: {
+            /** Format: int64 */
+            entries: number;
+            /** Format: int64 */
+            kanji: number;
+            /** Format: int64 */
+            kanji_meta: number;
+            /** Format: int64 */
+            media: number;
+            /** Format: int64 */
+            tags: number;
+            /** Format: int64 */
+            term_meta: number;
         };
         IpaTranscription: {
             ipa: string;
@@ -1725,16 +1775,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The dictionary was imported */
-            201: {
+            /** @description The import was started */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DictionarySummary"];
+                    "application/json": components["schemas"]["ImportJobStarted"];
                 };
             };
-            /** @description The file could not be read as a dictionary */
+            /** @description The chosen columns are not column roles */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1776,16 +1826,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The dictionary was imported */
-            201: {
+            /** @description The import was started */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DictionarySummary"];
+                    "application/json": components["schemas"]["ImportJobStarted"];
                 };
             };
-            /** @description The files could not be read as a dictionary */
+            /** @description The files could not be read */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1813,6 +1863,56 @@ export interface operations {
                 };
             };
             /** @description Nothing at the given path */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getImportJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The import job id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Where the import stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJobStatus"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No import job has the id, or its outcome has been forgotten */
             404: {
                 headers: {
                     [name: string]: unknown;

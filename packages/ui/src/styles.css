@@ -45,6 +45,19 @@
   --color-info-soft: var(--color-violet-50);
 }
 
+/* The bar of an import whose length is unknown slides back and forth. */
+@theme {
+  --animate-progress-slide: progress-slide 1.4s ease-in-out infinite;
+  @keyframes progress-slide {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+}
+
 /*
  * Registering the tokens as colors lets the browser animate them, so a theme change fades instead of flashing.
  * The attribute is set only after the first theme is applied, so the page does not fade when it loads.

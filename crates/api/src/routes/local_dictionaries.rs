@@ -17,7 +17,7 @@ use crate::auth::token_kind::TokenKind;
 use crate::local_dictionary_files::read_dictionary_files;
 use crate::local_path::ensure_local_paths_allowed;
 use crate::local_table_file::{PREVIEW_BYTES, is_table_file, read_table_file};
-use crate::routes::dictionaries::{DictionarySummary, import_files};
+use crate::routes::dictionary_imports::{ImportJobStarted, start_import};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -43,6 +43,8 @@ pub struct PreviewLocalDictionaryTableRequest {
     pub path: String,
 }
 
+/// Reads the files at the path, then starts importing them and answers with the job to poll
+/// at `/dictionaries/imports/{id}`.
 #[utoipa::path(
     post,
     path = "/dictionaries/import-local",
@@ -51,8 +53,8 @@ pub struct PreviewLocalDictionaryTableRequest {
     security(("bearer_token" = [])),
     request_body = ImportLocalDictionaryRequest,
     responses(
-        (status = 201, description = "The dictionary was imported", body = DictionarySummary),
-        (status = 400, description = "The files could not be read as a dictionary", body = ApiError),
+        (status = 202, description = "The import was started", body = ImportJobStarted),
+        (status = 400, description = "The files could not be read", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "The token may not read local paths", body = ApiError),
         (status = 404, description = "Nothing at the given path", body = ApiError),
@@ -63,10 +65,10 @@ pub async fn import_local_dictionary(
     State(state): State<AppState>,
     Extension(token): Extension<TokenKind>,
     Json(request): Json<ImportLocalDictionaryRequest>,
-) -> Result<(StatusCode, Json<DictionarySummary>), ApiFailure> {
+) -> Result<(StatusCode, Json<ImportJobStarted>), ApiFailure> {
     ensure_local_paths_allowed(token, &state.config)?;
     let files = read_local_dictionary(request.path, None).await?;
-    import_files(&state, files, request.table_layout).await
+    Ok(start_import(&state, files, request.table_layout))
 }
 
 /// Detects what each column of a table at a local path holds and returns that layout with the table's first rows,
