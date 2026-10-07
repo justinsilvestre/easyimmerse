@@ -13,6 +13,7 @@ export type PlayerShortcutCallbacks = Pick<
 /**
  * The keys that work the player while its screen is in reach:
  * Space or K plays and pauses, the left and right arrows skip to the previous and next cue, R replays the cue shown now, and M mutes and unmutes.
+ * The arrows are left to a focused word of the subtitles, where they move the lookup cursor.
  * J and L are left alone, since L opens the dictionary lookup.
  */
 export function usePlayerShortcuts(

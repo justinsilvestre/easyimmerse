@@ -1,10 +1,16 @@
 import type { Cue } from "@easyimmerse/types";
-import { type ComponentProps, type RefObject, useMemo, useRef } from "react";
+import {
+  type ComponentProps,
+  type RefObject,
+  useMemo,
+  useReducer,
+} from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { usePlaybackPause } from "../hooks/usePlaybackPause.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
+import { reduceCueCursor } from "../media/cueCursor.ts";
 import type {
   ActiveCueWord,
   CueWordGestures,
@@ -21,10 +27,12 @@ import {
 /**
  * Looks up words of the subtitles in the dictionary pop-up, which pauses playback while it is open
  * and resumes it when closed, unless the lookup led on to a flashcard or to the dictionaries settings.
- * While the screen that `screenRef` marks is in reach, the L key looks up the word under the mouse as a click on it would,
- * or opens the pop-up's search field when the mouse is on no word.
+ * Keeps the one lookup cursor of the subtitles, which the mouse and the keyboard move alike, wherever the subtitles are shown.
+ * While the screen that `screenRef` marks is in reach, the L key looks up from the cursor as a click there would,
+ * or opens the pop-up's search field when there is no cursor.
  * Returns the gestures for the subtitles' words, which keep their identity across renders,
  * the word the pop-up shows, which keeps its identity while it shows the same word,
+ * the cursor's place, which keeps its identity while the cursor stays,
  * and the pop-up's props, or null while it is closed.
  */
 export function useSubtitleLookup(
@@ -39,14 +47,13 @@ export function useSubtitleLookup(
     hold: { hold: pause.pause, release: pause.resume, forget: pause.forget },
     startFlashcard,
   });
-  const pointed = useRef<{ hit: WordHit; cue: Cue } | null>(null);
-  const lookUpPointedWord = () => {
-    const current = pointed.current;
-    if (current?.hit.element.isConnected)
-      lookup.clickWord(requestFor(current.hit, current.cue), "keyboard");
+  const [cursor, dispatchCursor] = useReducer(reduceCueCursor, null);
+  const lookUpCursor = () => {
+    if (cursor?.hit.element.isConnected)
+      lookup.clickWord(requestFor(cursor.hit, cursor.cue), "keyboard");
     else lookup.openSearch();
   };
-  useKeyboardShortcut("l", lookUpPointedWord, screenRef);
+  useKeyboardShortcut("l", lookUpCursor, screenRef);
   const popup = lookup.popup && {
     anchored: lookup.popup.anchored,
     props: {
@@ -57,18 +64,22 @@ export function useSubtitleLookup(
   const wordGestures = useStableCallbacks<Required<CueWordGestures>>({
     onWordClick: (hit, cue) =>
       lookup.clickWord(requestFor(hit, cue), hit.input),
-    onWordPointed: (hit, cue) => {
-      pointed.current = hit && { hit, cue };
-    },
+    onWordPointed: (hit, input, cue) =>
+      dispatchCursor(
+        hit ? { type: "pointed", cue, hit } : { type: "left", input },
+      ),
     onWordHover: (hit, cue) => lookup.hoverWord(requestFor(hit, cue)),
-    onWordHoverAnswered: (hit, _matchedLength, cue) =>
-      lookup.restOnWord(requestFor(hit, cue)),
+    onWordHoverAnswered: (hit, matchedLength, cue) => {
+      dispatchCursor({ type: "answered", cue, hit, matchedLength });
+      lookup.restOnWord(requestFor(hit, cue));
+    },
     onWordDoubleClick: (hit, cue) =>
       lookup.startFlashcardFor(requestFor(hit, cue)),
     onWordHold: (hit, cue) => lookup.startFlashcardFor(requestFor(hit, cue)),
   });
   return {
     activeWord: useActiveCueWord(lookup.activeOccurrence),
+    cursor: cursor?.position ?? null,
     popup,
     openSearch: lookup.openSearch,
     wordGestures,

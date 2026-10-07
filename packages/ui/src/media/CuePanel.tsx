@@ -1,12 +1,16 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { FilePlus, Layers, LocateFixed, Sparkles } from "lucide-react";
-import { type MouseEvent, memo, useMemo } from "react";
+import { type KeyboardEvent, type MouseEvent, memo, useMemo } from "react";
 import { Button } from "../components/Button.tsx";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
+import { lineStepOfKey } from "../components/cursorKeys.ts";
 import { EmptyState } from "../components/EmptyState.tsx";
+import { clickableWordAttribute } from "../components/lookupTrigger.ts";
 import type { Range } from "../components/RunText.tsx";
+import type { TextCursor } from "../components/textCursor.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
+import { type CueTextCursor, cursorIn } from "./cueCursor.ts";
 import {
   type ActiveCueWord,
   activeWordIn,
@@ -21,6 +25,8 @@ import { useFollowsPlayback } from "./useFollowsPlayback.ts";
  * The collapsible panel with one card per cue, which follows playback.
  * A click anywhere on a card seeks to its cue, except on its words, which keep their own gestures, and on its buttons.
  * Once the user scrolls the current line out of view, the panel stops following and offers a button back to it.
+ * From a focused word, Left and Right move the lookup cursor along its cue, and Up and Down move focus to the first word
+ * of the previous or next card and seek to its cue, as they do in the subtitles over the video.
  * A card renders again only when its own cue, state or word changes, so that playback and lookups stay quick with many cues;
  * for that, `wordGestures` must keep its identity across renders.
  */
@@ -31,6 +37,7 @@ export function CuePanel({
   flashcardCueIndexes,
   flashcardWordRanges,
   activeWord,
+  cursor,
   onSeek,
   wordGestures,
   onAddSubtitlesFile,
@@ -47,6 +54,8 @@ export function CuePanel({
    */
   flashcardWordRanges?: ReadonlyMap<number, readonly Range[]>;
   activeWord?: ActiveCueWord;
+  /** The lookup cursor of the subtitles, highlighted in the card of the cue it lies in; null when there is none. */
+  cursor?: CueTextCursor | null;
   onSeek: (ms: number) => void;
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
@@ -73,6 +82,21 @@ export function CuePanel({
     openFlashcardForCue: (cueIndex: number) =>
       onOpenFlashcardForCue?.(cueIndex),
   });
+  const stepCue = (event: KeyboardEvent<HTMLOListElement>) => {
+    const step = lineStepOfKey(event);
+    const card = (event.target as Element).closest("li");
+    if (step === null || !isClickableWord(event.target) || !card) return;
+    event.preventDefault();
+    const index = [...event.currentTarget.children].indexOf(card);
+    const adjacent = pairs[step === "next" ? index + 1 : index - 1];
+    const adjacentCard =
+      step === "next" ? card.nextElementSibling : card.previousElementSibling;
+    if (!adjacent || !adjacentCard) return;
+    adjacentCard
+      .querySelector<HTMLElement>(`[${clickableWordAttribute}]`)
+      ?.focus();
+    handlers.seek(adjacent.cue.start_ms);
+  };
   if (cues.length === 0) {
     return (
       <div className="p-3">
@@ -97,10 +121,12 @@ export function CuePanel({
   }
   return (
     <div className="relative flex min-h-0 flex-col">
+      {/* Up and Down reach here from the focused word of a card, which handles Left and Right itself. */}
       <ol
         ref={listRef}
         aria-label="Subtitles"
         className="flex flex-col gap-1 overflow-y-auto p-2"
+        onKeyDown={stepCue}
       >
         {pairs.map(({ cue, translation }) => (
           <CueCard
@@ -113,6 +139,7 @@ export function CuePanel({
               flashcardWordRanges?.get(cue.index) ?? noRanges
             }
             activeWord={activeWordIn(activeWord, cue)}
+            cursor={cursorIn(cursor, cue)}
             onSeek={handlers.seek}
             wordGestures={wordGestures}
             onOpenFlashcardForCue={
@@ -137,6 +164,12 @@ export function CuePanel({
 
 const noRanges: readonly Range[] = [];
 
+function isClickableWord(target: EventTarget): boolean {
+  return (
+    target instanceof Element && target.hasAttribute(clickableWordAttribute)
+  );
+}
+
 const CueCard = memo(function CueCard({
   cue,
   translation,
@@ -144,6 +177,7 @@ const CueCard = memo(function CueCard({
   hasFlashcard,
   flashcardWordRanges,
   activeWord,
+  cursor,
   onSeek,
   wordGestures,
   onOpenFlashcardForCue,
@@ -155,6 +189,8 @@ const CueCard = memo(function CueCard({
   flashcardWordRanges: readonly Range[];
   /** The word the pop-up shows, when it lies in this cue. */
   activeWord?: { start: number; length?: number; popupId: string };
+  /** The lookup cursor, when it lies in this cue, as `ClickableText` takes it. */
+  cursor?: TextCursor | null;
   onSeek: (ms: number) => void;
   /** What the user does to the words of each cue. */
   wordGestures: CueWordGestures;
@@ -219,6 +255,7 @@ const CueCard = memo(function CueCard({
         <ClickableText
           text={stripMarkup(cue.text)}
           activeWord={activeWord}
+          cursor={cursor}
           markedRanges={flashcardWordRanges}
           gestures={gesturesForCue(wordGestures, cue)}
         />

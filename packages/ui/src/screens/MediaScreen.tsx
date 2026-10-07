@@ -1,6 +1,7 @@
 import { actions, selectPlayer, selectPreference } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
 import { useCallback, useMemo, useReducer, useRef, useState } from "react";
+import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
@@ -13,11 +14,12 @@ import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useFullscreen } from "../hooks/useFullscreen.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
+import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
-import { findTranslationOf } from "../media/findCue.ts";
+import { findAdjacentCue, findTranslationOf } from "../media/findCue.ts";
 import { flashcardWordRanges } from "../media/flashcardWordRanges.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
@@ -41,8 +43,9 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
  * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
  * double-clicking a word starts a flashcard for it at once.
- * Space or K plays and pauses, the arrow keys skip between cues, R replays the cue shown now, M mutes, and F fills the screen,
- * as does double-clicking the picture.
+ * Space or K plays and pauses, Left and Right skip between cues, R replays the cue shown now, M mutes, and F fills the screen,
+ * as does double-clicking the picture. While a word of the subtitles has focus, Left and Right move the lookup cursor instead,
+ * and Up and Down skip to the previous or next cue; L looks up from the cursor, wherever the mouse or the keyboard put it.
  * The file resumes where playback last was, as `useResumePlayback` describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `useClipLoop` describes.
  * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
@@ -188,6 +191,12 @@ export function MediaScreen({
     screenRef,
   );
   useKeyboardShortcut("f", fullscreen.toggle, screenRef);
+  const cueSteps = useStableCallbacks({
+    step: (cue: Cue, step: LineStep) => {
+      const adjacent = findAdjacentCue(subtitles.cues, cue, step);
+      if (adjacent) dispatch(actions.seekRequested(adjacent.start_ms / 1000));
+    },
+  });
   return (
     <MediaView
       ref={screenRef}
@@ -243,7 +252,9 @@ export function MediaScreen({
       playerCallbacks={playerCallbacks}
       onBack={() => dispatch(actions.closeMedia())}
       activeWord={lookup.activeWord}
+      cursor={lookup.cursor}
       wordGestures={lookup.wordGestures}
+      onCueStep={cueSteps.step}
       onLookup={lookup.openSearch}
       onAddFlashcard={() => startFlashcard("", null, null)}
       lookup={
@@ -283,6 +294,7 @@ export function MediaScreen({
             flashcardCueIndexes={flashcards.cueIndexes}
             flashcardWordRanges={wordRanges}
             activeWord={lookup.activeWord}
+            cursor={lookup.cursor}
             wordGestures={lookup.wordGestures}
             onOpenFlashcardForCue={flashcards.openForCue}
           />
