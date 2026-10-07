@@ -2,6 +2,7 @@ pub mod deinflection;
 pub mod dictionary;
 pub mod document;
 pub mod flashcard;
+pub mod found_subtitle_tracks;
 pub mod language_code;
 pub mod lookup;
 pub mod media_file;

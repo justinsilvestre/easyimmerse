@@ -3,6 +3,7 @@ mod dictionaries;
 mod documents;
 mod embedded_subtitles;
 mod flashcards;
+mod local_media_sample;
 mod media;
 mod media_conversion;
 mod openapi;
