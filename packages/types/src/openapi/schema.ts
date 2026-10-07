@@ -419,8 +419,9 @@ export interface paths {
         put?: never;
         /**
          * Adds a media file to a project. A `path` source must name an existing file on the
-         *     server's machine, which only a token allowed to read local paths may do; subtitle files
-         *     beside it that share its name are added as its subtitle tracks.
+         *     server's machine, which only a token allowed to read local paths may do; the text
+         *     subtitle tracks inside it and the subtitle files beside it that share its name are added
+         *     as its subtitle tracks.
          */
         post: operations["addMediaFile"];
         delete?: never;
@@ -3205,7 +3206,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The subtitle tracks embedded in the file, which cannot be shown yet */
+            /** @description The subtitle tracks embedded in the file. Adding the file by path adds its text tracks among its subtitle tracks. */
             200: {
                 headers: {
                     [name: string]: unknown;
