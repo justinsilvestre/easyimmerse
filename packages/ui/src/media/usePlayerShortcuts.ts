@@ -4,7 +4,7 @@ import type { PlayerCallbacks } from "./PlayerControls.tsx";
 
 export type PlayerShortcutCallbacks = Pick<
   PlayerCallbacks,
-  "onTogglePlay" | "onSkip"
+  "onTogglePlay" | "onSkip" | "onToggleMute"
 > & {
   /** Plays the cue shown now again from its start, or the last few seconds between cues. */
   onReplay: () => void;
@@ -12,7 +12,7 @@ export type PlayerShortcutCallbacks = Pick<
 
 /**
  * The keys that work the player while its screen is in reach:
- * Space or K plays and pauses, the left and right arrows skip to the previous and next cue, and R replays the cue shown now.
+ * Space or K plays and pauses, the left and right arrows skip to the previous and next cue, R replays the cue shown now, and M mutes and unmutes.
  * J and L are left alone, since L opens the dictionary lookup.
  */
 export function usePlayerShortcuts(
@@ -27,4 +27,5 @@ export function usePlayerShortcuts(
     scopeRef,
   );
   useKeyboardShortcut("r", callbacks.onReplay, scopeRef);
+  useKeyboardShortcut("m", callbacks.onToggleMute, scopeRef);
 }

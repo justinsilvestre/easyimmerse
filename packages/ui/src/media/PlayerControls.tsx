@@ -10,6 +10,7 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
+  VolumeX,
 } from "lucide-react";
 import { IconButton } from "../components/IconButton.tsx";
 import { formatTimestamp } from "./formatTimestamp.ts";
@@ -22,6 +23,7 @@ export type PlayerCallbacks = {
   /** Skips to the previous or next cue, or by a few seconds when there are no cues. */
   onSkip: (direction: "back" | "forward") => void;
   onVolumeChange: (volume: number) => void;
+  onToggleMute: () => void;
   onSpeedChange: (speed: number) => void;
   /** Cycles which subtitles lie over the video: both, the target language, or the translation. */
   onToggleSubtitleDisplay: () => void;
@@ -85,9 +87,19 @@ export function PlayerControls({
         >
           <SkipForward className="size-4" />
         </IconButton>
+        <IconButton
+          label={playback.isMuted ? "Unmute (M)" : "Mute (M)"}
+          className="ml-2"
+          onClick={callbacks.onToggleMute}
+        >
+          {playback.isMuted ? (
+            <VolumeX className="size-4" />
+          ) : (
+            <Volume2 className="size-4" />
+          )}
+        </IconButton>
         {/* Phones and tablets set the volume with their own buttons, so the slider shows only for fine pointers. */}
-        <label className="ml-2 hidden items-center gap-1 text-fg-muted pointer-fine:flex">
-          <Volume2 className="size-4" aria-hidden />
+        <label className="hidden items-center text-fg-muted pointer-fine:flex">
           <input
             type="range"
             aria-label="Volume"

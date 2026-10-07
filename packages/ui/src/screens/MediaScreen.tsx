@@ -38,7 +38,7 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * the player with its subtitles and waveform, and the flashcard editor beside it while a card is open.
  * Clicking a word in the subtitles looks it up in the dictionary pop-up, which pauses playback while it is open;
  * double-clicking a word starts a flashcard for it at once.
- * Space or K plays and pauses, the arrow keys skip between cues, R replays the cue shown now, and F fills the screen.
+ * Space or K plays and pauses, the arrow keys skip between cues, R replays the cue shown now, M mutes, and F fills the screen.
  * The file resumes where playback last was, as `useResumePlayback` describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `useClipLoop` describes.
  * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
@@ -145,6 +145,7 @@ export function MediaScreen({
         ),
       ),
     onVolumeChange: (volume) => dispatch(actions.volumeChangeRequested(volume)),
+    onToggleMute: () => dispatch(actions.muteToggleRequested()),
     onSpeedChange: (speed) => dispatch(actions.speedChangeRequested(speed)),
     onToggleSubtitleDisplay: () =>
       dispatchPanels({ type: "subtitleDisplayCycled" }),
@@ -181,6 +182,7 @@ export function MediaScreen({
         durationMs,
         buffered: player.buffered,
         volume: player.volume,
+        isMuted: player.isMuted,
         speed: player.speed,
       }}
       tracks={tracks}

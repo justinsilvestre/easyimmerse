@@ -46,6 +46,7 @@ function renderView(overrides: Partial<ViewProps> = {}) {
         onToggleSubtitleDisplay: ignore,
         onToggleCuePanel: ignore,
         onToggleWaveform: ignore,
+        onToggleMute: ignore,
       }}
       onBack={ignore}
       wordGestures={{ onWordClick: ignore, onWordDoubleClick: ignore }}

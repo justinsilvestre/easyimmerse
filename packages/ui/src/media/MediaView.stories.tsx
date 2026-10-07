@@ -210,6 +210,7 @@ const meta = {
       onToggleSubtitleDisplay: fn(),
       onToggleCuePanel: fn(),
       onToggleWaveform: fn(),
+      onToggleMute: fn(),
     },
     onBack: fn(),
     wordGestures: {

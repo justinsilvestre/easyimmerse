@@ -37,6 +37,7 @@ function renderControls(
         onToggleSubtitleDisplay: ignore,
         onToggleCuePanel: ignore,
         onToggleWaveform: ignore,
+        onToggleMute: ignore,
       }}
       {...overrides}
     />,
@@ -83,11 +84,24 @@ describe("PlayerControls", () => {
         onToggleSubtitleDisplay: ignore,
         onToggleCuePanel: ignore,
         onToggleWaveform: ignore,
+        onToggleMute: ignore,
         onToggleFullscreen: ignore,
       },
     });
     expect(
       screen.getByRole("button", { name: "Leave fullscreen (F)" }),
     ).toBeDefined();
+  });
+});
+
+describe("PlayerControls mute button", () => {
+  it("offers to mute while the sound is on", () => {
+    renderControls();
+    expect(screen.getByRole("button", { name: "Mute (M)" })).toBeTruthy();
+  });
+
+  it("offers to unmute while muted", () => {
+    renderControls({ playback: { ...playback, isMuted: true } });
+    expect(screen.getByRole("button", { name: "Unmute (M)" })).toBeTruthy();
   });
 });
