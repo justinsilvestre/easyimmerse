@@ -1,21 +1,21 @@
 import type {
   AddMediaFileRequest,
-  AddMediaFromSourceRequest,
   AddSubtitleTrackRequest,
   BatchLookupRequest,
   BatchLookupResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
-  DescribeMediaSourceRequest,
   Document,
   DocumentFormat,
   EmbeddedSubtitleTracksResponse,
-  FetchSourceSubtitlesResponse,
   Flashcard,
   FlashcardDraft,
+  ImportFormRequest,
   ImportJobStarted,
   ImportJobStatus,
   ImportLocalDictionaryRequest,
+  ImportStepRequest,
+  ImportStepResponse,
   ListDictionariesResponse,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
@@ -23,7 +23,6 @@ import type {
   ListProjectsResponse,
   LookupQuery,
   LookupResponse,
-  MediaDescription,
   MediaFile,
   MediaSourceJob,
   NewFlashcard,
@@ -31,10 +30,12 @@ import type {
   ParseTimedTextRequest,
   PlaybackRequest,
   PlaybackResponse,
+  PluginForm,
   PreviewLocalDictionaryTableRequest,
   Project,
   ProjectSettings,
-  SourceSubtitlesResponse,
+  SourceStepRequest,
+  SourceStepResponse,
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
@@ -76,19 +77,13 @@ type FlashcardArgs = { projectId: string; flashcardId: string };
 
 type AddMediaFileArgs = { projectId: string; request: AddMediaFileRequest };
 
-type AddMediaFromSourceArgs = {
-  projectId: string;
-  request: AddMediaFromSourceRequest;
-};
+type ImportFormArgs = { projectId: string; request: ImportFormRequest };
+
+type ImportStepArgs = { projectId: string; request: ImportStepRequest };
 
 type MediaSourceJobArgs = { projectId: string; jobId: string };
 
-type DescribeMediaSourceArgs = {
-  plugin: string;
-  request: DescribeMediaSourceRequest;
-};
-
-type FetchSourceSubtitlesArgs = MediaFileArgs & { subtitles: string[] };
+type SourceStepArgs = MediaFileArgs & { request: SourceStepRequest };
 
 type MediaFileArgs = { projectId: string; mediaFileId: string };
 
@@ -285,17 +280,6 @@ export const backendApi = createApi({
     listPlugins: build.query<ListPluginsResponse, void>({
       query: () => ({ method: "GET", path: "/plugins" }),
     }),
-    /** Asks a media-source plugin what it has for a locator, without fetching anything. */
-    describeMediaSource: build.mutation<
-      MediaDescription,
-      DescribeMediaSourceArgs
-    >({
-      query: ({ plugin, request }) => ({
-        method: "POST",
-        path: `/plugins/${plugin}/describe`,
-        body: { kind: "json", value: request },
-      }),
-    }),
     listMediaFiles: build.query<ListMediaFilesResponse, string>({
       query: (projectId) => ({
         method: "GET",
@@ -319,11 +303,22 @@ export const backendApi = createApi({
       invalidatesTags: (_result, _error, { projectId }) =>
         mediaFileAddedTags(projectId),
     }),
-    /** Starts a fetch through a media-source plugin; the job it answers with is polled through `getMediaSourceJob`. */
-    addMediaFromSource: build.mutation<MediaSourceJob, AddMediaFromSourceArgs>({
+    /** Asks a media-source plugin for the first form of its import interface. */
+    getImportForm: build.mutation<PluginForm, ImportFormArgs>({
       query: ({ projectId, request }) => ({
         method: "POST",
-        path: `/projects/${projectId}/media/from-source`,
+        path: `/projects/${projectId}/media/import-form`,
+        body: { kind: "json", value: request },
+      }),
+    }),
+    /**
+     * Sends an action of a media-source plugin's import form. The plugin answers with the next form,
+     * or the server starts the import as a job, which is polled through `getMediaSourceJob`.
+     */
+    submitImportStep: build.mutation<ImportStepResponse, ImportStepArgs>({
+      query: ({ projectId, request }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/media/import-step`,
         body: { kind: "json", value: request },
       }),
     }),
@@ -401,24 +396,23 @@ export const backendApi = createApi({
       }),
       providesTags: (_result, _error, args) => subtitleTracksTag(args),
     }),
-    /** The subtitle tracks the source of a fetched media file offers; asked of its plugin each time. */
-    listSourceSubtitles: build.query<SourceSubtitlesResponse, MediaFileArgs>({
+    /** The first form of the media interface of the plugin a media file was imported through. */
+    getSourceForm: build.query<PluginForm, MediaFileArgs>({
       query: (args) => ({
         method: "GET",
-        path: `${mediaFilePath(args)}/source-subtitles`,
+        path: `${mediaFilePath(args)}/source-form`,
       }),
+      keepUnusedDataFor: 0,
     }),
-    /** Fetches subtitle tracks from a fetched media file's source and adds them to it. */
-    fetchSourceSubtitles: build.mutation<
-      FetchSourceSubtitlesResponse,
-      FetchSourceSubtitlesArgs
-    >({
-      query: ({ subtitles, ...args }) => ({
+    /** Sends an action of a media file's source form. The plugin answers with the next form, or the server applies its changes. */
+    submitSourceStep: build.mutation<SourceStepResponse, SourceStepArgs>({
+      query: ({ request, ...args }) => ({
         method: "POST",
-        path: `${mediaFilePath(args)}/source-subtitles`,
-        body: { kind: "json", value: { subtitles } },
+        path: `${mediaFilePath(args)}/source-step`,
+        body: { kind: "json", value: request },
       }),
-      invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
+      invalidatesTags: (result, _error, args) =>
+        result?.kind === "applied" ? subtitleTracksTag(args) : [],
     }),
     addSubtitleTrack: build.mutation<SubtitleTrack, AddSubtitleTrackArgs>({
       query: ({ request, ...args }) => ({
@@ -625,8 +619,8 @@ export const {
   useDeleteFlashcardMutation,
   useListMediaFilesQuery,
   useAddMediaFileMutation,
-  useAddMediaFromSourceMutation,
-  useDescribeMediaSourceMutation,
+  useGetImportFormMutation,
+  useSubmitImportStepMutation,
   useGetMediaSourceJobQuery,
   useListPluginsQuery,
   useRemoveMediaFileMutation,
@@ -636,8 +630,8 @@ export const {
   useLazyGetWaveformWindowQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
-  useLazyListSourceSubtitlesQuery,
-  useFetchSourceSubtitlesMutation,
+  useGetSourceFormQuery,
+  useSubmitSourceStepMutation,
   useAddSubtitleTrackMutation,
   useGetSubtitleCuesQuery,
   useSetSubtitleSelectionMutation,
