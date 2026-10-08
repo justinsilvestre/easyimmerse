@@ -6,6 +6,10 @@ use crate::error::PluginError;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct PluginManifest {
     pub name: String,
+    /// How the plugin is named to the user, when not by `name`.
+    pub title: Option<String>,
+    /// The text of a media-source plugin's import button, when not the default.
+    pub import_label: Option<String>,
     pub version: String,
     pub kind: PluginKind,
     /// The version of the `easyimmerse:plugin` WIT package the plugin was built against.
@@ -15,6 +19,23 @@ pub struct PluginManifest {
     pub allowed_hosts: Vec<String>,
     #[serde(default)]
     pub settings: Vec<SettingSchema>,
+}
+
+impl PluginManifest {
+    /// How the plugin is named to the user: its title, or else its name.
+    pub fn title(&self) -> &str {
+        self.title.as_deref().unwrap_or(&self.name)
+    }
+
+    /// The text of the plugin's import button, for a media-source plugin only.
+    pub fn import_label(&self) -> Option<String> {
+        let label = || {
+            self.import_label
+                .clone()
+                .unwrap_or_else(|| format!("Add from {}", self.title()))
+        };
+        (self.kind == PluginKind::MediaSource).then(label)
+    }
 }
 
 /// The capability a plugin exports. `Hello` exists only for the host tests.
@@ -99,6 +120,53 @@ interface_version = "0.1.0"
     fn defaults_the_settings_to_empty() {
         let manifest = parse_manifest(MINIMAL_MANIFEST).unwrap();
         assert!(manifest.settings.is_empty());
+    }
+
+    const MEDIA_SOURCE_MANIFEST: &str = r#"
+name = "video-site"
+version = "0.1.0"
+kind = "media-source"
+interface_version = "0.1.0"
+"#;
+
+    fn with_line(manifest: &str, line: &str) -> String {
+        format!("{line}\n{manifest}")
+    }
+
+    #[test]
+    fn titles_the_plugin_by_its_name_without_a_title() {
+        let manifest = parse_manifest(MINIMAL_MANIFEST).unwrap();
+        assert_eq!(manifest.title(), "hello-rust");
+    }
+
+    #[test]
+    fn titles_the_plugin_by_its_title() {
+        let text = with_line(MINIMAL_MANIFEST, "title = \"Hello\"");
+        assert_eq!(parse_manifest(&text).unwrap().title(), "Hello");
+    }
+
+    #[test]
+    fn labels_the_import_button_after_the_title_by_default() {
+        let text = with_line(MEDIA_SOURCE_MANIFEST, "title = \"Video Site\"");
+        assert_eq!(
+            parse_manifest(&text).unwrap().import_label(),
+            Some("Add from Video Site".to_string())
+        );
+    }
+
+    #[test]
+    fn labels_the_import_button_as_the_manifest_says() {
+        let text = with_line(MEDIA_SOURCE_MANIFEST, "import_label = \"Fetch a video\"");
+        assert_eq!(
+            parse_manifest(&text).unwrap().import_label(),
+            Some("Fetch a video".to_string())
+        );
+    }
+
+    #[test]
+    fn gives_no_import_label_to_a_plugin_of_another_kind() {
+        let text = with_line(MINIMAL_MANIFEST, "import_label = \"Fetch\"");
+        assert_eq!(parse_manifest(&text).unwrap().import_label(), None);
     }
 
     #[test]
