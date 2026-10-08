@@ -9,6 +9,7 @@ import { useTimer } from "../hooks/useTimer.ts";
 import { characterOffsetAt, type ViewportPoint } from "./characterAtPoint.ts";
 import { hoverMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
+import { runLookupStartAt } from "./runLookupStarts.ts";
 import type { ClickPoint, WordClickMemory } from "./wordClickMemory.ts";
 import { useWordClickMemory } from "./wordClickMemoryContext.tsx";
 
@@ -229,15 +230,17 @@ export function hitAt(
 }
 
 /**
- * Where a hit at a point begins within a word: in a run of a script written without spaces, at the character under the point,
- * or at the run's start where no character lies there; in any other word, at its start.
+ * Where a hit at a point begins within a word: in a run of a script written without spaces, at the lookup start of the character under the point,
+ * which is the letter a mark belongs to or the first of a stretch of digits, or at the run's start where no character lies there;
+ * in any other word, at its start.
  */
 function offsetAtPoint(
   part: WordPart,
   element: HTMLElement,
   point: ViewportPoint,
 ): number {
-  return part.isUnspaced ? (characterOffsetAt(element, point) ?? 0) : 0;
+  if (!part.isUnspaced) return 0;
+  return runLookupStartAt(part.text, characterOffsetAt(element, point) ?? 0);
 }
 
 function pointOf(event: MouseEvent<HTMLElement>): ViewportPoint {

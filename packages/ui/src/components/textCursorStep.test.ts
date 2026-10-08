@@ -23,6 +23,32 @@ const lookupsMatching =
 const movieSentenceLengths = { 0: 2, 2: 1, 3: 2, 5: 1 };
 
 describe("stepTextCursor", () => {
+  describe("by character in a run of Thai", () => {
+    it("steps over a vowel sign to the next letter", () => {
+      expect(
+        stepTextCursor(
+          splitIntoWords("กินข้าว"),
+          { start: 0 },
+          characterForward,
+          noLookups,
+        ),
+      ).toBe(2);
+    });
+  });
+
+  describe("by character in a run that begins with digits", () => {
+    it("steps over the digits at once", () => {
+      expect(
+        stepTextCursor(
+          splitIntoWords("2026年"),
+          { start: 0 },
+          characterForward,
+          noLookups,
+        ),
+      ).toBe(4);
+    });
+  });
+
   describe("by word in a language written with spaces", () => {
     it("moves forward to the next word", () => {
       expect(

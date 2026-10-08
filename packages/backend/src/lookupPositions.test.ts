@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lookupPositions } from "./lookupPositions.ts";
+import { lookupPositions, lookupStartsIn } from "./lookupPositions.ts";
 
 describe("lookupPositions", () => {
   it("lists the start of each word in spaced text", () => {
@@ -68,5 +68,15 @@ describe("lookupPositions", () => {
 
   it("does not treat a zero-width no-break space as whitespace", () => {
     expect(lookupPositions("cat\uFEFFdog")).toEqual([0]);
+  });
+});
+
+describe("lookupStartsIn", () => {
+  it("counts offsets in UTF-16 code units", () => {
+    expect(lookupStartsIn("𠮟る")).toEqual([0, 2]);
+  });
+
+  it("starts a run that begins with digits once at the digits", () => {
+    expect(lookupStartsIn("2026年")).toEqual([0, 4]);
   });
 });

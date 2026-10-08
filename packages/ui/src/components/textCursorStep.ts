@@ -1,5 +1,5 @@
-import { characterLength } from "./characterLength.ts";
 import type { TextDirection, TextStep } from "./cursorKeys.ts";
+import { runLookupEnd, runLookupStarts } from "./runLookupStarts.ts";
 import type { TextCursor } from "./textCursor.ts";
 
 /** A part of a text, as `splitIntoWords` finds it. */
@@ -82,9 +82,10 @@ function wordStartInRun(
     start: number,
     answer: ReturnType<MatchedLengthAt>,
   ): Promise<number> => {
-    const length =
-      (await answer) || characterLength(run.text, start - run.start);
-    const end = start + length;
+    const length = await answer;
+    const end = length
+      ? start + length
+      : run.start + runLookupEnd(run.text, start - run.start);
     return end > offset ? start : cut(end, matchedLengthAt(end));
   };
   return cut(run.start, first);
@@ -94,14 +95,7 @@ function wordStartInRun(
 function cursorPlacesIn(part: TextPart): number[] {
   if (!part.isWord) return [];
   if (!part.isUnspaced) return [part.start];
-  const places: number[] = [];
-  for (
-    let offset = 0;
-    offset < part.text.length;
-    offset += characterLength(part.text, offset)
-  )
-    places.push(part.start + offset);
-  return places;
+  return runLookupStarts(part.text).map((offset) => part.start + offset);
 }
 
 function contains(part: TextPart, offset: number): boolean {

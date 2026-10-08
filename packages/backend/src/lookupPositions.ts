@@ -21,6 +21,17 @@ export function lookupPositions(text: string): number[] {
   return positions;
 }
 
+/** Lists the same positions as `lookupPositions`, as offsets in UTF-16 code units, which JavaScript string indices count. */
+export function lookupStartsIn(text: string): number[] {
+  const offsets: number[] = [];
+  let offset = 0;
+  for (const character of text) {
+    offsets.push(offset);
+    offset += character.length;
+  }
+  return lookupPositions(text).map((position) => offsets[position] ?? 0);
+}
+
 function mayStartWord(previous: string | null, character: string): boolean {
   return (
     previous === null ||
@@ -31,16 +42,25 @@ function mayStartWord(previous: string | null, character: string): boolean {
 }
 
 /**
- * The characters of scripts written without spaces between words:
- * kanji or Chinese characters, kana, and the marks written among them;
- * Bopomofo, which annotates Chinese and has the ideographic Line_Break class ID;
- * and the characters of Line_Break class SA, "Complex Context Dependent (South East Asian)",
+ * The characters of Line_Break class SA, "Complex Context Dependent (South East Asian)",
  * which Unicode Standard Annex #14 (Unicode Line Breaking Algorithm) assigns to Thai, Lao, Myanmar, Khmer,
  * Tai Le, New Tai Lue, Tai Tham, Myanmar Extended-A and -B, Tai Viet, and Ahom,
  * as `LineBreak.txt` of the Unicode Character Database, version 16.0.0, lists them.
+ * These scripts are written without spaces between words.
+ * The ranges are written for the inside of a character class of a regular expression with the `u` flag.
  */
-const unspacedPattern =
-  /^[㐀-䶿一-鿿豈-﫿\u{20000}-\u{3134F}々-〇぀-ヿ\u{3105}-\u{312F}\u{31A0}-\u{31BF}ㇰ-ㇿｦ-ﾟ\u{E01}-\u{E3A}\u{E40}-\u{E4E}\u{E81}-\u{E82}\u{E84}\u{E86}-\u{E8A}\u{E8C}-\u{EA3}\u{EA5}\u{EA7}-\u{EBD}\u{EC0}-\u{EC4}\u{EC6}\u{EC8}-\u{ECE}\u{EDC}-\u{EDF}\u{1000}-\u{103F}\u{1050}-\u{108F}\u{109A}-\u{109F}\u{1780}-\u{17D3}\u{17D7}\u{17DC}-\u{17DD}\u{1950}-\u{196D}\u{1970}-\u{1974}\u{1980}-\u{19AB}\u{19B0}-\u{19C9}\u{19DE}-\u{19DF}\u{1A20}-\u{1A5E}\u{1A60}-\u{1A7C}\u{1AA0}-\u{1AAD}\u{A9E0}-\u{A9EF}\u{A9FA}-\u{A9FE}\u{AA60}-\u{AAC2}\u{AADB}-\u{AADF}\u{11700}-\u{1171A}\u{1171D}-\u{1172B}\u{1173A}-\u{1173B}\u{1173F}-\u{11746}]$/u;
+export const southEastAsianCharacterRanges = String.raw`\u{E01}-\u{E3A}\u{E40}-\u{E4E}\u{E81}-\u{E82}\u{E84}\u{E86}-\u{E8A}\u{E8C}-\u{EA3}\u{EA5}\u{EA7}-\u{EBD}\u{EC0}-\u{EC4}\u{EC6}\u{EC8}-\u{ECE}\u{EDC}-\u{EDF}\u{1000}-\u{103F}\u{1050}-\u{108F}\u{109A}-\u{109F}\u{1780}-\u{17D3}\u{17D7}\u{17DC}-\u{17DD}\u{1950}-\u{196D}\u{1970}-\u{1974}\u{1980}-\u{19AB}\u{19B0}-\u{19C9}\u{19DE}-\u{19DF}\u{1A20}-\u{1A5E}\u{1A60}-\u{1A7C}\u{1AA0}-\u{1AAD}\u{A9E0}-\u{A9EF}\u{A9FA}-\u{A9FE}\u{AA60}-\u{AAC2}\u{AADB}-\u{AADF}\u{11700}-\u{1171A}\u{1171D}-\u{1172B}\u{1173A}-\u{1173B}\u{1173F}-\u{11746}`;
+
+/**
+ * The characters of scripts written without spaces between words:
+ * kanji or Chinese characters, kana, and the marks written among them;
+ * Bopomofo, which annotates Chinese and has the ideographic Line_Break class ID;
+ * and the South East Asian scripts of `southEastAsianCharacterRanges`.
+ */
+const unspacedPattern = new RegExp(
+  String.raw`^[㐀-䶿一-鿿豈-﫿\u{20000}-\u{3134F}々-〇぀-ヿ\u{3105}-\u{312F}\u{31A0}-\u{31BF}ㇰ-ㇿｦ-ﾟ${southEastAsianCharacterRanges}]$`,
+  "u",
+);
 
 /**
  * The combining marks of the Line_Break class SA scripts, such as Thai vowel signs and tone marks:
