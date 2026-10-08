@@ -43,7 +43,7 @@ const dogCue = exampleCues[2] ?? null;
 function renderView(overrides: Partial<ViewProps> = {}) {
   renderWithAppStore(
     <MediaView
-      media={{ title: "Episode 1", projectName: "Alpha" }}
+      media={{ title: "Episode 1", projectName: "Alpha", source: null }}
       stage={
         <div
           role="img"
@@ -93,6 +93,29 @@ const picture = () => screen.getByRole("img", { name: "Picture" });
 const subtitleWord = () => screen.getByRole("button", { name: "Hund" });
 
 describe("MediaView", () => {
+  describe("for a file imported through a plugin", () => {
+    const media = {
+      title: "Episode 1",
+      projectName: "Alpha",
+      source: { title: "Video site", isAvailable: true },
+    };
+
+    it("opens the plugin's media interface from the chip named after it", () => {
+      const onOpenSource = vi.fn();
+      renderView({ media, onOpenSource });
+      fireEvent.click(screen.getByRole("button", { name: "Video site" }));
+      expect(onOpenSource).toHaveBeenCalledOnce();
+    });
+
+    it("opens nothing from the chip while the plugin is not installed", () => {
+      const onOpenSource = vi.fn();
+      const source = { title: "downloader", isAvailable: false };
+      renderView({ media: { ...media, source }, onOpenSource });
+      fireEvent.click(screen.getByRole("button", { name: "downloader" }));
+      expect(onOpenSource).not.toHaveBeenCalled();
+    });
+  });
+
   it("shows the controls at first", () => {
     renderView();
     expect(areControlsFolded()).toBe(false);

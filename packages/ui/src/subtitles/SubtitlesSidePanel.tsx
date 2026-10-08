@@ -24,7 +24,6 @@ export function SubtitlesSidePanel({
   activeWord,
   cursor,
   wordGestures,
-  onFetchFromSource,
   onOpenFlashcardForCue,
   onVisibleCuesChange,
 }: {
@@ -42,8 +41,6 @@ export function SubtitlesSidePanel({
   /** The lookup cursor of the subtitles, or null when there is none. */
   cursor?: CueTextCursor | null;
   wordGestures: CueWordGestures;
-  /** Null when the media did not come from a source that can offer subtitles. */
-  onFetchFromSource: (() => void) | null;
   /** Opens the flashcard made from a cue, from the mark on that cue's card. */
   onOpenFlashcardForCue?: (cueIndex: number) => void;
   /** Receives the positions among the cues of the cards in view, each time they change, and null once the panel is gone. */
@@ -60,7 +57,6 @@ export function SubtitlesSidePanel({
           subtitles.choose("translation", trackId)
         }
         onAddFile={subtitles.requestFile}
-        onFetchFromSource={onFetchFromSource}
       />
       {subtitles.hasFailed && (
         <p role="alert" className="px-3 py-2 text-sm text-danger-fg">

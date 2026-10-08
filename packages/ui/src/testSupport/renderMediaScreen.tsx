@@ -16,7 +16,10 @@ import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { NavigationActionsContext } from "../navigationContext.ts";
 import { MediaScreen } from "../screens/MediaScreen.tsx";
-import { createFakeBackendClient } from "./createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  type FakeResponse,
+} from "./createFakeBackendClient.ts";
 import {
   fixtureProject,
   fixtureResponses,
@@ -84,6 +87,8 @@ type MediaScreenSetup = {
    * or null, the default, for a server that offers no batch lookups.
    */
   batchLookupMs?: number | null;
+  /** Canned responses that add to or replace the screen's usual ones. */
+  responses?: Record<string, FakeResponse>;
 };
 
 /**
@@ -98,6 +103,7 @@ export function renderMediaScreen({
   slowLookups = {},
   failingLookups = {},
   batchLookupMs = null,
+  responses = {},
 }: MediaScreenSetup = {}) {
   const client = withLookupTiming(
     createFakeBackendClient(
@@ -111,6 +117,7 @@ export function renderMediaScreen({
         "POST /projects/p1/media/m1/subtitles":
           fixtureResponses["GET /projects/p1/media/m1/subtitles"].tracks[0],
         "POST /projects/p1/flashcards": savedFlashcard,
+        ...responses,
       },
       directPlaybackRoutes,
     ),

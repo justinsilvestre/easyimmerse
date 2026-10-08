@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Captions, ChevronDown, CloudDownload, FilePlus } from "lucide-react";
+import { Captions, ChevronDown, FilePlus } from "lucide-react";
 import { useState } from "react";
 import { IconButton } from "../components/IconButton.tsx";
 import { languageName } from "../projects/languages.ts";
@@ -9,8 +9,7 @@ import type {
 } from "./SubtitleTrackChoices.ts";
 
 /**
- * The row at the top of the subtitles panel for choosing the subtitle tracks and adding a subtitles file,
- * or fetching one from the source the media came from, when it came from one.
+ * The row at the top of the subtitles panel for choosing the subtitle tracks and adding a subtitles file.
  * Each choice is named for the project language it serves, such as "Japanese subtitles", inside its list and as its tooltip.
  * On a narrow screen the row folds into one line naming the chosen tracks, which opens the choices when pressed.
  */
@@ -20,7 +19,6 @@ export function SubtitleTrackBar({
   onTargetChange,
   onTranslationChange,
   onAddFile,
-  onFetchFromSource = null,
 }: {
   tracks: SubtitleTrackChoices;
   /** The project's target and translation languages, as BCP 47 tags. */
@@ -28,8 +26,6 @@ export function SubtitleTrackBar({
   onTargetChange: (trackId: string | null) => void;
   onTranslationChange: (trackId: string | null) => void;
   onAddFile: () => void;
-  /** Null when the media did not come from a source that can offer subtitles. */
-  onFetchFromSource?: (() => void) | null;
 }) {
   const [isExpanded, setExpanded] = useState(false);
   const chosen = chosenTrackNames(tracks);
@@ -73,14 +69,6 @@ export function SubtitleTrackBar({
         <IconButton label="Add a subtitles file" onClick={onAddFile}>
           <FilePlus className="size-4" />
         </IconButton>
-        {onFetchFromSource && (
-          <IconButton
-            label="Fetch subtitles from the source"
-            onClick={onFetchFromSource}
-          >
-            <CloudDownload className="size-4" />
-          </IconButton>
-        )}
       </div>
     </div>
   );

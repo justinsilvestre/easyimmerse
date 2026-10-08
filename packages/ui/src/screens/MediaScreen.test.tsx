@@ -5,7 +5,12 @@ import {
   selectCurrentMediaFileId,
   selectPreference,
 } from "@easyimmerse/state";
-import type { Flashcard, MediaFile } from "@easyimmerse/types";
+import type {
+  Flashcard,
+  MediaFile,
+  PluginForm,
+  SourceStepResponse,
+} from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -24,6 +29,8 @@ import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.
 import { createFakeFrameCapturer } from "../testSupport/createFakeFrameCapturer.ts";
 import { doubleClick } from "../testSupport/doubleClick.ts";
 import {
+  fixtureImportedMediaFiles,
+  fixtureMediaSourcePlugin,
   fixtureProject,
   fixtureResponses,
   fixtureSubtitleTracks,
@@ -701,6 +708,132 @@ describe("MediaScreen", () => {
         ).toMatchObject({ content: { audio_context: { start_ms: 250 } } }),
       );
     });
+  });
+
+  describe("for a file imported through a plugin", () => {
+    const fetchForm: PluginForm = {
+      title: "Subtitles from the video site",
+      description: null,
+      fields: [
+        {
+          id: "fetch",
+          label: "Subtitles to fetch",
+          hint: null,
+          control: {
+            kind: "choose-many",
+            options: [{ id: "en", label: "English (automatic)", hint: null }],
+            chosen: [],
+          },
+        },
+      ],
+      actions: [{ id: "apply", label: "Apply", style: "primary" }],
+    };
+
+    const applied = (
+      skipped: { id: string; reason: string }[] = [],
+    ): SourceStepResponse => ({
+      kind: "applied",
+      removed: [],
+      tracks: fixtureSubtitleTracks.tracks,
+      selection: fixtureSubtitleTracks.selection,
+      skipped,
+    });
+
+    const renderImported = (
+      step: unknown = applied(),
+      plugins = [fixtureMediaSourcePlugin],
+    ) =>
+      renderMediaScreen({
+        responses: {
+          "GET /plugins": { plugins },
+          "GET /projects/p1/media": fixtureImportedMediaFiles,
+          "GET /projects/p1/media/m1/source-form": fetchForm,
+          "POST /projects/p1/media/m1/source-step": step,
+        },
+      });
+
+    /** Opens the plugin's media interface from the chip, checks the English track, and applies. */
+    async function applyEnglish() {
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Video site" }),
+      );
+      fireEvent.click(await screen.findByLabelText("English (automatic)"));
+      fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+    }
+
+    it("shows a chip named after the plugin's title", async () => {
+      renderImported();
+      expect(
+        await screen.findByRole("button", { name: "Video site" }),
+      ).toBeDefined();
+    });
+
+    it("names a plugin that is not installed by its name, as unavailable", async () => {
+      renderImported(applied(), []);
+      expect(
+        (
+          await screen.findByRole("button", { name: "video-site" })
+        ).getAttribute("aria-disabled"),
+      ).toBe("true");
+    });
+
+    it("sends the applied form's input to the plugin", async () => {
+      const { client } = renderImported();
+      await applyEnglish();
+      await vi.waitFor(() =>
+        expect(
+          bodyOf(
+            requestsTo(
+              client.requests,
+              "POST",
+              "/projects/p1/media/m1/source-step",
+            )[0],
+          ),
+        ).toEqual({
+          action: "apply",
+          input: [{ field: "fetch", values: ["en"] }],
+        }),
+      );
+    });
+
+    it("closes the plugin's dialog once its changes are applied", async () => {
+      renderImported();
+      await applyEnglish();
+      await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    });
+
+    it("names the subtitles that the plugin's changes did not add", async () => {
+      const { effects } = renderImported(
+        applied([{ id: "en", reason: "the plugin did not fetch it" }]),
+      );
+      await applyEnglish();
+      await vi.waitFor(() =>
+        expect(effects.calls).toContainEqual({
+          type: "showNotification",
+          message:
+            "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+        }),
+      );
+    });
+
+    it("shows the next form the plugin answers with", async () => {
+      renderImported({
+        kind: "form",
+        form: { ...fetchForm, title: "Confirm the changes" },
+      });
+      await applyEnglish();
+      expect(
+        await screen.findByRole("heading", { name: "Confirm the changes" }),
+      ).toBeDefined();
+    });
+  });
+
+  it("shows no plugin chip for a file that no plugin imported", async () => {
+    renderMediaScreen({
+      responses: { "GET /plugins": { plugins: [fixtureMediaSourcePlugin] } },
+    });
+    await findSubtitles();
+    expect(screen.queryByRole("button", { name: "Video site" })).toBeNull();
   });
 
   describe("with a video the browser added", () => {
