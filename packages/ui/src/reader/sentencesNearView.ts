@@ -1,3 +1,4 @@
+import type { ItemSpan } from "../hooks/useVisibleItemSpan.ts";
 import type { ReaderLocation } from "./readingProgress.ts";
 import { zeroWidthSpace } from "./unwrapHardLineBreaks.ts";
 import { sentencesOf } from "./wordAt.ts";
@@ -5,64 +6,66 @@ import { sentencesOf } from "./wordAt.ts";
 /** The most characters a sentence may hold to be looked up ahead, which is what one text of a batch lookup may hold. */
 const maxSentenceCharacters = 2000;
 
+/**
+ * The most text of one paragraph that is looked up ahead of the place in view, and half that behind it.
+ * Paragraphs near the view are taken whole up to this, so that one paragraph many screens long, as in a plain-text book, stays cheap.
+ */
+const paragraphCharacters = 4000;
+
 /** A stretch of a paragraph, from `start` up to `end`, in UTF-16 code units. */
 type TextWindow = { paragraph: string; start: number; end: number };
 
+type Place = Pick<ReaderLocation, "paragraphIndex" | "offset">;
+
 /**
  * The sentences of a chapter whose words to look up ahead of the reader, most urgent first, as `sentenceLookupAt` sends them:
- * those of the text from the place in view on for two screens, then, going back, those of the screen before it.
- * `screenCharacters` is about how much text one screen shows. Sentences too long for a batch lookup are left out.
+ * those of the paragraphs `near` the view, by their indexes, from the place in view on, then those before it.
+ * The paragraph of the place in view is always taken. Of a long paragraph, only the text within `paragraphCharacters`
+ * of the place in view, or of the end that faces it, is taken. Sentences too long for a batch lookup are left out.
  */
 export function sentencesNearView(
   paragraphs: readonly string[],
-  place: Pick<ReaderLocation, "paragraphIndex" | "offset">,
+  near: ItemSpan,
+  place: Place,
   language: string,
-  screenCharacters: number,
 ): string[] {
-  const windows = [
-    ...windowsAhead(paragraphs, place, 2 * screenCharacters),
-    ...windowsBehind(paragraphs, place, screenCharacters),
+  const first = Math.min(near.first, place.paragraphIndex);
+  const last = Math.min(
+    Math.max(near.last, place.paragraphIndex),
+    paragraphs.length - 1,
+  );
+  const indexes = [
+    ...range(place.paragraphIndex, last + 1),
+    ...range(first, place.paragraphIndex).reverse(),
   ];
+  const windows = indexes.map((index) =>
+    windowOf(paragraphs[index] ?? "", index, place),
+  );
   return [
     ...new Set(windows.flatMap((window) => sentencesIn(window, language))),
   ];
 }
 
-function windowsAhead(
-  paragraphs: readonly string[],
-  { paragraphIndex, offset }: Pick<ReaderLocation, "paragraphIndex" | "offset">,
-  characters: number,
-): TextWindow[] {
-  const windows: TextWindow[] = [];
-  let remaining = characters;
-  let start = offset;
-  for (const paragraph of paragraphs.slice(paragraphIndex)) {
-    if (remaining <= 0) break;
-    const end = Math.min(paragraph.length, start + remaining);
-    if (end > start) windows.push({ paragraph, start, end });
-    remaining -= end - start;
-    start = 0;
-  }
-  return windows;
+/** The text of a paragraph to look up ahead: near the place in view in its own paragraph, and near the end facing it in others. */
+function windowOf(paragraph: string, index: number, place: Place): TextWindow {
+  const { length } = paragraph;
+  if (index > place.paragraphIndex)
+    return { paragraph, start: 0, end: Math.min(length, paragraphCharacters) };
+  if (index < place.paragraphIndex)
+    return {
+      paragraph,
+      start: Math.max(0, length - paragraphCharacters / 2),
+      end: length,
+    };
+  return {
+    paragraph,
+    start: Math.max(0, place.offset - paragraphCharacters / 2),
+    end: Math.min(length, place.offset + paragraphCharacters),
+  };
 }
 
-function windowsBehind(
-  paragraphs: readonly string[],
-  { paragraphIndex, offset }: Pick<ReaderLocation, "paragraphIndex" | "offset">,
-  characters: number,
-): TextWindow[] {
-  const windows: TextWindow[] = [];
-  let remaining = characters;
-  let end: number | null = offset;
-  for (let index = paragraphIndex; index >= 0 && remaining > 0; index--) {
-    const paragraph = paragraphs[index] ?? "";
-    const windowEnd = end ?? paragraph.length;
-    const start = Math.max(0, windowEnd - remaining);
-    if (windowEnd > start) windows.push({ paragraph, start, end: windowEnd });
-    remaining -= windowEnd - start;
-    end = null;
-  }
-  return windows;
+function range(from: number, to: number): number[] {
+  return Array.from({ length: Math.max(0, to - from) }, (_, i) => from + i);
 }
 
 /**

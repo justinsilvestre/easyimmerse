@@ -55,6 +55,7 @@ import { searchDocument } from "./searchDocument.ts";
 import { sentencesNearView } from "./sentencesNearView.ts";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 import { useLookedUpHighlight } from "./useLookedUpHighlight.ts";
+import { useParagraphsNearView } from "./useParagraphsNearView.ts";
 import { useReaderKeys } from "./useReaderKeys.ts";
 import {
   type ReaderWord,
@@ -117,8 +118,6 @@ const searchLimit = 500;
  * Layout time grows with the text's length, so a longer chapter is shown in sections.
  */
 const sectionCharacterLimit = 250_000;
-/** About how much text one screen shows, which sets how far around the view words are looked up ahead. */
-const screenCharacters = 2000;
 
 /**
  * The screen for reading an ebook or a text file.
@@ -180,17 +179,32 @@ export function ReaderView(props: ReaderViewProps) {
   useEffect(() => {
     reportLocation(state.location);
   }, [state.location]);
+  const textContainer = useRef<HTMLElement>(null);
+  const shownText = useMemo(
+    () => [chapter, sectionIndex, layoutKeyOf(preferences)],
+    [chapter, sectionIndex, preferences],
+  );
+  const measuredNear = useParagraphsNearView(textContainer, isPaged, shownText);
   const reportNearby = useEffectEvent((sentences: readonly string[]) =>
     callbacks.onNearbySentencesChange?.(sentences),
   );
   const { paragraphIndex, offset } = state.location;
+  const nearFirst = measuredNear?.first ?? paragraphIndex;
+  const nearLast = measuredNear?.last ?? paragraphIndex;
   useEffect(() => {
     const paragraphs = document.chapters[chapterIndex]?.paragraphs ?? [];
+    const near = { first: nearFirst, last: nearLast };
     const place = { paragraphIndex, offset };
-    reportNearby(
-      sentencesNearView(paragraphs, place, props.language, screenCharacters),
-    );
-  }, [document, chapterIndex, paragraphIndex, offset, props.language]);
+    reportNearby(sentencesNearView(paragraphs, near, place, props.language));
+  }, [
+    document,
+    chapterIndex,
+    nearFirst,
+    nearLast,
+    paragraphIndex,
+    offset,
+    props.language,
+  ]);
   const hasLookup = props.lookup != null;
   useLookedUpHighlight(props.highlightedWord);
 
@@ -244,13 +258,7 @@ export function ReaderView(props: ReaderViewProps) {
     },
   });
 
-  const layoutKey = [
-    preferences.font,
-    preferences.fontSizeStep,
-    preferences.lineSpacing,
-    preferences.lineLength,
-    preferences.isJustified,
-  ].join();
+  const layoutKey = layoutKeyOf(preferences);
   const text = (
     <ChapterText
       chapter={chapter}
@@ -291,6 +299,7 @@ export function ReaderView(props: ReaderViewProps) {
         onReveal={showChrome}
       />
       <main
+        ref={textContainer}
         key={chapterIndex}
         className="absolute inset-0 touch-manipulation transition-opacity duration-300 starting:opacity-0"
         style={{
@@ -430,4 +439,15 @@ export function ReaderView(props: ReaderViewProps) {
       )}
     </div>
   );
+}
+
+/** Changes whenever a preference that moves the text changes, such as the font size. */
+function layoutKeyOf(preferences: ReaderPreferences): string {
+  return [
+    preferences.font,
+    preferences.fontSizeStep,
+    preferences.lineSpacing,
+    preferences.lineLength,
+    preferences.isJustified,
+  ].join();
 }

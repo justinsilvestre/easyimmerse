@@ -18,6 +18,7 @@ import {
   pageOfLocation,
 } from "./pagePositions.ts";
 import type { ReaderLocation } from "./readingProgress.ts";
+import { readerViewportAttribute } from "./useParagraphsNearView.ts";
 import { useSwipe } from "./useSwipe.ts";
 import { useWheelTurns } from "./useWheelTurns.ts";
 
@@ -136,6 +137,7 @@ export function PagedChapter({
         {...swipe.handlers}
       >
         <div
+          {...{ [readerViewportAttribute]: "" }}
           className="mx-auto h-full overflow-hidden"
           style={{ width: layout?.pageWidth }}
         >

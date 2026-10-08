@@ -3,6 +3,7 @@ import { firstIndexWhere } from "./firstIndexWhere.ts";
 import { paragraphAt, paragraphsOf } from "./pagePositions.ts";
 import type { ReaderLocation } from "./readingProgress.ts";
 import { characterRect } from "./textOffsets.ts";
+import { readerViewportAttribute } from "./useParagraphsNearView.ts";
 
 /** The scroll distance that reveals or hides the toolbar. */
 const directionThresholdPx = 6;
@@ -78,6 +79,7 @@ export function ScrolledChapter({
   return (
     <div
       ref={scroller}
+      {...{ [readerViewportAttribute]: "" }}
       tabIndex={-1}
       className="h-full overflow-y-auto overscroll-contain outline-none"
       onScroll={onScroll}

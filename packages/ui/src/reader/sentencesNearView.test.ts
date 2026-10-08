@@ -9,29 +9,58 @@ function paragraphOf(count: number, prefix = "S"): string {
   );
 }
 
+const start = { paragraphIndex: 0, offset: 0 };
+
 describe("sentencesNearView", () => {
-  it("takes the sentences for two screens from the place in view, then those for one screen before it", () => {
-    const paragraphs = [paragraphOf(3, "A"), paragraphOf(3, "B")];
+  it("takes the paragraphs near the view from the place in view on, then those before it", () => {
+    const paragraphs = ["A0.", "B0. B1.", "C0."];
     expect(
-      sentencesNearView(paragraphs, { paragraphIndex: 1, offset: 4 }, "en", 5),
-    ).toEqual(["B1.", "B2.", "B0.", "A2."]);
+      sentencesNearView(
+        paragraphs,
+        { first: 0, last: 2 },
+        { paragraphIndex: 1, offset: 0 },
+        "en",
+      ),
+    ).toEqual(["B0.", "B1.", "C0.", "A0."]);
+  });
+
+  it("takes the paragraph of the place in view even when none near it was seen", () => {
+    expect(
+      sentencesNearView(["A0.", "B0."], { first: 1, last: 1 }, start, "en"),
+    ).toEqual(["A0.", "B0."]);
   });
 
   it("takes only the text near the place in view from a long paragraph", () => {
     const paragraph = paragraphOf(1000);
     const offset = paragraph.indexOf("S500.");
     expect(
-      sentencesNearView([paragraph], { paragraphIndex: 0, offset }, "en", 5),
-    ).toEqual(["S500.", "S501.", "S499."]);
+      sentencesNearView(
+        [paragraph],
+        { first: 0, last: 0 },
+        { paragraphIndex: 0, offset },
+        "en",
+      ),
+    ).not.toContain("S0.");
+  });
+
+  it("takes only the beginning of a long paragraph after the place in view", () => {
+    expect(
+      sentencesNearView(
+        ["A0.", paragraphOf(1000)],
+        { first: 0, last: 1 },
+        start,
+        "en",
+      ),
+    ).not.toContain("S999.");
   });
 
   it("leaves out sentences too long for a batch", () => {
     expect(
       sentencesNearView(
         [`${"a".repeat(2001)}. Kurz.`],
-        { paragraphIndex: 0, offset: 0 },
+        { first: 0, last: 0 },
+        start,
         "de",
-        3000,
       ),
     ).toEqual(["Kurz."]);
   });
@@ -40,9 +69,9 @@ describe("sentencesNearView", () => {
     expect(
       sentencesNearView(
         [`猫が${zeroWidthSpace}寝る。`],
-        { paragraphIndex: 0, offset: 0 },
+        { first: 0, last: 0 },
+        start,
         "ja",
-        100,
       ),
     ).toEqual(["猫が寝る。"]);
   });
