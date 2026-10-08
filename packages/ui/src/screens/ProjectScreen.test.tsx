@@ -195,10 +195,10 @@ describe("ProjectScreen", () => {
     expect(screen.queryByRole("button", { name: /Add from/ })).toBeNull();
   });
 
-  it("labels a media-source plugin's button after its title when it names no label", async () => {
+  it("labels a media-source plugin's button with its title when it names no label", async () => {
     renderImport({}, [{ ...fixtureMediaSourcePlugin, import_label: null }]);
     expect(
-      await screen.findByRole("button", { name: "Add from Video site" }),
+      await screen.findByRole("button", { name: "Video site" }),
     ).toBeDefined();
   });
 

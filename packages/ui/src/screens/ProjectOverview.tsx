@@ -104,14 +104,17 @@ export function ProjectOverview({
   );
 }
 
-/** The installed media-source plugins, with the labels of their import buttons. */
+/**
+ * The installed media-source plugins, with the labels of their import buttons.
+ * The server gives every media-source plugin a label, so the title only stands in for a missing one.
+ */
 function useImportSources(): ImportSource[] {
   const plugins = useListPluginsQuery().data?.plugins ?? [];
   return plugins
     .filter((plugin) => plugin.kind === "media-source")
     .map((plugin) => ({
       name: plugin.name,
-      label: plugin.import_label ?? `Add from ${plugin.title}`,
+      label: plugin.import_label ?? plugin.title,
     }));
 }
 
