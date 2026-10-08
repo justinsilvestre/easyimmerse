@@ -352,27 +352,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/plugins/{plugin}/describe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Asks a media-source plugin what it has for a locator: the media's title and duration,
-         *     and the subtitle tracks that can be fetched with it. Nothing is fetched. The plugin
-         *     may take a few seconds to answer, as it usually asks the source.
-         */
-        post: operations["describeMediaSource"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/preferences/{key}": {
         parameters: {
             query?: never;
@@ -483,29 +462,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/{id}/media/from-source": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Starts fetching the media at a locator, such as a URL, through a media-source plugin
-         *     into the server's media directory, with the chosen subtitle tracks. The answer is the running job; poll it with
-         *     `getMediaSourceJob` until it is done or has failed. Once done, the media file is in
-         *     the project with the subtitle files the plugin fetched beside it, and a subtitle file in
-         *     the project's target language or translation language has that role at once.
-         */
-        post: operations["addMediaFromSource"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/projects/{id}/media/from-source/{job_id}": {
         parameters: {
             query?: never;
@@ -516,6 +472,47 @@ export interface paths {
         get: operations["getMediaSourceJob"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/import-form": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The first form of a media-source plugin's import interface. The plugin may take a few
+         *     seconds to answer.
+         */
+        post: operations["getImportForm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/import-step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sends an action of the import interface to the plugin. When the plugin answers with the
+         *     import to run, the import starts as a job; poll it with `getMediaSourceJob` until it is
+         *     done or has failed.
+         */
+        post: operations["submitImportStep"];
         delete?: never;
         options?: never;
         head?: never;
@@ -595,7 +592,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/{id}/media/{media_id}/source-subtitles": {
+    "/projects/{id}/media/{media_id}/source-form": {
         parameters: {
             query?: never;
             header?: never;
@@ -603,18 +600,36 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Lists the subtitle tracks the media file's source offers, by asking the plugin that
-         *     fetched the media file. The plugin may take a few seconds to answer.
+         * The first form of the media interface of the plugin the media file was imported through.
+         *     The plugin may take a few seconds to answer.
          */
-        get: operations["listSourceSubtitles"];
+        get: operations["getSourceForm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/source-step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
         /**
-         * Fetches the chosen subtitle tracks from the media file's source and adds them to the
-         *     media file, beside the files fetched with it. A track in a project language whose role
-         *     is still free takes that role. A track that could not be fetched or read is left out and
-         *     listed as skipped. The request lasts as long as the fetch.
+         * Sends an action of the media interface to the plugin. When the plugin answers with
+         *     changes, the server removes the tracks it names, clearing them from the selection, and
+         *     then fetches the tracks it asks for, if any, beside the files imported with the media
+         *     file. A fetched track in a project language whose role is still free takes that role,
+         *     and a fetched track that could not be read is left out and listed as skipped. The
+         *     request lasts as long as the fetch.
          */
-        post: operations["fetchSourceSubtitles"];
+        post: operations["submitSourceStep"];
         delete?: never;
         options?: never;
         head?: never;
@@ -805,13 +820,6 @@ export interface components {
             name: string;
             source: components["schemas"]["MediaFileSource"];
         };
-        AddMediaFromSourceRequest: {
-            locator: components["schemas"]["MediaLocator"];
-            /** @description The name of an installed media-source plugin. */
-            plugin: string;
-            /** @description The ids of the subtitle tracks to fetch with the media, from `describeMediaSource`. */
-            subtitles?: string[];
-        };
         AddSubtitleTrackRequest: {
             format?: components["schemas"]["TimedTextFormat"] | null;
             /** @description The name shown in the track list, usually the file name. */
@@ -846,14 +854,6 @@ export interface components {
         };
         /** @enum {string} */
         AudioTarget: "aac" | "flac";
-        /** @description A subtitle track a source offers for a media item, which a fetch may ask for by id. */
-        AvailableSubtitle: {
-            id: string;
-            /** @description A language tag such as "en" or "ja", as the source reports it. */
-            language?: string | null;
-            /** @description What the source calls the track, such as "English (automatic)". */
-            name: string;
-        };
         BatchLookupRequest: {
             /** @description The language of the texts, as a BCP 47 tag, which decides how inflections are undone. */
             language: string;
@@ -986,9 +986,6 @@ export interface components {
             /** @enum {string} */
             kind: "formOf";
         };
-        DescribeMediaSourceRequest: {
-            locator: components["schemas"]["MediaLocator"];
-        };
         /** @description One dictionary's entry for a result, with the meaning of each tag it uses. */
         DictionaryDefinitions: {
             dictionaryId: string;
@@ -1049,17 +1046,6 @@ export interface components {
         DocumentFormat: "epub" | "plain_text";
         EmbeddedSubtitleTracksResponse: {
             tracks: components["schemas"]["TrackInfo"][];
-        };
-        FetchSourceSubtitlesRequest: {
-            /** @description The ids of the subtitle tracks to fetch, from `listSourceSubtitles`. */
-            subtitles: string[];
-        };
-        FetchSourceSubtitlesResponse: {
-            selection: components["schemas"]["SubtitleSelection"];
-            /** @description The tracks asked for that were not added. */
-            skipped: components["schemas"]["SkippedSubtitle"][];
-            /** @description The media file's subtitle tracks, with the fetched ones added. */
-            tracks: components["schemas"]["SubtitleTrack"][];
         };
         /** @description A flashcard saved in a project. */
         Flashcard: {
@@ -1124,6 +1110,71 @@ export interface components {
          */
         FlashcardFieldKey: "word" | "word_pronunciation" | "l1_definition" | "l2_definition" | "text_context" | "text_context_translation" | "text_context_pronunciation" | "audio_context" | "screenshot" | "tags";
         FlashcardId: string;
+        /**
+         * @description A button at the foot of a form. Pressing it sends the form's input and the button's
+         *     id back to the plugin.
+         */
+        FormAction: {
+            id: string;
+            label: string;
+            style: components["schemas"]["FormActionStyle"];
+        };
+        /**
+         * @description How prominently an action button is shown.
+         * @enum {string}
+         */
+        FormActionStyle: "primary" | "secondary" | "destructive";
+        /** @description The kind of control a form field shows, with what the control starts out as. */
+        FormControl: {
+            /** @enum {string} */
+            kind: "text";
+            placeholder?: string | null;
+            value: string;
+        } | {
+            /** @description The ids of the options chosen to begin with. */
+            chosen: string[];
+            /** @enum {string} */
+            kind: "choose-one";
+            options: components["schemas"]["FormOption"][];
+        } | {
+            /** @description The ids of the options chosen to begin with. */
+            chosen: string[];
+            /** @enum {string} */
+            kind: "choose-many";
+            options: components["schemas"]["FormOption"][];
+        } | {
+            /** @enum {string} */
+            kind: "toggle";
+            on: boolean;
+        } | {
+            /** @enum {string} */
+            kind: "note";
+            text: string;
+        };
+        /** @description One labelled control in a plugin form. */
+        FormField: {
+            control: components["schemas"]["FormControl"];
+            /** @description Explains the field under its label. */
+            hint?: string | null;
+            /** @description Names the field in the input the app sends back. */
+            id: string;
+            label: string;
+        };
+        /**
+         * @description What the user entered in one field: the text, the ids of the chosen options, or
+         *     "true" or "false" for a toggle. A note sends nothing.
+         */
+        FormInput: {
+            field: string;
+            values: string[];
+        };
+        /** @description One option of a choice control. */
+        FormOption: {
+            /** @description Explains the option beside its label. */
+            hint?: string | null;
+            id: string;
+            label: string;
+        };
         /** @description How common a term is. The dictionary's `FrequencyMode` says whether higher values mean more or less common. */
         Frequency: {
             /** @description The text to show in place of the value, if the dictionary gives one. */
@@ -1136,6 +1187,10 @@ export interface components {
         };
         HealthResponse: {
             status: string;
+        };
+        ImportFormRequest: {
+            /** @description The name of an installed media-source plugin. */
+            plugin: string;
         };
         ImportJobStarted: {
             id: string;
@@ -1171,11 +1226,36 @@ export interface components {
             /** Format: int64 */
             term_meta: number;
         };
+        ImportStepRequest: {
+            /** @description The id of the form action the user pressed. */
+            action: string;
+            /** @description What the user entered in the form's fields. */
+            input: components["schemas"]["FormInput"][];
+            /** @description The name of an installed media-source plugin. */
+            plugin: string;
+        };
+        /**
+         * @description The plugin's answer to an action in its import interface: the next form to show, or the
+         *     job that runs the import.
+         */
+        ImportStepResponse: {
+            form: components["schemas"]["PluginForm"];
+            /** @enum {string} */
+            kind: "form";
+        } | {
+            job: components["schemas"]["MediaSourceJob"];
+            /** @enum {string} */
+            kind: "job";
+        };
         /** @description A plugin the server found in its plugin directory. */
         InstalledPlugin: {
+            /** @description The text of the plugin's import button. Set for media-source plugins only. */
+            import_label?: string | null;
             /** @description The capability the plugin exports, as its manifest names it, such as `media-source`. */
             kind: string;
             name: string;
+            /** @description How the plugin is named to the user. */
+            title: string;
             version: string;
         };
         IpaTranscription: {
@@ -1245,16 +1325,6 @@ export interface components {
         };
         /** @enum {string} */
         MarkupDialect: "pango" | "xdxf";
-        /**
-         * @description What a media-source plugin found at a locator before fetching anything: what the
-         *     media is, and which subtitle tracks the source offers for it.
-         */
-        MediaDescription: {
-            /** Format: int64 */
-            duration_ms?: number | null;
-            subtitles: components["schemas"]["AvailableSubtitle"][];
-            title: string;
-        };
         /** @description A video or audio file added to a project. */
         MediaFile: {
             /**
@@ -1418,6 +1488,14 @@ export interface components {
             /** @description The path of the HLS playlist, present only when the plan converts. */
             playlist_path?: string | null;
         };
+        /** @description A form a plugin asks the app to show. The app adds a way to close it. */
+        PluginForm: {
+            actions: components["schemas"]["FormAction"][];
+            /** @description Explains the form under its title. */
+            description?: string | null;
+            fields: components["schemas"]["FormField"][];
+            title: string;
+        };
         /**
          * @description What a single lookup at one position of a text would return,
          *     with each result given as its index in the batch response's lists.
@@ -1506,9 +1584,30 @@ export interface components {
             id: string;
             reason: string;
         };
-        SourceSubtitlesResponse: {
-            /** @description The subtitle tracks the source offers for the media file. */
-            subtitles: components["schemas"]["AvailableSubtitle"][];
+        SourceStepRequest: {
+            /** @description The id of the form action the user pressed. */
+            action: string;
+            /** @description What the user entered in the form's fields. */
+            input: components["schemas"]["FormInput"][];
+        };
+        /**
+         * @description The plugin's answer to an action in its media interface: the next form to show, or the
+         *     changes the server applied.
+         */
+        SourceStepResponse: {
+            form: components["schemas"]["PluginForm"];
+            /** @enum {string} */
+            kind: "form";
+        } | {
+            /** @enum {string} */
+            kind: "applied";
+            /** @description The ids of the subtitle tracks that were removed. */
+            removed: components["schemas"]["SubtitleTrackId"][];
+            selection: components["schemas"]["SubtitleSelection"];
+            /** @description The tracks the plugin fetched that were not added. */
+            skipped: components["schemas"]["SkippedSubtitle"][];
+            /** @description The media file's subtitle tracks after the changes. */
+            tracks: components["schemas"]["SubtitleTrack"][];
         };
         /**
          * @description Which role a subtitle track plays for its media file.
@@ -2865,78 +2964,6 @@ export interface operations {
             };
         };
     };
-    describeMediaSource: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The name of an installed media-source plugin */
-                plugin: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DescribeMediaSourceRequest"];
-            };
-        };
-        responses: {
-            /** @description What the source has for the locator */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MediaDescription"];
-                };
-            };
-            /** @description The plugin does not understand the locator (code `invalid_locator`) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Missing or invalid token */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description No installed media-source plugin of that name */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Unexpected Host header */
-            421: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description The plugin could not describe the locator (code `media_source_failed`) */
-            502: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
     getPreference: {
         parameters: {
             query?: never;
@@ -3594,69 +3621,6 @@ export interface operations {
             };
         };
     };
-    addMediaFromSource: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The project id */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AddMediaFromSourceRequest"];
-            };
-        };
-        responses: {
-            /** @description The job fetching the media, still running */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MediaSourceJob"];
-                };
-            };
-            /** @description Missing or invalid token */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description No such project, or no installed media-source plugin of that name */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Unexpected Host header */
-            421: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description The server has no media directory for plugins to fetch into (code `media_dir_unavailable`) */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
     getMediaSourceJob: {
         parameters: {
             query?: never;
@@ -3700,6 +3664,150 @@ export interface operations {
             };
             /** @description Unexpected Host header */
             421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getImportForm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportFormRequest"];
+            };
+        };
+        responses: {
+            /** @description The form to show */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PluginForm"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project, or no installed media-source plugin of that name */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The plugin could not answer (code `media_source_failed`) */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    submitImportStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportStepRequest"];
+            };
+        };
+        responses: {
+            /** @description The next form, or the running job */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportStepResponse"];
+                };
+            };
+            /** @description The plugin refused the input (code `invalid_input`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project, or no installed media-source plugin of that name */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The plugin could not answer (code `media_source_failed`) */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description The server has no media directory for plugins to fetch into (code `media_dir_unavailable`) */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4014,7 +4122,7 @@ export interface operations {
             };
         };
     };
-    listSourceSubtitles: {
+    getSourceForm: {
         parameters: {
             query?: never;
             header?: never;
@@ -4028,13 +4136,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The subtitle tracks the source offers */
+            /** @description The form to show */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SourceSubtitlesResponse"];
+                    "application/json": components["schemas"]["PluginForm"];
                 };
             };
             /** @description Missing or invalid token */
@@ -4055,7 +4163,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description The media file was not fetched through a plugin (code `no_origin`) */
+            /** @description The media file was not imported through a plugin (code `no_origin`) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4073,7 +4181,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description The plugin could not describe the source (code `media_source_failed`) */
+            /** @description The plugin could not answer (code `media_source_failed`) */
             502: {
                 headers: {
                     [name: string]: unknown;
@@ -4084,7 +4192,7 @@ export interface operations {
             };
         };
     };
-    fetchSourceSubtitles: {
+    submitSourceStep: {
         parameters: {
             query?: never;
             header?: never;
@@ -4098,17 +4206,26 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["FetchSourceSubtitlesRequest"];
+                "application/json": components["schemas"]["SourceStepRequest"];
             };
         };
         responses: {
-            /** @description The media file's subtitle tracks, with the fetched ones added, and the ones that were skipped */
-            201: {
+            /** @description The next form, or the changes the server applied */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FetchSourceSubtitlesResponse"];
+                    "application/json": components["schemas"]["SourceStepResponse"];
+                };
+            };
+            /** @description The plugin refused the input (code `invalid_input`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Missing or invalid token */
@@ -4129,7 +4246,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description The media file was not fetched through a plugin (code `no_origin`) */
+            /** @description The media file was not imported through a plugin (code `no_origin`) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4147,7 +4264,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description The plugin could not fetch the subtitles (code `media_source_failed`) */
+            /** @description The plugin could not answer or fetch (code `media_source_failed`) */
             502: {
                 headers: {
                     [name: string]: unknown;

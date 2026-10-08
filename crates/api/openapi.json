@@ -1498,103 +1498,6 @@
         ]
       }
     },
-    "/plugins/{plugin}/describe": {
-      "post": {
-        "tags": [
-          "plugins"
-        ],
-        "summary": "Asks a media-source plugin what it has for a locator: the media's title and duration,\nand the subtitle tracks that can be fetched with it. Nothing is fetched. The plugin\nmay take a few seconds to answer, as it usually asks the source.",
-        "operationId": "describeMediaSource",
-        "parameters": [
-          {
-            "name": "plugin",
-            "in": "path",
-            "description": "The name of an installed media-source plugin",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DescribeMediaSourceRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "What the source has for the locator",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MediaDescription"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The plugin does not understand the locator (code `invalid_locator`)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid token",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No installed media-source plugin of that name",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "421": {
-            "description": "Unexpected Host header",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "The plugin could not describe the locator (code `media_source_failed`)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer_token": []
-          }
-        ]
-      }
-    },
     "/preferences/{key}": {
       "get": {
         "tags": [
@@ -2467,93 +2370,6 @@
         ]
       }
     },
-    "/projects/{id}/media/from-source": {
-      "post": {
-        "tags": [
-          "media"
-        ],
-        "summary": "Starts fetching the media at a locator, such as a URL, through a media-source plugin\ninto the server's media directory, with the chosen subtitle tracks. The answer is the running job; poll it with\n`getMediaSourceJob` until it is done or has failed. Once done, the media file is in\nthe project with the subtitle files the plugin fetched beside it, and a subtitle file in\nthe project's target language or translation language has that role at once.",
-        "operationId": "addMediaFromSource",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "The project id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddMediaFromSourceRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "202": {
-            "description": "The job fetching the media, still running",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MediaSourceJob"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid token",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such project, or no installed media-source plugin of that name",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "421": {
-            "description": "Unexpected Host header",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "The server has no media directory for plugins to fetch into (code `media_dir_unavailable`)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer_token": []
-          }
-        ]
-      }
-    },
     "/projects/{id}/media/from-source/{job_id}": {
       "get": {
         "tags": [
@@ -2613,6 +2429,200 @@
           },
           "421": {
             "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/import-form": {
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "The first form of a media-source plugin's import interface. The plugin may take a few\nseconds to answer.",
+        "operationId": "getImportForm",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportFormRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The form to show",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PluginForm"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no installed media-source plugin of that name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The plugin could not answer (code `media_source_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/import-step": {
+      "post": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Sends an action of the import interface to the plugin. When the plugin answers with the\nimport to run, the import starts as a job; poll it with `getMediaSourceJob` until it is\ndone or has failed.",
+        "operationId": "submitImportStep",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportStepRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The next form, or the running job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportStepResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The plugin refused the input (code `invalid_input`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or no installed media-source plugin of that name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The plugin could not answer (code `media_source_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The server has no media directory for plugins to fetch into (code `media_dir_unavailable`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3059,13 +3069,13 @@
         ]
       }
     },
-    "/projects/{id}/media/{media_id}/source-subtitles": {
+    "/projects/{id}/media/{media_id}/source-form": {
       "get": {
         "tags": [
           "subtitles"
         ],
-        "summary": "Lists the subtitle tracks the media file's source offers, by asking the plugin that\nfetched the media file. The plugin may take a few seconds to answer.",
-        "operationId": "listSourceSubtitles",
+        "summary": "The first form of the media interface of the plugin the media file was imported through.\nThe plugin may take a few seconds to answer.",
+        "operationId": "getSourceForm",
         "parameters": [
           {
             "name": "id",
@@ -3088,11 +3098,11 @@
         ],
         "responses": {
           "200": {
-            "description": "The subtitle tracks the source offers",
+            "description": "The form to show",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SourceSubtitlesResponse"
+                  "$ref": "#/components/schemas/PluginForm"
                 }
               }
             }
@@ -3118,7 +3128,7 @@
             }
           },
           "409": {
-            "description": "The media file was not fetched through a plugin (code `no_origin`)",
+            "description": "The media file was not imported through a plugin (code `no_origin`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3138,7 +3148,7 @@
             }
           },
           "502": {
-            "description": "The plugin could not describe the source (code `media_source_failed`)",
+            "description": "The plugin could not answer (code `media_source_failed`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3153,13 +3163,15 @@
             "bearer_token": []
           }
         ]
-      },
+      }
+    },
+    "/projects/{id}/media/{media_id}/source-step": {
       "post": {
         "tags": [
           "subtitles"
         ],
-        "summary": "Fetches the chosen subtitle tracks from the media file's source and adds them to the\nmedia file, beside the files fetched with it. A track in a project language whose role\nis still free takes that role. A track that could not be fetched or read is left out and\nlisted as skipped. The request lasts as long as the fetch.",
-        "operationId": "fetchSourceSubtitles",
+        "summary": "Sends an action of the media interface to the plugin. When the plugin answers with\nchanges, the server removes the tracks it names, clearing them from the selection, and\nthen fetches the tracks it asks for, if any, beside the files imported with the media\nfile. A fetched track in a project language whose role is still free takes that role,\nand a fetched track that could not be read is left out and listed as skipped. The\nrequest lasts as long as the fetch.",
+        "operationId": "submitSourceStep",
         "parameters": [
           {
             "name": "id",
@@ -3184,19 +3196,29 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FetchSourceSubtitlesRequest"
+                "$ref": "#/components/schemas/SourceStepRequest"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "The media file's subtitle tracks, with the fetched ones added, and the ones that were skipped",
+          "200": {
+            "description": "The next form, or the changes the server applied",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FetchSourceSubtitlesResponse"
+                  "$ref": "#/components/schemas/SourceStepResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The plugin refused the input (code `invalid_input`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -3222,7 +3244,7 @@
             }
           },
           "409": {
-            "description": "The media file was not fetched through a plugin (code `no_origin`)",
+            "description": "The media file was not imported through a plugin (code `no_origin`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3242,7 +3264,7 @@
             }
           },
           "502": {
-            "description": "The plugin could not fetch the subtitles (code `media_source_failed`)",
+            "description": "The plugin could not answer or fetch (code `media_source_failed`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -4377,29 +4399,6 @@
           }
         }
       },
-      "AddMediaFromSourceRequest": {
-        "type": "object",
-        "required": [
-          "plugin",
-          "locator"
-        ],
-        "properties": {
-          "locator": {
-            "$ref": "#/components/schemas/MediaLocator"
-          },
-          "plugin": {
-            "type": "string",
-            "description": "The name of an installed media-source plugin."
-          },
-          "subtitles": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "The ids of the subtitle tracks to fetch with the media, from `describeMediaSource`."
-          }
-        }
-      },
       "AddSubtitleTrackRequest": {
         "type": "object",
         "required": [
@@ -4529,30 +4528,6 @@
           "aac",
           "flac"
         ]
-      },
-      "AvailableSubtitle": {
-        "type": "object",
-        "description": "A subtitle track a source offers for a media item, which a fetch may ask for by id.",
-        "required": [
-          "id",
-          "name"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "language": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "A language tag such as \"en\" or \"ja\", as the source reports it."
-          },
-          "name": {
-            "type": "string",
-            "description": "What the source calls the track, such as \"English (automatic)\"."
-          }
-        }
       },
       "BatchLookupRequest": {
         "type": "object",
@@ -4975,17 +4950,6 @@
         ],
         "description": "One definition of an entry, kept in the form its dictionary supplies so that display can stay faithful to it."
       },
-      "DescribeMediaSourceRequest": {
-        "type": "object",
-        "required": [
-          "locator"
-        ],
-        "properties": {
-          "locator": {
-            "$ref": "#/components/schemas/MediaLocator"
-          }
-        }
-      },
       "DictionaryDefinitions": {
         "type": "object",
         "description": "One dictionary's entry for a result, with the meaning of each tag it uses.",
@@ -5203,48 +5167,6 @@
           }
         }
       },
-      "FetchSourceSubtitlesRequest": {
-        "type": "object",
-        "required": [
-          "subtitles"
-        ],
-        "properties": {
-          "subtitles": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "The ids of the subtitle tracks to fetch, from `listSourceSubtitles`."
-          }
-        }
-      },
-      "FetchSourceSubtitlesResponse": {
-        "type": "object",
-        "required": [
-          "tracks",
-          "selection",
-          "skipped"
-        ],
-        "properties": {
-          "selection": {
-            "$ref": "#/components/schemas/SubtitleSelection"
-          },
-          "skipped": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SkippedSubtitle"
-            },
-            "description": "The tracks asked for that were not added."
-          },
-          "tracks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SubtitleTrack"
-            },
-            "description": "The media file's subtitle tracks, with the fetched ones added."
-          }
-        }
-      },
       "Flashcard": {
         "type": "object",
         "description": "A flashcard saved in a project.",
@@ -5444,6 +5366,233 @@
       "FlashcardId": {
         "type": "string"
       },
+      "FormAction": {
+        "type": "object",
+        "description": "A button at the foot of a form. Pressing it sends the form's input and the button's\nid back to the plugin.",
+        "required": [
+          "id",
+          "label",
+          "style"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "style": {
+            "$ref": "#/components/schemas/FormActionStyle"
+          }
+        }
+      },
+      "FormActionStyle": {
+        "type": "string",
+        "description": "How prominently an action button is shown.",
+        "enum": [
+          "primary",
+          "secondary",
+          "destructive"
+        ]
+      },
+      "FormControl": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "A single-line text input.",
+            "required": [
+              "value",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "text"
+                ]
+              },
+              "placeholder": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A choice of one option.",
+            "required": [
+              "options",
+              "chosen",
+              "kind"
+            ],
+            "properties": {
+              "chosen": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The ids of the options chosen to begin with."
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "choose-one"
+                ]
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FormOption"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A choice of any number of options, shown as checkboxes.",
+            "required": [
+              "options",
+              "chosen",
+              "kind"
+            ],
+            "properties": {
+              "chosen": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The ids of the options chosen to begin with."
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "choose-many"
+                ]
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/FormOption"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A yes-or-no switch.",
+            "required": [
+              "on",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "toggle"
+                ]
+              },
+              "on": {
+                "type": "boolean"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A paragraph of text that is only read.",
+            "required": [
+              "text",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "note"
+                ]
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "The kind of control a form field shows, with what the control starts out as."
+      },
+      "FormField": {
+        "type": "object",
+        "description": "One labelled control in a plugin form.",
+        "required": [
+          "id",
+          "label",
+          "control"
+        ],
+        "properties": {
+          "control": {
+            "$ref": "#/components/schemas/FormControl"
+          },
+          "hint": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Explains the field under its label."
+          },
+          "id": {
+            "type": "string",
+            "description": "Names the field in the input the app sends back."
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "FormInput": {
+        "type": "object",
+        "description": "What the user entered in one field: the text, the ids of the chosen options, or\n\"true\" or \"false\" for a toggle. A note sends nothing.",
+        "required": [
+          "field",
+          "values"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "FormOption": {
+        "type": "object",
+        "description": "One option of a choice control.",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "hint": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Explains the option beside its label."
+          },
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
       "Frequency": {
         "type": "object",
         "description": "How common a term is. The dictionary's `FrequencyMode` says whether higher values mean more or less common.",
@@ -5473,6 +5622,18 @@
         "properties": {
           "status": {
             "type": "string"
+          }
+        }
+      },
+      "ImportFormRequest": {
+        "type": "object",
+        "required": [
+          "plugin"
+        ],
+        "properties": {
+          "plugin": {
+            "type": "string",
+            "description": "The name of an installed media-source plugin."
           }
         }
       },
@@ -5599,21 +5760,99 @@
           }
         }
       },
+      "ImportStepRequest": {
+        "type": "object",
+        "required": [
+          "plugin",
+          "action",
+          "input"
+        ],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The id of the form action the user pressed."
+          },
+          "input": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormInput"
+            },
+            "description": "What the user entered in the form's fields."
+          },
+          "plugin": {
+            "type": "string",
+            "description": "The name of an installed media-source plugin."
+          }
+        }
+      },
+      "ImportStepResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "form",
+              "kind"
+            ],
+            "properties": {
+              "form": {
+                "$ref": "#/components/schemas/PluginForm"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "form"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "job",
+              "kind"
+            ],
+            "properties": {
+              "job": {
+                "$ref": "#/components/schemas/MediaSourceJob"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "job"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "The plugin's answer to an action in its import interface: the next form to show, or the\njob that runs the import."
+      },
       "InstalledPlugin": {
         "type": "object",
         "description": "A plugin the server found in its plugin directory.",
         "required": [
           "name",
+          "title",
           "version",
           "kind"
         ],
         "properties": {
+          "import_label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The text of the plugin's import button. Set for media-source plugins only."
+          },
           "kind": {
             "type": "string",
             "description": "The capability the plugin exports, as its manifest names it, such as `media-source`."
           },
           "name": {
             "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "description": "How the plugin is named to the user."
           },
           "version": {
             "type": "string"
@@ -5898,33 +6137,6 @@
           "pango",
           "xdxf"
         ]
-      },
-      "MediaDescription": {
-        "type": "object",
-        "description": "What a media-source plugin found at a locator before fetching anything: what the\nmedia is, and which subtitle tracks the source offers for it.",
-        "required": [
-          "title",
-          "subtitles"
-        ],
-        "properties": {
-          "duration_ms": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "minimum": 0
-          },
-          "subtitles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AvailableSubtitle"
-            }
-          },
-          "title": {
-            "type": "string"
-          }
-        }
       },
       "MediaFile": {
         "type": "object",
@@ -6462,6 +6674,39 @@
           }
         }
       },
+      "PluginForm": {
+        "type": "object",
+        "description": "A form a plugin asks the app to show. The app adds a way to close it.",
+        "required": [
+          "title",
+          "fields",
+          "actions"
+        ],
+        "properties": {
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormAction"
+            }
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Explains the form under its title."
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormField"
+            }
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
       "PositionLookups": {
         "type": "object",
         "description": "What a single lookup at one position of a text would return,\nwith each result given as its index in the batch response's lists.",
@@ -6698,20 +6943,90 @@
           }
         }
       },
-      "SourceSubtitlesResponse": {
+      "SourceStepRequest": {
         "type": "object",
         "required": [
-          "subtitles"
+          "action",
+          "input"
         ],
         "properties": {
-          "subtitles": {
+          "action": {
+            "type": "string",
+            "description": "The id of the form action the user pressed."
+          },
+          "input": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AvailableSubtitle"
+              "$ref": "#/components/schemas/FormInput"
             },
-            "description": "The subtitle tracks the source offers for the media file."
+            "description": "What the user entered in the form's fields."
           }
         }
+      },
+      "SourceStepResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "form",
+              "kind"
+            ],
+            "properties": {
+              "form": {
+                "$ref": "#/components/schemas/PluginForm"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "form"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "removed",
+              "tracks",
+              "selection",
+              "skipped",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "applied"
+                ]
+              },
+              "removed": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SubtitleTrackId"
+                },
+                "description": "The ids of the subtitle tracks that were removed."
+              },
+              "selection": {
+                "$ref": "#/components/schemas/SubtitleSelection"
+              },
+              "skipped": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SkippedSubtitle"
+                },
+                "description": "The tracks the plugin fetched that were not added."
+              },
+              "tracks": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SubtitleTrack"
+                },
+                "description": "The media file's subtitle tracks after the changes."
+              }
+            }
+          }
+        ],
+        "description": "The plugin's answer to an action in its media interface: the next form to show, or the\nchanges the server applied."
       },
       "SubtitleRole": {
         "type": "string",

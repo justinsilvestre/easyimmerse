@@ -3,8 +3,16 @@
 /**
  * A plugin the server found in its plugin directory.
  */
-export type InstalledPlugin = { name: string, version: string, 
+export type InstalledPlugin = { name: string, 
+/**
+ * How the plugin is named to the user.
+ */
+title: string, version: string, 
 /**
  * The capability the plugin exports, as its manifest names it, such as `media-source`.
  */
-kind: string, };
+kind: string, 
+/**
+ * The text of the plugin's import button. Set for media-source plugins only.
+ */
+import_label: string | null, };
