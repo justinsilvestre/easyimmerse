@@ -1,4 +1,5 @@
 name = "fixture-media-source"
+title = "Fixture"
 version = "0.1.0"
 kind = "media-source"
 interface_version = "0.1.0"

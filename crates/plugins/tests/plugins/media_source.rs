@@ -2,9 +2,12 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use crate::support::FixtureServer;
+use easyimmerse_core::providers::plugin_form::{FormControl, FormInput, PluginForm};
 use easyimmerse_plugins::{
-    CapabilityGrants, CompiledPlugin, HostEvent, HostLimits, MediaSourceFixturePlugin,
-    MediaSourcePlugin, PluginErrorKind, PluginPackage,
+    CapabilityGrants, CompiledPlugin, FetchRequest, HeldSubtitle, HostEvent, HostLimits,
+    ImportAnswer, ImportContext, ImportRequest, MediaAnswer, MediaContext,
+    MediaSourceFixturePlugin, MediaSourcePlugin, MediaUpdate, PluginError, PluginErrorKind,
+    PluginPackage,
 };
 
 /// The fixture plugin compiled once, with a server for it to fetch from and a directory
@@ -69,11 +72,65 @@ impl Fixture {
             .to_string_lossy()
             .into_owned()
     }
+
+    /// An import of the sample locator with the given subtitle tracks.
+    fn import_request(&self, subtitles: &[&str]) -> ImportRequest {
+        ImportRequest {
+            locator: self.locator(),
+            input: vec![input("subtitles", subtitles)],
+        }
+    }
+
+    /// A fetch of the sample locator's subtitle tracks with the given ids.
+    fn fetch_request(&self, ids: &[&str]) -> FetchRequest {
+        FetchRequest {
+            locator: self.locator(),
+            input: vec![input("fetch", ids)],
+        }
+    }
+
+    fn media_context(&self, held: &[(&str, &str)]) -> MediaContext {
+        let subtitles = held
+            .iter()
+            .map(|(id, name)| HeldSubtitle {
+                id: id.to_string(),
+                name: name.to_string(),
+            })
+            .collect();
+        MediaContext {
+            locator: self.locator(),
+            languages: languages(),
+            subtitles,
+        }
+    }
 }
 
-/// The id of the fixture's one subtitle track.
-fn english() -> Vec<String> {
-    vec!["en".to_string()]
+fn input(field: &str, values: &[&str]) -> FormInput {
+    FormInput {
+        field: field.to_string(),
+        values: values.iter().map(|value| value.to_string()).collect(),
+    }
+}
+
+fn languages() -> Vec<String> {
+    vec!["ja".to_string(), "en".to_string()]
+}
+
+fn import_context() -> ImportContext {
+    ImportContext {
+        languages: languages(),
+    }
+}
+
+/// The option ids of the choice field `field` in `form`.
+fn option_ids(form: &PluginForm, field: &str) -> Vec<String> {
+    let control = form.fields.iter().find(|candidate| candidate.id == field);
+    match control.map(|field| &field.control) {
+        Some(FormControl::ChooseMany { options, .. }) => {
+            options.iter().map(|option| option.id.clone()).collect()
+        }
+        other => panic!("no choice field {field:?}: {other:?}"),
+    }
 }
 
 #[cfg(windows)]
@@ -108,24 +165,66 @@ fn refuses_to_fetch_from_a_host_that_is_not_allowed() {
 }
 
 #[test]
-fn reports_progress_while_resolving() {
+fn offers_a_locator_field_in_the_import_form() {
     let fixture = Fixture::start();
-    let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
+    let form = fixture
+        .media_source()
+        .import_form(&import_context())
+        .expect("import form");
+    let fields: Vec<_> = form.fields.iter().map(|field| field.id.as_str()).collect();
+    assert_eq!(fields, vec!["locator"]);
+}
+
+#[test]
+fn answers_the_import_action_with_the_import_to_run() {
+    let fixture = Fixture::start();
+    let entered = vec![input("locator", &["sample"])];
+    let answer = fixture
+        .media_source()
+        .import_step(&import_context(), "import", &entered)
+        .expect("import step");
+    let expected = ImportRequest {
+        locator: "sample".to_string(),
+        input: entered,
+    };
+    assert_eq!(answer, ImportAnswer::Import(expected));
+}
+
+#[test]
+fn refuses_an_import_step_without_a_locator() {
+    let fixture = Fixture::start();
+    let outcome =
+        fixture
+            .media_source()
+            .import_step(&import_context(), "import", &[input("locator", &[""])]);
+    assert!(
+        matches!(
+            outcome,
+            Err(PluginError::Plugin(PluginErrorKind::InvalidInput(_)))
+        ),
+        "got {outcome:?}"
+    );
+}
+
+#[test]
+fn reports_progress_while_importing() {
+    let fixture = Fixture::start();
+    let (request, output_dir) = (fixture.import_request(&["en"]), fixture.output_path(""));
     let (_, progress) = fixture
         .media_source()
-        .resolve(&locator, &output_dir, &english())
-        .expect("resolve");
+        .import(&request, &output_dir)
+        .expect("import");
     assert!(progress.len() >= 2, "got {progress:?}");
 }
 
 #[test]
 fn writes_the_media_and_subtitles_into_the_granted_dir() {
     let fixture = Fixture::start();
-    let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
+    let (request, output_dir) = (fixture.import_request(&["en"]), fixture.output_path(""));
     fixture
         .media_source()
-        .resolve(&locator, &output_dir, &english())
-        .expect("resolve");
+        .import(&request, &output_dir)
+        .expect("import");
     assert!(
         files_match(
             &fixture.output_path("media.mp4"),
@@ -138,41 +237,24 @@ fn writes_the_media_and_subtitles_into_the_granted_dir() {
 }
 
 #[test]
-fn describes_the_subtitle_tracks_the_source_offers() {
+fn imports_the_title_the_source_gives() {
     let fixture = Fixture::start();
-    let description = fixture
-        .media_source()
-        .describe(&fixture.locator())
-        .expect("describe");
-    let names: Vec<_> = description
-        .subtitles
-        .iter()
-        .map(|subtitle| (subtitle.id.as_str(), subtitle.name.as_str()))
-        .collect();
-    assert_eq!(names, vec![("en", "English")]);
-}
-
-#[test]
-fn describes_the_title_without_writing_anything() {
-    let fixture = Fixture::start();
-    let description = fixture
-        .media_source()
-        .describe(&fixture.locator())
-        .expect("describe");
-    let written = std::fs::read_dir(fixture.output_dir.path())
-        .expect("read the output dir")
-        .count();
-    assert_eq!((description.title.as_str(), written), ("Fixture", 0));
-}
-
-#[test]
-fn fetches_no_subtitles_when_none_are_chosen() {
-    let fixture = Fixture::start();
-    let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
+    let (request, output_dir) = (fixture.import_request(&[]), fixture.output_path(""));
     let (resolved, _) = fixture
         .media_source()
-        .resolve(&locator, &output_dir, &[])
-        .expect("resolve");
+        .import(&request, &output_dir)
+        .expect("import");
+    assert_eq!(resolved.title, "Fixture");
+}
+
+#[test]
+fn imports_no_subtitles_when_none_are_chosen() {
+    let fixture = Fixture::start();
+    let (request, output_dir) = (fixture.import_request(&[]), fixture.output_path(""));
+    let (resolved, _) = fixture
+        .media_source()
+        .import(&request, &output_dir)
+        .expect("import");
     assert!(
         resolved.subtitles.is_empty(),
         "got {:?}",
@@ -181,12 +263,76 @@ fn fetches_no_subtitles_when_none_are_chosen() {
 }
 
 #[test]
+fn reports_the_language_of_each_subtitle_file() {
+    let fixture = Fixture::start();
+    let (request, output_dir) = (fixture.import_request(&["en"]), fixture.output_path(""));
+    let (resolved, _) = fixture
+        .media_source()
+        .import(&request, &output_dir)
+        .expect("import");
+    let languages: Vec<_> = resolved
+        .subtitles
+        .iter()
+        .map(|subtitle| subtitle.language.as_deref())
+        .collect();
+    assert_eq!(languages, vec![Some("en")]);
+}
+
+#[test]
+fn offers_a_track_that_is_not_held_in_the_media_form() {
+    let fixture = Fixture::start();
+    let form = fixture
+        .media_source()
+        .media_form(&fixture.media_context(&[]))
+        .expect("media form");
+    assert_eq!(option_ids(&form, "fetch"), vec!["en"]);
+}
+
+#[test]
+fn offers_no_track_that_is_held_in_the_media_form() {
+    let fixture = Fixture::start();
+    let form = fixture
+        .media_source()
+        .media_form(&fixture.media_context(&[("track-1", "English")]))
+        .expect("media form");
+    assert!(option_ids(&form, "fetch").is_empty());
+}
+
+#[test]
+fn lists_the_held_tracks_for_removal_in_the_media_form() {
+    let fixture = Fixture::start();
+    let form = fixture
+        .media_source()
+        .media_form(&fixture.media_context(&[("track-1", "English")]))
+        .expect("media form");
+    assert_eq!(option_ids(&form, "remove"), vec!["track-1"]);
+}
+
+#[test]
+fn answers_the_apply_action_with_the_update_to_apply() {
+    let fixture = Fixture::start();
+    let entered = vec![input("fetch", &["en"]), input("remove", &["track-1"])];
+    let answer = fixture
+        .media_source()
+        .media_step(&fixture.media_context(&[]), "apply", &entered)
+        .expect("media step");
+    let expected = MediaUpdate {
+        remove_subtitles: vec!["track-1".to_string()],
+        fetch: Some(FetchRequest {
+            locator: fixture.locator(),
+            input: entered,
+        }),
+    };
+    assert_eq!(answer, MediaAnswer::Apply(expected));
+}
+
+#[test]
 fn fetches_subtitles_on_their_own() {
     let fixture = Fixture::start();
-    let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
+    let (request, output_dir) = (fixture.fetch_request(&["en"]), fixture.output_path(""));
     let fetched = fixture
         .media_source()
-        .fetch_subtitles(&locator, &output_dir, &english())
+        .fetch_subtitles(&request, &output_dir)
         .expect("fetch subtitles");
     assert!(
         files_match(
@@ -200,47 +346,42 @@ fn fetches_subtitles_on_their_own() {
 #[test]
 fn refuses_to_fetch_a_subtitle_track_the_source_does_not_offer() {
     let fixture = Fixture::start();
-    let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
-    let outcome =
-        fixture
-            .media_source()
-            .fetch_subtitles(&locator, &output_dir, &["xx".to_string()]);
+    let (request, output_dir) = (fixture.fetch_request(&["xx"]), fixture.output_path(""));
+    let outcome = fixture
+        .media_source()
+        .fetch_subtitles(&request, &output_dir);
     assert!(
         matches!(
             outcome,
-            Err(easyimmerse_plugins::PluginError::Plugin(
-                PluginErrorKind::NotFound(_)
-            ))
+            Err(PluginError::Plugin(PluginErrorKind::NotFound(_)))
         ),
         "got {outcome:?}"
     );
 }
 
 #[test]
-fn reports_the_language_of_each_subtitle_file() {
+fn shows_forms_without_writing_anything() {
     let fixture = Fixture::start();
-    let (locator, output_dir) = (fixture.locator(), fixture.output_path(""));
-    let (resolved, _) = fixture
-        .media_source()
-        .resolve(&locator, &output_dir, &english())
-        .expect("resolve");
-    let languages: Vec<_> = resolved
-        .subtitles
-        .iter()
-        .map(|subtitle| subtitle.language.as_deref())
-        .collect();
-    assert_eq!(languages, vec![Some("en")]);
+    let mut plugin = fixture.media_source();
+    plugin.import_form(&import_context()).expect("import form");
+    plugin
+        .media_form(&fixture.media_context(&[]))
+        .expect("media form");
+    let written = std::fs::read_dir(fixture.output_dir.path())
+        .expect("read the output dir")
+        .count();
+    assert_eq!(written, 0);
 }
 
-/// Resolves with a listener installed and returns every event it heard, in order.
-fn events_while_resolving(fixture: &Fixture) -> Vec<HostEvent> {
+/// Imports with a listener installed and returns every event it heard, in order.
+fn events_while_importing(fixture: &Fixture) -> Vec<HostEvent> {
     let events = Arc::new(Mutex::new(Vec::new()));
     let heard = Arc::clone(&events);
     let mut plugin = fixture.media_source();
     plugin.listen(move |event| heard.lock().unwrap().push(event));
     plugin
-        .resolve(&fixture.locator(), &fixture.output_path(""), &english())
-        .expect("resolve");
+        .import(&fixture.import_request(&["en"]), &fixture.output_path(""))
+        .expect("import");
     // Cloned out of the lock before the guard is dropped at the end of the statement.
     events.lock().unwrap().clone()
 }
@@ -248,7 +389,7 @@ fn events_while_resolving(fixture: &Fixture) -> Vec<HostEvent> {
 #[test]
 fn the_listener_hears_each_progress_report_as_it_happens() {
     let fixture = Fixture::start();
-    let progress = events_while_resolving(&fixture)
+    let progress = events_while_importing(&fixture)
         .into_iter()
         .filter(|event| matches!(event, HostEvent::Progress(_)))
         .count();
@@ -258,7 +399,7 @@ fn the_listener_hears_each_progress_report_as_it_happens() {
 #[test]
 fn the_listener_hears_the_command_the_plugin_runs() {
     let fixture = Fixture::start();
-    let started = events_while_resolving(&fixture)
+    let started = events_while_importing(&fixture)
         .into_iter()
         .find_map(|event| match event {
             HostEvent::CommandStarted { command, args } => Some((command, args)),
@@ -273,7 +414,7 @@ fn the_listener_hears_the_command_the_plugin_runs() {
 #[test]
 fn the_listener_hears_what_the_command_prints() {
     let fixture = Fixture::start();
-    let printed = events_while_resolving(&fixture).into_iter().any(|event| {
+    let printed = events_while_importing(&fixture).into_iter().any(|event| {
         matches!(event, HostEvent::CommandOutput { line, .. } if line.contains("\"title\":\"Fixture\""))
     });
     assert!(printed);

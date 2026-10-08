@@ -2,14 +2,14 @@ use serde::Deserialize;
 
 use crate::easyimmerse::plugin::{
     fs, http, log, run_command,
-    types::{
-        AvailableSubtitle, FetchedSubtitle, MediaDescription, MediaMetadata, PluginError,
-        ProgressEvent, ResolvedMedia,
-    },
+    types::{FetchedSubtitle, MediaMetadata, PluginError, ProgressEvent, ResolvedMedia},
 };
 
 /// The id the fixture offers its one English subtitle track under.
-const SUBTITLE_ID: &str = "en";
+pub const SUBTITLE_ID: &str = "en";
+
+/// The name of the fixture's one subtitle track.
+pub const SUBTITLE_NAME: &str = "English";
 
 /// The JSON that the bundled `fetch-locator` script prints for a locator.
 #[derive(Deserialize)]
@@ -17,18 +17,6 @@ struct LocatorInfo {
     media_url: String,
     subtitle_url: String,
     title: String,
-}
-
-pub fn describe(locator: &str) -> Result<MediaDescription, PluginError> {
-    let info = fetch_locator(locator)?;
-    Ok(MediaDescription {
-        metadata: metadata(&info),
-        subtitles: vec![AvailableSubtitle {
-            id: SUBTITLE_ID.to_string(),
-            language: Some("en".to_string()),
-            name: "English".to_string(),
-        }],
-    })
 }
 
 pub fn resolve(
@@ -75,7 +63,7 @@ fn write_subtitles(
         fetched.push(FetchedSubtitle {
             id: id.clone(),
             language: Some("en".to_string()),
-            name: "English".to_string(),
+            name: SUBTITLE_NAME.to_string(),
             path,
         });
     }
