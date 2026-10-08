@@ -7,7 +7,7 @@ import type {
   LookupResult,
 } from "@easyimmerse/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BackendRequest } from "./backendClient.ts";
+import type { BackendError, BackendRequest } from "./backendClient.ts";
 import { backendStoreParts } from "./backendStoreParts.ts";
 import { configureBackend, resetBackend } from "./configureBackend.ts";
 import { lookUpTextAhead } from "./lookUpTextAhead.ts";
@@ -45,8 +45,13 @@ const emptyResponse: LookupResponse = {
   stylesheets: [],
 };
 
-/** A store whose backend answers batches with `answerBatch` once `release` is called, and single lookups at once with nothing. */
-function createConfiguredStore() {
+/**
+ * A store whose backend answers batches with `answerBatch` once `release` is called, and single lookups at once with nothing.
+ * `failBatch` gives the error that a batch fails with instead, if any.
+ */
+function createConfiguredStore(
+  failBatch: (request: BatchLookupRequest) => BackendError | null = () => null,
+) {
   const requests: BackendRequest[] = [];
   const { promise: released, resolve: release } = Promise.withResolvers<void>();
   configureBackend({
@@ -54,14 +59,26 @@ function createConfiguredStore() {
       requests.push(request);
       if (request.body?.kind !== "json") return { data: emptyResponse as T };
       await released;
-      return {
-        data: answerBatch(request.body.value as BatchLookupRequest) as T,
-      };
+      const batch = request.body.value as BatchLookupRequest;
+      const error = failBatch(batch);
+      return error ? { error } : { data: answerBatch(batch) as T };
     },
   });
   const store = createAppStore(createRecordingEffects(), backendStoreParts);
   return { store, requests, release };
 }
+
+/** Fails with 400 every batch that holds the text. */
+const rejectingText =
+  (text: string) =>
+  (batch: BatchLookupRequest): BackendError | null =>
+    batch.texts.includes(text)
+      ? { status: 400, message: "The text is not valid" }
+      : null;
+
+/** Waits for the store to drop finished batches, which it keeps for no time once they answer. */
+const forgetFinishedBatches = () =>
+  new Promise((resolve) => setTimeout(resolve, 10));
 
 function lookupAt(context: string, offset: number): LookupQuery {
   return { text: context.slice(offset), language, context, offset };
@@ -112,9 +129,83 @@ describe("prefetchLookups", () => {
   it("leaves a position the batch did not look up to a lookup of its own", async () => {
     const { store, requests, release } = createConfiguredStore();
     release();
-    await prefetchLookups(store.dispatch, [lookupAt("Hund", 2)]);
+    await prefetchLookups(store.dispatch, [
+      lookupAt("Hund", 0),
+      lookupAt("Hund", 2),
+    ]);
     await lookUpTextAhead(store.dispatch, lookupAt("Hund", 2));
     expect(requests).toHaveLength(2);
+  });
+
+  it("does not fetch a passage again for a position the batch did not look up", async () => {
+    const { store, requests, release } = createConfiguredStore();
+    release();
+    const lookups = [lookupAt("Hund", 0), lookupAt("Hund", 2)];
+    await prefetchLookups(store.dispatch, lookups);
+    await forgetFinishedBatches();
+    await prefetchLookups(store.dispatch, lookups);
+    expect(requests).toHaveLength(1);
+  });
+
+  it("does not make a lookup at a position a running batch cannot look up wait for it", async () => {
+    const { store, requests } = createConfiguredStore();
+    void prefetchLookups(store.dispatch, [lookupAt("Hund", 0)]);
+    await lookUpTextAhead(store.dispatch, lookupAt("Hund", 2));
+    expect(requests).toHaveLength(2);
+  });
+
+  it("does not fetch passages again soon after their batch failed", async () => {
+    const { store, requests, release } = createConfiguredStore(() => ({
+      status: 404,
+      message: "Not found",
+    }));
+    release();
+    const lookups = [lookupAt("猫", 0), lookupAt("犬", 0)];
+    await prefetchLookups(store.dispatch, lookups);
+    await forgetFinishedBatches();
+    await prefetchLookups(store.dispatch, lookups);
+    expect(requests).toHaveLength(1);
+  });
+
+  it("fetches passages again once a while has passed since their batch failed", async () => {
+    vi.useFakeTimers();
+    const { store, requests, release } = createConfiguredStore(() => ({
+      status: 404,
+      message: "Not found",
+    }));
+    release();
+    const lookups = [lookupAt("猫", 0)];
+    await prefetchLookups(store.dispatch, lookups);
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    await prefetchLookups(store.dispatch, lookups);
+    expect(requests).toHaveLength(2);
+  });
+
+  it("splits a batch the server rejects to cache the passages it accepts", async () => {
+    const { store, requests, release } = createConfiguredStore(
+      rejectingText("悪"),
+    );
+    release();
+    await prefetchLookups(
+      store.dispatch,
+      ["猫", "悪", "犬", "鳥"].map((text) => lookupAt(text, 0)),
+    );
+    const before = requests.length;
+    await lookUpTextAhead(store.dispatch, lookupAt("鳥", 0));
+    expect(requests.length).toBe(before);
+  });
+
+  it("does not fetch again soon a passage the server rejects on its own", async () => {
+    const { store, requests, release } = createConfiguredStore(
+      rejectingText("悪"),
+    );
+    release();
+    const lookups = ["猫", "悪"].map((text) => lookupAt(text, 0));
+    await prefetchLookups(store.dispatch, lookups);
+    await forgetFinishedBatches();
+    const before = requests.length;
+    await prefetchLookups(store.dispatch, lookups);
+    expect(requests.length).toBe(before);
   });
 
   it("leaves out passages whose lookups are all cached", async () => {

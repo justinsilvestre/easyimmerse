@@ -1,32 +1,36 @@
 import type { AppDispatch } from "@easyimmerse/state";
 import type { LookupQuery } from "@easyimmerse/types";
-import type { UnknownAction } from "redux";
-import type { ThunkDispatch } from "redux-thunk";
 import {
   backendApi,
   lookupCacheSeconds,
   selectRunningBatches,
 } from "./backendApi.ts";
-import { lookupResponseAt } from "./lookupResponseAt.ts";
+import { hasFailedLately } from "./failedPassages.ts";
+import {
+  type BackendThunkDispatch,
+  fetchLookupBatch,
+} from "./fetchLookupBatch.ts";
+import {
+  batchesOf,
+  lookupsInBatchReach,
+  type Passage,
+  passageKey,
+} from "./lookupBatches.ts";
 
-/** The most texts one batch lookup may hold. */
-const maxBatchTexts = 100;
-/** The most characters one text of a batch lookup may hold. */
-const maxBatchTextCharacters = 2000;
 /** How often a caller should prefetch the passages it keeps in range, so that their cached lookups never expire. */
 export const prefetchRepeatMs = 60_000;
 /** How old a cached lookup grows before a prefetch caches it afresh, so that it outlives the next prefetch. */
 const refreshAfterMs = (lookupCacheSeconds * 1000) / 2;
 
 type BackendState = Parameters<typeof selectRunningBatches>[0];
-type BackendThunkDispatch = ThunkDispatch<BackendState, unknown, UnknownAction>;
 
 /**
  * Looks up ahead, in batches, every lookup given, so that hovering or clicking those words later reads the answers from the cache.
  * Each lookup stands for one position that the user could look up, with the passage it lies in, such as a subtitle cue, as its `context`.
- * Passages whose lookups are cached or being fetched already are left out, and cached lookups are kept from expiring
- * as long as prefetches that include them run at least every `prefetchRepeatMs`.
- * The promise resolves once every batch has answered or failed; a lookup whose batch failed is made on its own when it is needed.
+ * Lookups that a batch would not answer are left to be made on their own when needed,
+ * and passages that are cached, being fetched, or whose batch failed lately are left out.
+ * Cached lookups are kept from expiring as long as prefetches that include them run at least every `prefetchRepeatMs`.
+ * The promise resolves once every batch has answered or failed.
  */
 export async function prefetchLookups(
   dispatch: AppDispatch,
@@ -35,39 +39,41 @@ export async function prefetchLookups(
   // The app store's dispatch is typed for app actions only; thunks reach it through the middleware chain.
   const thunkDispatch = dispatch as unknown as BackendThunkDispatch;
   const state = thunkDispatch((_, getState) => getState());
-  refreshAgingLookups(thunkDispatch, state, lookups);
-  const missing = passagesToFetch(state, lookups);
+  const reachable = lookupsInBatchReach(lookups);
+  refreshAgingLookups(thunkDispatch, state, reachable);
+  const missing = passagesToFetch(state, reachable).filter(
+    (passage) => !hasFailedLately(thunkDispatch, passage),
+  );
   await Promise.all(
-    chunksOf(missing, maxBatchTexts).map((batch) =>
-      fetchBatch(thunkDispatch, batch, lookups),
+    batchesOf(missing).map((batch) =>
+      fetchLookupBatch(thunkDispatch, batch, reachable),
     ),
   );
 }
-
-type Passage = { language: string; text: string };
 
 /** The passages, in the order first given, that hold a lookup neither cached nor being fetched. */
 function passagesToFetch(
   state: BackendState,
   lookups: readonly LookupQuery[],
 ): Passage[] {
-  const running = selectRunningBatches(state);
-  const isRunning = (lookup: LookupQuery) =>
-    running.some(
-      (batch) =>
-        batch.language === lookup.language &&
-        batch.texts.includes(lookup.context ?? ""),
-    );
+  const running = new Set(
+    selectRunningBatches(state).flatMap(({ language, texts }) =>
+      texts.map((text) => passageKey({ language, text })),
+    ),
+  );
   const passages = new Map<string, Passage>();
   for (const lookup of lookups) {
-    const { context, language } = lookup;
-    if (context === undefined || !fitsBatch(context)) continue;
-    const entry = backendApi.endpoints.lookupText.select(lookup)(state);
-    const isFetchable = entry.isUninitialized || entry.isError;
-    if (isFetchable && !isRunning(lookup))
-      passages.set(passageKey(language, context), { language, text: context });
+    const passage = { language: lookup.language, text: lookup.context ?? "" };
+    const key = passageKey(passage);
+    if (isFetchable(state, lookup) && !running.has(key))
+      passages.set(key, passage);
   }
   return [...passages.values()];
+}
+
+function isFetchable(state: BackendState, lookup: LookupQuery): boolean {
+  const entry = backendApi.endpoints.lookupText.select(lookup)(state);
+  return entry.isUninitialized || entry.isError;
 }
 
 /** Caches afresh the cached lookups that have grown old enough to expire before the next prefetch. */
@@ -78,8 +84,10 @@ function refreshAgingLookups(
 ) {
   const aging = lookups.flatMap((lookup) => {
     const entry = backendApi.endpoints.lookupText.select(lookup)(state);
-    const age = Date.now() - (entry.fulfilledTimeStamp ?? Date.now());
-    return entry.isSuccess && age >= refreshAfterMs
+    const fulfilledAt = entry.fulfilledTimeStamp ?? Date.now();
+    const isAging =
+      entry.isSuccess && Date.now() - fulfilledAt >= refreshAfterMs;
+    return isAging
       ? [
           {
             endpointName: "lookupText" as const,
@@ -90,51 +98,4 @@ function refreshAgingLookups(
       : [];
   });
   if (aging.length > 0) dispatch(backendApi.util.upsertQueryEntries(aging));
-}
-
-/** Fetches one batch of passages of one language, then caches the lookup of every given position in them. */
-async function fetchBatch(
-  dispatch: BackendThunkDispatch,
-  passages: readonly Passage[],
-  lookups: readonly LookupQuery[],
-) {
-  const language = passages[0]?.language ?? "";
-  const texts = passages.map((passage) => passage.text);
-  const request = { language, texts };
-  const answer = await dispatch(
-    backendApi.endpoints.lookupTexts.initiate(request, { subscribe: false }),
-  )
-    .unwrap()
-    .catch(() => null);
-  if (answer === null) return;
-  const entries = lookups.flatMap((lookup) => {
-    const index =
-      lookup.language === language ? texts.indexOf(lookup.context ?? "") : -1;
-    const value =
-      index < 0
-        ? null
-        : lookupResponseAt(request, answer, index, lookup.offset ?? 0);
-    return value
-      ? [{ endpointName: "lookupText" as const, arg: lookup, value }]
-      : [];
-  });
-  dispatch(backendApi.util.upsertQueryEntries(entries));
-}
-
-/** Splits passages into batches of at most `size`, each of one language. */
-function chunksOf(passages: readonly Passage[], size: number): Passage[][] {
-  const byLanguage = Map.groupBy(passages, (passage) => passage.language);
-  return [...byLanguage.values()].flatMap((group) =>
-    Array.from({ length: Math.ceil(group.length / size) }, (_, index) =>
-      group.slice(index * size, (index + 1) * size),
-    ),
-  );
-}
-
-function fitsBatch(text: string): boolean {
-  return [...text].length <= maxBatchTextCharacters;
-}
-
-function passageKey(language: string, text: string): string {
-  return `${language}\n${text}`;
 }

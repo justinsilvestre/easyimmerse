@@ -51,10 +51,19 @@ export function sentenceAt(
   const segment = segmenterOf(language, "sentence")
     .segment(text)
     .containing(offset);
-  if (!segment) return null;
-  const span = spanOf(segment);
-  const trimmed = span.text.trimEnd();
-  return { ...span, text: trimmed, end: span.start + trimmed.length };
+  return segment ? trimmedEnd(spanOf(segment)) : null;
+}
+
+function trimmedEnd(span: TextSpan): TextSpan {
+  const text = span.text.trimEnd();
+  return { ...span, text, end: span.start + text.length };
+}
+
+/** Lists the sentences of a text, each without the space that follows it, as `sentenceAt` finds them. */
+export function sentencesOf(text: string, language: string): TextSpan[] {
+  return [...segmenterOf(language, "sentence").segment(text)].map((segment) =>
+    trimmedEnd(spanOf(segment)),
+  );
 }
 
 function spanOf(segment: Intl.SegmentData): TextSpan {

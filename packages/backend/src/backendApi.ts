@@ -42,6 +42,7 @@ import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import type { BackendError } from "./backendClient.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
+import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
 
 type ParseDocumentArgs = {
@@ -579,13 +580,17 @@ export function selectRunningBatches(
     );
 }
 
-/** Answers a lookup from a batch being fetched that covers its context, once the batch answers; or null when none does or it fails. */
+/**
+ * Answers a lookup from a batch being fetched that covers its context and looks up its position, once the batch answers;
+ * or null when none does or the batch fails.
+ */
 async function answerFromRunningBatch(
   api: BaseQueryApi,
   lookup: LookupQuery,
 ): Promise<{ data: LookupResponse } | null> {
   const { context, offset } = lookup;
-  if (context === undefined || offset === undefined) return null;
+  const isInReach = lookupsInBatchReach([lookup]).length > 0;
+  if (context === undefined || offset === undefined || !isInReach) return null;
   const batch = selectRunningBatches(api.getState() as BackendState).find(
     (request) =>
       request.language === lookup.language && request.texts.includes(context),
