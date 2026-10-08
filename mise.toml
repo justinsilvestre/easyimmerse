@@ -39,11 +39,12 @@ run = [
 ]
 
 [tasks.typegen]
-description = "Regenerate packages/types/src/generated from Rust with ts-rs"
+description = "Regenerate packages/types/src/generated from Rust with ts-rs, and the shared lookup constants"
 run = [
   "rm -rf packages/types/src/generated",
   "cargo test -p easyimmerse-core -p easyimmerse-media -p easyimmerse-api --lib export_bindings",
   "node packages/types/scripts/writeGeneratedIndex.ts",
+  "EASYIMMERSE_UPDATE_CONSTANTS=1 cargo test -p easyimmerse-api --lib the_committed_module_is_current",
 ]
 sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
 

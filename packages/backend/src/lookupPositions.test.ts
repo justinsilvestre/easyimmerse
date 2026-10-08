@@ -22,6 +22,10 @@ describe("lookupPositions", () => {
     expect(lookupPositions("猫のcat food")).toEqual([0, 1, 2, 6]);
   });
 
+  it("lists a kana repetition mark that follows a Latin letter", () => {
+    expect(lookupPositions("a〱")).toEqual([0, 1]);
+  });
+
   it("keeps a hyphenated word whole", () => {
     expect(lookupPositions("well-known")).toEqual([0]);
   });

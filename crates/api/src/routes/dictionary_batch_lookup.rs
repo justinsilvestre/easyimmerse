@@ -9,8 +9,10 @@ use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
 use crate::lookup::{BatchLookupResponse, BatchPools, LookupRows, PositionLookup};
 use crate::state::AppState;
 
-const MAX_TEXTS: usize = 100;
-const MAX_TEXT_CHARACTERS: usize = 2_000;
+/// The most texts one batch lookup may hold.
+pub const MAX_TEXTS: usize = 100;
+/// The most characters one text of a batch lookup may hold.
+pub const MAX_TEXT_CHARACTERS: usize = 2_000;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[serde(rename_all = "camelCase")]

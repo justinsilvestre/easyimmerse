@@ -19,6 +19,8 @@ pub mod routes;
 pub mod serve;
 pub mod sidecar_subtitle_tracks;
 pub mod state;
+#[cfg(test)]
+mod typescript_constants;
 
 pub use auth::error_body::{ApiError, ApiFailure};
 pub use auth::token_kind::TokenKind;

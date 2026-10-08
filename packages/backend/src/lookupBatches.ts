@@ -1,13 +1,12 @@
-import type { LookupQuery } from "@easyimmerse/types";
+import {
+  type LookupQuery,
+  maxBatchTextCharacters,
+  maxBatchTexts,
+} from "@easyimmerse/types";
 import { lookupPositions } from "./lookupPositions.ts";
 
 /** A text to send in a batch lookup, such as a subtitle cue, with its language. */
 export type Passage = { language: string; text: string };
-
-/** The most texts one batch lookup may hold. */
-const maxBatchTexts = 100;
-/** The most characters one text of a batch lookup may hold. */
-const maxBatchTextCharacters = 2000;
 
 /**
  * Picks the lookups that a batch lookup of their context would answer:

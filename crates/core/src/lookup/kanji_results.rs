@@ -1,13 +1,22 @@
+use std::ops::RangeInclusive;
+
 use super::found_rows::{FoundKanji, FoundKanjiMeta};
 use super::lookup_result::{DictionaryFrequency, KanjiResult};
 
 /// Reports whether a character is a CJK ideograph, which kanji dictionaries describe.
 pub fn is_kanji(character: char) -> bool {
-    matches!(
-        character,
-        '\u{3400}'..='\u{4DBF}' | '\u{4E00}'..='\u{9FFF}' | '\u{F900}'..='\u{FAFF}' | '\u{20000}'..='\u{3134F}'
-    )
+    KANJI_RANGES.iter().any(|range| range.contains(&character))
 }
+
+/// The blocks of CJK Unified Ideographs, their extensions A to I, and CJK Compatibility Ideographs,
+/// as `Blocks.txt` of the Unicode Character Database, version 16.0.0, lists them.
+pub const KANJI_RANGES: [RangeInclusive<char>; 5] = [
+    '\u{3400}'..='\u{4DBF}',
+    '\u{4E00}'..='\u{9FFF}',
+    '\u{F900}'..='\u{FAFF}',
+    '\u{20000}'..='\u{3134F}',
+    '\u{31350}'..='\u{323AF}',
+];
 
 /// Pairs each found kanji entry with every frequency stored for its character,
 /// both in dictionary import order.
