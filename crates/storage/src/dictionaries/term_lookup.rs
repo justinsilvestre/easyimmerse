@@ -4,7 +4,8 @@ use rusqlite::{Connection, Row, params_from_iter};
 
 use super::columns::{get_deflated_json, get_json, split_words};
 use super::origin::{
-    AFTER_ORIGIN, ORIGIN_COLUMNS, TagDefinitions, distinct_numbers, placeholders, read_origin,
+    AFTER_ORIGIN, ORIGIN_COLUMNS, TagDefinitions, distinct_numbers, placeholders, query_in_chunks,
+    read_origin,
 };
 use crate::error::StorageError;
 
@@ -15,9 +16,24 @@ pub fn find_entries(
     headwords: &[String],
 ) -> Result<Vec<FoundEntry>, StorageError> {
     let folded_headwords = fold_distinct(headwords);
-    if folded_headwords.is_empty() {
-        return Ok(Vec::new());
-    }
+    let mut found = query_in_chunks(&folded_headwords, |chunk| find_entry_rows(conn, chunk))?;
+    // The rows of separate chunks are put back in the order that one query would return them in.
+    found.sort_by_key(|found| (found.dictionary.rank, found.entry_id));
+    attach_tags(conn, found)
+}
+
+/// Finds the frequencies and pronunciations that every dictionary stores for any of the terms.
+pub fn find_term_meta(
+    conn: &Connection,
+    terms: &[String],
+) -> Result<Vec<FoundTermMeta>, StorageError> {
+    query_in_chunks(terms, |chunk| find_term_meta_rows(conn, chunk))
+}
+
+fn find_entry_rows(
+    conn: &Connection,
+    folded_headwords: &[String],
+) -> Result<Vec<FoundEntry>, StorageError> {
     let mut statement = conn.prepare(&format!(
         "SELECT {ORIGIN_COLUMNS}, h.folded_headword, e.id, e.term, e.reading, e.alternates, e.word_classes, e.score,
              e.sequence, e.term_tags, e.definition_tags, e.definitions
@@ -28,20 +44,14 @@ pub fn find_entries(
          ORDER BY d.number, e.id",
         placeholders(folded_headwords.len())
     ))?;
-    let found: Vec<FoundEntry> = statement
-        .query_map(params_from_iter(&folded_headwords), read_found_entry)?
-        .collect::<Result<_, _>>()?;
-    attach_tags(conn, found)
+    let rows = statement.query_map(params_from_iter(folded_headwords), read_found_entry)?;
+    Ok(rows.collect::<Result<_, _>>()?)
 }
 
-/// Finds the frequencies and pronunciations that every dictionary stores for any of the terms.
-pub fn find_term_meta(
+fn find_term_meta_rows(
     conn: &Connection,
     terms: &[String],
 ) -> Result<Vec<FoundTermMeta>, StorageError> {
-    if terms.is_empty() {
-        return Ok(Vec::new());
-    }
     let mut statement = conn.prepare(&format!(
         "SELECT {ORIGIN_COLUMNS}, m.term, m.reading, m.data
          FROM dictionary_term_meta m
