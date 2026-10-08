@@ -44,6 +44,15 @@ mod tests {
     }
 
     #[test]
+    fn reads_a_chapter_that_starts_with_a_byte_order_mark() {
+        let xhtml = format!("\u{feff}{}", wrap("<p>First one.</p>"));
+        assert_eq!(
+            extract_chapter(&xhtml).unwrap().paragraphs,
+            vec!["First one."]
+        );
+    }
+
+    #[test]
     fn uses_the_first_heading_as_the_title() {
         let chapter = extract_chapter(&wrap("<h2>Two</h2><h1>One</h1>")).unwrap();
         assert_eq!(chapter.title, Some("Two".into()));

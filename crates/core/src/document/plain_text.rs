@@ -38,6 +38,14 @@ mod tests {
     }
 
     #[test]
+    fn leaves_a_byte_order_mark_out_of_the_first_paragraph() {
+        assert_eq!(
+            parse_plain_text("\u{feff}First one.").chapters[0].paragraphs,
+            vec!["First one."]
+        );
+    }
+
+    #[test]
     fn produces_an_untitled_chapter() {
         assert_eq!(parse_plain_text("Hello.").chapters[0].title, None);
     }
