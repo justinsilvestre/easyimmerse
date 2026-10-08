@@ -33,12 +33,19 @@ const dictionaryForAnyLanguage = {
  * Opens the media screen on the subtitles above, in a media file of its own.
  * The tests share one server, and a file with the name of one already in the project opens that one instead,
  * with the subtitles another test gave it; so each run of a test adds the media under a name of its own.
+ * Batch lookups fail unless `answersBatches` says otherwise, so that every word is looked up on its own,
+ * which the tests that wait for a word's lookup request rely on, and the server's own dictionaries never answer.
  */
-async function openJapaneseSubtitles(page: Page) {
+async function openJapaneseSubtitles(page: Page, answersBatches = false) {
   await page.route("**/dictionaries", (route) =>
     route.request().method() === "GET"
       ? route.fulfill({ json: { dictionaries: [dictionaryForAnyLanguage] } })
       : route.fallback(),
+  );
+  await page.route("**/dictionaries/lookup/batch", (route) =>
+    answersBatches
+      ? route.fulfill({ json: answerBatch(route.request().postDataJSON()) })
+      : route.fulfill({ status: 404, json: { message: "Not found" } }),
   );
   await page.goto("/");
   await page
@@ -105,26 +112,50 @@ test("a later character of a Japanese run is looked up from that character", asy
 /** The words a dictionary would find in 𠮷野家で映画を見る, by the text a lookup starts from. */
 const japaneseWords = ["𠮷野家", "で", "映画", "を", "見る"];
 
-/** Answers each lookup with the word the text starts with, so that the run's words are known. */
+/** The result for a word of `japaneseWords`. */
+function resultFor(word: string) {
+  return {
+    matchedText: word,
+    term: word,
+    reading: null,
+    inflectionChains: [],
+    definitions: [],
+    frequencies: [],
+    pronunciations: [],
+  };
+}
+
+/** The word of `japaneseWords` that a text starts with, if any. */
+const wordStarting = (text: string) =>
+  japaneseWords.find((each) => text.startsWith(each));
+
+/** Answers each single lookup with the word the text starts with, so that the run's words are known. */
 async function answerLookupsWithWords(page: Page) {
-  await page.route("**/dictionaries/lookup**", (route) => {
+  const isSingleLookup = (url: URL) =>
+    url.pathname.endsWith("/dictionaries/lookup");
+  await page.route(isSingleLookup, (route) => {
     const text = new URL(route.request().url()).searchParams.get("text") ?? "";
-    const word = japaneseWords.find((each) => text.startsWith(each));
-    const results = word
-      ? [
-          {
-            matchedText: word,
-            term: word,
-            reading: null,
-            inflectionChains: [],
-            definitions: [],
-            frequencies: [],
-            pronunciations: [],
-          },
-        ]
-      : [];
+    const word = wordStarting(text);
+    const results = word ? [resultFor(word)] : [];
     return route.fulfill({ json: { results, kanji: [], stylesheets: [] } });
   });
+}
+
+/** Answers a batch lookup as `answerLookupsWithWords` answers single lookups, at every character of every text. */
+function answerBatch({ texts }: { texts: string[] }) {
+  return {
+    texts: texts.map((text) => ({
+      positions: [...text].flatMap((_, offset) => {
+        const index = japaneseWords.indexOf(
+          wordStarting([...text].slice(offset).join("")) ?? "",
+        );
+        return index < 0 ? [] : [{ offset, results: [index], kanji: [] }];
+      }),
+    })),
+    results: japaneseWords.map(resultFor),
+    kanji: [],
+    stylesheets: [],
+  };
 }
 
 /** Focuses the Japanese run and waits until the lookup from its first character has answered with 𠮷野家. */
@@ -138,6 +169,31 @@ async function focusJapaneseRun(page: Page) {
   await expect(run.locator("[data-hovered]")).toHaveText("𠮷野家");
   return run;
 }
+
+test("a run whose lookups were fetched ahead is highlighted without a lookup of its own", async ({
+  page,
+  hasTouch,
+}) => {
+  test.skip(hasTouch, "Keyboard lookups need a keyboard.");
+  const singleLookups: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.endsWith("/dictionaries/lookup"))
+      singleLookups.push(request.url());
+  });
+  const batch = page.waitForResponse((response) =>
+    response.url().includes("/dictionaries/lookup/batch"),
+  );
+  await openJapaneseSubtitles(page, true);
+  await batch;
+  const run = page
+    .getByRole("list", { name: "Subtitles" })
+    .getByRole("button", { name: "𠮷野家で映画を見る" });
+  await run.focus();
+  await run
+    .locator("[data-hovered]", { hasText: "𠮷野家" })
+    .waitFor({ state: "visible" });
+  expect(singleLookups).toEqual([]);
+});
 
 /** Presses a key and resolves to the text and offset of the lookup it sends. */
 async function lookupAfterPressing(page: Page, key: string) {
