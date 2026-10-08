@@ -20,7 +20,7 @@ function hitAt(start: number, input: WordHit["input"]): WordHit {
   return {
     word: "cat",
     start,
-    element: document.createElement("button"),
+    element: document.createElement("span"),
     input,
   };
 }

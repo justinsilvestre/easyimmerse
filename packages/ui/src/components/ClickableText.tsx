@@ -96,6 +96,8 @@ export function stripMarkup(text: string): string {
 
 /**
  * Renders text with each word as a button, so that a word can be looked up or turned into a flashcard.
+ * Each word is an inline element with the role of a button rather than a `<button>`, which browsers lay out as one unbreakable box:
+ * a long run would then not wrap with the text around it, and the punctuation after it would start a new line.
  * `gestures` receives what the user does to each word: click, double-click, hover or a held tap.
  * The lookup cursor, which the mouse and the keyboard move alike, is highlighted once the answer of its lookup is known,
  * in the same render when it is cached: a word written with spaces whole, and in a run of a script written without spaces
@@ -151,9 +153,11 @@ export function ClickableText({
         const flashcardWords = rangesWithin(part, markedRanges);
         const hasFlashcard = flashcardWords.length > 0;
         return (
-          <button
+          // biome-ignore lint/a11y/useSemanticElements: a <button> cannot wrap across lines, as the doc comment above tells.
+          <span
             key={part.start}
-            type="button"
+            role="button"
+            tabIndex={0}
             // The highlight splits a run into pieces, which must not split its name.
             aria-label={part.isUnspaced ? part.text : undefined}
             aria-keyshortcuts={
@@ -169,8 +173,7 @@ export function ClickableText({
             className={clsx(
               // On a touch screen, a held tap starts a flashcard, so it must neither select the word nor open the browser's menu,
               // and a double tap must not zoom the page.
-              // Browsers give buttons no text shadow of their own, so the word takes the shadow of the text around it.
-              "touch-manipulation rounded-sm px-px [text-shadow:inherit] focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
+              "touch-manipulation rounded-sm px-px focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none]",
               // A run highlights only the characters concerned, inside itself.
               !part.isUnspaced &&
                 (isActiveHighlighted || isHighlighted) &&
@@ -195,10 +198,10 @@ export function ClickableText({
             ) : (
               part.text
             )}
-          </button>
+          </span>
         );
       })}
-      {/* One region for the whole text, outside the buttons, where screen readers announce reliably. */}
+      {/* One region for the whole text, outside the words, where screen readers announce reliably. */}
       <span aria-live="polite" className="sr-only">
         {keyboard.hasFocus ? announcementOf(cursor, parts) : ""}
       </span>
@@ -227,7 +230,7 @@ function highlightOf(
   return { start: cursor.start, length: cursor.matchedLength };
 }
 
-/** What to announce of a cursor the keyboard has moved into a run, which the run's button alone does not tell. */
+/** What to announce of a cursor the keyboard has moved into a run, which the run's name alone does not tell. */
 function announcementOf(
   cursor: TextCursor | null,
   parts: readonly TextPart[],

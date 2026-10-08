@@ -8,7 +8,7 @@ afterEach(() => vi.useRealTimers());
 
 function firstClickOn(word: string, input: WordHit["input"] = "mouse") {
   return {
-    hit: { word, start: 0, element: document.createElement("button"), input },
+    hit: { word, start: 0, element: document.createElement("span"), input },
     point: { x: 0, y: 0 },
     onDoubleClick: undefined,
   };

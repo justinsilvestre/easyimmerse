@@ -209,7 +209,10 @@ const CueCard = memo(function CueCard({
   onOpenFlashcardForCue?: (cueIndex: number) => void;
 }) {
   const seekOnClick = (event: MouseEvent<HTMLLIElement>) => {
-    if (event.target instanceof Element && event.target.closest("button"))
+    if (
+      event.target instanceof Element &&
+      event.target.closest("button, [role=button]")
+    )
       return;
     const selection = window.getSelection();
     if (

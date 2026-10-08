@@ -10,7 +10,7 @@ afterEach(() => {
 
 /** A word on the page whose place the test sets. */
 function createWord(rect: AnchorRect) {
-  const word = document.createElement("button");
+  const word = document.createElement("span");
   document.body.append(word);
   let current = rect;
   vi.spyOn(word, "getBoundingClientRect").mockImplementation(

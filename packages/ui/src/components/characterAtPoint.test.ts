@@ -6,11 +6,11 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-/** A button whose text is laid out 16 px per UTF-16 code unit, on one line 20 px high. */
-function laidOutButton(text: string) {
-  const button = document.createElement("button");
-  button.textContent = text;
-  document.body.append(button);
+/** A word whose text is laid out 16 px per UTF-16 code unit, on one line 20 px high. */
+function laidOutWord(text: string) {
+  const word = document.createElement("span");
+  word.textContent = text;
+  document.body.append(word);
   vi.spyOn(Range.prototype, "getClientRects").mockImplementation(function (
     this: Range,
   ) {
@@ -24,25 +24,23 @@ function laidOutButton(text: string) {
       item: () => rect,
     }) as unknown as DOMRectList;
   });
-  return button;
+  return word;
 }
 
 describe("characterOffsetAt", () => {
   it("finds the character under the point", () => {
-    expect(
-      characterOffsetAt(laidOutButton("映画を見る"), { x: 50, y: 10 }),
-    ).toBe(3);
+    expect(characterOffsetAt(laidOutWord("映画を見る"), { x: 50, y: 10 })).toBe(
+      3,
+    );
   });
 
   it("counts a character outside the Basic Multilingual Plane as two code units", () => {
-    expect(characterOffsetAt(laidOutButton("𠮷野家"), { x: 40, y: 10 })).toBe(
-      2,
-    );
+    expect(characterOffsetAt(laidOutWord("𠮷野家"), { x: 40, y: 10 })).toBe(2);
   });
 
   it("finds nothing below the text", () => {
     expect(
-      characterOffsetAt(laidOutButton("映画を見る"), { x: 50, y: 30 }),
+      characterOffsetAt(laidOutWord("映画を見る"), { x: 50, y: 30 }),
     ).toBeNull();
   });
 });
