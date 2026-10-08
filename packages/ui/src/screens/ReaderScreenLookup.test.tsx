@@ -1,6 +1,12 @@
+import type { BackendRequest } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
-import type { LookupResponse, MediaFile } from "@easyimmerse/types";
+import type {
+  BatchLookupRequest,
+  BatchLookupResponse,
+  LookupResponse,
+  MediaFile,
+} from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -18,6 +24,7 @@ import {
   fixtureResponses,
 } from "../testSupport/fixtureResponses.ts";
 import {
+  bodyOf,
   dictionarySummary,
   requestsTo,
 } from "../testSupport/renderMediaScreen.tsx";
@@ -72,8 +79,29 @@ function pointAt(word: string) {
   ]);
 }
 
-async function renderReader() {
+/** Finds the example results at every position of every text of a batch lookup. */
+function answerBatch(request: BackendRequest): BatchLookupResponse {
+  const { texts } = bodyOf(request) as BatchLookupRequest;
+  return {
+    texts: texts.map((text) => ({
+      positions: [...text].map((_, offset) => ({
+        offset,
+        results: exampleResults.map((_, index) => index),
+        kanji: [],
+      })),
+    })),
+    results: [...exampleResults],
+    kanji: [],
+    stylesheets: [],
+  };
+}
+
+/** Renders the reader on the short example book, with a server that offers batch lookups when `hasBatchLookups` says so. */
+async function renderReader({ hasBatchLookups = false } = {}) {
   const client = createFakeBackendClient({
+    ...(hasBatchLookups && {
+      "POST /dictionaries/lookup/batch": answerBatch,
+    }),
     ...fixtureResponses,
     "GET /projects/p1/media": { media_files: [bookFile] },
     "POST /documents/parse-local": exampleShortBook,
@@ -215,5 +243,38 @@ describe("ReaderScreen lookup", () => {
     expect(
       (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
     ).toBe("fressen");
+  });
+});
+
+describe("ReaderScreen lookup prefetch", () => {
+  it("looks up the sentences near the view in one batch", async () => {
+    const { client } = await renderReader({ hasBatchLookups: true });
+    await vi.waitFor(() =>
+      expect(
+        requestsTo(client.requests, "POST", "/dictionaries/lookup/batch").map(
+          (request) => (bodyOf(request) as BatchLookupRequest).texts,
+        ),
+      ).toEqual([
+        [
+          "The cat is sleeping on the windowsill.",
+          "The dog wants to eat, and it is hungry.",
+        ],
+      ]),
+    );
+  });
+
+  it("sends no lookup of its own for a word clicked near the view", async () => {
+    const { client } = await renderReader({ hasBatchLookups: true });
+    await vi.waitFor(() =>
+      expect(
+        requestsTo(client.requests, "POST", "/dictionaries/lookup/batch"),
+      ).toHaveLength(1),
+    );
+    await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
+    pointAt("cat");
+    click();
+    const popup = await findPopup();
+    await within(popup).findByRole("button", { name: "devour" });
+    expect(lookupQueries(client)).toEqual([]);
   });
 });

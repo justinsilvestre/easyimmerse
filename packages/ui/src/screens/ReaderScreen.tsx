@@ -6,7 +6,7 @@ import {
   selectPreferencesLoaded,
 } from "@easyimmerse/state";
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { draftFromText } from "../flashcards/draftFromText.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { isAwaitingLookup } from "../flashcards/saveStage.ts";
@@ -15,8 +15,10 @@ import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
+import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useReaderLookup } from "../lookup/useReaderLookup.ts";
 import type { WordPlace } from "../lookup/useWordLookup.ts";
+import { paragraphLookups } from "../reader/paragraphLookups.ts";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { ReaderView } from "../reader/ReaderView.tsx";
 import { parseReaderPreferences } from "../reader/readerPreferences.ts";
@@ -119,12 +121,19 @@ function BookReader({
     flashcards.start(started, lateFields);
   };
   const lookup = useReaderLookup(languages, startFlashcard);
+  const textLanguage = document.language ?? settings.target_language;
+  const [nearbyParagraphs, setNearbyParagraphs] = useState<readonly string[]>(
+    [],
+  );
+  useLookupPrefetch(languages.target, nearbyParagraphs, (paragraph) =>
+    paragraphLookups(paragraph, textLanguage),
+  );
   return (
     <ReaderView
       document={document}
       title={document.title || mediaFile.name}
       projectName={settings.name}
-      language={document.language ?? settings.target_language}
+      language={textLanguage}
       preferences={preferences}
       initialLocation={initialLocation}
       lookup={lookup.popup && <DictionaryPopup {...lookup.popup.props} />}
@@ -140,6 +149,7 @@ function BookReader({
         onPointerInsideLookupChange: lookup.popup?.onPointerInsideChange,
         onLocationChange: (location) =>
           dispatch(actions.readingLocationReported(mediaFile.id, location)),
+        onNearbyParagraphsChange: setNearbyParagraphs,
         onPreferencesChange: (changed) =>
           dispatch(
             actions.preferenceSet("readerPreferences", JSON.stringify(changed)),

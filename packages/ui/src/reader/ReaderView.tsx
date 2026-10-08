@@ -27,6 +27,7 @@ import {
   type PageInfo,
   type PageTurner,
 } from "./PagedChapter.tsx";
+import { paragraphsNearView } from "./paragraphsNearView.ts";
 import { ReaderFooter } from "./ReaderFooter.tsx";
 import { ReaderToolbar } from "./ReaderToolbar.tsx";
 import {
@@ -72,6 +73,8 @@ export type ReaderCallbacks = ReaderWordGestures & {
   /** The pointer entering or leaving the dictionary pop-up. */
   onPointerInsideLookupChange?: (isInside: boolean) => void;
   onLocationChange: (location: ReaderLocation) => void;
+  /** Receives the paragraphs near the view, as `paragraphsNearView` picks them, each time the view moves to another paragraph. */
+  onNearbyParagraphsChange?: (paragraphs: readonly string[]) => void;
   onPreferencesChange: (preferences: ReaderPreferences) => void;
 };
 
@@ -114,6 +117,8 @@ const searchLimit = 500;
  * Layout time grows with the text's length, so a longer chapter is shown in sections.
  */
 const sectionCharacterLimit = 250_000;
+/** About how much text one screen shows, which sets how far around the view words are looked up ahead. */
+const screenCharacters = 2000;
 
 /**
  * The screen for reading an ebook or a text file.
@@ -175,6 +180,16 @@ export function ReaderView(props: ReaderViewProps) {
   useEffect(() => {
     reportLocation(state.location);
   }, [state.location]);
+  const reportNearby = useEffectEvent((paragraphs: readonly string[]) =>
+    callbacks.onNearbyParagraphsChange?.(paragraphs),
+  );
+  const firstParagraphInView = state.location.paragraphIndex;
+  useEffect(() => {
+    const paragraphs = document.chapters[chapterIndex]?.paragraphs ?? [];
+    reportNearby(
+      paragraphsNearView(paragraphs, firstParagraphInView, screenCharacters),
+    );
+  }, [document, chapterIndex, firstParagraphInView]);
   const hasLookup = props.lookup != null;
   useLookedUpHighlight(props.highlightedWord);
 
