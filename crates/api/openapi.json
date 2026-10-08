@@ -5519,6 +5519,25 @@
                 "type": "string"
               }
             }
+          },
+          {
+            "type": "object",
+            "description": "A value the host does not show and sends back unchanged, so a plugin can\ncarry what it learned in one step into the next.",
+            "required": [
+              "value",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "hidden"
+                ]
+              },
+              "value": {
+                "type": "string"
+              }
+            }
           }
         ],
         "description": "The kind of control a form field shows, with what the control starts out as."

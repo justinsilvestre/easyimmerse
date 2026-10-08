@@ -1150,6 +1150,10 @@ export interface components {
             /** @enum {string} */
             kind: "note";
             text: string;
+        } | {
+            /** @enum {string} */
+            kind: "hidden";
+            value: string;
         };
         /** @description One labelled control in a plugin form. */
         FormField: {

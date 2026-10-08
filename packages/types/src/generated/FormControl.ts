@@ -12,4 +12,4 @@ chosen: Array<string>, } | { "kind": "choose-many", options: Array<FormOption>,
 /**
  * The ids of the options chosen to begin with.
  */
-chosen: Array<string>, } | { "kind": "toggle", on: boolean, } | { "kind": "note", text: string, };
+chosen: Array<string>, } | { "kind": "toggle", on: boolean, } | { "kind": "note", text: string, } | { "kind": "hidden", value: string, };
