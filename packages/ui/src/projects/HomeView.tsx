@@ -4,7 +4,8 @@ import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { HelpLink } from "../components/HelpLink.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
-import { ProjectCard } from "./ProjectCard.tsx";
+import { LoadingStatus } from "../components/Skeleton.tsx";
+import { ProjectCard, ProjectCardSkeleton } from "./ProjectCard.tsx";
 
 /** How the project list is coming along: `offline` means no server answers, so only local work can continue. */
 export type ProjectListStatus = "loading" | "ready" | "failed" | "offline";
@@ -76,7 +77,13 @@ function Projects({
 }) {
   switch (status) {
     case "loading":
-      return <p className="text-sm text-fg-muted">Loading projects…</p>;
+      return (
+        <LoadingStatus label="Loading projects" className="flex flex-col gap-2">
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+        </LoadingStatus>
+      );
     case "failed":
       return <p role="alert">Could not load the projects.</p>;
     case "offline":

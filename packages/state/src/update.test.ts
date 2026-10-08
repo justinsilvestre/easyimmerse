@@ -97,6 +97,15 @@ describe("update", () => {
     expect(state.player.durationSeconds).toBe(90);
   });
 
+  it("stores what the player has loaded for playerBufferedChanged", () => {
+    const buffered = [{ startSeconds: 0, endSeconds: 30 }];
+    const [state] = update(
+      initialAppState,
+      actions.playerBufferedChanged(buffered),
+    );
+    expect(state.player.buffered).toEqual(buffered);
+  });
+
   it("returns no effects for playerTimeChanged", () => {
     const [, effects] = update(initialAppState, actions.playerTimeChanged(3));
     expect(effects).toEqual([]);
@@ -298,6 +307,39 @@ describe("update", () => {
     expect(state.player).toEqual(initialAppState.player);
   });
 
+  it("flips isMuted for muteToggleRequested", () => {
+    const [state] = update(initialAppState, actions.muteToggleRequested());
+    expect(state.player.isMuted).toBe(true);
+  });
+
+  it("flips isMuted back for a second muteToggleRequested", () => {
+    const [muted] = update(initialAppState, actions.muteToggleRequested());
+    const [state] = update(muted, actions.muteToggleRequested());
+    expect(state.player.isMuted).toBe(false);
+  });
+
+  it("returns a setPlayerMuted effect for muteToggleRequested", () => {
+    const [, effects] = update(initialAppState, actions.muteToggleRequested());
+    expect(effects).toEqual([{ type: "setPlayerMuted", isMuted: true }]);
+  });
+
+  it("returns an unmuting setPlayerMuted effect when muted", () => {
+    const [muted] = update(initialAppState, actions.muteToggleRequested());
+    const [, effects] = update(muted, actions.muteToggleRequested());
+    expect(effects).toEqual([{ type: "setPlayerMuted", isMuted: false }]);
+  });
+
+  it("keeps the volume for muteToggleRequested", () => {
+    const [state] = update(initialAppState, actions.muteToggleRequested());
+    expect(state.player.volume).toBe(initialAppState.player.volume);
+  });
+
+  it("keeps the mute state for closeMedia", () => {
+    const [muted] = update(initialAppState, actions.muteToggleRequested());
+    const [state] = update(muted, actions.closeMedia());
+    expect(state.player.isMuted).toBe(true);
+  });
+
   it("keeps the volume and speed for closeMedia", () => {
     const playing = {
       ...initialAppState,
@@ -347,6 +389,8 @@ describe("update", () => {
           "losslessAudio",
           "conversionNoticeDismissed",
           "readerPreferences",
+          "subtitleAppearance",
+          "theme",
         ],
       },
     ]);
@@ -358,6 +402,14 @@ describe("update", () => {
       actions.preferenceSet("conversionNoticeDismissed", "true"),
     );
     expect(state.preferences.conversionNoticeDismissed).toBe("true");
+  });
+
+  it("stores a structured preference as the given JSON for preferenceSet", () => {
+    const [state] = update(
+      initialAppState,
+      actions.preferenceSet("subtitleAppearance", '{"boxOpacity":40}'),
+    );
+    expect(state.preferences.subtitleAppearance).toBe('{"boxOpacity":40}');
   });
 
   it("returns a savePreference effect with the given value for preferenceSet", () => {
@@ -513,5 +565,83 @@ describe("update", () => {
       );
       expect(effects).toEqual([]);
     });
+  });
+});
+
+describe("update, for the playback position", () => {
+  const loaded: AppState = {
+    ...initialAppState,
+    currentMediaFileId: "m1",
+    player: {
+      ...initialAppState.player,
+      currentTimeSeconds: 14,
+      durationSeconds: 60,
+    },
+  };
+
+  it("returns a loadPlaybackPosition effect for playbackPositionLoadRequested", () => {
+    const [, effects] = update(
+      initialAppState,
+      actions.playbackPositionLoadRequested("m1"),
+    );
+    expect(effects).toEqual([
+      { type: "loadPlaybackPosition", mediaFileId: "m1" },
+    ]);
+  });
+
+  it("returns no effects for playbackPositionLoadRequested once the position is known", () => {
+    const [, effects] = update(
+      { ...initialAppState, playbackPositions: { m1: null } },
+      actions.playbackPositionLoadRequested("m1"),
+    );
+    expect(effects).toEqual([]);
+  });
+
+  it("stores the loaded position for playbackPositionLoaded", () => {
+    const [state] = update(
+      initialAppState,
+      actions.playbackPositionLoaded("m1", 8000),
+    );
+    expect(state.playbackPositions.m1).toBe(8000);
+  });
+
+  it("saves the position when playback enters a new stretch for playerTimeChanged", () => {
+    const [, effects] = update(loaded, actions.playerTimeChanged(15.5));
+    expect(effects).toEqual([
+      { type: "savePlaybackPosition", mediaFileId: "m1", ms: 15_500 },
+    ]);
+  });
+
+  it("saves nothing within the same stretch for playerTimeChanged", () => {
+    const [, effects] = update(loaded, actions.playerTimeChanged(14.5));
+    expect(effects).toEqual([]);
+  });
+
+  it("saves the position when playback pauses for playerPlayingChanged", () => {
+    const [, effects] = update(loaded, actions.playerPlayingChanged(false));
+    expect(effects).toEqual([
+      { type: "savePlaybackPosition", mediaFileId: "m1", ms: 14_000 },
+    ]);
+  });
+
+  it("saves the position for closeMedia", () => {
+    const [, effects] = update(loaded, actions.closeMedia());
+    expect(effects).toEqual([
+      { type: "savePlaybackPosition", mediaFileId: "m1", ms: 14_000 },
+    ]);
+  });
+
+  it("remembers the saved position for closeMedia, so that reopening the file finds it", () => {
+    const [state] = update(loaded, actions.closeMedia());
+    expect(state.playbackPositions.m1).toBe(14_000);
+  });
+
+  it("saves nothing before the player has loaded the file", () => {
+    const unloaded = {
+      ...loaded,
+      player: { ...loaded.player, durationSeconds: 0 },
+    };
+    const [, effects] = update(unloaded, actions.closeMedia());
+    expect(effects).toEqual([]);
   });
 });

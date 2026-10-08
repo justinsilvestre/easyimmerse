@@ -8,11 +8,11 @@ import { DictionaryScope } from "../lookup/stylesheet/DictionaryScope.tsx";
 export function renderDefinition(
   definition: Definition,
   {
-    onWordClick = () => undefined,
+    onWordLookup = () => undefined,
     onLookup = () => undefined,
     resolveMediaUrl = () => null,
   }: {
-    onWordClick?: (word: string) => void;
+    onWordLookup?: (word: string) => void;
     onLookup?: (term: string) => void;
     resolveMediaUrl?: ResolveMediaUrl;
   } = {},
@@ -23,7 +23,7 @@ export function renderDefinition(
         definition={definition}
         dictionaryId="dict"
         resolveMediaUrl={resolveMediaUrl}
-        onWordClick={onWordClick}
+        onWordLookup={onWordLookup}
         onLookup={onLookup}
       />
     </DictionaryScope>,

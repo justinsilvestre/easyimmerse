@@ -66,10 +66,25 @@ impl DictionaryImporter<'_> {
         Ok(self.started()?.number)
     }
 
+    /// Tells whether a dictionary with the title was imported before, so that the same file is not imported twice.
+    fn has_dictionary_titled(&self, title: &str) -> Result<bool, StorageError> {
+        let count: i64 = self.transaction.query_row(
+            "SELECT COUNT(*) FROM dictionaries WHERE title = ?1",
+            params![title],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+    }
+
     fn insert_metadata(
         &self,
         metadata: &DictionaryMetadata,
     ) -> Result<StartedDictionary, StorageError> {
+        if self.has_dictionary_titled(&metadata.title)? {
+            return Err(StorageError::DictionaryAlreadyImported(
+                metadata.title.clone(),
+            ));
+        }
         let id = DictionaryId::generate();
         let frequency_mode = metadata
             .frequency_mode

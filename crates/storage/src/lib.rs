@@ -23,7 +23,9 @@ pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 
 use std::path::Path;
 
-use easyimmerse_core::dictionary::{DictionaryMedia, DictionarySource};
+use easyimmerse_core::dictionary::{
+    DictionaryError, DictionaryMedia, DictionarySink, DictionarySource,
+};
 use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
@@ -243,6 +245,16 @@ impl Storage {
     ) -> Result<DictionaryId, StorageError> {
         let imported_at = new_row::now_ms();
         self.write(|conn| dictionaries::import_dictionary(conn, source, imported_at))
+    }
+
+    /// Imports the dictionary that `read` passes to the sink, in one transaction, and returns its new id.
+    /// The caller may wrap the sink, for example to count what it stores.
+    pub fn import_dictionary_with(
+        &self,
+        read: impl FnOnce(&mut dyn DictionarySink) -> Result<(), DictionaryError>,
+    ) -> Result<DictionaryId, StorageError> {
+        let imported_at = new_row::now_ms();
+        self.write(|conn| dictionaries::import_with(conn, imported_at, read))
     }
 
     /// Lists every stored dictionary in the order they were imported.

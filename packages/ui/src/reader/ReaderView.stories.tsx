@@ -121,8 +121,8 @@ function StatefulReader(args: ReaderViewProps) {
           args.callbacks.onWordClick(clicked, input);
           setWord(clicked);
         },
-        onWordHoverIntent: (hovered) => {
-          args.callbacks.onWordHoverIntent(hovered);
+        onWordHoverAnswered: (hovered) => {
+          args.callbacks.onWordHoverAnswered?.(hovered);
           if (word) setWord(hovered);
         },
         onDismissLookup: () => {
@@ -145,6 +145,7 @@ const meta = {
   args: {
     document: exampleNovel,
     title: "Die Verwandlung",
+    projectName: "German reading",
     language: "de",
     preferences: defaultReaderPreferences,
     callbacks: {
@@ -152,7 +153,8 @@ const meta = {
       onLookup: fn(),
       onWordClick: fn(),
       onWordDoubleClick: fn(),
-      onWordHoverIntent: fn(),
+      onWordHover: fn(),
+      onWordHoverAnswered: fn(),
       onWordHold: fn(),
       onDismissLookup: fn(),
       onLocationChange: fn(),

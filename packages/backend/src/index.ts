@@ -1,5 +1,6 @@
 export { skipToken } from "@reduxjs/toolkit/query";
 export {
+  selectCachedLookup,
   useAddMediaFileMutation,
   useAddMediaFromSourceMutation,
   useAddSubtitleTrackMutation,
@@ -11,6 +12,7 @@ export {
   useDescribeMediaSourceMutation,
   useFetchSourceSubtitlesMutation,
   useGetConversionCacheStatusQuery,
+  useGetImportJobQuery,
   useGetMediaSourceJobQuery,
   useGetMediaTracksQuery,
   useGetProjectQuery,
@@ -37,6 +39,7 @@ export {
   usePreviewLocalDictionaryTableMutation,
   useRemoveMediaFileMutation,
   useSaveTrackSelectionMutation,
+  useSetConversionCacheBudgetMutation,
   useSetSubtitleSelectionMutation,
   useUpdateFlashcardMutation,
   useUpdateProjectMutation,
@@ -58,7 +61,13 @@ export {
 } from "./conversionFileUrl.ts";
 export { buildDictionaryMediaUrl } from "./dictionaryMediaUrl.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
+export { lookUpTextAhead } from "./lookUpTextAhead.ts";
+export {
+  lookupStartsIn,
+  southEastAsianCharacterRanges,
+} from "./lookupPositions.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
+export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
 export type { ServerConfig } from "./resolveServerConfig.ts";
 export { resolveServerConfig } from "./resolveServerConfig.ts";
 export { createWasmBackendClient } from "./wasmBackendClient.ts";

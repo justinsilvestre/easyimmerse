@@ -65,6 +65,72 @@
         ]
       }
     },
+    "/conversion-cache/budget": {
+      "put": {
+        "tags": [
+          "conversions"
+        ],
+        "summary": "Sets how large the cache may grow, keeps the choice for later runs, and answers with the status under it.",
+        "operationId": "setConversionCacheBudget",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversionCacheBudget"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The cache's usage and limits under the new budget",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversionCacheStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server does not convert media (code `conversion_unavailable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/conversion-cache/clear": {
       "post": {
         "tags": [
@@ -456,6 +522,7 @@
         "tags": [
           "dictionaries"
         ],
+        "summary": "Starts importing the file and answers with the job to poll at `/dictionaries/imports/{id}`,\nsince a large dictionary takes longer to store than a browser waits for a response.",
         "operationId": "importDictionary",
         "parameters": [
           {
@@ -493,18 +560,18 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "The dictionary was imported",
+          "202": {
+            "description": "The import was started",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DictionarySummary"
+                  "$ref": "#/components/schemas/ImportJobStarted"
                 }
               }
             }
           },
           "400": {
-            "description": "The file could not be read as a dictionary",
+            "description": "The chosen columns are not column roles",
             "content": {
               "application/json": {
                 "schema": {
@@ -546,6 +613,7 @@
         "tags": [
           "dictionaries"
         ],
+        "summary": "Reads the files at the path, then starts importing them and answers with the job to poll\nat `/dictionaries/imports/{id}`.",
         "operationId": "importLocalDictionary",
         "requestBody": {
           "content": {
@@ -558,18 +626,18 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "The dictionary was imported",
+          "202": {
+            "description": "The import was started",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DictionarySummary"
+                  "$ref": "#/components/schemas/ImportJobStarted"
                 }
               }
             }
           },
           "400": {
-            "description": "The files could not be read as a dictionary",
+            "description": "The files could not be read",
             "content": {
               "application/json": {
                 "schema": {
@@ -600,6 +668,72 @@
           },
           "404": {
             "description": "Nothing at the given path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/imports/{id}": {
+      "get": {
+        "tags": [
+          "dictionaries"
+        ],
+        "operationId": "getImportJob",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The import job id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Where the import stands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportJobStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No import job has the id, or its outcome has been forgotten",
             "content": {
               "application/json": {
                 "schema": {
@@ -678,6 +812,71 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LookupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/dictionaries/lookup/batch": {
+      "post": {
+        "tags": [
+          "dictionaries"
+        ],
+        "operationId": "lookupTexts",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The entries of every dictionary at every position of each text where a word may start",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchLookupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Too many texts, or a text too long",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -2186,7 +2385,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Adds a media file to a project. A `path` source must name an existing file on the\nserver's machine, which only a token allowed to read local paths may do.",
+        "summary": "Adds a media file to a project. A `path` source must name an existing file on the\nserver's machine, which only a token allowed to read local paths may do; the text\nsubtitle tracks inside it and the subtitle files beside it that share its name are added\nas its subtitle tracks.",
         "operationId": "addMediaFile",
         "parameters": [
           {
@@ -2526,7 +2725,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The subtitle tracks embedded in the file, which cannot be shown yet",
+            "description": "The subtitle tracks embedded in the file. Adding the file by path adds its text tracks among its subtitle tracks.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4355,6 +4554,65 @@
           }
         }
       },
+      "BatchLookupRequest": {
+        "type": "object",
+        "required": [
+          "language",
+          "texts"
+        ],
+        "properties": {
+          "language": {
+            "type": "string",
+            "description": "The language of the texts, as a BCP 47 tag, which decides how inflections are undone."
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The texts to look up at every position, such as subtitle cues or paragraphs without their markup.\nAt most 100 texts, of at most 2,000 characters each."
+          }
+        }
+      },
+      "BatchLookupResponse": {
+        "type": "object",
+        "required": [
+          "texts",
+          "results",
+          "kanji",
+          "stylesheets"
+        ],
+        "properties": {
+          "kanji": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KanjiResult"
+            },
+            "description": "Every distinct kanji result of the lookups, each once."
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LookupResult"
+            },
+            "description": "Every distinct term result of the lookups, each once."
+          },
+          "stylesheets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryStylesheet"
+            },
+            "description": "The stylesheets of the dictionaries whose definitions appear in `results`, each once."
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextLookups"
+            },
+            "description": "The lookups in each requested text, in the order requested."
+          }
+        }
+      },
       "CanPlayAnswer": {
         "type": "string",
         "description": "A media element's `canPlayType` answer. The empty string becomes `No`.",
@@ -4472,6 +4730,20 @@
           }
         }
       },
+      "ConversionCacheBudget": {
+        "type": "object",
+        "description": "How large the conversion cache may grow. `null` lets the budget follow the disk's size.",
+        "properties": {
+          "budget_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
       "ConversionCacheStatus": {
         "type": "object",
         "description": "Sizes are in bytes.",
@@ -4487,6 +4759,15 @@
             "type": "integer",
             "format": "int64",
             "description": "The size the cache may grow to when disk space allows.",
+            "minimum": 0
+          },
+          "chosen_budget_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The budget the user chose, or None while the budget follows the disk's size.",
             "minimum": 0
           },
           "free_bytes": {
@@ -5023,6 +5304,15 @@
             "format": "int64",
             "description": "Milliseconds since the Unix epoch.",
             "minimum": 0
+          },
+          "word_start": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.\nNull when that is not known, as for a card whose word was not taken from a cue.",
+            "minimum": 0
           }
         }
       },
@@ -5123,6 +5413,15 @@
                 "type": "null"
               }
             ]
+          },
+          "word_start": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.\nNull when that is not known, as for a card whose word was not taken from a cue.",
+            "minimum": 0
           }
         }
       },
@@ -5177,6 +5476,62 @@
           }
         }
       },
+      "ImportJobStarted": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "ImportJobState": {
+        "type": "string",
+        "enum": [
+          "running",
+          "done",
+          "failed"
+        ]
+      },
+      "ImportJobStatus": {
+        "type": "object",
+        "required": [
+          "state",
+          "progress"
+        ],
+        "properties": {
+          "dictionary": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DictionarySummary",
+                "description": "The stored dictionary, once the job is done."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ApiError",
+                "description": "Why the import failed, once the job has failed."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progress": {
+            "$ref": "#/components/schemas/ImportProgress"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ImportJobState"
+          }
+        }
+      },
       "ImportLocalDictionaryRequest": {
         "type": "object",
         "required": [
@@ -5197,6 +5552,50 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "ImportProgress": {
+        "type": "object",
+        "description": "How many items of each kind the import has stored so far.",
+        "required": [
+          "entries",
+          "term_meta",
+          "kanji",
+          "kanji_meta",
+          "tags",
+          "media"
+        ],
+        "properties": {
+          "entries": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "kanji": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "kanji_meta": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "media": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "tags": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "term_meta": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           }
         }
       },
@@ -6063,6 +6462,41 @@
           }
         }
       },
+      "PositionLookups": {
+        "type": "object",
+        "description": "What a single lookup at one position of a text would return,\nwith each result given as its index in the batch response's lists.",
+        "required": [
+          "offset",
+          "results",
+          "kanji"
+        ],
+        "properties": {
+          "kanji": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Indices into the response's `kanji`."
+          },
+          "offset": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The position of the looked-up character in the text, counted in characters (Unicode scalar values).",
+            "minimum": 0
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Indices into the response's `results`, best first."
+          }
+        }
+      },
       "PreferenceValue": {
         "type": "object",
         "description": "A preference value. `null` means the preference has not been set.",
@@ -6584,6 +7018,21 @@
             }
           }
         ]
+      },
+      "TextLookups": {
+        "type": "object",
+        "required": [
+          "positions"
+        ],
+        "properties": {
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PositionLookups"
+            },
+            "description": "The positions where lookup found something, in the order they appear in the text.\nA position that lookup tried but found nothing at is left out."
+          }
+        }
       },
       "TextSource": {
         "oneOf": [

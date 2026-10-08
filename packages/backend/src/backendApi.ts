@@ -2,15 +2,19 @@ import type {
   AddMediaFileRequest,
   AddMediaFromSourceRequest,
   AddSubtitleTrackRequest,
+  BatchLookupRequest,
+  BatchLookupResponse,
+  ConversionCacheBudget,
   ConversionCacheStatus,
   DescribeMediaSourceRequest,
-  DictionarySummary,
   Document,
   DocumentFormat,
   EmbeddedSubtitleTracksResponse,
   FetchSourceSubtitlesResponse,
   Flashcard,
   FlashcardDraft,
+  ImportJobStarted,
+  ImportJobStatus,
   ImportLocalDictionaryRequest,
   ListDictionariesResponse,
   ListFlashcardsResponse,
@@ -41,8 +45,12 @@ import type {
   TracksResponse,
   WaveformResponse,
 } from "@easyimmerse/types";
+import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
+import type { BackendError } from "./backendClient.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
+import { lookupsInBatchReach } from "./lookupBatches.ts";
+import { lookupResponseAt } from "./lookupResponseAt.ts";
 
 type ParseDocumentArgs = {
   bytes: Uint8Array | Blob;
@@ -117,6 +125,12 @@ const lookupContextQuery = (
   context === undefined || offset === undefined
     ? {}
     : { context, offset: String(offset) };
+
+/**
+ * How long, in seconds, a lookup stays cached once nothing shows it.
+ * It outlasts the minute of playback that `prefetchLookups` looks ahead, so that a word looked up early is still cached when it comes up.
+ */
+export const lookupCacheSeconds = 300;
 
 const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
   `/projects/${projectId}/media/${mediaFileId}`;
@@ -452,6 +466,17 @@ export const backendApi = createApi({
       query: () => ({ method: "POST", path: "/conversion-cache/clear" }),
       invalidatesTags: ["ConversionCache"],
     }),
+    setConversionCacheBudget: build.mutation<
+      ConversionCacheStatus,
+      ConversionCacheBudget
+    >({
+      query: (budget) => ({
+        method: "PUT",
+        path: "/conversion-cache/budget",
+        body: { kind: "json", value: budget },
+      }),
+      invalidatesTags: ["ConversionCache"],
+    }),
     parseTimedText: build.mutation<TimedTextTrack, ParseTimedTextRequest>({
       query: (request) => ({
         method: "POST",
@@ -479,7 +504,7 @@ export const backendApi = createApi({
         body: { kind: "json", value: request },
       }),
     }),
-    importDictionary: build.mutation<DictionarySummary, ImportDictionaryArgs>({
+    importDictionary: build.mutation<ImportJobStarted, ImportDictionaryArgs>({
       query: ({ fileName, bytes, tableLayout = null }) => ({
         method: "POST",
         path: "/dictionaries",
@@ -491,10 +516,9 @@ export const backendApi = createApi({
         },
         offlineOperation:
           bytes instanceof Uint8Array
-            ? { kind: "parseDictionary", fileName, bytes, tableLayout }
+            ? { kind: "importDictionary", fileName, bytes, tableLayout }
             : undefined,
       }),
-      invalidatesTags: ["Dictionaries"],
     }),
     previewDictionaryTable: build.mutation<
       TablePreview,
@@ -526,7 +550,7 @@ export const backendApi = createApi({
       }),
     }),
     importLocalDictionary: build.mutation<
-      DictionarySummary,
+      ImportJobStarted,
       ImportLocalDictionaryRequest
     >({
       query: (request) => ({
@@ -534,7 +558,19 @@ export const backendApi = createApi({
         path: "/dictionaries/import-local",
         body: { kind: "json", value: request },
       }),
-      invalidatesTags: ["Dictionaries"],
+    }),
+    getImportJob: build.query<ImportJobStatus, string>({
+      query: (id) => ({
+        method: "GET",
+        path: `/dictionaries/imports/${encodeURIComponent(id)}`,
+        offlineOperation: { kind: "importJobStatus", id },
+      }),
+      /** Once the import is done, the list of dictionaries and the lookups that read them are stale. */
+      async onQueryStarted(_id, { dispatch, queryFulfilled }) {
+        const { data } = await queryFulfilled.catch(() => ({ data: null }));
+        if (data?.state === "done")
+          dispatch(backendApi.util.invalidateTags(["Dictionaries"]));
+      },
     }),
     listDictionaries: build.query<ListDictionariesResponse, void>({
       query: () => ({ method: "GET", path: "/dictionaries" }),
@@ -548,12 +584,31 @@ export const backendApi = createApi({
       invalidatesTags: ["Dictionaries"],
     }),
     lookupText: build.query<LookupResponse, LookupQuery>({
-      query: ({ text, language, context, offset }) => ({
-        method: "GET",
-        path: "/dictionaries/lookup",
-        query: { text, language, ...lookupContextQuery(context, offset) },
-      }),
+      // A lookup whose context a batch is fetching waits for that batch rather than asking the server a second time.
+      queryFn: async (lookup, api, _extraOptions, baseQuery) =>
+        (await answerFromRunningBatch(api, lookup)) ??
+        (baseQuery({
+          method: "GET",
+          path: "/dictionaries/lookup",
+          query: {
+            text: lookup.text,
+            language: lookup.language,
+            ...lookupContextQuery(lookup.context, lookup.offset),
+          },
+        }) as Promise<
+          QueryReturnValue<LookupResponse, BackendError, undefined>
+        >),
       providesTags: ["Dictionaries"],
+      keepUnusedDataFor: lookupCacheSeconds,
+    }),
+    /** Looks up every position of several texts at once. `prefetchLookups` copies the answer into the cache of `lookupText`. */
+    lookupTexts: build.query<BatchLookupResponse, BatchLookupRequest>({
+      query: (request) => ({
+        method: "POST",
+        path: "/dictionaries/lookup/batch",
+        body: { kind: "json", value: request },
+      }),
+      keepUnusedDataFor: 0,
     }),
   }),
 });
@@ -588,6 +643,7 @@ export const {
   useSetSubtitleSelectionMutation,
   useGetConversionCacheStatusQuery,
   useClearConversionCacheMutation,
+  useSetConversionCacheBudgetMutation,
   useParseTimedTextMutation,
   useParseDocumentMutation,
   useParseLocalDocumentMutation,
@@ -595,8 +651,62 @@ export const {
   usePreviewDictionaryTableMutation,
   usePreviewLocalDictionaryTableMutation,
   useImportLocalDictionaryMutation,
+  useGetImportJobQuery,
   useListDictionariesQuery,
   useDeleteDictionaryMutation,
   useLookupTextQuery,
   useLazyLookupTextQuery,
 } = backendApi;
+
+type BackendState = Parameters<
+  typeof backendApi.util.selectCachedArgsForQuery
+>[0];
+
+/** The cached answer of a lookup, or undefined when none is cached, for reading the cache at once rather than through a hook. */
+export function selectCachedLookup(
+  state: unknown,
+  query: LookupQuery,
+): LookupResponse | undefined {
+  const entry = backendApi.endpoints.lookupText.select(query)(
+    state as BackendState,
+  );
+  return entry.isSuccess ? entry.data : undefined;
+}
+
+/** The batch lookups being fetched now. */
+export function selectRunningBatches(
+  state: BackendState,
+): BatchLookupRequest[] {
+  return backendApi.util
+    .selectCachedArgsForQuery(state, "lookupTexts")
+    .filter(
+      (request) =>
+        backendApi.endpoints.lookupTexts.select(request)(state).isLoading,
+    );
+}
+
+/**
+ * Answers a lookup from a batch being fetched that covers its context and looks up its position, once the batch answers;
+ * or null when none does or the batch fails.
+ */
+async function answerFromRunningBatch(
+  api: BaseQueryApi,
+  lookup: LookupQuery,
+): Promise<{ data: LookupResponse } | null> {
+  const { context, offset } = lookup;
+  const isInReach = lookupsInBatchReach([lookup]).length > 0;
+  if (context === undefined || offset === undefined || !isInReach) return null;
+  const batch = selectRunningBatches(api.getState() as BackendState).find(
+    (request) =>
+      request.language === lookup.language && request.texts.includes(context),
+  );
+  const running =
+    batch &&
+    api.dispatch(backendApi.util.getRunningQueryThunk("lookupTexts", batch));
+  const answer = running && (await running).data;
+  const data =
+    answer &&
+    batch &&
+    lookupResponseAt(batch, answer, batch.texts.indexOf(context), offset);
+  return data ? { data } : null;
+}

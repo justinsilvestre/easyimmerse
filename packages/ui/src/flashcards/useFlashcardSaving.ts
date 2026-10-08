@@ -1,4 +1,5 @@
 import { actions } from "@easyimmerse/state";
+import type { FlashcardDraft } from "@easyimmerse/types";
 import {
   type Dispatch,
   type RefObject,
@@ -16,14 +17,21 @@ import {
   type EditedFlashcard,
   type EditedFlashcardAction,
 } from "./editedFlashcard.ts";
-import { isAwaitingLookup, isSaveAsked } from "./saveStage.ts";
+import { draftOfFlashcard } from "./flashcardDrafts.ts";
+import { isAwaitingLookup, isSaveAsked, isSending } from "./saveStage.ts";
 import { useOffScreenSaving } from "./useOffScreenSaving.ts";
+import { useSaveUndo } from "./useSaveUndo.ts";
 
 /**
  * Saves flashcards: the open card once its save is ready, and any card the editor leaves, as it is, in the background.
+ * - A save the user asked for that lands while its card is still open closes the card and shows the brief notice with Undo
+ *   that a card saved in the background shows, as `useSaveUndo` describes.
+ * - A save the user asked for that fails while its card is still open leaves the card open with `saveFailed` set until Save is pressed again.
+ *   Closing the card meanwhile lists it among the flashcards not saved, as a card whose background save failed is listed, rather than dropping it.
  * - A save that waits for a lookup stops waiting `saveLookupWaitMs` after Save was pressed and saves the card as it is,
  *   and keeps waiting, within the same limit, if the editor leaves the card.
- * - The open card counts as unsaved work while it has unsaved changes or a save the user asked for, so that the app warns before closing meanwhile.
+ * - The open card counts as unsaved work while it has unsaved changes, a save the user asked for or under way, or a failed save,
+ *   so that the app warns before closing meanwhile, without a gap between a save failing and the editor telling of it.
  * - A card that leaves the editor is dealt with as `useOffScreenSaving` describes.
  * `openSession` is the opening the editor will show once React has rendered every action dispatched so far.
  */
@@ -40,9 +48,20 @@ export function useFlashcardSaving(
       dispatchEdited({ type: "restored", card, session: createCardSession() }),
     );
   const offScreen = useOffScreenSaving(projectId, reopen);
-  const [isSaved, setSaved] = useState(false);
+  const undo = useSaveUndo();
+  /** The opening whose save the user asked for failed last, with the error it failed with. */
+  const [failure, setFailure] = useState<{
+    session: CardSession;
+    error: unknown;
+  } | null>(null);
+  const saveFailed = edited !== null && failure?.session === edited.session;
   const isOnScreen = (card: EditedFlashcard) =>
     offScreen.isScreenMounted() && openSession.current === card.session;
+  /** What a card's flashcard holds before its save, for its Undo: the content last sent for a saved one, or nothing for a new one. */
+  const beforeOf = (card: EditedFlashcard): FlashcardDraft | null =>
+    card.kind === "existing"
+      ? draftOfFlashcard(offScreen.latestOf(card.flashcard))
+      : null;
   const waitStartedAt = useRef<number | null>(null);
   /** Deals with a card the editor leaves, for another card or as the screen closes. */
   const leave = (card: EditedFlashcard) => {
@@ -75,7 +94,11 @@ export function useFlashcardSaving(
     [],
   );
   const isWorkAtRisk =
-    edited !== null && (edited.isChanged || isSaveAsked(edited.stage));
+    edited !== null &&
+    (edited.isChanged ||
+      isSending(edited.stage) ||
+      isSaveAsked(edited.stage) ||
+      saveFailed);
   useEffect(() => {
     if (!isWorkAtRisk) return;
     dispatch(actions.unsavedWorkBegan());
@@ -86,23 +109,23 @@ export function useFlashcardSaving(
   useEffect(() => {
     if (edited?.stage !== "readyToSend") return;
     dispatchEdited({ type: "sendStarted" });
+    setFailure(null);
     const card = edited;
+    const before = beforeOf(card);
     const saving = offScreen.send(card);
     if (!saving) return;
     offScreen.track(
       saving.then(
-        () => {
+        (saved) => {
           const wasOnScreen = isOnScreen(card);
           dispatchEdited({ type: "saved", session: card.session });
-          if (wasOnScreen) setSaved(true);
+          if (wasOnScreen) undo.offer(card, saved, before);
         },
         (error: unknown) => {
           const wasOnScreen = isOnScreen(card);
           dispatchEdited({ type: "saveFailed", session: card.session });
           if (!wasOnScreen) return offScreen.listFailure(card, error);
-          dispatch(
-            actions.notificationRequested("The flashcard could not be saved"),
-          );
+          setFailure({ session: card.session, error });
         },
       ),
     );
@@ -124,18 +147,30 @@ export function useFlashcardSaving(
     );
   }, [waitingDraft, giveUp, dispatchEdited]);
   return {
-    isSaved,
-    dismissSaved: () => setSaved(false),
+    /** Whether the save the user last asked for of the open card failed, which stays so until Save is pressed again. */
+    saveFailed,
     replaceOpenCard,
     reopen,
-    /** Closes a card without saving it; a changed one can be brought back with Undo. */
+    /**
+     * Closes a card without saving it; a changed one can be brought back with Undo.
+     * A card whose save just failed is listed among the flashcards not saved instead, to be sent again from there.
+     */
     discard: (card: EditedFlashcard) => {
       dispatchEdited({ type: "closed" });
+      if (failure?.session === card.session) {
+        setFailure(null);
+        return offScreen.listFailure(card, failure.error);
+      }
       offScreen.cleanUpAfterDiscard(card);
       if (card.isChanged) offScreen.showClosed(card);
     },
+    /** Saves a new card that never opened in the editor, once its word's lookup answers, fails or has been waited for `saveLookupWaitMs`. */
+    saveUnopened: (card: EditedFlashcard) => {
+      if (isAwaitingLookup(card.stage))
+        offScreen.saveAfterLookup(card, saveLookupWaitMs);
+      else offScreen.save(card);
+    },
     rememberLookup: offScreen.rememberLookup,
-    replace: offScreen.replace,
     latestOf: offScreen.latestOf,
     remove: offScreen.remove,
     withdrawUndo: offScreen.withdrawUndo,

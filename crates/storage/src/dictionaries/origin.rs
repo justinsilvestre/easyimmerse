@@ -30,6 +30,21 @@ pub fn placeholders(count: usize) -> String {
     vec!["?"; count].join(", ")
 }
 
+/// The most values that one query binds to its `IN (...)` list. SQLite refuses statements that bind more than 32,766.
+const MAX_BOUND_VALUES: usize = 10_000;
+
+/// Runs a query once for each chunk of `values` that fits in one statement, and joins the rows in chunk order.
+pub fn query_in_chunks<T>(
+    values: &[String],
+    mut query: impl FnMut(&[String]) -> Result<Vec<T>, StorageError>,
+) -> Result<Vec<T>, StorageError> {
+    let mut rows = Vec::new();
+    for chunk in values.chunks(MAX_BOUND_VALUES) {
+        rows.extend(query(chunk)?);
+    }
+    Ok(rows)
+}
+
 /// The tag definitions of several dictionaries, keyed by dictionary number and tag name.
 pub struct TagDefinitions(HashMap<(i64, String), TagDefinition>);
 

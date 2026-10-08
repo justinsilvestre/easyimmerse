@@ -9,10 +9,10 @@ import { TagList } from "./TagList.tsx";
 /** One kanji in the dictionary pop-up: the character, its readings and meanings, and facts such as stroke count labelled by the dictionary's tags. */
 export function KanjiCard({
   result,
-  onWordClick,
+  onWordLookup,
 }: {
   result: KanjiResult;
-  onWordClick: (word: string) => void;
+  onWordLookup: (word: string) => void;
 }) {
   const { entry, tags } = result;
   const popupWordActions = usePopupWordActions();
@@ -31,7 +31,7 @@ export function KanjiCard({
         <p>
           <ClickableText
             text={entry.meanings.join(", ")}
-            gestures={popupWordGestures(onWordClick, popupWordActions)}
+            gestures={popupWordGestures(onWordLookup, popupWordActions)}
           />
         </p>
         <FrequencyList frequencies={result.frequencies} />

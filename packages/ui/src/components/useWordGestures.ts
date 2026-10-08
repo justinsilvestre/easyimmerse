@@ -1,5 +1,4 @@
 import {
-  type KeyboardEvent,
   type MouseEvent,
   type PointerEvent,
   useEffect,
@@ -8,9 +7,9 @@ import {
 } from "react";
 import { useTimer } from "../hooks/useTimer.ts";
 import { characterOffsetAt, type ViewportPoint } from "./characterAtPoint.ts";
-import { doubleClickMs, hoverIntentMs } from "./gestureTiming.ts";
+import { hoverMs } from "./gestureTiming.ts";
 import { createPressTracker } from "./pressTracker.ts";
-import { useKeyboardStart } from "./useKeyboardStart.ts";
+import { runLookupStartAt } from "./runLookupStarts.ts";
 import type { ClickPoint, WordClickMemory } from "./wordClickMemory.ts";
 import { useWordClickMemory } from "./wordClickMemoryContext.tsx";
 
@@ -33,36 +32,52 @@ export type WordGestures = {
    * Without this handler a double-click counts as another click.
    */
   onWordDoubleClick?: (hit: WordHit) => void;
-  /** A mouse pointer resting on the word for a moment. Passing over it reports nothing. */
-  onWordHoverIntent?: (hit: WordHit) => void;
+  /**
+   * The word, or in a run of a script written without spaces the character, that the mouse pointer is over or the keyboard has moved to,
+   * reported at once each time it changes. It is reported as null, with the input, when the mouse pointer leaves,
+   * or when keyboard focus leaves the text or Escape is pressed. A touch reports nothing.
+   */
+  onWordPointed?: (hit: WordHit | null, input: WordHit["input"]) => void;
+  /**
+   * A mouse pointer that has stayed on the word, or on a character of a run, for the brief moment
+   * that tells pointing at it from sweeping across the text; or the keyboard moving there, at once.
+   * This is the one handler that answers: with the length of the text, in UTF-16 code units from the hit,
+   * that a lookup from the hit matched, or null when nothing matched.
+   * It is also called for the characters of a run that the keyboard steps back over, to find where the run's words begin.
+   */
+  // A handler with nothing to look up returns nothing, as the other handlers do.
+  // biome-ignore lint/suspicious/noConfusingVoidType: see above
+  onWordHover?: (hit: WordHit) => void | Promise<number | null>;
+  /**
+   * The answer of `onWordHover`, reported only while the mouse or the keyboard still points at the word or character it was for,
+   * so that the text can highlight the match and an open pop-up can follow it together.
+   * Without an answer to wait for, it follows the hover at once, with null.
+   */
+  onWordHoverAnswered?: (hit: WordHit, matchedLength: number | null) => void;
   /** A touch held on the word. The click that ends it is not reported. */
   onWordHold?: (hit: WordHit) => void;
-  /**
-   * Holds a pointer click back until the double-click interval has passed, and drops it when a double-click follows.
-   * Use it where a click changes the text under the pointer, so that the second click of a double-click still lands on the word.
-   */
-  defersClick?: boolean;
-  /** A click that `defersClick` holds back, reported at once, so that work such as a lookup can begin. */
-  onWordClickStarted?: (hit: WordHit) => void;
 };
 
 /**
  * Turns pointer, touch and keyboard events on words into the gestures of `WordGestures`.
  * Returns a function that builds the event handlers for one word's button,
- * and the character of a focused run that a lookup from the keyboard starts from.
- * In a run of a script written without spaces, each character can begin a word, so the hit starts at the character under the pointer,
- * or, from the keyboard, at the character that Left and Right have moved to;
- * and moving the mouse to another character of the run restarts the wait for hover intent.
+ * functions through which the keyboard points at a word, or stops pointing, as the mouse does,
+ * and one through which the keyboard looks up from a word without pointing at it.
+ * In a run of a script written without spaces, each character can begin a word, so the hit starts at the character under the pointer;
+ * and moving the mouse to another character of the run restarts the wait for a hover.
+ * Enter or Space on a focused word looks up from `cursorStart`, the offset in the text where the lookup cursor lies,
+ * when it lies within that word, and from the word's start otherwise.
  */
-export function useWordGestures(gestures: WordGestures) {
+export function useWordGestures(
+  gestures: WordGestures,
+  cursorStart: number | null,
+) {
   const latest = useRef(gestures);
   latest.current = gestures;
   const hoverTimer = useTimer();
-  const clickTimer = useTimer();
   const [press] = useState(createPressTracker);
   useEffect(() => press.cancelHold, [press]);
   const memory = useWordClickMemory();
-  const keyboardStart = useKeyboardStart();
   const pointerHit = (
     part: WordPart,
     element: HTMLElement,
@@ -70,36 +85,60 @@ export function useWordGestures(gestures: WordGestures) {
     input: WordHit["input"],
   ) => hitAt(part, element, offsetAtPoint(part, element, point), input);
   const reportClick = (event: MouseEvent<HTMLElement>, hit: WordHit) => {
-    const { onWordClick, onWordDoubleClick, defersClick } = latest.current;
+    const { onWordClick, onWordDoubleClick } = latest.current;
     if (hit.input === "keyboard")
       return (
         event.shiftKey && onWordDoubleClick ? onWordDoubleClick : onWordClick
       )?.(hit);
     const point = pointOf(event);
     const first = firstClickCompletedBy(memory, event, hit, point);
-    if (first) {
-      first.cancel();
-      return first.onDoubleClick?.(first.hit);
-    }
+    if (first) return first.onDoubleClick?.(first.hit);
     // A second click whose first landed on no word, or too long ago, counts as a click of its own.
     memory.remember({
       hit,
       point,
       onDoubleClick: onWordDoubleClick ?? onWordClick,
-      cancel: clickTimer.cancel,
     });
-    if (!defersClick) return onWordClick?.(hit);
-    latest.current.onWordClickStarted?.(hit);
-    clickTimer.restart(doubleClickMs, () => latest.current.onWordClick?.(hit));
+    onWordClick?.(hit);
   };
   const hovered = useRef<WordHit | null>(null);
-  /** Starts, or restarts for another character, the wait before a mouse resting on a word counts as hover intent. */
+  const reportAnswer = (hit: WordHit, matchedLength: number | null) => {
+    if (hovered.current === hit && hit.element.isConnected)
+      latest.current.onWordHoverAnswered?.(hit, matchedLength);
+  };
+  const hover = (hit: WordHit) => {
+    if (!hit.element.isConnected) return;
+    const answer = latest.current.onWordHover?.(hit);
+    if (answer instanceof Promise)
+      answer.then((length) => reportAnswer(hit, length));
+    else reportAnswer(hit, null);
+  };
+  /** Starts, or restarts for another character, the wait before a mouse on a word counts as hovering. */
   const restartHover = (hit: WordHit) => {
     if (hovered.current?.start === hit.start) return;
     hovered.current = hit;
-    hoverTimer.restart(hoverIntentMs, () => {
-      if (hit.element.isConnected) latest.current.onWordHoverIntent?.(hit);
-    });
+    latest.current.onWordPointed?.(hit, hit.input);
+    hoverTimer.restart(hoverMs, () => hover(hit));
+  };
+  const cancelHover = () => {
+    hovered.current = null;
+    hoverTimer.cancel();
+  };
+  /** Points at a word from the keyboard, which counts as hovering at once, since a key press is never a sweep. */
+  const pointWithKeyboard = (hit: WordHit) => {
+    hoverTimer.cancel();
+    hovered.current = hit;
+    latest.current.onWordPointed?.(hit, "keyboard");
+    hover(hit);
+  };
+  /** Looks up from a hit without pointing at it, as `MatchedLengthAt` describes. */
+  const lookUpMatchedLength = (hit: WordHit) => {
+    const answer = latest.current.onWordHover?.(hit);
+    return answer instanceof Promise ? answer : null;
+  };
+  const endKeyboardPointing = () => {
+    if (hovered.current?.input === "keyboard") cancelHover();
+    latest.current.onWordPointed?.(null, "keyboard");
   };
   const handlersFor = (part: WordPart) => ({
     onPointerEnter: (event: PointerEvent<HTMLElement>) => {
@@ -110,8 +149,10 @@ export function useWordGestures(gestures: WordGestures) {
       );
     },
     onPointerLeave: () => {
-      hovered.current = null;
-      hoverTimer.cancel();
+      if (hovered.current?.input === "mouse") {
+        latest.current.onWordPointed?.(null, "mouse");
+        cancelHover();
+      }
       press.cancelHold();
     },
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
@@ -143,7 +184,7 @@ export function useWordGestures(gestures: WordGestures) {
       const isKeyboard = event.detail === 0;
       if (!isKeyboard && press.takeHeld()) return;
       if (isKeyboard) {
-        const offset = keyboardStart.offsetIn(part) ?? 0;
+        const offset = offsetWithin(part, cursorStart);
         return reportClick(
           event,
           hitAt(part, event.currentTarget, offset, "keyboard"),
@@ -154,22 +195,27 @@ export function useWordGestures(gestures: WordGestures) {
       const point = input === "touch" ? press.origin() : pointOf(event);
       reportClick(event, pointerHit(part, event.currentTarget, point, input));
     },
-    ...(part.isUnspaced && {
-      onFocus: () => keyboardStart.focus(part),
-      onBlur: () => keyboardStart.blur(part),
-      onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
-        if (keyboardStart.move(part, event)) event.preventDefault();
-      },
-    }),
   });
-  return { handlersFor, keyboardStart };
+  return {
+    handlersFor,
+    pointWithKeyboard,
+    endKeyboardPointing,
+    lookUpMatchedLength,
+  };
 }
 
 /** A word of clickable text, as `splitIntoWords` finds it. */
 type WordPart = { text: string; start: number; isUnspaced: boolean };
 
+/** How far into a word an offset in the text lies, or 0 when it lies outside the word. */
+function offsetWithin(part: WordPart, offset: number | null): number {
+  if (offset === null) return 0;
+  const within = offset - part.start;
+  return within >= 0 && within < part.text.length ? within : 0;
+}
+
 /** The hit on a word beginning `offset` code units into it, as within a run of a script written without spaces. */
-function hitAt(
+export function hitAt(
   part: WordPart,
   element: HTMLElement,
   offset: number,
@@ -184,15 +230,17 @@ function hitAt(
 }
 
 /**
- * Where a hit at a point begins within a word: in a run of a script written without spaces, at the character under the point,
- * or at the run's start where no character lies there; in any other word, at its start.
+ * Where a hit at a point begins within a word: in a run of a script written without spaces, at the lookup start of the character under the point,
+ * which is the letter a mark belongs to or the first of a stretch of digits, or at the run's start where no character lies there;
+ * in any other word, at its start.
  */
 function offsetAtPoint(
   part: WordPart,
   element: HTMLElement,
   point: ViewportPoint,
 ): number {
-  return part.isUnspaced ? (characterOffsetAt(element, point) ?? 0) : 0;
+  if (!part.isUnspaced) return 0;
+  return runLookupStartAt(part.text, characterOffsetAt(element, point) ?? 0);
 }
 
 function pointOf(event: MouseEvent<HTMLElement>): ViewportPoint {

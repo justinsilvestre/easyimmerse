@@ -1,12 +1,12 @@
 {
   "repository": "justinsilvestre/easyimmerse",
-  "release": "ffmpeg-8.1.3-3",
+  "release": "ffmpeg-8.1.3-4",
   "sha256": {
-    "x86_64-unknown-linux-gnu": "06e26b1b6d4637d431bbb2e37e716fd8f4da496d803969a2702ea4d76f11ec1a",
-    "aarch64-unknown-linux-gnu": "6eb82d8e97e40e35c0b89bba09f68c50defef29457988a5fd7d2b2de4da23f67",
-    "x86_64-pc-windows-msvc": "c4099f24c39679969262eba3950e24dc137f66edca0a56da1ea65addc6f1485e",
-    "aarch64-pc-windows-msvc": "3306fe7c831006cd35eb8aeed126ed717bdaf659859b0eb5bc3321b3d64dcbba",
-    "x86_64-apple-darwin": "1cb9f35573ed3adba8c93daf2cc4fd792f5aa38b9ca58f815aecbc289520dc8b",
-    "aarch64-apple-darwin": "87fcb5b610aba902a0425d5b2d2597183fecbfd4a36116e3cae5bbcddc548bec"
+    "x86_64-unknown-linux-gnu": "09ecc1b5243f9fa02d229bc69b9836332386ef0d7f2d72464b42c32b961e0637",
+    "aarch64-unknown-linux-gnu": "403865d26631bfe8094307742931dcb297b0567d3959c2afee199e61d4ee7b09",
+    "x86_64-pc-windows-msvc": "b10963066bf512164a0b7be398f431d055f7791918c26bcebc81000ebc1dbea5",
+    "aarch64-pc-windows-msvc": "a94e678a31f05704fc48f255e1ef2cb038b6116b23b9ba5e024917b8ba9abd2d",
+    "x86_64-apple-darwin": "eac2662aac36d3733c8ba48f8b86393db035fb4db83cef8fa26412703c8bc8e0",
+    "aarch64-apple-darwin": "eddf72fbaf7635a28fb38268c6f3a5418ae9af92cea560b4d06241ed303011e3"
   }
 }

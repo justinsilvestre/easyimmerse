@@ -77,6 +77,8 @@ Each crate's integration tests form one binary named after the crate. Cargo buil
 
 Tests that run `ffmpeg` or `ffprobe` (in `crates/media-ffmpeg`, `crates/conversion`, and `crates/api`) skip with a message when the binaries are found neither in `EASYIMMERSE_FFMPEG_DIR` nor on `PATH`. To run them against the bundled LGPL build, run `mise run fetch-ffmpeg` and set `EASYIMMERSE_FFMPEG_DIR` to the absolute path of `apps/native/src-tauri/binaries/`, for example `EASYIMMERSE_FFMPEG_DIR=$PWD/apps/native/src-tauri/binaries cargo test -p easyimmerse-conversion`. The transcoding tests in `crates/conversion` also need a working H.264 encoder from the hardware list in `crates/media-ffmpeg/src/encoders.rs`, because the bundled builds include no software H.264 encoder of their own. They skip with a message on a machine where none works, which includes most Linux machines without a VA-API or NVENC capable GPU.
 
+The tests in `crates/api/tests/api/local_media_sample.rs` add a media file from your own library, so they skip unless `EASYIMMERSE_SAMPLE_MEDIA` names one. The file must hold an embedded English text subtitle track and sit beside a `.ja.srt` file. `mise run test:sample-media` fetches the sidecars and runs these tests against them; the variable can be set in `.env`. The tests fail, rather than skip, when the ffmpeg they find cannot write SubRip, since the app would then add the file without its embedded tracks.
+
 #### End-to-end tests
 
 ```sh

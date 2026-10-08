@@ -125,6 +125,7 @@ export const fixtureConversionCacheStatus: ConversionCacheStatus = {
   budget_bytes: 5_000_000_000,
   free_bytes: 40_000_000_000,
   space_low: false,
+  chosen_budget_bytes: null,
 };
 
 /** A quiet window with one loud click per second, as the conversion fixtures' audio has. */

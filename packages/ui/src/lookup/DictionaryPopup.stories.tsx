@@ -23,7 +23,8 @@ const meta = {
     resolveMediaUrl: resolveExampleMediaUrl,
     onSearch: fn(),
     onCreateFlashcard: fn(),
-    wordActions: { onFlashcard: fn(), onLookupStarted: fn() },
+    onToggleSize: fn(),
+    wordActions: { onFlashcard: fn() },
     onClose: fn(),
     onSetUpDictionary: fn(),
   },
@@ -33,6 +34,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const EntriesFound: Story = {};
+
+/** Enlarged to show more of the entries, as the bar along its bottom makes it. */
+export const Expanded: Story = {
+  args: { size: "expanded" },
+};
 
 export const JapaneseWithKanji: Story = {
   args: {

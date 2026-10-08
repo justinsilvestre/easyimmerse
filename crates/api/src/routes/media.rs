@@ -12,6 +12,7 @@ use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
+use crate::found_subtitle_tracks::add_found_subtitle_tracks;
 use crate::local_path::ensure_local_file_exists;
 use crate::plugins::fetched_item_dir;
 use crate::state::AppState;
@@ -54,7 +55,9 @@ pub async fn list_media_files(
 }
 
 /// Adds a media file to a project. A `path` source must name an existing file on the
-/// server's machine, which only a token allowed to read local paths may do.
+/// server's machine, which only a token allowed to read local paths may do; the text
+/// subtitle tracks inside it and the subtitle files beside it that share its name are added
+/// as its subtitle tracks.
 #[utoipa::path(
     post,
     path = "/projects/{id}/media",
@@ -80,11 +83,15 @@ pub async fn add_media_file(
     if let MediaFileSource::Path { path } = &request.source {
         ensure_local_file_exists(token, &state.config, path).await?;
     }
+    let source = request.source.clone();
     let media_file = state
         .with_storage(move |storage| {
             storage.add_media_file(&project_id, &request.name, &request.source)
         })
         .await?;
+    if let MediaFileSource::Path { path } = source {
+        add_found_subtitle_tracks(&state, token, &media_file, &path).await;
+    }
     Ok((StatusCode::CREATED, Json(media_file)))
 }
 

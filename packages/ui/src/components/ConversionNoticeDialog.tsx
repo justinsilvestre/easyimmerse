@@ -6,7 +6,7 @@ import { ModalDialog } from "./ModalDialog.tsx";
 
 /**
  * Tells the user, once, that a file is about to be converted as it plays.
- * Ticking "Don't show this again" and playing stores the `conversionNoticeDismissed` preference.
+ * "Don't show this again" starts ticked, so that playing stores the `conversionNoticeDismissed` preference unless the box is cleared.
  */
 export function ConversionNoticeDialog({
   onPlay,
@@ -16,7 +16,7 @@ export function ConversionNoticeDialog({
   onCancel: () => void;
 }) {
   const dispatch = useAppDispatch();
-  const [dismissForGood, setDismissForGood] = useState(false);
+  const [dismissForGood, setDismissForGood] = useState(true);
   const play = () => {
     if (dismissForGood)
       dispatch(actions.preferenceSet("conversionNoticeDismissed", "true"));

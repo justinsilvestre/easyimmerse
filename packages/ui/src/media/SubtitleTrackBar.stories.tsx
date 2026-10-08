@@ -7,12 +7,13 @@ const meta = {
   component: SubtitleTrackBar,
   decorators: [
     (Story) => (
-      <div data-theme="dark" className="w-96 bg-canvas text-fg">
+      <div className="w-96 bg-canvas text-fg">
         <Story />
       </div>
     ),
   ],
   args: {
+    languages: { target: "de", translation: "en" },
     tracks: {
       subtitles: [
         { id: "s1", label: "German", language: "de", sample: "Hallo." },

@@ -1,6 +1,7 @@
 import { resetBackend } from "@easyimmerse/backend";
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { SettingsOpenContext } from "../navigationContext.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { SettingsScreen } from "./SettingsScreen.tsx";
 
@@ -38,14 +39,35 @@ describe("SettingsScreen", () => {
     expect(openCount).toBe(1);
   });
 
-  it("offers no link to itself in the footer", () => {
+  it("marks the footer's Settings control as the page already open", () => {
+    renderWithAppStore(
+      <SettingsOpenContext value={true}>
+        <SettingsScreen
+          onBack={() => undefined}
+          onOpenDictionaries={() => undefined}
+        />
+      </SettingsOpenContext>,
+    );
+    expect(
+      screen
+        .getByRole("button", { name: "Settings" })
+        .getAttribute("aria-current"),
+    ).toBe("page");
+  });
+
+  it("shows the subtitle appearance controls in a Subtitles section", () => {
     renderWithAppStore(
       <SettingsScreen
         onBack={() => undefined}
         onOpenDictionaries={() => undefined}
       />,
     );
-    expect(screen.queryByRole("button", { name: "Settings" })).toBeNull();
+    expect(
+      within(screen.getByRole("region", { name: "Subtitles" })).getByRole(
+        "slider",
+        { name: "Background opacity" },
+      ),
+    ).toBeDefined();
   });
 
   it("treats conversion as unavailable until told otherwise", () => {
@@ -57,7 +79,7 @@ describe("SettingsScreen", () => {
     );
     expect(
       screen.getByText(
-        "Video conversion is unavailable, so no converted videos are stored.",
+        "Media conversion is unavailable, so there is no cache.",
       ),
     ).toBeDefined();
   });

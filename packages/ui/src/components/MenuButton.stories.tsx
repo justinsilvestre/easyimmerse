@@ -36,6 +36,18 @@ export const WithText: Story = {
   args: { label: "More fields", children: "More fields" },
 };
 
+export const WithBadgeAndOneChoice: Story = {
+  args: {
+    label: "Zoom: 100%",
+    badge: "100%",
+    items: ["50%", "100%", "200%"].map((label) => ({
+      label,
+      isSelected: label === "100%",
+      onSelect: fn(),
+    })),
+  },
+};
+
 export const WithCheckboxes: Story = {
   args: {
     label: "More fields",

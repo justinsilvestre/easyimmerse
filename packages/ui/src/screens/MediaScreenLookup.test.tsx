@@ -8,11 +8,13 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { saveLookupWaitMs } from "../lookup/lookupTiming.ts";
 import type { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import { doubleClick } from "../testSupport/doubleClick.ts";
 import {
   createdDraftOf,
   dictionarySummary,
-  doubleClick,
+  findCreatedDraft,
   findSubtitles,
   playbackCalls,
   renderMediaScreen,
@@ -36,19 +38,27 @@ async function lookUpInPanel(word: string) {
 
 const queryPopup = () => screen.queryByRole("dialog", { name: "Dictionary" });
 
-/** Waits for the pop-up to show the word in its header. */
-const findPopupShowing = async (word: string) =>
-  within(await screen.findByRole("dialog", { name: "Dictionary" })).findByText(
-    word,
-    { selector: "header *" },
-  );
+/** The word the pop-up shows, as its field holds it. */
+const shownWord = (popup: HTMLElement) =>
+  within(popup).getByRole<HTMLInputElement>("textbox", {
+    name: "Word to look up",
+  }).value;
+
+/** Waits for the pop-up to show the word in its field. */
+const findPopupShowing = async (word: string) => {
+  const popup = await screen.findByRole("dialog", { name: "Dictionary" });
+  await vi.waitFor(() => expect(shownWord(popup)).toBe(word));
+  return popup;
+};
 
 const panelWord = (word: string) =>
   within(screen.getByRole("list", { name: "Subtitles" })).getByRole("button", {
     name: word,
   });
 
-const lookupTexts = (client: ReturnType<typeof createFakeBackendClient>) =>
+type Client = ReturnType<typeof createFakeBackendClient>;
+
+const lookupTexts = (client: Client) =>
   requestsTo(client.requests, "GET", "/dictionaries/lookup").map(
     (request) => request.query?.text,
   );
@@ -57,6 +67,17 @@ const fieldValue = (label: string) =>
   (screen.getByLabelText(label) as HTMLTextAreaElement).value;
 
 const editor = () => screen.queryByRole("form", { name: "Flashcard" });
+
+const creations = (client: Client) =>
+  requestsTo(client.requests, "POST", "/projects/p1/flashcards");
+
+/** The content of the first flashcard the screen created, if it has created one. */
+const createdContent = (client: Client) =>
+  createdDraftOf(creations(client)[0])?.content;
+
+/** Waits for the screen to create a flashcard, and gives its content. */
+const findCreatedContent = async (client: Client) =>
+  (await findCreatedDraft(client)).content;
 
 /** Advances the faked timers, letting the screen update in between. */
 const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
@@ -76,7 +97,7 @@ async function holdTouch(element: HTMLElement) {
   fireEvent.click(element, { detail: 1 });
 }
 
-/** Rests the mouse on an element for as long as it takes to count as pointing at it. */
+/** Rests the mouse on an element for longer than it takes to look its word up. */
 async function restMouseOn(element: HTMLElement) {
   fireEvent.pointerEnter(element, { pointerType: "mouse" });
   await advance(150);
@@ -127,16 +148,24 @@ describe("MediaScreen lookup gestures", () => {
     expect(await findPopupShowing("dog")).toBeDefined();
   });
 
-  it("stays on its word when the mouse passes quickly over another", async () => {
+  it("stays on its word when the mouse sweeps over another", async () => {
     renderMediaScreen();
     const popup = await lookUpInPanel("cat");
     fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
-    await advance(100);
+    await advance(20);
     fireEvent.pointerLeave(panelWord("dog"), { pointerType: "mouse" });
     await advance(200);
-    expect(
-      within(popup).getByText("cat", { selector: "header *" }),
-    ).toBeDefined();
+    expect(shownWord(popup)).toBe("cat");
+  });
+
+  it("follows the mouse only once the word's lookup answers", async () => {
+    renderMediaScreen({
+      slowLookups: { "dog wants to eat.\nIt is hungry.": 300 },
+    });
+    const popup = await lookUpInPanel("cat");
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    await advance(200);
+    expect(shownWord(popup)).toBe("cat");
   });
 
   it("does not follow the mouse while the pointer is inside the pop-up", async () => {
@@ -144,9 +173,25 @@ describe("MediaScreen lookup gestures", () => {
     const popup = await lookUpInPanel("cat");
     fireEvent.pointerEnter(popup, { pointerType: "mouse" });
     await restMouseOn(panelWord("dog"));
-    expect(
-      within(popup).getByText("cat", { selector: "header *" }),
-    ).toBeDefined();
+    expect(shownWord(popup)).toBe("cat");
+  });
+
+  it("looks a word up ahead of a click once the mouse has stayed on it for 40 ms", async () => {
+    const { client } = renderMediaScreen();
+    await findSubtitles();
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    await advance(40);
+    expect(lookupTexts(client)).toEqual(["dog wants to eat.\nIt is hungry."]);
+  });
+
+  it("looks nothing up for a word the mouse sweeps over", async () => {
+    const { client } = renderMediaScreen();
+    await findSubtitles();
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    await advance(20);
+    fireEvent.pointerLeave(panelWord("dog"), { pointerType: "mouse" });
+    await advance(200);
+    expect(lookupTexts(client)).toEqual([]);
   });
 
   it("looks nothing up for words hovered inside the pop-up", async () => {
@@ -184,25 +229,22 @@ describe("MediaScreen lookup gestures", () => {
     expect(queryPopup()).toBeNull();
   });
 
-  it("starts a flashcard filled from the lookup on a double tap", async () => {
-    renderMediaScreen();
+  it("saves a flashcard filled from the lookup on a double tap", async () => {
+    const { client } = renderMediaScreen();
     await findSubtitles();
     tap(panelWord("cat"));
     await advance(250);
     tap(panelWord("cat"));
-    await screen.findByRole("form", { name: "Flashcard" });
-    expect(fieldValue("Word (de)")).toBe("fressen");
+    expect((await findCreatedContent(client)).word).toBe("fressen");
   });
 
-  it("starts a flashcard on a double tap on the word it shows, without closing first", async () => {
-    renderMediaScreen();
+  it("saves a flashcard on a double tap on the word it shows, without closing first", async () => {
+    const { client } = renderMediaScreen();
     await lookUpInPanel("cat");
     tap(panelWord("cat"));
     await advance(250);
     tap(panelWord("cat"));
-    expect(
-      await screen.findByRole("form", { name: "Flashcard" }),
-    ).toBeDefined();
+    expect(await findCreatedContent(client)).toBeDefined();
   });
 
   it("closes at once when the word it shows is activated from the keyboard", async () => {
@@ -224,22 +266,27 @@ describe("MediaScreen lookup gestures", () => {
 
     it("looks the word up once, for both the pop-up and the flashcard", async () => {
       const { client } = await doubleClickCat();
-      await screen.findByRole("form", { name: "Flashcard" });
+      await findCreatedContent(client);
       expect(lookupTexts(client)).toEqual(["cat is sleeping."]);
     });
 
-    it("fills the flashcard with the definitions in the translation language", async () => {
-      await doubleClickCat();
-      await screen.findByRole("form", { name: "Flashcard" });
-      expect(fieldValue("Definition (en)")).toMatch(
+    it("saves the flashcard with the definitions in the translation language", async () => {
+      const { client } = await doubleClickCat();
+      expect((await findCreatedContent(client)).l1_definition).toMatch(
         /^to eat \(of an animal\); to devour\n/,
       );
     });
 
-    it("opens the flashcard editor instead of the pop-up", async () => {
-      await doubleClickCat();
-      await screen.findByRole("form", { name: "Flashcard" });
+    it("closes the pop-up once the flashcard is made", async () => {
+      const { client } = await doubleClickCat();
+      await findCreatedContent(client);
       expect(queryPopup()).toBeNull();
+    });
+
+    it("opens no flashcard in the editor", async () => {
+      const { client } = await doubleClickCat();
+      await findCreatedContent(client);
+      expect(editor()).toBeNull();
     });
 
     it("says that it is making a flashcard while the lookup has not answered", async () => {
@@ -249,8 +296,90 @@ describe("MediaScreen lookup gestures", () => {
       ).toBeDefined();
     });
 
-    it("opens the flashcard with the clicked word once 1.5 seconds pass without an answer", async () => {
-      await doubleClickCat({ unansweredLookups: ["cat is sleeping."] });
+    describe("when the lookup answers only after 1.5 seconds", () => {
+      const lateLookup = { slowLookups: { "cat is sleeping.": 3000 } };
+
+      it("sends nothing before the answer", async () => {
+        const { client } = await doubleClickCat(lateLookup);
+        await advance(1500);
+        await advance(1000);
+        expect(creations(client)).toEqual([]);
+      });
+
+      it("saves the flashcard filled from the answer once it arrives", async () => {
+        const { client } = await doubleClickCat(lateLookup);
+        await advance(1500);
+        await advance(1500);
+        expect((await findCreatedContent(client)).word).toBe("fressen");
+      });
+    });
+
+    it("saves the flashcard with the clicked word once the save has waited its limit for an answer", async () => {
+      const { client } = await doubleClickCat({
+        unansweredLookups: ["cat is sleeping."],
+      });
+      await advance(1500);
+      await advance(saveLookupWaitMs);
+      expect((await findCreatedContent(client)).word).toBe("cat");
+    });
+
+    it("drops the flashcard when another word is clicked before the lookup answers", async () => {
+      const { client } = await doubleClickCat({
+        unansweredLookups: ["cat is sleeping."],
+      });
+      fireEvent.click(panelWord("dog"), { detail: 1 });
+      await advance(1500);
+      await advance(saveLookupWaitMs);
+      expect(creations(client)).toEqual([]);
+    });
+
+    it("drops the flashcard when Escape is pressed before the lookup answers", async () => {
+      const { client } = await doubleClickCat({
+        unansweredLookups: ["cat is sleeping."],
+      });
+      fireEvent.keyDown(document.body, { key: "Escape" });
+      await advance(1500);
+      await advance(saveLookupWaitMs);
+      expect(creations(client)).toEqual([]);
+    });
+
+    it("keeps the flashcard when the mouse rests on another word before the lookup answers", async () => {
+      const { client } = await doubleClickCat({
+        unansweredLookups: ["cat is sleeping."],
+      });
+      await restMouseOn(panelWord("dog"));
+      await advance(1500);
+      await advance(saveLookupWaitMs);
+      expect((await findCreatedContent(client)).word).toBe("cat");
+    });
+  });
+
+  describe("with the E key while the mouse is on a word", () => {
+    async function pressEOnCat(
+      setup: Parameters<typeof renderMediaScreen>[0] = {},
+    ) {
+      const rendered = renderMediaScreen(setup);
+      await findSubtitles();
+      fireEvent.pointerEnter(panelWord("cat"), { pointerType: "mouse" });
+      fireEvent.keyDown(document.body, { key: "e" });
+      return rendered;
+    }
+
+    it("opens the flashcard editor filled from the lookup", async () => {
+      await pressEOnCat();
+      await screen.findByRole("form", { name: "Flashcard" });
+      expect(fieldValue("Word (de)")).toBe("fressen");
+    });
+
+    it("sends nothing until Save is pressed", async () => {
+      const { client } = await pressEOnCat();
+      await screen.findByRole("form", { name: "Flashcard" });
+      await advance(500);
+      expect(creations(client)).toEqual([]);
+    });
+
+    it("opens the flashcard with the word once 1.5 seconds pass without an answer", async () => {
+      await pressEOnCat({ unansweredLookups: ["cat is sleeping."] });
       await advance(1500);
       expect(fieldValue("Word (de)")).toBe("cat");
     });
@@ -259,14 +388,14 @@ describe("MediaScreen lookup gestures", () => {
       const lateLookup = { slowLookups: { "cat is sleeping.": 3000 } };
 
       it("fills the flashcard from it", async () => {
-        await doubleClickCat(lateLookup);
+        await pressEOnCat(lateLookup);
         await advance(1500);
         await advance(1500);
         expect(fieldValue("Word (de)")).toBe("fressen");
       });
 
       it("leaves alone a field typed in before the answer", async () => {
-        await doubleClickCat(lateLookup);
+        await pressEOnCat(lateLookup);
         await advance(1500);
         fireEvent.change(screen.getByLabelText("Word (de)"), {
           target: { value: "Kater" },
@@ -276,7 +405,7 @@ describe("MediaScreen lookup gestures", () => {
       });
 
       it("fills the fields the user has not typed in", async () => {
-        await doubleClickCat(lateLookup);
+        await pressEOnCat(lateLookup);
         await advance(1500);
         fireEvent.change(screen.getByLabelText("Definition (en)"), {
           target: { value: "a small pet" },
@@ -286,7 +415,7 @@ describe("MediaScreen lookup gestures", () => {
       });
 
       it("leaves alone a definition typed in before the answer", async () => {
-        await doubleClickCat(lateLookup);
+        await pressEOnCat(lateLookup);
         await advance(1500);
         fireEvent.change(screen.getByLabelText("Definition (en)"), {
           target: { value: "a small pet" },
@@ -296,7 +425,7 @@ describe("MediaScreen lookup gestures", () => {
       });
 
       it("saves at once once the word has been changed before Save", async () => {
-        const { client } = await doubleClickCat(lateLookup);
+        const { client } = await pressEOnCat(lateLookup);
         await advance(1500);
         fireEvent.change(screen.getByLabelText("Word (de)"), {
           target: { value: "Kater" },
@@ -310,7 +439,7 @@ describe("MediaScreen lookup gestures", () => {
       });
 
       it("fills nothing once the word has been changed before the answer", async () => {
-        await doubleClickCat(lateLookup);
+        await pressEOnCat(lateLookup);
         await advance(1500);
         fireEvent.change(screen.getByLabelText("Word (de)"), {
           target: { value: "Kater" },
@@ -323,26 +452,13 @@ describe("MediaScreen lookup gestures", () => {
         async function pressSaveBeforeAnswer(
           setup: Parameters<typeof renderMediaScreen>[0] = lateLookup,
         ) {
-          const rendered = await doubleClickCat(setup);
+          const rendered = await pressEOnCat(setup);
           await advance(1500);
           fireEvent.click(screen.getByRole("button", { name: "Save" }));
           return rendered;
         }
 
-        const savedContent = (
-          client: ReturnType<typeof createFakeBackendClient>,
-        ) =>
-          (
-            createdDraftOf(
-              requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
-            ) as
-              | { content?: { word?: string; l1_definition?: string } }
-              | undefined
-          )?.content;
-
-        const savedWord = (
-          client: ReturnType<typeof createFakeBackendClient>,
-        ) => savedContent(client)?.word;
+        const savedWord = (client: Client) => createdContent(client)?.word;
 
         it("says that it waits for the definitions", async () => {
           await pressSaveBeforeAnswer();
@@ -386,7 +502,7 @@ describe("MediaScreen lookup gestures", () => {
         });
 
         it("saves a definition typed in before Save as typed, with the word from the answer", async () => {
-          const { client } = await doubleClickCat(lateLookup);
+          const { client } = await pressEOnCat(lateLookup);
           await advance(1500);
           fireEvent.change(screen.getByLabelText("Definition (en)"), {
             target: { value: "a small pet" },
@@ -394,7 +510,7 @@ describe("MediaScreen lookup gestures", () => {
           fireEvent.click(screen.getByRole("button", { name: "Save" }));
           await advance(1500);
           await vi.waitFor(() =>
-            expect(savedContent(client)).toMatchObject({
+            expect(createdContent(client)).toMatchObject({
               word: "fressen",
               l1_definition: "a small pet",
             }),
@@ -410,56 +526,32 @@ describe("MediaScreen lookup gestures", () => {
         });
       });
     });
-
-    it("drops the flashcard when another word is clicked before the lookup answers", async () => {
-      await doubleClickCat({ unansweredLookups: ["cat is sleeping."] });
-      fireEvent.click(panelWord("dog"), { detail: 1 });
-      await advance(1500);
-      expect(editor()).toBeNull();
-    });
-
-    it("drops the flashcard when Escape is pressed before the lookup answers", async () => {
-      await doubleClickCat({ unansweredLookups: ["cat is sleeping."] });
-      fireEvent.keyDown(document.body, { key: "Escape" });
-      await advance(1500);
-      expect(editor()).toBeNull();
-    });
-
-    it("keeps the flashcard when the mouse rests on another word before the lookup answers", async () => {
-      await doubleClickCat({ unansweredLookups: ["cat is sleeping."] });
-      await restMouseOn(panelWord("dog"));
-      await advance(1500);
-      expect(fieldValue("Word (de)")).toBe("cat");
-    });
   });
 
   it("counts a second click 400 ms after the first as a double-click", async () => {
-    renderMediaScreen();
+    const { client } = renderMediaScreen();
     await lookUpInPanel("cat");
     await advance(400);
     fireEvent.click(panelWord("cat"), { detail: 2 });
-    expect(
-      await screen.findByRole("form", { name: "Flashcard" }),
-    ).toBeDefined();
+    expect(await findCreatedContent(client)).toBeDefined();
   });
 
   it("keeps playback paused on a double-click on the word the pop-up shows", async () => {
-    const { effects, store } = renderMediaScreen();
+    const { client, effects, store } = renderMediaScreen();
     act(() => store.dispatch(actions.playerPlayingChanged(true)));
     await lookUpInPanel("cat");
     act(() => store.dispatch(actions.playerPlayingChanged(false)));
     doubleClick(panelWord("cat"));
-    await screen.findByRole("form", { name: "Flashcard" });
+    await findCreatedContent(client);
     await advance(600);
     expect(playbackCalls(effects)).toEqual(["pausePlayer"]);
   });
 
-  it("starts a flashcard filled from the lookup on a held tap", async () => {
-    renderMediaScreen();
+  it("saves a flashcard filled from the lookup on a held tap", async () => {
+    const { client } = renderMediaScreen();
     await findSubtitles();
     await holdTouch(panelWord("cat"));
-    await screen.findByRole("form", { name: "Flashcard" });
-    expect(fieldValue("Word (de)")).toBe("fressen");
+    expect((await findCreatedContent(client)).word).toBe("fressen");
   });
 
   describe("for a word inside the pop-up", () => {
@@ -468,62 +560,62 @@ describe("MediaScreen lookup gestures", () => {
       return within(popup).findByRole("button", { name: "devour" });
     }
 
-    it("starts looking a clicked word up at once", async () => {
+    it("looks nothing up on a single click", async () => {
       const { client } = renderMediaScreen();
       fireEvent.click(await findDevour(), { detail: 1 });
-      expect(lookupTexts(client)).toEqual(["cat is sleeping.", "devour"]);
+      await advance(500);
+      expect(lookupTexts(client)).toEqual(["cat is sleeping."]);
     });
 
-    it("keeps showing the first word during the double-click interval", async () => {
-      renderMediaScreen();
-      fireEvent.click(await findDevour(), { detail: 1 });
-      await advance(450);
-      expect(
-        within(queryPopup() as HTMLElement).getByText("cat", {
-          selector: "header *",
-        }),
-      ).toBeDefined();
-    });
-
-    it("shows a clicked word once the double-click interval has passed", async () => {
+    it("keeps showing the first word after a single click", async () => {
       renderMediaScreen();
       fireEvent.click(await findDevour(), { detail: 1 });
       await advance(500);
+      expect(shownWord(queryPopup() as HTMLElement)).toBe("cat");
+    });
+
+    it("shows a double-clicked word", async () => {
+      renderMediaScreen();
+      doubleClick(await findDevour());
       expect(await findPopupShowing("devour")).toBeDefined();
     });
 
-    it("starts a flashcard from its lookup on a double-click", async () => {
-      const { client } = renderMediaScreen();
-      doubleClick(await findDevour());
-      await screen.findByRole("form", { name: "Flashcard" });
-      expect(lookupTexts(client)).toEqual(["cat is sleeping.", "devour"]);
-    });
-
-    it("says that it is making a flashcard while the lookup has not answered", async () => {
-      renderMediaScreen({ unansweredLookups: ["devour"] });
-      doubleClick(await findDevour());
-      expect(
-        await screen.findByText("Making a flashcard for “devour”…"),
-      ).toBeDefined();
-    });
-
-    it("starts a flashcard on a double tap", async () => {
+    it("shows a double-tapped word", async () => {
       renderMediaScreen();
       const devour = await findDevour();
       tap(devour);
       await advance(250);
       tap(devour);
+      expect(await findPopupShowing("devour")).toBeDefined();
+    });
+
+    it("makes no flashcard on a double-click", async () => {
+      const { client } = renderMediaScreen();
+      doubleClick(await findDevour());
+      await findPopupShowing("devour");
+      expect(creations(client)).toEqual([]);
+    });
+
+    it("saves a flashcard from its lookup on a held tap", async () => {
+      const { client } = renderMediaScreen();
+      await holdTouch(await findDevour());
+      await findCreatedContent(client);
+      expect(lookupTexts(client)).toEqual(["cat is sleeping.", "devour"]);
+    });
+
+    it("says that it is making a flashcard while the lookup has not answered", async () => {
+      renderMediaScreen({ unansweredLookups: ["devour"] });
+      await holdTouch(await findDevour());
       expect(
-        await screen.findByRole("form", { name: "Flashcard" }),
+        await screen.findByText("Making a flashcard for “devour”…"),
       ).toBeDefined();
     });
 
-    it("starts a flashcard on a held tap", async () => {
-      renderMediaScreen();
+    it("opens no flashcard in the editor on a held tap", async () => {
+      const { client } = renderMediaScreen();
       await holdTouch(await findDevour());
-      expect(
-        await screen.findByRole("form", { name: "Flashcard" }),
-      ).toBeDefined();
+      await findCreatedContent(client);
+      expect(editor()).toBeNull();
     });
   });
 });
@@ -552,26 +644,34 @@ describe("MediaScreen lookup", () => {
     ).toBeDefined();
   });
 
-  it("fills a flashcard made from the pop-up with the definitions in the translation language", async () => {
-    renderMediaScreen();
+  it("saves a flashcard made from the pop-up with the definitions in the translation language", async () => {
+    const { client } = renderMediaScreen();
     const popup = await lookUpInPanel("cat");
     fireEvent.click(
-      await within(popup).findByRole("button", { name: "Flashcard" }),
+      await within(popup).findByRole("button", { name: "New flashcard" }),
     );
-    expect(
-      (screen.getByLabelText("Definition (en)") as HTMLTextAreaElement).value,
-    ).toMatch(/^to eat \(of an animal\); to devour\n/);
+    expect((await findCreatedContent(client)).l1_definition).toMatch(
+      /^to eat \(of an animal\); to devour\n/,
+    );
   });
 
   it("takes the word of a flashcard made from the pop-up from the dictionary", async () => {
-    renderMediaScreen();
+    const { client } = renderMediaScreen();
     const popup = await lookUpInPanel("cat");
     fireEvent.click(
-      await within(popup).findByRole("button", { name: "Flashcard" }),
+      await within(popup).findByRole("button", { name: "New flashcard" }),
     );
-    expect(
-      (screen.getByLabelText("Word (de)") as HTMLTextAreaElement).value,
-    ).toBe("fressen");
+    expect((await findCreatedContent(client)).word).toBe("fressen");
+  });
+
+  it("opens no flashcard in the editor from the pop-up", async () => {
+    const { client } = renderMediaScreen();
+    const popup = await lookUpInPanel("cat");
+    fireEvent.click(
+      await within(popup).findByRole("button", { name: "New flashcard" }),
+    );
+    await findCreatedContent(client);
+    expect(editor()).toBeNull();
   });
 
   it("closes the pop-up on Escape", async () => {
@@ -610,7 +710,7 @@ describe("MediaScreen lookup", () => {
     const popup = await lookUpInPanel("cat");
     act(() => store.dispatch(actions.playerPlayingChanged(false)));
     fireEvent.click(
-      await within(popup).findByRole("button", { name: "Flashcard" }),
+      await within(popup).findByRole("button", { name: "New flashcard" }),
     );
     fireEvent.click(screen.getByRole("heading", { name: "episode.mkv" }));
     expect(playbackCalls(effects)).toEqual(["pausePlayer"]);
@@ -669,5 +769,35 @@ describe("MediaScreen lookup", () => {
     expect(
       screen.getByRole("textbox", { name: "Word to look up" }),
     ).toBeDefined();
+  });
+
+  describe("with the L key while the mouse is on a word", () => {
+    it("looks the word up", async () => {
+      renderMediaScreen();
+      await findSubtitles();
+      fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+      fireEvent.keyDown(document.body, { key: "l" });
+      expect(await findPopupShowing("dog")).toBeDefined();
+    });
+
+    it("closes the pop-up when it shows that word", async () => {
+      renderMediaScreen();
+      await lookUpInPanel("cat");
+      fireEvent.pointerEnter(panelWord("cat"), { pointerType: "mouse" });
+      fireEvent.keyDown(document.body, { key: "l" });
+      expect(queryPopup()).toBeNull();
+    });
+  });
+
+  it("opens the pop-up's search field with the L key once the mouse has left the words", async () => {
+    renderMediaScreen();
+    await findSubtitles();
+    fireEvent.pointerEnter(panelWord("dog"), { pointerType: "mouse" });
+    fireEvent.pointerLeave(panelWord("dog"), { pointerType: "mouse" });
+    fireEvent.keyDown(document.body, { key: "l" });
+    expect(
+      screen.getByRole<HTMLInputElement>("textbox", { name: "Word to look up" })
+        .value,
+    ).toBe("");
   });
 });

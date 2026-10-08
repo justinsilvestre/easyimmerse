@@ -15,7 +15,7 @@ import type {
   MediaFile,
   TrackSelection,
 } from "@easyimmerse/types";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { derivePlayerStatus } from "./derivePlayerStatus.ts";
@@ -119,7 +119,7 @@ export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
       container !== undefined && needsTrackChoice(container, null),
     chooseTracks,
     cancelTrackChoice: () => setTrackDialog("closed"),
-    openTrackChoice: () => setTrackDialog("open"),
+    openTrackChoice: useCallback(() => setTrackDialog("open"), []),
     acceptNotice: () => setNoticeAccepted(true),
   };
 }

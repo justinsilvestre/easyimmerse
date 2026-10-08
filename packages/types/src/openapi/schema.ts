@@ -20,6 +20,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/conversion-cache/budget": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Sets how large the cache may grow, keeps the choice for later runs, and answers with the status under it. */
+        put: operations["setConversionCacheBudget"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/conversion-cache/clear": {
         parameters: {
             query?: never;
@@ -94,6 +111,10 @@ export interface paths {
         };
         get: operations["listDictionaries"];
         put?: never;
+        /**
+         * Starts importing the file and answers with the job to poll at `/dictionaries/imports/{id}`,
+         *     since a large dictionary takes longer to store than a browser waits for a response.
+         */
         post: operations["importDictionary"];
         delete?: never;
         options?: never;
@@ -110,7 +131,27 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Reads the files at the path, then starts importing them and answers with the job to poll
+         *     at `/dictionaries/imports/{id}`.
+         */
         post: operations["importLocalDictionary"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/imports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getImportJob"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -127,6 +168,22 @@ export interface paths {
         get: operations["lookupText"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dictionaries/lookup/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["lookupTexts"];
         delete?: never;
         options?: never;
         head?: never;
@@ -415,7 +472,9 @@ export interface paths {
         put?: never;
         /**
          * Adds a media file to a project. A `path` source must name an existing file on the
-         *     server's machine, which only a token allowed to read local paths may do.
+         *     server's machine, which only a token allowed to read local paths may do; the text
+         *     subtitle tracks inside it and the subtitle files beside it that share its name are added
+         *     as its subtitle tracks.
          */
         post: operations["addMediaFile"];
         delete?: never;
@@ -795,6 +854,25 @@ export interface components {
             /** @description What the source calls the track, such as "English (automatic)". */
             name: string;
         };
+        BatchLookupRequest: {
+            /** @description The language of the texts, as a BCP 47 tag, which decides how inflections are undone. */
+            language: string;
+            /**
+             * @description The texts to look up at every position, such as subtitle cues or paragraphs without their markup.
+             *     At most 100 texts, of at most 2,000 characters each.
+             */
+            texts: string[];
+        };
+        BatchLookupResponse: {
+            /** @description Every distinct kanji result of the lookups, each once. */
+            kanji: components["schemas"]["KanjiResult"][];
+            /** @description Every distinct term result of the lookups, each once. */
+            results: components["schemas"]["LookupResult"][];
+            /** @description The stylesheets of the dictionaries whose definitions appear in `results`, each once. */
+            stylesheets: components["schemas"]["DictionaryStylesheet"][];
+            /** @description The lookups in each requested text, in the order requested. */
+            texts: components["schemas"]["TextLookups"][];
+        };
         /**
          * @description A media element's `canPlayType` answer. The empty string becomes `No`.
          * @enum {string}
@@ -830,6 +908,11 @@ export interface components {
             start: number;
             text: string;
         };
+        /** @description How large the conversion cache may grow. `null` lets the budget follow the disk's size. */
+        ConversionCacheBudget: {
+            /** Format: int64 */
+            budget_bytes?: number | null;
+        };
         /** @description Sizes are in bytes. */
         ConversionCacheStatus: {
             /**
@@ -837,6 +920,11 @@ export interface components {
              * @description The size the cache may grow to when disk space allows.
              */
             budget_bytes: number;
+            /**
+             * Format: int64
+             * @description The budget the user chose, or None while the budget follows the disk's size.
+             */
+            chosen_budget_bytes?: number | null;
             /** Format: int64 */
             free_bytes: number;
             /**
@@ -996,6 +1084,12 @@ export interface components {
              * @description Milliseconds since the Unix epoch.
              */
             updated_at_ms: number;
+            /**
+             * Format: int32
+             * @description Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.
+             *     Null when that is not known, as for a card whose word was not taken from a cue.
+             */
+            word_start?: number | null;
         };
         /** @description Everything a flashcard can hold. L1 is the language the user already knows; L2 is the one they are learning. */
         FlashcardContent: {
@@ -1017,6 +1111,12 @@ export interface components {
             cue_index?: number | null;
             included_fields: components["schemas"]["FlashcardFieldKey"][];
             media_file_id?: components["schemas"]["MediaFileId"] | null;
+            /**
+             * Format: int32
+             * @description Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.
+             *     Null when that is not known, as for a card whose word was not taken from a cue.
+             */
+            word_start?: number | null;
         };
         /**
          * @description The fields of a flashcard, named as the keys of `FlashcardContent`.
@@ -1037,6 +1137,17 @@ export interface components {
         HealthResponse: {
             status: string;
         };
+        ImportJobStarted: {
+            id: string;
+        };
+        /** @enum {string} */
+        ImportJobState: "running" | "done" | "failed";
+        ImportJobStatus: {
+            dictionary?: components["schemas"]["DictionarySummary"] | null;
+            error?: components["schemas"]["ApiError"] | null;
+            progress: components["schemas"]["ImportProgress"];
+            state: components["schemas"]["ImportJobState"];
+        };
         ImportLocalDictionaryRequest: {
             /**
              * @description A dictionary file, imported with its siblings of the same stem, or a directory of dictionary files.
@@ -1044,6 +1155,21 @@ export interface components {
              */
             path: string;
             tableLayout?: components["schemas"]["TableLayout"] | null;
+        };
+        /** @description How many items of each kind the import has stored so far. */
+        ImportProgress: {
+            /** Format: int64 */
+            entries: number;
+            /** Format: int64 */
+            kanji: number;
+            /** Format: int64 */
+            kanji_meta: number;
+            /** Format: int64 */
+            media: number;
+            /** Format: int64 */
+            tags: number;
+            /** Format: int64 */
+            term_meta: number;
         };
         /** @description A plugin the server found in its plugin directory. */
         InstalledPlugin: {
@@ -1292,6 +1418,21 @@ export interface components {
             /** @description The path of the HLS playlist, present only when the plan converts. */
             playlist_path?: string | null;
         };
+        /**
+         * @description What a single lookup at one position of a text would return,
+         *     with each result given as its index in the batch response's lists.
+         */
+        PositionLookups: {
+            /** @description Indices into the response's `kanji`. */
+            kanji: number[];
+            /**
+             * Format: int32
+             * @description The position of the looked-up character in the text, counted in characters (Unicode scalar values).
+             */
+            offset: number;
+            /** @description Indices into the response's `results`, best first. */
+            results: number[];
+        };
         /** @description A preference value. `null` means the preference has not been set. */
         PreferenceValue: {
             value?: string | null;
@@ -1460,6 +1601,13 @@ export interface components {
             kind: "ipa";
             transcriptions: components["schemas"]["IpaTranscription"][];
         };
+        TextLookups: {
+            /**
+             * @description The positions where lookup found something, in the order they appear in the text.
+             *     A position that lookup tried but found nothing at is left out.
+             */
+            positions: components["schemas"]["PositionLookups"][];
+        };
         /**
          * @description Where the text of a request comes from.
          *
@@ -1589,6 +1737,57 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The cache's usage and limits */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversionCacheStatus"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description This server does not convert media (code `conversion_unavailable`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setConversionCacheBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversionCacheBudget"];
+            };
+        };
+        responses: {
+            /** @description The cache's usage and limits under the new budget */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1947,16 +2146,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The dictionary was imported */
-            201: {
+            /** @description The import was started */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DictionarySummary"];
+                    "application/json": components["schemas"]["ImportJobStarted"];
                 };
             };
-            /** @description The file could not be read as a dictionary */
+            /** @description The chosen columns are not column roles */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1998,16 +2197,16 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The dictionary was imported */
-            201: {
+            /** @description The import was started */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DictionarySummary"];
+                    "application/json": components["schemas"]["ImportJobStarted"];
                 };
             };
-            /** @description The files could not be read as a dictionary */
+            /** @description The files could not be read */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2035,6 +2234,56 @@ export interface operations {
                 };
             };
             /** @description Nothing at the given path */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getImportJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The import job id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Where the import stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJobStatus"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No import job has the id, or its outcome has been forgotten */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2086,6 +2335,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LookupResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    lookupTexts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchLookupRequest"];
+            };
+        };
+        responses: {
+            /** @description The entries of every dictionary at every position of each text where a word may start */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchLookupResponse"];
+                };
+            };
+            /** @description Too many texts, or a text too long */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Missing or invalid token */
@@ -3473,7 +3773,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The subtitle tracks embedded in the file, which cannot be shown yet */
+            /** @description The subtitle tracks embedded in the file. Adding the file by path adds its text tracks among its subtitle tracks. */
             200: {
                 headers: {
                     [name: string]: unknown;

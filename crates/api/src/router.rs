@@ -14,10 +14,10 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    conversion_cache, conversions, dictionaries, dictionary_lookup, dictionary_media, documents,
-    flashcards, health, local_dictionaries, media, media_frame, media_playback, media_stream,
-    media_tracks, media_waveform, openapi, plugins, preferences, projects, source_subtitles,
-    subtitles, timed_text,
+    conversion_cache, conversions, dictionaries, dictionary_batch_lookup, dictionary_imports,
+    dictionary_lookup, dictionary_media, documents, flashcards, health, local_dictionaries, media,
+    media_frame, media_playback, media_stream, media_tracks, media_waveform, openapi, plugins,
+    preferences, projects, source_subtitles, subtitles, timed_text,
 };
 use crate::state::AppState;
 
@@ -113,6 +113,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(conversions::get_conversion_segment))
         .routes(routes!(conversion_cache::get_conversion_cache))
         .routes(routes!(conversion_cache::clear_conversion_cache))
+        .routes(routes!(conversion_cache::set_conversion_cache_budget))
         .routes(routes!(
             preferences::get_preference,
             preferences::set_preference
@@ -125,10 +126,12 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             dictionaries::list_dictionaries
         ))
         .routes(routes!(local_dictionaries::import_local_dictionary))
+        .routes(routes!(dictionary_imports::get_import_job))
         .routes(routes!(local_dictionaries::preview_local_dictionary_table))
         .routes(routes!(dictionaries::preview_dictionary_table))
         .routes(routes!(dictionaries::delete_dictionary))
         .routes(routes!(dictionary_lookup::lookup_text))
+        .routes(routes!(dictionary_batch_lookup::lookup_texts))
         .routes(routes!(dictionary_media::get_dictionary_media))
 }
 

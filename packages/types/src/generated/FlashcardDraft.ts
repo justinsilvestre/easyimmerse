@@ -6,4 +6,9 @@ import type { MediaFileId } from "./MediaFileId";
 /**
  * What the editor sends to create or replace a flashcard.
  */
-export type FlashcardDraft = { media_file_id: MediaFileId | null, cue_index: number | null, content: FlashcardContent, included_fields: Array<FlashcardFieldKey>, };
+export type FlashcardDraft = { media_file_id: MediaFileId | null, cue_index: number | null, 
+/**
+ * Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.
+ * Null when that is not known, as for a card whose word was not taken from a cue.
+ */
+word_start: number | null, content: FlashcardContent, included_fields: Array<FlashcardFieldKey>, };

@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { doubleClick } from "../../testSupport/doubleClick.ts";
 import { renderDefinition } from "../../testSupport/renderDefinition.tsx";
 
 afterEach(cleanup);
@@ -25,14 +26,26 @@ describe("DefinitionView", () => {
     expect(container.textContent).toBe("<colloq.> mate");
   });
 
-  it("makes the words of a text definition clickable", () => {
-    const clicked: string[] = [];
+  it("looks up a double-clicked word of a text definition", () => {
+    const looked: string[] = [];
     renderDefinition(
       { kind: "text", text: "to devour" },
-      { onWordClick: (word) => clicked.push(word) },
+      { onWordLookup: (word) => looked.push(word) },
     );
-    fireEvent.click(screen.getByRole("button", { name: "devour" }));
-    expect(clicked).toEqual(["devour"]);
+    doubleClick(screen.getByRole("button", { name: "devour" }));
+    expect(looked).toEqual(["devour"]);
+  });
+
+  it("looks nothing up for a word of a text definition clicked once", () => {
+    const looked: string[] = [];
+    renderDefinition(
+      { kind: "text", text: "to devour" },
+      { onWordLookup: (word) => looked.push(word) },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "devour" }), {
+      detail: 1,
+    });
+    expect(looked).toEqual([]);
   });
 
   it("looks up the base of a form-of definition", () => {

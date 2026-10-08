@@ -51,6 +51,7 @@ function renderStrip(overrides: Partial<WaveformStripProps> = {}) {
       windows={new Map()}
       cues={[]}
       flashcardSegments={[segment]}
+      editableSegmentId="f1"
       visibleSpanMs={60_000}
       onSeek={record("seek")}
       onOpenFlashcardSegment={record("open")}
@@ -79,6 +80,15 @@ describe("WaveformStrip", () => {
     pointer(canvas, "pointerDown", 300);
     pointer(canvas, "pointerUp", 300);
     expect(calls).toEqual([["seek", 30_000]]);
+  });
+
+  it("seeks to the start of the cue clicked in the cue band", () => {
+    const { canvas, calls } = renderStrip({
+      cues: [{ index: 1, start_ms: 12_300, end_ms: 15_000, text: "Hi" }],
+    });
+    pointer(canvas, "pointerDown", 140, 70);
+    pointer(canvas, "pointerUp", 140, 70);
+    expect(calls).toEqual([["seek", 12_300]]);
   });
 
   it("does not seek when the pointer moved between press and release", () => {
@@ -122,6 +132,39 @@ describe("WaveformStrip", () => {
     pointer(canvas, "pointerMove", 170, 5);
     pointer(canvas, "pointerUp", 170, 5);
     expect(calls).toEqual([["screenshot", "f1", 17_000]]);
+  });
+
+  it("seeks rather than drags at the clip start of a segment not open in the editor", () => {
+    const { calls, canvas } = renderStrip({ editableSegmentId: null });
+    pointer(canvas, "pointerDown", 100);
+    pointer(canvas, "pointerUp", 100);
+    expect(calls).toEqual([["seek", 10_000]]);
+  });
+
+  it("drags nothing of a segment not open in the editor", () => {
+    const { calls, canvas } = renderStrip({ editableSegmentId: null });
+    pointer(canvas, "pointerDown", 200);
+    pointer(canvas, "pointerMove", 250);
+    pointer(canvas, "pointerUp", 250);
+    expect(calls).toEqual([]);
+  });
+
+  it("opens a segment not open in the editor on double-click", () => {
+    const { calls, canvas } = renderStrip({ editableSegmentId: null });
+    fireEvent.doubleClick(canvas, { clientX: 150, clientY: 36 });
+    expect(calls).toEqual([["open", "f1"]]);
+  });
+
+  it("shows a resize cursor over a handle of the open segment", () => {
+    const { canvas } = renderStrip();
+    pointer(canvas, "pointerMove", 200);
+    expect(canvas.style.cursor).toBe("ew-resize");
+  });
+
+  it("shows a pointer over a segment's body", () => {
+    const { canvas } = renderStrip({ editableSegmentId: null });
+    pointer(canvas, "pointerMove", 200);
+    expect(canvas.style.cursor).toBe("pointer");
   });
 
   it("stops a dragged clip start at the screenshot marker", () => {

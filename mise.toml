@@ -77,6 +77,16 @@ run = "pnpm --filter @easyimmerse/plugin-hello-js build"
 description = "Download the ffmpeg sidecar binaries for the current platform"
 run = "node scripts/fetch-ffmpeg/index.ts"
 
+# The tests skip when EASYIMMERSE_SAMPLE_MEDIA is unset, so the task refuses to run without it.
+[tasks."test:sample-media"]
+description = "Test adding the media file at EASYIMMERSE_SAMPLE_MEDIA, which must hold an embedded English text subtitle track and sit beside a .ja.srt file, with the app's own ffmpeg sidecar"
+depends = ["fetch-ffmpeg"]
+env = { EASYIMMERSE_FFMPEG_DIR = "{{config_root}}/apps/native/src-tauri/binaries" }
+run = [
+  "[ -n \"$EASYIMMERSE_SAMPLE_MEDIA\" ] || { echo 'set EASYIMMERSE_SAMPLE_MEDIA to a media file with embedded subtitles' >&2; exit 1; }",
+  "cargo test -p easyimmerse-api --test api local_media_sample:: -- --nocapture",
+]
+
 [tasks."ffmpeg-notices"]
 description = "Regenerate the license notices of the ffmpeg builds in the fetch-ffmpeg manifest"
 run = "node scripts/ffmpeg-notices/index.ts"

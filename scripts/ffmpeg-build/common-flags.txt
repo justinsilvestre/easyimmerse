@@ -22,7 +22,7 @@
 --enable-parser=h264,hevc,mpeg4video,mpegvideo,vp8,vp9,av1,vc1,mjpeg,aac,aac_latm,mpegaudio,vorbis,opus,flac,ac3,dca
 --enable-bsf=noise,aac_adtstoasc,extract_extradata,vp9_superframe,null
 --enable-filter=aresample,aformat,anull,format,null,scale,bwdif,color,crop,trim,atrim,transpose,hflip,vflip,rotate,hwupload,hwdownload
---enable-encoder=aac,flac,mjpeg,pcm_s16le,pcm_f32le,rawvideo,wrapped_avframe
---enable-muxer=hls,mp4,mov,segment,mpegts,webvtt,pcm_f32le,rawvideo,image2pipe,null
+--enable-encoder=aac,flac,mjpeg,pcm_s16le,pcm_f32le,rawvideo,subrip,wrapped_avframe
+--enable-muxer=hls,mp4,mov,segment,mpegts,webvtt,srt,pcm_f32le,rawvideo,image2pipe,null
 --enable-protocol=file,pipe
 --enable-indev=lavfi

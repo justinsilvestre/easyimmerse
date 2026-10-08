@@ -29,7 +29,8 @@ import { skippedSubtitlesMessage } from "../projects/skippedSubtitlesMessage.ts"
 
 /**
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
- * Work is saved on the server as it happens, so the project always reads as saved.
+ * Work is saved on the server as it happens, so the screen offers nothing to save by hand.
+ * The ways to review or export flashcards are not built yet, so each is marked as coming soon and explains so when chosen.
  */
 export function ProjectOverview({
   project,
@@ -55,9 +56,7 @@ export function ProjectOverview({
   return (
     <ProjectView
       name={settings.name}
-      hasUnsavedChanges={false}
       onBack={onBack}
-      onSave={() => notify("Your work is saved as you go.")}
       onEditSettings={onEditSettings}
     >
       {dictionaries && (
@@ -102,6 +101,7 @@ export function ProjectOverview({
       )}
       <FlashcardSyncPanel
         state={{ kind: "notStarted" }}
+        comingSoon={["review", "ankiPackage", "ankiConnect"]}
         includedFields={settings.flashcard_fields}
         languages={{
           target: settings.target_language,

@@ -50,4 +50,6 @@ pub struct ConversionCacheStatus {
     pub free_bytes: u64,
     /// True when free disk space, not the budget, limits the cache.
     pub space_low: bool,
+    /// The budget the user chose, or None while the budget follows the disk's size.
+    pub chosen_budget_bytes: Option<u64>,
 }

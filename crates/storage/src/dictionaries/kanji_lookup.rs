@@ -4,7 +4,8 @@ use rusqlite::{Connection, params_from_iter};
 
 use super::columns::get_json;
 use super::origin::{
-    AFTER_ORIGIN, ORIGIN_COLUMNS, TagDefinitions, distinct_numbers, placeholders, read_origin,
+    AFTER_ORIGIN, ORIGIN_COLUMNS, TagDefinitions, distinct_numbers, placeholders, query_in_chunks,
+    read_origin,
 };
 use crate::error::StorageError;
 
@@ -14,24 +15,7 @@ pub fn find_kanji(
     conn: &Connection,
     characters: &[String],
 ) -> Result<Vec<FoundKanji>, StorageError> {
-    if characters.is_empty() {
-        return Ok(Vec::new());
-    }
-    let mut statement = conn.prepare(&format!(
-        "SELECT {ORIGIN_COLUMNS}, k.data
-         FROM dictionary_kanji k JOIN dictionaries d ON d.number = k.dictionary_number
-         WHERE k.character IN ({}) ORDER BY d.number, k.rowid",
-        placeholders(characters.len())
-    ))?;
-    let found: Vec<FoundKanji> = statement
-        .query_map(params_from_iter(characters), |row| {
-            Ok(FoundKanji {
-                dictionary: read_origin(row)?,
-                entry: get_json::<KanjiEntry>(row, AFTER_ORIGIN)?,
-                tags: Vec::new(),
-            })
-        })?
-        .collect::<Result<_, _>>()?;
+    let found = query_in_chunks(characters, |chunk| find_kanji_rows(conn, chunk))?;
     attach_tags(conn, found)
 }
 
@@ -40,9 +24,33 @@ pub fn find_kanji_meta(
     conn: &Connection,
     characters: &[String],
 ) -> Result<Vec<FoundKanjiMeta>, StorageError> {
-    if characters.is_empty() {
-        return Ok(Vec::new());
-    }
+    query_in_chunks(characters, |chunk| find_kanji_meta_rows(conn, chunk))
+}
+
+fn find_kanji_rows(
+    conn: &Connection,
+    characters: &[String],
+) -> Result<Vec<FoundKanji>, StorageError> {
+    let mut statement = conn.prepare(&format!(
+        "SELECT {ORIGIN_COLUMNS}, k.data
+         FROM dictionary_kanji k JOIN dictionaries d ON d.number = k.dictionary_number
+         WHERE k.character IN ({}) ORDER BY d.number, k.rowid",
+        placeholders(characters.len())
+    ))?;
+    let rows = statement.query_map(params_from_iter(characters), |row| {
+        Ok(FoundKanji {
+            dictionary: read_origin(row)?,
+            entry: get_json::<KanjiEntry>(row, AFTER_ORIGIN)?,
+            tags: Vec::new(),
+        })
+    })?;
+    Ok(rows.collect::<Result<_, _>>()?)
+}
+
+fn find_kanji_meta_rows(
+    conn: &Connection,
+    characters: &[String],
+) -> Result<Vec<FoundKanjiMeta>, StorageError> {
     let mut statement = conn.prepare(&format!(
         "SELECT {ORIGIN_COLUMNS}, m.character, m.data
          FROM dictionary_kanji_meta m JOIN dictionaries d ON d.number = m.dictionary_number

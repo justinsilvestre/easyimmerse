@@ -21,6 +21,7 @@ export interface Effects {
   /** Pauses the player, and does nothing when it is already paused. */
   pausePlayer(): void;
   setPlayerVolume(volume: number): void;
+  setPlayerMuted(isMuted: boolean): void;
   setPlayerSpeed(speed: number): void;
   pickFile(accept: readonly string[]): Promise<PickedFile | null>;
   pickMediaFile(accept: readonly string[]): Promise<PickedMediaFile | null>;

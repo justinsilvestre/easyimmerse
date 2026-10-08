@@ -1,11 +1,12 @@
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
 use easyimmerse_storage::{Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
+use crate::import_jobs::ImportJobs;
 use crate::media_source_jobs::MediaSourceJobs;
 use crate::plugins::PluginRegistry;
 
@@ -17,6 +18,8 @@ pub struct AppState {
     pub probes: Option<Arc<ProbeCache>>,
     /// Converts media while it plays. None without ffmpeg or a cache directory.
     pub conversion: Option<ConversionService>,
+    /// The dictionary imports running or recently finished.
+    pub import_jobs: Arc<Mutex<ImportJobs>>,
     /// The installed plugins. Empty without a plugin directory.
     pub plugins: Arc<PluginRegistry>,
     /// The fetches through media-source plugins since the server started.
@@ -38,6 +41,7 @@ impl AppState {
             config: Arc::new(config),
             probes: probes.map(Arc::new),
             conversion,
+            import_jobs: Arc::default(),
             plugins: Arc::new(PluginRegistry::default()),
             media_source_jobs: Arc::new(MediaSourceJobs::default()),
             media_dir: None,

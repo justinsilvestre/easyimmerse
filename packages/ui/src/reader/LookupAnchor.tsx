@@ -1,23 +1,26 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { popupPlacement } from "./popupPlacement.ts";
-
-/** The width of the dictionary pop-up, 26rem, which sets where it can be centered. */
-const popupWidthPx = 416;
+import { useViewportSize } from "../hooks/useViewportSize.ts";
+import { placeAtAnchor } from "../lookup/placeAtAnchor.ts";
+import { type PopupSize, popupWidthPx } from "../lookup/popupSize.ts";
+import { useIsGliding } from "../lookup/useIsGliding.ts";
 
 /**
- * Holds the dictionary pop-up beside the word it is about.
+ * Holds the dictionary pop-up beside the word it is about, placed as `placeAtAnchor` describes.
+ * It glides from one word to the next on the same side, and appears at once where it first opens or when it changes sides.
  * On a phone, or when it opens on its search field, it sits at the bottom of the window instead.
  * `onPointerInsideChange` reports the pointer entering and leaving the pop-up.
  */
 export function LookupAnchor({
   wordRect,
   isWide,
+  size = "compact",
   onPointerInsideChange,
   children,
 }: {
   wordRect: DOMRect | null;
   isWide: boolean;
+  size?: PopupSize;
   onPointerInsideChange?: (isInside: boolean) => void;
   children: ReactNode;
 }) {
@@ -26,31 +29,35 @@ export function LookupAnchor({
     onPointerEnter: () => onPointerInsideChange?.(true),
     onPointerLeave: () => onPointerInsideChange?.(false),
   };
-  if (!isWide || !wordRect)
+  const viewport = useViewportSize();
+  const place =
+    isWide && wordRect
+      ? placeAtAnchor(wordRect, popupWidthPx(size), viewport, size)
+      : null;
+  const isGliding = useIsGliding(place);
+  if (!place)
     return (
       <div
         {...pointerProps}
-        className="pointer-events-none fixed inset-x-2 bottom-2 z-30 flex h-[60dvh] flex-col items-center justify-end *:pointer-events-auto"
+        className={clsx(
+          "pointer-events-none fixed inset-x-2 bottom-2 z-30 flex flex-col items-center justify-end *:pointer-events-auto",
+          size === "expanded" ? "h-[calc(100dvh-1rem)]" : "h-[60dvh]",
+        )}
       >
         {children}
       </div>
     );
-  const placement = popupPlacement(wordRect, popupWidthPx, {
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
+  const { side, ...style } = place;
   return (
     <div
       {...pointerProps}
       className={clsx(
-        "pointer-events-none fixed z-30 flex flex-col font-sans *:pointer-events-auto transition-[top,bottom,left] duration-150",
-        placement.side === "above" ? "justify-end" : "justify-start",
+        "pointer-events-none fixed z-30 flex flex-col font-sans *:pointer-events-auto",
+        side === "above" ? "justify-end" : "justify-start",
+        isGliding &&
+          "transition-[top,bottom,left,width] duration-150 ease-out motion-reduce:transition-none",
       )}
-      style={{
-        left: placement.left,
-        top: placement.top,
-        bottom: placement.bottom,
-      }}
+      style={style}
     >
       {children}
     </div>

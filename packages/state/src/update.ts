@@ -4,8 +4,8 @@ import { initialPlayerState, preferenceKeys } from "./appState.ts";
 import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import type { Effect } from "./effect.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
+import { crossesSaveInterval } from "./playbackPosition.ts";
 import { isSameParagraph, type ReaderLocation } from "./readingLocation.ts";
-import { followSystemTheme, toggleTheme } from "./theme.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
 export type Update<S, A, E> = (
@@ -25,12 +25,21 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
         },
         [{ type: "seekPlayer", seconds: action.seconds }],
       ];
-    case "playerTimeChanged":
+    case "playerTimeChanged": {
+      const moved = {
+        ...state,
+        player: { ...state.player, currentTimeSeconds: action.seconds },
+      };
+      return crossesSaveInterval(
+        state.player.currentTimeSeconds,
+        action.seconds,
+      )
+        ? savePlaybackPosition(moved)
+        : [moved, []];
+    }
+    case "playerBufferedChanged":
       return [
-        {
-          ...state,
-          player: { ...state.player, currentTimeSeconds: action.seconds },
-        },
+        { ...state, player: { ...state.player, buffered: action.buffered } },
         [],
       ];
     case "playerDurationChanged":
@@ -47,15 +56,25 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       return [state, [{ type: "playPlayer" }]];
     case "pauseRequested":
       return [state, [{ type: "pausePlayer" }]];
-    case "playerPlayingChanged":
-      return [
-        { ...state, player: { ...state.player, isPlaying: action.isPlaying } },
-        [],
-      ];
+    case "playerPlayingChanged": {
+      const changed = {
+        ...state,
+        player: { ...state.player, isPlaying: action.isPlaying },
+      };
+      return action.isPlaying ? [changed, []] : savePlaybackPosition(changed);
+    }
     case "volumeChangeRequested":
       return [
         { ...state, player: { ...state.player, volume: action.volume } },
         [{ type: "setPlayerVolume", volume: action.volume }],
+      ];
+    case "muteToggleRequested":
+      return [
+        {
+          ...state,
+          player: { ...state.player, isMuted: !state.player.isMuted },
+        },
+        [{ type: "setPlayerMuted", isMuted: !state.player.isMuted }],
       ];
     case "speedChangeRequested":
       return [
@@ -135,19 +154,40 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       return [{ ...state, chosenDictionaryFile: null }, []];
     case "openMedia":
       return [{ ...state, currentMediaFileId: action.mediaFileId }, []];
-    case "closeMedia":
+    case "closeMedia": {
+      const [remembered, effects] = savePlaybackPosition(state);
       return [
         {
-          ...state,
+          ...remembered,
           currentMediaFileId: null,
           chosenSubtitleFile: null,
           player: {
             ...initialPlayerState,
             volume: state.player.volume,
+            isMuted: state.player.isMuted,
             speed: state.player.speed,
           },
         },
-        saveOpenBookLocation(state),
+        [...saveOpenBookLocation(state), ...effects],
+      ];
+    }
+    case "playbackPositionLoadRequested":
+      return [
+        state,
+        state.playbackPositions[action.mediaFileId] === undefined
+          ? [{ type: "loadPlaybackPosition", mediaFileId: action.mediaFileId }]
+          : [],
+      ];
+    case "playbackPositionLoaded":
+      return [
+        {
+          ...state,
+          playbackPositions: {
+            ...state.playbackPositions,
+            [action.mediaFileId]: action.ms,
+          },
+        },
+        [],
       ];
     case "readingLocationLoadRequested":
       return [
@@ -218,12 +258,7 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
     case "externalLinkRequested":
       return [state, [{ type: "openExternalUrl", url: action.url }]];
     case "systemThemeChanged":
-      return [
-        { ...state, theme: followSystemTheme(state.theme, action.theme) },
-        [],
-      ];
-    case "themeToggled":
-      return [{ ...state, theme: toggleTheme(state.theme) }, []];
+      return [{ ...state, systemTheme: action.theme }, []];
     case "textScaleChosen":
       return [
         setPreference(state, "textScale", String(action.scale)),
@@ -266,6 +301,24 @@ function setReadingLocation(
     ...state,
     readingLocations: { ...state.readingLocations, [mediaFileId]: location },
   };
+}
+
+/**
+ * Remembers where playback is in the open media file and saves it, once the player has loaded the file.
+ * A book never loads the player, so its position is not saved.
+ */
+function savePlaybackPosition(state: AppState): [AppState, Effect[]] {
+  const mediaFileId = state.currentMediaFileId;
+  if (mediaFileId === null || state.player.durationSeconds === 0)
+    return [state, []];
+  const ms = state.player.currentTimeSeconds * 1000;
+  return [
+    {
+      ...state,
+      playbackPositions: { ...state.playbackPositions, [mediaFileId]: ms },
+    },
+    [{ type: "savePlaybackPosition", mediaFileId, ms }],
+  ];
 }
 
 /**

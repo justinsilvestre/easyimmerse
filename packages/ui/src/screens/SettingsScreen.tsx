@@ -1,5 +1,4 @@
 import { BookOpen, ChevronRight } from "lucide-react";
-import { Button } from "../components/Button.tsx";
 import type { ConversionCacheControls } from "../components/ConversionCacheSection.tsx";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
 import {
@@ -8,11 +7,13 @@ import {
 } from "../components/LicensesPage.tsx";
 import { PreferenceToggle } from "../components/PreferenceToggle.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { SubtitleAppearanceSection } from "../media/SubtitleAppearanceSection.tsx";
 
 const unavailableConversionCache: ConversionCacheControls = {
   cache: { kind: "unavailable" },
   onClear: () => undefined,
   clearStatus: "",
+  onBudgetChange: () => undefined,
 };
 
 export function SettingsScreen({
@@ -21,16 +22,14 @@ export function SettingsScreen({
   conversionCache = unavailableConversionCache,
   licenseNotices = { status: "loaded", groups: [] },
 }: {
+  /** Closes Settings to the screen beneath, whichever it is, so its button says only Back. */
   onBack: () => void;
   onOpenDictionaries: () => void;
   conversionCache?: ConversionCacheControls;
   licenseNotices?: LicenseNoticesState;
 }) {
   return (
-    <ScreenLayout
-      headerActions={<Button onClick={onBack}>Back</Button>}
-      showSettingsLink={false}
-    >
+    <ScreenLayout onBack={onBack}>
       <h1 className="text-xl font-semibold">Settings</h1>
       <button
         type="button"
@@ -46,6 +45,7 @@ export function SettingsScreen({
         </span>
         <ChevronRight className="size-4 text-fg-muted" aria-hidden />
       </button>
+      <SubtitleAppearanceSection />
       <section
         aria-labelledby="settings-conversion"
         className="flex flex-col gap-3"

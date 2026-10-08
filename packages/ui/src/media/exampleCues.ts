@@ -1,4 +1,5 @@
 import type { Cue } from "@easyimmerse/types";
+import { flashcardWordRanges } from "./flashcardWordRanges.ts";
 
 /** A short scene in German, with its translation, for the media stories. */
 export const exampleCues: readonly Cue[] = [
@@ -64,3 +65,12 @@ export const exampleTranslationCues: readonly Cue[] = [
 ];
 
 export const exampleFlashcardCueIndexes: readonly number[] = [3, 6];
+
+/** Where the example cues hold the words of their flashcards. */
+export const exampleFlashcardWordRanges = flashcardWordRanges(
+  [
+    { cue_index: 3, word_start: 14, content: { word: "fressen" } },
+    { cue_index: 6, word_start: 12, content: { word: "Schlüssel" } },
+  ],
+  exampleCues,
+);

@@ -1,6 +1,6 @@
 export type { AppAction } from "./actions.ts";
 export { actions } from "./actions.ts";
-export type { PreferenceKey } from "./appState.ts";
+export type { BufferedRange, PreferenceKey } from "./appState.ts";
 export type { BrowserFileRegistry } from "./browserFileRegistry.ts";
 export { createBrowserFileRegistry } from "./browserFileRegistry.ts";
 export type {
@@ -33,6 +33,7 @@ export {
   selectCurrentMediaFileId,
   selectCurrentTime,
   selectPendingFilePick,
+  selectPlaybackPosition,
   selectPlayer,
   selectPlayerDuration,
   selectPreference,
@@ -40,6 +41,7 @@ export {
   selectReadingLocation,
   selectTextScale,
   selectTheme,
+  selectThemeChoice,
 } from "./selectors.ts";
 export {
   defaultTextScale,
@@ -47,5 +49,6 @@ export {
   smallerTextScale,
   textScales,
 } from "./textScale.ts";
-export type { Theme } from "./theme.ts";
+export type { Theme, ThemeChoice } from "./theme.ts";
+export { themeChoices } from "./theme.ts";
 export { update } from "./update.ts";

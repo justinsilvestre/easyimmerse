@@ -1,6 +1,7 @@
 import type { Definition } from "@easyimmerse/types";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { doubleClick } from "../../testSupport/doubleClick.ts";
 import {
   renderDefinition,
   resolveFakeMediaUrl,
@@ -155,13 +156,13 @@ describe("MarkupView", () => {
       expect(clicked).toEqual(["bloom"]);
     });
 
-    it("does not start a flashcard from a lookup link", () => {
-      const clicked: string[] = [];
+    it("does not treat the text of a lookup link as words of its own", () => {
+      const looked: string[] = [];
       renderDefinition(html('<a href="bword://bloom">bloom</a>'), {
-        onWordClick: (word) => clicked.push(word),
+        onWordLookup: (word) => looked.push(word),
       });
-      fireEvent.click(screen.getByRole("button", { name: "bloom" }));
-      expect(clicked).toEqual([]);
+      doubleClick(screen.getByRole("button", { name: "bloom" }));
+      expect(looked).toEqual([]);
     });
 
     it("keeps text written with escaped angle brackets", () => {

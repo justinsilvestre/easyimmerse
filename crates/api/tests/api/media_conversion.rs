@@ -3,28 +3,17 @@
 
 use easyimmerse_core::media_file::MediaFileSource;
 use easyimmerse_core::project::ProjectId;
-use easyimmerse_media_ffmpeg::{BinaryName, FfmpegPaths, locate_binary};
 use serde_json::{Value, json};
 use tempfile::TempDir;
 
 use crate::support::{
-    TestServer, fixture_path, seeded_storage, spawn_test_server, spawn_test_server_with_cache,
-    spawn_test_server_with_storage,
+    TestServer, ffmpeg_available, fixture_path, seeded_storage, spawn_test_server,
+    spawn_test_server_with_cache, spawn_test_server_with_storage,
 };
 
 const PROJECT: &str = "placeholder-1";
 const MKV: &str = "conversion-h264-aac.mkv";
 const TONE_WAV: &str = "conversion-tone.wav";
-
-fn ffmpeg_available() -> bool {
-    let paths = FfmpegPaths::default();
-    let available = locate_binary(BinaryName::Ffmpeg, &paths).is_ok()
-        && locate_binary(BinaryName::Ffprobe, &paths).is_ok();
-    if !available {
-        eprintln!("skipped: ffmpeg or ffprobe not found");
-    }
-    available
-}
 
 async fn add_path_media(server: &TestServer, name: &str) -> String {
     let response = server
@@ -373,6 +362,40 @@ async fn clearing_the_cache_answers_with_the_status() {
         (response.status, response.json()["usage_bytes"].as_u64()),
         (200, Some(0))
     );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn setting_the_budget_answers_with_the_status_under_it() {
+    if !ffmpeg_available() {
+        return;
+    }
+    let (server, _cache_dir, _) = converting_server().await;
+    let response = server
+        .put_json(
+            "/conversion-cache/budget",
+            &json!({ "budget_bytes": 5_000_000_000u64 }),
+        )
+        .await;
+    assert_eq!(
+        (response.status, response.json()["budget_bytes"].as_u64()),
+        (200, Some(5_000_000_000))
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_chosen_budget_is_kept_in_the_preferences() {
+    if !ffmpeg_available() {
+        return;
+    }
+    let (server, _cache_dir, _) = converting_server().await;
+    server
+        .put_json(
+            "/conversion-cache/budget",
+            &json!({ "budget_bytes": 5_000_000_000u64 }),
+        )
+        .await;
+    let response = server.get("/preferences/conversionCacheBudgetBytes").await;
+    assert_eq!(response.json()["value"], "5000000000");
 }
 
 #[tokio::test(flavor = "multi_thread")]

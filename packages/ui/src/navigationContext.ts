@@ -23,3 +23,10 @@ export const NavigationActionsContext = createContext<NavigationActions>(
 export function useNavigationActions(): NavigationActions {
   return useContext(NavigationActionsContext);
 }
+
+/** Whether Settings lies over the screen, in which case the footer's Settings control stands for the page already open. */
+export const SettingsOpenContext = createContext(false);
+
+export function useIsSettingsOpen(): boolean {
+  return useContext(SettingsOpenContext);
+}

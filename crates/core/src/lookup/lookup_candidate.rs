@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 use super::separated_verb::SeparatedVerb;
 use super::word_boundary::is_word_boundary;
@@ -56,12 +57,10 @@ impl LookupCandidate {
 /// Lookup considers at most 20 characters, and stops at the first space or punctuation mark.
 pub fn lookup_candidates(text: &str, language: &str) -> Vec<LookupCandidate> {
     let mut candidates: Vec<LookupCandidate> = Vec::new();
+    let mut seen: HashSet<Deinflection> = HashSet::new();
     for prefix in prefixes(text) {
         for deinflection in deinflect(language, prefix) {
-            if !candidates
-                .iter()
-                .any(|known| known.deinflection == deinflection)
-            {
+            if seen.insert(deinflection.clone()) {
                 candidates.push(LookupCandidate {
                     matched_text: prefix.to_string(),
                     is_bare_form: is_bare_form(language, &deinflection),
@@ -76,13 +75,12 @@ pub fn lookup_candidates(text: &str, language: &str) -> Vec<LookupCandidate> {
 
 /// Lists the distinct headwords that storage must search for to find every candidate.
 pub fn candidate_headwords(candidates: &[LookupCandidate]) -> Vec<String> {
-    let mut headwords: Vec<String> = Vec::new();
-    for candidate in candidates {
-        if !headwords.contains(&candidate.deinflection.term) {
-            headwords.push(candidate.deinflection.term.clone());
-        }
-    }
-    headwords
+    let mut seen: HashSet<&str> = HashSet::new();
+    (candidates.iter())
+        .map(|candidate| candidate.deinflection.term.as_str())
+        .filter(|term| seen.insert(term))
+        .map(String::from)
+        .collect()
 }
 
 fn prefixes(text: &str) -> Vec<&str> {

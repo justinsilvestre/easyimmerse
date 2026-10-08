@@ -1,7 +1,7 @@
 import type { PreferenceKey } from "./appState.ts";
 import type { RootState } from "./createAppStore.ts";
 import { parseTextScale } from "./textScale.ts";
-import { chooseTheme } from "./theme.ts";
+import { chooseTheme, parseThemeChoice } from "./theme.ts";
 
 export const selectCurrentTime = (state: RootState) =>
   state.app.player.currentTimeSeconds;
@@ -34,11 +34,21 @@ export const selectReadingLocation =
   (mediaFileId: string) => (state: RootState) =>
     state.app.readingLocations[mediaFileId];
 
+/** Returns where playback last was in a media file, null when it was never played, or undefined until its stored position has been read. */
+export const selectPlaybackPosition =
+  (mediaFileId: string) => (state: RootState) =>
+    state.app.playbackPositions[mediaFileId];
+
 export const selectChosenDictionaryFile = (state: RootState) =>
   state.app.chosenDictionaryFile;
 
+/** Returns the theme the user chose, or "system" until one is chosen. */
+export const selectThemeChoice = (state: RootState) =>
+  parseThemeChoice(state.app.preferences.theme);
+
 /** Returns the theme the app shows: the one the user chose, or else the operating system's. */
-export const selectTheme = (state: RootState) => chooseTheme(state.app.theme);
+export const selectTheme = (state: RootState) =>
+  chooseTheme(selectThemeChoice(state), state.app.systemTheme);
 
 /** Returns the text scale the user chose, as a percentage, or 100 until one is chosen. */
 export const selectTextScale = (state: RootState) =>

@@ -9,9 +9,10 @@ export type OfflineOperation =
   | { kind: "parseTimedText"; request: ParseTimedTextRequest }
   | { kind: "parseDocument"; bytes: Uint8Array; format: DocumentFormat | null }
   | {
-      kind: "parseDictionary";
+      kind: "importDictionary";
       fileName: string;
       bytes: Uint8Array;
       tableLayout: TableLayout | null;
     }
+  | { kind: "importJobStatus"; id: string }
   | { kind: "previewDictionaryTable"; fileName: string; bytes: Uint8Array };

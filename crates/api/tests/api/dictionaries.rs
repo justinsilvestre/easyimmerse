@@ -1,7 +1,9 @@
+use std::time::Duration;
+
 use crate::support::{TestResponse, TestServer, fixture_path, read_fixture, spawn_test_server};
 use serde_json::{Value, json};
 
-async fn import_fixture(server: &TestServer) -> TestResponse {
+async fn start_fixture_import(server: &TestServer) -> TestResponse {
     server
         .post_bytes(
             "/dictionaries?fileName=sample-yomitan.zip",
@@ -11,8 +13,30 @@ async fn import_fixture(server: &TestServer) -> TestResponse {
         .await
 }
 
+/// Polls the job that `started` answered with until it is done or has failed, and returns its last status.
+pub(crate) async fn finished(server: &TestServer, started: TestResponse) -> Value {
+    let id = started.json()["id"].as_str().unwrap().to_string();
+    loop {
+        let status = job_status(server, &id).await.json();
+        if status["state"] != "running" {
+            return status;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+}
+
+async fn job_status(server: &TestServer, id: &str) -> TestResponse {
+    server.get(&format!("/dictionaries/imports/{id}")).await
+}
+
+/// Imports the fixture and returns the stored dictionary.
+pub(crate) async fn import_fixture(server: &TestServer) -> Value {
+    let started = start_fixture_import(server).await;
+    finished(server, started).await["dictionary"].clone()
+}
+
 async fn imported_id(server: &TestServer) -> String {
-    import_fixture(server).await.json()["id"]
+    import_fixture(server).await["id"]
         .as_str()
         .unwrap()
         .to_string()
@@ -42,20 +66,53 @@ async fn look_up(server: &TestServer, text: &str) -> Value {
         .json()
 }
 
-fn percent_encode(text: &str) -> String {
+pub(crate) fn percent_encode(text: &str) -> String {
     text.bytes().map(|byte| format!("%{byte:02X}")).collect()
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn importing_a_file_body_is_created() {
+async fn importing_a_file_body_is_accepted() {
     let server = spawn_test_server(false).await;
-    assert_eq!(import_fixture(&server).await.status, 201);
+    assert_eq!(start_fixture_import(&server).await.status, 202);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn importing_a_file_body_starts_a_running_job() {
+    let server = spawn_test_server(false).await;
+    let id = start_fixture_import(&server).await.json()["id"].clone();
+    let status = job_status(&server, id.as_str().unwrap()).await.json();
+    assert!(["running", "done"].contains(&status["state"].as_str().unwrap()));
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn importing_a_file_body_reports_its_format() {
     let server = spawn_test_server(false).await;
-    assert_eq!(import_fixture(&server).await.json()["format"], "yomitan");
+    assert_eq!(import_fixture(&server).await["format"], "yomitan");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_finished_import_counts_what_it_stored() {
+    let server = spawn_test_server(false).await;
+    let started = start_fixture_import(&server).await;
+    let status = finished(&server, started).await;
+    assert_eq!(
+        status["progress"]["entries"],
+        status["dictionary"]["entry_count"]
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_finished_import_has_counted_something() {
+    let server = spawn_test_server(false).await;
+    let started = start_fixture_import(&server).await;
+    let status = finished(&server, started).await;
+    assert!(status["progress"]["entries"].as_u64().unwrap() > 0);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn an_unknown_import_job_is_not_found() {
+    let server = spawn_test_server(false).await;
+    assert_eq!(job_status(&server, "missing").await.status, 404);
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -72,35 +129,49 @@ async fn importing_a_file_body_without_its_name_is_a_bad_request() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn importing_something_that_is_not_a_dictionary_is_a_bad_request() {
+async fn importing_something_that_is_not_a_dictionary_fails_the_job() {
     let server = spawn_test_server(false).await;
-    let response = server
+    let started = server
         .post_bytes(
             "/dictionaries?fileName=notes.txt",
             "application/octet-stream",
             b"nope".to_vec(),
         )
         .await;
-    assert_eq!(response.status, 400);
+    assert_eq!(finished(&server, started).await["state"], "failed");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn importing_the_same_dictionary_again_is_refused() {
+    let server = spawn_test_server(false).await;
+    import_fixture(&server).await;
+    let started = start_fixture_import(&server).await;
+    assert_eq!(
+        finished(&server, started).await["error"]["code"],
+        "dictionary_already_imported"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn importing_a_file_in_an_unsupported_format_says_so() {
     let server = spawn_test_server(false).await;
-    let response = server
+    let started = server
         .post_bytes(
             "/dictionaries?fileName=duden.lsd",
             "application/octet-stream",
             b"nope".to_vec(),
         )
         .await;
-    assert_eq!(response.json()["code"], "unsupported_dictionary_format");
+    assert_eq!(
+        finished(&server, started).await["error"]["code"],
+        "unsupported_dictionary_format"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn importing_a_file_body_reports_its_languages() {
     let server = spawn_test_server(false).await;
-    let summary = import_fixture(&server).await.json();
+    let summary = import_fixture(&server).await;
     assert_eq!(
         [&summary["source_language"], &summary["target_language"]],
         [&json!("ja"), &json!("en")]
@@ -111,8 +182,11 @@ async fn importing_a_file_body_reports_its_languages() {
 async fn importing_a_local_archive_works_when_allowed() {
     let server = spawn_test_server(true).await;
     let path = fixture_path("sample-yomitan.zip");
-    let response = import_local(&server, path.to_str().unwrap()).await;
-    assert_eq!(response.json()["title"], "Sample Dictionary");
+    let started = import_local(&server, path.to_str().unwrap()).await;
+    assert_eq!(
+        finished(&server, started).await["dictionary"]["title"],
+        "Sample Dictionary"
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -127,8 +201,11 @@ async fn importing_a_local_archive_is_refused_when_not_allowed() {
 async fn importing_a_local_directory_reads_every_file_in_it() {
     let server = spawn_test_server(true).await;
     let directory = unpacked_dictionary();
-    let response = import_local(&server, directory.path().to_str().unwrap()).await;
-    assert_eq!(response.json()["entry_count"], 1);
+    let started = import_local(&server, directory.path().to_str().unwrap()).await;
+    assert_eq!(
+        finished(&server, started).await["dictionary"]["entry_count"],
+        1
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -141,7 +218,7 @@ async fn importing_a_missing_local_path_is_not_found() {
 #[tokio::test(flavor = "multi_thread")]
 async fn lists_the_imported_dictionary() {
     let server = spawn_test_server(false).await;
-    let imported = import_fixture(&server).await.json();
+    let imported = import_fixture(&server).await;
     let response = server.get("/dictionaries").await;
     assert_eq!(response.json()["dictionaries"], json!([imported]));
 }
@@ -177,7 +254,14 @@ async fn looks_up_a_term_by_its_reading() {
 async fn looks_up_a_term_in_every_dictionary() {
     let server = spawn_test_server(false).await;
     import_fixture(&server).await;
-    import_fixture(&server).await;
+    let started = server
+        .post_bytes(
+            "/dictionaries?fileName=cats.csv&columns=term,reading,definition",
+            "application/octet-stream",
+            "猫,ねこ,cat\n".as_bytes().to_vec(),
+        )
+        .await;
+    finished(&server, started).await;
     let response = look_up(&server, "猫").await;
     let definitions = response["results"][0]["definitions"].as_array().unwrap();
     assert_eq!(definitions.len(), 2);
@@ -324,8 +408,11 @@ async fn previewing_something_that_is_not_a_table_is_a_bad_request() {
 #[tokio::test(flavor = "multi_thread")]
 async fn importing_a_table_with_chosen_columns_skips_the_header_the_user_marks() {
     let server = spawn_test_server(false).await;
-    let response = import_table(&server, "&columns=term,definition&hasHeader=true").await;
-    assert_eq!(response.json()["entry_count"], 2);
+    let started = import_table(&server, "&columns=term,definition&hasHeader=true").await;
+    assert_eq!(
+        finished(&server, started).await["dictionary"]["entry_count"],
+        2
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -338,13 +425,14 @@ async fn importing_a_table_with_an_unknown_column_role_is_a_bad_request() {
 #[tokio::test(flavor = "multi_thread")]
 async fn looking_up_a_verb_in_context_finds_its_separated_particle_verb() {
     let server = spawn_test_server(false).await;
-    server
+    let started = server
         .post_bytes(
             "/dictionaries?fileName=verbs.csv",
             "application/octet-stream",
             b"anrufen,to call\nrufen,to shout\n".to_vec(),
         )
         .await;
+    finished(&server, started).await;
     let context = "Ich rufe dich an.";
     let query = format!(
         "text={}&language=de&context={}&offset=4",
@@ -404,7 +492,7 @@ async fn importing_a_local_table_with_chosen_columns_skips_the_header_the_user_m
     let server = spawn_test_server(true).await;
     let directory = local_table();
     let path = directory.path().join("words.csv");
-    let response = server
+    let started = server
         .post_json(
             "/dictionaries/import-local",
             &json!({
@@ -413,7 +501,10 @@ async fn importing_a_local_table_with_chosen_columns_skips_the_header_the_user_m
             }),
         )
         .await;
-    assert_eq!(response.json()["entry_count"], 2);
+    assert_eq!(
+        finished(&server, started).await["dictionary"]["entry_count"],
+        2
+    );
 }
 
 /// Writes two tables that share a stem: `words.csv` with two columns and `words.txt` with three.
@@ -442,7 +533,7 @@ async fn importing_a_local_table_with_chosen_columns_imports_the_picked_file_and
     let server = spawn_test_server(true).await;
     let directory = tables_sharing_a_stem();
     let path = directory.path().join("words.txt");
-    let response = server
+    let started = server
         .post_json(
             "/dictionaries/import-local",
             &json!({
@@ -451,7 +542,10 @@ async fn importing_a_local_table_with_chosen_columns_imports_the_picked_file_and
             }),
         )
         .await;
-    assert_eq!(response.json()["entry_count"], 3);
+    assert_eq!(
+        finished(&server, started).await["dictionary"]["entry_count"],
+        3
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -460,7 +554,8 @@ async fn importing_a_local_table_without_chosen_columns_imports_the_picked_file_
     let server = spawn_test_server(true).await;
     let directory = tables_sharing_a_stem();
     let path = directory.path().join("words.txt");
-    import_local(&server, path.to_str().unwrap()).await;
+    let started = import_local(&server, path.to_str().unwrap()).await;
+    finished(&server, started).await;
     let response = server
         .get("/dictionaries/lookup?text=Maus&language=de")
         .await;

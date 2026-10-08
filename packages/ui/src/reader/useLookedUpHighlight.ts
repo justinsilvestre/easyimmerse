@@ -1,15 +1,15 @@
 import { useEffect } from "react";
-import { characterLength } from "../components/useKeyboardStart.ts";
+import { runLookupEnd } from "../components/runLookupStarts.ts";
 import { clearWordHighlight, highlightWord } from "./readerWordHighlight.ts";
 import type { ReaderWord } from "./wordAtPoint.ts";
 
 /**
- * Highlights the word the dictionary pop-up shows, as the subtitles do:
+ * Highlights the word the dictionary pop-up shows, as the subtitles do, once its lookup has answered:
  * a word written with spaces whole, and in a script without spaces the characters the lookup matched,
- * or, until the lookup answers, the character it looks up from.
+ * or the character it looked up from with its marks when nothing matched. Until the lookup answers, nothing is highlighted.
  */
 export function useLookedUpHighlight(
-  highlighted: { word: ReaderWord; matchedLength?: number } | undefined,
+  highlighted: { word: ReaderWord; matchedLength?: number | null } | undefined,
 ) {
   const location = highlighted?.word.location;
   const length = highlighted && highlightedLength(highlighted);
@@ -23,19 +23,21 @@ export function useLookedUpHighlight(
       offset === undefined ||
       length === undefined
     )
-      return;
+      return clearWordHighlight();
     highlightWord({ chapterIndex, paragraphIndex, offset }, length);
     return clearWordHighlight;
   }, [chapterIndex, paragraphIndex, offset, length]);
 }
 
+/** How many characters to highlight, or undefined while the lookup has not answered. */
 function highlightedLength({
   word,
   matchedLength,
 }: {
   word: ReaderWord;
-  matchedLength?: number;
-}): number {
+  matchedLength?: number | null;
+}): number | undefined {
+  if (matchedLength === undefined) return undefined;
   if (!word.isUnspaced) return word.text.length;
-  return matchedLength ?? characterLength(word.text, 0);
+  return matchedLength ?? runLookupEnd(word.text, 0);
 }

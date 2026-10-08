@@ -1,34 +1,35 @@
-import clsx from "clsx";
-import { useNavigationActions } from "../navigationContext.ts";
-import { Button } from "./Button.tsx";
-import { ThemeToggle } from "./ThemeToggle.tsx";
+import { Settings } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  useIsSettingsOpen,
+  useNavigationActions,
+} from "../navigationContext.ts";
+import { IconButton } from "./IconButton.tsx";
+import { ThemeMenu } from "./ThemeMenu.tsx";
 
 /**
- * Shows the Settings link and the theme switch at the bottom of a screen.
- * `contentClassName` lets it line up with the screen's content.
+ * A thin bar at the bottom of the window, with the way to Settings and the theme menu at its left edge,
+ * which look the same on every screen, and the screen's own buttons, passed as children, at its right edge.
+ * While Settings is open, its control stands for the page already open and does nothing.
  */
-export function AppFooter({
-  contentClassName,
-  showSettingsLink = true,
-}: {
-  contentClassName?: string;
-  showSettingsLink?: boolean;
-}) {
+export function AppFooter({ children }: { children?: ReactNode }) {
   const { openSettings } = useNavigationActions();
+  const isSettingsOpen = useIsSettingsOpen();
   return (
-    <footer className="border-t border-line">
-      <div
-        className={clsx(
-          "flex items-center justify-end gap-4 px-4 py-3",
-          contentClassName,
-        )}
-      >
-        {showSettingsLink && (
-          <Button variant="subtle" onClick={openSettings}>
-            Settings
-          </Button>
-        )}
-        <ThemeToggle />
+    <footer className="sticky bottom-0 border-t border-line bg-surface">
+      <div className="flex items-center justify-between gap-2 px-2 py-0.5">
+        <div className="flex items-center gap-2">
+          <IconButton
+            label="Settings"
+            aria-current={isSettingsOpen ? "page" : undefined}
+            aria-disabled={isSettingsOpen || undefined}
+            onClick={isSettingsOpen ? undefined : openSettings}
+          >
+            <Settings className="size-4" />
+          </IconButton>
+          <ThemeMenu />
+        </div>
+        {children && <div className="flex items-center gap-1">{children}</div>}
       </div>
     </footer>
   );

@@ -4,8 +4,7 @@ import type {
   PickedMediaFile,
 } from "./effects.ts";
 import type { ReaderLocation } from "./readingLocation.ts";
-import type { ThemeState } from "./theme.ts";
-import { initialThemeState } from "./theme.ts";
+import type { Theme } from "./theme.ts";
 
 export type PreferenceKey =
   | "showTranslations"
@@ -13,7 +12,11 @@ export type PreferenceKey =
   | "losslessAudio"
   | "conversionNoticeDismissed"
   /** The reader's appearance, as JSON. */
-  | "readerPreferences";
+  | "readerPreferences"
+  /** How the subtitles over the video look, as JSON. */
+  | "subtitleAppearance"
+  /** The theme the user chose: "light", "dark", or anything else for the system's. */
+  | "theme";
 
 export const preferenceKeys: readonly PreferenceKey[] = [
   "showTranslations",
@@ -21,23 +24,34 @@ export const preferenceKeys: readonly PreferenceKey[] = [
   "losslessAudio",
   "conversionNoticeDismissed",
   "readerPreferences",
+  "subtitleAppearance",
+  "theme",
 ];
+
+/** A stretch of the media the player holds ready, in seconds. */
+export type BufferedRange = { startSeconds: number; endSeconds: number };
 
 /** The player as the controls show it. Volume is 0 to 1; speed is a multiplier. */
 export type PlayerState = {
   currentTimeSeconds: number;
   /** Zero until the player has loaded a file. */
   durationSeconds: number;
+  /** What the player has loaded so far, which the seek bar shows, as a stream being converted arrives piece by piece. */
+  buffered: readonly BufferedRange[];
   isPlaying: boolean;
   volume: number;
+  /** Silences the player without changing its volume. */
+  isMuted: boolean;
   speed: number;
 };
 
 export const initialPlayerState: PlayerState = {
   currentTimeSeconds: 0,
   durationSeconds: 0,
+  buffered: [],
   isPlaying: false,
   volume: 1,
+  isMuted: false,
   speed: 1,
 };
 
@@ -57,12 +71,15 @@ export type AppState = {
   chosenDictionaryFile: PickedDictionaryFile | null;
   /** How many pieces of work closing the app would lose, such as flashcard saves under way or unsaved changes in the editor. */
   unsavedWorkCount: number;
-  theme: ThemeState;
+  /** The operating system's theme, which the app shows unless the user chose one. */
+  systemTheme: Theme;
   /**
    * The last reading place in each book opened since the app started, by media file id.
    * Null for a book with no stored place; absent until the stored place has been read.
    */
   readingLocations: Partial<Record<string, ReaderLocation | null>>;
+  /** Where playback last was in each media file, in milliseconds: null for a file never played, undefined until its stored position has been read. */
+  playbackPositions: Partial<Record<string, number | null>>;
 };
 
 export const initialAppState: AppState = {
@@ -75,6 +92,7 @@ export const initialAppState: AppState = {
   chosenMediaFile: null,
   chosenDictionaryFile: null,
   unsavedWorkCount: 0,
-  theme: initialThemeState,
+  systemTheme: "light",
   readingLocations: {},
+  playbackPositions: {},
 };

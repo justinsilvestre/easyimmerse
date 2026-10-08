@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { doubleClickMs } from "../components/gestureTiming.ts";
 import { useTimer } from "../hooks/useTimer.ts";
 import { isSameOccurrence, type LookupRequest } from "./lookupPopup.ts";
+import type { PopupSize } from "./popupSize.ts";
 import { useDictionaryLookup } from "./useDictionaryLookup.ts";
 import { usePendingFlashcard } from "./usePendingFlashcard.ts";
 
@@ -19,12 +20,14 @@ export type PopupHold = {
  * Opens, moves and closes the dictionary pop-up, holding what `hold` holds while it is open.
  * Every explicit step (opening on a clicked word, searching, closing) drops a flashcard still waiting for its lookup;
  * following the mouse does not.
+ * The size chosen for the pop-up is kept through its closing and reopening, for as long as its screen is shown.
  */
 export function useLookupPopupControl<S>(language: string, hold: PopupHold) {
   const lookup = useDictionaryLookup<S>(language);
   const pending = usePendingFlashcard();
   const closeTimer = useTimer();
   const isPointerInside = useRef(false);
+  const [size, setSize] = useState<PopupSize>("compact");
   const show = (request: LookupRequest<S>) => {
     closeTimer.cancel();
     hold.hold();
@@ -41,6 +44,9 @@ export function useLookupPopupControl<S>(language: string, hold: PopupHold) {
     lookup,
     pending,
     isPointerInside,
+    size,
+    toggleSize: () =>
+      setSize((current) => (current === "compact" ? "expanded" : "compact")),
     showsOccurrence: (request: LookupRequest<S>) =>
       lookup.popup !== null &&
       isSameOccurrence(lookup.request?.occurrence, request.occurrence),

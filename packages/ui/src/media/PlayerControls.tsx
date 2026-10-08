@@ -1,17 +1,19 @@
 import {
-  AudioWaveform,
+  AudioLines,
   Captions,
-  Expand,
   Languages,
   Pause,
   Play,
   SkipBack,
   SkipForward,
   Volume2,
+  VolumeX,
 } from "lucide-react";
 import { IconButton } from "../components/IconButton.tsx";
+import { MenuButton } from "../components/MenuButton.tsx";
 import { formatTimestamp } from "./formatTimestamp.ts";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
+import { SpeedMenu } from "./SpeedMenu.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 
 export type PlayerCallbacks = {
@@ -20,17 +22,37 @@ export type PlayerCallbacks = {
   /** Skips to the previous or next cue, or by a few seconds when there are no cues. */
   onSkip: (direction: "back" | "forward") => void;
   onVolumeChange: (volume: number) => void;
+  onToggleMute: () => void;
   onSpeedChange: (speed: number) => void;
   /** Cycles which subtitles lie over the video: both, the target language, or the translation. */
   onToggleSubtitleDisplay: () => void;
+  /** Hides the subtitles over the video, or shows them again. */
+  onToggleSubtitles: () => void;
+  /** Opens the dialog where the user sets how the subtitles over the video look. */
+  onOpenSubtitleAppearance: () => void;
   onToggleCuePanel: () => void;
   onToggleWaveform: () => void;
-  onToggleDistractionFree: () => void;
+  /** Fills the screen with the app, or leaves it. Absent where the browser offers no fullscreen. */
+  onToggleFullscreen?: () => void;
+  /** Opens the track choice dialog. Absent when the file offers nothing to choose. */
+  onOpenTracks?: () => void;
 };
 
-const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
+/** Which panels are open, whether the subtitles over the video are hidden, and whether the app fills the screen. */
+export type PlayerPanelsState = {
+  cues: boolean;
+  waveform: boolean;
+  areSubtitlesHidden?: boolean;
+  /** Tells that the flashcard editor holds the side panel, so that the subtitles panel cannot show and its toggle is marked unavailable. */
+  isCuePanelTakenByEditor?: boolean;
+  isFullscreen?: boolean;
+};
 
-/** The bar over the bottom of the player: the position, transport, volume, and speed, with the toggles for the panels around it. */
+/**
+ * The bar over the bottom of the player: the position, transport and volume, the playback speed in a menu of its own,
+ * and the subtitles over the video in a menu, so that the bar fits on one row on a phone.
+ * The buttons name their keys in their labels, which show as tooltips.
+ */
 export function PlayerControls({
   playback,
   tracks,
@@ -39,33 +61,21 @@ export function PlayerControls({
 }: {
   playback: PlayerControlsState;
   tracks: SubtitleTrackChoices;
-  panels: { cues: boolean; waveform: boolean };
+  panels: PlayerPanelsState;
   callbacks: PlayerCallbacks;
 }) {
   return (
-    <div className="flex flex-col gap-1.5 bg-surface/90 px-3 py-2">
-      <div className="flex items-center gap-3 text-xs text-fg-muted tabular-nums">
-        <span>{formatTimestamp(playback.currentMs)}</span>
-        <input
-          type="range"
-          aria-label="Position"
-          min={0}
-          max={playback.durationMs}
-          value={playback.currentMs}
-          onChange={(event) => callbacks.onSeek(Number(event.target.value))}
-          className="flex-1 accent-accent"
-        />
-        <span>{formatTimestamp(playback.durationMs)}</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-1">
+    <div className="flex flex-col gap-1.5 bg-black/90 px-3 py-2 backdrop-blur-sm">
+      <PositionBar playback={playback} onSeek={callbacks.onSeek} />
+      <div className="flex flex-nowrap items-center gap-1">
         <IconButton
-          label="Previous cue"
+          label="Previous cue (←)"
           onClick={() => callbacks.onSkip("back")}
         >
           <SkipBack className="size-4" />
         </IconButton>
         <IconButton
-          label={playback.isPlaying ? "Pause" : "Play"}
+          label={playback.isPlaying ? "Pause (Space)" : "Play (Space)"}
           onClick={callbacks.onTogglePlay}
         >
           {playback.isPlaying ? (
@@ -75,13 +85,24 @@ export function PlayerControls({
           )}
         </IconButton>
         <IconButton
-          label="Next cue"
+          label="Next cue (→)"
           onClick={() => callbacks.onSkip("forward")}
         >
           <SkipForward className="size-4" />
         </IconButton>
-        <label className="ml-2 flex items-center gap-1 text-fg-muted">
-          <Volume2 className="size-4" aria-hidden />
+        <IconButton
+          label={playback.isMuted ? "Unmute (M)" : "Mute (M)"}
+          className="ml-2"
+          onClick={callbacks.onToggleMute}
+        >
+          {playback.isMuted ? (
+            <VolumeX className="size-4" />
+          ) : (
+            <Volume2 className="size-4" />
+          )}
+        </IconButton>
+        {/* Phones and tablets set the volume with their own buttons, so the slider shows only for fine pointers. */}
+        <label className="hidden min-w-0 items-center text-fg-muted pointer-fine:flex">
           <input
             type="range"
             aria-label="Volume"
@@ -92,19 +113,15 @@ export function PlayerControls({
             onChange={(event) =>
               callbacks.onVolumeChange(Number(event.target.value))
             }
-            className="w-20 accent-accent"
+            className="w-20 min-w-0 accent-accent"
           />
         </label>
-        <CompactSelect
-          label="Playback speed"
-          value={String(playback.speed)}
-          options={speeds.map((speed) => ({
-            value: String(speed),
-            label: `${speed}×`,
-          }))}
-          onChange={(value) => callbacks.onSpeedChange(Number(value))}
-        />
-        <span className="ml-auto flex items-center gap-1">
+        <span className="ml-auto flex shrink-0 items-center gap-1">
+          {callbacks.onOpenTracks && (
+            <IconButton label="Tracks" onClick={callbacks.onOpenTracks}>
+              <AudioLines className="size-4" />
+            </IconButton>
+          )}
           {tracks.translationSubtitlesId !== null && (
             <IconButton
               label="Switch which subtitles are shown"
@@ -113,56 +130,122 @@ export function PlayerControls({
               <Languages className="size-4" />
             </IconButton>
           )}
-          <IconButton
-            label="Subtitles panel"
-            pressed={panels.cues}
-            onClick={callbacks.onToggleCuePanel}
-          >
-            <Captions className="size-4" />
-          </IconButton>
-          <IconButton
-            label="Waveform"
-            pressed={panels.waveform}
-            onClick={callbacks.onToggleWaveform}
-          >
-            <AudioWaveform className="size-4" />
-          </IconButton>
-          <IconButton
-            label="Distraction-free mode"
-            onClick={callbacks.onToggleDistractionFree}
-          >
-            <Expand className="size-4" />
-          </IconButton>
+          <SpeedMenu
+            speed={playback.speed}
+            onSpeedChange={callbacks.onSpeedChange}
+          />
+          <SubtitleOptions panels={panels} callbacks={callbacks} />
         </span>
       </div>
     </div>
   );
 }
 
-function CompactSelect({
-  label,
-  value,
-  options,
-  onChange,
+/** The menu of whether the subtitles show over the video, and of how they look. */
+function SubtitleOptions({
+  panels,
+  callbacks,
 }: {
-  label: string;
-  value: string;
-  options: readonly { value: string; label: string }[];
-  onChange: (value: string) => void;
+  panels: PlayerPanelsState;
+  callbacks: PlayerCallbacks;
 }) {
   return (
-    <select
-      aria-label={label}
-      title={label}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="max-w-36 rounded-md border border-line bg-surface px-1.5 py-1 text-xs text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-accent"
+    <MenuButton
+      label="Subtitle options"
+      icon={<Captions className="size-4" />}
+      opensUpward
+      items={[
+        {
+          label: "Show subtitles",
+          isChecked: panels.areSubtitlesHidden !== true,
+          onSelect: callbacks.onToggleSubtitles,
+        },
+        {
+          label: "Subtitle appearance…",
+          onSelect: callbacks.onOpenSubtitleAppearance,
+        },
+      ]}
+    />
+  );
+}
+
+/**
+ * The seek bar with the time on either side. The track behind the slider shows what the player has loaded, as a stream being
+ * converted arrives piece by piece, and the part played. The arrows move a second at a time; a `step` would do the same,
+ * but would also round the position the bar shows.
+ */
+function PositionBar({
+  playback,
+  onSeek,
+}: {
+  playback: PlayerControlsState;
+  onSeek: (ms: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 text-xs text-fg-muted tabular-nums">
+      <span>{formatTimestamp(playback.currentMs)}</span>
+      <span className="relative flex flex-1 items-center">
+        <BufferedTrack playback={playback} />
+        <input
+          type="range"
+          aria-label="Position"
+          min={0}
+          max={playback.durationMs}
+          value={playback.currentMs}
+          aria-valuetext={formatTimestamp(playback.currentMs)}
+          onChange={(event) => onSeek(Number(event.target.value))}
+          onKeyDown={(event) => {
+            const directions: Partial<Record<string, number>> = {
+              ArrowLeft: -1,
+              ArrowDown: -1,
+              ArrowRight: 1,
+              ArrowUp: 1,
+            };
+            const direction = directions[event.key];
+            if (direction === undefined) return;
+            event.preventDefault();
+            onSeek(
+              Math.min(
+                Math.max(playback.currentMs + direction * 1000, 0),
+                playback.durationMs,
+              ),
+            );
+          }}
+          // The native track is hidden, since the one drawn behind shows the loaded stretches; the thumb stays native.
+          className="relative w-full accent-accent [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:bg-transparent"
+        />
+      </span>
+      <span>{formatTimestamp(playback.durationMs)}</span>
+    </div>
+  );
+}
+
+/** The track behind the slider: the loaded stretches in a lighter shade and the part played in the accent color. */
+function BufferedTrack({ playback }: { playback: PlayerControlsState }) {
+  const percentOf = (ms: number) =>
+    playback.durationMs > 0 ? (100 * ms) / playback.durationMs : 0;
+  const span = (fromMs: number, toMs: number) => ({
+    left: `${percentOf(fromMs)}%`,
+    width: `${percentOf(toMs) - percentOf(fromMs)}%`,
+  });
+  return (
+    <span
+      aria-hidden
+      data-testid="buffered-track"
+      className="pointer-events-none absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full bg-surface-strong"
     >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
+      {(playback.buffered ?? []).map(({ startSeconds, endSeconds }) => (
+        <span
+          key={startSeconds}
+          data-buffered
+          className="absolute inset-y-0 bg-fg-faint"
+          style={span(startSeconds * 1000, endSeconds * 1000)}
+        />
       ))}
-    </select>
+      <span
+        className="absolute inset-y-0 bg-accent"
+        style={span(0, playback.currentMs)}
+      />
+    </span>
   );
 }

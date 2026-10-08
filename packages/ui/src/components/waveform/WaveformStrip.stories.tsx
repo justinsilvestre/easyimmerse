@@ -81,6 +81,8 @@ export const WithCuesAndFlashcards: Story = {
       { id: "f1", startMs: 1_750, endMs: 3_000, screenshotMs: 2_200 },
       { id: "f2", startMs: 6_000, endMs: 9_500, screenshotMs: 8_000 },
     ],
+    // The second flashcard is open in the editor, so only its handles drag.
+    editableSegmentId: "f2",
   },
 };
 

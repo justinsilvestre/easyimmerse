@@ -10,6 +10,7 @@ pub mod frame_command;
 pub mod keyframes;
 pub mod locate;
 pub mod probe;
+pub mod subtitle_command;
 pub mod waveform_command;
 
 mod ffmpeg_time;
@@ -29,4 +30,5 @@ pub use frame_command::{FrameGrab, frame_grab_args};
 pub use keyframes::list_keyframes;
 pub use locate::{BinaryName, FfmpegPaths, locate_binary};
 pub use probe::probe_file;
+pub use subtitle_command::subtitle_extraction_args;
 pub use waveform_command::{WaveformDecode, waveform_decode_args};

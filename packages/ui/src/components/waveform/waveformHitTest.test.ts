@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import type { WaveformView } from "./waveformGeometry.ts";
-import { hitTest } from "./waveformHitTest.ts";
+import { cursorOf, hitTest } from "./waveformHitTest.ts";
 
 const view: WaveformView = { startMs: 0, spanMs: 60_000, widthPx: 600 };
 
@@ -14,41 +14,41 @@ const segment: FlashcardSegment = {
 
 describe("hitTest", () => {
   it("finds nothing in empty space", () => {
-    expect(hitTest(view, [segment], { x: 400, y: 30 })).toEqual({
+    expect(hitTest(view, [segment], { x: 400, y: 30 }, "f1")).toEqual({
       kind: "none",
     });
   });
 
   it("finds a segment's body", () => {
-    expect(hitTest(view, [segment], { x: 130, y: 30 })).toEqual({
+    expect(hitTest(view, [segment], { x: 130, y: 30 }, "f1")).toEqual({
       kind: "segment",
       segmentId: "f1",
     });
   });
 
   it("finds the clip start handle within reach", () => {
-    expect(hitTest(view, [segment], { x: 104, y: 30 })).toEqual({
+    expect(hitTest(view, [segment], { x: 104, y: 30 }, "f1")).toEqual({
       kind: "clipStart",
       segmentId: "f1",
     });
   });
 
   it("finds the clip end handle within reach", () => {
-    expect(hitTest(view, [segment], { x: 197, y: 30 })).toEqual({
+    expect(hitTest(view, [segment], { x: 197, y: 30 }, "f1")).toEqual({
       kind: "clipEnd",
       segmentId: "f1",
     });
   });
 
   it("finds the screenshot marker near the top", () => {
-    expect(hitTest(view, [segment], { x: 152, y: 5 })).toEqual({
+    expect(hitTest(view, [segment], { x: 152, y: 5 }, "f1")).toEqual({
       kind: "screenshot",
       segmentId: "f1",
     });
   });
 
   it("ignores the screenshot marker lower down", () => {
-    expect(hitTest(view, [segment], { x: 152, y: 40 })).toEqual({
+    expect(hitTest(view, [segment], { x: 152, y: 40 }, "f1")).toEqual({
       kind: "segment",
       segmentId: "f1",
     });
@@ -56,9 +56,43 @@ describe("hitTest", () => {
 
   it("prefers the nearer handle when two are in reach", () => {
     const narrow = { ...segment, startMs: 10_000, endMs: 10_800 };
-    expect(hitTest(view, [narrow], { x: 107, y: 30 })).toEqual({
+    expect(hitTest(view, [narrow], { x: 107, y: 30 }, "f1")).toEqual({
       kind: "clipEnd",
       segmentId: "f1",
     });
+  });
+
+  it("finds only the body of a segment not open in the editor at its clip start", () => {
+    expect(hitTest(view, [segment], { x: 104, y: 30 }, null)).toEqual({
+      kind: "segment",
+      segmentId: "f1",
+    });
+  });
+
+  it("finds only the body of a segment not open in the editor at its screenshot marker", () => {
+    expect(hitTest(view, [segment], { x: 152, y: 5 }, "f2")).toEqual({
+      kind: "segment",
+      segmentId: "f1",
+    });
+  });
+
+  it("finds nothing just outside a segment not open in the editor", () => {
+    expect(hitTest(view, [segment], { x: 97, y: 30 }, null)).toEqual({
+      kind: "none",
+    });
+  });
+});
+
+describe("cursorOf", () => {
+  it("shows a resize cursor over a handle", () => {
+    expect(cursorOf({ kind: "clipEnd", segmentId: "f1" })).toBe("ew-resize");
+  });
+
+  it("shows a pointer over a segment's body", () => {
+    expect(cursorOf({ kind: "segment", segmentId: "f1" })).toBe("pointer");
+  });
+
+  it("leaves the cursor alone over empty space", () => {
+    expect(cursorOf({ kind: "none" })).toBe("");
   });
 });

@@ -32,6 +32,7 @@ function renderReader(
     <ReaderView
       document={exampleShortBook}
       title="Sample Book"
+      projectName="English reading"
       language="en"
       preferences={{
         ...defaultReaderPreferences,
@@ -44,7 +45,7 @@ function renderReader(
         onLookup: ignore,
         onWordClick: ignore,
         onWordDoubleClick: ignore,
-        onWordHoverIntent: ignore,
+        onWordHover: ignore,
         onWordHold: ignore,
         onDismissLookup: ignore,
         onLocationChange: overrides.onLocationChange ?? ignore,
@@ -125,7 +126,9 @@ describe("ReaderView", () => {
     it("keeps the back button reachable by keyboard", () => {
       renderReader();
       hideToolbar();
-      const back = screen.getByRole("button", { name: "Project" });
+      const back = screen.getByRole("button", {
+        name: "Back to English reading",
+      });
       expect(back.closest("[inert]")).toBeNull();
     });
 

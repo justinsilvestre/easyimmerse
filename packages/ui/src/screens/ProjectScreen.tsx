@@ -10,6 +10,7 @@ import {
 import type { Project } from "@easyimmerse/types";
 import { useEffect } from "react";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
+import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
 import { useGiveUpOpenings } from "../flashcards/unsaved/useGiveUpOpenings.ts";
 import { useAddChosenMediaFile } from "../hooks/useAddChosenMediaFile.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -44,7 +45,13 @@ export function ProjectScreen({
   if (project === undefined)
     return (
       <ScreenLayout>
-        <p className="text-sm text-fg-muted">Loading the project…</p>
+        <LoadingStatus
+          label="Loading the project"
+          className="flex flex-col gap-6"
+        >
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-32 w-full rounded-lg" />
+        </LoadingStatus>
       </ScreenLayout>
     );
   if (mediaFileId !== null)
@@ -82,7 +89,9 @@ function OpenFileScreen({
   if (!mediaFile && isFetching)
     return (
       <ScreenLayout>
-        <p className="text-sm text-fg-muted">Opening the file…</p>
+        <p role="status" className="text-sm text-fg-muted">
+          Opening the file…
+        </p>
       </ScreenLayout>
     );
   return <MediaScreen project={project} mediaFileId={mediaFileId} />;

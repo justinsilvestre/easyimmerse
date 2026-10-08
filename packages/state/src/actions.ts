@@ -1,5 +1,5 @@
 import type { Action } from "redux";
-import type { AppState, PreferenceKey } from "./appState.ts";
+import type { AppState, BufferedRange, PreferenceKey } from "./appState.ts";
 import type {
   PickedDictionaryFile,
   PickedFile,
@@ -15,6 +15,8 @@ export const actions = {
     ({ type: "playerTimeChanged", seconds }) as const,
   playerDurationChanged: (seconds: number) =>
     ({ type: "playerDurationChanged", seconds }) as const,
+  playerBufferedChanged: (buffered: readonly BufferedRange[]) =>
+    ({ type: "playerBufferedChanged", buffered }) as const,
   playToggleRequested: () => ({ type: "playToggleRequested" }) as const,
   playRequested: () => ({ type: "playRequested" }) as const,
   pauseRequested: () => ({ type: "pauseRequested" }) as const,
@@ -22,6 +24,7 @@ export const actions = {
     ({ type: "playerPlayingChanged", isPlaying }) as const,
   volumeChangeRequested: (volume: number) =>
     ({ type: "volumeChangeRequested", volume }) as const,
+  muteToggleRequested: () => ({ type: "muteToggleRequested" }) as const,
   speedChangeRequested: (speed: number) =>
     ({ type: "speedChangeRequested", speed }) as const,
   filePickRequested: () => ({ type: "filePickRequested" }) as const,
@@ -56,6 +59,10 @@ export const actions = {
   ) => ({ type: "readingLocationLoaded", mediaFileId, location }) as const,
   readingLocationReported: (mediaFileId: string, location: ReaderLocation) =>
     ({ type: "readingLocationReported", mediaFileId, location }) as const,
+  playbackPositionLoadRequested: (mediaFileId: string) =>
+    ({ type: "playbackPositionLoadRequested", mediaFileId }) as const,
+  playbackPositionLoaded: (mediaFileId: string, ms: number | null) =>
+    ({ type: "playbackPositionLoaded", mediaFileId, ms }) as const,
   preferenceToggled: (key: PreferenceKey) =>
     ({ type: "preferenceToggled", key }) as const,
   preferenceSet: (key: PreferenceKey, value: string) =>
@@ -73,7 +80,6 @@ export const actions = {
     ({ type: "externalLinkRequested", url }) as const,
   systemThemeChanged: (theme: Theme) =>
     ({ type: "systemThemeChanged", theme }) as const,
-  themeToggled: () => ({ type: "themeToggled" }) as const,
   textScaleChosen: (scale: number) =>
     ({ type: "textScaleChosen", scale }) as const,
 };

@@ -3,15 +3,15 @@ use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use easyimmerse_core::dictionary::{
-    ColumnRole, DictionaryFormatKind, DictionarySource, SourceFile, TableLayout, TablePreview,
-    preview_table,
+    ColumnRole, DictionaryFormatKind, SourceFile, TableLayout, TablePreview, preview_table,
 };
-use easyimmerse_storage::{DictionaryId, Storage, StorageError, StoredDictionary};
+use easyimmerse_storage::{DictionaryId, StoredDictionary};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal};
+use crate::routes::dictionary_imports::{ImportJobStarted, start_import};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -64,6 +64,8 @@ pub struct ListDictionariesResponse {
     pub dictionaries: Vec<DictionarySummary>,
 }
 
+/// Starts importing the file and answers with the job to poll at `/dictionaries/imports/{id}`,
+/// since a large dictionary takes longer to store than a browser waits for a response.
 #[utoipa::path(
     post,
     path = "/dictionaries",
@@ -76,8 +78,8 @@ pub struct ListDictionariesResponse {
         content(("application/octet-stream")),
     ),
     responses(
-        (status = 201, description = "The dictionary was imported", body = DictionarySummary),
-        (status = 400, description = "The file could not be read as a dictionary", body = ApiError),
+        (status = 202, description = "The import was started", body = ImportJobStarted),
+        (status = 400, description = "The chosen columns are not column roles", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
@@ -86,13 +88,13 @@ pub async fn import_dictionary(
     State(state): State<AppState>,
     Query(query): Query<ImportDictionaryQuery>,
     body: Bytes,
-) -> Result<(StatusCode, Json<DictionarySummary>), ApiFailure> {
+) -> Result<(StatusCode, Json<ImportJobStarted>), ApiFailure> {
     let table_layout = chosen_table_layout(&query)?;
     let file = SourceFile {
         name: query.file_name,
         bytes: body.to_vec(),
     };
-    import_files(&state, vec![file], table_layout).await
+    Ok(start_import(&state, vec![file], table_layout))
 }
 
 /// Detects what each column of a table holds and returns that layout with the table's first rows,
@@ -173,28 +175,6 @@ pub async fn delete_dictionary(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Imports on the blocking pool, since reading and storing a large dictionary takes a while.
-pub(crate) async fn import_files(
-    state: &AppState,
-    files: Vec<SourceFile>,
-    table_layout: Option<TableLayout>,
-) -> Result<(StatusCode, Json<DictionarySummary>), ApiFailure> {
-    let summary = state
-        .with_storage(move |storage| import_into(storage, files, table_layout))
-        .await?;
-    Ok((StatusCode::CREATED, Json(summary)))
-}
-
-fn import_into(
-    storage: &Storage,
-    files: Vec<SourceFile>,
-    table_layout: Option<TableLayout>,
-) -> Result<DictionarySummary, StorageError> {
-    let mut source = DictionarySource::new(files)?.with_table_layout(table_layout);
-    let id = storage.import_dictionary(&mut source)?;
-    storage.get_dictionary(&id).map(summarize)
-}
-
 fn chosen_table_layout(query: &ImportDictionaryQuery) -> Result<Option<TableLayout>, ApiFailure> {
     let Some(columns) = &query.columns else {
         return Ok(None);
@@ -214,7 +194,7 @@ fn parse_column_role(name: &str) -> Result<ColumnRole, ApiFailure> {
         .map_err(|_| bad_request(format!("{name:?} is not a column role")))
 }
 
-fn summarize(dictionary: StoredDictionary) -> DictionarySummary {
+pub(crate) fn summarize(dictionary: StoredDictionary) -> DictionarySummary {
     let counts = dictionary.counts;
     DictionarySummary {
         id: dictionary.id.0,

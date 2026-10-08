@@ -12,6 +12,7 @@ const status: ConversionCacheStatus = {
   budget_bytes: 5_000_000_000,
   free_bytes: 40_000_000_000,
   space_low: false,
+  chosen_budget_bytes: null,
 };
 
 const available: ConversionCacheView = { kind: "available", status };
@@ -30,12 +31,14 @@ function renderSection(
   cache: ConversionCacheView,
   onClear: () => void = () => undefined,
   clearStatus = "",
+  onBudgetChange: (budgetBytes: number | null) => void = () => undefined,
 ) {
   render(
     <ConversionCacheSection
       cache={cache}
       onClear={onClear}
       clearStatus={clearStatus}
+      onBudgetChange={onBudgetChange}
     />,
   );
 }
@@ -45,7 +48,7 @@ describe("ConversionCacheSection", () => {
     it("shows only the heading", () => {
       renderSection({ kind: "loading" });
       expect(
-        screen.queryByText(/converted videos/i, { selector: "p" }),
+        screen.queryByText(/The cache is using/, { selector: "p" }),
       ).toBeNull();
     });
   });
@@ -55,7 +58,7 @@ describe("ConversionCacheSection", () => {
       renderSection({ kind: "unavailable" });
       expect(
         screen.getByText(
-          "Video conversion is unavailable, so no converted videos are stored.",
+          "Media conversion is unavailable, so there is no cache.",
         ),
       ).toBeDefined();
     });
@@ -70,7 +73,7 @@ describe("ConversionCacheSection", () => {
     it("shows the failure", () => {
       renderSection({ kind: "failed", message: "Internal Server Error" });
       expect(screen.getByRole("alert").textContent).toBe(
-        "The converted videos could not be checked: Internal Server Error",
+        "The media cache could not be checked: Internal Server Error",
       );
     });
   });
@@ -79,7 +82,7 @@ describe("ConversionCacheSection", () => {
     it("states the usage and the limit", () => {
       renderSection(available);
       expect(
-        screen.getByText("Converted videos use 1.2 GB of 5 GB."),
+        screen.getByText("The cache is using 1.2 GB of 5 GB."),
       ).toBeDefined();
     });
 
@@ -98,8 +101,51 @@ describe("ConversionCacheSection", () => {
     it("warns that fewer conversions are kept when space is low", () => {
       renderSection(lowSpace);
       expect(screen.getByRole("note").textContent).toContain(
-        "fewer converted videos are kept",
+        "fewer processed files are kept",
       );
+    });
+
+    it("shows the automatic size while no budget is chosen", () => {
+      renderSection(available);
+      expect(
+        screen.getByRole("combobox", { name: "Maximum size" }),
+      ).toHaveProperty("value", "auto");
+    });
+
+    it("shows the chosen size", () => {
+      renderSection({
+        kind: "available",
+        status: { ...status, chosen_budget_bytes: 10_000_000_000 },
+      });
+      expect(
+        screen.getByRole("combobox", { name: "Maximum size" }),
+      ).toHaveProperty("value", "10000000000");
+    });
+
+    it("reports a chosen size in bytes", () => {
+      const chosen: (number | null)[] = [];
+      renderSection(available, undefined, "", (bytes) => chosen.push(bytes));
+      fireEvent.change(screen.getByRole("combobox", { name: "Maximum size" }), {
+        target: { value: "5000000000" },
+      });
+      expect(chosen).toEqual([5_000_000_000]);
+    });
+
+    it("reports the automatic size as null", () => {
+      const chosen: (number | null)[] = [];
+      renderSection(
+        {
+          kind: "available",
+          status: { ...status, chosen_budget_bytes: 10_000_000_000 },
+        },
+        undefined,
+        "",
+        (bytes) => chosen.push(bytes),
+      );
+      fireEvent.change(screen.getByRole("combobox", { name: "Maximum size" }), {
+        target: { value: "auto" },
+      });
+      expect(chosen).toEqual([null]);
     });
 
     it("calls onClear when the clear button is clicked", () => {
@@ -108,7 +154,7 @@ describe("ConversionCacheSection", () => {
         cleared += 1;
       });
       fireEvent.click(
-        screen.getByRole("button", { name: "Clear converted videos" }),
+        screen.getByRole("button", { name: "Clear media cache" }),
       );
       expect(cleared).toBe(1);
     });

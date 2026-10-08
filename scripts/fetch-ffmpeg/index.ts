@@ -20,12 +20,14 @@ import {
   type ManifestEntry,
   readManifestEntry,
 } from "./manifest.ts";
+import { removeSidecarCopies } from "./sidecarCopies.ts";
 
 /**
  * Downloads the pinned ffmpeg build for a target triple and places its `ffmpeg` and
  * `ffprobe` where Tauri looks for sidecar binaries.
  * A stamp beside them records the release and archive hash installed,
  * so the download is skipped only while both binaries exist and the stamp matches the manifest.
+ * After a download, it removes the copies of the old binaries from Cargo's target folder.
  *
  * Usage: `node scripts/fetch-ffmpeg/index.ts [triple] [--force]`
  */
@@ -33,6 +35,9 @@ const binaryNames = ["ffmpeg", "ffprobe"] as const;
 const outputDir = fileURLToPath(
   new URL("../../apps/native/src-tauri/binaries/", import.meta.url),
 );
+const targetDir =
+  process.env.CARGO_TARGET_DIR ??
+  fileURLToPath(new URL("../../target/", import.meta.url));
 
 await main(process.argv.slice(2));
 
@@ -50,6 +55,9 @@ async function main(args: string[]): Promise<void> {
   }
   await fetchIntoOutputDir(entry, triple);
   printPaths(outputs);
+  for (const path of removeSidecarCopies(targetDir, triple)) {
+    console.log(`removed ${path}, which the next build copies again`);
+  }
 }
 
 function isCurrent(

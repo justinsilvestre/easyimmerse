@@ -142,7 +142,7 @@ describe("ReaderScreen", () => {
     const { effects } = renderReader({ options: storedInSecondChapter });
     await chapterHeading();
     effects.preferences.clear();
-    fireEvent.click(screen.getByRole("button", { name: "Project" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to Alpha" }));
     expect(effects.preferences.get("readingLocation:b1")).toBe(
       JSON.stringify(secondChapter),
     );
@@ -202,7 +202,9 @@ describe("ReaderScreen", () => {
       parsed: fakeFailure({ status: 400, message: "invalid archive" }),
     });
     await screen.findByRole("alert");
-    fireEvent.click(screen.getByRole("button", { name: "Project" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Back to the project" }),
+    );
     await vi.waitFor(() =>
       expect(store.getState().app.currentMediaFileId).toBeNull(),
     );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { exampleCues } from "./exampleCues.ts";
-import { skipTarget } from "./skipTarget.ts";
+import { replayTarget, skipTarget } from "./skipTarget.ts";
 
 describe("skipTarget", () => {
   it("skips forward to the next cue", () => {
@@ -21,5 +21,23 @@ describe("skipTarget", () => {
 
   it("stops at the start of the file", () => {
     expect(skipTarget([], 2_000, 24_000, "back")).toBe(0);
+  });
+});
+
+describe("replayTarget", () => {
+  it("goes back to the start of the cue shown now", () => {
+    expect(replayTarget(exampleCues, 7_000)).toBe(5_400);
+  });
+
+  it("goes back to the start of the cue still shown after it ends", () => {
+    expect(replayTarget(exampleCues, 8_400)).toBe(5_400);
+  });
+
+  it("goes back a few seconds without cues", () => {
+    expect(replayTarget([], 12_000)).toBe(7_000);
+  });
+
+  it("stops at the start of the file", () => {
+    expect(replayTarget([], 2_000)).toBe(0);
   });
 });
