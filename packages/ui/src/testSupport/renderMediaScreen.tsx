@@ -1,6 +1,8 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type {
+  BatchLookupRequest,
+  BatchLookupResponse,
   Cue,
   DictionarySummary,
   Flashcard,
@@ -77,6 +79,11 @@ type MediaScreenSetup = {
   slowLookups?: Readonly<Record<string, number>>;
   /** The texts whose lookups fail after the given number of milliseconds. */
   failingLookups?: Readonly<Record<string, number>>;
+  /**
+   * How many milliseconds batch lookups take to find the example results at every position of every text,
+   * or null, the default, for a server that offers no batch lookups.
+   */
+  batchLookupMs?: number | null;
 };
 
 /**
@@ -90,6 +97,7 @@ export function renderMediaScreen({
   unansweredLookups = [],
   slowLookups = {},
   failingLookups = {},
+  batchLookupMs = null,
 }: MediaScreenSetup = {}) {
   const client = withLookupTiming(
     createFakeBackendClient(
@@ -106,7 +114,7 @@ export function renderMediaScreen({
       },
       directPlaybackRoutes,
     ),
-    { unansweredLookups, slowLookups, failingLookups },
+    { unansweredLookups, slowLookups, failingLookups, batchLookupMs },
   );
   const navigation = { dictionariesOpenCount: 0 };
   const rendered = renderWithAppStore(
@@ -138,16 +146,25 @@ function withLookupTiming(
     unansweredLookups,
     slowLookups,
     failingLookups,
+    batchLookupMs,
   }: Required<
     Pick<
       MediaScreenSetup,
-      "unansweredLookups" | "slowLookups" | "failingLookups"
+      "unansweredLookups" | "slowLookups" | "failingLookups" | "batchLookupMs"
     >
   >,
 ): ReturnType<typeof createFakeBackendClient> {
   return {
     requests: client.requests,
     send: <T,>(request: BackendRequest) => {
+      if (
+        request.path === "/dictionaries/lookup/batch" &&
+        batchLookupMs !== null
+      ) {
+        client.requests.push(request);
+        const answer = answerBatch(bodyOf(request) as BatchLookupRequest);
+        return after(batchLookupMs).then(() => ({ data: answer as T }));
+      }
       const text =
         request.path === "/dictionaries/lookup" ? request.query?.text : null;
       if (text == null) return client.send<T>(request);
@@ -166,6 +183,23 @@ function withLookupTiming(
       if (delayMs === undefined) return client.send<T>(request);
       return after(delayMs).then(() => client.send<T>(request));
     },
+  };
+}
+
+/** Finds every one of the example results at each position of each text. */
+function answerBatch({ texts }: BatchLookupRequest): BatchLookupResponse {
+  const resultIndexes = exampleResults.map((_, index) => index);
+  return {
+    texts: texts.map((text) => ({
+      positions: [...text].map((_, offset) => ({
+        offset,
+        results: resultIndexes,
+        kanji: [],
+      })),
+    })),
+    results: [...exampleResults],
+    kanji: [],
+    stylesheets: [],
   };
 }
 

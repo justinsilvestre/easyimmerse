@@ -13,6 +13,8 @@ import { lookupResponseAt } from "./lookupResponseAt.ts";
 const maxBatchTexts = 100;
 /** The most characters one text of a batch lookup may hold. */
 const maxBatchTextCharacters = 2000;
+/** How often a caller should prefetch the passages it keeps in range, so that their cached lookups never expire. */
+export const prefetchRepeatMs = 60_000;
 /** How old a cached lookup grows before a prefetch caches it afresh, so that it outlives the next prefetch. */
 const refreshAfterMs = (lookupCacheSeconds * 1000) / 2;
 
@@ -23,7 +25,7 @@ type BackendThunkDispatch = ThunkDispatch<BackendState, unknown, UnknownAction>;
  * Looks up ahead, in batches, every lookup given, so that hovering or clicking those words later reads the answers from the cache.
  * Each lookup stands for one position that the user could look up, with the passage it lies in, such as a subtitle cue, as its `context`.
  * Passages whose lookups are cached or being fetched already are left out, and cached lookups are kept from expiring
- * as long as prefetches that include them run more often than every `lookupCacheSeconds / 2` seconds.
+ * as long as prefetches that include them run at least every `prefetchRepeatMs`.
  * The promise resolves once every batch has answered or failed; a lookup whose batch failed is made on its own when it is needed.
  */
 export async function prefetchLookups(
