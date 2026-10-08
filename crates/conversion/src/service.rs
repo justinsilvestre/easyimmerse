@@ -38,6 +38,8 @@ pub(crate) struct ServiceInner {
     pub encoders: EncoderDiscovery,
     pub waveform: WaveformDecoder,
     pub last_eviction: Mutex<Option<Instant>>,
+    /// The cache budget the user chose, or None while it follows the disk's size.
+    pub cache_budget_bytes: Mutex<Option<u64>>,
 }
 
 impl ConversionService {
@@ -58,8 +60,27 @@ impl ConversionService {
                 layout,
                 entries: tokio::sync::Mutex::new(HashMap::new()),
                 last_eviction: Mutex::new(None),
+                cache_budget_bytes: Mutex::new(None),
             }),
         })
+    }
+
+    /// Sets how large the cache may grow, or None to let the budget follow the disk's size.
+    pub fn set_cache_budget(&self, budget_bytes: Option<u64>) {
+        *self
+            .inner
+            .cache_budget_bytes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = budget_bytes;
+    }
+
+    /// The cache budget the user chose, or None while it follows the disk's size.
+    pub fn cache_budget(&self) -> Option<u64> {
+        *self
+            .inner
+            .cache_budget_bytes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     /// Runs the one-frame test encodes in the background.

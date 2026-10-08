@@ -2,6 +2,7 @@ import type { BackendClient } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { NavigationActionsContext } from "../navigationContext.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { HomeScreen } from "./HomeScreen.tsx";
 
@@ -19,15 +20,24 @@ function renderHome(
     onOpenProject?: (projectId: string) => void;
     onCreateProject?: () => void;
     onContinueOffline?: () => void;
+    onOpenDictionaries?: () => void;
   } = {},
   client?: BackendClient,
 ) {
   return renderWithAppStore(
-    <HomeScreen
-      onOpenProject={callbacks.onOpenProject ?? (() => undefined)}
-      onCreateProject={callbacks.onCreateProject ?? (() => undefined)}
-      onContinueOffline={callbacks.onContinueOffline ?? (() => undefined)}
-    />,
+    <NavigationActionsContext
+      value={{
+        openSettings: () => undefined,
+        openDictionaries: callbacks.onOpenDictionaries ?? (() => undefined),
+        openMediaFile: () => undefined,
+      }}
+    >
+      <HomeScreen
+        onOpenProject={callbacks.onOpenProject ?? (() => undefined)}
+        onCreateProject={callbacks.onCreateProject ?? (() => undefined)}
+        onContinueOffline={callbacks.onContinueOffline ?? (() => undefined)}
+      />
+    </NavigationActionsContext>,
     client,
   );
 }
@@ -70,6 +80,20 @@ describe("HomeScreen", () => {
       );
       expect(offline).toBe(true);
     });
+  });
+
+  it("tells that the projects are loading until they arrive", () => {
+    renderHome();
+    expect(
+      screen.getByRole("status", { name: "Loading projects" }),
+    ).toBeDefined();
+  });
+
+  it("opens the dictionaries when Dictionaries is clicked", () => {
+    let opened = false;
+    renderHome({ onOpenDictionaries: () => (opened = true) });
+    fireEvent.click(screen.getByRole("button", { name: "Dictionaries" }));
+    expect(opened).toBe(true);
   });
 
   it("requests an external link when Help is clicked", () => {

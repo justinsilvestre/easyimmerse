@@ -14,12 +14,14 @@ mod german_clause_words;
 mod japanese_splits;
 mod kanji_results;
 mod lookup_candidate;
+mod lookup_positions;
 mod lookup_result;
 mod result_group;
 mod result_sort_key;
 mod separated_particles;
 mod separated_verb;
 mod term_meta_matching;
+mod unspaced_scripts;
 mod word_boundary;
 
 pub use build_lookup_results::build_lookup_results;
@@ -27,6 +29,7 @@ pub use fold_case::fold_case;
 pub use found_rows::{DictionaryOrigin, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta};
 pub use kanji_results::{build_kanji_results, is_kanji};
 pub use lookup_candidate::{LookupCandidate, candidate_headwords, lookup_candidates};
+pub use lookup_positions::lookup_positions;
 pub use lookup_result::{
     DictionaryDefinitions, DictionaryFrequency, DictionaryPronunciation, DictionaryStylesheet,
     KanjiResult, LookupResult,

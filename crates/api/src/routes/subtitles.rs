@@ -82,7 +82,19 @@ pub async fn add_subtitle_track(
     Json(request): Json<AddSubtitleTrackRequest>,
 ) -> Result<(StatusCode, Json<SubtitleTrack>), ApiFailure> {
     load_media_file(&state, project_id, media_id.clone()).await?;
-    let text = read_text(&state, token, &request.source).await?;
+    let track = store_subtitle_track(&state, token, media_id, request).await?;
+    Ok((StatusCode::CREATED, Json(track)))
+}
+
+/// Reads and parses a subtitles file, then stores it as a track of the media file,
+/// giving it the requested role. The media file must already be known to exist.
+pub async fn store_subtitle_track(
+    state: &AppState,
+    token: TokenKind,
+    media_id: MediaFileId,
+    request: AddSubtitleTrackRequest,
+) -> Result<SubtitleTrack, ApiFailure> {
+    let text = read_text(state, token, &request.source).await?;
     let format = request.format.unwrap_or_else(|| detect_format(&text));
     let parsed = parse_timed_text(&text, Some(format))?;
     let new_track = NewSubtitleTrack {
@@ -91,7 +103,7 @@ pub async fn add_subtitle_track(
         source: request.source,
         sample: parsed.cues.first().map(|cue| cue.text.clone()),
     };
-    let track = state
+    state
         .with_storage(move |storage| {
             let track = storage.add_subtitle_track(&media_id, &new_track)?;
             if let Some(role) = request.role {
@@ -102,8 +114,7 @@ pub async fn add_subtitle_track(
             }
             Ok(track)
         })
-        .await?;
-    Ok((StatusCode::CREATED, Json(track)))
+        .await
 }
 
 #[utoipa::path(

@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
+import type { PopupSize } from "../lookup/popupSize.ts";
 import { AppearancePanel } from "./AppearancePanel.tsx";
 import { ChapterEnd } from "./ChapterEnd.tsx";
 import { ChapterText } from "./ChapterText.tsx";
@@ -51,8 +52,10 @@ import {
 import { ScrolledChapter } from "./ScrolledChapter.tsx";
 import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
+import { sentencesNearView } from "./sentencesNearView.ts";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 import { useLookedUpHighlight } from "./useLookedUpHighlight.ts";
+import { useParagraphsNearView } from "./useParagraphsNearView.ts";
 import { useReaderKeys } from "./useReaderKeys.ts";
 import {
   type ReaderWord,
@@ -64,11 +67,15 @@ export type ReaderCallbacks = ReaderWordGestures & {
   onBack: () => void;
   /** Opens the dictionary pop-up with a field to type a word into. */
   onLookup: () => void;
+  /** The L key, which does what `onLookup` does unless this says otherwise, as looking up the word under the mouse. */
+  onLookupKey?: () => void;
   /** Escape, or a click or tap beside the dictionary pop-up and off the words, which closes it. */
   onDismissLookup: () => void;
   /** The pointer entering or leaving the dictionary pop-up. */
   onPointerInsideLookupChange?: (isInside: boolean) => void;
   onLocationChange: (location: ReaderLocation) => void;
+  /** Receives the sentences near the view, as `sentencesNearView` picks them, each time the view moves. */
+  onNearbySentencesChange?: (sentences: readonly string[]) => void;
   onPreferencesChange: (preferences: ReaderPreferences) => void;
 };
 
@@ -76,6 +83,8 @@ type ReaderViewProps = {
   document: Document;
   /** The book's title, or the file's name when the book has none. */
   title: string;
+  /** The name of the project the book belongs to, which the way back is named after. */
+  projectName: string;
   /** The language of the text, which sets its word boundaries and hyphenation. */
   language: string;
   preferences: ReaderPreferences;
@@ -87,14 +96,16 @@ type ReaderViewProps = {
   callbacks: ReaderCallbacks;
   /** The dictionary pop-up, placed beside `lookupWord`. */
   lookup?: ReactNode;
+  /** The pop-up's size, which sets how it is placed. */
+  lookupSize?: PopupSize;
   /** The word of the text the pop-up opened on, which it stands beside. */
   lookupWord?: ReaderWord;
   /**
-   * The word of the text the pop-up shows, which is highlighted as in the subtitles:
+   * The word of the text the pop-up shows, which is highlighted as in the subtitles once its lookup has answered:
    * a word written with spaces whole, and in a script without spaces the characters the lookup matched,
-   * or, until `matchedLength` is known, the character it looks up from.
+   * or the character it looked up from when `matchedLength` is null because nothing matched.
    */
-  highlightedWord?: { word: ReaderWord; matchedLength?: number };
+  highlightedWord?: { word: ReaderWord; matchedLength?: number | null };
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
   /** A panel laid over the text at the side, such as the flashcard editor. The reader's keys leave it alone. */
@@ -168,6 +179,32 @@ export function ReaderView(props: ReaderViewProps) {
   useEffect(() => {
     reportLocation(state.location);
   }, [state.location]);
+  const textContainer = useRef<HTMLElement>(null);
+  const shownText = useMemo(
+    () => [chapter, sectionIndex, layoutKeyOf(preferences)],
+    [chapter, sectionIndex, preferences],
+  );
+  const measuredNear = useParagraphsNearView(textContainer, isPaged, shownText);
+  const reportNearby = useEffectEvent((sentences: readonly string[]) =>
+    callbacks.onNearbySentencesChange?.(sentences),
+  );
+  const { paragraphIndex, offset } = state.location;
+  const nearFirst = measuredNear?.first ?? paragraphIndex;
+  const nearLast = measuredNear?.last ?? paragraphIndex;
+  useEffect(() => {
+    const paragraphs = document.chapters[chapterIndex]?.paragraphs ?? [];
+    const near = { first: nearFirst, last: nearLast };
+    const place = { paragraphIndex, offset };
+    reportNearby(sentencesNearView(paragraphs, near, place, props.language));
+  }, [
+    document,
+    chapterIndex,
+    nearFirst,
+    nearLast,
+    paragraphIndex,
+    offset,
+    props.language,
+  ]);
   const hasLookup = props.lookup != null;
   useLookedUpHighlight(props.highlightedWord);
 
@@ -201,14 +238,16 @@ export function ReaderView(props: ReaderViewProps) {
       searchInput.current?.focus();
       searchInput.current?.select();
     },
-    onLookup: callbacks.onLookup,
+    onLookup: callbacks.onLookupKey ?? callbacks.onLookup,
     onEscape: callbacks.onDismissLookup,
   });
 
   const wordPointer = useWordPointer(chapterIndex, props.language, {
     onWordClick: callbacks.onWordClick,
     onWordDoubleClick: callbacks.onWordDoubleClick,
-    onWordHoverIntent: callbacks.onWordHoverIntent,
+    onWordPointed: callbacks.onWordPointed,
+    onWordHover: callbacks.onWordHover,
+    onWordHoverAnswered: callbacks.onWordHoverAnswered,
     onWordHold: callbacks.onWordHold,
     onBlankClick: (event) => {
       if (hasLookup) return callbacks.onDismissLookup();
@@ -219,13 +258,7 @@ export function ReaderView(props: ReaderViewProps) {
     },
   });
 
-  const layoutKey = [
-    preferences.font,
-    preferences.fontSizeStep,
-    preferences.lineSpacing,
-    preferences.lineLength,
-    preferences.isJustified,
-  ].join();
+  const layoutKey = layoutKeyOf(preferences);
   const text = (
     <ChapterText
       chapter={chapter}
@@ -254,6 +287,7 @@ export function ReaderView(props: ReaderViewProps) {
     >
       <ReaderToolbar
         title={props.title}
+        projectName={props.projectName}
         chapterTitle={chapterTitle}
         isVisible={state.isChromeVisible}
         panel={state.panel}
@@ -265,6 +299,7 @@ export function ReaderView(props: ReaderViewProps) {
         onReveal={showChrome}
       />
       <main
+        ref={textContainer}
         key={chapterIndex}
         className="absolute inset-0 touch-manipulation transition-opacity duration-300 starting:opacity-0"
         style={{
@@ -275,7 +310,7 @@ export function ReaderView(props: ReaderViewProps) {
         {...wordPointer}
       >
         {isPaged ? (
-          <div className="h-full pt-14 pb-10">
+          <div className="h-full pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
             <PagedChapter
               ref={turner}
               chapterIndex={chapterIndex}
@@ -343,6 +378,7 @@ export function ReaderView(props: ReaderViewProps) {
         <LookupAnchor
           wordRect={props.lookupWord?.rect ?? null}
           isWide={isWide}
+          size={props.lookupSize}
           onPointerInsideChange={callbacks.onPointerInsideLookupChange}
         >
           {props.lookup}
@@ -403,4 +439,15 @@ export function ReaderView(props: ReaderViewProps) {
       )}
     </div>
   );
+}
+
+/** Changes whenever a preference that moves the text changes, such as the font size. */
+function layoutKeyOf(preferences: ReaderPreferences): string {
+  return [
+    preferences.font,
+    preferences.fontSizeStep,
+    preferences.lineSpacing,
+    preferences.lineLength,
+    preferences.isJustified,
+  ].join();
 }

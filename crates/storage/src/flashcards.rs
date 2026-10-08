@@ -9,8 +9,8 @@ use crate::new_row::now_ms;
 use crate::projects::ensure_project_exists;
 use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 
-const FLASHCARD_COLUMNS: &str = "id, project_id, media_file_id, cue_index, content_json, \
-     included_fields_json, created_at_ms, updated_at_ms";
+const FLASHCARD_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
+     content_json, included_fields_json, created_at_ms, updated_at_ms";
 
 /// Lists a project's flashcards, oldest first.
 pub fn list_flashcards(
@@ -51,9 +51,10 @@ pub fn create_flashcard(
     let now = to_stored_integer(now_ms());
     let saved = conn.execute(
         &format!(
-            "INSERT INTO flashcards ({FLASHCARD_COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7) \
+            "INSERT INTO flashcards ({FLASHCARD_COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8) \
              ON CONFLICT(id) DO UPDATE SET media_file_id = excluded.media_file_id, \
-             cue_index = excluded.cue_index, content_json = excluded.content_json, \
+             cue_index = excluded.cue_index, word_start = excluded.word_start, \
+             content_json = excluded.content_json, \
              included_fields_json = excluded.included_fields_json, updated_at_ms = excluded.updated_at_ms \
              WHERE flashcards.project_id = excluded.project_id"
         ),
@@ -62,6 +63,7 @@ pub fn create_flashcard(
             project_id.0,
             draft.media_file_id.as_ref().map(|media| &media.0),
             draft.cue_index,
+            draft.word_start,
             serde_json::to_string(&draft.content)?,
             serde_json::to_string(&draft.included_fields)?,
             now,
@@ -82,12 +84,13 @@ pub fn update_flashcard(
     let current = get_flashcard(conn, id)?;
     ensure_media_file_matches(conn, &current.project_id, draft.media_file_id.as_ref())?;
     conn.execute(
-        "UPDATE flashcards SET media_file_id = ?2, cue_index = ?3, content_json = ?4, \
-         included_fields_json = ?5, updated_at_ms = ?6 WHERE id = ?1",
+        "UPDATE flashcards SET media_file_id = ?2, cue_index = ?3, word_start = ?4, \
+         content_json = ?5, included_fields_json = ?6, updated_at_ms = ?7 WHERE id = ?1",
         params![
             id.0,
             draft.media_file_id.as_ref().map(|media| &media.0),
             draft.cue_index,
+            draft.word_start,
             serde_json::to_string(&draft.content)?,
             serde_json::to_string(&draft.included_fields)?,
             to_stored_integer(now_ms()),
@@ -121,10 +124,11 @@ fn read_flashcard(row: &Row) -> rusqlite::Result<Flashcard> {
         project_id: ProjectId(row.get(1)?),
         media_file_id: row.get::<_, Option<String>>(2)?.map(MediaFileId),
         cue_index: row.get(3)?,
-        content: read_json(row, 4)?,
-        included_fields: read_json(row, 5)?,
-        created_at_ms: read_unsigned(row, 6)?,
-        updated_at_ms: read_unsigned(row, 7)?,
+        word_start: row.get(4)?,
+        content: read_json(row, 5)?,
+        included_fields: read_json(row, 6)?,
+        created_at_ms: read_unsigned(row, 7)?,
+        updated_at_ms: read_unsigned(row, 8)?,
     })
 }
 
@@ -167,6 +171,7 @@ mod tests {
         FlashcardDraft {
             media_file_id,
             cue_index: Some(3),
+            word_start: Some(8),
             content: FlashcardContent {
                 word: word.to_string(),
                 word_pronunciation: String::new(),
@@ -201,6 +206,15 @@ mod tests {
             .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
             .unwrap();
         assert_eq!(created.content, draft(None, "fressen").content);
+    }
+
+    #[test]
+    fn a_created_flashcard_keeps_where_its_word_begins() {
+        let storage = seeded_storage();
+        let created = storage
+            .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
+            .unwrap();
+        assert_eq!(created.word_start, Some(8));
     }
 
     #[test]
@@ -298,6 +312,22 @@ mod tests {
             .update_flashcard(&created.id, &draft(None, "essen"))
             .unwrap();
         assert_eq!(updated.content.word, "essen");
+    }
+
+    #[test]
+    fn updating_replaces_where_the_word_begins() {
+        let storage = seeded_storage();
+        let created = storage
+            .create_flashcard(&project(), &new_id(), &draft(None, "fressen"))
+            .unwrap();
+        let without_start = FlashcardDraft {
+            word_start: None,
+            ..draft(None, "fressen")
+        };
+        let updated = storage
+            .update_flashcard(&created.id, &without_start)
+            .unwrap();
+        assert_eq!(updated.word_start, None);
     }
 
     #[test]

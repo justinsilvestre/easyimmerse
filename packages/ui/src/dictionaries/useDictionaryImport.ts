@@ -8,7 +8,7 @@ import {
 import type { PickedDictionaryFile } from "@easyimmerse/state";
 import { actions, selectChosenDictionaryFile } from "@easyimmerse/state";
 import type {
-  DictionarySummary,
+  ImportJobStarted,
   MediaFileSource,
   TableLayout,
   TablePreview,
@@ -23,6 +23,7 @@ import {
   type PendingTable,
   reduceDictionaryImport,
 } from "./dictionaryImport.ts";
+import { type ImportJobOutcome, useImportJob } from "./useImportJob.ts";
 
 const unsupportedFormatCode = "unsupported_dictionary_format";
 
@@ -38,6 +39,7 @@ type ResettableRequest<T> = { unwrap(): Promise<T>; reset(): void };
  * Imports the dictionary file the user picked through the backend.
  * A desktop app's file is read by the server from its path; a browser's file is sent as bytes.
  * Either way, a table is previewed first so that the user can check its columns.
+ * The backend answers with a job, which is polled until the dictionary is stored.
  */
 export function useDictionaryImport() {
   const dispatch = useAppDispatch();
@@ -54,15 +56,23 @@ export function useDictionaryImport() {
   const fail = (fileName: string, failure: ImportFailure) => {
     if (failure.code === unsupportedFormatCode)
       return dispatchImport({ type: "refusedAsUnsupported", fileName });
-    dispatchImport({ type: "finished" });
-    dispatch(actions.notificationRequested(describeFailure(failure)));
+    dispatchImport({
+      type: "failed",
+      message: describeFailure(fileName, failure),
+    });
   };
-  const settle = (fileName: string, request: Promise<DictionarySummary>) =>
+  const settleJob = (outcome: ImportJobOutcome) => {
+    if (outcome.kind === "failed")
+      return fail(state.addingFile ?? "", outcome.error);
+    dispatchImport({ type: "finished" });
+    dispatch(
+      actions.notificationRequested(`Added ${outcome.dictionary.title}`),
+    );
+  };
+  const progress = useImportJob(state.jobId, settleJob);
+  const start = (fileName: string, request: Promise<ImportJobStarted>) =>
     request
-      .then((summary) => {
-        dispatchImport({ type: "finished" });
-        dispatch(actions.notificationRequested(`Added ${summary.title}`));
-      })
+      .then(({ id }) => dispatchImport({ type: "jobStarted", jobId: id }))
       .catch((error: BackendError) => fail(fileName, error));
   const showColumns = (
     fileName: string,
@@ -82,7 +92,7 @@ export function useDictionaryImport() {
           { kind: "path", path },
           previewLocalTable({ path }).unwrap(),
         ).catch((error: BackendError) => fail(fileName, error))
-      : settle(fileName, importLocalDictionary({ path }).unwrap());
+      : start(fileName, importLocalDictionary({ path }).unwrap());
   const sendBytes = (fileName: string, bytes: Uint8Array) =>
     isTableFile(fileName)
       ? showColumns(
@@ -90,7 +100,7 @@ export function useDictionaryImport() {
           { kind: "bytes", bytes },
           settledOnce(previewTable({ fileName, bytes })),
         )
-      : settle(fileName, settledOnce(importDictionary({ fileName, bytes })));
+      : start(fileName, settledOnce(importDictionary({ fileName, bytes })));
   const addFromBrowser = (fileName: string, source: MediaFileSource) => {
     const held = registry?.find(fileName, source);
     if (!held)
@@ -116,12 +126,13 @@ export function useDictionaryImport() {
   });
   return {
     ...state,
+    progress,
     importTable: (layout: TableLayout) => {
       const table = state.pendingTable;
       if (table === null) return;
       dispatchImport({ type: "started", fileName: table.fileName });
       const { contents, fileName } = table;
-      settle(
+      start(
         fileName,
         contents.kind === "path"
           ? importLocalDictionary({
@@ -139,6 +150,7 @@ export function useDictionaryImport() {
     },
     cancelTable: () => dispatchImport({ type: "tableCancelled" }),
     dismissUnsupported: () => dispatchImport({ type: "unsupportedDismissed" }),
+    dismissFailure: () => dispatchImport({ type: "failureDismissed" }),
   };
 }
 
@@ -153,8 +165,8 @@ function asFailure(error: unknown): ImportFailure {
   return { message: String(error) };
 }
 
-function describeFailure(failure: ImportFailure): string {
+function describeFailure(fileName: string, failure: ImportFailure): string {
   return failure.isOwnMessage
     ? failure.message
-    : `The dictionary could not be added: ${failure.message}`;
+    : `${fileName} could not be added: ${failure.message}`;
 }

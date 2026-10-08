@@ -2,6 +2,7 @@ import type { BackendError } from "@easyimmerse/backend";
 import {
   useClearConversionCacheMutation,
   useGetConversionCacheStatusQuery,
+  useSetConversionCacheBudgetMutation,
 } from "@easyimmerse/backend";
 import type { ConversionCacheStatus } from "@easyimmerse/types";
 import { useState } from "react";
@@ -10,10 +11,11 @@ import type {
   ConversionCacheView,
 } from "../components/ConversionCacheSection.tsx";
 
-/** Reads the converted videos' disk usage and clears them on request. */
+/** Reads the media cache's disk usage, clears it on request, and sets how large it may grow. */
 export function useConversionCacheControls(): ConversionCacheControls {
   const { data, error } = useGetConversionCacheStatusQuery();
   const [clearCache] = useClearConversionCacheMutation();
+  const [setBudget] = useSetConversionCacheBudgetMutation();
   const [clearStatus, setClearStatus] = useState("");
   const onClear = () => {
     setClearStatus("Clearing…");
@@ -22,11 +24,25 @@ export function useConversionCacheControls(): ConversionCacheControls {
       .then(() => setClearStatus("Cleared."))
       .catch((error: { message?: string }) =>
         setClearStatus(
-          error.message ?? "The converted videos could not be cleared.",
+          error.message ?? "The media cache could not be cleared.",
         ),
       );
   };
-  return { cache: toCacheView(data, error), onClear, clearStatus };
+  const onBudgetChange = (budgetBytes: number | null) => {
+    setBudget({ budget_bytes: budgetBytes })
+      .unwrap()
+      .catch((error: { message?: string }) =>
+        setClearStatus(
+          error.message ?? "The cache's maximum size could not be changed.",
+        ),
+      );
+  };
+  return {
+    cache: toCacheView(data, error),
+    onClear,
+    clearStatus,
+    onBudgetChange,
+  };
 }
 
 /**

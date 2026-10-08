@@ -1,20 +1,27 @@
+import type { Cue } from "@easyimmerse/types";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useRef, useState } from "react";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
+import { cueAt } from "./waveformCueHit.ts";
 import type { WaveformDrag } from "./waveformDrag.ts";
 import { constrainDrag } from "./waveformDrag.ts";
 import type { WaveformView } from "./waveformGeometry.ts";
 import { timeAtX } from "./waveformGeometry.ts";
 import type { WaveformGestureHandlers } from "./waveformGestureHandlers.ts";
 import { reportDragEnd } from "./waveformGestureHandlers.ts";
-import { hitTest } from "./waveformHitTest.ts";
+import { cursorOf, hitTest } from "./waveformHitTest.ts";
 import type { WaveformPinch } from "./waveformPinch.ts";
 import { pinchedSpan, startPinch } from "./waveformPinch.ts";
 
 type PointersInput = {
   view: WaveformView;
+  /** The strip's height, which places the cue band along its bottom edge. */
+  heightPx: number;
   durationMs: number;
+  cues: readonly Cue[];
   segments: readonly FlashcardSegment[];
+  /** The segment whose handles can be dragged, the flashcard open in the editor, or null when none is open. */
+  editableSegmentId: string | null;
   handlers: WaveformGestureHandlers;
 };
 
@@ -23,11 +30,18 @@ type CanvasPointerEvent = ReactPointerEvent<HTMLCanvasElement>;
 /** A pointer moving less than this many pixels between press and release counts as a click. */
 const clickTolerancePx = 4;
 
-/** Turns pointer events on the canvas into seeks, handle drags, and pinch zooms. */
+/**
+ * Turns pointer events on the canvas into seeks, handle drags, and pinch zooms.
+ * A click seeks to the clicked time, or to the start of the cue clicked in the cue band.
+ * The cursor tells what lies under the pointer: a resize cursor over a handle that can be dragged, a pointer over a segment's body or a cue.
+ */
 export function useWaveformPointers({
   view,
+  heightPx,
   durationMs,
+  cues,
   segments,
+  editableSegmentId,
   handlers,
 }: PointersInput) {
   const [drag, setDrag] = useState<WaveformDrag | null>(null);
@@ -45,7 +59,7 @@ export function useWaveformPointers({
       setDrag(null);
       return;
     }
-    const hit = hitTest(view, segments, point);
+    const hit = hitTest(view, segments, point, editableSegmentId);
     if (
       hit.kind === "clipStart" ||
       hit.kind === "clipEnd" ||
@@ -59,6 +73,11 @@ export function useWaveformPointers({
 
   const onPointerMove = (event: CanvasPointerEvent) => {
     const point = pointAt(event);
+    // Set on the element directly, since a hover needs no render.
+    if (!drag)
+      event.currentTarget.style.cursor = cueAt(view, cues, point, heightPx)
+        ? "pointer"
+        : cursorOf(hitTest(view, segments, point, editableSegmentId));
     if (!pointerXs.current.has(event.pointerId)) return;
     pointerXs.current.set(event.pointerId, point.x);
     if (pinch.current && pointerXs.current.size === 2) {
@@ -82,7 +101,10 @@ export function useWaveformPointers({
       press.current?.pointerId === event.pointerId &&
       Math.abs(press.current.x - point.x) <= clickTolerancePx
     ) {
-      handlers.onSeek(clampTime(timeAtX(view, point.x), durationMs));
+      const cue = cueAt(view, cues, point, heightPx);
+      handlers.onSeek(
+        cue ? cue.start_ms : clampTime(timeAtX(view, point.x), durationMs),
+      );
     }
     press.current = null;
   };

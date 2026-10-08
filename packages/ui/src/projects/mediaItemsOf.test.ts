@@ -10,6 +10,7 @@ function flashcardFrom(mediaFileId: string | null): Flashcard {
     project_id: "p1",
     media_file_id: mediaFileId,
     cue_index: null,
+    word_start: null,
     content: exampleFlashcard,
     included_fields: [],
     created_at_ms: 0,

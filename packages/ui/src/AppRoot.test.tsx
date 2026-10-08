@@ -69,7 +69,7 @@ async function openMediaFile() {
   await screen.findByRole("region", { name: "Player" });
 }
 
-/** The app's Settings button: the footer's, or the media screen's header button. A project screen has a Settings button of its own before it. */
+/** The app's Settings button: the footer's, or the media screen's header button. */
 function openSettingsFromFooter() {
   const buttons = screen.getAllByRole("button", { name: "Settings" });
   fireEvent.click(buttons.at(-1) as HTMLElement);
@@ -164,7 +164,7 @@ describe("AppRoot", () => {
       openSettingsFromFooter();
       expect(
         await screen.findByText(
-          "Video conversion is unavailable, so no converted videos are stored.",
+          "Media conversion is unavailable, so there is no cache.",
         ),
       ).toBeDefined();
     });

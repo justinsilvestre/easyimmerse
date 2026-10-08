@@ -6,10 +6,12 @@ import {
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
   selectCurrentTime,
+  selectPlayer,
   selectPlayerDuration,
 } from "@easyimmerse/state";
 import type { ListMediaFilesResponse, MediaFile } from "@easyimmerse/types";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import { type ReactNode, useCallback, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FakeRoute } from "../testSupport/createFakeBackendClient.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
@@ -28,6 +30,8 @@ import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { createFakeHls } from "./fakeHls.ts";
 import { HlsLoaderContext } from "./hlsLoaderContext.ts";
 import { MediaPlayer } from "./MediaPlayer.tsx";
+import { stagePictureAttribute } from "./stagePicture.ts";
+import { TrackChoiceContext } from "./trackChoiceContext.ts";
 
 afterEach(() => {
   cleanup();
@@ -50,6 +54,25 @@ type RenderOptions = {
   before?: ReturnType<(typeof actions)[keyof typeof actions]>[];
 };
 
+/** Stands in for the screen, which shows a Tracks button while the player offers a track choice. */
+function TrackChoiceProbe({ children }: { children: ReactNode }) {
+  const [openTracks, setOpenTracks] = useState<(() => void) | null>(null);
+  const offer = useCallback(
+    (open: (() => void) | null) => setOpenTracks(() => open),
+    [],
+  );
+  return (
+    <TrackChoiceContext value={offer}>
+      {children}
+      {openTracks && (
+        <button type="button" onClick={openTracks}>
+          Tracks
+        </button>
+      )}
+    </TrackChoiceContext>
+  );
+}
+
 function renderPlayer(
   routes: readonly FakeRoute[],
   options: RenderOptions = {},
@@ -64,7 +87,9 @@ function renderPlayer(
   const fakeHls = createFakeHls();
   const rendered = renderWithAppStore(
     <HlsLoaderContext value={async () => fakeHls.Hls}>
-      <MediaPlayer projectId="p1" />
+      <TrackChoiceProbe>
+        <MediaPlayer projectId="p1" />
+      </TrackChoiceProbe>
     </HlsLoaderContext>,
     client,
     {
@@ -130,11 +155,30 @@ describe("MediaPlayer", () => {
       expect((await findVideo()).getAttribute("crossorigin")).toBe("anonymous");
     });
 
+    it("refuses the browser's context menu on the video", async () => {
+      renderPlayer(directPlaybackRoutes);
+      expect(fireEvent.contextMenu(await findVideo())).toBe(false);
+    });
+
     it("seeks half a frame past the asked time", async () => {
       const { playerRegistry } = renderPlayer(directPlaybackRoutes);
       const video = await findVideo();
       act(() => playerRegistry.current()?.seek(1));
       expect(video.currentTime).toBeCloseTo(1 + halfFrame, 9);
+    });
+
+    it("mutes the element when the registered player is muted", async () => {
+      const { playerRegistry } = renderPlayer(directPlaybackRoutes);
+      const video = await findVideo();
+      act(() => playerRegistry.current()?.setMuted(true));
+      expect(video.muted).toBe(true);
+    });
+
+    it("starts the element muted when the store is muted", async () => {
+      renderPlayer(directPlaybackRoutes, {
+        before: [actions.preferencesLoaded({}), actions.muteToggleRequested()],
+      });
+      expect((await findVideo()).muted).toBe(true);
     });
 
     it("reports the element's time to the store", async () => {
@@ -153,10 +197,23 @@ describe("MediaPlayer", () => {
       expect(selectPlayerDuration(store.getState())).toBe(90);
     });
 
-    it("offers a screenshot of the video", async () => {
+    it("reports what the element has loaded to the store", async () => {
+      const { store } = renderPlayer(directPlaybackRoutes);
+      const video = await findVideo();
+      Object.defineProperty(video, "buffered", {
+        value: { length: 1, start: () => 0, end: () => 30 },
+      });
+      fireEvent.progress(video);
+      expect(selectPlayer(store.getState()).buffered).toEqual([
+        { startSeconds: 0, endSeconds: 30 },
+      ]);
+    });
+
+    it("marks the video as the stage's picture", async () => {
       renderPlayer(directPlaybackRoutes);
-      await findVideo();
-      expect(screen.getByRole("button", { name: "Screenshot" })).toBeDefined();
+      expect(
+        (await findVideo()).closest(`[${stagePictureAttribute}]`),
+      ).not.toBeNull();
     });
 
     it("offers no track choice for a file with one track of each kind", async () => {
@@ -366,6 +423,15 @@ describe("MediaPlayer", () => {
       ).toBeDefined();
     });
 
+    it("leaves playback alone when the Tracks button is clicked", async () => {
+      const { effects, hls } = renderPlayer(copyPlaybackRoutes, {
+        mediaFiles: withSavedSelection,
+      });
+      await vi.waitFor(() => expect(hls[0]).toBeDefined());
+      fireEvent.click(screen.getByRole("button", { name: "Tracks" }));
+      expect(effects.calls).not.toContainEqual({ type: "togglePlayer" });
+    });
+
     it("asks for a new plan when the tracks change", async () => {
       const { client, hls } = renderPlayer(copyPlaybackRoutes, {
         mediaFiles: withSavedSelection,
@@ -458,6 +524,14 @@ describe("MediaPlayer", () => {
         "No canned GET /projects/p1/media/m1/tracks",
       );
     });
+
+    it("closes the file from the failure's way back to the project", async () => {
+      const { store } = renderPlayer(unsupportedPlaybackRoutes);
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Back to the project" }),
+      );
+      expect(selectCurrentMediaFileId(store.getState())).toBeNull();
+    });
   });
 
   describe("with a file the browser holds", () => {
@@ -509,6 +583,19 @@ describe("MediaPlayer", () => {
       expect(client.requests.map((request) => request.path)).not.toContain(
         "/projects/p1/media/m2/tracks",
       );
+    });
+
+    it("marks the artwork as the stage's picture", async () => {
+      const { registry, mediaFiles } = registryHolding(audioFile());
+      renderPlayer([], {
+        mediaFiles,
+        mediaFileId: "m2",
+        browserFileRegistry: registry,
+      });
+      await screen.findByLabelText("Audio");
+      expect(
+        screen.getByText("interview.mp3").closest(`[${stagePictureAttribute}]`),
+      ).not.toBeNull();
     });
 
     it("explains when the browser no longer holds the file", async () => {

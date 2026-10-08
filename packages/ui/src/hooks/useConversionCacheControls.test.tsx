@@ -27,13 +27,13 @@ function renderProbe(responses: Record<string, FakeResponse>) {
 const statusRoute = { "GET /conversion-cache": fixtureConversionCacheStatus };
 
 const unavailableText =
-  "Video conversion is unavailable, so no converted videos are stored.";
+  "Media conversion is unavailable, so there is no cache.";
 
 describe("useConversionCacheControls", () => {
   it("shows the usage the server reports", async () => {
     renderProbe(statusRoute);
     expect(
-      await screen.findByText("Converted videos use 1.2 GB of 5 GB."),
+      await screen.findByText("The cache is using 1.2 GB of 5 GB."),
     ).toBeDefined();
   });
 
@@ -76,7 +76,7 @@ describe("useConversionCacheControls", () => {
       "POST /conversion-cache/clear": fixtureConversionCacheStatus,
     });
     fireEvent.click(
-      await screen.findByRole("button", { name: "Clear converted videos" }),
+      await screen.findByRole("button", { name: "Clear media cache" }),
     );
     expect(await screen.findByText("Cleared.")).toBeDefined();
   });
@@ -84,7 +84,7 @@ describe("useConversionCacheControls", () => {
   it("reports the error of a clearing that failed", async () => {
     renderProbe(statusRoute);
     fireEvent.click(
-      await screen.findByRole("button", { name: "Clear converted videos" }),
+      await screen.findByRole("button", { name: "Clear media cache" }),
     );
     expect(
       await screen.findByText("No canned POST /conversion-cache/clear"),

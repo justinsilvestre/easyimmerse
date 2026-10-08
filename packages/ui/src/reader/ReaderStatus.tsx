@@ -18,7 +18,11 @@ export function ReaderStatus({
   return (
     <div className="flex h-dvh flex-col bg-canvas text-fg">
       <header className="flex h-12 items-center gap-1 border-b border-line bg-surface px-2">
-        <Button variant="subtle" onClick={onBack}>
+        <Button
+          variant="subtle"
+          aria-label="Back to the project"
+          onClick={onBack}
+        >
           <ArrowLeft className="size-4" aria-hidden />
           <span className="hidden sm:inline">Project</span>
         </Button>

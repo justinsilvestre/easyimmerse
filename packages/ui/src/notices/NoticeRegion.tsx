@@ -12,7 +12,7 @@ import {
 } from "./noticeStore.ts";
 
 /**
- * Shows the app's notices at the bottom of the window. Each failure is an alert, announced as soon as it appears;
+ * Shows the app's notices at the bottom of the window, above the home indicator on a phone with one. Each failure is an alert, announced as soon as it appears;
  * other notices sit in a polite live region, announced once the screen reader is idle. Their buttons follow the page in keyboard order.
  * A transient notice waits while the pointer or focus is on it.
  */
@@ -29,7 +29,7 @@ export function NoticeRegion({
   return (
     <section
       aria-label="Notifications"
-      className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex flex-col items-center gap-2 px-4"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex flex-col items-center gap-2 px-4"
     >
       {statusLine}
       <NoticeList notices={notices.filter(isFailure)} store={store} />

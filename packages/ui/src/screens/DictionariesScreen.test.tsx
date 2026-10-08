@@ -25,14 +25,45 @@ const tablePreview = {
   rows: [["Hund", "dog"]],
 };
 
+const noProgress = {
+  entries: 0,
+  term_meta: 0,
+  kanji: 0,
+  kanji_meta: 0,
+  tags: 0,
+  media: 0,
+};
+
+const doneJob = {
+  state: "done",
+  progress: { ...noProgress, entries: 412_380 },
+  dictionary: exampleDictionaries[0],
+  error: null,
+};
+
+const runningJob = {
+  state: "running",
+  progress: { ...noProgress, entries: 123_456 },
+  dictionary: null,
+  error: null,
+};
+
+const failedJob = (error: { code: string; message: string }) => ({
+  state: "failed",
+  progress: noProgress,
+  dictionary: null,
+  error,
+});
+
 function renderScreen(responses: Record<string, FakeResponse> = {}) {
   const client = createFakeBackendClient({
     "GET /dictionaries": { dictionaries: exampleDictionaries },
     "DELETE /dictionaries/d1": undefined,
-    "POST /dictionaries/import-local": exampleDictionaries[0],
+    "POST /dictionaries/import-local": { id: "job1" },
     "POST /dictionaries/preview": tablePreview,
     "POST /dictionaries/preview-local": tablePreview,
-    "POST /dictionaries": exampleDictionaries[0],
+    "POST /dictionaries": { id: "job1" },
+    "GET /dictionaries/imports/job1": doneJob,
     ...responses,
   });
   const registry = createBrowserFileRegistry<File>();
@@ -186,6 +217,86 @@ describe("DictionariesScreen", () => {
       );
     });
 
+    describe("once confirmed, until the dictionary leaves the list", () => {
+      async function confirmRemoval() {
+        const rendered = renderScreen();
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "Remove German-English Wiktionary",
+          }),
+        );
+        fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+        return rendered;
+      }
+
+      it("says that the dictionary is being removed", async () => {
+        await confirmRemoval();
+        expect((await screen.findByRole("status")).textContent).toBe(
+          "Removing…",
+        );
+      });
+
+      it("disables the dictionary's remove button", async () => {
+        await confirmRemoval();
+        await screen.findByRole("status");
+        expect(
+          screen
+            .getByRole("button", { name: "Remove German-English Wiktionary" })
+            .hasAttribute("disabled"),
+        ).toBe(true);
+      });
+
+      it("leaves the other dictionaries' remove buttons enabled", async () => {
+        await confirmRemoval();
+        await screen.findByRole("status");
+        expect(
+          screen
+            .getByRole("button", { name: "Remove DWDS Kernwortschatz" })
+            .hasAttribute("disabled"),
+        ).toBe(false);
+      });
+    });
+
+    describe("when the removal fails", () => {
+      async function confirmFailingRemoval() {
+        const rendered = renderScreen({
+          "DELETE /dictionaries/d1": serverFailure,
+        });
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "Remove German-English Wiktionary",
+          }),
+        );
+        fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+        return rendered;
+      }
+
+      it("stops saying that the dictionary is being removed", async () => {
+        await confirmFailingRemoval();
+        await vi.waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+      });
+
+      it("enables the dictionary's remove button again", async () => {
+        await confirmFailingRemoval();
+        await vi.waitFor(() =>
+          expect(
+            screen
+              .getByRole("button", { name: "Remove German-English Wiktionary" })
+              .hasAttribute("disabled"),
+          ).toBe(false),
+        );
+      });
+
+      it("notifies that the dictionary could not be removed", async () => {
+        const { notifications } = await confirmFailingRemoval();
+        await vi.waitFor(() =>
+          expect(notifications()).toEqual([
+            "The dictionary could not be removed",
+          ]),
+        );
+      });
+    });
+
     it("closes the question on Cancel", async () => {
       await pressRemove();
       fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
@@ -285,9 +396,59 @@ describe("DictionariesScreen", () => {
     );
   });
 
+  describe("while the server imports a file", () => {
+    it("shows the import's progress bar", async () => {
+      const { chooseBrowserFile } = renderScreen({
+        "GET /dictionaries/imports/job1": runningJob,
+      });
+      chooseBrowserFile("jmdict.zip");
+      expect(
+        await screen.findByRole("progressbar", { name: "Adding jmdict.zip…" }),
+      ).toBeDefined();
+    });
+
+    it("counts the entries stored so far", async () => {
+      const { chooseBrowserFile } = renderScreen({
+        "GET /dictionaries/imports/job1": runningJob,
+      });
+      chooseBrowserFile("jmdict.zip");
+      expect(
+        await screen.findByText(`${(123_456).toLocaleString()} entries so far`),
+      ).toBeDefined();
+    });
+  });
+
+  describe("once the server has imported a file", () => {
+    it("names the added dictionary", async () => {
+      const { chooseBrowserFile, notifications } = renderScreen();
+      chooseBrowserFile("jmdict.zip");
+      await vi.waitFor(() =>
+        expect(notifications()).toEqual(["Added German-English Wiktionary"]),
+      );
+    });
+
+    it("stops showing the file as being added", async () => {
+      const { chooseBrowserFile } = renderScreen();
+      chooseBrowserFile("jmdict.zip");
+      await screen.findByText("Adding jmdict.zip…");
+      await vi.waitFor(() =>
+        expect(screen.queryByText("Adding jmdict.zip…")).toBeNull(),
+      );
+    });
+
+    it("fetches the list again", async () => {
+      const { client, chooseBrowserFile } = renderScreen();
+      await screen.findByText("DWDS Kernwortschatz");
+      chooseBrowserFile("jmdict.zip");
+      await vi.waitFor(() =>
+        expect(requestsTo(client, "GET", "/dictionaries")).toHaveLength(2),
+      );
+    });
+  });
+
   describe("when adding a file fails", () => {
     it("says so when the browser no longer holds the file", async () => {
-      const { store, notifications } = renderScreen();
+      const { store } = renderScreen();
       act(() => {
         store.dispatch(
           actions.dictionaryFileChosen({
@@ -296,34 +457,64 @@ describe("DictionariesScreen", () => {
           }),
         );
       });
-      await vi.waitFor(() =>
-        expect(notifications()).toEqual([
-          "jmdict.zip is no longer available. Pick it again.",
-        ]),
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "jmdict.zip is no longer available. Pick it again.",
       );
     });
 
-    it("says what the server reported", async () => {
-      const { chooseBrowserFile, notifications } = renderScreen({
+    it("says what the server reported when the import could not start", async () => {
+      const { chooseBrowserFile } = renderScreen({
         "POST /dictionaries": serverFailure,
       });
       chooseBrowserFile("jmdict.zip");
-      await vi.waitFor(() =>
-        expect(notifications()).toEqual([
-          "The dictionary could not be added: the index is broken",
-        ]),
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "jmdict.zip could not be added: the index is broken",
+      );
+    });
+
+    it("says what the server reported when the import failed", async () => {
+      const { chooseBrowserFile } = renderScreen({
+        "GET /dictionaries/imports/job1": failedJob({
+          code: "bad_request",
+          message: "term_bank_3.json is not valid JSON",
+        }),
+      });
+      chooseBrowserFile("jmdict.zip");
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "jmdict.zip could not be added: term_bank_3.json is not valid JSON",
+      );
+    });
+
+    it("keeps the alert until it is dismissed", async () => {
+      const { chooseBrowserFile } = renderScreen({
+        "POST /dictionaries": serverFailure,
+      });
+      chooseBrowserFile("jmdict.zip");
+      fireEvent.click(await screen.findByRole("button", { name: "Dismiss" }));
+      expect(screen.queryByRole("alert")).toBeNull();
+    });
+
+    it("says so when the job can no longer be found", async () => {
+      const { chooseBrowserFile } = renderScreen({
+        "GET /dictionaries/imports/job1": fakeFailure({
+          status: 404,
+          code: "not_found",
+          message: 'no import job has the id "job1"',
+        }),
+      });
+      chooseBrowserFile("jmdict.zip");
+      expect((await screen.findByRole("alert")).textContent).toContain(
+        "no import job has the id",
       );
     });
 
     it("says so when a table cannot be previewed", async () => {
-      const { chooseBrowserFile, notifications } = renderScreen({
+      const { chooseBrowserFile } = renderScreen({
         "POST /dictionaries/preview": serverFailure,
       });
       chooseBrowserFile("animals.csv");
-      await vi.waitFor(() =>
-        expect(notifications()).toEqual([
-          "The dictionary could not be added: the index is broken",
-        ]),
+      expect((await screen.findByRole("alert")).textContent).toBe(
+        "animals.csv could not be added: the index is broken",
       );
     });
 
@@ -342,15 +533,14 @@ describe("DictionariesScreen", () => {
 
   it("names a file in a format no reader supports", async () => {
     const { chooseBrowserFile } = renderScreen({
-      "POST /dictionaries": fakeFailure({
-        status: 400,
+      "GET /dictionaries/imports/job1": failedJob({
         code: "unsupported_dictionary_format",
         message: "no supported dictionary format recognizes these files",
       }),
     });
     chooseBrowserFile("duden.lsd");
     expect((await screen.findByRole("alert")).textContent).toContain(
-      "duden.lsd",
+      "is not in a format the app can read",
     );
   });
 });

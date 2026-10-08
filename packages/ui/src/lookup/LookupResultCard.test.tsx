@@ -1,5 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { doubleClick } from "../testSupport/doubleClick.ts";
 import {
   exampleAmbiguousInflectionResult,
   exampleInflectedResult,
@@ -11,13 +12,13 @@ afterEach(cleanup);
 
 function renderCard(
   result = exampleInflectedResult,
-  onWordClick: (word: string) => void = () => undefined,
+  onWordLookup: (word: string) => void = () => undefined,
 ) {
   return render(
     <LookupResultCard
       result={result}
       resolveMediaUrl={() => null}
-      onWordClick={onWordClick}
+      onWordLookup={onWordLookup}
       onLookup={() => undefined}
       onCreateFlashcard={() => undefined}
     />,
@@ -84,10 +85,10 @@ describe("LookupResultCard", () => {
     expect(screen.getByRole("region", { name: "Jitendex" })).toBeDefined();
   });
 
-  it("passes words clicked in a definition on", () => {
-    const clicked: string[] = [];
-    renderCard(exampleInflectedResult, (word) => clicked.push(word));
-    fireEvent.click(screen.getByRole("button", { name: "subsist" }));
-    expect(clicked).toEqual(["subsist"]);
+  it("passes words double-clicked in a definition on", () => {
+    const looked: string[] = [];
+    renderCard(exampleInflectedResult, (word) => looked.push(word));
+    doubleClick(screen.getByRole("button", { name: "subsist" }));
+    expect(looked).toEqual(["subsist"]);
   });
 });

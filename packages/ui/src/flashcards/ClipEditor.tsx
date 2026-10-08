@@ -1,6 +1,7 @@
 import type { AudioClip } from "@easyimmerse/types";
 import { Camera } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
+import { WaveformBars } from "../components/waveform/WaveformBars.tsx";
 import {
   clamp,
   moveClipEnd,
@@ -12,7 +13,7 @@ import {
   viewIncludingAll,
 } from "./clipView.ts";
 import { formatClipTime } from "./formatClipTime.ts";
-import { Peaks, peaksBetween } from "./Peaks.tsx";
+import { peaksBetween } from "./peaksBetween.ts";
 import {
   type DraggableTime,
   type DragHandlers,
@@ -24,6 +25,7 @@ import {
  * the arrow keys, and so can the marker for the time the screenshot is taken at.
  * The part on view stays put while a handle moves, widens while a handle is held past its edge,
  * and settles around the clip again once the handle is let go.
+ * Beneath the waveform sit the clip's start and end times, with the controls passed in between them.
  */
 export function ClipEditor({
   peaks,
@@ -32,6 +34,7 @@ export function ClipEditor({
   screenshotMs,
   onClipChange,
   onScreenshotMsChange,
+  controls,
 }: {
   peaks: readonly number[];
   durationMs: number;
@@ -39,6 +42,8 @@ export function ClipEditor({
   screenshotMs: number | null;
   onClipChange: (clip: AudioClip) => void;
   onScreenshotMsChange: (ms: number) => void;
+  /** Shown between the clip's start and end times, such as a button that plays the clip. */
+  controls?: ReactNode;
 }) {
   const waveformRef = useRef<HTMLDivElement>(null);
   const [storedView, setStoredView] = useState(() =>
@@ -89,7 +94,7 @@ export function ClipEditor({
             className="absolute inset-y-0"
             style={between(peaksOnView.startMs, peaksOnView.endMs)}
           >
-            <Peaks
+            <WaveformBars
               peaks={peaksBetween(peaks, durationMs, view.startMs, view.endMs)}
             />
           </div>
@@ -130,8 +135,9 @@ export function ClipEditor({
           />
         )}
       </div>
-      <div className="flex justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span>{formatClipTime(clip.start_ms)}</span>
+        {controls}
         <span>{formatClipTime(clip.end_ms)}</span>
       </div>
     </div>

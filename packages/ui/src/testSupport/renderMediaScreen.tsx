@@ -1,6 +1,9 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type {
+  BatchLookupRequest,
+  BatchLookupResponse,
+  Cue,
   DictionarySummary,
   Flashcard,
   FlashcardDraft,
@@ -8,12 +11,17 @@ import type {
   NewFlashcard,
 } from "@easyimmerse/types";
 import { act, fireEvent, screen } from "@testing-library/react";
+import { vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { NavigationActionsContext } from "../navigationContext.ts";
 import { MediaScreen } from "../screens/MediaScreen.tsx";
 import { createFakeBackendClient } from "./createFakeBackendClient.ts";
-import { fixtureProject, fixtureResponses } from "./fixtureResponses.ts";
+import {
+  fixtureProject,
+  fixtureResponses,
+  fixtureTrack,
+} from "./fixtureResponses.ts";
 import { directPlaybackRoutes, fakeServer } from "./mediaFixtureResponses.ts";
 import { renderWithAppStore } from "./renderWithAppStore.tsx";
 
@@ -22,6 +30,7 @@ export const savedFlashcard: Flashcard = {
   project_id: "p1",
   media_file_id: "m1",
   cue_index: null,
+  word_start: null,
   content: { ...exampleFlashcard, screenshot: { at_ms: 2400 } },
   included_fields: ["word", "audio_context", "screenshot"],
   created_at_ms: 0,
@@ -61,6 +70,8 @@ const lookupResponse: LookupResponse = {
 
 type MediaScreenSetup = {
   flashcards?: Flashcard[];
+  /** The cues of the media file's subtitles, in place of the fixture track's. */
+  cues?: Cue[];
   dictionaries?: DictionarySummary[];
   /** The texts whose lookups never answer. Every other lookup finds the example results. */
   unansweredLookups?: readonly string[];
@@ -68,6 +79,11 @@ type MediaScreenSetup = {
   slowLookups?: Readonly<Record<string, number>>;
   /** The texts whose lookups fail after the given number of milliseconds. */
   failingLookups?: Readonly<Record<string, number>>;
+  /**
+   * How many milliseconds batch lookups take to find the example results at every position of every text,
+   * or null, the default, for a server that offers no batch lookups.
+   */
+  batchLookupMs?: number | null;
 };
 
 /**
@@ -76,10 +92,12 @@ type MediaScreenSetup = {
  */
 export function renderMediaScreen({
   flashcards = [],
+  cues = fixtureTrack.cues,
   dictionaries = germanDictionaries,
   unansweredLookups = [],
   slowLookups = {},
   failingLookups = {},
+  batchLookupMs = null,
 }: MediaScreenSetup = {}) {
   const client = withLookupTiming(
     createFakeBackendClient(
@@ -88,6 +106,7 @@ export function renderMediaScreen({
         "GET /dictionaries": { dictionaries },
         "GET /dictionaries/lookup": lookupResponse,
         "GET /projects/p1/flashcards": { flashcards },
+        "GET /projects/p1/media/m1/subtitles/s1/cues": { format: "srt", cues },
         "PUT /projects/p1/flashcards/f1": savedFlashcard,
         "POST /projects/p1/media/m1/subtitles":
           fixtureResponses["GET /projects/p1/media/m1/subtitles"].tracks[0],
@@ -95,7 +114,7 @@ export function renderMediaScreen({
       },
       directPlaybackRoutes,
     ),
-    { unansweredLookups, slowLookups, failingLookups },
+    { unansweredLookups, slowLookups, failingLookups, batchLookupMs },
   );
   const navigation = { dictionariesOpenCount: 0 };
   const rendered = renderWithAppStore(
@@ -127,16 +146,25 @@ function withLookupTiming(
     unansweredLookups,
     slowLookups,
     failingLookups,
+    batchLookupMs,
   }: Required<
     Pick<
       MediaScreenSetup,
-      "unansweredLookups" | "slowLookups" | "failingLookups"
+      "unansweredLookups" | "slowLookups" | "failingLookups" | "batchLookupMs"
     >
   >,
 ): ReturnType<typeof createFakeBackendClient> {
   return {
     requests: client.requests,
     send: <T,>(request: BackendRequest) => {
+      if (
+        request.path === "/dictionaries/lookup/batch" &&
+        batchLookupMs !== null
+      ) {
+        client.requests.push(request);
+        const answer = answerBatch(bodyOf(request) as BatchLookupRequest);
+        return after(batchLookupMs).then(() => ({ data: answer as T }));
+      }
       const text =
         request.path === "/dictionaries/lookup" ? request.query?.text : null;
       if (text == null) return client.send<T>(request);
@@ -155,6 +183,23 @@ function withLookupTiming(
       if (delayMs === undefined) return client.send<T>(request);
       return after(delayMs).then(() => client.send<T>(request));
     },
+  };
+}
+
+/** Finds every one of the example results at each position of each text. */
+function answerBatch({ texts }: BatchLookupRequest): BatchLookupResponse {
+  const resultIndexes = exampleResults.map((_, index) => index);
+  return {
+    texts: texts.map((text) => ({
+      positions: [...text].map((_, offset) => ({
+        offset,
+        results: resultIndexes,
+        kanji: [],
+      })),
+    })),
+    results: [...exampleResults],
+    kanji: [],
+    stylesheets: [],
   };
 }
 
@@ -187,17 +232,24 @@ export function createdDraftOf(
   return (bodyOf(request) as NewFlashcard | undefined)?.draft;
 }
 
-/** Fires what a browser fires for a double-click: two clicks counting up, then dblclick. */
-export function doubleClick(element: HTMLElement) {
-  fireEvent.click(element, { detail: 1 });
-  fireEvent.click(element, { detail: 2 });
-  fireEvent.doubleClick(element, { detail: 2 });
+/** Starts a flashcard for a word with the E key while the mouse is on it, and waits for the editor, which opens once the word's lookup answers. */
+export async function openFlashcardFor(element: HTMLElement) {
+  fireEvent.pointerEnter(element, { pointerType: "mouse" });
+  fireEvent.keyDown(document.body, { key: "e" });
+  await screen.findByRole("form", { name: "Flashcard" });
 }
 
-/** Double-clicks a word and waits for the flashcard editor, which opens once the word's lookup answers. */
-export async function doubleClickWord(element: HTMLElement) {
-  doubleClick(element);
-  await screen.findByRole("form", { name: "Flashcard" });
+/** The draft of the first flashcard the screen created, once its request has been sent. */
+export async function findCreatedDraft(
+  client: ReturnType<typeof createFakeBackendClient>,
+) {
+  return vi.waitFor(() => {
+    const draft = createdDraftOf(
+      requestsTo(client.requests, "POST", "/projects/p1/flashcards")[0],
+    );
+    if (!draft) throw new Error("No flashcard has been created yet.");
+    return draft;
+  });
 }
 
 /** The play and pause requests made so far, in order. */

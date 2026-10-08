@@ -6,7 +6,7 @@ export type ViewportPoint = { x: number; y: number };
  * or null when no character lies there.
  *
  * Each character is measured with a range, rather than asked of the browser's caret position:
- * caret positions are unreliable inside buttons and in text that cannot be selected, which a held tap requires.
+ * caret positions are unreliable in text that cannot be selected, which a held tap requires.
  * The offset is always that of a whole character, never of half a surrogate pair.
  */
 export function characterOffsetAt(

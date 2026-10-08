@@ -23,7 +23,7 @@ function renderDialog() {
 const findDialog = () => screen.getByRole("dialog");
 const clickPlay = () =>
   fireEvent.click(screen.getByRole("button", { name: "Play" }));
-const tickDontShowAgain = () =>
+const toggleDontShowAgain = () =>
   fireEvent.click(
     screen.getByRole("checkbox", { name: "Don't show this again" }),
   );
@@ -61,22 +61,28 @@ describe("ConversionNoticeDialog", () => {
     expect(calls).toEqual(["cancel"]);
   });
 
+  it("starts with the box ticked", () => {
+    renderDialog();
+    expect(
+      screen.getByRole("checkbox", { name: "Don't show this again" }),
+    ).toHaveProperty("checked", true);
+  });
+
   it("stores the dismissal when Play is clicked with the box ticked", () => {
     const { effects } = renderDialog();
-    tickDontShowAgain();
     clickPlay();
     expect(effects.preferences.get("conversionNoticeDismissed")).toBe("true");
   });
 
-  it("stores nothing when Play is clicked with the box clear", () => {
+  it("stores nothing when Play is clicked with the box cleared", () => {
     const { effects } = renderDialog();
+    toggleDontShowAgain();
     clickPlay();
     expect(effects.preferences.has("conversionNoticeDismissed")).toBe(false);
   });
 
   it("stores nothing when the box is ticked but the dialog is cancelled", () => {
     const { effects } = renderDialog();
-    tickDontShowAgain();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(effects.preferences.has("conversionNoticeDismissed")).toBe(false);
   });

@@ -91,9 +91,7 @@ const meta = {
   parameters: { layout: "fullscreen" },
   args: {
     name: "German",
-    hasUnsavedChanges: false,
     onBack: fn(),
-    onSave: fn(),
     onEditSettings: fn(),
     children: sections(media, { kind: "notStarted" }),
   },
@@ -115,7 +113,6 @@ export const WithMedia: Story = {};
 
 export const ReviewingInApp: Story = {
   args: {
-    hasUnsavedChanges: true,
     children: sections(media, {
       kind: "review",
       dueCount: 12,

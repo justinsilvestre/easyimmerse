@@ -13,13 +13,19 @@ const handleGrabPx = 6;
 /** The screenshot marker hangs from the top edge down to this height. */
 export const screenshotMarkerHeightPx = 14;
 
-/** Finds the handle, else the segment, under the point. Handles win over segment bodies, and the nearest handle wins. */
+/**
+ * Finds the handle, else the segment, under the point. Handles win over segment bodies, and the nearest handle wins.
+ * Only the segment `editableSegmentId`, the flashcard open in the editor, has handles to find; every other segment is found by its body alone.
+ */
 export function hitTest(
   view: WaveformView,
   segments: readonly FlashcardSegment[],
   point: { x: number; y: number },
+  editableSegmentId: string | null,
 ): WaveformHit {
-  const handles = segments.flatMap((segment) => handlesOf(view, segment));
+  const handles = segments
+    .filter((segment) => segment.id === editableSegmentId)
+    .flatMap((segment) => handlesOf(view, segment));
   const nearest = handles
     .filter(
       ({ x, topOnly }) =>
@@ -34,6 +40,12 @@ export function hitTest(
       point.x <= xAtTime(view, segment.endMs),
   );
   return body ? { kind: "segment", segmentId: body.id } : { kind: "none" };
+}
+
+/** The cursor that tells what pressing at a hit would do: drag a handle sideways, open a segment with a double-click, or seek. */
+export function cursorOf(hit: WaveformHit): string {
+  if (hit.kind === "none") return "";
+  return hit.kind === "segment" ? "pointer" : "ew-resize";
 }
 
 function handlesOf(view: WaveformView, segment: FlashcardSegment) {

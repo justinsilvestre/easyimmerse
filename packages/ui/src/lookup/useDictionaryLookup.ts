@@ -1,24 +1,24 @@
 import {
   buildDictionaryMediaUrl,
   getServerConfig,
+  lookUpTextAhead,
+  selectCachedLookup,
   skipToken,
-  useLazyLookupTextQuery,
   useListDictionariesQuery,
   useLookupTextQuery,
 } from "@easyimmerse/backend";
-import type {
-  DictionarySummary,
-  LookupQuery,
-  LookupResult,
-} from "@easyimmerse/types";
+import type { DictionarySummary, LookupResult } from "@easyimmerse/types";
 import { useReducer } from "react";
+import { useStore } from "react-redux";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import {
   type LookupPopup,
   type LookupRequest,
   reduceLookupPopup,
 } from "./lookupPopup.ts";
+import { lookupQueryOf } from "./lookupQueryOf.ts";
 import { type LookupOutcome, lookupStateOf } from "./lookupStateOf.ts";
 
 const noDictionaries: readonly DictionarySummary[] = [];
@@ -41,11 +41,11 @@ export function useDictionaryLookup<S>(language: string) {
     listed !== undefined && !listed.some((d) => coversLanguage(d, language));
   const query = useLookupTextQuery(
     request && !isMissingDictionary
-      ? lookupQueryOf(request, language)
+      ? lookupQueryOf(request.lookup, language)
       : skipToken,
   );
-  const [lookUpLazily] = useLazyLookupTextQuery();
-  const [prefetchLazily] = useLazyLookupTextQuery();
+  const storeDispatch = useAppDispatch();
+  const store = useStore();
   return {
     popup,
     request,
@@ -59,37 +59,35 @@ export function useDictionaryLookup<S>(language: string) {
     /**
      * Looks a word up without showing it, and resolves its results, or null when the lookup fails or no dictionary covers the language.
      * A lookup the pop-up already made or is making for the same word is reused.
+     * It does not render the component again.
      */
     lookUp: (
       wanted: LookupRequest<S>,
     ): Promise<readonly LookupResult[] | null> =>
       isMissingDictionary
         ? Promise.resolve(null)
-        : lookUpLazily(lookupQueryOf(wanted, language), true)
-            .unwrap()
+        : lookUpTextAhead(storeDispatch, lookupQueryOf(wanted.lookup, language))
             .then((response) => response.results)
             .catch(() => null),
-    /** Starts looking a word up, so that its results are at hand when the pop-up shows it. */
-    prefetch: (wanted: LookupRequest<S>) => {
-      if (!isMissingDictionary)
-        prefetchLazily(lookupQueryOf(wanted, language), true);
-    },
+    /**
+     * The results of a word's lookup when they are known at once: from the cache, or none when no dictionary covers the language.
+     * Undefined when the word has to be looked up. It reads the cache without rendering the component again when the cache changes.
+     */
+    cachedResults: (
+      wanted: LookupRequest<S>,
+    ): readonly LookupResult[] | undefined =>
+      isMissingDictionary
+        ? []
+        : selectCachedLookup(
+            store.getState(),
+            lookupQueryOf(wanted.lookup, language),
+          )?.results,
     chooseWord: (chosen: LookupRequest<S>) =>
       dispatch({ type: "wordChosen", request: chosen }),
     openSearch: () => dispatch({ type: "searchOpened" }),
     search: (term: string) => dispatch({ type: "termSearched", term }),
     close: () => dispatch({ type: "closed" }),
   };
-}
-
-function lookupQueryOf<S>(
-  request: LookupRequest<S>,
-  language: string,
-): LookupQuery {
-  const { text, context, offset } = request.lookup;
-  return context === undefined || offset === undefined
-    ? { text, language }
-    : { text, language, context, offset };
 }
 
 function outcomeOf(

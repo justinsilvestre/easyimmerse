@@ -1,12 +1,16 @@
 mod auth;
 mod dictionaries;
+mod dictionary_batch_lookup;
 mod documents;
+mod embedded_subtitles;
 mod flashcards;
+mod local_media_sample;
 mod media;
 mod media_conversion;
 mod openapi;
 mod preferences;
 mod projects;
+mod sidecar_subtitles;
 mod subtitles;
 mod support;
 mod timed_text;

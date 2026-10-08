@@ -1,7 +1,8 @@
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { useReducer } from "react";
 import { afterEach, describe, expect, it } from "vitest";
+import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { reduceEditor } from "./editFlashcard.ts";
 import {
   exampleFlashcard,
@@ -39,7 +40,7 @@ function EditorWithState({ onSave }: { onSave: OnSave }) {
 }
 
 function renderEditor(onSave: OnSave = () => undefined) {
-  render(<EditorWithState onSave={onSave} />);
+  renderWithAppStore(<EditorWithState onSave={onSave} />);
 }
 
 const openMoreFields = () =>
@@ -158,7 +159,7 @@ function renderWithSaveStatus(
   saveStatus: "idle" | "waitingForDefinitions" | "saving",
   onSave: () => void = () => undefined,
 ) {
-  render(
+  renderWithAppStore(
     <FlashcardEditor
       state={{
         content: exampleFlashcard,
@@ -178,7 +179,7 @@ function renderWithSaveStatus(
 /** Renders the editor with its clip and screenshot shown, recording the actions it dispatches. */
 function renderWithMedia(saveStatus: "idle" | "saving") {
   const actions: string[] = [];
-  render(
+  renderWithAppStore(
     <FlashcardEditor
       state={{
         content: exampleFlashcard,
@@ -200,9 +201,10 @@ function renderWithMedia(saveStatus: "idle" | "saving") {
 /** Renders the editor, recording presses of Close and Delete. */
 function renderWithLeavingButtons(
   saveStatus: "idle" | "waitingForDefinitions" | "saving",
+  { isNew = false, hasSaveFailed = false } = {},
 ) {
   const presses: string[] = [];
-  render(
+  renderWithAppStore(
     <FlashcardEditor
       state={{
         content: exampleFlashcard,
@@ -212,6 +214,8 @@ function renderWithLeavingButtons(
       languages={exampleLanguages}
       waveform={null}
       saveStatus={saveStatus}
+      isNew={isNew}
+      hasSaveFailed={hasSaveFailed}
       onSave={() => undefined}
       onDelete={() => presses.push("delete")}
       onClose={() => presses.push("close")}
@@ -247,6 +251,83 @@ describe("FlashcardEditor's Close and Delete buttons", () => {
       screen.getByRole("button", { name: "Close without saving" }),
     );
     expect(presses).toEqual(["close"]);
+  });
+
+  it("offer no Delete for a new flashcard that was never saved", () => {
+    renderWithLeavingButtons("idle", { isNew: true });
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+  });
+});
+
+describe("FlashcardEditor's Delete", () => {
+  const pressDelete = () =>
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+  const confirmDialog = () =>
+    screen.getByRole("dialog", {
+      hidden: true,
+      name: "Delete this flashcard?",
+    });
+
+  it("asks before deleting", () => {
+    const presses = renderWithLeavingButtons("idle");
+    pressDelete();
+    expect(presses).toEqual([]);
+  });
+
+  it("names the word in its question", () => {
+    renderWithLeavingButtons("idle");
+    pressDelete();
+    expect(confirmDialog().textContent).toContain(`“${exampleFlashcard.word}”`);
+  });
+
+  it("deletes once the deletion is confirmed", () => {
+    const presses = renderWithLeavingButtons("idle");
+    pressDelete();
+    fireEvent.click(
+      within(confirmDialog()).getByRole("button", {
+        hidden: true,
+        name: "Delete",
+      }),
+    );
+    expect(presses).toEqual(["delete"]);
+  });
+
+  it("deletes nothing once the question is cancelled", () => {
+    const presses = renderWithLeavingButtons("idle");
+    pressDelete();
+    fireEvent.click(
+      within(confirmDialog()).getByRole("button", {
+        hidden: true,
+        name: "Cancel",
+      }),
+    );
+    expect(presses).toEqual([]);
+  });
+
+  it("closes the question once it is cancelled", () => {
+    renderWithLeavingButtons("idle");
+    pressDelete();
+    fireEvent.click(
+      within(confirmDialog()).getByRole("button", {
+        hidden: true,
+        name: "Cancel",
+      }),
+    );
+    expect(screen.queryByRole("dialog", { hidden: true })).toBeNull();
+  });
+});
+
+describe("FlashcardEditor after a failed save", () => {
+  it("tells that the save failed", () => {
+    renderWithLeavingButtons("idle", { hasSaveFailed: true });
+    expect(screen.getByRole("status").textContent).toBe(
+      "Could not save the flashcard. Press Save to try again.",
+    );
+  });
+
+  it("tells of the new save instead once Save is pressed again", () => {
+    renderWithLeavingButtons("saving", { hasSaveFailed: true });
+    expect(screen.getByRole("status").textContent).toBe("Saving…");
   });
 });
 
@@ -338,7 +419,7 @@ describe("FlashcardEditor's save status", () => {
 
 describe("FlashcardEditor while its save waits for definitions", () => {
   function renderWaiting(onSave: () => void) {
-    render(
+    renderWithAppStore(
       <FlashcardEditor
         state={{
           content: exampleFlashcard,

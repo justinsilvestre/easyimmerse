@@ -1,3 +1,7 @@
+use std::borrow::Cow;
+
+pub(crate) const BYTE_ORDER_MARK: char = '\u{feff}';
+
 /// Splits text into groups of consecutive non-blank lines. Line endings may be LF or CRLF.
 pub(crate) fn split_blocks(text: &str) -> Vec<Vec<&str>> {
     let mut blocks = Vec::new();
@@ -19,8 +23,14 @@ fn flush_block<'a>(blocks: &mut Vec<Vec<&'a str>>, current: &mut Vec<&'a str>) {
     }
 }
 
-pub(crate) fn strip_bom(text: &str) -> &str {
-    text.trim_start_matches('\u{feff}')
+/// Removes every byte order mark (U+FEFF), wherever it lies.
+/// Files joined together carry one at the start of each part, and its other use, as a zero-width no-break space, is deprecated.
+pub(crate) fn remove_byte_order_marks(text: &str) -> Cow<'_, str> {
+    if text.contains(BYTE_ORDER_MARK) {
+        Cow::Owned(text.replace(BYTE_ORDER_MARK, ""))
+    } else {
+        Cow::Borrowed(text)
+    }
 }
 
 /// Joins cue text lines with `\n`, dropping trailing whitespace on each line.
@@ -55,7 +65,12 @@ mod tests {
     }
 
     #[test]
-    fn strips_a_leading_byte_order_mark() {
-        assert_eq!(strip_bom("\u{feff}WEBVTT"), "WEBVTT");
+    fn removes_a_leading_byte_order_mark() {
+        assert_eq!(remove_byte_order_marks("\u{feff}WEBVTT"), "WEBVTT");
+    }
+
+    #[test]
+    fn removes_byte_order_marks_inside_the_text() {
+        assert_eq!(remove_byte_order_marks("a\u{feff}b\u{feff}"), "ab");
     }
 }

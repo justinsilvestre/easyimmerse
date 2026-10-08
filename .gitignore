@@ -1,4 +1,5 @@
 *.tmp.md
+*.tmp.png
 
 # Local overrides
 .env

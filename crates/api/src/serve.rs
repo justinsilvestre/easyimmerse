@@ -11,6 +11,7 @@ use tokio::task::JoinHandle;
 
 use crate::config::ApiConfig;
 use crate::router::build_router;
+use crate::routes::conversion_cache::restore_cache_budget;
 use crate::state::AppState;
 
 #[derive(Debug, Error)]
@@ -104,6 +105,7 @@ fn open_conversion_service(cache_dir: PathBuf) -> Option<ConversionService> {
 /// Encoder discovery and cache cleanup run in the background, so that they never delay the
 /// first request.
 fn start_background_work(conversion: &ConversionService, storage: &Storage) {
+    restore_cache_budget(conversion, storage);
     conversion.start_encoder_discovery();
     match storage.list_referenced_source_paths() {
         Ok(paths) => conversion.start_cache_cleanup(paths.into_iter().map(PathBuf::from).collect()),

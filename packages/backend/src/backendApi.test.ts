@@ -54,6 +54,7 @@ const savedFlashcard: Flashcard = {
   project_id: "p1",
   media_file_id: "m1",
   cue_index: null,
+  word_start: null,
   content: {
     word: "Hund",
     word_pronunciation: "",
@@ -74,6 +75,7 @@ const savedFlashcard: Flashcard = {
 const movedClipDraft: FlashcardDraft = {
   media_file_id: "m1",
   cue_index: null,
+  word_start: null,
   content: {
     ...savedFlashcard.content,
     audio_context: { start_ms: 500, end_ms: 2000 },
@@ -308,7 +310,7 @@ describe("backendApi", () => {
       }),
     );
     expect(client.requests[0]?.offlineOperation).toEqual({
-      kind: "parseDictionary",
+      kind: "importDictionary",
       fileName: "words.csv",
       bytes,
       tableLayout: null,
@@ -330,6 +332,15 @@ describe("backendApi", () => {
       columns: "term,ignored",
       hasHeader: "true",
     });
+  });
+
+  it("sends GET /dictionaries/imports/{id} for getImportJob", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.getImportJob.initiate("job 1"),
+    );
+    expect(client.requests[0]?.path).toBe("/dictionaries/imports/job%201");
   });
 
   it("sends POST /dictionaries/preview for previewDictionaryTable", async () => {

@@ -14,22 +14,31 @@ export type PendingTable = {
 export type DictionaryImport = {
   /** The file being read or imported. */
   addingFile: string | null;
+  /** The job importing `addingFile`, once the server has started it. */
+  jobId: string | null;
   /** The file last refused because no supported format reads it, until dismissed. */
   unsupportedFile: string | null;
+  /** Why the last file could not be added for another reason, until dismissed. */
+  importFailure: string | null;
   pendingTable: PendingTable | null;
 };
 
 export type DictionaryImportAction =
   | { type: "started"; fileName: string }
+  | { type: "jobStarted"; jobId: string }
   | { type: "tablePreviewed"; table: PendingTable }
   | { type: "tableCancelled" }
   | { type: "finished" }
   | { type: "refusedAsUnsupported"; fileName: string }
-  | { type: "unsupportedDismissed" };
+  | { type: "unsupportedDismissed" }
+  | { type: "failed"; message: string }
+  | { type: "failureDismissed" };
 
 export const initialDictionaryImport: DictionaryImport = {
   addingFile: null,
+  jobId: null,
   unsupportedFile: null,
+  importFailure: null,
   pendingTable: null,
 };
 
@@ -49,18 +58,36 @@ export function reduceDictionaryImport(
     case "started":
       return {
         addingFile: action.fileName,
+        jobId: null,
         unsupportedFile: null,
+        importFailure: null,
         pendingTable: null,
       };
+    case "jobStarted":
+      return { ...state, jobId: action.jobId };
     case "tablePreviewed":
       return { ...state, addingFile: null, pendingTable: action.table };
     case "tableCancelled":
       return { ...state, pendingTable: null };
     case "finished":
-      return { ...state, addingFile: null };
+      return { ...state, addingFile: null, jobId: null };
     case "refusedAsUnsupported":
-      return { ...state, addingFile: null, unsupportedFile: action.fileName };
+      return {
+        ...state,
+        addingFile: null,
+        jobId: null,
+        unsupportedFile: action.fileName,
+      };
     case "unsupportedDismissed":
       return { ...state, unsupportedFile: null };
+    case "failed":
+      return {
+        ...state,
+        addingFile: null,
+        jobId: null,
+        importFailure: action.message,
+      };
+    case "failureDismissed":
+      return { ...state, importFailure: null };
   }
 }

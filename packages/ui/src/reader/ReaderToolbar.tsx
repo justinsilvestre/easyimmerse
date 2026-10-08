@@ -11,6 +11,7 @@ import type { ReaderPanel } from "./readerState.ts";
  */
 export function ReaderToolbar({
   title,
+  projectName,
   chapterTitle,
   isVisible,
   panel,
@@ -22,6 +23,8 @@ export function ReaderToolbar({
   onReveal,
 }: {
   title: string;
+  /** The name of the project the book belongs to, which the way back is named after. */
+  projectName: string;
   chapterTitle: string | null;
   isVisible: boolean;
   panel: ReaderPanel | null;
@@ -39,15 +42,20 @@ export function ReaderToolbar({
     // biome-ignore lint/a11y/noStaticElementInteractions: see above
     <header
       className={clsx(
-        "absolute inset-x-0 top-0 z-20 border-b border-line bg-surface/90 backdrop-blur transition-[opacity,translate] duration-300",
+        "absolute inset-x-0 top-0 z-20 pt-[env(safe-area-inset-top)] border-b border-line bg-surface/90 backdrop-blur transition-[opacity,translate] duration-300",
         !isVisible && "pointer-events-none -translate-y-2 opacity-0",
       )}
       onFocus={onReveal}
     >
       <div className="flex h-12 items-center gap-1 px-2">
-        <Button variant="subtle" onClick={onBack}>
-          <ArrowLeft className="size-4" aria-hidden />
-          <span className="hidden sm:inline">Project</span>
+        <Button
+          variant="subtle"
+          aria-label={`Back to ${projectName}`}
+          className="min-w-0 shrink"
+          onClick={onBack}
+        >
+          <ArrowLeft className="size-4 shrink-0" aria-hidden />
+          <span className="hidden truncate sm:inline">{projectName}</span>
         </Button>
         {hasContents && (
           <IconButton

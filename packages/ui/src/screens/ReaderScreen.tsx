@@ -6,19 +6,22 @@ import {
   selectPreferencesLoaded,
 } from "@easyimmerse/state";
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { draftFromText } from "../flashcards/draftFromText.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
-import { FlashcardSaveNotice } from "../flashcards/FlashcardSaveNotice.tsx";
+import { isAwaitingLookup } from "../flashcards/saveStage.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
+import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useReaderLookup } from "../lookup/useReaderLookup.ts";
+import type { WordPlace } from "../lookup/useWordLookup.ts";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { ReaderView } from "../reader/ReaderView.tsx";
 import { parseReaderPreferences } from "../reader/readerPreferences.ts";
+import { sentenceWordLookups } from "../reader/sentenceWordLookups.ts";
 import { useOpenedBook } from "../reader/useOpenedBook.ts";
 import { useOpeningLocation } from "../reader/useOpeningLocation.ts";
 import type { ReaderWord } from "../reader/useWordPointer.ts";
@@ -27,6 +30,7 @@ import type { ReaderWord } from "../reader/useWordPointer.ts";
  * The screen for reading one of the project's ebooks or text files.
  * The book opens where it was last left, in the appearance last chosen.
  * Words are looked up in the dictionary pop-up as in the subtitles, and a flashcard made from one is filled from its lookup, with its sentence as context.
+ * The L key looks up the word under the mouse, or opens the pop-up's search field when the mouse is on no word.
  */
 export function ReaderScreen({
   project,
@@ -101,13 +105,13 @@ function BookReader({
    */
   const startFlashcard = (
     word: string,
-    source: ReaderWord | null,
+    place: WordPlace<ReaderWord> | null,
     lookupFields: LookupFlashcardFields | null,
     lateFields?: Promise<LookupFlashcardFields | null>,
   ) => {
     const draft = draftFromText({
       word,
-      sentence: source?.sentence ?? "",
+      sentence: place?.source.sentence ?? "",
       mediaFile,
       settings,
     });
@@ -117,37 +121,38 @@ function BookReader({
     flashcards.start(started, lateFields);
   };
   const lookup = useReaderLookup(languages, startFlashcard);
+  const textLanguage = document.language ?? settings.target_language;
+  const [nearbySentences, setNearbySentences] = useState<readonly string[]>([]);
+  useLookupPrefetch(languages.target, nearbySentences, (sentence) =>
+    sentenceWordLookups(sentence, textLanguage),
+  );
   return (
     <ReaderView
       document={document}
       title={document.title || mediaFile.name}
-      language={document.language ?? settings.target_language}
+      projectName={settings.name}
+      language={textLanguage}
       preferences={preferences}
       initialLocation={initialLocation}
       lookup={lookup.popup && <DictionaryPopup {...lookup.popup.props} />}
+      lookupSize={lookup.popup?.size}
       lookupWord={lookup.lookupWord}
       highlightedWord={lookup.highlightedWord}
       callbacks={{
         ...lookup.wordGestures,
         onBack: () => dispatch(actions.closeMedia()),
         onLookup: lookup.openSearch,
+        onLookupKey: lookup.lookUpPointedWord,
         onDismissLookup: lookup.close,
         onPointerInsideLookupChange: lookup.popup?.onPointerInsideChange,
         onLocationChange: (location) =>
           dispatch(actions.readingLocationReported(mediaFile.id, location)),
+        onNearbySentencesChange: setNearbySentences,
         onPreferencesChange: (changed) =>
           dispatch(
             actions.preferenceSet("readerPreferences", JSON.stringify(changed)),
           ),
       }}
-      headerContent={
-        flashcards.isSaved ? (
-          <FlashcardSaveNotice
-            outcome="savedInProject"
-            onDismiss={flashcards.dismissSaved}
-          />
-        ) : undefined
-      }
       sidePanel={
         flashcards.edited && (
           <FlashcardEditor
@@ -157,6 +162,9 @@ function BookReader({
                 : flashcards.edited.flashcard.id
             }
             state={flashcards.edited.editor}
+            isNew={flashcards.edited.kind === "new"}
+            isAwaitingLookup={isAwaitingLookup(flashcards.edited.stage)}
+            hasSaveFailed={flashcards.saveFailed}
             dispatch={flashcards.edit}
             languages={languages}
             waveform={null}

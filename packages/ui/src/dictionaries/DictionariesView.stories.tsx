@@ -12,6 +12,7 @@ const meta = {
   args: {
     dictionaries: exampleDictionaries,
     unsupportedFile: null,
+    importFailure: null,
     pendingTable: null,
     onBack: fn(),
     onAddFromRegistry: fn(),
@@ -20,6 +21,7 @@ const meta = {
     onMove: fn(),
     onRemove: fn(),
     onDismissUnsupportedFile: fn(),
+    onDismissImportFailure: fn(),
     onImportTable: fn(),
     onCancelTable: fn(),
   },
@@ -39,8 +41,35 @@ export const WithoutRegistryOrOrdering: Story = {
   },
 };
 
+/** After the removal of the first dictionary was confirmed, while the server deletes it. */
+export const RemovingOne: Story = {
+  args: { removingIds: ["d1"] },
+};
+
+/** Before the server has reported any progress. */
 export const Adding: Story = {
   args: { addingFile: "jmdict_english.zip" },
+};
+
+export const AddingWithProgress: Story = {
+  args: {
+    addingFile: "jmdict_english.zip",
+    importProgress: {
+      entries: 123_456,
+      term_meta: 0,
+      kanji: 0,
+      kanji_meta: 0,
+      tags: 12,
+      media: 0,
+    },
+  },
+};
+
+export const ImportFailed: Story = {
+  args: {
+    importFailure:
+      "jmdict_english.zip could not be added: term_bank_3.json is not valid JSON",
+  },
 };
 
 export const Loading: Story = {

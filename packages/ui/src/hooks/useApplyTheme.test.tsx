@@ -19,7 +19,7 @@ describe("useApplyTheme", () => {
   it("marks the document with the theme to show", () => {
     const { store } = renderWithAppStore(<ThemeProbe />);
     act(() => {
-      store.dispatch(actions.themeToggled());
+      store.dispatch(actions.preferenceSet("theme", "dark"));
     });
     expect(document.documentElement.dataset.theme).toBe("dark");
   });

@@ -15,4 +15,8 @@ budget_bytes: number, free_bytes: number,
 /**
  * True when free disk space, not the budget, limits the cache.
  */
-space_low: boolean, };
+space_low: boolean, 
+/**
+ * The budget the user chose, or None while the budget follows the disk's size.
+ */
+chosen_budget_bytes: number | null, };

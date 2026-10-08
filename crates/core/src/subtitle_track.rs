@@ -66,6 +66,14 @@ pub struct SubtitleTracksResponse {
 }
 
 impl SubtitleSelection {
+    /// Fills each role this selection leaves unset with the track `other` gives it.
+    pub fn with_unset_roles_from(self, other: SubtitleSelection) -> Self {
+        SubtitleSelection {
+            target_track_id: self.target_track_id.or(other.target_track_id),
+            translation_track_id: self.translation_track_id.or(other.translation_track_id),
+        }
+    }
+
     /// Gives the track the role, replacing whichever track had it.
     pub fn with_role(mut self, role: SubtitleRole, track_id: SubtitleTrackId) -> Self {
         match role {
@@ -116,5 +124,22 @@ mod tests {
     fn removing_an_unrelated_track_changes_nothing() {
         let selection = SubtitleSelection::default().with_role(SubtitleRole::Target, track("a"));
         assert_eq!(selection.clone().without_track(&track("b")), selection);
+    }
+
+    #[test]
+    fn filling_unset_roles_keeps_the_roles_already_set() {
+        let selection = SubtitleSelection::default()
+            .with_role(SubtitleRole::Target, track("a"))
+            .with_unset_roles_from(
+                SubtitleSelection::default()
+                    .with_role(SubtitleRole::Target, track("b"))
+                    .with_role(SubtitleRole::Translation, track("c")),
+            );
+        assert_eq!(
+            selection,
+            SubtitleSelection::default()
+                .with_role(SubtitleRole::Target, track("a"))
+                .with_role(SubtitleRole::Translation, track("c"))
+        );
     }
 }

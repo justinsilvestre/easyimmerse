@@ -2,6 +2,7 @@ import type { Project } from "@easyimmerse/types";
 import { ChevronRight, Film, Layers } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { pluralize } from "../components/pluralize.ts";
+import { Skeleton } from "../components/Skeleton.tsx";
 import { formatRelativeDate } from "./formatRelativeDate.ts";
 import { languageName } from "./languages.ts";
 
@@ -46,5 +47,18 @@ export function ProjectCard({
         aria-hidden
       />
     </button>
+  );
+}
+
+/** A placeholder in the shape of a project card, shown while the projects load. */
+export function ProjectCardSkeleton() {
+  return (
+    <div className="flex items-center gap-4 rounded-lg border border-line bg-surface px-4 py-3">
+      <Skeleton className="size-10 shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-3 w-2/3" />
+      </div>
+    </div>
   );
 }

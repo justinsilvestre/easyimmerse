@@ -1,10 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
 use easyimmerse_storage::{Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
+use crate::import_jobs::ImportJobs;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -14,6 +15,8 @@ pub struct AppState {
     pub probes: Option<Arc<ProbeCache>>,
     /// Converts media while it plays. None without ffmpeg or a cache directory.
     pub conversion: Option<ConversionService>,
+    /// The dictionary imports running or recently finished.
+    pub import_jobs: Arc<Mutex<ImportJobs>>,
 }
 
 impl AppState {
@@ -28,6 +31,7 @@ impl AppState {
             config: Arc::new(config),
             probes: probes.map(Arc::new),
             conversion,
+            import_jobs: Arc::default(),
         }
     }
 

@@ -11,6 +11,7 @@ function registryWithRecorder() {
     play: () => calls.push("play"),
     pause: () => calls.push("pause"),
     setVolume: (volume) => calls.push(`setVolume ${volume}`),
+    setMuted: (isMuted) => calls.push(`setMuted ${isMuted}`),
     setSpeed: (speed) => calls.push(`setSpeed ${speed}`),
   });
   return { registry, calls };
@@ -39,6 +40,12 @@ describe("createPlayerEffects", () => {
     const { registry, calls } = registryWithRecorder();
     createPlayerEffects(registry).pausePlayer();
     expect(calls).toEqual(["pause"]);
+  });
+
+  it("mutes the registered player", () => {
+    const { registry, calls } = registryWithRecorder();
+    createPlayerEffects(registry).setPlayerMuted(true);
+    expect(calls).toEqual(["setMuted true"]);
   });
 
   it("sets the registered player's speed", () => {

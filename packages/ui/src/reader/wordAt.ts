@@ -35,6 +35,13 @@ export function wordsAroundCaret(
   return after ? [after, before] : [before];
 }
 
+/** Lists the words of a text, using the language's word boundaries, leaving out punctuation and space. */
+export function wordsOf(text: string, language: string): TextSpan[] {
+  return [...segmenterOf(language, "word").segment(text)]
+    .filter((segment) => segment.isWordLike)
+    .map(spanOf);
+}
+
 /** Finds the sentence that contains the character at the offset. */
 export function sentenceAt(
   text: string,
@@ -44,10 +51,19 @@ export function sentenceAt(
   const segment = segmenterOf(language, "sentence")
     .segment(text)
     .containing(offset);
-  if (!segment) return null;
-  const span = spanOf(segment);
-  const trimmed = span.text.trimEnd();
-  return { ...span, text: trimmed, end: span.start + trimmed.length };
+  return segment ? trimmedEnd(spanOf(segment)) : null;
+}
+
+function trimmedEnd(span: TextSpan): TextSpan {
+  const text = span.text.trimEnd();
+  return { ...span, text, end: span.start + text.length };
+}
+
+/** Lists the sentences of a text, each without the space that follows it, as `sentenceAt` finds them. */
+export function sentencesOf(text: string, language: string): TextSpan[] {
+  return [...segmenterOf(language, "sentence").segment(text)].map((segment) =>
+    trimmedEnd(spanOf(segment)),
+  );
 }
 
 function spanOf(segment: Intl.SegmentData): TextSpan {

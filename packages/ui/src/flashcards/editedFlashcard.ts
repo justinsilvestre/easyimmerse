@@ -102,16 +102,7 @@ export function reduceEditedFlashcard(
 ): EditedFlashcard | null {
   switch (action.type) {
     case "started":
-      return {
-        kind: "new",
-        flashcardId: action.flashcardId,
-        draft: action.draft,
-        editor: editorStateOf(action.draft),
-        typedFields: [],
-        stage: action.awaitsLookup ? "awaitingLookup" : "editing",
-        isChanged: false,
-        session: action.session,
-      };
+      return startedFlashcard(action);
     case "opened":
       return {
         kind: "existing",
@@ -165,6 +156,22 @@ export function reduceEditedFlashcard(
 }
 
 type NewFlashcard = Extract<EditedFlashcard, { kind: "new" }>;
+
+/** The new flashcard that `started` opens, which may also be saved without ever opening. */
+export function startedFlashcard(
+  action: Extract<EditedFlashcardAction, { type: "started" }>,
+): NewFlashcard {
+  return {
+    kind: "new",
+    flashcardId: action.flashcardId,
+    draft: action.draft,
+    editor: editorStateOf(action.draft),
+    typedFields: [],
+    stage: action.awaitsLookup ? "awaitingLookup" : "editing",
+    isChanged: false,
+    session: action.session,
+  };
+}
 
 function isAwaitingLookupOf(
   edited: EditedFlashcard | null,

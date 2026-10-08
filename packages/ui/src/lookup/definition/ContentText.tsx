@@ -9,13 +9,13 @@ import {
 
 /** Renders a run of definition text, with each word clickable unless the text sits inside a `PlainTextScope`. */
 export function ContentText({ text }: { text: string }) {
-  const { isPlainText, onWordClick } = useDefinitionContext();
+  const { isPlainText, onWordLookup } = useDefinitionContext();
   const popupWordActions = usePopupWordActions();
   if (isPlainText) return text;
   return (
     <ClickableText
       text={text}
-      gestures={popupWordGestures(onWordClick, popupWordActions)}
+      gestures={popupWordGestures(onWordLookup, popupWordActions)}
     />
   );
 }

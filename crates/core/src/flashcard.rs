@@ -33,6 +33,9 @@ pub struct Flashcard {
     pub media_file_id: Option<MediaFileId>,
     /// The index of the subtitle cue the card was made from, when it was made from one.
     pub cue_index: Option<u32>,
+    /// Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.
+    /// Null when that is not known, as for a card whose word was not taken from a cue.
+    pub word_start: Option<u32>,
     pub content: FlashcardContent,
     /// The fields the card shows, in no particular order.
     pub included_fields: Vec<FlashcardFieldKey>,
@@ -48,6 +51,9 @@ pub struct Flashcard {
 pub struct FlashcardDraft {
     pub media_file_id: Option<MediaFileId>,
     pub cue_index: Option<u32>,
+    /// Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.
+    /// Null when that is not known, as for a card whose word was not taken from a cue.
+    pub word_start: Option<u32>,
     pub content: FlashcardContent,
     pub included_fields: Vec<FlashcardFieldKey>,
 }

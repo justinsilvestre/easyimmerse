@@ -2,7 +2,7 @@ import type { MediaFile, ProjectSettings } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { exampleCues, exampleTranslationCues } from "../media/exampleCues.ts";
 import { defaultProjectSettings } from "../projects/newProjectSettings.ts";
-import { cueForFlashcard, draftFromCue } from "./draftFromCue.ts";
+import { draftFromCue } from "./draftFromCue.ts";
 
 const mediaFile: MediaFile = {
   id: "m1",
@@ -18,9 +18,11 @@ const cue = exampleCues[2] ?? null;
 function draft(
   settings: ProjectSettings = defaultProjectSettings,
   hasScreenshots = true,
+  wordStart: number | null = 14,
 ) {
   return draftFromCue({
     word: "fressen",
+    wordStart,
     cue,
     translationCue: exampleTranslationCues[2] ?? null,
     mediaFile,
@@ -29,25 +31,23 @@ function draft(
   });
 }
 
-describe("cueForFlashcard", () => {
-  it("takes the cue shown at the time", () => {
-    expect(cueForFlashcard(exampleCues, 6_000)?.index).toBe(3);
-  });
-
-  it("takes the last cue before a pause", () => {
-    expect(cueForFlashcard(exampleCues, 8_400)?.index).toBe(3);
-  });
-
-  it("finds none before the first cue", () => {
-    expect(cueForFlashcard(exampleCues, 100)).toBeNull();
-  });
-});
-
 describe("draftFromCue", () => {
   it("takes the cue's text as the sentence", () => {
     expect(draft().content.text_context).toBe(
       "Der Hund will fressen.\nEr hat Hunger.",
     );
+  });
+
+  it("records where in the cue the word was taken from", () => {
+    expect(draft().word_start).toBe(14);
+  });
+
+  it("records no word start when the cue does not hold the word there", () => {
+    expect(draft(defaultProjectSettings, true, 4).word_start).toBeNull();
+  });
+
+  it("records no word start for a word not taken from the cue", () => {
+    expect(draft(defaultProjectSettings, true, null).word_start).toBeNull();
   });
 
   it("takes the translation cue's text as the sentence translation", () => {

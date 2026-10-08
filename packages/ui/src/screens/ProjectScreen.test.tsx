@@ -89,6 +89,18 @@ describe("ProjectScreen", () => {
     ).toBeDefined();
   });
 
+  it("narrows the media list to one kind of file from its heading menu", async () => {
+    renderProject();
+    await screen.findByRole("button", { name: "Audio interview.mp3" });
+    fireEvent.click(screen.getByRole("button", { name: "Media" }));
+    fireEvent.click(
+      screen.getByRole("menuitemcheckbox", { name: "Audio (1)" }),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Video episode.mkv" }),
+    ).toBeNull();
+  });
+
   it("opens a media file when it is clicked", async () => {
     const { store } = renderProject();
     fireEvent.click(
@@ -159,8 +171,8 @@ describe("ProjectScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add media" }));
     act(() =>
       effects.resolvePickMediaFile({
-        name: "episode.mkv",
-        source: { kind: "path", path: "/videos/episode.mkv" },
+        name: "pilot.mkv",
+        source: { kind: "path", path: "/videos/pilot.mkv" },
       }),
     );
     await vi.waitFor(() =>
@@ -172,10 +184,7 @@ describe("ProjectScreen", () => {
     let opened = false;
     renderProject(() => (opened = true));
     await screen.findByRole("heading", { name: "Alpha" });
-    // The first Settings button is the project's; the footer's opens the app's settings.
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "Settings" })[0] as HTMLElement,
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Project settings" }));
     expect(opened).toBe(true);
   });
 

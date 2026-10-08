@@ -6,12 +6,13 @@ describe("the app's home screen", () => {
   });
 
   // The app starts in the system's theme, which differs between machines and times of day.
-  it("switches to the other theme from the footer", async () => {
+  it("switches to the other theme from the footer's menu", async () => {
     const themeBefore = await $("html").getAttribute("data-theme");
-    await $('button[role="switch"]').click();
-    await expect($("html")).toHaveAttribute(
-      "data-theme",
-      themeBefore === "dark" ? "light" : "dark",
-    );
+    const themeAfter = themeBefore === "dark" ? "light" : "dark";
+    await $('button[aria-label^="Theme:"]').click();
+    await $('[role="menu"]')
+      .$(`button=${themeAfter === "dark" ? "Dark" : "Light"}`)
+      .click();
+    await expect($("html")).toHaveAttribute("data-theme", themeAfter);
   });
 });

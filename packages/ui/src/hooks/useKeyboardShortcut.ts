@@ -2,32 +2,44 @@ import { type RefObject, useEffect, useRef } from "react";
 import { isOutOfReach } from "./isOutOfReach.ts";
 
 /**
- * Calls `onPress` when a single key is pressed without modifiers anywhere on the page,
- * except while the user types into a field, or while the screen that `scopeRef` marks
- * lies beneath another or under a modal dialog.
+ * Calls `onPress` when a key is pressed without modifiers anywhere on the page,
+ * except while the user types into a field, when the focused element has already handled the key,
+ * or while the screen that `scopeRef` marks lies beneath another or under a modal dialog.
+ * `keys` names one key or several that do the same thing, as `KeyboardEvent.key` spells them, so " " is Space.
+ * Space is left to a focused button or link, which it already presses.
  */
 export function useKeyboardShortcut(
-  key: string,
+  keys: string | readonly string[],
   onPress: () => void,
   scopeRef: RefObject<Element | null>,
 ): void {
-  const onPressRef = useRef(onPress);
-  onPressRef.current = onPress;
+  const latest = useRef({ keys, onPress });
+  latest.current = { keys, onPress };
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!isShortcut(event, key) || isOutOfReach(scopeRef.current)) return;
+      if (event.defaultPrevented) return;
+      if (!isShortcut(event, latest.current.keys)) return;
+      if (isOutOfReach(scopeRef.current)) return;
       event.preventDefault();
-      onPressRef.current();
+      latest.current.onPress();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [key, scopeRef]);
+  }, [scopeRef]);
 }
 
-function isShortcut(event: KeyboardEvent, key: string): boolean {
-  if (event.key.toLowerCase() !== key.toLowerCase()) return false;
+function isShortcut(
+  event: KeyboardEvent,
+  keys: string | readonly string[],
+): boolean {
+  const key = event.key.toLowerCase();
+  const listened = typeof keys === "string" ? [keys] : keys;
+  if (!listened.some((listenedKey) => listenedKey.toLowerCase() === key)) {
+    return false;
+  }
   if (event.ctrlKey || event.metaKey || event.altKey) return false;
-  return !isTypingTarget(event.target);
+  if (isTypingTarget(event.target)) return false;
+  return key !== " " || !isPressable(event.target);
 }
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -35,5 +47,15 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return (
     target.isContentEditable ||
     ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
+  );
+}
+
+/** Whether Space on the element already does something of its own, such as pressing a button. */
+function isPressable(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return (
+    target.closest(
+      "button, a[href], summary, [role='button'], [role='checkbox'], [role='switch'], [role='tab'], [role='menuitem'], [role='option']",
+    ) !== null
   );
 }

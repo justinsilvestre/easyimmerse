@@ -3,6 +3,7 @@ import type { ComponentProps } from "react";
 import { useReducer } from "react";
 import { fn } from "storybook/test";
 import { generateExamplePeaks } from "../media/examplePeaks.ts";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { type EditorAction, reduceEditor } from "./editFlashcard.ts";
 import {
   exampleFlashcard,
@@ -29,6 +30,7 @@ const meta = {
   component: FlashcardEditor,
   render: (args) => <EditorWithState {...args} />,
   decorators: [
+    withAppStore,
     (Story) => (
       <div className="h-[36rem] w-full max-w-96">
         <Story />
@@ -82,4 +84,28 @@ export const FromAnEbook: Story = {
 /** Save was pressed while the word's definitions are still on their way. */
 export const SaveWaitingForDefinitions: Story = {
   args: { saveStatus: "waitingForDefinitions" },
+};
+
+/** A flashcard just started, which has never been saved and so has nothing to delete. */
+export const NewFlashcard: Story = {
+  args: { isNew: true },
+};
+
+/** The last save failed; the line stays until Save is pressed again. */
+export const SaveFailed: Story = {
+  args: { hasSaveFailed: true },
+};
+
+/** A definition too long for its field, cut off with a faded edge until the field has focus. */
+export const LongDefinition: Story = {
+  args: {
+    state: {
+      content: {
+        ...exampleFlashcard,
+        l1_definition:
+          "1. (of an animal) to eat; to feed on. 2. (colloquial, derogatory, of a person) to eat greedily or in large amounts; to gobble, to wolf down. 3. (figurative) to use up or consume in large quantities, as a machine that eats electricity or a project that swallows all of one's savings. 4. (figurative) to take in eagerly, as a reader who devours books. 5. (idiom) jemanden gefressen haben: to be unable to stand someone. 6. (idiom) etwas gefressen haben: to have finally understood something. 7. (idiom) wie ein Scheunendrescher fressen: to eat like a horse.",
+      },
+      includedFields: fieldsOfPreset("intermediate"),
+    },
+  },
 };

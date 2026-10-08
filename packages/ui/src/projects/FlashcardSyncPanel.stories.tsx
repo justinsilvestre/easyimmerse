@@ -33,6 +33,10 @@ type Story = StoryObj<typeof meta>;
 
 export const NotStarted: Story = {};
 
+export const NotStartedWithOptionsComingSoon: Story = {
+  args: { comingSoon: ["review", "ankiPackage", "ankiConnect"] },
+};
+
 export const Reviewing: Story = {
   args: { state: { kind: "review", dueCount: 12, nextCard: exampleFlashcard } },
 };
