@@ -1,11 +1,11 @@
 //! Applying the changes a media-source plugin asks for to a media file imported through
-//! it: removing held subtitle tracks, then fetching more.
+//! it: fetching more subtitle tracks, then removing held ones.
 
 use std::path::PathBuf;
 
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_core::project::ProjectSettings;
-use easyimmerse_core::providers::media_source::SkippedSubtitle;
+use easyimmerse_core::providers::media_source::{ResolvedSubtitle, SkippedSubtitle};
 use easyimmerse_core::subtitle_track::SubtitleTrackId;
 use easyimmerse_plugins::{FetchRequest, MediaContext, MediaUpdate, PluginPackage};
 
@@ -24,18 +24,20 @@ pub(crate) struct SourceMedia {
     pub context: MediaContext,
 }
 
-/// Removes the held tracks the update names, then fetches the tracks it asks for, and
-/// answers with the media file's tracks afterwards.
+/// Fetches the tracks the update asks for, then removes the held tracks it names and adds
+/// the fetched ones, and answers with the media file's tracks afterwards. A failed fetch
+/// changes nothing.
 pub(crate) async fn apply_media_update(
     state: &AppState,
     source: SourceMedia,
     update: MediaUpdate,
 ) -> Result<SourceStepResponse, ApiFailure> {
-    let removed = remove_held_tracks(state, &source, update.remove_subtitles).await?;
-    let skipped = match update.fetch {
+    let fetched = match update.fetch {
         Some(request) => fetch_tracks(state, &source, request).await?,
-        None => Vec::new(),
+        None => FetchedFiles::default(),
     };
+    let removed = remove_held_tracks(state, &source, update.remove_subtitles).await?;
+    let skipped = add_fetched_tracks(state, &source, fetched).await?;
     let media_id = source.media_file.id;
     state
         .with_storage(move |storage| {
@@ -47,6 +49,13 @@ pub(crate) async fn apply_media_update(
             })
         })
         .await
+}
+
+/// The subtitle files a plugin fetched, with the ids of the tracks it said it would fetch.
+#[derive(Default)]
+struct FetchedFiles {
+    requested: Vec<String>,
+    subtitles: Vec<ResolvedSubtitle>,
 }
 
 /// Removes the tracks among `ids` that the media file holds, ignoring any other id, and
@@ -71,13 +80,12 @@ async fn remove_held_tracks(
         .await
 }
 
-/// Fetches the tracks the plugin asks for into a fresh directory beside the media file and
-/// adds them, returning the fetched tracks that were not added.
+/// Fetches the tracks the plugin asks for into a fresh directory beside the media file.
 async fn fetch_tracks(
     state: &AppState,
     source: &SourceMedia,
     request: FetchRequest,
-) -> Result<Vec<SkippedSubtitle>, ApiFailure> {
+) -> Result<FetchedFiles, ApiFailure> {
     let output_dir = subtitles_dir(state, &source.media_file)?;
     tokio::fs::create_dir_all(&output_dir)
         .await
@@ -87,12 +95,26 @@ async fn fetch_tracks(
                 output_dir.display()
             ))
         })?;
+    let requested = request.subtitles.clone();
     let (package, dir) = (source.package.clone(), output_dir.clone());
-    let fetched = run_plugin_call(move || fetch_subtitles(&package, &request, &dir)).await?;
+    let subtitles = run_plugin_call(move || fetch_subtitles(&package, &request, &dir)).await?;
     ensure_inside(
         &output_dir,
-        fetched.iter().map(|subtitle| subtitle.path.as_str()),
+        subtitles.iter().map(|subtitle| subtitle.path.as_str()),
     )?;
+    Ok(FetchedFiles {
+        requested,
+        subtitles,
+    })
+}
+
+/// Adds the fetched tracks, giving them the roles left free, and returns the tracks asked
+/// for that were not added.
+async fn add_fetched_tracks(
+    state: &AppState,
+    source: &SourceMedia,
+    fetched: FetchedFiles,
+) -> Result<Vec<SkippedSubtitle>, ApiFailure> {
     let media_id = source.media_file.id.clone();
     let taken = {
         let media_id = media_id.clone();
@@ -100,8 +122,13 @@ async fn fetch_tracks(
             .with_storage(move |storage| storage.get_subtitle_selection(&media_id))
             .await?
     };
-    let FetchedTracks { tracks, skipped } =
-        read_fetched_subtitles(&fetched, &source.settings, taken.clone()).await;
+    let FetchedTracks { tracks, skipped } = read_fetched_subtitles(
+        &fetched.requested,
+        &fetched.subtitles,
+        &source.settings,
+        taken.clone(),
+    )
+    .await;
     state
         .with_storage(move |storage| {
             let mut selection = taken;

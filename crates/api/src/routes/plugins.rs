@@ -268,6 +268,7 @@ async fn fetch_and_store(
     ensure_inside(&fetch.output_dir, paths)?;
     let name = media_name(&resolved);
     let FetchedTracks { tracks, skipped } = read_fetched_subtitles(
+        &fetch.request.subtitles,
         &resolved.subtitles,
         &fetch.settings,
         SubtitleSelection::default(),

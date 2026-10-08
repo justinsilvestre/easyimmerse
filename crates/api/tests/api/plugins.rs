@@ -640,6 +640,18 @@ async fn a_source_step_removes_no_track_of_another_media_file() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn a_source_step_whose_fetch_fails_removes_no_track() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add().await;
+    let track_id = fixture.subtitle_tracks(&added).await["tracks"][0]["id"].clone();
+    fixture
+        .source_step(&added, "apply", &["unknown"], &[track_id.as_str().unwrap()])
+        .await;
+    let tracks = fixture.subtitle_tracks(&added).await;
+    assert_eq!(tracks["tracks"].as_array().map(Vec::len), Some(1));
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn a_source_step_fetches_a_track() {
     let fixture = Fixture::start(false).await;
     let added = fixture.add_with_subtitles(&[]).await;
