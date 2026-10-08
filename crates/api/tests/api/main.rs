@@ -1,5 +1,6 @@
 mod auth;
 mod dictionaries;
+mod dictionary_batch_lookup;
 mod documents;
 mod embedded_subtitles;
 mod flashcards;

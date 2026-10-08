@@ -14,7 +14,7 @@ async fn start_fixture_import(server: &TestServer) -> TestResponse {
 }
 
 /// Polls the job that `started` answered with until it is done or has failed, and returns its last status.
-async fn finished(server: &TestServer, started: TestResponse) -> Value {
+pub(crate) async fn finished(server: &TestServer, started: TestResponse) -> Value {
     let id = started.json()["id"].as_str().unwrap().to_string();
     loop {
         let status = job_status(server, &id).await.json();
@@ -30,7 +30,7 @@ async fn job_status(server: &TestServer, id: &str) -> TestResponse {
 }
 
 /// Imports the fixture and returns the stored dictionary.
-async fn import_fixture(server: &TestServer) -> Value {
+pub(crate) async fn import_fixture(server: &TestServer) -> Value {
     let started = start_fixture_import(server).await;
     finished(server, started).await["dictionary"].clone()
 }
@@ -66,7 +66,7 @@ async fn look_up(server: &TestServer, text: &str) -> Value {
         .json()
 }
 
-fn percent_encode(text: &str) -> String {
+pub(crate) fn percent_encode(text: &str) -> String {
     text.bytes().map(|byte| format!("%{byte:02X}")).collect()
 }
 
