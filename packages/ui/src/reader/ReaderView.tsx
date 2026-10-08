@@ -27,7 +27,6 @@ import {
   type PageInfo,
   type PageTurner,
 } from "./PagedChapter.tsx";
-import { paragraphsNearView } from "./paragraphsNearView.ts";
 import { ReaderFooter } from "./ReaderFooter.tsx";
 import { ReaderToolbar } from "./ReaderToolbar.tsx";
 import {
@@ -53,6 +52,7 @@ import {
 import { ScrolledChapter } from "./ScrolledChapter.tsx";
 import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
+import { sentencesNearView } from "./sentencesNearView.ts";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 import { useLookedUpHighlight } from "./useLookedUpHighlight.ts";
 import { useReaderKeys } from "./useReaderKeys.ts";
@@ -73,8 +73,8 @@ export type ReaderCallbacks = ReaderWordGestures & {
   /** The pointer entering or leaving the dictionary pop-up. */
   onPointerInsideLookupChange?: (isInside: boolean) => void;
   onLocationChange: (location: ReaderLocation) => void;
-  /** Receives the paragraphs near the view, as `paragraphsNearView` picks them, each time the view moves to another paragraph. */
-  onNearbyParagraphsChange?: (paragraphs: readonly string[]) => void;
+  /** Receives the sentences near the view, as `sentencesNearView` picks them, each time the view moves. */
+  onNearbySentencesChange?: (sentences: readonly string[]) => void;
   onPreferencesChange: (preferences: ReaderPreferences) => void;
 };
 
@@ -180,16 +180,17 @@ export function ReaderView(props: ReaderViewProps) {
   useEffect(() => {
     reportLocation(state.location);
   }, [state.location]);
-  const reportNearby = useEffectEvent((paragraphs: readonly string[]) =>
-    callbacks.onNearbyParagraphsChange?.(paragraphs),
+  const reportNearby = useEffectEvent((sentences: readonly string[]) =>
+    callbacks.onNearbySentencesChange?.(sentences),
   );
-  const firstParagraphInView = state.location.paragraphIndex;
+  const { paragraphIndex, offset } = state.location;
   useEffect(() => {
     const paragraphs = document.chapters[chapterIndex]?.paragraphs ?? [];
+    const place = { paragraphIndex, offset };
     reportNearby(
-      paragraphsNearView(paragraphs, firstParagraphInView, screenCharacters),
+      sentencesNearView(paragraphs, place, props.language, screenCharacters),
     );
-  }, [document, chapterIndex, firstParagraphInView]);
+  }, [document, chapterIndex, paragraphIndex, offset, props.language]);
   const hasLookup = props.lookup != null;
   useLookedUpHighlight(props.highlightedWord);
 

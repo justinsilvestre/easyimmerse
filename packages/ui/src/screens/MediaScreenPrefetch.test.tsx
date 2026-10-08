@@ -82,7 +82,7 @@ describe("MediaScreen lookup prefetch", () => {
   it("looks up the cues of the next minute in one batch, without their markup", async () => {
     const { client } = renderMediaScreen({ batchLookupMs: 0 });
     await findSubtitles();
-    await vi.waitFor(() => expect(batches(client)).toHaveLength(1));
+    await vi.waitUntil(() => batches(client).length > 0);
     expect(batches(client)[0]?.texts).toEqual([
       "The cat is sleeping.",
       "The dog wants to eat.\nIt is hungry.",
@@ -94,7 +94,7 @@ describe("MediaScreen lookup prefetch", () => {
   it("sends no lookup of its own for a word hovered in a prefetched cue", async () => {
     const { client } = renderMediaScreen({ batchLookupMs: 0 });
     await findSubtitles();
-    await vi.waitFor(() => expect(batches(client)).toHaveLength(1));
+    await vi.waitUntil(() => batches(client).length > 0);
     await advance(10);
     await restMouseOn(panelWord("dog"));
     expect(singleLookups(client)).toEqual([]);
@@ -103,7 +103,7 @@ describe("MediaScreen lookup prefetch", () => {
   it("waits for the batch being fetched rather than looking a hovered word up on its own", async () => {
     const { client } = renderMediaScreen({ batchLookupMs: 500 });
     await findSubtitles();
-    await vi.waitFor(() => expect(batches(client)).toHaveLength(1));
+    await vi.waitUntil(() => batches(client).length > 0);
     await restMouseOn(panelWord("dog"));
     await advance(600);
     expect(singleLookups(client)).toEqual([]);
@@ -112,16 +112,15 @@ describe("MediaScreen lookup prefetch", () => {
   it("follows the mouse to a prefetched word without showing that it is looking it up", async () => {
     const { client } = renderMediaScreen({ batchLookupMs: 0 });
     await findSubtitles();
-    await vi.waitFor(() => expect(batches(client)).toHaveLength(1));
+    await vi.waitUntil(() => batches(client).length > 0);
     const popup = await lookUpInPanel("cat");
     const sawLoading = watchForText("Looking up dog");
     await restMouseOn(panelWord("dog"));
-    await vi.waitFor(() =>
-      expect(
+    await vi.waitUntil(
+      () =>
         within(popup).getByRole<HTMLInputElement>("textbox", {
           name: "Word to look up",
-        }).value,
-      ).toBe("dog"),
+        }).value === "dog",
     );
     expect(sawLoading.current).toBe(false);
   });

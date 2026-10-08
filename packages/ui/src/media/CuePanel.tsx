@@ -1,14 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { FilePlus, Layers, LocateFixed, Sparkles } from "lucide-react";
-import {
-  type KeyboardEvent,
-  type MouseEvent,
-  memo,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { type KeyboardEvent, type MouseEvent, memo, useMemo } from "react";
 import { Button } from "../components/Button.tsx";
 import {
   type ActiveWord,
@@ -87,16 +80,8 @@ export function CuePanel({
       })),
     [cues, translationCues],
   );
-  const { listRef, isFollowing, resume, follow } =
+  const { listRef, list, isFollowing, resume, follow } =
     useFollowsPlayback(activeCueIndex);
-  const [list, setList] = useState<HTMLOListElement | null>(null);
-  const attachList = useCallback(
-    (element: HTMLOListElement | null) => {
-      listRef(element);
-      setList(element);
-    },
-    [listRef],
-  );
   useVisibleItemSpan(list, cues, onVisibleCuesChange);
   const handlers = useStableCallbacks({
     seek: (ms: number) => {
@@ -147,7 +132,7 @@ export function CuePanel({
     <div className="relative flex min-h-0 flex-col">
       {/* Up and Down reach here from the focused word of a card, which handles Left and Right itself. */}
       <ol
-        ref={attachList}
+        ref={listRef}
         aria-label="Subtitles"
         className="flex flex-col gap-1 overflow-y-auto p-2"
         onKeyDown={stepCue}

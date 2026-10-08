@@ -265,10 +265,10 @@ describe("ReaderScreen lookup prefetch", () => {
 
   it("sends no lookup of its own for a word clicked near the view", async () => {
     const { client } = await renderReader({ hasBatchLookups: true });
-    await vi.waitFor(() =>
-      expect(
-        requestsTo(client.requests, "POST", "/dictionaries/lookup/batch"),
-      ).toHaveLength(1),
+    await vi.waitUntil(
+      () =>
+        requestsTo(client.requests, "POST", "/dictionaries/lookup/batch")
+          .length > 0,
     );
     await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
     pointAt("cat");

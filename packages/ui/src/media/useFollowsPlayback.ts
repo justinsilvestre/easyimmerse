@@ -75,6 +75,8 @@ export function useFollowsPlayback(activeKey: unknown) {
   return {
     /** Attach to the scrolling list. */
     listRef: setList,
+    /** The scrolling list, once attached. */
+    list,
     isFollowing,
     /** Brings the active item back into view and follows playback again. */
     resume: useCallback(() => {

@@ -18,10 +18,10 @@ import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useReaderLookup } from "../lookup/useReaderLookup.ts";
 import type { WordPlace } from "../lookup/useWordLookup.ts";
-import { paragraphLookups } from "../reader/paragraphLookups.ts";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { ReaderView } from "../reader/ReaderView.tsx";
 import { parseReaderPreferences } from "../reader/readerPreferences.ts";
+import { sentenceWordLookups } from "../reader/sentenceWordLookups.ts";
 import { useOpenedBook } from "../reader/useOpenedBook.ts";
 import { useOpeningLocation } from "../reader/useOpeningLocation.ts";
 import type { ReaderWord } from "../reader/useWordPointer.ts";
@@ -122,11 +122,9 @@ function BookReader({
   };
   const lookup = useReaderLookup(languages, startFlashcard);
   const textLanguage = document.language ?? settings.target_language;
-  const [nearbyParagraphs, setNearbyParagraphs] = useState<readonly string[]>(
-    [],
-  );
-  useLookupPrefetch(languages.target, nearbyParagraphs, (paragraph) =>
-    paragraphLookups(paragraph, textLanguage),
+  const [nearbySentences, setNearbySentences] = useState<readonly string[]>([]);
+  useLookupPrefetch(languages.target, nearbySentences, (sentence) =>
+    sentenceWordLookups(sentence, textLanguage),
   );
   return (
     <ReaderView
@@ -149,7 +147,7 @@ function BookReader({
         onPointerInsideLookupChange: lookup.popup?.onPointerInsideChange,
         onLocationChange: (location) =>
           dispatch(actions.readingLocationReported(mediaFile.id, location)),
-        onNearbyParagraphsChange: setNearbyParagraphs,
+        onNearbySentencesChange: setNearbySentences,
         onPreferencesChange: (changed) =>
           dispatch(
             actions.preferenceSet("readerPreferences", JSON.stringify(changed)),
