@@ -51,6 +51,9 @@ pub enum FormControl {
     Toggle { on: bool },
     /// A paragraph of text that is only read.
     Note { text: String },
+    /// A value the host does not show and sends back unchanged, so a plugin can
+    /// carry what it learned in one step into the next.
+    Hidden { value: String },
 }
 
 /// One option of a choice control.

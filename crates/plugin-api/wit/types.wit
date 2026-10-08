@@ -52,6 +52,9 @@ interface types {
         toggle(bool),
         /// A paragraph of text that is only read.
         note(string),
+        /// A value the host does not show and sends back unchanged, so a plugin can
+        /// carry what it learned in one step into the next.
+        hidden(string),
     }
 
     record text-control {
@@ -83,7 +86,8 @@ interface types {
     enum form-action-style { primary, secondary, destructive }
 
     /// What the user entered in one field: the text, the ids of the chosen options,
-    /// or "true" or "false" for a toggle. A note sends nothing.
+    /// or "true" or "false" for a toggle. A hidden control sends its value back
+    /// unchanged. A note sends nothing.
     record form-input {
         field: string,
         values: list<string>,
@@ -101,6 +105,9 @@ interface types {
         locator: string,
         /// The input of the form the import was submitted from.
         input: list<form-input>,
+        /// The ids of the subtitle tracks the plugin will try to fetch, so the host can
+        /// tell the user which did not arrive.
+        subtitles: list<string>,
     }
 
     /// The plugin's answer to an action in its import interface.
@@ -130,6 +137,9 @@ interface types {
         locator: string,
         /// The input of the form the fetch was submitted from.
         input: list<form-input>,
+        /// The ids of the subtitle tracks the plugin will try to fetch, so the host can
+        /// tell the user which did not arrive.
+        subtitles: list<string>,
     }
 
     /// Changes to a media file the host applies at the plugin's request.
