@@ -25,6 +25,27 @@ function createRecordingClient(): BackendClient & {
   };
 }
 
+/** Records every request and fails each source step, as a plugin whose fetch fails would. */
+function createFailingSourceStepClient(): BackendClient & {
+  requests: BackendRequest[];
+} {
+  const requests: BackendRequest[] = [];
+  return {
+    requests,
+    send: async <T>(request: BackendRequest) => {
+      requests.push(request);
+      if (request.path.endsWith("/source-step"))
+        return { error: { status: 502, message: "the fetch failed" } };
+      return {
+        data: {
+          tracks: [],
+          selection: { target_track_id: null, translation_track_id: null },
+        } as T,
+      };
+    },
+  };
+}
+
 function createStore() {
   return configureStore({
     reducer: { [backendApi.reducerPath]: backendApi.reducer },
@@ -534,6 +555,25 @@ describe("backendApi", () => {
     expect(client.requests).toEqual([
       { method: "POST", path: "/conversion-cache/clear" },
     ]);
+  });
+
+  it("fetches the subtitle tracks again after a source step fails", async () => {
+    const client = createFailingSourceStepClient();
+    configureBackend(client);
+    const store = createStore();
+    store.dispatch(backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs));
+    await store.dispatch(
+      backendApi.endpoints.submitSourceStep.initiate({
+        ...mediaArgs,
+        request: { action: "apply", input: [] },
+      }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(
+      client.requests.filter(
+        (request) => request.path === "/projects/p1/media/m1/subtitles",
+      ),
+    ).toHaveLength(2);
   });
 
   it("lists an added media file before the list is fetched again", async () => {

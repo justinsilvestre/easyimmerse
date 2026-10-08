@@ -404,7 +404,10 @@ export const backendApi = createApi({
       }),
       keepUnusedDataFor: 0,
     }),
-    /** Sends an action of a media file's source form. The plugin answers with the next form, or the server applies its changes. */
+    /**
+     * Sends an action of a media file's source form. The plugin answers with the next form, or the server applies its changes.
+     * A failure may come after some changes were made, so it refreshes the media file's tracks as well.
+     */
     submitSourceStep: build.mutation<SourceStepResponse, SourceStepArgs>({
       query: ({ request, ...args }) => ({
         method: "POST",
@@ -412,7 +415,7 @@ export const backendApi = createApi({
         body: { kind: "json", value: request },
       }),
       invalidatesTags: (result, _error, args) =>
-        result?.kind === "applied" ? subtitleTracksTag(args) : [],
+        result?.kind === "form" ? [] : subtitleTracksTag(args),
     }),
     addSubtitleTrack: build.mutation<SubtitleTrack, AddSubtitleTrackArgs>({
       query: ({ request, ...args }) => ({
