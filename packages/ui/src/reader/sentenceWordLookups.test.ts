@@ -15,6 +15,12 @@ describe("sentenceWordLookups", () => {
     ).toEqual(["猫が寝る。", "が寝る。", "寝る。", "る。"]);
   });
 
+  it("looks up from a number before a kanji once, at its first digit", () => {
+    expect(
+      sentenceWordLookups("2026年に", "ja").map((lookup) => lookup.text),
+    ).toEqual(["2026年に", "年に", "に"]);
+  });
+
   it("describes each lookup as pointing at the word in its paragraph would", () => {
     expect(sentenceWordLookups("Er frisst.", "de")[1]).toEqual(
       sentenceLookupAt("Der Hund. Er frisst.", 13, "de").lookup,

@@ -1,7 +1,8 @@
-import { isUnspacedLetter } from "../components/ClickableText.tsx";
 import type { ViewportPoint } from "../components/characterAtPoint.ts";
 import { characterLength } from "../components/characterLength.ts";
+import { runLookupStartAt } from "../components/runLookupStarts.ts";
 import type { LookupText } from "../lookup/lookupTextAt.ts";
+import { isUnspacedWord } from "./isUnspacedWord.ts";
 import type { ReaderLocation } from "./readingProgress.ts";
 import { sentenceLookupAt } from "./sentenceLookupAt.ts";
 import {
@@ -29,7 +30,8 @@ export type ReaderWord = {
 
 /**
  * Finds the word under a point of the window, or null when the point lies on no word.
- * In a script written without spaces, the word begins at the character under the point, as a lookup there does.
+ * In a script written without spaces, the word begins at the character under the point, as a lookup there does,
+ * or at the first digit of a stretch of digits under it.
  */
 export function wordAtPoint(
   point: ViewportPoint,
@@ -46,10 +48,14 @@ export function wordAtPoint(
   for (const word of wordsAroundCaret(text, offset, language)) {
     const rect = rectsOf(paragraph, word).find((r) => contains(r, point));
     if (!rect) continue;
-    const isUnspaced = isUnspacedLetter(
-      String.fromCodePoint(text.codePointAt(word.start) ?? 0),
-    );
-    const start = isUnspaced ? characterAt(paragraph, word, point) : word.start;
+    const isUnspaced = isUnspacedWord(word.text);
+    const start = isUnspaced
+      ? word.start +
+        runLookupStartAt(
+          word.text,
+          characterAt(paragraph, word, point) - word.start,
+        )
+      : word.start;
     return {
       text: text.slice(start, word.end),
       isUnspaced,
