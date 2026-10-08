@@ -1,7 +1,14 @@
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { FilePlus, Layers, LocateFixed, Sparkles } from "lucide-react";
-import { type KeyboardEvent, type MouseEvent, memo, useMemo } from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  memo,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { Button } from "../components/Button.tsx";
 import {
   type ActiveWord,
@@ -24,6 +31,7 @@ import {
 import { findTranslationOf } from "./findCue.ts";
 import { formatTimestamp } from "./formatTimestamp.ts";
 import { useFollowsPlayback } from "./useFollowsPlayback.ts";
+import { type ItemSpan, useVisibleItemSpan } from "./useVisibleItemSpan.ts";
 
 /**
  * The collapsible panel with one card per cue, which follows playback.
@@ -47,6 +55,7 @@ export function CuePanel({
   onAddSubtitlesFile,
   onGenerateSubtitles,
   onOpenFlashcardForCue,
+  onVisibleCuesChange,
 }: {
   cues: readonly Cue[];
   translationCues: readonly Cue[];
@@ -67,6 +76,8 @@ export function CuePanel({
   onGenerateSubtitles: () => void;
   /** Opens the flashcard made from a cue. Without it, a card only marks that it has one. */
   onOpenFlashcardForCue?: (cueIndex: number) => void;
+  /** Receives the positions in `cues` of the cards in view, each time they change, and null once the panel is gone. */
+  onVisibleCuesChange?: (span: ItemSpan | null) => void;
 }) {
   const pairs = useMemo(
     () =>
@@ -78,6 +89,15 @@ export function CuePanel({
   );
   const { listRef, isFollowing, resume, follow } =
     useFollowsPlayback(activeCueIndex);
+  const [list, setList] = useState<HTMLOListElement | null>(null);
+  const attachList = useCallback(
+    (element: HTMLOListElement | null) => {
+      listRef(element);
+      setList(element);
+    },
+    [listRef],
+  );
+  useVisibleItemSpan(list, cues, onVisibleCuesChange);
   const handlers = useStableCallbacks({
     seek: (ms: number) => {
       follow();
@@ -127,7 +147,7 @@ export function CuePanel({
     <div className="relative flex min-h-0 flex-col">
       {/* Up and Down reach here from the focused word of a card, which handles Left and Right itself. */}
       <ol
-        ref={listRef}
+        ref={attachList}
         aria-label="Subtitles"
         className="flex flex-col gap-1 overflow-y-auto p-2"
         onKeyDown={stepCue}

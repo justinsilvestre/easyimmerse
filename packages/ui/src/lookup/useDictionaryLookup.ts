@@ -6,11 +6,7 @@ import {
   useListDictionariesQuery,
   useLookupTextQuery,
 } from "@easyimmerse/backend";
-import type {
-  DictionarySummary,
-  LookupQuery,
-  LookupResult,
-} from "@easyimmerse/types";
+import type { DictionarySummary, LookupResult } from "@easyimmerse/types";
 import { useReducer } from "react";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -20,6 +16,7 @@ import {
   type LookupRequest,
   reduceLookupPopup,
 } from "./lookupPopup.ts";
+import { lookupQueryOf } from "./lookupQueryOf.ts";
 import { type LookupOutcome, lookupStateOf } from "./lookupStateOf.ts";
 
 const noDictionaries: readonly DictionarySummary[] = [];
@@ -42,7 +39,7 @@ export function useDictionaryLookup<S>(language: string) {
     listed !== undefined && !listed.some((d) => coversLanguage(d, language));
   const query = useLookupTextQuery(
     request && !isMissingDictionary
-      ? lookupQueryOf(request, language)
+      ? lookupQueryOf(request.lookup, language)
       : skipToken,
   );
   const storeDispatch = useAppDispatch();
@@ -66,7 +63,7 @@ export function useDictionaryLookup<S>(language: string) {
     ): Promise<readonly LookupResult[] | null> =>
       isMissingDictionary
         ? Promise.resolve(null)
-        : lookUpTextAhead(storeDispatch, lookupQueryOf(wanted, language))
+        : lookUpTextAhead(storeDispatch, lookupQueryOf(wanted.lookup, language))
             .then((response) => response.results)
             .catch(() => null),
     chooseWord: (chosen: LookupRequest<S>) =>
@@ -75,16 +72,6 @@ export function useDictionaryLookup<S>(language: string) {
     search: (term: string) => dispatch({ type: "termSearched", term }),
     close: () => dispatch({ type: "closed" }),
   };
-}
-
-function lookupQueryOf<S>(
-  request: LookupRequest<S>,
-  language: string,
-): LookupQuery {
-  const { text, context, offset } = request.lookup;
-  return context === undefined || offset === undefined
-    ? { text, language }
-    : { text, language, context, offset };
 }
 
 function outcomeOf(

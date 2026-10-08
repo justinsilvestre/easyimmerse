@@ -1,6 +1,7 @@
 import { actions, selectPlayer, selectPreference } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
 import { useCallback, useMemo, useReducer, useRef, useState } from "react";
+import { stripMarkup } from "../components/ClickableText.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { draftFromCue } from "../flashcards/draftFromCue.ts";
@@ -17,8 +18,11 @@ import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
+import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
 import type { StartFlashcardFromLookup } from "../lookup/useWordLookup.ts";
+import { wordLookupsIn } from "../lookup/wordLookupsIn.ts";
+import { cuesToPrefetch } from "../media/cuesToPrefetch.ts";
 import { findAdjacentCue, findTranslationOf } from "../media/findCue.ts";
 import { flashcardWordRanges } from "../media/flashcardWordRanges.ts";
 import { MediaView } from "../media/MediaView.tsx";
@@ -30,6 +34,7 @@ import { parseSubtitleAppearance } from "../media/subtitleAppearance.ts";
 import { useClipLoop } from "../media/useClipLoop.ts";
 import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
 import { useShownCue } from "../media/useShownCue.ts";
+import type { ItemSpan } from "../media/useVisibleItemSpan.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { TrackChoiceContext } from "../player/trackChoiceContext.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
@@ -157,6 +162,14 @@ export function MediaScreen({
     target: settings.target_language,
     translation: settings.translation_language,
   };
+  const [panelSpan, setPanelSpan] = useState<ItemSpan | null>(null);
+  useLookupPrefetch(
+    languages.target,
+    cuesToPrefetch(subtitles.cues, { shownCue, currentMs, panelSpan }).map(
+      (cue) => stripMarkup(cue.text),
+    ),
+    wordLookupsIn,
+  );
   const screenRef = useRef<HTMLDivElement>(null);
   const lookup = useSubtitleLookup(languages, createFlashcard, screenRef);
   useKeyboardShortcut(
@@ -307,6 +320,7 @@ export function MediaScreen({
             cursor={lookup.cursor}
             wordGestures={lookup.wordGestures}
             onOpenFlashcardForCue={flashcards.openForCue}
+            onVisibleCuesChange={setPanelSpan}
           />
         ) : undefined
       }

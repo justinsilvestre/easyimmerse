@@ -35,6 +35,13 @@ export function wordsAroundCaret(
   return after ? [after, before] : [before];
 }
 
+/** Lists the words of a text, using the language's word boundaries, leaving out punctuation and space. */
+export function wordsOf(text: string, language: string): TextSpan[] {
+  return [...segmenterOf(language, "word").segment(text)]
+    .filter((segment) => segment.isWordLike)
+    .map(spanOf);
+}
+
 /** Finds the sentence that contains the character at the offset. */
 export function sentenceAt(
   text: string,

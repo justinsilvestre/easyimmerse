@@ -10,6 +10,7 @@ import type {
 } from "../media/cueWordGestures.ts";
 import { SubtitleTrackBar } from "../media/SubtitleTrackBar.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
+import type { ItemSpan } from "../media/useVisibleItemSpan.ts";
 import type { useMediaSubtitles } from "./useMediaSubtitles.ts";
 
 /** The subtitles panel beside the stage: the track choice above one card per cue of the target-language track. */
@@ -24,6 +25,7 @@ export function SubtitlesSidePanel({
   cursor,
   wordGestures,
   onOpenFlashcardForCue,
+  onVisibleCuesChange,
 }: {
   subtitles: ReturnType<typeof useMediaSubtitles>;
   tracks: SubtitleTrackChoices;
@@ -41,6 +43,8 @@ export function SubtitlesSidePanel({
   wordGestures: CueWordGestures;
   /** Opens the flashcard made from a cue, from the mark on that cue's card. */
   onOpenFlashcardForCue?: (cueIndex: number) => void;
+  /** Receives the positions among the cues of the cards in view, each time they change, and null once the panel is gone. */
+  onVisibleCuesChange?: (span: ItemSpan | null) => void;
 }) {
   const dispatch = useAppDispatch();
   return (
@@ -70,6 +74,7 @@ export function SubtitlesSidePanel({
         onSeek={(ms) => dispatch(actions.seekRequested(ms / 1000))}
         wordGestures={wordGestures}
         onOpenFlashcardForCue={onOpenFlashcardForCue}
+        onVisibleCuesChange={onVisibleCuesChange}
         onAddSubtitlesFile={subtitles.requestFile}
         onGenerateSubtitles={() =>
           dispatch(

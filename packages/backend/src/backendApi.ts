@@ -1,6 +1,8 @@
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  BatchLookupRequest,
+  BatchLookupResponse,
   ConversionCacheBudget,
   ConversionCacheStatus,
   Document,
@@ -36,8 +38,11 @@ import type {
   TracksResponse,
   WaveformResponse,
 } from "@easyimmerse/types";
+import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
+import type { BackendError } from "./backendClient.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
+import { lookupResponseAt } from "./lookupResponseAt.ts";
 
 type ParseDocumentArgs = {
   bytes: Uint8Array | Blob;
@@ -98,6 +103,12 @@ const lookupContextQuery = (
   context === undefined || offset === undefined
     ? {}
     : { context, offset: String(offset) };
+
+/**
+ * How long, in seconds, a lookup stays cached once nothing shows it.
+ * It outlasts the minute of playback that `prefetchLookups` looks ahead, so that a word looked up early is still cached when it comes up.
+ */
+export const lookupCacheSeconds = 300;
 
 const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
   `/projects/${projectId}/media/${mediaFileId}`;
@@ -484,12 +495,31 @@ export const backendApi = createApi({
       invalidatesTags: ["Dictionaries"],
     }),
     lookupText: build.query<LookupResponse, LookupQuery>({
-      query: ({ text, language, context, offset }) => ({
-        method: "GET",
-        path: "/dictionaries/lookup",
-        query: { text, language, ...lookupContextQuery(context, offset) },
-      }),
+      // A lookup whose context a batch is fetching waits for that batch rather than asking the server a second time.
+      queryFn: async (lookup, api, _extraOptions, baseQuery) =>
+        (await answerFromRunningBatch(api, lookup)) ??
+        (baseQuery({
+          method: "GET",
+          path: "/dictionaries/lookup",
+          query: {
+            text: lookup.text,
+            language: lookup.language,
+            ...lookupContextQuery(lookup.context, lookup.offset),
+          },
+        }) as Promise<
+          QueryReturnValue<LookupResponse, BackendError, undefined>
+        >),
       providesTags: ["Dictionaries"],
+      keepUnusedDataFor: lookupCacheSeconds,
+    }),
+    /** Looks up every position of several texts at once. `prefetchLookups` copies the answer into the cache of `lookupText`. */
+    lookupTexts: build.query<BatchLookupResponse, BatchLookupRequest>({
+      query: (request) => ({
+        method: "POST",
+        path: "/dictionaries/lookup/batch",
+        body: { kind: "json", value: request },
+      }),
+      keepUnusedDataFor: 0,
     }),
   }),
 });
@@ -532,3 +562,41 @@ export const {
   useLookupTextQuery,
   useLazyLookupTextQuery,
 } = backendApi;
+
+type BackendState = Parameters<
+  typeof backendApi.util.selectCachedArgsForQuery
+>[0];
+
+/** The batch lookups being fetched now. */
+export function selectRunningBatches(
+  state: BackendState,
+): BatchLookupRequest[] {
+  return backendApi.util
+    .selectCachedArgsForQuery(state, "lookupTexts")
+    .filter(
+      (request) =>
+        backendApi.endpoints.lookupTexts.select(request)(state).isLoading,
+    );
+}
+
+/** Answers a lookup from a batch being fetched that covers its context, once the batch answers; or null when none does or it fails. */
+async function answerFromRunningBatch(
+  api: BaseQueryApi,
+  lookup: LookupQuery,
+): Promise<{ data: LookupResponse } | null> {
+  const { context, offset } = lookup;
+  if (context === undefined || offset === undefined) return null;
+  const batch = selectRunningBatches(api.getState() as BackendState).find(
+    (request) =>
+      request.language === lookup.language && request.texts.includes(context),
+  );
+  const running =
+    batch &&
+    api.dispatch(backendApi.util.getRunningQueryThunk("lookupTexts", batch));
+  const answer = running && (await running).data;
+  const data =
+    answer &&
+    batch &&
+    lookupResponseAt(batch, answer, batch.texts.indexOf(context), offset);
+  return data ? { data } : null;
+}

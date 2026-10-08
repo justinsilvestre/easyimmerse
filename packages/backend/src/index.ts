@@ -56,6 +56,7 @@ export { buildDictionaryMediaUrl } from "./dictionaryMediaUrl.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
 export { lookUpTextAhead } from "./lookUpTextAhead.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
+export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
 export type { ServerConfig } from "./resolveServerConfig.ts";
 export { resolveServerConfig } from "./resolveServerConfig.ts";
 export { createWasmBackendClient } from "./wasmBackendClient.ts";
