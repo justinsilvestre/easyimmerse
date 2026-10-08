@@ -356,7 +356,7 @@ As a user:
 - in the target-language subtitles, one lookup cursor points at what a lookup would start from:
   - [x] the mouse and the keyboard move the same cursor, to the same places: a word in a language written with spaces, or a character in Japanese or Chinese
   - [x] resting the mouse pointer on a word, or giving a word keyboard focus, puts the cursor there
-  - [x] the cursor is highlighted the same way however it got there, in the subtitles over the video and in the subtitles panel alike, at once, and grows to what the lookup from it matched once it answers
+  - [x] the cursor is highlighted the same way however it got there, in the subtitles over the video and in the subtitles panel alike; the highlight covers what a lookup from the cursor matched
 - when a word in the target-language subtitles has keyboard focus:
   - [x] Right and Left move the lookup cursor forward and backward through the cue's text by a word: in Japanese or Chinese, Right moves past the characters the lookup matched, or one character until it answers, and Left moves to the start of the word before the cursor; keyboard focus follows the cursor from word to word, and the cursor stops at either end of the cue
   - [x] in Japanese or Chinese, Shift with Right or Left moves the cursor one character at a time; in a language written with spaces, Shift makes no difference
