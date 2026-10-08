@@ -77,6 +77,16 @@ mod tests {
     }
 
     #[test]
+    fn keeps_a_zero_width_no_break_space_within_a_word() {
+        assert_eq!(lookup_positions("cat\u{FEFF}dog"), vec![0]);
+    }
+
+    #[test]
+    fn treats_a_next_line_character_as_whitespace() {
+        assert_eq!(lookup_positions("cat\u{0085}dog"), vec![0, 4]);
+    }
+
+    #[test]
     fn lists_nothing_for_empty_text() {
         assert_eq!(lookup_positions(""), Vec::<usize>::new());
     }
