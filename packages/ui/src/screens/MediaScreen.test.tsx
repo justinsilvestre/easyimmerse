@@ -816,6 +816,20 @@ describe("MediaScreen", () => {
       );
     });
 
+    it("stays open when changes sent before it was closed and opened again are applied", async () => {
+      const stale = Promise.withResolvers<SourceStepResponse>();
+      renderImported(() => stale.promise);
+      await applyEnglish();
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      fireEvent.click(screen.getByRole("button", { name: "Video site" }));
+      await screen.findByLabelText("English (automatic)");
+      await act(async () => {
+        stale.resolve(applied());
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+      expect(screen.queryByRole("dialog")).not.toBeNull();
+    });
+
     it("shows the next form the plugin answers with", async () => {
       renderImported({
         kind: "form",

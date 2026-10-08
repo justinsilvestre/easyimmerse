@@ -25,31 +25,39 @@ const JOB_POLLING_INTERVAL_MS = 1000;
  * the forms the plugin asks for, and the fetch the last one starts, which the server runs as a job
  * that is polled while it runs. An imported media file opens at once, as a picked file does,
  * with a notification naming any chosen subtitle tracks that were not added.
+ * The dialog stays busy from an action until the plugin's answer, or the fetch it started, is shown.
  * Closing the dialog stops watching the fetch; the server finishes it anyway.
  */
 export function useImportMedia(projectId: string) {
   const [state, change] = useReducer(importMediaReducer, noImport);
   const [getImportForm] = useGetImportFormMutation();
-  const [submitImportStep, { isLoading: isStepping }] =
-    useSubmitImportStepMutation();
+  const [submitImportStep] = useSubmitImportStepMutation();
   const job = useWatchedJob(projectId, state.jobId);
   useOpenImportedMedia(job, state.form, change);
-  const fail = (failure: unknown, fallback: string) =>
-    change({ type: "failed", message: failureMessage(failure, fallback) });
+  const fail = (opening: number, failure: unknown, fallback: string) =>
+    change({
+      type: "failed",
+      opening,
+      message: failureMessage(failure, fallback),
+    });
   return {
     ...state,
     job,
-    isBusy: isStepping,
+    isBusy: state.isAwaitingAnswer || (state.jobId !== null && job === null),
     open: (source: ImportSource) => {
+      const opening = state.opening + 1;
       change({ type: "opened", source });
       getImportForm({ projectId, request: { plugin: source.name } })
         .unwrap()
-        .then((form) => change({ type: "formArrived", form }))
-        .catch((failure) => fail(failure, "The plugin's form could not load."));
+        .then((form) => change({ type: "formArrived", opening, form }))
+        .catch((failure) =>
+          fail(opening, failure, "The plugin's form could not load."),
+        );
     },
     close: () => change({ type: "closed" }),
     act: (action: string, input: FormInput[]) => {
       if (state.source === null) return;
+      const { opening } = state;
       change({ type: "stepSent" });
       const request = { plugin: state.source.name, action, input };
       submitImportStep({ projectId, request })
@@ -57,11 +65,13 @@ export function useImportMedia(projectId: string) {
         .then((answer) =>
           change(
             answer.kind === "form"
-              ? { type: "formArrived", form: answer.form }
-              : { type: "jobStarted", jobId: answer.job.id },
+              ? { type: "formArrived", opening, form: answer.form }
+              : { type: "jobStarted", opening, jobId: answer.job.id },
           ),
         )
-        .catch((failure) => fail(failure, "The media could not be added."));
+        .catch((failure) =>
+          fail(opening, failure, "The media could not be added."),
+        );
     },
   };
 }

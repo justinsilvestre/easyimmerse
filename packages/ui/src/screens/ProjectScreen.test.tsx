@@ -23,6 +23,7 @@ import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import {
   createFakeBackendClient,
+  type FakeResponse,
   fakeFailure,
 } from "../testSupport/createFakeBackendClient.ts";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
@@ -240,6 +241,7 @@ describe("ProjectScreen", () => {
   function renderImport(
     polled: Partial<MediaSourceJob> = {},
     plugins: InstalledPlugin[] = [fixtureMediaSourcePlugin],
+    responses: Record<string, FakeResponse> = {},
   ) {
     const job = {
       ...exampleRunningJob,
@@ -257,6 +259,7 @@ describe("ProjectScreen", () => {
             ? { kind: "form", form: subtitlesForm }
             : { kind: "job", job },
         "GET /projects/p1/media/from-source/j1": { ...job, ...polled },
+        ...responses,
       },
       directPlaybackRoutes,
     );
@@ -341,6 +344,47 @@ describe("ProjectScreen", () => {
         "downloading the video and subtitles",
       ),
     );
+  });
+
+  it("ignores a form that arrives after its dialog was closed", async () => {
+    const stale = Promise.withResolvers<PluginForm>();
+    const formsAsked = { count: 0 };
+    renderImport({}, undefined, {
+      "POST /projects/p1/media/import-form": () => {
+        formsAsked.count += 1;
+        return formsAsked.count === 1 ? stale.promise : urlForm;
+      },
+    });
+    const importButton = await screen.findByRole("button", {
+      name: "Add from a video site",
+    });
+    fireEvent.click(importButton);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(importButton);
+    await screen.findByLabelText("URL or video ID");
+    await act(async () => {
+      stale.resolve({ ...urlForm, title: "Stale form" });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(screen.queryByRole("heading", { name: "Stale form" })).toBeNull();
+  });
+
+  it("starts one import when its action is pressed again before the fetch shows", async () => {
+    const { client } = renderImport({}, undefined, {
+      "GET /projects/p1/media/from-source/j1": () => new Promise(() => {}),
+    });
+    await startImport();
+    await vi.waitFor(() =>
+      expect(pathsOf(client.requests, "GET")).toContain(
+        "/projects/p1/media/from-source/j1",
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
+    expect(
+      pathsOf(client.requests, "POST").filter(
+        (path) => path === "/projects/p1/media/import-step",
+      ),
+    ).toHaveLength(2);
   });
 
   it("opens the project's settings", async () => {

@@ -4,7 +4,7 @@ import type {
   BackendRequest,
 } from "@easyimmerse/backend";
 
-/** A canned response, or a function computing one from the request. */
+/** A canned response, or a function computing one from the request, possibly as a promise. */
 export type FakeResponse = unknown | ((request: BackendRequest) => unknown);
 
 const failureTag = Symbol("failure");
@@ -45,7 +45,7 @@ export function createFakeBackendClient(
         return {
           error: { status: 404, message: `No canned ${describe(request)}` },
         };
-      const answer = respond(found.response, request);
+      const answer = await respond(found.response, request);
       if (isFakeFailure(answer)) return { error: answer[failureTag] };
       return { data: answer as T };
     },
