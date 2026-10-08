@@ -81,7 +81,7 @@ test("a later character of a Japanese run is looked up from that character", asy
   const run = page
     .getByRole("list", { name: "Subtitles" })
     .getByRole("button", { name: "𠮷野家で映画を見る" });
-  // The middle of 見, the seventh character after 𠮷, relative to the run's button.
+  // The middle of 見, the seventh character after 𠮷, relative to the run's element.
   // The run's text may be split across several text nodes, so the node holding 見 is searched for.
   const position = await run.evaluate((element) => {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
@@ -94,10 +94,10 @@ test("a later character of a Japanese run is looked up from that character", asy
     range.setStart(text, index);
     range.setEnd(text, index + 1);
     const character = range.getBoundingClientRect();
-    const button = element.getBoundingClientRect();
+    const box = element.getBoundingClientRect();
     return {
-      x: character.left + character.width / 2 - button.left,
-      y: character.top + character.height / 2 - button.top,
+      x: character.left + character.width / 2 - box.left,
+      y: character.top + character.height / 2 - box.top,
     };
   });
   const lookup = page.waitForRequest((request) =>

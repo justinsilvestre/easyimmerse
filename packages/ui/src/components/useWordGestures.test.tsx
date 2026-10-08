@@ -87,11 +87,11 @@ function layOutCharacters() {
   });
 }
 
-/** How many code units of the run's text come before the node, within the run's button. */
+/** How many code units of the run's text come before the node, within the run's element. */
 function offsetInRun(node: Node): number {
-  const button = node.parentElement?.closest("button");
-  if (!button) return 0;
-  const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+  const run = node.parentElement?.closest("[role=button]");
+  if (!run) return 0;
+  const walker = document.createTreeWalker(run, NodeFilter.SHOW_TEXT);
   let offset = 0;
   for (
     let text = walker.nextNode();

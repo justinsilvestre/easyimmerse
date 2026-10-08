@@ -276,11 +276,11 @@ describe("ClickableText", () => {
       });
     }
 
-    /** How many code units of the run's text come before the node, within the run's button. */
+    /** How many code units of the run's text come before the node, within the run's element. */
     function offsetInRun(node: Node): number {
-      const button = node.parentElement?.closest("button");
-      if (!button) return 0;
-      const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+      const run = node.parentElement?.closest("[role=button]");
+      if (!run) return 0;
+      const walker = document.createTreeWalker(run, NodeFilter.SHOW_TEXT);
       let offset = 0;
       for (
         let text = walker.nextNode();
@@ -533,7 +533,9 @@ describe("ClickableText", () => {
 
     it("announces from outside the run's button", () => {
       focusAndMoveRight(3);
-      expect(screen.getByText("Looks up from 見").closest("button")).toBeNull();
+      expect(
+        screen.getByText("Looks up from 見").closest("[role=button]"),
+      ).toBeNull();
     });
 
     it("keeps its announcing region on the page before any key is pressed", () => {
@@ -701,6 +703,64 @@ describe("ClickableText", () => {
     it("keeps the run's name whole while a character is marked", () => {
       focusAndMoveRight(3);
       expect(screen.getByRole("button", { name: "映画を見る" })).toBeDefined();
+    });
+  });
+
+  describe("with the keyboard on a word", () => {
+    function renderWithClicks() {
+      const clicks: string[] = [];
+      render(
+        <ClickableText
+          text="Ich rufe an."
+          gestures={{
+            onWordClick: (hit) => clicks.push(`click ${hit.input}`),
+            onWordDoubleClick: (hit) => clicks.push(`double ${hit.input}`),
+          }}
+        />,
+      );
+      return { clicks, word: screen.getByRole("button", { name: "rufe" }) };
+    }
+
+    it("can be reached with Tab", () => {
+      render(<ClickableText text="Ich rufe an." />);
+      expect(screen.getByRole("button", { name: "rufe" }).tabIndex).toBe(0);
+    });
+
+    it("looks it up on Enter", () => {
+      const { clicks, word } = renderWithClicks();
+      fireEvent.keyDown(word, { key: "Enter" });
+      expect(clicks).toEqual(["click keyboard"]);
+    });
+
+    it("looks it up once Space is released", () => {
+      const { clicks, word } = renderWithClicks();
+      fireEvent.keyDown(word, { key: " " });
+      fireEvent.keyUp(word, { key: " " });
+      expect(clicks).toEqual(["click keyboard"]);
+    });
+
+    it("keeps Space from scrolling the page", () => {
+      const { word } = renderWithClicks();
+      expect(fireEvent.keyDown(word, { key: " " })).toBe(false);
+    });
+
+    it("looks it up as a double-click on Shift+Enter", () => {
+      const { clicks, word } = renderWithClicks();
+      fireEvent.keyDown(word, { key: "Enter", shiftKey: true });
+      expect(clicks).toEqual(["double keyboard"]);
+    });
+
+    it("looks nothing up on another key", () => {
+      const { clicks, word } = renderWithClicks();
+      fireEvent.keyDown(word, { key: "a" });
+      fireEvent.keyUp(word, { key: "a" });
+      expect(clicks).toEqual([]);
+    });
+
+    it("looks nothing up on Enter with Control held", () => {
+      const { clicks, word } = renderWithClicks();
+      fireEvent.keyDown(word, { key: "Enter", ctrlKey: true });
+      expect(clicks).toEqual([]);
     });
   });
 

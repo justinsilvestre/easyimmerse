@@ -75,6 +75,28 @@ export const LongScene: Story = {
   },
 };
 
+/** Japanese lines, written without spaces, whose long runs wrap across lines like the text around them. */
+export const JapaneseSubtitles: Story = {
+  args: {
+    cues: [
+      {
+        index: 1,
+        start_ms: 500,
+        end_ms: 4200,
+        text: "だから解釈の幅が揺れすぎないようにある程度のラインも定めているんですね。",
+      },
+      {
+        index: 2,
+        start_ms: 4600,
+        end_ms: 9000,
+        text: "なるほどね。だからイワし雲ってのは秋の空に浮かぶ雲のことなんだ。",
+      },
+    ],
+    translationCues: [],
+    activeCueIndex: 2,
+  },
+};
+
 export const NoSubtitles: Story = { args: { cues: [] } };
 
 function repeatScene(cues: readonly Cue[], times: number): Cue[] {
