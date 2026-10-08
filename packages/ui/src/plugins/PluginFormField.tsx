@@ -3,7 +3,7 @@ import { CheckboxField } from "../components/CheckboxField.tsx";
 import { SelectField } from "../components/SelectField.tsx";
 import { TextField } from "../components/TextField.tsx";
 
-/** One field of a plugin form, drawn as the control its kind calls for. */
+/** One field of a plugin form, drawn as the control its kind calls for. A hidden field draws nothing. */
 export function PluginFormField({
   field,
   values,
@@ -77,6 +77,8 @@ export function PluginFormField({
           {hint && <p className="text-xs text-fg-muted">{hint}</p>}
         </div>
       );
+    case "hidden":
+      return null;
   }
 }
 

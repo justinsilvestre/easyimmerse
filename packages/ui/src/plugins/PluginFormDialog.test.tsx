@@ -64,6 +64,7 @@ describe("PluginFormDialog", () => {
         { field: "quality", values: ["best"] },
         { field: "subtitles", values: ["ja"] },
         { field: "keep-original", values: ["false"] },
+        { field: "session", values: ["session-42"] },
       ],
     });
   });
@@ -101,6 +102,17 @@ describe("PluginFormDialog", () => {
     fireEvent.click(screen.getByLabelText(/Keep the original file/));
     press("Import");
     expect(submittedValues(submissions, "keep-original")).toEqual(["true"]);
+  });
+
+  it("sends a hidden field's value back unchanged", () => {
+    const { submissions } = renderDialog();
+    press("Import");
+    expect(submittedValues(submissions, "session")).toEqual(["session-42"]);
+  });
+
+  it("shows nothing for a hidden field", () => {
+    renderDialog();
+    expect(screen.queryByText("Session")).toBeNull();
   });
 
   it("sends nothing for a note", () => {

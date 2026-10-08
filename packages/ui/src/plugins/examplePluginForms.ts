@@ -45,6 +45,12 @@ export const exampleImportForm: PluginForm = {
       control: { kind: "toggle", on: false },
     },
     {
+      id: "session",
+      label: "Session",
+      hint: null,
+      control: { kind: "hidden", value: "session-42" },
+    },
+    {
       id: "terms",
       label: "Terms",
       hint: null,
@@ -84,6 +90,12 @@ export const exampleLookedUpForm: PluginForm = {
   title: "Add from a video site",
   description: null,
   fields: [
+    {
+      id: "video-id",
+      label: "Video ID",
+      hint: null,
+      control: { kind: "hidden", value: "abc123def45" },
+    },
     {
       id: "summary",
       label: "Video",

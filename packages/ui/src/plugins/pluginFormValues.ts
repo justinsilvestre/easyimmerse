@@ -54,6 +54,8 @@ function initialValuesOfControl(control: FormControl): readonly string[] {
       return control.chosen;
     case "toggle":
       return [String(control.on)];
+    case "hidden":
+      return [control.value];
     case "note":
       return [];
   }
