@@ -35,10 +35,10 @@ describe("lookupPositions", () => {
   });
 
   it("treats a next-line character as whitespace", () => {
-    expect(lookupPositions("a\u0085b")).toEqual([0, 2]);
+    expect(lookupPositions("cat\u0085dog")).toEqual([0, 4]);
   });
 
   it("does not treat a zero-width no-break space as whitespace", () => {
-    expect(lookupPositions("a\uFEFFb")).toEqual([0]);
+    expect(lookupPositions("cat\uFEFFdog")).toEqual([0]);
   });
 });
