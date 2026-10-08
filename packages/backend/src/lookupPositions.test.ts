@@ -34,6 +34,34 @@ describe("lookupPositions", () => {
     expect(lookupPositions("𠮟る")).toEqual([0, 1]);
   });
 
+  it("lists every character of Bopomofo", () => {
+    expect(lookupPositions("ㄅㄆ")).toEqual([0, 1]);
+  });
+
+  it("lists every letter of Thai text but not its vowel signs and tone marks", () => {
+    expect(lookupPositions("กินข้าว")).toEqual([0, 2, 3, 5, 6]);
+  });
+
+  it("lists a Thai vowel written before its consonant", () => {
+    expect(lookupPositions("เขา")).toEqual([0, 1, 2]);
+  });
+
+  it("lists every letter of Lao text but not its vowel signs", () => {
+    expect(lookupPositions("ສະບາຍດີ")).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+
+  it("lists every letter of Khmer text but not its signs", () => {
+    expect(lookupPositions("ខ្ញុំ")).toEqual([0, 2]);
+  });
+
+  it("lists every letter of Myanmar text but not its signs", () => {
+    expect(lookupPositions("မြန်မာ")).toEqual([0, 2, 4]);
+  });
+
+  it("skips a combining mark at the start of the text", () => {
+    expect(lookupPositions("\u0E34ก")).toEqual([1]);
+  });
+
   it("treats a next-line character as whitespace", () => {
     expect(lookupPositions("cat\u0085dog")).toEqual([0, 4]);
   });

@@ -21,6 +21,7 @@ mod result_sort_key;
 mod separated_particles;
 mod separated_verb;
 mod term_meta_matching;
+mod unspaced_scripts;
 mod word_boundary;
 
 pub use build_lookup_results::build_lookup_results;
