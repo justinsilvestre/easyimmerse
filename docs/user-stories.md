@@ -23,15 +23,14 @@ Where mouse actions are specified, the actions should generally also be possible
 As a user:
 - when I am using the app:
   - [ ] I can resize the app window, and the app's layout adjusts accordingly
-  - [ ] the app follows my system's light or dark theme
-  - [ ] I can switch between a light and dark theme with the toggle at the bottom of the screen, and the app follows my system again the next time the system theme changes
-  - [ ] I can choose in the settings to always use the light or the dark theme
+  - [x] the app follows my system's light or dark theme
+  - [x] from the theme menu at the bottom of the screen, I can choose to follow the system or to always use the light or the dark theme; the menu's icon shows the choice, which is kept on the device
   - [ ] I can change the size of the app's text from the "Text size" menu at the bottom of the screen, in steps from 75% to 175%, and return to 100% (not in the browser, where the browser's own zoom applies)
   - [ ] *on desktop*, I can see a menu bar with options:
     - easyImmerse menu: About, Preferences, Quit
     - File menu: New project, Open project, Save project, Export flashcards, Import/export project, Exit
     - Edit menu: Undo, Redo, Cut, Copy, Paste
-    - View menu: Toggle fullscreen, Toggle distraction-free mode, Toggle subtitles panel, Toggle waveform visualization
+    - View menu: Toggle fullscreen, Toggle subtitles panel, Toggle waveform visualization
     - Window menu: Minimize, Zoom, Bring all to front
 - when I open the app for the first time:
   - [ ] I am prompted to select a language for the app's interface
@@ -83,6 +82,7 @@ As a user:
 - when I am on the project screen:
   - [x] I see the open project's name
   - [x] I see a list of the project's media files
+  - [x] the list's heading is a menu that narrows it to videos, audio or ebooks, each choice counting its files
   - [x] I can click on a media file to open it
   - [x] I can remove a media file from the project through the menu on its row
   - [ ] the menu bar has an option to save the project
@@ -126,25 +126,56 @@ As a user:
 As a user:
 - when a video has been opened:
   - [x] I see a video player
-  - [x] I can pause and resume playback through player controls or keyboard shortcuts
+  - [x] I can pause and resume playback through player controls, keyboard shortcuts, or double-clicking on the video
   - [x] I can seek to a different time in the video via the playback bar
-  - [ ] I can skip forward or backward by a small amount (or to the next/previous cue, if any subtitles tracks are open) via player controls or keyboard shortcuts
+  - [ ] I can skip forward or backward (by cue timings if any subtitles tracks are open) via player controls
   - [x] I can adjust the volume of the audio track
-  - [x] I can adjust the playback speed of the video
-  - [x] I can switch between different audio tracks, when multiple are present
-  - [ ] I can choose among the embedded subtitle tracks and any external subtitles files, for the target language and for the translation
-  - [x] I can add a subtitles file from disk as the target-language or translation subtitles
-  - [x] the player controls lie over the bottom of the video and hide while it plays and the pointer rests; they reappear when the pointer moves or playback pauses
-  - [ ] the lookup and new-flashcard buttons stay available over the video, also in distraction-free mode
-  - [ ] I can enter a distraction-free fullscreen mode, in which only the video and subtitles are shown
-- when I open a video for the first time:
-  - [ ] given multiple audio tracks, a lone track in the language of the project is automatically selected, or else I am prompted to select a track
-  - [ ] given embedded subtitles or automatically found subtitles resources, a lone track in the language of the project is automatically selected as the target language subtitles, or else I am prompted to select a track, with the first lines of each track shown so I can tell them apart
-  - [ ] given embedded subtitles or automatically found subtitles resources, a lone track in my language is automatically selected as the translation subtitles, or else I am prompted to select a track
-  - [x] given an unsupported video or audio format, I am prompted to allow the file to be converted to a supported format
+  - [x] I can mute and unmute the audio with the button next to the volume
+  - [x] I can choose the playback speed from a button in the player controls that shows the current speed, such as "1x", and opens a menu of speeds
+  - [ ] I can open the player subtitles menu with a button, showing options for:
+    - toggling the visibility of the target language track (disabled if absent)
+    - toggling the visibility of the translation track (disabled if absent)
+    - opening the subtitles appearance dialog
+  - [x] the footer shows a button for toggling fullscreen mode
+  - [x] I can toggle fullscreen mode with the F key or by double-clicking on the video
+  - [ ] the footer shows a button for toggling the visibility of the subtitles panel
+  - [ ] the footer shows a button for toggling the visibility of the waveform visualization
+- when I open a media file for the first time, and the audio tracks correspond neatly to both or either of the project's target or translation languages:
+  - [x] the tracks are automatically opened as the target- and/or translation-language tracks
+- when I open a media file for the first time, and the audio tracks do NOT correspond neatly to both or either of the project's target or translation languages:
+  - [ ] I am prompted to select a track for each target- and translation-language slot
+-  *on desktop*, when I open a media file for the first time, and subtitles files in the same folder sharing the files name are present:
+  - [x] the subtitles files are added, so as to be immediately available in the subtitles track selection dropdowns
+- when I open a media file for the first time, and the immediately available subtitles tracks correspond neatly to both or either of the project's target or translation languages:
+  - [x] the tracks are automatically opened as the target- and/or translation-language tracks
+- when I open a media file for the first time, and the immediately available tracks do NOT correspond neatly to both or either of the project's target or translation languages:
+  - [ ] I am prompted to select a track for each target- and translation-language slot, with the first lines of each track shown so I can tell them apart
+- when a subtitles track is added:
+  - [ ] its language is detected from any metadata, and on external files, tags in the filename such as `.ja.srt` or `.jpn.srt` 
+- when subtitles tracks are present:
+  - [x] I can choose among the embedded subtitle tracks and any external subtitles files, for the target language and for the translation
+- when NO subtitles tracks are opened:
+  - [x] I can skip forward or backward by a small amount via player controls or the Left/Right arrow keys
+- when subtitles tracks are opened, and NO word in the subtitles has keyboard focus:
+  - [x] I can skip forward or backward to the next or previous cue via player controls or the Left/Right arrow keys
+- when subtitles tracks are opened:
+  - [x] I can skip forward or backward to the next or previous cue via player controls, the Left/Right arrow keys, or the Up/Down arrow keys
+  - [x] I can hide the video's subtitles from the Subtitle options menu in the player controls
+- when multiple audio tracks are present:
+  - [x] I can switch between different audio tracks
+- when subtitles are present at the current time:
+- when the video has been paused, or when I've just moved the pointer over the video area, NOT including the subtitles band:
+  - [x] the player controls and the header appear over the video (to hide again after a few seconds of no pointer movement)
+- when the video has been paused, or when I've just moved the pointer over the video area, including the subtitles band:
+  - [ ] the lookup and new-flashcard buttons appear over the subtitles band (to hide again after a few seconds of no pointer movement)
+- when the video is streaming:
+  - [ ] I can see how much of the file the player loaded in the seek bar
+- when I open a media file I have played before:
+  - [x] playback resumes where I left off, unless I had stopped within a few seconds of the start or the end
+- when I open a video or audio file my system cannot play directly, and I haven't turned off the conversion notice setting:
+  - [x] a dialog appears informing me that the file will be converted as it plays, with a "Don't show this again" box that starts ticked
 - when I open a video or audio file my system cannot play directly:
-  - [x] the first time, I see a notice that the file will be converted as it plays, with a "Don't show this again" box; Cancel returns me to the project's media list
-  - [x] playback starts within a few seconds, and I can jump to any point before the conversion has finished
+ - [x] playback starts within a few seconds, and I can jump to any point before the conversion has finished
   - [x] the converted file is kept on disk, so it plays at once the next time
 - when a video or audio file has several video or audio tracks:
   - [x] I choose which tracks to play before the first play, and my choice is remembered for that file
@@ -153,12 +184,45 @@ As a user:
   - [x] a "Screenshot" button captures the current frame
 - when a file cannot be played:
   - [x] I see "The media could not be played." followed by one plain sentence saying why, for example "This video's picture is too tall to convert."
-- when a subtitles track is opened:
-  - [x] I see the subtitles displayed on top of the video
+- when a subtitles track is opened and visible:
+  - [ ] I see it in a band at the bottom or below the picture
+  - [x] I see the subtitles in a band right under the picture, or across the picture's lower edge, above the player controls, when the window is too short and wide to fit the band and the controls underneath; the band keeps its height from cue to cue, sits on black under the picture, like the video, and on a translucent dark backdrop over it, and the text carries a shadow so it stays readable
+  - [x] moving the mouse anywhere over the subtitle band, even its empty parts, does not bring the player controls back
+- when I open the subtitles appearance dialog from the menu in the player controls:
+  - [x] I can change the background's opacity and the text's shadow, size and colour
+  - [ ] I can see a live preview
+- when I submit the subtitles appearance dialog:
+  - [ ] the choice is kept on the device for every file
   - [x] I see indications of the cue timings in the waveform visualization, and can click on them to seek the video to that cue
 - when both a target-language subtitles track and a translation subtitles track are opened:
   - [x] I see the target-language subtitles above the translation subtitles
-  - [x] I can toggle between displaying the target-language and translation subtitles on top of the video, with the button in the player controls
+
+
+---
+
+### Subtitles band
+
+- when a flashcard with target-language sentence text has a clip at the current time:
+  - [ ] that text is shown as the *active* target-language cue text
+- when a flashcard with translation subtitles cue text has a clip at the current time:
+  - [ ] that text is shown as the *active* translation cue text
+- when both a flashcard's target-language sentence text and an open target-language subtitles track's cue text have clips at the current time:
+  - [ ] the flashcard's text is shown as the *active* target-language cue text
+- when both a flashcard's translation subtitles cue text and an open translation subtitles track's cue text have clips at the current time:
+  - [ ] the flashcard's text is shown as the *active* translation cue text
+- when only an open target-language subtitles track has a clip at the current time:
+  - [ ] that text is shown as the *active* target-language cue text
+- when only an open translation subtitles track has a clip at the current time:
+  - [ ] that text is shown as the *active* translation cue text
+- when a target-language cue text is active:
+  - [ ] the cue text shows in large text in the middle of the band
+- when a translation subtitles cue text is active:
+  - [ ] the cue text shows in smaller text
+- when both a target-language subtitles cue and a translation subtitles cue are active:
+  - [ ] the target-language cue text shows above the translation cue text
+- when a word in the active target-language cue text correspond to a flashcard's word field:
+  - [ ] it is marked with an underline
+  - [ ] it names the flashcard in its tooltip
 
 ---
 
@@ -187,7 +251,7 @@ As a user:
 - when I click on a point in the waveform visualization:
   - [x] the audio seeks to that point
 - when I click on a segment in the waveform visualization:
-  - [ ] the audio seeks to the start of that segment
+  - [x] the audio seeks to the start of that segment
 - when I double-click/double-tap on a segment in the waveform visualization corresponding to a flashcard:
   - [x] the flashcard is opened for editing
 - while a flashcard is open for editing:
@@ -200,8 +264,6 @@ As a user:
   - [x] the arrow keys move the view by a second (ten with Shift), and Home and End jump to the ends of the file
 - when the waveform visualization is at its closest or widest zoom level:
   - [x] the corresponding zoom button is disabled
-- when the waveform visualization is shown:
-  - [x] I can hide it with the button in its corner, and show it again with the strip under the player
 - *on desktop*, when I open the View menu:
   - [ ] I can show or hide the waveform visualization
 
@@ -210,16 +272,26 @@ As a user:
 ### Subtitles panel
 
 As a user:
-- when a subtitles track is opened:
-  - [x] I can access the collapsible subtitles panel
 - while the subtitles panel is open:
   - [x] I see the subtitles displayed in the panel, with one card per cue
+  - [ ] in each subtitle cue card, I see the target language in large text and the translation a size smaller under it
+  - [ ] I can see which cues correspond to flashcards, and which words inside those cues correspond to their word fields
   - [ ] it is docked to the side of the video player, or at the top of the audio player
-  - [x] the card for the cue currently being spoken is highlighted, and the panel scrolls to keep it in view
+- when cue text is active in the video/audio player:
+  - [x] the card corresponding to the cue now is highlighted
+- when the user scrolls to cues at a different time than the current media time:
+  - [ ] the panel ceases to automatically scroll to match the current media time
+  - [ ] a button appears to allow the user to return to the current media time
+- while the user hasn't scrolled away from the current media time:
+- [ ] the panel scrolls automatically to keep the highlighted cue card in view
   - [ ] I can click on a card to seek the media to the start of that cue
 - when the open media file has no subtitles:
   - [x] I see a button to add a subtitles file from disk
   - [ ] I see a button to generate subtitles automatically
+- when I click on the "Add subtitles" button:
+  - [x] I can add a subtitles file from disk as the target-language or translation subtitles
+- when I open the dropdowns for tracks:
+  - [ ] I can select any available track for the target-language and translation subtitles tracks
 
 ---
 
@@ -267,6 +339,8 @@ As a user:
 
 ### Dictionary lookup and flashcard creation
 
+*this section needs some organizing.*
+
 As a user:
 - when I click or tap on a word in the target-language subtitles or text:
   - [x] the dictionary pop-up opens at the word, with the word's definitions, if available
@@ -277,36 +351,76 @@ As a user:
   - [x] the lookup starts at the character I click, tap or point at, and finds the longest word the dictionaries know from there
   - [x] the characters the lookup matched are highlighted
   - [x] clicking or tapping punctuation such as 、 or 。 looks nothing up
+- when I rest the mouse pointer on a word in the target-language subtitles:
+  - [x] the longest matching word the dictionaries know from that point is highlighted instantly
+- in the target-language subtitles, one lookup cursor points at what a lookup would start from:
+  - [x] the mouse and the keyboard move the same cursor, to the same places: a word in a language written with spaces, or a character in Japanese or Chinese
+  - [x] resting the mouse pointer on a word, or giving a word keyboard focus, puts the cursor there
+  - [x] the cursor is highlighted the same way however it got there, in the subtitles over the video and in the subtitles panel alike, at once, and grows to what the lookup from it matched once it answers
+- when a word in the target-language subtitles has keyboard focus:
+  - [x] Right and Left move the lookup cursor forward and backward through the cue's text by a word: in Japanese or Chinese, Right moves past the characters the lookup matched, or one character until it answers, and Left moves to the start of the word before the cursor; keyboard focus follows the cursor from word to word, and the cursor stops at either end of the cue
+  - [x] in Japanese or Chinese, Shift with Right or Left moves the cursor one character at a time; in a language written with spaces, Shift makes no difference
+  - [x] what the cursor moves to is highlighted and looked up at once, and an open pop-up moves to it when the lookup answers, as when the mouse pointer rests on a word
+  - [x] in Japanese or Chinese, the character the cursor moves to is announced
+  - [x] Up and Down skip playback to the previous or next cue, and the cursor and keyboard focus move to that cue's first word, in the subtitles over the video and in the subtitles panel alike
+  - [x] when the cue over the video changes during playback, keyboard focus moves to the first word of the new cue
+  - [x] Escape takes the cursor away
 - when a word in the target-language subtitles or text has keyboard focus:
-  - [x] pressing Enter or Space opens the dictionary pop-up for the word
-  - [x] pressing Shift+Enter or Shift+Space creates a flashcard for the word, filled from the word's definitions
-- when a Japanese or Chinese run of text has keyboard focus:
-  - [x] Left and Right choose the character the lookup starts from, which is marked in the text and announced
-- when I press the lookup button, or L while no text field has focus:
+  - [x] pressing Enter or Space opens the dictionary pop-up for the word, starting from the lookup cursor when it lies in that word
+  - [x] pressing Shift+Enter or Shift+Space creates a flashcard for the word, filled from the word's definitions, as a double-click on it would
+- when I press L while the lookup cursor lies in the target-language subtitles, or while the mouse pointer is on a word of an ebook or text:
+  - [x] what the cursor points at is looked up as a click there would look it up, whether the mouse or the keyboard put the cursor there, or the pop-up closes if it already shows that word
+- when I press the lookup button, or L while there is no lookup cursor and no text field has focus:
   - [x] the dictionary pop-up opens, with focus on its search field, where I can type a word to look up
+- when I press C while no text field has focus on the media screen:
+  - [x] a flashcard is created and saved, as a double-click on the word at the lookup cursor would create it, or as the new-flashcard button would when there is no lookup cursor
+- when I press E while no text field has focus on the media screen, and no flashcard is open in the flashcard-editing form:
+  - [x] the same flashcard as C would create is opened in the flashcard-editing form instead of being saved, and is saved only when I save it or leave it
+- when I press E while a flashcard is open in the flashcard-editing form:
+  - [x] nothing happens, and the open flashcard is left as it is
+- when I press the new-flashcard button over the subtitles:
+  - [x] a flashcard with no word is created from the cue shown now and saved at once; its tooltip names the C key
+- when the target-language subtitles or text are written from right to left, as Arabic and Hebrew are:
+  - [ ] the arrow keys move the lookup cursor in the script's own reading direction, so that Left moves it forward and Right backward
 - while the dictionary pop-up is open, when I press Escape:
-  - [x] the pop-up closes, and keyboard focus returns to where it was before the pop-up opened
+  - [x] if I have expanded the pop-up, it returns to its compact size
+  - [x] otherwise the pop-up closes, and keyboard focus returns to where it was before the pop-up opened
 - while the dictionary pop-up is open:
-  - [x] while it shows a word rather than its search field, when I rest the mouse pointer on another word in the target-language subtitles or text for a moment, the pop-up moves to that word and shows its definitions; passing quickly over words leaves it where it is
+  - [x] while it shows a word rather than its search field, when I rest the mouse pointer on another word in the target-language subtitles or text
+  - [x] when the pop-up moves to another word on the same side of the text, it glides there rather than jumping; it jumps only when it changes sides, and never on first opening
   - [x] while the mouse pointer is inside the pop-up, it stays on its word, so I can reach its buttons
   - [x] on a touch screen, when I tap another word in the target-language subtitles or text, the pop-up moves to that word and shows its definitions
-  - [x] when I click or tap a word or a link in the pop-up's definitions, the pop-up shows the definitions of that word, or of the word the link points to
-  - [x] I can double-click, double-tap, or hold a tap on a word in the dictionary pop-up to create a flashcard for the word, filled from that word's definitions
+  - [x] when I double-click or double-tap a word in the pop-up's definitions, or follow a link in them, the pop-up shows the definitions of that word, or of the word the link points to; a single click leaves the word alone, so an entry's own clickable elements work
+  - [x] I can edit the word in the pop-up's field and press Enter, or its magnifier button, to look up something else; while the field still holds the word shown, the magnifier selects it for editing instead
+  - [x] from the thin bar at its bottom, I can expand the pop-up to the window's height to show more of the entries, and shrink it again from the bar or with Escape; the choice lasts while the screen is open
+  - [x] a flashcard from every entry comes from the icon button in the pop-up's header, which names itself in a tooltip; on the media screen it is saved at once, as below
+  - [x] when no dictionary has an entry for the word, the pop-up offers the dictionaries settings
+  - [x] each result's frequency badges follow a "Frequency" label and explain themselves in a tooltip
+  - [x] I can hold a tap on a word in the dictionary pop-up to create a flashcard for the word, filled from that word's definitions; with a mouse, the flashcard buttons of the header and of each entry do it; on the media screen the flashcard is saved at once, as below
 - when I click or tap outside the pop-up and not on a word in the target-language subtitles or text:
   - [x] the dictionary pop-up is closed
   - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
-- when I click the pop-up's close button, click or tap the word it shows, or press Escape:
+- when I click the pop-up's close button, click or tap the word it shows, or press Escape while it is compact:
   - [x] the dictionary pop-up is closed
   - [x] any paused audio/video playback is resumed, or any looping audio/video playback is played as normal
 - when I double-click, double-tap, or hold a tap on a word in the target-language subtitles or text:
   - [x] a flashcard is created for the word
   - [x] the word, its pronunciation, and the L1 and L2 definitions are filled from the word's definitions, as when I create the flashcard from the dictionary pop-up (unless I have already typed in the field before the definitions had a chance to load)
   - [x] the fields are shown according to my flashcard settings
-  - [x] the flashcard-editing form is opened instead of the dictionary pop-up
+  - [x] in the subtitles, the flashcard is saved at once, without opening the flashcard-editing form, once the definitions arrive, or as it is if they cannot be found or have not arrived within ten seconds; a brief notice names it and offers Undo, and a flashcard already open in the form stays open
+  - [x] in an ebook or text, the flashcard-editing form is opened instead of the dictionary pop-up; while the definitions are still on their way, those fields say "Looking up…"
+
+
+---
+
+### Flashcard form
+
 - when the flashcard-editing form is open:
   - [ ] the corresponding segment of audio/video is looped
   - [x] I can edit the text fields of the flashcard
-  - [x] I see the waveform of the flashcard's audio clip in the form, where I can move the clip's edges and the time of its screenshot as in the waveform visualization
+  - [x] I can see the a segment of the audio track's waveform visualization corresponding to that card's audio clip, if present
+  - [ ] I can move the clip's edges to change the clip's start and end times
+  - [ ] I can move the point in the waveform visualization corresponding to the flashcard's screenshot
   - [x] I can toggle whether to include the screenshot by clicking it or its checkbox; an excluded screenshot is shown faded
   - [x] I enter tags as chips, separated by commas or Enter
   - [x] fields excluded in my flashcard settings are hidden
@@ -314,6 +428,10 @@ As a user:
   - [x] I can save the flashcard and close the form
   - [x] I can delete the flashcard and close the form
   - [x] I can close the form without saving; changes I discard this way can be brought back with Undo for a short while
+- when an unfocused text field has many lines of text:
+  - [x] it shows only a few lines, with a faded edge
+- when a focused text field has many lines of text:
+  - [x] it shows all its text
 - when I delete the contents of a field of the flashcard-editing form that can be filled from the dictionary:
   - [ ] I am offered an option to fill it again from the lookup
 - when a flashcard is created from a word:
@@ -354,8 +472,13 @@ As a user:
 - when I open the dictionaries settings:
   - [x] I see a list of my dictionaries, with each one's language(s) and format
   - [ ] I can add a dictionary from the easyImmerse registry
-  - [x] I can add a dictionary from a file
   - [x] I can remove a dictionary
+- when I add a dictionary that is to be stored locally:
+  - [ ] I can see the import progress visualized in the progress bar and as a number of entries out of the total which have been processed so far
+- when a dictionary fails to be added:
+  - [ ] a notice informing me of the failure stays on the screen until dismissed
+- when I attempt to add a dictionary that is already in my list:
+  - [x] I am told that it is already present, and the addition is not repeated
 - when I have more than one dictionary enabled for a language:
   - [ ] I can set the order in which their entries appear in the dictionary pop-up
 - when I add a dictionary from a table file (CSV, TSV or Tabfile):
@@ -365,6 +488,8 @@ As a user:
   - [x] I am told which formats are supported, and that a plugin may add support for others
 - when I remove a dictionary:
   - [x] I am asked to confirm first, and told that the removal cannot be undone
+  - [ ] I can see the progress of the removal.
+
 
 As a web app user:
 - when I add a dictionary from a file:
@@ -633,12 +758,9 @@ As a user:
 ### App settings
 
 As a user:
-- when I open the settings screen:
-  - [x] it opens over the current screen, from a Settings link in the footer; Back returns me to the screen as it was, so a video keeps playing while I change a setting
-  - [x] *on macOS*, Preferences in the app menu (Cmd+,) opens it too
 - when I am on the settings screen:
   - [x] I can turn on "Keep audio lossless when converting", so later conversions keep the audio at full quality at the cost of more disk space
-  - [x] I see how much disk the converted videos use of what they may use, and a "Clear converted videos" button; without a server that can convert, the section is one line saying so
+  - [x] I can open the subtitles appearance dialog
   - [x] I can read the open-source licenses of the bundled components, including the bundled ffmpeg's notices and those of every Rust crate and JavaScript package that ships
   - [ ] I can change the app's theme between light and dark
   - [ ] I can set whether to honor the system's light/dark theme preference
@@ -646,6 +768,16 @@ As a user:
   - [ ] I can view and change keyboard shortcuts
   - [ ] I can enable AnkiConnect
   - [ ] I can configure the storage location for app data
+- *on desktop*, when I select Preferences from the app menu:
+  - [ ] the settings screen opens
+- when a media conversion server is set:
+  - [x] I see how much disk the media cache uses of what it may use, with a line explaining about the cache
+  - [x] I can clear the media cache via the "Clear media cache" button
+  - [x] I can set the cache's maximum size, from automatic (five percent of the disk) to a fixed number of gigabytes, and the choice is kept on the server
+- when NO media conversion server is set:
+  - [ ] the "Clear media cache" button is absent
+- when I use the keyboard shortcut (e.g. Cmd + ,):
+  - [ ] the settings screen opens
 
 ---
 
