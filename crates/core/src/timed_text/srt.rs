@@ -2,11 +2,11 @@ use super::TimedTextFormat;
 use super::error::TimedTextError;
 use super::timestamp::parse_timing_line;
 use super::track::{Cue, TimedTextTrack};
-use crate::text_blocks::{join_text_lines, split_blocks, strip_bom};
+use crate::text_blocks::{join_text_lines, remove_byte_order_marks, split_blocks};
 
 /// Parses SubRip text: blank-line separated blocks of an index line, a timing line, and text.
 pub fn parse_srt(text: &str) -> Result<TimedTextTrack, TimedTextError> {
-    let cues = split_blocks(strip_bom(text))
+    let cues = split_blocks(&remove_byte_order_marks(text))
         .iter()
         .enumerate()
         .map(|(position, block)| parse_cue_block(block, position + 1))
@@ -85,6 +85,18 @@ mod tests {
     #[test]
     fn parses_a_file_with_a_byte_order_mark_and_no_final_newline() {
         let track = parse_srt("\u{feff}1\n00:00:00,000 --> 00:00:01,000\nHello").unwrap();
+        assert_eq!(track.cues[0].text, "Hello");
+    }
+
+    #[test]
+    fn parses_a_file_joined_after_another_with_its_byte_order_mark() {
+        let joined = "1\n00:00:00,000 --> 00:00:01,000\nHello\n\n\u{feff}2\n00:00:01,000 --> 00:00:02,000\nBye";
+        assert_eq!(parse_srt(joined).unwrap().cues[1].text, "Bye");
+    }
+
+    #[test]
+    fn removes_a_byte_order_mark_inside_cue_text() {
+        let track = parse_srt("1\n00:00:00,000 --> 00:00:01,000\nHel\u{feff}lo").unwrap();
         assert_eq!(track.cues[0].text, "Hello");
     }
 

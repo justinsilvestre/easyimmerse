@@ -1,9 +1,9 @@
 use super::{Chapter, Document};
-use crate::text_blocks::{join_text_lines, split_blocks, strip_bom};
+use crate::text_blocks::{join_text_lines, remove_byte_order_marks, split_blocks};
 
 /// Parses plain text into one untitled chapter whose paragraphs are separated by blank lines.
 pub fn parse_plain_text(text: &str) -> Document {
-    let paragraphs = split_blocks(strip_bom(text))
+    let paragraphs = split_blocks(&remove_byte_order_marks(text))
         .iter()
         .map(|lines| join_text_lines(lines))
         .collect();
@@ -42,6 +42,14 @@ mod tests {
         assert_eq!(
             parse_plain_text("\u{feff}First one.").chapters[0].paragraphs,
             vec!["First one."]
+        );
+    }
+
+    #[test]
+    fn leaves_a_byte_order_mark_out_of_a_later_paragraph() {
+        assert_eq!(
+            parse_plain_text("First one.\n\n\u{feff}Second one.").chapters[0].paragraphs,
+            vec!["First one.", "Second one."]
         );
     }
 

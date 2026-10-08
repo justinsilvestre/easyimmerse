@@ -2,6 +2,7 @@ use roxmltree::{Document as XmlDocument, Node};
 
 use super::Chapter;
 use super::error::DocumentError;
+use crate::text_blocks::remove_byte_order_marks;
 
 /// Extracts a chapter from an XHTML content document: the first `h1`, `h2`, or `h3` becomes
 /// the title, and each `p` becomes one paragraph with inline elements merged into its text
@@ -32,7 +33,10 @@ fn collapsed_text(node: Node) -> String {
         .filter(Node::is_text)
         .filter_map(|node| node.text())
         .collect();
-    text.split_whitespace().collect::<Vec<_>>().join(" ")
+    remove_byte_order_marks(&text)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 #[cfg(test)]
@@ -41,6 +45,15 @@ mod tests {
 
     fn wrap(body: &str) -> String {
         format!(r#"<html xmlns="http://www.w3.org/1999/xhtml"><body>{body}</body></html>"#)
+    }
+
+    #[test]
+    fn removes_a_byte_order_mark_inside_a_paragraph() {
+        let xhtml = wrap("<p>Fir\u{feff}st one.</p>");
+        assert_eq!(
+            extract_chapter(&xhtml).unwrap().paragraphs,
+            vec!["First one."]
+        );
     }
 
     #[test]
