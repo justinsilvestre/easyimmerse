@@ -137,13 +137,33 @@ describe("ClickableText", () => {
     ).toBe("dictionary");
   });
 
-  it("highlights a word written with spaces as soon as the mouse is on it", () => {
+  it("does not highlight a word written with spaces before its lookup answers", () => {
     render(
       <ClickableText
         text="Ich rufe an."
         gestures={{ onWordHover: () => new Promise(() => undefined) }}
       />,
     );
+    const word = screen.getByRole("button", { name: "rufe" });
+    fireEvent.pointerEnter(word, { pointerType: "mouse" });
+    expect(word.classList.contains("bg-accent-soft")).toBe(false);
+  });
+
+  it("highlights a word written with spaces once its lookup answers", async () => {
+    render(
+      <ClickableText
+        text="Ich rufe an."
+        gestures={{ onWordHover: () => Promise.resolve(4) }}
+      />,
+    );
+    const word = screen.getByRole("button", { name: "rufe" });
+    fireEvent.pointerEnter(word, { pointerType: "mouse" });
+    await vi.waitUntil(() => word.classList.contains("bg-accent-soft"));
+    expect(word.classList.contains("bg-accent-soft")).toBe(true);
+  });
+
+  it("highlights a word written with spaces at once when nothing is looked up", () => {
+    render(<ClickableText text="Ich rufe an." />);
     const word = screen.getByRole("button", { name: "rufe" });
     fireEvent.pointerEnter(word, { pointerType: "mouse" });
     expect(word.classList.contains("bg-accent-soft")).toBe(true);
@@ -281,11 +301,21 @@ describe("ClickableText", () => {
       expect(matchedText(container)).toBe("見る");
     });
 
-    it("highlights the character looked up from until the lookup reports its match", () => {
+    it("leaves the pop-up's word unhighlighted until its lookup answers", () => {
       const { container } = render(
         <ClickableText
           text="映画を見る"
           activeWord={{ start: 3, popupId: "dictionary" }}
+        />,
+      );
+      expect(matchedText(container)).toBeUndefined();
+    });
+
+    it("highlights the character looked up from when the lookup matched nothing", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          activeWord={{ start: 3, length: null, popupId: "dictionary" }}
         />,
       );
       expect(matchedText(container)).toBe("見");
@@ -295,38 +325,38 @@ describe("ClickableText", () => {
       const { container } = render(
         <ClickableText
           text="𠮷野家"
-          activeWord={{ start: 0, popupId: "dictionary" }}
+          activeWord={{ start: 0, length: null, popupId: "dictionary" }}
         />,
       );
       expect(matchedText(container)).toBe("𠮷");
     });
 
-    it("highlights a Thai letter with its vowel sign until the lookup reports its match", () => {
+    it("highlights a Thai letter with its vowel sign when the lookup matched nothing", () => {
       const { container } = render(
         <ClickableText
           text="กินข้าว"
-          activeWord={{ start: 0, popupId: "dictionary" }}
+          activeWord={{ start: 0, length: null, popupId: "dictionary" }}
         />,
       );
       expect(matchedText(container)).toBe("กิ");
     });
 
-    it("highlights the digits a run begins with until the lookup reports its match", () => {
+    it("highlights the digits a run begins with when the lookup matched nothing", () => {
       const { container } = render(
         <ClickableText
           text="2026年"
-          activeWord={{ start: 0, popupId: "dictionary" }}
+          activeWord={{ start: 0, length: null, popupId: "dictionary" }}
         />,
       );
       expect(matchedText(container)).toBe("2026");
     });
 
-    /** Rests the mouse, for a hover whose lookup never answers, on the character of the text at the index. */
-    function hoverCharacter(text: string, index: number) {
+    /** Rests the mouse, for a hover whose lookup matches nothing, on the character of the text at the index, until the answer. */
+    async function hoverCharacter(text: string, index: number) {
       const rendered = render(
         <ClickableText
           text={text}
-          gestures={{ onWordHover: () => new Promise(() => undefined) }}
+          gestures={{ onWordHover: () => Promise.resolve(null) }}
         />,
       );
       layOutCharacters();
@@ -335,16 +365,17 @@ describe("ClickableText", () => {
         clientX: index * 16 + 4,
         clientY: 10,
       });
+      await act(() => vi.advanceTimersByTimeAsync(40));
       return rendered;
     }
 
-    it("hovers the letter that a Thai vowel sign under the mouse belongs to", () => {
-      const { container } = hoverCharacter("กินข้าว", 1);
+    it("hovers the letter that a Thai vowel sign under the mouse belongs to", async () => {
+      const { container } = await hoverCharacter("กินข้าว", 1);
       expect(hoveredText(container)).toBe("กิ");
     });
 
-    it("hovers the digits that a digit under the mouse belongs to", () => {
-      const { container } = hoverCharacter("2026年", 2);
+    it("hovers the digits that a digit under the mouse belongs to", async () => {
+      const { container } = await hoverCharacter("2026年", 2);
       expect(hoveredText(container)).toBe("2026");
     });
 
@@ -366,7 +397,7 @@ describe("ClickableText", () => {
       return rendered;
     }
 
-    it("highlights the character under the mouse at once, before the hover's lookup answers", () => {
+    it("highlights nothing before the hover's lookup answers", () => {
       const { container } = render(
         <ClickableText
           text="映画を見る"
@@ -379,7 +410,7 @@ describe("ClickableText", () => {
         clientX: 50,
         clientY: 10,
       });
-      expect(hoveredText(container)).toBe("見");
+      expect(hoveredText(container)).toBeUndefined();
     });
 
     it("highlights the text that the hover's lookup matched, within 40 ms", async () => {
@@ -414,14 +445,14 @@ describe("ClickableText", () => {
       expect(hoveredText(container)).toBe("見る");
     });
 
-    it("moves the highlight at once when the mouse moves beyond the matched text", async () => {
+    it("drops the highlight at once when the mouse moves beyond the matched text", async () => {
       const { container } = await hoverAnswering(2);
       fireEvent.pointerMove(screen.getByRole("button"), {
         pointerType: "mouse",
         clientX: 5,
         clientY: 10,
       });
-      expect(hoveredText(container)).toBe("映");
+      expect(hoveredText(container)).toBeUndefined();
     });
 
     it("ignores a lookup's answer for a character the mouse has left", async () => {
@@ -620,11 +651,21 @@ describe("ClickableText", () => {
       );
     });
 
-    it("highlights the character of a cursor it is given before its lookup answers", () => {
+    it("highlights nothing for a cursor it is given before its lookup answers", () => {
       const { container } = render(
         <ClickableText
           text="映画を見る"
           cursor={{ start: 3, input: "keyboard" }}
+        />,
+      );
+      expect(container.querySelector("[data-hovered]")).toBeNull();
+    });
+
+    it("highlights the character of a cursor it is given whose lookup matched nothing", () => {
+      const { container } = render(
+        <ClickableText
+          text="映画を見る"
+          cursor={{ start: 3, input: "keyboard", matchedLength: null }}
         />,
       );
       expect(container.querySelector("[data-hovered]")?.textContent).toBe("見");

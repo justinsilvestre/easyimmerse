@@ -69,6 +69,16 @@ describe("reduceCueCursor", () => {
     expect(cursor?.position.matchedLength).toBeUndefined();
   });
 
+  it("takes the length a cached lookup matched when pointed", () => {
+    const cursor = reduceCueCursor(null, {
+      type: "pointed",
+      cue: secondCue,
+      hit: hitAt(4, "mouse"),
+      matchedLength: 3,
+    });
+    expect(cursor?.position.matchedLength).toBe(3);
+  });
+
   it("keeps the length the lookup matched once it answers", () => {
     const hit = hitAt(4, "keyboard");
     const cursor = reduceCueCursor(null, {

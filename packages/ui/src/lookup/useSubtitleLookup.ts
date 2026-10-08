@@ -77,7 +77,14 @@ export function useSubtitleLookup(
       lookup.clickWord(requestFor(hit, cue), hit.input),
     onWordPointed: (hit, input, cue) =>
       dispatchCursor(
-        hit ? { type: "pointed", cue, hit } : { type: "left", input },
+        hit
+          ? {
+              type: "pointed",
+              cue,
+              hit,
+              matchedLength: lookup.cachedMatchLength(requestFor(hit, cue)),
+            }
+          : { type: "left", input },
       ),
     onWordHover: (hit, cue) => lookup.hoverWord(requestFor(hit, cue)),
     onWordHoverAnswered: (hit, matchedLength, cue) => {

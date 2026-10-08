@@ -8,6 +8,7 @@ import {
   type LookupFlashcardFields,
 } from "./flashcardFieldsFromLookup.ts";
 import type { LookupRequest } from "./lookupPopup.ts";
+import type { LookupState } from "./lookupState.ts";
 import { flashcardLookupWaitMs } from "./lookupTiming.ts";
 import {
   type PopupHold,
@@ -114,14 +115,20 @@ export function useWordLookup<S>({
     }),
     /**
      * The occurrence the pop-up shows, if it shows a word from the text, with the pop-up's id,
-     * and the length of the text its best result matched, once the lookup has answered.
+     * and the length of the text its best result matched once the lookup has answered, or null when nothing matched.
      */
     activeOccurrence: lookup.request?.occurrence && {
       ...lookup.request.occurrence,
       source: lookup.request.source,
       popupId,
-      length: lookup.results[0]?.matchedText.length,
+      length: matchedLengthOf(lookup.state, lookup.results),
     },
+    /**
+     * The length of the text that a word's lookup matched, when its answer is known at once, as from the cache:
+     * null when it matched nothing, and undefined when the word has yet to be looked up.
+     */
+    cachedMatchLength: (request: LookupRequest<S>): number | null | undefined =>
+      bestMatchLength(lookup.cachedResults(request)),
     /** A word clicked or tapped in the text. */
     clickWord: (request: LookupRequest<S>, input: WordHit["input"]) => {
       if (!control.showsOccurrence(request)) return control.open(request);
@@ -156,6 +163,20 @@ export function useWordLookup<S>({
     close: control.close,
     leaveFor: control.leaveFor,
   };
+}
+
+/** The length of text the pop-up's lookup matched: undefined while it is being looked up, and null when nothing matched. */
+function matchedLengthOf(
+  state: LookupState | null,
+  results: readonly LookupResult[],
+): number | null | undefined {
+  return state?.kind === "loading" ? undefined : bestMatchLength(results);
+}
+
+function bestMatchLength(
+  results: readonly LookupResult[] | undefined,
+): number | null | undefined {
+  return results && (results[0]?.matchedText.length ?? null);
 }
 
 type Control<S> = ReturnType<typeof useLookupPopupControl<S>>;

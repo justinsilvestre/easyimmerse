@@ -1,5 +1,6 @@
 export { skipToken } from "@reduxjs/toolkit/query";
 export {
+  selectCachedLookup,
   useAddMediaFileMutation,
   useAddSubtitleTrackMutation,
   useClearConversionCacheMutation,

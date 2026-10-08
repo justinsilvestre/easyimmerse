@@ -5,6 +5,7 @@ import {
   findCreatedDraft,
   findSubtitles,
   renderMediaScreen,
+  requestsTo,
 } from "../testSupport/renderMediaScreen.tsx";
 
 afterEach(() => {
@@ -81,14 +82,38 @@ describe("MediaScreen lookup cursor", () => {
     renderMediaScreen();
     const dog = await cardWord(2, "dog");
     fireEvent.pointerEnter(dog, { pointerType: "mouse" });
-    await vi.waitFor(() => expect(isHighlighted(dog)).toBe(true));
+    await vi.waitUntil(() => isHighlighted(dog));
     fireEvent.pointerLeave(dog, { pointerType: "mouse" });
     expect(isHighlighted(dog)).toBe(false);
   });
 
-  it("highlights a word as soon as the mouse is on it, before its lookup answers", async () => {
+  it("highlights nothing on a word whose lookup has not answered", async () => {
     renderMediaScreen({ unansweredLookups: [dogCueFromDog] });
     const dog = await cardWord(2, "dog");
+    fireEvent.pointerEnter(dog, { pointerType: "mouse" });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(isHighlighted(dog)).toBe(false);
+  });
+
+  it("takes the highlight off a word at once when the mouse moves to one whose lookup has not answered", async () => {
+    renderMediaScreen({ unansweredLookups: [dogCueFromDog] });
+    const cat = await cardWord(1, "cat");
+    fireEvent.pointerEnter(cat, { pointerType: "mouse" });
+    await vi.waitUntil(() => isHighlighted(cat));
+    fireEvent.pointerLeave(cat, { pointerType: "mouse" });
+    fireEvent.pointerEnter(await cardWord(2, "dog"), { pointerType: "mouse" });
+    expect(isHighlighted(cat)).toBe(false);
+  });
+
+  it("highlights a word whose lookup is cached in the same moment the mouse moves onto it", async () => {
+    const { client } = renderMediaScreen({ batchLookupMs: 0 });
+    const dog = await cardWord(2, "dog");
+    await vi.waitUntil(
+      () =>
+        requestsTo(client.requests, "POST", "/dictionaries/lookup/batch")
+          .length > 0,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
     fireEvent.pointerEnter(dog, { pointerType: "mouse" });
     expect(isHighlighted(dog)).toBe(true);
   });

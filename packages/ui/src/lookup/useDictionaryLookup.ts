@@ -2,12 +2,14 @@ import {
   buildDictionaryMediaUrl,
   getServerConfig,
   lookUpTextAhead,
+  selectCachedLookup,
   skipToken,
   useListDictionariesQuery,
   useLookupTextQuery,
 } from "@easyimmerse/backend";
 import type { DictionarySummary, LookupResult } from "@easyimmerse/types";
 import { useReducer } from "react";
+import { useStore } from "react-redux";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
@@ -43,6 +45,7 @@ export function useDictionaryLookup<S>(language: string) {
       : skipToken,
   );
   const storeDispatch = useAppDispatch();
+  const store = useStore();
   return {
     popup,
     request,
@@ -66,6 +69,19 @@ export function useDictionaryLookup<S>(language: string) {
         : lookUpTextAhead(storeDispatch, lookupQueryOf(wanted.lookup, language))
             .then((response) => response.results)
             .catch(() => null),
+    /**
+     * The results of a word's lookup when they are known at once: from the cache, or none when no dictionary covers the language.
+     * Undefined when the word has to be looked up. It reads the cache without rendering the component again when the cache changes.
+     */
+    cachedResults: (
+      wanted: LookupRequest<S>,
+    ): readonly LookupResult[] | undefined =>
+      isMissingDictionary
+        ? []
+        : selectCachedLookup(
+            store.getState(),
+            lookupQueryOf(wanted.lookup, language),
+          )?.results,
     chooseWord: (chosen: LookupRequest<S>) =>
       dispatch({ type: "wordChosen", request: chosen }),
     openSearch: () => dispatch({ type: "searchOpened" }),

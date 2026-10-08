@@ -12,13 +12,19 @@ export type TextCursor = {
   input: WordHit["input"];
   /**
    * How much of the text the lookup from `start` matched, or null when it matched nothing.
-   * It is unset until that lookup answers; meanwhile the cursor highlights the word or character it lies on.
+   * It is unset until that lookup's answer is known, from the cache at once or when the lookup answers; meanwhile nothing is highlighted.
    */
   matchedLength?: number | null;
 };
 
 export type TextCursorAction =
-  | { type: "pointed"; start: number; input: WordHit["input"] }
+  | {
+      type: "pointed";
+      start: number;
+      input: WordHit["input"];
+      /** The length a cached lookup from `start` matched, or null when it matched nothing; unset when no answer is cached. */
+      matchedLength?: number | null;
+    }
   | {
       type: "answered";
       start: number;
@@ -29,7 +35,8 @@ export type TextCursorAction =
   | { type: "cleared" };
 
 /**
- * Moves the cursor where the mouse or the keyboard points, and keeps the length its lookup matched once that answers.
+ * Moves the cursor where the mouse or the keyboard points, and keeps the length its lookup matched,
+ * at once when the pointing brings a cached answer, or once the lookup answers.
  * A mouse that moves within the highlighted text leaves the cursor where it is, so that the highlight does not flicker.
  * The cursor goes once the input that placed it leaves the text, or when it is cleared, as when the text changes.
  */
@@ -39,20 +46,28 @@ export function reduceTextCursor(
 ): TextCursor | null {
   switch (action.type) {
     case "pointed":
-      return keepsCursor(cursor, action)
-        ? cursor
-        : { start: action.start, input: action.input };
+      return keepsCursor(cursor, action) ? cursor : cursorOf(action);
     case "answered":
-      return {
-        start: action.start,
-        input: action.input,
-        matchedLength: action.matchedLength,
-      };
+      return isSameCursor(cursor, action) ? cursor : cursorOf(action);
     case "left":
       return cursor?.input === action.input ? null : cursor;
     case "cleared":
       return null;
   }
+}
+
+function cursorOf({ start, input, matchedLength }: TextCursor): TextCursor {
+  return matchedLength === undefined
+    ? { start, input }
+    : { start, input, matchedLength };
+}
+
+function isSameCursor(cursor: TextCursor | null, other: TextCursor): boolean {
+  return (
+    cursor?.start === other.start &&
+    cursor.input === other.input &&
+    cursor.matchedLength === other.matchedLength
+  );
 }
 
 function keepsCursor(

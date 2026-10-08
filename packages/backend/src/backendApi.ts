@@ -568,6 +568,17 @@ type BackendState = Parameters<
   typeof backendApi.util.selectCachedArgsForQuery
 >[0];
 
+/** The cached answer of a lookup, or undefined when none is cached, for reading the cache at once rather than through a hook. */
+export function selectCachedLookup(
+  state: unknown,
+  query: LookupQuery,
+): LookupResponse | undefined {
+  const entry = backendApi.endpoints.lookupText.select(query)(
+    state as BackendState,
+  );
+  return entry.isSuccess ? entry.data : undefined;
+}
+
 /** The batch lookups being fetched now. */
 export function selectRunningBatches(
   state: BackendState,

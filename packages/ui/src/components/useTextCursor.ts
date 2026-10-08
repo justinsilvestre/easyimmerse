@@ -25,7 +25,13 @@ export function useTextCursor(
       if (isOwn)
         dispatch(
           hit
-            ? { type: "pointed", start: hit.start, input }
+            ? {
+                type: "pointed",
+                start: hit.start,
+                input,
+                // Without a lookup to wait for, the answer is known at once: nothing matched.
+                matchedLength: gestures.onWordHover ? undefined : null,
+              }
             : { type: "left", input },
         );
       gestures.onWordPointed?.(hit, input);

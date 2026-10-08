@@ -16,7 +16,7 @@ export type CueTextCursor = TextCursor & { cueIndex: number };
 export type CueCursor = { cue: Cue; hit: WordHit; position: CueTextCursor };
 
 export type CueCursorAction =
-  | { type: "pointed"; cue: Cue; hit: WordHit }
+  | { type: "pointed"; cue: Cue; hit: WordHit; matchedLength?: number | null }
   | { type: "answered"; cue: Cue; hit: WordHit; matchedLength: number | null }
   | { type: "left"; input: WordHit["input"] };
 
@@ -46,7 +46,7 @@ function textActionOf(
 ): TextCursorAction {
   const { start, input } = action.hit;
   return action.type === "pointed"
-    ? { type: "pointed", start, input }
+    ? { type: "pointed", start, input, matchedLength: action.matchedLength }
     : { type: "answered", start, input, matchedLength: action.matchedLength };
 }
 
