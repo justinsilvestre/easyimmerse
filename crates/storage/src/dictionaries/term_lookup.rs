@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use easyimmerse_core::dictionary::{TermEntry, TermMeta};
 use easyimmerse_core::lookup::{FoundEntry, FoundTermMeta, fold_case};
 use rusqlite::{Connection, Row, params_from_iter};
@@ -74,13 +76,11 @@ fn find_term_meta_rows(
 }
 
 fn fold_distinct(headwords: &[String]) -> Vec<String> {
-    let mut folded_headwords: Vec<String> = Vec::new();
-    for folded in headwords.iter().map(|headword| fold_case(headword)) {
-        if !folded_headwords.contains(&folded) {
-            folded_headwords.push(folded);
-        }
-    }
-    folded_headwords
+    let mut seen: HashSet<String> = HashSet::new();
+    (headwords.iter())
+        .map(|headword| fold_case(headword))
+        .filter(|folded| seen.insert(folded.clone()))
+        .collect()
 }
 
 fn read_found_entry(row: &Row) -> rusqlite::Result<FoundEntry> {
