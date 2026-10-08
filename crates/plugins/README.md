@@ -2,6 +2,16 @@
 
 `easyimmerse-plugins` loads plugins, which are WebAssembly components built against the interfaces in [`crates/plugin-api`](../plugin-api), and runs them through wasmtime. The example plugins its tests use live in [`plugins/`](../../plugins); build them with `mise run plugins:build`.
 
+## Media-source plugins
+
+A media-source plugin imports media and subtitles from an external source, such as a video site. The plugin never ships user interface code. Instead, it describes forms declaratively, with text fields, choices, toggles, notes and action buttons, and the app renders them.
+
+The plugin has two interfaces, each a sequence of forms. The import interface starts with `import-form`. Each time the user presses an action, the host sends the action and the form's input to `import-step`, which answers with the next form or with the import to run. The host then calls `import`, granting the plugin a fresh directory to write the media and subtitle files into, and adds the media file to the project with the locator the plugin gave as its origin.
+
+The media interface belongs to a media file imported through the plugin. It starts with `media-form`, which the host calls with the media file's locator, the project's languages and the subtitle tracks the host holds for it. Each action goes to `media-step`, which answers with the next form or with an update: held tracks to remove, and tracks to fetch through `fetch-subtitles` into a new directory beside the media file.
+
+The host grants no directory for the form calls, so a plugin cannot write anything while the user is still filling in a form. `MediaSourcePlugin` wraps each export, converting the WIT forms and form input to and from the core types that cross HTTP.
+
 ## Execution modes
 
 The host runs a plugin in one of two modes. The native mode compiles it to machine code with Cranelift. The interpreter mode compiles it to bytecode for wasmtime's Pulley interpreter instead, which needs the crate's `interpreter` feature and is an order of magnitude slower. `EASYIMMERSE_PLUGIN_EXECUTION=interpreter` selects the interpreter on desktop and Android; any other value or an unset variable selects native execution.
