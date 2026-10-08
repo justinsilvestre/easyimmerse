@@ -7,7 +7,7 @@ use ts_rs::TS;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::auth::error_body::{ApiError, ApiFailure};
-use crate::lookup_rows::{LookupRows, PositionLookup, defining_dictionary_ids};
+use crate::lookup::{LookupRows, PositionLookup, defining_dictionary_ids};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema, IntoParams)]

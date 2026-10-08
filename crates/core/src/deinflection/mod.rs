@@ -8,7 +8,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 /// A dictionary form that some text may be an inflection of.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS, ToSchema)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct Deinflection {
