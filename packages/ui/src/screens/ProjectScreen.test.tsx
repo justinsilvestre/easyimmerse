@@ -1,7 +1,13 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
 import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
-import type { MediaFile, MediaSourceJob } from "@easyimmerse/types";
+import type {
+  ImportStepRequest,
+  InstalledPlugin,
+  MediaFile,
+  MediaSourceJob,
+  PluginForm,
+} from "@easyimmerse/types";
 import {
   act,
   cleanup,
@@ -12,10 +18,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSharedSaving } from "../flashcards/sharedSaving.ts";
 import { exampleUnsavedCard } from "../flashcards/unsaved/exampleUnsavedCard.ts";
-import {
-  exampleMediaDescription,
-  exampleRunningJob,
-} from "../projects/exampleMediaSourceJob.ts";
+import { exampleRunningJob } from "../projects/exampleMediaSourceJob.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import {
@@ -25,6 +28,7 @@ import {
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 import {
   fixtureMediaFiles,
+  fixtureMediaSourcePlugin,
   fixtureResponses,
 } from "../testSupport/fixtureResponses.ts";
 import {
@@ -185,17 +189,58 @@ describe("ProjectScreen", () => {
     );
   });
 
-  it("offers no URL entry while no media-source plugin is installed", async () => {
+  it("offers no import button while no media-source plugin is installed", async () => {
     renderProject();
     await screen.findByRole("button", { name: "Add media" });
-    expect(screen.queryByRole("button", { name: "Add from URL" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Add from/ })).toBeNull();
   });
 
+  it("labels a media-source plugin's button after its title when it names no label", async () => {
+    renderImport({}, [{ ...fixtureMediaSourcePlugin, import_label: null }]);
+    expect(
+      await screen.findByRole("button", { name: "Add from Video site" }),
+    ).toBeDefined();
+  });
+
+  const urlForm: PluginForm = {
+    title: "Add from a video site",
+    description: null,
+    fields: [
+      {
+        id: "url",
+        label: "URL or video ID",
+        hint: null,
+        control: { kind: "text", value: "", placeholder: null },
+      },
+    ],
+    actions: [{ id: "look-up", label: "Look up", style: "primary" }],
+  };
+
+  const subtitlesForm: PluginForm = {
+    ...urlForm,
+    fields: [
+      {
+        id: "subtitles",
+        label: "Subtitles",
+        hint: null,
+        control: {
+          kind: "choose-many",
+          options: [{ id: "en", label: "English (automatic)", hint: null }],
+          chosen: ["en"],
+        },
+      },
+    ],
+    actions: [{ id: "add", label: "Add", style: "primary" }],
+  };
+
   /**
-   * Adds media from a URL through a fake media-source plugin whose fetch ends as
-   * `finished` says, and waits for the media file to open.
+   * Renders the project with a fake media-source plugin whose import interface asks for a URL,
+   * then for subtitles, and then starts a fetch that the job route reports as `polled`.
    */
-  async function addMediaFromUrl(finished: Partial<MediaSourceJob> = {}) {
+  function renderImport(
+    polled: Partial<MediaSourceJob> = {},
+    plugins: InstalledPlugin[] = [fixtureMediaSourcePlugin],
+  ) {
     const job = {
       ...exampleRunningJob,
       id: "j1",
@@ -205,23 +250,17 @@ describe("ProjectScreen", () => {
       {
         ...fixtureResponses,
         "GET /dictionaries": { dictionaries: [] },
-        "GET /plugins": {
-          plugins: [
-            { name: "video-site", version: "0.1.0", kind: "media-source" },
-          ],
-        },
-        "POST /plugins/video-site/describe": exampleMediaDescription,
-        "POST /projects/p1/media/from-source": job,
-        "GET /projects/p1/media/from-source/j1": {
-          ...job,
-          status: "done",
-          media_file: fixtureMediaFiles.media_files[0],
-          ...finished,
-        },
+        "GET /plugins": { plugins },
+        "POST /projects/p1/media/import-form": urlForm,
+        "POST /projects/p1/media/import-step": (request: BackendRequest) =>
+          stepRequestOf(request).action === "look-up"
+            ? { kind: "form", form: subtitlesForm }
+            : { kind: "job", job },
+        "GET /projects/p1/media/from-source/j1": { ...job, ...polled },
       },
       directPlaybackRoutes,
     );
-    const { store, effects } = renderWithAppStore(
+    const rendered = renderWithAppStore(
       <ProjectScreen
         projectId="p1"
         onBack={() => undefined}
@@ -230,37 +269,59 @@ describe("ProjectScreen", () => {
       client,
       { server: fakeServer },
     );
+    return { ...rendered, client };
+  }
+
+  const stepRequestOf = (request: BackendRequest) =>
+    (request.body as { value: ImportStepRequest }).value;
+
+  /** Goes through the fake plugin's forms up to the start of the fetch. */
+  async function startImport() {
     fireEvent.click(
-      await screen.findByRole("button", { name: "Add from URL" }),
+      await screen.findByRole("button", { name: "Add from a video site" }),
     );
-    fireEvent.change(screen.getByLabelText("URL or ID"), {
+    fireEvent.change(await screen.findByLabelText("URL or video ID"), {
       target: { value: "https://videos.example.com/abc" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Look up" }));
     fireEvent.click(await screen.findByRole("button", { name: "Add" }));
-    await vi.waitFor(() =>
-      expect(selectCurrentMediaFileId(store.getState())).toBe("m1"),
-    );
-    return { client, effects };
   }
 
-  it("adds media from a URL through a media-source plugin and opens it once the fetch is done", async () => {
-    const { client } = await addMediaFromUrl();
-    const request = client.requests.find(
-      ({ path }) => path === "/projects/p1/media/from-source",
-    );
-    expect(request?.body).toEqual({
-      kind: "json",
-      value: {
-        plugin: "video-site",
-        locator: "https://videos.example.com/abc",
-        subtitles: ["en"],
-      },
+  /** Imports media through the fake plugin, with a fetch that ends as `finished` says, and waits for the file to open. */
+  async function importMedia(finished: Partial<MediaSourceJob> = {}) {
+    const rendered = renderImport({
+      status: "done",
+      media_file: fixtureMediaFiles.media_files[0],
+      ...finished,
     });
+    await startImport();
+    await vi.waitFor(() =>
+      expect(selectCurrentMediaFileId(rendered.store.getState())).toBe("m1"),
+    );
+    return rendered;
+  }
+
+  it("sends each form's input with the pressed action to the plugin", async () => {
+    const { client } = await importMedia();
+    const steps = client.requests
+      .filter(({ path }) => path === "/projects/p1/media/import-step")
+      .map(stepRequestOf);
+    expect(steps).toEqual([
+      {
+        plugin: "video-site",
+        action: "look-up",
+        input: [{ field: "url", values: ["https://videos.example.com/abc"] }],
+      },
+      {
+        plugin: "video-site",
+        action: "add",
+        input: [{ field: "subtitles", values: ["en"] }],
+      },
+    ]);
   });
 
-  it("names the chosen subtitles that a fetch from a URL did not add", async () => {
-    const { effects } = await addMediaFromUrl({
+  it("names the chosen subtitles that an import did not add", async () => {
+    const { effects } = await importMedia({
       skipped_subtitles: [{ id: "en", reason: "the plugin did not fetch it" }],
     });
     expect(
@@ -273,39 +334,8 @@ describe("ProjectScreen", () => {
   });
 
   it("shows the fetch's progress while it runs", async () => {
-    const job = { ...exampleRunningJob, id: "j1" };
-    const client = createFakeBackendClient(
-      {
-        ...fixtureResponses,
-        "GET /dictionaries": { dictionaries: [] },
-        "GET /plugins": {
-          plugins: [
-            { name: "video-site", version: "0.1.0", kind: "media-source" },
-          ],
-        },
-        "POST /plugins/video-site/describe": exampleMediaDescription,
-        "POST /projects/p1/media/from-source": job,
-        "GET /projects/p1/media/from-source/j1": job,
-      },
-      directPlaybackRoutes,
-    );
-    renderWithAppStore(
-      <ProjectScreen
-        projectId="p1"
-        onBack={() => undefined}
-        onEditSettings={() => undefined}
-      />,
-      client,
-      { server: fakeServer },
-    );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Add from URL" }),
-    );
-    fireEvent.change(screen.getByLabelText("URL or ID"), {
-      target: { value: "https://videos.example.com/abc" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Look up" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Add" }));
+    renderImport();
+    await startImport();
     await vi.waitFor(() =>
       expect(screen.getByRole("status").textContent).toContain(
         "downloading the video and subtitles",

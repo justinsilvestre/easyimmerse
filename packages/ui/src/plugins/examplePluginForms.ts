@@ -78,3 +78,76 @@ export const exampleNoticeForm: PluginForm = {
   ],
   actions: [{ id: "retry", label: "Try again", style: "primary" }],
 };
+
+/** The second form of a video site's import interface, after the URL was looked up. */
+export const exampleLookedUpForm: PluginForm = {
+  title: "Add from a video site",
+  description: null,
+  fields: [
+    {
+      id: "summary",
+      label: "Video",
+      hint: null,
+      control: { kind: "note", text: "A walk through the old town · 12:34" },
+    },
+    {
+      id: "url",
+      label: "URL or video ID",
+      hint: null,
+      control: {
+        kind: "text",
+        value: "https://videos.example.com/watch/abc123def45",
+        placeholder: null,
+      },
+    },
+    {
+      id: "subtitles",
+      label: "Subtitles",
+      hint: null,
+      control: {
+        kind: "choose-many",
+        options: [
+          { id: "ja", label: "Japanese", hint: null },
+          { id: "en", label: "English (automatic)", hint: null },
+        ],
+        chosen: ["ja", "en"],
+      },
+    },
+  ],
+  actions: [
+    { id: "look-up", label: "Look up", style: "secondary" },
+    { id: "add", label: "Add", style: "primary" },
+  ],
+};
+
+/** The media interface of a video site, for a file that holds one of its subtitle tracks. */
+export const exampleSourceMediaForm: PluginForm = {
+  title: "A walk through the old town",
+  description: null,
+  fields: [
+    {
+      id: "fetch",
+      label: "Subtitles to fetch",
+      hint: null,
+      control: {
+        kind: "choose-many",
+        options: [
+          { id: "en", label: "English (automatic)", hint: null },
+          { id: "fr", label: "French (automatic)", hint: null },
+        ],
+        chosen: [],
+      },
+    },
+    {
+      id: "remove",
+      label: "Subtitles to remove",
+      hint: null,
+      control: {
+        kind: "choose-many",
+        options: [{ id: "track-1", label: "Japanese", hint: null }],
+        chosen: [],
+      },
+    },
+  ],
+  actions: [{ id: "apply", label: "Apply", style: "primary" }],
+};
