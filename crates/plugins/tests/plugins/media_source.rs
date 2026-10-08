@@ -78,6 +78,7 @@ impl Fixture {
         ImportRequest {
             locator: self.locator(),
             input: vec![input("subtitles", subtitles)],
+            subtitles: strings(subtitles),
         }
     }
 
@@ -86,6 +87,7 @@ impl Fixture {
         FetchRequest {
             locator: self.locator(),
             input: vec![input("fetch", ids)],
+            subtitles: strings(ids),
         }
     }
 
@@ -108,8 +110,12 @@ impl Fixture {
 fn input(field: &str, values: &[&str]) -> FormInput {
     FormInput {
         field: field.to_string(),
-        values: values.iter().map(|value| value.to_string()).collect(),
+        values: strings(values),
     }
+}
+
+fn strings(values: &[&str]) -> Vec<String> {
+    values.iter().map(|value| value.to_string()).collect()
 }
 
 fn languages() -> Vec<String> {
@@ -186,8 +192,23 @@ fn answers_the_import_action_with_the_import_to_run() {
     let expected = ImportRequest {
         locator: "sample".to_string(),
         input: entered,
+        subtitles: Vec::new(),
     };
     assert_eq!(answer, ImportAnswer::Import(expected));
+}
+
+#[test]
+fn names_the_subtitle_tracks_an_import_will_fetch() {
+    let fixture = Fixture::start();
+    let entered = vec![input("locator", &["sample"]), input("subtitles", &["en"])];
+    let answer = fixture
+        .media_source()
+        .import_step(&import_context(), "import", &entered)
+        .expect("import step");
+    let ImportAnswer::Import(request) = answer else {
+        panic!("expected an import, got {answer:?}");
+    };
+    assert_eq!(request.subtitles, vec!["en".to_string()]);
 }
 
 #[test]
@@ -321,6 +342,7 @@ fn answers_the_apply_action_with_the_update_to_apply() {
         fetch: Some(FetchRequest {
             locator: fixture.locator(),
             input: entered,
+            subtitles: vec!["en".to_string()],
         }),
     };
     assert_eq!(answer, MediaAnswer::Apply(expected));

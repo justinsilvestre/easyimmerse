@@ -64,6 +64,7 @@ fn to_control(control: WitFormControl) -> FormControl {
         }
         WitFormControl::Toggle(on) => FormControl::Toggle { on },
         WitFormControl::Note(text) => FormControl::Note { text },
+        WitFormControl::Hidden(value) => FormControl::Hidden { value },
     }
 }
 
@@ -90,5 +91,21 @@ fn to_action(action: WitFormAction) -> FormAction {
         id: action.id,
         label: action.label,
         style,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn keeps_the_value_of_a_hidden_control() {
+        let control = to_control(WitFormControl::Hidden("sample".to_string()));
+        assert_eq!(
+            control,
+            FormControl::Hidden {
+                value: "sample".to_string()
+            }
+        );
     }
 }

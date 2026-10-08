@@ -27,6 +27,8 @@ pub struct ImportRequest {
     pub locator: String,
     /// The input of the form the import was submitted from.
     pub input: Vec<FormInput>,
+    /// The ids of the subtitle tracks the plugin will try to fetch.
+    pub subtitles: Vec<String>,
 }
 
 /// The plugin's answer to an action in its import interface.
@@ -58,6 +60,8 @@ pub struct FetchRequest {
     pub locator: String,
     /// The input of the form the fetch was submitted from.
     pub input: Vec<FormInput>,
+    /// The ids of the subtitle tracks the plugin will try to fetch.
+    pub subtitles: Vec<String>,
 }
 
 /// Changes to a media file the host applies at the plugin's request.
@@ -85,6 +89,7 @@ pub(crate) fn to_wit_import_request(request: &ImportRequest) -> WitImportRequest
     WitImportRequest {
         locator: request.locator.clone(),
         input: to_wit_inputs(&request.input),
+        subtitles: request.subtitles.clone(),
     }
 }
 
@@ -94,6 +99,7 @@ pub(crate) fn to_import_answer(answer: WitImportAnswer) -> ImportAnswer {
         WitImportAnswer::Import(request) => ImportAnswer::Import(ImportRequest {
             locator: request.locator,
             input: to_inputs(request.input),
+            subtitles: request.subtitles,
         }),
     }
 }
@@ -128,6 +134,7 @@ fn to_fetch_request(request: WitFetchRequest) -> FetchRequest {
     FetchRequest {
         locator: request.locator,
         input: to_inputs(request.input),
+        subtitles: request.subtitles,
     }
 }
 
@@ -135,6 +142,7 @@ pub(crate) fn to_wit_fetch_request(request: &FetchRequest) -> WitFetchRequest {
     WitFetchRequest {
         locator: request.locator.clone(),
         input: to_wit_inputs(&request.input),
+        subtitles: request.subtitles.clone(),
     }
 }
 

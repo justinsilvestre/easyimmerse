@@ -30,8 +30,7 @@ impl media_source::Guest for FixtureMediaSource {
     }
 
     fn import(request: ImportRequest, output_dir: String) -> Result<ResolvedMedia, PluginError> {
-        let subtitles = input::values_of(&request.input, "subtitles");
-        resolve::resolve(&request.locator, &output_dir, &subtitles)
+        resolve::resolve(&request.locator, &output_dir, &request.subtitles)
     }
 
     fn media_form(context: MediaContext) -> Result<Form, PluginError> {
@@ -50,8 +49,7 @@ impl media_source::Guest for FixtureMediaSource {
         request: FetchRequest,
         output_dir: String,
     ) -> Result<Vec<FetchedSubtitle>, PluginError> {
-        let subtitles = input::values_of(&request.input, "fetch");
-        resolve::fetch_subtitles(&request.locator, &output_dir, &subtitles)
+        resolve::fetch_subtitles(&request.locator, &output_dir, &request.subtitles)
     }
 }
 

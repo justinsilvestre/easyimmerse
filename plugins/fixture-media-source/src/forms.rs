@@ -20,15 +20,20 @@ pub fn import_form() -> Form {
     }
 }
 
-/// Answers `import` with an import of the locator the user entered, passing the whole
-/// input on.
+/// Answers `import` with an import of the locator the user entered and the subtitle
+/// tracks named in the input's `subtitles` field, passing the whole input on.
 pub fn import_step(action: &str, input: Vec<FormInput>) -> Result<ImportAnswer, PluginError> {
     expect_action(action, "import")?;
     let locator = values_of(&input, "locator").concat();
     if locator.is_empty() {
         return Err(PluginError::InvalidInput("enter a locator".to_string()));
     }
-    Ok(ImportAnswer::Import(ImportRequest { locator, input }))
+    let subtitles = values_of(&input, "subtitles");
+    Ok(ImportAnswer::Import(ImportRequest {
+        locator,
+        input,
+        subtitles,
+    }))
 }
 
 /// A form offering the English track unless it is held already, and the held tracks to
@@ -62,9 +67,11 @@ pub fn media_step(
     input: Vec<FormInput>,
 ) -> Result<MediaAnswer, PluginError> {
     expect_action(action, "apply")?;
-    let fetch = (!values_of(&input, "fetch").is_empty()).then(|| FetchRequest {
+    let fetched = values_of(&input, "fetch");
+    let fetch = (!fetched.is_empty()).then(|| FetchRequest {
         locator: context.locator,
         input: input.clone(),
+        subtitles: fetched,
     });
     Ok(MediaAnswer::Apply(MediaUpdate {
         remove_subtitles: values_of(&input, "remove"),
