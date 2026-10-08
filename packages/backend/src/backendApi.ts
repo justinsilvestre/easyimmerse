@@ -597,6 +597,6 @@ async function answerFromRunningBatch(
   const data =
     answer &&
     batch &&
-    lookupResponseAt(answer, batch.texts.indexOf(context), offset);
+    lookupResponseAt(batch, answer, batch.texts.indexOf(context), offset);
   return data ? { data } : null;
 }

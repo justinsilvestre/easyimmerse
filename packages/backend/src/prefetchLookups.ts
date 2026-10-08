@@ -98,11 +98,10 @@ async function fetchBatch(
 ) {
   const language = passages[0]?.language ?? "";
   const texts = passages.map((passage) => passage.text);
-  const request = backendApi.endpoints.lookupTexts.initiate(
-    { language, texts },
-    { subscribe: false },
-  );
-  const answer = await dispatch(request)
+  const request = { language, texts };
+  const answer = await dispatch(
+    backendApi.endpoints.lookupTexts.initiate(request, { subscribe: false }),
+  )
     .unwrap()
     .catch(() => null);
   if (answer === null) return;
@@ -110,7 +109,9 @@ async function fetchBatch(
     const index =
       lookup.language === language ? texts.indexOf(lookup.context ?? "") : -1;
     const value =
-      index < 0 ? null : lookupResponseAt(answer, index, lookup.offset ?? 0);
+      index < 0
+        ? null
+        : lookupResponseAt(request, answer, index, lookup.offset ?? 0);
     return value
       ? [{ endpointName: "lookupText" as const, arg: lookup, value }]
       : [];

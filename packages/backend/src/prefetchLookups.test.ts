@@ -109,6 +109,14 @@ describe("prefetchLookups", () => {
     ).resolves.toEqual(emptyResponse);
   });
 
+  it("leaves a position the batch did not look up to a lookup of its own", async () => {
+    const { store, requests, release } = createConfiguredStore();
+    release();
+    await prefetchLookups(store.dispatch, [lookupAt("Hund", 2)]);
+    await lookUpTextAhead(store.dispatch, lookupAt("Hund", 2));
+    expect(requests).toHaveLength(2);
+  });
+
   it("leaves out passages whose lookups are all cached", async () => {
     const { store, requests, release } = createConfiguredStore();
     release();

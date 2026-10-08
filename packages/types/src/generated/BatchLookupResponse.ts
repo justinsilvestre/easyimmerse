@@ -4,4 +4,20 @@ import type { KanjiResult } from "./KanjiResult";
 import type { LookupResult } from "./LookupResult";
 import type { TextLookups } from "./TextLookups";
 
-export type BatchLookupResponse = { texts: Array<TextLookups>, results: Array<LookupResult>, kanji: Array<KanjiResult>, stylesheets: Array<DictionaryStylesheet>, };
+export type BatchLookupResponse = { 
+/**
+ * The lookups in each requested text, in the order requested.
+ */
+texts: Array<TextLookups>, 
+/**
+ * Every distinct term result of the lookups, each once.
+ */
+results: Array<LookupResult>, 
+/**
+ * Every distinct kanji result of the lookups, each once.
+ */
+kanji: Array<KanjiResult>, 
+/**
+ * The stylesheets of the dictionaries whose definitions appear in `results`, each once.
+ */
+stylesheets: Array<DictionaryStylesheet>, };
