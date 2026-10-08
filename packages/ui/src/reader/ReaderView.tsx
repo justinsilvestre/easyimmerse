@@ -101,11 +101,11 @@ type ReaderViewProps = {
   /** The word of the text the pop-up opened on, which it stands beside. */
   lookupWord?: ReaderWord;
   /**
-   * The word of the text the pop-up shows, which is highlighted as in the subtitles:
+   * The word of the text the pop-up shows, which is highlighted as in the subtitles once its lookup has answered:
    * a word written with spaces whole, and in a script without spaces the characters the lookup matched,
-   * or, until `matchedLength` is known, the character it looks up from.
+   * or the character it looked up from when `matchedLength` is null because nothing matched.
    */
-  highlightedWord?: { word: ReaderWord; matchedLength?: number };
+  highlightedWord?: { word: ReaderWord; matchedLength?: number | null };
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
   /** A panel laid over the text at the side, such as the flashcard editor. The reader's keys leave it alone. */
