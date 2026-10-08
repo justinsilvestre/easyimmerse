@@ -18,6 +18,7 @@ pub mod router;
 pub mod routes;
 pub mod serve;
 pub mod sidecar_subtitle_tracks;
+mod source_update;
 pub mod state;
 #[cfg(test)]
 mod typescript_constants;

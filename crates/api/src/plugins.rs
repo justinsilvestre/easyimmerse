@@ -2,15 +2,15 @@
 
 use std::path::{Path, PathBuf};
 
-use easyimmerse_core::providers::media_source::{
-    MediaDescription, ResolvedMedia, ResolvedSubtitle,
-};
+use easyimmerse_core::providers::media_source::{ResolvedMedia, ResolvedSubtitle};
+use easyimmerse_core::providers::plugin_form::{FormInput, PluginForm};
 use easyimmerse_plugins::{
-    CapabilityGrants, ExecutionMode, HostEvent, HostLimits, MediaSourcePlugin, PluginError,
+    CapabilityGrants, ExecutionMode, FetchRequest, HostEvent, HostLimits, ImportAnswer,
+    ImportContext, ImportRequest, MediaAnswer, MediaContext, MediaSourcePlugin, PluginError,
     PluginKind, PluginPackage,
 };
 
-/// The instruction budget of one `resolve` call. A media-source plugin spends its own
+/// The instruction budget of one call. A media-source plugin spends its own
 /// instructions on parsing what its tools print, while the host does the fetching, so the
 /// budget is far above the default per-call one without letting a loop run forever.
 const MEDIA_SOURCE_FUEL: u64 = 2_000_000_000;
@@ -62,45 +62,67 @@ fn package_dirs(dir: &Path) -> Vec<PathBuf> {
     dirs
 }
 
-/// Asks the plugin what the source has for `locator`, granting it no directory to write
-/// into, since describing fetches nothing.
-pub fn describe_media(
+/// The first form of the plugin's import interface. The plugin is granted no directory,
+/// since showing a form fetches nothing; the same holds for the other form calls.
+pub fn import_form(
     package: &PluginPackage,
-    locator: &str,
-) -> Result<MediaDescription, PluginError> {
-    load_plugin(package, &[])?.describe(locator)
+    context: &ImportContext,
+) -> Result<PluginForm, PluginError> {
+    load_plugin(package, &[])?.import_form(context)
 }
 
-/// Runs the plugin's `resolve` on the current thread, granting it `output_dir` to write
+/// The plugin's answer to an action in its import interface.
+pub fn import_step(
+    package: &PluginPackage,
+    context: &ImportContext,
+    action: &str,
+    input: &[FormInput],
+) -> Result<ImportAnswer, PluginError> {
+    load_plugin(package, &[])?.import_step(context, action, input)
+}
+
+/// Runs the plugin's `import` on the current thread, granting it `output_dir` to write
 /// into, the hosts its manifest lists, and the executables it bundles. The listener hears
 /// what the plugin and its commands report as it happens; the host logs it as well.
-pub fn resolve_media(
+pub fn run_import(
     package: &PluginPackage,
-    locator: &str,
+    request: &ImportRequest,
     output_dir: &Path,
-    subtitle_ids: &[String],
     listener: impl FnMut(HostEvent) + Send + 'static,
 ) -> Result<ResolvedMedia, PluginError> {
     let mut plugin = load_plugin(package, &[output_dir.to_path_buf()])?;
     plugin.listen(listener);
-    let (resolved, _progress) =
-        plugin.resolve(locator, &output_dir.to_string_lossy(), subtitle_ids)?;
+    let (resolved, _progress) = plugin.import(request, &output_dir.to_string_lossy())?;
     Ok(resolved)
+}
+
+/// The first form of the plugin's media interface for a media file imported through it.
+pub fn media_form(
+    package: &PluginPackage,
+    context: &MediaContext,
+) -> Result<PluginForm, PluginError> {
+    load_plugin(package, &[])?.media_form(context)
+}
+
+/// The plugin's answer to an action in its media interface.
+pub fn media_step(
+    package: &PluginPackage,
+    context: &MediaContext,
+    action: &str,
+    input: &[FormInput],
+) -> Result<MediaAnswer, PluginError> {
+    load_plugin(package, &[])?.media_step(context, action, input)
 }
 
 /// Runs the plugin's `fetch-subtitles` on the current thread, granting it `output_dir`
 /// to write into.
 pub fn fetch_subtitles(
     package: &PluginPackage,
-    locator: &str,
+    request: &FetchRequest,
     output_dir: &Path,
-    subtitle_ids: &[String],
 ) -> Result<Vec<ResolvedSubtitle>, PluginError> {
-    load_plugin(package, &[output_dir.to_path_buf()])?.fetch_subtitles(
-        locator,
-        &output_dir.to_string_lossy(),
-        subtitle_ids,
-    )
+    load_plugin(package, &[output_dir.to_path_buf()])?
+        .fetch_subtitles(request, &output_dir.to_string_lossy())
 }
 
 /// Loads the plugin with the hosts its manifest lists, the executables it bundles, and

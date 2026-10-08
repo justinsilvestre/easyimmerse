@@ -9,7 +9,7 @@ use easyimmerse_core::text_source::TextSource;
 use easyimmerse_core::timed_text::{detect_format, parse_timed_text};
 use easyimmerse_storage::NewSubtitleTrack;
 
-/// The tracks to add, each with the role it takes, and the tracks asked for that were not.
+/// The tracks to add, each with the role it takes, and the fetched tracks that were not.
 pub(crate) struct FetchedTracks {
     pub tracks: Vec<(NewSubtitleTrack, Option<SubtitleRole>)>,
     pub skipped: Vec<SkippedSubtitle>,
@@ -17,16 +17,14 @@ pub(crate) struct FetchedTracks {
 
 /// Parses each subtitle file once, as adding a subtitle track by hand does, and gives the
 /// first file in each of the project's languages that language's role, unless `taken`
-/// already fills it. A track in `requested` that the plugin did not fetch, or whose file
-/// cannot be read or parsed, is reported as skipped.
+/// already fills it. A track whose file cannot be read or parsed is reported as skipped.
 pub(crate) async fn read_fetched_subtitles(
-    requested: &[String],
     fetched: &[ResolvedSubtitle],
     settings: &ProjectSettings,
     taken: SubtitleSelection,
 ) -> FetchedTracks {
     let mut tracks = Vec::new();
-    let mut skipped = unfetched(requested, fetched);
+    let mut skipped = Vec::new();
     let mut selection = taken;
     for subtitle in fetched {
         let track = match read_subtitle(subtitle).await {
@@ -47,19 +45,6 @@ pub(crate) async fn read_fetched_subtitles(
         tracks.push((track, role));
     }
     FetchedTracks { tracks, skipped }
-}
-
-/// The tracks asked for that the plugin did not return, which it may have explained in
-/// its log.
-fn unfetched(requested: &[String], fetched: &[ResolvedSubtitle]) -> Vec<SkippedSubtitle> {
-    requested
-        .iter()
-        .filter(|id| !fetched.iter().any(|subtitle| &subtitle.id == *id))
-        .map(|id| SkippedSubtitle {
-            id: id.clone(),
-            reason: "the plugin did not fetch it".to_string(),
-        })
-        .collect()
 }
 
 /// Stands in for the ids of the tracks that will be added, while roles are chosen.
@@ -149,18 +134,8 @@ mod tests {
         }
     }
 
-    fn requested(ids: &[&str]) -> Vec<String> {
-        ids.iter().map(|id| id.to_string()).collect()
-    }
-
-    async fn read(requested: &[String], fetched: &[ResolvedSubtitle]) -> FetchedTracks {
-        read_fetched_subtitles(
-            requested,
-            fetched,
-            &settings(),
-            SubtitleSelection::default(),
-        )
-        .await
+    async fn read(fetched: &[ResolvedSubtitle]) -> FetchedTracks {
+        read_fetched_subtitles(fetched, &settings(), SubtitleSelection::default()).await
     }
 
     #[test]
@@ -218,19 +193,7 @@ mod tests {
         let path = dir.path().join("media.en.vtt");
         std::fs::write(&path, "WEBVTT\n\n00:00.000 --> 00:01.000\nHello\n").unwrap();
         let fetched = [subtitle("English", &path.to_string_lossy())];
-        assert_eq!(read(&requested(&["en"]), &fetched).await.tracks.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn skips_a_requested_track_the_plugin_did_not_fetch() {
-        let skipped = read(&requested(&["ja"]), &[]).await.skipped;
-        assert_eq!(
-            skipped,
-            vec![SkippedSubtitle {
-                id: "ja".to_string(),
-                reason: "the plugin did not fetch it".to_string(),
-            }]
-        );
+        assert_eq!(read(&fetched).await.tracks.len(), 1);
     }
 
     #[tokio::test]
@@ -239,7 +202,7 @@ mod tests {
         let path = dir.path().join("media.en.vtt");
         std::fs::write(&path, "WEBVTT\n\nHello\n").unwrap();
         let fetched = [subtitle("English", &path.to_string_lossy())];
-        let skipped = read(&requested(&["en"]), &fetched).await.skipped;
+        let skipped = read(&fetched).await.skipped;
         assert_eq!(
             skipped
                 .iter()

@@ -1,5 +1,6 @@
-//! The installed plugins, and adding media to a project through a media-source plugin.
-//! The fetch runs as a job, since it takes as long as a download; the client polls it.
+//! The installed plugins, and the job that imports media into a project through a
+//! media-source plugin. The import runs as a job, since it takes as long as a download; the
+//! client polls it.
 
 use std::path::Path as FsPath;
 
@@ -7,12 +8,10 @@ use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource, MediaOrigin};
-use easyimmerse_core::project::{ProjectId, ProjectSettings};
-use easyimmerse_core::providers::media_source::{
-    MediaDescription, MediaLocator, ResolvedMedia, SkippedSubtitle,
-};
+use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
+use easyimmerse_core::providers::media_source::{MediaLocator, ResolvedMedia, SkippedSubtitle};
 use easyimmerse_core::subtitle_track::SubtitleSelection;
-use easyimmerse_plugins::{PluginError, PluginErrorKind, PluginPackage};
+use easyimmerse_plugins::{ImportRequest, PluginError, PluginErrorKind, PluginPackage};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
@@ -20,7 +19,7 @@ use utoipa::ToSchema;
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
 use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles};
 use crate::media_source_jobs::{MediaSourceJob, MediaSourceJobId, output_dir_for};
-use crate::plugins::{describe_media, resolve_media};
+use crate::plugins::run_import;
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -34,26 +33,13 @@ pub struct ListPluginsResponse {
 #[ts(export)]
 pub struct InstalledPlugin {
     pub name: String,
+    /// How the plugin is named to the user.
+    pub title: String,
     pub version: String,
     /// The capability the plugin exports, as its manifest names it, such as `media-source`.
     pub kind: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
-#[ts(export)]
-pub struct AddMediaFromSourceRequest {
-    /// The name of an installed media-source plugin.
-    pub plugin: String,
-    pub locator: MediaLocator,
-    /// The ids of the subtitle tracks to fetch with the media, from `describeMediaSource`.
-    #[serde(default)]
-    pub subtitles: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
-#[ts(export)]
-pub struct DescribeMediaSourceRequest {
-    pub locator: MediaLocator,
+    /// The text of the plugin's import button. Set for media-source plugins only.
+    pub import_label: Option<String>,
 }
 
 #[utoipa::path(
@@ -79,10 +65,13 @@ pub async fn list_plugins(State(state): State<AppState>) -> Json<ListPluginsResp
 }
 
 fn installed_plugin(package: &PluginPackage) -> InstalledPlugin {
+    let manifest = &package.manifest;
     InstalledPlugin {
-        name: package.manifest.name.clone(),
-        version: package.manifest.version.clone(),
-        kind: kind_name(package.manifest.kind).to_string(),
+        name: manifest.name.clone(),
+        title: manifest.title().to_string(),
+        version: manifest.version.clone(),
+        kind: kind_name(manifest.kind).to_string(),
+        import_label: manifest.import_label(),
     }
 }
 
@@ -102,40 +91,6 @@ fn kind_name(kind: easyimmerse_plugins::PluginKind) -> &'static str {
     }
 }
 
-/// Asks a media-source plugin what it has for a locator: the media's title and duration,
-/// and the subtitle tracks that can be fetched with it. Nothing is fetched. The plugin
-/// may take a few seconds to answer, as it usually asks the source.
-#[utoipa::path(
-    post,
-    path = "/plugins/{plugin}/describe",
-    tag = "plugins",
-    operation_id = "describeMediaSource",
-    security(("bearer_token" = [])),
-    params(("plugin" = String, Path, description = "The name of an installed media-source plugin")),
-    request_body = DescribeMediaSourceRequest,
-    responses(
-        (status = 200, description = "What the source has for the locator", body = MediaDescription),
-        (status = 400, description = "The plugin does not understand the locator (code `invalid_locator`)", body = ApiError),
-        (status = 401, description = "Missing or invalid token", body = ApiError),
-        (status = 404, description = "No installed media-source plugin of that name", body = ApiError),
-        (status = 421, description = "Unexpected Host header", body = ApiError),
-        (status = 502, description = "The plugin could not describe the locator (code `media_source_failed`)", body = ApiError),
-    ),
-)]
-pub async fn describe_media_source(
-    State(state): State<AppState>,
-    Path(plugin): Path<String>,
-    Json(request): Json<DescribeMediaSourceRequest>,
-) -> Result<Json<MediaDescription>, ApiFailure> {
-    let package = media_source_package(&state, &plugin)?;
-    let locator = request.locator.0;
-    let description = tokio::task::spawn_blocking(move || describe_media(&package, &locator))
-        .await
-        .map_err(|error| internal(format!("plugin task failed: {error}")))?
-        .map_err(plugin_failure)?;
-    Ok(Json(description))
-}
-
 /// The installed media-source plugin called `name`.
 pub(crate) fn media_source_package(
     state: &AppState,
@@ -148,42 +103,19 @@ pub(crate) fn media_source_package(
         .ok_or_else(|| not_found(format!("no media-source plugin {name:?}")))
 }
 
-/// Starts fetching the media at a locator, such as a URL, through a media-source plugin
-/// into the server's media directory, with the chosen subtitle tracks. The answer is the running job; poll it with
-/// `getMediaSourceJob` until it is done or has failed. Once done, the media file is in
-/// the project with the subtitle files the plugin fetched beside it, and a subtitle file in
-/// the project's target language or translation language has that role at once.
-#[utoipa::path(
-    post,
-    path = "/projects/{id}/media/from-source",
-    tag = "media",
-    operation_id = "addMediaFromSource",
-    security(("bearer_token" = [])),
-    params(("id" = String, Path, description = "The project id")),
-    request_body = AddMediaFromSourceRequest,
-    responses(
-        (status = 202, description = "The job fetching the media, still running", body = MediaSourceJob),
-        (status = 401, description = "Missing or invalid token", body = ApiError),
-        (status = 404, description = "No such project, or no installed media-source plugin of that name", body = ApiError),
-        (status = 421, description = "Unexpected Host header", body = ApiError),
-        (status = 503, description = "The server has no media directory for plugins to fetch into (code `media_dir_unavailable`)", body = ApiError),
-    ),
-)]
-pub async fn add_media_from_source(
-    State(state): State<AppState>,
-    Path(project_id): Path<ProjectId>,
-    Json(request): Json<AddMediaFromSourceRequest>,
-) -> Result<(StatusCode, Json<MediaSourceJob>), ApiFailure> {
-    let settings = {
-        let project_id = project_id.clone();
-        state
-            .with_storage(move |storage| storage.get_project(&project_id))
-            .await?
-            .settings
-    };
-    let package = media_source_package(&state, &request.plugin)?;
-    let media_dir = media_dir(&state)?;
-    let mut job = MediaSourceJob::start(project_id, &package.manifest.name, request.locator);
+/// Starts the job that runs the import the plugin asked for, fetching the media into the
+/// server's media directory. Once the job is done, the media file is in the project with
+/// the subtitle files the plugin fetched beside it, and a subtitle file in the project's
+/// target language or translation language has that role at once.
+pub(crate) async fn start_import_job(
+    state: &AppState,
+    project: Project,
+    package: PluginPackage,
+    request: ImportRequest,
+) -> Result<MediaSourceJob, ApiFailure> {
+    let media_dir = media_dir(state)?;
+    let locator = MediaLocator(request.locator.clone());
+    let mut job = MediaSourceJob::start(project.id, &package.manifest.name, locator);
     // Which build of the plugin runs is the first thing to check when a fetch misbehaves,
     // and the version alone does not tell a rebuilt plugin from a stale copy.
     let build = plugin_build(&package);
@@ -206,13 +138,13 @@ pub async fn add_media_from_source(
     );
     state.media_source_jobs.insert(job.clone());
     let fetch = Fetch {
-        settings,
+        settings: project.settings,
         package,
         output_dir,
-        subtitle_ids: request.subtitles,
+        request,
     };
-    tokio::spawn(run_job(state, job.clone(), fetch));
-    Ok((StatusCode::ACCEPTED, Json(job)))
+    tokio::spawn(run_job(state.clone(), job.clone(), fetch));
+    Ok(job)
 }
 
 /// The directory plugins fetch into, which a server without one cannot offer.
@@ -231,7 +163,7 @@ struct Fetch {
     settings: ProjectSettings,
     package: PluginPackage,
     output_dir: std::path::PathBuf,
-    subtitle_ids: Vec<String>,
+    request: ImportRequest,
 }
 
 #[utoipa::path(
@@ -336,7 +268,6 @@ async fn fetch_and_store(
     ensure_inside(&fetch.output_dir, paths)?;
     let name = media_name(&resolved);
     let FetchedTracks { tracks, skipped } = read_fetched_subtitles(
-        &fetch.subtitle_ids,
         &resolved.subtitles,
         &fetch.settings,
         SubtitleSelection::default(),
@@ -376,24 +307,29 @@ async fn run_plugin(
     fetch: &Fetch,
 ) -> Result<ResolvedMedia, ApiFailure> {
     let listener = state.media_source_jobs.listener(job.id.clone());
-    let (package, locator, output_dir, subtitle_ids) = (
+    let (package, request, output_dir) = (
         fetch.package.clone(),
-        job.locator.0.clone(),
+        fetch.request.clone(),
         fetch.output_dir.clone(),
-        fetch.subtitle_ids.clone(),
     );
-    tokio::task::spawn_blocking(move || {
-        resolve_media(&package, &locator, &output_dir, &subtitle_ids, listener)
-    })
-    .await
-    .map_err(|error| internal(format!("plugin task failed: {error}")))?
-    .map_err(plugin_failure)
+    run_plugin_call(move || run_import(&package, &request, &output_dir, listener)).await
 }
 
-pub(crate) fn plugin_failure(error: PluginError) -> ApiFailure {
+/// Runs one call into a plugin on the blocking pool, since compiling and running a plugin
+/// takes a while, and turns its failure into the matching HTTP error.
+pub(crate) async fn run_plugin_call<T: Send + 'static>(
+    call: impl FnOnce() -> Result<T, PluginError> + Send + 'static,
+) -> Result<T, ApiFailure> {
+    tokio::task::spawn_blocking(call)
+        .await
+        .map_err(|error| internal(format!("plugin task failed: {error}")))?
+        .map_err(plugin_failure)
+}
+
+fn plugin_failure(error: PluginError) -> ApiFailure {
     match error {
         PluginError::Plugin(PluginErrorKind::InvalidInput(message)) => {
-            ApiFailure::new(StatusCode::BAD_REQUEST, "invalid_locator", message)
+            ApiFailure::new(StatusCode::BAD_REQUEST, "invalid_input", message)
         }
         PluginError::Plugin(kind) => ApiFailure::new(
             StatusCode::BAD_GATEWAY,
