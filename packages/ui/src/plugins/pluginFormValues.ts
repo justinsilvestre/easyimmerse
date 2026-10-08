@@ -3,10 +3,10 @@ import type { FormControl, FormInput, PluginForm } from "@easyimmerse/types";
 /** What the user has entered so far, as the values each field would send, keyed by field id. */
 export type PluginFormValues = Readonly<Record<string, readonly string[]>>;
 
-/** The values a form starts out with, before the user changes anything. */
-export function initialValuesOf(form: PluginForm): PluginFormValues {
+/** The values a form starts out with, before the user changes anything; none while there is no form. */
+export function initialValuesOf(form: PluginForm | null): PluginFormValues {
   return Object.fromEntries(
-    form.fields.map((field) => [
+    (form?.fields ?? []).map((field) => [
       field.id,
       initialValuesOfControl(field.control),
     ]),
@@ -27,7 +27,10 @@ export function inputOf(
 }
 
 /** The values entered into a form, along with the form they were entered into. */
-export type PluginFormState = { form: PluginForm; values: PluginFormValues };
+export type PluginFormState = {
+  form: PluginForm | null;
+  values: PluginFormValues;
+};
 
 /** Records a field's new values, starting afresh when they belong to a different form. */
 export function pluginFormReducer(
