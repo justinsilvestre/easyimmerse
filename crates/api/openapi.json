@@ -844,6 +844,71 @@
         ]
       }
     },
+    "/dictionaries/lookup/batch": {
+      "post": {
+        "tags": [
+          "dictionaries"
+        ],
+        "operationId": "lookupTexts",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchLookupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The entries of every dictionary at every position of each text where a word may start",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchLookupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Too many texts, or a text too long",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/dictionaries/preview": {
       "post": {
         "tags": [
@@ -3928,6 +3993,65 @@
           "flac"
         ]
       },
+      "BatchLookupRequest": {
+        "type": "object",
+        "required": [
+          "language",
+          "texts"
+        ],
+        "properties": {
+          "language": {
+            "type": "string",
+            "description": "The language of the texts, as a BCP 47 tag, which decides how inflections are undone."
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The texts to look up at every position, such as subtitle cues or paragraphs without their markup.\nAt most 100 texts, of at most 2,000 characters each."
+          }
+        }
+      },
+      "BatchLookupResponse": {
+        "type": "object",
+        "required": [
+          "texts",
+          "results",
+          "kanji",
+          "stylesheets"
+        ],
+        "properties": {
+          "kanji": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KanjiResult"
+            },
+            "description": "Every distinct kanji result of the lookups, each once."
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LookupResult"
+            },
+            "description": "Every distinct term result of the lookups, each once."
+          },
+          "stylesheets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryStylesheet"
+            },
+            "description": "The stylesheets of the dictionaries whose definitions appear in `results`, each once."
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextLookups"
+            },
+            "description": "The lookups in each requested text, in the order requested."
+          }
+        }
+      },
       "CanPlayAnswer": {
         "type": "string",
         "description": "A media element's `canPlayType` answer. The empty string becomes `No`.",
@@ -5495,6 +5619,41 @@
           }
         }
       },
+      "PositionLookups": {
+        "type": "object",
+        "description": "What a single lookup at one position of a text would return,\nwith each result given as its index in the batch response's lists.",
+        "required": [
+          "offset",
+          "results",
+          "kanji"
+        ],
+        "properties": {
+          "kanji": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Indices into the response's `kanji`."
+          },
+          "offset": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The position of the looked-up character in the text, counted in characters (Unicode scalar values).",
+            "minimum": 0
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Indices into the response's `results`, best first."
+          }
+        }
+      },
       "PreferenceValue": {
         "type": "object",
         "description": "A preference value. `null` means the preference has not been set.",
@@ -5967,6 +6126,21 @@
             }
           }
         ]
+      },
+      "TextLookups": {
+        "type": "object",
+        "required": [
+          "positions"
+        ],
+        "properties": {
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PositionLookups"
+            },
+            "description": "The positions where lookup found something, in the order they appear in the text.\nA position that lookup tried but found nothing at is left out."
+          }
+        }
       },
       "TextSource": {
         "oneOf": [

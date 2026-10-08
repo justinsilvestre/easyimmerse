@@ -174,6 +174,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dictionaries/lookup/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["lookupTexts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dictionaries/preview": {
         parameters: {
             query?: never;
@@ -721,6 +737,25 @@ export interface components {
         };
         /** @enum {string} */
         AudioTarget: "aac" | "flac";
+        BatchLookupRequest: {
+            /** @description The language of the texts, as a BCP 47 tag, which decides how inflections are undone. */
+            language: string;
+            /**
+             * @description The texts to look up at every position, such as subtitle cues or paragraphs without their markup.
+             *     At most 100 texts, of at most 2,000 characters each.
+             */
+            texts: string[];
+        };
+        BatchLookupResponse: {
+            /** @description Every distinct kanji result of the lookups, each once. */
+            kanji: components["schemas"]["KanjiResult"][];
+            /** @description Every distinct term result of the lookups, each once. */
+            results: components["schemas"]["LookupResult"][];
+            /** @description The stylesheets of the dictionaries whose definitions appear in `results`, each once. */
+            stylesheets: components["schemas"]["DictionaryStylesheet"][];
+            /** @description The lookups in each requested text, in the order requested. */
+            texts: components["schemas"]["TextLookups"][];
+        };
         /**
          * @description A media element's `canPlayType` answer. The empty string becomes `No`.
          * @enum {string}
@@ -1177,6 +1212,21 @@ export interface components {
             /** @description The path of the HLS playlist, present only when the plan converts. */
             playlist_path?: string | null;
         };
+        /**
+         * @description What a single lookup at one position of a text would return,
+         *     with each result given as its index in the batch response's lists.
+         */
+        PositionLookups: {
+            /** @description Indices into the response's `kanji`. */
+            kanji: number[];
+            /**
+             * Format: int32
+             * @description The position of the looked-up character in the text, counted in characters (Unicode scalar values).
+             */
+            offset: number;
+            /** @description Indices into the response's `results`, best first. */
+            results: number[];
+        };
         /** @description A preference value. `null` means the preference has not been set. */
         PreferenceValue: {
             value?: string | null;
@@ -1328,6 +1378,13 @@ export interface components {
             /** @enum {string} */
             kind: "ipa";
             transcriptions: components["schemas"]["IpaTranscription"][];
+        };
+        TextLookups: {
+            /**
+             * @description The positions where lookup found something, in the order they appear in the text.
+             *     A position that lookup tried but found nothing at is left out.
+             */
+            positions: components["schemas"]["PositionLookups"][];
         };
         /**
          * @description Where the text of a request comes from.
@@ -2056,6 +2113,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LookupResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    lookupTexts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchLookupRequest"];
+            };
+        };
+        responses: {
+            /** @description The entries of every dictionary at every position of each text where a word may start */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchLookupResponse"];
+                };
+            };
+            /** @description Too many texts, or a text too long */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
                 };
             };
             /** @description Missing or invalid token */
