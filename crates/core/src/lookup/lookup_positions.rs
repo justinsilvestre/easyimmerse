@@ -1,16 +1,20 @@
-use super::kanji_results::is_kanji;
+use super::unspaced_scripts::{is_unspaced, is_unspaced_mark};
 use super::word_boundary::is_word_boundary;
 
 /// Lists the positions in `text` where a reader could start a lookup, counted in characters (Unicode scalar values).
 ///
 /// In text that separates its words with spaces, these are the starts of words.
-/// In Japanese and Chinese, which do not, every character is a position, since a word may begin at any of them.
+/// In scripts that do not, such as Japanese, Chinese, and Thai, every character is a position, since a word may begin at any of them,
+/// except a combining mark such as a Thai vowel sign, which belongs to the letter before it.
 /// Whitespace and punctuation are never positions.
 pub fn lookup_positions(text: &str) -> Vec<usize> {
     let mut positions = Vec::new();
     let mut previous: Option<char> = None;
     for (position, character) in text.chars().enumerate() {
-        if !is_word_boundary(character) && may_start_word(previous, character) {
+        if !is_word_boundary(character)
+            && !is_unspaced_mark(character)
+            && may_start_word(previous, character)
+        {
             positions.push(position);
         }
         previous = Some(character);
@@ -25,16 +29,6 @@ fn may_start_word(previous: Option<char>, character: char) -> bool {
             is_word_boundary(previous) || is_unspaced(previous) || is_unspaced(character)
         }
     }
-}
-
-/// Reports whether a character belongs to a script written without spaces between words:
-/// kanji or Chinese characters, kana, and the marks written among them.
-fn is_unspaced(character: char) -> bool {
-    is_kanji(character)
-        || matches!(
-            character,
-            '\u{3005}'..='\u{3007}' | '\u{3040}'..='\u{30FF}' | '\u{31F0}'..='\u{31FF}' | '\u{FF66}'..='\u{FF9F}'
-        )
 }
 
 #[cfg(test)]
@@ -74,6 +68,46 @@ mod tests {
     #[test]
     fn lists_each_character_of_a_katakana_word_with_a_long_vowel_mark() {
         assert_eq!(lookup_positions("コーヒー"), vec![0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn counts_a_character_outside_the_basic_multilingual_plane_as_one() {
+        assert_eq!(lookup_positions("𠮟る"), vec![0, 1]);
+    }
+
+    #[test]
+    fn lists_every_character_of_bopomofo() {
+        assert_eq!(lookup_positions("ㄅㄆ"), vec![0, 1]);
+    }
+
+    #[test]
+    fn lists_every_letter_of_thai_text_but_not_its_vowel_signs_and_tone_marks() {
+        assert_eq!(lookup_positions("กินข้าว"), vec![0, 2, 3, 5, 6]);
+    }
+
+    #[test]
+    fn lists_a_thai_vowel_written_before_its_consonant() {
+        assert_eq!(lookup_positions("เขา"), vec![0, 1, 2]);
+    }
+
+    #[test]
+    fn lists_every_letter_of_lao_text_but_not_its_vowel_signs() {
+        assert_eq!(lookup_positions("ສະບາຍດີ"), vec![0, 1, 2, 3, 4, 5]);
+    }
+
+    #[test]
+    fn lists_every_letter_of_khmer_text_but_not_its_signs() {
+        assert_eq!(lookup_positions("ខ្ញុំ"), vec![0, 2]);
+    }
+
+    #[test]
+    fn lists_every_letter_of_myanmar_text_but_not_its_signs() {
+        assert_eq!(lookup_positions("မြန်မာ"), vec![0, 2, 4]);
+    }
+
+    #[test]
+    fn skips_a_combining_mark_at_the_start_of_the_text() {
+        assert_eq!(lookup_positions("\u{0E34}ก"), vec![1]);
     }
 
     #[test]

@@ -68,6 +68,14 @@ describe("splitIntoWords", () => {
     expect(splitIntoWords("ㄅㄆㄇ")[0]?.isUnspaced).toBe(true);
   });
 
+  it("marks a run of Thai as written without spaces", () => {
+    expect(splitIntoWords("กินข้าว")[0]?.isUnspaced).toBe(true);
+  });
+
+  it("keeps Thai vowel signs and tone marks inside a run", () => {
+    expect(splitIntoWords("กินข้าว")[0]?.text).toBe("กินข้าว");
+  });
+
   it("leaves digits that stand alone out of the words", () => {
     expect(
       splitIntoWords("Seite 12")
@@ -291,6 +299,53 @@ describe("ClickableText", () => {
         />,
       );
       expect(matchedText(container)).toBe("𠮷");
+    });
+
+    it("highlights a Thai letter with its vowel sign until the lookup reports its match", () => {
+      const { container } = render(
+        <ClickableText
+          text="กินข้าว"
+          activeWord={{ start: 0, popupId: "dictionary" }}
+        />,
+      );
+      expect(matchedText(container)).toBe("กิ");
+    });
+
+    it("highlights the digits a run begins with until the lookup reports its match", () => {
+      const { container } = render(
+        <ClickableText
+          text="2026年"
+          activeWord={{ start: 0, popupId: "dictionary" }}
+        />,
+      );
+      expect(matchedText(container)).toBe("2026");
+    });
+
+    /** Rests the mouse, for a hover whose lookup never answers, on the character of the text at the index. */
+    function hoverCharacter(text: string, index: number) {
+      const rendered = render(
+        <ClickableText
+          text={text}
+          gestures={{ onWordHover: () => new Promise(() => undefined) }}
+        />,
+      );
+      layOutCharacters();
+      fireEvent.pointerEnter(screen.getByRole("button"), {
+        pointerType: "mouse",
+        clientX: index * 16 + 4,
+        clientY: 10,
+      });
+      return rendered;
+    }
+
+    it("hovers the letter that a Thai vowel sign under the mouse belongs to", () => {
+      const { container } = hoverCharacter("กินข้าว", 1);
+      expect(hoveredText(container)).toBe("กิ");
+    });
+
+    it("hovers the digits that a digit under the mouse belongs to", () => {
+      const { container } = hoverCharacter("2026年", 2);
+      expect(hoveredText(container)).toBe("2026");
     });
 
     /** Renders a run whose hover lookups answer with the given length, and rests the mouse on 見 until the answer. */

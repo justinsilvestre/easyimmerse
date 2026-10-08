@@ -2,16 +2,16 @@ use super::TimedTextFormat;
 use super::error::TimedTextError;
 use super::timestamp::parse_timing_line;
 use super::track::{Cue, TimedTextTrack};
-use crate::text_blocks::{join_text_lines, split_blocks, strip_bom};
+use crate::text_blocks::{join_text_lines, remove_byte_order_marks, split_blocks};
 
 /// Parses WebVTT text. `NOTE`, `STYLE`, and `REGION` blocks are skipped, cue identifiers
 /// are optional, and cue settings after the end timestamp are ignored.
 pub fn parse_vtt(text: &str) -> Result<TimedTextTrack, TimedTextError> {
-    let text = strip_bom(text);
-    if !has_webvtt_header(text) {
+    let text = remove_byte_order_marks(text);
+    if !has_webvtt_header(&text) {
         return Err(TimedTextError::MissingWebVttHeader);
     }
-    let cues = split_blocks(text)
+    let cues = split_blocks(&text)
         .iter()
         .filter(|block| is_cue_block(block))
         .enumerate()
@@ -76,6 +76,12 @@ mod tests {
 
     fn parse_fixture() -> TimedTextTrack {
         parse_vtt(&read_fixture_text("sample.vtt")).expect("fixture should parse")
+    }
+
+    #[test]
+    fn removes_a_byte_order_mark_inside_cue_text() {
+        let track = parse_vtt("WEBVTT\n\n00:00.000 --> 00:01.000\nHel\u{feff}lo").unwrap();
+        assert_eq!(track.cues[0].text, "Hello");
     }
 
     #[test]

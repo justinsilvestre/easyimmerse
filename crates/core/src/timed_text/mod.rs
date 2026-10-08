@@ -35,7 +35,8 @@ pub fn parse_timed_text(
 
 /// Reports WebVTT when the text starts with a `WEBVTT` header, and SubRip otherwise.
 pub fn detect_format(text: &str) -> TimedTextFormat {
-    if crate::text_blocks::strip_bom(text).starts_with("WEBVTT") {
+    let text = text.trim_start_matches(crate::text_blocks::BYTE_ORDER_MARK);
+    if text.starts_with("WEBVTT") {
         TimedTextFormat::Vtt
     } else {
         TimedTextFormat::Srt

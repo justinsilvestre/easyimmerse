@@ -27,6 +27,14 @@ describe("wordLookupsIn", () => {
     expect(textsOf("𠮟る")).toEqual(["𠮟る", "る"]);
   });
 
+  it("looks up from each letter of a Thai run but not from its vowel signs and tone marks", () => {
+    expect(textsOf("กินข้าว")).toEqual(["กินข้าว", "นข้าว", "ข้าว", "าว", "ว"]);
+  });
+
+  it("looks up from the digits a run begins with once", () => {
+    expect(textsOf("2026年")).toEqual(["2026年", "年"]);
+  });
+
   it("describes each lookup as a lookup at that place would", () => {
     expect(wordLookupsIn("a 𠮟る")[2]).toEqual(lookupTextAt("a 𠮟る", 4));
   });

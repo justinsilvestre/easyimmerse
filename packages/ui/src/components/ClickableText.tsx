@@ -1,17 +1,24 @@
+import { southEastAsianCharacterRanges } from "@easyimmerse/backend";
 import clsx from "clsx";
-import { characterLength } from "./characterLength.ts";
 import {
   clickableWordAttribute,
   lookupTriggerAttribute,
 } from "./lookupTrigger.ts";
 import { type Range, RunText } from "./RunText.tsx";
+import { runLookupEnd } from "./runLookupStarts.ts";
 import type { TextCursor } from "./textCursor.ts";
 import { useKeyboardCursor } from "./useKeyboardCursor.ts";
 import { useTextCursor } from "./useTextCursor.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
 
-/** The scripts written without spaces between words: Chinese characters, hiragana, katakana and Bopomofo. */
+/** Chinese characters, hiragana, katakana and Bopomofo, which are written without spaces between words. */
 const unspacedScript = String.raw`\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}\p{scx=Bopomofo}`;
+
+/**
+ * Every script written without spaces between words: those of `unspacedScript`, and the South East Asian scripts, such as Thai,
+ * whose runs are looked up from each letter until a tokenizer can find their words.
+ */
+const runScript = `${unspacedScript}${southEastAsianCharacterRanges}`;
 
 /**
  * A character of an unspaced script that belongs in a run: a letter or mark, with marks such as ー,
@@ -21,7 +28,10 @@ const unspacedLetter = String.raw`(?=[\p{L}\p{M}〇゛゜])[${unspacedScript}]`;
 
 const unspacedLetterPattern = new RegExp(`^${unspacedLetter}$`, "u");
 
-/** Tells whether a character is a letter of a script written without spaces, every one of which can begin a word. */
+/**
+ * Tells whether a character is a letter of Chinese, Japanese or Bopomofo, every one of which can begin a word.
+ * The reader finds the words of the South East Asian scripts with the browser's word segmenter instead, so they are left out.
+ */
 export function isUnspacedLetter(character: string): boolean {
   return unspacedLetterPattern.test(character);
 }
@@ -29,15 +39,18 @@ export function isUnspacedLetter(character: string): boolean {
 /** A digit, ASCII or fullwidth, which a run takes in, as in ３人 or 2026年. */
 const runDigit = "[0-9０-９]";
 
+/** A letter or mark of a script written without spaces that belongs in a run, as `unspacedLetter` describes. */
+const runLetter = String.raw`(?=[\p{L}\p{M}〇゛゜])[${runScript}]`;
+
 /** A letter, mark, digit or joining character of any other script. */
-const spacedLetter = String.raw`(?![${unspacedScript}])[\p{L}\p{M}\p{N}'’-]`;
+const spacedLetter = String.raw`(?![${runScript}])[\p{L}\p{M}\p{N}'’-]`;
 
 /**
  * A run of an unspaced script, with any digits before or inside it, or a word of another script beginning with a letter.
  * Digits alone make no word.
  */
 const wordPattern = new RegExp(
-  String.raw`(?<unspaced>${runDigit}*${unspacedLetter}(?:${unspacedLetter}|${runDigit})*)|(?=\p{L})(?:${spacedLetter})+`,
+  String.raw`(?<unspaced>${runDigit}*${runLetter}(?:${runLetter}|${runDigit})*)|(?=\p{L})(?:${spacedLetter})+`,
   "gu",
 );
 
@@ -219,10 +232,7 @@ function announcementOf(
   );
   if (!run) return "";
   const offset = cursor.start - run.start;
-  const character = run.text.slice(
-    offset,
-    offset + characterLength(run.text, offset),
-  );
+  const character = run.text.slice(offset, runLookupEnd(run.text, offset));
   return `Looks up from ${character}`;
 }
 
@@ -254,13 +264,16 @@ function contains(part: { start: number; text: string }, offset: number) {
 
 /**
  * The range of a run, from its start, that the lookup matched,
- * or, until the lookup reports its match, the character it looks up from.
+ * or, until the lookup reports its match, the character it looks up from with any marks on it, or the digits it looks up from.
  */
 function matchedRange(
   part: { start: number; text: string },
   word: { start: number; length?: number },
 ): Range {
   const from = word.start - part.start;
-  const length = word.length ?? characterLength(part.text, from);
-  return { from, to: Math.min(from + length, part.text.length) };
+  const to =
+    word.length === undefined
+      ? runLookupEnd(part.text, from)
+      : from + word.length;
+  return { from, to: Math.min(to, part.text.length) };
 }
