@@ -40,5 +40,7 @@ const punctuationPattern =
 
 function isWordBoundary(character: string): boolean {
   if (keptInWords.test(character)) return false;
-  return /^\s$/u.test(character) || punctuationPattern.test(character);
+  return (
+    /^\p{White_Space}$/u.test(character) || punctuationPattern.test(character)
+  );
 }

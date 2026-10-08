@@ -33,4 +33,12 @@ describe("lookupPositions", () => {
   it("counts a character outside the Basic Multilingual Plane as one", () => {
     expect(lookupPositions("𠮟る")).toEqual([0, 1]);
   });
+
+  it("treats a next-line character as whitespace", () => {
+    expect(lookupPositions("a\u0085b")).toEqual([0, 2]);
+  });
+
+  it("does not treat a zero-width no-break space as whitespace", () => {
+    expect(lookupPositions("a\uFEFFb")).toEqual([0]);
+  });
 });
