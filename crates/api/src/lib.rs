@@ -10,6 +10,7 @@ pub mod import_progress_sink;
 pub mod local_dictionary_files;
 pub mod local_path;
 pub mod local_table_file;
+pub mod lookup_rows;
 pub mod router;
 pub mod routes;
 pub mod serve;

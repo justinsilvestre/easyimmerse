@@ -1,15 +1,13 @@
 use axum::Json;
 use axum::extract::{Query, State};
-use easyimmerse_core::lookup::{
-    DictionaryStylesheet, KanjiResult, LookupResult, build_kanji_results, build_lookup_results,
-    candidate_headwords, is_kanji, lookup_candidates, separated_verb_candidates,
-};
+use easyimmerse_core::lookup::{DictionaryStylesheet, KanjiResult, LookupResult};
 use easyimmerse_storage::{Storage, StorageError};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::auth::error_body::{ApiError, ApiFailure};
+use crate::lookup_rows::{LookupRows, PositionLookup, defining_dictionary_ids};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema, IntoParams)]
@@ -68,45 +66,14 @@ pub async fn lookup_text(
 }
 
 fn look_up(storage: &Storage, query: &LookupQuery) -> Result<LookupResponse, StorageError> {
-    let (text, language) = (query.text.as_str(), query.language.as_str());
-    let mut candidates = lookup_candidates(text, language);
-    if let (Some(context), Some(offset)) = (&query.context, query.offset) {
-        candidates.extend(separated_verb_candidates(context, offset, language));
-    }
-    let found_entries = storage.find_dictionary_entries(&candidate_headwords(&candidates))?;
-    let mut terms: Vec<String> = found_entries
-        .iter()
-        .map(|found| found.entry.term.clone())
-        .collect();
-    terms.sort();
-    terms.dedup();
-    let term_meta = storage.find_term_meta(&terms)?;
-    let results = build_lookup_results(&candidates, found_entries, &term_meta);
+    let context = query.context.as_deref().zip(query.offset);
+    let lookup = PositionLookup::new(&query.text, &query.language, context);
+    let rows = LookupRows::find(storage, &[&lookup])?;
+    let results = rows.results(&lookup);
     // Stylesheets come with each lookup rather than from a route of their own, so that entries never show unstyled first.
     Ok(LookupResponse {
         stylesheets: storage.find_dictionary_stylesheets(&defining_dictionary_ids(&results))?,
+        kanji: rows.kanji(&lookup),
         results,
-        kanji: look_up_kanji(storage, text)?,
     })
-}
-
-fn defining_dictionary_ids(results: &[LookupResult]) -> Vec<String> {
-    let mut ids: Vec<String> = results
-        .iter()
-        .flat_map(|result| &result.definitions)
-        .map(|definitions| definitions.dictionary_id.clone())
-        .collect();
-    ids.sort();
-    ids.dedup();
-    ids
-}
-
-fn look_up_kanji(storage: &Storage, text: &str) -> Result<Vec<KanjiResult>, StorageError> {
-    let Some(first) = text.chars().next().filter(|character| is_kanji(*character)) else {
-        return Ok(Vec::new());
-    };
-    let characters = vec![first.to_string()];
-    let found_kanji = storage.find_kanji(&characters)?;
-    let kanji_meta = storage.find_kanji_meta(&characters)?;
-    Ok(build_kanji_results(found_kanji, &kanji_meta))
 }
