@@ -1,5 +1,5 @@
 import type { Cue } from "@easyimmerse/types";
-import type { ItemSpan } from "./useVisibleItemSpan.ts";
+import type { ItemSpan } from "../hooks/useVisibleItemSpan.ts";
 
 /** How far ahead of the playback position the words of the subtitles are looked up. */
 const aheadMs = 60_000;

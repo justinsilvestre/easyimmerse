@@ -4,14 +4,18 @@ import { type ItemSpan, useVisibleItemSpan } from "./useVisibleItemSpan.ts";
 
 type Callback = (entries: Partial<IntersectionObserverEntry>[]) => void;
 
+/** The options each fake intersection observer was created with. */
+const observerOptions: (IntersectionObserverInit | undefined)[] = [];
+
 /** Installs an intersection observer that reports only what the test tells it to, and returns how to tell it. */
 function installFakeObserver() {
   const observers: Callback[] = [];
   vi.stubGlobal(
     "IntersectionObserver",
     class {
-      constructor(callback: Callback) {
+      constructor(callback: Callback, options?: IntersectionObserverInit) {
         observers.push(callback);
+        observerOptions.push(options);
       }
       observe() {}
       disconnect() {}
@@ -59,5 +63,30 @@ describe("useVisibleItemSpan", () => {
     );
     unmount();
     expect(spans).toEqual([null]);
+  });
+
+  it("watches the items that `itemsOf` picks, at the positions `positionOf` gives", () => {
+    const report = installFakeObserver();
+    const list = listOf(3);
+    list.children[2]?.setAttribute("data-place", "7");
+    const spans: (ItemSpan | null)[] = [];
+    renderHook(() =>
+      useVisibleItemSpan(list, [], (span) => spans.push(span), {
+        itemsOf: (root) => [...root.querySelectorAll("[data-place]")],
+        positionOf: (item) => Number(item.getAttribute("data-place")),
+      }),
+    );
+    report([list.children[2] as Element], true);
+    expect(spans).toEqual([{ first: 7, last: 7 }]);
+  });
+
+  it("counts items within the margin around the list as in view", () => {
+    installFakeObserver();
+    renderHook(() =>
+      useVisibleItemSpan(listOf(1), [], () => undefined, {
+        rootMargin: "100% 0px",
+      }),
+    );
+    expect(observerOptions.at(-1)?.rootMargin).toBe("100% 0px");
   });
 });

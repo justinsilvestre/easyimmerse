@@ -2,6 +2,7 @@ import { actions } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import type { Range } from "../components/RunText.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import type { ItemSpan } from "../hooks/useVisibleItemSpan.ts";
 import { CuePanel } from "../media/CuePanel.tsx";
 import type { CueTextCursor } from "../media/cueCursor.ts";
 import type {
@@ -10,7 +11,6 @@ import type {
 } from "../media/cueWordGestures.ts";
 import { SubtitleTrackBar } from "../media/SubtitleTrackBar.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
-import type { ItemSpan } from "../media/useVisibleItemSpan.ts";
 import type { useMediaSubtitles } from "./useMediaSubtitles.ts";
 
 /** The subtitles panel beside the stage: the track choice above one card per cue of the target-language track. */

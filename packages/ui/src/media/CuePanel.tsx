@@ -14,6 +14,10 @@ import { clickableWordAttribute } from "../components/lookupTrigger.ts";
 import type { Range } from "../components/RunText.tsx";
 import type { TextCursor } from "../components/textCursor.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
+import {
+  type ItemSpan,
+  useVisibleItemSpan,
+} from "../hooks/useVisibleItemSpan.ts";
 import { type CueTextCursor, cursorIn } from "./cueCursor.ts";
 import {
   type ActiveCueWord,
@@ -24,7 +28,6 @@ import {
 import { findTranslationOf } from "./findCue.ts";
 import { formatTimestamp } from "./formatTimestamp.ts";
 import { useFollowsPlayback } from "./useFollowsPlayback.ts";
-import { type ItemSpan, useVisibleItemSpan } from "./useVisibleItemSpan.ts";
 
 /**
  * The collapsible panel with one card per cue, which follows playback.
