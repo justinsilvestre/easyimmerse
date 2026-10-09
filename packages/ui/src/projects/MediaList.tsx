@@ -78,8 +78,12 @@ function MediaRow({
             {item.name}
           </span>
           {issueMessage && (
-            <span title={issueMessage} className="shrink-0 text-warning-fg">
-              <TriangleAlert className="size-4" aria-hidden />
+            <span
+              title={issueMessage}
+              aria-hidden
+              className="shrink-0 text-warning-fg"
+            >
+              <TriangleAlert className="size-4" />
             </span>
           )}
         </span>

@@ -84,6 +84,13 @@ export const WithUnavailableMedia: Story = {
         name: "Tagesschau 2026-10-08.mp4",
         kind: "video",
         flashcardCount: 0,
+        issue: "pathNotAllowed",
+      },
+      {
+        id: "m6",
+        name: "Der Process.txt",
+        kind: "ebook",
+        flashcardCount: 0,
         issue: "pathUnreadable",
       },
     ],

@@ -54,6 +54,12 @@ describe("mediaIssueOf", () => {
       );
     });
 
+    it("tells the server may not read it when the server says so", () => {
+      expect(
+        mediaIssueOf(pathFile(), null, new Map([["m1", "not_allowed"]])),
+      ).toBe("pathNotAllowed");
+    });
+
     it("tells it is unreadable when the server says so", () => {
       expect(
         mediaIssueOf(pathFile(), null, new Map([["m1", "unreadable"]])),

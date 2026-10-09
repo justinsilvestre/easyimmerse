@@ -123,7 +123,9 @@ function useImportSources(): ImportSource[] {
 function useMediaItems(projectId: string) {
   const mediaFiles = useListMediaFilesQuery(projectId);
   const flashcards = useListFlashcardsQuery(projectId);
-  const availability = useGetMediaAvailabilityQuery(projectId);
+  const availability = useGetMediaAvailabilityQuery(projectId, {
+    refetchOnMountOrArgChange: true,
+  });
   const registry = useBrowserFileRegistry();
   return {
     items: mediaItemsOf(

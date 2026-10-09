@@ -439,9 +439,11 @@ describe("ProjectScreen", () => {
       }),
     );
     expect(
-      await screen.findByText(
-        "This file was not found at its path. It may have been moved or deleted.",
-      ),
+      await screen.findByRole("button", {
+        name: "Video episode.mkv",
+        description:
+          "This file was not found at its path. It may have been moved or deleted.",
+      }),
     ).toBeDefined();
   });
 

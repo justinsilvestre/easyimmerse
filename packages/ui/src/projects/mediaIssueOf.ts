@@ -22,8 +22,9 @@ export function mediaIssueOf(
     : undefined;
 }
 
-const pathIssues = {
+const pathIssues: Record<PathAvailability, MediaIssue | undefined> = {
   available: undefined,
   missing: "pathMissing",
+  not_allowed: "pathNotAllowed",
   unreadable: "pathUnreadable",
-} as const;
+};
