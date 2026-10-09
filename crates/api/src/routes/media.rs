@@ -80,14 +80,13 @@ pub async fn add_media_file(
     Path(project_id): Path<ProjectId>,
     extract::Json(request): extract::Json<AddMediaFileRequest>,
 ) -> Result<(StatusCode, Json<MediaFile>), ApiFailure> {
+    let requested = request.source.clone();
     let source = resolve_media_source(&state, token, request.source).await?;
-    let stored_source = source.clone();
     let media_file = state
-        .with_storage(move |storage| {
-            storage.add_media_file(&project_id, &request.name, &stored_source)
-        })
+        .with_storage(move |storage| storage.add_media_file(&project_id, &request.name, &source))
         .await?;
-    if let MediaFileSource::Path { path } = source {
+    // Sidecar files sit beside the path the user chose, which may be a link to the file.
+    if let MediaFileSource::Path { path } = requested {
         add_found_subtitle_tracks(&state, token, &media_file, &path).await;
     }
     Ok((StatusCode::CREATED, Json(media_file)))

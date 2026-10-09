@@ -48,6 +48,33 @@ fn track_id_named(listed: &Value, name: &str) -> Value {
         .map_or(Value::Null, |track| track["id"].clone())
 }
 
+/// A folder holding `Show.mp4`, a link to a video in `target` that has no sidecar files of
+/// its own, and a Spanish SubRip file beside the link.
+#[cfg(unix)]
+fn linked_media_folder(target: &TempDir) -> TempDir {
+    let video = target.path().join("Episode.mp4");
+    std::fs::write(&video, read_fixture("conversion-h264-aac.mp4")).unwrap();
+    let folder = TempDir::new().expect("a temporary folder");
+    std::os::unix::fs::symlink(&video, folder.path().join("Show.mp4")).unwrap();
+    std::fs::write(
+        folder.path().join("Show.es.srt"),
+        read_fixture("sample.srt"),
+    )
+    .unwrap();
+    folder
+}
+
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread")]
+async fn adds_the_sidecar_files_beside_a_link_to_the_media() {
+    let server = spawn_test_server(true).await;
+    let target = TempDir::new().expect("a temporary folder");
+    let folder = linked_media_folder(&target);
+    let media_id = add_show(&server, &folder).await;
+    let listed = list_tracks(&server, &media_id).await;
+    assert_ne!(track_id_named(&listed, "Show.es.srt"), Value::Null);
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn adds_the_parsable_sidecar_files_as_tracks() {
     let server = spawn_test_server(true).await;
