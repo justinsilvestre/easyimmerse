@@ -178,6 +178,25 @@ impl Read for StallingBody {
     }
 }
 
+/// Sends a block every 100 milliseconds, eight times, so the whole body takes longer than
+/// the stall timeout the tests set while no single wait does.
+struct TricklingBody(u8);
+
+impl Read for TricklingBody {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        if self.0 == 8 {
+            return Ok(0);
+        }
+        self.0 += 1;
+        std::thread::sleep(Duration::from_millis(100));
+        let count = buffer.len().min(TRICKLE_BLOCK_BYTES);
+        buffer[..count].fill(1);
+        Ok(count)
+    }
+}
+
+/// Large enough that the server sends each block as its own chunk.
+const TRICKLE_BLOCK_BYTES: usize = 16_384;
 const BODY_BYTES: u64 = 10_000;
 const FREE_SPACE_BUDGET_BYTES: u64 = 100_000;
 
@@ -319,4 +338,24 @@ fn removes_the_partial_file_when_a_download_stalls() {
         &fixture.output_path("media.bin"),
     );
     assert!(file_names_in(&fixture).is_empty());
+}
+
+#[test]
+fn completes_a_download_that_outlasts_the_stall_timeout_while_bytes_keep_arriving() {
+    let fixture = Fixture::start();
+    let server = serve_streams(|| Box::new(TricklingBody(0)));
+    let limits = HostLimits {
+        download_stall_timeout: Duration::from_millis(300),
+        ..HostLimits::default()
+    };
+    let outcome = download_with_limits(
+        &fixture,
+        limits,
+        &server.url,
+        &fixture.output_path("media.bin"),
+    );
+    assert!(
+        outcome.is_ok(),
+        "expected the download to finish, got {outcome:?}"
+    );
 }

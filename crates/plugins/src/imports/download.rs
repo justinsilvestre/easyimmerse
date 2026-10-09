@@ -5,7 +5,6 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::mpsc::{Receiver, RecvTimeoutError, sync_channel};
 use std::time::Duration;
 
 use easyimmerse_plugin_api::base::easyimmerse::plugin::types::PluginError;
@@ -17,8 +16,6 @@ use crate::imports::to_guest_error;
 
 const CHUNK_BYTES: usize = 64 * 1024;
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
-
-type Chunk = std::io::Result<Vec<u8>>;
 
 /// Checks the URL and the path before sending the request, so a refused
 /// download touches neither the network nor the file system. The body goes to
@@ -109,21 +106,24 @@ fn temp_path_beside(destination: &Path) -> PathBuf {
 
 /// Writes the body into a new file at `temp`, giving up when no bytes arrive
 /// within the stall timeout or the free space falls below the reserve.
+/// The body's reads end with a timeout after the stall timeout, because the agent bounds each wait.
 fn stream_to_file(
-    body: impl Read + Send + 'static,
+    mut body: impl Read,
     temp: &Path,
     limits: DownloadLimits,
 ) -> Result<u64, PluginError> {
     let mut file = create_new(temp)?;
-    let chunks = read_in_background(body);
+    let mut buffer = vec![0; CHUNK_BYTES];
     let (mut written, mut last_checked) = (0u64, 0u64);
     loop {
-        let chunk = next_chunk(&chunks, limits.stall_timeout)?;
-        if chunk.is_empty() {
+        let count = body
+            .read(&mut buffer)
+            .map_err(|error| read_error(error, limits.stall_timeout))?;
+        if count == 0 {
             return Ok(written);
         }
-        file.write_all(&chunk).map_err(to_io_error)?;
-        written += chunk.len() as u64;
+        file.write_all(&buffer[..count]).map_err(to_io_error)?;
+        written += count as u64;
         if written - last_checked >= limits.space_check_interval_bytes {
             last_checked = written;
             check_space_while(temp, limits)?;
@@ -139,32 +139,10 @@ fn create_new(path: &Path) -> Result<File, PluginError> {
         .map_err(to_io_error)
 }
 
-/// Reads the body on another thread, because a blocked read cannot be
-/// interrupted. An empty chunk marks the end of the body. The thread ends once
-/// the receiver is dropped or the body is read to its end.
-fn read_in_background(mut body: impl Read + Send + 'static) -> Receiver<Chunk> {
-    let (sender, receiver) = sync_channel(4);
-    std::thread::spawn(move || {
-        loop {
-            let mut buffer = vec![0; CHUNK_BYTES];
-            let chunk = body.read(&mut buffer).map(|count| {
-                buffer.truncate(count);
-                buffer
-            });
-            let finished = chunk.as_ref().map_or(true, Vec::is_empty);
-            if sender.send(chunk).is_err() || finished {
-                return;
-            }
-        }
-    });
-    receiver
-}
-
-fn next_chunk(chunks: &Receiver<Chunk>, stall_timeout: Duration) -> Result<Vec<u8>, PluginError> {
-    match chunks.recv_timeout(stall_timeout) {
-        Ok(chunk) => chunk.map_err(to_io_error),
-        Err(RecvTimeoutError::Timeout) => Err(stalled(stall_timeout)),
-        Err(RecvTimeoutError::Disconnected) => Err(to_io_error("the download was interrupted")),
+fn read_error(error: std::io::Error, stall_timeout: Duration) -> PluginError {
+    match error.downcast::<ureq::Error>() {
+        Ok(error) => request_error(error, stall_timeout),
+        Err(error) => to_io_error(error),
     }
 }
 

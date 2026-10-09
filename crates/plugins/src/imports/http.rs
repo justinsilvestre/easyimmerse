@@ -1,11 +1,16 @@
+mod stall_timeout;
+
 use std::time::Duration;
 
 use easyimmerse_plugin_api::base::easyimmerse::plugin::http::{Host, HttpResponse};
 use easyimmerse_plugin_api::base::easyimmerse::plugin::types::PluginError;
+use ureq::unversioned::resolver::DefaultResolver;
+use ureq::unversioned::transport::{Connector, DefaultConnector};
 
 use crate::grants::CapabilityGrants;
 use crate::host_state::HostState;
 use crate::imports::download::download;
+use crate::imports::http::stall_timeout::StallTimeoutConnector;
 
 /// The largest response body the host passes to a plugin.
 const MAX_BODY_BYTES: u64 = 256 * 1024 * 1024;
@@ -45,19 +50,24 @@ fn fetch(url: &str) -> Result<HttpResponse, ureq::Error> {
     Ok(HttpResponse { status, body })
 }
 
-/// An agent that hands back every status as a response, and gives up on
-/// connecting or on waiting for the response head after `stall_timeout`, when given.
-/// It follows no
-/// redirects, because the redirect target has not been checked against the
-/// allowed hosts.
+/// An agent that hands back every status as a response and follows no redirects,
+/// because a redirect target has not been checked against the allowed hosts.
+/// Given a `stall_timeout`, it gives up on connecting, and on any wait for incoming bytes,
+/// once that much time passes without progress.
+/// The wait is bounded for each read, so a long transfer that keeps receiving bytes is never cut off.
 pub(super) fn agent(stall_timeout: Option<Duration>) -> ureq::Agent {
-    ureq::config::Config::builder()
+    let config = ureq::config::Config::builder()
         .http_status_as_error(false)
         .max_redirects(0)
         .timeout_connect(stall_timeout)
-        .timeout_recv_response(stall_timeout)
-        .build()
-        .new_agent()
+        .build();
+    match stall_timeout {
+        Some(timeout) => {
+            let connector = DefaultConnector::new().chain(StallTimeoutConnector(timeout));
+            ureq::Agent::with_parts(config, connector, DefaultResolver::default())
+        }
+        None => config.new_agent(),
+    }
 }
 
 pub(super) fn check_status(url: &str, status: u16) -> Result<(), PluginError> {
