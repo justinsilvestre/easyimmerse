@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 use crate::easyimmerse::plugin::{
-    fs, http, log, run_command,
+    http, log, run_command,
     types::{FetchedSubtitle, MediaMetadata, PluginError, ProgressEvent, ResolvedMedia},
 };
 
@@ -27,7 +27,7 @@ pub fn resolve(
     let info = fetch_locator(locator)?;
     report(0.0, "resolved locator");
     let media_path = format!("{output_dir}/media.mp4");
-    download(&info.media_url, &media_path)?;
+    http::download(&info.media_url, &media_path)?;
     report(0.5, "downloaded media");
     let subtitles = write_subtitles(&info, output_dir, subtitles)?;
     report(1.0, "downloaded subtitles");
@@ -59,7 +59,7 @@ fn write_subtitles(
             return Err(PluginError::NotFound(format!("no subtitle track {id:?}")));
         }
         let path = format!("{output_dir}/subtitles.srt");
-        download(&info.subtitle_url, &path)?;
+        http::download(&info.subtitle_url, &path)?;
         fetched.push(FetchedSubtitle {
             id: id.clone(),
             language: Some("en".to_string()),
@@ -82,11 +82,6 @@ fn fetch_locator(locator: &str) -> Result<LocatorInfo, PluginError> {
     let output = run_command::run("fetch-locator", &[locator.to_string()])?;
     serde_json::from_str(&output.stdout)
         .map_err(|error| PluginError::InvalidInput(format!("fetch-locator output: {error}")))
-}
-
-fn download(url: &str, path: &str) -> Result<(), PluginError> {
-    let response = http::get(url)?;
-    fs::write_file(path, &response.body)
 }
 
 fn report(fraction: f32, message: &str) {

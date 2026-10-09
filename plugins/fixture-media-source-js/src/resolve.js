@@ -1,5 +1,4 @@
-import { writeFile } from "easyimmerse:plugin/fs@0.1.0";
-import { get } from "easyimmerse:plugin/http@0.1.0";
+import { download } from "easyimmerse:plugin/http@0.1.0";
 import { progress } from "easyimmerse:plugin/log@0.1.0";
 import { run } from "easyimmerse:plugin/run-command@0.1.0";
 
@@ -77,14 +76,6 @@ function fetchLocator(locator) {
   } catch (error) {
     throw { tag: "invalid-input", val: `fetch-locator output: ${error}` };
   }
-}
-
-/**
- * @param {string} url
- * @param {string} path
- */
-function download(url, path) {
-  writeFile(path, get(url).body);
 }
 
 /**

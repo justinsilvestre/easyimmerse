@@ -12,13 +12,17 @@ The media interface belongs to a media file imported through the plugin. It star
 
 The host grants no directory for the form calls, so a plugin cannot write anything while the user is still filling in a form. `MediaSourcePlugin` wraps each export, converting the WIT forms and form input to and from the core types that cross HTTP.
 
+## Downloads
+
+A plugin fetches a file with `http.download`, which writes the response body straight to a path and returns the number of bytes written. The bytes never enter the plugin, so a download costs the plugin the same small amount of fuel whatever the file's size. The host applies the same checks as `http.get` to the URL, allowing only the manifest's allowed hosts and following no redirects, and the same checks as `fs.write-file` to the path, which must lie inside a granted directory. A 404 response fails with `not-found` and any other status outside 200 to 299 with `io`, both before the file is created; a transfer that fails partway removes the partial file. A plugin calls `http.get` only when it needs to read the body itself.
+
 ## Plugins in JavaScript
 
 A plugin can be written in JavaScript and built into a component with `jco componentize`, which embeds the StarlingMonkey JavaScript engine. `plugins/fixture-media-source-js` does the same work as the Rust `fixture-media-source`. `mise run plugins:build-js` builds it with `--bundle`, which joins its modules into the single module ComponentizeJS accepts, and `--disable all`, which leaves out the WASI imports the host does not provide.
 
 The plugin imports each host interface as a module, such as `easyimmerse:plugin/http@0.1.0`, and exports each interface as an object of camel-cased functions, such as `mediaSource.fetchSubtitles`. A WIT variant is an object `{ tag, val }`, an enum case is its name as a string, and an absent option is `undefined`. A function returns the `ok` value of a WIT result and throws a `plugin-error` variant for the `err` value. A host import that fails throws an error carrying the host's `plugin-error`, so a plugin that does not catch it passes the host's error back unchanged.
 
-The engine makes the component large, about 13 MB against about 100 KB for the Rust build. Its calls also cost more fuel. The fixture's form calls fit the default budget of 5 million per call, but an import that runs `fetch-locator`, downloads the 48 KB sample media and writes its subtitles needs between 15 and 20 million, and the cost grows with the number of bytes that pass through the plugin.
+The engine makes the component large, about 13 MB against about 100 KB for the Rust build. Its calls also cost more fuel. The fixture's form calls fit the default budget of 5 million per call, but an import that runs `fetch-locator` and downloads the 48 KB sample media and its subtitles needs about 15.5 million. Because the plugin downloads through `http.download`, that cost does not grow with the size of the media; reading the same bytes through `http.get` and `fs.write-file` costs about 17 more fuel per byte.
 
 ## Execution modes
 
