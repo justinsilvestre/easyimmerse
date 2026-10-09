@@ -1,4 +1,5 @@
 import {
+  useGetMediaAvailabilityQuery,
   useListDictionariesQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
@@ -6,7 +7,7 @@ import {
   useRemoveMediaFileMutation,
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
-import type { Project } from "@easyimmerse/types";
+import type { MediaAvailabilityResponse, Project } from "@easyimmerse/types";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useNavigationActions } from "../navigationContext.ts";
@@ -15,6 +16,7 @@ import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
 import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
 import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
 import { type ImportSource, MediaSection } from "../projects/MediaSection.tsx";
+import type { PathAvailabilities } from "../projects/mediaIssueOf.ts";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
 import { ProjectView } from "../projects/ProjectView.tsx";
 import { useImportMedia } from "../projects/useImportMedia.ts";
@@ -121,14 +123,27 @@ function useImportSources(): ImportSource[] {
 function useMediaItems(projectId: string) {
   const mediaFiles = useListMediaFilesQuery(projectId);
   const flashcards = useListFlashcardsQuery(projectId);
+  const availability = useGetMediaAvailabilityQuery(projectId);
   const registry = useBrowserFileRegistry();
   return {
     items: mediaItemsOf(
       mediaFiles.data?.media_files ?? [],
       flashcards.data?.flashcards ?? [],
       registry,
-      new Map(),
+      pathAvailabilitiesOf(availability.data),
     ),
     error: mediaFiles.error,
   };
+}
+
+/** What the server reported for each media file at a path, empty until its answer arrives. */
+function pathAvailabilitiesOf(
+  response: MediaAvailabilityResponse | undefined,
+): PathAvailabilities {
+  return new Map(
+    response?.media_files.map(({ media_id, availability }) => [
+      media_id,
+      availability,
+    ]),
+  );
 }

@@ -423,6 +423,28 @@ describe("ProjectScreen", () => {
     ).toBeDefined();
   });
 
+  it("marks a file the server reports missing with the reason", async () => {
+    renderWithAppStore(
+      <ProjectScreen
+        projectId="p1"
+        onBack={() => undefined}
+        onEditSettings={() => undefined}
+      />,
+      createFakeBackendClient({
+        ...fixtureResponses,
+        "GET /dictionaries": { dictionaries: [] },
+        "GET /projects/p1/media/availability": {
+          media_files: [{ media_id: "m1", availability: "missing" }],
+        },
+      }),
+    );
+    expect(
+      await screen.findByText(
+        "This file was not found at its path. It may have been moved or deleted.",
+      ),
+    ).toBeDefined();
+  });
+
   it("opens the project's settings", async () => {
     let opened = false;
     renderProject(() => (opened = true));

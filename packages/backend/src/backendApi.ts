@@ -23,6 +23,7 @@ import type {
   ListProjectsResponse,
   LookupQuery,
   LookupResponse,
+  MediaAvailabilityResponse,
   MediaFile,
   MediaSourceJob,
   NewFlashcard,
@@ -284,6 +285,16 @@ export const backendApi = createApi({
       query: (projectId) => ({
         method: "GET",
         path: `/projects/${projectId}/media`,
+      }),
+      providesTags: (_result, _error, projectId) => [
+        { type: "MediaFiles", id: projectId },
+      ],
+    }),
+    /** Asks the server whether it can open each of the project's media files at a path. */
+    getMediaAvailability: build.query<MediaAvailabilityResponse, string>({
+      query: (projectId) => ({
+        method: "GET",
+        path: `/projects/${projectId}/media/availability`,
       }),
       providesTags: (_result, _error, projectId) => [
         { type: "MediaFiles", id: projectId },
@@ -642,6 +653,7 @@ export const {
   useUpdateFlashcardMutation,
   useDeleteFlashcardMutation,
   useListMediaFilesQuery,
+  useGetMediaAvailabilityQuery,
   useAddMediaFileMutation,
   useGetImportFormMutation,
   useSubmitImportStepMutation,

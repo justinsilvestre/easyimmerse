@@ -1,12 +1,9 @@
 import type { BrowserFileRegistry } from "@easyimmerse/state";
-import type { MediaFile } from "@easyimmerse/types";
+import type { MediaFile, PathAvailability } from "@easyimmerse/types";
 import type { MediaIssue } from "./mediaIssueMessage.ts";
 
 /** What the server reported about each media file at a path, by media file ID. */
-export type PathAvailabilities = ReadonlyMap<
-  string,
-  "available" | "missing" | "unreadable"
->;
+export type PathAvailabilities = ReadonlyMap<string, PathAvailability>;
 
 /**
  * Tells why a media file cannot be opened from this app, or returns undefined when nothing is known to stop it.
