@@ -61,6 +61,10 @@ impl sandbox_probe::Guest for FixtureMediaSource {
     fn try_get(url: String) -> Result<(), PluginError> {
         probe::try_get(&url)
     }
+
+    fn try_download(url: String, path: String) -> Result<u64, PluginError> {
+        probe::try_download(&url, &path)
+    }
 }
 
 export!(FixtureMediaSource);

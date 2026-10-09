@@ -9,7 +9,7 @@ use crate::limits::{HostLimits, reset_fuel};
 use crate::media_source_plugin::to_error_kind;
 
 /// A loaded plugin of the test-only `media-source-fixture` world, through its
-/// `sandbox-probe` export. The host tests use it to check which commands and hosts
+/// `sandbox-probe` export. The host tests use it to check which commands, hosts and paths
 /// the sandbox lets a plugin reach; the `media-source` export of the same component
 /// is loaded through `MediaSourcePlugin`.
 pub struct MediaSourceFixturePlugin {
@@ -51,6 +51,21 @@ impl MediaSourceFixturePlugin {
             .bindings
             .easyimmerse_plugin_sandbox_probe()
             .call_try_get(&mut self.store, url)?;
+        Ok(outcome.map_err(to_error_kind))
+    }
+
+    /// Asks the plugin to download `url` into `path`, returning the byte count or
+    /// the error the host gave it.
+    pub fn probe_download(
+        &mut self,
+        url: &str,
+        path: &str,
+    ) -> Result<Result<u64, PluginErrorKind>, PluginError> {
+        reset_fuel(&mut self.store, &self.limits)?;
+        let outcome = self
+            .bindings
+            .easyimmerse_plugin_sandbox_probe()
+            .call_try_download(&mut self.store, url, path)?;
         Ok(outcome.map_err(to_error_kind))
     }
 }

@@ -1,5 +1,5 @@
 import { importForm, importStep, mediaForm, mediaStep } from "./forms.js";
-import { tryGet, tryRun } from "./probe.js";
+import { tryDownload, tryGet, tryRun } from "./probe.js";
 import { fetchSubtitles, resolve } from "./resolve.js";
 
 /**
@@ -18,4 +18,4 @@ export const mediaSource = {
 };
 
 /** The test-only `sandbox-probe` export. */
-export const sandboxProbe = { tryRun, tryGet };
+export const sandboxProbe = { tryRun, tryGet, tryDownload };

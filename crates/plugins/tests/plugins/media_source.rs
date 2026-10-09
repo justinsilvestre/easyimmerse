@@ -12,15 +12,15 @@ use easyimmerse_plugins::{
 
 /// The fixture plugin compiled once, with a server for it to fetch from and a directory
 /// granted to it.
-struct Fixture {
-    server: FixtureServer,
-    output_dir: tempfile::TempDir,
+pub(crate) struct Fixture {
+    pub(crate) server: FixtureServer,
+    pub(crate) output_dir: tempfile::TempDir,
     compiled: CompiledPlugin,
     grants: CapabilityGrants,
 }
 
 impl Fixture {
-    fn start() -> Self {
+    pub(crate) fn start() -> Self {
         let server = crate::support::start_fixture_http_server();
         let output_dir = tempfile::tempdir().expect("create a temp dir");
         let package =
@@ -52,7 +52,7 @@ impl Fixture {
     }
 
     /// The component through its test-only `sandbox-probe` export.
-    fn probe(&self) -> MediaSourceFixturePlugin {
+    pub(crate) fn probe(&self) -> MediaSourceFixturePlugin {
         MediaSourceFixturePlugin::instantiate(
             &self.compiled,
             self.grants.clone(),
@@ -65,7 +65,7 @@ impl Fixture {
         format!("{}/sample", self.server.base_url)
     }
 
-    fn output_path(&self, file_name: &str) -> String {
+    pub(crate) fn output_path(&self, file_name: &str) -> String {
         self.output_dir
             .path()
             .join(file_name)

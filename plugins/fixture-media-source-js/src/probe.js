@@ -1,4 +1,4 @@
-import { get } from "easyimmerse:plugin/http@0.1.0";
+import { download, get } from "easyimmerse:plugin/http@0.1.0";
 import { run } from "easyimmerse:plugin/run-command@0.1.0";
 
 /**
@@ -19,4 +19,16 @@ export function tryRun(command) {
  */
 export function tryGet(url) {
   get(url);
+}
+
+/**
+ * Asks the host to download a URL into a file. The host tests use this to
+ * check that only allowlisted hosts and granted paths are permitted.
+ *
+ * @param {string} url
+ * @param {string} path
+ * @returns {bigint}
+ */
+export function tryDownload(url, path) {
+  return download(url, path);
 }

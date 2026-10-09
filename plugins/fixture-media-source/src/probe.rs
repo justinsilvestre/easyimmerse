@@ -11,3 +11,9 @@ pub fn try_run(command: &str) -> Result<(), PluginError> {
 pub fn try_get(url: &str) -> Result<(), PluginError> {
     http::get(url).map(|_| ())
 }
+
+/// Asks the host to download a URL into a file. The host tests use this to
+/// check that only allowlisted hosts and granted paths are permitted.
+pub fn try_download(url: &str, path: &str) -> Result<u64, PluginError> {
+    http::download(url, path)
+}
