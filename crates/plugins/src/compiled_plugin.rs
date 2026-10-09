@@ -19,9 +19,15 @@ pub struct CompiledPlugin {
 }
 
 impl CompiledPlugin {
+    /// Compiles the package's `plugin.wasm` as it is on disk now.
     pub fn compile(package: &PluginPackage, mode: ExecutionMode) -> Result<Self, PluginError> {
+        Self::from_bytes(&package.read_component()?, mode)
+    }
+
+    /// Compiles a component from the bytes of a `plugin.wasm`.
+    pub fn from_bytes(bytes: &[u8], mode: ExecutionMode) -> Result<Self, PluginError> {
         let engine = build_engine(mode)?;
-        let component = Component::from_file(&engine, &package.wasm_path)?;
+        let component = Component::new(&engine, bytes)?;
         let linker = new_linker(&engine)?;
         Ok(Self {
             engine,

@@ -38,4 +38,4 @@ pub use media_source_exchange::{
 };
 pub use media_source_fixture_plugin::MediaSourceFixturePlugin;
 pub use media_source_plugin::MediaSourcePlugin;
-pub use package::{PluginPackage, current_target_name};
+pub use package::{PluginPackage, current_target_name, sha256_hex};

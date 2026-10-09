@@ -3,60 +3,84 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 
-use easyimmerse_plugins::{CompiledPlugin, ExecutionMode, PluginError, PluginPackage};
+use easyimmerse_plugins::{CompiledPlugin, ExecutionMode, PluginError, PluginPackage, sha256_hex};
 
-/// Identifies one compiled component: the digest of the plugin's `plugin.wasm` and the
-/// name of the execution mode it was compiled for. A changed component has a new digest,
-/// so it is never served from an older compile.
+/// Identifies one compiled component: the digest of the `plugin.wasm` bytes it was compiled
+/// from and the name of the execution mode it was compiled for. A changed component has a
+/// new digest, so it is never served from an older compile.
 type CompileKey = (String, &'static str);
 
+/// The slot holding the value compiled for one key, empty until a compile succeeds.
+type CompileSlot<T> = Arc<Mutex<Option<Arc<T>>>>;
+
 /// The compiled component of `package` for `mode`, compiled on the first call and reused
-/// by every later one.
+/// by every later call while `plugin.wasm` keeps the same bytes.
 pub fn compiled_plugin(
     package: &PluginPackage,
     mode: ExecutionMode,
 ) -> Result<Arc<CompiledPlugin>, PluginError> {
     static CACHE: OnceLock<CompileCache<CompiledPlugin>> = OnceLock::new();
-    let key = (package.wasm_sha256.clone(), mode.name());
+    let bytes = package.read_component()?;
     CACHE
         .get_or_init(CompileCache::default)
-        .get_or_compile(key, || CompiledPlugin::compile(package, mode))
+        .get_or_compile_bytes(&bytes, mode.name(), |bytes| {
+            CompiledPlugin::from_bytes(bytes, mode)
+        })
 }
 
 /// Values compiled at most once per key.
 pub struct CompileCache<T> {
-    entries: Mutex<HashMap<CompileKey, Arc<T>>>,
+    slots: Mutex<HashMap<CompileKey, CompileSlot<T>>>,
 }
 
 impl<T> Default for CompileCache<T> {
     fn default() -> Self {
         Self {
-            entries: Mutex::new(HashMap::new()),
+            slots: Mutex::new(HashMap::new()),
         }
     }
 }
 
 impl<T> CompileCache<T> {
-    /// The value stored under `key`, or the result of `compile` once it succeeds. The lock is
-    /// held while compiling, so two first calls for the same plugin do not both compile it.
+    /// The value compiled from `bytes` for the execution mode named `mode`, compiling it with
+    /// `compile` when no earlier call has.
+    pub fn get_or_compile_bytes<E>(
+        &self,
+        bytes: &[u8],
+        mode: &'static str,
+        compile: impl FnOnce(&[u8]) -> Result<T, E>,
+    ) -> Result<Arc<T>, E> {
+        self.get_or_compile((sha256_hex(bytes), mode), || compile(bytes))
+    }
+
+    /// The value stored under `key`, or the result of `compile` once it succeeds. Two first
+    /// calls with the same key compile only once, while calls with other keys do not wait.
     pub fn get_or_compile<E>(
         &self,
         key: CompileKey,
         compile: impl FnOnce() -> Result<T, E>,
     ) -> Result<Arc<T>, E> {
-        let mut entries = self.entries.lock().unwrap_or_else(PoisonError::into_inner);
-        if let Some(value) = entries.get(&key) {
+        let slot = self.slot(key);
+        let mut value = slot.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(value) = value.as_ref() {
             return Ok(Arc::clone(value));
         }
-        let value = Arc::new(compile()?);
-        entries.insert(key, Arc::clone(&value));
-        Ok(value)
+        let compiled = Arc::new(compile()?);
+        *value = Some(Arc::clone(&compiled));
+        Ok(compiled)
+    }
+
+    fn slot(&self, key: CompileKey) -> CompileSlot<T> {
+        let mut slots = self.slots.lock().unwrap_or_else(PoisonError::into_inner);
+        Arc::clone(slots.entry(key).or_default())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use std::cell::Cell;
+    use std::sync::mpsc;
+    use std::time::Duration;
 
     use super::*;
 
@@ -103,6 +127,43 @@ mod tests {
             cache.get_or_compile(key("abc"), || Ok::<_, ()>(1)),
             Ok(Arc::new(1))
         );
+    }
+
+    #[test]
+    fn compiles_the_new_bytes_after_a_rebuild() {
+        let cache = CompileCache::default();
+        let compile = |bytes: &[u8]| Ok::<_, ()>(bytes.to_vec());
+        cache
+            .get_or_compile_bytes(b"old", "native", compile)
+            .unwrap();
+        let rebuilt = cache.get_or_compile_bytes(b"new", "native", compile);
+        assert_eq!(rebuilt, Ok(Arc::new(b"new".to_vec())));
+    }
+
+    #[test]
+    fn answers_a_cached_key_while_another_key_compiles() {
+        let cache = &CompileCache::default();
+        cache
+            .get_or_compile(key("cached"), || Ok::<_, ()>(1))
+            .unwrap();
+        let (started, wait_for_start) = mpsc::channel();
+        let (release, wait_for_release) = mpsc::channel::<()>();
+        let (answer, wait_for_answer) = mpsc::channel();
+        let answered = std::thread::scope(|scope| {
+            scope.spawn(move || {
+                cache.get_or_compile(key("slow"), || {
+                    started.send(()).unwrap();
+                    wait_for_release.recv().unwrap();
+                    Ok::<_, ()>(2)
+                })
+            });
+            wait_for_start.recv().unwrap();
+            scope.spawn(move || answer.send(cache.get_or_compile(key("cached"), || Err(()))));
+            let answered = wait_for_answer.recv_timeout(Duration::from_secs(1)).ok();
+            release.send(()).unwrap();
+            answered
+        });
+        assert_eq!(answered, Some(Ok(Arc::new(1))));
     }
 
     #[test]
