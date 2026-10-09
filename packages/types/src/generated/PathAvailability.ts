@@ -3,4 +3,4 @@
 /**
  * Whether the server can open the file at a media file's path.
  */
-export type PathAvailability = "available" | "missing" | "unreadable";
+export type PathAvailability = "available" | "missing" | "not_allowed" | "unreadable";

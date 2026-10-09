@@ -2375,7 +2375,7 @@
         "tags": [
           "media"
         ],
-        "summary": "Checks whether each path-backed media file of a project can be opened. Files the browser\nholds are left out, since only the browser can tell whether it still has them. A\npath-backed file is also left out when its check takes longer than two seconds, as can\nhappen on a sleeping network drive, so an omitted file is one whose state is unknown.",
+        "summary": "Checks whether each path-backed media file of a project can be opened. Files the browser\nholds are left out, since only the browser can tell whether it still has them. A\npath-backed file is also left out when its check takes longer than two seconds, as can\nhappen on a sleeping network drive, so an omitted file is one whose state is unknown.\nAt most eight files are checked at once, across all requests.",
         "operationId": "getMediaAvailability",
         "parameters": [
           {
@@ -6579,6 +6579,7 @@
         "enum": [
           "available",
           "missing",
+          "not_allowed",
           "unreadable"
         ]
       },

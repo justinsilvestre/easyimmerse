@@ -54,11 +54,30 @@ async fn reports_a_file_that_no_longer_exists_as_missing() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn reports_a_file_as_unreadable_when_local_paths_are_not_allowed() {
+async fn reports_a_file_as_not_allowed_when_local_paths_are_not_allowed() {
     let storage = seeded_storage();
     let added = add_path_file(&storage, &fixture("sample.mp4"));
     assert_eq!(
         availability(false, storage).await,
+        entry(&added, "not_allowed")
+    );
+}
+
+/// A file without read permission still opens for the root user, so this test fails when
+/// run as root.
+#[cfg(unix)]
+#[tokio::test(flavor = "multi_thread")]
+async fn reports_a_file_without_read_permission_as_unreadable() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("locked.mp4");
+    std::fs::write(&file, b"").unwrap();
+    std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o000)).unwrap();
+    let storage = seeded_storage();
+    let added = add_path_file(&storage, &file.to_string_lossy());
+    assert_eq!(
+        availability(true, storage).await,
         entry(&added, "unreadable")
     );
 }

@@ -474,6 +474,7 @@ export interface paths {
          *     holds are left out, since only the browser can tell whether it still has them. A
          *     path-backed file is also left out when its check takes longer than two seconds, as can
          *     happen on a sleeping network drive, so an omitted file is one whose state is unknown.
+         *     At most eight files are checked at once, across all requests.
          */
         get: operations["getMediaAvailability"];
         put?: never;
@@ -1477,7 +1478,7 @@ export interface components {
          * @description Whether the server can open the file at a media file's path.
          * @enum {string}
          */
-        PathAvailability: "available" | "missing" | "unreadable";
+        PathAvailability: "available" | "missing" | "not_allowed" | "unreadable";
         PictureSize: {
             /** Format: int32 */
             height: number;

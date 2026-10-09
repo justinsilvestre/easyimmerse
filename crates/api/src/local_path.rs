@@ -10,6 +10,9 @@ use crate::auth::error_body::{ApiFailure, bad_request, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::config::ApiConfig;
 
+/// The error code of a request whose token may not read files on the server.
+pub const LOCAL_PATHS_NOT_ALLOWED: &str = "local_paths_not_allowed";
+
 /// Reads the file at `path` when the request's token kind allows local paths.
 pub async fn resolve_local_path(
     token: TokenKind,
@@ -78,7 +81,7 @@ pub fn ensure_local_paths_allowed(token: TokenKind, config: &ApiConfig) -> Resul
     } else {
         Err(ApiFailure::new(
             StatusCode::FORBIDDEN,
-            "local_paths_not_allowed",
+            LOCAL_PATHS_NOT_ALLOWED,
             "this token may not read files on the server",
         ))
     }
