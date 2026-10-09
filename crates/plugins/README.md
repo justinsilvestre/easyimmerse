@@ -12,6 +12,14 @@ The media interface belongs to a media file imported through the plugin. It star
 
 The host grants no directory for the form calls, so a plugin cannot write anything while the user is still filling in a form. `MediaSourcePlugin` wraps each export, converting the WIT forms and form input to and from the core types that cross HTTP.
 
+## Plugins in JavaScript
+
+A plugin can be written in JavaScript and built into a component with `jco componentize`, which embeds the StarlingMonkey JavaScript engine. `plugins/fixture-media-source-js` does the same work as the Rust `fixture-media-source`. `mise run plugins:build-js` builds it with `--bundle`, which joins its modules into the single module ComponentizeJS accepts, and `--disable all`, which leaves out the WASI imports the host does not provide.
+
+The plugin imports each host interface as a module, such as `easyimmerse:plugin/http@0.1.0`, and exports each interface as an object of camel-cased functions, such as `mediaSource.fetchSubtitles`. A WIT variant is an object `{ tag, val }`, an enum case is its name as a string, and an absent option is `undefined`. A function returns the `ok` value of a WIT result and throws a `plugin-error` variant for the `err` value. A host import that fails throws an error carrying the host's `plugin-error`, so a plugin that does not catch it passes the host's error back unchanged.
+
+The engine makes the component large, about 13 MB against about 100 KB for the Rust build. Its calls also cost more fuel. The fixture's form calls fit the default budget of 5 million per call, but an import that runs `fetch-locator`, downloads the 48 KB sample media and writes its subtitles needs between 15 and 20 million, and the cost grows with the number of bytes that pass through the plugin.
+
 ## Execution modes
 
 The host runs a plugin in one of two modes. The native mode compiles it to machine code with Cranelift. The interpreter mode compiles it to bytecode for wasmtime's Pulley interpreter instead, which needs the crate's `interpreter` feature and is an order of magnitude slower. `EASYIMMERSE_PLUGIN_EXECUTION=interpreter` selects the interpreter on desktop and Android; any other value or an unset variable selects native execution.
