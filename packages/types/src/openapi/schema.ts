@@ -462,6 +462,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Checks whether each path-backed media file of a project can be opened. Files the browser
+         *     holds are left out, since only the browser can tell whether it still has them. A
+         *     path-backed file is also left out when its check takes longer than two seconds, as can
+         *     happen on a sleeping network drive, so an omitted file is one whose state is unknown.
+         */
+        get: operations["getMediaAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/from-source/{job_id}": {
         parameters: {
             query?: never;
@@ -1330,6 +1352,9 @@ export interface components {
         };
         /** @enum {string} */
         MarkupDialect: "pango" | "xdxf";
+        MediaAvailabilityResponse: {
+            media_files: components["schemas"]["MediaFileAvailability"][];
+        };
         /** @description A video or audio file added to a project. */
         MediaFile: {
             /**
@@ -1348,6 +1373,10 @@ export interface components {
              *     defines. Null until the user has chosen.
              */
             track_selection_json?: string | null;
+        };
+        MediaFileAvailability: {
+            availability: components["schemas"]["PathAvailability"];
+            media_id: components["schemas"]["MediaFileId"];
         };
         MediaFileId: string;
         /**
@@ -1444,6 +1473,11 @@ export interface components {
             format?: components["schemas"]["TimedTextFormat"] | null;
             source: components["schemas"]["TextSource"];
         };
+        /**
+         * @description Whether the server can open the file at a media file's path.
+         * @enum {string}
+         */
+        PathAvailability: "available" | "missing" | "unreadable";
         PictureSize: {
             /** Format: int32 */
             height: number;
@@ -3607,6 +3641,56 @@ export interface operations {
                 };
             };
             /** @description No such project, or no file at the given path */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getMediaAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The availability of the project's path-backed media files, oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaAvailabilityResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
             404: {
                 headers: {
                     [name: string]: unknown;

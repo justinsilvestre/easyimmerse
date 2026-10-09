@@ -2370,6 +2370,73 @@
         ]
       }
     },
+    "/projects/{id}/media/availability": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Checks whether each path-backed media file of a project can be opened. Files the browser\nholds are left out, since only the browser can tell whether it still has them. A\npath-backed file is also left out when its check takes longer than two seconds, as can\nhappen on a sleeping network drive, so an omitted file is one whose state is unknown.",
+        "operationId": "getMediaAvailability",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The availability of the project's path-backed media files, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAvailabilityResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/from-source/{job_id}": {
       "get": {
         "tags": [
@@ -6157,6 +6224,20 @@
           "xdxf"
         ]
       },
+      "MediaAvailabilityResponse": {
+        "type": "object",
+        "required": [
+          "media_files"
+        ],
+        "properties": {
+          "media_files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaFileAvailability"
+            }
+          }
+        }
+      },
       "MediaFile": {
         "type": "object",
         "description": "A video or audio file added to a project.",
@@ -6204,6 +6285,21 @@
               "null"
             ],
             "description": "The user's saved choice of video and audio tracks, as the JSON the media crate\ndefines. Null until the user has chosen."
+          }
+        }
+      },
+      "MediaFileAvailability": {
+        "type": "object",
+        "required": [
+          "media_id",
+          "availability"
+        ],
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/PathAvailability"
+          },
+          "media_id": {
+            "$ref": "#/components/schemas/MediaFileId"
           }
         }
       },
@@ -6476,6 +6572,15 @@
             "$ref": "#/components/schemas/TextSource"
           }
         }
+      },
+      "PathAvailability": {
+        "type": "string",
+        "description": "Whether the server can open the file at a media file's path.",
+        "enum": [
+          "available",
+          "missing",
+          "unreadable"
+        ]
       },
       "PictureSize": {
         "type": "object",
