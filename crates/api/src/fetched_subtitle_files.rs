@@ -1,7 +1,9 @@
-//! Removing subtitle tracks together with the files a media-source plugin fetched for them.
-//! A file is deleted only when the media file was imported through a plugin, the file lies
-//! in the directory the plugin fetched the media file into, and no media file or subtitle
-//! track still refers to it.
+//! Removing subtitle tracks from a media file.
+//! The app deletes a track's file only when it downloaded the file itself, into its own media
+//! directory, and no media file or subtitle track still refers to it. Files the user chose
+//! are never deleted.
+//! Concretely, the media file must have been imported through a plugin, and the track's
+//! file must lie in the directory the app created for that import.
 
 use std::path::{Path, PathBuf};
 
@@ -18,7 +20,7 @@ use crate::state::AppState;
 pub(crate) const SUBTITLES_DIR_PREFIX: &str = "subtitles-";
 
 /// Removes the tracks `ids` from the media file, then deletes the files among them that the
-/// plugin fetched for it and that nothing refers to any more, leaving every other file alone.
+/// app downloaded for it and that nothing refers to any more, leaving every other file alone.
 pub(crate) async fn remove_subtitle_tracks(
     state: &AppState,
     media_file: &MediaFile,

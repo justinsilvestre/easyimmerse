@@ -118,7 +118,7 @@ async fn resolve_media_source(
         ("media_id" = String, Path, description = "The media file id"),
     ),
     responses(
-        (status = 204, description = "The media file was removed"),
+        (status = 204, description = "The media file was removed. The files the app downloaded into its media directory for it are deleted once no media file or track refers to them; any other file is left alone"),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such media file in the project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),

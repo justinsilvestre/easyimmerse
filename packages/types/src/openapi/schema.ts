@@ -3836,7 +3836,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The media file was removed */
+            /** @description The media file was removed. The files the app downloaded into its media directory for it are deleted once no media file or track refers to them; any other file is left alone */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -4565,7 +4565,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The track was removed, together with the file a media-source plugin fetched for it unless a media file or another track still refers to that file */
+            /** @description The track was removed. A file the app downloaded into its media directory for the track is deleted once no media file or track refers to it; any other file is left alone */
             204: {
                 headers: {
                     [name: string]: unknown;
