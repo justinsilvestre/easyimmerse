@@ -28,11 +28,9 @@ impl CapabilityGrants {
     }
 
     /// Checks that `path` names a file inside a granted directory. The file
-    /// itself may not exist yet, but its parent directory must. A relative
-    /// path is taken relative to the host's current directory.
+    /// itself may not exist yet, but its parent directory must.
     pub fn resolve_granted_path(&self, path: &str) -> Result<PathBuf, PluginError> {
-        let path = absolute_path(path)?;
-        let path = path.as_path();
+        let path = Path::new(path);
         let (parent, file_name) = split_file_path(path)?;
         let parent = parent
             .canonicalize()
@@ -99,16 +97,11 @@ fn is_bare_file_name(name: &str) -> bool {
     )
 }
 
-fn absolute_path(path: &str) -> Result<PathBuf, PluginError> {
-    std::path::absolute(path)
-        .map_err(|source| PluginError::io("resolving the path", Path::new(path), source))
-}
-
 fn split_file_path(path: &Path) -> Result<(&Path, &std::ffi::OsStr), PluginError> {
     match (path.parent(), path.file_name()) {
-        (Some(parent), Some(file_name)) => Ok((parent, file_name)),
+        (Some(parent), Some(file_name)) if path.is_absolute() => Ok((parent, file_name)),
         _ => Err(PluginError::NotPermitted(format!(
-            "{} is not a file path",
+            "{} is not an absolute file path",
             path.display()
         ))),
     }
@@ -220,27 +213,12 @@ mod tests {
     }
 
     #[test]
-    fn refuses_a_relative_path_outside_the_granted_dirs() {
+    fn refuses_a_relative_path() {
         let grants = CapabilityGrants::default();
         assert!(matches!(
             grants.resolve_granted_path("relative.txt"),
             Err(PluginError::NotPermitted(_))
         ));
-    }
-
-    #[test]
-    fn resolves_a_relative_path_inside_a_relative_granted_dir() {
-        let dir = tempfile::tempdir_in(".").unwrap();
-        let relative_dir = PathBuf::from(dir.path().file_name().unwrap());
-        let grants = CapabilityGrants {
-            granted_dirs: vec![relative_dir.clone()],
-            ..CapabilityGrants::default()
-        };
-        let resolved = grants.resolve_granted_path(&relative_dir.join("a.vtt").to_string_lossy());
-        assert_eq!(
-            resolved.unwrap(),
-            dir.path().canonicalize().unwrap().join("a.vtt")
-        );
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock};
 
-use crate::support::FixtureServer;
+use crate::support::LoopbackServer;
 use easyimmerse_core::providers::plugin_form::{FormControl, FormInput, PluginForm};
 use easyimmerse_plugins::{
     CapabilityGrants, CompiledPlugin, FetchRequest, HeldSubtitle, HostEvent, HostLimits,
@@ -79,7 +79,7 @@ test_each_plugin!(
 /// A compiled fixture plugin, with a server for it to fetch from and a directory
 /// granted to it.
 pub(crate) struct Fixture {
-    pub(crate) server: FixtureServer,
+    pub(crate) server: LoopbackServer,
     pub(crate) output_dir: tempfile::TempDir,
     compiled: &'static CompiledPlugin,
     grants: CapabilityGrants,

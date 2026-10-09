@@ -9,3 +9,4 @@ CREATE TABLE subtitle_tracks (
 );
 
 CREATE INDEX subtitle_tracks_by_media_file ON subtitle_tracks (media_file_id, created_at_ms);
+CREATE INDEX subtitle_tracks_by_source_path ON subtitle_tracks (json_extract(source_json, '$.path'));

@@ -40,22 +40,14 @@ export function ImportMediaDialog({
     <PluginFormDialog
       form={form}
       fallbackTitle={label}
+      loadingMessage="Asking the plugin what it needs…"
+      error={failure}
       isBusy={isBusy || isRunning}
       onAction={onAction}
       onClose={onClose}
       closeLabel={isRunning ? "Close" : "Cancel"}
     >
-      {form === null && error === null && (
-        <p className="text-sm text-fg-muted" role="status">
-          Asking the plugin what it needs…
-        </p>
-      )}
       {job && <FetchProgress job={job} />}
-      {failure !== null && (
-        <p className="text-sm text-danger-fg" role="alert">
-          {failure}
-        </p>
-      )}
     </PluginFormDialog>
   );
 }

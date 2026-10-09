@@ -2,13 +2,14 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
+use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_storage::{Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
 use crate::import_jobs::ImportJobs;
 use crate::media_source_jobs::MediaSourceJobs;
-use crate::plugins::PluginRegistry;
+use crate::plugins::{PluginRegistry, fetched_item_dir};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -67,5 +68,15 @@ impl AppState {
             .await
             .map_err(|error| internal(format!("storage task failed: {error}")))?
             .map_err(ApiFailure::from)
+    }
+
+    /// The directory a media-source plugin fetched the media file into, when it was imported
+    /// through a plugin into the media directory.
+    pub fn fetched_item_dir(&self, media_file: &MediaFile) -> Option<PathBuf> {
+        media_file.origin.as_ref()?;
+        let MediaFileSource::Path { path } = &media_file.source else {
+            return None;
+        };
+        fetched_item_dir(self.media_dir.as_deref()?, path)
     }
 }

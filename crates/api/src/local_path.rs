@@ -35,21 +35,27 @@ pub async fn resolve_local_text(
 }
 
 /// Checks that a file exists at `path` without reading it, when the request's token kind
-/// allows local paths.
-pub async fn ensure_local_file_exists(
+/// allows local paths, and returns the file's canonical absolute path. Store this path rather
+/// than the one given, so that each file has a single spelling in storage.
+pub async fn resolve_local_file(
     token: TokenKind,
     config: &ApiConfig,
     path: &str,
-) -> Result<(), ApiFailure> {
+) -> Result<String, ApiFailure> {
     ensure_local_path_readable(token, config, path)?;
-    let metadata = tokio::fs::metadata(path)
+    let canonical = tokio::fs::canonicalize(path)
         .await
         .map_err(|error| describe_read_error(path, error))?;
-    if metadata.is_file() {
-        Ok(())
-    } else {
-        Err(not_found(format!("no file at {path:?}")))
+    let metadata = tokio::fs::metadata(&canonical)
+        .await
+        .map_err(|error| describe_read_error(path, error))?;
+    if !metadata.is_file() {
+        return Err(not_found(format!("no file at {path:?}")));
     }
+    canonical
+        .into_os_string()
+        .into_string()
+        .map_err(|_| bad_request(format!("the path of {path:?} is not valid UTF-8")))
 }
 
 /// Checks that the request may read the file at `path`: any token may read a file in one
@@ -135,16 +141,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn confirms_an_existing_file_without_reading_it() {
-        let result =
-            ensure_local_file_exists(TokenKind::Launch, &config(true), &fixture("sample.mp4"))
-                .await;
-        assert_eq!(result, Ok(()));
+    async fn resolves_an_existing_file_to_its_canonical_path() {
+        let path = format!("{}/../../fixtures/./sample.mp4", env!("CARGO_MANIFEST_DIR"));
+        let canonical = std::fs::canonicalize(&path).unwrap();
+        let result = resolve_local_file(TokenKind::Launch, &config(true), &path).await;
+        assert_eq!(result, Ok(canonical.to_string_lossy().into_owned()));
     }
 
     #[tokio::test]
     async fn reports_a_directory_as_not_found() {
-        let failure = ensure_local_file_exists(TokenKind::Launch, &config(true), &fixture(""))
+        let failure = resolve_local_file(TokenKind::Launch, &config(true), &fixture(""))
             .await
             .unwrap_err();
         assert_eq!(failure.status, StatusCode::NOT_FOUND);

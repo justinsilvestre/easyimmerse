@@ -111,7 +111,7 @@ As a user:
   - [x] I see the new media file in the list of media files
   - [x] the new media file is opened
 - when I click "Remove" next to a media file:
-  - [x] the media file is removed from the project's list; the file itself is left alone
+  - [x] the media file is removed from the project's list; the user's files are left alone
 - when I save the project via the menu bar or keyboard shortcut:
   - [ ] the project's name, language, media files registry, etc. are saved to disk or online, according to the environment and settings
 - while I am working in a project:

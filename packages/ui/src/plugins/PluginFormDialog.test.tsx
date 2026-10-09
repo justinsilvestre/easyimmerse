@@ -18,6 +18,8 @@ function renderDialog(
     <PluginFormDialog
       form={shown}
       fallbackTitle="Add from a video site"
+      loadingMessage="Loading…"
+      error={null}
       isBusy={isBusy}
       onAction={(actionId, input) => submissions.push({ actionId, input })}
       onClose={() => {

@@ -12,7 +12,7 @@ use easyimmerse_media_ffmpeg::FfmpegError;
 
 use crate::auth::error_body::{ApiFailure, bad_request, internal, not_found};
 use crate::auth::token_kind::TokenKind;
-use crate::local_path::ensure_local_file_exists;
+use crate::local_path::resolve_local_file;
 use crate::state::AppState;
 
 pub const CONVERSION_UNAVAILABLE: &str = "conversion_unavailable";
@@ -27,7 +27,7 @@ pub async fn resolve_source_path(
         MediaFileSource::Path { path } => path.clone(),
         MediaFileSource::BrowserFile { .. } => return Err(not_resolvable()),
     };
-    ensure_local_file_exists(token, &state.config, &path).await?;
+    resolve_local_file(token, &state.config, &path).await?;
     Ok(path)
 }
 

@@ -30,7 +30,7 @@ pub use execution_mode::{ExecutionMode, PLATFORM_FORBIDS_JIT};
 pub use grants::CapabilityGrants;
 pub use hello_plugin::HelloPlugin;
 pub use host_state::{HostEvent, HostListener, HostState, LogEntry, LogLevel};
-pub use limits::{FreeSpaceLookup, HostLimits};
+pub use limits::{DownloadLimits, FreeSpaceLookup, HostLimits};
 pub use manifest::{PluginKind, PluginManifest, SettingSchema, parse_manifest};
 pub use media_source_exchange::{
     FetchRequest, HeldSubtitle, ImportAnswer, ImportContext, ImportRequest, MediaAnswer,
@@ -38,4 +38,4 @@ pub use media_source_exchange::{
 };
 pub use media_source_fixture_plugin::MediaSourceFixturePlugin;
 pub use media_source_plugin::MediaSourcePlugin;
-pub use package::{PluginPackage, current_target_name};
+pub use package::{PluginPackage, current_target_name, sha256_hex};

@@ -2,13 +2,13 @@
 
 use std::io::Read;
 use std::path::Path;
-use std::sync::Arc;
 use std::time::Duration;
 
-use easyimmerse_plugins::{HostLimits, PluginErrorKind};
-use tiny_http::{Response, Server, StatusCode};
+use easyimmerse_plugins::{DownloadLimits, HostLimits, PluginErrorKind};
+use tiny_http::{Response, StatusCode};
 
 use crate::media_source::Fixture;
+use crate::support::{LoopbackServer, start_http_server};
 
 fn sample_url(fixture: &Fixture) -> String {
     format!("{}/sample.mp4", fixture.server.base_url)
@@ -135,32 +135,12 @@ fn file_names_in(fixture: &Fixture) -> Vec<String> {
         .collect()
 }
 
-/// A server that answers every request with `body`, sent without a length.
-struct StreamServer {
-    url: String,
-    server: Arc<Server>,
-}
-
-impl Drop for StreamServer {
-    fn drop(&mut self) {
-        self.server.unblock();
-    }
-}
-
-fn serve_streams(make_body: fn() -> Box<dyn Read + Send>) -> StreamServer {
-    let server = Arc::new(Server::http("127.0.0.1:0").expect("bind a loopback port"));
-    let port = server.server_addr().to_ip().expect("an IP address").port();
-    let served = Arc::clone(&server);
-    std::thread::spawn(move || {
-        for request in served.incoming_requests() {
-            let response = Response::new(StatusCode(200), vec![], make_body(), None, None);
-            let _ = request.respond(response);
-        }
-    });
-    StreamServer {
-        url: format!("http://127.0.0.1:{port}/stream"),
-        server,
-    }
+/// A server that answers every request with a body from `make_body`, sent without a length.
+fn serve_streams(make_body: fn() -> Box<dyn Read + Send>) -> LoopbackServer {
+    start_http_server(move |request| {
+        let response = Response::new(StatusCode(200), vec![], make_body(), None, None);
+        let _ = request.respond(response);
+    })
 }
 
 /// Sends a little data, then goes quiet for longer than any test waits.
@@ -220,23 +200,30 @@ fn current_file_len(path: &Path) -> std::io::Result<u64> {
     Ok(std::fs::File::open(path)?.metadata()?.len())
 }
 
-fn shrinking_space_limits() -> HostLimits {
+fn download_limits(download: DownloadLimits) -> HostLimits {
     HostLimits {
-        download_reserve_bytes: 80_000,
-        download_space_check_interval_bytes: 4_096,
-        download_free_space: shrinking_free_space,
+        download,
         ..HostLimits::default()
     }
+}
+
+fn shrinking_space_limits() -> HostLimits {
+    download_limits(DownloadLimits {
+        reserve_bytes: 80_000,
+        space_check_interval_bytes: 4_096,
+        free_space: shrinking_free_space,
+        ..DownloadLimits::default()
+    })
 }
 
 fn little_space_limits() -> HostLimits {
-    HostLimits {
-        download_free_space: little_free_space,
-        ..HostLimits::default()
-    }
+    download_limits(DownloadLimits {
+        free_space: little_free_space,
+        ..DownloadLimits::default()
+    })
 }
 
-fn serve_small_body() -> StreamServer {
+fn serve_small_body() -> LoopbackServer {
     serve_streams(|| Box::new(std::io::repeat(0).take(BODY_BYTES)))
 }
 
@@ -286,7 +273,7 @@ fn stops_a_download_that_outgrows_the_reserve_while_streaming() {
     let outcome = download_with_limits(
         &fixture,
         limits,
-        &server.url,
+        &server.base_url,
         &fixture.output_path("media.bin"),
     );
     assert!(io_message(outcome).contains("not enough free space"));
@@ -300,7 +287,7 @@ fn removes_the_partial_file_when_the_reserve_stops_a_download() {
     let _ = download_with_limits(
         &fixture,
         limits,
-        &server.url,
+        &server.base_url,
         &fixture.output_path("media.bin"),
     );
     assert!(file_names_in(&fixture).is_empty());
@@ -310,14 +297,14 @@ fn removes_the_partial_file_when_the_reserve_stops_a_download() {
 fn aborts_a_download_that_receives_no_bytes_within_the_stall_timeout() {
     let fixture = Fixture::start();
     let server = serve_streams(|| Box::new(StallingBody(false)));
-    let limits = HostLimits {
-        download_stall_timeout: Duration::from_millis(300),
-        ..HostLimits::default()
-    };
+    let limits = download_limits(DownloadLimits {
+        stall_timeout: Duration::from_millis(300),
+        ..DownloadLimits::default()
+    });
     let outcome = download_with_limits(
         &fixture,
         limits,
-        &server.url,
+        &server.base_url,
         &fixture.output_path("media.bin"),
     );
     assert!(io_message(outcome).contains("stalled"));
@@ -327,14 +314,14 @@ fn aborts_a_download_that_receives_no_bytes_within_the_stall_timeout() {
 fn removes_the_partial_file_when_a_download_stalls() {
     let fixture = Fixture::start();
     let server = serve_streams(|| Box::new(StallingBody(false)));
-    let limits = HostLimits {
-        download_stall_timeout: Duration::from_millis(300),
-        ..HostLimits::default()
-    };
+    let limits = download_limits(DownloadLimits {
+        stall_timeout: Duration::from_millis(300),
+        ..DownloadLimits::default()
+    });
     let _ = download_with_limits(
         &fixture,
         limits,
-        &server.url,
+        &server.base_url,
         &fixture.output_path("media.bin"),
     );
     assert!(file_names_in(&fixture).is_empty());
@@ -344,14 +331,14 @@ fn removes_the_partial_file_when_a_download_stalls() {
 fn completes_a_download_that_outlasts_the_stall_timeout_while_bytes_keep_arriving() {
     let fixture = Fixture::start();
     let server = serve_streams(|| Box::new(TricklingBody(0)));
-    let limits = HostLimits {
-        download_stall_timeout: Duration::from_millis(300),
-        ..HostLimits::default()
-    };
+    let limits = download_limits(DownloadLimits {
+        stall_timeout: Duration::from_millis(300),
+        ..DownloadLimits::default()
+    });
     let outcome = download_with_limits(
         &fixture,
         limits,
-        &server.url,
+        &server.base_url,
         &fixture.output_path("media.bin"),
     );
     assert!(

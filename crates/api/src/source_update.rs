@@ -7,14 +7,13 @@ use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_core::project::ProjectSettings;
 use easyimmerse_core::providers::media_source::{ResolvedSubtitle, SkippedSubtitle};
 use easyimmerse_core::subtitle_track::SubtitleTrackId;
-use easyimmerse_core::text_source::TextSource;
 use easyimmerse_plugins::{FetchRequest, MediaContext, MediaUpdate, PluginPackage};
 
 use crate::auth::error_body::{ApiFailure, internal};
-use crate::fetched_subtitle_files::{SUBTITLES_DIR_PREFIX, remove_fetched_subtitle_file};
-use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles};
+use crate::fetched_subtitle_files::{SUBTITLES_DIR_PREFIX, remove_subtitle_tracks};
+use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles, store_fetched_tracks};
 use crate::plugins::{fetch_subtitles, fetched_item_dir};
-use crate::routes::plugins::{discard_output_dir, ensure_inside, media_dir, run_plugin_call};
+use crate::routes::plugins::{canonicalize_inside, discard_output_dir, media_dir, run_plugin_call};
 use crate::routes::source_form::SourceStepResponse;
 use crate::state::AppState;
 
@@ -75,38 +74,8 @@ async fn remove_held_tracks(
         .filter(|id| source.context.subtitles.iter().any(|held| &held.id == id))
         .map(SubtitleTrackId)
         .collect();
-    let (removed, removed_sources) = state
-        .with_storage(move |storage| {
-            let mut sources = Vec::new();
-            for id in &held {
-                sources.push(storage.get_subtitle_track(id)?.source);
-                storage.remove_subtitle_track(id)?;
-            }
-            Ok((held, sources))
-        })
-        .await?;
-    remove_fetched_files(state, &source.media_file, removed_sources).await;
-    Ok(removed)
-}
-
-/// Deletes the files among `sources` that lie in the directory the media file was fetched
-/// into, leaving every other file alone.
-async fn remove_fetched_files(state: &AppState, media_file: &MediaFile, sources: Vec<TextSource>) {
-    let MediaFileSource::Path { path: media_path } = &media_file.source else {
-        return;
-    };
-    let item_dir = state
-        .media_dir
-        .as_deref()
-        .and_then(|media_dir| fetched_item_dir(media_dir, media_path));
-    let Some(item_dir) = item_dir else {
-        return;
-    };
-    for source in sources {
-        if let TextSource::Path { path } = source {
-            remove_fetched_subtitle_file(&item_dir, Path::new(media_path), &path).await;
-        }
-    }
+    remove_subtitle_tracks(state, &source.media_file, &held).await?;
+    Ok(held)
 }
 
 /// Fetches the tracks the plugin asks for into a fresh directory beside the media file,
@@ -146,10 +115,10 @@ async fn fetch_into(
     output_dir: &Path,
 ) -> Result<Vec<ResolvedSubtitle>, ApiFailure> {
     let (package, dir) = (source.package.clone(), output_dir.to_path_buf());
-    let subtitles = run_plugin_call(move || fetch_subtitles(&package, &request, &dir)).await?;
-    ensure_inside(
+    let mut subtitles = run_plugin_call(move || fetch_subtitles(&package, &request, &dir)).await?;
+    canonicalize_inside(
         output_dir,
-        subtitles.iter().map(|subtitle| subtitle.path.as_str()),
+        subtitles.iter_mut().map(|subtitle| &mut subtitle.path),
     )?;
     Ok(subtitles)
 }
@@ -180,14 +149,7 @@ async fn add_fetched_tracks(
     }
     state
         .with_storage(move |storage| {
-            let mut selection = taken;
-            for (track, role) in tracks {
-                let added = storage.add_subtitle_track(&media_id, &track)?;
-                if let Some(role) = role {
-                    selection = selection.with_role(role, added.id);
-                }
-            }
-            storage.set_subtitle_selection(&media_id, &selection)?;
+            store_fetched_tracks(storage, &media_id, tracks, taken)?;
             Ok(skipped)
         })
         .await

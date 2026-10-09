@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use easyimmerse_plugins::ExecutionMode;
-use tiny_http::{Header, Response, Server};
+use tiny_http::{Header, Request, Response, Server};
 
 /// The `dist/` directory of a plugin under `plugins/`, built by `mise run plugins:build`.
 pub fn built_plugin_dir(name: &str) -> PathBuf {
@@ -40,36 +40,38 @@ pub fn execution_mode() -> ExecutionMode {
     ExecutionMode::from_env()
 }
 
-/// An HTTP server on the loopback interface serving the files under `fixtures/`.
-/// It stops when dropped.
-pub struct FixtureServer {
+/// An HTTP server on the loopback interface. It stops when dropped.
+pub struct LoopbackServer {
     pub base_url: String,
     server: Arc<Server>,
 }
 
-impl Drop for FixtureServer {
+impl Drop for LoopbackServer {
     fn drop(&mut self) {
         self.server.unblock();
     }
 }
 
-pub fn start_fixture_http_server() -> FixtureServer {
+/// Starts a loopback server that answers its requests with `respond`,
+/// one after another on a single background thread.
+pub fn start_http_server(respond: impl Fn(Request) + Send + 'static) -> LoopbackServer {
     let server = Arc::new(Server::http("127.0.0.1:0").expect("bind a loopback port"));
     let port = server.server_addr().to_ip().expect("an IP address").port();
     let served = Arc::clone(&server);
-    std::thread::spawn(move || serve_fixtures(&served));
-    FixtureServer {
+    std::thread::spawn(move || served.incoming_requests().for_each(respond));
+    LoopbackServer {
         base_url: format!("http://127.0.0.1:{port}"),
         server,
     }
 }
 
-fn serve_fixtures(server: &Server) {
+/// Starts a loopback server serving the files under `fixtures/`.
+pub fn start_fixture_http_server() -> LoopbackServer {
     let root = fixtures_dir();
-    for request in server.incoming_requests() {
+    start_http_server(move |request| {
         let response = fixture_response(&root, request.url());
         let _ = request.respond(response);
-    }
+    })
 }
 
 fn fixture_response(root: &Path, url: &str) -> Response<std::io::Cursor<Vec<u8>>> {

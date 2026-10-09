@@ -13,8 +13,8 @@ use utoipa::ToSchema;
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::found_subtitle_tracks::add_found_subtitle_tracks;
-use crate::local_path::ensure_local_file_exists;
-use crate::plugins::fetched_item_dir;
+use crate::local_path::resolve_local_file;
+use crate::routes::plugins::discard_output_dir;
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -80,19 +80,31 @@ pub async fn add_media_file(
     Path(project_id): Path<ProjectId>,
     extract::Json(request): extract::Json<AddMediaFileRequest>,
 ) -> Result<(StatusCode, Json<MediaFile>), ApiFailure> {
-    if let MediaFileSource::Path { path } = &request.source {
-        ensure_local_file_exists(token, &state.config, path).await?;
-    }
-    let source = request.source.clone();
+    let requested = request.source.clone();
+    let source = resolve_media_source(&state, token, request.source).await?;
     let media_file = state
-        .with_storage(move |storage| {
-            storage.add_media_file(&project_id, &request.name, &request.source)
-        })
+        .with_storage(move |storage| storage.add_media_file(&project_id, &request.name, &source))
         .await?;
-    if let MediaFileSource::Path { path } = source {
+    // Sidecar files sit beside the path the user chose, which may be a link to the file.
+    if let MediaFileSource::Path { path } = requested {
         add_found_subtitle_tracks(&state, token, &media_file, &path).await;
     }
     Ok((StatusCode::CREATED, Json(media_file)))
+}
+
+/// The source to store for a new media file: a `path` source names the file by its
+/// canonical path, once the token may read it and the file exists.
+async fn resolve_media_source(
+    state: &AppState,
+    token: TokenKind,
+    source: MediaFileSource,
+) -> Result<MediaFileSource, ApiFailure> {
+    match source {
+        MediaFileSource::Path { path } => Ok(MediaFileSource::Path {
+            path: resolve_local_file(token, &state.config, &path).await?,
+        }),
+        source => Ok(source),
+    }
 }
 
 #[utoipa::path(
@@ -106,7 +118,7 @@ pub async fn add_media_file(
         ("media_id" = String, Path, description = "The media file id"),
     ),
     responses(
-        (status = 204, description = "The media file was removed"),
+        (status = 204, description = "The media file was removed. The files the app downloaded into its media directory for it are deleted once no media file or track refers to them; any other file is left alone"),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such media file in the project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
@@ -117,29 +129,26 @@ pub async fn remove_media_file(
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
 ) -> Result<StatusCode, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id.clone()).await?;
-    state
-        .with_storage(move |storage| storage.remove_media_file(&media_id))
+    let item_dir = state.fetched_item_dir(&media_file);
+    let dir = item_dir.clone();
+    let is_dir_in_use = state
+        .with_storage(move |storage| {
+            storage.remove_media_file(&media_id)?;
+            match &dir {
+                Some(dir) => storage.is_path_referenced_inside(&dir.to_string_lossy()),
+                None => Ok(false),
+            }
+        })
         .await?;
+    // The directory a plugin fetched the media into goes with it, unless something else
+    // still refers to a file inside.
+    if let Some(dir) = item_dir.filter(|_| !is_dir_in_use) {
+        discard_output_dir(&dir).await;
+    }
     if let MediaFileSource::Path { path } = media_file.source {
-        remove_fetched_files(&state, &path).await;
         remove_unreferenced_conversions(&state, vec![path]).await?;
     }
     Ok(StatusCode::NO_CONTENT)
-}
-
-/// Deletes what a media-source plugin fetched for the media file, when it was added that
-/// way: the directory holding the file and its subtitles. A failure is only logged.
-async fn remove_fetched_files(state: &AppState, path: &str) {
-    let Some(item_dir) = state
-        .media_dir
-        .as_deref()
-        .and_then(|media_dir| fetched_item_dir(media_dir, path))
-    else {
-        return;
-    };
-    if let Err(error) = tokio::fs::remove_dir_all(&item_dir).await {
-        tracing::warn!("could not remove {}: {error}", item_dir.display());
-    }
 }
 
 /// Removes the cached conversions of the given source paths that no media file points at

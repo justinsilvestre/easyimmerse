@@ -31,6 +31,17 @@ impl PluginPackage {
             wasm_sha256,
         })
     }
+
+    /// Reads `plugin.wasm` as it is on disk now. After a rebuild of the plugin, these bytes
+    /// no longer match `wasm_sha256`, which was computed when the package was opened.
+    pub fn read_component(&self) -> Result<Vec<u8>, PluginError> {
+        read_component(&self.wasm_path)
+    }
+}
+
+/// The SHA-256 digest of `bytes` as lowercase hex.
+pub fn sha256_hex(bytes: &[u8]) -> String {
+    hex::encode(Sha256::digest(bytes))
 }
 
 /// The `bin/<target>/` name for the platform this host was compiled for, or
@@ -57,9 +68,12 @@ fn read_manifest(path: &Path) -> Result<PluginManifest, PluginError> {
 }
 
 fn digest_file(path: &Path) -> Result<String, PluginError> {
-    let bytes = std::fs::read(path)
-        .map_err(|source| PluginError::io("reading the plugin component", path, source))?;
-    Ok(hex::encode(Sha256::digest(bytes)))
+    Ok(sha256_hex(&read_component(path)?))
+}
+
+fn read_component(path: &Path) -> Result<Vec<u8>, PluginError> {
+    std::fs::read(path)
+        .map_err(|source| PluginError::io("reading the plugin component", path, source))
 }
 
 fn find_bin_dir(dir: &Path) -> Option<PathBuf> {

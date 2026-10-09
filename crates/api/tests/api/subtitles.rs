@@ -1,6 +1,11 @@
+use easyimmerse_core::subtitle_track::SubtitleTrackId;
+use easyimmerse_core::text_source::TextSource;
+use easyimmerse_storage::Storage;
 use serde_json::{Value, json};
 
-use crate::support::{TestServer, fixture_path, read_fixture, spawn_test_server};
+use crate::support::{
+    TestServer, fixture_path, read_fixture, spawn_test_server, spawn_test_server_with_storage,
+};
 
 const PROJECT: &str = "placeholder-1";
 
@@ -112,6 +117,34 @@ async fn reads_the_cues_of_a_path_source() {
         .get(&subtitles_route(&media_id, &format!("/{id}/cues")))
         .await;
     assert_eq!(response.json()["cues"].as_array().unwrap().len(), 4);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn stores_a_path_source_by_its_canonical_path() {
+    let dir = tempfile::tempdir().unwrap();
+    let database = dir.path().join("easyimmerse.db");
+    let storage = Storage::open(&database).unwrap();
+    storage.seed_placeholder_projects().unwrap();
+    let server = spawn_test_server_with_storage(true, storage).await;
+    let media_id = add_media(&server).await;
+    let spelled = fixture_path(".").join("sample.vtt");
+    let added = add_track(
+        &server,
+        &media_id,
+        &json!({ "name": "sample.vtt", "source": { "kind": "path", "path": spelled }, "format": null, "role": null }),
+    )
+    .await;
+    let id = SubtitleTrackId(added["id"].as_str().unwrap().to_string());
+    let stored = Storage::open(&database)
+        .unwrap()
+        .get_subtitle_track(&id)
+        .unwrap();
+    let canonical = spelled
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    assert_eq!(stored.source, TextSource::Path { path: canonical });
 }
 
 #[tokio::test(flavor = "multi_thread")]

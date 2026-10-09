@@ -17,7 +17,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
-use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles};
+use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles, store_fetched_tracks};
 use crate::media_source_jobs::{MediaSourceJob, MediaSourceJobId, output_dir_for};
 use crate::plugins::run_import;
 use crate::state::AppState;
@@ -258,14 +258,14 @@ async fn fetch_and_store(
     job: &MediaSourceJob,
     fetch: &Fetch,
 ) -> Result<(MediaFile, Vec<SkippedSubtitle>), ApiFailure> {
-    let resolved = run_plugin(state, job, fetch).await?;
-    let paths = std::iter::once(resolved.media_path.as_str()).chain(
+    let mut resolved = run_plugin(state, job, fetch).await?;
+    let paths = std::iter::once(&mut resolved.media_path).chain(
         resolved
             .subtitles
-            .iter()
-            .map(|subtitle| subtitle.path.as_str()),
+            .iter_mut()
+            .map(|subtitle| &mut subtitle.path),
     );
-    ensure_inside(&fetch.output_dir, paths)?;
+    canonicalize_inside(&fetch.output_dir, paths)?;
     let name = media_name(&resolved);
     let FetchedTracks { tracks, skipped } = read_fetched_subtitles(
         &fetch.request.subtitles,
@@ -287,14 +287,12 @@ async fn fetch_and_store(
             let mut media_file = storage.add_media_file(&project_id, &name, &source)?;
             storage.set_media_file_origin(&media_file.id, &origin)?;
             media_file.origin = Some(origin);
-            let mut selection = SubtitleSelection::default();
-            for (track, role) in tracks {
-                let added = storage.add_subtitle_track(&media_file.id, &track)?;
-                if let Some(role) = role {
-                    selection = selection.with_role(role, added.id);
-                }
-            }
-            storage.set_subtitle_selection(&media_file.id, &selection)?;
+            store_fetched_tracks(
+                storage,
+                &media_file.id,
+                tracks,
+                SubtitleSelection::default(),
+            )?;
             Ok((media_file, skipped))
         })
         .await
@@ -347,11 +345,12 @@ pub(crate) async fn discard_output_dir(output_dir: &FsPath) {
     }
 }
 
-/// Refuses a result naming files outside the directory the plugin was granted, so that a
-/// plugin cannot make the project point at any other file on the machine.
-pub(crate) fn ensure_inside<'a>(
+/// Replaces each of `paths` with its canonical form, so that storage holds one spelling of
+/// each file. Refuses a result naming files outside the directory the plugin was granted, so
+/// that a plugin cannot make the project point at any other file on the machine.
+pub(crate) fn canonicalize_inside<'a>(
     output_dir: &FsPath,
-    paths: impl Iterator<Item = &'a str>,
+    paths: impl Iterator<Item = &'a mut String>,
 ) -> Result<(), ApiFailure> {
     let output_dir = output_dir.canonicalize().map_err(|error| {
         internal(format!(
@@ -360,16 +359,22 @@ pub(crate) fn ensure_inside<'a>(
         ))
     })?;
     for path in paths {
-        let is_inside = FsPath::new(path)
-            .canonicalize()
-            .is_ok_and(|canonical| canonical.starts_with(&output_dir));
-        if !is_inside {
-            return Err(bad_request(format!(
-                "the plugin named {path:?}, which is not a file it fetched"
-            )));
-        }
+        *path = canonicalize_one_inside(&output_dir, path)?;
     }
     Ok(())
+}
+
+fn canonicalize_one_inside(output_dir: &FsPath, path: &str) -> Result<String, ApiFailure> {
+    FsPath::new(path)
+        .canonicalize()
+        .ok()
+        .filter(|canonical| canonical.starts_with(output_dir))
+        .and_then(|canonical| canonical.into_os_string().into_string().ok())
+        .ok_or_else(|| {
+            bad_request(format!(
+                "the plugin named {path:?}, which is not a file it fetched"
+            ))
+        })
 }
 
 /// The title with the media file's extension, so that the name tells video from audio as a
@@ -427,8 +432,8 @@ mod tests {
         let other = tempfile::tempdir().unwrap();
         let outside = other.path().join("media.mp4");
         std::fs::write(&outside, "").unwrap();
-        let outside = outside.to_string_lossy();
-        let result = ensure_inside(output_dir.path(), std::iter::once(outside.as_ref()));
+        let mut outside = outside.to_string_lossy().into_owned();
+        let result = canonicalize_inside(output_dir.path(), std::iter::once(&mut outside));
         assert_eq!(result.unwrap_err().status, StatusCode::BAD_REQUEST);
     }
 
@@ -437,8 +442,23 @@ mod tests {
         let output_dir = tempfile::tempdir().unwrap();
         let inside = output_dir.path().join("media.mp4");
         std::fs::write(&inside, "").unwrap();
-        let inside = inside.to_string_lossy();
-        let result = ensure_inside(output_dir.path(), std::iter::once(inside.as_ref()));
+        let mut inside = inside.to_string_lossy().into_owned();
+        let result = canonicalize_inside(output_dir.path(), std::iter::once(&mut inside));
         assert_eq!(result, Ok(()));
+    }
+
+    #[test]
+    fn replaces_a_media_path_with_its_canonical_form() {
+        let output_dir = tempfile::tempdir().unwrap();
+        std::fs::write(output_dir.path().join("media.mp4"), "").unwrap();
+        let mut path = output_dir
+            .path()
+            .join(".")
+            .join("media.mp4")
+            .to_string_lossy()
+            .into_owned();
+        canonicalize_inside(output_dir.path(), std::iter::once(&mut path)).unwrap();
+        let canonical = output_dir.path().canonicalize().unwrap().join("media.mp4");
+        assert_eq!(path, canonical.to_string_lossy());
     }
 }

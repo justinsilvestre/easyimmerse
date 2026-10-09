@@ -50,10 +50,14 @@ async fn lists_an_added_media_file() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn an_added_media_file_carries_its_source() {
+async fn an_added_media_file_carries_its_canonical_path() {
     let server = spawn_test_server(true).await;
     let added = add(&server, "sample.mp4", path_source("sample.mp4")).await;
-    assert_eq!(added["source"], path_source("sample.mp4"));
+    let canonical = fixture_path("sample.mp4").canonicalize().unwrap();
+    assert_eq!(
+        added["source"],
+        json!({ "kind": "path", "path": canonical })
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]

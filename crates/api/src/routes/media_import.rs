@@ -119,7 +119,10 @@ pub async fn submit_import_step(
     Ok(Json(response))
 }
 
-async fn load_project(state: &AppState, project_id: ProjectId) -> Result<Project, ApiFailure> {
+pub(crate) async fn load_project(
+    state: &AppState,
+    project_id: ProjectId,
+) -> Result<Project, ApiFailure> {
     state
         .with_storage(move |storage| storage.get_project(&project_id))
         .await
