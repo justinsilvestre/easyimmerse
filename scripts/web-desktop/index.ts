@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import {
   type DesktopServerFile,
@@ -9,7 +8,9 @@ import {
   readDesktopServerFile,
 } from "./desktopServerFile.ts";
 import { probeServer } from "./probeServer.ts";
-import { type ChildCommand, runTogether } from "./runTogether.ts";
+import { repositoryRoot } from "./repositoryRoot.ts";
+import { spawnChild } from "./runTogether.ts";
+import { ensureLanForwarderPortFree, serveWebApp } from "./serveWebApp.ts";
 import {
   standaloneServerCargoArgs,
   standaloneServerUrl,
@@ -18,10 +19,10 @@ import {
 /**
  * Runs the web app against the desktop app's embedded server, or, when the desktop app is not
  * running, against a standalone server on the desktop app's database and cache.
+ * Serves it to this machine and to the local network.
  *
  * Usage: `node scripts/web-desktop/index.ts`
  */
-const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
 const serverFileName = ".dev/desktop-server.env";
 const ffmpegDir = join(repositoryRoot, "apps/native/src-tauri/binaries");
 
@@ -33,6 +34,7 @@ async function main(): Promise<void> {
     fail(
       `Start the desktop app once with 'mise run desktop'. It writes ${serverFileName}, which this task reads.`,
     );
+  await ensureLanForwarderPortFree();
   const probe = await probeServer(file.url, file.token);
   if (probe === "answering") return runAgainstDesktopServer(file);
   if (probe === "refusing") {
@@ -48,9 +50,9 @@ async function main(): Promise<void> {
   );
 }
 
-function runAgainstDesktopServer(file: DesktopServerFile): void {
+async function runAgainstDesktopServer(file: DesktopServerFile): Promise<void> {
   console.log(`Using the desktop app's server at ${file.url}.`);
-  runTogether([viteCommand(file.url, file.token)], repositoryRoot);
+  await serveWebApp(file);
 }
 
 async function runAgainstStandaloneServer(
@@ -70,15 +72,15 @@ async function runAgainstStandaloneServer(
     EASYIMMERSE_TOKEN: token,
     EASYIMMERSE_FFMPEG_DIR: ffmpegDir,
   };
-  const server = {
-    command: "cargo",
-    args: standaloneServerCargoArgs(storage),
-    env: serverEnv,
-  };
-  runTogether(
-    [server, viteCommand(standaloneServerUrl, token)],
+  const server = spawnChild(
+    {
+      command: "cargo",
+      args: standaloneServerCargoArgs(storage),
+      env: serverEnv,
+    },
     repositoryRoot,
   );
+  await serveWebApp({ url: standaloneServerUrl, token }, [server]);
 }
 
 /** Builds before Vite starts, so that a compile error stops the task. */
@@ -88,17 +90,6 @@ function buildServer(): void {
     stdio: "inherit",
   });
   if (build.status !== 0) fail("The server did not build.");
-}
-
-function viteCommand(serverUrl: string, token: string): ChildCommand {
-  return {
-    command: "pnpm",
-    args: ["--filter", "@easyimmerse/web", "dev"],
-    env: {
-      VITE_EASYIMMERSE_SERVER_URL: serverUrl,
-      VITE_EASYIMMERSE_TOKEN: token,
-    },
-  };
 }
 
 function fail(message: string): never {
