@@ -120,12 +120,12 @@ impl Fixture {
 
     /// The component through its test-only `sandbox-probe` export.
     pub(crate) fn probe(&self) -> MediaSourceFixturePlugin {
-        MediaSourceFixturePlugin::instantiate(
-            self.compiled,
-            self.grants.clone(),
-            HostLimits::default(),
-        )
-        .expect("instantiate the plugin")
+        self.probe_with_limits(HostLimits::default())
+    }
+
+    pub(crate) fn probe_with_limits(&self, limits: HostLimits) -> MediaSourceFixturePlugin {
+        MediaSourceFixturePlugin::instantiate(self.compiled, self.grants.clone(), limits)
+            .expect("instantiate the plugin")
     }
 
     fn locator(&self) -> String {

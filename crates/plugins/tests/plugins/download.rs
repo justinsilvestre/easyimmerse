@@ -1,8 +1,12 @@
 //! The `http.download` import, reached through the fixture plugin's `sandbox-probe` export.
 
+use std::io::Read;
 use std::path::Path;
+use std::sync::Arc;
+use std::time::Duration;
 
-use easyimmerse_plugins::PluginErrorKind;
+use easyimmerse_plugins::{HostLimits, PluginErrorKind};
+use tiny_http::{Response, Server, StatusCode};
 
 use crate::media_source::Fixture;
 
@@ -97,4 +101,197 @@ fn writes_no_file_for_a_missing_resource() {
     let path = fixture.output_path("media.mp4");
     let _ = download(&fixture, &url, &path);
     assert!(!Path::new(&path).exists());
+}
+
+const MEBIBYTE: u64 = 1024 * 1024;
+
+fn download_with_limits(
+    fixture: &Fixture,
+    limits: HostLimits,
+    url: &str,
+    path: &str,
+) -> Result<u64, PluginErrorKind> {
+    fixture
+        .probe_with_limits(limits)
+        .probe_download(url, path)
+        .expect("the call completes")
+}
+
+fn io_message(outcome: Result<u64, PluginErrorKind>) -> String {
+    match outcome {
+        Err(PluginErrorKind::Io(message)) => message,
+        other => panic!("expected an io error, got {other:?}"),
+    }
+}
+
+fn file_names_in(fixture: &Fixture) -> Vec<String> {
+    std::fs::read_dir(fixture.output_dir.path())
+        .expect("list the output dir")
+        .map(|entry| {
+            entry
+                .expect("read an entry")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect()
+}
+
+/// A server that answers every request with `body`, sent without a length.
+struct StreamServer {
+    url: String,
+    server: Arc<Server>,
+}
+
+impl Drop for StreamServer {
+    fn drop(&mut self) {
+        self.server.unblock();
+    }
+}
+
+fn serve_streams(make_body: fn() -> Box<dyn Read + Send>) -> StreamServer {
+    let server = Arc::new(Server::http("127.0.0.1:0").expect("bind a loopback port"));
+    let port = server.server_addr().to_ip().expect("an IP address").port();
+    let served = Arc::clone(&server);
+    std::thread::spawn(move || {
+        for request in served.incoming_requests() {
+            let response = Response::new(StatusCode(200), vec![], make_body(), None, None);
+            let _ = request.respond(response);
+        }
+    });
+    StreamServer {
+        url: format!("http://127.0.0.1:{port}/stream"),
+        server,
+    }
+}
+
+/// Sends a little data, then goes quiet for longer than any test waits.
+struct StallingBody(bool);
+
+impl Read for StallingBody {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        if self.0 {
+            std::thread::sleep(Duration::from_secs(5));
+            return Ok(0);
+        }
+        self.0 = true;
+        buffer[..16].fill(1);
+        Ok(16)
+    }
+}
+
+fn available_bytes(fixture: &Fixture) -> u64 {
+    fs4::available_space(fixture.output_dir.path()).expect("read the free space")
+}
+
+#[test]
+fn leaves_only_the_finished_file_in_the_dir() {
+    let fixture = Fixture::start();
+    download(
+        &fixture,
+        &sample_url(&fixture),
+        &fixture.output_path("media.mp4"),
+    )
+    .expect("download");
+    assert_eq!(file_names_in(&fixture), ["media.mp4"]);
+}
+
+#[test]
+fn refuses_a_download_that_would_leave_less_than_the_reserve_free() {
+    let fixture = Fixture::start();
+    let limits = HostLimits {
+        download_reserve_bytes: u64::MAX / 2,
+        ..HostLimits::default()
+    };
+    let outcome = download_with_limits(
+        &fixture,
+        limits,
+        &sample_url(&fixture),
+        &fixture.output_path("media.mp4"),
+    );
+    assert!(io_message(outcome).contains("not enough free space"));
+}
+
+#[test]
+fn leaves_no_file_behind_when_the_reserve_refuses_a_download() {
+    let fixture = Fixture::start();
+    let limits = HostLimits {
+        download_reserve_bytes: u64::MAX / 2,
+        ..HostLimits::default()
+    };
+    let _ = download_with_limits(
+        &fixture,
+        limits,
+        &sample_url(&fixture),
+        &fixture.output_path("media.mp4"),
+    );
+    assert!(file_names_in(&fixture).is_empty());
+}
+
+#[test]
+fn stops_a_download_that_outgrows_the_reserve_while_streaming() {
+    let fixture = Fixture::start();
+    let server = serve_streams(|| Box::new(std::io::repeat(0).take(64 * MEBIBYTE)));
+    let limits = HostLimits {
+        download_reserve_bytes: available_bytes(&fixture) - 16 * MEBIBYTE,
+        ..HostLimits::default()
+    };
+    let outcome = download_with_limits(
+        &fixture,
+        limits,
+        &server.url,
+        &fixture.output_path("media.bin"),
+    );
+    assert!(io_message(outcome).contains("not enough free space"));
+}
+
+#[test]
+fn removes_the_partial_file_when_the_reserve_stops_a_download() {
+    let fixture = Fixture::start();
+    let server = serve_streams(|| Box::new(std::io::repeat(0).take(64 * MEBIBYTE)));
+    let limits = HostLimits {
+        download_reserve_bytes: available_bytes(&fixture) - 16 * MEBIBYTE,
+        ..HostLimits::default()
+    };
+    let _ = download_with_limits(
+        &fixture,
+        limits,
+        &server.url,
+        &fixture.output_path("media.bin"),
+    );
+    assert!(file_names_in(&fixture).is_empty());
+}
+
+#[test]
+fn aborts_a_download_that_receives_no_bytes_within_the_stall_timeout() {
+    let fixture = Fixture::start();
+    let server = serve_streams(|| Box::new(StallingBody(false)));
+    let limits = HostLimits {
+        download_stall_timeout: Duration::from_millis(300),
+        ..HostLimits::default()
+    };
+    let outcome = download_with_limits(
+        &fixture,
+        limits,
+        &server.url,
+        &fixture.output_path("media.bin"),
+    );
+    assert!(io_message(outcome).contains("stalled"));
+}
+
+#[test]
+fn removes_the_partial_file_when_a_download_stalls() {
+    let fixture = Fixture::start();
+    let server = serve_streams(|| Box::new(StallingBody(false)));
+    let limits = HostLimits {
+        download_stall_timeout: Duration::from_millis(300),
+        ..HostLimits::default()
+    };
+    let _ = download_with_limits(
+        &fixture,
+        limits,
+        &server.url,
+        &fixture.output_path("media.bin"),
+    );
+    assert!(file_names_in(&fixture).is_empty());
 }

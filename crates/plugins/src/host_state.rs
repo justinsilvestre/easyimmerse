@@ -4,6 +4,7 @@ use wasmtime::component::ResourceTable;
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 
 use crate::grants::CapabilityGrants;
+use crate::limits::HostLimits;
 
 /// Everything the host keeps for one plugin instance: the WASI context, the
 /// resource limits, the capability grants, what the plugin has reported, and the
@@ -12,10 +13,27 @@ pub struct HostState {
     pub wasi: WasiCtx,
     pub table: ResourceTable,
     pub limits: StoreLimits,
+    pub download: DownloadLimits,
     pub grants: CapabilityGrants,
     pub log: Vec<LogEntry>,
     pub progress: Vec<ProgressEvent>,
     pub listener: Option<HostListener>,
+}
+
+/// The parts of [`HostLimits`] that `http.download` enforces.
+#[derive(Debug, Clone, Copy)]
+pub struct DownloadLimits {
+    pub reserve_bytes: u64,
+    pub stall_timeout: std::time::Duration,
+}
+
+impl From<&HostLimits> for DownloadLimits {
+    fn from(limits: &HostLimits) -> Self {
+        Self {
+            reserve_bytes: limits.download_reserve_bytes,
+            stall_timeout: limits.download_stall_timeout,
+        }
+    }
 }
 
 /// Something that happened during a call into the plugin, reported as it happens.
@@ -63,6 +81,7 @@ impl HostState {
             wasi: WasiCtxBuilder::new().build(),
             table: ResourceTable::new(),
             limits: StoreLimits::default(),
+            download: DownloadLimits::from(&HostLimits::default()),
             grants,
             log: Vec::new(),
             progress: Vec::new(),

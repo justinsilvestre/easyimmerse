@@ -1,6 +1,7 @@
 //! Implementations of the host interfaces of the `easyimmerse:plugin` WIT
 //! package for [`HostState`](crate::host_state::HostState).
 
+pub mod download;
 pub mod fs;
 pub mod http;
 pub mod log;
