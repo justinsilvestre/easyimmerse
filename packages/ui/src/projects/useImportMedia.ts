@@ -5,16 +5,11 @@ import {
   useSubmitImportStepMutation,
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
-import type { FormInput, MediaSourceJob, PluginForm } from "@easyimmerse/types";
-import { type Dispatch, useEffect, useReducer, useState } from "react";
+import type { MediaSourceJob, PluginForm } from "@easyimmerse/types";
+import { useEffect, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { failureMessage } from "../plugins/failureMessage.ts";
-import {
-  type ImportMediaEvent,
-  type ImportSource,
-  importMediaReducer,
-  noImport,
-} from "./importMediaReducer.ts";
+import { usePluginFormSession } from "../plugins/usePluginFormSession.ts";
+import type { ImportSource } from "./MediaSection.tsx";
 import { skippedSubtitlesMessage } from "./skippedSubtitlesMessage.ts";
 
 /** How often the dialog asks the server about the fetch while it runs. */
@@ -29,50 +24,42 @@ const JOB_POLLING_INTERVAL_MS = 1000;
  * Closing the dialog stops watching the fetch; the server finishes it anyway.
  */
 export function useImportMedia(projectId: string) {
-  const [state, change] = useReducer(importMediaReducer, noImport);
   const [getImportForm] = useGetImportFormMutation();
   const [submitImportStep] = useSubmitImportStepMutation();
-  const job = useWatchedJob(projectId, state.jobId);
-  useOpenImportedMedia(job, state.form, change);
-  const fail = (opening: number, failure: unknown, fallback: string) =>
-    change({
-      type: "failed",
-      opening,
-      message: failureMessage(failure, fallback),
-    });
-  return {
-    ...state,
-    job,
-    isBusy: state.isAwaitingAnswer || (state.jobId !== null && job === null),
-    open: (source: ImportSource) => {
-      const opening = state.opening + 1;
-      change({ type: "opened", source });
-      getImportForm({ projectId, request: { plugin: source.name } })
-        .unwrap()
-        .then((form) => change({ type: "formArrived", opening, form }))
-        .catch((failure) =>
-          fail(opening, failure, "The plugin's form could not load."),
-        );
-    },
-    close: () => change({ type: "closed" }),
-    act: (action: string, input: FormInput[]) => {
-      if (state.source === null) return;
-      const { opening } = state;
-      change({ type: "stepSent" });
-      const request = { plugin: state.source.name, action, input };
-      submitImportStep({ projectId, request })
+  const { session, open, close, act } = usePluginFormSession<
+    ImportSource,
+    string
+  >(
+    (source) =>
+      getImportForm({ projectId, request: { plugin: source.name } }).unwrap(),
+    (source, action, input) =>
+      submitImportStep({
+        projectId,
+        request: { plugin: source.name, action, input },
+      })
         .unwrap()
         .then((answer) =>
-          change(
-            answer.kind === "form"
-              ? { type: "formArrived", opening, form: answer.form }
-              : { type: "jobStarted", opening, jobId: answer.job.id },
-          ),
-        )
-        .catch((failure) =>
-          fail(opening, failure, "The media could not be added."),
-        );
+          answer.kind === "form"
+            ? { form: answer.form }
+            : { outcome: answer.job.id },
+        ),
+    {
+      form: "The plugin's form could not load.",
+      step: "The media could not be added.",
     },
+  );
+  const job = useWatchedJob(projectId, session.outcome);
+  useOpenImportedMedia(job, session.form, close);
+  return {
+    source: session.subject,
+    form: session.form,
+    error: session.error,
+    job,
+    isBusy:
+      session.isAwaitingAnswer || (session.outcome !== null && job === null),
+    open,
+    close,
+    act,
   };
 }
 
@@ -96,7 +83,7 @@ function useWatchedJob(
 function useOpenImportedMedia(
   job: MediaSourceJob | null,
   form: PluginForm | null,
-  change: Dispatch<ImportMediaEvent>,
+  close: () => void,
 ) {
   const dispatch = useAppDispatch();
   const isDone = job?.status === "done";
@@ -106,9 +93,9 @@ function useOpenImportedMedia(
     : null;
   useEffect(() => {
     if (addedId === null) return;
-    change({ type: "closed" });
+    close();
     dispatch(actions.mediaFileAdded(addedId));
     if (skippedMessage !== null)
       dispatch(actions.notificationRequested(skippedMessage));
-  }, [addedId, skippedMessage, change, dispatch]);
+  }, [addedId, skippedMessage, close, dispatch]);
 }

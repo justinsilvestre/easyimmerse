@@ -29,23 +29,15 @@ export function SourceMediaDialog({
     <PluginFormDialog
       form={form}
       fallbackTitle={title}
+      loadingMessage="Asking the plugin what it offers…"
+      error={error}
       isBusy={isBusy}
       onAction={onAction}
       onClose={onClose}
     >
-      {form === null && error === null && (
-        <p className="text-sm text-fg-muted" role="status">
-          Asking the plugin what it offers…
-        </p>
-      )}
       {isBusy && (
         <p className="text-sm text-fg-muted" role="status">
           Working… This can take a moment.
-        </p>
-      )}
-      {error !== null && (
-        <p className="text-sm text-danger-fg" role="alert">
-          {error}
         </p>
       )}
     </PluginFormDialog>

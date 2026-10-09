@@ -48,14 +48,13 @@ export function pluginFormReducer(
 function initialValuesOfControl(control: FormControl): readonly string[] {
   switch (control.kind) {
     case "text":
+    case "hidden":
       return [control.value];
     case "choose-one":
     case "choose-many":
       return control.chosen;
     case "toggle":
       return [String(control.on)];
-    case "hidden":
-      return [control.value];
     case "note":
       return [];
   }

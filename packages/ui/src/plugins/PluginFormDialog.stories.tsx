@@ -9,6 +9,8 @@ const meta = {
   args: {
     form: exampleImportForm,
     fallbackTitle: "Add from a video site",
+    loadingMessage: "Asking the plugin what it needs…",
+    error: null,
     isBusy: false,
     onAction: fn(),
     onClose: fn(),

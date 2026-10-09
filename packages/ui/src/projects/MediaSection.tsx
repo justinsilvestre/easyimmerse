@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
-import type { ImportSource } from "./importMediaReducer.ts";
 import { type MediaItem, MediaList } from "./MediaList.tsx";
 import {
   type MediaCategory,
@@ -11,6 +10,9 @@ import {
   mediaCategoryLabel,
   mediaOfCategory,
 } from "./mediaCategories.ts";
+
+/** A media-source plugin offered for importing media, with the label of its button. */
+export type ImportSource = { name: string; label: string };
 
 /**
  * The project's media files, with the ways to add one: from a file, and through each installed

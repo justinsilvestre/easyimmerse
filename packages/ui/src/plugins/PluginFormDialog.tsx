@@ -13,12 +13,14 @@ import { usePluginFormValues } from "./usePluginFormValues.ts";
 /**
  * A dialog showing a form a plugin asked for, with a button for each of its actions and one to close it.
  * What the user enters is kept until a different form arrives. Pressing Enter in a field presses the form's primary action.
- * While there is no form yet, the dialog is named `fallbackTitle` and shows only its children,
- * which also follow the form's fields, for such things as progress and errors.
+ * While there is no form yet, the dialog is named `fallbackTitle` and shows `loadingMessage`.
+ * Its children follow the form's fields, for such things as progress, and `error` follows them.
  */
 export function PluginFormDialog({
   form,
   fallbackTitle,
+  loadingMessage,
+  error,
   isBusy,
   onAction,
   onClose,
@@ -27,6 +29,9 @@ export function PluginFormDialog({
 }: {
   form: PluginForm | null;
   fallbackTitle: string;
+  loadingMessage: string;
+  /** Why the form could not be shown or an action carried out, or null. */
+  error: string | null;
   /** Whether the plugin is working on an earlier action, which locks the fields and actions. */
   isBusy: boolean;
   onAction: (actionId: string, input: FormInput[]) => void;
@@ -39,7 +44,7 @@ export function PluginFormDialog({
   const press = (actionId: string) => {
     if (!isBusy) onAction(actionId, input());
   };
-  const submitAction = form && submitActionOf(form.actions);
+  const submitAction = form ? submitActionOf(form.actions) : undefined;
   return (
     <ModalDialog
       title={form?.title ?? fallbackTitle}
@@ -50,6 +55,7 @@ export function PluginFormDialog({
           <Button onClick={onClose}>{closeLabel}</Button>
           <PluginFormActions
             actions={form?.actions ?? []}
+            submitAction={submitAction}
             formId={formId}
             isBusy={isBusy}
             onPress={press}
@@ -77,24 +83,35 @@ export function PluginFormDialog({
           </fieldset>
         </form>
       )}
+      {form === null && error === null && (
+        <p className="text-sm text-fg-muted" role="status">
+          {loadingMessage}
+        </p>
+      )}
       {children}
+      {error !== null && (
+        <p className="text-sm text-danger-fg" role="alert">
+          {error}
+        </p>
+      )}
     </ModalDialog>
   );
 }
 
-/** The form's actions as buttons. The first primary one submits the form, so that Enter in a field presses it too. */
+/** The form's actions as buttons. `submitAction` submits the form, so that Enter in a field presses it too. */
 function PluginFormActions({
   actions,
+  submitAction,
   formId,
   isBusy,
   onPress,
 }: {
   actions: readonly FormAction[];
+  submitAction: FormAction | undefined;
   formId: string;
   isBusy: boolean;
   onPress: (actionId: string) => void;
 }) {
-  const submitAction = submitActionOf(actions);
   return actions.map((action) =>
     action === submitAction ? (
       <Button
@@ -119,6 +136,7 @@ function PluginFormActions({
   );
 }
 
+/** The form's first primary action, which Enter in a field presses. */
 function submitActionOf(
   actions: readonly FormAction[],
 ): FormAction | undefined {

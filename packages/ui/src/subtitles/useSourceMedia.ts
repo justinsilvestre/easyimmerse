@@ -3,12 +3,9 @@ import {
   useSubmitSourceStepMutation,
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
-import type { FormInput, SkippedSubtitle } from "@easyimmerse/types";
-import { useReducer } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { failureMessage } from "../plugins/failureMessage.ts";
+import { usePluginFormSession } from "../plugins/usePluginFormSession.ts";
 import { skippedSubtitlesMessage } from "../projects/skippedSubtitlesMessage.ts";
-import { closedSourceMedia, sourceMediaReducer } from "./sourceMediaReducer.ts";
 
 /**
  * The dialog for the media interface of the plugin a media file was imported through:
@@ -20,51 +17,35 @@ import { closedSourceMedia, sourceMediaReducer } from "./sourceMediaReducer.ts";
  */
 export function useSourceMedia(projectId: string, mediaFileId: string) {
   const dispatch = useAppDispatch();
-  const [state, change] = useReducer(sourceMediaReducer, closedSourceMedia);
   const args = { projectId, mediaFileId };
   const [getSourceForm] = useGetSourceFormMutation();
   const [submitSourceStep] = useSubmitSourceStepMutation();
-  const { form } = state;
-  const notifySkipped = (skipped: readonly SkippedSubtitle[]) => {
-    const message = skippedSubtitlesMessage(skipped, form);
-    if (message !== null) dispatch(actions.notificationRequested(message));
-  };
-  const fail = (opening: number, failure: unknown, fallback: string) =>
-    change({
-      type: "failed",
-      opening,
-      message: failureMessage(failure, fallback),
-    });
-  return {
-    isOpen: state.isOpen,
-    form,
-    isBusy: state.isAwaitingAnswer,
-    error: state.error,
-    open: () => {
-      const opening = state.opening + 1;
-      change({ type: "opened" });
-      getSourceForm(args)
-        .unwrap()
-        .then((form) => change({ type: "formArrived", opening, form }))
-        .catch((failure) => fail(opening, failure, "The form could not load."));
-    },
-    close: () => change({ type: "closed" }),
-    act: (action: string, input: FormInput[]) => {
-      const { opening } = state;
-      change({ type: "stepSent" });
-      submitSourceStep({ ...args, request: { action, input } })
+  const { session, open, close, act } = usePluginFormSession<string, "applied">(
+    () => getSourceForm(args).unwrap(),
+    (_mediaFile, action, input) => {
+      const { form } = session;
+      return submitSourceStep({ ...args, request: { action, input } })
         .unwrap()
         .then((answer) => {
-          if (answer.kind === "form") {
-            change({ type: "formArrived", opening, form: answer.form });
-          } else {
-            change({ type: "applied", opening });
-            notifySkipped(answer.skipped);
-          }
-        })
-        .catch((failure) =>
-          fail(opening, failure, "The changes could not be made."),
-        );
+          if (answer.kind === "form") return { form: answer.form };
+          const message = skippedSubtitlesMessage(answer.skipped, form);
+          if (message !== null)
+            dispatch(actions.notificationRequested(message));
+          return { outcome: "applied" };
+        });
     },
+    {
+      form: "The form could not load.",
+      step: "The changes could not be made.",
+    },
+  );
+  return {
+    isOpen: session.subject !== null && session.outcome === null,
+    form: session.form,
+    isBusy: session.isAwaitingAnswer,
+    error: session.error,
+    open: () => open(mediaFileId),
+    close,
+    act,
   };
 }
