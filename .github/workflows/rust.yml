@@ -77,14 +77,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # The plugin host's tests load plugins built by `mise run plugins:build`; the plugins
-      # workflow builds those and runs that crate's tests on every platform.
+      # The plugin host's tests and the API's plugin route tests load plugins built by
+      # `mise run plugins:build`; the plugins workflow builds those and runs these tests.
       # Showing the output of passing tests reveals the ones that skipped their body.
       - name: Test
         shell: bash
         env:
           EASYIMMERSE_FFMPEG_DIR: ${{ github.workspace }}/apps/native/src-tauri/binaries
-        run: cargo test --workspace --exclude easyimmerse-native --exclude easyimmerse-plugins --no-fail-fast -- --show-output 2>&1 | tee "$RUNNER_TEMP/test.log"
+        run: cargo test --workspace --exclude easyimmerse-native --exclude easyimmerse-plugins --no-fail-fast -- --skip plugin_routes:: --show-output 2>&1 | tee "$RUNNER_TEMP/test.log"
 
       # A test that cannot find ffmpeg passes without testing anything, so it fails the job here.
       # Runners have no GPU, so tests that need a hardware encoder may skip.

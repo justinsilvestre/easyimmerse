@@ -8,7 +8,7 @@ mod local_media_sample;
 mod media;
 mod media_conversion;
 mod openapi;
-mod plugins;
+mod plugin_routes;
 mod preferences;
 mod projects;
 mod sidecar_subtitles;
