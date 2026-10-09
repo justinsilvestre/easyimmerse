@@ -80,6 +80,7 @@ pub async fn spawn_test_server_with_cache(allow_local_paths: bool) -> (TestServe
     let cache_dir = TempDir::new().expect("a cache directory");
     let options = ServeOptions {
         cache_dir: Some(cache_dir.path().to_path_buf()),
+        ..ServeOptions::default()
     };
     let server = spawn_test_server_with_options(allow_local_paths, seeded_storage(), options).await;
     (server, cache_dir)

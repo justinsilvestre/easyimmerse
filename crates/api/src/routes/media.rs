@@ -14,6 +14,7 @@ use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::found_subtitle_tracks::add_found_subtitle_tracks;
 use crate::local_path::ensure_local_file_exists;
+use crate::plugins::fetched_item_dir;
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -120,9 +121,25 @@ pub async fn remove_media_file(
         .with_storage(move |storage| storage.remove_media_file(&media_id))
         .await?;
     if let MediaFileSource::Path { path } = media_file.source {
+        remove_fetched_files(&state, &path).await;
         remove_unreferenced_conversions(&state, vec![path]).await?;
     }
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// Deletes what a media-source plugin fetched for the media file, when it was added that
+/// way: the directory holding the file and its subtitles. A failure is only logged.
+async fn remove_fetched_files(state: &AppState, path: &str) {
+    let Some(item_dir) = state
+        .media_dir
+        .as_deref()
+        .and_then(|media_dir| fetched_item_dir(media_dir, path))
+    else {
+        return;
+    };
+    if let Err(error) = tokio::fs::remove_dir_all(&item_dir).await {
+        tracing::warn!("could not remove {}: {error}", item_dir.display());
+    }
 }
 
 /// Removes the cached conversions of the given source paths that no media file points at

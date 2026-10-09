@@ -1,3 +1,4 @@
+mod download;
 mod fuel;
 mod hello;
 mod media_source;

@@ -103,6 +103,10 @@ As a user:
   - [ ] I see a button to send new flashcards to Anki via AnkiConnect
 - when I click on the "Add media" button:
   - [x] I am prompted to select a media file to add to the project
+- when a media-source plugin is active:
+  - [x] I can see a button tagged with the plugin name button beside "Add media", which opens the plugin's media-import interface
+- when I submit within the plugin's media-adding interface:
+  - [x] I see progress for the operation of adding resources
 - when I add a media file to the project:
   - [x] I see the new media file in the list of media files
   - [x] the new media file is opened
@@ -196,6 +200,8 @@ As a user:
   - [x] I see indications of the cue timings in the waveform visualization, and can click on them to seek the video to that cue
 - when both a target-language subtitles track and a translation subtitles track are opened:
   - [x] I see the target-language subtitles above the translation subtitles
+- when a media source plugin is active:
+  - [x] I can see chip with the plugin title next to the media file's name, and click it to open the plugin's media interface for that file.
 
 
 ---

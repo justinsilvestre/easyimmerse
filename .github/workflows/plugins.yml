@@ -73,6 +73,10 @@ jobs:
       - name: Host tests
         run: cargo test -p easyimmerse-plugins
 
+      # The other API tests run in the rust and server workflows, which do not build plugins.
+      - name: API plugin route tests
+        run: cargo test -p easyimmerse-api --test api plugin_routes::
+
   interpreter:
     needs: gate
     if: needs.gate.outputs.passed != 'true' && github.ref_type != 'tag'

@@ -68,6 +68,8 @@ function sections(
       <MediaSection
         media={mediaItems}
         onAddMedia={fn()}
+        importSources={[{ name: "downloader", label: "Add from a video site" }]}
+        onImportMedia={fn()}
         onOpenMedia={fn()}
         onDeleteMedia={fn()}
       />

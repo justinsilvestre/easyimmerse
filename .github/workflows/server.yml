@@ -74,8 +74,9 @@ jobs:
           curl -fsS -H 'Authorization: Bearer ci' http://127.0.0.1:8787/projects | grep -q placeholder-1
           kill %1
 
+      # The plugin route tests load plugins built by `mise run plugins:build`, so the plugins workflow runs them.
       - name: API integration tests
-        run: cargo test -p easyimmerse-api -p easyimmerse-storage
+        run: cargo test -p easyimmerse-api -p easyimmerse-storage -- --skip plugin_routes::
 
   record:
     needs: [gate, server]

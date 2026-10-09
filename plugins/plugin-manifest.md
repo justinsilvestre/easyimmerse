@@ -7,10 +7,12 @@ Every plugin package contains a `plugin.toml` beside its `plugin.wasm`. The host
 | Field | Type | Meaning |
 |---|---|---|
 | `name` | string | The plugin's identifier. Unique among installed plugins. |
+| `title` | string, optional | How the plugin is named to the user. Defaults to `name`. |
 | `version` | string | The plugin's own version, as semver. |
 | `kind` | string | The capability the plugin exports. One of `speech-to-text`, `text-to-speech`, `translation`, `alignment`, `dictionary-format`, `media-step`, `flashcard-export`, `media-source`, or `hello`. The `hello` kind exists only for the host tests. |
 | `interface_version` | string | The version of the `easyimmerse:plugin` WIT package the component was built against. Currently `"0.1.0"`. |
 | `allowed_hosts` | list of strings | Host names the plugin may reach through the `http` import. The host refuses requests to any other host. May be empty. |
+| `import_label` | string, optional | Media-source plugins only. The text of the plugin's import button. Defaults to "Add from <title>". |
 | `settings` | array of tables, optional | Values the user enters for this plugin, which the plugin reads through the `secrets` import. |
 
 Each `[[settings]]` entry has these fields:

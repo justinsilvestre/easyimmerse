@@ -1,5 +1,5 @@
-//! Starts the API server on the loopback interface with a database in the app data directory
-//! and the conversion cache in the app cache directory.
+//! Starts the API server on the loopback interface with a database in the app data directory,
+//! the plugins and fetched media beside it, and the conversion cache in the app cache directory.
 //! A debug build opens the file named by `EASYIMMERSE_DATABASE` instead, when it is set.
 
 use std::io::ErrorKind;
@@ -18,6 +18,9 @@ const DEFAULT_PORT: u16 = 8787;
 /// How long quitting waits for the server's in-flight requests before giving up on them.
 const SHUTDOWN_PATIENCE: Duration = Duration::from_secs(5);
 const DATABASE_FILE_NAME: &str = "easyimmerse.sqlite";
+/// The directories beside the database that hold installed plugins and the media they fetch.
+const PLUGINS_DIR_NAME: &str = "plugins";
+const MEDIA_DIR_NAME: &str = "media";
 const DATABASE_OVERRIDE_VARIABLE: &str = "EASYIMMERSE_DATABASE";
 
 /// The running server. Kept in the app's managed state so it lives as long as the app.
@@ -83,7 +86,7 @@ pub fn start(app: &AppHandle) -> Result<EmbeddedServer, EmbeddedServerError> {
     let storage = open_storage(&database_path)?;
     let cache_dir = create_cache_dir(app)?;
     let token = hex::encode(rand::random::<[u8; 32]>());
-    let serving = serve_on_loopback(storage, cache_dir.clone(), token.clone());
+    let serving = serve_on_loopback(storage, &database_path, cache_dir.clone(), token.clone());
     let (port, handle) = tauri::async_runtime::block_on(serving)?;
     Ok(EmbeddedServer {
         url: format!("http://127.0.0.1:{port}"),
@@ -96,6 +99,7 @@ pub fn start(app: &AppHandle) -> Result<EmbeddedServer, EmbeddedServerError> {
 
 async fn serve_on_loopback(
     storage: Storage,
+    database_path: &Path,
     cache_dir: PathBuf,
     token: String,
 ) -> Result<(u16, ServerHandle), EmbeddedServerError> {
@@ -107,6 +111,8 @@ async fn serve_on_loopback(
     let config = ApiConfig::for_loopback(port, token, true);
     let options = ServeOptions {
         cache_dir: Some(cache_dir),
+        plugins_dir: database_path.parent().map(|dir| dir.join(PLUGINS_DIR_NAME)),
+        media_dir: database_path.parent().map(|dir| dir.join(MEDIA_DIR_NAME)),
     };
     let handle = serve(listener, config, storage, options).await?;
     tracing::info!("embedded server listening on 127.0.0.1:{port}");

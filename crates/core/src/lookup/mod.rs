@@ -27,7 +27,7 @@ mod word_boundary;
 pub use build_lookup_results::build_lookup_results;
 pub use fold_case::fold_case;
 pub use found_rows::{DictionaryOrigin, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta};
-pub use kanji_results::{build_kanji_results, is_kanji};
+pub use kanji_results::{KANJI_RANGES, build_kanji_results, is_kanji};
 pub use lookup_candidate::{LookupCandidate, candidate_headwords, lookup_candidates};
 pub use lookup_positions::lookup_positions;
 pub use lookup_result::{
@@ -36,6 +36,9 @@ pub use lookup_result::{
 };
 pub use separated_particles::separated_verb_candidates;
 pub use separated_verb::{ContextWord, SeparatedVerb};
+pub use unspaced_scripts::{
+    KANA_AND_BOPOMOFO_RANGES, SOUTH_EAST_ASIAN_MARK_RANGES, SOUTH_EAST_ASIAN_RANGES,
+};
 #[cfg(test)]
 mod german_lookup_tests;
 #[cfg(test)]

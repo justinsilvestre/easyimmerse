@@ -204,6 +204,7 @@ const meta = {
     media: {
       projectName: "German series",
       title: "Dark S01E01 - Geheimnisse.mkv",
+      source: null,
     },
     stage: videoStage(),
     playback: {
@@ -260,6 +261,26 @@ export const VideoWithDualSubtitles: Story = {};
  * A large phone, where the subtitles and controls sit under the picture at the top of the screen,
  * and the subtitles panel takes the rest of the height.
  */
+export const ImportedThroughAPlugin: Story = {
+  args: {
+    media: {
+      projectName: "German series",
+      title: "Eine Stadtführung durch die Altstadt",
+      source: { title: "Video site", isAvailable: true },
+    },
+  },
+};
+
+export const ImportedThroughAMissingPlugin: Story = {
+  args: {
+    media: {
+      projectName: "German series",
+      title: "Eine Stadtführung durch die Altstadt",
+      source: { title: "downloader", isAvailable: false },
+    },
+  },
+};
+
 export const OnAPhone: Story = {
   globals: { viewport: { value: "mobile2", isRotated: false } },
 };
@@ -404,6 +425,7 @@ export const AudioWithTranscript: Story = {
     media: {
       projectName: "German series",
       title: "Die Verwandlung, Kapitel 1",
+      source: null,
     },
     stage: audioStage("Die Verwandlung, Kapitel 1"),
     translationCues: [],

@@ -9,9 +9,12 @@ export {
   useDeleteDictionaryMutation,
   useDeleteFlashcardMutation,
   useGetConversionCacheStatusQuery,
+  useGetImportFormMutation,
   useGetImportJobQuery,
+  useGetMediaSourceJobQuery,
   useGetMediaTracksQuery,
   useGetProjectQuery,
+  useGetSourceFormMutation,
   useGetSubtitleCuesQuery,
   useImportDictionaryMutation,
   useImportLocalDictionaryMutation,
@@ -21,6 +24,7 @@ export {
   useListEmbeddedSubtitleTracksQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
+  useListPluginsQuery,
   useListProjectsQuery,
   useListSubtitleTracksQuery,
   useLookupTextQuery,
@@ -35,6 +39,8 @@ export {
   useSaveTrackSelectionMutation,
   useSetConversionCacheBudgetMutation,
   useSetSubtitleSelectionMutation,
+  useSubmitImportStepMutation,
+  useSubmitSourceStepMutation,
   useUpdateFlashcardMutation,
   useUpdateProjectMutation,
 } from "./backendApi.ts";
@@ -56,10 +62,7 @@ export {
 export { buildDictionaryMediaUrl } from "./dictionaryMediaUrl.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
 export { lookUpTextAhead } from "./lookUpTextAhead.ts";
-export {
-  lookupStartsIn,
-  southEastAsianCharacterRanges,
-} from "./lookupPositions.ts";
+export { lookupStartsIn } from "./lookupPositions.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
 export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
 export type { ServerConfig } from "./resolveServerConfig.ts";

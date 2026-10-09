@@ -2,6 +2,7 @@ import {
   useListDictionariesQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
+  useListPluginsQuery,
   useRemoveMediaFileMutation,
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
@@ -11,9 +12,12 @@ import { useNavigationActions } from "../navigationContext.ts";
 import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
 import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
+import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
+import type { ImportSource } from "../projects/importMediaReducer.ts";
 import { MediaSection } from "../projects/MediaSection.tsx";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
 import { ProjectView } from "../projects/ProjectView.tsx";
+import { useImportMedia } from "../projects/useImportMedia.ts";
 
 /**
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
@@ -36,6 +40,8 @@ export function ProjectOverview({
     notify("Reviewing and exporting flashcards is not available yet.");
   const media = useMediaItems(project.id);
   const [removeMediaFile] = useRemoveMediaFileMutation();
+  const importSources = useImportSources();
+  const importMedia = useImportMedia(project.id);
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
   const { openDictionaries } = useNavigationActions();
   const { settings } = project;
@@ -56,7 +62,9 @@ export function ProjectOverview({
       ) : (
         <MediaSection
           media={media.items}
+          importSources={importSources}
           onAddMedia={() => dispatch(actions.mediaFilePickRequested())}
+          onImportMedia={importMedia.open}
           onOpenMedia={(mediaFileId) =>
             dispatch(actions.openMedia(mediaFileId))
           }
@@ -66,6 +74,17 @@ export function ProjectOverview({
               .then(() => dispatch(actions.mediaFileRemoved(mediaFileId)))
               .catch(() => notify("The media file could not be removed"))
           }
+        />
+      )}
+      {importMedia.source && (
+        <ImportMediaDialog
+          label={importMedia.source.label}
+          form={importMedia.form}
+          isBusy={importMedia.isBusy}
+          job={importMedia.job}
+          error={importMedia.error}
+          onAction={importMedia.act}
+          onClose={importMedia.close}
         />
       )}
       <FlashcardSyncPanel
@@ -83,6 +102,20 @@ export function ProjectOverview({
       />
     </ProjectView>
   );
+}
+
+/**
+ * The installed media-source plugins, with the labels of their import buttons.
+ * The server gives every media-source plugin a label, so the title only stands in for a missing one.
+ */
+function useImportSources(): ImportSource[] {
+  const plugins = useListPluginsQuery().data?.plugins ?? [];
+  return plugins
+    .filter((plugin) => plugin.kind === "media-source")
+    .map((plugin) => ({
+      name: plugin.name,
+      label: plugin.import_label ?? plugin.title,
+    }));
 }
 
 function useMediaItems(projectId: string) {

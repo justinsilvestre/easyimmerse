@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
@@ -6,6 +7,8 @@ use easyimmerse_storage::{Storage, StorageError};
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
 use crate::import_jobs::ImportJobs;
+use crate::media_source_jobs::MediaSourceJobs;
+use crate::plugins::PluginRegistry;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -17,6 +20,13 @@ pub struct AppState {
     pub conversion: Option<ConversionService>,
     /// The dictionary imports running or recently finished.
     pub import_jobs: Arc<Mutex<ImportJobs>>,
+    /// The installed plugins. Empty without a plugin directory.
+    pub plugins: Arc<PluginRegistry>,
+    /// The fetches through media-source plugins since the server started.
+    pub media_source_jobs: Arc<MediaSourceJobs>,
+    /// Where media-source plugins put what they fetch. None when the server has no media
+    /// directory, in which case media cannot be added through a plugin.
+    pub media_dir: Option<PathBuf>,
 }
 
 impl AppState {
@@ -32,7 +42,16 @@ impl AppState {
             probes: probes.map(Arc::new),
             conversion,
             import_jobs: Arc::default(),
+            plugins: Arc::new(PluginRegistry::default()),
+            media_source_jobs: Arc::new(MediaSourceJobs::default()),
+            media_dir: None,
         }
+    }
+
+    pub fn with_plugins(mut self, plugins: PluginRegistry, media_dir: Option<PathBuf>) -> Self {
+        self.plugins = Arc::new(plugins);
+        self.media_dir = media_dir;
+        self
     }
 
     /// Runs a storage operation on the blocking thread pool, since SQLite calls block.

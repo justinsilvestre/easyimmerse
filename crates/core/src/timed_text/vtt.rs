@@ -2,16 +2,18 @@ use super::TimedTextFormat;
 use super::error::TimedTextError;
 use super::timestamp::parse_timing_line;
 use super::track::{Cue, TimedTextTrack};
-use crate::text_blocks::{join_text_lines, remove_byte_order_marks, split_blocks};
+use crate::text_blocks::{join_text_lines, remove_byte_order_marks, split_blocks_at};
 
 /// Parses WebVTT text. `NOTE`, `STYLE`, and `REGION` blocks are skipped, cue identifiers
-/// are optional, and cue settings after the end timestamp are ignored.
+/// are optional, and cue settings after the end timestamp are ignored. Only an empty line
+/// ends a block, as the WebVTT specification says, so a cue may contain a line of only
+/// spaces, as automatic captions often do; such lines around the cue text are dropped.
 pub fn parse_vtt(text: &str) -> Result<TimedTextTrack, TimedTextError> {
     let text = remove_byte_order_marks(text);
     if !has_webvtt_header(&text) {
         return Err(TimedTextError::MissingWebVttHeader);
     }
-    let cues = split_blocks(&text)
+    let cues = split_blocks_at(&text, str::is_empty)
         .iter()
         .filter(|block| is_cue_block(block))
         .enumerate()
@@ -61,7 +63,9 @@ fn parse_cue_block(lines: &[&str], position: usize) -> Result<Cue, TimedTextErro
         index: numeric_identifier(identifier).unwrap_or(position as u32),
         start_ms,
         end_ms,
-        text: join_text_lines(&lines[timing_position + 1..]),
+        text: join_text_lines(&lines[timing_position + 1..])
+            .trim_matches('\n')
+            .to_string(),
     })
 }
 
@@ -161,6 +165,25 @@ mod tests {
     #[test]
     fn accepts_a_header_with_trailing_text() {
         assert!(parse_vtt("WEBVTT - subtitles\n\n00:00.000 --> 00:01.000\nA").is_ok());
+    }
+
+    #[test]
+    fn keeps_a_cue_together_across_a_line_of_only_spaces() {
+        let track = parse_vtt("WEBVTT\n\n00:00.000 --> 00:01.000\n \nA").unwrap();
+        assert_eq!(track.cues.len(), 1);
+    }
+
+    #[test]
+    fn drops_lines_of_only_spaces_around_a_cue_text() {
+        let track = parse_vtt("WEBVTT\n\n00:00.000 --> 00:01.000\n \nA\n \n").unwrap();
+        assert_eq!(track.cues[0].text, "A");
+    }
+
+    #[test]
+    fn skips_the_metadata_lines_under_the_header() {
+        let track = parse_vtt("WEBVTT\nKind: captions\nLanguage: ja\n\n00:00.000 --> 00:01.000\nA")
+            .unwrap();
+        assert_eq!(track.cues.len(), 1);
     }
 
     #[test]

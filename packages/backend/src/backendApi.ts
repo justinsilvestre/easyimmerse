@@ -10,24 +10,32 @@ import type {
   EmbeddedSubtitleTracksResponse,
   Flashcard,
   FlashcardDraft,
+  ImportFormRequest,
   ImportJobStarted,
   ImportJobStatus,
   ImportLocalDictionaryRequest,
+  ImportStepRequest,
+  ImportStepResponse,
   ListDictionariesResponse,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
+  ListPluginsResponse,
   ListProjectsResponse,
   LookupQuery,
   LookupResponse,
   MediaFile,
+  MediaSourceJob,
   NewFlashcard,
   ParseLocalDocumentRequest,
   ParseTimedTextRequest,
   PlaybackRequest,
   PlaybackResponse,
+  PluginForm,
   PreviewLocalDictionaryTableRequest,
   Project,
   ProjectSettings,
+  SourceStepRequest,
+  SourceStepResponse,
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
@@ -68,6 +76,14 @@ type ProjectArgs = { projectId: string; settings: ProjectSettings };
 type FlashcardArgs = { projectId: string; flashcardId: string };
 
 type AddMediaFileArgs = { projectId: string; request: AddMediaFileRequest };
+
+type ImportFormArgs = { projectId: string; request: ImportFormRequest };
+
+type ImportStepArgs = { projectId: string; request: ImportStepRequest };
+
+type MediaSourceJobArgs = { projectId: string; jobId: string };
+
+type SourceStepArgs = MediaFileArgs & { request: SourceStepRequest };
 
 type MediaFileArgs = { projectId: string; mediaFileId: string };
 
@@ -116,6 +132,31 @@ const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
 
 const subtitleTracksTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "SubtitleTracks", id: mediaFileId }] as const;
+
+/**
+ * Puts a media file the server added into the project's list.
+ * The new file's entry decides which screen opens it, so it joins the list at once.
+ * The refetch that the invalidation starts can wait for other requests to finish.
+ */
+function listMediaFileAtOnce(
+  dispatch: (action: unknown) => unknown,
+  projectId: string,
+  added: MediaFile,
+) {
+  dispatch(
+    backendApi.util.updateQueryData("listMediaFiles", projectId, (list) => {
+      if (!list.media_files.some(({ id }) => id === added.id))
+        list.media_files.push(added);
+    }),
+  );
+}
+
+const mediaFileAddedTags = (projectId: string) =>
+  [
+    { type: "MediaFiles", id: projectId },
+    { type: "Projects", id: projectId },
+    "Projects",
+  ] as const;
 
 /** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
@@ -236,6 +277,9 @@ export const backendApi = createApi({
         "Projects",
       ],
     }),
+    listPlugins: build.query<ListPluginsResponse, void>({
+      query: () => ({ method: "GET", path: "/plugins" }),
+    }),
     listMediaFiles: build.query<ListMediaFilesResponse, string>({
       query: (projectId) => ({
         method: "GET",
@@ -251,28 +295,48 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/media`,
         body: { kind: "json", value: request },
       }),
-      // The new file's entry decides which screen opens it, so it joins the list at once.
-      // The refetch that the invalidation starts can wait for other requests to finish.
       async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
         const result = await queryFulfilled.catch(() => null);
-        if (result === null) return;
-        const added = result.data;
+        if (result !== null)
+          listMediaFileAtOnce(dispatch, projectId, result.data);
+      },
+      invalidatesTags: (_result, _error, { projectId }) =>
+        mediaFileAddedTags(projectId),
+    }),
+    /** Asks a media-source plugin for the first form of its import interface. */
+    getImportForm: build.mutation<PluginForm, ImportFormArgs>({
+      query: ({ projectId, request }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/media/import-form`,
+        body: { kind: "json", value: request },
+      }),
+    }),
+    /**
+     * Sends an action of a media-source plugin's import form. The plugin answers with the next form,
+     * or the server starts the import as a job, which is polled through `getMediaSourceJob`.
+     */
+    submitImportStep: build.mutation<ImportStepResponse, ImportStepArgs>({
+      query: ({ projectId, request }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/media/import-step`,
+        body: { kind: "json", value: request },
+      }),
+    }),
+    /** A fetch through a media-source plugin. Once it is done, its media file joins the project's list. */
+    getMediaSourceJob: build.query<MediaSourceJob, MediaSourceJobArgs>({
+      query: ({ projectId, jobId }) => ({
+        method: "GET",
+        path: `/projects/${projectId}/media/from-source/${jobId}`,
+      }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        const result = await queryFulfilled.catch(() => null);
+        const added = result?.data.media_file;
+        if (result?.data.status !== "done" || !added) return;
+        listMediaFileAtOnce(dispatch, projectId, added);
         dispatch(
-          backendApi.util.updateQueryData(
-            "listMediaFiles",
-            projectId,
-            (list) => {
-              if (!list.media_files.some(({ id }) => id === added.id))
-                list.media_files.push(added);
-            },
-          ),
+          backendApi.util.invalidateTags([...mediaFileAddedTags(projectId)]),
         );
       },
-      invalidatesTags: (_result, _error, { projectId }) => [
-        { type: "MediaFiles", id: projectId },
-        { type: "Projects", id: projectId },
-        "Projects",
-      ],
     }),
     removeMediaFile: build.mutation<void, MediaFileArgs>({
       query: ({ projectId, mediaFileId }) => ({
@@ -331,6 +395,48 @@ export const backendApi = createApi({
         path: `${mediaFilePath(args)}/subtitles`,
       }),
       providesTags: (_result, _error, args) => subtitleTracksTag(args),
+    }),
+    /**
+     * Asks the plugin a media file was imported through for the first form of its media interface.
+     * The answer is not cached, since the plugin may offer something different each time.
+     */
+    getSourceForm: build.mutation<PluginForm, MediaFileArgs>({
+      query: (args) => ({
+        method: "GET",
+        path: `${mediaFilePath(args)}/source-form`,
+      }),
+    }),
+    /**
+     * Sends an action of a media file's source form. The plugin answers with the next form, or the server applies its changes.
+     * Applied changes come with the media file's tracks, which replace the cached ones.
+     * A failure may come after some changes were made, so it refreshes the media file's tracks.
+     */
+    submitSourceStep: build.mutation<SourceStepResponse, SourceStepArgs>({
+      query: ({ request, ...args }) => ({
+        method: "POST",
+        path: `${mediaFilePath(args)}/source-step`,
+        body: { kind: "json", value: request },
+      }),
+      async onQueryStarted(
+        { projectId, mediaFileId },
+        { dispatch, queryFulfilled },
+      ) {
+        const answer = await queryFulfilled.then(
+          ({ data }) => data,
+          () => undefined,
+        );
+        if (answer?.kind !== "applied") return;
+        const { tracks, selection } = answer;
+        dispatch(
+          backendApi.util.updateQueryData(
+            "listSubtitleTracks",
+            { projectId, mediaFileId },
+            () => ({ tracks, selection }),
+          ),
+        );
+      },
+      invalidatesTags: (_result, error, args) =>
+        error === undefined ? [] : subtitleTracksTag(args),
     }),
     addSubtitleTrack: build.mutation<SubtitleTrack, AddSubtitleTrackArgs>({
       query: ({ request, ...args }) => ({
@@ -537,6 +643,10 @@ export const {
   useDeleteFlashcardMutation,
   useListMediaFilesQuery,
   useAddMediaFileMutation,
+  useGetImportFormMutation,
+  useSubmitImportStepMutation,
+  useGetMediaSourceJobQuery,
+  useListPluginsQuery,
   useRemoveMediaFileMutation,
   useGetMediaTracksQuery,
   usePlanPlaybackQuery,
@@ -544,6 +654,8 @@ export const {
   useLazyGetWaveformWindowQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
+  useGetSourceFormMutation,
+  useSubmitSourceStepMutation,
   useAddSubtitleTrackMutation,
   useGetSubtitleCuesQuery,
   useSetSubtitleSelectionMutation,

@@ -104,4 +104,32 @@ describe("ts-rs output", () => {
   it("TermEntry is assignable to its OpenAPI schema", () => {
     expectTypeOf<generated.TermEntry>().toExtend<Schemas["TermEntry"]>();
   });
+  it("ListPluginsResponse is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.ListPluginsResponse>().toExtend<
+      Schemas["ListPluginsResponse"]
+    >();
+  });
+  it("PluginForm is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.PluginForm>().toExtend<Schemas["PluginForm"]>();
+  });
+  it("ImportStepRequest is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.ImportStepRequest>().toExtend<
+      Schemas["ImportStepRequest"]
+    >();
+  });
+  it("ImportStepResponse is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.ImportStepResponse>().toExtend<
+      Schemas["ImportStepResponse"]
+    >();
+  });
+  it("SourceStepRequest is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.SourceStepRequest>().toExtend<
+      Schemas["SourceStepRequest"]
+    >();
+  });
+  it("SourceStepResponse is assignable to its OpenAPI schema", () => {
+    expectTypeOf<generated.SourceStepResponse>().toExtend<
+      Schemas["SourceStepResponse"]
+    >();
+  });
 });

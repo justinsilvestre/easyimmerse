@@ -1,4 +1,7 @@
-import { southEastAsianCharacterRanges } from "@easyimmerse/backend";
+import {
+  chineseAndJapaneseCharacterRanges,
+  southEastAsianCharacterRanges,
+} from "@easyimmerse/types";
 import clsx from "clsx";
 import {
   clickableWordAttribute,
@@ -11,20 +14,17 @@ import { useKeyboardCursor } from "./useKeyboardCursor.ts";
 import { useTextCursor } from "./useTextCursor.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
 
-/** Chinese characters, hiragana, katakana and Bopomofo, which are written without spaces between words. */
-const unspacedScript = String.raw`\p{scx=Han}\p{scx=Hiragana}\p{scx=Katakana}\p{scx=Bopomofo}`;
-
 /**
- * Every script written without spaces between words: those of `unspacedScript`, and the South East Asian scripts, such as Thai,
+ * Every script written without spaces between words: Chinese and Japanese, and the South East Asian scripts, such as Thai,
  * whose runs are looked up from each letter until a tokenizer can find their words.
  */
-const runScript = `${unspacedScript}${southEastAsianCharacterRanges}`;
+const runScript = `${chineseAndJapaneseCharacterRanges}${southEastAsianCharacterRanges}`;
 
 /**
  * A character of an unspaced script that belongs in a run: a letter or mark, with marks such as ー,
  * the ideographic zero 〇 and the spacing voicing marks ゛ and ゜, but not punctuation such as 、.
  */
-const unspacedLetter = String.raw`(?=[\p{L}\p{M}〇゛゜])[${unspacedScript}]`;
+const unspacedLetter = String.raw`(?=[\p{L}\p{M}〇゛゜])[${chineseAndJapaneseCharacterRanges}]`;
 
 const unspacedLetterPattern = new RegExp(`^${unspacedLetter}$`, "u");
 

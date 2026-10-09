@@ -3,6 +3,7 @@ packages:
   - packages/*
   - fixtures
   - plugins/hello-js
+  - plugins/fixture-media-source-js
 # pnpm 12 refuses to install versions younger than 24 hours. This exemption let the
 # opener plugin's 2.7.0 in on its release day, 2026-09-29. Delete the two lines below
 # after 2026-09-30 and run `pnpm install` to confirm the lockfile still resolves.

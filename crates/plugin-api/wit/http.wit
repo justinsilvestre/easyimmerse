@@ -1,6 +1,7 @@
 package easyimmerse:plugin@0.1.0;
 
-/// Outbound HTTP requests. The host allows only hosts listed in the plugin manifest.
+/// Outbound HTTP requests. The host allows only hosts listed in the plugin manifest,
+/// and follows no redirects.
 interface http {
     use types.{plugin-error};
 
@@ -10,4 +11,12 @@ interface http {
     }
 
     get: func(url: string) -> result<http-response, plugin-error>;
+
+    /// Downloads `url` into the file at `path` and returns the number of bytes written.
+    /// The body goes straight to the file and never passes through the plugin, so this
+    /// suits large files such as media. The host checks `url` as `get` does and `path`
+    /// as `fs.write-file` does, and fails with `not-found` for a 404 response and with
+    /// `io` for any other status outside 200 to 299. If the transfer fails partway, the
+    /// host removes the partial file.
+    download: func(url: string, path: string) -> result<u64, plugin-error>;
 }

@@ -39,11 +39,12 @@ run = [
 ]
 
 [tasks.typegen]
-description = "Regenerate packages/types/src/generated from Rust with ts-rs"
+description = "Regenerate packages/types/src/generated from Rust with ts-rs, and the shared lookup constants"
 run = [
   "rm -rf packages/types/src/generated",
   "cargo test -p easyimmerse-core -p easyimmerse-media -p easyimmerse-api --lib export_bindings",
   "node packages/types/scripts/writeGeneratedIndex.ts",
+  "EASYIMMERSE_UPDATE_CONSTANTS=1 cargo test -p easyimmerse-api --lib the_committed_module_is_current",
 ]
 sources = ["crates/**/*.rs", "apps/server/**/*.rs"]
 
@@ -71,7 +72,7 @@ depends = ["plugins:build-rust", "plugins:build-js"]
 run = "node plugins/build-rust.ts"
 
 [tasks."plugins:build-js"]
-run = "pnpm --filter @easyimmerse/plugin-hello-js build"
+run = "pnpm --filter @easyimmerse/plugin-hello-js --filter @easyimmerse/plugin-fixture-media-source-js build"
 
 [tasks."fetch-ffmpeg"]
 description = "Download the ffmpeg sidecar binaries for the current platform"
@@ -195,6 +196,7 @@ run = "cargo build -p easyimmerse-server"
 
 # The server keeps its data in .dev/ and seeds the placeholder projects only into a new database.
 # It gives them sample media and dictionaries once per database, so an older database receives them too.
+# Plugins placed under .dev/plugins are installed, and what they fetch lands in .dev/media.
 # Port 8788 leaves 8787 to the desktop app's embedded server.
 [tasks."web-dev:server"]
 depends = ["web-dev:build"]
@@ -202,7 +204,7 @@ env = { EASYIMMERSE_TOKEN = "dev" }
 run = '''
 mkdir -p .dev
 seed=$([ -e .dev/server.sqlite ] || echo --seed-placeholders)
-exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed --seed-sample-content
+exec cargo run --quiet -p easyimmerse-server -- serve --bind 127.0.0.1:8788 --db .dev/server.sqlite $seed --seed-sample-content --plugins-dir .dev/plugins --media-dir .dev/media
 '''
 
 # Waits for the server build so that a compile error stops the task before Vite starts.

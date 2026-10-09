@@ -12,9 +12,9 @@ describe("standaloneServerCargoArgs", () => {
     assert.deepEqual(args, [
       ...["run", "--quiet", "-p", "easyimmerse-server", "--", "serve"],
       ...["--bind", "127.0.0.1:8789", "--db", "/data/a b.sqlite"],
+      ...["--cache-dir", "/cache"],
+      ...["--plugins-dir", "/data/plugins", "--media-dir", "/data/media"],
       ...[
-        "--cache-dir",
-        "/cache",
         "--allow-local-paths",
         "--seed-placeholders",
         "--seed-sample-content",

@@ -11,6 +11,7 @@ const mediaFile: MediaFile = {
   source: { kind: "path", path: "/videos/dark.mkv" },
   created_at_ms: 0,
   track_selection_json: null,
+  origin: null,
 };
 
 const cue = exampleCues[2] ?? null;

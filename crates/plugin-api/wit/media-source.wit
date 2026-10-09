@@ -1,9 +1,28 @@
 package easyimmerse:plugin@0.1.0;
 
-/// Resolve an external locator, such as a URL, to media and subtitles written
-/// into a directory the host has granted.
+/// Import media and subtitles from an external source into a directory the host has
+/// granted, through forms the plugin defines and the host shows.
 interface media-source {
-    use types.{plugin-error, resolved-media};
+    use types.{plugin-error, form, form-input, import-context, import-answer, import-request,
+        resolved-media, media-context, media-answer, fetch-request, fetched-subtitle};
 
-    resolve: func(locator: string, output-dir: string) -> result<resolved-media, plugin-error>;
+    /// The first form of the import interface.
+    import-form: func(context: import-context) -> result<form, plugin-error>;
+
+    /// Answers an action in the import interface with the next form or with the
+    /// import to run.
+    import-step: func(context: import-context, action: string, input: list<form-input>) -> result<import-answer, plugin-error>;
+
+    /// Fetches the media and subtitles the request asks for into `output-dir`.
+    %import: func(request: import-request, output-dir: string) -> result<resolved-media, plugin-error>;
+
+    /// The first form of the media interface for media imported earlier.
+    media-form: func(context: media-context) -> result<form, plugin-error>;
+
+    /// Answers an action in the media interface with the next form or with the
+    /// update to apply.
+    media-step: func(context: media-context, action: string, input: list<form-input>) -> result<media-answer, plugin-error>;
+
+    /// Fetches the subtitle tracks the request asks for into `output-dir`.
+    fetch-subtitles: func(request: fetch-request, output-dir: string) -> result<list<fetched-subtitle>, plugin-error>;
 }

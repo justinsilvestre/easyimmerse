@@ -17,6 +17,8 @@ pub async fn run(args: ServeArgs) -> anyhow::Result<()> {
     let storage = open_storage(&args)?;
     let options = ServeOptions {
         cache_dir: args.cache_dir.clone(),
+        plugins_dir: args.plugins_dir.clone(),
+        media_dir: args.media_dir.clone(),
     };
     let handle = serve(listener, config, storage, options).await?;
     println!("listening on http://{addr}");
@@ -97,6 +99,8 @@ mod tests {
             seed_placeholders: false,
             seed_sample_content: false,
             cache_dir: None,
+            plugins_dir: None,
+            media_dir: None,
             expected_hosts: expected_hosts.iter().map(|host| host.to_string()).collect(),
         }
     }

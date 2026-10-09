@@ -30,7 +30,7 @@ use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
 };
-use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource};
+use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, MediaOrigin};
 use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
@@ -132,6 +132,15 @@ impl Storage {
 
     pub fn remove_media_file(&self, id: &MediaFileId) -> Result<(), StorageError> {
         self.write(|conn| media_files::remove_media_file(conn, id))
+    }
+
+    /// Records where a media-source plugin fetched the media file from.
+    pub fn set_media_file_origin(
+        &self,
+        id: &MediaFileId,
+        origin: &MediaOrigin,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| media_files::set_media_file_origin(conn, id, origin))
     }
 
     /// Stores the user's track choice for a media file; `None` clears it.

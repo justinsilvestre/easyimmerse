@@ -7,4 +7,6 @@ interface sandbox-probe {
 
     try-run: func(command: string) -> result<_, plugin-error>;
     try-get: func(url: string) -> result<_, plugin-error>;
+    /// Passes the result of `http.download` back unchanged.
+    try-download: func(url: string, path: string) -> result<u64, plugin-error>;
 }

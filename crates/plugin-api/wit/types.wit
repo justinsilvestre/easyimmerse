@@ -23,18 +23,154 @@ interface types {
         media-url: string,
     }
 
-    record subtitle-track {
-        language: option<language>,
-        url: string,
+    /// A form a plugin asks the host to show. The host adds a way to close it.
+    record form {
+        title: string,
+        /// Explains the form under its title.
+        description: option<string>,
+        fields: list<form-field>,
+        actions: list<form-action>,
     }
 
-    /// The outcome of resolving an external locator: what the media is, and where
-    /// the plugin wrote the media file and the subtitle files.
+    record form-field {
+        /// Names the field in the input the host sends back.
+        id: string,
+        label: string,
+        /// Explains the field under its label.
+        hint: option<string>,
+        control: form-control,
+    }
+
+    variant form-control {
+        /// A single-line text input.
+        text(text-control),
+        /// A choice of one option.
+        choose-one(choice-control),
+        /// A choice of any number of options, shown as checkboxes.
+        choose-many(choice-control),
+        /// A yes-or-no switch, with whether it is on.
+        toggle(bool),
+        /// A paragraph of text that is only read.
+        note(string),
+        /// A value the host does not show and sends back unchanged, so a plugin can
+        /// carry what it learned in one step into the next.
+        hidden(string),
+    }
+
+    record text-control {
+        value: string,
+        placeholder: option<string>,
+    }
+
+    record choice-control {
+        options: list<form-option>,
+        /// The ids of the options chosen to begin with.
+        chosen: list<string>,
+    }
+
+    record form-option {
+        id: string,
+        label: string,
+        /// Explains the option beside its label.
+        hint: option<string>,
+    }
+
+    /// A button at the foot of a form. Pressing it sends the form's input and the
+    /// button's id back to the plugin.
+    record form-action {
+        id: string,
+        label: string,
+        style: form-action-style,
+    }
+
+    enum form-action-style { primary, secondary, destructive }
+
+    /// What the user entered in one field: the text, the ids of the chosen options,
+    /// or "true" or "false" for a toggle. A hidden control sends its value back
+    /// unchanged. A note sends nothing.
+    record form-input {
+        field: string,
+        values: list<string>,
+    }
+
+    /// What the host tells a plugin about the project an import is for.
+    record import-context {
+        /// The project's languages as BCP 47 tags, target language first.
+        languages: list<language>,
+    }
+
+    /// An import the plugin is ready to run.
+    record import-request {
+        /// Identifies the media at the source; the host keeps it as the media file's origin.
+        locator: string,
+        /// The input of the form the import was submitted from.
+        input: list<form-input>,
+        /// The ids of the subtitle tracks the plugin will try to fetch, so the host can
+        /// tell the user which did not arrive.
+        subtitles: list<string>,
+    }
+
+    /// The plugin's answer to an action in its import interface.
+    variant import-answer {
+        /// Show this form next.
+        form(form),
+        /// Run this import.
+        %import(import-request),
+    }
+
+    /// A subtitle track the host holds for a media file.
+    record held-subtitle {
+        id: string,
+        name: string,
+    }
+
+    /// What the host tells a plugin about a media file imported through it.
+    record media-context {
+        locator: string,
+        /// The project's languages as BCP 47 tags, target language first.
+        languages: list<language>,
+        subtitles: list<held-subtitle>,
+    }
+
+    /// Subtitle tracks the plugin is ready to fetch for media imported earlier.
+    record fetch-request {
+        locator: string,
+        /// The input of the form the fetch was submitted from.
+        input: list<form-input>,
+        /// The ids of the subtitle tracks the plugin will try to fetch, so the host can
+        /// tell the user which did not arrive.
+        subtitles: list<string>,
+    }
+
+    /// Changes to a media file the host applies at the plugin's request.
+    record media-update {
+        /// Ids of held subtitle tracks to remove.
+        remove-subtitles: list<string>,
+        /// Subtitle tracks to fetch from the source, if any.
+        fetch: option<fetch-request>,
+    }
+
+    /// The plugin's answer to an action in its media interface.
+    variant media-answer {
+        form(form),
+        apply(media-update),
+    }
+
+    /// A subtitle file a media-source plugin wrote.
+    record fetched-subtitle {
+        /// The id the track was offered under.
+        id: string,
+        language: option<language>,
+        name: string,
+        path: string,
+    }
+
+    /// The outcome of fetching a locator: what the media is, and where the plugin wrote
+    /// the media file and the subtitle files.
     record resolved-media {
         metadata: media-metadata,
-        subtitle-tracks: list<subtitle-track>,
         media-path: string,
-        subtitle-paths: list<string>,
+        subtitles: list<fetched-subtitle>,
     }
 
     /// A report of partial completion. `fraction` runs from 0.0 to 1.0.

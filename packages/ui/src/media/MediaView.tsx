@@ -18,6 +18,7 @@ import {
   type PlayerPanelsState,
 } from "./PlayerControls.tsx";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
+import { SourceChip } from "./SourceChip.tsx";
 import { SubtitleAppearanceDialog } from "./SubtitleAppearanceDialog.tsx";
 import { SubtitleBand } from "./SubtitleBand.tsx";
 import { SubtitleLookupButtons } from "./SubtitleLookupButtons.tsx";
@@ -34,8 +35,15 @@ import { useStageClicks } from "./useStageClicks.ts";
 type MediaViewProps = {
   /** The screen's root element, which keyboard shortcuts check to tell whether the screen is in reach. */
   ref?: Ref<HTMLDivElement>;
-  /** The file's name, and the name of the project it belongs to, which the way back is named after. */
-  media: { title: string; projectName: string };
+  /**
+   * The file's name, the name of the project it belongs to, which the way back is named after,
+   * and the plugin the file was imported through, if any, which is unavailable when it is no longer installed.
+   */
+  media: {
+    title: string;
+    projectName: string;
+    source: { title: string; isAvailable: boolean } | null;
+  };
   /** The player itself: the video, or the artwork of an audio file, with whatever precedes playback. */
   stage: ReactNode;
   playback: PlayerControlsState;
@@ -61,6 +69,8 @@ type MediaViewProps = {
   cursor?: CueTextCursor | null;
   playerCallbacks: PlayerCallbacks;
   onBack: () => void;
+  /** Opens the media interface of the plugin the file was imported through. */
+  onOpenSource?: () => void;
   /** What the user does to the words of the subtitles over the stage. */
   wordGestures: CueWordGestures;
   /** Moves from a cue of the subtitles over the stage to the previous or next one; it must keep its identity across renders. */
@@ -345,10 +355,13 @@ function Fading({
   );
 }
 
-/** The bar over the top of the stage: the way back to the project, named after it, and the file's name. */
-function Header({ media, onBack }: MediaViewProps) {
+/**
+ * The bar over the top of the stage: the way back to the project, named after it, the file's name,
+ * and the plugin the file was imported through.
+ */
+function Header({ media, onBack, onOpenSource }: MediaViewProps) {
   return (
-    <header className="flex items-center gap-3 bg-black/90 px-3 py-2 backdrop-blur-sm">
+    <header className="flex items-center gap-3 bg-black/90 px-3 py-2 text-fg backdrop-blur-sm">
       <Button
         variant="subtle"
         aria-label={`Back to ${media.projectName}`}
@@ -358,7 +371,10 @@ function Header({ media, onBack }: MediaViewProps) {
         <ArrowLeft className="size-4 shrink-0" aria-hidden />
         <span className="truncate">{media.projectName}</span>
       </Button>
-      <h1 className="min-w-0 flex-1 truncate font-medium">{media.title}</h1>
+      <h1 className="min-w-0 truncate font-medium">{media.title}</h1>
+      {media.source && (
+        <SourceChip source={media.source} onOpen={onOpenSource} />
+      )}
     </header>
   );
 }

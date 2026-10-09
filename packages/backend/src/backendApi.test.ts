@@ -4,6 +4,7 @@ import type {
   LookupResponse,
   MediaFile,
   PlaybackRequest,
+  SourceStepResponse,
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
@@ -23,6 +24,83 @@ function createRecordingClient(): BackendClient & {
       return { data: { projects: [] } as T };
     },
   };
+}
+
+/** Records every request and fails each source step, as a plugin whose fetch fails would. */
+function createFailingSourceStepClient(): BackendClient & {
+  requests: BackendRequest[];
+} {
+  const requests: BackendRequest[] = [];
+  return {
+    requests,
+    send: async <T>(request: BackendRequest) => {
+      requests.push(request);
+      if (request.path.endsWith("/source-step"))
+        return { error: { status: 502, message: "the fetch failed" } };
+      return {
+        data: {
+          tracks: [],
+          selection: { target_track_id: null, translation_track_id: null },
+        } as T,
+      };
+    },
+  };
+}
+
+const fetchedTrack = {
+  id: "s2",
+  media_file_id: "m1",
+  name: "English",
+  format: "srt",
+  sample: "Hi",
+  created_at_ms: 0,
+} as const;
+
+const appliedStep: SourceStepResponse = {
+  kind: "applied",
+  removed: [],
+  tracks: [fetchedTrack],
+  selection: { target_track_id: null, translation_track_id: "s2" },
+  skipped: [],
+};
+
+/** Records every request and answers each source step with `appliedStep`. */
+function createApplyingSourceStepClient(): BackendClient & {
+  requests: BackendRequest[];
+} {
+  const requests: BackendRequest[] = [];
+  return {
+    requests,
+    send: async <T>(request: BackendRequest) => {
+      requests.push(request);
+      if (request.path.endsWith("/source-step"))
+        return { data: appliedStep as T };
+      return {
+        data: {
+          tracks: [],
+          selection: { target_track_id: null, translation_track_id: null },
+        } as T,
+      };
+    },
+  };
+}
+
+async function storeAfterApplyingSourceStep(
+  client: BackendClient = createApplyingSourceStepClient(),
+) {
+  configureBackend(client);
+  const store = createStore();
+  await store.dispatch(
+    backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
+  );
+  await store.dispatch(
+    backendApi.endpoints.submitSourceStep.initiate({
+      ...mediaArgs,
+      request: { action: "apply", input: [] },
+    }),
+  );
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return store;
 }
 
 function createStore() {
@@ -141,6 +219,7 @@ const addedBook: MediaFile = {
   source: { kind: "path", path: "/book.epub" },
   created_at_ms: 0,
   track_selection_json: null,
+  origin: null,
 };
 
 /** Lists no media files at first, adds a book, and leaves the list's refetch pending. */
@@ -533,6 +612,44 @@ describe("backendApi", () => {
     expect(client.requests).toEqual([
       { method: "POST", path: "/conversion-cache/clear" },
     ]);
+  });
+
+  it("fetches the subtitle tracks again after a source step fails", async () => {
+    const client = createFailingSourceStepClient();
+    configureBackend(client);
+    const store = createStore();
+    store.dispatch(backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs));
+    await store.dispatch(
+      backendApi.endpoints.submitSourceStep.initiate({
+        ...mediaArgs,
+        request: { action: "apply", input: [] },
+      }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(
+      client.requests.filter(
+        (request) => request.path === "/projects/p1/media/m1/subtitles",
+      ),
+    ).toHaveLength(2);
+  });
+
+  it("puts the tracks of an applied source step into the cached track list", async () => {
+    const store = await storeAfterApplyingSourceStep();
+    expect(
+      backendApi.endpoints.listSubtitleTracks.select(mediaArgs)(
+        store.getState(),
+      ).data,
+    ).toEqual({ tracks: appliedStep.tracks, selection: appliedStep.selection });
+  });
+
+  it("does not fetch the subtitle tracks again after a source step is applied", async () => {
+    const client = createApplyingSourceStepClient();
+    await storeAfterApplyingSourceStep(client);
+    expect(
+      client.requests.filter(
+        (request) => request.path === "/projects/p1/media/m1/subtitles",
+      ),
+    ).toHaveLength(1);
   });
 
   it("lists an added media file before the list is fetched again", async () => {

@@ -1369,6 +1369,7 @@ dependencies = [
  "easyimmerse-core",
  "easyimmerse-media",
  "easyimmerse-media-ffmpeg",
+ "easyimmerse-plugins",
  "easyimmerse-storage",
  "hex",
  "rand 0.10.3",
@@ -1376,6 +1377,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 2.0.21",
+ "tiny_http",
  "tokio",
  "tower",
  "tower-http 0.7.1",
@@ -1495,6 +1497,7 @@ version = "0.1.0"
 dependencies = [
  "easyimmerse-core",
  "easyimmerse-plugin-api",
+ "fs4",
  "hex",
  "serde",
  "sha2 0.11.0",

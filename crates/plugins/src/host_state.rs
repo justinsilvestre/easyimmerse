@@ -4,17 +4,66 @@ use wasmtime::component::ResourceTable;
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 
 use crate::grants::CapabilityGrants;
+use crate::limits::{FreeSpaceLookup, HostLimits};
 
 /// Everything the host keeps for one plugin instance: the WASI context, the
-/// resource limits, the capability grants, and what the plugin has reported.
+/// resource limits, the capability grants, what the plugin has reported, and the
+/// listener that hears each event as it happens.
 pub struct HostState {
     pub wasi: WasiCtx,
     pub table: ResourceTable,
     pub limits: StoreLimits,
+    pub download: DownloadLimits,
     pub grants: CapabilityGrants,
     pub log: Vec<LogEntry>,
     pub progress: Vec<ProgressEvent>,
+    pub listener: Option<HostListener>,
 }
+
+/// The parts of [`HostLimits`] that `http.download` enforces.
+#[derive(Debug, Clone, Copy)]
+pub struct DownloadLimits {
+    pub reserve_bytes: u64,
+    pub stall_timeout: std::time::Duration,
+    pub space_check_interval_bytes: u64,
+    pub free_space: FreeSpaceLookup,
+}
+
+impl From<&HostLimits> for DownloadLimits {
+    fn from(limits: &HostLimits) -> Self {
+        Self {
+            reserve_bytes: limits.download_reserve_bytes,
+            stall_timeout: limits.download_stall_timeout,
+            space_check_interval_bytes: limits.download_space_check_interval_bytes,
+            free_space: limits.download_free_space,
+        }
+    }
+}
+
+/// Something that happened during a call into the plugin, reported as it happens.
+#[derive(Debug, Clone, PartialEq)]
+pub enum HostEvent {
+    Log(LogEntry),
+    Progress(ProgressEvent),
+    /// The plugin asked for a command, which the host is now running.
+    CommandStarted {
+        command: String,
+        args: Vec<String>,
+    },
+    /// A line the running command wrote to its standard output or error.
+    CommandOutput {
+        command: String,
+        line: String,
+    },
+    CommandFinished {
+        command: String,
+        exit_code: i32,
+        elapsed_ms: u64,
+    },
+}
+
+/// Hears each event of a plugin call. It runs on the thread making the call.
+pub type HostListener = Box<dyn FnMut(HostEvent) + Send>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogEntry {
@@ -36,9 +85,18 @@ impl HostState {
             wasi: WasiCtxBuilder::new().build(),
             table: ResourceTable::new(),
             limits: StoreLimits::default(),
+            download: DownloadLimits::from(&HostLimits::default()),
             grants,
             log: Vec::new(),
             progress: Vec::new(),
+            listener: None,
+        }
+    }
+
+    /// Hands the event to the listener, when one is installed.
+    pub fn emit(&mut self, event: HostEvent) {
+        if let Some(listener) = &mut self.listener {
+            listener(event);
         }
     }
 

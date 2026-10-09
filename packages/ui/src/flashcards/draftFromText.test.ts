@@ -10,6 +10,7 @@ const mediaFile: MediaFile = {
   source: { kind: "path", path: "/books/die-verwandlung.epub" },
   created_at_ms: 0,
   track_selection_json: null,
+  origin: null,
 };
 
 function draft(settings: ProjectSettings = defaultProjectSettings) {

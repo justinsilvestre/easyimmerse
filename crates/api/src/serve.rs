@@ -10,6 +10,7 @@ use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 
 use crate::config::ApiConfig;
+use crate::plugins::PluginRegistry;
 use crate::router::build_router;
 use crate::routes::conversion_cache::restore_cache_budget;
 use crate::state::AppState;
@@ -50,12 +51,16 @@ impl ServerHandle {
 pub struct ServeOptions {
     /// Where converted media is cached. None disables conversion.
     pub cache_dir: Option<PathBuf>,
+    /// Where installed plugins live, one package per subdirectory. None installs no plugins.
+    pub plugins_dir: Option<PathBuf>,
+    /// Where media-source plugins put what they fetch. None keeps them from adding media.
+    pub media_dir: Option<PathBuf>,
 }
 
 /// Serves the API on an already bound listener, so that the caller knows the port.
 pub async fn serve(
     listener: TcpListener,
-    config: ApiConfig,
+    mut config: ApiConfig,
     storage: Storage,
     options: ServeOptions,
 ) -> Result<ServerHandle, ServeError> {
@@ -64,7 +69,18 @@ pub async fn serve(
     if let Some(conversion) = &conversion {
         start_background_work(conversion, &storage);
     }
-    let state = AppState::new(storage, config, open_probe_cache(), conversion.clone());
+    // The server fills the media directory itself, so its files are readable with any token.
+    if let Some(media_dir) = &options.media_dir {
+        std::fs::create_dir_all(media_dir)?;
+        config.server_dirs.push(media_dir.clone());
+    }
+    let plugins = options
+        .plugins_dir
+        .as_deref()
+        .map(PluginRegistry::scan)
+        .unwrap_or_default();
+    let state = AppState::new(storage, config, open_probe_cache(), conversion.clone())
+        .with_plugins(plugins, options.media_dir);
     let (router, _) = build_router(state);
     let (shutdown, shutdown_requested) = oneshot::channel();
     let server = axum::serve(listener, router).with_graceful_shutdown(async {

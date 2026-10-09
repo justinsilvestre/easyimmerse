@@ -1,4 +1,5 @@
 import type {
+  InstalledPlugin,
   ListFlashcardsResponse,
   ListMediaFilesResponse,
   ListProjectsResponse,
@@ -95,6 +96,7 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       source: { kind: "path", path: "/videos/episode.mkv" },
       created_at_ms: 1767225600000,
       track_selection_json: null,
+      origin: null,
     },
     {
       id: "m2",
@@ -107,11 +109,37 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       },
       created_at_ms: 1767312000000,
       track_selection_json: null,
+      origin: null,
     },
   ],
 };
 
+/** A media-source plugin, installed when a test puts it in the answer to `GET /plugins`. */
+export const fixtureMediaSourcePlugin: InstalledPlugin = {
+  name: "video-site",
+  title: "Video site",
+  version: "0.1.0",
+  kind: "media-source",
+  import_label: "Add from a video site",
+};
+
+/** The media files of project `p1`, with `episode.mkv` imported through `fixtureMediaSourcePlugin`. */
+export const fixtureImportedMediaFiles: ListMediaFilesResponse = {
+  media_files: fixtureMediaFiles.media_files.map((mediaFile) =>
+    mediaFile.id === "m1"
+      ? {
+          ...mediaFile,
+          origin: {
+            plugin: fixtureMediaSourcePlugin.name,
+            locator: "https://videos.example.com/watch/abc123def45",
+          },
+        }
+      : mediaFile,
+  ),
+};
+
 export const fixtureResponses = {
+  "GET /plugins": { plugins: [] },
   "GET /projects": fixtureProjects,
   "GET /projects/p1": fixtureProject,
   "POST /projects/p1/opened": undefined,

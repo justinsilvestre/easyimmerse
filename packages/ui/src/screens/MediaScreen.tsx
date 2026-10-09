@@ -1,3 +1,4 @@
+import { useListPluginsQuery } from "@easyimmerse/backend";
 import { actions, selectPlayer, selectPreference } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
 import { useCallback, useMemo, useReducer, useRef, useState } from "react";
@@ -28,6 +29,7 @@ import { findAdjacentCue, findTranslationOf } from "../media/findCue.ts";
 import { flashcardWordRanges } from "../media/flashcardWordRanges.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
+import { mediaSourceOf } from "../media/mediaSourceOf.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
@@ -40,8 +42,10 @@ import { TrackChoiceContext } from "../player/trackChoiceContext.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import { useResumePlayback } from "../player/useResumePlayback.ts";
+import { SourceMediaDialog } from "../subtitles/SourceMediaDialog.tsx";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
 import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
+import { useSourceMedia } from "../subtitles/useSourceMedia.ts";
 
 /**
  * The screen for watching or listening to one of the project's media files:
@@ -75,6 +79,11 @@ export function MediaScreen({
   const durationMs = useMediaDurationMs(projectId, mediaFile);
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
+  const source = mediaSourceOf(
+    mediaFile?.origin ?? null,
+    useListPluginsQuery().data?.plugins,
+  );
+  const sourceMedia = useSourceMedia(projectId, mediaFileId);
   // Found here alone and passed down, since it depends on the times observed before: a panel opened later shows the same cue.
   const shownCue = useShownCue(subtitles.cues, currentMs);
   const hasScreenshots = screenshotSource !== null;
@@ -221,109 +230,126 @@ export function MediaScreen({
     },
   });
   return (
-    <MediaView
-      ref={screenRef}
-      media={{ title: mediaFile?.name ?? "", projectName: settings.name }}
-      stage={
-        <TrackChoiceContext value={offerTrackChoice}>
-          <MediaPlayer projectId={projectId} />
-        </TrackChoiceContext>
-      }
-      playback={{
-        isPlaying: player.isPlaying,
-        currentMs,
-        durationMs,
-        buffered: player.buffered,
-        volume: player.volume,
-        isMuted: player.isMuted,
-        speed: player.speed,
-      }}
-      tracks={tracks}
-      cues={subtitles.cues}
-      translationCues={subtitles.translationCues}
-      shownCue={shownCue}
-      waveform={
-        <PlayerWaveform
-          projectId={projectId}
-          mediaFileId={mediaFileId}
-          cues={subtitles.cues}
-          flashcardSegments={flashcards.segments}
-          editableSegmentId={flashcards.editedSegmentId}
-          segmentHandlers={{
-            onOpenFlashcardSegment: flashcards.open,
-            onClipEndpointMoved: flashcards.moveClipEndpoint,
-            onScreenshotMarkerMoved: flashcards.moveScreenshot,
-          }}
+    <>
+      {sourceMedia.isOpen && source && (
+        <SourceMediaDialog
+          title={source.title}
+          form={sourceMedia.form}
+          isBusy={sourceMedia.isBusy}
+          error={sourceMedia.error}
+          onAction={sourceMedia.act}
+          onClose={sourceMedia.close}
         />
-      }
-      panels={shownPanels}
-      subtitleDisplay={panels.subtitleDisplay}
-      subtitleAppearance={subtitleAppearance}
-      isSubtitleAppearanceOpen={panels.isSubtitleAppearanceOpen}
-      onSubtitleAppearanceChange={(appearance) =>
-        dispatch(
-          actions.preferenceSet(
-            "subtitleAppearance",
-            JSON.stringify(appearance),
-          ),
-        )
-      }
-      onCloseSubtitleAppearance={() =>
-        dispatchPanels({ type: "subtitleAppearanceClosed" })
-      }
-      flashcardWordRanges={wordRanges}
-      playerCallbacks={playerCallbacks}
-      onBack={() => dispatch(actions.closeMedia())}
-      activeWord={lookup.activeWord}
-      cursor={lookup.cursor}
-      wordGestures={lookup.wordGestures}
-      onCueStep={cueSteps.step}
-      onLookup={lookup.openSearch}
-      onAddFlashcard={() => createFlashcard("", null, null)}
-      lookup={
-        lookup.popup && (
-          <AnchoredPopup {...lookup.popup.anchored}>
-            <DictionaryPopup {...lookup.popup.props} />
-          </AnchoredPopup>
-        )
-      }
-      sidePanel={
-        flashcards.edited !== null ? (
-          <FlashcardEditor
-            key={
-              flashcards.edited.kind === "new"
-                ? "new"
-                : flashcards.edited.flashcard.id
-            }
-            state={flashcards.edited.editor}
-            dispatch={flashcards.edit}
-            languages={languages}
-            waveform={clipWaveform}
-            screenshotUrl={screenshotUrl}
-            saveStatus={saveStatusOf(flashcards.edited.stage)}
-            isNew={flashcards.edited.kind === "new"}
-            isAwaitingLookup={isAwaitingLookup(flashcards.edited.stage)}
-            hasSaveFailed={flashcards.saveFailed}
-            onSave={flashcards.save}
-            onDelete={flashcards.remove}
-            onClose={flashcards.close}
+      )}
+      <MediaView
+        ref={screenRef}
+        media={{
+          title: mediaFile?.name ?? "",
+          projectName: settings.name,
+          source,
+        }}
+        stage={
+          <TrackChoiceContext value={offerTrackChoice}>
+            <MediaPlayer projectId={projectId} />
+          </TrackChoiceContext>
+        }
+        playback={{
+          isPlaying: player.isPlaying,
+          currentMs,
+          durationMs,
+          buffered: player.buffered,
+          volume: player.volume,
+          isMuted: player.isMuted,
+          speed: player.speed,
+        }}
+        tracks={tracks}
+        cues={subtitles.cues}
+        translationCues={subtitles.translationCues}
+        shownCue={shownCue}
+        waveform={
+          <PlayerWaveform
+            projectId={projectId}
+            mediaFileId={mediaFileId}
+            cues={subtitles.cues}
+            flashcardSegments={flashcards.segments}
+            editableSegmentId={flashcards.editedSegmentId}
+            segmentHandlers={{
+              onOpenFlashcardSegment: flashcards.open,
+              onClipEndpointMoved: flashcards.moveClipEndpoint,
+              onScreenshotMarkerMoved: flashcards.moveScreenshot,
+            }}
           />
-        ) : panels.cues ? (
-          <SubtitlesSidePanel
-            subtitles={subtitles}
-            tracks={tracks}
-            languages={languages}
-            shownCue={shownCue}
-            flashcardCueIndexes={flashcards.cueIndexes}
-            flashcardWordRanges={wordRanges}
-            activeWord={lookup.activeWord}
-            cursor={lookup.cursor}
-            wordGestures={lookup.wordGestures}
-            onOpenFlashcardForCue={flashcards.openForCue}
-            onVisibleCuesChange={setPanelSpan}
-          />
-        ) : undefined
-      }
-    />
+        }
+        panels={shownPanels}
+        subtitleDisplay={panels.subtitleDisplay}
+        subtitleAppearance={subtitleAppearance}
+        isSubtitleAppearanceOpen={panels.isSubtitleAppearanceOpen}
+        onSubtitleAppearanceChange={(appearance) =>
+          dispatch(
+            actions.preferenceSet(
+              "subtitleAppearance",
+              JSON.stringify(appearance),
+            ),
+          )
+        }
+        onCloseSubtitleAppearance={() =>
+          dispatchPanels({ type: "subtitleAppearanceClosed" })
+        }
+        flashcardWordRanges={wordRanges}
+        playerCallbacks={playerCallbacks}
+        onBack={() => dispatch(actions.closeMedia())}
+        onOpenSource={sourceMedia.open}
+        activeWord={lookup.activeWord}
+        cursor={lookup.cursor}
+        wordGestures={lookup.wordGestures}
+        onCueStep={cueSteps.step}
+        onLookup={lookup.openSearch}
+        onAddFlashcard={() => createFlashcard("", null, null)}
+        lookup={
+          lookup.popup && (
+            <AnchoredPopup {...lookup.popup.anchored}>
+              <DictionaryPopup {...lookup.popup.props} />
+            </AnchoredPopup>
+          )
+        }
+        sidePanel={
+          flashcards.edited !== null ? (
+            <FlashcardEditor
+              key={
+                flashcards.edited.kind === "new"
+                  ? "new"
+                  : flashcards.edited.flashcard.id
+              }
+              state={flashcards.edited.editor}
+              dispatch={flashcards.edit}
+              languages={languages}
+              waveform={clipWaveform}
+              screenshotUrl={screenshotUrl}
+              saveStatus={saveStatusOf(flashcards.edited.stage)}
+              isNew={flashcards.edited.kind === "new"}
+              isAwaitingLookup={isAwaitingLookup(flashcards.edited.stage)}
+              hasSaveFailed={flashcards.saveFailed}
+              onSave={flashcards.save}
+              onDelete={flashcards.remove}
+              onClose={flashcards.close}
+            />
+          ) : panels.cues ? (
+            <SubtitlesSidePanel
+              subtitles={subtitles}
+              tracks={tracks}
+              languages={languages}
+              shownCue={shownCue}
+              flashcardCueIndexes={flashcards.cueIndexes}
+              flashcardWordRanges={wordRanges}
+              activeWord={lookup.activeWord}
+              cursor={lookup.cursor}
+              wordGestures={lookup.wordGestures}
+              onOpenFlashcardForCue={flashcards.openForCue}
+              onVisibleCuesChange={setPanelSpan}
+            />
+          ) : undefined
+        }
+      />
+    </>
   );
 }
