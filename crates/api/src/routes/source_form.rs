@@ -17,7 +17,7 @@ use utoipa::ToSchema;
 use crate::auth::error_body::{ApiError, ApiFailure};
 use crate::plugins::{media_form, media_step};
 use crate::routes::media::load_media_file;
-use crate::routes::media_import::project_languages;
+use crate::routes::media_import::{load_project, project_languages};
 use crate::routes::plugins::{media_source_package, run_plugin_call};
 use crate::source_update::{SourceMedia, apply_media_update};
 use crate::state::AppState;
@@ -133,13 +133,7 @@ async fn load_source(
     project_id: ProjectId,
     media_id: MediaFileId,
 ) -> Result<SourceMedia, ApiFailure> {
-    let settings = {
-        let project_id = project_id.clone();
-        state
-            .with_storage(move |storage| storage.get_project(&project_id))
-            .await?
-            .settings
-    };
+    let settings = load_project(state, project_id.clone()).await?.settings;
     let media_file = load_media_file(state, project_id, media_id).await?;
     let origin = origin_of(&media_file)?.clone();
     let package = media_source_package(state, &origin.plugin)?;

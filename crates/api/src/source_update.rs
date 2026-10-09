@@ -12,7 +12,7 @@ use easyimmerse_plugins::{FetchRequest, MediaContext, MediaUpdate, PluginPackage
 
 use crate::auth::error_body::{ApiFailure, internal};
 use crate::fetched_subtitle_files::{SUBTITLES_DIR_PREFIX, remove_fetched_subtitle_file};
-use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles};
+use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles, store_fetched_tracks};
 use crate::plugins::{fetch_subtitles, fetched_item_dir};
 use crate::routes::plugins::{discard_output_dir, ensure_inside, media_dir, run_plugin_call};
 use crate::routes::source_form::SourceStepResponse;
@@ -85,21 +85,21 @@ async fn remove_held_tracks(
             Ok((held, sources))
         })
         .await?;
-    remove_fetched_files(state, &source.media_file, removed_sources).await;
+    remove_fetched_subtitle_files(state, &source.media_file, removed_sources).await;
     Ok(removed)
 }
 
 /// Deletes the files among `sources` that lie in the directory the media file was fetched
 /// into, leaving every other file alone.
-async fn remove_fetched_files(state: &AppState, media_file: &MediaFile, sources: Vec<TextSource>) {
+async fn remove_fetched_subtitle_files(
+    state: &AppState,
+    media_file: &MediaFile,
+    sources: Vec<TextSource>,
+) {
     let MediaFileSource::Path { path: media_path } = &media_file.source else {
         return;
     };
-    let item_dir = state
-        .media_dir
-        .as_deref()
-        .and_then(|media_dir| fetched_item_dir(media_dir, media_path));
-    let Some(item_dir) = item_dir else {
+    let Some(item_dir) = state.fetched_item_dir(media_path) else {
         return;
     };
     for source in sources {
@@ -180,14 +180,7 @@ async fn add_fetched_tracks(
     }
     state
         .with_storage(move |storage| {
-            let mut selection = taken;
-            for (track, role) in tracks {
-                let added = storage.add_subtitle_track(&media_id, &track)?;
-                if let Some(role) = role {
-                    selection = selection.with_role(role, added.id);
-                }
-            }
-            storage.set_subtitle_selection(&media_id, &selection)?;
+            store_fetched_tracks(storage, &media_id, tracks, taken)?;
             Ok(skipped)
         })
         .await

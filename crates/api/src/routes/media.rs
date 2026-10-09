@@ -14,7 +14,7 @@ use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::found_subtitle_tracks::add_found_subtitle_tracks;
 use crate::local_path::ensure_local_file_exists;
-use crate::plugins::fetched_item_dir;
+use crate::routes::plugins::discard_output_dir;
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -130,15 +130,8 @@ pub async fn remove_media_file(
 /// Deletes what a media-source plugin fetched for the media file, when it was added that
 /// way: the directory holding the file and its subtitles. A failure is only logged.
 async fn remove_fetched_files(state: &AppState, path: &str) {
-    let Some(item_dir) = state
-        .media_dir
-        .as_deref()
-        .and_then(|media_dir| fetched_item_dir(media_dir, path))
-    else {
-        return;
-    };
-    if let Err(error) = tokio::fs::remove_dir_all(&item_dir).await {
-        tracing::warn!("could not remove {}: {error}", item_dir.display());
+    if let Some(item_dir) = state.fetched_item_dir(path) {
+        discard_output_dir(&item_dir).await;
     }
 }
 

@@ -8,7 +8,7 @@ use crate::auth::error_body::{ApiFailure, internal};
 use crate::config::ApiConfig;
 use crate::import_jobs::ImportJobs;
 use crate::media_source_jobs::MediaSourceJobs;
-use crate::plugins::PluginRegistry;
+use crate::plugins::{PluginRegistry, fetched_item_dir};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -67,5 +67,11 @@ impl AppState {
             .await
             .map_err(|error| internal(format!("storage task failed: {error}")))?
             .map_err(ApiFailure::from)
+    }
+
+    /// The directory a media-source plugin fetched the file at `path` into, when it was
+    /// fetched into the media directory.
+    pub fn fetched_item_dir(&self, path: &str) -> Option<PathBuf> {
+        fetched_item_dir(self.media_dir.as_deref()?, path)
     }
 }

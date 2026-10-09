@@ -10,9 +10,9 @@ use std::time::Duration;
 use easyimmerse_plugin_api::base::easyimmerse::plugin::types::PluginError;
 
 use crate::grants::CapabilityGrants;
-use crate::host_state::DownloadLimits;
 use crate::imports::http::{agent, check_host, check_status, to_io_error};
 use crate::imports::to_guest_error;
+use crate::limits::DownloadLimits;
 
 const CHUNK_BYTES: usize = 64 * 1024;
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);

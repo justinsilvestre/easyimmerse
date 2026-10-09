@@ -2,17 +2,35 @@
 
 use std::path::Path;
 
+use easyimmerse_core::media_file::MediaFileId;
 use easyimmerse_core::project::ProjectSettings;
 use easyimmerse_core::providers::media_source::{ResolvedSubtitle, SkippedSubtitle};
 use easyimmerse_core::subtitle_track::{SubtitleRole, SubtitleSelection, SubtitleTrackId};
 use easyimmerse_core::text_source::TextSource;
 use easyimmerse_core::timed_text::{detect_format, parse_timed_text};
-use easyimmerse_storage::NewSubtitleTrack;
+use easyimmerse_storage::{NewSubtitleTrack, Storage, StorageError};
 
 /// The tracks to add, each with the role it takes, and the tracks asked for that were not.
 pub(crate) struct FetchedTracks {
     pub tracks: Vec<(NewSubtitleTrack, Option<SubtitleRole>)>,
     pub skipped: Vec<SkippedSubtitle>,
+}
+
+/// Adds `tracks` to the media file, giving each its role on top of `selection`,
+/// and saves the resulting selection.
+pub(crate) fn store_fetched_tracks(
+    storage: &Storage,
+    media_id: &MediaFileId,
+    tracks: Vec<(NewSubtitleTrack, Option<SubtitleRole>)>,
+    mut selection: SubtitleSelection,
+) -> Result<(), StorageError> {
+    for (track, role) in tracks {
+        let added = storage.add_subtitle_track(media_id, &track)?;
+        if let Some(role) = role {
+            selection = selection.with_role(role, added.id);
+        }
+    }
+    storage.set_subtitle_selection(media_id, &selection)
 }
 
 /// Parses each subtitle file once, as adding a subtitle track by hand does, and gives the

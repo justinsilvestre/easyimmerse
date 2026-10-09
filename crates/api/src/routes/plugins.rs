@@ -17,7 +17,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
-use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles};
+use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles, store_fetched_tracks};
 use crate::media_source_jobs::{MediaSourceJob, MediaSourceJobId, output_dir_for};
 use crate::plugins::run_import;
 use crate::state::AppState;
@@ -287,14 +287,12 @@ async fn fetch_and_store(
             let mut media_file = storage.add_media_file(&project_id, &name, &source)?;
             storage.set_media_file_origin(&media_file.id, &origin)?;
             media_file.origin = Some(origin);
-            let mut selection = SubtitleSelection::default();
-            for (track, role) in tracks {
-                let added = storage.add_subtitle_track(&media_file.id, &track)?;
-                if let Some(role) = role {
-                    selection = selection.with_role(role, added.id);
-                }
-            }
-            storage.set_subtitle_selection(&media_file.id, &selection)?;
+            store_fetched_tracks(
+                storage,
+                &media_file.id,
+                tracks,
+                SubtitleSelection::default(),
+            )?;
             Ok((media_file, skipped))
         })
         .await
