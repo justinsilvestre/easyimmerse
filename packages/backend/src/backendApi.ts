@@ -408,7 +408,8 @@ export const backendApi = createApi({
     }),
     /**
      * Sends an action of a media file's source form. The plugin answers with the next form, or the server applies its changes.
-     * A failure may come after some changes were made, so it refreshes the media file's tracks as well.
+     * Applied changes come with the media file's tracks, which replace the cached ones.
+     * A failure may come after some changes were made, so it refreshes the media file's tracks.
      */
     submitSourceStep: build.mutation<SourceStepResponse, SourceStepArgs>({
       query: ({ request, ...args }) => ({
@@ -416,8 +417,26 @@ export const backendApi = createApi({
         path: `${mediaFilePath(args)}/source-step`,
         body: { kind: "json", value: request },
       }),
-      invalidatesTags: (result, _error, args) =>
-        result?.kind === "form" ? [] : subtitleTracksTag(args),
+      async onQueryStarted(
+        { projectId, mediaFileId },
+        { dispatch, queryFulfilled },
+      ) {
+        const answer = await queryFulfilled.then(
+          ({ data }) => data,
+          () => undefined,
+        );
+        if (answer?.kind !== "applied") return;
+        const { tracks, selection } = answer;
+        dispatch(
+          backendApi.util.updateQueryData(
+            "listSubtitleTracks",
+            { projectId, mediaFileId },
+            () => ({ tracks, selection }),
+          ),
+        );
+      },
+      invalidatesTags: (_result, error, args) =>
+        error === undefined ? [] : subtitleTracksTag(args),
     }),
     addSubtitleTrack: build.mutation<SubtitleTrack, AddSubtitleTrackArgs>({
       query: ({ request, ...args }) => ({
