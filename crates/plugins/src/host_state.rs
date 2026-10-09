@@ -4,7 +4,7 @@ use wasmtime::component::ResourceTable;
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView};
 
 use crate::grants::CapabilityGrants;
-use crate::limits::HostLimits;
+use crate::limits::{FreeSpaceLookup, HostLimits};
 
 /// Everything the host keeps for one plugin instance: the WASI context, the
 /// resource limits, the capability grants, what the plugin has reported, and the
@@ -25,6 +25,8 @@ pub struct HostState {
 pub struct DownloadLimits {
     pub reserve_bytes: u64,
     pub stall_timeout: std::time::Duration,
+    pub space_check_interval_bytes: u64,
+    pub free_space: FreeSpaceLookup,
 }
 
 impl From<&HostLimits> for DownloadLimits {
@@ -32,6 +34,8 @@ impl From<&HostLimits> for DownloadLimits {
         Self {
             reserve_bytes: limits.download_reserve_bytes,
             stall_timeout: limits.download_stall_timeout,
+            space_check_interval_bytes: limits.download_space_check_interval_bytes,
+            free_space: limits.download_free_space,
         }
     }
 }

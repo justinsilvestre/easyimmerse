@@ -16,8 +16,6 @@ use crate::imports::http::{agent, check_host, check_status, to_io_error};
 use crate::imports::to_guest_error;
 
 const CHUNK_BYTES: usize = 64 * 1024;
-/// How many bytes are written between two looks at the volume's free space.
-const SPACE_CHECK_INTERVAL_BYTES: u64 = 8 * 1024 * 1024;
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 type Chunk = std::io::Result<Vec<u8>>;
@@ -40,7 +38,7 @@ pub fn download(
         .map_err(|error| request_error(error, limits.stall_timeout))?;
     check_status(url, response.status().as_u16())?;
     let announced_bytes = response.body().content_length();
-    check_space_before(&destination, announced_bytes, limits.reserve_bytes)?;
+    check_space_before(&destination, announced_bytes, limits)?;
     let body = response.into_body().into_reader();
     let temp = temp_path_beside(&destination);
     let written = stream_to_file(body, &temp, limits);
@@ -75,19 +73,21 @@ fn rename_into_place(temp: &Path, destination: &Path, bytes: u64) -> Result<u64,
 fn check_space_before(
     destination: &Path,
     announced_bytes: Option<u64>,
-    reserve_bytes: u64,
+    limits: DownloadLimits,
 ) -> Result<(), PluginError> {
-    let available = available_space(destination)?;
-    let needed = announced_bytes.unwrap_or(0).saturating_add(reserve_bytes);
+    let available = available_space(destination, limits)?;
+    let needed = announced_bytes
+        .unwrap_or(0)
+        .saturating_add(limits.reserve_bytes);
     if available < needed {
         return Err(not_enough_space(available, needed));
     }
     Ok(())
 }
 
-fn available_space(destination: &Path) -> Result<u64, PluginError> {
+fn available_space(destination: &Path, limits: DownloadLimits) -> Result<u64, PluginError> {
     let directory = destination.parent().unwrap_or(destination);
-    fs4::available_space(directory).map_err(to_io_error)
+    (limits.free_space)(directory).map_err(to_io_error)
 }
 
 fn not_enough_space(available: u64, needed: u64) -> PluginError {
@@ -124,9 +124,9 @@ fn stream_to_file(
         }
         file.write_all(&chunk).map_err(to_io_error)?;
         written += chunk.len() as u64;
-        if written - last_checked >= SPACE_CHECK_INTERVAL_BYTES {
+        if written - last_checked >= limits.space_check_interval_bytes {
             last_checked = written;
-            check_space_while(temp, limits.reserve_bytes)?;
+            check_space_while(temp, limits)?;
         }
     }
 }
@@ -169,10 +169,10 @@ fn next_chunk(chunks: &Receiver<Chunk>, stall_timeout: Duration) -> Result<Vec<u
 }
 
 /// Aborts once the bytes written so far have used up the reserve.
-fn check_space_while(temp: &Path, reserve_bytes: u64) -> Result<(), PluginError> {
-    let available = available_space(temp)?;
-    if available < reserve_bytes {
-        return Err(not_enough_space(available, reserve_bytes));
+fn check_space_while(temp: &Path, limits: DownloadLimits) -> Result<(), PluginError> {
+    let available = available_space(temp, limits)?;
+    if available < limits.reserve_bytes {
+        return Err(not_enough_space(available, limits.reserve_bytes));
     }
     Ok(())
 }

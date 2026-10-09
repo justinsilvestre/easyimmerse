@@ -103,8 +103,6 @@ fn writes_no_file_for_a_missing_resource() {
     assert!(!Path::new(&path).exists());
 }
 
-const MEBIBYTE: u64 = 1024 * 1024;
-
 fn download_with_limits(
     fixture: &Fixture,
     limits: HostLimits,
@@ -180,8 +178,41 @@ impl Read for StallingBody {
     }
 }
 
-fn available_bytes(fixture: &Fixture) -> u64 {
-    fs4::available_space(fixture.output_dir.path()).expect("read the free space")
+const BODY_BYTES: u64 = 10_000;
+const FREE_SPACE_BUDGET_BYTES: u64 = 100_000;
+
+/// Reports a fixed amount, below the default reserve.
+fn little_free_space(_directory: &Path) -> std::io::Result<u64> {
+    Ok(1_000)
+}
+
+/// Reports a budget that shrinks tenfold faster than the files in the directory grow.
+fn shrinking_free_space(directory: &Path) -> std::io::Result<u64> {
+    let mut used = 0;
+    for entry in std::fs::read_dir(directory)? {
+        used += entry?.metadata()?.len();
+    }
+    Ok(FREE_SPACE_BUDGET_BYTES.saturating_sub(used * 10))
+}
+
+fn shrinking_space_limits() -> HostLimits {
+    HostLimits {
+        download_reserve_bytes: 80_000,
+        download_space_check_interval_bytes: 4_096,
+        download_free_space: shrinking_free_space,
+        ..HostLimits::default()
+    }
+}
+
+fn little_space_limits() -> HostLimits {
+    HostLimits {
+        download_free_space: little_free_space,
+        ..HostLimits::default()
+    }
+}
+
+fn serve_small_body() -> StreamServer {
+    serve_streams(|| Box::new(std::io::repeat(0).take(BODY_BYTES)))
 }
 
 #[test]
@@ -199,10 +230,7 @@ fn leaves_only_the_finished_file_in_the_dir() {
 #[test]
 fn refuses_a_download_that_would_leave_less_than_the_reserve_free() {
     let fixture = Fixture::start();
-    let limits = HostLimits {
-        download_reserve_bytes: u64::MAX / 2,
-        ..HostLimits::default()
-    };
+    let limits = little_space_limits();
     let outcome = download_with_limits(
         &fixture,
         limits,
@@ -215,10 +243,7 @@ fn refuses_a_download_that_would_leave_less_than_the_reserve_free() {
 #[test]
 fn leaves_no_file_behind_when_the_reserve_refuses_a_download() {
     let fixture = Fixture::start();
-    let limits = HostLimits {
-        download_reserve_bytes: u64::MAX / 2,
-        ..HostLimits::default()
-    };
+    let limits = little_space_limits();
     let _ = download_with_limits(
         &fixture,
         limits,
@@ -231,11 +256,8 @@ fn leaves_no_file_behind_when_the_reserve_refuses_a_download() {
 #[test]
 fn stops_a_download_that_outgrows_the_reserve_while_streaming() {
     let fixture = Fixture::start();
-    let server = serve_streams(|| Box::new(std::io::repeat(0).take(64 * MEBIBYTE)));
-    let limits = HostLimits {
-        download_reserve_bytes: available_bytes(&fixture) - 16 * MEBIBYTE,
-        ..HostLimits::default()
-    };
+    let server = serve_small_body();
+    let limits = shrinking_space_limits();
     let outcome = download_with_limits(
         &fixture,
         limits,
@@ -248,11 +270,8 @@ fn stops_a_download_that_outgrows_the_reserve_while_streaming() {
 #[test]
 fn removes_the_partial_file_when_the_reserve_stops_a_download() {
     let fixture = Fixture::start();
-    let server = serve_streams(|| Box::new(std::io::repeat(0).take(64 * MEBIBYTE)));
-    let limits = HostLimits {
-        download_reserve_bytes: available_bytes(&fixture) - 16 * MEBIBYTE,
-        ..HostLimits::default()
-    };
+    let server = serve_small_body();
+    let limits = shrinking_space_limits();
     let _ = download_with_limits(
         &fixture,
         limits,
