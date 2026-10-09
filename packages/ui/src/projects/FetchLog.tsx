@@ -2,6 +2,7 @@ import type { MediaSourceLogLine } from "@easyimmerse/types";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../components/Button.tsx";
+import { copyTextToClipboard } from "./copyTextToClipboard.ts";
 
 /** How long the copy button confirms a copy before reading "Copy" again. */
 const COPIED_MS = 2000;
@@ -55,9 +56,7 @@ function CopyLogButton({ lines }: { lines: readonly MediaSourceLogLine[] }) {
     return () => clearTimeout(timeout);
   }, [isCopied]);
   const copy = () => {
-    void navigator.clipboard
-      .writeText(formatLog(lines))
-      .then(() => setIsCopied(true));
+    void copyTextToClipboard(formatLog(lines)).then(() => setIsCopied(true));
   };
   return (
     <Button
