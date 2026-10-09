@@ -788,6 +788,48 @@ async fn a_source_step_keeps_the_file_of_a_track_outside_the_media_dir() {
     assert!(file.is_file());
 }
 
+impl Fixture {
+    async fn delete_track(&self, media_file: &Value, track_id: &str) {
+        let path = format!(
+            "/projects/{PROJECT}/media/{}/subtitles/{track_id}",
+            media_id(media_file)
+        );
+        self.server.delete(&path).await;
+    }
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn deleting_a_track_deletes_the_file_fetched_with_the_media() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add().await;
+    let track_id = fixture.subtitle_tracks(&added).await["tracks"][0]["id"].clone();
+    fixture
+        .delete_track(&added, track_id.as_str().unwrap())
+        .await;
+    assert!(!item_dir(&added).join("subtitles.srt").exists());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn deleting_a_track_keeps_a_file_outside_the_fetched_item_dir() {
+    let fixture = Fixture::start(true).await;
+    let added = fixture.add_with_subtitles(&[]).await;
+    let elsewhere = TempDir::new().expect("a directory outside the media directory");
+    let file = elsewhere.path().join("sample.srt");
+    std::fs::copy(fixture_path("sample.srt"), &file).expect("copy the subtitles");
+    let track = fixture
+        .server
+        .post_json(
+            &format!("/projects/{PROJECT}/media/{}/subtitles", media_id(&added)),
+            &json!({ "name": "sample.srt", "source": { "kind": "path", "path": file }, "format": null, "role": null }),
+        )
+        .await
+        .json();
+    fixture
+        .delete_track(&added, track["id"].as_str().unwrap())
+        .await;
+    assert!(file.is_file());
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn a_source_step_whose_fetch_fails_leaves_no_subtitles_dir() {
     let fixture = Fixture::start(false).await;

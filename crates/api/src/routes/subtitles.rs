@@ -15,6 +15,7 @@ use easyimmerse_storage::NewSubtitleTrack;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
+use crate::fetched_subtitle_files::remove_subtitle_tracks;
 use crate::local_path::resolve_local_text;
 use crate::routes::media::load_media_file;
 use crate::state::AppState;
@@ -139,10 +140,9 @@ pub async fn remove_subtitle_track(
     State(state): State<AppState>,
     Path((project_id, media_id, track_id)): Path<(ProjectId, MediaFileId, SubtitleTrackId)>,
 ) -> Result<StatusCode, ApiFailure> {
+    let media_file = load_media_file(&state, project_id.clone(), media_id.clone()).await?;
     load_subtitle_track(&state, project_id, media_id, track_id.clone()).await?;
-    state
-        .with_storage(move |storage| storage.remove_subtitle_track(&track_id))
-        .await?;
+    remove_subtitle_tracks(&state, &media_file, &[track_id]).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

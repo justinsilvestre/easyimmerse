@@ -7,11 +7,10 @@ use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_core::project::ProjectSettings;
 use easyimmerse_core::providers::media_source::{ResolvedSubtitle, SkippedSubtitle};
 use easyimmerse_core::subtitle_track::SubtitleTrackId;
-use easyimmerse_core::text_source::TextSource;
 use easyimmerse_plugins::{FetchRequest, MediaContext, MediaUpdate, PluginPackage};
 
 use crate::auth::error_body::{ApiFailure, internal};
-use crate::fetched_subtitle_files::{SUBTITLES_DIR_PREFIX, remove_fetched_subtitle_file};
+use crate::fetched_subtitle_files::{SUBTITLES_DIR_PREFIX, remove_subtitle_tracks};
 use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles, store_fetched_tracks};
 use crate::plugins::{fetch_subtitles, fetched_item_dir};
 use crate::routes::plugins::{discard_output_dir, ensure_inside, media_dir, run_plugin_call};
@@ -75,38 +74,8 @@ async fn remove_held_tracks(
         .filter(|id| source.context.subtitles.iter().any(|held| &held.id == id))
         .map(SubtitleTrackId)
         .collect();
-    let (removed, removed_sources) = state
-        .with_storage(move |storage| {
-            let mut sources = Vec::new();
-            for id in &held {
-                sources.push(storage.get_subtitle_track(id)?.source);
-                storage.remove_subtitle_track(id)?;
-            }
-            Ok((held, sources))
-        })
-        .await?;
-    remove_fetched_subtitle_files(state, &source.media_file, removed_sources).await;
-    Ok(removed)
-}
-
-/// Deletes the files among `sources` that lie in the directory the media file was fetched
-/// into, leaving every other file alone.
-async fn remove_fetched_subtitle_files(
-    state: &AppState,
-    media_file: &MediaFile,
-    sources: Vec<TextSource>,
-) {
-    let MediaFileSource::Path { path: media_path } = &media_file.source else {
-        return;
-    };
-    let Some(item_dir) = state.fetched_item_dir(media_path) else {
-        return;
-    };
-    for source in sources {
-        if let TextSource::Path { path } = source {
-            remove_fetched_subtitle_file(&item_dir, Path::new(media_path), &path).await;
-        }
-    }
+    remove_subtitle_tracks(state, &source.media_file, &held).await?;
+    Ok(held)
 }
 
 /// Fetches the tracks the plugin asks for into a fresh directory beside the media file,
