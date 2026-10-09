@@ -14,7 +14,7 @@ export {
   useGetMediaSourceJobQuery,
   useGetMediaTracksQuery,
   useGetProjectQuery,
-  useGetSourceFormQuery,
+  useGetSourceFormMutation,
   useGetSubtitleCuesQuery,
   useImportDictionaryMutation,
   useImportLocalDictionaryMutation,

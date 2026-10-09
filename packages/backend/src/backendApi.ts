@@ -396,13 +396,15 @@ export const backendApi = createApi({
       }),
       providesTags: (_result, _error, args) => subtitleTracksTag(args),
     }),
-    /** The first form of the media interface of the plugin a media file was imported through. */
-    getSourceForm: build.query<PluginForm, MediaFileArgs>({
+    /**
+     * Asks the plugin a media file was imported through for the first form of its media interface.
+     * The answer is not cached, since the plugin may offer something different each time.
+     */
+    getSourceForm: build.mutation<PluginForm, MediaFileArgs>({
       query: (args) => ({
         method: "GET",
         path: `${mediaFilePath(args)}/source-form`,
       }),
-      keepUnusedDataFor: 0,
     }),
     /**
      * Sends an action of a media file's source form. The plugin answers with the next form, or the server applies its changes.
@@ -633,7 +635,7 @@ export const {
   useLazyGetWaveformWindowQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
-  useGetSourceFormQuery,
+  useGetSourceFormMutation,
   useSubmitSourceStepMutation,
   useAddSubtitleTrackMutation,
   useGetSubtitleCuesQuery,

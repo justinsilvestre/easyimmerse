@@ -25,7 +25,10 @@ import {
 } from "../player/browserFrameCapturer.ts";
 import type { FrameSource } from "../player/captureVideoFrame.ts";
 import { FrameCapturerContext } from "../player/frameCapturerContext.ts";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  fakeFailure,
+} from "../testSupport/createFakeBackendClient.ts";
 import { createFakeFrameCapturer } from "../testSupport/createFakeFrameCapturer.ts";
 import { doubleClick } from "../testSupport/doubleClick.ts";
 import {
@@ -828,6 +831,55 @@ describe("MediaScreen", () => {
         await new Promise((resolve) => setTimeout(resolve, 20));
       });
       expect(screen.queryByRole("dialog")).not.toBeNull();
+    });
+
+    it("asks the plugin for its form once when opened", async () => {
+      const { client } = renderImported();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Video site" }),
+      );
+      await screen.findByLabelText("English (automatic)");
+      await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
+      expect(
+        requestsTo(client.requests, "GET", "/projects/p1/media/m1/source-form"),
+      ).toHaveLength(1);
+    });
+
+    it("shows no form from an earlier opening while asking the plugin again", async () => {
+      const later = Promise.withResolvers<PluginForm>();
+      const forms = [fetchForm, later.promise];
+      renderMediaScreen({
+        responses: {
+          "GET /plugins": { plugins: [fixtureMediaSourcePlugin] },
+          "GET /projects/p1/media": fixtureImportedMediaFiles,
+          "GET /projects/p1/media/m1/source-form": () => forms.shift(),
+        },
+      });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Video site" }),
+      );
+      await screen.findByLabelText("English (automatic)");
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      fireEvent.click(screen.getByRole("button", { name: "Video site" }));
+      await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
+      expect(screen.queryByLabelText("English (automatic)")).toBeNull();
+    });
+
+    it("tells why the plugin's form could not load", async () => {
+      renderMediaScreen({
+        responses: {
+          "GET /plugins": { plugins: [fixtureMediaSourcePlugin] },
+          "GET /projects/p1/media": fixtureImportedMediaFiles,
+          "GET /projects/p1/media/m1/source-form": fakeFailure({
+            status: 502,
+            message: "The plugin stopped.",
+          }),
+        },
+      });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Video site" }),
+      );
+      expect(await screen.findByText(/The plugin stopped/)).toBeDefined();
     });
 
     it("shows the next form the plugin answers with", async () => {
