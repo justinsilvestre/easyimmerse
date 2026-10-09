@@ -346,6 +346,18 @@ describe("ProjectScreen", () => {
     );
   });
 
+  it("stops asking about the fetch once it has failed", async () => {
+    const { client } = renderImport({ status: "failed" });
+    await startImport();
+    const jobRequestCount = () =>
+      pathsOf(client.requests, "GET").filter(
+        (path) => path === "/projects/p1/media/from-source/j1",
+      ).length;
+    await vi.waitFor(() => expect(jobRequestCount()).toBe(1));
+    await new Promise((resolve) => setTimeout(resolve, 2200));
+    expect(jobRequestCount()).toBe(1);
+  }, 10_000);
+
   it("ignores a form that arrives after its dialog was closed", async () => {
     const stale = Promise.withResolvers<PluginForm>();
     const formsAsked = { count: 0 };

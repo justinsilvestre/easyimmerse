@@ -6,7 +6,7 @@ import {
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { FormInput, MediaSourceJob, PluginForm } from "@easyimmerse/types";
-import { type Dispatch, useEffect, useReducer } from "react";
+import { type Dispatch, useEffect, useReducer, useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { failureMessage } from "../plugins/failureMessage.ts";
 import {
@@ -76,16 +76,20 @@ export function useImportMedia(projectId: string) {
   };
 }
 
-/** The job with `jobId`, polled until it finishes, or null while there is none. */
+/** The job with `jobId`, polled while it runs, or null while there is none. */
 function useWatchedJob(
   projectId: string,
   jobId: string | null,
 ): MediaSourceJob | null {
+  const [isRunning, setIsRunning] = useState(true);
   const { data } = useGetMediaSourceJobQuery(
     jobId === null ? skipToken : { projectId, jobId },
-    { pollingInterval: JOB_POLLING_INTERVAL_MS },
+    { pollingInterval: isRunning ? JOB_POLLING_INTERVAL_MS : 0 },
   );
-  return data !== undefined && data.id === jobId ? data : null;
+  const job = data !== undefined && data.id === jobId ? data : null;
+  const isJobRunning = job === null || job.status === "running";
+  if (isJobRunning !== isRunning) setIsRunning(isJobRunning);
+  return job;
 }
 
 /** Once the job is done, closes the dialog, opens the added media file, and tells of any skipped subtitles. */
