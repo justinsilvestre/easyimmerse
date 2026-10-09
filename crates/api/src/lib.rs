@@ -16,6 +16,7 @@ pub mod lookup;
 pub mod media_source_jobs;
 mod plugin_compile_cache;
 pub mod plugins;
+mod referenced_paths;
 pub mod router;
 pub mod routes;
 pub mod serve;

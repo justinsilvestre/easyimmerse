@@ -3703,7 +3703,7 @@
         ],
         "responses": {
           "204": {
-            "description": "The track was removed"
+            "description": "The track was removed, together with the file a media-source plugin fetched for it unless a media file or another track still refers to that file"
           },
           "401": {
             "description": "Missing or invalid token",

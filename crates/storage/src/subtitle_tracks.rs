@@ -88,6 +88,18 @@ pub fn remove_subtitle_track(conn: &Connection, id: &SubtitleTrackId) -> Result<
     Ok(())
 }
 
+/// Lists every distinct local path that the `path` source of some subtitle track names.
+pub fn list_subtitle_source_paths(conn: &Connection) -> Result<Vec<String>, StorageError> {
+    let mut statement = conn.prepare(
+        "SELECT DISTINCT json_extract(source_json, '$.path') FROM subtitle_tracks \
+         WHERE json_extract(source_json, '$.kind') = 'path' ORDER BY 1",
+    )?;
+    let paths = statement
+        .query_map([], |row| row.get(0))?
+        .collect::<Result<_, _>>()?;
+    Ok(paths)
+}
+
 pub fn get_subtitle_selection(
     conn: &Connection,
     media_file_id: &MediaFileId,
@@ -329,6 +341,24 @@ mod tests {
             result,
             Err(StorageError::SubtitleTrackNotFound(_))
         ));
+    }
+
+    #[test]
+    fn lists_each_path_source_once() {
+        let (storage, media) = storage_with_media();
+        let path_track = NewSubtitleTrack {
+            source: TextSource::Path {
+                path: "/a.srt".to_string(),
+            },
+            ..new_track("a.srt")
+        };
+        for track in [&path_track, &path_track, &new_track("inline")] {
+            storage.add_subtitle_track(&media, track).unwrap();
+        }
+        assert_eq!(
+            storage.list_subtitle_source_paths().unwrap(),
+            vec!["/a.srt".to_string()]
+        );
     }
 
     #[test]

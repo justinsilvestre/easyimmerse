@@ -14,6 +14,7 @@ use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::found_subtitle_tracks::add_found_subtitle_tracks;
 use crate::local_path::ensure_local_file_exists;
+use crate::referenced_paths::{canonicalize_paths, list_referenced_paths};
 use crate::routes::plugins::discard_output_dir;
 use crate::state::AppState;
 
@@ -117,20 +118,32 @@ pub async fn remove_media_file(
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
 ) -> Result<StatusCode, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id.clone()).await?;
-    state
-        .with_storage(move |storage| storage.remove_media_file(&media_id))
+    let referenced = state
+        .with_storage(move |storage| {
+            storage.remove_media_file(&media_id)?;
+            list_referenced_paths(storage)
+        })
         .await?;
     if let MediaFileSource::Path { path } = media_file.source {
-        remove_fetched_files(&state, &path).await;
+        if media_file.origin.is_some() {
+            remove_fetched_files(&state, &path, &referenced).await;
+        }
         remove_unreferenced_conversions(&state, vec![path]).await?;
     }
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Deletes what a media-source plugin fetched for the media file, when it was added that
-/// way: the directory holding the file and its subtitles. A failure is only logged.
-async fn remove_fetched_files(state: &AppState, path: &str) {
-    if let Some(item_dir) = state.fetched_item_dir(path) {
+/// Deletes the directory a media-source plugin fetched the media file at `path` into, with
+/// its subtitles, unless one of the `referenced` paths still lies inside it.
+/// A failure is only logged.
+async fn remove_fetched_files(state: &AppState, path: &str, referenced: &[String]) {
+    let Some(item_dir) = state.fetched_item_dir(path) else {
+        return;
+    };
+    let is_in_use = canonicalize_paths(referenced)
+        .iter()
+        .any(|referenced| referenced.starts_with(&item_dir));
+    if !is_in_use {
         discard_output_dir(&item_dir).await;
     }
 }

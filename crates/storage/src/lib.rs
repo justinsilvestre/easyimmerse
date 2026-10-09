@@ -213,6 +213,10 @@ impl Storage {
         self.write(|conn| subtitle_tracks::remove_subtitle_track(conn, id))
     }
 
+    pub fn list_subtitle_source_paths(&self) -> Result<Vec<String>, StorageError> {
+        self.read(subtitle_tracks::list_subtitle_source_paths)
+    }
+
     pub fn get_subtitle_selection(
         &self,
         media_file_id: &MediaFileId,

@@ -4565,7 +4565,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The track was removed */
+            /** @description The track was removed, together with the file a media-source plugin fetched for it unless a media file or another track still refers to that file */
             204: {
                 headers: {
                     [name: string]: unknown;

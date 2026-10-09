@@ -130,7 +130,7 @@ pub async fn store_subtitle_track(
         ("track_id" = String, Path, description = "The subtitle track id"),
     ),
     responses(
-        (status = 204, description = "The track was removed"),
+        (status = 204, description = "The track was removed, together with the file a media-source plugin fetched for it unless a media file or another track still refers to that file"),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such track on the media file", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),

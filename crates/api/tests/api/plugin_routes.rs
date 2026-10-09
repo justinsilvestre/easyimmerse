@@ -774,14 +774,7 @@ async fn a_source_step_keeps_the_file_of_a_track_outside_the_media_dir() {
     let elsewhere = TempDir::new().expect("a directory outside the media directory");
     let file = elsewhere.path().join("sample.srt");
     std::fs::copy(fixture_path("sample.srt"), &file).expect("copy the subtitles");
-    let track = fixture
-        .server
-        .post_json(
-            &format!("/projects/{PROJECT}/media/{}/subtitles", media_id(&added)),
-            &json!({ "name": "sample.srt", "source": { "kind": "path", "path": file }, "format": null, "role": null }),
-        )
-        .await
-        .json();
+    let track = fixture.add_path_track(&added, &file).await;
     fixture
         .apply(&added, &[], &[track["id"].as_str().unwrap()])
         .await;
@@ -794,8 +787,75 @@ impl Fixture {
             "/projects/{PROJECT}/media/{}/subtitles/{track_id}",
             media_id(media_file)
         );
-        self.server.delete(&path).await;
+        let response = self.server.delete(&path).await;
+        assert_eq!(response.status, 204, "{}", response.text());
     }
+
+    /// Adds a track to `media_file` that reads the subtitles file at `path`, and returns it.
+    async fn add_path_track(&self, media_file: &Value, path: &Path) -> Value {
+        let response = self
+            .server
+            .post_json(
+                &format!("/projects/{PROJECT}/media/{}/subtitles", media_id(media_file)),
+                &json!({ "name": "sample.srt", "source": { "kind": "path", "path": path }, "format": null, "role": null }),
+            )
+            .await;
+        assert_eq!(response.status, 201, "{}", response.text());
+        response.json()
+    }
+
+    /// Adds a second media file to the project that points at the file of `media_file`.
+    async fn add_media_at_same_path(&self, media_file: &Value) {
+        let response = self
+            .server
+            .post_json(
+                &format!("/projects/{PROJECT}/media"),
+                &json!({ "name": "copy", "source": media_file["source"] }),
+            )
+            .await;
+        assert_eq!(response.status, 201, "{}", response.text());
+    }
+
+    async fn first_track_id(&self, media_file: &Value) -> String {
+        let tracks = self.subtitle_tracks(media_file).await;
+        tracks["tracks"][0]["id"]
+            .as_str()
+            .expect("a track id")
+            .to_string()
+    }
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn deleting_a_track_keeps_the_media_file() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add().await;
+    let track_id = fixture.first_track_id(&added).await;
+    fixture.delete_track(&added, &track_id).await;
+    assert!(Path::new(added["source"]["path"].as_str().unwrap()).is_file());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn deleting_a_track_keeps_a_fetched_file_another_track_refers_to() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add().await;
+    let track_id = fixture.first_track_id(&added).await;
+    let file = item_dir(&added).join("subtitles.srt");
+    fixture.add_path_track(&added, &file).await;
+    fixture.delete_track(&added, &track_id).await;
+    assert!(file.is_file());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn removing_a_media_file_keeps_a_fetched_dir_another_media_file_refers_to() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add().await;
+    fixture.add_media_at_same_path(&added).await;
+    let response = fixture
+        .server
+        .delete(&format!("/projects/{PROJECT}/media/{}", media_id(&added)))
+        .await;
+    assert_eq!(response.status, 204, "{}", response.text());
+    assert!(item_dir(&added).is_dir());
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -816,14 +876,7 @@ async fn deleting_a_track_keeps_a_file_outside_the_fetched_item_dir() {
     let elsewhere = TempDir::new().expect("a directory outside the media directory");
     let file = elsewhere.path().join("sample.srt");
     std::fs::copy(fixture_path("sample.srt"), &file).expect("copy the subtitles");
-    let track = fixture
-        .server
-        .post_json(
-            &format!("/projects/{PROJECT}/media/{}/subtitles", media_id(&added)),
-            &json!({ "name": "sample.srt", "source": { "kind": "path", "path": file }, "format": null, "role": null }),
-        )
-        .await
-        .json();
+    let track = fixture.add_path_track(&added, &file).await;
     fixture
         .delete_track(&added, track["id"].as_str().unwrap())
         .await;
