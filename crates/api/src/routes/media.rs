@@ -14,7 +14,6 @@ use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::found_subtitle_tracks::add_found_subtitle_tracks;
 use crate::local_path::resolve_local_file;
-use crate::referenced_paths::{canonicalize_paths, list_referenced_paths};
 use crate::routes::plugins::discard_output_dir;
 use crate::state::AppState;
 
@@ -131,34 +130,26 @@ pub async fn remove_media_file(
     Path((project_id, media_id)): Path<(ProjectId, MediaFileId)>,
 ) -> Result<StatusCode, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id.clone()).await?;
-    let referenced = state
+    let item_dir = state.fetched_item_dir(&media_file);
+    let dir = item_dir.clone();
+    let is_dir_in_use = state
         .with_storage(move |storage| {
             storage.remove_media_file(&media_id)?;
-            list_referenced_paths(storage)
+            match &dir {
+                Some(dir) => storage.is_path_referenced_inside(&dir.to_string_lossy()),
+                None => Ok(false),
+            }
         })
         .await?;
+    // The directory a plugin fetched the media into goes with it, unless something else
+    // still refers to a file inside.
+    if let Some(dir) = item_dir.filter(|_| !is_dir_in_use) {
+        discard_output_dir(&dir).await;
+    }
     if let MediaFileSource::Path { path } = media_file.source {
-        if media_file.origin.is_some() {
-            remove_fetched_files(&state, &path, &referenced).await;
-        }
         remove_unreferenced_conversions(&state, vec![path]).await?;
     }
     Ok(StatusCode::NO_CONTENT)
-}
-
-/// Deletes the directory a media-source plugin fetched the media file at `path` into, with
-/// its subtitles, unless one of the `referenced` paths still lies inside it.
-/// A failure is only logged.
-async fn remove_fetched_files(state: &AppState, path: &str, referenced: &[String]) {
-    let Some(item_dir) = state.fetched_item_dir(path) else {
-        return;
-    };
-    let is_in_use = canonicalize_paths(referenced)
-        .iter()
-        .any(|referenced| referenced.starts_with(&item_dir));
-    if !is_in_use {
-        discard_output_dir(&item_dir).await;
-    }
 }
 
 /// Removes the cached conversions of the given source paths that no media file points at

@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use easyimmerse_conversion::{ConversionService, ProbeCache};
+use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
 use easyimmerse_storage::{Storage, StorageError};
 
 use crate::auth::error_body::{ApiFailure, internal};
@@ -69,9 +70,13 @@ impl AppState {
             .map_err(ApiFailure::from)
     }
 
-    /// The directory a media-source plugin fetched the file at `path` into, when it was
-    /// fetched into the media directory.
-    pub fn fetched_item_dir(&self, path: &str) -> Option<PathBuf> {
+    /// The directory a media-source plugin fetched the media file into, when it was imported
+    /// through a plugin into the media directory.
+    pub fn fetched_item_dir(&self, media_file: &MediaFile) -> Option<PathBuf> {
+        media_file.origin.as_ref()?;
+        let MediaFileSource::Path { path } = &media_file.source else {
+            return None;
+        };
         fetched_item_dir(self.media_dir.as_deref()?, path)
     }
 }

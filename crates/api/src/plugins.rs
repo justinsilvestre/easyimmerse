@@ -158,10 +158,9 @@ fn load_plugin(
 /// The directory a plugin fetched `path` into, when `path` lies in one: the media directory
 /// holds one directory per plugin, and each of those one directory per fetched item.
 /// Returns `None` for a path anywhere else, so that nothing outside is ever removed.
+/// Both `media_dir` and `path` must be canonical, as the server stores them.
 pub fn fetched_item_dir(media_dir: &Path, path: &str) -> Option<PathBuf> {
-    let media_dir = media_dir.canonicalize().ok()?;
-    let path = Path::new(path).canonicalize().ok()?;
-    let item_dir = path.parent()?;
+    let item_dir = Path::new(path).parent()?;
     let plugin_dir = item_dir.parent()?;
     (plugin_dir.parent()? == media_dir).then(|| item_dir.to_path_buf())
 }
@@ -224,7 +223,7 @@ mod tests {
         write(&file, "");
         assert_eq!(
             fetched_item_dir(media_dir.path(), &file.to_string_lossy()),
-            Some(item_dir.canonicalize().unwrap())
+            Some(item_dir)
         );
     }
 

@@ -5,12 +5,12 @@
 
 use std::path::{Path, PathBuf};
 
-use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
+use easyimmerse_core::media_file::MediaFile;
 use easyimmerse_core::subtitle_track::SubtitleTrackId;
 use easyimmerse_core::text_source::TextSource;
+use easyimmerse_storage::{Storage, StorageError};
 
 use crate::auth::error_body::ApiFailure;
-use crate::referenced_paths::{canonicalize_paths, list_referenced_paths};
 use crate::state::AppState;
 
 /// The prefix of the directories that subtitles fetched after the import are written into,
@@ -25,53 +25,53 @@ pub(crate) async fn remove_subtitle_tracks(
     ids: &[SubtitleTrackId],
 ) -> Result<(), ApiFailure> {
     let ids = ids.to_vec();
-    let (sources, referenced) = state
+    let item_dir = state.fetched_item_dir(media_file);
+    let dir = item_dir.clone();
+    let deletable = state
         .with_storage(move |storage| {
             let mut sources = Vec::new();
             for id in &ids {
                 sources.push(storage.get_subtitle_track(id)?.source);
                 storage.remove_subtitle_track(id)?;
             }
-            Ok((sources, list_referenced_paths(storage)?))
+            match &dir {
+                Some(dir) => list_deletable_files(storage, dir, sources),
+                None => Ok(Vec::new()),
+            }
         })
         .await?;
-    if media_file.origin.is_some() {
-        remove_fetched_files(state, media_file, sources, &canonicalize_paths(&referenced)).await;
+    if let Some(item_dir) = item_dir {
+        for file in deletable {
+            remove_fetched_subtitle_file(&item_dir, &file).await;
+        }
     }
     Ok(())
 }
 
-async fn remove_fetched_files(
-    state: &AppState,
-    media_file: &MediaFile,
+/// The files among `sources` that lie inside `item_dir` and that no media file or subtitle
+/// track names any more. Stored paths are canonical, so they are compared as they are.
+fn list_deletable_files(
+    storage: &Storage,
+    item_dir: &Path,
     sources: Vec<TextSource>,
-    referenced: &[PathBuf],
-) {
-    let MediaFileSource::Path { path: media_path } = &media_file.source else {
-        return;
-    };
-    let Some(item_dir) = state.fetched_item_dir(media_path) else {
-        return;
-    };
+) -> Result<Vec<PathBuf>, StorageError> {
+    let mut deletable = Vec::new();
     for source in sources {
-        if let TextSource::Path { path } = source {
-            remove_fetched_subtitle_file(&item_dir, &path, referenced).await;
+        let TextSource::Path { path } = source else {
+            continue;
+        };
+        let file = PathBuf::from(&path);
+        let is_fetched = file.starts_with(item_dir) && file != item_dir;
+        if is_fetched && !deletable.contains(&file) && !storage.is_path_referenced(&path)? {
+            deletable.push(file);
         }
     }
+    Ok(deletable)
 }
 
-/// Deletes the subtitle file at `path` when it lies inside `item_dir`, the directory the
-/// media file was fetched into, and is not among the `referenced` files, then removes the
-/// file's subtitles directory once it is empty. A file anywhere else is left untouched.
-async fn remove_fetched_subtitle_file(item_dir: &Path, path: &str, referenced: &[PathBuf]) {
-    let Ok(file) = Path::new(path).canonicalize() else {
-        return;
-    };
-    let is_fetched = file.starts_with(item_dir) && file != item_dir;
-    if !is_fetched || referenced.contains(&file) {
-        return;
-    }
-    if let Err(error) = tokio::fs::remove_file(&file).await {
+/// Deletes the subtitle file, then removes its subtitles directory once it is empty.
+async fn remove_fetched_subtitle_file(item_dir: &Path, file: &Path) {
+    if let Err(error) = tokio::fs::remove_file(file).await {
         tracing::warn!("could not remove {}: {error}", file.display());
         return;
     }

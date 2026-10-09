@@ -15,3 +15,4 @@ CREATE TABLE media_files (
 );
 
 CREATE INDEX media_files_by_project ON media_files (project_id, created_at_ms);
+CREATE INDEX media_files_by_source_path ON media_files (source_path);

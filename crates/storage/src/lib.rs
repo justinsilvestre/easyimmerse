@@ -12,6 +12,7 @@ mod migrations;
 mod new_row;
 mod preferences;
 mod projects;
+mod referenced_paths;
 mod sample_content;
 mod stored_integer;
 mod subtitle_tracks;
@@ -213,8 +214,15 @@ impl Storage {
         self.write(|conn| subtitle_tracks::remove_subtitle_track(conn, id))
     }
 
-    pub fn list_subtitle_source_paths(&self) -> Result<Vec<String>, StorageError> {
-        self.read(subtitle_tracks::list_subtitle_source_paths)
+    /// Whether a media file or a subtitle track names `path`, exactly as stored.
+    pub fn is_path_referenced(&self, path: &str) -> Result<bool, StorageError> {
+        self.read(|conn| referenced_paths::is_path_referenced(conn, path))
+    }
+
+    /// Whether a media file or a subtitle track names a path inside the directory `dir`,
+    /// comparing paths exactly as stored.
+    pub fn is_path_referenced_inside(&self, dir: &str) -> Result<bool, StorageError> {
+        self.read(|conn| referenced_paths::is_path_referenced_inside(conn, dir))
     }
 
     pub fn get_subtitle_selection(
