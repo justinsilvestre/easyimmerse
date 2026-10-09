@@ -7,7 +7,6 @@ use wasmtime::Store;
 
 use crate::compiled_plugin::CompiledPlugin;
 use crate::error::{PluginError, PluginErrorKind};
-use crate::execution_mode::ExecutionMode;
 use crate::grants::CapabilityGrants;
 use crate::host_state::{HostEvent, HostState, LogEntry};
 use crate::limits::{HostLimits, reset_fuel};
@@ -16,7 +15,6 @@ use crate::media_source_exchange::{
     to_import_answer, to_media_answer, to_resolved_media, to_resolved_subtitle,
     to_wit_fetch_request, to_wit_import_context, to_wit_import_request, to_wit_media_context,
 };
-use crate::package::PluginPackage;
 use crate::plugin_form::{to_form, to_wit_inputs};
 
 /// A loaded plugin of the `media-source-plugin` world, which shows forms through which the
@@ -29,16 +27,6 @@ pub struct MediaSourcePlugin {
 }
 
 impl MediaSourcePlugin {
-    /// Compiles and instantiates the plugin in one step.
-    pub fn load(
-        package: &PluginPackage,
-        grants: CapabilityGrants,
-        mode: ExecutionMode,
-        limits: HostLimits,
-    ) -> Result<Self, PluginError> {
-        Self::instantiate(&CompiledPlugin::compile(package, mode)?, grants, limits)
-    }
-
     pub fn instantiate(
         compiled: &CompiledPlugin,
         grants: CapabilityGrants,

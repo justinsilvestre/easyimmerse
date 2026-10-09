@@ -52,7 +52,8 @@ impl Drop for LoopbackServer {
     }
 }
 
-/// Starts a loopback server that answers each request with `respond` on a thread of its own.
+/// Starts a loopback server that answers its requests with `respond`,
+/// one after another on a single background thread.
 pub fn start_http_server(respond: impl Fn(Request) + Send + 'static) -> LoopbackServer {
     let server = Arc::new(Server::http("127.0.0.1:0").expect("bind a loopback port"));
     let port = server.server_addr().to_ip().expect("an IP address").port();
