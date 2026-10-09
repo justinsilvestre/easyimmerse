@@ -10,6 +10,8 @@ use easyimmerse_plugins::{
     PluginKind, PluginPackage,
 };
 
+use crate::plugin_compile_cache::compiled_plugin;
+
 /// The instruction budget of one call. A media-source plugin spends its own
 /// instructions on parsing what its tools print, while the host does the fetching, so the
 /// budget is far above the default per-call one without letting a loop run forever.
@@ -125,8 +127,9 @@ pub fn fetch_subtitles(
         .fetch_subtitles(request, &output_dir.to_string_lossy())
 }
 
-/// Loads the plugin with the hosts its manifest lists, the executables it bundles, and
-/// `granted_dirs` to write into.
+/// Instantiates the plugin with the hosts its manifest lists, the executables it bundles,
+/// and `granted_dirs` to write into. The component is compiled on the plugin's first call
+/// and reused by later ones.
 fn load_plugin(
     package: &PluginPackage,
     granted_dirs: &[PathBuf],
@@ -148,7 +151,8 @@ fn load_plugin(
         mode = mode.name(),
         "loading the plugin"
     );
-    MediaSourcePlugin::load(package, grants, mode, limits)
+    let compiled = compiled_plugin(package, mode)?;
+    MediaSourcePlugin::instantiate(&compiled, grants, limits)
 }
 
 /// The directory a plugin fetched `path` into, when `path` lies in one: the media directory
