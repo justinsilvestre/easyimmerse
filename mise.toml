@@ -215,11 +215,18 @@ run = "pnpm --filter @easyimmerse/web dev"
 
 # A debug build of the desktop app writes its server's address, a new random token, and its database and cache paths to .dev/desktop-server.env each time it starts.
 # When that server is not running, the task starts a standalone server on the same database and cache at http://127.0.0.1:8789 instead.
+# Vite listens on every interface at port 5173, and a forwarder on port 8790 passes the local network's API requests to the loopback-only server.
 # Vite reads the address only at start-up, so restart this task after starting or quitting the desktop app.
 [tasks."web:desktop"]
-description = "Run the web app with hot reloading against the desktop app's server, or a standalone server on its data"
+description = "Run the web app with hot reloading, reachable on the local network, against the desktop app's server or a standalone server on its data"
 depends = ["fetch-ffmpeg"]
 run = "node scripts/web-desktop/index.ts"
+
+# Starts the desktop app as the desktop task does, waits until its server answers with the token it has just written, and then serves the web app as web:desktop does.
+[tasks.dev]
+description = "Run the desktop app and serve the web app to this machine's browser and to phones on the local network, on the desktop app's data"
+depends = ["fetch-ffmpeg"]
+run = ["node scripts/web-desktop/guardDesktop.ts", "node scripts/web-desktop/dev.ts"]
 
 [tasks.storybook]
 description = "Serve the UI component stories at http://localhost:6006"
