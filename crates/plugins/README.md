@@ -22,7 +22,7 @@ A plugin can be written in JavaScript and built into a component with `jco compo
 
 The plugin imports each host interface as a module, such as `easyimmerse:plugin/http@0.1.0`, and exports each interface as an object of camel-cased functions, such as `mediaSource.fetchSubtitles`. A WIT variant is an object `{ tag, val }`, an enum case is its name as a string, and an absent option is `undefined`. A function returns the `ok` value of a WIT result and throws a `plugin-error` variant for the `err` value. A host import that fails throws an error carrying the host's `plugin-error`, so a plugin that does not catch it passes the host's error back unchanged.
 
-The engine makes the component large, about 13 MB against about 100 KB for the Rust build. Its calls also cost more fuel. The fixture's form calls fit the default budget of 5 million per call, but an import that runs `fetch-locator` and downloads the 48 KB sample media and its subtitles needs about 15.5 million. Because the plugin downloads through `http.download`, that cost does not grow with the size of the media; reading the same bytes through `http.get` and `fs.write-file` costs about 17 more fuel per byte.
+The engine makes the component large, about 13 MB against about 100 KB for the Rust build. Its calls also cost more fuel. The costliest fixture call, an import that runs `fetch-locator` and downloads the 48 KB sample media and its subtitles, needs about 15.5 million, which fits the default budget of 100 million per call with about six times headroom. Because the plugin downloads through `http.download`, that cost does not grow with the size of the media; reading the same bytes through `http.get` and `fs.write-file` costs about 17 more fuel per byte.
 
 ## Execution modes
 

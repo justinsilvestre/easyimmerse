@@ -21,7 +21,7 @@ impl Default for HostLimits {
     fn default() -> Self {
         Self {
             memory_bytes: 64 * MEBIBYTE,
-            fuel: 5_000_000,
+            fuel: 100_000_000,
             instantiation_fuel: 50_000_000,
         }
     }
