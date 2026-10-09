@@ -1,5 +1,6 @@
 import { type BrowserFileRegistry, documentFormatOf } from "@easyimmerse/state";
 import type { Document, DocumentFormat, MediaFile } from "@easyimmerse/types";
+import { browserFileNotices } from "../media/browserFileNotices.ts";
 
 /** A book on its way to the reader. */
 export type OpenedBook =
@@ -38,15 +39,9 @@ export async function openBook(
   const { source } = mediaFile;
   if (source.kind === "path")
     return settle(parsers.parsePath(source.path, format));
-  if (registry === null)
-    return failed(
-      "This file was added in a web browser, and this app cannot reach it.",
-    );
+  if (registry === null) return failed(browserFileNotices.unreachable);
   const file = registry.find(mediaFile.name, source);
-  if (file === null)
-    return failed(
-      "This file is no longer open in the browser. Add it again to read it.",
-    );
+  if (file === null) return failed(browserFileNotices.notOpen("read"));
   return settle(
     file
       .arrayBuffer()

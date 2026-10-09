@@ -11,6 +11,7 @@ export {
   useGetConversionCacheStatusQuery,
   useGetImportFormMutation,
   useGetImportJobQuery,
+  useGetMediaAvailabilityQuery,
   useGetMediaSourceJobQuery,
   useGetMediaTracksQuery,
   useGetProjectQuery,

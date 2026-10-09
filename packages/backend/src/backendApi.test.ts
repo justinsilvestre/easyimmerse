@@ -318,6 +318,17 @@ describe("backendApi", () => {
     ]);
   });
 
+  it("sends GET /projects/{id}/media/availability for getMediaAvailability", async () => {
+    const client = createRecordingClient();
+    configureBackend(client);
+    await createStore().dispatch(
+      backendApi.endpoints.getMediaAvailability.initiate("p1"),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/projects/p1/media/availability" },
+    ]);
+  });
+
   it("posts the name and source for addMediaFile", async () => {
     const client = createRecordingClient();
     configureBackend(client);

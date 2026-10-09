@@ -49,6 +49,54 @@ export const WithImportSources: Story = {
   },
 };
 
+export const WithUnavailableMedia: Story = {
+  args: {
+    media: [
+      {
+        id: "m1",
+        name: "Dark S01E01 - Geheimnisse.mkv",
+        kind: "video",
+        flashcardCount: 37,
+      },
+      {
+        id: "m2",
+        name: "Die Verwandlung (Hörbuch).mp3",
+        kind: "audio",
+        flashcardCount: 4,
+        issue: "browserFileUnreachable",
+      },
+      {
+        id: "m3",
+        name: "Der Process.epub",
+        kind: "ebook",
+        flashcardCount: 0,
+        issue: "browserFileNotOpen",
+      },
+      {
+        id: "m4",
+        name: "Dark S01E02 - Lügen.mkv",
+        kind: "video",
+        flashcardCount: 12,
+        issue: "pathMissing",
+      },
+      {
+        id: "m5",
+        name: "Tagesschau 2026-10-08.mp4",
+        kind: "video",
+        flashcardCount: 0,
+        issue: "pathNotAllowed",
+      },
+      {
+        id: "m6",
+        name: "Der Process.txt",
+        kind: "ebook",
+        flashcardCount: 0,
+        issue: "pathUnreadable",
+      },
+    ],
+  },
+};
+
 export const Empty: Story = {
   args: { media: [] },
 };

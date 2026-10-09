@@ -6,6 +6,7 @@ mod embedded_subtitles;
 mod flashcards;
 mod local_media_sample;
 mod media;
+mod media_availability;
 mod media_conversion;
 mod openapi;
 mod plugin_routes;
