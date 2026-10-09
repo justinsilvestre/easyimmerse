@@ -1,7 +1,7 @@
 import { join } from "node:path";
 
 import { repositoryRoot } from "./repositoryRoot.ts";
-import { spawnChild } from "./runTogether.ts";
+import { interruptAll, spawnChild } from "./runTogether.ts";
 import { ensureLanForwarderPortFree, serveWebApp } from "./serveWebApp.ts";
 import {
   readTextOrNull,
@@ -28,9 +28,18 @@ const desktop = spawnChild(
 );
 const exitEarly = (code: number | null) => process.exit(code ?? 1);
 desktop.on("exit", exitEarly);
+// Until runTogether forwards signals, a signal sent only to this process must still stop the desktop app.
+const stopDesktop = () => {
+  interruptAll([desktop]);
+  process.exit(1);
+};
+process.on("SIGINT", stopDesktop);
+process.on("SIGTERM", stopDesktop);
 console.log(
   "Waiting for the desktop app to start its server. The first build can take several minutes.",
 );
 const file = await waitForDesktopServer(serverFilePath, previousText);
 desktop.off("exit", exitEarly);
+process.off("SIGINT", stopDesktop);
+process.off("SIGTERM", stopDesktop);
 await serveWebApp(file, [desktop]);

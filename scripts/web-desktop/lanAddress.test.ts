@@ -41,6 +41,37 @@ describe("selectLanAddress", () => {
     assert.equal(address, null);
   });
 
+  it("prefers an address in a private range", () => {
+    const address = selectLanAddress({
+      utun4: [entry("100.64.0.2", "IPv4", false)],
+      en0: [entry("172.20.1.5", "IPv4", false)],
+    });
+    assert.equal(address, "172.20.1.5");
+  });
+
+  it("keeps the order among private addresses", () => {
+    const address = selectLanAddress({
+      en0: [entry("192.168.1.5", "IPv4", false)],
+      bridge100: [entry("10.0.0.1", "IPv4", false)],
+    });
+    assert.equal(address, "192.168.1.5");
+  });
+
+  it("falls back to a public address", () => {
+    const address = selectLanAddress({
+      en0: [entry("172.32.0.1", "IPv4", false)],
+    });
+    assert.equal(address, "172.32.0.1");
+  });
+
+  it("returns the override instead of a detected address", () => {
+    const address = selectLanAddress(
+      { en0: [entry("192.168.1.5", "IPv4", false)] },
+      "10.1.2.3",
+    );
+    assert.equal(address, "10.1.2.3");
+  });
+
   it("returns null without any interface", () => {
     assert.equal(selectLanAddress({}), null);
   });
