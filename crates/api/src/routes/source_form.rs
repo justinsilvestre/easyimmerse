@@ -82,8 +82,9 @@ pub async fn get_source_form(
 }
 
 /// Sends an action of the media interface to the plugin. When the plugin answers with
-/// changes, the server removes the tracks it names, clearing them from the selection, and
-/// then fetches the tracks it asks for, if any, beside the files imported with the media
+/// changes, the server removes the tracks it names,
+/// clearing them from the selection and deleting the files the plugin fetched for them,
+/// and then fetches the tracks it asks for, if any, beside the files imported with the media
 /// file. A fetched track in a project language whose role is still free takes that role,
 /// and a fetched track that could not be read is left out and listed as skipped. The
 /// request lasts as long as the fetch.

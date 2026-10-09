@@ -341,7 +341,7 @@ fn plugin_failure(error: PluginError) -> ApiFailure {
     }
 }
 
-async fn discard_output_dir(output_dir: &FsPath) {
+pub(crate) async fn discard_output_dir(output_dir: &FsPath) {
     if let Err(error) = tokio::fs::remove_dir_all(output_dir).await {
         tracing::warn!("could not remove {}: {error}", output_dir.display());
     }

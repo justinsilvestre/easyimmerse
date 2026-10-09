@@ -545,6 +545,29 @@ async fn refuses_to_add_media_without_a_media_dir() {
     assert_eq!(response.status, 503);
 }
 
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_an_import_step_without_a_media_dir_before_asking_the_plugin() {
+    let plugins_dir = TempDir::new().expect("a plugins directory");
+    install_fixture_plugin(plugins_dir.path());
+    let options = ServeOptions {
+        plugins_dir: Some(plugins_dir.path().to_path_buf()),
+        ..ServeOptions::default()
+    };
+    let server = spawn_test_server_with_options(false, seeded_storage(), options).await;
+    // The plugin refuses an empty locator, so a 503 shows that it was never asked.
+    let input = json!([{ "field": "locator", "values": [""] }]);
+    let response = server
+        .post_json(
+            &format!("/projects/{PROJECT}/media/import-step"),
+            &json!({ "plugin": PLUGIN, "action": "import", "input": input }),
+        )
+        .await;
+    assert_eq!(
+        (response.status, response.json()["code"].clone()),
+        (503, json!("media_dir_unavailable"))
+    );
+}
+
 /// The option ids of the choice field `field` in a form.
 fn option_ids(form: &Value, field: &str) -> Vec<Value> {
     let fields = form["fields"].as_array().expect("form fields");
@@ -695,6 +718,84 @@ async fn a_track_fetched_later_lands_beside_the_media() {
         })
         .map(|entry| entry.path().join("subtitles.srt").is_file());
     assert_eq!(written, Some(true));
+}
+
+/// The directory the media file was fetched into.
+fn item_dir(media_file: &Value) -> PathBuf {
+    let media_path = Path::new(media_file["source"]["path"].as_str().expect("a media path"));
+    media_path
+        .parent()
+        .expect("an item directory")
+        .to_path_buf()
+}
+
+/// The directories that subtitles fetched after the import were written into.
+fn subtitles_dirs(media_file: &Value) -> Vec<PathBuf> {
+    std::fs::read_dir(item_dir(media_file))
+        .expect("read the item directory")
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("subtitles-")
+        })
+        .map(|entry| entry.path())
+        .collect()
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_source_step_deletes_the_file_of_a_track_fetched_with_the_media() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add().await;
+    let track_id = fixture.subtitle_tracks(&added).await["tracks"][0]["id"].clone();
+    fixture
+        .apply(&added, &[], &[track_id.as_str().unwrap()])
+        .await;
+    assert!(!item_dir(&added).join("subtitles.srt").exists());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_source_step_deletes_the_directory_of_a_track_fetched_later() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add_with_subtitles(&[]).await;
+    fixture.apply(&added, &["en"], &[]).await;
+    let track_id = fixture.subtitle_tracks(&added).await["tracks"][0]["id"].clone();
+    fixture
+        .apply(&added, &[], &[track_id.as_str().unwrap()])
+        .await;
+    assert_eq!(subtitles_dirs(&added), Vec::<PathBuf>::new());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_source_step_keeps_the_file_of_a_track_outside_the_media_dir() {
+    let fixture = Fixture::start(true).await;
+    let added = fixture.add_with_subtitles(&[]).await;
+    let elsewhere = TempDir::new().expect("a directory outside the media directory");
+    let file = elsewhere.path().join("sample.srt");
+    std::fs::copy(fixture_path("sample.srt"), &file).expect("copy the subtitles");
+    let track = fixture
+        .server
+        .post_json(
+            &format!("/projects/{PROJECT}/media/{}/subtitles", media_id(&added)),
+            &json!({ "name": "sample.srt", "source": { "kind": "path", "path": file }, "format": null, "role": null }),
+        )
+        .await
+        .json();
+    fixture
+        .apply(&added, &[], &[track["id"].as_str().unwrap()])
+        .await;
+    assert!(file.is_file());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_source_step_whose_fetch_fails_leaves_no_subtitles_dir() {
+    let fixture = Fixture::start(false).await;
+    let added = fixture.add_with_subtitles(&[]).await;
+    fixture
+        .source_step(&added, "apply", &["unknown"], &[])
+        .await;
+    assert_eq!(subtitles_dirs(&added), Vec::<PathBuf>::new());
 }
 
 /// An HTTP server on the loopback interface serving the files under `fixtures/`.

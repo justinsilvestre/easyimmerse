@@ -4,6 +4,7 @@
 pub mod auth;
 pub mod config;
 pub mod embedded_subtitle_tracks;
+mod fetched_subtitle_files;
 mod fetched_subtitles;
 pub mod found_subtitle_tracks;
 pub mod import_jobs;

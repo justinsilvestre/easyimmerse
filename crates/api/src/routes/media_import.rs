@@ -13,7 +13,7 @@ use utoipa::ToSchema;
 use crate::auth::error_body::{ApiError, ApiFailure};
 use crate::media_source_jobs::MediaSourceJob;
 use crate::plugins::{import_form, import_step};
-use crate::routes::plugins::{media_source_package, run_plugin_call, start_import_job};
+use crate::routes::plugins::{media_dir, media_source_package, run_plugin_call, start_import_job};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -102,6 +102,8 @@ pub async fn submit_import_step(
 ) -> Result<Json<ImportStepResponse>, ApiFailure> {
     let project = load_project(&state, project_id).await?;
     let package = media_source_package(&state, &request.plugin)?;
+    // A server without a media directory cannot run the import the steps lead to.
+    media_dir(&state)?;
     let context = import_context(&project.settings);
     let answer = {
         let package = package.clone();
