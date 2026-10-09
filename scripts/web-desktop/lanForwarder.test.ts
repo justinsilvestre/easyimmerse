@@ -66,16 +66,24 @@ describe("startLanForwarder", () => {
     assert.equal(response.headers.get("x-echo"), "bytes=0-99");
   });
 
-  it("returns the upstream's status and body", async () => {
+  it("returns the upstream's status", async () => {
     const upstream = await startUpstream((_request, response) => {
       response.writeHead(206).end("partial");
     });
+    const response = await forward(upstream, "/media/1");
+    assert.equal(response.status, 206);
+  });
+
+  it("returns the upstream's body", async () => {
+    const upstream = await startUpstream((_request, response) => {
+      response.end("partial");
+    });
     const forwarder = await startLanForwarder(urlOf(upstream), 0);
     const response = await fetch(new URL("/media/1", urlOf(forwarder)));
-    const answer = `${response.status} ${await response.text()}`;
+    const body = await response.text();
     forwarder.close();
     upstream.close();
-    assert.equal(answer, "206 partial");
+    assert.equal(body, "partial");
   });
 
   it("answers 502 when the upstream is unreachable", async () => {

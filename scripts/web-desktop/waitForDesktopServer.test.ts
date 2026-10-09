@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, it } from "node:test";
+import { after, describe, it } from "node:test";
 
 import {
   parseFreshServerFile,
@@ -35,13 +35,16 @@ describe("parseFreshServerFile", () => {
 });
 
 describe("waitForDesktopServer", () => {
+  const directory = mkdtempSync(join(tmpdir(), "desktop-server-"));
+  after(() => rmSync(directory, { recursive: true, force: true }));
+
   it("resolves once a new file names a server that accepts its token", async () => {
     const server = createServer((_request, response) => response.end("[]"));
     await new Promise<void>((resolve) =>
       server.listen(0, "127.0.0.1", resolve),
     );
     const port = (server.address() as AddressInfo).port;
-    const path = join(mkdtempSync(join(tmpdir(), "desktop-server-")), "env");
+    const path = join(directory, "env");
     const waiting = waitForDesktopServer(path, null, 10);
     writeFileSync(
       path,

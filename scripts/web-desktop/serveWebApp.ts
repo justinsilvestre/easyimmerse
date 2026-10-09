@@ -8,6 +8,7 @@ import { type ChildCommand, interruptAll, runTogether } from "./runTogether.ts";
 
 /** The port `.claude/launch.json` expects the web app on. */
 const webAppPort = 5173;
+const webAppPortArgs = ["--port", String(webAppPort), "--strictPort"];
 
 /** A server on this machine's loopback interface, with the token it accepts. */
 export interface Upstream {
@@ -26,6 +27,12 @@ export async function ensureLanForwarderPortFree(): Promise<void> {
   }
 }
 
+/** The children that serve the web app, once they run and forward signals themselves. */
+export interface WebAppSession {
+  /** Resolves once every child has exited and the forwarder has closed. */
+  finished: Promise<void>;
+}
+
 /**
  * Serves the web app against `upstream` to this machine and to the local network,
  * alongside the `running` children, until one of them exits.
@@ -34,31 +41,40 @@ export async function ensureLanForwarderPortFree(): Promise<void> {
 export async function serveWebApp(
   upstream: Upstream,
   running: ChildProcess[] = [],
-): Promise<void> {
+): Promise<WebAppSession> {
   const lanAddress = findLanAddress();
   if (lanAddress === null) {
     console.log(
       "No local network address was found, so the web app is served to this machine only.",
     );
-    runTogether([viteCommand(upstream, [])], repositoryRoot, running);
-    return;
+    const vite = viteCommand(upstream, webAppPortArgs);
+    return { finished: runTogether([vite], repositoryRoot, running) };
   }
-  const forwarder = await startLanForwarder(upstream.url).catch(() =>
-    stop(
-      running,
-      `Port ${lanForwarderPort} is taken, probably by another 'mise run web:desktop' or 'mise run dev'. Stop it first.`,
-    ),
+  const forwarder = await startLanForwarder(upstream.url).catch((error) =>
+    stop(running, describeListenError(error)),
   );
-  // The children keep this process alive; the forwarder should not once they have exited.
-  forwarder.unref();
   const forwarderUrl = `http://${lanAddress}:${lanForwarderPort}`;
   console.log(
     `\nWeb app for this machine and phones on the local network: http://${lanAddress}:${webAppPort}\n(API forwarded from ${upstream.url} through ${forwarderUrl})\n`,
   );
   const vite = viteCommand({ ...upstream, url: forwarderUrl }, [
-    ...["--host", "--port", String(webAppPort), "--strictPort"],
+    "--host",
+    ...webAppPortArgs,
   ]);
-  runTogether([vite], repositoryRoot, running);
+  const children = runTogether([vite], repositoryRoot, running);
+  // Open connections, such as a phone streaming media, would otherwise keep this process alive.
+  const finished = children.then(() => {
+    forwarder.closeAllConnections();
+    forwarder.close();
+  });
+  return { finished };
+}
+
+function describeListenError(error: unknown): string {
+  const code = (error as NodeJS.ErrnoException).code;
+  return code === "EADDRINUSE"
+    ? `Port ${lanForwarderPort} is taken, probably by another 'mise run web:desktop' or 'mise run dev'. Stop it first.`
+    : String(error);
 }
 
 function viteCommand(server: Upstream, viteArgs: string[]): ChildCommand {

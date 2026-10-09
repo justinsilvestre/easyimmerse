@@ -1,9 +1,9 @@
-import { existsSync, readFileSync } from "node:fs";
 import { setTimeout } from "node:timers/promises";
 
 import {
   type DesktopServerFile,
   parseDesktopServerFile,
+  readTextOrNull,
 } from "./desktopServerFile.ts";
 import { probeServer } from "./probeServer.ts";
 
@@ -32,8 +32,4 @@ export function parseFreshServerFile(
 ): DesktopServerFile | null {
   if (currentText === null || currentText === previousText) return null;
   return parseDesktopServerFile(currentText);
-}
-
-export function readTextOrNull(path: string): string | null {
-  return existsSync(path) ? readFileSync(path, "utf-8") : null;
 }
