@@ -361,7 +361,7 @@ function Fading({
  */
 function Header({ media, onBack, onOpenSource }: MediaViewProps) {
   return (
-    <header className="flex items-center gap-3 bg-black/90 px-3 py-2 backdrop-blur-sm">
+    <header className="flex items-center gap-3 bg-black/90 px-3 py-2 text-fg backdrop-blur-sm">
       <Button
         variant="subtle"
         aria-label={`Back to ${media.projectName}`}
