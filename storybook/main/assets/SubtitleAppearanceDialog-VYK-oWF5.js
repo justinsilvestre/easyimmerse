@@ -1,0 +1,16 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{t}from"./jsx-runtime-DeHZSEgm.js";import{n,t as r}from"./Button-KG4HKgfk.js";import{n as i,t as a}from"./ModalDialog-14_7cRt-.js";import{a as o,i as s}from"./subtitleBoxStyles-8AGi-M23.js";import{n as c,t as l}from"./SubtitleAppearanceControls-D2JloGOq.js";function u({appearance:e,onChange:t,onClose:n}){return(0,d.jsx)(a,{title:`Subtitle appearance`,onCancel:n,footer:(0,d.jsxs)(d.Fragment,{children:[(0,d.jsx)(r,{variant:`subtle`,onClick:()=>t(s),children:`Restore defaults`}),(0,d.jsx)(r,{variant:`primary`,onClick:n,children:`Done`})]}),children:(0,d.jsx)(l,{appearance:e,onChange:t})})}var d;function f(){return(f=e((()=>{n(),i(),c(),o(),d=t(),u.__docgenInfo={description:`The dialog where the user sets how the subtitles over the video look.
+Each change applies at once, to the preview and to the subtitles behind the dialog.`,methods:[],displayName:`SubtitleAppearanceDialog`,props:{appearance:{required:!0,tsType:{name:`signature`,type:`object`,raw:`{
+  /** How opaque the background is, as a whole percentage. */
+  backgroundOpacity: number;
+  textShadow: (typeof subtitleTextShadows)[number];
+  /** An index into \`subtitleTextScales\`. */
+  textSizeStep: number;
+  textColor: "white" | "yellow" | "black";
+}`,signature:{properties:[{key:`backgroundOpacity`,value:{name:`number`,required:!0},description:`How opaque the background is, as a whole percentage.`},{key:`textShadow`,value:{name:`unknown[number]`,raw:`(typeof subtitleTextShadows)[number]`,required:!0}},{key:`textSizeStep`,value:{name:`number`,required:!0},description:"An index into `subtitleTextScales`."},{key:`textColor`,value:{name:`union`,raw:`"white" | "yellow" | "black"`,elements:[{name:`literal`,value:`"white"`},{name:`literal`,value:`"yellow"`},{name:`literal`,value:`"black"`}],required:!0}}]}},description:``},onChange:{required:!0,tsType:{name:`signature`,type:`function`,raw:`(appearance: SubtitleAppearance) => void`,signature:{arguments:[{type:{name:`signature`,type:`object`,raw:`{
+  /** How opaque the background is, as a whole percentage. */
+  backgroundOpacity: number;
+  textShadow: (typeof subtitleTextShadows)[number];
+  /** An index into \`subtitleTextScales\`. */
+  textSizeStep: number;
+  textColor: "white" | "yellow" | "black";
+}`,signature:{properties:[{key:`backgroundOpacity`,value:{name:`number`,required:!0},description:`How opaque the background is, as a whole percentage.`},{key:`textShadow`,value:{name:`unknown[number]`,raw:`(typeof subtitleTextShadows)[number]`,required:!0}},{key:`textSizeStep`,value:{name:`number`,required:!0},description:"An index into `subtitleTextScales`."},{key:`textColor`,value:{name:`union`,raw:`"white" | "yellow" | "black"`,elements:[{name:`literal`,value:`"white"`},{name:`literal`,value:`"yellow"`},{name:`literal`,value:`"black"`}],required:!0}}]}},name:`appearance`}],return:{name:`void`}}},description:``},onClose:{required:!0,tsType:{name:`signature`,type:`function`,raw:`() => void`,signature:{arguments:[],return:{name:`void`}}},description:``}}}})))()}export{f as n,u as t};
