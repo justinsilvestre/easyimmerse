@@ -72,7 +72,7 @@ depends = ["plugins:build-rust", "plugins:build-js"]
 run = "node plugins/build-rust.ts"
 
 [tasks."plugins:build-js"]
-run = "pnpm --filter @easyimmerse/plugin-hello-js build"
+run = "pnpm --filter @easyimmerse/plugin-hello-js --filter @easyimmerse/plugin-fixture-media-source-js build"
 
 [tasks."fetch-ffmpeg"]
 description = "Download the ffmpeg sidecar binaries for the current platform"
