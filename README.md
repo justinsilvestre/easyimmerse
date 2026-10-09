@@ -28,17 +28,36 @@ mise run check           # lint, typecheck, and test every layer
 ```sh
 mise run web-dev        # web app with hot reloading, against a local server
 mise run desktop        # desktop app with its embedded server
-mise run web:desktop    # web app with hot reloading, against the desktop app's server or a standalone server on its data
+mise run web:desktop    # web app with hot reloading, reachable on the local network, against the desktop app's server or a standalone server on its data
+mise run dev            # desktop app, with the web app served to this machine and the local network against its server
 mise run storybook      # UI component stories at http://localhost:6006
 ```
 
+#### Web app against a local server
+
 `web-dev` starts the server at `http://127.0.0.1:8788` with the token `dev`. The server keeps its data in `.dev/server.sqlite` and seeds two placeholder projects when that file is new. Once per database, it gives the Spanish and the Japanese project a sample video with subtitles in their language and in English, and imports small dictionaries for both languages, all from the checkout's `fixtures/`. The video is stored by its path, which this server does not let the browser read, so it does not play here. Delete `.dev/` to start over. The server takes `--cache-dir` (or `EASYIMMERSE_CACHE_DIR`) for the directory where converted media is cached; without it, and without ffmpeg and ffprobe in `EASYIMMERSE_FFMPEG_DIR`, next to the executable, or on `PATH`, it plays only files the browser plays directly. `web-dev` does not set it yet. It takes `--plugins-dir` (or `EASYIMMERSE_PLUGINS_DIR`) for the directory holding installed plugins, one package per subdirectory, and `--media-dir` (or `EASYIMMERSE_MEDIA_DIR`) for where media-source plugins put the media they fetch; `web-dev` points them at `.dev/plugins` and `.dev/media`. Files in the media directory play in the browser even here, since the server fetched them itself.
+
+#### Desktop app
 
 `desktop` first fetches the ffmpeg sidecars when they are missing or come from an older release than the one pinned (`mise run fetch-ffmpeg`, described in the [app README](apps/native/README.md#ffmpeg-sidecars)), then starts Vite on port 1421 and the Rust app in debug mode, so the frontend reloads on change. The database lands in the app data directory, for example `~/Library/Application Support/com.easyimmerse.app/easyimmerse.sqlite` on macOS, with installed plugins in `plugins/` and the media they fetch in `media/` beside it, and converted media in the app cache directory, for example `~/Library/Caches/com.easyimmerse.app`. Each time it starts, it writes its server's address, a new token, and those two paths to `.dev/desktop-server.env`. A debug build seeds two placeholder projects into a new database, as `web-dev` does, and once per database gives them the same sample video, subtitles, and dictionaries; a release build starts empty. A database that already has the placeholder projects receives the sample content on the next start, as long as a project has no media of its own. It refuses to start while the standalone server of `web:desktop` is running, because both would convert into the same cache.
 
+#### Web app on the desktop app's data
+
 `web:desktop` reads `.dev/desktop-server.env`, so run `mise run desktop` once before using it. While the desktop app is running, the web app talks to its embedded server. Otherwise the task starts a standalone server at `http://127.0.0.1:8789` on the desktop app's database and cache, with `EASYIMMERSE_FFMPEG_DIR` pointing at the sidecars in `apps/native/src-tauri/binaries/`, and points the web app at it. Quit the task before starting the desktop app again. Vite reads the server address only at start-up, so restart the task after starting or quitting the desktop app.
 
+#### Web app on the local network
+
+`web:desktop` serves the web app to this machine and to other devices on the local network, such as a phone, and prints the address to open, for example `http://192.168.1.5:5173`. The server accepts requests only when their Host header names its loopback address, so a forwarder on port 8790 listens on every network interface and passes each request on to it with the Host header rewritten; the web app talks to the server through that forwarder. The page carries the server's token and is itself served to the whole network, so anyone on the network can use the page and the API. Use the task only on a network you trust. macOS may ask whether node may accept incoming connections. When the machine has several network addresses, for example because of a VPN interface, `EASYIMMERSE_LAN_ADDRESS` picks the one to use. If the machine's address on the network changes, restart the task. When the machine has no network address, the task serves the web app to this machine only.
+
+#### Desktop app and web app together
+
+`dev` starts the desktop app as `desktop` does, waits until the app has written a new token to `.dev/desktop-server.env` and its server accepts it, and then serves the web app as `web:desktop` does, against the desktop app's server. The first build can take several minutes. When Rust sources change, `tauri dev` rebuilds and restarts the desktop app, which writes a new token and possibly a new port, while Vite keeps the values it started with. Restart the task after such a rebuild. Quitting the desktop app or stopping Vite stops the whole task.
+
+#### Storybook
+
 `storybook` serves the stories of `packages/ui`, where screens are designed before they are wired to the store. The `storybook` workflow also publishes a built copy of every pull request's stories to GitHub Pages at `https://justinsilvestre.github.io/easyimmerse/storybook/pr-<number>/` and posts the link on the pull request; it can be run by hand from the Actions tab to preview a branch without one, at `storybook/<branch>/`. The repository's Pages setting must serve the `gh-pages` branch.
+
+#### Browser extension
 
 The browser extension has no dev task. Build it, then load it unpacked:
 
