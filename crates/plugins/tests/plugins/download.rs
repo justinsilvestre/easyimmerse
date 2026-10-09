@@ -190,9 +190,15 @@ fn little_free_space(_directory: &Path) -> std::io::Result<u64> {
 fn shrinking_free_space(directory: &Path) -> std::io::Result<u64> {
     let mut used = 0;
     for entry in std::fs::read_dir(directory)? {
-        used += entry?.metadata()?.len();
+        used += current_file_len(&entry?.path())?;
     }
     Ok(FREE_SPACE_BUDGET_BYTES.saturating_sub(used * 10))
+}
+
+/// Reads the length through an open handle, because on Windows the length in a directory
+/// listing stays stale while another handle is still writing to the file.
+fn current_file_len(path: &Path) -> std::io::Result<u64> {
+    Ok(std::fs::File::open(path)?.metadata()?.len())
 }
 
 fn shrinking_space_limits() -> HostLimits {
