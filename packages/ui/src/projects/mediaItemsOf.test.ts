@@ -26,7 +26,12 @@ function mediaFileNamed(name: string): MediaFile {
 
 describe("mediaItemsOf", () => {
   it("tells audio from video by the file name", () => {
-    const items = mediaItemsOf(fixtureMediaFiles.media_files, []);
+    const items = mediaItemsOf(
+      fixtureMediaFiles.media_files,
+      [],
+      null,
+      new Map(),
+    );
     expect(items.map((item) => item.kind)).toEqual(["video", "audio"]);
   });
 
@@ -34,16 +39,32 @@ describe("mediaItemsOf", () => {
     const items = mediaItemsOf(
       [mediaFileNamed("book.epub"), mediaFileNamed("notes.txt")],
       [],
+      null,
+      new Map(),
     );
     expect(items.map((item) => item.kind)).toEqual(["ebook", "ebook"]);
   });
 
   it("counts the flashcards made from each file", () => {
-    const items = mediaItemsOf(fixtureMediaFiles.media_files, [
-      flashcardFrom("m1"),
-      flashcardFrom("m1"),
-      flashcardFrom(null),
-    ]);
+    const items = mediaItemsOf(
+      fixtureMediaFiles.media_files,
+      [flashcardFrom("m1"), flashcardFrom("m1"), flashcardFrom(null)],
+      null,
+      new Map(),
+    );
     expect(items.map((item) => item.flashcardCount)).toEqual([2, 0]);
+  });
+
+  it("tells why a file cannot be opened", () => {
+    const items = mediaItemsOf(
+      fixtureMediaFiles.media_files,
+      [],
+      null,
+      new Map([["m1", "missing"]]),
+    );
+    expect(items.map((item) => item.issue)).toEqual([
+      "pathMissing",
+      "browserFileUnreachable",
+    ]);
   });
 });

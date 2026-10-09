@@ -1,6 +1,10 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
-import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
+import {
+  actions,
+  createBrowserFileRegistry,
+  selectCurrentMediaFileId,
+} from "@easyimmerse/state";
 import type {
   ImportStepRequest,
   InstalledPlugin,
@@ -397,6 +401,26 @@ describe("ProjectScreen", () => {
         (path) => path === "/projects/p1/media/import-step",
       ),
     ).toHaveLength(2);
+  });
+
+  it("marks a file the browser no longer holds with the reason", async () => {
+    renderWithAppStore(
+      <ProjectScreen
+        projectId="p1"
+        onBack={() => undefined}
+        onEditSettings={() => undefined}
+      />,
+      createFakeBackendClient({
+        ...fixtureResponses,
+        "GET /dictionaries": { dictionaries: [] },
+      }),
+      { browserFileRegistry: createBrowserFileRegistry() },
+    );
+    expect(
+      await screen.findByText(
+        "This file is no longer open in the browser. Add it again to play it.",
+      ),
+    ).toBeDefined();
   });
 
   it("opens the project's settings", async () => {

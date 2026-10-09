@@ -7,6 +7,7 @@ import {
 } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
+import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useNavigationActions } from "../navigationContext.ts";
 import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
@@ -120,10 +121,13 @@ function useImportSources(): ImportSource[] {
 function useMediaItems(projectId: string) {
   const mediaFiles = useListMediaFilesQuery(projectId);
   const flashcards = useListFlashcardsQuery(projectId);
+  const registry = useBrowserFileRegistry();
   return {
     items: mediaItemsOf(
       mediaFiles.data?.media_files ?? [],
       flashcards.data?.flashcards ?? [],
+      registry,
+      new Map(),
     ),
     error: mediaFiles.error,
   };
