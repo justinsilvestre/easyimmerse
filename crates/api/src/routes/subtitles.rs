@@ -16,7 +16,7 @@ use easyimmerse_storage::NewSubtitleTrack;
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::fetched_subtitle_files::remove_subtitle_tracks;
-use crate::local_path::resolve_local_text;
+use crate::local_path::{resolve_local_file, resolve_local_text};
 use crate::routes::media::load_media_file;
 use crate::state::AppState;
 
@@ -95,13 +95,14 @@ pub async fn store_subtitle_track(
     media_id: MediaFileId,
     request: AddSubtitleTrackRequest,
 ) -> Result<SubtitleTrack, ApiFailure> {
-    let text = read_text(state, token, &request.source).await?;
+    let source = resolve_text_source(state, token, request.source).await?;
+    let text = read_text(state, token, &source).await?;
     let format = request.format.unwrap_or_else(|| detect_format(&text));
     let parsed = parse_timed_text(&text, Some(format))?;
     let new_track = NewSubtitleTrack {
         name: request.name,
         format,
-        source: request.source,
+        source,
         sample: parsed.cues.first().map(|cue| cue.text.clone()),
     };
     state
@@ -205,6 +206,21 @@ pub async fn set_subtitle_selection(
         .with_storage(move |storage| storage.set_subtitle_selection(&media_id, &selection))
         .await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// The source to store for a new track: a `path` source names the file by its canonical
+/// path, once the token may read it and the file exists.
+async fn resolve_text_source(
+    state: &AppState,
+    token: TokenKind,
+    source: TextSource,
+) -> Result<TextSource, ApiFailure> {
+    match source {
+        TextSource::Path { path } => Ok(TextSource::Path {
+            path: resolve_local_file(token, &state.config, &path).await?,
+        }),
+        source => Ok(source),
+    }
 }
 
 async fn read_text(

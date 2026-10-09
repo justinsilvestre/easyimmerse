@@ -13,7 +13,7 @@ use crate::auth::error_body::{ApiFailure, internal};
 use crate::fetched_subtitle_files::{SUBTITLES_DIR_PREFIX, remove_subtitle_tracks};
 use crate::fetched_subtitles::{FetchedTracks, read_fetched_subtitles, store_fetched_tracks};
 use crate::plugins::{fetch_subtitles, fetched_item_dir};
-use crate::routes::plugins::{discard_output_dir, ensure_inside, media_dir, run_plugin_call};
+use crate::routes::plugins::{canonicalize_inside, discard_output_dir, media_dir, run_plugin_call};
 use crate::routes::source_form::SourceStepResponse;
 use crate::state::AppState;
 
@@ -115,10 +115,10 @@ async fn fetch_into(
     output_dir: &Path,
 ) -> Result<Vec<ResolvedSubtitle>, ApiFailure> {
     let (package, dir) = (source.package.clone(), output_dir.to_path_buf());
-    let subtitles = run_plugin_call(move || fetch_subtitles(&package, &request, &dir)).await?;
-    ensure_inside(
+    let mut subtitles = run_plugin_call(move || fetch_subtitles(&package, &request, &dir)).await?;
+    canonicalize_inside(
         output_dir,
-        subtitles.iter().map(|subtitle| subtitle.path.as_str()),
+        subtitles.iter_mut().map(|subtitle| &mut subtitle.path),
     )?;
     Ok(subtitles)
 }

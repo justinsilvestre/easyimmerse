@@ -13,7 +13,7 @@ use utoipa::ToSchema;
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::found_subtitle_tracks::add_found_subtitle_tracks;
-use crate::local_path::ensure_local_file_exists;
+use crate::local_path::resolve_local_file;
 use crate::referenced_paths::{canonicalize_paths, list_referenced_paths};
 use crate::routes::plugins::discard_output_dir;
 use crate::state::AppState;
@@ -81,19 +81,32 @@ pub async fn add_media_file(
     Path(project_id): Path<ProjectId>,
     extract::Json(request): extract::Json<AddMediaFileRequest>,
 ) -> Result<(StatusCode, Json<MediaFile>), ApiFailure> {
-    if let MediaFileSource::Path { path } = &request.source {
-        ensure_local_file_exists(token, &state.config, path).await?;
-    }
-    let source = request.source.clone();
+    let source = resolve_media_source(&state, token, request.source).await?;
+    let stored_source = source.clone();
     let media_file = state
         .with_storage(move |storage| {
-            storage.add_media_file(&project_id, &request.name, &request.source)
+            storage.add_media_file(&project_id, &request.name, &stored_source)
         })
         .await?;
     if let MediaFileSource::Path { path } = source {
         add_found_subtitle_tracks(&state, token, &media_file, &path).await;
     }
     Ok((StatusCode::CREATED, Json(media_file)))
+}
+
+/// The source to store for a new media file: a `path` source names the file by its
+/// canonical path, once the token may read it and the file exists.
+async fn resolve_media_source(
+    state: &AppState,
+    token: TokenKind,
+    source: MediaFileSource,
+) -> Result<MediaFileSource, ApiFailure> {
+    match source {
+        MediaFileSource::Path { path } => Ok(MediaFileSource::Path {
+            path: resolve_local_file(token, &state.config, &path).await?,
+        }),
+        source => Ok(source),
+    }
 }
 
 #[utoipa::path(
