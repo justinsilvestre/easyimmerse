@@ -65,7 +65,12 @@ export type ScreenState = {
   /** The main screen's own state. Replaced when the route's main screen changes. */
   main: MainScreenState;
   /** Settings open over the main screen, which stays mounted beneath them. Null while they are closed. */
-  settings: { dictionaryImport: DictionaryImportWizard | null } | null;
+  settings: {
+    /** The adding of a dictionary from a file, which lasts while the dictionaries page is on top. */
+    dictionaryImport: DictionaryImportWizard | null;
+    /** How the last clearing of the media cache, or a failed change of its size, went, while the general page is on top. */
+    conversionCacheReport: string | null;
+  } | null;
   /** The one modal dialog open, if any. The platform's file picker counts as one, though the app does not draw it. */
   dialog:
     | { kind: "filePick"; for: "subtitles" }

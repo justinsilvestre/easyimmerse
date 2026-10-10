@@ -1,6 +1,8 @@
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  ConversionCacheBudget,
+  ConversionCacheStatus,
   ImportFormRequest,
   ImportJobStarted,
   ImportJobStatus,
@@ -71,7 +73,9 @@ export type ServerRequest =
       endMs: number;
     }
   | { kind: "lookupText"; query: LookupQuery }
-  | { kind: "deleteDictionary"; dictionaryId: string };
+  | { kind: "deleteDictionary"; dictionaryId: string }
+  | { kind: "clearConversionCache" }
+  | { kind: "setConversionCacheBudget"; budget: ConversionCacheBudget };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -99,6 +103,8 @@ export type ServerResponses = {
   saveTrackSelection: void;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteDictionary: void;
+  clearConversionCache: ConversionCacheStatus;
+  setConversionCacheBudget: ConversionCacheStatus;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

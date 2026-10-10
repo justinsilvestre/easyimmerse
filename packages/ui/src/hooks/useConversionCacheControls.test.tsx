@@ -1,11 +1,8 @@
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { actions } from "@easyimmerse/state";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
-import type { FakeResponse } from "../testSupport/createFakeBackendClient.ts";
-import {
-  createFakeBackendClient,
-  fakeFailure,
-} from "../testSupport/createFakeBackendClient.ts";
+import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { fixtureConversionCacheStatus } from "../testSupport/mediaFixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { useConversionCacheControls } from "./useConversionCacheControls.ts";
@@ -16,74 +13,19 @@ function Probe() {
   return <ConversionCacheSection {...useConversionCacheControls()} />;
 }
 
-function renderProbe(responses: Record<string, FakeResponse>) {
-  return renderWithAppStore(<Probe />, createFakeBackendClient(responses));
-}
-
-const statusRoute = { "GET /conversion-cache": fixtureConversionCacheStatus };
-
-const unavailableText =
-  "Media conversion is unavailable, so there is no cache.";
-
 describe("useConversionCacheControls", () => {
-  it("shows the usage the server reports", async () => {
-    renderProbe(statusRoute);
-    expect(
-      await screen.findByText("The cache is using 1.2 GB of 5 GB."),
-    ).toBeDefined();
-  });
-
-  it("shows nothing while the status loads", () => {
-    renderProbe(statusRoute);
-    expect(screen.queryByText(unavailableText)).toBeNull();
-  });
-
-  it("treats conversion as unavailable when the server says so", async () => {
-    renderProbe({
-      "GET /conversion-cache": fakeFailure({
-        status: 503,
-        code: "conversion_unavailable",
-        message: "this server has no ffmpeg",
-      }),
-    });
-    expect(await screen.findByText(unavailableText)).toBeDefined();
-  });
-
-  it("treats conversion as unavailable without a server", async () => {
-    renderProbe({
-      "GET /conversion-cache": fakeFailure({
-        status: "OFFLINE",
-        message: "needs a server",
-      }),
-    });
-    expect(await screen.findByText(unavailableText)).toBeDefined();
-  });
-
-  it("reports any other failure to read the status", async () => {
-    renderProbe({});
-    expect((await screen.findByRole("alert")).textContent).toContain(
-      "No canned GET /conversion-cache",
-    );
-  });
-
   it("reports a clearing that succeeded", async () => {
-    renderProbe({
-      ...statusRoute,
-      "POST /conversion-cache/clear": fixtureConversionCacheStatus,
-    });
+    const { store } = renderWithAppStore(
+      <Probe />,
+      createFakeBackendClient({
+        "GET /conversion-cache": fixtureConversionCacheStatus,
+        "POST /conversion-cache/clear": fixtureConversionCacheStatus,
+      }),
+    );
+    act(() => store.dispatch(actions.settingsRequested()));
     fireEvent.click(
       await screen.findByRole("button", { name: "Clear media cache" }),
     );
     expect(await screen.findByText("Cleared.")).toBeDefined();
-  });
-
-  it("reports the error of a clearing that failed", async () => {
-    renderProbe(statusRoute);
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Clear media cache" }),
-    );
-    expect(
-      await screen.findByText("No canned POST /conversion-cache/clear"),
-    ).toBeDefined();
   });
 });

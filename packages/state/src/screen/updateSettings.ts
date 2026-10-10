@@ -2,6 +2,7 @@ import type { AppAction } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
 import type { Route } from "../route/route.ts";
 import { settingsPageOf } from "../route/route.ts";
+import { updateConversionCache } from "./conversionCache/updateConversionCache.ts";
 import { removeDictionary } from "./dictionaries/dictionaryRemoval.ts";
 import { stopWatching } from "./dictionaryImport/dictionaryImportRequests.ts";
 import { updateDictionaryImport } from "./dictionaryImport/updateDictionaryImport.ts";
@@ -11,8 +12,9 @@ type SettingsState = ScreenState["settings"];
 
 /**
  * Keeps the state of Settings while the route shows them, and drops it once they close.
- * The dictionary import lasts while the dictionaries page is on top; when the page goes, its job is no longer watched.
- * A dictionary whose removal is confirmed there is removed.
+ * Each page's state lasts while that page is on top: the media cache's report on the general page,
+ * and the dictionary import on the dictionaries page, whose job is no longer watched once the page goes.
+ * A dictionary whose removal is confirmed on the dictionaries page is removed.
  */
 export function updateSettings(
   settings: SettingsState,
@@ -22,20 +24,27 @@ export function updateSettings(
   const dictionaryImport = settings?.dictionaryImport ?? null;
   if (route.screen !== "settings")
     return [null, stopWatching(dictionaryImport)];
-  if (settingsPageOf(route) !== "dictionaries")
-    return [
-      dictionaryImport === null && settings !== null
-        ? settings
-        : { dictionaryImport: null },
-      stopWatching(dictionaryImport),
-    ];
-  const [next, effects] = updateDictionaryImport(dictionaryImport, action);
+  const page = settingsPageOf(route);
+  const [nextImport, importEffects] =
+    page === "dictionaries"
+      ? updateDictionaryImport(dictionaryImport, action)
+      : [null, stopWatching(dictionaryImport)];
+  const [report, cacheEffects] =
+    page === "general"
+      ? updateConversionCache(settings?.conversionCacheReport ?? null, action)
+      : [null, []];
+  const removalEffects =
+    page === "dictionaries" && action.type === "dictionaryRemovalConfirmed"
+      ? [removeDictionary(action.dictionaryId)]
+      : [];
+  const isUnchanged =
+    settings !== null &&
+    nextImport === settings.dictionaryImport &&
+    report === settings.conversionCacheReport;
   return [
-    next === dictionaryImport && settings !== null
+    isUnchanged
       ? settings
-      : { dictionaryImport: next },
-    action.type === "dictionaryRemovalConfirmed"
-      ? [...effects, removeDictionary(action.dictionaryId)]
-      : effects,
+      : { dictionaryImport: nextImport, conversionCacheReport: report },
+    [...importEffects, ...removalEffects, ...cacheEffects],
   ];
 }

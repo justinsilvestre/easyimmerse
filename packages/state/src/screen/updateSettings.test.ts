@@ -23,6 +23,7 @@ const generalPage: Route = {
 
 const importing = {
   dictionaryImport: { stage: "importing", file: zip, jobId: "job1" },
+  conversionCacheReport: null,
 } as const;
 
 const closeSettings = actions.navigated({ type: "closeSettings" });
@@ -35,12 +36,15 @@ describe("updateSettings", () => {
       actions.settingsRequested(),
       dictionariesPage,
     );
-    expect(settings).toEqual({ dictionaryImport: null });
+    expect(settings).toEqual({
+      dictionaryImport: null,
+      conversionCacheReport: null,
+    });
   });
 
   it("starts adding a chosen dictionary file", () => {
     const [settings] = updateSettings(
-      { dictionaryImport: null },
+      { dictionaryImport: null, conversionCacheReport: null },
       actions.dictionaryFileChosen(zip),
       dictionariesPage,
     );
@@ -52,7 +56,10 @@ describe("updateSettings", () => {
 
   it("drops the import when the dictionaries page closes", () => {
     const [settings] = updateSettings(importing, closeSettings, generalPage);
-    expect(settings).toEqual({ dictionaryImport: null });
+    expect(settings).toEqual({
+      dictionaryImport: null,
+      conversionCacheReport: null,
+    });
   });
 
   it("stops watching the import's job when the dictionaries page closes", () => {
@@ -76,7 +83,7 @@ describe("updateSettings", () => {
 
   it("removes a dictionary once its removal is confirmed", () => {
     const [, effects] = updateSettings(
-      { dictionaryImport: null },
+      { dictionaryImport: null, conversionCacheReport: null },
       actions.dictionaryRemovalConfirmed("d1"),
       dictionariesPage,
     );
@@ -87,5 +94,27 @@ describe("updateSettings", () => {
         request: { kind: "deleteDictionary", dictionaryId: "d1" },
       },
     ]);
+  });
+
+  it("keeps the media cache's report while the general page is on top", () => {
+    const [settings] = updateSettings(
+      { dictionaryImport: null, conversionCacheReport: null },
+      actions.requestSettled(
+        "settings/conversionCache/clear",
+        { kind: "clearConversionCache" },
+        { ok: false, error: { status: 500, message: "disk busy" } },
+      ),
+      generalPage,
+    );
+    expect(settings?.conversionCacheReport).toBe("disk busy");
+  });
+
+  it("drops the media cache's report when the dictionaries page opens over the general page", () => {
+    const [settings] = updateSettings(
+      { dictionaryImport: null, conversionCacheReport: "Cleared." },
+      actions.navigated({ type: "openDictionaries" }),
+      dictionariesPage,
+    );
+    expect(settings?.conversionCacheReport).toBeNull();
   });
 });

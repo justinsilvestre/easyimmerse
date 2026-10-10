@@ -113,6 +113,14 @@ export const requestEndpoints = {
     backendApi.endpoints.deleteDictionary.initiate(dictionaryId, {
       track: false,
     }),
+  clearConversionCache: () =>
+    backendApi.endpoints.clearConversionCache.initiate(undefined, {
+      track: false,
+    }),
+  setConversionCacheBudget: ({ budget }) =>
+    backendApi.endpoints.setConversionCacheBudget.initiate(budget, {
+      track: false,
+    }),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**
