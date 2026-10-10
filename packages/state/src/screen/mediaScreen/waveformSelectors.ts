@@ -2,7 +2,7 @@ import type { RootState } from "../../app/createAppStore.ts";
 import type { WaveformViewName, WaveformViewState } from "./waveformState.ts";
 import { initialWaveform } from "./waveformState.ts";
 
-const waveformOf = (state: RootState) =>
+const selectWaveform = (state: RootState) =>
   state.app.screen.main.kind === "media"
     ? state.app.screen.main.waveform
     : initialWaveform;
@@ -11,8 +11,8 @@ const waveformOf = (state: RootState) =>
 export const selectWaveformRequests = (
   state: RootState,
   name: WaveformViewName,
-): WaveformViewState["requests"] => waveformOf(state)[name].requests;
+): WaveformViewState["requests"] => selectWaveform(state)[name].requests;
 
 /** Returns the span the user last zoomed the player's waveform strip to. */
 export const selectRequestedWaveformSpan = (state: RootState) =>
-  waveformOf(state).requestedSpanMs;
+  selectWaveform(state).requestedSpanMs;
