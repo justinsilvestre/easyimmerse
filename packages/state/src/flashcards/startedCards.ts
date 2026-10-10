@@ -18,13 +18,14 @@ import { holdForLookup } from "./waitingCards.ts";
 
 /** Saves at once a card started to be saved with no lookup to wait for, offering Undo once it lands. */
 export function saveStarted(action: AppAction, app: FlashcardApp) {
-  const started = flashcardStartedBy(action);
-  const projectId = selectMediaScreen(app)?.route.projectId;
-  if (started?.destination !== "save" || projectId === undefined) return [];
+  const onScreen = selectMediaScreen(app);
+  if (onScreen === null) return [];
+  const started = flashcardStartedBy(onScreen.screen.lookup, action);
+  if (started?.destination !== "save") return [];
   return askSave(
     {
       card: newCard(started.flashcard),
-      projectId,
+      projectId: onScreen.route.projectId,
       from: "background",
       offersUndo: true,
       rollbackIfDiscarded: null,

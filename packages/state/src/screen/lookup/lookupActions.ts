@@ -61,12 +61,12 @@ export const lookupActions = {
       context,
     }) as const,
   /**
-   * The C or E key: a flashcard for the word the cursor showed, filled from its lookup, or for no word when it showed none.
-   * The dispatcher makes both flashcards; `atCursor` is the word it showed with its flashcard, or null when it showed no cursor or could make no flashcard for its word.
+   * The C or E key: a flashcard for the lookup cursor's word, filled from its lookup, or for no word when there is no cursor.
+   * The dispatcher makes both flashcards; `atCursor` is the one for the cursor's word, or null when there is no cursor or it could make none for its word.
    */
   lookupCursorFlashcardRequested: (
     destination: FlashcardDestination,
-    atCursor: { chosen: ChosenWord; flashcard: NewFlashcard } | null,
+    atCursor: NewFlashcard | null,
     wordless: NewFlashcard | null,
     context: LookupFieldsContext,
   ) =>

@@ -63,8 +63,8 @@ export const requestFlashcard = (
   );
 
 /**
- * The C key as the UI saw the cursor: a flashcard for the word `atCursor`, under the id f-cursor,
- * or for no word, under the id f-wordless, when the UI showed no cursor.
+ * The C key as the UI makes its flashcards: one for the cursor's word `atCursor`, under the id f-cursor,
+ * and one for no word, under the id f-wordless. Pass null for `atCursor` when there is no cursor.
  */
 export const requestCursorFlashcard = (
   atCursor: ChosenWord | null,
@@ -72,10 +72,7 @@ export const requestCursorFlashcard = (
 ) =>
   actions.lookupCursorFlashcardRequested(
     destination,
-    atCursor && {
-      chosen: atCursor,
-      flashcard: exampleNewFlashcard("f-cursor", atCursor.word.term),
-    },
+    atCursor && exampleNewFlashcard("f-cursor", atCursor.word.term),
     exampleNewFlashcard("f-wordless", ""),
     exampleContext,
   );

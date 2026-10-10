@@ -413,17 +413,9 @@ describe("flashcardCommands", () => {
     ).toEqual(["f-wordless"]);
   });
 
-  it("when the C key is pressed with no cursor shown while the store has one, saves a flashcard for no word", () => {
-    const app = appAfter(actions.lookupCursorMoved(dog, "mouse"));
-    expect(
-      requestsAsked(app, requestCursorFlashcard(null)).map(
-        ({ request }) => request.flashcardId,
-      ),
-    ).toEqual(["f-wordless"]);
-  });
-
-  it("when the C key is pressed on a word shown at the cursor that the store has cleared, saves no flashcard for no word", () => {
-    expect(requestsAsked(appAfter(), requestCursorFlashcard(cat))).toEqual([]);
+  it("when the C key is pressed at a cursor, saves no flashcard for no word", () => {
+    const app = appAfter(actions.lookupCursorMoved(cat, "mouse"));
+    expect(requestsAsked(app, requestCursorFlashcard(cat))).toEqual([]);
   });
 
   it("when a flashcard for a word no dictionary covers is asked for, saves it at once", () => {

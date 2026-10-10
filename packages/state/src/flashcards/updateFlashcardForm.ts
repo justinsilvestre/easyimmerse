@@ -48,17 +48,15 @@ export function updateFlashcardForm(
 ) {
   if (action.type === "mediaScreenLeft")
     return updated(null, ...leaveForm(form, app));
-  const finished = lookupFlashcardFinishedBy(
-    selectShownMediaScreen(app).lookup,
-    action,
-  );
+  const { lookup } = selectShownMediaScreen(app);
+  const finished = lookupFlashcardFinishedBy(lookup, action);
   if (
     finished?.pending.destination === "editor" &&
     finished.how !== "abandoned"
   )
     return replaceForm(form, formFromLookup(finished), app);
   if (picturesFoundBy(action, app)) return updated(withPictures(form));
-  const started = flashcardStartedBy(action);
+  const started = flashcardStartedBy(lookup, action);
   if (started)
     return started.destination === "editor"
       ? replaceForm(form, openedForm(newCard(started.flashcard)), app)

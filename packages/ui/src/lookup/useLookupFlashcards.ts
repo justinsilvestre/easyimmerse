@@ -84,7 +84,7 @@ export function useLookupFlashcards(
       );
     },
     /**
-     * Starts a flashcard for the cursor's word shown once its lookup answers, or for no word when no cursor is shown
+     * Starts a flashcard for the lookup cursor's word `cursorWord` once its lookup answers, or for no word when there is no cursor
      * or no flashcard can be made for its word, saved at once or opened in the form as `destination` says.
      */
     startFlashcardAtCursor: (
@@ -96,7 +96,7 @@ export function useLookupFlashcards(
       dispatch(
         actions.lookupCursorFlashcardRequested(
           destinationOf(destination),
-          cursorWord && flashcard && { chosen: cursorWord, flashcard },
+          flashcard,
           newFlashcard("", null),
           context,
         ),
