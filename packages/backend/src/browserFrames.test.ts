@@ -14,9 +14,9 @@ function createRecordingCapturer(
 ) {
   const asked: Asked[] = [];
   const capturer: FrameCapturer = {
-    capture: async (file, atMs) => {
+    capture: async (file, atMs, isAbandoned) => {
       asked.push({ file, atMs });
-      return frame;
+      return isAbandoned() ? undefined : frame;
     },
     probe: async (file) => {
       asked.push({ file });
@@ -45,6 +45,9 @@ function heldVideo(capturer: FrameCapturer) {
   return { held, file, extra: extraWith(registry, capturer) };
 }
 
+/** The check of a capture that a component still shows. */
+const alwaysWanted = () => false;
+
 const goneVideo = {
   name: "clip.mp4",
   source: {
@@ -59,7 +62,9 @@ describe("captureFrame", () => {
     const { file, extra } = heldVideo(
       createRecordingCapturer("frame").capturer,
     );
-    expect(await captureFrame({ file, atMs: 1000 }, extra)).toEqual({
+    expect(
+      await captureFrame({ file, atMs: 1000 }, extra, alwaysWanted),
+    ).toEqual({
       data: { file, url: "frame" },
     });
   });
@@ -67,22 +72,25 @@ describe("captureFrame", () => {
   it("asks the capturer for the held file at the time", async () => {
     const { asked, capturer } = createRecordingCapturer("frame");
     const { held, file, extra } = heldVideo(capturer);
-    await captureFrame({ file, atMs: 1000 }, extra);
+    await captureFrame({ file, atMs: 1000 }, extra, alwaysWanted);
     expect(asked).toEqual([{ file: held, atMs: 1000 }]);
   });
 
   it("answers null for a frame that cannot be drawn", async () => {
     const { file, extra } = heldVideo(createRecordingCapturer(null).capturer);
-    expect(await captureFrame({ file, atMs: 1000 }, extra)).toEqual({
+    expect(
+      await captureFrame({ file, atMs: 1000 }, extra, alwaysWanted),
+    ).toEqual({
       data: { file, url: null },
     });
   });
 
-  it("fails a capture superseded by a later one", async () => {
-    const { capturer } = createRecordingCapturer(undefined);
-    const { file, extra } = heldVideo(capturer);
-    const result = await captureFrame({ file, atMs: 1000 }, extra);
-    expect(result.error?.code).toBe("frameCaptureSuperseded");
+  it("fails a capture abandoned before its turn", async () => {
+    const { file, extra } = heldVideo(
+      createRecordingCapturer("frame").capturer,
+    );
+    const result = await captureFrame({ file, atMs: 1000 }, extra, () => true);
+    expect(result.error?.code).toBe("frameCaptureAbandoned");
   });
 
   it("fails on a platform without a capturer", async () => {
@@ -94,6 +102,7 @@ describe("captureFrame", () => {
     const result = await captureFrame(
       { file, atMs: 1000 },
       extraWith(registry, null),
+      alwaysWanted,
     );
     expect(result.error?.code).toBe("browserFileUnreachable");
   });
@@ -103,7 +112,11 @@ describe("captureFrame", () => {
       createBrowserFileRegistry<File>(),
       createRecordingCapturer("frame").capturer,
     );
-    const result = await captureFrame({ file: goneVideo, atMs: 1000 }, extra);
+    const result = await captureFrame(
+      { file: goneVideo, atMs: 1000 },
+      extra,
+      alwaysWanted,
+    );
     expect(result.error?.code).toBe("browserFileGone");
   });
 });

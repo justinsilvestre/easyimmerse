@@ -14,23 +14,24 @@ export type FrameArgs = { file: PickedFile; atMs: number };
 /** A captured frame as an image URL, or null when the file shows no pictures or the frame cannot be drawn, with the file it comes from. */
 export type CapturedFrame = { file: PickedFile; url: string | null };
 
-/** The failure for a capture skipped because a capture of the same file at another time was asked for after it. */
-const frameCaptureSuperseded: BackendError = {
+/** The failure for a capture skipped because nothing showed it any more when its turn came. */
+const frameCaptureAbandoned: BackendError = {
   status: 409,
-  code: "frameCaptureSuperseded",
-  message: "A capture at another time replaced this one.",
+  code: "frameCaptureAbandoned",
+  message: "Nothing showed this frame any more when its turn came.",
 };
 
-/** Captures a frame of a file the browser holds. */
+/** Captures a frame of a file the browser holds, unless `isAbandoned` answers true when the capture's turn comes. */
 export async function captureFrame(
   { file, atMs }: FrameArgs,
   extra: BackendThunkExtra,
+  isAbandoned: () => boolean,
 ): Promise<QueryReturnValue<CapturedFrame, BackendError, undefined>> {
   const found = findCapturable(file, extra);
   if ("error" in found) return found;
-  const url = await found.capturer.capture(found.file, atMs);
+  const url = await found.capturer.capture(found.file, atMs, isAbandoned);
   return url === undefined
-    ? { error: frameCaptureSuperseded }
+    ? { error: frameCaptureAbandoned }
     : { data: { file, url } };
 }
 

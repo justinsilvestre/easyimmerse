@@ -40,20 +40,22 @@ const videoFile = () => new Blob(["video"]);
 describe("createFrameCapturer", () => {
   it("captures the frame at the asked time", async () => {
     const capturer = createFrameCapturer(createFakePlatform());
-    expect(await capturer.capture(videoFile(), 2500)).toBe("frame-at-2.5");
+    expect(await capturer.capture(videoFile(), 2500, () => false)).toBe(
+      "frame-at-2.5",
+    );
   });
 
   it("finds no frame in a file without pictures", async () => {
     const capturer = createFrameCapturer(createFakePlatform());
-    expect(await capturer.capture(new Blob([]), 2500)).toBeNull();
+    expect(await capturer.capture(new Blob([]), 2500, () => false)).toBeNull();
   });
 
   it("opens a file without pictures only once", async () => {
     const platform = createFakePlatform();
     const capturer = createFrameCapturer(platform);
     const file = new Blob([]);
-    await capturer.capture(file, 2500);
-    await capturer.capture(file, 9000);
+    await capturer.capture(file, 2500, () => false);
+    await capturer.capture(file, 9000, () => false);
     expect(platform.opened).toHaveLength(1);
   });
 
@@ -62,44 +64,37 @@ describe("createFrameCapturer", () => {
       ...createFakePlatform(),
       captureFrame: () => Promise.reject(new Error("The canvas is tainted.")),
     });
-    expect(await capturer.capture(videoFile(), 2500)).toBeNull();
+    expect(await capturer.capture(videoFile(), 2500, () => false)).toBeNull();
   });
 
   it("closes the video once no capture is waiting", async () => {
     const platform = createFakePlatform();
     const capturer = createFrameCapturer(platform);
     const file = videoFile();
-    await Promise.all([capturer.probe(file), capturer.capture(file, 1000)]);
+    await Promise.all([
+      capturer.probe(file),
+      capturer.capture(file, 1000, () => false),
+    ]);
     expect(platform.closed).toEqual([file]);
   });
 
-  it("skips a capture superseded by a later one of the same file before its turn", async () => {
+  it("skips a capture abandoned before its turn", async () => {
     const platform = createFakePlatform();
     const capturer = createFrameCapturer(platform);
     const file = videoFile();
-    await Promise.all([
-      capturer.capture(file, 1000),
-      capturer.capture(file, 2000),
-    ]);
-    expect(platform.captured).toEqual([2]);
+    let isAbandoned = false;
+    const first = capturer.capture(file, 1000, () => false);
+    const skipped = capturer.capture(file, 2000, () => isAbandoned);
+    isAbandoned = true;
+    await Promise.all([first, skipped]);
+    expect(platform.captured).toEqual([1]);
   });
 
-  it("resolves a superseded capture with no answer", async () => {
+  it("resolves an abandoned capture with no answer", async () => {
     const capturer = createFrameCapturer(createFakePlatform());
-    const file = videoFile();
-    const superseded = capturer.capture(file, 1000);
-    capturer.capture(file, 2000);
-    expect(await superseded).toBeUndefined();
-  });
-
-  it("keeps a capture asked for before one of another file", async () => {
-    const platform = createFakePlatform();
-    const capturer = createFrameCapturer(platform);
-    await Promise.all([
-      capturer.capture(videoFile(), 1000),
-      capturer.capture(videoFile(), 2000),
-    ]);
-    expect(platform.captured).toEqual([1, 2]);
+    expect(
+      await capturer.capture(videoFile(), 2000, () => true),
+    ).toBeUndefined();
   });
 
   describe("when probing a file for pictures", () => {
@@ -117,7 +112,7 @@ describe("createFrameCapturer", () => {
       const platform = createFakePlatform();
       const capturer = createFrameCapturer(platform);
       const file = videoFile();
-      await capturer.capture(file, 1000);
+      await capturer.capture(file, 1000, () => false);
       await capturer.probe(file);
       expect(platform.opened).toHaveLength(1);
     });
@@ -126,7 +121,10 @@ describe("createFrameCapturer", () => {
       const platform = createFakePlatform();
       const capturer = createFrameCapturer(platform);
       const file = videoFile();
-      await Promise.all([capturer.probe(file), capturer.capture(file, 1000)]);
+      await Promise.all([
+        capturer.probe(file),
+        capturer.capture(file, 1000, () => false),
+      ]);
       expect(platform.opened).toHaveLength(1);
     });
   });

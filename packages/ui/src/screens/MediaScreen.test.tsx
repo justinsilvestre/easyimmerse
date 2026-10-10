@@ -1,5 +1,4 @@
-import type { FrameCapturer } from "@easyimmerse/backend";
-import type { AppStore } from "@easyimmerse/state";
+import { type FrameCapturer, hasProbedPictures } from "@easyimmerse/backend";
 import {
   actions,
   createBrowserFileRegistry,
@@ -102,7 +101,8 @@ function renderBrowserVideoScreen(
     rendered.store.dispatch(actions.preferencesLoaded({}));
     rendered.store.dispatch(actions.openMediaFileRequested("p1", "m3"));
   });
-  return { ...rendered, client };
+  const pickedVideo = { name: mediaFile.name, source: mediaFile.source };
+  return { ...rendered, client, pickedVideo };
 }
 
 /** A capturer whose probes wait until the test answers whether the file shows pictures. */
@@ -121,17 +121,6 @@ function createWaitingFrameCapturer() {
   return { capturer, answer };
 }
 
-/** Whether the cache holds the answer of a pictures probe. */
-function hasProbeAnswered(store: AppStore) {
-  const { queries } = store.getState().backend as {
-    queries: Record<string, { endpointName?: string; status?: string }>;
-  };
-  return Object.values(queries).some(
-    (entry) =>
-      entry.endpointName === "probePictures" && entry.status === "fulfilled",
-  );
-}
-
 /** Starts a new flashcard from a word in the subtitles before the probe answers, then lets it answer. */
 async function startFlashcardBeforeProbe(hasPictures: boolean) {
   const { capturer, answer } = createWaitingFrameCapturer();
@@ -139,7 +128,11 @@ async function startFlashcardBeforeProbe(hasPictures: boolean) {
   const list = await findSubtitles();
   await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
   answer(hasPictures);
-  await vi.waitFor(() => expect(hasProbeAnswered(rendered.store)).toBe(true));
+  await vi.waitFor(() =>
+    expect(
+      hasProbedPictures(rendered.store.getState(), rendered.pickedVideo),
+    ).toBe(true),
+  );
   return rendered;
 }
 
@@ -948,11 +941,13 @@ describe("MediaScreen", () => {
     });
 
     it("leaves the screenshot out of a new flashcard once the file turns out to have no pictures", async () => {
-      const { client, store } = renderBrowserVideoScreen(
+      const { client, store, pickedVideo } = renderBrowserVideoScreen(
         browserVideo(),
         createFakeFrameCapturer(false),
       );
-      await vi.waitFor(() => expect(hasProbeAnswered(store)).toBe(true));
+      await vi.waitFor(() =>
+        expect(hasProbedPictures(store.getState(), pickedVideo)).toBe(true),
+      );
       expect(await savedScreenshotOfNewFlashcard(client)).toBeNull();
     });
 

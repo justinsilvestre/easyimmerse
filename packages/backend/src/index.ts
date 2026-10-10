@@ -1,5 +1,6 @@
 export { skipToken } from "@reduxjs/toolkit/query";
 export {
+  hasProbedPictures,
   selectCachedLookup,
   selectCachedMediaTracks,
   selectCachedWaveformWindow,
@@ -58,6 +59,6 @@ export { lookupStartsIn } from "./lookupPositions.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
 export { usePrefetchLookupRangeQuery } from "./prefetchLookupRange.ts";
 export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
-export { isSamePickedFile } from "./readPickedFile.ts";
+export { isSamePickedFile, type PickedFile } from "./readPickedFile.ts";
 export { resolveServerConfig } from "./resolveServerConfig.ts";
 export { createWasmBackendClient } from "./wasmBackendClient.ts";

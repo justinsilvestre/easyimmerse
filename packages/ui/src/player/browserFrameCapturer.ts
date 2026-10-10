@@ -21,8 +21,6 @@ export function createFrameCapturer(
   platform: FrameCapturerPlatform,
 ): FrameCapturer {
   const picturesByFile = new WeakMap<Blob, boolean>();
-  const latestCaptureByFile = new WeakMap<Blob, number>();
-  let captureCount = 0;
   let queue: Promise<unknown> = Promise.resolve();
   let waitingCount = 0;
   let opened: { file: Blob; video: OpenedVideo | null } | null = null;
@@ -61,17 +59,11 @@ export function createFrameCapturer(
     queue = turn.catch(() => undefined);
     return turn;
   };
-  const capture = (file: Blob, atMs: number) => {
-    captureCount += 1;
-    const id = captureCount;
-    latestCaptureByFile.set(file, id);
-    const isSuperseded = () => latestCaptureByFile.get(file) !== id;
-    return enqueue(async () =>
-      isSuperseded() ? undefined : captureNow(file, atMs),
-    );
+  return {
+    capture: (file, atMs, isAbandoned) =>
+      enqueue(async () => (isAbandoned() ? undefined : captureNow(file, atMs))),
+    probe: (file) => enqueue(() => probeNow(file)),
   };
-
-  return { capture, probe: (file) => enqueue(() => probeNow(file)) };
 }
 
 /** The width the server's frame route scales screenshots down to, which browser captures match. */

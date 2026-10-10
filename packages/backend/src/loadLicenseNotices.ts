@@ -10,7 +10,7 @@ const licenseNoticesUnloadable: BackendError = {
 };
 
 /** Loads the bundled license notices, answering a failure to load them with a client error. */
-export function loadNotices(
+export function loadLicenseNotices(
   load: () => Promise<LicenseNoticeGroup[]>,
 ): Promise<QueryReturnValue<LicenseNoticeGroup[], BackendError, undefined>> {
   return load().then(

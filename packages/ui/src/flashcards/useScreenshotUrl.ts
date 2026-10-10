@@ -15,7 +15,6 @@ export function useScreenshotUrl(
   atMs: number | null,
 ): string | null {
   const browserFile = source?.kind === "browser" ? source.file : null;
-  // `data` is the last frame received at any time, so that the frame shown stays while the next one is captured.
   const { data: frame } = useCaptureFrameQuery(
     browserFile && atMs !== null ? { file: browserFile, atMs } : skipToken,
   );

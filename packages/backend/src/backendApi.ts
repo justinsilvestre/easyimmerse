@@ -57,7 +57,11 @@ import {
 } from "./browserFrames.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
-import { loadNotices } from "./licenseNotices.ts";
+import {
+  isQuerySubscribed,
+  type SubscriptionActions,
+} from "./isQuerySubscribed.ts";
+import { loadLicenseNotices } from "./loadLicenseNotices.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
 import { type BookArgs, parseBook } from "./parseBook.ts";
@@ -512,11 +516,15 @@ export const backendApi = createApi({
      */
     captureFrame: build.query<CapturedFrame, FrameArgs>({
       queryFn: (args, api) =>
-        captureFrame(args, api.extra as BackendThunkExtra),
+        captureFrame(
+          args,
+          api.extra as BackendThunkExtra,
+          () => !isQuerySubscribed(api, subscriptionActions()),
+        ),
     }),
     /** The open-source license notices. They are megabytes of text, so the entry goes as soon as no page shows them. */
     licenseNotices: build.query<LicenseNoticeGroup[], void>({
-      queryFn: () => loadNotices(loadLicenseNoticeGroups),
+      queryFn: () => loadLicenseNotices(loadLicenseNoticeGroups),
       keepUnusedDataFor: 0,
     }),
     /** Imports a picked dictionary file. The server answers with a job, which is polled through `getImportJob`. */
@@ -656,6 +664,17 @@ export function selectCachedWaveformWindow(
 }
 
 /** The tracks of a media file, from the cache, or undefined until they have loaded. */
+/** The API's internal subscription actions, typed apart so that the endpoints that read them do not make `backendApi`'s type refer to itself. */
+function subscriptionActions(): SubscriptionActions {
+  return backendApi.internalActions;
+}
+
+/** Whether the cache holds the answer of the pictures probe of a file the browser holds. */
+export function hasProbedPictures(state: unknown, file: PickedFile): boolean {
+  return backendApi.endpoints.probePictures.select(file)(state as BackendState)
+    .isSuccess;
+}
+
 export function selectCachedMediaTracks(
   state: unknown,
   file: MediaFileArgs,

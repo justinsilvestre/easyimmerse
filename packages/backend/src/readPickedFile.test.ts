@@ -71,6 +71,14 @@ describe("isSamePickedFile", () => {
     ).toBe(false);
   });
 
+  it("never matches files with paths", () => {
+    const onDisk = {
+      name: "clip.mp4",
+      source: { kind: "path", path: "/clip.mp4" } as const,
+    };
+    expect(isSamePickedFile(onDisk, onDisk)).toBe(false);
+  });
+
   it("tells apart files whose names differ", () => {
     expect(isSamePickedFile(picked, { ...picked, name: "other.mp4" })).toBe(
       false,

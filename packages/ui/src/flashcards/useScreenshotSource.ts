@@ -1,4 +1,8 @@
-import { skipToken, useProbePicturesQuery } from "@easyimmerse/backend";
+import {
+  type PickedFile,
+  skipToken,
+  useProbePicturesQuery,
+} from "@easyimmerse/backend";
 import type { ServerConfig } from "@easyimmerse/state";
 import { selectServerConfig } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
@@ -16,7 +20,7 @@ export type ScreenshotSource =
       projectId: string;
       mediaFileId: string;
     }
-  | { kind: "browser"; file: Pick<MediaFile, "name" | "source"> };
+  | { kind: "browser"; file: PickedFile };
 
 /**
  * The source of the media file's screenshots, or null until the file is known to show pictures, or when none can be reached.
