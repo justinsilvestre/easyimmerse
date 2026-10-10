@@ -25,13 +25,14 @@ function PopupAtWord({
       {wordAt && (
         <span
           ref={setWord}
+          id="anchored-word"
           style={wordAt}
           className="absolute rounded-sm bg-accent-soft px-1"
         >
           fressen
         </span>
       )}
-      <AnchoredPopup anchor={word} size={size}>
+      <AnchoredPopup anchor={word && { elementId: word.id }} size={size}>
         <DictionaryPopup
           state={{ kind: "found", term: "fressen", results: exampleResults }}
           mode={wordAt ? "word" : "search"}
@@ -67,6 +68,7 @@ function PopupFollowingWords() {
       {followedWords.map(({ text, top, left }) => (
         <span
           key={text}
+          id={`followed-${text}`}
           style={{ top, left }}
           onPointerEnter={(event) => setWord(event.currentTarget)}
           className="absolute rounded-sm bg-accent-soft px-1"
@@ -75,7 +77,7 @@ function PopupFollowingWords() {
         </span>
       ))}
       {word && (
-        <AnchoredPopup anchor={word}>
+        <AnchoredPopup anchor={{ elementId: word.id }}>
           <DictionaryPopup
             state={{ kind: "found", term: "fressen", results: exampleResults }}
             mode="word"

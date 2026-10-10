@@ -10,7 +10,13 @@ export type LookupWord = { term: string; query: LookupQuery | null };
 /** The passage a word was chosen in, which a flashcard made from it takes its sentence from. */
 export type LookupSource =
   | { kind: "cue"; cue: Cue }
-  | { kind: "text"; sentence: string; location: ReaderLocation };
+  /** A word of a book: its sentence, where it begins, and whether its script is written without spaces, for highlighting it. */
+  | {
+      kind: "text";
+      sentence: string;
+      location: ReaderLocation;
+      isUnspaced: boolean;
+    };
 
 /** Where a word lies in the viewport, in CSS pixels, as `getBoundingClientRect` reports it. */
 export type AnchorRect = {

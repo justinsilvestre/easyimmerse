@@ -19,16 +19,15 @@ import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
+import type { LookupPlace } from "../lookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useReaderLookup } from "../lookup/useReaderLookup.ts";
-import type { WordPlace } from "../lookup/useWordLookup.ts";
 import { bookFailureSentence } from "../reader/bookFailureSentence.ts";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { ReaderView } from "../reader/ReaderView.tsx";
 import { parseReaderPreferences } from "../reader/readerPreferences.ts";
 import { sentenceWordLookups } from "../reader/sentenceWordLookups.ts";
 import { useOpeningLocation } from "../reader/useOpeningLocation.ts";
-import type { ReaderWord } from "../reader/useWordPointer.ts";
 
 /**
  * The screen for reading one of the project's ebooks or text files.
@@ -117,13 +116,13 @@ function BookReader({
    */
   const startFlashcard = (
     word: string,
-    place: WordPlace<ReaderWord> | null,
+    place: LookupPlace | null,
     lookupFields: LookupFlashcardFields | null,
     lateFields?: Promise<LookupFlashcardFields | null>,
   ) => {
     const draft = draftFromText({
       word,
-      sentence: place?.source.sentence ?? "",
+      sentence: place?.source.kind === "text" ? place.source.sentence : "",
       mediaFile,
       settings,
     });
@@ -148,7 +147,7 @@ function BookReader({
       initialLocation={initialLocation}
       lookup={lookup.popup && <DictionaryPopup {...lookup.popup.props} />}
       lookupSize={lookup.popup?.size}
-      lookupWord={lookup.lookupWord}
+      lookupRect={lookup.popup?.rect}
       highlightedWord={lookup.highlightedWord}
       callbacks={{
         ...lookup.wordGestures,

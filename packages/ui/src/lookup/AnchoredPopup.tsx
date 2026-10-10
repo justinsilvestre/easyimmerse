@@ -1,3 +1,4 @@
+import type { LookupAnchor } from "@easyimmerse/state";
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import { useViewportSize } from "../hooks/useViewportSize.ts";
@@ -7,7 +8,8 @@ import { useAnchorRect } from "./useAnchorRect.ts";
 import { useIsGliding } from "./useIsGliding.ts";
 
 /**
- * Holds the dictionary pop-up at the word it shows, following the word as it moves, inside the window less a margin.
+ * Holds the dictionary pop-up at the word it shows, an element found by its id or a rectangle,
+ * following the element as it moves, inside the window less a margin.
  * Compact, it stands on whichever side of the word has more room, without covering the word;
  * expanded, it spans the window's height and may cover the word. Either way it is centred on the word as far as the window allows.
  * It glides from one word to the next on the same side, and appears at once where it first opens or when it changes sides.
@@ -21,7 +23,7 @@ export function AnchoredPopup({
   onPointerInsideChange,
   children,
 }: {
-  anchor: Element | null;
+  anchor: LookupAnchor | null;
   size?: PopupSize;
   onPointerInsideChange?: (isInside: boolean) => void;
   children: ReactNode;

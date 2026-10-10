@@ -1,3 +1,4 @@
+import type { ChosenWord } from "@easyimmerse/state";
 import { type ComponentProps, useRef } from "react";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import type {
@@ -5,81 +6,89 @@ import type {
   ReaderWordGestures,
 } from "../reader/useWordPointer.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
-import type { LookupRequest } from "./lookupPopup.ts";
-import {
-  type PopupHold,
-  type StartFlashcardFromLookup,
-  useWordLookup,
-} from "./useWordLookup.ts";
-
-/** The reader has no playback for the pop-up to hold. */
-const noHold: PopupHold = {
-  hold: () => undefined,
-  release: () => undefined,
-  forget: () => undefined,
-};
+import type { StartFlashcardFromLookup } from "./lookupPlace.ts";
+import { useWordLookup } from "./useWordLookup.ts";
 
 /**
  * Looks up words of an ebook or text in the dictionary pop-up, with the same gestures as the subtitles' words.
+ * A flashcard made from a word opens in the editor through `startFlashcard`.
  * Returns the gestures for the text's words, the pop-up's props, or null while it is closed,
- * the words of the text the pop-up stands beside and highlights,
+ * the rectangle of the word the pop-up stands beside, the word it highlights,
  * and what the L key does: look up the word under the mouse as a click on it would, or else open the search field.
  */
 export function useReaderLookup(
   languages: { target: string; translation: string },
-  startFlashcard: StartFlashcardFromLookup<ReaderWord>,
+  startFlashcard: StartFlashcardFromLookup,
 ) {
   const navigate = useNavigate();
-  const openDictionaries = () => navigate({ type: "openDictionaries" });
-  const lookup = useWordLookup<ReaderWord>({
-    languages,
-    hold: noHold,
-    startFlashcard,
+  const lookup = useWordLookup(languages, {
+    save: startFlashcard,
+    editor: startFlashcard,
   });
+  const chosenFor = (word: ReaderWord): ChosenWord => {
+    const { chapterIndex, paragraphIndex, offset } = word.location;
+    const { top, bottom, left, right } = word.rect;
+    return {
+      word: lookup.wordOf(word.text, word.lookup),
+      source: {
+        kind: "text",
+        sentence: word.sentence,
+        location: word.location,
+        isUnspaced: word.isUnspaced,
+      },
+      occurrence: {
+        passage: `${chapterIndex}:${paragraphIndex}`,
+        start: offset,
+      },
+      anchor: { rect: { top, bottom, left, right } },
+    };
+  };
   const popup = lookup.popup && {
     size: lookup.popup.anchored.size,
     onPointerInsideChange: lookup.popup.anchored.onPointerInsideChange,
+    rect: rectOf(lookup.popup.anchored.anchor),
     props: {
       ...lookup.popup.props,
-      onSetUpDictionary: () => lookup.leaveFor(openDictionaries),
+      onSetUpDictionary: () =>
+        lookup.setAsideFor(() => navigate({ type: "openDictionaries" })),
     } satisfies ComponentProps<typeof DictionaryPopup>,
   };
   const occurrence = lookup.activeOccurrence;
   const pointed = useRef<ReaderWord | null>(null);
   const wordGestures: ReaderWordGestures = {
-    onWordClick: (word, input) => lookup.clickWord(requestFor(word), input),
+    onWordClick: (word, input) => lookup.clickWord(chosenFor(word), input),
     onWordPointed: (word) => {
       pointed.current = word;
     },
-    onWordHover: (word) => lookup.hoverWord(requestFor(word)),
-    onWordHoverAnswered: (word) => lookup.restOnWord(requestFor(word)),
-    onWordDoubleClick: (word) => lookup.startFlashcardFor(requestFor(word)),
-    onWordHold: (word) => lookup.startFlashcardFor(requestFor(word)),
+    onWordHover: (word) => lookup.hoverWord(chosenFor(word)),
+    onWordHoverAnswered: (word) => lookup.restOnWord(chosenFor(word)),
+    onWordDoubleClick: (word) => lookup.startFlashcardFor(chosenFor(word)),
+    onWordHold: (word) => lookup.startFlashcardFor(chosenFor(word)),
   };
   return {
     popup,
     wordGestures,
-    lookupWord: lookup.shownSource ?? undefined,
-    highlightedWord: occurrence?.source
-      ? { word: occurrence.source, matchedLength: occurrence.length }
-      : undefined,
+    highlightedWord:
+      occurrence?.source?.kind === "text"
+        ? {
+            word: {
+              text: lookup.shownTerm,
+              location: occurrence.source.location,
+              isUnspaced: occurrence.source.isUnspaced,
+            },
+            matchedLength: occurrence.length,
+          }
+        : undefined,
     openSearch: lookup.openSearch,
     lookUpPointedWord: () => {
       if (pointed.current)
-        lookup.clickWord(requestFor(pointed.current), "keyboard");
+        lookup.clickWord(chosenFor(pointed.current), "keyboard");
       else lookup.openSearch();
     },
     close: lookup.close,
   };
 }
 
-function requestFor(word: ReaderWord): LookupRequest<ReaderWord> {
-  const { chapterIndex, paragraphIndex, offset } = word.location;
-  return {
-    term: word.text,
-    lookup: word.lookup,
-    source: word,
-    occurrence: { passage: `${chapterIndex}:${paragraphIndex}`, start: offset },
-    anchor: null,
-  };
+function rectOf(anchor: ChosenWord["anchor"]) {
+  return anchor !== null && "rect" in anchor ? anchor.rect : null;
 }

@@ -3,13 +3,21 @@ import { runLookupEnd } from "../components/runLookupStarts.ts";
 import { clearWordHighlight, highlightWord } from "./readerWordHighlight.ts";
 import type { ReaderWord } from "./wordAtPoint.ts";
 
+/** What highlighting a word of the text needs: its text, where it begins, and whether its script is written without spaces. */
+export type HighlightedWord = Pick<
+  ReaderWord,
+  "text" | "location" | "isUnspaced"
+>;
+
 /**
  * Highlights the word the dictionary pop-up shows, as the subtitles do, once its lookup has answered:
  * a word written with spaces whole, and in a script without spaces the characters the lookup matched,
  * or the character it looked up from with its marks when nothing matched. Until the lookup answers, nothing is highlighted.
  */
 export function useLookedUpHighlight(
-  highlighted: { word: ReaderWord; matchedLength?: number | null } | undefined,
+  highlighted:
+    | { word: HighlightedWord; matchedLength?: number | null }
+    | undefined,
 ) {
   const location = highlighted?.word.location;
   const length = highlighted && highlightedLength(highlighted);
@@ -34,7 +42,7 @@ function highlightedLength({
   word,
   matchedLength,
 }: {
-  word: ReaderWord;
+  word: HighlightedWord;
   matchedLength?: number | null;
 }): number | undefined {
   if (matchedLength === undefined) return undefined;

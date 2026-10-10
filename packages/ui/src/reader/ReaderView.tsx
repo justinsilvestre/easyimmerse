@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
+import type { AnchorRect } from "../lookup/placeAtAnchor.ts";
 import type { PopupSize } from "../lookup/popupSize.ts";
 import { AppearancePanel } from "./AppearancePanel.tsx";
 import { ChapterEnd } from "./ChapterEnd.tsx";
@@ -54,14 +55,13 @@ import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
 import { sentencesNearView } from "./sentencesNearView.ts";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
-import { useLookedUpHighlight } from "./useLookedUpHighlight.ts";
+import {
+  type HighlightedWord,
+  useLookedUpHighlight,
+} from "./useLookedUpHighlight.ts";
 import { useParagraphsNearView } from "./useParagraphsNearView.ts";
 import { useReaderKeys } from "./useReaderKeys.ts";
-import {
-  type ReaderWord,
-  type ReaderWordGestures,
-  useWordPointer,
-} from "./useWordPointer.ts";
+import { type ReaderWordGestures, useWordPointer } from "./useWordPointer.ts";
 
 export type ReaderCallbacks = ReaderWordGestures & {
   onBack: () => void;
@@ -94,18 +94,18 @@ type ReaderViewProps = {
   initialPanel?: ReaderPanel;
   initialSearchQuery?: string;
   callbacks: ReaderCallbacks;
-  /** The dictionary pop-up, placed beside `lookupWord`. */
+  /** The dictionary pop-up, placed beside `lookupRect`. */
   lookup?: ReactNode;
   /** The pop-up's size, which sets how it is placed. */
   lookupSize?: PopupSize;
-  /** The word of the text the pop-up opened on, which it stands beside. */
-  lookupWord?: ReaderWord;
+  /** Where the word of the text the pop-up opened on lies in the window, which the pop-up stands beside. */
+  lookupRect?: AnchorRect | null;
   /**
    * The word of the text the pop-up shows, which is highlighted as in the subtitles once its lookup has answered:
    * a word written with spaces whole, and in a script without spaces the characters the lookup matched,
    * or the character it looked up from when `matchedLength` is null because nothing matched.
    */
-  highlightedWord?: { word: ReaderWord; matchedLength?: number | null };
+  highlightedWord?: { word: HighlightedWord; matchedLength?: number | null };
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
   /** A panel laid over the text at the side, such as the flashcard editor. The reader's keys leave it alone. */
@@ -376,7 +376,7 @@ export function ReaderView(props: ReaderViewProps) {
       />
       {props.lookup && (
         <LookupAnchor
-          wordRect={props.lookupWord?.rect ?? null}
+          wordRect={props.lookupRect ?? null}
           isWide={isWide}
           size={props.lookupSize}
           onPointerInsideChange={callbacks.onPointerInsideLookupChange}

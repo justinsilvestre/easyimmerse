@@ -113,7 +113,7 @@ function StatefulReader(args: ReaderViewProps) {
       {...args}
       preferences={preferences}
       lookup={lookup}
-      lookupWord={word ?? undefined}
+      lookupRect={word?.rect}
       highlightedWord={word ? { word } : undefined}
       callbacks={{
         ...args.callbacks,

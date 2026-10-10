@@ -495,7 +495,7 @@ function LookupInSubtitlesPanel({
       }
       lookup={
         word && (
-          <AnchoredPopup anchor={word} size={size}>
+          <AnchoredPopup anchor={{ elementId: word.id }} size={size}>
             <DictionaryPopup
               state={{ kind: "found", term: "Hund", results: exampleResults }}
               mode="word"

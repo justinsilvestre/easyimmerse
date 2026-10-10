@@ -25,9 +25,9 @@ import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import type { ItemSpan } from "../hooks/useVisibleItemSpan.ts";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
+import type { StartFlashcardFromLookup } from "../lookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
-import type { StartFlashcardFromLookup } from "../lookup/useWordLookup.ts";
 import { wordLookupsIn } from "../lookup/wordLookupsIn.ts";
 import { cuesToPrefetch } from "../media/cuesToPrefetch.ts";
 import { findAdjacentCue, findTranslationOf } from "../media/findCue.ts";
@@ -136,10 +136,10 @@ export function MediaScreen({
    * filled from its lookup now or, through `lateFields`, once the lookup answers.
    */
   const flashcardStarter =
-    (start: typeof flashcards.start): StartFlashcardFromLookup<Cue> =>
+    (start: typeof flashcards.start): StartFlashcardFromLookup =>
     (word, place, lookupFields, lateFields) => {
       if (mediaFile === null) return;
-      const cue = place?.source ?? shownCue;
+      const cue = place?.source.kind === "cue" ? place.source.cue : shownCue;
       const draft = draftFromCue({
         word,
         wordStart: place?.start ?? null,
@@ -171,11 +171,15 @@ export function MediaScreen({
     wordLookupsIn,
   );
   const screenRef = useRef<HTMLDivElement>(null);
-  const lookup = useSubtitleLookup(languages, createFlashcard, screenRef);
+  const lookup = useSubtitleLookup(
+    languages,
+    { save: createFlashcard, editor: openNewFlashcard },
+    screenRef,
+  );
   useKeyboardShortcut(
     "e",
     () => {
-      if (!isEditorOpen) lookup.startFlashcardAtCursor(openNewFlashcard);
+      if (!isEditorOpen) lookup.startFlashcardAtCursor("editor");
     },
     screenRef,
   );

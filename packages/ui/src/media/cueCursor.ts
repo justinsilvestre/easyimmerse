@@ -16,7 +16,13 @@ export type CueTextCursor = TextCursor & { cueIndex: number };
 export type CueCursor = { cue: Cue; hit: WordHit; position: CueTextCursor };
 
 export type CueCursorAction =
-  | { type: "pointed"; cue: Cue; hit: WordHit; matchedLength?: number | null }
+  /** `shownMatchedLength` is the match the cursor shows now, which may come from the cache, so that a mouse within it keeps the cursor. */
+  | {
+      type: "pointed";
+      cue: Cue;
+      hit: WordHit;
+      shownMatchedLength?: number | null;
+    }
   | { type: "answered"; cue: Cue; hit: WordHit; matchedLength: number | null }
   | { type: "left"; input: WordHit["input"] };
 
@@ -28,12 +34,10 @@ export function reduceCueCursor(
   if (action.type === "left")
     return cursor?.position.input === action.input ? null : cursor;
   const current = cursor?.cue.index === action.cue.index ? cursor : null;
-  const position = reduceTextCursor(
-    current?.position ?? null,
-    textActionOf(action),
-  );
+  const shown = current && shownPosition(current.position, action);
+  const position = reduceTextCursor(shown, textActionOf(action));
   if (position === null) return null;
-  if (current && position === current.position) return current;
+  if (current && position === shown) return current;
   return {
     cue: action.cue,
     hit: action.hit,
@@ -46,8 +50,20 @@ function textActionOf(
 ): TextCursorAction {
   const { start, input } = action.hit;
   return action.type === "pointed"
-    ? { type: "pointed", start, input, matchedLength: action.matchedLength }
+    ? { type: "pointed", start, input }
     : { type: "answered", start, input, matchedLength: action.matchedLength };
+}
+
+/** The cursor's place as it is shown, with the match a pointing action says is shown when the place has none of its own. */
+function shownPosition(
+  position: CueTextCursor,
+  action: Exclude<CueCursorAction, { type: "left" }>,
+): CueTextCursor {
+  if (action.type !== "pointed" || position.matchedLength !== undefined)
+    return position;
+  return action.shownMatchedLength === undefined
+    ? position
+    : { ...position, matchedLength: action.shownMatchedLength };
 }
 
 /**

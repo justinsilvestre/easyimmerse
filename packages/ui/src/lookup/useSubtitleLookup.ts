@@ -1,3 +1,4 @@
+import type { ChosenWord } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import {
   type ComponentProps,
@@ -9,20 +10,17 @@ import { stripMarkup } from "../components/ClickableText.tsx";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
-import { usePlaybackPause } from "../hooks/usePlaybackPause.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
-import { reduceCueCursor } from "../media/cueCursor.ts";
+import { type CueCursor, reduceCueCursor } from "../media/cueCursor.ts";
 import type {
   ActiveCueWord,
   CueWordGestures,
 } from "../media/cueWordGestures.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
-import type { LookupRequest } from "./lookupPopup.ts";
 import { lookupTextAt } from "./lookupTextAt.ts";
-import {
-  type StartFlashcardFromLookup,
-  useWordLookup,
-} from "./useWordLookup.ts";
+import { useCachedMatchLength } from "./useCachedMatchLength.ts";
+import type { LookupFlashcardStarts } from "./useLookupFlashcardHandoff.ts";
+import { useWordLookup } from "./useWordLookup.ts";
 
 /**
  * Looks up words of the subtitles in the dictionary pop-up, which pauses playback while it is open
@@ -30,52 +28,55 @@ import {
  * Keeps the one lookup cursor of the subtitles, which the mouse and the keyboard move alike, wherever the subtitles are shown.
  * While the screen that `screenRef` marks is in reach, the L key looks up from the cursor as a click there would,
  * or opens the pop-up's search field when there is no cursor,
- * and the C key starts a flashcard through `startFlashcard` from the cursor as a double-click there would, or for no word when there is no cursor.
+ * and the C key saves a flashcard from the cursor as a double-click there would, or for no word when there is no cursor.
  * Returns the gestures for the subtitles' words, which keep their identity across renders,
  * the word the pop-up shows, which keeps its identity while it shows the same word and is highlighted only while there is no cursor,
- * the cursor's place, which keeps its identity while the cursor stays,
+ * the cursor's place, highlighted at once when its word's lookup is cached,
  * and the pop-up's props, or null while it is closed.
  */
 export function useSubtitleLookup(
   languages: { target: string; translation: string },
-  startFlashcard: StartFlashcardFromLookup<Cue>,
+  starts: LookupFlashcardStarts,
   screenRef: RefObject<Element | null>,
 ) {
-  const pause = usePlaybackPause();
   const navigate = useNavigate();
-  const openDictionaries = () => navigate({ type: "openDictionaries" });
-  const lookup = useWordLookup<Cue>({
-    languages,
-    hold: { hold: pause.pause, release: pause.resume, forget: pause.forget },
-    startFlashcard,
+  const lookup = useWordLookup(languages, starts);
+  const chosenAt = (hit: WordHit, cue: Cue): ChosenWord => ({
+    word: lookup.wordOf(
+      hit.word,
+      lookupTextAt(stripMarkup(cue.text), hit.start),
+    ),
+    source: { kind: "cue", cue },
+    occurrence: { passage: String(cue.index), start: hit.start },
+    anchor: { elementId: hit.element.id },
   });
   const [cursor, dispatchCursor] = useReducer(reduceCueCursor, null);
+  const cursorMatch = useCachedMatchLength(
+    cursor ? chosenAt(cursor.hit, cursor.cue).word.query : undefined,
+  );
+  const position = useShownCursor(cursor, cursorMatch);
   const lookUpCursor = () => {
     if (cursor?.hit.element.isConnected)
-      lookup.clickWord(requestFor(cursor.hit, cursor.cue), "keyboard");
+      lookup.clickWord(chosenAt(cursor.hit, cursor.cue), "keyboard");
     else lookup.openSearch();
   };
   useKeyboardShortcut("l", lookUpCursor, screenRef);
-  const startFlashcardAtCursor = (start: StartFlashcardFromLookup<Cue>) => {
+  const startFlashcardAtCursor = (destination: "save" | "editor") => {
     if (cursor?.hit.element.isConnected)
-      lookup.startFlashcardFor(requestFor(cursor.hit, cursor.cue), start);
-    else start("", null, null);
+      lookup.startFlashcardFor(chosenAt(cursor.hit, cursor.cue), destination);
+    else starts[destination]("", null, null);
   };
-  useKeyboardShortcut(
-    "c",
-    () => startFlashcardAtCursor(startFlashcard),
-    screenRef,
-  );
+  useKeyboardShortcut("c", () => startFlashcardAtCursor("save"), screenRef);
   const popup = lookup.popup && {
     anchored: lookup.popup.anchored,
     props: {
       ...lookup.popup.props,
-      onSetUpDictionary: () => lookup.leaveFor(openDictionaries),
+      onSetUpDictionary: () =>
+        lookup.setAsideFor(() => navigate({ type: "openDictionaries" })),
     } satisfies ComponentProps<typeof DictionaryPopup>,
   };
   const wordGestures = useStableCallbacks<Required<CueWordGestures>>({
-    onWordClick: (hit, cue) =>
-      lookup.clickWord(requestFor(hit, cue), hit.input),
+    onWordClick: (hit, cue) => lookup.clickWord(chosenAt(hit, cue), hit.input),
     onWordPointed: (hit, input, cue) =>
       dispatchCursor(
         hit
@@ -83,31 +84,48 @@ export function useSubtitleLookup(
               type: "pointed",
               cue,
               hit,
-              matchedLength: lookup.cachedMatchLength(requestFor(hit, cue)),
+              shownMatchedLength: position?.matchedLength,
             }
           : { type: "left", input },
       ),
-    onWordHover: (hit, cue) => lookup.hoverWord(requestFor(hit, cue)),
+    onWordHover: (hit, cue) => lookup.hoverWord(chosenAt(hit, cue)),
     onWordHoverAnswered: (hit, matchedLength, cue) => {
       dispatchCursor({ type: "answered", cue, hit, matchedLength });
-      lookup.restOnWord(requestFor(hit, cue));
+      lookup.restOnWord(chosenAt(hit, cue));
     },
     onWordDoubleClick: (hit, cue) =>
-      lookup.startFlashcardFor(requestFor(hit, cue)),
-    onWordHold: (hit, cue) => lookup.startFlashcardFor(requestFor(hit, cue)),
+      lookup.startFlashcardFor(chosenAt(hit, cue)),
+    onWordHold: (hit, cue) => lookup.startFlashcardFor(chosenAt(hit, cue)),
   });
   return {
     activeWord: useActiveCueWord(lookup.activeOccurrence, cursor === null),
-    cursor: cursor?.position ?? null,
+    cursor: position,
     popup,
     openSearch: lookup.openSearch,
     /**
-     * Starts a flashcard through `start` for the word at the cursor once its lookup answers, as a double-click there would,
-     * or, when there is no cursor, for no word.
+     * Starts a flashcard for the word at the cursor once its lookup answers, as a double-click there would,
+     * or, when there is no cursor, for no word; saved at once, or opened in the editor, as `destination` says.
      */
     startFlashcardAtCursor,
     wordGestures,
   };
+}
+
+/** The cursor's place, with the length its word's cached lookup matched until the cursor's own lookup has answered. */
+function useShownCursor(
+  cursor: CueCursor | null,
+  cachedMatch: number | null | undefined,
+) {
+  const position = cursor?.position ?? null;
+  return useMemo(
+    () =>
+      position === null ||
+      position.matchedLength !== undefined ||
+      cachedMatch === undefined
+        ? position
+        : { ...position, matchedLength: cachedMatch },
+    [position, cachedMatch],
+  );
 }
 
 /**
@@ -115,10 +133,13 @@ export function useSubtitleLookup(
  * and its highlight stays on or off.
  */
 function useActiveCueWord(
-  occurrence: ReturnType<typeof useWordLookup<Cue>>["activeOccurrence"],
+  occurrence: ReturnType<typeof useWordLookup>["activeOccurrence"],
   isHighlighted: boolean,
 ): ActiveCueWord | undefined {
-  const cueIndex = occurrence?.source?.index;
+  const cueIndex =
+    occurrence?.source?.kind === "cue"
+      ? occurrence.source.cue.index
+      : undefined;
   const start = occurrence?.start;
   const length = occurrence?.length;
   const popupId = occurrence?.popupId;
@@ -129,14 +150,4 @@ function useActiveCueWord(
         : { cueIndex, start, length, popupId, isHighlighted },
     [cueIndex, start, length, popupId, isHighlighted],
   );
-}
-
-function requestFor(hit: WordHit, cue: Cue): LookupRequest<Cue> {
-  return {
-    term: hit.word,
-    lookup: lookupTextAt(stripMarkup(cue.text), hit.start),
-    source: cue,
-    occurrence: { passage: String(cue.index), start: hit.start },
-    anchor: hit.element,
-  };
 }

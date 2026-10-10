@@ -1,238 +1,123 @@
-import type { DictionarySummary, LookupResult } from "@easyimmerse/types";
-import { type ComponentProps, useId } from "react";
+import { lookUpTextAhead } from "@easyimmerse/backend";
+import {
+  type AppDispatch,
+  actions,
+  type ChosenWord,
+  selectLookup,
+} from "@easyimmerse/state";
+import type { LookupQuery } from "@easyimmerse/types";
+import { useId } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
-import type { AnchoredPopup } from "./AnchoredPopup.tsx";
-import type { DictionaryPopup } from "./DictionaryPopup.tsx";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { flashcardFieldsFromLookup } from "./flashcardFieldsFromLookup.ts";
+import { placeOf } from "./lookupPlace.ts";
+import { lookupPopupProps, matchedLengthOf } from "./lookupPopupProps.ts";
+import { lookupWordOf } from "./lookupWordOf.ts";
+import { useLookupDisplay } from "./useLookupDisplay.ts";
 import {
-  flashcardFieldsFromLookup,
-  type LookupFlashcardFields,
-} from "./flashcardFieldsFromLookup.ts";
-import type { LookupRequest } from "./lookupPopup.ts";
-import type { LookupState } from "./lookupState.ts";
-import { flashcardLookupWaitMs } from "./lookupTiming.ts";
-import {
-  type PopupHold,
-  useLookupPopupControl,
-} from "./useLookupPopupControl.ts";
-import { withinTime } from "./withinTime.ts";
-
-export type { PopupHold } from "./useLookupPopupControl.ts";
+  type LookupFlashcardStarts,
+  useLookupFlashcardHandoff,
+} from "./useLookupFlashcardHandoff.ts";
 
 /**
- * Starts a flashcard for a word from its place in a passage, with fields filled from its lookup when one answered,
- * or, through `lateFields`, once a lookup that was too slow to wait for answers.
- */
-export type StartFlashcardFromLookup<S> = (
-  word: string,
-  place: WordPlace<S> | null,
-  lookupFields: LookupFlashcardFields | null,
-  lateFields?: Promise<LookupFlashcardFields | null>,
-) => void;
-
-/**
- * The passage a word for a flashcard comes from, and, when the word was pointed at in the passage
- * rather than typed or chosen in the pop-up, its offset there in UTF-16 code units.
- */
-export type WordPlace<S> = { source: S; start: number | null };
-
-/** Stands for a lookup that has not answered within `flashcardLookupWaitMs`. */
-const tooSlow = Symbol("too slow");
-
-type Languages = { target: string; translation: string };
-
-/**
- * Drives the dictionary pop-up for words in a text, such as subtitles or an ebook:
+ * Drives the dictionary pop-up for words in a text, such as subtitles or an ebook, through the screen's lookup in the store:
  * a click opens it at the word, or closes it when it shows that word already;
- * a hover looks the word up ahead of a click, and once that lookup answers an open pop-up moves to the word, unless the pointer is inside it;
- * and a double-click or held tap turns the word into a flashcard filled from its lookup.
+ * a hover looks the word up ahead of a click, and once that lookup answers an open pop-up moves to the word;
+ * and a double-click or held tap turns the word into a flashcard filled from its lookup, started through `starts`.
  * Words inside the pop-up are looked up in it with a double-click, or turned into flashcards with a held tap.
- * `S` is the kind of passage words come from, such as a subtitle cue.
  */
-export function useWordLookup<S>({
-  languages,
-  hold,
-  startFlashcard,
-}: {
-  languages: Languages;
-  hold: PopupHold;
-  startFlashcard: StartFlashcardFromLookup<S>;
-}) {
-  const control = useLookupPopupControl<S>(languages.target, hold);
-  const { lookup } = control;
+export function useWordLookup(
+  languages: { target: string; translation: string },
+  starts: LookupFlashcardStarts,
+) {
+  const dispatch = useAppDispatch();
+  const lookup = useAppSelector(selectLookup);
+  const display = useLookupDisplay(lookup?.popup ?? null, languages.target);
+  useLookupFlashcardHandoff(starts, languages, display.dictionaries);
   const popupId = useId();
-  const fieldsFrom = (
-    results: readonly LookupResult[],
-    entryIndex: number | null,
-    dictionaries: readonly DictionarySummary[],
-  ) => flashcardFieldsFromLookup(results, entryIndex, languages, dictionaries);
-  /** Closes the pop-up for a flashcard that `start` starts, taking its word from the lookup when one answered. */
-  const endingIn =
-    (start: StartFlashcardFromLookup<S>): StartFlashcardFromLookup<S> =>
-    (word, place, lookupFields, lateFields) =>
-      control.leaveFor(() =>
-        start(lookupFields?.word ?? word, place, lookupFields, lateFields),
-      );
-  const endInFlashcard = endingIn(startFlashcard);
-  /**
-   * Turns a word into a flashcard once its lookup answers, showing the word in the pop-up meanwhile when it comes from the text.
-   * `start` starts the flashcard, in place of the `startFlashcard` the hook was given.
-   */
-  const startFlashcardFor = (
-    request: LookupRequest<S>,
-    start: StartFlashcardFromLookup<S> = startFlashcard,
-  ) => {
-    const end = endingIn(start);
-    control.keepOpen();
-    if (request.occurrence !== null && !control.showsOccurrence(request))
-      control.open(request);
-    const { dictionaries } = lookup;
-    const fieldsOf = (results: readonly LookupResult[] | null) =>
-      results && fieldsFrom(results, null, dictionaries);
-    const answer = lookup.lookUp(request);
-    const place = placeOf(request);
-    control.pending.start(
-      request.term,
-      withinTime<readonly LookupResult[] | null | typeof tooSlow>(
-        answer,
-        flashcardLookupWaitMs,
-        tooSlow,
-      ),
-      (results) =>
-        results === tooSlow
-          ? end(request.term, place, null, answer.then(fieldsOf))
-          : end(request.term, place, fieldsOf(results)),
-    );
-  };
+  const chosen = lookup?.popup?.chosen ?? null;
+  const wordOf = (term: string, text: Parameters<typeof lookupWordOf>[1]) =>
+    lookupWordOf(term, text, languages.target, display.isCovered);
+  /** A word inside the pop-up, at the place of the word the pop-up shows. */
+  const inPopup = (term: string): ChosenWord => ({
+    word: wordOf(term, { text: term }),
+    source: chosen?.source ?? null,
+    occurrence: null,
+    anchor: chosen?.anchor ?? null,
+  });
   return {
-    popup: popupOf(control, popupId, {
-      onWordFlashcard: (term) => startFlashcardFor(wordInPopup(control, term)),
-      onCreateFlashcard: (entryIndex) =>
-        endInFlashcard(
-          lookup.request?.term ?? "",
-          placeOf(lookup.request),
-          fieldsFrom(lookup.results, entryIndex, lookup.dictionaries),
-        ),
+    popup: lookupPopupProps(lookup, popupId, display, {
+      onSearch: (term) =>
+        dispatch(actions.lookupTermSearched(inPopup(term.trim()).word)),
+      wordActions: {
+        onFlashcard: (term) =>
+          dispatch(actions.lookupFlashcardRequested(inPopup(term), "save")),
+      },
+      onCreateFlashcard: (entryIndex) => {
+        const { results, dictionaries } = display;
+        const fields = flashcardFieldsFromLookup(
+          results,
+          entryIndex,
+          languages,
+          dictionaries,
+        );
+        dispatch(actions.lookupSetAside());
+        starts.save(
+          fields?.word ?? chosen?.word.term ?? "",
+          placeOf(chosen),
+          fields,
+        );
+      },
+      onClose: () => dispatch(actions.lookupClosed()),
+      onToggleSize: () => dispatch(actions.lookupSizeToggled()),
+      onPointerInsideChange: (isInside) =>
+        dispatch(actions.lookupPointerInsideChanged(isInside)),
     }),
     /**
      * The occurrence the pop-up shows, if it shows a word from the text, with the pop-up's id,
      * and the length of the text its best result matched once the lookup has answered, or null when nothing matched.
      */
-    activeOccurrence: lookup.request?.occurrence && {
-      ...lookup.request.occurrence,
-      source: lookup.request.source,
+    activeOccurrence: chosen?.occurrence && {
+      ...chosen.occurrence,
+      source: chosen.source,
       popupId,
-      length: matchedLengthOf(lookup.state, lookup.results),
+      length: matchedLengthOf(display.state, display.results),
     },
-    /**
-     * The length of the text that a word's lookup matched, when its answer is known at once, as from the cache:
-     * null when it matched nothing, and undefined when the word has yet to be looked up.
-     */
-    cachedMatchLength: (request: LookupRequest<S>): number | null | undefined =>
-      bestMatchLength(lookup.cachedResults(request)),
-    /** A word clicked or tapped in the text. */
-    clickWord: (request: LookupRequest<S>, input: WordHit["input"]) => {
-      if (!control.showsOccurrence(request)) return control.open(request);
-      // A click or tap may begin a double-click or double tap, whose second half must find the pop-up still open.
-      if (input === "keyboard") control.close();
-      else control.closeSoon();
-    },
-    /**
-     * A word the mouse is on in the text. Its lookup starts at once, so that a click finds the answer ready,
-     * and resolves to the length of the text the best result matched, for the text to highlight, or null when nothing matched.
-     */
-    hoverWord: (request: LookupRequest<S>): Promise<number | null> =>
-      lookup
-        .lookUp(request)
-        .then((results) => results?.[0]?.matchedText.length ?? null),
-    /**
-     * A word whose hover lookup has answered while the mouse is still on it, which an open pop-up follows,
-     * unless the pointer is inside the pop-up or a flashcard waits for its lookup.
-     */
-    restOnWord: (request: LookupRequest<S>) => {
-      const followsPointer =
-        lookup.popup?.mode === "word" &&
-        !control.isPointerInside.current &&
-        !control.pending.isPending();
-      if (followsPointer && !control.showsOccurrence(request))
-        control.show(request);
-    },
-    /** The passage of the word the pop-up opened on, kept while it looks up words inside it; null when it opened on its search field. */
-    shownSource: lookup.request?.source ?? null,
-    startFlashcardFor,
-    openSearch: control.openSearch,
-    close: control.close,
-    leaveFor: control.leaveFor,
-  };
-}
-
-/** The length of text the pop-up's lookup matched: undefined while it is being looked up, and null when nothing matched. */
-function matchedLengthOf(
-  state: LookupState | null,
-  results: readonly LookupResult[],
-): number | null | undefined {
-  return state?.kind === "loading" ? undefined : bestMatchLength(results);
-}
-
-function bestMatchLength(
-  results: readonly LookupResult[] | undefined,
-): number | null | undefined {
-  return results && (results[0]?.matchedText.length ?? null);
-}
-
-type Control<S> = ReturnType<typeof useLookupPopupControl<S>>;
-
-function placeOf<S>(request: LookupRequest<S> | null): WordPlace<S> | null {
-  if (request?.source == null) return null;
-  return { source: request.source, start: request.occurrence?.start ?? null };
-}
-
-/** A word inside the pop-up, looked up from its passage and shown at the same place. */
-function wordInPopup<S>(control: Control<S>, term: string): LookupRequest<S> {
-  const shown = control.lookup.request;
-  return {
-    term,
-    lookup: { text: term },
-    source: shown?.source ?? null,
-    occurrence: null,
-    anchor: shown?.anchor ?? null,
-  };
-}
-
-/** The props of the pop-up and of the wrapper that places it, or null while it is closed. */
-function popupOf<S>(
-  control: Control<S>,
-  popupId: string,
-  flashcards: {
-    onWordFlashcard: (term: string) => void;
-    onCreateFlashcard: (entryIndex: number | null) => void;
-  },
-): {
-  anchored: Omit<ComponentProps<typeof AnchoredPopup>, "children">;
-  props: Omit<ComponentProps<typeof DictionaryPopup>, "onSetUpDictionary">;
-} | null {
-  const { lookup, pending } = control;
-  if (lookup.popup === null) return null;
-  return {
-    anchored: {
-      anchor:
-        lookup.popup.mode === "word" ? (lookup.request?.anchor ?? null) : null,
-      size: control.size,
-      onPointerInsideChange: (isInside) => {
-        control.isPointerInside.current = isInside;
-      },
-    },
-    props: {
-      id: popupId,
-      state: lookup.state,
-      mode: lookup.popup.mode,
-      size: control.size,
-      onToggleSize: control.toggleSize,
-      resolveMediaUrl: lookup.resolveMediaUrl,
-      pendingFlashcard: pending.term,
-      onSearch: control.search,
-      wordActions: { onFlashcard: flashcards.onWordFlashcard },
-      onCreateFlashcard: flashcards.onCreateFlashcard,
-      onClose: control.close,
+    /** The word the pop-up shows, or the empty string while it shows none. */
+    shownTerm: chosen?.word.term ?? "",
+    wordOf,
+    clickWord: (word: ChosenWord, input: WordHit["input"]) =>
+      dispatch(actions.lookupWordClicked(word, input)),
+    restOnWord: (word: ChosenWord) =>
+      dispatch(actions.lookupWordRestedOn(word)),
+    startFlashcardFor: (
+      word: ChosenWord,
+      destination: "save" | "editor" = "save",
+    ) => dispatch(actions.lookupFlashcardRequested(word, destination)),
+    hoverWord: (word: ChosenWord) =>
+      hoverMatchLength(dispatch, word.word.query),
+    openSearch: () => dispatch(actions.lookupSearchOpened()),
+    close: () => dispatch(actions.lookupClosed()),
+    /** Closes the pop-up for something else that keeps playback paused, such as the dictionaries settings. */
+    setAsideFor: (next: () => void) => {
+      dispatch(actions.lookupSetAside());
+      next();
     },
   };
+}
+
+/**
+ * Looks a hovered word up ahead of a click, and resolves to the length of the text its best result matched,
+ * or null when nothing matched, the lookup failed, or there is nothing to look up.
+ */
+function hoverMatchLength(
+  dispatch: AppDispatch,
+  query: LookupQuery | null,
+): Promise<number | null> {
+  if (query === null) return Promise.resolve(null);
+  return lookUpTextAhead(dispatch, query).then(
+    (response) => response.results[0]?.matchedText.length ?? null,
+    () => null,
+  );
 }

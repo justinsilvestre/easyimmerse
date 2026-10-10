@@ -1,43 +1,25 @@
 import { cleanup, fireEvent, within } from "@testing-library/react";
-import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   findSubtitles,
   renderMediaScreen,
 } from "../testSupport/renderMediaScreen.tsx";
 
-/** How often each text has rendered, by the text. */
-const renderCounts = vi.hoisted(() => new Map<string, number>());
+afterEach(cleanup);
 
-vi.mock("../components/ClickableText.tsx", async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import("../components/ClickableText.tsx")>();
-  return {
-    ...original,
-    ClickableText: (props: ComponentProps<typeof original.ClickableText>) => {
-      renderCounts.set(props.text, (renderCounts.get(props.text) ?? 0) + 1);
-      return <original.ClickableText {...props} />;
-    },
-  };
-});
-
-afterEach(() => {
-  cleanup();
-  renderCounts.clear();
-});
-
+// The cards other than the one under the mouse keep their props, as the tests of `cursorIn` and `activeWordIn` check,
+// so a commit renders only that card; this test keeps the number of commits from growing.
 describe("MediaScreen renders", () => {
-  it("render only the card under the mouse while the mouse moves onto a word and its lookup answers", async () => {
-    renderMediaScreen();
+  it("commits the screen at most three times while the mouse moves onto a word and its lookup answers", async () => {
+    const commits = { count: 0 };
+    renderMediaScreen({ onCommit: () => commits.count++ });
     const list = await findSubtitles();
-    const card = within(list).getAllByRole("listitem")[1] as HTMLElement;
-    renderCounts.clear();
-    fireEvent.pointerEnter(within(card).getByRole("button", { name: "dog" }), {
-      pointerType: "mouse",
-    });
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    expect([...renderCounts.keys()]).toEqual([
-      "The dog wants to eat.\nIt is hungry.",
-    ]);
+    const dog = within(list).getByRole("button", { name: "dog" });
+    commits.count = 0;
+    fireEvent.pointerEnter(dog, { pointerType: "mouse" });
+    await vi.waitFor(() =>
+      expect(dog.classList.contains("bg-accent-soft")).toBe(true),
+    );
+    expect(commits.count).toBeLessThanOrEqual(3);
   });
 });
