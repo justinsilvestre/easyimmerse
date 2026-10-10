@@ -13,10 +13,10 @@ const offline = { kind: "offline", pendingSubtitleFile: null } as const;
 const chosen = { kind: "offline", pendingSubtitleFile: pickedFile } as const;
 
 describe("updatePendingSubtitleFile", () => {
-  it("keeps the chosen file for fileChosen", () => {
+  it("keeps the chosen file for subtitleFileChosen", () => {
     const screen = updatePendingSubtitleFile(
       offline,
-      actions.fileChosen(pickedFile),
+      actions.subtitleFileChosen(pickedFile),
     );
     expect(screen.pendingSubtitleFile).toEqual(pickedFile);
   });

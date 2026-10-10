@@ -20,9 +20,12 @@ export const screenActions = {
   pauseRequested: () => ({ type: "pauseRequested" }) as const,
   playerPlayingChanged: (isPlaying: boolean) =>
     ({ type: "playerPlayingChanged", isPlaying }) as const,
-  filePickRequested: () => ({ type: "filePickRequested" }) as const,
-  fileChosen: (file: PickedFile) => ({ type: "fileChosen", file }) as const,
-  filePickCancelled: () => ({ type: "filePickCancelled" }) as const,
+  subtitleFilePickRequested: () =>
+    ({ type: "subtitleFilePickRequested" }) as const,
+  subtitleFileChosen: (file: PickedFile) =>
+    ({ type: "subtitleFileChosen", file }) as const,
+  subtitleFilePickCancelled: () =>
+    ({ type: "subtitleFilePickCancelled" }) as const,
   subtitleFileAdded: () => ({ type: "subtitleFileAdded" }) as const,
   subtitleFileAddFailed: () => ({ type: "subtitleFileAddFailed" }) as const,
   mediaFilePickRequested: () => ({ type: "mediaFilePickRequested" }) as const,

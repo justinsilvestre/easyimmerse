@@ -12,9 +12,13 @@ export const screenEffectRunners = {
     effects
       .pickFile(effect.accept)
       .then((file) =>
-        dispatch(file ? actions.fileChosen(file) : actions.filePickCancelled()),
+        dispatch(
+          file
+            ? actions.subtitleFileChosen(file)
+            : actions.subtitleFilePickCancelled(),
+        ),
       )
-      .catch(() => dispatch(actions.filePickCancelled()));
+      .catch(() => dispatch(actions.subtitleFilePickCancelled()));
   },
   pickMediaFile: (effect, { effects, dispatch }) => {
     effects

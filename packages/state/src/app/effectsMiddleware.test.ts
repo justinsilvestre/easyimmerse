@@ -159,41 +159,41 @@ describe("effectsMiddleware", () => {
     expect(effects.calls).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);
   });
 
-  it("dispatches fileChosen once the file pick resolves", async () => {
+  it("dispatches subtitleFileChosen once the file pick resolves", async () => {
     const effects = createRecordingEffects();
     const server = createFakeServerStoreParts();
     const store = createAppStore(effects, server);
-    store.dispatch(actions.filePickRequested());
+    store.dispatch(actions.subtitleFilePickRequested());
     effects.resolvePickFile(pickedFile);
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
-        actions.fileChosen(pickedFile),
+        actions.subtitleFileChosen(pickedFile),
       );
     });
   });
 
-  it("dispatches filePickCancelled once the file pick resolves to null", async () => {
+  it("dispatches subtitleFilePickCancelled once the file pick resolves to null", async () => {
     const effects = createRecordingEffects();
     const server = createFakeServerStoreParts();
     const store = createAppStore(effects, server);
-    store.dispatch(actions.filePickRequested());
+    store.dispatch(actions.subtitleFilePickRequested());
     effects.resolvePickFile(null);
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
-        actions.filePickCancelled(),
+        actions.subtitleFilePickCancelled(),
       );
     });
   });
 
-  it("dispatches filePickCancelled once the file pick fails", async () => {
+  it("dispatches subtitleFilePickCancelled once the file pick fails", async () => {
     const effects = createRecordingEffects();
     const server = createFakeServerStoreParts();
     const store = createAppStore(effects, server);
-    store.dispatch(actions.filePickRequested());
+    store.dispatch(actions.subtitleFilePickRequested());
     effects.rejectPickFile(new Error("dialog unavailable"));
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
-        actions.filePickCancelled(),
+        actions.subtitleFilePickCancelled(),
       );
     });
   });

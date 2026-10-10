@@ -50,7 +50,7 @@ export function useMediaSubtitles(projectId: string, mediaFileId: string) {
     translationCues: translation.cues,
     hasFailed: list.isError || target.hasFailed || translation.hasFailed,
     choose,
-    requestFile: () => dispatch(actions.filePickRequested()),
+    requestFile: () => dispatch(actions.subtitleFilePickRequested()),
   };
 }
 

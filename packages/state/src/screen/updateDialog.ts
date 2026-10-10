@@ -14,13 +14,13 @@ export function updateDialog(
   action: AppAction,
 ): readonly [DialogState, readonly Effect[]] {
   switch (action.type) {
-    case "filePickRequested":
+    case "subtitleFilePickRequested":
       return [
         { kind: "filePick", for: "subtitles" },
         [{ type: "pickFile", accept: subtitleFileExtensions }],
       ];
-    case "fileChosen":
-    case "filePickCancelled":
+    case "subtitleFileChosen":
+    case "subtitleFilePickCancelled":
       return [null, []];
     case "mediaFilePickRequested":
       return [dialog, [{ type: "pickMediaFile", accept: mediaFileExtensions }]];

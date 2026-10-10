@@ -13,23 +13,26 @@ const pickedFile: PickedFile = {
 const picking = { kind: "filePick", for: "subtitles" } as const;
 
 describe("updateDialog", () => {
-  it("marks a file pick as pending for filePickRequested", () => {
-    const [dialog] = updateDialog(null, actions.filePickRequested());
+  it("marks a file pick as pending for subtitleFilePickRequested", () => {
+    const [dialog] = updateDialog(null, actions.subtitleFilePickRequested());
     expect(dialog).toEqual(picking);
   });
 
-  it("returns a pickFile effect accepting subtitle files for filePickRequested", () => {
-    const [, effects] = updateDialog(null, actions.filePickRequested());
+  it("returns a pickFile effect accepting subtitle files for subtitleFilePickRequested", () => {
+    const [, effects] = updateDialog(null, actions.subtitleFilePickRequested());
     expect(effects).toEqual([{ type: "pickFile", accept: [".srt", ".vtt"] }]);
   });
 
-  it("clears the pending file pick for fileChosen", () => {
-    const [dialog] = updateDialog(picking, actions.fileChosen(pickedFile));
+  it("clears the pending file pick for subtitleFileChosen", () => {
+    const [dialog] = updateDialog(
+      picking,
+      actions.subtitleFileChosen(pickedFile),
+    );
     expect(dialog).toBeNull();
   });
 
-  it("clears the pending file pick for filePickCancelled", () => {
-    const [dialog] = updateDialog(picking, actions.filePickCancelled());
+  it("clears the pending file pick for subtitleFilePickCancelled", () => {
+    const [dialog] = updateDialog(picking, actions.subtitleFilePickCancelled());
     expect(dialog).toBeNull();
   });
 

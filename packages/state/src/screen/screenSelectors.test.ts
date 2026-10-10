@@ -21,7 +21,7 @@ const playing = {
     actions.openMediaFileRequested("p1", "m1"),
     actions.playerDurationChanged(90),
     actions.playerTimeChanged(4),
-    actions.filePickRequested(),
+    actions.subtitleFilePickRequested(),
   ),
 };
 

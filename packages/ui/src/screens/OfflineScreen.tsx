@@ -22,7 +22,7 @@ export function OfflineScreen({ onBack }: { onBack: () => void }) {
   const dispatch = useAppDispatch();
   const isPicking = useAppSelector(selectPendingFilePick);
   const { cues, hasFailed } = useParsedChosenFile();
-  const openFile = () => dispatch(actions.filePickRequested());
+  const openFile = () => dispatch(actions.subtitleFilePickRequested());
   return (
     <ScreenLayout onBack={onBack} backLabel="Projects">
       <h1 className="text-xl font-semibold">Working offline</h1>

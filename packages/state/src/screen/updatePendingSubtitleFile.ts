@@ -6,7 +6,7 @@ export function updatePendingSubtitleFile<
   S extends { pendingSubtitleFile: PickedFile | null },
 >(screen: S, action: AppAction): S {
   switch (action.type) {
-    case "fileChosen":
+    case "subtitleFileChosen":
       return { ...screen, pendingSubtitleFile: action.file };
     case "subtitleFileAdded":
     case "subtitleFileAddFailed":
