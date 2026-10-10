@@ -2,7 +2,7 @@ import type { SubtitleDisplay } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ArrowLeft } from "lucide-react";
-import { type PointerEvent, type ReactNode, type Ref, useRef } from "react";
+import { type PointerEvent, type ReactNode, useRef } from "react";
 import { AppFooter } from "../components/AppFooter.tsx";
 import { Button } from "../components/Button.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
@@ -34,8 +34,6 @@ import { usePictureAspectRatio } from "./usePictureAspectRatio.ts";
 import { useStageClicks } from "./useStageClicks.ts";
 
 type MediaViewProps = {
-  /** The screen's root element, which keyboard shortcuts check to tell whether the screen is in reach. */
-  ref?: Ref<HTMLDivElement>;
   /**
    * The file's name, the name of the project it belongs to, which the way back is named after,
    * and the plugin the file was imported through, if any, which is unavailable when it is no longer installed.
@@ -134,10 +132,7 @@ export function MediaView(props: MediaViewProps) {
     </AppFooter>
   );
   return (
-    <div
-      ref={props.ref}
-      className="flex h-dvh flex-col overflow-hidden bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-fg"
-    >
+    <div className="flex h-dvh flex-col overflow-hidden bg-canvas pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] text-fg">
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main
           className={clsx(

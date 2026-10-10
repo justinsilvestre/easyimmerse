@@ -2,6 +2,7 @@ import {
   actions,
   type ReaderScreenAction,
   type ReaderScreenState,
+  selectReaderKeyBinding,
 } from "@easyimmerse/state";
 import type { Document } from "@easyimmerse/types";
 import {
@@ -11,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useKeyBindings } from "../hooks/useKeyBindings.ts";
 import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
 import type { AnchorRect } from "../lookup/placeAtAnchor.ts";
 import type { PopupSize } from "../lookup/popupSize.ts";
@@ -53,16 +55,13 @@ import {
   useLookedUpHighlight,
 } from "./useLookedUpHighlight.ts";
 import { useParagraphsNearView } from "./useParagraphsNearView.ts";
-import { useReaderKeys } from "./useReaderKeys.ts";
 import { type ReaderWordGestures, useWordPointer } from "./useWordPointer.ts";
 
 export type ReaderCallbacks = ReaderWordGestures & {
   onBack: () => void;
   /** Opens the dictionary pop-up with a field to type a word into. */
   onLookup: () => void;
-  /** The L key, which does what `onLookup` does unless this says otherwise, as looking up the word under the mouse. */
-  onLookupKey?: () => void;
-  /** Escape, or a click or tap beside the dictionary pop-up and off the words, which closes it. */
+  /** A click or tap beside the dictionary pop-up and off the words, which closes it. */
   onDismissLookup: () => void;
   /** The pointer entering or leaving the dictionary pop-up. */
   onPointerInsideLookupChange?: (isInside: boolean) => void;
@@ -105,7 +104,7 @@ type ReaderViewProps = {
   highlightedWord?: { word: HighlightedWord; matchedLength?: number | null };
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
-  /** A panel laid over the text at the side, such as the flashcard editor. The reader's keys leave it alone. */
+  /** A panel laid over the text at the side, such as the flashcard editor. */
   sidePanel?: ReactNode;
 };
 
@@ -127,7 +126,6 @@ export function ReaderView(props: ReaderViewProps) {
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
   const turner = useRef<PageTurner>(null);
   const searchInput = useRef<HTMLInputElement>(null);
-  const root = useRef<HTMLDivElement>(null);
   const isWide = useMediaQuery(wideScreenQuery);
   const isPaged = preferences.layout === "pages";
 
@@ -193,21 +191,14 @@ export function ReaderView(props: ReaderViewProps) {
     if (isPaged) turner.current?.[direction]();
     else goToChapter(chapterIndex + (direction === "next" ? 1 : -1), "start");
   };
-  useReaderKeys(
-    {
-      isPaged,
-      isPanelOpen: reader.panel !== null || props.sidePanel != null,
-      onTurn: turn,
-      onOpenSearch: () => {
-        dispatch(actions.readerPanelOpened("search"));
-        searchInput.current?.focus();
-        searchInput.current?.select();
-      },
-      onLookup: callbacks.onLookupKey ?? callbacks.onLookup,
-      onEscape: callbacks.onDismissLookup,
+  useKeyBindings(selectReaderKeyBinding, {
+    turnPage: ({ direction }) => turn(direction),
+    openBookSearch: () => {
+      dispatch(actions.readerPanelOpened("search"));
+      searchInput.current?.focus();
+      searchInput.current?.select();
     },
-    root,
-  );
+  });
 
   const wordPointer = useWordPointer(chapterIndex, props.language, {
     onWordClick: callbacks.onWordClick,
@@ -244,7 +235,6 @@ export function ReaderView(props: ReaderViewProps) {
 
   return (
     <div
-      ref={root}
       data-theme={preferences.theme === "auto" ? undefined : preferences.theme}
       className="relative h-dvh overflow-hidden bg-canvas text-fg"
       onPointerMove={(event) => {

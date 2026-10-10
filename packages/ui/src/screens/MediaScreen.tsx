@@ -5,6 +5,7 @@ import {
   saveStatusOf,
   selectCuePanelSpan,
   selectIsSubtitleAppearanceOpen,
+  selectMediaKeyBinding,
   selectMediaPanels,
   selectPlayer,
   selectPlayerControls,
@@ -13,7 +14,7 @@ import {
   selectSourceMedia,
 } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
@@ -26,7 +27,7 @@ import { useScreenshotUrl } from "../flashcards/useScreenshotUrl.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useFullscreen } from "../hooks/useFullscreen.ts";
-import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
+import { useKeyBindings } from "../hooks/useKeyBindings.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
@@ -43,7 +44,6 @@ import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
 import { parseSubtitleAppearance } from "../media/subtitleAppearance.ts";
-import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { selectCanChooseTracks } from "../player/selectCanChooseTracks.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
@@ -62,7 +62,8 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * as does double-clicking the picture. While a word of the subtitles has focus, Left and Right move the lookup cursor instead,
  * and Up and Down skip to the previous or next cue. L looks up from the cursor, wherever the mouse or the keyboard put it;
  * C saves a flashcard from the cursor as a double-click there would, or as the New flashcard button would when there is no cursor;
- * and E makes the same flashcard but opens it in the editor instead, unless a card is open there already.
+ * and E makes the same flashcard but opens it in the editor instead, unless a card is open there already,
+ * as `selectMediaKeyBinding` in the state package describes.
  * The file resumes where playback last was, as `resume` in the state package describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `playOpenedCard` in the state package describes.
  * While a card is open the editor takes the side panel, so the store keeps the subtitles panel's toggle unavailable until it closes.
@@ -163,19 +164,10 @@ export function MediaScreen({
     ),
     wordLookupsIn,
   );
-  const screenRef = useRef<HTMLDivElement>(null);
-  const lookup = useSubtitleLookup(
-    languages,
-    { draftFor, savesAtOnce: true },
-    screenRef,
-  );
-  useKeyboardShortcut(
-    "e",
-    () => {
-      if (!isEditorOpen) lookup.startFlashcardAtCursor("editor");
-    },
-    screenRef,
-  );
+  const lookup = useSubtitleLookup(languages, {
+    draftFor,
+    savesAtOnce: true,
+  });
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
     onSeek: (ms) => dispatch(actions.seekRequested(ms / 1000)),
@@ -199,17 +191,16 @@ export function MediaScreen({
       ? () => dispatch(actions.trackChoiceRequested())
       : undefined,
   };
-  usePlayerShortcuts(
-    {
-      ...playerCallbacks,
-      onReplay: () =>
-        dispatch(
-          actions.seekRequested(replayTarget(subtitles.cues, currentMs) / 1000),
-        ),
-    },
-    screenRef,
-  );
-  useKeyboardShortcut("f", fullscreen.toggle, screenRef);
+  useKeyBindings(selectMediaKeyBinding, {
+    skipCue: ({ direction }) => playerCallbacks.onSkip(direction),
+    replayCue: () =>
+      dispatch(
+        actions.seekRequested(replayTarget(subtitles.cues, currentMs) / 1000),
+      ),
+    toggleFullscreen: fullscreen.toggle,
+    startFlashcardAtCursor: ({ destination }) =>
+      lookup.startFlashcardAtCursor(destination),
+  });
   const cueSteps = useStableCallbacks({
     step: (cue: Cue, step: LineStep) => {
       const adjacent = findAdjacentCue(subtitles.cues, cue, step);
@@ -231,7 +222,6 @@ export function MediaScreen({
         />
       )}
       <MediaView
-        ref={screenRef}
         media={{
           title: mediaFile?.name ?? "",
           projectName: settings.name,

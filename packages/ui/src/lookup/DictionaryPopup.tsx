@@ -23,8 +23,7 @@ import { usePopupDismissal } from "./usePopupDismissal.ts";
  * When no dictionary has an entry for the word, the header button still makes a flashcard, with the word and its sentence only.
  * While such a flashcard waits for its word's lookup, `pendingFlashcard` names the word.
  * A thin bar along its bottom edge asks, through `onToggleSize`, to switch the pop-up between its two `size`s, to show more or less of the entries.
- * Escape, or pressing outside the pop-up and not on a word marked as a lookup trigger, closes it;
- * while it is expanded, Escape asks through `onToggleSize` to make it compact again instead.
+ * Pressing outside the pop-up and not on a word marked as a lookup trigger closes it.
  * Images in definitions are found through `resolveMediaUrl`.
  */
 export function DictionaryPopup({
@@ -57,7 +56,7 @@ export function DictionaryPopup({
 }) {
   const ref = useRef<HTMLElement>(null);
   const isExpanded = size === "expanded";
-  usePopupDismissal(ref, onClose, isExpanded ? onToggleSize : undefined);
+  usePopupDismissal(ref, onClose);
   return (
     <section
       ref={ref}

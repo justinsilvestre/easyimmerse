@@ -138,7 +138,6 @@ function BookReader({
         ...lookup.wordGestures,
         onBack: () => dispatch(actions.closeMedia()),
         onLookup: lookup.openSearch,
-        onLookupKey: lookup.lookUpPointedWord,
         onDismissLookup: lookup.close,
         onPointerInsideLookupChange: lookup.popup?.onPointerInsideChange,
         onPreferencesChange: (changed) =>

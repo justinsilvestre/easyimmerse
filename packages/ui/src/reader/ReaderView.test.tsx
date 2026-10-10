@@ -3,15 +3,9 @@ import {
   initialReaderScreen,
   type ReaderScreenState,
 } from "@easyimmerse/state";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
-import type { ReactNode } from "react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { exampleShortBook } from "./exampleDocuments.ts";
 import { ReaderView, type ReaderViewAction } from "./ReaderView.tsx";
 import {
@@ -24,20 +18,19 @@ afterEach(cleanup);
 
 const ignore = () => undefined;
 
-/** Renders the reader on the short example book, and returns the actions it dispatches. */
+/**
+ * Renders the reader on the short example book, and returns the actions it dispatches.
+ * The store it renders in only serves the keys, which `ReaderScreen`'s tests cover.
+ */
 function renderReader(
   overrides: {
     location?: ReaderLocation;
     reader?: Partial<ReaderScreenState>;
-    layout?: ReaderPreferences["layout"];
     onPreferencesChange?: (preferences: ReaderPreferences) => void;
-    sidePanel?: ReactNode;
-    /** What covers the reader: Settings, which make it inert, or a modal dialog. */
-    coveredBy?: "settings" | "dialog";
   } = {},
 ) {
   const dispatched: ReaderViewAction[] = [];
-  const view = (
+  renderWithAppStore(
     <ReaderView
       mediaFileId="b1"
       document={exampleShortBook}
@@ -49,9 +42,8 @@ function renderReader(
       language="en"
       preferences={{
         ...defaultReaderPreferences,
-        layout: overrides.layout ?? "scroll",
+        layout: "scroll",
       }}
-      sidePanel={overrides.sidePanel}
       callbacks={{
         onBack: ignore,
         onLookup: ignore,
@@ -62,19 +54,10 @@ function renderReader(
         onDismissLookup: ignore,
         onPreferencesChange: overrides.onPreferencesChange ?? ignore,
       }}
-    />
-  );
-  render(
-    <>
-      <div inert={overrides.coveredBy === "settings"}>{view}</div>
-      {overrides.coveredBy === "dialog" && <dialog open aria-label="Tracks" />}
-    </>,
+    />,
   );
   return dispatched;
 }
-
-const jumps = (dispatched: ReaderViewAction[]) =>
-  dispatched.filter((action) => action.type === "readerJumped");
 
 const chapterTwo = { chapterIndex: 1, paragraphIndex: 0, offset: 0 };
 
@@ -123,18 +106,6 @@ describe("ReaderView", () => {
     expect(dispatched).toContainEqual(actions.readerChromeToggled());
   });
 
-  it("asks to open the search panel on Ctrl+F", () => {
-    const dispatched = renderReader();
-    fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
-    expect(dispatched).toContainEqual(actions.readerPanelOpened("search"));
-  });
-
-  it("leaves Ctrl+F to the browser while Settings cover the reader", () => {
-    const dispatched = renderReader({ coveredBy: "settings" });
-    fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
-    expect(dispatched).not.toContainEqual(actions.readerPanelOpened("search"));
-  });
-
   describe("when the toolbar is hidden", () => {
     const hidden = { reader: { isChromeVisible: false } };
 
@@ -159,47 +130,6 @@ describe("ReaderView", () => {
       expect(document.activeElement).toBe(
         screen.getByRole("main").firstElementChild,
       );
-    });
-  });
-
-  describe("in the paged layout", () => {
-    // Without a layout engine every chapter fills one page, so turning the page moves to the next chapter.
-    it("asks to jump to the next chapter with the right arrow key", () => {
-      const dispatched = renderReader({ layout: "pages" });
-      fireEvent.keyDown(document.body, { key: "ArrowRight" });
-      expect(dispatched).toContainEqual(actions.readerJumped("b1", chapterTwo));
-    });
-
-    it("leaves the arrow keys alone while a side panel is open", () => {
-      const dispatched = renderReader({
-        layout: "pages",
-        sidePanel: <p>Flashcard</p>,
-      });
-      fireEvent.keyDown(document.body, { key: "ArrowRight" });
-      expect(jumps(dispatched)).toEqual([]);
-    });
-
-    it("leaves the arrow keys alone while Settings cover the reader", () => {
-      const dispatched = renderReader({
-        layout: "pages",
-        coveredBy: "settings",
-      });
-      fireEvent.keyDown(document.body, { key: "ArrowRight" });
-      expect(jumps(dispatched)).toEqual([]);
-    });
-
-    it("leaves the arrow keys alone while a modal dialog is open", () => {
-      const dispatched = renderReader({ layout: "pages", coveredBy: "dialog" });
-      fireEvent.keyDown(document.body, { key: "ArrowRight" });
-      expect(jumps(dispatched)).toEqual([]);
-    });
-
-    it("leaves Space to a focused button rather than turning the page", () => {
-      const dispatched = renderReader({ layout: "pages" });
-      const button = screen.getByRole("button", { name: "Contents" });
-      button.focus();
-      fireEvent.keyDown(button, { key: " " });
-      expect(jumps(dispatched)).toEqual([]);
     });
   });
 });

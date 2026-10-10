@@ -14,9 +14,7 @@ import type { WordFlashcards } from "./wordFlashcards.ts";
  * Looks up words of an ebook or text in the dictionary pop-up, with the same gestures as the subtitles' words.
  * A flashcard made from a word opens in the form, with the draft `draftFor` makes.
  * Returns the gestures for the text's words, the pop-up's props, or null while it is closed,
- * the rectangle of the word the pop-up stands beside, the word it highlights,
- * and what the L key does: look up the word at the screen's lookup cursor, which the mouse moves, as a click on it would,
- * or else open the search field.
+ * the rectangle of the word the pop-up stands beside, and the word it highlights.
  */
 export function useReaderLookup(
   languages: { target: string; translation: string },
@@ -81,7 +79,6 @@ export function useReaderLookup(
           }
         : undefined,
     openSearch: lookup.openSearch,
-    lookUpPointedWord: () => dispatch(actions.lookupCursorLookedUp()),
     close: lookup.close,
   };
 }

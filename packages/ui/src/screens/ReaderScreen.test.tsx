@@ -169,6 +169,33 @@ describe("ReaderScreen", () => {
     expect(document.activeElement).toBe(screen.getByRole("searchbox"));
   });
 
+  describe("in the paged layout", () => {
+    // Without a layout engine every chapter fills one page, so turning the page moves to the next chapter.
+    it("turns to the next chapter with the right arrow key", async () => {
+      renderReader();
+      await chapterHeading();
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      expect((await chapterHeading()).textContent).toBe("Chapter Two");
+    });
+
+    it("leaves Space to a focused button rather than turning the page", async () => {
+      renderReader();
+      await chapterHeading();
+      const button = screen.getByRole("button", { name: "Contents" });
+      button.focus();
+      fireEvent.keyDown(button, { key: " " });
+      expect((await chapterHeading()).textContent).toBe("Chapter One");
+    });
+
+    it("leaves the arrow keys alone while Settings cover the reader", async () => {
+      const { store } = renderReader();
+      await chapterHeading();
+      act(() => store.dispatch(actions.settingsRequested()));
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      expect((await chapterHeading()).textContent).toBe("Chapter One");
+    });
+  });
+
   it("explains a book that can no longer be found", async () => {
     renderReader({
       parsed: fakeFailure({ status: 404, message: "no file at that path" }),

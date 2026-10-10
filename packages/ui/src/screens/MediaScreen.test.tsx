@@ -4,6 +4,7 @@ import {
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
   selectCurrentTime,
+  selectPlayerControls,
   selectPreference,
 } from "@easyimmerse/state";
 import type {
@@ -615,6 +616,15 @@ describe("MediaScreen", () => {
       key: " ",
     });
     expect(effects.calls).not.toContainEqual({ type: "togglePlayer" });
+  });
+
+  it("leaves M to the open speed menu rather than muting", () => {
+    const { store } = renderMediaScreen();
+    fireEvent.click(screen.getByRole("button", { name: /Playback speed/ }));
+    fireEvent.keyDown(screen.getByRole("menuitemradio", { name: "1×" }), {
+      key: "m",
+    });
+    expect(selectPlayerControls(store.getState()).isMuted).toBe(false);
   });
 
   it("asks the player to replay the cue when R is pressed", () => {
