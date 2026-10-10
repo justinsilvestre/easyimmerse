@@ -9,7 +9,7 @@ import { type CueTextCursor, cuePositionOf } from "./cueCursor.ts";
  * as one object while its place and length stay the same.
  */
 export function useCuePosition(): CueTextCursor | null {
-  const cursor = useAppSelector(selectLookupCursor);
+  const cursor = useAppSelector((state) => selectLookupCursor(state.app));
   const matchedLength = useAppSelector(selectCursorMatchedLength);
   const { cueIndex, start, input } = cuePositionOf(cursor, matchedLength) ?? {};
   return useMemo(() => {

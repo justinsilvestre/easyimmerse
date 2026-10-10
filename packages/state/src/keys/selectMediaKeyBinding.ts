@@ -1,4 +1,5 @@
 import type { AppState } from "../app/appState.ts";
+import type { FlashcardDestination } from "../flashcards/flashcardActions.ts";
 import { preferencesActions } from "../preferences/preferencesActions.ts";
 import { lookupActions } from "../screen/lookup/lookupActions.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
@@ -12,6 +13,13 @@ import {
   keyNameOf,
   selectLookupEscapeBinding,
 } from "./keyBinding.ts";
+
+/** What the media screen completes with data only it holds: the cues, the drafts of flashcards, and the fullscreen state. */
+type MediaKeyCommand =
+  | { type: "skipCue"; direction: "back" | "forward" }
+  | { type: "replayCue" }
+  | { type: "toggleFullscreen" }
+  | { type: "startFlashcardAtCursor"; destination: FlashcardDestination };
 
 /**
  * Returns what a key does on the media screen, or null to leave it to the browser.
@@ -36,26 +44,35 @@ export function selectMediaKeyBinding(
     case "k":
       return bindAction(screenActions.playToggleRequested());
     case "ArrowLeft":
-      return bindCommand({ type: "skipCue", direction: "back" });
+      return bindCommand<MediaKeyCommand>({
+        type: "skipCue",
+        direction: "back",
+      });
     case "ArrowRight":
-      return bindCommand({ type: "skipCue", direction: "forward" });
+      return bindCommand<MediaKeyCommand>({
+        type: "skipCue",
+        direction: "forward",
+      });
     case "r":
-      return bindCommand({ type: "replayCue" });
+      return bindCommand<MediaKeyCommand>({ type: "replayCue" });
     case "m":
       return bindAction(preferencesActions.muteToggleRequested());
     case "f":
-      return bindCommand({ type: "toggleFullscreen" });
+      return bindCommand<MediaKeyCommand>({ type: "toggleFullscreen" });
     case "l":
       return bindAction(lookupActions.lookupCursorLookedUp());
     case "c":
       // Works while a card is open in the editor, too.
-      return bindCommand({
+      return bindCommand<MediaKeyCommand>({
         type: "startFlashcardAtCursor",
         destination: "save",
       });
     case "e":
       return selectFlashcardForm(app) === null
-        ? bindCommand({ type: "startFlashcardAtCursor", destination: "editor" })
+        ? bindCommand<MediaKeyCommand>({
+            type: "startFlashcardAtCursor",
+            destination: "editor",
+          })
         : null;
     default:
       return null;

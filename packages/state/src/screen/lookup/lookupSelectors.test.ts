@@ -8,26 +8,22 @@ const openM1 = actions.openMediaFileRequested("p1", "m1");
 
 describe("selectLookup", () => {
   it("returns the open screen's lookup", () => {
-    const state = {
-      app: stateAfter(openM1, actions.lookupWordClicked(cat, "mouse")),
-    };
-    expect(selectLookup(state)?.popup?.chosen).toEqual(cat);
+    const app = stateAfter(openM1, actions.lookupWordClicked(cat, "mouse"));
+    expect(selectLookup(app)?.popup?.chosen).toEqual(cat);
   });
 
   it("returns null outside the media screen", () => {
-    expect(selectLookup({ app: stateAfter() })).toBeNull();
+    expect(selectLookup(stateAfter())).toBeNull();
   });
 });
 
 describe("selectLookupCursor", () => {
   it("returns the open screen's lookup cursor", () => {
-    const state = {
-      app: stateAfter(openM1, actions.lookupCursorMoved(cat, "mouse")),
-    };
-    expect(selectLookupCursor(state)?.chosen).toEqual(cat);
+    const app = stateAfter(openM1, actions.lookupCursorMoved(cat, "mouse"));
+    expect(selectLookupCursor(app)?.chosen).toEqual(cat);
   });
 
   it("returns null outside the media screen", () => {
-    expect(selectLookupCursor({ app: stateAfter() })).toBeNull();
+    expect(selectLookupCursor(stateAfter())).toBeNull();
   });
 });

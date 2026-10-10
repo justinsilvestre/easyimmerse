@@ -40,7 +40,7 @@ describe("selectReaderKeyBinding", () => {
     it("opens the book search from a field", () => {
       const press = exampleKeyPress("f", {
         hasCommandKey: true,
-        focus: "textField",
+        focus: "formField",
       });
       expect(selectReaderKeyBinding(reading(), press)).toEqual(openBookSearch);
     });
@@ -80,7 +80,7 @@ describe("selectReaderKeyBinding", () => {
         actions.lookupSearchOpened(),
         actions.readerPanelOpened("search"),
       );
-      const press = exampleKeyPress("Escape", { focus: "textField" });
+      const press = exampleKeyPress("Escape", { focus: "formField" });
       expect(selectReaderKeyBinding(app, press)).toEqual(lookupClosed);
     });
 
@@ -119,7 +119,7 @@ describe("selectReaderKeyBinding", () => {
     });
 
     it("leaves a key typed into a field", () => {
-      const press = exampleKeyPress("l", { focus: "textField" });
+      const press = exampleKeyPress("l", { focus: "formField" });
       expect(selectReaderKeyBinding(reading(), press)).toBeNull();
     });
 

@@ -51,10 +51,10 @@ describe("keyPressOf", () => {
       expect(pressOn(document.body).focus).toBe("page");
     });
 
-    it("as a text field", () => {
+    it("as a form field for a text box", () => {
       render(<Page />);
       const field = screen.getByRole("textbox", { name: "Notes" });
-      expect(pressOn(field).focus).toBe("textField");
+      expect(pressOn(field).focus).toBe("formField");
     });
 
     it("as a control for a button", () => {

@@ -1,10 +1,10 @@
-import type { AppStore, BufferedRange } from "@easyimmerse/state";
+import type { BufferedRange } from "@easyimmerse/state";
 import { actions, selectPlayerControls } from "@easyimmerse/state";
 import type { Rational } from "@easyimmerse/types";
 import type { RefObject, SyntheticEvent } from "react";
 import { useEffect } from "react";
-import { useStore } from "react-redux";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppStore } from "../hooks/useAppStore.ts";
 import { usePlayerRegistry } from "../playerRegistryContext.ts";
 import { seekTarget } from "./seekTarget.ts";
 
@@ -23,7 +23,7 @@ export function useRegisteredPlayer(
 ) {
   const registry = usePlayerRegistry();
   const dispatch = useAppDispatch();
-  const store = useStore() as AppStore;
+  const store = useAppStore();
   useEffect(() => {
     const element = elementRef.current;
     if (element !== null)

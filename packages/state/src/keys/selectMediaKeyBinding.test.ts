@@ -132,7 +132,7 @@ describe("selectMediaKeyBinding", () => {
     });
 
     it("leaves a key typed into a field", () => {
-      const press = exampleKeyPress("k", { focus: "textField" });
+      const press = exampleKeyPress("k", { focus: "formField" });
       expect(selectMediaKeyBinding(onScreen(), press)).toBeNull();
     });
 
@@ -171,7 +171,7 @@ describe("selectMediaKeyBinding", () => {
     });
 
     it("closes the pop-up from its own field", () => {
-      const press = exampleKeyPress("Escape", { focus: "textField" });
+      const press = exampleKeyPress("Escape", { focus: "formField" });
       expect(selectMediaKeyBinding(withPopup(), press)).toEqual(lookupClosed);
     });
 

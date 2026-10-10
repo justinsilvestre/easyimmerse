@@ -1,7 +1,7 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import { lookupActions } from "../screen/lookup/lookupActions.ts";
-import { selectMediaScreen } from "../screen/mediaScreen/mediaScreenSelectors.ts";
+import { selectLookup } from "../screen/lookup/lookupSelectors.ts";
 
 /** A key pressed on a screen, with the facts about the page that only the browser knows. */
 export type KeyPress = {
@@ -12,11 +12,11 @@ export type KeyPress = {
   hasCommandKey: boolean;
   hasAltKey: boolean;
   /**
-   * What has focus: a field the user types into, an item of an open menu,
-   * a control that Space presses, such as a button or a link, or anything else on the page.
+   * What has focus: a form field, which takes the keys it uses itself, such as a text box, a slider, a checkbox or a select;
+   * an item of an open menu; a control that Space presses, such as a button or a link; or anything else on the page.
    */
-  focus: "textField" | "menu" | "control" | "page";
-  /** Whether a modal dialog is open over the page. */
+  focus: "formField" | "menu" | "control" | "page";
+  /** Whether a dialog is open over the page. Every dialog of the app is modal. */
   isDialogOpen: boolean;
   /** Whether the focused element has already handled the key. */
   isHandled: boolean;
@@ -34,8 +34,8 @@ export type KeyBinding<Command> =
 export const bindAction = (action: AppAction) =>
   ({ kind: "action", action }) as const;
 
-/** Binds a key to a command for the screen. */
-export const bindCommand = <const Command>(command: Command) =>
+/** Binds a key to a command for the screen, one of the commands that `Command` lists. */
+export const bindCommand = <Command>(command: Command) =>
   ({ kind: "command", command }) as const;
 
 /** Tells whether the screen lies beneath Settings or under a modal dialog, where its keys do nothing. */
@@ -48,14 +48,14 @@ export function isScreenCovered(
 
 /**
  * Tells whether a key is free for the screen's own shortcuts:
- * pressed without Ctrl, Cmd or Alt, not handled already, and not typed into a field or a menu.
+ * pressed without Ctrl, Cmd or Alt, not handled already, and not pressed in a form field or a menu.
  */
 export function isShortcutPress(press: KeyPress): boolean {
   return (
     !press.isHandled &&
     !press.hasCommandKey &&
     !press.hasAltKey &&
-    press.focus !== "textField" &&
+    press.focus !== "formField" &&
     press.focus !== "menu"
   );
 }
@@ -69,10 +69,8 @@ export function keyNameOf(press: KeyPress): string {
  * Returns what Escape does while the dictionary pop-up is open, wherever focus is:
  * it makes an expanded pop-up compact, and closes a compact one. Returns null while the pop-up is closed.
  */
-export function selectLookupEscapeBinding(
-  app: Pick<AppState, "route" | "screen">,
-) {
-  const lookup = selectMediaScreen(app)?.screen.lookup;
+export function selectLookupEscapeBinding(app: Pick<AppState, "screen">) {
+  const lookup = selectLookup(app);
   if (!lookup?.popup) return null;
   return bindAction(
     lookup.size === "expanded"

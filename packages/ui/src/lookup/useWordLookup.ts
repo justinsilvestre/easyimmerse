@@ -20,7 +20,7 @@ export function useWordLookup(
   flashcards: WordFlashcards,
 ) {
   const dispatch = useAppDispatch();
-  const lookup = useAppSelector(selectLookup);
+  const lookup = useAppSelector((state) => selectLookup(state.app));
   const display = useLookupDisplay(lookup?.popup ?? null, languages.target);
   const popupId = useId();
   const chosen = lookup?.popup?.chosen ?? null;

@@ -1,5 +1,4 @@
 import type { AppState } from "../../app/appState.ts";
-import type { RootState } from "../../app/createAppStore.ts";
 import { selectMediaScreen } from "../mediaScreen/mediaScreenSelectors.ts";
 import type {
   LookupCursor,
@@ -8,12 +7,18 @@ import type {
 } from "./lookupState.ts";
 
 /** Returns the dictionary pop-up's state of the media screen or the reader, or null on any other screen. */
-export const selectLookup = (state: RootState): LookupState | null =>
-  state.app.screen.main.kind === "media" ? state.app.screen.main.lookup : null;
+export function selectLookup(
+  app: Pick<AppState, "screen">,
+): LookupState | null {
+  return app.screen.main.kind === "media" ? app.screen.main.lookup : null;
+}
 
 /** Returns the lookup cursor of the media screen or the reader, or null when there is none. */
-export const selectLookupCursor = (state: RootState): LookupCursor | null =>
-  selectLookup(state)?.cursor ?? null;
+export function selectLookupCursor(
+  app: Pick<AppState, "screen">,
+): LookupCursor | null {
+  return selectLookup(app)?.cursor ?? null;
+}
 
 /** Returns the flashcard waiting for its word's lookup before it is saved or opened, or null. */
 export function selectPendingFlashcard(

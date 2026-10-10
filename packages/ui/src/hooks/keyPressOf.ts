@@ -15,12 +15,12 @@ export function keyPressOf(event: KeyboardEvent): KeyPress {
 
 function focusOf(target: EventTarget | null): KeyPress["focus"] {
   if (!(target instanceof HTMLElement)) return "page";
-  if (isTextField(target)) return "textField";
+  if (isFormField(target)) return "formField";
   if (target.closest("[role='menu']") !== null) return "menu";
   return target.closest(pressableSelector) !== null ? "control" : "page";
 }
 
-function isTextField(element: HTMLElement): boolean {
+function isFormField(element: HTMLElement): boolean {
   return (
     element.isContentEditable ||
     ["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName)

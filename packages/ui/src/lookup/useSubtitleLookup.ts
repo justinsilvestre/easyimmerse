@@ -39,7 +39,9 @@ export function useSubtitleLookup(
   const navigate = useNavigate();
   const lookup = useWordLookup(languages, flashcards);
   const cursor = useCuePosition();
-  const cursorWord = useAppSelector(selectLookupCursor)?.chosen;
+  const cursorWord = useAppSelector((state) =>
+    selectLookupCursor(state.app),
+  )?.chosen;
   const chosenAt = (hit: WordHit, cue: Cue) =>
     chosenWordAt(hit, cue, lookup.wordOf);
   const startFlashcardAtCursor = (destination: FlashcardDestination) =>

@@ -1,27 +1,9 @@
-import type {
-  AppStore,
-  KeyBinding,
-  KeyPress,
-  RootState,
-} from "@easyimmerse/state";
+import type { AppState, KeyBinding, KeyPress } from "@easyimmerse/state";
 import { useEffect, useEffectEvent } from "react";
-import { useStore } from "react-redux";
 import { keyPressOf } from "./keyPressOf.ts";
+import { useAppStore } from "./useAppStore.ts";
 
 type Command = { type: string };
-
-type SelectBinding = (
-  app: RootState["app"],
-  press: KeyPress,
-) => KeyBinding<Command> | null;
-
-/** The commands that a binding selector can give. */
-type CommandOf<Binding> = Binding extends {
-  kind: "command";
-  command: infer Given;
-}
-  ? Given
-  : never;
 
 /** A handler for each command a screen's keys can give, which completes it with data only the screen holds. */
 type CommandHandlers<Given extends Command> = {
@@ -33,11 +15,11 @@ type CommandHandlers<Given extends Command> = {
  * dispatches its action, or hands its command to the matching handler. A key with no meaning is left to the browser.
  * The focused element sees each key first, so that a key it handles, which it marks by preventing the default, can be told apart.
  */
-export function useKeyBindings<Select extends SelectBinding>(
-  selectBinding: Select,
-  handlers: CommandHandlers<CommandOf<ReturnType<Select>>>,
+export function useKeyBindings<Given extends Command>(
+  selectBinding: (app: AppState, press: KeyPress) => KeyBinding<Given> | null,
+  handlers: NoInfer<CommandHandlers<Given>>,
 ): void {
-  const store = useStore() as AppStore;
+  const store = useAppStore();
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
     const binding = selectBinding(store.getState().app, keyPressOf(event));
     if (binding === null) return;

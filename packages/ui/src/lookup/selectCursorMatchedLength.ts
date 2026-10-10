@@ -10,7 +10,7 @@ import { type RootState, selectLookupCursor } from "@easyimmerse/state";
 export function selectCursorMatchedLength(
   state: RootState,
 ): number | null | undefined {
-  const cursor = selectLookupCursor(state);
+  const cursor = selectLookupCursor(state.app);
   if (cursor === null) return undefined;
   if (cursor.matchedLength !== undefined) return cursor.matchedLength;
   const { query } = cursor.chosen.word;
