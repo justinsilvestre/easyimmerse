@@ -22,6 +22,16 @@ describe("updatePlayer", () => {
     expect(effects).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);
   });
 
+  it("records the seek target for seekRequested", () => {
+    const [screen] = apply(actions.seekRequested(12.5));
+    expect(screen.player.lastSeekSeconds).toBe(12.5);
+  });
+
+  it("records the seek target for playerSeeking", () => {
+    const [screen] = apply(actions.playerSeeking(4));
+    expect(screen.player.lastSeekSeconds).toBe(4);
+  });
+
   it("stores the current time for playerTimeChanged", () => {
     const [screen] = apply(actions.playerTimeChanged(3));
     expect(screen.player.currentTimeSeconds).toBe(3);

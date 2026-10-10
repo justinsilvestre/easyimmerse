@@ -2,14 +2,17 @@ import type { Effect } from "../../app/effect.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import type { PlayerState } from "./playerState.ts";
 
-/** Moves the player to a time, which the controls show at once, and asks the platform's player to seek there. */
+/** Moves the player to a time, which the controls show at once, records it as the last seek, and asks the platform's player to seek there. */
 export function seekTo(
   screen: MediaScreenState,
   ms: number,
 ): readonly [MediaScreenState, readonly Effect[]] {
   const seconds = ms / 1000;
   return [
-    withPlayer(screen, { currentTimeSeconds: seconds }),
+    withPlayer(screen, {
+      currentTimeSeconds: seconds,
+      lastSeekSeconds: seconds,
+    }),
     [{ type: "seekPlayer", seconds }],
   ];
 }

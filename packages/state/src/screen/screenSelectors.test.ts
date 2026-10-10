@@ -45,6 +45,7 @@ describe("screenSelectors", () => {
       durationSeconds: 90,
       buffered: [],
       isPlaying: false,
+      lastSeekSeconds: null,
     });
   });
 

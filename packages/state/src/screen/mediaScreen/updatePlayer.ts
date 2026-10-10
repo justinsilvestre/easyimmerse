@@ -13,6 +13,8 @@ export function updatePlayer(
       return seekTo(screen, action.seconds * 1000);
     case "playerTimeChanged":
       return [withPlayer(screen, { currentTimeSeconds: action.seconds }), []];
+    case "playerSeeking":
+      return [withPlayer(screen, { lastSeekSeconds: action.seconds }), []];
     case "playerDurationChanged":
       return [withPlayer(screen, { durationSeconds: action.seconds }), []];
     case "playerBufferedChanged":

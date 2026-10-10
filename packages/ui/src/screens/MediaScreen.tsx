@@ -4,6 +4,7 @@ import {
   selectPlayer,
   selectPlayerControls,
   selectPreference,
+  selectShownCue,
 } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
 import { useMemo, useReducer, useRef, useState } from "react";
@@ -40,7 +41,6 @@ import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
 import { parseSubtitleAppearance } from "../media/subtitleAppearance.ts";
 import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
-import { useShownCue } from "../media/useShownCue.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { selectCanChooseTracks } from "../player/selectCanChooseTracks.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
@@ -87,8 +87,9 @@ export function MediaScreen({
     useListPluginsQuery().data?.plugins,
   );
   const sourceMedia = useSourceMedia(projectId, mediaFileId);
-  // Found here alone and passed down, since it depends on the times observed before: a panel opened later shows the same cue.
-  const shownCue = useShownCue(subtitles.cues, currentMs);
+  const shownCue = useAppSelector((state) =>
+    selectShownCue(state, subtitles.cues),
+  );
   const hasScreenshots = screenshotSource !== null;
   const flashcards = useMediaFlashcards(projectId, mediaFileId, hasScreenshots);
   const [panels, dispatchPanels] = useReducer(

@@ -84,6 +84,10 @@ export {
   isDocumentFileName,
 } from "./screen/mediaFileExtensions.ts";
 export { isConversionNoticeDue } from "./screen/mediaScreen/conversionNotice.ts";
+export {
+  findCueAt,
+  findCueShownAt,
+} from "./screen/mediaScreen/findCue.ts";
 export type { PathPlayback } from "./screen/mediaScreen/pathPlayback.ts";
 export {
   needsTrackChoice,
@@ -95,6 +99,7 @@ export {
   selectPathPlayback,
 } from "./screen/mediaScreen/playbackSelectors.ts";
 export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
+export { selectShownCue } from "./screen/mediaScreen/selectShownCue.ts";
 export {
   selectRequestedWaveformSpan,
   selectWaveformRequests,

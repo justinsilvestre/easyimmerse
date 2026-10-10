@@ -9,6 +9,8 @@ export type PlayerState = {
   /** What the player has loaded so far, which the seek bar shows, as a stream being converted arrives piece by piece. */
   buffered: readonly BufferedRange[];
   isPlaying: boolean;
+  /** Where the last seek went, or null while the player has not sought since the file opened. */
+  lastSeekSeconds: number | null;
 };
 
 /** The player before it has loaded a file. */
@@ -17,4 +19,5 @@ export const initialPlayerState: PlayerState = {
   durationSeconds: 0,
   buffered: [],
   isPlaying: false,
+  lastSeekSeconds: null,
 };

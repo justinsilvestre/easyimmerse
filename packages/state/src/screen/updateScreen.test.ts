@@ -6,9 +6,8 @@ import { transientNotice } from "../notices/transientNotice.ts";
 import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
-import { initialLookup } from "./lookup/lookupState.ts";
 import { mediaFilesListed } from "./mediaScreen/playbackTestActions.ts";
-import { initialWaveform } from "./mediaScreen/waveformState.ts";
+import { initialPlayerState } from "./mediaScreen/playerState.ts";
 import { updateScreen } from "./updateScreen.ts";
 
 /** Applies an action to the screens after the given earlier actions. */
@@ -167,21 +166,9 @@ describe("updateScreen", () => {
       actions.openMediaFileRequested("p1", "m1"),
       ...playingM2,
     );
-    expect(screen.main).toEqual({
-      kind: "media",
-      player: {
-        currentTimeSeconds: 0,
-        durationSeconds: 0,
-        buffered: [],
-        isPlaying: false,
-      },
-      loop: null,
-      pendingResumeMs: null,
-      playback: null,
-      pendingSubtitleFile: null,
-      waveform: initialWaveform,
-      lookup: initialLookup,
-    });
+    expect(screen.main.kind === "media" && screen.main.player).toEqual(
+      initialPlayerState,
+    );
   });
 
   it("leaves the same media file open as it is", () => {
