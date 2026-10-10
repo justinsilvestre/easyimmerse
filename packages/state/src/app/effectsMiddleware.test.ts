@@ -1,9 +1,16 @@
+import type { MiddlewareAPI, UnknownAction } from "redux";
 import { describe, expect, it, vi } from "vitest";
-import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
+import type {
+  Effects,
+  PickedFile,
+  PickedMediaFile,
+} from "../platform/effects.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import { actions } from "./appAction.ts";
 import { createAppStore } from "./createAppStore.ts";
 import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
+import type { Effect } from "./effect.ts";
+import { createEffectsMiddleware } from "./effectsMiddleware.ts";
 
 const pickedFile: PickedFile = {
   name: "episode.srt",
@@ -15,7 +22,52 @@ const pickedMediaFile: PickedMediaFile = {
   source: { kind: "path", path: "/videos/episode.mkv" },
 };
 
+const timerAction = actions.notificationRequested("Time is up");
+
+const startTimer: Effect = {
+  type: "startTimer",
+  id: "test/a",
+  ms: 1_000,
+  action: timerAction,
+};
+
+/** Passes one action through an effects middleware whose reducer queued `queued`, and returns the actions the middleware dispatches, then and later. */
+function dispatchedBy(
+  effects: Effects,
+  queued: readonly Effect[],
+): UnknownAction[] {
+  const dispatched: UnknownAction[] = [];
+  const api: MiddlewareAPI = {
+    dispatch: (action) => {
+      dispatched.push(action);
+      return action;
+    },
+    getState: () => ({}),
+  };
+  createEffectsMiddleware(effects, () => queued)(api)(() => undefined)(
+    actions.playerTimeChanged(0),
+  );
+  return dispatched;
+}
+
 describe("effectsMiddleware", () => {
+  it("dispatches a started timer's action once the clock passes its deadline", () => {
+    const effects = createRecordingEffects();
+    const dispatched = dispatchedBy(effects, [startTimer]);
+    effects.clock.advanceBy(1_000);
+    expect(dispatched).toEqual([timerAction]);
+  });
+
+  it("does not dispatch the action of a timer that was cancelled", () => {
+    const effects = createRecordingEffects();
+    const dispatched = dispatchedBy(effects, [
+      startTimer,
+      { type: "cancelTimer", id: "test/a" },
+    ]);
+    effects.clock.advanceBy(1_000);
+    expect(dispatched).toEqual([]);
+  });
+
   it("calls seekPlayer after seekRequested is dispatched", () => {
     const effects = createRecordingEffects();
     const store = createAppStore(effects, createFakeServerStoreParts());

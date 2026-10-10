@@ -3,14 +3,17 @@ import { platformEffectRunners } from "../platform/platformEffectRunners.ts";
 import { preferencesEffectRunners } from "../preferences/preferencesEffectRunners.ts";
 import { screenEffectRunners } from "../screen/screenEffectRunners.ts";
 import { storedPlacesEffectRunners } from "../storedPlaces/storedPlacesEffectRunners.ts";
+import { timerEffectRunners } from "../timers/timerEffectRunners.ts";
+import type { TimerTable } from "../timers/timerTable.ts";
 import { unsavedWorkEffectRunners } from "../unsavedWork/unsavedWork.ts";
 import type { AppAction } from "./appAction.ts";
 import type { Effect } from "./effect.ts";
 
-/** What an effect runner may use: the platform's effects and the store's dispatch. */
+/** What an effect runner may use: the platform's effects, the store's dispatch, and the store's pending timers. */
 export type EffectContext = {
   effects: Effects;
   dispatch: (action: AppAction) => void;
+  timers: TimerTable;
 };
 
 /** Performs one kind of effect. Effects that produce a result dispatch the corresponding action once it arrives. */
@@ -27,6 +30,7 @@ const effectRunners = {
   ...storedPlacesEffectRunners,
   ...unsavedWorkEffectRunners,
   ...platformEffectRunners,
+  ...timerEffectRunners,
 } satisfies EffectRunners<Effect>;
 
 /** Performs one effect through the platform's effects. */
