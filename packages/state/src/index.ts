@@ -114,9 +114,9 @@ export {
   waveformPeaksPerSecond,
   waveformWindowMs,
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
+export { skippedSubtitlesMessage } from "./screen/pluginForm/skippedSubtitlesMessage.ts";
 export type { MediaImportSource } from "./screen/projectScreen/mediaImportWizard.ts";
 export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
-export { skippedSubtitlesMessage } from "./screen/projectScreen/skippedSubtitlesMessage.ts";
 export {
   selectCurrentTime,
   selectDictionaryRemovalQuestion,

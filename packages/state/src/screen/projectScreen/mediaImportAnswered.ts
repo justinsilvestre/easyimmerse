@@ -1,13 +1,11 @@
 import type { Effect } from "../../app/effect.ts";
 import { jobKey } from "../../operations/jobs.ts";
 import { isSettled } from "../../server/isSettled.ts";
-import type {
-  RequestFailure,
-  RequestSettled,
-} from "../../server/serverRequest.ts";
+import type { RequestSettled } from "../../server/serverRequest.ts";
+import { formShown, requestFailed } from "../pluginForm/pluginFormWizard.ts";
+import { skippedSubtitlesNotice } from "../pluginForm/skippedSubtitlesMessage.ts";
 import { mediaImportIds, watchFetch } from "./mediaImportRequests.ts";
 import type { MediaImportWizard } from "./mediaImportWizard.ts";
-import { skippedSubtitlesNotice } from "./skippedSubtitlesMessage.ts";
 
 type Result = readonly [MediaImportWizard, readonly Effect[]];
 
@@ -20,9 +18,9 @@ export function mediaImportAnswered(
   const ids = mediaImportIds(projectId);
   if (isSettled(action, ids.form, "getImportForm"))
     return action.outcome.ok
-      ? [{ ...wizard, form: action.outcome.data, error: null }, []]
+      ? [formShown(wizard, action.outcome.data), []]
       : [
-          failed(
+          requestFailed(
             wizard,
             action.outcome.error,
             "The plugin's form could not load.",
@@ -32,15 +30,18 @@ export function mediaImportAnswered(
   if (isSettled(action, ids.step, "submitImportStep")) {
     if (!action.outcome.ok)
       return [
-        failed(wizard, action.outcome.error, "The media could not be added."),
+        requestFailed(
+          wizard,
+          action.outcome.error,
+          "The media could not be added.",
+        ),
         [],
       ];
     const answer = action.outcome.data;
-    const answered = { ...wizard, isAwaitingAnswer: false };
     return answer.kind === "form"
-      ? [{ ...answered, form: answer.form, error: null }, []]
+      ? [formShown(wizard, answer.form), []]
       : [
-          { ...answered, jobId: answer.job.id },
+          { ...wizard, isAwaitingAnswer: false, jobId: answer.job.id },
           [watchFetch(projectId, answer.job.id)],
         ];
   }
@@ -50,22 +51,14 @@ export function mediaImportAnswered(
   ) {
     if (!action.outcome.ok)
       return [
-        failed(wizard, action.outcome.error, "The media could not be added."),
+        requestFailed(
+          wizard,
+          action.outcome.error,
+          "The media could not be added.",
+        ),
         [],
       ];
     return [wizard, skippedSubtitlesNotice(action.outcome.data, wizard.form)];
   }
   return [wizard, []];
-}
-
-function failed(
-  wizard: MediaImportWizard,
-  failure: RequestFailure,
-  fallback: string,
-): MediaImportWizard {
-  return {
-    ...wizard,
-    isAwaitingAnswer: false,
-    error: failure.message || fallback,
-  };
 }

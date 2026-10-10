@@ -1,6 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { Effect } from "../../app/effect.ts";
 import { isAborted } from "../../server/isAborted.ts";
+import { openedPluginForm, stepSent } from "../pluginForm/pluginFormWizard.ts";
 import { mediaImportAnswered } from "./mediaImportAnswered.ts";
 import {
   endImport,
@@ -26,13 +27,7 @@ export function updateMediaImport(
   switch (action.type) {
     case "mediaImportOpened":
       return [
-        {
-          source: action.source,
-          form: null,
-          isAwaitingAnswer: false,
-          jobId: null,
-          error: null,
-        },
+        { ...openedPluginForm, source: action.source, jobId: null },
         [
           ...endImport(projectId, wizard),
           formRequest(projectId, action.source.name),
@@ -41,7 +36,7 @@ export function updateMediaImport(
     case "mediaImportStepTaken":
       if (wizard === null || wizard.isAwaitingAnswer) return [wizard, []];
       return [
-        { ...wizard, isAwaitingAnswer: true, jobId: null, error: null },
+        { ...stepSent(wizard), jobId: null },
         [
           ...unwatchFetch(wizard),
           stepRequest(
