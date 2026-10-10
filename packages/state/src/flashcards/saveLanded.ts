@@ -1,8 +1,8 @@
-import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { forgetFailedSave } from "./failedSaveKeeping.ts";
 import { selectFailedSave } from "./failedSaveSelectors.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import {
   flashcardNoticeKeys,
   flashcardNotices,
@@ -21,7 +21,7 @@ type CardSave = Extract<SavePurpose, { type: "save" }>;
  * drops a Retry of it still waiting, and shows its undo toast when the save offers one.
  * An Undo or rollback that lands leaves the failed saves as they are.
  */
-export function saveLanded({ id, request }: Save, app: AppState) {
+export function saveLanded({ id, request }: Save, app: FlashcardApp) {
   const { flashcardId, projectId, purpose } = request;
   if (purpose.type !== "save") return [];
   const undo = {
@@ -47,7 +47,11 @@ export function saveLanded({ id, request }: Save, app: AppState) {
 }
 
 /** A form's save offers Undo only while its card is still open; a Retry never does. */
-function isUndoOffered(purpose: CardSave, id: string, app: AppState): boolean {
+function isUndoOffered(
+  purpose: CardSave,
+  id: string,
+  app: FlashcardApp,
+): boolean {
   if (purpose.from === "form")
     return selectFlashcardForm(app)?.sentRequestId === id;
   return purpose.offersUndo;
@@ -55,7 +59,7 @@ function isUndoOffered(purpose: CardSave, id: string, app: AppState): boolean {
 
 /** The waiting Retries of a flashcard other than the request that just landed, which that request has made pointless. */
 function selectWaitingRetries(
-  app: Pick<AppState, "operations">,
+  app: FlashcardApp,
   flashcardId: string,
   landedId: string,
 ): readonly string[] {

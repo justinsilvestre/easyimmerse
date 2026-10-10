@@ -1,6 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { mediaScreenActionOf } from "./mediaScreenActionOf.ts";

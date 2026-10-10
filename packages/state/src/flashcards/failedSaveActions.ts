@@ -1,4 +1,3 @@
-import type { AppState } from "../app/appState.ts";
 import type { FailedRequest } from "../operations/failedRequests.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { failedSaveIdOf } from "./failedSave.ts";
@@ -8,6 +7,7 @@ import {
   selectKeptFailedSave,
   selectPendingRetry,
 } from "./failedSaveSelectors.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import {
   flashcardNoticeKeys,
   flashcardNotices,
@@ -22,7 +22,7 @@ import { isCardOf } from "./latestFlashcard.ts";
  * Throws a failed save's edits away, with an undo toast that keeps it again, and takes back a save of it in doubt.
  * It does nothing while a Retry of the card is under way.
  */
-export function discardFailedSave(flashcardId: string, app: AppState) {
+export function discardFailedSave(flashcardId: string, app: FlashcardApp) {
   const failedSave = selectFailedSave(app, flashcardId);
   if (!failedSave || selectPendingRetry(app, flashcardId)) return [];
   const { card, projectId, rollbackIfDiscarded, kept } = failedSave;
@@ -43,7 +43,7 @@ export function discardFailedSave(flashcardId: string, app: AppState) {
 }
 
 /** Keeps a discarded failed save again, unless the form holds its flashcard meanwhile, whose copy is then the newer one. */
-export function restoreFailedSave(kept: FailedRequest, app: AppState) {
+export function restoreFailedSave(kept: FailedRequest, app: FlashcardApp) {
   const failedSave = selectKeptFailedSave(app, kept);
   const form = selectFlashcardForm(app);
   if (failedSave === null) return [];

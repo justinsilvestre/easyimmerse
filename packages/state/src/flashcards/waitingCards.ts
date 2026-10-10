@@ -1,5 +1,4 @@
 import type { AppAction } from "../app/appAction.ts";
-import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import type { RequestRecord } from "../operations/operations.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
@@ -9,6 +8,7 @@ import {
   selectShownMediaFile,
 } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { isSettled } from "../server/isSettled.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import { type NewCard, withLookupFields } from "./flashcardCard.ts";
 import type { LookupFieldsContext } from "./flashcardForm.ts";
 import {
@@ -40,7 +40,7 @@ type HeldSave = {
 /** Asks for the save of a card held for its word's lookup, in the project of the media screen shown. */
 export function holdForLookup(
   { card, lookup, offersUndo }: WaitingCard,
-  app: AppState,
+  app: FlashcardApp,
   sender: FlashcardSender,
 ) {
   const order = {
@@ -58,7 +58,7 @@ export function holdForLookup(
 export function fillWaitingCards(
   requestId: string,
   fields: LookupFlashcardFields | null,
-  app: AppState,
+  app: FlashcardApp,
 ) {
   return selectHeldSaves(app)
     .filter((held) => held.heldFor === requestId)
@@ -66,7 +66,7 @@ export function fillWaitingCards(
 }
 
 /** Releases as it is the held save whose wait for its lookup has run out. */
-export function sendLateCard(flashcardId: string, app: AppState) {
+export function sendLateCard(flashcardId: string, app: FlashcardApp) {
   return selectHeldSaves(app)
     .filter((held) => held.card.flashcardId === flashcardId)
     .flatMap((held) => release(held, held.card, app));
@@ -75,7 +75,7 @@ export function sendLateCard(flashcardId: string, app: AppState) {
 function release(
   { id, projectId, purpose }: HeldSave,
   card: NewCard,
-  app: AppState,
+  app: FlashcardApp,
 ) {
   const { offersUndo } = purpose;
   const order = { card, projectId, from: "background", offersUndo } as const;
@@ -86,7 +86,7 @@ function release(
   ];
 }
 
-function selectHeldSaves(app: Pick<AppState, "operations">): HeldSave[] {
+function selectHeldSaves(app: FlashcardApp): HeldSave[] {
   return app.operations.requests.flatMap(heldSaveOf);
 }
 
@@ -98,7 +98,7 @@ function heldSaveOf({ id, request, heldFor }: RequestRecord): HeldSave[] {
 }
 
 /** Asks for the fields of a settled lookup that a flashcard waits for: the word's pending flashcard, the form's card or a held save. */
-export function fieldsAwaitedBy(action: AppAction, app: AppState) {
+export function fieldsAwaitedBy(action: AppAction, app: FlashcardApp) {
   if (
     action.type !== "requestSettled" ||
     !isSettled(action, action.id, "lookupText")
@@ -119,7 +119,7 @@ export function fieldsAwaitedBy(action: AppAction, app: AppState) {
 
 function selectAwaitingLookupContext(
   requestId: string,
-  app: AppState,
+  app: FlashcardApp,
 ): LookupFieldsContext | null {
   const pending = selectPendingFlashcard(app);
   if (pending && lookupRequestId(pending.flashcardId) === requestId)

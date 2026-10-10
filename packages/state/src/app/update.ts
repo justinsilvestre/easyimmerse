@@ -21,7 +21,9 @@ export type UpdateFunction<S, A, E> = (state: S, action: A) => Update<S, E>;
 
 export type Update<S, E> = readonly [S, readonly E[]];
 
-type FeatureTable = { [K in keyof AppState]: Feature<AppState[K]> };
+type FeatureTable = {
+  [K in keyof AppState]: Feature<AppState[K], keyof AppState>;
+};
 
 const features = {
   route: routeFeature,
@@ -85,6 +87,8 @@ function updateSlice<K extends keyof AppState>(
   state: AppState,
   action: AppAction,
 ): Update<AppState[K], Effect> {
-  const feature: Feature<AppState[K]> = (features as FeatureTable)[name];
+  const feature: Feature<AppState[K], keyof AppState> = (
+    features as FeatureTable
+  )[name];
   return feature.update(state[name], action, state);
 }

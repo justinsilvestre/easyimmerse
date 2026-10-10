@@ -1,5 +1,4 @@
 import type { AppAction } from "../app/appAction.ts";
-import type { AppState } from "../app/appState.ts";
 import {
   type FinishedLookupFlashcard,
   lookupFlashcardFinishedBy,
@@ -10,6 +9,7 @@ import {
   selectMediaScreen,
   selectShownMediaFile,
 } from "../screen/mediaScreen/mediaScreenSelectors.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import { newCard, withLookupFields } from "./flashcardCard.ts";
 import { askSave } from "./flashcardSaves.ts";
 import { flashcardStartedBy } from "./flashcardStartedBy.ts";
@@ -17,7 +17,7 @@ import { startLookupWait } from "./lookupWait.ts";
 import { holdForLookup } from "./waitingCards.ts";
 
 /** Saves at once a card started to be saved with no lookup to wait for, offering Undo once it lands. */
-export function saveStarted(action: AppAction, app: AppState) {
+export function saveStarted(action: AppAction, app: FlashcardApp) {
   const started = flashcardStartedBy(action);
   const projectId = selectMediaScreen(app)?.route.projectId;
   if (started?.destination !== "save" || projectId === undefined) return [];
@@ -35,7 +35,7 @@ export function saveStarted(action: AppAction, app: AppState) {
 }
 
 /** Takes a flashcard from a word whose lookup no longer holds it, as `takeLookupFlashcard` describes. */
-export function takeFinished(action: AppAction, app: AppState) {
+export function takeFinished(action: AppAction, app: FlashcardApp) {
   const onScreen = selectMediaScreen(app);
   if (onScreen === null) return [];
   const seen = mediaScreenActionOf(app, action);
@@ -50,7 +50,7 @@ export function takeFinished(action: AppAction, app: AppState) {
  */
 function takeLookupFlashcard(
   { pending, how, fields }: FinishedLookupFlashcard,
-  app: AppState,
+  app: FlashcardApp,
 ) {
   const { projectId } = selectShownMediaFile(app);
   if (pending.destination === "editor" && how !== "abandoned") return [];

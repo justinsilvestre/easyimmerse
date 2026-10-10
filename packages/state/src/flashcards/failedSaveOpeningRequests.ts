@@ -86,7 +86,7 @@ export function openingSettledBy(action: AppAction): OpeningSettled | null {
 export function openingProgress(
   opening: OpeningSettled,
   failedSave: FailedSave,
-  app: AppState,
+  app: Pick<AppState, "operations">,
 ): OpeningProgress {
   if (!opening.hasFound(failedSave)) return "failed";
   return selectIsRequestInFlight(app, opening.otherId) ? "waiting" : "ready";

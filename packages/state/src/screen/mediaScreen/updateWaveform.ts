@@ -30,7 +30,7 @@ const viewNames: readonly WaveformViewName[] = ["player", "clip"];
 export function updateWaveform(
   waveform: WaveformState,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen">,
 ) {
   const route = selectShownMediaFile(app);
   switch (action.type) {

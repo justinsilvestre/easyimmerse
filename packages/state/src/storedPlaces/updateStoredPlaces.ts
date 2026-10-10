@@ -19,11 +19,10 @@ import { initialStoredPlaces } from "./storedPlacesState.ts";
  * Updates the stored places: loads a media file's places when its screen opens,
  * and saves them as reading and playback move on and when its screen closes.
  */
-export const updateStoredPlaces: FeatureUpdate<StoredPlacesState> = (
-  places,
-  action,
-  app,
-) => {
+export const updateStoredPlaces: FeatureUpdate<
+  StoredPlacesState,
+  "route" | "screen"
+> = (places, action, app) => {
   switch (action.type) {
     case "readingLocationLoaded":
       return updated(
@@ -76,7 +75,10 @@ export const updateStoredPlaces: FeatureUpdate<StoredPlacesState> = (
 };
 
 /** The stored places as a feature: where to resume each book and media file. */
-export const storedPlacesFeature: Feature<StoredPlacesState> = {
+export const storedPlacesFeature: Feature<
+  StoredPlacesState,
+  "route" | "screen"
+> = {
   initialState: initialStoredPlaces,
   update: updateStoredPlaces,
 };

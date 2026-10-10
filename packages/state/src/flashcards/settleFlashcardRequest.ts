@@ -1,7 +1,7 @@
 import type { AppAction } from "../app/appAction.ts";
-import type { AppState } from "../app/appState.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
 import { cardSaveFailed } from "./cardSaveFailed.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import { flashcardNotices, show } from "./flashcardNotices.ts";
 import { saveLanded } from "./saveLanded.ts";
 
@@ -19,7 +19,7 @@ type Settled<K> = Extract<FlashcardSettled, { request: { kind: K } }>;
  */
 export function settleFlashcardRequest(
   settled: FlashcardSettled,
-  app: AppState,
+  app: FlashcardApp,
 ) {
   if (settled.request.kind === "deleteFlashcard")
     return settleDeletion(settled as Settled<"deleteFlashcard">);

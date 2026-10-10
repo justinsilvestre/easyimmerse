@@ -2,7 +2,6 @@ import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
 import { withLoadedPreferences } from "../../preferences/preferencesState.ts";
-import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
 import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
@@ -25,7 +24,7 @@ import { sendFirstPlan, sendPlan } from "./sendPlan.ts";
 export function updatePathPlayback(
   playback: PathPlayback | null,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen" | "preferences">,
 ) {
   const route = selectShownMediaFile(app);
   switch (action.type) {
@@ -81,7 +80,7 @@ export function updatePathPlayback(
 function requestSettled(
   playback: PathPlayback | null,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen" | "preferences">,
 ) {
   const route = selectShownMediaFile(app);
   const ids = playbackRequestIds(route.mediaFileId);

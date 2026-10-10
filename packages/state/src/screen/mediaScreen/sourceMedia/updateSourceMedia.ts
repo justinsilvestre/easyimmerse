@@ -24,7 +24,7 @@ import { selectIsSourceStepInFlight } from "./sourceMediaSelectors.ts";
 export function updateSourceMedia(
   wizard: PluginFormWizard | null,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "operations" | "route" | "screen">,
 ) {
   const route = selectShownMediaFile(app);
   switch (action.type) {

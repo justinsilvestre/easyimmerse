@@ -65,7 +65,7 @@ export function routeAfter(app: RouteApp, action: AppAction): Route {
 }
 
 /** The route as a feature: where the app is, moved by navigation and by opening and closing media files. */
-export const routeFeature: Feature<Route> = {
+export const routeFeature: Feature<Route, "route" | "screen"> = {
   initialState: initialRoute,
   update: (_route, action, app) => [routeAfter(app, action), []],
 };

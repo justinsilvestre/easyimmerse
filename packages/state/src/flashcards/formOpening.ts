@@ -1,11 +1,11 @@
 import type { Flashcard } from "@easyimmerse/types";
-import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
 import type { FinishedLookupFlashcard } from "../screen/lookup/lookupFlashcardFinishedBy.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
 import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
 import { forgetFailedSave } from "./failedSaveKeeping.ts";
 import { selectFailedSave, selectPendingRetry } from "./failedSaveSelectors.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import {
   existingCard,
   type FlashcardCard,
@@ -44,7 +44,7 @@ export function formFromLookup({
 export function openListed(
   form: FlashcardForm | null,
   { flashcardId, listed }: { flashcardId: string; listed: Flashcard | null },
-  app: AppState,
+  app: FlashcardApp,
 ) {
   const failedSave = selectFailedSave(app, flashcardId);
   if (failedSave) return takeFailedSave(form, failedSave, app);
@@ -65,7 +65,7 @@ export function openListed(
 export function takeFailedSave(
   form: FlashcardForm | null,
   failedSave: FailedSave,
-  app: AppState,
+  app: FlashcardApp,
 ) {
   const flashcardId = failedSaveIdOf(failedSave);
   const retry = selectPendingRetry(app, flashcardId);

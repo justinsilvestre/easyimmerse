@@ -26,7 +26,7 @@ export type FailedCard = Pick<
 export function keepFailedSave(
   failedCard: FailedCard,
   failure: RequestFailure,
-  app: AppState,
+  app: Pick<AppState, "operations">,
 ) {
   const order = { ...failedCard, from: "retry", offersUndo: false } as const;
   const kept = {

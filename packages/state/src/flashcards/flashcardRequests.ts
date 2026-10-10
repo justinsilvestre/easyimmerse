@@ -63,7 +63,7 @@ export type FlashcardSender = "form" | "background";
  */
 export function sendFlashcardRequest(
   request: FlashcardRequest,
-  app: AppState,
+  app: Pick<AppState, "operations">,
   sender: FlashcardSender,
   heldFor?: string,
 ) {

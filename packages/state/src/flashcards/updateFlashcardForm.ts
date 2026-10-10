@@ -1,7 +1,6 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
-import type { MediaRoute } from "../route/route.ts";
 import { lookupFlashcardFinishedBy } from "../screen/lookup/lookupFlashcardFinishedBy.ts";
 import {
   selectShownMediaFile,
@@ -41,7 +40,7 @@ import { isFlashcardSettled } from "./settleFlashcardRequest.ts";
 export function updateFlashcardForm(
   form: FlashcardForm | null,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "operations" | "route" | "screen" | "server">,
 ) {
   const route = selectShownMediaFile(app);
   if (action.type === "mediaScreenLeft")
@@ -90,7 +89,11 @@ export function updateFlashcardForm(
 }
 
 /** Takes the outcome of a flashcard request, or of the last of the requests on the way to opening a failed save here. */
-function settled(form: FlashcardForm | null, action: AppAction, app: AppState) {
+function settled(
+  form: FlashcardForm | null,
+  action: AppAction,
+  app: Pick<AppState, "operations" | "route" | "screen" | "server">,
+) {
   if (isFlashcardSettled(action))
     return updated(form && settleInForm(form, action));
   const opening = openingSettledBy(action);

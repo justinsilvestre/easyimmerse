@@ -16,7 +16,7 @@ import {
  * Updates the preferences, loading them when the app starts and saving each one the user changes,
  * the conversion notice's dismissal included when it is accepted with its box ticked.
  */
-export const updatePreferences: FeatureUpdate<PreferencesState> = (
+export const updatePreferences: FeatureUpdate<PreferencesState, "screen"> = (
   preferences,
   action,
   app,
@@ -69,7 +69,7 @@ export const updatePreferences: FeatureUpdate<PreferencesState> = (
 };
 
 /** The preferences as a feature: the stored preferences, the system theme and the player's controls, with the appearance they call for applied. */
-export const preferencesFeature: Feature<PreferencesState> = {
+export const preferencesFeature: Feature<PreferencesState, "screen"> = {
   initialState: initialPreferences,
   update: applyingAppearance(updatePreferences),
 };

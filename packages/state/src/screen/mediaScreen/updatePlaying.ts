@@ -17,7 +17,7 @@ import { seekTo, withPlayer } from "./seekTo.ts";
 export function updatePlaying(
   playing: PlayingState,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen" | "storedPlaces">,
 ) {
   const clip = formClipOf(selectShownMediaScreen(app));
   switch (action.type) {

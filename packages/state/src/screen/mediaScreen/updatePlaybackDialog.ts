@@ -1,6 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
-import { mainScreenOf } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { ScreenState } from "../screenState.ts";
 import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
@@ -20,7 +19,7 @@ type DialogState = ScreenState["dialog"];
 export function updatePlaybackDialog(
   dialog: DialogState,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen" | "preferences">,
 ): DialogState {
   const open = selectOpenPathPlayback(app);
   if (open === null) return dialog;
@@ -69,7 +68,7 @@ function settledDialog(
   dialog: DialogState,
   action: AppAction,
   open: OpenPathPlayback,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen" | "preferences">,
 ): DialogState {
   const ids = playbackRequestIds(open.mediaFileId);
   if (isSettled(action, ids.tracks, "getMediaTracks") && action.outcome.ok)

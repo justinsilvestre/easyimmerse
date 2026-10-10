@@ -1,5 +1,4 @@
 import type { AppAction } from "../app/appAction.ts";
-import type { AppState } from "../app/appState.ts";
 import { combineUpdates } from "../app/combineUpdates.ts";
 import type { Feature } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
@@ -17,13 +16,14 @@ import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
 import { updateProjectForm } from "./projectForm/updateProjectForm.ts";
 import { endImport } from "./projectScreen/mediaImportRequests.ts";
 import { updateProjectScreen } from "./projectScreen/updateProjectScreen.ts";
+import type { ScreenApp } from "./screenApp.ts";
 import type { MainScreenState, ScreenState } from "./screenState.ts";
 import { initialMainScreen, initialScreen } from "./screenState.ts";
 import { updateDialog } from "./updateDialog.ts";
 import { updateSettings } from "./updateSettings.ts";
 
 /** Updates the main screen, Settings and the open dialog, each from the state before the action. */
-export const updateScreen = combineUpdates<ScreenState, [AppState]>({
+export const updateScreen = combineUpdates<ScreenState, [ScreenApp]>({
   main: updateMain,
   settings: (settings, action, app) =>
     updateSettings(settings, action, routeAfter(app, action)),
@@ -31,7 +31,7 @@ export const updateScreen = combineUpdates<ScreenState, [AppState]>({
 });
 
 /** The screens as a feature: the state of the main screen, of Settings and of the open dialog. */
-export const screenFeature: Feature<ScreenState> = {
+export const screenFeature: Feature<ScreenState, keyof ScreenApp> = {
   initialState: initialScreen,
   update: updateScreen,
 };
@@ -40,7 +40,7 @@ export const screenFeature: Feature<ScreenState> = {
  * Runs the shown screen's own update, which sees every action, the one that leaves it included,
  * then starts the main screen over when the action moves the route to another one.
  */
-function updateMain(main: MainScreenState, action: AppAction, app: AppState) {
+function updateMain(main: MainScreenState, action: AppAction, app: ScreenApp) {
   const [next, effects] = updateShownScreen(main, action, app);
   const move = mainScreenMoveOf(app, action);
   if (move === null) return updated(next, ...effects);
@@ -55,7 +55,7 @@ function updateMain(main: MainScreenState, action: AppAction, app: AppState) {
 function updateShownScreen(
   main: MainScreenState,
   action: AppAction,
-  app: AppState,
+  app: ScreenApp,
 ) {
   const route = mainScreenOf(app.route);
   if (main.kind === "media" && route.screen === "media")

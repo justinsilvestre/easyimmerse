@@ -17,7 +17,7 @@ type PositionLoaded = Extract<AppAction, { type: "playbackPositionLoaded" }>;
 export function positionLoaded(
   playing: PlayingState,
   action: PositionLoaded,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen" | "storedPlaces">,
 ) {
   const { mediaFileId } = selectShownMediaFile(app);
   return action.mediaFileId === mediaFileId &&

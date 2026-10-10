@@ -11,7 +11,10 @@ import { askSave } from "./flashcardSaves.ts";
  * Sends a failed save again, unless it was refused or its Retry is under way.
  * The failed save stays kept until the Retry lands, and an opening under way goes on, so that it still opens if the Retry fails.
  */
-export function retryFailedSave(flashcardId: string, app: AppState) {
+export function retryFailedSave(
+  flashcardId: string,
+  app: Pick<AppState, "operations">,
+) {
   const failedSave = selectFailedSave(app, flashcardId);
   if (
     !failedSave ||
@@ -28,7 +31,7 @@ export function retryFailedSave(flashcardId: string, app: AppState) {
 }
 
 /** Sends every failed save again, as `retryFailedSave` does. */
-export function retryAllFailedSaves(app: AppState) {
+export function retryAllFailedSaves(app: Pick<AppState, "operations">) {
   return selectFailedSaves(app).flatMap((failedSave) =>
     retryFailedSave(failedSaveIdOf(failedSave), app),
   );

@@ -22,7 +22,7 @@ const subtitleFileExtensions: readonly string[] = [".srt", ".vtt"];
 export function updateDialog(
   dialog: DialogState,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen" | "preferences">,
 ) {
   const [next, effects] = dialogAfter(dialog, action, app);
   return isLeftBy(next, action, app)
@@ -35,7 +35,11 @@ export function updateDialog(
  * Opens and closes the media screen's subtitle appearance dialog, and the question whether to remove a dictionary,
  * which removes the dictionary once confirmed. The media screen's playback dialogs follow `updatePlaybackDialog`.
  */
-function dialogAfter(dialog: DialogState, action: AppAction, app: AppState) {
+function dialogAfter(
+  dialog: DialogState,
+  action: AppAction,
+  app: Pick<AppState, "route" | "screen" | "preferences">,
+) {
   switch (action.type) {
     case "subtitleFilePickRequested":
       return updated(
@@ -79,7 +83,7 @@ function dialogAfter(dialog: DialogState, action: AppAction, app: AppState) {
 function isLeftBy(
   dialog: DialogState,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen" | "preferences">,
 ): boolean {
   switch (dialog?.kind) {
     case "trackChoice":

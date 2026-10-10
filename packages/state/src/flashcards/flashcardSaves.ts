@@ -28,7 +28,7 @@ export type SaveOrder = Pick<
  */
 export function askSave(
   order: SaveOrder,
-  app: AppState,
+  app: Pick<AppState, "operations">,
   sender: FlashcardSender,
   heldFor?: string,
 ) {
@@ -41,7 +41,10 @@ export function askSave(
 }
 
 /** The request that saves a card, recording what the flashcard holds before it. */
-export function saveRequest(order: SaveOrder, app: AppState) {
+export function saveRequest(
+  order: SaveOrder,
+  app: Pick<AppState, "operations">,
+) {
   const { card, projectId, ...purpose } = order;
   return {
     kind: "saveFlashcard",

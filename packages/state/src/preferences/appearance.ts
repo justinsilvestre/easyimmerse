@@ -1,3 +1,4 @@
+import type { AppState } from "../app/appState.ts";
 import type { FeatureUpdate } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
 import type { PreferencesState } from "./preferencesState.ts";
@@ -17,9 +18,9 @@ export function appearanceOf(preferences: PreferencesState): Appearance {
 }
 
 /** Adds an `applyAppearance` effect to an update of the preferences when the app starts and whenever the appearance changes. */
-export function applyingAppearance(
-  update: FeatureUpdate<PreferencesState>,
-): FeatureUpdate<PreferencesState> {
+export function applyingAppearance<Deps extends keyof AppState>(
+  update: FeatureUpdate<PreferencesState, Deps>,
+): FeatureUpdate<PreferencesState, Deps> {
   return (preferences, action, app) => {
     const [next, effects] = update(preferences, action, app);
     const appearance = appearanceOf(next);

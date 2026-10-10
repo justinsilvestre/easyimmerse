@@ -1,7 +1,7 @@
-import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
 import { selectShownMediaFile } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { keepFailedSave } from "./failedSaveKeeping.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
 import {
@@ -19,7 +19,7 @@ import { isLocked } from "./saveStage.ts";
  * A card whose save the user asked for failed is kept among the failed saves rather than dropped.
  * A changed card is discarded with an undo toast that reopens it, and a card in doubt takes back the save that may have landed.
  */
-export function closeForm(form: FlashcardForm | null, app: AppState) {
+export function closeForm(form: FlashcardForm | null, app: FlashcardApp) {
   if (form === null || isLocked(form.stage)) return updated(form);
   const { card, rollbackIfDiscarded, saveFailure } = form;
   if (saveFailure !== null) {
@@ -45,7 +45,7 @@ export function closeForm(form: FlashcardForm | null, app: AppState) {
 }
 
 /** Deletes the open flashcard, or closes a new one at once, unless Save has been pressed. */
-export function deleteFromForm(form: FlashcardForm, app: AppState) {
+export function deleteFromForm(form: FlashcardForm, app: FlashcardApp) {
   if (isLocked(form.stage)) return updated(form);
   if (form.card.kind === "new") return updated(null);
   const flashcardId = flashcardIdOf(form.card);

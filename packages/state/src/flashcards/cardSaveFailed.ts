@@ -1,9 +1,9 @@
-import type { AppState } from "../app/appState.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
 import type { FailedSave } from "./failedSave.ts";
 import { type FailedCard, keepFailedSave } from "./failedSaveKeeping.ts";
 import { selectFailedSave } from "./failedSaveSelectors.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import type { Rollback } from "./flashcardForm.ts";
 import type { SavePurpose } from "./flashcardRequests.ts";
 import { isCardOf } from "./latestFlashcard.ts";
@@ -20,7 +20,7 @@ type CardSave = Extract<SavePurpose, { type: "save" }>;
 export function cardSaveFailed(
   { id, request }: Save,
   error: RequestFailure,
-  app: AppState,
+  app: FlashcardApp,
 ) {
   const purpose = request.purpose as CardSave;
   const form = selectFlashcardForm(app);

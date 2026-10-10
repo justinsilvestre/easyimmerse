@@ -23,7 +23,7 @@ const subtitlesNotAdded = {
 export function updateSubtitles(
   pending: PickedFile | null,
   action: AppAction,
-  app: AppState,
+  app: Pick<AppState, "route" | "screen">,
 ) {
   const route = selectShownMediaFile(app);
   switch (action.type) {

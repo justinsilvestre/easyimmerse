@@ -1,7 +1,4 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
-import { updated } from "../../app/updated.ts";
-import { selectFlashcardForm } from "./mediaScreenSelectors.ts";
 
 /** Which subtitles lie over the media screen's stage: both languages, or one of them alone. */
 export type SubtitleDisplay = "both" | "target" | "translation";
@@ -34,14 +31,6 @@ const nextDisplay: Record<SubtitleDisplay, SubtitleDisplay> = {
  * The flashcard form takes the side panel while a card is open, so the subtitles panel cannot be toggled meanwhile.
  */
 export function updateMediaPanels(
-  panels: MediaPanels,
-  action: AppAction,
-  app: AppState,
-) {
-  return updated(nextPanels(panels, action, selectFlashcardForm(app) !== null));
-}
-
-function nextPanels(
   panels: MediaPanels,
   action: AppAction,
   isFormOpen: boolean,
