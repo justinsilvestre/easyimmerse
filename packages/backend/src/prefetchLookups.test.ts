@@ -7,7 +7,7 @@ import type {
   LookupResponse,
   LookupResult,
 } from "@easyimmerse/types";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type {
   BackendClient,
   BackendError,
@@ -19,6 +19,8 @@ import { lookUpTextAhead } from "./lookUpTextAhead.ts";
 import { prefetchLookups } from "./prefetchLookups.ts";
 
 const language = "ja";
+/** The time each prefetch is given, in milliseconds since the epoch. */
+const startMs = Date.UTC(2026, 9, 10);
 
 /** The store's dispatch, which takes the backend's thunks through the middleware chain, typed for them. */
 const backendDispatchOf = (store: AppStore) =>
@@ -104,24 +106,26 @@ function batchesOf(requests: readonly BackendRequest[]): BatchLookupRequest[] {
   );
 }
 
-afterEach(() => vi.useRealTimers());
-
 describe("prefetchLookups", () => {
   it("sends each passage once in one batch", async () => {
     const { store, requests, release } = createConfiguredStore();
     release();
-    await prefetchLookups(backendDispatchOf(store), [
-      lookupAt("猫が", 0),
-      lookupAt("猫が", 1),
-      lookupAt("犬", 0),
-    ]);
+    await prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫が", 0), lookupAt("猫が", 1), lookupAt("犬", 0)],
+      startMs,
+    );
     expect(batchesOf(requests)).toEqual([{ language, texts: ["猫が", "犬"] }]);
   });
 
   it("fills the cache, so that a later lookup sends no request", async () => {
     const { store, requests, release } = createConfiguredStore();
     release();
-    await prefetchLookups(backendDispatchOf(store), [lookupAt("猫が", 0)]);
+    await prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫が", 0)],
+      startMs,
+    );
     await lookUpTextAhead(store.dispatch, lookupAt("猫が", 0));
     expect(requests).toHaveLength(1);
   });
@@ -129,7 +133,11 @@ describe("prefetchLookups", () => {
   it("caches a position the batch found nothing at as an empty response", async () => {
     const { store, release } = createConfiguredStore();
     release();
-    await prefetchLookups(backendDispatchOf(store), [lookupAt("猫が", 1)]);
+    await prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫が", 1)],
+      startMs,
+    );
     await expect(
       lookUpTextAhead(store.dispatch, lookupAt("猫が", 1)),
     ).resolves.toEqual(emptyResponse);
@@ -138,10 +146,11 @@ describe("prefetchLookups", () => {
   it("leaves a position the batch did not look up to a lookup of its own", async () => {
     const { store, requests, release } = createConfiguredStore();
     release();
-    await prefetchLookups(backendDispatchOf(store), [
-      lookupAt("Hund", 0),
-      lookupAt("Hund", 2),
-    ]);
+    await prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("Hund", 0), lookupAt("Hund", 2)],
+      startMs,
+    );
     await lookUpTextAhead(store.dispatch, lookupAt("Hund", 2));
     expect(requests).toHaveLength(2);
   });
@@ -150,15 +159,19 @@ describe("prefetchLookups", () => {
     const { store, requests, release } = createConfiguredStore();
     release();
     const lookups = [lookupAt("Hund", 0), lookupAt("Hund", 2)];
-    await prefetchLookups(backendDispatchOf(store), lookups);
+    await prefetchLookups(backendDispatchOf(store), lookups, startMs);
     await forgetFinishedBatches();
-    await prefetchLookups(backendDispatchOf(store), lookups);
+    await prefetchLookups(backendDispatchOf(store), lookups, startMs);
     expect(requests).toHaveLength(1);
   });
 
   it("does not make a lookup at a position a running batch cannot look up wait for it", async () => {
     const { store, requests } = createConfiguredStore();
-    void prefetchLookups(backendDispatchOf(store), [lookupAt("Hund", 0)]);
+    void prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("Hund", 0)],
+      startMs,
+    );
     await lookUpTextAhead(store.dispatch, lookupAt("Hund", 2));
     expect(requests).toHaveLength(2);
   });
@@ -170,23 +183,26 @@ describe("prefetchLookups", () => {
     }));
     release();
     const lookups = [lookupAt("猫", 0), lookupAt("犬", 0)];
-    await prefetchLookups(backendDispatchOf(store), lookups);
+    await prefetchLookups(backendDispatchOf(store), lookups, startMs);
     await forgetFinishedBatches();
-    await prefetchLookups(backendDispatchOf(store), lookups);
+    await prefetchLookups(backendDispatchOf(store), lookups, startMs);
     expect(requests).toHaveLength(1);
   });
 
   it("fetches passages again once a while has passed since their batch failed", async () => {
-    vi.useFakeTimers();
     const { store, requests, release } = createConfiguredStore(() => ({
       status: 404,
       message: "Not found",
     }));
     release();
     const lookups = [lookupAt("猫", 0)];
-    await prefetchLookups(backendDispatchOf(store), lookups);
-    await vi.advanceTimersByTimeAsync(10 * 60_000);
-    await prefetchLookups(backendDispatchOf(store), lookups);
+    await prefetchLookups(backendDispatchOf(store), lookups, startMs);
+    await forgetFinishedBatches();
+    await prefetchLookups(
+      backendDispatchOf(store),
+      lookups,
+      startMs + 10 * 60_000,
+    );
     expect(requests).toHaveLength(2);
   });
 
@@ -198,6 +214,7 @@ describe("prefetchLookups", () => {
     await prefetchLookups(
       store.dispatch,
       ["猫", "悪", "犬", "鳥"].map((text) => lookupAt(text, 0)),
+      startMs,
     );
     const before = requests.length;
     await lookUpTextAhead(store.dispatch, lookupAt("鳥", 0));
@@ -210,32 +227,41 @@ describe("prefetchLookups", () => {
     );
     release();
     const lookups = ["猫", "悪"].map((text) => lookupAt(text, 0));
-    await prefetchLookups(backendDispatchOf(store), lookups);
+    await prefetchLookups(backendDispatchOf(store), lookups, startMs);
     await forgetFinishedBatches();
     const before = requests.length;
-    await prefetchLookups(backendDispatchOf(store), lookups);
+    await prefetchLookups(backendDispatchOf(store), lookups, startMs);
     expect(requests.length).toBe(before);
   });
 
   it("leaves out passages whose lookups are all cached", async () => {
     const { store, requests, release } = createConfiguredStore();
     release();
-    await prefetchLookups(backendDispatchOf(store), [lookupAt("猫が", 0)]);
-    await prefetchLookups(backendDispatchOf(store), [
-      lookupAt("猫が", 0),
-      lookupAt("犬", 0),
-    ]);
+    await prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫が", 0)],
+      startMs,
+    );
+    await prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫が", 0), lookupAt("犬", 0)],
+      startMs,
+    );
     expect(batchesOf(requests)[1]).toEqual({ language, texts: ["犬"] });
   });
 
   it("leaves out passages that a batch being fetched holds", async () => {
     const { store, requests, release } = createConfiguredStore();
-    const first = prefetchLookups(backendDispatchOf(store), [
-      lookupAt("猫が", 0),
-    ]);
-    const second = prefetchLookups(backendDispatchOf(store), [
-      lookupAt("猫が", 0),
-    ]);
+    const first = prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫が", 0)],
+      startMs,
+    );
+    const second = prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫が", 0)],
+      startMs,
+    );
     release();
     await Promise.all([first, second]);
     expect(requests).toHaveLength(1);
@@ -243,9 +269,11 @@ describe("prefetchLookups", () => {
 
   it("makes a lookup of a passage being fetched wait for its batch", async () => {
     const { store, requests, release } = createConfiguredStore();
-    const prefetched = prefetchLookups(backendDispatchOf(store), [
-      lookupAt("猫が", 0),
-    ]);
+    const prefetched = prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫が", 0)],
+      startMs,
+    );
     const hovered = lookUpTextAhead(store.dispatch, lookupAt("猫が", 0));
     release();
     await Promise.all([prefetched, hovered]);
@@ -254,9 +282,11 @@ describe("prefetchLookups", () => {
 
   it("answers a lookup that waited for a batch from that batch", async () => {
     const { store, release } = createConfiguredStore();
-    const prefetched = prefetchLookups(backendDispatchOf(store), [
-      lookupAt("猫が", 0),
-    ]);
+    const prefetched = prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫が", 0)],
+      startMs,
+    );
     const hovered = lookUpTextAhead(store.dispatch, lookupAt("猫が", 0));
     release();
     await prefetched;
@@ -273,6 +303,7 @@ describe("prefetchLookups", () => {
     await prefetchLookups(
       store.dispatch,
       passages.map((passage) => lookupAt(passage, 0)),
+      startMs,
     );
     expect(batchesOf(requests).map((batch) => batch.texts.length)).toEqual([
       100, 1,
@@ -282,22 +313,11 @@ describe("prefetchLookups", () => {
   it("leaves out passages longer than a batch allows", async () => {
     const { store, requests, release } = createConfiguredStore();
     release();
-    await prefetchLookups(backendDispatchOf(store), [
-      lookupAt("猫".repeat(2001), 0),
-    ]);
+    await prefetchLookups(
+      backendDispatchOf(store),
+      [lookupAt("猫".repeat(2001), 0)],
+      startMs,
+    );
     expect(requests).toHaveLength(0);
-  });
-
-  it("keeps passages that stay in range cached past the cache's lifetime", async () => {
-    vi.useFakeTimers();
-    const { store, requests, release } = createConfiguredStore();
-    release();
-    const lookups = [lookupAt("猫が", 0)];
-    await prefetchLookups(backendDispatchOf(store), lookups);
-    for (let minute = 0; minute < 10; minute++) {
-      await vi.advanceTimersByTimeAsync(60_000);
-      await prefetchLookups(backendDispatchOf(store), lookups);
-    }
-    expect(requests).toHaveLength(1);
   });
 });

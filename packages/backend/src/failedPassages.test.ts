@@ -1,42 +1,32 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { hasFailedLately, rememberFailure } from "./failedPassages.ts";
+import { describe, expect, it } from "vitest";
+import { hasFailedLately, withFailure } from "./failedPassages.ts";
 
 const passage = { language: "ja", text: "猫が好き" };
 const minuteMs = 60_000;
 
-describe("failedPassages", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
+describe("hasFailedLately", () => {
   it("reports a passage whose batch failed a moment ago", () => {
-    const store = {};
-    rememberFailure(store, [passage]);
-    expect(hasFailedLately(store, passage)).toBe(true);
+    const retryTimes = withFailure({}, [passage], 0);
+    expect(hasFailedLately(retryTimes, passage, 1)).toBe(true);
   });
 
   it("forgets a failure after five minutes", () => {
-    const store = {};
-    rememberFailure(store, [passage]);
-    vi.advanceTimersByTime(5 * minuteMs);
-    expect(hasFailedLately(store, passage)).toBe(false);
+    const retryTimes = withFailure({}, [passage], 0);
+    expect(hasFailedLately(retryTimes, passage, 5 * minuteMs)).toBe(false);
   });
 
-  it("keeps the failures of each store apart", () => {
-    rememberFailure({}, [passage]);
-    expect(hasFailedLately({}, passage)).toBe(false);
+  it("reports nothing for a passage that never failed", () => {
+    expect(hasFailedLately({}, passage, 0)).toBe(false);
   });
+});
 
-  it("drops an expired failure when it remembers another, even if the clock is turned back", () => {
-    const store = {};
-    rememberFailure(store, [passage]);
-    vi.advanceTimersByTime(5 * minuteMs);
-    rememberFailure(store, [{ language: "ja", text: "犬" }]);
-    vi.setSystemTime(Date.now() - 5 * minuteMs);
-    expect(hasFailedLately(store, passage)).toBe(false);
+describe("withFailure", () => {
+  it("drops the failures that may already be retried", () => {
+    const retryTimes = withFailure(
+      withFailure({}, [passage], 0),
+      [{ language: "ja", text: "犬" }],
+      5 * minuteMs,
+    );
+    expect(hasFailedLately(retryTimes, passage, 0)).toBe(false);
   });
 });

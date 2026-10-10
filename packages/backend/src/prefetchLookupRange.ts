@@ -16,12 +16,12 @@ export function lookupRangeKey({ language, lookups }: LookupRange): string {
 const withPrefetch = backendApi.injectEndpoints({
   endpoints: (build) => ({
     /**
-     * Keeps the lookups of a range cached, through `prefetchLookups`: they are looked up when a component subscribes to a range,
+     * Keeps the lookups of a range cached, through `prefetchLookups` at the time it runs: they are looked up when a component subscribes to a range,
      * again at the subscription's polling interval, and again when the dictionaries change. A range no one subscribes to is dropped at once.
      */
     prefetchLookupRange: build.query<null, LookupRange>({
       queryFn: async ({ lookups }, api) => {
-        await prefetchLookups(api.dispatch, lookups);
+        await prefetchLookups(api.dispatch, lookups, Date.now());
         return { data: null };
       },
       serializeQueryArgs: ({ queryArgs }) => lookupRangeKey(queryArgs),

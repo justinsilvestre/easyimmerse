@@ -31,6 +31,7 @@ function extraWith(
   return {
     client: { send: async () => ({ data: null as never }) },
     browserFileRegistry,
+    failedPassages: { retryTimes: {} },
   };
 }
 

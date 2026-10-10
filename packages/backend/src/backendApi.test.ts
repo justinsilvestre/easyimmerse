@@ -103,7 +103,11 @@ async function storeAfterApplyingSourceStep(
 }
 
 function createStore(client: BackendClient) {
-  const extra: BackendThunkExtra = { client, browserFileRegistry: null };
+  const extra: BackendThunkExtra = {
+    client,
+    browserFileRegistry: null,
+    failedPassages: { retryTimes: {} },
+  };
   return configureStore({
     reducer: { [backendApi.reducerPath]: backendApi.reducer },
     middleware: (getDefault) =>

@@ -5,12 +5,15 @@ import type {
   BackendError,
   BackendRequest,
 } from "./backendClient.ts";
+import type { FailedPassages } from "./failedPassages.ts";
 
 /** What the backend's thunk middleware passes to every thunk and base query as their extra argument. */
 export type BackendThunkExtra = {
   client: BackendClient;
   /** The files a browser picked, on the platforms that hold any. */
   browserFileRegistry: BrowserFileRegistry<File> | null;
+  /** The passages whose prefetched batch failed lately in this store. */
+  failedPassages: FailedPassages;
 };
 
 /** The RTK Query base query. It sends each request through the client the store was created with. */

@@ -23,7 +23,11 @@ export function createBackendStoreParts(
   return {
     reducerPath: backendApi.reducerPath,
     reducer: backendApi.reducer,
-    middleware: createMiddleware({ client, browserFileRegistry }),
+    middleware: createMiddleware({
+      client,
+      browserFileRegistry,
+      failedPassages: { retryTimes: {} },
+    }),
     runRequest,
     serverConfig,
   };
@@ -32,7 +36,7 @@ export function createBackendStoreParts(
 /**
  * Chains the thunk middleware in front of the RTK Query middleware. The app store is built
  * by hand without Redux Toolkit's defaults, and RTK Query's hooks dispatch thunks.
- * The thunk middleware's extra argument carries the client and the browser file registry to the base query and query functions.
+ * The thunk middleware's extra argument carries the client, the browser file registry and the store's failed prefetch passages to the base query, the query functions and the backend's thunks.
  */
 function createMiddleware(extra: BackendThunkExtra): Middleware {
   const thunkWithClient = withExtraArgument(extra);
