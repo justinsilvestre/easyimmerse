@@ -6,7 +6,7 @@ import {
   usePreviewLocalDictionaryTableMutation,
 } from "@easyimmerse/backend";
 import type { PickedDictionaryFile } from "@easyimmerse/state";
-import { actions, selectChosenDictionaryFile } from "@easyimmerse/state";
+import { actions, selectPendingDictionaryFile } from "@easyimmerse/state";
 import type {
   ImportJobStarted,
   MediaFileSource,
@@ -43,7 +43,7 @@ type ResettableRequest<T> = { unwrap(): Promise<T>; reset(): void };
  */
 export function useDictionaryImport() {
   const dispatch = useAppDispatch();
-  const chosen = useAppSelector(selectChosenDictionaryFile);
+  const chosen = useAppSelector(selectPendingDictionaryFile);
   const registry = useBrowserFileRegistry();
   const [state, dispatchImport] = useReducer(
     reduceDictionaryImport,

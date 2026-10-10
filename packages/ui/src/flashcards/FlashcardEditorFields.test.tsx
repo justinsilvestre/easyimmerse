@@ -36,6 +36,9 @@ function renderClip({
     />,
     createFakeBackendClient({}),
   );
+  act(() =>
+    rendered.store.dispatch(actions.openMediaFileRequested("p1", "m1")),
+  );
   const playerCalls = () =>
     rendered.effects.calls.filter((call) => call.type.endsWith("Player"));
   const reportPlayer = (isPlaying: boolean, seconds: number) =>

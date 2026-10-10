@@ -1,5 +1,5 @@
 import type { AppStore, BufferedRange } from "@easyimmerse/state";
-import { actions, selectPlayer } from "@easyimmerse/state";
+import { actions, selectPlayerControls } from "@easyimmerse/state";
 import type { Rational } from "@easyimmerse/types";
 import type { RefObject, SyntheticEvent } from "react";
 import { useEffect } from "react";
@@ -27,7 +27,7 @@ export function useRegisteredPlayer(
   useEffect(() => {
     const element = elementRef.current;
     if (element !== null)
-      applySettings(element, selectPlayer(store.getState()));
+      applySettings(element, selectPlayerControls(store.getState()));
     const withElement = (act: (element: HTMLMediaElement) => void) => () => {
       if (elementRef.current !== null) act(elementRef.current);
     };

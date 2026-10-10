@@ -6,13 +6,12 @@ import {
   legacy_createStore as createStore,
 } from "redux";
 import type { Effects } from "../platform/effects.ts";
-import type { AppAction } from "./actions.ts";
-import { actions, isAppAction } from "./actions.ts";
+import type { AppAction } from "./appAction.ts";
+import { actions, isAppAction } from "./appAction.ts";
 import type { AppState } from "./appState.ts";
-import { initialAppState } from "./appState.ts";
 import { createEffectsReducer } from "./createEffectsReducer.ts";
 import { createEffectsMiddleware } from "./effectsMiddleware.ts";
-import { update } from "./update.ts";
+import { initialAppState, update } from "./update.ts";
 
 /** The reducer and middleware for server data, supplied by the backend package so that this package never imports it. */
 export type ServerStoreParts = {

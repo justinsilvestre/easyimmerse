@@ -1,5 +1,5 @@
 import { resetBackend } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, selectPlaybackPosition } from "@easyimmerse/state";
 import { act, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
@@ -23,11 +23,11 @@ async function renderResuming(storedMs: number | null) {
   });
   const { store } = rendered;
   act(() => {
-    store.dispatch(actions.openMedia("m1"));
+    store.dispatch(actions.openMediaFileRequested("p1", "m1"));
     store.dispatch(actions.playerDurationChanged(600));
   });
   await vi.waitFor(() =>
-    expect(store.getState().app.playbackPositions.m1).not.toBeUndefined(),
+    expect(selectPlaybackPosition("m1")(store.getState())).not.toBeUndefined(),
   );
   return rendered;
 }

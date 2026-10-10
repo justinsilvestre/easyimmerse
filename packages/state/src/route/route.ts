@@ -1,10 +1,12 @@
-/** A screen that fills the window on its own. A project's open media file is kept in `currentMediaFileId`, not here. */
+/** A screen that fills the window on its own. */
 export type MainRoute =
   | { screen: "home" }
   | { screen: "offline" }
   | { screen: "newProject" }
   | { screen: "project"; projectId: string }
-  | { screen: "projectSettings"; projectId: string };
+  | { screen: "projectSettings"; projectId: string }
+  /** A media file of a project, shown on the media screen or, for a book, in the reader. */
+  | { screen: "media"; projectId: string; mediaFileId: string };
 
 /** A page of the settings, which open over a main screen. */
 export type SettingsPage = "general" | "dictionaries";

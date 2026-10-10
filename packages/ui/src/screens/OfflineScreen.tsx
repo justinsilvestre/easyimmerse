@@ -2,8 +2,8 @@ import { useParseTimedTextMutation } from "@easyimmerse/backend";
 import type { PickedFile } from "@easyimmerse/state";
 import {
   actions,
-  selectChosenSubtitleFile,
   selectPendingFilePick,
+  selectPendingSubtitleFile,
 } from "@easyimmerse/state";
 import { FilePlus } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -61,7 +61,7 @@ export function OfflineScreen({ onBack }: { onBack: () => void }) {
 /** Parses the subtitles file the user picked, in WebAssembly when no server is connected. */
 function useParsedChosenFile() {
   const dispatch = useAppDispatch();
-  const chosen = useAppSelector(selectChosenSubtitleFile);
+  const chosen = useAppSelector(selectPendingSubtitleFile);
   const [parseTimedText, { data, isError }] = useParseTimedTextMutation();
   const sent = useRef<PickedFile | null>(null);
   useEffect(() => {

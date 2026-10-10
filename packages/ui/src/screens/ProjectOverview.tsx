@@ -66,7 +66,7 @@ export function ProjectOverview({
           onAddMedia={() => dispatch(actions.mediaFilePickRequested())}
           onImportMedia={importMedia.open}
           onOpenMedia={(mediaFileId) =>
-            dispatch(actions.openMedia(mediaFileId))
+            dispatch(actions.openMediaFileRequested(project.id, mediaFileId))
           }
           onDeleteMedia={(mediaFileId) =>
             removeMediaFile({ projectId: project.id, mediaFileId })

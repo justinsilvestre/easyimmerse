@@ -1,28 +1,13 @@
-import type { ReaderLocation } from "../storedPlaces/readingLocation.ts";
-import type { PreferenceKey } from "./appState.ts";
+import type { PlatformEffect } from "../platform/platformCommands.ts";
+import type { PreferencesEffect } from "../preferences/preferencesActions.ts";
+import type { ScreenEffect } from "../screen/screenActions.ts";
+import type { StoredPlacesEffect } from "../storedPlaces/storedPlacesActions.ts";
+import type { UnsavedWorkEffect } from "../unsavedWork/unsavedWork.ts";
 
 /** A description of a side effect to perform. Effects are plain data and contain no code. */
 export type Effect =
-  | { type: "seekPlayer"; seconds: number }
-  | { type: "togglePlayer" }
-  | { type: "playPlayer" }
-  | { type: "pausePlayer" }
-  | { type: "setPlayerVolume"; volume: number }
-  | { type: "setPlayerMuted"; isMuted: boolean }
-  | { type: "setPlayerSpeed"; speed: number }
-  | { type: "pickFile"; accept: readonly string[] }
-  | { type: "pickMediaFile"; accept: readonly string[] }
-  | { type: "pickDictionaryFile"; accept: readonly string[] }
-  | { type: "savePreference"; key: PreferenceKey; value: string }
-  | { type: "loadPreferences"; keys: readonly PreferenceKey[] }
-  | { type: "loadReadingLocation"; mediaFileId: string }
-  | {
-      type: "saveReadingLocation";
-      mediaFileId: string;
-      location: ReaderLocation;
-    }
-  | { type: "loadPlaybackPosition"; mediaFileId: string }
-  | { type: "savePlaybackPosition"; mediaFileId: string; ms: number }
-  | { type: "showNotification"; message: string }
-  | { type: "openExternalUrl"; url: string }
-  | { type: "guardClose"; isActive: boolean };
+  | ScreenEffect
+  | PreferencesEffect
+  | StoredPlacesEffect
+  | UnsavedWorkEffect
+  | PlatformEffect;

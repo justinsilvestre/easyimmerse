@@ -63,6 +63,11 @@ function renderProject(onEditSettings: () => void = () => undefined) {
     client,
     { server: fakeServer },
   );
+  act(() =>
+    rendered.store.dispatch(
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+    ),
+  );
   return { ...rendered, client };
 }
 
@@ -121,7 +126,7 @@ describe("ProjectScreen", () => {
   it("shows the media screen while a media file is open", async () => {
     const { store } = renderProject();
     await screen.findByRole("heading", { name: "Alpha" });
-    act(() => store.dispatch(actions.openMedia("m1")));
+    act(() => store.dispatch(actions.openMediaFileRequested("p1", "m1")));
     expect(
       await screen.findByRole("heading", { name: "episode.mkv" }),
     ).toBeDefined();
@@ -153,7 +158,7 @@ describe("ProjectScreen", () => {
     await screen.findByRole("heading", { name: "Alpha" });
     act(() => {
       store.dispatch(actions.preferencesLoaded({}));
-      store.dispatch(actions.openMedia("b1"));
+      store.dispatch(actions.openMediaFileRequested("p1", "b1"));
     });
     expect(
       await screen.findByRole("heading", { name: "Sample Book" }),
@@ -271,6 +276,11 @@ describe("ProjectScreen", () => {
       />,
       client,
       { server: fakeServer },
+    );
+    act(() =>
+      rendered.store.dispatch(
+        actions.navigated({ type: "openProject", projectId: "p1" }),
+      ),
     );
     return { ...rendered, client };
   }

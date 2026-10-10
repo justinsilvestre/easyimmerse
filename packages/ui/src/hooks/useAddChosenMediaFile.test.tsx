@@ -33,6 +33,9 @@ function chooseFile(name: string) {
   const rendered = renderWithAppStore(<AddsChosenMediaFile />, client);
   act(() => {
     rendered.store.dispatch(
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+    );
+    rendered.store.dispatch(
       actions.mediaFileChosen({
         name,
         source: { kind: "path", path: `/videos/${name}` },

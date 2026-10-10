@@ -745,7 +745,7 @@ describe("MediaScreen lookup", () => {
       const { store } = await pressAddDictionary();
       expect(selectRoute(store.getState())).toEqual({
         screen: "settings",
-        beneath: { screen: "home" },
+        beneath: { screen: "media", projectId: "p1", mediaFileId: "m1" },
         pages: ["dictionaries"],
       });
     });

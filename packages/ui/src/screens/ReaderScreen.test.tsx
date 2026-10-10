@@ -1,5 +1,9 @@
 import { resetBackend } from "@easyimmerse/backend";
-import { actions, createBrowserFileRegistry } from "@easyimmerse/state";
+import {
+  actions,
+  createBrowserFileRegistry,
+  selectCurrentMediaFileId,
+} from "@easyimmerse/state";
 import type { Document, MediaFile } from "@easyimmerse/types";
 import {
   act,
@@ -75,7 +79,9 @@ function renderReader({
   );
   act(() => {
     rendered.store.dispatch(actions.preferencesLoaded(loadedPreferences));
-    rendered.store.dispatch(actions.openMedia(mediaFile.id));
+    rendered.store.dispatch(
+      actions.openMediaFileRequested(fixtureProject.id, mediaFile.id),
+    );
   });
   return { ...rendered, client };
 }
@@ -206,7 +212,7 @@ describe("ReaderScreen", () => {
       screen.getByRole("button", { name: "Back to the project" }),
     );
     await vi.waitFor(() =>
-      expect(store.getState().app.currentMediaFileId).toBeNull(),
+      expect(selectCurrentMediaFileId(store.getState())).toBeNull(),
     );
   });
 });

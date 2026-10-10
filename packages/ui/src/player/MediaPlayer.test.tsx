@@ -100,7 +100,9 @@ function renderPlayer(
   act(() => {
     for (const action of options.before ?? [actions.preferencesLoaded({})])
       rendered.store.dispatch(action);
-    rendered.store.dispatch(actions.openMedia(options.mediaFileId ?? "m1"));
+    rendered.store.dispatch(
+      actions.openMediaFileRequested("p1", options.mediaFileId ?? "m1"),
+    );
   });
   return { ...rendered, client, hls: fakeHls.instances };
 }

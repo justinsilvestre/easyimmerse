@@ -71,7 +71,7 @@ function renderStatusOver(cards: UnsavedCard[], savesHang: boolean) {
 /** The project and media file the store shows, as "projectId/mediaFileId", or null when no project is open. */
 function shownMediaFileOf(store: AppStore): string | null {
   const route = selectRoute(store.getState());
-  if (route.screen !== "project") return null;
+  if (route.screen !== "project" && route.screen !== "media") return null;
   return `${route.projectId}/${selectCurrentMediaFileId(store.getState())}`;
 }
 

@@ -3,7 +3,7 @@ import {
   useListMediaFilesQuery,
 } from "@easyimmerse/backend";
 import type { PickedMediaFile } from "@easyimmerse/state";
-import { actions, selectChosenMediaFile } from "@easyimmerse/state";
+import { actions, selectPendingMediaFile } from "@easyimmerse/state";
 import { useEffect, useRef } from "react";
 import { useAppDispatch } from "./useAppDispatch.ts";
 import { useAppSelector } from "./useAppSelector.ts";
@@ -15,7 +15,7 @@ import { useAppSelector } from "./useAppSelector.ts";
  */
 export function useAddChosenMediaFile(projectId: string): void {
   const dispatch = useAppDispatch();
-  const chosen = useAppSelector(selectChosenMediaFile);
+  const chosen = useAppSelector(selectPendingMediaFile);
   const { data: list, isLoading } = useListMediaFilesQuery(projectId);
   const [addMediaFile] = useAddMediaFileMutation();
   // Strict mode runs effects twice, and the same chosen file must be sent only once.

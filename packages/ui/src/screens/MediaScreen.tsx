@@ -1,5 +1,10 @@
 import { useListPluginsQuery } from "@easyimmerse/backend";
-import { actions, selectPlayer, selectPreference } from "@easyimmerse/state";
+import {
+  actions,
+  selectPlayer,
+  selectPlayerControls,
+  selectPreference,
+} from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
 import { useCallback, useMemo, useReducer, useRef, useState } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
@@ -75,6 +80,7 @@ export function MediaScreen({
   const mediaFile = useMediaFile(projectId, mediaFileId);
   useResumePlayback(mediaFileId);
   const player = useAppSelector(selectPlayer);
+  const controls = useAppSelector(selectPlayerControls);
   const currentMs = player.currentTimeSeconds * 1000;
   const durationMs = useMediaDurationMs(projectId, mediaFile);
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
@@ -258,9 +264,9 @@ export function MediaScreen({
           currentMs,
           durationMs,
           buffered: player.buffered,
-          volume: player.volume,
-          isMuted: player.isMuted,
-          speed: player.speed,
+          volume: controls.volume,
+          isMuted: controls.isMuted,
+          speed: controls.speed,
         }}
         tracks={tracks}
         cues={subtitles.cues}

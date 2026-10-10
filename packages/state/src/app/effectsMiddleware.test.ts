@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
-import { actions } from "./actions.ts";
+import { actions } from "./appAction.ts";
 import { createAppStore } from "./createAppStore.ts";
 import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
 
@@ -19,6 +19,7 @@ describe("effectsMiddleware", () => {
   it("calls seekPlayer after seekRequested is dispatched", () => {
     const effects = createRecordingEffects();
     const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.openMediaFileRequested("p1", "m1"));
     store.dispatch(actions.seekRequested(12.5));
     expect(effects.calls).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);
   });

@@ -51,6 +51,7 @@ function MainScreen({ route }: { route: MainRoute }) {
     case "newProject":
       return <NewProjectScreen onCreated={openProject} onCancel={goHome} />;
     case "project":
+    case "media":
       return (
         <ProjectScreen
           projectId={route.projectId}

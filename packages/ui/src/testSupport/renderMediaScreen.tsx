@@ -128,7 +128,9 @@ export function renderMediaScreen({
   );
   act(() => {
     rendered.store.dispatch(actions.preferencesLoaded({}));
-    rendered.store.dispatch(actions.openMedia("m1"));
+    rendered.store.dispatch(
+      actions.openMediaFileRequested(fixtureProject.id, "m1"),
+    );
   });
   return { ...rendered, client };
 }

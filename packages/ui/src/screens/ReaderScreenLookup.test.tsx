@@ -117,7 +117,9 @@ async function renderReader({ hasBatchLookups = false } = {}) {
   );
   act(() => {
     rendered.store.dispatch(actions.preferencesLoaded({}));
-    rendered.store.dispatch(actions.openMedia(bookFile.id));
+    rendered.store.dispatch(
+      actions.openMediaFileRequested(fixtureProject.id, bookFile.id),
+    );
   });
   await screen.findByRole("heading", { level: 2 });
   return { ...rendered, client };

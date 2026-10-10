@@ -22,6 +22,9 @@ function renderWaveform(mediaFileId: string) {
     <PlayerWaveform projectId="p1" mediaFileId={mediaFileId} />,
     client,
   );
+  act(() =>
+    rendered.store.dispatch(actions.openMediaFileRequested("p1", mediaFileId)),
+  );
   return { ...rendered, client };
 }
 

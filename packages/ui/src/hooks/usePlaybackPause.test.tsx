@@ -34,6 +34,9 @@ function renderProbe(isPlaying: boolean) {
     <PauseProbe />,
     createFakeBackendClient({}),
   );
+  act(() =>
+    rendered.store.dispatch(actions.openMediaFileRequested("p1", "m1")),
+  );
   const report = (playing: boolean) =>
     act(() => rendered.store.dispatch(actions.playerPlayingChanged(playing)));
   report(isPlaying);

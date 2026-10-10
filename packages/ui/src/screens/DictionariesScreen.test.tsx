@@ -72,6 +72,9 @@ function renderScreen(responses: Record<string, FakeResponse> = {}) {
     client,
     { browserFileRegistry: registry },
   );
+  act(() =>
+    rendered.store.dispatch(actions.navigated({ type: "openDictionaries" })),
+  );
   /** Acts as the user picking a file in the browser. */
   const chooseBrowserFile = (
     name: string,

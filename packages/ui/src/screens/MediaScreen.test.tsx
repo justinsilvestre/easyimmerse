@@ -3,6 +3,7 @@ import {
   actions,
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
+  selectCurrentTime,
   selectPreference,
 } from "@easyimmerse/state";
 import type {
@@ -96,7 +97,7 @@ function renderBrowserVideoScreen(
   );
   act(() => {
     rendered.store.dispatch(actions.preferencesLoaded({}));
-    rendered.store.dispatch(actions.openMedia("m3"));
+    rendered.store.dispatch(actions.openMediaFileRequested("p1", "m3"));
   });
   return { ...rendered, client };
 }
@@ -639,7 +640,7 @@ describe("MediaScreen", () => {
       const { store } = await renderWithWaveform();
       await openSavedFlashcardFromStrip();
       await vi.waitFor(() =>
-        expect(store.getState().app.player.currentTimeSeconds).toBe(1.75),
+        expect(selectCurrentTime(store.getState())).toBe(1.75),
       );
     });
 

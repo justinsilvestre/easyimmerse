@@ -1,6 +1,5 @@
-export type { AppAction } from "./app/actions.ts";
-export { actions } from "./app/actions.ts";
-export type { BufferedRange, PreferenceKey } from "./app/appState.ts";
+export type { AppAction } from "./app/appAction.ts";
+export { actions } from "./app/appAction.ts";
 export type {
   AppDispatch,
   AppStore,
@@ -9,25 +8,6 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
-export {
-  selectChosenDictionaryFile,
-  selectChosenMediaFile,
-  selectChosenSubtitleFile,
-  selectCurrentMediaFileId,
-  selectCurrentTime,
-  selectIsSettingsOpen,
-  selectPendingFilePick,
-  selectPlaybackPosition,
-  selectPlayer,
-  selectPlayerDuration,
-  selectPreference,
-  selectPreferencesLoaded,
-  selectReadingLocation,
-  selectRoute,
-  selectTextScale,
-  selectTheme,
-  selectThemeChoice,
-} from "./app/selectors.ts";
 export { update } from "./app/update.ts";
 export type { BrowserFileRegistry } from "./platform/browserFileRegistry.ts";
 export { createBrowserFileRegistry } from "./platform/browserFileRegistry.ts";
@@ -40,6 +20,18 @@ export type {
 export type { PlayerRegistry } from "./platform/playerRegistry.ts";
 export { createPlayerRegistry } from "./platform/playerRegistry.ts";
 export { createRecordingEffects } from "./platform/recordingEffects.ts";
+export {
+  selectPlayerControls,
+  selectPreference,
+  selectPreferencesLoaded,
+  selectTextScale,
+  selectTheme,
+  selectThemeChoice,
+} from "./preferences/preferencesSelectors.ts";
+export type {
+  PlayerControls,
+  PreferenceKey,
+} from "./preferences/preferencesState.ts";
 export {
   defaultTextScale,
   largerTextScale,
@@ -55,9 +47,28 @@ export type {
   SettingsPage,
 } from "./route/route.ts";
 export { mainScreenOf, settingsPageOf } from "./route/route.ts";
+export {
+  selectCurrentMediaFileId,
+  selectIsSettingsOpen,
+  selectRoute,
+} from "./route/routeSelectors.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
 export {
   documentFormatOf,
   isDocumentFileName,
 } from "./screen/mediaFileExtensions.ts";
+export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
+export {
+  selectCurrentTime,
+  selectPendingDictionaryFile,
+  selectPendingFilePick,
+  selectPendingMediaFile,
+  selectPendingSubtitleFile,
+  selectPlayer,
+  selectPlayerDuration,
+} from "./screen/screenSelectors.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
+export {
+  selectPlaybackPosition,
+  selectReadingLocation,
+} from "./storedPlaces/storedPlacesSelectors.ts";

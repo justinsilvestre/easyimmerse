@@ -1,6 +1,6 @@
 import { useAddSubtitleTrackMutation } from "@easyimmerse/backend";
 import type { PickedFile } from "@easyimmerse/state";
-import { actions, selectChosenSubtitleFile } from "@easyimmerse/state";
+import { actions, selectPendingSubtitleFile } from "@easyimmerse/state";
 import type { SubtitleSelection } from "@easyimmerse/types";
 import { useEffect, useRef } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -17,7 +17,7 @@ export function useAddChosenSubtitleFile(
   selection: SubtitleSelection | undefined,
 ): void {
   const dispatch = useAppDispatch();
-  const chosen = useAppSelector(selectChosenSubtitleFile);
+  const chosen = useAppSelector(selectPendingSubtitleFile);
   const [addSubtitleTrack] = useAddSubtitleTrackMutation();
   // Strict mode runs effects twice, and the same chosen file must be sent only once.
   const sent = useRef<PickedFile | null>(null);
