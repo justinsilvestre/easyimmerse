@@ -16,6 +16,7 @@ import type {
   TableLayout,
   TablePreview,
   TimedTextTrack,
+  WaveformResponse,
 } from "@easyimmerse/types";
 import type { Dispatch } from "redux";
 import type { PickedDictionaryFile } from "../platform/effects.ts";
@@ -42,6 +43,13 @@ export type ServerRequest =
       kind: "importDictionary";
       file: PickedDictionaryFile;
       tableLayout: TableLayout | null;
+    }
+  | {
+      kind: "getWaveformWindow";
+      projectId: string;
+      mediaFileId: string;
+      startMs: number;
+      endMs: number;
     };
 
 /** The kind of a server request. */
@@ -62,6 +70,7 @@ export type ServerResponses = {
   submitImportStep: ImportStepResponse;
   previewDictionaryTable: TablePreview;
   importDictionary: ImportJobStarted;
+  getWaveformWindow: WaveformResponse;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

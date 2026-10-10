@@ -50,6 +50,14 @@ function recording(client: BackendClient) {
   return { methods, send };
 }
 
+const waveformWindow: ServerRequest = {
+  kind: "getWaveformWindow",
+  projectId: "p1",
+  mediaFileId: "m1",
+  startMs: 0,
+  endMs: 30_000,
+};
+
 const neverAnswering: BackendClient = { send: () => new Promise(() => {}) };
 
 type BackendDispatch = ThunkDispatch<unknown, unknown, UnknownAction>;
@@ -105,5 +113,13 @@ describe("runRequest", () => {
     await vi.waitFor(() => {
       expect(client.methods).toEqual(["GET", "POST", "GET"]);
     });
+  });
+
+  it("answers a waveform window asked for again from the cache", async () => {
+    const client = recording(answering({ data: { start_ms: 0, peaks: [1] } }));
+    const store = createStore(client);
+    await settle(store, waveformWindow);
+    await settle(store, waveformWindow);
+    expect(client.methods).toEqual(["GET"]);
   });
 });

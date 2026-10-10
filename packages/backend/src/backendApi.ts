@@ -347,7 +347,12 @@ export const backendApi = createApi({
         { type: "MediaFiles", id: projectId },
       ],
     }),
+    /**
+     * One window of a media file's waveform peaks. The media screen's update requests the windows,
+     * and the waveform reads their peaks from the cache, which keeps every window for the rest of the session.
+     */
     getWaveformWindow: build.query<WaveformResponse, WaveformWindowArgs>({
+      keepUnusedDataFor: Infinity,
       query: ({ startMs, endMs, ...args }) => ({
         method: "GET",
         path: `${mediaFilePath(args)}/waveform`,

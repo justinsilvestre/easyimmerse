@@ -87,6 +87,11 @@ export const requestEndpoints = {
     backendApi.endpoints.markProjectOpened.initiate(projectId, {
       track: false,
     }),
+  getWaveformWindow: ({ projectId, mediaFileId, startMs, endMs }) =>
+    backendApi.endpoints.getWaveformWindow.initiate(
+      { projectId, mediaFileId, startMs, endMs },
+      { subscribe: false },
+    ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**
