@@ -4,6 +4,7 @@ import type {
   PickedMediaFile,
 } from "./effects.ts";
 import type { ReaderLocation } from "./readingLocation.ts";
+import { initialRoute, type Route } from "./route.ts";
 import type { Theme } from "./theme.ts";
 
 export type PreferenceKey =
@@ -56,6 +57,8 @@ export const initialPlayerState: PlayerState = {
 };
 
 export type AppState = {
+  /** Where the app is. */
+  route: Route;
   player: PlayerState;
   /** A picked subtitles file waiting to be added to the open media file through the backend. */
   chosenSubtitleFile: PickedFile | null;
@@ -83,6 +86,7 @@ export type AppState = {
 };
 
 export const initialAppState: AppState = {
+  route: initialRoute,
   player: initialPlayerState,
   chosenSubtitleFile: null,
   preferences: {},

@@ -645,3 +645,76 @@ describe("update, for the playback position", () => {
     expect(effects).toEqual([]);
   });
 });
+
+describe("update, for the route", () => {
+  const playingM2: AppState = {
+    ...initialAppState,
+    currentMediaFileId: "m2",
+    player: {
+      ...initialAppState.player,
+      currentTimeSeconds: 5,
+      durationSeconds: 60,
+    },
+  };
+
+  it("takes the navigation step for navigated", () => {
+    const [state] = update(
+      initialAppState,
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+    );
+    expect(state.route).toEqual({ screen: "project", projectId: "p1" });
+  });
+
+  it("opens settings over the current screen for settingsRequested", () => {
+    const [state] = update(initialAppState, actions.settingsRequested());
+    expect(state.route).toEqual({
+      screen: "settings",
+      beneath: { screen: "home" },
+      pages: ["general"],
+    });
+  });
+
+  describe("for openMediaFileRequested", () => {
+    it("opens the media file's project", () => {
+      const [state] = update(
+        initialAppState,
+        actions.openMediaFileRequested("p1", "m1"),
+      );
+      expect(state.route).toEqual({ screen: "project", projectId: "p1" });
+    });
+
+    it("opens the media file", () => {
+      const [state] = update(
+        initialAppState,
+        actions.openMediaFileRequested("p1", "m1"),
+      );
+      expect(state.currentMediaFileId).toBe("m1");
+    });
+
+    it("closes a different open media file first, saving its position", () => {
+      const [, effects] = update(
+        playingM2,
+        actions.openMediaFileRequested("p1", "m1"),
+      );
+      expect(effects).toEqual([
+        { type: "savePlaybackPosition", mediaFileId: "m2", ms: 5000 },
+      ]);
+    });
+
+    it("resets the player when it closes a different media file", () => {
+      const [state] = update(
+        playingM2,
+        actions.openMediaFileRequested("p1", "m1"),
+      );
+      expect(state.player.durationSeconds).toBe(0);
+    });
+
+    it("leaves the same media file open as it is", () => {
+      const [state] = update(
+        playingM2,
+        actions.openMediaFileRequested("p1", "m2"),
+      );
+      expect(state.player).toBe(playingM2.player);
+    });
+  });
+});

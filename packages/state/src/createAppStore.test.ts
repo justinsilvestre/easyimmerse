@@ -32,6 +32,13 @@ describe("createAppStore", () => {
     );
   });
 
+  it("opens Settings when the platform asks for them", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    effects.requestSettings();
+    expect(store.getState().app.route.screen).toBe("settings");
+  });
+
   it("builds the store through the given enhancer composer", () => {
     const composed: StoreEnhancer[][] = [];
     createAppStore(

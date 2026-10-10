@@ -6,6 +6,7 @@ import type {
   PickedMediaFile,
 } from "./effects.ts";
 import type { ReaderLocation } from "./readingLocation.ts";
+import type { NavigationStep } from "./route.ts";
 import type { Theme } from "./theme.ts";
 
 export const actions = {
@@ -48,6 +49,13 @@ export const actions = {
   dictionaryFilePickCancelled: () =>
     ({ type: "dictionaryFilePickCancelled" }) as const,
   dictionaryFileHandled: () => ({ type: "dictionaryFileHandled" }) as const,
+  /** Takes a step from where the app is to another place. */
+  navigated: (step: NavigationStep) => ({ type: "navigated", step }) as const,
+  /** Opens a media file of a project on its media screen, from wherever the app is. */
+  openMediaFileRequested: (projectId: string, mediaFileId: string) =>
+    ({ type: "openMediaFileRequested", projectId, mediaFileId }) as const,
+  /** The platform asked for the Settings screen, as a desktop menu item does. */
+  settingsRequested: () => ({ type: "settingsRequested" }) as const,
   openMedia: (mediaFileId: string) =>
     ({ type: "openMedia", mediaFileId }) as const,
   closeMedia: () => ({ type: "closeMedia" }) as const,

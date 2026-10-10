@@ -20,8 +20,7 @@ type EffectCall =
   | { type: "loadPreference"; key: string }
   | { type: "showNotification"; message: string }
   | { type: "openExternalUrl"; url: string }
-  | { type: "guardClose"; isActive: boolean }
-  | { type: "subscribeToSettingsRequests" };
+  | { type: "guardClose"; isActive: boolean };
 
 export type RecordingEffects = Effects & {
   /** Every call made so far, in order, with its arguments. */
@@ -128,7 +127,6 @@ export function createRecordingEffects(): RecordingEffects {
       calls.push({ type: "guardClose", isActive });
     },
     subscribeToSettingsRequests: (listener) => {
-      calls.push({ type: "subscribeToSettingsRequests" });
       settingsListeners.add(listener);
       return () => settingsListeners.delete(listener);
     },

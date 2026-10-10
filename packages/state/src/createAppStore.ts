@@ -6,7 +6,7 @@ import {
   legacy_createStore as createStore,
 } from "redux";
 import type { AppAction } from "./actions.ts";
-import { isAppAction } from "./actions.ts";
+import { actions, isAppAction } from "./actions.ts";
 import type { AppState } from "./appState.ts";
 import { initialAppState } from "./appState.ts";
 import { createEffectsReducer } from "./createEffectsReducer.ts";
@@ -33,6 +33,7 @@ export type EnhancerComposer = (...enhancers: StoreEnhancer[]) => StoreEnhancer;
 /**
  * Creates the app's store.
  * A composer other than Redux's own `compose`, such as one that connects developer tools, may wrap the store's enhancers.
+ * The store opens Settings whenever the platform asks for them, for as long as it lives.
  */
 export function createAppStore(
   effects: Effects,
@@ -44,7 +45,7 @@ export function createAppStore(
     app: app.reducer,
     [server.reducerPath]: server.reducer,
   });
-  return createStore(
+  const store: AppStore = createStore(
     rootReducer,
     composeEnhancers(
       applyMiddleware(
@@ -53,4 +54,8 @@ export function createAppStore(
       ),
     ),
   );
+  effects.subscribeToSettingsRequests(() =>
+    store.dispatch(actions.settingsRequested()),
+  );
+  return store;
 }

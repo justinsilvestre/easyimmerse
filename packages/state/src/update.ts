@@ -1,4 +1,4 @@
-import type { AppAction } from "./actions.ts";
+import { type AppAction, actions } from "./actions.ts";
 import type { AppState, PreferenceKey } from "./appState.ts";
 import { initialPlayerState, preferenceKeys } from "./appState.ts";
 import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
@@ -6,6 +6,7 @@ import type { Effect } from "./effect.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { crossesSaveInterval } from "./playbackPosition.ts";
 import { isSameParagraph, type ReaderLocation } from "./readingLocation.ts";
+import { navigate } from "./route.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
 export type Update<S, A, E> = (
@@ -152,6 +153,29 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
       return [state, []];
     case "dictionaryFileHandled":
       return [{ ...state, chosenDictionaryFile: null }, []];
+    case "navigated":
+      return [{ ...state, route: navigate(state.route, action.step) }, []];
+    case "settingsRequested":
+      return [
+        { ...state, route: navigate(state.route, { type: "openSettings" }) },
+        [],
+      ];
+    case "openMediaFileRequested": {
+      const inProject = {
+        ...state,
+        route: navigate(state.route, {
+          type: "openProject",
+          projectId: action.projectId,
+        }),
+      };
+      const openId = state.currentMediaFileId;
+      // Closing a different media file resets the player, as leaving its screen with Back does.
+      const [closed, effects] =
+        openId !== null && openId !== action.mediaFileId
+          ? update(inProject, actions.closeMedia())
+          : [inProject, []];
+      return [{ ...closed, currentMediaFileId: action.mediaFileId }, effects];
+    }
     case "openMedia":
       return [{ ...state, currentMediaFileId: action.mediaFileId }, []];
     case "closeMedia": {
