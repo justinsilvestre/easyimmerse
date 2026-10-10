@@ -14,7 +14,7 @@ import {
 import { useElementSize } from "../hooks/useElementSize.ts";
 import { type PageLayout, pageLayoutOf } from "./pageLayout.ts";
 import {
-  locationOfPage,
+  locationTurningTo,
   type PagedText,
   pageCountOf,
   pageOfLocation,
@@ -105,17 +105,18 @@ export function PagedChapter({
     reportPage(view);
   }, [view]);
 
-  const turnTo = (page: number) => {
+  const turnTo = (page: number, onPastSection: () => void) => {
     const text = pagedText(columns.current, layout);
-    if (page >= view.pageCount) return onPastEnd();
-    if (page < 0) return onBeforeStart();
+    if (page < 0 || page >= view.pageCount) return onPastSection();
     if (!text) return;
+    const location = locationTurningTo(text, view.page, page, chapterIndex);
+    if (location === null) return onPastSection();
     setAnimates(true);
-    onLocationChange(locationOfPage(text, page, chapterIndex));
+    onLocationChange(location);
   };
   const turner = {
-    next: () => turnTo(view.page + 1),
-    previous: () => turnTo(view.page - 1),
+    next: () => turnTo(view.page + 1, onPastEnd),
+    previous: () => turnTo(view.page - 1, onBeforeStart),
   };
   useImperativeHandle(ref, () => turner);
   const swipe = useSwipe(turner);
