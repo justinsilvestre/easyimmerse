@@ -1,4 +1,5 @@
 import type { EditorAction, EditorState } from "@easyimmerse/state";
+import type { AudioClip } from "@easyimmerse/types";
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { useId, useState } from "react";
@@ -29,6 +30,7 @@ export function FlashcardEditor({
   languages,
   waveform,
   screenshotUrl = null,
+  mediaDurationMs = 0,
   saveStatus = "idle",
   isNew = false,
   hasSaveFailed = false,
@@ -36,6 +38,7 @@ export function FlashcardEditor({
   onSave,
   onDelete,
   onClose,
+  onPlayClip,
 }: {
   state: EditorState;
   dispatch: (action: EditorAction) => void;
@@ -44,6 +47,8 @@ export function FlashcardEditor({
   waveform: MediaWaveform | null;
   /** The image of the screenshot at its current time. Without it, no screenshot is shown. */
   screenshotUrl?: string | null;
+  /** The media file's length, which the clip's end stays within; zero, the default, while it is unknown. */
+  mediaDurationMs?: number;
   /**
    * Whether a save the user asked for waits for definitions still on their way, or is under way.
    * Meanwhile Save, Close and Delete do nothing and the fields are read-only, so that what is saved is what is shown.
@@ -58,6 +63,8 @@ export function FlashcardEditor({
   onSave: () => void;
   onDelete: () => void;
   onClose: () => void;
+  /** Plays the clip on the media player. */
+  onPlayClip: (clip: AudioClip) => void;
 }) {
   const { content, includedFields } = state;
   const saveStatusId = useId();
@@ -98,7 +105,9 @@ export function FlashcardEditor({
             state={state}
             waveform={waveform}
             screenshotUrl={screenshotUrl}
+            mediaDurationMs={mediaDurationMs}
             dispatch={dispatch}
+            onPlayClip={onPlayClip}
             isReadOnly={isSaveInert}
           />
           {includedFields.includes("tags") && (

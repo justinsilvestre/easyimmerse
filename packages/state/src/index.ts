@@ -164,6 +164,7 @@ export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
 export type { ReaderScreenAction } from "./screen/readerScreen/readerScreenActions.ts";
 export { selectReaderScreen } from "./screen/readerScreen/readerScreenSelectors.ts";
 export type {
+  PageInfo,
   ReaderPanel,
   ReaderScreenState,
 } from "./screen/readerScreen/readerScreenState.ts";

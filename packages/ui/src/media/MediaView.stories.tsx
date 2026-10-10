@@ -402,6 +402,7 @@ export const EditingAFlashcard: Story = {
         onSave={fn()}
         onDelete={fn()}
         onClose={fn()}
+        onPlayClip={fn()}
       />
     ),
   },

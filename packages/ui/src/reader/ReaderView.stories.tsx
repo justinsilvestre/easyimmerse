@@ -308,6 +308,7 @@ export const FlashcardStarted: Story = {
         onSave={fn()}
         onDelete={fn()}
         onClose={fn()}
+        onPlayClip={fn()}
       />
     ),
   },

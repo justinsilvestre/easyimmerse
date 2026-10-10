@@ -5,16 +5,15 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
-  isAwaitingLookup,
+  selectFlashcardForm,
   selectIsReadingLocationLoaded,
   selectPreferencesLoaded,
   selectReaderPreferences,
 } from "@easyimmerse/state";
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo } from "react";
+import { ConnectedFlashcardEditor } from "../flashcards/ConnectedFlashcardEditor.tsx";
 import { draftFromText } from "../flashcards/draftFromText.ts";
-import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
-import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
@@ -96,8 +95,7 @@ function BookReader({
     selectReaderPreferences(state.app),
   );
   const controls = useReaderKeyBindings();
-  const flashcards = useMediaFlashcards(project.id, mediaFile.id);
-  const { form } = flashcards;
+  const form = useAppSelector((state) => selectFlashcardForm(state.app));
   const languages = {
     target: settings.target_language,
     translation: settings.translation_language,
@@ -144,21 +142,7 @@ function BookReader({
           ),
       }}
       sidePanel={
-        form && (
-          <FlashcardEditor
-            key={form.card.kind === "new" ? "new" : form.card.flashcard.id}
-            state={form.card.editor}
-            isNew={form.card.kind === "new"}
-            isAwaitingLookup={isAwaitingLookup(form.stage)}
-            hasSaveFailed={form.saveFailure !== null}
-            dispatch={flashcards.edit}
-            languages={languages}
-            waveform={null}
-            onSave={flashcards.save}
-            onDelete={flashcards.remove}
-            onClose={flashcards.close}
-          />
-        )
+        form && <ConnectedFlashcardEditor form={form} languages={languages} />
       }
     />
   );

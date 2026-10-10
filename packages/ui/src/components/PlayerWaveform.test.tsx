@@ -14,10 +14,7 @@ function renderWaveform(mediaFileId: string) {
     fixtureResponses,
     directPlaybackRoutes,
   );
-  const rendered = renderWithAppStore(
-    <PlayerWaveform projectId="p1" mediaFileId={mediaFileId} />,
-    client,
-  );
+  const rendered = renderWithAppStore(<PlayerWaveform />, client);
   act(() =>
     rendered.store.dispatch(actions.openMediaFileRequested("p1", mediaFileId)),
   );

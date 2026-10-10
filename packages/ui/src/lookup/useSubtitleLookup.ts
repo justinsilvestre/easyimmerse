@@ -8,6 +8,7 @@ import { type ComponentProps, useMemo } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { useAppStore } from "../hooks/useAppStore.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import {
@@ -15,7 +16,7 @@ import {
   activeCueWordOf,
   type CueWordGestures,
 } from "../media/cueWordGestures.ts";
-import { useCuePosition } from "../media/useCuePosition.ts";
+import { selectCuePosition } from "../media/selectCuePosition.ts";
 import { chosenWordAt } from "./chosenWordAt.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import { matchedLengthAhead } from "./matchedLengthAhead.ts";
@@ -38,14 +39,15 @@ export function useSubtitleLookup(
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const lookup = useWordLookup(languages, flashcards);
-  const cursor = useCuePosition();
-  const cursorWord = useAppSelector((state) =>
-    selectLookupCursor(state.app),
-  )?.chosen;
+  const store = useAppStore();
+  const cursor = useAppSelector(selectCuePosition);
   const chosenAt = (hit: WordHit, cue: Cue) =>
     chosenWordAt(hit, cue, lookup.wordOf);
   const startFlashcardAtCursor = (destination: FlashcardDestination) =>
-    lookup.startFlashcardAtCursor(cursorWord ?? null, destination);
+    lookup.startFlashcardAtCursor(
+      selectLookupCursor(store.getState().app)?.chosen ?? null,
+      destination,
+    );
   const popup = lookup.popup && {
     anchored: lookup.popup.anchored,
     props: {

@@ -35,6 +35,7 @@ function EditorWithState({ onSave }: { onSave: OnSave }) {
       onSave={() => onSave(state.content, state.includedFields)}
       onDelete={() => undefined}
       onClose={() => undefined}
+      onPlayClip={() => undefined}
     />
   );
 }
@@ -172,6 +173,7 @@ function renderWithSaveStatus(
       onSave={onSave}
       onDelete={() => undefined}
       onClose={() => undefined}
+      onPlayClip={() => undefined}
     />,
   );
 }
@@ -193,6 +195,7 @@ function renderWithMedia(saveStatus: "idle" | "saving") {
       onSave={() => undefined}
       onDelete={() => undefined}
       onClose={() => undefined}
+      onPlayClip={() => undefined}
     />,
   );
   return actions;
@@ -219,6 +222,7 @@ function renderWithLeavingButtons(
       onSave={() => undefined}
       onDelete={() => presses.push("delete")}
       onClose={() => presses.push("close")}
+      onPlayClip={() => undefined}
     />,
   );
   return presses;
@@ -432,6 +436,7 @@ describe("FlashcardEditor while its save waits for definitions", () => {
         onSave={onSave}
         onDelete={() => undefined}
         onClose={() => undefined}
+        onPlayClip={() => undefined}
       />,
     );
   }

@@ -5,13 +5,7 @@ import {
   type ReaderScreenState,
 } from "@easyimmerse/state";
 import type { Document } from "@easyimmerse/types";
-import {
-  type ReactNode,
-  useDeferredValue,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useDeferredValue, useMemo, useRef } from "react";
 import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
 import type { AnchorRect } from "../lookup/placeAtAnchor.ts";
 import type { PopupSize } from "../lookup/popupSize.ts";
@@ -26,7 +20,7 @@ import {
 } from "./chapterSections.ts";
 import { chapterLabelOf, chapterTitleOf } from "./chapterTitles.ts";
 import { LookupAnchor } from "./LookupAnchor.tsx";
-import { PagedChapter, type PageInfo } from "./PagedChapter.tsx";
+import { PagedChapter } from "./PagedChapter.tsx";
 import { ReaderFooter } from "./ReaderFooter.tsx";
 import { ReaderToolbar } from "./ReaderToolbar.tsx";
 import { type ReaderControls, useReaderControls } from "./readerControls.ts";
@@ -120,7 +114,6 @@ const sectionCharacterLimit = 250_000;
 export function ReaderView(props: ReaderViewProps) {
   const { document, location, reader, dispatch, mediaFileId } = props;
   const { preferences, callbacks } = props;
-  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
   const ownControls = useReaderControls();
   const { pageTurner: turner, searchInput } = props.controls ?? ownControls;
   const isWide = useMediaQuery(wideScreenQuery);
@@ -271,7 +264,9 @@ export function ReaderView(props: ReaderViewProps) {
                 );
                 dispatch(actions.readerChromeHidden());
               }}
-              onPageChange={setPageInfo}
+              onPageMeasured={(info) =>
+                dispatch(actions.readerPageMeasured(info))
+              }
               onPastEnd={() => goToSection(sectionIndex + 1, "start")}
               onBeforeStart={() => goToSection(sectionIndex - 1, "end")}
             >
@@ -312,7 +307,7 @@ export function ReaderView(props: ReaderViewProps) {
       </main>
       <ReaderFooter
         progress={progress}
-        pageInfo={isPaged && sections.length === 1 ? pageInfo : null}
+        pageInfo={isPaged && sections.length === 1 ? reader.pageInfo : null}
         chapterTitle={chapterTitle}
         chapterStarts={chapterStarts}
         isVisible={reader.isChromeVisible}

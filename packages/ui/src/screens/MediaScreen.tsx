@@ -1,25 +1,21 @@
 import { useListPluginsQuery } from "@easyimmerse/backend";
 import {
   actions,
-  isAwaitingLookup,
-  saveStatusOf,
   selectCuePanelSpan,
   selectIsSubtitleAppearanceOpen,
   selectMediaKeyBinding,
   selectMediaPanels,
-  selectPlayer,
-  selectPlayerControls,
-  selectPreference,
   selectShownCue,
   selectSourceMedia,
+  transientNotice,
 } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
 import { useMemo } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
+import { ConnectedFlashcardEditor } from "../flashcards/ConnectedFlashcardEditor.tsx";
 import { draftFromCue } from "../flashcards/draftFromCue.ts";
-import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
@@ -42,11 +38,11 @@ import { MediaView } from "../media/MediaView.tsx";
 import { mediaSourceOf } from "../media/mediaSourceOf.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
+import { selectMediaPlayback } from "../media/selectMediaPlayback.ts";
+import { selectSubtitleAppearance } from "../media/selectSubtitleAppearance.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
-import { parseSubtitleAppearance } from "../media/subtitleAppearance.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { selectCanChooseTracks } from "../player/selectCanChooseTracks.ts";
-import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import { SourceMediaDialog } from "../subtitles/SourceMediaDialog.tsx";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
@@ -79,10 +75,8 @@ export function MediaScreen({
   const projectId = project.id;
   const { settings } = project;
   const mediaFile = useMediaFile(projectId, mediaFileId);
-  const player = useAppSelector(selectPlayer);
-  const controls = useAppSelector(selectPlayerControls);
-  const currentMs = player.currentTimeSeconds * 1000;
-  const durationMs = useMediaDurationMs(projectId, mediaFile);
+  const playback = useAppSelector(selectMediaPlayback);
+  const { currentMs, durationMs } = playback;
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
   const source = mediaSourceOf(
@@ -104,13 +98,7 @@ export function MediaScreen({
     () => flashcardWordRanges(flashcards.flashcards, subtitles.cues),
     [flashcards.flashcards, subtitles.cues],
   );
-  const storedAppearance = useAppSelector(
-    selectPreference("subtitleAppearance"),
-  );
-  const subtitleAppearance = useMemo(
-    () => parseSubtitleAppearance(storedAppearance),
-    [storedAppearance],
-  );
+  const subtitleAppearance = useAppSelector(selectSubtitleAppearance);
   const { form } = flashcards;
   const editedContent = form?.card.editor.content;
   const isEditorOpen = form !== null;
@@ -228,23 +216,13 @@ export function MediaScreen({
           source,
         }}
         stage={<MediaPlayer projectId={projectId} />}
-        playback={{
-          isPlaying: player.isPlaying,
-          currentMs,
-          durationMs,
-          buffered: player.buffered,
-          volume: controls.volume,
-          isMuted: controls.isMuted,
-          speed: controls.speed,
-        }}
+        playback={playback}
         tracks={tracks}
         cues={subtitles.cues}
         translationCues={subtitles.translationCues}
         shownCue={shownCue}
         waveform={
           <PlayerWaveform
-            projectId={projectId}
-            mediaFileId={mediaFileId}
             cues={subtitles.cues}
             flashcardSegments={flashcards.segments}
             editableSegmentId={flashcards.editedSegmentId}
@@ -289,20 +267,11 @@ export function MediaScreen({
         }
         sidePanel={
           form !== null ? (
-            <FlashcardEditor
-              key={form.card.kind === "new" ? "new" : form.card.flashcard.id}
-              state={form.card.editor}
-              dispatch={flashcards.edit}
+            <ConnectedFlashcardEditor
+              form={form}
               languages={languages}
               waveform={clipWaveform}
               screenshotUrl={screenshotUrl}
-              saveStatus={saveStatusOf(form.stage)}
-              isNew={form.card.kind === "new"}
-              isAwaitingLookup={isAwaitingLookup(form.stage)}
-              hasSaveFailed={form.saveFailure !== null}
-              onSave={flashcards.save}
-              onDelete={flashcards.remove}
-              onClose={flashcards.close}
             />
           ) : panels.cues ? (
             <SubtitlesSidePanel
@@ -316,6 +285,17 @@ export function MediaScreen({
               cursor={lookup.cursor}
               wordGestures={lookup.wordGestures}
               onOpenFlashcardForCue={flashcards.openForCue}
+              onSeek={playerCallbacks.onSeek}
+              onGenerateSubtitles={() =>
+                dispatch(
+                  actions.noticeRequested(
+                    transientNotice(
+                      "info",
+                      "Generating subtitles is not available yet.",
+                    ),
+                  ),
+                )
+              }
               onVisibleCuesChange={(span) =>
                 dispatch(actions.cuePanelSpanMeasured(span))
               }

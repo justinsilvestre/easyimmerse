@@ -3,15 +3,12 @@ import type {
   EditorState,
   FlashcardTextFieldKey,
 } from "@easyimmerse/state";
-import { actions, selectPlayerDuration } from "@easyimmerse/state";
 import type { AudioClip } from "@easyimmerse/types";
 import clsx from "clsx";
 import { Minus, Play, Plus, X } from "lucide-react";
 import { type ReactNode, useId } from "react";
 import { AutoGrowTextarea } from "../components/AutoGrowTextarea.tsx";
 import { FocusExpandingBox } from "../components/FocusExpandingBox.tsx";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { ClipEditor } from "./ClipEditor.tsx";
 import { moveClipEnd, moveClipStart } from "./clipView.ts";
 import {
@@ -164,14 +161,20 @@ export function MediaFields({
   state,
   waveform,
   screenshotUrl,
+  mediaDurationMs,
   dispatch,
+  onPlayClip,
   isReadOnly = false,
 }: {
   state: EditorState;
   waveform: MediaWaveform | null;
   /** The image of the screenshot at its current time, or null when none can be shown. */
   screenshotUrl: string | null;
+  /** The media file's length, which the clip's end stays within; zero while it is unknown. */
+  mediaDurationMs: number;
   dispatch: (action: EditorAction) => void;
+  /** Plays the clip on the media player. */
+  onPlayClip: (clip: AudioClip) => void;
   isReadOnly?: boolean;
 }) {
   const { content } = state;
@@ -192,7 +195,12 @@ export function MediaFields({
           className="min-w-0 flex-1"
         >
           {waveform === null ? (
-            <ClipTimes clip={clip} onClipChange={changeClip} />
+            <ClipTimes
+              clip={clip}
+              mediaDurationMs={mediaDurationMs}
+              onClipChange={changeClip}
+              onPlayClip={onPlayClip}
+            />
           ) : (
             <ClipEditor
               peaks={waveform.peaks}
@@ -203,7 +211,7 @@ export function MediaFields({
               onScreenshotMsChange={(ms) =>
                 dispatch({ type: "screenshotMsChanged", ms })
               }
-              controls={<ClipPlayback clip={clip} />}
+              controls={<ClipPlayback clip={clip} onPlay={onPlayClip} />}
             />
           )}
         </fieldset>
@@ -225,18 +233,21 @@ const nudgeMs = 100;
 
 /**
  * The clip's start and end times, each between buttons that move it a tenth of a second earlier or later,
- * with the button that plays the clip beneath them. The end stays within the media once the player knows its length.
+ * with the button that plays the clip beneath them. The end stays within the media once its length is known.
  */
 function ClipTimes({
   clip,
+  mediaDurationMs,
   onClipChange,
+  onPlayClip,
 }: {
   clip: AudioClip;
+  mediaDurationMs: number;
   onClipChange: (clip: AudioClip) => void;
+  onPlayClip: (clip: AudioClip) => void;
 }) {
-  const durationSeconds = useAppSelector(selectPlayerDuration);
   const durationMs =
-    durationSeconds > 0 ? durationSeconds * 1000 : Number.POSITIVE_INFINITY;
+    mediaDurationMs > 0 ? mediaDurationMs : Number.POSITIVE_INFINITY;
   const change = (next: AudioClip) => {
     if (next.start_ms !== clip.start_ms || next.end_ms !== clip.end_ms)
       onClipChange(next);
@@ -261,7 +272,7 @@ function ClipTimes({
           }
         />
       </div>
-      <ClipPlayback clip={clip} />
+      <ClipPlayback clip={clip} onPlay={onPlayClip} />
     </div>
   );
 }
@@ -314,15 +325,20 @@ function NudgeButton({
 }
 
 /** The button that plays the clip on the media player, with the clip's length beside it. */
-function ClipPlayback({ clip }: { clip: AudioClip }) {
-  const dispatch = useAppDispatch();
+function ClipPlayback({
+  clip,
+  onPlay,
+}: {
+  clip: AudioClip;
+  onPlay: (clip: AudioClip) => void;
+}) {
   return (
     <span className="flex items-center gap-1.5">
       {/* Named for the clip, so that screen readers tell it apart from the player's own Play. */}
       <button
         type="button"
         aria-label="Play the clip"
-        onClick={() => dispatch(actions.clipPlayRequested(clip))}
+        onClick={() => onPlay(clip)}
         className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium text-accent-fg pointer-coarse:py-2 hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent"
       >
         <Play className="size-3.5" aria-hidden />

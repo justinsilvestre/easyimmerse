@@ -12,7 +12,7 @@ import { flashcardRetiming } from "./flashcardRetiming.ts";
 import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
 
 /**
- * The flashcards made from one media file, as the store holds them, with the card open in the form and the ways to edit, save, close and delete it.
+ * The flashcards made from one media file, as the store holds them, with the card open in the form and the ways to open a card and retime the open one.
  * The waveform draws each card with the content the app holds for it; its handles edit only the open card.
  */
 export function useMediaFlashcards(projectId: string, mediaFileId: string) {
@@ -38,16 +38,12 @@ export function useMediaFlashcards(projectId: string, mediaFileId: string) {
     form,
     /** The waveform segment of the open card, the only one whose clip and screenshot time can be dragged, or null when no card is open. */
     editedSegmentId: form && segmentIdOf(form.card),
-    edit,
     open,
     /** Opens the card made from the cue at `cueIndex` of the target-language subtitles, when there is one. */
     openForCue: (cueIndex: number) => {
       const card = flashcards.find((listed) => listed.cue_index === cueIndex);
       if (card) open(card.id);
     },
-    save: () => dispatch(actions.flashcardSaveRequested()),
-    close: () => dispatch(actions.flashcardClosed()),
-    remove: () => dispatch(actions.flashcardDeleteRequested()),
     ...flashcardRetiming(form, edit),
   };
 }

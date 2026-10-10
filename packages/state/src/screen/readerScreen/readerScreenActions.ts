@@ -1,8 +1,8 @@
 import type { ReaderLocation } from "../../storedPlaces/readingLocation.ts";
 import type { ItemSpan } from "../itemSpan.ts";
-import type { ReaderPanel } from "./readerScreenState.ts";
+import type { PageInfo, ReaderPanel } from "./readerScreenState.ts";
 
-/** The action creators of the reader: its jumps, panels, chrome and search, and the paragraphs it measured near the view. */
+/** The action creators of the reader: its jumps, panels, chrome and search, and the paragraphs and the page it measured in view. */
 export const readerScreenActions = {
   /** The user moved to another place in the book, as by the contents or the progress bar. */
   readerJumped: (mediaFileId: string, location: ReaderLocation) =>
@@ -27,6 +27,9 @@ export const readerScreenActions = {
   /** The paragraphs near the view, as the reader measured them. */
   readerNearSpanMeasured: (span: ItemSpan | null) =>
     ({ type: "readerNearSpanMeasured", span }) as const,
+  /** The page in view in the paged layout, as the reader measured it. */
+  readerPageMeasured: (pageInfo: PageInfo) =>
+    ({ type: "readerPageMeasured", pageInfo }) as const,
 };
 
 /** An action of the reader. */
