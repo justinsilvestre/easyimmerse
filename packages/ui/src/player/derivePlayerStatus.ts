@@ -1,9 +1,9 @@
-import type { ServerConfig } from "@easyimmerse/backend";
 import {
   buildAuthorizationHeader,
   buildConversionFileUrl,
   buildMediaStreamUrl,
 } from "@easyimmerse/backend";
+import type { ServerConfig } from "@easyimmerse/state";
 import type {
   PlaybackResponse,
   TrackSelection,

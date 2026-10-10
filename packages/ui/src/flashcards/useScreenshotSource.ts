@@ -1,4 +1,5 @@
-import { getServerConfig, type ServerConfig } from "@easyimmerse/backend";
+import { getServerConfig } from "@easyimmerse/backend";
+import type { ServerConfig } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
 import { useHasPictures } from "../player/useHasPictures.ts";

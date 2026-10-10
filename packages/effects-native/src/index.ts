@@ -1,6 +1,5 @@
-import type { ServerConfig } from "@easyimmerse/backend";
 import { createWebEffects } from "@easyimmerse/effects-web";
-import type { Effects, PlayerRegistry } from "@easyimmerse/state";
+import type { Effects, PlayerRegistry, ServerConfig } from "@easyimmerse/state";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { desktopDictionaryExtensions } from "./desktopDictionaryExtensions.ts";

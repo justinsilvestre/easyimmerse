@@ -1,5 +1,6 @@
-import type { BackendClient, ServerConfig } from "@easyimmerse/backend";
+import type { BackendClient } from "@easyimmerse/backend";
 import { backendStoreParts, configureBackend } from "@easyimmerse/backend";
+import type { ServerConfig } from "@easyimmerse/state";
 import {
   createAppStore,
   createPlayerRegistry,

@@ -1,5 +1,9 @@
-import type { BackendClient, ServerConfig } from "@easyimmerse/backend";
-import type { BrowserFileRegistry, Theme } from "@easyimmerse/state";
+import type { BackendClient } from "@easyimmerse/backend";
+import type {
+  BrowserFileRegistry,
+  ServerConfig,
+  Theme,
+} from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
 import type { Decorator } from "@storybook/react-vite";
 import { type ReactNode, useEffect, useState } from "react";

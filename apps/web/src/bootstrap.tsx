@@ -1,4 +1,4 @@
-import type { BackendClient, ServerConfig } from "@easyimmerse/backend";
+import type { BackendClient } from "@easyimmerse/backend";
 import {
   backendStoreParts,
   configureBackend,
@@ -7,7 +7,7 @@ import {
   resolveServerConfig,
 } from "@easyimmerse/backend";
 import { createWebEffects } from "@easyimmerse/effects-web";
-import type { EnhancerComposer } from "@easyimmerse/state";
+import type { EnhancerComposer, ServerConfig } from "@easyimmerse/state";
 import {
   createAppStore,
   createBrowserFileRegistry,

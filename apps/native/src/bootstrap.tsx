@@ -1,4 +1,3 @@
-import type { ServerConfig } from "@easyimmerse/backend";
 import {
   backendStoreParts,
   configureBackend,
@@ -6,6 +5,7 @@ import {
   resolveServerConfig,
 } from "@easyimmerse/backend";
 import { createNativeEffects } from "@easyimmerse/effects-native";
+import type { ServerConfig } from "@easyimmerse/state";
 import { createAppStore, createPlayerRegistry } from "@easyimmerse/state";
 import { AppRoot } from "@easyimmerse/ui";
 import { createRoot } from "react-dom/client";

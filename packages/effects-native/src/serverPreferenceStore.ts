@@ -1,5 +1,5 @@
-import type { ServerConfig } from "@easyimmerse/backend";
 import type { PreferenceStore } from "@easyimmerse/effects-web";
+import type { ServerConfig } from "@easyimmerse/state";
 
 /** Persists preferences through the embedded server's `/preferences/{key}` routes. */
 export function createServerPreferenceStore(

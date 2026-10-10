@@ -60,6 +60,7 @@ export {
   selectPlayer,
   selectPlayerDuration,
 } from "./screen/screenSelectors.ts";
+export type { ServerConfig } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
 export {
   selectPlaybackPosition,

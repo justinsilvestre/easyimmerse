@@ -1,5 +1,5 @@
+import type { ServerConfig } from "@easyimmerse/state";
 import type { BackendClient } from "./backendClient.ts";
-import type { ServerConfig } from "./resolveServerConfig.ts";
 
 let configuredClient: BackendClient | null = null;
 let configuredServer: ServerConfig | null = null;

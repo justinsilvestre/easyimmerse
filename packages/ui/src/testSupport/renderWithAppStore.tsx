@@ -1,5 +1,5 @@
-import type { BackendClient, ServerConfig } from "@easyimmerse/backend";
-import type { BrowserFileRegistry } from "@easyimmerse/state";
+import type { BackendClient } from "@easyimmerse/backend";
+import type { BrowserFileRegistry, ServerConfig } from "@easyimmerse/state";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { AppStoreProviders } from "./AppStoreProviders.tsx";
