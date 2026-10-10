@@ -1,6 +1,9 @@
 /** A stretch of the media the player holds ready, in seconds. */
 export type BufferedRange = { startSeconds: number; endSeconds: number };
 
+/** A failure of the media element, which belongs to the source it happened on: a new source starts clean. */
+export type PlayerFailure = { url: string; cause: string };
+
 /** The player of the open media file as the controls show it. Its volume, mute and speed are among the preferences. */
 export type PlayerState = {
   currentTimeSeconds: number;
@@ -11,6 +14,8 @@ export type PlayerState = {
   isPlaying: boolean;
   /** Where the last seek went, or null while the player has not sought since the file opened. */
   lastSeekSeconds: number | null;
+  /** The media element's last failure, shown while the source it happened on stays. */
+  failure: PlayerFailure | null;
 };
 
 /** The player before it has loaded a file. */
@@ -20,4 +25,5 @@ export const initialPlayerState: PlayerState = {
   buffered: [],
   isPlaying: false,
   lastSeekSeconds: null,
+  failure: null,
 };

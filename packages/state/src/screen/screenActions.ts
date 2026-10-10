@@ -28,6 +28,9 @@ export const screenActions = {
   /** The player has started a seek to a time, whether the app asked for it or not. */
   playerSeeking: (seconds: number) =>
     ({ type: "playerSeeking", seconds }) as const,
+  /** The media element could not play the source at `url`, for the reason given in `cause`. */
+  playerFailed: (url: string, cause: string) =>
+    ({ type: "playerFailed", url, cause }) as const,
   /** A flashcard opened in the editor, with its clip, or null when it has none. Transitional until the open card is in the store. */
   editedClipOpened: (clip: AudioClip | null) =>
     ({ type: "editedClipOpened", clip }) as const,

@@ -1,6 +1,9 @@
+import { actions, selectPlayerFailure } from "@easyimmerse/state";
 import type { Rational } from "@easyimmerse/types";
 import { Music } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef } from "react";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { MediaElement } from "./MediaElement.tsx";
 import { PlayerFailure } from "./PlayerFailure.tsx";
 import type { PlayerSource } from "./PlayerSource.ts";
@@ -61,9 +64,6 @@ function PlayerBody({
   }
 }
 
-/** A failure belongs to the source it happened on; a new source starts clean. */
-type SourceFailure = { url: string; cause: string };
-
 /** The video, or the artwork of an audio file, filling the stage and marked as its picture, which the media screen makes clickable. */
 function PlayerMedia({
   name,
@@ -77,7 +77,10 @@ function PlayerMedia({
   hasVideo: boolean;
 }) {
   const elementRef = useRef<HTMLVideoElement>(null);
-  const [failure, setFailure] = useState<SourceFailure | null>(null);
+  const dispatch = useAppDispatch();
+  const failure = useAppSelector((state) =>
+    selectPlayerFailure(state, source.url),
+  );
   return (
     <>
       <div
@@ -89,13 +92,15 @@ function PlayerMedia({
           frameRate={frameRate}
           hasVideo={hasVideo}
           elementRef={elementRef}
-          onFailure={(cause) => setFailure({ url: source.url, cause })}
+          onFailure={(cause) =>
+            dispatch(actions.playerFailed(source.url, cause))
+          }
         />
         {!hasVideo && <AudioArtwork name={name} />}
       </div>
-      {failure !== null && failure.url === source.url && (
+      {failure !== null && (
         <div className="absolute inset-x-0 top-12 flex justify-center px-4">
-          <PlayerFailure cause={failure.cause} />
+          <PlayerFailure cause={failure} />
         </div>
       )}
     </>

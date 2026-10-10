@@ -10,6 +10,7 @@ import {
   selectPendingFilePick,
   selectPlayer,
   selectPlayerDuration,
+  selectPlayerFailure,
 } from "./screenSelectors.ts";
 
 const parseSource = { kind: "inline", text: "" } as const;
@@ -46,6 +47,7 @@ describe("screenSelectors", () => {
       buffered: [],
       isPlaying: false,
       lastSeekSeconds: null,
+      failure: null,
     });
   });
 
@@ -83,5 +85,33 @@ describe("screenSelectors", () => {
       ),
     };
     expect(selectOfflineParseFailed(failed)).toBe(true);
+  });
+
+  describe("selectPlayerFailure", () => {
+    const failed = {
+      app: stateAfter(
+        actions.openMediaFileRequested("p1", "m1"),
+        actions.playerFailed("a.mp4", "It is damaged."),
+      ),
+    };
+
+    it("returns the cause of a failure on the source", () => {
+      expect(selectPlayerFailure(failed, "a.mp4")).toBe("It is damaged.");
+    });
+
+    it("returns null for another source", () => {
+      expect(selectPlayerFailure(failed, "b.m3u8")).toBeNull();
+    });
+
+    it("returns null once another media file opens", () => {
+      const reopened = {
+        app: stateAfter(
+          actions.openMediaFileRequested("p1", "m1"),
+          actions.playerFailed("a.mp4", "It is damaged."),
+          actions.openMediaFileRequested("p1", "m2"),
+        ),
+      };
+      expect(selectPlayerFailure(reopened, "a.mp4")).toBeNull();
+    });
   });
 });

@@ -32,6 +32,14 @@ describe("updatePlayer", () => {
     expect(screen.player.lastSeekSeconds).toBe(4);
   });
 
+  it("records the failure on a source for playerFailed", () => {
+    const [screen] = apply(actions.playerFailed("a.mp4", "It is damaged."));
+    expect(screen.player.failure).toEqual({
+      url: "a.mp4",
+      cause: "It is damaged.",
+    });
+  });
+
   it("stores the current time for playerTimeChanged", () => {
     const [screen] = apply(actions.playerTimeChanged(3));
     expect(screen.player.currentTimeSeconds).toBe(3);

@@ -121,6 +121,7 @@ export {
   selectPendingFilePick,
   selectPlayer,
   selectPlayerDuration,
+  selectPlayerFailure,
 } from "./screen/screenSelectors.ts";
 export type {
   RequestFailure,

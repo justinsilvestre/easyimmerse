@@ -16,6 +16,15 @@ export const selectCurrentTime = (state: RootState) =>
 export const selectPlayerDuration = (state: RootState) =>
   selectPlayer(state).durationSeconds;
 
+/** Returns why the player failed on a source, or null when it has not failed on that source. */
+export const selectPlayerFailure = (
+  state: RootState,
+  url: string,
+): string | null => {
+  const { failure } = selectPlayer(state);
+  return failure !== null && failure.url === url ? failure.cause : null;
+};
+
 /** Tells whether the platform's file picker is open for a subtitles file. */
 export const selectPendingFilePick = (state: RootState) =>
   state.app.screen.dialog?.kind === "filePick";

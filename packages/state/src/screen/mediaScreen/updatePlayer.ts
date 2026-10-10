@@ -21,6 +21,13 @@ export function updatePlayer(
       return [withPlayer(screen, { buffered: action.buffered }), []];
     case "playerPlayingChanged":
       return [withPlayer(screen, { isPlaying: action.isPlaying }), []];
+    case "playerFailed":
+      return [
+        withPlayer(screen, {
+          failure: { url: action.url, cause: action.cause },
+        }),
+        [],
+      ];
     case "playToggleRequested":
       return [screen, [{ type: "togglePlayer" }]];
     case "playRequested":
