@@ -1,6 +1,6 @@
+import type { PageInfo } from "@easyimmerse/state";
 import clsx from "clsx";
 import { useState } from "react";
-import type { PageInfo } from "./PagedChapter.tsx";
 
 /** The steps of the progress slider. */
 const sliderSteps = 1000;

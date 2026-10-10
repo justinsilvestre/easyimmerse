@@ -1,3 +1,4 @@
+import type { PageInfo } from "@easyimmerse/state";
 import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -26,16 +27,14 @@ import { useWheelTurns } from "./useWheelTurns.ts";
 /** Turns the pages of the chapter on screen. */
 export type PageTurner = { next: () => void; previous: () => void };
 
-export type PageInfo = { page: number; pageCount: number };
-
 /** The space between columns, and between pages, in multiples of the font size. */
 const gapEm = 3;
 
 /**
  * Lays a chapter, or a section of a long one, out in pages of one or two columns,
  * which the reader turns by keyboard, swipe, scroll wheel, or the arrows beside the page.
- * The page is found again from the reading location whenever the layout changes,
- * so that resizing the window or the text keeps the reader's place.
+ * The page shown is the one that holds the reading location, found again whenever the location or the layout changes,
+ * so that resizing the window or the text keeps the reader's place. Turning a page reports the location of its first character.
  */
 export function PagedChapter({
   chapterIndex,
@@ -45,22 +44,22 @@ export function PagedChapter({
   maxColumnWidthEm,
   ref,
   onLocationChange,
-  onPageChange,
+  onPageMeasured,
   onPastEnd,
   onBeforeStart,
   children,
 }: {
   chapterIndex: number;
-  /** The reader's place, which the pages are turned to when they are laid out and after each jump. */
+  /** The reader's place, which the pages are turned to. */
   location: ReaderLocation;
-  /** Changes with each jump to `location`. */
+  /** Changes with each jump to `location`, which shows its page at once rather than sliding to it. */
   jumpCount: number;
   /** Changes whenever a preference that moves the text changes, such as the font size. */
   layoutKey: string;
   maxColumnWidthEm: number;
   ref?: Ref<PageTurner>;
   onLocationChange: (location: ReaderLocation) => void;
-  onPageChange: (info: PageInfo) => void;
+  onPageMeasured: (info: PageInfo) => void;
   onPastEnd: () => void;
   onBeforeStart: () => void;
   /** The chapter's text. */
@@ -71,8 +70,8 @@ export function PagedChapter({
   const size = useElementSize(viewport);
   const fontsLoaded = useFontsLoaded();
   const [layout, setLayout] = useState<PageLayout | null>(null);
-  const [view, setView] = useState({ page: 0, pageCount: 1, animates: false });
-  const reportsLocation = useRef(false);
+  const [view, setView] = useState<PageInfo>({ page: 0, pageCount: 1 });
+  const [animates, setAnimates] = useState(false);
 
   // Measure the font to size the columns. The key and size are what make the measurement stale.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
@@ -86,33 +85,33 @@ export function PagedChapter({
     );
   }, [size, layoutKey, maxColumnWidthEm, fontsLoaded]);
 
-  // Once the columns are laid out, count the pages and find the reader's place among them, and again after each jump.
-  // The location is read here but not followed, since the chapter's own reports move it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
+  // A new layout or a jump shows its page at once; only a turn slides to the next page.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the dependencies are what end a slide
+  useLayoutEffect(() => setAnimates(false), [layout, size.height, jumpCount]);
+
+  // Once the columns are laid out, count the pages and find the reader's place among them.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the height moves the text without changing the layout
   useLayoutEffect(() => {
     const text = pagedText(columns.current, layout);
     if (!text) return;
     setView({
       page: pageOfLocation(text, location),
       pageCount: pageCountOf(text),
-      animates: false,
     });
-  }, [layout, size.height, jumpCount]);
+  }, [layout, size.height, location]);
 
-  const reportView = useEffectEvent((shown: typeof view) => {
-    onPageChange({ page: shown.page, pageCount: shown.pageCount });
-    const text = pagedText(columns.current, layout);
-    if (!reportsLocation.current || !text) return;
-    reportsLocation.current = false;
-    onLocationChange(locationOfPage(text, shown.page, chapterIndex));
-  });
-  useEffect(() => reportView(view), [view]);
+  const reportPage = useEffectEvent(onPageMeasured);
+  useEffect(() => {
+    reportPage(view);
+  }, [view]);
 
   const turnTo = (page: number) => {
+    const text = pagedText(columns.current, layout);
     if (page >= view.pageCount) return onPastEnd();
     if (page < 0) return onBeforeStart();
-    reportsLocation.current = true;
-    setView({ ...view, page, animates: true });
+    if (!text) return;
+    setAnimates(true);
+    onLocationChange(locationOfPage(text, page, chapterIndex));
   };
   const turner = {
     next: () => turnTo(view.page + 1),
@@ -146,7 +145,7 @@ export function PagedChapter({
               width: layout?.pageWidth,
               transform: `translateX(${offset}px)`,
               transition:
-                view.animates && !swipe.isDragging
+                animates && !swipe.isDragging
                   ? "transform 320ms cubic-bezier(0.2, 0.7, 0.2, 1)"
                   : undefined,
             }}

@@ -1,7 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { ReaderScreenState } from "./readerScreenState.ts";
 
-/** Opens and closes the reader's panels and chrome, keeps its search and measured span, and counts its jumps. */
+/** Opens and closes the reader's panels and chrome, keeps its search and what it measured, and counts its jumps. */
 export function updateReaderScreen(
   reader: ReaderScreenState,
   action: AppAction,
@@ -39,6 +39,8 @@ export function updateReaderScreen(
       };
     case "readerNearSpanMeasured":
       return { ...reader, nearSpan: action.span };
+    case "readerPageMeasured":
+      return { ...reader, pageInfo: action.pageInfo };
     default:
       return reader;
   }
