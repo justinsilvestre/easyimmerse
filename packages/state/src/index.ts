@@ -40,6 +40,9 @@ export {
   type StatusLineSave,
   selectStatusLineSaves,
 } from "./flashcards/selectStatusLineSaves.ts";
+export type { KeyBinding, KeyPress } from "./keys/keyBinding.ts";
+export { selectMediaKeyBinding } from "./keys/selectMediaKeyBinding.ts";
+export { selectReaderKeyBinding } from "./keys/selectReaderKeyBinding.ts";
 export { selectNotices } from "./notices/noticesSelectors.ts";
 export type {
   Notice,
