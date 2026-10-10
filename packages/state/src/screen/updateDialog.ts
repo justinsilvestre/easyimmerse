@@ -1,5 +1,4 @@
 import type { AppAction } from "../app/appAction.ts";
-import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
 import { mainScreenMoveOf } from "../route/mainScreenMoveOf.ts";
 import { settingsPageOf } from "../route/route.ts";
@@ -7,6 +6,7 @@ import { routeAfter } from "../route/updateRoute.ts";
 import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import { removeDictionary } from "./dictionaryRemoval/removeDictionary.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
+import type { PlaybackApp } from "./mediaScreen/playbackApp.ts";
 import { updatePlaybackDialog } from "./mediaScreen/updatePlaybackDialog.ts";
 import type { ScreenState } from "./screenState.ts";
 
@@ -22,7 +22,7 @@ const subtitleFileExtensions: readonly string[] = [".srt", ".vtt"];
 export function updateDialog(
   dialog: DialogState,
   action: AppAction,
-  app: Pick<AppState, "route" | "screen" | "preferences">,
+  app: PlaybackApp,
 ) {
   const [next, effects] = dialogAfter(dialog, action, app);
   return isLeftBy(next, action, app)
@@ -35,11 +35,7 @@ export function updateDialog(
  * Opens and closes the media screen's subtitle appearance dialog, and the question whether to remove a dictionary,
  * which removes the dictionary once confirmed. The media screen's playback dialogs follow `updatePlaybackDialog`.
  */
-function dialogAfter(
-  dialog: DialogState,
-  action: AppAction,
-  app: Pick<AppState, "route" | "screen" | "preferences">,
-) {
+function dialogAfter(dialog: DialogState, action: AppAction, app: PlaybackApp) {
   switch (action.type) {
     case "subtitleFilePickRequested":
       return updated(
@@ -83,7 +79,7 @@ function dialogAfter(
 function isLeftBy(
   dialog: DialogState,
   action: AppAction,
-  app: Pick<AppState, "route" | "screen" | "preferences">,
+  app: PlaybackApp,
 ): boolean {
   switch (dialog?.kind) {
     case "trackChoice":

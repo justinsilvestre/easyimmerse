@@ -3,9 +3,9 @@ export const settingsActions = {
   /** The user pressed Remove on a dictionary, which asks before removing it. */
   dictionaryRemovalRequested: (dictionaryId: string) =>
     ({ type: "dictionaryRemovalRequested", dictionaryId }) as const,
-  /** The user confirmed that the dictionary is to be removed. */
-  dictionaryRemovalConfirmed: (dictionaryId: string) =>
-    ({ type: "dictionaryRemovalConfirmed", dictionaryId }) as const,
+  /** The user confirmed that the dictionary they were asked about is to be removed. */
+  dictionaryRemovalConfirmed: () =>
+    ({ type: "dictionaryRemovalConfirmed" }) as const,
   /** The user declined to remove the dictionary they were asked about. */
   dictionaryRemovalCancelled: () =>
     ({ type: "dictionaryRemovalCancelled" }) as const,

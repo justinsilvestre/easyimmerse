@@ -1,3 +1,4 @@
+import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { forgetFailedSave } from "./failedSaveKeeping.ts";
@@ -73,7 +74,7 @@ function isUndoOffered(
 
 /** The waiting Retries of a flashcard other than the request that just landed, which that request has made pointless. */
 function selectWaitingRetries(
-  app: FlashcardApp,
+  app: Pick<AppState, "operations">,
   flashcardId: string,
   landedId: string,
 ): readonly string[] {

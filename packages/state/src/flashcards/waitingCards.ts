@@ -1,4 +1,5 @@
 import type { AppAction } from "../app/appAction.ts";
+import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import type { RequestRecord } from "../operations/operations.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
@@ -86,7 +87,7 @@ function release(
   ];
 }
 
-function selectHeldSaves(app: FlashcardApp): HeldSave[] {
+function selectHeldSaves(app: Pick<AppState, "operations">): HeldSave[] {
   return app.operations.requests.flatMap(heldSaveOf);
 }
 

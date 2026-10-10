@@ -8,6 +8,7 @@ import {
   settleOpening,
 } from "./failedSaveOpening.ts";
 import { retryAllFailedSaves, retryFailedSave } from "./failedSaveRetry.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import { formDiscardedKeyPrefix, withdraw } from "./flashcardNotices.ts";
 import { sendFlashcardRequest } from "./flashcardRequests.ts";
 import { undoRequest } from "./flashcardSaves.ts";
@@ -22,13 +23,19 @@ import {
   sendLateCard,
 } from "./waitingCards.ts";
 
+/** The slices of the app state that the flashcard commands read: the flashcard rules' slices, and the notices shown. */
+type FlashcardCommandsApp = FlashcardApp & Pick<AppState, "notices">;
+
 /**
  * Returns the flashcard requests and notices an action asks for outside the form: flashcards from words saved at once
  * or held for their lookup, the outcomes of flashcard requests, and the failed saves' Retry, Open and Discard.
  * The flashcards keep no state of their own.
  * Each request goes in its flashcard's scope with a time limit, under the first id free for its flashcard.
  */
-export function flashcardCommands(action: AppAction, app: AppState) {
+export function flashcardCommands(
+  action: AppAction,
+  app: FlashcardCommandsApp,
+) {
   return [
     ...saveStarted(action, app),
     ...takeFinished(action, app),
@@ -38,7 +45,7 @@ export function flashcardCommands(action: AppAction, app: AppState) {
   ];
 }
 
-function answer(action: AppAction, app: AppState) {
+function answer(action: AppAction, app: FlashcardCommandsApp) {
   switch (action.type) {
     case "flashcardFieldsWritten":
       return fillWaitingCards(action.requestId, action.fields, app);
@@ -71,7 +78,7 @@ function answer(action: AppAction, app: AppState) {
 }
 
 /** Withdraws, as the screen closes, the undo toasts of closed forms, since their Undo needs the form. */
-function withdrawFormNotices(action: AppAction, app: AppState) {
+function withdrawFormNotices(action: AppAction, app: FlashcardCommandsApp) {
   if (mainScreenMoveOf(app, action)?.from.screen !== "media") return [];
   return app.notices.shown.flatMap(({ key }) =>
     key?.startsWith(formDiscardedKeyPrefix) ? [withdraw(key)] : [],

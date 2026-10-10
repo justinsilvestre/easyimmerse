@@ -121,7 +121,7 @@ describe("updateDialog", () => {
     it("closes the question once the removal is confirmed", () => {
       const [dialog] = applyDialog(
         asking,
-        actions.dictionaryRemovalConfirmed("d1"),
+        actions.dictionaryRemovalConfirmed(),
       );
       expect(dialog).toBeNull();
     });
@@ -129,7 +129,7 @@ describe("updateDialog", () => {
     it("removes the dictionary once its removal is confirmed", () => {
       const [, effects] = applyDialog(
         asking,
-        actions.dictionaryRemovalConfirmed("d1"),
+        actions.dictionaryRemovalConfirmed(),
       );
       expect(effects).toEqual([
         {
@@ -143,7 +143,7 @@ describe("updateDialog", () => {
     it("removes no dictionary for a confirmation when no question is open", () => {
       const [, effects] = applyDialog(
         null,
-        actions.dictionaryRemovalConfirmed("d1"),
+        actions.dictionaryRemovalConfirmed(),
       );
       expect(effects).toEqual([]);
     });

@@ -82,7 +82,7 @@ export function DictionariesView({
   onMove?: (dictionaryId: string, direction: "up" | "down") => void;
   /** Asks whether to remove a dictionary. */
   onRemove: (dictionaryId: string) => void;
-  onConfirmRemoval: (dictionaryId: string) => void;
+  onConfirmRemoval: () => void;
   onCancelRemoval: () => void;
   onDismissUnsupportedFile: () => void;
   onDismissImportFailure: () => void;
@@ -184,7 +184,7 @@ export function DictionariesView({
       {confirmingRemovalOf && (
         <RemoveDictionaryDialog
           title={confirmingRemovalOf.title}
-          onRemove={() => onConfirmRemoval(confirmingRemovalOf.id)}
+          onRemove={onConfirmRemoval}
           onCancel={onCancelRemoval}
         />
       )}

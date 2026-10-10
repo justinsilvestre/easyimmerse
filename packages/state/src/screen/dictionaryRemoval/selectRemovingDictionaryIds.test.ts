@@ -8,7 +8,7 @@ const openDictionaries = actions.navigated({ type: "openDictionaries" });
 const removalOfD1 = [
   openDictionaries,
   actions.dictionaryRemovalRequested("d1"),
-  actions.dictionaryRemovalConfirmed("d1"),
+  actions.dictionaryRemovalConfirmed(),
 ];
 
 describe("selectRemovingDictionaryIds", () => {

@@ -36,9 +36,7 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
       onRemove={(dictionaryId) =>
         dispatch(actions.dictionaryRemovalRequested(dictionaryId))
       }
-      onConfirmRemoval={(dictionaryId) =>
-        dispatch(actions.dictionaryRemovalConfirmed(dictionaryId))
-      }
+      onConfirmRemoval={() => dispatch(actions.dictionaryRemovalConfirmed())}
       onCancelRemoval={() => dispatch(actions.dictionaryRemovalCancelled())}
       onDismissUnsupportedFile={dismissAlert}
       onDismissImportFailure={dismissAlert}

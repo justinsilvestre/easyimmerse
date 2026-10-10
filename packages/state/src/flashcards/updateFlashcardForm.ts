@@ -12,6 +12,7 @@ import {
   openingSettledBy,
 } from "./failedSaveOpeningRequests.ts";
 import { selectFailedSave } from "./failedSaveSelectors.ts";
+import type { FlashcardApp } from "./flashcardApp.ts";
 import { newCard, withScreenshot } from "./flashcardCard.ts";
 import { type FlashcardForm, openedForm } from "./flashcardForm.ts";
 import { flashcardStartedBy } from "./flashcardStartedBy.ts";
@@ -33,6 +34,9 @@ import { settleInForm } from "./formSettling.ts";
 import { isCardOf } from "./latestFlashcard.ts";
 import { isFlashcardSettled } from "./settleFlashcardRequest.ts";
 
+/** The slices of the app state that the form reads: the flashcard rules' slices, and the server's capabilities for pictures. */
+type FlashcardFormApp = FlashcardApp & Pick<AppState, "server">;
+
 /**
  * Updates the flashcard-editing form of the media screen, returning with it the requests and notices it asks for,
  * and the announcement of any card it opens.
@@ -40,9 +44,8 @@ import { isFlashcardSettled } from "./settleFlashcardRequest.ts";
 export function updateFlashcardForm(
   form: FlashcardForm | null,
   action: AppAction,
-  app: Pick<AppState, "operations" | "route" | "screen" | "server">,
+  app: FlashcardFormApp,
 ) {
-  const route = selectShownMediaFile(app);
   if (action.type === "mediaScreenLeft")
     return updated(null, ...leaveForm(form, app));
   const finished = lookupFlashcardFinishedBy(
@@ -92,7 +95,7 @@ export function updateFlashcardForm(
 function settled(
   form: FlashcardForm | null,
   action: AppAction,
-  app: Pick<AppState, "operations" | "route" | "screen" | "server">,
+  app: FlashcardFormApp,
 ) {
   if (isFlashcardSettled(action))
     return updated(form && settleInForm(form, action));

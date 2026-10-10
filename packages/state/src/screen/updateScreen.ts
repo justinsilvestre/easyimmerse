@@ -71,7 +71,7 @@ function updateShownScreen(
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);
   if (route.screen === "newProject" || route.screen === "projectSettings")
-    return updateProjectForm(main, action, route, app);
+    return updated(main, ...updateProjectForm(route, action, app));
   return updated(main);
 }
 
