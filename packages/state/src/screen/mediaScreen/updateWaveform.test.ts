@@ -42,10 +42,10 @@ const settled = (
     outcome,
   );
 
-const loaded: RequestOutcome<"getWaveformWindow"> = {
+const loaded = (startMs: number): RequestOutcome<"getWaveformWindow"> => ({
   ok: true,
-  data: { start_ms: 0, peaks: [1, 2, 3] },
-};
+  data: { start_ms: startMs, peaks: [1, 2, 3] },
+});
 
 const failed = { ok: false, error: { status: 500, message: "down" } } as const;
 
@@ -66,11 +66,11 @@ const waveformAfter = (...after: AppAction[]): WaveformState =>
 /** The first window failed, and every other wanted window has loaded. */
 const failedFirst = [
   settled(90_000, failed),
-  settled(30_000, loaded),
-  settled(60_000, loaded),
-  settled(120_000, loaded),
-  settled(0, loaded),
-  settled(150_000, loaded),
+  settled(30_000, loaded(30_000)),
+  settled(60_000, loaded(60_000)),
+  settled(120_000, loaded(120_000)),
+  settled(0, loaded(0)),
+  settled(150_000, loaded(150_000)),
 ];
 
 const effectsOf = (waveform: WaveformState, action: AppAction) =>
@@ -110,13 +110,16 @@ describe("updateWaveform", () => {
   });
 
   it("requests the next wanted window once one has loaded", () => {
-    expect(effectsOf(waveformAfter(), settled(90_000, loaded))).toEqual([
-      sent(120_000),
-    ]);
+    expect(effectsOf(waveformAfter(), settled(90_000, loaded(90_000)))).toEqual(
+      [sent(120_000)],
+    );
   });
 
   it("does not request a loaded window again", () => {
-    const allLoaded = [settled(90_000, loaded), ...failedFirst.slice(1)];
+    const allLoaded = [
+      settled(90_000, loaded(90_000)),
+      ...failedFirst.slice(1),
+    ];
     expect(effectsOf(waveformAfter(...allLoaded), viewChanged)).toEqual([]);
   });
 
@@ -130,7 +133,9 @@ describe("updateWaveform", () => {
   });
 
   it("ignores a window it did not request", () => {
-    expect(effectsOf(initialWaveform, settled(90_000, loaded))).toEqual([]);
+    expect(effectsOf(initialWaveform, settled(90_000, loaded(90_000)))).toEqual(
+      [],
+    );
   });
 
   describe("when a window fails", () => {
@@ -155,12 +160,36 @@ describe("updateWaveform", () => {
       expect(effectsOf(waveformAfter(...failedFirst), viewChanged)).toEqual([]);
     });
 
+    it("holds it once a later request succeeds", () => {
+      const waveform = waveformAfter(
+        ...failedFirst,
+        actions.waveformRetryDue("player", 90_000),
+        settled(90_000, loaded(90_000)),
+      );
+      expect(waveform.player.requests[90_000]?.status).toBe("loaded");
+    });
+
     it("requests it again once its retry is due", () => {
       const retry = actions.waveformRetryDue("player", 90_000);
       expect(effectsOf(waveformAfter(...failedFirst), retry)).toEqual([
         sent(90_000),
       ]);
     });
+  });
+
+  it("keeps the requests when the view changes but wants nothing new", () => {
+    const before = waveformAfter();
+    const moved = actions.waveformViewChanged("player", {
+      ...view,
+      focusMs: 95_000,
+    });
+    const [waveform] = updateWaveform(before, moved, route);
+    expect(waveform.player.requests).toBe(before.player.requests);
+  });
+
+  it("requests nothing more once the view is no longer shown", () => {
+    const hidden = waveformAfter(actions.waveformViewChanged("player", null));
+    expect(effectsOf(hidden, settled(90_000, loaded(90_000)))).toEqual([]);
   });
 
   it("ignores a retry for a window that has not failed", () => {

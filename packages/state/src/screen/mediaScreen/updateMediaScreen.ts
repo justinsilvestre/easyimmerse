@@ -2,14 +2,12 @@ import type { SubtitleSelection } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
 import type { Effect } from "../../app/effect.ts";
 import type { PickedFile } from "../../platform/effects.ts";
-import type { MainRoute } from "../../route/route.ts";
+import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import type { PlayerState } from "./playerState.ts";
 import { roleForNewTrack } from "./roleForNewTrack.ts";
 import { updateWaveform } from "./updateWaveform.ts";
-
-type MediaRoute = Extract<MainRoute, { screen: "media" }>;
 
 const subtitlesNotAdded: Effect = {
   type: "showNotification",

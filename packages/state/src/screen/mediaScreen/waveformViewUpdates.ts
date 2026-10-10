@@ -1,7 +1,8 @@
 import type { Effect } from "../../app/effect.ts";
 import { isAborted } from "../../server/isAborted.ts";
 import type { RequestSettled } from "../../server/serverRequest.ts";
-import type { WaveformViewState, WindowRequest } from "./waveformState.ts";
+import type { WaveformViewState } from "./waveformState.ts";
+import { startsWith, withoutWindow, withStatus } from "./waveformState.ts";
 import type { WindowTarget } from "./waveformWindowEffects.ts";
 import {
   retryTimer,
@@ -14,7 +15,7 @@ import {
   waveformWindowMs,
 } from "./waveformWindowPolicy.ts";
 
-/** The end of a window's request. */
+/** The action reporting how a window's request ended. */
 export type WindowSettled = Extract<
   RequestSettled,
   { request: { kind: "getWaveformWindow" } }
@@ -22,10 +23,10 @@ export type WindowSettled = Extract<
 
 type Updated = readonly [WaveformViewState, readonly Effect[]];
 
-/** Takes the new view and requests the windows it lacks. */
+/** Takes the new view and requests the windows it lacks. A null view wants nothing, so nothing more is requested. */
 export function viewChanged(
   state: WaveformViewState,
-  view: WaveformWindowView,
+  view: WaveformWindowView | null,
   target: WindowTarget,
 ): Updated {
   return requestMissing({ ...state, view }, target);
@@ -94,34 +95,4 @@ function requestMissing(
     effects.push(windowRequest(target, start, endMs));
   }
   return [{ ...state, requests }, effects];
-}
-
-function startsWith(
-  state: WaveformViewState,
-  status: WindowRequest["status"],
-): Set<number> {
-  const starts = new Set<number>();
-  for (const [start, request] of Object.entries(state.requests))
-    if (request?.status === status) starts.add(Number(start));
-  return starts;
-}
-
-function withStatus(
-  state: WaveformViewState,
-  start: number,
-  status: WindowRequest["status"],
-): WaveformViewState {
-  const request = state.requests[start] as WindowRequest;
-  return {
-    ...state,
-    requests: { ...state.requests, [start]: { ...request, status } },
-  };
-}
-
-function withoutWindow(
-  state: WaveformViewState,
-  start: number,
-): WaveformViewState {
-  const { [start]: _removed, ...requests } = state.requests;
-  return { ...state, requests };
 }

@@ -1,5 +1,6 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { Effect } from "../../app/effect.ts";
+import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type {
   WaveformState,
@@ -19,13 +20,13 @@ import { windowRequestId } from "./waveformWindowEffects.ts";
 const viewNames: readonly WaveformViewName[] = ["player", "clip"];
 
 /**
- * Requests the windows each waveform view wants, at most three at a time and most urgent first,
- * and requests a failed window again once its retry delay has passed.
+ * Keeps the span the player strip is zoomed to, requests the windows each waveform view wants,
+ * at most three at a time and most urgent first, and requests a failed window again once its retry delay has passed.
  */
 export function updateWaveform(
   waveform: WaveformState,
   action: AppAction,
-  route: WindowTarget["route"],
+  route: MediaRoute,
 ): readonly [WaveformState, readonly Effect[]] {
   switch (action.type) {
     case "waveformZoomed":
@@ -60,7 +61,7 @@ export function updateWaveform(
 /** Cancels the retry timers of both views, for a media screen being replaced. Requests in flight are left to finish into the cache. */
 export function leaveWaveform(
   waveform: WaveformState,
-  route: WindowTarget["route"],
+  route: MediaRoute,
 ): Effect[] {
   return viewNames.flatMap((name) =>
     cancelRetries(waveform[name], { route, name }),

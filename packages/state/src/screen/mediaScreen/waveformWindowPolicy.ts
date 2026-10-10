@@ -1,5 +1,6 @@
 /** Peaks arrive in aligned windows of this length. */
 export const waveformWindowMs = 30_000;
+/** How many peaks a window holds for each second of the media. */
 export const waveformPeaksPerSecond = 100;
 const maxWindowRequestsInFlight = 3;
 /** How long after a failed request a window may be requested again. */
@@ -7,6 +8,7 @@ export const waveformWindowRetryMs = 5_000;
 /** The widest visible span: as many windows as can be kept arriving while the view moves. */
 export const maxVisibleSpanMs = 10 * waveformWindowMs;
 
+/** The stretch of a media file that a waveform view shows, which decides the windows it wants. */
 export type WaveformWindowView = {
   viewStartMs: number;
   viewEndMs: number;

@@ -32,3 +32,36 @@ export const initialWaveform: WaveformState = {
   player: { view: null, requests: {} },
   clip: { view: null, requests: {} },
 };
+
+/** The starts of the view's windows whose requests stand as given. */
+export function startsWith(
+  state: WaveformViewState,
+  status: WindowRequest["status"],
+): Set<number> {
+  const starts = new Set<number>();
+  for (const [start, request] of Object.entries(state.requests))
+    if (request?.status === status) starts.add(Number(start));
+  return starts;
+}
+
+/** The view with one window's request marked as given. */
+export function withStatus(
+  state: WaveformViewState,
+  start: number,
+  status: WindowRequest["status"],
+): WaveformViewState {
+  const request = state.requests[start] as WindowRequest;
+  return {
+    ...state,
+    requests: { ...state.requests, [start]: { ...request, status } },
+  };
+}
+
+/** The view without one window's request, so that the window may be requested again. */
+export function withoutWindow(
+  state: WaveformViewState,
+  start: number,
+): WaveformViewState {
+  const { [start]: _removed, ...requests } = state.requests;
+  return { ...state, requests };
+}

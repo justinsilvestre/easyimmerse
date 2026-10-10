@@ -54,9 +54,11 @@ export const screenActions = {
   /** The user dismissed the alert that a file could not be added. */
   dictionaryImportAlertDismissed: () =>
     ({ type: "dictionaryImportAlertDismissed" }) as const,
-  /** A waveform view now shows a different stretch of the file, or the file's duration became known. */
-  waveformViewChanged: (name: WaveformViewName, view: WaveformWindowView) =>
-    ({ type: "waveformViewChanged", name, view }) as const,
+  /** A waveform view now shows a different stretch of the file, or its duration became known; null once it is no longer shown. */
+  waveformViewChanged: (
+    name: WaveformViewName,
+    view: WaveformWindowView | null,
+  ) => ({ type: "waveformViewChanged", name, view }) as const,
   /** The user zoomed the player's waveform strip to show the given span. */
   waveformZoomed: (spanMs: number) =>
     ({ type: "waveformZoomed", spanMs }) as const,

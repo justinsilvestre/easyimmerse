@@ -8,6 +8,9 @@ export type MainRoute =
   /** A media file of a project, shown on the media screen or, for a book, in the reader. */
   | { screen: "media"; projectId: string; mediaFileId: string };
 
+/** The route of a media file's screen. */
+export type MediaRoute = Extract<MainRoute, { screen: "media" }>;
+
 /** A page of the settings, which open over a main screen. */
 export type SettingsPage = "general" | "dictionaries";
 

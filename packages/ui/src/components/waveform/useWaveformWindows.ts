@@ -10,7 +10,7 @@ import {
 } from "./selectWaveformWindows.ts";
 
 /**
- * Tells the store which stretch of the open media file a waveform view shows,
+ * Tells the store which stretch of the open media file a waveform view shows, and that it shows nothing once unmounted,
  * and returns the peaks windows loaded for that view so far by their start.
  */
 export function useWaveformWindows(
@@ -34,6 +34,12 @@ export function useWaveformWindows(
     focusMs,
     durationMs,
   ]);
+  useEffect(
+    () => () => {
+      dispatch(actions.waveformViewChanged(name, null));
+    },
+    [dispatch, name],
+  );
   return useAppSelector(
     (state) => selectWaveformWindows(state, name),
     haveSameWindows,

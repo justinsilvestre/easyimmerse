@@ -62,10 +62,7 @@ export {
   selectRequestedWaveformSpan,
   selectWaveformRequests,
 } from "./screen/mediaScreen/waveformSelectors.ts";
-export type {
-  WaveformViewName,
-  WindowRequest,
-} from "./screen/mediaScreen/waveformState.ts";
+export type { WaveformViewName } from "./screen/mediaScreen/waveformState.ts";
 export type { WaveformWindowView } from "./screen/mediaScreen/waveformWindowPolicy.ts";
 export {
   maxVisibleSpanMs,

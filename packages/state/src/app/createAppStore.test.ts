@@ -178,9 +178,10 @@ describe("createAppStore", () => {
         ok: false,
         error: { status: 500, message: "down" },
       });
-      await vi.waitFor(() =>
-        expect(server.dispatchedActions).toContainEqual(
-          expect.objectContaining({ id: "media/m1/waveform/player/0" }),
+      await vi.waitUntil(() =>
+        server.dispatchedActions.some(
+          (action) =>
+            "id" in action && action.id === "media/m1/waveform/player/0",
         ),
       );
       return { effects, server };

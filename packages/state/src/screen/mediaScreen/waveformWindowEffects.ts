@@ -1,12 +1,12 @@
 import { actions } from "../../app/appAction.ts";
 import type { Effect } from "../../app/effect.ts";
-import type { MainRoute } from "../../route/route.ts";
+import type { MediaRoute } from "../../route/route.ts";
 import type { WaveformViewName } from "./waveformState.ts";
 import { waveformWindowRetryMs } from "./waveformWindowPolicy.ts";
 
 /** The open media file and the view whose windows are requested. */
 export type WindowTarget = {
-  route: Extract<MainRoute, { screen: "media" }>;
+  route: MediaRoute;
   name: WaveformViewName;
 };
 
