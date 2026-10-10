@@ -37,14 +37,9 @@ function renderClip({
   );
   const playerCalls = () =>
     rendered.effects.calls.filter((call) => call.type.endsWith("Player"));
-  const reportPlayer = (isPlaying: boolean, seconds: number) =>
-    act(() => {
-      rendered.store.dispatch(actions.playerPlayingChanged(isPlaying));
-      rendered.store.dispatch(actions.playerTimeChanged(seconds));
-    });
   const press = (name: string) =>
     fireEvent.click(screen.getByRole("button", { name }));
-  return { edits, playerCalls, reportPlayer, press };
+  return { edits, playerCalls, press };
 }
 
 describe("MediaFields without a waveform", () => {
@@ -115,28 +110,5 @@ describe("MediaFields' Play button", () => {
     expect(
       screen.queryByRole("button", { name: "Play the clip" }),
     ).not.toBeNull();
-  });
-
-  it("pauses the player once playback reaches the clip's end", () => {
-    const { playerCalls, press, reportPlayer } = renderClip();
-    press("Play the clip");
-    reportPlayer(true, 2.5);
-    reportPlayer(true, 3.1);
-    expect(playerCalls().map((call) => call.type)).toEqual([
-      "seekPlayer",
-      "playPlayer",
-      "pausePlayer",
-    ]);
-  });
-
-  it("leaves playback alone once the user has moved away from the clip", () => {
-    const { playerCalls, press, reportPlayer } = renderClip();
-    press("Play the clip");
-    reportPlayer(true, 2.5);
-    reportPlayer(true, 12);
-    expect(playerCalls().map((call) => call.type)).toEqual([
-      "seekPlayer",
-      "playPlayer",
-    ]);
   });
 });

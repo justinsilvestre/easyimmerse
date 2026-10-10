@@ -5,6 +5,7 @@ import type { MediaRoute } from "../../route/route.ts";
 import { updateLookup } from "../lookup/updateLookup.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateClipLoop } from "./updateClipLoop.ts";
+import { updateClipPlayback } from "./updateClipPlayback.ts";
 import { updatePathPlayback } from "./updatePathPlayback.ts";
 import { updatePlayer } from "./updatePlayer.ts";
 import { updateResume } from "./updateResume.ts";
@@ -39,12 +40,13 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
   },
   updateSubtitlePick,
   updateClipLoop,
+  updateClipPlayback,
   updateResume,
   updatePathPlayback,
 ];
 
 /**
- * Updates the media screen: its player, the dictionary pop-up, the clip loop, the resume seek, how a file on the server's disk plays,
+ * Updates the media screen: its player, the dictionary pop-up, the clip loop, the clip Play, the resume seek, how a file on the server's disk plays,
  * the subtitles file picked for it, and its waveform.
  * `app` is the state before the action.
  */

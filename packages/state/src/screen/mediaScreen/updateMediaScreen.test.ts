@@ -32,6 +32,15 @@ describe("updateMediaScreen", () => {
     );
   });
 
+  it("pauses the player at the end of a clip played with its Play button", () => {
+    const clip = { start_ms: 1_750, end_ms: 3_000 };
+    const [, effects] = apply(
+      actions.playerTimeChanged(3.1),
+      actions.clipPlayRequested(clip),
+    );
+    expect(effects).toEqual([{ type: "pausePlayer" }]);
+  });
+
   it("seeks the player for seekRequested", () => {
     const [, effects] = apply(actions.seekRequested(12.5));
     expect(effects).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);

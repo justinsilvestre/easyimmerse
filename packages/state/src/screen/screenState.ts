@@ -19,6 +19,8 @@ export type MediaScreenState = {
   player: PlayerState;
   /** The clip of the flashcard open in the editor while playback loops it; null while nothing loops. */
   loop: AudioClip | null;
+  /** The clip that the editor's Play button started, which pauses the player at its end; null when nothing is to pause. */
+  clipPlayback: AudioClip | null;
   /** The stored position to seek to once the player has loaded the file; null once it is used, or when there is none. */
   pendingResumeMs: number | null;
   /** How a file on the server's disk is to be played; null for a file the browser holds, or until the file's record arrives. */
@@ -98,6 +100,7 @@ export function initialMainScreen(
         kind: "media",
         player: initialPlayerState,
         loop: null,
+        clipPlayback: null,
         pendingResumeMs: storedPlaces.playback[route.mediaFileId] ?? null,
         playback: null,
         pendingSubtitleFile: null,

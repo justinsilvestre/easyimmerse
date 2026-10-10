@@ -34,6 +34,9 @@ export const screenActions = {
   /** The clip of the flashcard open in the editor has new edges. */
   editedClipMoved: (clip: AudioClip) =>
     ({ type: "editedClipMoved", clip }) as const,
+  /** The user asked to play a flashcard's clip from its start, pausing at its end. */
+  clipPlayRequested: (clip: AudioClip) =>
+    ({ type: "clipPlayRequested", clip }) as const,
   /** The flashcard open in the editor has closed. */
   editedClipClosed: () => ({ type: "editedClipClosed" }) as const,
   /** The browser's media support for a file's formats, as measured for its playback plan. */

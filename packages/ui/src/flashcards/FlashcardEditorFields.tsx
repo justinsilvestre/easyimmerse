@@ -1,12 +1,8 @@
-import {
-  actions,
-  selectPlayer,
-  selectPlayerDuration,
-} from "@easyimmerse/state";
+import { actions, selectPlayerDuration } from "@easyimmerse/state";
 import type { AudioClip } from "@easyimmerse/types";
 import clsx from "clsx";
 import { Minus, Play, Plus, X } from "lucide-react";
-import { type ReactNode, useEffect, useId, useRef } from "react";
+import { type ReactNode, useId } from "react";
 import { AutoGrowTextarea } from "../components/AutoGrowTextarea.tsx";
 import { FocusExpandingBox } from "../components/FocusExpandingBox.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -316,14 +312,14 @@ function NudgeButton({
 
 /** The button that plays the clip on the media player, with the clip's length beside it. */
 function ClipPlayback({ clip }: { clip: AudioClip }) {
-  const playClip = usePlayClip(clip);
+  const dispatch = useAppDispatch();
   return (
     <span className="flex items-center gap-1.5">
       {/* Named for the clip, so that screen readers tell it apart from the player's own Play. */}
       <button
         type="button"
         aria-label="Play the clip"
-        onClick={playClip}
+        onClick={() => dispatch(actions.clipPlayRequested(clip))}
         className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium text-accent-fg pointer-coarse:py-2 hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent"
       >
         <Play className="size-3.5" aria-hidden />
@@ -334,46 +330,6 @@ function ClipPlayback({ clip }: { clip: AudioClip }) {
       </span>
     </span>
   );
-}
-
-/** How far before the clip's start the player may report itself and still count as playing the clip. */
-const startToleranceMs = 250;
-/** How far past the clip's end the player may report itself and still be paused there, rather than having been moved on by the user. */
-const endToleranceMs = 1000;
-
-/**
- * Plays the clip on the media player from its start, and pauses the player once playback reaches the clip's end.
- * Playback the user pauses, or moves away from the clip, before then is theirs, and is left to play on.
- */
-function usePlayClip(clip: AudioClip): () => void {
-  const dispatch = useAppDispatch();
-  const { currentTimeSeconds, isPlaying } = useAppSelector(selectPlayer);
-  // "requested" until the player reports that it plays, then "playing" until the clip ends or the user takes over.
-  const playback = useRef<"requested" | "playing" | null>(null);
-  useEffect(() => {
-    if (isPlaying && playback.current === "requested")
-      playback.current = "playing";
-    else if (!isPlaying && playback.current === "playing")
-      playback.current = null;
-  }, [isPlaying]);
-  useEffect(() => {
-    if (playback.current === null) return;
-    const ms = currentTimeSeconds * 1000;
-    if (
-      ms < clip.start_ms - startToleranceMs ||
-      ms > clip.end_ms + endToleranceMs
-    ) {
-      playback.current = null;
-    } else if (ms >= clip.end_ms) {
-      playback.current = null;
-      dispatch(actions.pauseRequested());
-    }
-  }, [currentTimeSeconds, clip.start_ms, clip.end_ms, dispatch]);
-  return () => {
-    playback.current = isPlaying ? "playing" : "requested";
-    dispatch(actions.seekRequested(clip.start_ms / 1000));
-    dispatch(actions.playRequested());
-  };
 }
 
 function ScreenshotThumbnail({
