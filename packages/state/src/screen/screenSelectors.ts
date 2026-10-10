@@ -1,3 +1,4 @@
+import type { Cue } from "@easyimmerse/types";
 import type { RootState } from "../app/createAppStore.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
 
@@ -19,13 +20,23 @@ export const selectPlayerDuration = (state: RootState) =>
 export const selectPendingFilePick = (state: RootState) =>
   state.app.screen.dialog?.kind === "filePick";
 
-/** Returns the subtitles file picked and not yet sent, on the screens that take one. */
-export const selectPendingSubtitleFile = (state: RootState) => {
-  const main = state.app.screen.main;
-  return main.kind === "media" || main.kind === "offline"
-    ? main.pendingSubtitleFile
+const noCues: readonly Cue[] = [];
+
+/** Returns the cues of the subtitles file last parsed on the offline screen. */
+export const selectOfflineCues = (state: RootState) =>
+  state.app.screen.main.kind === "offline"
+    ? state.app.screen.main.cues
+    : noCues;
+
+/** Tells whether the subtitles file last picked on the offline screen could not be parsed. */
+export const selectOfflineParseFailed = (state: RootState) =>
+  state.app.screen.main.kind === "offline" && state.app.screen.main.hasFailed;
+
+/** Returns the subtitles file picked and not yet sent to the open media file. */
+export const selectPendingSubtitleFile = (state: RootState) =>
+  state.app.screen.main.kind === "media"
+    ? state.app.screen.main.pendingSubtitleFile
     : null;
-};
 
 /** Returns the media file picked and not yet added to the open project. */
 export const selectPendingMediaFile = (state: RootState) =>

@@ -59,6 +59,8 @@ export {
 export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
 export {
   selectCurrentTime,
+  selectOfflineCues,
+  selectOfflineParseFailed,
   selectPendingDictionaryFile,
   selectPendingFilePick,
   selectPendingMediaFile,

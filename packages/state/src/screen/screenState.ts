@@ -1,3 +1,4 @@
+import type { Cue } from "@easyimmerse/types";
 import type {
   PickedDictionaryFile,
   PickedFile,
@@ -15,13 +16,19 @@ export type MediaScreenState = {
   pendingSubtitleFile: PickedFile | null;
 };
 
+/** The offline screen's state: the cues of the subtitles file last picked, parsed in the browser when no server is connected. */
+export type OfflineScreenState = {
+  kind: "offline";
+  cues: readonly Cue[];
+  hasFailed: boolean;
+};
+
 /** The main screen's own state, keyed by the route's main screen. The ids it belongs to are in the route. */
 export type MainScreenState =
   | { kind: "home" }
   | { kind: "newProject" }
   | { kind: "projectSettings" }
-  /** A picked subtitles file waiting to be parsed. */
-  | { kind: "offline"; pendingSubtitleFile: PickedFile | null }
+  | OfflineScreenState
   /** A picked media file waiting to be added to the project. */
   | { kind: "project"; pendingMediaFile: PickedMediaFile | null }
   | MediaScreenState;
@@ -50,7 +57,7 @@ export function initialMainScreen(route: MainRoute): MainScreenState {
     case "projectSettings":
       return { kind: route.screen };
     case "offline":
-      return { kind: "offline", pendingSubtitleFile: null };
+      return { kind: "offline", cues: [], hasFailed: false };
     case "project":
       return { kind: "project", pendingMediaFile: null };
     case "media":

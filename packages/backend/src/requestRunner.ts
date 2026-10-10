@@ -50,6 +50,8 @@ export const requestEndpoints = {
       { projectId, request },
       { track: false },
     ),
+  parseTimedText: ({ request }) =>
+    backendApi.endpoints.parseTimedText.initiate(request, { track: false }),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

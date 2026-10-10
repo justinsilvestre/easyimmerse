@@ -1,9 +1,13 @@
+import type { Cue } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
+import type { ServerRequest } from "../server/serverRequest.ts";
 import {
   selectCurrentTime,
+  selectOfflineCues,
+  selectOfflineParseFailed,
   selectPendingDictionaryFile,
   selectPendingFilePick,
   selectPendingMediaFile,
@@ -15,6 +19,13 @@ const pickedMediaFile: PickedMediaFile = {
   name: "a.mp4",
   source: { kind: "path", path: "/a" },
 };
+
+const parseRequest: ServerRequest = {
+  kind: "parseTimedText",
+  request: { source: { kind: "inline", text: "" }, format: null },
+};
+
+const cue: Cue = { index: 1, start_ms: 0, end_ms: 1000, text: "Hi" };
 
 const playing = {
   app: stateAfter(
@@ -59,6 +70,32 @@ describe("screenSelectors", () => {
       ),
     };
     expect(selectPendingMediaFile(chosen)?.name).toBe("a.mp4");
+  });
+
+  it("selectOfflineCues returns the cues of the file parsed offline", () => {
+    const parsed = {
+      app: stateAfter(
+        actions.navigated({ type: "continueOffline" }),
+        actions.requestSettled("offline/parseTimedText", parseRequest, {
+          ok: true,
+          data: { format: "srt", cues: [cue] },
+        }),
+      ),
+    };
+    expect(selectOfflineCues(parsed)).toEqual([cue]);
+  });
+
+  it("selectOfflineParseFailed tells whether the offline parse failed", () => {
+    const failed = {
+      app: stateAfter(
+        actions.navigated({ type: "continueOffline" }),
+        actions.requestSettled("offline/parseTimedText", parseRequest, {
+          ok: false,
+          error: { status: 400, message: "not a subtitles file" },
+        }),
+      ),
+    };
+    expect(selectOfflineParseFailed(failed)).toBe(true);
   });
 
   it("selectPendingDictionaryFile returns the dictionary file waiting to be imported", () => {

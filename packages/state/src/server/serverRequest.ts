@@ -3,8 +3,10 @@ import type {
   AddSubtitleTrackRequest,
   ListMediaFilesResponse,
   MediaFile,
+  ParseTimedTextRequest,
   SubtitleTrack,
   SubtitleTracksResponse,
+  TimedTextTrack,
 } from "@easyimmerse/types";
 import type { Dispatch } from "redux";
 
@@ -18,7 +20,8 @@ export type ServerRequest =
       request: AddSubtitleTrackRequest;
     }
   | { kind: "listMediaFiles"; projectId: string }
-  | { kind: "addMediaFile"; projectId: string; request: AddMediaFileRequest };
+  | { kind: "addMediaFile"; projectId: string; request: AddMediaFileRequest }
+  | { kind: "parseTimedText"; request: ParseTimedTextRequest };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -29,6 +32,7 @@ export type ServerResponses = {
   addSubtitleTrack: SubtitleTrack;
   listMediaFiles: ListMediaFilesResponse;
   addMediaFile: MediaFile;
+  parseTimedText: TimedTextTrack;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

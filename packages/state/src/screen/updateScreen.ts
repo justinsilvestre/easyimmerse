@@ -4,11 +4,11 @@ import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
 import { nextRoute } from "../route/updateRoute.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
+import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
 import { updateProjectScreen } from "./projectScreen/updateProjectScreen.ts";
 import type { MainScreenState, ScreenState } from "./screenState.ts";
 import { initialMainScreen, initialScreen } from "./screenState.ts";
 import { updateDialog } from "./updateDialog.ts";
-import { updatePendingSubtitleFile } from "./updatePendingSubtitleFile.ts";
 import { updateSettings } from "./updateSettings.ts";
 
 /** Updates the screens, starting the main screen over whenever the route moves to a different one. */
@@ -64,7 +64,7 @@ function updateMainScreen(
     case "project":
       return [updateProjectScreen(main, action), []];
     case "offline":
-      return [updatePendingSubtitleFile(main, action), []];
+      return updateOfflineScreen(main, action);
     default:
       return [main, []];
   }
