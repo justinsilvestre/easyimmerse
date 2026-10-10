@@ -183,6 +183,17 @@ export {
   selectPlayerFailure,
 } from "./screen/screenSelectors.ts";
 export type {
+  CachedQueries,
+  CacheEntry,
+  ServerCacheSlice,
+} from "./server/cacheEntry.ts";
+export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
+export { cacheKey } from "./server/cacheKey.ts";
+export {
+  emptyServerCache,
+  serverCacheWith,
+} from "./server/serverCacheWith.ts";
+export type {
   RequestFailure,
   RequestOutcome,
   RequestRunner,

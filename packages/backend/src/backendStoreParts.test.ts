@@ -1,5 +1,6 @@
-import type { RootState } from "@easyimmerse/state";
+import type { RootState, ServerCacheSlice } from "@easyimmerse/state";
 import {
+  cacheEntry,
   createAppStore,
   createBrowserFileRegistry,
   createRecordingEffects,
@@ -49,6 +50,22 @@ describe("createBackendStoreParts", () => {
     const dispatch = store.dispatch as unknown as ThunkCapableDispatch;
     const result = await dispatch(backendApi.endpoints.listProjects.initiate());
     expect(result.data).toEqual({ projects: [] });
+  });
+
+  it("stores query answers where the state package finds them", async () => {
+    const tracksClient: BackendClient = {
+      send: async <T>(_request: BackendRequest) => ({ data: "tracks" as T }),
+    };
+    const store = createAppStore(
+      createRecordingEffects(),
+      createBackendStoreParts(tracksClient, null),
+    );
+    const dispatch = store.dispatch as unknown as ThunkCapableDispatch;
+    const file = { projectId: "p1", mediaFileId: "m1" };
+    await dispatch(backendApi.endpoints.getMediaTracks.initiate(file));
+    const slice = store.getState().backend as ServerCacheSlice;
+    const entry = cacheEntry(slice, "getMediaTracks", file);
+    expect(entry?.data).toBe("tracks");
   });
 
   it("hands the browser file registry to the book query", async () => {

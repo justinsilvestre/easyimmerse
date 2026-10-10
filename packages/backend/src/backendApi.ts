@@ -3,6 +3,12 @@ import {
   loadLicenseNoticeGroups,
 } from "@easyimmerse/licenses";
 import type { PickedDictionaryFile } from "@easyimmerse/state";
+import {
+  type CacheEntry,
+  cacheEntry,
+  cacheKey,
+  serverCachePath,
+} from "@easyimmerse/state";
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
@@ -46,12 +52,7 @@ import type {
   TracksResponse,
   WaveformResponse,
 } from "@easyimmerse/types";
-import type { SerializedError } from "@reduxjs/toolkit";
-import {
-  type BaseQueryApi,
-  defaultSerializeQueryArgs,
-  type QueryReturnValue,
-} from "@reduxjs/toolkit/query";
+import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import type { BackendError } from "./backendClient.ts";
 import {
@@ -180,7 +181,10 @@ const mediaFileAddedTags = (projectId: string) =>
 
 /** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
-  reducerPath: "backend",
+  reducerPath: serverCachePath,
+  // The state package reads entries from the cache, so it decides the keys they are stored under.
+  serializeQueryArgs: ({ endpointName, queryArgs }) =>
+    cacheKey(endpointName, queryArgs),
   baseQuery: injectedBaseQuery,
   tagTypes: [
     "Projects",
@@ -712,50 +716,24 @@ export function selectCachedMediaTracks(
   return entry.isSuccess ? entry.data : undefined;
 }
 
-/**
- * A query's entry in the cache: its answer, or the error it failed with.
- * The entry keeps its reference until the cache changes it, so that a selector reading it computes again only then.
- */
-export type CacheEntry<Data> =
-  | { data?: Data; error?: BackendError | SerializedError }
-  | undefined;
-
 /** The cache entry of a media file's tracks, or undefined while the cache holds none. */
 export function selectMediaTracksEntry(
   state: unknown,
   file: MediaFileArgs,
-): CacheEntry<TracksResponse> {
-  return cacheEntryOf<TracksResponse>(state, "getMediaTracks", file);
+): CacheEntry<"getMediaTracks"> {
+  return cacheEntry(cacheOf(state), "getMediaTracks", file);
 }
 
 /** The cache entry of a media file's playback method, or undefined while the cache holds none. */
 export function selectPlaybackMethodEntry(
   state: unknown,
   args: ChoosePlaybackMethodArgs,
-): CacheEntry<PlaybackMethodResponse> {
-  return cacheEntryOf<PlaybackMethodResponse>(
-    state,
-    "choosePlaybackMethod",
-    args,
-  );
+): CacheEntry<"choosePlaybackMethod"> {
+  return cacheEntry(cacheOf(state), "choosePlaybackMethod", args);
 }
 
-/** Reads a query's entry straight from the cache, without building a selector for its arguments. */
-function cacheEntryOf<Data>(
-  state: unknown,
-  endpointName: "getMediaTracks" | "choosePlaybackMethod",
-  queryArgs: unknown,
-): CacheEntry<Data> {
-  const key = defaultSerializeQueryArgs({
-    queryArgs,
-    endpointName,
-    // The default serialization reads only the arguments and the endpoint's name.
-    endpointDefinition: undefined as never,
-  });
-  // The cache holds every endpoint's entries untyped; the endpoint's name fixes the type of this one.
-  return (state as BackendState)[backendApi.reducerPath].queries[
-    key
-  ] as CacheEntry<Data>;
+function cacheOf(state: unknown) {
+  return (state as BackendState)[backendApi.reducerPath];
 }
 
 /** The batch lookups being fetched now. */
