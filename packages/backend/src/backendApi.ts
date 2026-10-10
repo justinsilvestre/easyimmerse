@@ -617,7 +617,6 @@ export const {
   useGetProjectQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,
-  useMarkProjectOpenedMutation,
   useListFlashcardsQuery,
   useCreateFlashcardMutation,
   useUpdateFlashcardMutation,

@@ -26,19 +26,24 @@ const playedTo14: AppAction[] = [
 
 describe("updateStoredPlaces", () => {
   describe("for the reading location", () => {
-    it("returns a loadReadingLocation effect for readingLocationLoadRequested", () => {
-      const [, effects] = apply(actions.readingLocationLoadRequested("b1"));
-      expect(effects).toEqual([
-        { type: "loadReadingLocation", mediaFileId: "b1" },
-      ]);
+    it("loads the reading place of a media file when it opens", () => {
+      const [, effects] = apply(actions.openMediaFileRequested("p1", "b1"));
+      expect(effects).toContainEqual({
+        type: "loadReadingLocation",
+        mediaFileId: "b1",
+      });
     });
 
-    it("returns no effects for readingLocationLoadRequested once the location is known", () => {
+    it("does not load the reading place again when it is known", () => {
       const [, effects] = apply(
-        actions.readingLocationLoadRequested("b1"),
+        actions.openMediaFileRequested("p1", "b1"),
         ...openBook(null),
+        actions.closeMedia(),
       );
-      expect(effects).toEqual([]);
+      expect(effects).not.toContainEqual({
+        type: "loadReadingLocation",
+        mediaFileId: "b1",
+      });
     });
 
     it("stores the loaded location for readingLocationLoaded", () => {
@@ -101,17 +106,29 @@ describe("updateStoredPlaces", () => {
   });
 
   describe("for the playback position", () => {
-    it("returns a loadPlaybackPosition effect for playbackPositionLoadRequested", () => {
-      const [, effects] = apply(actions.playbackPositionLoadRequested("m1"));
-      expect(effects).toEqual([
-        { type: "loadPlaybackPosition", mediaFileId: "m1" },
-      ]);
+    it("loads the playback position of a media file when it opens", () => {
+      const [, effects] = apply(actions.openMediaFileRequested("p1", "m1"));
+      expect(effects).toContainEqual({
+        type: "loadPlaybackPosition",
+        mediaFileId: "m1",
+      });
     });
 
-    it("returns no effects for playbackPositionLoadRequested once the position is known", () => {
+    it("does not load the playback position again when it is known", () => {
       const [, effects] = apply(
-        actions.playbackPositionLoadRequested("m1"),
+        actions.openMediaFileRequested("p1", "m1"),
         actions.playbackPositionLoaded("m1", null),
+      );
+      expect(effects).not.toContainEqual({
+        type: "loadPlaybackPosition",
+        mediaFileId: "m1",
+      });
+    });
+
+    it("loads nothing when Settings open over the media file", () => {
+      const [, effects] = apply(
+        actions.settingsRequested(),
+        actions.openMediaFileRequested("p1", "m1"),
       );
       expect(effects).toEqual([]);
     });
@@ -138,9 +155,11 @@ describe("updateStoredPlaces", () => {
         actions.playerPlayingChanged(false),
         ...playedTo14,
       );
-      expect(effects).toEqual([
-        { type: "savePlaybackPosition", mediaFileId: "m1", ms: 14_000 },
-      ]);
+      expect(effects).toContainEqual({
+        type: "savePlaybackPosition",
+        mediaFileId: "m1",
+        ms: 14_000,
+      });
     });
 
     it("saves the position for closeMedia", () => {
@@ -169,9 +188,11 @@ describe("updateStoredPlaces", () => {
         actions.openMediaFileRequested("p1", "m2"),
         ...playedTo14,
       );
-      expect(effects).toEqual([
-        { type: "savePlaybackPosition", mediaFileId: "m1", ms: 14_000 },
-      ]);
+      expect(effects).toContainEqual({
+        type: "savePlaybackPosition",
+        mediaFileId: "m1",
+        ms: 14_000,
+      });
     });
 
     it("saves nothing when the same media file is requested again", () => {

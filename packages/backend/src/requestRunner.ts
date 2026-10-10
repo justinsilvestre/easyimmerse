@@ -63,6 +63,10 @@ export const requestEndpoints = {
       { projectId, jobId },
       { subscribe: false, forceRefetch: true },
     ),
+  markProjectOpened: ({ projectId }) =>
+    backendApi.endpoints.markProjectOpened.initiate(projectId, {
+      track: false,
+    }),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

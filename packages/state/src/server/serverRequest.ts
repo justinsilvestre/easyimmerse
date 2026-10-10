@@ -25,7 +25,8 @@ export type ServerRequest =
   | { kind: "addMediaFile"; projectId: string; request: AddMediaFileRequest }
   | { kind: "parseTimedText"; request: ParseTimedTextRequest }
   | { kind: "getImportJob"; jobId: string }
-  | { kind: "getMediaSourceJob"; projectId: string; jobId: string };
+  | { kind: "getMediaSourceJob"; projectId: string; jobId: string }
+  | { kind: "markProjectOpened"; projectId: string };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -39,6 +40,8 @@ export type ServerResponses = {
   parseTimedText: TimedTextTrack;
   getImportJob: ImportJobStatus;
   getMediaSourceJob: MediaSourceJob;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  markProjectOpened: void;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

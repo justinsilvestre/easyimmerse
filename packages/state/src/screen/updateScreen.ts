@@ -6,6 +6,10 @@ import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
 import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
+import {
+  markOpened,
+  projectOpenedBy,
+} from "./projectScreen/projectOpenedBy.ts";
 import { updateProjectScreen } from "./projectScreen/updateProjectScreen.ts";
 import type { MainScreenState, ScreenState } from "./screenState.ts";
 import { initialMainScreen, initialScreen } from "./screenState.ts";
@@ -14,7 +18,7 @@ import { updateSettings } from "./updateSettings.ts";
 
 /**
  * Updates the screens. The main screen sees every action first, the one that leaves it included,
- * and starts over whenever the route moves to a different main screen.
+ * and starts over whenever the route moves to a different main screen. Opening a project records that it was opened.
  */
 export const updateScreen: FeatureUpdate<ScreenState> = (
   screen,
@@ -32,7 +36,13 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
     : initialMainScreen(mainScreenOf(route));
   const [dialog, dialogEffects] = updateDialog(screen.dialog, action);
   const settings = updateSettings(screen.settings, action, route);
-  const effects = [...mainEffects, ...dialogEffects, ...failureNotices(action)];
+  const opened = projectOpenedBy(app, action);
+  const effects = [
+    ...mainEffects,
+    ...dialogEffects,
+    ...failureNotices(action),
+    ...(opened === null ? [] : [markOpened(opened)]),
+  ];
   return nextMain === screen.main &&
     settings === screen.settings &&
     dialog === screen.dialog

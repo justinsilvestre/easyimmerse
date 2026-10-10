@@ -53,6 +53,17 @@ const leftProject: AppAction[] = [
 ];
 
 describe("updateScreen", () => {
+  it("records that a project was opened when its overview opens", () => {
+    const [, effects] = apply(
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+    );
+    expect(effects).toContainEqual({
+      type: "sendRequest",
+      id: "project/p1/markOpened",
+      request: { kind: "markProjectOpened", projectId: "p1" },
+    });
+  });
+
   it("starts the new screen's state when the main screen changes", () => {
     const [screen] = apply(
       actions.navigated({ type: "openProject", projectId: "p1" }),

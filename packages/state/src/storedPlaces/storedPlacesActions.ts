@@ -1,17 +1,13 @@
 import type { ReaderLocation } from "./readingLocation.ts";
 
-/** The action creators that load and report the places to resume from. */
+/** The action creators that report the places to resume from, as loaded and as the reader moves on. */
 export const storedPlacesActions = {
-  readingLocationLoadRequested: (mediaFileId: string) =>
-    ({ type: "readingLocationLoadRequested", mediaFileId }) as const,
   readingLocationLoaded: (
     mediaFileId: string,
     location: ReaderLocation | null,
   ) => ({ type: "readingLocationLoaded", mediaFileId, location }) as const,
   readingLocationReported: (mediaFileId: string, location: ReaderLocation) =>
     ({ type: "readingLocationReported", mediaFileId, location }) as const,
-  playbackPositionLoadRequested: (mediaFileId: string) =>
-    ({ type: "playbackPositionLoadRequested", mediaFileId }) as const,
   playbackPositionLoaded: (mediaFileId: string, ms: number | null) =>
     ({ type: "playbackPositionLoaded", mediaFileId, ms }) as const,
 };

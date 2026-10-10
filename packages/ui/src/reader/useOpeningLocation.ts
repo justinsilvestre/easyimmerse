@@ -1,10 +1,4 @@
-import {
-  actions,
-  type ReaderLocation,
-  selectReadingLocation,
-} from "@easyimmerse/state";
-import { useEffect } from "react";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { type ReaderLocation, selectReadingLocation } from "@easyimmerse/state";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 
 /**
@@ -12,10 +6,6 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
  * Later reports from the reader leave the result alone, so that reading does not re-render the screen on every scroll.
  */
 export function useOpeningLocation(mediaFileId: string) {
-  const dispatch = useAppDispatch();
-  useEffect(() => {
-    dispatch(actions.readingLocationLoadRequested(mediaFileId));
-  }, [dispatch, mediaFileId]);
   return useAppSelector(selectReadingLocation(mediaFileId), haveSameLoadState);
 }
 

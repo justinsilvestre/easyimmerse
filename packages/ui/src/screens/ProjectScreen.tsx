@@ -1,14 +1,12 @@
 import {
   useGetProjectQuery,
   useListMediaFilesQuery,
-  useMarkProjectOpenedMutation,
 } from "@easyimmerse/backend";
 import {
   isDocumentFileName,
   selectCurrentMediaFileId,
 } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
-import { useEffect } from "react";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
 import { useGiveUpOpenings } from "../flashcards/unsaved/useGiveUpOpenings.ts";
@@ -32,7 +30,6 @@ export function ProjectScreen({
 }) {
   const { data: project, error } = useGetProjectQuery(projectId);
   const mediaFileId = useAppSelector(selectCurrentMediaFileId);
-  useMarkOpened(projectId);
   useGiveUpOpenings("projectId", projectId, error !== undefined);
   if (error)
     return (
@@ -93,12 +90,4 @@ function OpenFileScreen({
       </ScreenLayout>
     );
   return <MediaScreen project={project} mediaFileId={mediaFileId} />;
-}
-
-/** Records once per project that it was opened, which moves it to the front of the home screen. */
-function useMarkOpened(projectId: string): void {
-  const [markOpened] = useMarkProjectOpenedMutation();
-  useEffect(() => {
-    markOpened(projectId);
-  }, [markOpened, projectId]);
 }

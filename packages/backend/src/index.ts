@@ -28,7 +28,6 @@ export {
   useListProjectsQuery,
   useListSubtitleTracksQuery,
   useLookupTextQuery,
-  useMarkProjectOpenedMutation,
   useOpenBookQuery,
   usePlanPlaybackQuery,
   usePreviewDictionaryTableMutation,

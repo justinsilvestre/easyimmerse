@@ -85,13 +85,6 @@ describe("ProjectScreen", () => {
     ).toBeDefined();
   });
 
-  it("records that the project was opened", async () => {
-    const { client } = renderProject();
-    await vi.waitFor(() =>
-      expect(pathsOf(client.requests, "POST")).toContain("/projects/p1/opened"),
-    );
-  });
-
   it("lists the project's media files", async () => {
     renderProject();
     expect(

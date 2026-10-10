@@ -26,3 +26,15 @@ export function mediaScreenLeftBy(
     ? open
     : null;
 }
+
+/** Returns the media file whose media screen or reader the action's route change opens, or null when none opens. */
+export function mediaScreenEnteredBy(
+  app: AppState,
+  action: AppAction,
+): string | null {
+  const after = routeAfter(app, action);
+  const main = mainScreenOf(after);
+  return main.screen === "media" && !isSameMainScreen(app.route, after)
+    ? main.mediaFileId
+    : null;
+}

@@ -287,13 +287,13 @@ describe("effectsMiddleware", () => {
     expect(effects.preferences.get("showTranslations")).toBe("true");
   });
 
-  it("dispatches readingLocationLoaded with the stored location after readingLocationLoadRequested", async () => {
+  it("dispatches readingLocationLoaded with the stored location once the book opens", async () => {
     const location = { chapterIndex: 2, paragraphIndex: 3, offset: 4 };
     const effects = createRecordingEffects();
     effects.preferences.set("readingLocation:b1", JSON.stringify(location));
     const server = createFakeServerStoreParts();
     const store = createAppStore(effects, server);
-    store.dispatch(actions.readingLocationLoadRequested("b1"));
+    store.dispatch(actions.openMediaFileRequested("p1", "b1"));
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
         actions.readingLocationLoaded("b1", location),
@@ -306,7 +306,7 @@ describe("effectsMiddleware", () => {
     effects.loadPreference = () => Promise.reject(new Error("storage locked"));
     const server = createFakeServerStoreParts();
     const store = createAppStore(effects, server);
-    store.dispatch(actions.readingLocationLoadRequested("b1"));
+    store.dispatch(actions.openMediaFileRequested("p1", "b1"));
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
         actions.readingLocationLoaded("b1", null),

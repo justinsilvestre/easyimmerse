@@ -97,6 +97,11 @@ const sentContent = (request: BackendRequest | undefined) => {
 const sentWord = (request: BackendRequest | undefined) =>
   sentContent(request)?.word;
 
+/** Tells whether a request creates or updates a flashcard, as opposed to recording that the project was opened. */
+const isFlashcardSave = (request: BackendRequest) =>
+  (request.method === "POST" || request.method === "PUT") &&
+  request.path.includes("/flashcards");
+
 /** The id a request that creates a flashcard sent. */
 const sentId = (request: BackendRequest | undefined) =>
   (request?.body?.value as SentFlashcard | undefined)?.id;
@@ -160,7 +165,7 @@ function renderFlashcards({ savesFail = false, savesRejected = false } = {}) {
   const held: (() => void)[] = [];
   const holdingClient = {
     send: async <T,>(request: BackendRequest) => {
-      if (request.method === "POST" || request.method === "PUT")
+      if (isFlashcardSave(request))
         await new Promise<void>((resolve) => held.push(resolve));
       requests.push(request);
       return backend.send<T>(request);
@@ -187,7 +192,10 @@ function renderFlashcards({ savesFail = false, savesRejected = false } = {}) {
       { wrapper },
     );
   const rendered = renderScreen();
-  const posts = () => requests.filter((request) => request.method === "POST");
+  const posts = () =>
+    requests.filter(
+      (request) => request.method === "POST" && isFlashcardSave(request),
+    );
   const puts = () => requests.filter((request) => request.method === "PUT");
   /** Makes the saves let through from now on succeed. */
   const letSavesSucceed = () => {

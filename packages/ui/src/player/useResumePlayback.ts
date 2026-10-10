@@ -20,9 +20,6 @@ export function useResumePlayback(mediaFileId: string): void {
   const durationSeconds = useAppSelector(selectPlayerDuration);
   const hasResumed = useRef(false);
   useEffect(() => {
-    dispatch(actions.playbackPositionLoadRequested(mediaFileId));
-  }, [dispatch, mediaFileId]);
-  useEffect(() => {
     if (hasResumed.current || storedMs == null || durationSeconds === 0) return;
     hasResumed.current = true;
     const seconds = storedMs / 1000;
