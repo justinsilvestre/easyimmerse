@@ -62,6 +62,7 @@ export function initialMainScreen(route: MainRoute): MainScreenState {
   }
 }
 
+/** The screens when the app starts, on the home screen. */
 export const initialScreen: ScreenState = {
   main: { kind: "home" },
   settings: null,

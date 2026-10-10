@@ -3,9 +3,11 @@ import type { PreferenceKey } from "./preferencesState.ts";
 import { parseTextScale } from "./textScale.ts";
 import { chooseTheme, parseThemeChoice } from "./theme.ts";
 
+/** Returns a stored preference's value, or undefined while it is unset. */
 export const selectPreference = (key: PreferenceKey) => (state: RootState) =>
   state.app.preferences.values[key];
 
+/** Tells whether the preferences stored on the device have been read. */
 export const selectPreferencesLoaded = (state: RootState) =>
   state.app.preferences.isLoaded;
 

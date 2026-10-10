@@ -6,9 +6,9 @@ import {
   playbackPositionKey,
 } from "./playbackPosition.ts";
 import { parseReadingLocation, readingLocationKey } from "./readingLocation.ts";
-import type { StoredPlacesEffect } from "./storedPlacesActions.ts";
+import type { StoredPlacesEffect } from "./storedPlacesEffect.ts";
 
-/** Stored places that cannot be read count as absent. */
+/** Performs the stored places' effects. A stored place that cannot be read counts as absent. */
 export const storedPlacesEffectRunners = {
   loadReadingLocation: ({ mediaFileId }, effects, dispatch) => {
     effects

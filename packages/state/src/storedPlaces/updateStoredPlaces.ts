@@ -9,6 +9,7 @@ import { saveOnLeaving, savePlayback } from "./savePlaces.ts";
 import type { StoredPlacesState } from "./storedPlacesState.ts";
 import { initialStoredPlaces } from "./storedPlacesState.ts";
 
+/** Updates the stored places, loading them on request and saving them as reading and playback move on and when a media screen closes. */
 export const updateStoredPlaces: FeatureUpdate<StoredPlacesState> = (
   places,
   action,
@@ -77,6 +78,7 @@ export const updateStoredPlaces: FeatureUpdate<StoredPlacesState> = (
   }
 };
 
+/** The stored places as a feature: where to resume each book and media file. */
 export const storedPlacesFeature: Feature<StoredPlacesState> = {
   initialState: initialStoredPlaces,
   update: updateStoredPlaces,

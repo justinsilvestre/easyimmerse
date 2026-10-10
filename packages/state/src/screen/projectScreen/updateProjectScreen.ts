@@ -1,5 +1,4 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { Effect } from "../../app/effect.ts";
 import type { MainScreenState } from "../screenState.ts";
 
 type ProjectScreenState = Extract<MainScreenState, { kind: "project" }>;
@@ -8,21 +7,13 @@ type ProjectScreenState = Extract<MainScreenState, { kind: "project" }>;
 export function updateProjectScreen(
   screen: ProjectScreenState,
   action: AppAction,
-): readonly [ProjectScreenState, readonly Effect[]] {
+): ProjectScreenState {
   switch (action.type) {
     case "mediaFileChosen":
-      return [{ ...screen, pendingMediaFile: action.file }, []];
+      return { ...screen, pendingMediaFile: action.file };
     case "mediaFileAddFailed":
-      return [
-        { ...screen, pendingMediaFile: null },
-        [
-          {
-            type: "showNotification",
-            message: "The media file could not be added",
-          },
-        ],
-      ];
+      return { ...screen, pendingMediaFile: null };
     default:
-      return [screen, []];
+      return screen;
   }
 }

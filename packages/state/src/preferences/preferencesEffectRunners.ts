@@ -2,9 +2,10 @@ import { actions } from "../app/appAction.ts";
 import type { EffectRunners } from "../app/runEffect.ts";
 import type { Effects } from "../platform/effects.ts";
 import { ignoreFailure } from "../platform/ignoreFailure.ts";
-import type { PreferencesEffect } from "./preferencesActions.ts";
+import type { PreferencesEffect } from "./preferencesEffect.ts";
 import type { PreferenceKey, PreferenceValues } from "./preferencesState.ts";
 
+/** Performs the preferences' effects. A preference that cannot be saved is dropped. */
 export const preferencesEffectRunners = {
   savePreference: (effect, effects) => {
     effects.savePreference(effect.key, effect.value).catch(ignoreFailure);

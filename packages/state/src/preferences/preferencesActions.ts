@@ -1,6 +1,7 @@
 import type { PreferenceKey, PreferenceValues } from "./preferencesState.ts";
 import type { Theme } from "./theme.ts";
 
+/** The action creators of the preferences and the player's controls. */
 export const preferencesActions = {
   preferenceToggled: (key: PreferenceKey) =>
     ({ type: "preferenceToggled", key }) as const,
@@ -21,13 +22,7 @@ export const preferencesActions = {
     ({ type: "speedChangeRequested", speed }) as const,
 };
 
+/** An action of the preferences. */
 export type PreferencesAction = ReturnType<
   (typeof preferencesActions)[keyof typeof preferencesActions]
 >;
-
-export type PreferencesEffect =
-  | { type: "savePreference"; key: PreferenceKey; value: string }
-  | { type: "loadPreferences"; keys: readonly PreferenceKey[] }
-  | { type: "setPlayerVolume"; volume: number }
-  | { type: "setPlayerMuted"; isMuted: boolean }
-  | { type: "setPlayerSpeed"; speed: number };

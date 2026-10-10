@@ -29,20 +29,22 @@ const features = {
 
 const featureNames = Object.keys(features) as (keyof AppState)[];
 
+/** The app state when the app starts: each feature's initial slice. */
 export const initialAppState = Object.fromEntries(
   featureNames.map((name) => [name, features[name].initialState]),
 ) as AppState;
 
 /**
  * Lets every feature update its own slice, each seeing the state before the action, and gathers their effects in the order of the feature table.
+ * The state keeps its reference when no slice changes.
  * The platform commands are the only effects that do not come from a feature, since they change no state.
  */
 export const update: Update<AppState, AppAction, Effect> = (state, action) => {
-  const next = { ...state };
+  let next = state;
   const effects: Effect[] = [];
   for (const name of featureNames) {
     const [slice, sliceEffects] = updateSlice(name, state, action);
-    Object.assign(next, { [name]: slice });
+    if (slice !== state[name]) next = { ...next, [name]: slice };
     effects.push(...sliceEffects);
   }
   return [next, [...effects, ...platformCommands(action)]];

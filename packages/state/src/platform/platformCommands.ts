@@ -1,5 +1,4 @@
 import type { AppAction } from "../app/appAction.ts";
-import type { EffectRunners } from "../app/runEffect.ts";
 
 /** What the app asks of the platform it runs on without changing any state. */
 export type PlatformEffect =
@@ -17,9 +16,3 @@ export function platformCommands(action: AppAction): PlatformEffect[] {
       return [];
   }
 }
-
-export const platformEffectRunners = {
-  showNotification: (effect, effects) =>
-    effects.showNotification(effect.message),
-  openExternalUrl: (effect, effects) => effects.openExternalUrl(effect.url),
-} satisfies EffectRunners<PlatformEffect>;

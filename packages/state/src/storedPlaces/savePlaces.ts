@@ -1,5 +1,5 @@
 import type { OpenMediaScreen } from "../screen/openMediaScreen.ts";
-import type { StoredPlacesEffect } from "./storedPlacesActions.ts";
+import type { StoredPlacesEffect } from "./storedPlacesEffect.ts";
 import type { StoredPlacesState } from "./storedPlacesState.ts";
 
 type Result = readonly [StoredPlacesState, StoredPlacesEffect[]];

@@ -23,6 +23,12 @@ const playingM2: AppAction[] = [
   actions.playerTimeChanged(5),
 ];
 
+/** A project opened and then left for the home screen. */
+const leftProject: AppAction[] = [
+  actions.navigated({ type: "openProject", projectId: "p1" }),
+  actions.navigated({ type: "goHome" }),
+];
+
 describe("updateScreen", () => {
   it("starts the new screen's state when the main screen changes", () => {
     const [screen] = apply(
@@ -31,9 +37,9 @@ describe("updateScreen", () => {
     expect(screen.main).toEqual({ kind: "project", pendingMediaFile: null });
   });
 
-  it("resets the player's position and duration for closeMedia", () => {
+  it("drops the player for closeMedia", () => {
     const [screen] = apply(actions.closeMedia(), ...playingM2);
-    expect(screen.main).not.toHaveProperty("player");
+    expect(screen.main.kind).toBe("project");
   });
 
   it("resets the player when another media file opens", () => {
@@ -75,12 +81,58 @@ describe("updateScreen", () => {
       actions.navigated({ type: "openProject", projectId: "p1" }),
       actions.mediaFileChosen(pickedMediaFile),
     );
-    expect(screen.main).not.toHaveProperty("pendingMediaFile");
+    expect(screen.main.kind).toBe("media");
   });
 
   it("drops a media file chosen after the project was left", () => {
-    const [screen] = apply(actions.mediaFileChosen(pickedMediaFile));
+    const [screen] = apply(
+      actions.mediaFileChosen(pickedMediaFile),
+      ...leftProject,
+    );
     expect(screen.main).toEqual({ kind: "home" });
+  });
+
+  it("returns a notification for mediaFileAddFailed", () => {
+    const [, effects] = apply(
+      actions.mediaFileAddFailed(),
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotification",
+        message: "The media file could not be added",
+      },
+    ]);
+  });
+
+  it("returns a notification for mediaFileAddFailed after the project was left", () => {
+    const [, effects] = apply(actions.mediaFileAddFailed(), ...leftProject);
+    expect(effects).toEqual([
+      {
+        type: "showNotification",
+        message: "The media file could not be added",
+      },
+    ]);
+  });
+
+  it("returns a notification for subtitleFileAddFailed", () => {
+    const [, effects] = apply(actions.subtitleFileAddFailed(), ...playingM2);
+    expect(effects).toEqual([
+      {
+        type: "showNotification",
+        message: "The subtitles file could not be added",
+      },
+    ]);
+  });
+
+  it("keeps the screens as they are for an action they do not handle", () => {
+    const app = stateAfter(...playingM2);
+    const [screen] = updateScreen(
+      app.screen,
+      actions.preferencesLoadRequested(),
+      app,
+    );
+    expect(screen).toBe(app.screen);
   });
 
   it("returns the player's effects only while the media screen is open", () => {

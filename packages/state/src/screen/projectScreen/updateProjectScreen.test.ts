@@ -12,7 +12,7 @@ const chosen = { kind: "project", pendingMediaFile: pickedMediaFile } as const;
 
 describe("updateProjectScreen", () => {
   it("keeps the chosen media file for mediaFileChosen", () => {
-    const [screen] = updateProjectScreen(
+    const screen = updateProjectScreen(
       { kind: "project", pendingMediaFile: null },
       actions.mediaFileChosen(pickedMediaFile),
     );
@@ -20,20 +20,7 @@ describe("updateProjectScreen", () => {
   });
 
   it("forgets the chosen media file for mediaFileAddFailed", () => {
-    const [screen] = updateProjectScreen(chosen, actions.mediaFileAddFailed());
+    const screen = updateProjectScreen(chosen, actions.mediaFileAddFailed());
     expect(screen.pendingMediaFile).toBeNull();
-  });
-
-  it("returns a notification for mediaFileAddFailed", () => {
-    const [, effects] = updateProjectScreen(
-      chosen,
-      actions.mediaFileAddFailed(),
-    );
-    expect(effects).toEqual([
-      {
-        type: "showNotification",
-        message: "The media file could not be added",
-      },
-    ]);
   });
 });

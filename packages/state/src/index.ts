@@ -8,7 +8,6 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
-export { update } from "./app/update.ts";
 export type { BrowserFileRegistry } from "./platform/browserFileRegistry.ts";
 export { createBrowserFileRegistry } from "./platform/browserFileRegistry.ts";
 export type {
@@ -32,18 +31,12 @@ export type {
   PlayerControls,
   PreferenceKey,
 } from "./preferences/preferencesState.ts";
-export {
-  defaultTextScale,
-  largerTextScale,
-  smallerTextScale,
-  textScales,
-} from "./preferences/textScale.ts";
+export { defaultTextScale } from "./preferences/textScale.ts";
 export type { Theme, ThemeChoice } from "./preferences/theme.ts";
 export { themeChoices } from "./preferences/theme.ts";
 export type {
   MainRoute,
   NavigationStep,
-  Route,
   SettingsPage,
 } from "./route/route.ts";
 export { mainScreenOf, settingsPageOf } from "./route/route.ts";

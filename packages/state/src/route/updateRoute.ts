@@ -37,6 +37,7 @@ export function nextRoute(route: Route, action: AppAction): Route {
   }
 }
 
+/** The route as a feature: where the app is, moved by navigation and by opening and closing media files. */
 export const routeFeature: Feature<Route> = {
   initialState: initialRoute,
   update: (route, action) => [nextRoute(route, action), []],

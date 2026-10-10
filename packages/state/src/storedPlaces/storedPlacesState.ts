@@ -12,6 +12,7 @@ export type StoredPlacesState = {
   playback: Partial<Record<string, number | null>>;
 };
 
+/** The stored places before any have been read. */
 export const initialStoredPlaces: StoredPlacesState = {
   reading: {},
   playback: {},

@@ -5,6 +5,7 @@ import type {
 } from "../platform/effects.ts";
 import type { BufferedRange } from "./mediaScreen/playerState.ts";
 
+/** The action creators of the screens: the player's requests and reports, and the file picks and their outcomes. */
 export const screenActions = {
   seekRequested: (seconds: number) =>
     ({ type: "seekRequested", seconds }) as const,
@@ -38,15 +39,7 @@ export const screenActions = {
   dictionaryFileHandled: () => ({ type: "dictionaryFileHandled" }) as const,
 };
 
+/** An action of the screens. */
 export type ScreenAction = ReturnType<
   (typeof screenActions)[keyof typeof screenActions]
 >;
-
-export type ScreenEffect =
-  | { type: "seekPlayer"; seconds: number }
-  | { type: "togglePlayer" }
-  | { type: "playPlayer" }
-  | { type: "pausePlayer" }
-  | { type: "pickFile"; accept: readonly string[] }
-  | { type: "pickMediaFile"; accept: readonly string[] }
-  | { type: "pickDictionaryFile"; accept: readonly string[] };

@@ -11,6 +11,7 @@ export type PlayerState = {
   isPlaying: boolean;
 };
 
+/** The player before it has loaded a file. */
 export const initialPlayerState: PlayerState = {
   currentTimeSeconds: 0,
   durationSeconds: 0,

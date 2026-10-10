@@ -7,9 +7,11 @@ export const selectPlayer = (state: RootState) =>
     ? state.app.screen.main.player
     : initialPlayerState;
 
+/** Returns where the player is, in seconds. */
 export const selectCurrentTime = (state: RootState) =>
   selectPlayer(state).currentTimeSeconds;
 
+/** Returns the loaded file's duration in seconds, or zero until the player has loaded it. */
 export const selectPlayerDuration = (state: RootState) =>
   selectPlayer(state).durationSeconds;
 

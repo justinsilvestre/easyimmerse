@@ -1,10 +1,9 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
-import { mainScreenOf } from "../route/route.ts";
+import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
 import { nextRoute } from "../route/updateRoute.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
-import { isSameMainScreen } from "./openMediaScreen.ts";
 import { updateProjectScreen } from "./projectScreen/updateProjectScreen.ts";
 import type { MainScreenState, ScreenState } from "./screenState.ts";
 import { initialMainScreen, initialScreen } from "./screenState.ts";
@@ -24,20 +23,36 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
     : initialMainScreen(mainScreenOf(route));
   const [nextMain, mainEffects] = updateMainScreen(main, action);
   const [dialog, dialogEffects] = updateDialog(screen.dialog, action);
-  return [
-    {
-      main: nextMain,
-      settings: updateSettings(screen.settings, action, route),
-      dialog,
-    },
-    [...mainEffects, ...dialogEffects],
-  ];
+  const settings = updateSettings(screen.settings, action, route);
+  const effects = [...mainEffects, ...dialogEffects, ...failureNotices(action)];
+  return nextMain === screen.main &&
+    settings === screen.settings &&
+    dialog === screen.dialog
+    ? [screen, effects]
+    : [{ main: nextMain, settings, dialog }, effects];
 };
 
+/** The screens as a feature: the state of the main screen, of Settings and of the open dialog. */
 export const screenFeature: Feature<ScreenState> = {
   initialState: initialScreen,
   update: updateScreen,
 };
+
+/** Tells the user that adding a picked file failed, even when its screen has gone by the time the failure arrives. */
+function failureNotices(action: AppAction): Effect[] {
+  switch (action.type) {
+    case "mediaFileAddFailed":
+      return [notice("The media file could not be added")];
+    case "subtitleFileAddFailed":
+      return [notice("The subtitles file could not be added")];
+    default:
+      return [];
+  }
+}
+
+function notice(message: string): Effect {
+  return { type: "showNotification", message };
+}
 
 function updateMainScreen(
   main: MainScreenState,
@@ -47,9 +62,9 @@ function updateMainScreen(
     case "media":
       return updateMediaScreen(main, action);
     case "project":
-      return updateProjectScreen(main, action);
+      return [updateProjectScreen(main, action), []];
     case "offline":
-      return updatePendingSubtitleFile(main, action);
+      return [updatePendingSubtitleFile(main, action), []];
     default:
       return [main, []];
   }

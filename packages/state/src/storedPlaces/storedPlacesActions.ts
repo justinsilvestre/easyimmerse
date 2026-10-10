@@ -1,5 +1,6 @@
 import type { ReaderLocation } from "./readingLocation.ts";
 
+/** The action creators that load and report the places to resume from. */
 export const storedPlacesActions = {
   readingLocationLoadRequested: (mediaFileId: string) =>
     ({ type: "readingLocationLoadRequested", mediaFileId }) as const,
@@ -15,16 +16,7 @@ export const storedPlacesActions = {
     ({ type: "playbackPositionLoaded", mediaFileId, ms }) as const,
 };
 
+/** An action of the stored places. */
 export type StoredPlacesAction = ReturnType<
   (typeof storedPlacesActions)[keyof typeof storedPlacesActions]
 >;
-
-export type StoredPlacesEffect =
-  | { type: "loadReadingLocation"; mediaFileId: string }
-  | {
-      type: "saveReadingLocation";
-      mediaFileId: string;
-      location: ReaderLocation;
-    }
-  | { type: "loadPlaybackPosition"; mediaFileId: string }
-  | { type: "savePlaybackPosition"; mediaFileId: string; ms: number };

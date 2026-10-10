@@ -87,3 +87,20 @@ function closeSettingsPage(current: Route): Route {
 export function mainScreenOf(route: Route): MainRoute {
   return route.screen === "settings" ? route.beneath : route;
 }
+
+/** Tells whether two routes show the same main screen for the same project and media file. Settings over it do not count. */
+export function isSameMainScreen(before: Route, after: Route): boolean {
+  const [a, b] = [
+    identify(mainScreenOf(before)),
+    identify(mainScreenOf(after)),
+  ];
+  return a.every((part, index) => part === b[index]);
+}
+
+function identify(route: MainRoute): readonly (string | null)[] {
+  return [
+    route.screen,
+    "projectId" in route ? route.projectId : null,
+    "mediaFileId" in route ? route.mediaFileId : null,
+  ];
+}

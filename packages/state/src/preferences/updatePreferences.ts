@@ -1,5 +1,5 @@
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
-import type { PreferencesEffect } from "./preferencesActions.ts";
+import type { PreferencesEffect } from "./preferencesEffect.ts";
 import type {
   PlayerControls,
   PreferenceKey,
@@ -7,6 +7,7 @@ import type {
 } from "./preferencesState.ts";
 import { initialPreferences, preferenceKeys } from "./preferencesState.ts";
 
+/** Updates the preferences, saving each one the user changes. */
 export const updatePreferences: FeatureUpdate<PreferencesState> = (
   preferences,
   action,
@@ -56,6 +57,7 @@ export const updatePreferences: FeatureUpdate<PreferencesState> = (
   }
 };
 
+/** The preferences as a feature: the stored preferences, the system theme and the player's controls. */
 export const preferencesFeature: Feature<PreferencesState> = {
   initialState: initialPreferences,
   update: updatePreferences,

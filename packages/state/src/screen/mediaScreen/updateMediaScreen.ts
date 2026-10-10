@@ -30,7 +30,7 @@ export function updateMediaScreen(
     case "pauseRequested":
       return [screen, [{ type: "pausePlayer" }]];
     default:
-      return updatePendingSubtitleFile(screen, action);
+      return [updatePendingSubtitleFile(screen, action), []];
   }
 }
 

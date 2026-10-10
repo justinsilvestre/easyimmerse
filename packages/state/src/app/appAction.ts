@@ -12,16 +12,32 @@ import { storedPlacesActions } from "../storedPlaces/storedPlacesActions.ts";
 import type { UnsavedWorkAction } from "../unsavedWork/unsavedWork.ts";
 import { unsavedWorkActions } from "../unsavedWork/unsavedWork.ts";
 
-/** Every feature's action creators, in one object. */
-export const actions = {
-  ...routeActions,
-  ...screenActions,
-  ...preferencesActions,
-  ...storedPlacesActions,
-  ...unsavedWorkActions,
-  ...platformActions,
-};
+const featureActionCreators = [
+  routeActions,
+  screenActions,
+  preferencesActions,
+  storedPlacesActions,
+  unsavedWorkActions,
+  platformActions,
+] as const;
 
+/** The action creators of each feature. A type-level test checks that no two declare the same action type. */
+export type FeatureActionCreators = typeof featureActionCreators;
+
+type Merged<T extends readonly object[]> = T extends readonly [
+  infer Head,
+  ...infer Rest extends readonly object[],
+]
+  ? Head & Merged<Rest>
+  : unknown;
+
+/** Every feature's action creators, in one object. */
+export const actions = Object.assign(
+  {},
+  ...featureActionCreators,
+) as Merged<FeatureActionCreators>;
+
+/** Any action of the app's own, from any feature. */
 export type AppAction =
   | RouteAction
   | ScreenAction
@@ -29,16 +45,6 @@ export type AppAction =
   | StoredPlacesAction
   | UnsavedWorkAction
   | PlatformAction;
-
-/** The action creators of each feature, as spread into `actions`. A type-level test checks that no two declare the same action type. */
-export type FeatureActionCreators = [
-  typeof routeActions,
-  typeof screenActions,
-  typeof preferencesActions,
-  typeof storedPlacesActions,
-  typeof unsavedWorkActions,
-  typeof platformActions,
-];
 
 /** Tells whether a Redux action is one of the app's own, as opposed to one from Redux itself or from another slice. */
 export function isAppAction(action: Action): action is AppAction {

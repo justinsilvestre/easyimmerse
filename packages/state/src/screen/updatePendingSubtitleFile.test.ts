@@ -14,7 +14,7 @@ const chosen = { kind: "offline", pendingSubtitleFile: pickedFile } as const;
 
 describe("updatePendingSubtitleFile", () => {
   it("keeps the chosen file for fileChosen", () => {
-    const [screen] = updatePendingSubtitleFile(
+    const screen = updatePendingSubtitleFile(
       offline,
       actions.fileChosen(pickedFile),
     );
@@ -22,23 +22,18 @@ describe("updatePendingSubtitleFile", () => {
   });
 
   it("forgets the chosen file for subtitleFileAdded", () => {
-    const [screen] = updatePendingSubtitleFile(
+    const screen = updatePendingSubtitleFile(
       chosen,
       actions.subtitleFileAdded(),
     );
     expect(screen.pendingSubtitleFile).toBeNull();
   });
 
-  it("returns a notification for subtitleFileAddFailed", () => {
-    const [, effects] = updatePendingSubtitleFile(
+  it("forgets the chosen file for subtitleFileAddFailed", () => {
+    const screen = updatePendingSubtitleFile(
       chosen,
       actions.subtitleFileAddFailed(),
     );
-    expect(effects).toEqual([
-      {
-        type: "showNotification",
-        message: "The subtitles file could not be added",
-      },
-    ]);
+    expect(screen.pendingSubtitleFile).toBeNull();
   });
 });

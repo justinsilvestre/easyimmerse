@@ -34,6 +34,6 @@ describe("update", () => {
 
   it("leaves every slice as it is for an action no feature handles", () => {
     const [state] = update(initialAppState, actions.mediaFilePickCancelled());
-    expect(state).toEqual(initialAppState);
+    expect(state).toBe(initialAppState);
   });
 });

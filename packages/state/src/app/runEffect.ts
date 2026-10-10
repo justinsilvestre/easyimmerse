@@ -1,5 +1,5 @@
 import type { Effects } from "../platform/effects.ts";
-import { platformEffectRunners } from "../platform/platformCommands.ts";
+import { platformEffectRunners } from "../platform/platformEffectRunners.ts";
 import { preferencesEffectRunners } from "../preferences/preferencesEffectRunners.ts";
 import { screenEffectRunners } from "../screen/screenEffectRunners.ts";
 import { storedPlacesEffectRunners } from "../storedPlaces/storedPlacesEffectRunners.ts";

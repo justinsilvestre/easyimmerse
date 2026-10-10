@@ -12,6 +12,7 @@ export type PreferenceKey =
   /** The theme the user chose: "light", "dark", or anything else for the system's. */
   | "theme";
 
+/** Every preference key, in the order the preferences are read. */
 export const preferenceKeys: readonly PreferenceKey[] = [
   "showTranslations",
   "textScale",
@@ -33,6 +34,7 @@ export type PlayerControls = {
   speed: number;
 };
 
+/** The user's preferences and the settings that go with them. */
 export type PreferencesState = {
   values: PreferenceValues;
   /** False until the preferences stored on the device have been read once. */
@@ -43,6 +45,7 @@ export type PreferencesState = {
   playerControls: PlayerControls;
 };
 
+/** The preferences before any have been read from the device. */
 export const initialPreferences: PreferencesState = {
   values: {},
   isLoaded: false,

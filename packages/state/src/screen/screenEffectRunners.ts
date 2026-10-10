@@ -1,8 +1,8 @@
 import { actions } from "../app/appAction.ts";
 import type { EffectRunners } from "../app/runEffect.ts";
-import type { ScreenEffect } from "./screenActions.ts";
+import type { ScreenEffect } from "./screenEffect.ts";
 
-/** A pick that fails counts as cancelled. */
+/** Performs the screens' effects. A file pick that fails counts as cancelled. */
 export const screenEffectRunners = {
   seekPlayer: (effect, effects) => effects.seekPlayer(effect.seconds),
   togglePlayer: (_, effects) => effects.togglePlayer(),
