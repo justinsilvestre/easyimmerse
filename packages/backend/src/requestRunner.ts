@@ -107,6 +107,8 @@ export const requestEndpoints = {
       { projectId, mediaFileId, startMs, endMs },
       { subscribe: false },
     ),
+  lookupText: ({ query }) =>
+    backendApi.endpoints.lookupText.initiate(query, { subscribe: false }),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

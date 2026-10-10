@@ -6,6 +6,7 @@ import type { MainRoute } from "../route/route.ts";
 import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import { isAborted } from "../server/isAborted.ts";
+import { leaveLookup } from "./lookup/lookupIds.ts";
 import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
 import { leaveWaveform } from "./mediaScreen/updateWaveform.ts";
@@ -81,7 +82,7 @@ function leavingEffects(main: MainScreenState, route: MainRoute): Effect[] {
   if (main.kind === "project" && route.screen === "project")
     return endImport(route.projectId, main.mediaImport);
   if (main.kind === "media" && route.screen === "media")
-    return leaveWaveform(main.waveform, route);
+    return [...leaveWaveform(main.waveform, route), ...leaveLookup];
   return [];
 }
 

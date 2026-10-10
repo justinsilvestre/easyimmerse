@@ -55,6 +55,27 @@ export {
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
 export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictionaryImport.ts";
 export {
+  selectFinishedLookupFlashcard,
+  selectLookup,
+} from "./screen/lookup/lookupSelectors.ts";
+export type {
+  AnchorRect,
+  ChosenWord,
+  LookupAnchor,
+  LookupPopup,
+  LookupSource,
+  LookupState,
+  LookupWord,
+  PendingFlashcard,
+  WordInput,
+  WordOccurrence,
+} from "./screen/lookup/lookupState.ts";
+export { isSameOccurrence } from "./screen/lookup/lookupState.ts";
+export {
+  doubleClickMs,
+  flashcardLookupWaitMs,
+} from "./screen/lookup/lookupTiming.ts";
+export {
   documentFormatOf,
   isDocumentFileName,
 } from "./screen/mediaFileExtensions.ts";

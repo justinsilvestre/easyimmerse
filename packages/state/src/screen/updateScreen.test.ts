@@ -5,6 +5,7 @@ import { stateAfter } from "../app/stateAfter.ts";
 import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { initialLookup } from "./lookup/lookupState.ts";
 import { mediaFilesListed } from "./mediaScreen/playbackTestActions.ts";
 import { initialWaveform } from "./mediaScreen/waveformState.ts";
 import { updateScreen } from "./updateScreen.ts";
@@ -120,6 +121,19 @@ describe("updateScreen", () => {
     });
   });
 
+  it("cancels the lookup's close timer when the media screen closes", () => {
+    const [, effects] = apply(actions.closeMedia(), ...playingM2);
+    expect(effects).toContainEqual({ type: "cancelTimer", id: "lookup/close" });
+  });
+
+  it("cancels the wait for a flashcard's lookup when the media screen closes", () => {
+    const [, effects] = apply(actions.closeMedia(), ...playingM2);
+    expect(effects).toContainEqual({
+      type: "cancelTimer",
+      id: "lookup/flashcardWait",
+    });
+  });
+
   it("records that a project was opened when its overview opens", () => {
     const [, effects] = apply(
       actions.navigated({ type: "openProject", projectId: "p1" }),
@@ -165,6 +179,7 @@ describe("updateScreen", () => {
       playback: null,
       pendingSubtitleFile: null,
       waveform: initialWaveform,
+      lookup: initialLookup,
     });
   });
 

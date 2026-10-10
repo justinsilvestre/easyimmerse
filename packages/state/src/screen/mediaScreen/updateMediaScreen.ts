@@ -2,6 +2,7 @@ import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
 import type { MediaRoute } from "../../route/route.ts";
+import { updateLookup } from "../lookup/updateLookup.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateClipLoop } from "./updateClipLoop.ts";
 import { updatePathPlayback } from "./updatePathPlayback.ts";
@@ -27,6 +28,15 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
     ];
   },
   updatePlayer,
+  (screen, action, _route, app) => {
+    const [lookup, effects] = updateLookup(
+      screen.lookup,
+      action,
+      screen.player,
+      app.operations.requests,
+    );
+    return [lookup === screen.lookup ? screen : { ...screen, lookup }, effects];
+  },
   updateSubtitlePick,
   updateClipLoop,
   updateResume,
@@ -34,7 +44,7 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
 ];
 
 /**
- * Updates the media screen: its player, the clip loop, the resume seek, how a file on the server's disk plays,
+ * Updates the media screen: its player, the dictionary pop-up, the clip loop, the resume seek, how a file on the server's disk plays,
  * the subtitles file picked for it, and its waveform.
  * `app` is the state before the action.
  */

@@ -7,6 +7,8 @@ import type {
   ImportStepRequest,
   ImportStepResponse,
   ListMediaFilesResponse,
+  LookupQuery,
+  LookupResponse,
   MediaFile,
   MediaSourceJob,
   ParseTimedTextRequest,
@@ -67,7 +69,8 @@ export type ServerRequest =
       mediaFileId: string;
       startMs: number;
       endMs: number;
-    };
+    }
+  | { kind: "lookupText"; query: LookupQuery };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -88,6 +91,7 @@ export type ServerResponses = {
   previewDictionaryTable: TablePreview;
   importDictionary: ImportJobStarted;
   getWaveformWindow: WaveformResponse;
+  lookupText: LookupResponse;
   getMediaTracks: TracksResponse;
   planPlayback: PlaybackResponse;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.

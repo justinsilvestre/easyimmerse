@@ -4,6 +4,8 @@ import type { MainRoute } from "../route/route.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
 import { initialStoredPlaces } from "../storedPlaces/storedPlacesState.ts";
 import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
+import type { LookupState } from "./lookup/lookupState.ts";
+import { initialLookup } from "./lookup/lookupState.ts";
 import type { PathPlayback } from "./mediaScreen/pathPlayback.ts";
 import type { PlayerState } from "./mediaScreen/playerState.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
@@ -24,6 +26,8 @@ export type MediaScreenState = {
   /** A picked subtitles file waiting to be added to the open media file. */
   pendingSubtitleFile: PickedFile | null;
   waveform: WaveformState;
+  /** The dictionary pop-up and the flashcard waiting for a word's lookup, in the subtitles or in a book. */
+  lookup: LookupState;
 };
 
 /** The offline screen's state: the cues of the subtitles file last picked, parsed in the browser when no server is connected. */
@@ -98,6 +102,7 @@ export function initialMainScreen(
         playback: null,
         pendingSubtitleFile: null,
         waveform: initialWaveform,
+        lookup: initialLookup,
       };
   }
 }

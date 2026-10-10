@@ -122,4 +122,16 @@ describe("runRequest", () => {
     await settle(store, waveformWindow);
     expect(client.methods).toEqual(["GET"]);
   });
+
+  it("leaves a word's lookup in the cache for the pop-up to read", async () => {
+    const answer = { results: [], kanji: [], stylesheets: [] };
+    const client = recording(answering({ data: answer }));
+    const store = createStore(client);
+    const query = { text: "Katze", language: "de" };
+    await settle(store, { kind: "lookupText", query });
+    await (store.dispatch as BackendDispatch)(
+      backendApi.endpoints.lookupText.initiate(query, { subscribe: false }),
+    );
+    expect(client.methods).toEqual(["GET"]);
+  });
 });
