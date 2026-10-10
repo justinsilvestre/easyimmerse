@@ -186,6 +186,12 @@ describe("updateNotices", () => {
         transientNotice("success", "Copied the log."),
       );
     });
+
+    it("replaces the notice of an earlier copy of the same thing", () => {
+      expect(
+        messagesAfter(actions.textCopied("log"), actions.textCopied("log")),
+      ).toEqual(["Copied the log."]);
+    });
   });
 
   describe("for textCopyFailed", () => {

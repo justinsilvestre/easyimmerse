@@ -69,7 +69,7 @@ function indexOf(_item: Element, index: number): number {
 }
 
 /** A change the observer reported: the item at `position` came into view or left it. */
-export type IntersectionChange = { position: number; isIntersecting: boolean };
+type IntersectionChange = { position: number; isIntersecting: boolean };
 
 /** Returns the positions in view once a batch of changes applies, in order. */
 export function visiblePositionsAfter(

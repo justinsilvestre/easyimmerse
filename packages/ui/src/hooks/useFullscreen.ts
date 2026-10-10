@@ -21,8 +21,9 @@ function subscribeToFullscreenChange(onChange: () => void): () => void {
   return () => document.removeEventListener("fullscreenchange", onChange);
 }
 
+/** Reads a browser without the Fullscreen API, where the property is undefined, as not fullscreen. */
 function isPageFullscreen(): boolean {
-  return document.fullscreenElement !== null;
+  return document.fullscreenElement != null;
 }
 
 function toggleFullscreen(): void {

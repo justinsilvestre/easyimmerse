@@ -1,3 +1,4 @@
+import type { MediaSourceLogLine } from "@easyimmerse/types";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
@@ -7,7 +8,7 @@ import { FetchLog, formatLog } from "./FetchLog.tsx";
 afterEach(cleanup);
 
 /** Renders the log over a fresh store, presses Copy, and returns the effects asked for. */
-function pressCopy(lines: Parameters<typeof FetchLog>[0]["lines"]) {
+function pressCopy(lines: readonly MediaSourceLogLine[]) {
   const { effects } = renderWithAppStore(<FetchLog lines={lines} />);
   fireEvent.click(screen.getByRole("button", { name: "Copy" }));
   return effects.calls;

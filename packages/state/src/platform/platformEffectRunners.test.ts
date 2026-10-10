@@ -3,15 +3,24 @@ import { actions } from "../app/appAction.ts";
 import { createAppStore } from "../app/createAppStore.ts";
 import { createFakeServerStoreParts } from "../app/createFakeServerStoreParts.ts";
 import { selectNotices } from "../notices/noticesSelectors.ts";
-import { createRecordingEffects } from "./recordingEffects.ts";
+import {
+  createRecordingEffects,
+  type RecordingEffects,
+} from "./recordingEffects.ts";
 
-/** Asks a fresh store to copy the log and returns the store, whose effects refuse the copy when `isRefused`. */
-function copyLog(isRefused: boolean) {
-  const effects = createRecordingEffects();
-  if (isRefused) effects.refuseCopies();
+/** Builds a fresh store over the effects and asks it to copy the log. */
+function copyLogOver(effects: RecordingEffects) {
   const store = createAppStore(effects, createFakeServerStoreParts());
   store.dispatch(actions.textCopyRequested("[info] resolving", "log"));
   return store;
+}
+
+const copyLog = () => copyLogOver(createRecordingEffects());
+
+function refuseThenCopyLog() {
+  const effects = createRecordingEffects();
+  effects.refuseCopies();
+  return copyLogOver(effects);
 }
 
 const messagesOf = (store: ReturnType<typeof copyLog>) =>
@@ -20,14 +29,14 @@ const messagesOf = (store: ReturnType<typeof copyLog>) =>
 describe("platformEffectRunners", () => {
   describe("for copyText", () => {
     it("reports the copy once the platform has made it", async () => {
-      const store = copyLog(false);
+      const store = copyLog();
       await vi.waitFor(() =>
         expect(messagesOf(store)).toEqual(["Copied the log."]),
       );
     });
 
     it("reports the failure once the platform has refused", async () => {
-      const store = copyLog(true);
+      const store = refuseThenCopyLog();
       await vi.waitFor(() =>
         expect(messagesOf(store)).toEqual(["The log could not be copied."]),
       );
