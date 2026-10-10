@@ -11,9 +11,9 @@ afterEach(cleanup);
 // so each commit renders only that card. The bound counts the commits a hover makes:
 // the cursor pointed at the word, the cached match length once the hover lookup is fulfilled, and the cursor answered.
 describe("MediaScreen renders", () => {
-  it("commits the subtitles panel at most three times while the mouse moves onto a word and its lookup answers", async () => {
+  it("commits the screen at most three times while the mouse moves onto a word and its lookup answers", async () => {
     const commits = { count: 0 };
-    renderMediaScreen({ onSubtitlesCommit: () => commits.count++ });
+    renderMediaScreen({ onCommit: () => commits.count++ });
     const list = await findSubtitles();
     const dog = within(list).getByRole("button", { name: "dog" });
     commits.count = 0;

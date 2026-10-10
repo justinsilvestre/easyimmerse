@@ -11,6 +11,7 @@ import type {
   NewFlashcard,
 } from "@easyimmerse/types";
 import { act, fireEvent, screen } from "@testing-library/react";
+import { Profiler } from "react";
 import { vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
@@ -87,8 +88,8 @@ type MediaScreenSetup = {
   responses?: Record<string, FakeResponse>;
   /** The routes that answer the file's tracks and plan; by default, those of a file that plays directly. */
   playbackRoutes?: readonly FakeRoute[];
-  /** Called after each commit of the subtitles panel, through React's `Profiler`. */
-  onSubtitlesCommit?: () => void;
+  /** Called after each commit of the screen, through React's `Profiler`. */
+  onCommit?: () => void;
 };
 
 /**
@@ -102,7 +103,7 @@ export function renderMediaScreen({
   batchLookups = "unavailable",
   responses = {},
   playbackRoutes = directPlaybackRoutes,
-  onSubtitlesCommit,
+  onCommit,
 }: MediaScreenSetup = {}) {
   const client = withHeldLookups(
     createFakeBackendClient(
@@ -124,11 +125,9 @@ export function renderMediaScreen({
     batchLookups,
   );
   const rendered = renderWithAppStore(
-    <MediaScreen
-      project={fixtureProject}
-      mediaFileId="m1"
-      onSubtitlesCommit={onSubtitlesCommit}
-    />,
+    <Profiler id="MediaScreen" onRender={() => onCommit?.()}>
+      <MediaScreen project={fixtureProject} mediaFileId="m1" />
+    </Profiler>,
     client,
     { server: fakeServer },
   );
