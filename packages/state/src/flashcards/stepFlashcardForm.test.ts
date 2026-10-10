@@ -336,4 +336,12 @@ describe("stepFlashcardForm", () => {
       step(applied(appAfter(), actions.closeMedia()), save).form,
     ).toBeNull();
   });
+
+  it("puts the card in doubt when an earlier background save of its flashcard runs out of time", () => {
+    const app = applied(hundSaving(), openHund);
+    expect(
+      step(app, settle(app, "flashcard/1", failure("ABORTED"))).form
+        ?.rollbackIfDiscarded,
+    ).toMatchObject({ content: { content: { word: "Hund" } } });
+  });
 });

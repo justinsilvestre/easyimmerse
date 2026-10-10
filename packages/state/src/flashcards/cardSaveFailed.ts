@@ -12,13 +12,15 @@ import type { FlashcardsContext } from "./flashcardsContext.ts";
 import { formOf } from "./flashcardsOnScreen.ts";
 import type { FlashcardsState } from "./flashcardsState.ts";
 import { isSaveRefused } from "./isSaveRefused.ts";
+import { isCardOf } from "./latestFlashcard.ts";
 
 type Save = Extract<FlashcardSettled, { request: { kind: "saveFlashcard" } }>;
 type CardSave = Extract<SavePurpose, { type: "save" }>;
 
 /**
  * Lists a card whose save failed after it left the form, or updates the failed save a Retry sent; nothing is sent again.
- * The form's own save is left to the form. A save that ran out of time may still land, so its card is in doubt.
+ * The form's own save is left to the form, as is a save of the flashcard the form holds, since the form's copy is newer.
+ * A save that ran out of time may still land, so its card is in doubt.
  */
 export function cardSaveFailed(
   state: FlashcardsState,
@@ -27,8 +29,8 @@ export function cardSaveFailed(
   { app, outbox }: FlashcardsContext,
 ): FlashcardsState {
   const purpose = request.purpose as CardSave;
-  if (purpose.from === "form" && formOf(app)?.sentRequestId === id)
-    return state;
+  const form = formOf(app);
+  if (form && isCardOf(form.card, request.flashcardId)) return state;
   const listed = state.failedSaves.find(
     (failedSave) => failedSaveIdOf(failedSave) === request.flashcardId,
   );

@@ -1,4 +1,4 @@
-import type { FailedSave } from "./failedSave.ts";
+import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
 import {
   changeFailedSave,
   findFailedSave,
@@ -12,8 +12,9 @@ import {
 } from "./flashcardNotices.ts";
 import { rollbackRequest } from "./flashcardSaves.ts";
 import type { FlashcardsContext } from "./flashcardsContext.ts";
+import { formOf } from "./flashcardsOnScreen.ts";
 import type { FlashcardsState } from "./flashcardsState.ts";
-import { retryOf } from "./latestFlashcard.ts";
+import { isCardOf, retryOf } from "./latestFlashcard.ts";
 
 /**
  * Throws a failed save's edits away, with an undo toast that lists it again, and takes back a save of it in doubt.
@@ -45,10 +46,14 @@ export function discardFailedSave(
   };
 }
 
-/** Lists a discarded failed save again. */
+/** Lists a discarded failed save again, unless the form holds its flashcard meanwhile, whose copy is then the newer one. */
 export function restoreFailedSave(
   state: FlashcardsState,
   failedSave: FailedSave,
+  { app }: FlashcardsContext,
 ): FlashcardsState {
-  return changeFailedSave(state, failedSave);
+  const form = formOf(app);
+  return form && isCardOf(form.card, failedSaveIdOf(failedSave))
+    ? state
+    : changeFailedSave(state, failedSave);
 }

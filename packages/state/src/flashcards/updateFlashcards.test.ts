@@ -600,24 +600,6 @@ describe("updateFlashcards", () => {
     });
   });
 
-  it("drops a Retry that waited behind a newer save from the form, which took the card off the list", () => {
-    const app = applied(hundSaving(), openHund, typeWord("Rüde"), save);
-    const retrying = applied(
-      app,
-      settle(app, "flashcard/1", failure(500)),
-      actions.failedSaveRetried("h"),
-    );
-    const landing = settle(
-      retrying,
-      "flashcard/3",
-      landed(exampleListedFlashcard("h", "Rüde", 2)),
-    );
-    expect(flashcardEffects(retrying, landing)).toContainEqual({
-      type: "abortRequest",
-      id: "flashcard/4",
-    });
-  });
-
   it("withdraws the undo toasts of closed forms once the screen is left", () => {
     const app = appAfter(startNew("f1", "Katze"), typeWord("Kater"));
     const closed = applied(
@@ -651,5 +633,35 @@ describe("updateFlashcards", () => {
       landed(exampleListedFlashcard("h", "Hund", 2)),
     );
     expect(failedIds(applied(app, landing))).toEqual(["h"]);
+  });
+
+  describe("while the form holds a flashcard", () => {
+    it("does not list it when an earlier background save of it fails", () => {
+      const app = applied(hundSaving(), openHund);
+      expect(
+        failedIds(applied(app, settle(app, "flashcard/1", failure(500)))),
+      ).toEqual([]);
+    });
+
+    it("does not list it again on Undo of its discard from the list", () => {
+      const failed = hundFailed();
+      const [toast] = noticesShown(failed, actions.failedSaveDiscarded("h"));
+      const app = applied(failed, actions.failedSaveDiscarded("h"), openHund);
+      expect(failedIds(applied(app, buttonOf(toast, "Undo")))).toEqual([]);
+    });
+  });
+
+  it("keeps a failed save waiting to open when its Retry fails", () => {
+    const app = applied(
+      hundFailed(),
+      actions.failedSaveOpened("h", "p1", "m1"),
+      actions.failedSaveRetried("h"),
+    );
+    const [retry] = requestIdsOf(app, "h");
+    if (!retry) throw new Error("No Retry was sent.");
+    expect(
+      applied(app, settle(app, retry, failure(500))).flashcards.failedSaves[0]
+        ?.isOpening,
+    ).toBe(true);
   });
 });

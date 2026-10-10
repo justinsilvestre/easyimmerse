@@ -81,7 +81,7 @@ function updateSlice(
     case "failedSaveDiscarded":
       return discardFailedSave(state, action.flashcardId, context);
     case "failedSaveDiscardUndone":
-      return restoreFailedSave(state, action.failedSave);
+      return restoreFailedSave(state, action.failedSave, context);
     case "saveUndoRequested":
       context.outbox.send(undoRequest(action.undo));
       return state;
