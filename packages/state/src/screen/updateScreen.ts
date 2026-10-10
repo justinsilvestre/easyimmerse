@@ -6,6 +6,7 @@ import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
 import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
+import { endImport } from "./projectScreen/mediaImportRequests.ts";
 import {
   markOpened,
   projectOpenedBy,
@@ -31,9 +32,8 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
     mainScreenOf(app.route),
   );
   const route = routeAfter(app, action);
-  const nextMain = isSameMainScreen(app.route, route)
-    ? updated
-    : initialMainScreen(mainScreenOf(route));
+  const isLeaving = !isSameMainScreen(app.route, route);
+  const nextMain = isLeaving ? initialMainScreen(mainScreenOf(route)) : updated;
   const [dialog, dialogEffects] = updateDialog(screen.dialog, action);
   const [settings, settingsEffects] = updateSettings(
     screen.settings,
@@ -43,6 +43,7 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
   const opened = projectOpenedBy(app, action);
   const effects = [
     ...mainEffects,
+    ...(isLeaving ? leavingEffects(updated, mainScreenOf(app.route)) : []),
     ...dialogEffects,
     ...settingsEffects,
     ...failureNotices(action),
@@ -60,6 +61,13 @@ export const screenFeature: Feature<ScreenState> = {
   initialState: initialScreen,
   update: updateScreen,
 };
+
+/** Stops the work that belongs to a main screen being replaced. */
+function leavingEffects(main: MainScreenState, route: MainRoute): Effect[] {
+  return main.kind === "project" && route.screen === "project"
+    ? endImport(route.projectId, main.mediaImport)
+    : [];
+}
 
 /** Tells the user that adding a picked file failed, even when its screen has gone by the time the failure arrives. */
 function failureNotices(action: AppAction): Effect[] {

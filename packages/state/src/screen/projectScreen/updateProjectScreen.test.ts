@@ -13,11 +13,16 @@ const picked: PickedMediaFile = {
   source: { kind: "path", path: "/videos/pilot.mkv" },
 };
 
-const idle: ProjectScreenState = { kind: "project", pendingMediaFile: null };
+const idle: ProjectScreenState = {
+  kind: "project",
+  pendingMediaFile: null,
+  mediaImport: null,
+};
 
 const chosen: ProjectScreenState = {
   kind: "project",
   pendingMediaFile: picked,
+  mediaImport: null,
 };
 
 const listRequest: ServerRequest = { kind: "listMediaFiles", projectId: "p1" };

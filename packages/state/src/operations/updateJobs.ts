@@ -1,6 +1,7 @@
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
+import { isAborted } from "../server/isAborted.ts";
 import type { RequestOutcome } from "../server/serverRequest.ts";
 import type { JobRecord, JobStatus, JobsState } from "./jobs.ts";
 import { pollingIntervalMs } from "./jobs.ts";
@@ -44,10 +45,6 @@ export function updateJobs(
     default:
       return [jobs, []];
   }
-}
-
-function isAborted(outcome: RequestOutcome): boolean {
-  return !outcome.ok && outcome.error.status === "ABORTED";
 }
 
 // The settled action's id is the job's key, so its data is the report of the job's kind.

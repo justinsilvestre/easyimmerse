@@ -1,6 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { Effect } from "../../app/effect.ts";
 import { jobKey } from "../../operations/jobs.ts";
+import { isAborted } from "../../server/isAborted.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type {
   RequestOutcome,
@@ -56,7 +57,7 @@ export function updateDictionaryImport(
         ? [null, []]
         : [wizard, []];
     case "requestSettled":
-      return wizard === null || isAborted(action)
+      return wizard === null || isAborted(action.outcome)
         ? [wizard, []]
         : settled(wizard, action);
     default:
@@ -123,8 +124,4 @@ function importJobChecked(
   if (state === "failed" && error !== null)
     return [failedImport(wizard.file.name, error), stop];
   return [wizard, []];
-}
-
-function isAborted(action: RequestSettled): boolean {
-  return !action.outcome.ok && action.outcome.error.status === "ABORTED";
 }

@@ -322,19 +322,6 @@ describe("ProjectScreen", () => {
     ]);
   });
 
-  it("names the chosen subtitles that an import did not add", async () => {
-    const { effects } = await importMedia({
-      skipped_subtitles: [{ id: "en", reason: "the plugin did not fetch it" }],
-    });
-    expect(
-      effects.calls.flatMap((call) =>
-        call.type === "showNotification" ? [call.message] : [],
-      ),
-    ).toEqual([
-      "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
-    ]);
-  });
-
   it("shows the fetch's progress while it runs", async () => {
     renderImport();
     await startImport();
@@ -343,41 +330,6 @@ describe("ProjectScreen", () => {
         "downloading the video and subtitles",
       ),
     );
-  });
-
-  it("stops asking about the fetch once it has failed", async () => {
-    const { client } = renderImport({ status: "failed" });
-    await startImport();
-    const jobRequestCount = () =>
-      pathsOf(client.requests, "GET").filter(
-        (path) => path === "/projects/p1/media/from-source/j1",
-      ).length;
-    await vi.waitFor(() => expect(jobRequestCount()).toBe(1));
-    await new Promise((resolve) => setTimeout(resolve, 2200));
-    expect(jobRequestCount()).toBe(1);
-  }, 10_000);
-
-  it("ignores a form that arrives after its dialog was closed", async () => {
-    const stale = Promise.withResolvers<PluginForm>();
-    const formsAsked = { count: 0 };
-    renderImport({}, undefined, {
-      "POST /projects/p1/media/import-form": () => {
-        formsAsked.count += 1;
-        return formsAsked.count === 1 ? stale.promise : urlForm;
-      },
-    });
-    const importButton = await screen.findByRole("button", {
-      name: "Add from a video site",
-    });
-    fireEvent.click(importButton);
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    fireEvent.click(importButton);
-    await screen.findByLabelText("URL or video ID");
-    await act(async () => {
-      stale.resolve({ ...urlForm, title: "Stale form" });
-      await new Promise((resolve) => setTimeout(resolve, 20));
-    });
-    expect(screen.queryByRole("heading", { name: "Stale form" })).toBeNull();
   });
 
   it("starts one import when its action is pressed again before the fetch shows", async () => {

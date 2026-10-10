@@ -4,16 +4,37 @@ import type { PickedMediaFile } from "../../platform/effects.ts";
 import type { MainRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { ProjectScreenState } from "../screenState.ts";
-import { findMediaFileNamed } from "./mediaFileOpenedByPick.ts";
+import { findMediaFileNamed } from "./mediaFileOpenedBy.ts";
 import { mediaFilePickRequestIds } from "./mediaFilePickRequestIds.ts";
+import { updateMediaImport } from "./updateMediaImport.ts";
 
 type ProjectRoute = Extract<MainRoute, { screen: "project" }>;
 
 /**
- * Adds a picked media file to the project, unless a file of that name is already there.
- * The route then opens the added file or the existing one (see `mediaFileOpenedByPick`), which replaces this screen.
+ * Updates the project overview: its media import dialog, and the adding of a picked media file.
+ * The route then opens the added, existing or fetched file (see `mediaFileOpenedBy`), which replaces this screen.
  */
 export function updateProjectScreen(
+  screen: ProjectScreenState,
+  action: AppAction,
+  route: ProjectRoute,
+): readonly [ProjectScreenState, readonly Effect[]] {
+  const [withPick, pickEffects] = updatePickedMediaFile(screen, action, route);
+  const [mediaImport, importEffects] = updateMediaImport(
+    screen.mediaImport,
+    action,
+    route.projectId,
+  );
+  return [
+    mediaImport === screen.mediaImport
+      ? withPick
+      : { ...withPick, mediaImport },
+    [...pickEffects, ...importEffects],
+  ];
+}
+
+/** Adds a picked media file to the project, unless a file of that name is already there. */
+function updatePickedMediaFile(
   screen: ProjectScreenState,
   action: AppAction,
   route: ProjectRoute,

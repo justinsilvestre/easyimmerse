@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
+import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { updateScreen } from "./updateScreen.ts";
@@ -53,6 +54,28 @@ const leftProject: AppAction[] = [
 ];
 
 describe("updateScreen", () => {
+  it("stops watching a media-source fetch when the project is left", () => {
+    const [, effects] = apply(
+      actions.navigated({ type: "goHome" }),
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+      actions.mediaImportOpened({ name: "video-site", label: "Video site" }),
+      actions.mediaImportStepTaken("add", []),
+      actions.requestSettled(
+        "project/p1/mediaImport/step",
+        {
+          kind: "submitImportStep",
+          projectId: "p1",
+          request: { plugin: "video-site", action: "add", input: [] },
+        },
+        { ok: true, data: { kind: "job", job: runningMediaSourceJob } },
+      ),
+    );
+    expect(effects).toContainEqual({
+      type: "unwatchJob",
+      key: "jobs/mediaSource/j1",
+    });
+  });
+
   it("records that a project was opened when its overview opens", () => {
     const [, effects] = apply(
       actions.navigated({ type: "openProject", projectId: "p1" }),
@@ -68,7 +91,11 @@ describe("updateScreen", () => {
     const [screen] = apply(
       actions.navigated({ type: "openProject", projectId: "p1" }),
     );
-    expect(screen.main).toEqual({ kind: "project", pendingMediaFile: null });
+    expect(screen.main).toEqual({
+      kind: "project",
+      pendingMediaFile: null,
+      mediaImport: null,
+    });
   });
 
   it("drops the player for closeMedia", () => {

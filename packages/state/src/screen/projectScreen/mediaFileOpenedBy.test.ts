@@ -5,7 +5,7 @@ import { stateAfter } from "../../app/stateAfter.ts";
 import type { PickedMediaFile } from "../../platform/effects.ts";
 import { exampleMediaFile } from "../../server/exampleMediaFile.ts";
 import type { ServerRequest } from "../../server/serverRequest.ts";
-import { mediaFileOpenedByPick } from "./mediaFileOpenedByPick.ts";
+import { mediaFileOpenedBy } from "./mediaFileOpenedBy.ts";
 
 const picked: PickedMediaFile = {
   name: "pilot.mkv",
@@ -38,16 +38,16 @@ const added = actions.requestSettled("project/p1/addMediaFile", addRequest, {
   data: exampleMediaFile("m-pilot.mkv", "pilot.mkv"),
 });
 
-describe("mediaFileOpenedByPick", () => {
+describe("mediaFileOpenedBy", () => {
   it("returns the file that the add created", () => {
-    expect(mediaFileOpenedByPick(stateAfter(...pickedInProject), added)).toBe(
+    expect(mediaFileOpenedBy(stateAfter(...pickedInProject), added)).toBe(
       "m-pilot.mkv",
     );
   });
 
   it("returns the file of the same name already in the project", () => {
     expect(
-      mediaFileOpenedByPick(
+      mediaFileOpenedBy(
         stateAfter(...pickedInProject),
         listed("episode.mkv", "pilot.mkv"),
       ),
@@ -56,10 +56,7 @@ describe("mediaFileOpenedByPick", () => {
 
   it("returns null while no file of that name is in the project", () => {
     expect(
-      mediaFileOpenedByPick(
-        stateAfter(...pickedInProject),
-        listed("episode.mkv"),
-      ),
+      mediaFileOpenedBy(stateAfter(...pickedInProject), listed("episode.mkv")),
     ).toBeNull();
   });
 
@@ -70,7 +67,7 @@ describe("mediaFileOpenedByPick", () => {
       { ok: false, error: { status: 500, message: "down" } },
     );
     expect(
-      mediaFileOpenedByPick(stateAfter(...pickedInProject), failed),
+      mediaFileOpenedBy(stateAfter(...pickedInProject), failed),
     ).toBeNull();
   });
 
@@ -79,6 +76,6 @@ describe("mediaFileOpenedByPick", () => {
       ...pickedInProject,
       actions.navigated({ type: "goHome" }),
     );
-    expect(mediaFileOpenedByPick(app, added)).toBeNull();
+    expect(mediaFileOpenedBy(app, added)).toBeNull();
   });
 });

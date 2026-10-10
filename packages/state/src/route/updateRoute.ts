@@ -1,10 +1,9 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Feature } from "../app/feature.ts";
-import { mediaFileOpenedByPick } from "../screen/projectScreen/mediaFileOpenedByPick.ts";
+import { mediaFileOpenedBy } from "../screen/projectScreen/mediaFileOpenedBy.ts";
 import type { MainRoute, Route } from "./route.ts";
 import { initialRoute, navigate } from "./route.ts";
-import { routeActions } from "./routeActions.ts";
 
 /** Returns where the app is after an action. */
 export function nextRoute(route: Route, action: AppAction): Route {
@@ -19,12 +18,6 @@ export function nextRoute(route: Route, action: AppAction): Route {
         projectId: action.projectId,
         mediaFileId: action.mediaFileId,
       };
-    case "mediaFileAdded":
-      return withMainRoute(route, (main) =>
-        main.screen === "project"
-          ? { ...main, screen: "media", mediaFileId: action.mediaFileId }
-          : main,
-      );
     case "closeMedia":
       return withMainRoute(route, (main) =>
         main.screen === "media" ? projectRouteOf(main) : main,
@@ -40,13 +33,16 @@ export function nextRoute(route: Route, action: AppAction): Route {
   }
 }
 
-/** Returns where the app is after an action, including the media file that a settled pick opens. */
+/** Returns where the app is after an action, including the media file that a settled pick or fetch opens. */
 export function routeAfter(app: AppState, action: AppAction): Route {
-  const picked = mediaFileOpenedByPick(app, action);
-  return nextRoute(
-    app.route,
-    picked === null ? action : routeActions.mediaFileAdded(picked),
-  );
+  const opened = mediaFileOpenedBy(app, action);
+  return opened === null
+    ? nextRoute(app.route, action)
+    : withMainRoute(app.route, (main) =>
+        main.screen === "project"
+          ? { ...main, screen: "media", mediaFileId: opened }
+          : main,
+      );
 }
 
 /** The route as a feature: where the app is, moved by navigation and by opening and closing media files. */

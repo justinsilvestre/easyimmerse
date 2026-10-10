@@ -4,6 +4,7 @@ import type { MainRoute } from "../route/route.ts";
 import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
 import type { PlayerState } from "./mediaScreen/playerState.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
+import type { MediaImportWizard } from "./projectScreen/mediaImportWizard.ts";
 
 /** The media screen's state, which the reader shares until it has state of its own. */
 export type MediaScreenState = {
@@ -22,10 +23,11 @@ export type OfflineScreenState = {
   parsing: boolean;
 };
 
-/** The project overview's state: a picked media file, held while its requests run. */
+/** The project overview's state: a picked media file, held while its requests run, and the media import dialog. */
 export type ProjectScreenState = {
   kind: "project";
   pendingMediaFile: PickedMediaFile | null;
+  mediaImport: MediaImportWizard | null;
 };
 
 /** The main screen's own state, keyed by the route's main screen. The ids it belongs to are in the route. */
@@ -57,7 +59,7 @@ export function initialMainScreen(route: MainRoute): MainScreenState {
     case "offline":
       return { kind: "offline", cues: [], hasFailed: false, parsing: false };
     case "project":
-      return { kind: "project", pendingMediaFile: null };
+      return { kind: "project", pendingMediaFile: null, mediaImport: null };
     case "media":
       return {
         kind: "media",

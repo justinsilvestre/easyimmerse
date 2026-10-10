@@ -2,10 +2,9 @@ import {
   useGetSourceFormMutation,
   useSubmitSourceStepMutation,
 } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, skippedSubtitlesMessage } from "@easyimmerse/state";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { usePluginFormSession } from "../plugins/usePluginFormSession.ts";
-import { skippedSubtitlesMessage } from "../projects/skippedSubtitlesMessage.ts";
 
 /**
  * The dialog for the media interface of the plugin a media file was imported through:

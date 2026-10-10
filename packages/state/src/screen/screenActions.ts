@@ -1,10 +1,11 @@
-import type { TableLayout } from "@easyimmerse/types";
+import type { FormInput, TableLayout } from "@easyimmerse/types";
 import type {
   PickedDictionaryFile,
   PickedFile,
   PickedMediaFile,
 } from "../platform/effects.ts";
 import type { BufferedRange } from "./mediaScreen/playerState.ts";
+import type { MediaImportSource } from "./projectScreen/mediaImportWizard.ts";
 
 /** The action creators of the screens: the player's requests and reports, and the file picks and their outcomes. */
 export const screenActions = {
@@ -37,6 +38,12 @@ export const screenActions = {
     ({ type: "dictionaryFileChosen", file }) as const,
   dictionaryFilePickCancelled: () =>
     ({ type: "dictionaryFilePickCancelled" }) as const,
+  mediaImportOpened: (source: MediaImportSource) =>
+    ({ type: "mediaImportOpened", source }) as const,
+  /** The user pressed an action of the media import dialog's form, with what they entered. */
+  mediaImportStepTaken: (action: string, input: FormInput[]) =>
+    ({ type: "mediaImportStepTaken", action, input }) as const,
+  mediaImportClosed: () => ({ type: "mediaImportClosed" }) as const,
   /** The user checked a previewed table's columns and asked for it to be imported with them. */
   dictionaryColumnsChosen: (layout: TableLayout) =>
     ({ type: "dictionaryColumnsChosen", layout }) as const,

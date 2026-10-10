@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
+import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import type { Route } from "./route.ts";
 import { nextRoute, routeAfter } from "./updateRoute.ts";
@@ -45,21 +46,6 @@ describe("nextRoute", () => {
     ).toEqual(media);
   });
 
-  it("opens the added media file for mediaFileAdded", () => {
-    expect(nextRoute(project, actions.mediaFileAdded("m1"))).toEqual(media);
-  });
-
-  it("opens the added media file beneath settings for mediaFileAdded", () => {
-    expect(
-      nextRoute(settingsOver(project), actions.mediaFileAdded("m1")),
-    ).toEqual(settingsOver(media));
-  });
-
-  it("stays put for mediaFileAdded away from a project", () => {
-    const home: Route = { screen: "home" };
-    expect(nextRoute(home, actions.mediaFileAdded("m1"))).toBe(home);
-  });
-
   it("returns to the project for closeMedia", () => {
     expect(nextRoute(media, actions.closeMedia())).toEqual(project);
   });
@@ -93,6 +79,40 @@ const added = actions.requestSettled(
   { ok: true, data: exampleMediaFile("m1", "a.mkv") },
 );
 
+const fetchStatusRequest = {
+  kind: "getMediaSourceJob",
+  projectId: "p1",
+  jobId: "j1",
+} as const;
+
+const fetchStarted = [
+  actions.navigated({ type: "openProject", projectId: "p1" }),
+  actions.mediaImportOpened({ name: "video-site", label: "Video site" }),
+  actions.mediaImportStepTaken("add", []),
+  actions.requestSettled(
+    "project/p1/mediaImport/step",
+    {
+      kind: "submitImportStep",
+      projectId: "p1",
+      request: { plugin: "video-site", action: "add", input: [] },
+    },
+    { ok: true, data: { kind: "job", job: runningMediaSourceJob } },
+  ),
+];
+
+const fetchDone = actions.requestSettled(
+  "jobs/mediaSource/j1",
+  fetchStatusRequest,
+  {
+    ok: true,
+    data: {
+      ...runningMediaSourceJob,
+      status: "done",
+      media_file: exampleMediaFile("m1", "a.mkv"),
+    },
+  },
+);
+
 describe("routeAfter", () => {
   it("opens the media file that a settled pick names", () => {
     expect(routeAfter(stateAfter(...pickedInProject), added)).toEqual(media);
@@ -101,6 +121,21 @@ describe("routeAfter", () => {
   it("opens the media file that a settled pick names beneath Settings opened meanwhile", () => {
     const app = stateAfter(...pickedInProject, actions.settingsRequested());
     expect(routeAfter(app, added)).toEqual(settingsOver(media));
+  });
+
+  it("opens the media file that a media-source fetch added", () => {
+    const app = stateAfter(...fetchStarted);
+    expect(routeAfter(app, fetchDone)).toEqual(media);
+  });
+
+  it("stays on the project when a fetch ends without a media file", () => {
+    const app = stateAfter(...fetchStarted);
+    const failed = actions.requestSettled(
+      "jobs/mediaSource/j1",
+      fetchStatusRequest,
+      { ok: true, data: { ...runningMediaSourceJob, status: "failed" } },
+    );
+    expect(routeAfter(app, failed)).toEqual(project);
   });
 
   it("takes the route's own next step for any other action", () => {

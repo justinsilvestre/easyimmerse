@@ -5,9 +5,10 @@ import {
   useListPluginsQuery,
   useRemoveMediaFileMutation,
 } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, selectMediaImport } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
@@ -16,7 +17,6 @@ import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
 import { type ImportSource, MediaSection } from "../projects/MediaSection.tsx";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
 import { ProjectView } from "../projects/ProjectView.tsx";
-import { useImportMedia } from "../projects/useImportMedia.ts";
 
 /**
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
@@ -40,7 +40,7 @@ export function ProjectOverview({
   const media = useMediaItems(project.id);
   const [removeMediaFile] = useRemoveMediaFileMutation();
   const importSources = useImportSources();
-  const importMedia = useImportMedia(project.id);
+  const importMedia = useAppSelector(selectMediaImport);
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
   const navigate = useNavigate();
   const openDictionaries = () => navigate({ type: "openDictionaries" });
@@ -64,7 +64,9 @@ export function ProjectOverview({
           media={media.items}
           importSources={importSources}
           onAddMedia={() => dispatch(actions.mediaFilePickRequested())}
-          onImportMedia={importMedia.open}
+          onImportMedia={(source) =>
+            dispatch(actions.mediaImportOpened(source))
+          }
           onOpenMedia={(mediaFileId) =>
             dispatch(actions.openMediaFileRequested(project.id, mediaFileId))
           }
@@ -76,15 +78,17 @@ export function ProjectOverview({
           }
         />
       )}
-      {importMedia.source && (
+      {importMedia && (
         <ImportMediaDialog
           label={importMedia.source.label}
           form={importMedia.form}
           isBusy={importMedia.isBusy}
           job={importMedia.job}
           error={importMedia.error}
-          onAction={importMedia.act}
-          onClose={importMedia.close}
+          onAction={(actionId, input) =>
+            dispatch(actions.mediaImportStepTaken(actionId, input))
+          }
+          onClose={() => dispatch(actions.mediaImportClosed())}
         />
       )}
       <FlashcardSyncPanel

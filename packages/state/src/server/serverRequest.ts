@@ -1,12 +1,16 @@
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  ImportFormRequest,
   ImportJobStarted,
   ImportJobStatus,
+  ImportStepRequest,
+  ImportStepResponse,
   ListMediaFilesResponse,
   MediaFile,
   MediaSourceJob,
   ParseTimedTextRequest,
+  PluginForm,
   SubtitleTrack,
   SubtitleTracksResponse,
   TableLayout,
@@ -31,6 +35,8 @@ export type ServerRequest =
   | { kind: "getImportJob"; jobId: string }
   | { kind: "getMediaSourceJob"; projectId: string; jobId: string }
   | { kind: "markProjectOpened"; projectId: string }
+  | { kind: "getImportForm"; projectId: string; request: ImportFormRequest }
+  | { kind: "submitImportStep"; projectId: string; request: ImportStepRequest }
   | { kind: "previewDictionaryTable"; file: PickedDictionaryFile }
   | {
       kind: "importDictionary";
@@ -52,6 +58,8 @@ export type ServerResponses = {
   getMediaSourceJob: MediaSourceJob;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   markProjectOpened: void;
+  getImportForm: PluginForm;
+  submitImportStep: ImportStepResponse;
   previewDictionaryTable: TablePreview;
   importDictionary: ImportJobStarted;
 };

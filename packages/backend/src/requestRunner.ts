@@ -63,6 +63,16 @@ export const requestEndpoints = {
       { projectId, jobId },
       { subscribe: false, forceRefetch: true },
     ),
+  getImportForm: ({ projectId, request }) =>
+    backendApi.endpoints.getImportForm.initiate(
+      { projectId, request },
+      { track: false },
+    ),
+  submitImportStep: ({ projectId, request }) =>
+    backendApi.endpoints.submitImportStep.initiate(
+      { projectId, request },
+      { track: false },
+    ),
   previewDictionaryTable: ({ file }) =>
     backendApi.endpoints.previewDictionaryTable.initiate(
       { file },
