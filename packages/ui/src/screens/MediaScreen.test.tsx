@@ -618,6 +618,13 @@ describe("MediaScreen", () => {
     expect(effects.calls).not.toContainEqual({ type: "togglePlayer" });
   });
 
+  it("asks the player to skip to the next cue when the right arrow is pressed", async () => {
+    const { effects } = renderMediaScreen();
+    await findSubtitles();
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 0.5 });
+  });
+
   it("leaves M to the open speed menu rather than muting", () => {
     const { store } = renderMediaScreen();
     fireEvent.click(screen.getByRole("button", { name: /Playback speed/ }));
