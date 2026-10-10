@@ -243,8 +243,6 @@ export function MediaScreen({
         shownCue={shownCue}
         waveform={
           <PlayerWaveform
-            projectId={projectId}
-            mediaFileId={mediaFileId}
             cues={subtitles.cues}
             flashcardSegments={flashcards.segments}
             editableSegmentId={flashcards.editedSegmentId}
