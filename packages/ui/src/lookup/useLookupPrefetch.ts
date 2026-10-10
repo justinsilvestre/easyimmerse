@@ -34,6 +34,11 @@ export function useLookupPrefetch(
   );
   usePrefetchLookupRangeQuery(
     { language, lookups },
-    { skip: !isCovered, pollingInterval: prefetchRepeatMs },
+    {
+      skip: !isCovered,
+      pollingInterval: prefetchRepeatMs,
+      // Nothing here reads the range's result, so its starting and settling do not render the component.
+      selectFromResult: () => ({}),
+    },
   );
 }
