@@ -22,6 +22,11 @@ function PlayerShortcutsProbe({ onCall }: { onCall: (call: string) => void }) {
       <button type="button">Next cue</button>
       <input type="range" aria-label="Volume" />
       <ClickableText text="Der Hund will fressen." />
+      <div role="menu" aria-label="Speed">
+        <button type="button" role="menuitemradio" aria-checked="true">
+          1×
+        </button>
+      </div>
     </div>
   );
 }
@@ -86,6 +91,22 @@ describe("usePlayerShortcuts", () => {
     const calls = renderProbe();
     fireEvent.keyDown(screen.getByRole("button", { name: "Hund" }), {
       key: "ArrowRight",
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it("leaves the arrows to an open menu", () => {
+    const calls = renderProbe();
+    fireEvent.keyDown(screen.getByRole("menuitemradio", { name: "1×" }), {
+      key: "ArrowRight",
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it("leaves M to an open menu", () => {
+    const calls = renderProbe();
+    fireEvent.keyDown(screen.getByRole("menuitemradio", { name: "1×" }), {
+      key: "m",
     });
     expect(calls).toEqual([]);
   });

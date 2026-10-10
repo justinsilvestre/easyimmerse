@@ -3,7 +3,7 @@ import { isOutOfReach } from "./isOutOfReach.ts";
 
 /**
  * Calls `onPress` when a key is pressed without modifiers anywhere on the page,
- * except while the user types into a field, when the focused element has already handled the key,
+ * except while the user types into a field or moves through an open menu, when the focused element has already handled the key,
  * or while the screen that `scopeRef` marks lies beneath another or under a modal dialog.
  * `keys` names one key or several that do the same thing, as `KeyboardEvent.key` spells them, so " " is Space.
  * Space is left to a focused button or link, which it already presses.
@@ -38,7 +38,7 @@ function isShortcut(
     return false;
   }
   if (event.ctrlKey || event.metaKey || event.altKey) return false;
-  if (isTypingTarget(event.target)) return false;
+  if (isTypingTarget(event.target) || isInMenu(event.target)) return false;
   return key !== " " || !isPressable(event.target);
 }
 
@@ -48,6 +48,11 @@ function isTypingTarget(target: EventTarget | null): boolean {
     target.isContentEditable ||
     ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
   );
+}
+
+/** Whether the element is an item of an open menu, which keeps every key for itself. */
+function isInMenu(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest("[role='menu']") !== null;
 }
 
 /** Whether Space on the element already does something of its own, such as pressing a button. */
