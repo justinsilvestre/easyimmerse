@@ -6,8 +6,10 @@ export const settingsActions = {
   /** The user confirmed that the dictionary is to be removed. */
   dictionaryRemovalConfirmed: (dictionaryId: string) =>
     ({ type: "dictionaryRemovalConfirmed", dictionaryId }) as const,
+  /** The user declined to remove the dictionary they were asked about. */
   dictionaryRemovalCancelled: () =>
     ({ type: "dictionaryRemovalCancelled" }) as const,
+  /** The user asked to clear the media cache. */
   conversionCacheClearRequested: () =>
     ({ type: "conversionCacheClearRequested" }) as const,
   /** The user chose how large the media cache may grow, or null to let it follow the disk's size. */

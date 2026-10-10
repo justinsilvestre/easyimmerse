@@ -117,4 +117,31 @@ describe("updateSettings", () => {
     );
     expect(settings?.conversionCacheReport).toBeNull();
   });
+
+  it("sends nothing when the removal of a dictionary is asked about", () => {
+    const [, effects] = updateSettings(
+      { dictionaryImport: null, conversionCacheReport: null },
+      actions.dictionaryRemovalRequested("d1"),
+      dictionariesPage,
+    );
+    expect(effects).toEqual([]);
+  });
+
+  it("sends nothing when the removal of a dictionary is cancelled", () => {
+    const [, effects] = updateSettings(
+      { dictionaryImport: null, conversionCacheReport: null },
+      actions.dictionaryRemovalCancelled(),
+      dictionariesPage,
+    );
+    expect(effects).toEqual([]);
+  });
+
+  it("removes no dictionary for a confirmation while the general page is on top", () => {
+    const [, effects] = updateSettings(
+      { dictionaryImport: null, conversionCacheReport: null },
+      actions.dictionaryRemovalConfirmed("d1"),
+      generalPage,
+    );
+    expect(effects).toEqual([]);
+  });
 });

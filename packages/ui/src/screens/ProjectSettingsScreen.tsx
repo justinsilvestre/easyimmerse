@@ -4,13 +4,13 @@ import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { ProjectSettingsView } from "../projects/ProjectSettingsView.tsx";
 
-/** The form for an existing project's settings, which returns to the project once saved. `onDone` leaves without saving. */
+/** The form for an existing project's settings. The route returns to the project once they are saved; `onCancel` leaves without saving. */
 export function ProjectSettingsScreen({
   projectId,
-  onDone,
+  onCancel,
 }: {
   projectId: string;
-  onDone: () => void;
+  onCancel: () => void;
 }) {
   const dispatch = useAppDispatch();
   const { data: project, error } = useGetProjectQuery(projectId);
@@ -26,7 +26,7 @@ export function ProjectSettingsScreen({
       mode="edit"
       initialValues={project.settings}
       onSubmit={(settings) => dispatch(actions.projectFormSubmitted(settings))}
-      onCancel={onDone}
+      onCancel={onCancel}
     />
   );
 }

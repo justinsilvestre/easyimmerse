@@ -2,7 +2,7 @@ import type { AppAction } from "../../app/appAction.ts";
 import type { Effect } from "../../app/effect.ts";
 import { isAborted } from "../../server/isAborted.ts";
 import { isSettled } from "../../server/isSettled.ts";
-import { conversionCacheIds } from "./conversionCacheIds.ts";
+import { conversionCacheRequestId } from "./conversionCacheRequestId.ts";
 
 /**
  * Clears the media cache and sets its maximum size when asked,
@@ -19,7 +19,7 @@ export function updateConversionCache(
         [
           {
             type: "sendRequest",
-            id: conversionCacheIds.clear,
+            id: conversionCacheRequestId("clear"),
             request: { kind: "clearConversionCache" },
           },
         ],
@@ -30,7 +30,7 @@ export function updateConversionCache(
         [
           {
             type: "sendRequest",
-            id: conversionCacheIds.budget,
+            id: conversionCacheRequestId("budget"),
             request: {
               kind: "setConversionCacheBudget",
               budget: { budget_bytes: action.budgetBytes },
@@ -45,15 +45,23 @@ export function updateConversionCache(
   }
 }
 
-function reportAfter(report: string | null, action: AppAction): string | null {
-  if (action.type !== "requestSettled" || isAborted(action.outcome))
-    return report;
-  if (isSettled(action, conversionCacheIds.clear, "clearConversionCache"))
+function reportAfter(
+  report: string | null,
+  action: Extract<AppAction, { type: "requestSettled" }>,
+): string | null {
+  if (isAborted(action.outcome)) return report;
+  if (
+    isSettled(action, conversionCacheRequestId("clear"), "clearConversionCache")
+  )
     return action.outcome.ok
       ? "Cleared."
       : action.outcome.error.message || "The media cache could not be cleared.";
   if (
-    isSettled(action, conversionCacheIds.budget, "setConversionCacheBudget") &&
+    isSettled(
+      action,
+      conversionCacheRequestId("budget"),
+      "setConversionCacheBudget",
+    ) &&
     !action.outcome.ok
   )
     return (

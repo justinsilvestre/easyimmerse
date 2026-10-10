@@ -3,9 +3,9 @@ import type { Effect } from "../app/effect.ts";
 import type { Route } from "../route/route.ts";
 import { settingsPageOf } from "../route/route.ts";
 import { updateConversionCache } from "./conversionCache/updateConversionCache.ts";
-import { removeDictionary } from "./dictionaries/dictionaryRemoval.ts";
 import { stopWatching } from "./dictionaryImport/dictionaryImportRequests.ts";
 import { updateDictionaryImport } from "./dictionaryImport/updateDictionaryImport.ts";
+import { removeDictionary } from "./dictionaryRemoval/removeDictionary.ts";
 import type { ScreenState } from "./screenState.ts";
 
 type SettingsState = ScreenState["settings"];

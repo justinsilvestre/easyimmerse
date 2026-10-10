@@ -7,6 +7,7 @@ import { isSettled } from "../../server/isSettled.ts";
 import type { ProjectScreenState } from "../screenState.ts";
 import { findMediaFileNamed } from "./mediaFileOpenedBy.ts";
 import { mediaFilePickRequestIds } from "./mediaFilePickRequestIds.ts";
+import { mediaFileRemovalId } from "./mediaFileRemovalId.ts";
 import { updateMediaImport } from "./updateMediaImport.ts";
 
 type ProjectRoute = Extract<MainRoute, { screen: "project" }>;
@@ -34,14 +35,14 @@ export function updateProjectScreen(
   ];
 }
 
-/** Removes a media file from the project when the user asks. Its id names the file, so that removals of two files run side by side. */
+/** Removes a media file from the project when the user asks. */
 function removalEffects(action: AppAction, { projectId }: ProjectRoute) {
   if (action.type !== "mediaFileRemovalRequested") return [];
   const { mediaFileId } = action;
   return [
     {
       type: "sendRequest",
-      id: `project/${projectId}/removeMediaFile/${mediaFileId}`,
+      id: mediaFileRemovalId(projectId, mediaFileId),
       request: { kind: "removeMediaFile", projectId, mediaFileId },
     } satisfies Effect,
   ];

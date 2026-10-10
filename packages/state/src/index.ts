@@ -56,9 +56,9 @@ export {
   selectRoute,
 } from "./route/routeSelectors.ts";
 export { selectConversionCacheReport } from "./screen/conversionCache/selectConversionCacheReport.ts";
-export { selectRemovingDictionaryIds } from "./screen/dictionaries/selectRemovingDictionaryIds.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
 export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictionaryImport.ts";
+export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
 export {
   selectFinishedLookupFlashcard,
   selectLookup,

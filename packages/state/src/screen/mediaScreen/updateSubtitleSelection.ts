@@ -4,11 +4,9 @@ import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import type { MediaScreenState } from "../screenState.ts";
+import { subtitleSelectionId } from "./subtitleSelectionId.ts";
 
-/**
- * Saves the subtitle tracks shown with a chosen track in its role.
- * The request's id names both tracks, so that two different choices never abort each other.
- */
+/** Saves the subtitle tracks shown with a chosen track in its role. */
 export function updateSubtitleSelection(
   screen: MediaScreenState,
   action: AppAction,
@@ -26,7 +24,7 @@ export function updateSubtitleSelection(
     [
       {
         type: "sendRequest",
-        id: `media/${mediaFileId}/subtitleSelection/${selection.target_track_id ?? "none"}/${selection.translation_track_id ?? "none"}`,
+        id: subtitleSelectionId(route, selection),
         request: {
           kind: "setSubtitleSelection",
           projectId,

@@ -66,7 +66,7 @@ function MainScreen({ route }: { route: MainRoute }) {
       return (
         <ProjectSettingsScreen
           projectId={route.projectId}
-          onDone={() => openProject(route.projectId)}
+          onCancel={() => openProject(route.projectId)}
         />
       );
   }

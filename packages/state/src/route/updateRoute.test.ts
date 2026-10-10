@@ -69,6 +69,12 @@ describe("nextRoute", () => {
     expect(nextRoute(media, mediaFileRemoved("m2"))).toBe(media);
   });
 
+  it("leaves Settings over the project once the removal of the file beneath them succeeds", () => {
+    expect(nextRoute(settingsOver(media), mediaFileRemoved("m1"))).toEqual(
+      settingsOver(project),
+    );
+  });
+
   it("keeps the open media file when its removal failed", () => {
     const failed = actions.requestSettled(
       "project/p1/removeMediaFile/m1",

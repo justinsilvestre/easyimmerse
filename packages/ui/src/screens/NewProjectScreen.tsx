@@ -4,7 +4,7 @@ import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { newProjectSettings } from "../projects/newProjectSettings.ts";
 import { ProjectSettingsView } from "../projects/ProjectSettingsView.tsx";
 
-/** The new project form, filled in from the last created project, which opens the project once it is created. */
+/** The new project form, filled in from the last created project. The route opens the project once it is created. */
 export function NewProjectScreen({ onCancel }: { onCancel: () => void }) {
   const dispatch = useAppDispatch();
   const { data, isLoading } = useListProjectsQuery();

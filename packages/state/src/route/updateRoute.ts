@@ -24,7 +24,7 @@ export function nextRoute(route: Route, action: AppAction): Route {
         main.screen === "media" ? projectRouteOf(main) : main,
       );
     case "requestSettled": {
-      // A media file removed from its project, if it is open, gives way to its project's overview.
+      // When the open media file is removed from its project, the project's overview shows instead.
       if (action.request.kind !== "removeMediaFile" || !action.outcome.ok)
         return route;
       const { mediaFileId } = action.request;
