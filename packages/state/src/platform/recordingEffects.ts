@@ -31,6 +31,7 @@ type EffectCall =
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
   | { type: "openExternalUrl"; url: string }
+  | { type: "copyText"; text: string }
   | { type: "guardClose"; isActive: boolean }
   | { type: "applyAppearance"; appearance: Appearance };
 
@@ -55,6 +56,8 @@ export type RecordingEffects = Effects & {
   requestSettings(): void;
   /** Acts as the operating system switching between light and dark, by calling every subscribed listener. */
   changeSystemTheme(theme: Theme): void;
+  /** Makes every later copy fail, as a platform that refuses clipboard access does. */
+  refuseCopies(): void;
   /** Lets the preference loads held so far, and every later one, read the preference store. */
   releasePreferenceLoads(): void;
 };
@@ -100,6 +103,7 @@ export function createRecordingEffects(
   );
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
+  let refusesCopies = false;
   return {
     clock: createManualClock(),
     calls,
@@ -150,6 +154,10 @@ export function createRecordingEffects(
     openExternalUrl: (url) => {
       calls.push({ type: "openExternalUrl", url });
     },
+    copyText: async (text) => {
+      calls.push({ type: "copyText", text });
+      if (refusesCopies) throw new Error("The platform refused to copy.");
+    },
     guardClose: (isActive) => {
       calls.push({ type: "guardClose", isActive });
     },
@@ -184,6 +192,9 @@ export function createRecordingEffects(
     },
     changeSystemTheme: (theme) => {
       for (const listener of systemThemeListeners) listener(theme);
+    },
+    refuseCopies: () => {
+      refusesCopies = true;
     },
     releasePreferenceLoads: () => preferenceLoads.resolve(),
   };

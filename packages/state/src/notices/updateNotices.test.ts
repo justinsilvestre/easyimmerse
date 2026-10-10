@@ -3,6 +3,7 @@ import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import type { NoticeContent } from "./noticesState.ts";
+import { transientNotice } from "./transientNotice.ts";
 import { updateNotices } from "./updateNotices.ts";
 
 const transient: NoticeContent = {
@@ -175,6 +176,24 @@ describe("updateNotices", () => {
         app,
       );
       expect(notices).toBe(app.notices);
+    });
+  });
+
+  describe("for textCopied", () => {
+    it("shows a transient success notice naming what was copied", () => {
+      const [notices] = apply([], actions.textCopied("log"));
+      expect(notices.shown[0]).toMatchObject(
+        transientNotice("success", "Copied the log."),
+      );
+    });
+  });
+
+  describe("for textCopyFailed", () => {
+    it("shows a transient danger notice naming what was not copied", () => {
+      const [notices] = apply([], actions.textCopyFailed("log"));
+      expect(notices.shown[0]).toMatchObject(
+        transientNotice("danger", "The log could not be copied."),
+      );
     });
   });
 });

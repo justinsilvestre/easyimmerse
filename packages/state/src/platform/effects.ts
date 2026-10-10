@@ -47,6 +47,8 @@ export interface Effects {
   savePreference(key: string, value: string): Promise<void>;
   loadPreference(key: string): Promise<string | null>;
   openExternalUrl(url: string): void;
+  /** Copies text to the clipboard; rejects when the platform refuses. */
+  copyText(text: string): Promise<void>;
   /**
    * Warns before the app or its page closes while `isActive`, as while a flashcard is being saved or has unsaved changes.
    * Where closing cannot be held back, as on a phone, it does nothing.

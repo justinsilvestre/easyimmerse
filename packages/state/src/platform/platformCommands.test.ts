@@ -8,4 +8,10 @@ describe("platformCommands", () => {
       platformCommands(actions.externalLinkRequested("https://example.com")),
     ).toEqual([{ type: "openExternalUrl", url: "https://example.com" }]);
   });
+
+  it("returns a copyText effect for textCopyRequested", () => {
+    expect(platformCommands(actions.textCopyRequested("hello", "log"))).toEqual(
+      [{ type: "copyText", text: "hello", what: "log" }],
+    );
+  });
 });

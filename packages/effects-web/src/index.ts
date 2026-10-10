@@ -6,6 +6,7 @@ import type {
 import { createBrowserFileRegistry, systemClock } from "@easyimmerse/state";
 import { createApplyAppearance } from "./applyAppearance.ts";
 import { createCloseGuard } from "./closeGuard.ts";
+import { copyTextToClipboard } from "./copyTextToClipboard.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { pickFile } from "./pickFile.ts";
 import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
@@ -34,6 +35,7 @@ export function createWebEffects(options: {
     savePreference: preferences.save,
     loadPreference: preferences.load,
     openExternalUrl,
+    copyText: copyTextToClipboard,
     guardClose: createCloseGuard(),
     subscribeToSettingsRequests: ignoreSettingsRequests,
     applyAppearance: createApplyAppearance(document.documentElement),

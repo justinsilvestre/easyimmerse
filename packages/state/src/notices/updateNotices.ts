@@ -1,9 +1,11 @@
 import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import { copyOutcomeNotice } from "./copyOutcomeNotice.ts";
 import { noticesActions } from "./noticesActions.ts";
 import {
   initialNoticesState,
   type Notice,
+  type NoticeContent,
   type NoticeHold,
   type NoticesState,
 } from "./noticesState.ts";
@@ -20,21 +22,8 @@ type Result = readonly [NoticesState, readonly Effect[]];
  */
 export const updateNotices: FeatureUpdate<NoticesState> = (state, action) => {
   switch (action.type) {
-    case "noticeRequested": {
-      const notice: Notice = {
-        ...action.content,
-        id: state.nextId,
-        heldBy: { pointer: false, focus: false },
-      };
-      const { key } = notice;
-      const others = state.shown.filter(
-        (shown) => key === undefined || shown.key !== key,
-      );
-      return [
-        { shown: [...others, notice], nextId: state.nextId + 1 },
-        expiryTimerFor(notice),
-      ];
-    }
+    case "noticeRequested":
+      return show(state, action.content);
     case "noticeHeld":
       return holdChanged(state, action.id, action.by, true);
     case "noticeReleased":
@@ -45,10 +34,30 @@ export const updateNotices: FeatureUpdate<NoticesState> = (state, action) => {
       return [without(state, (notice) => notice.id === action.id), []];
     case "noticeWithdrawn":
       return [without(state, (notice) => notice.key === action.key), []];
+    case "textCopied":
+    case "textCopyFailed":
+      return show(state, copyOutcomeNotice(action));
     default:
       return [state, []];
   }
 };
+
+/** Shows a notice, in place of the shown notice of its key, and starts its expiry timer when it is transient. */
+function show(state: NoticesState, content: NoticeContent): Result {
+  const notice: Notice = {
+    ...content,
+    id: state.nextId,
+    heldBy: { pointer: false, focus: false },
+  };
+  const { key } = notice;
+  const others = state.shown.filter(
+    (shown) => key === undefined || shown.key !== key,
+  );
+  return [
+    { shown: [...others, notice], nextId: state.nextId + 1 },
+    expiryTimerFor(notice),
+  ];
+}
 
 /** The notices as a feature. */
 export const noticesFeature: Feature<NoticesState> = {
