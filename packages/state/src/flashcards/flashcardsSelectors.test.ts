@@ -77,6 +77,13 @@ describe("selectMediaFlashcards", () => {
     expect(selectMediaFlashcards({ app: hovered }, listed, "m1")).toBe(first);
   });
 
+  it("keeps returning the same flashcards as the player's time moves, while a card is open and a save has failed", () => {
+    const app = hundFailed(500);
+    const first = selectMediaFlashcards({ app }, listed, "m1");
+    const ticked = applied(app, actions.playerTimeChanged(1.5));
+    expect(selectMediaFlashcards({ app: ticked }, listed, "m1")).toBe(first);
+  });
+
   it("leaves out the flashcards of other media files", () => {
     const other = { ...katze, media_file_id: "m2" };
     const { flashcards } = selectMediaFlashcards(

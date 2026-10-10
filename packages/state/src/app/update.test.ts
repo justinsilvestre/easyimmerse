@@ -6,6 +6,7 @@ import {
 import type { RequestRecord } from "../operations/operations.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import { actions } from "./appAction.ts";
+import type { AppState } from "./appState.ts";
 import { stateAfter } from "./stateAfter.ts";
 import { initialAppState, update } from "./update.ts";
 
@@ -37,6 +38,25 @@ function withRequests(...requests: RequestRecord[]) {
   };
 }
 
+/** The paths, down to the media screen's fields, under which two states hold different references. */
+function changedPaths(before: AppState, after: AppState): string[] {
+  const changedKeys = (first: object, second: object) =>
+    Object.keys(first).filter(
+      (key) => Reflect.get(first, key) !== Reflect.get(second, key),
+    );
+  return changedKeys(before, after).flatMap((slice) =>
+    slice === "screen"
+      ? changedKeys(before.screen, after.screen).flatMap((part) =>
+          part === "main"
+            ? changedKeys(before.screen.main, after.screen.main).map(
+                (field) => `screen.main.${field}`,
+              )
+            : [`screen.${part}`],
+        )
+      : [slice],
+  );
+}
+
 describe("update", () => {
   it("keeps the mute state for closeMedia", () => {
     const state = stateAfter(
@@ -66,6 +86,16 @@ describe("update", () => {
     expect(effects).toEqual([
       { type: "openExternalUrl", url: "https://example.com" },
     ]);
+  });
+
+  it("changes only the media screen's playing state as the player's time moves", () => {
+    const before = stateAfter(
+      actions.openMediaFileRequested("p1", "m1"),
+      actions.flashcardStarted(exampleNewFlashcard("f1", "Katze"), "editor"),
+      actions.playerPlayingChanged(true),
+    );
+    const [after] = update(before, actions.playerTimeChanged(1.5));
+    expect(changedPaths(before, after)).toEqual(["screen.main.playing"]);
   });
 
   it("leaves every slice as it is for an action no feature handles", () => {
