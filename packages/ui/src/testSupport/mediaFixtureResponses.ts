@@ -1,7 +1,7 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import type {
   ConversionCacheStatus,
-  PlaybackResponse,
+  PlaybackMethodResponse,
   TrackInfo,
   TracksResponse,
   WaveformResponse,
@@ -89,13 +89,13 @@ export const fixtureTracksDirect: TracksResponse = {
   direct_mime_type: 'video/mp4; codecs="avc1.4D000C, mp4a.40.2"',
 };
 
-const fixtureDirectPlayback: PlaybackResponse = {
-  plan: { kind: "direct" },
+const fixtureDirectPlayback: PlaybackMethodResponse = {
+  method: { kind: "direct" },
   playlist_path: null,
 };
 
-export const fixtureCopyPlayback: PlaybackResponse = {
-  plan: {
+export const fixtureCopyPlayback: PlaybackMethodResponse = {
+  method: {
     kind: "convert",
     video: { action: "copy", index: 0 },
     audio: { action: "copy", index: 1 },
@@ -104,8 +104,8 @@ export const fixtureCopyPlayback: PlaybackResponse = {
   playlist_path: "/conversions/copy0001/index.m3u8",
 };
 
-const fixtureTranscodePlayback: PlaybackResponse = {
-  plan: {
+const fixtureTranscodePlayback: PlaybackMethodResponse = {
+  method: {
     kind: "convert",
     video: { action: "copy", index: 0 },
     audio: { action: "transcode", index: 2, target: "aac" },
@@ -114,8 +114,8 @@ const fixtureTranscodePlayback: PlaybackResponse = {
   playlist_path: "/conversions/transcode01/index.m3u8",
 };
 
-const fixtureUnsupportedPlayback: PlaybackResponse = {
-  plan: { kind: "unsupported", reason: "picture_too_tall" },
+const fixtureUnsupportedPlayback: PlaybackMethodResponse = {
+  method: { kind: "unsupported", reason: "picture_too_tall" },
   playlist_path: null,
 };
 
@@ -141,7 +141,7 @@ const waveformWindowFor = (request: BackendRequest) =>
 
 const trackRoutes = {
   tracks: /^\/projects\/[^/]+\/media\/[^/]+\/tracks$/,
-  playback: /^\/projects\/[^/]+\/media\/[^/]+\/playback$/,
+  playback: /^\/projects\/[^/]+\/media\/[^/]+\/playback-method$/,
   trackSelection: /^\/projects\/[^/]+\/media\/[^/]+\/track-selection$/,
   waveform: /^\/projects\/[^/]+\/media\/[^/]+\/waveform$/,
 };

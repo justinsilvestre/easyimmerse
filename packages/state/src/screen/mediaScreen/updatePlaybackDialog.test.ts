@@ -12,7 +12,7 @@ import {
   environmentMeasured,
   fileOnDisk,
   mediaFilesListed,
-  planSettled,
+  methodSettled,
   tracksSettled,
 } from "./playbackTestActions.ts";
 import { updatePlaybackDialog } from "./updatePlaybackDialog.ts";
@@ -86,22 +86,22 @@ describe("updatePlaybackDialog", () => {
     ).toBeNull();
   });
 
-  it("opens the conversion notice when the plan re-encodes a track", () => {
+  it("opens the conversion notice when the playback method re-encodes a track", () => {
     expect(
-      dialogAfter(planSettled(exampleTranscodePlayback), ...playing),
+      dialogAfter(methodSettled(exampleTranscodePlayback), ...playing),
     ).toEqual({ kind: "conversionNotice", dismissForGood: true });
   });
 
-  it("leaves the conversion notice closed for a plan that only copies the tracks", () => {
+  it("leaves the conversion notice closed for a method that only copies the tracks", () => {
     expect(
-      dialogAfter(planSettled(exampleCopyPlayback), ...playing),
+      dialogAfter(methodSettled(exampleCopyPlayback), ...playing),
     ).toBeNull();
   });
 
   it("leaves the conversion notice closed once the preference dismisses it", () => {
     expect(
       dialogAfter(
-        planSettled(exampleTranscodePlayback),
+        methodSettled(exampleTranscodePlayback),
         actions.preferenceSet("conversionNoticeDismissed", "true"),
         ...playing,
       ),
@@ -111,31 +111,31 @@ describe("updatePlaybackDialog", () => {
   it("leaves the conversion notice closed once the user has accepted it", () => {
     expect(
       dialogAfter(
-        planSettled(exampleTranscodePlayback),
+        methodSettled(exampleTranscodePlayback),
         ...playing,
-        planSettled(exampleTranscodePlayback),
+        methodSettled(exampleTranscodePlayback),
         actions.conversionNoticeAccepted(),
       ),
     ).toBeNull();
   });
 
-  it("leaves the track choice open when a plan that re-encodes settles meanwhile", () => {
+  it("leaves the track choice open when a method that re-encodes settles meanwhile", () => {
     expect(
       dialogAfter(
-        planSettled(exampleTranscodePlayback),
+        methodSettled(exampleTranscodePlayback),
         ...playing,
         actions.trackChoiceRequested(),
       ),
     ).toMatchObject({ kind: "trackChoice" });
   });
 
-  it("opens the conversion notice when the track choice is cancelled after a plan called for it", () => {
+  it("opens the conversion notice when the track choice is cancelled after a playback method called for it", () => {
     expect(
       dialogAfter(
         actions.trackChoiceCancelled(),
         ...playing,
         actions.trackChoiceRequested(),
-        planSettled(exampleTranscodePlayback),
+        methodSettled(exampleTranscodePlayback),
       ),
     ).toEqual({ kind: "conversionNotice", dismissForGood: true });
   });
@@ -155,7 +155,7 @@ describe("updatePlaybackDialog", () => {
       dialogAfter(
         actions.conversionNoticeDismissalToggled(),
         ...playing,
-        planSettled(exampleTranscodePlayback),
+        methodSettled(exampleTranscodePlayback),
       ),
     ).toEqual({ kind: "conversionNotice", dismissForGood: false });
   });
@@ -165,7 +165,7 @@ describe("updatePlaybackDialog", () => {
       dialogAfter(
         actions.conversionNoticeAccepted(),
         ...playing,
-        planSettled(exampleTranscodePlayback),
+        methodSettled(exampleTranscodePlayback),
       ),
     ).toBeNull();
   });

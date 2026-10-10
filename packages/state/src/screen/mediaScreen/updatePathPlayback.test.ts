@@ -10,8 +10,8 @@ import {
   environmentMeasured,
   fileOnDisk,
   mediaFilesListed,
-  planSent,
-  planSettled,
+  methodRequestSent,
+  methodSettled,
   tracksSettled,
 } from "./playbackTestActions.ts";
 
@@ -75,18 +75,18 @@ describe("updateMediaScreen", () => {
       ]);
     });
 
-    it("asks for the plan once the browser is measured", () => {
+    it("asks for the playback method once the browser is measured", () => {
       const [, effects] = apply(environmentMeasured, loaded, ...measuredWith());
-      expect(effects).toEqual([planSent(null)]);
+      expect(effects).toEqual([methodRequestSent(null)]);
     });
 
-    it("sends the saved choice with the plan", () => {
+    it("sends the saved choice with the playback method request", () => {
       const [, effects] = apply(
         environmentMeasured,
         loaded,
         ...measuredWith(exampleTracksOneEach, savedChoice),
       );
-      expect(effects).toEqual([planSent({ video: 0, audio: 2 })]);
+      expect(effects).toEqual([methodRequestSent({ video: 0, audio: 2 })]);
     });
 
     it("asks for FLAC when lossless audio is preferred", () => {
@@ -95,10 +95,10 @@ describe("updateMediaScreen", () => {
         actions.preferencesLoaded({ losslessAudio: "true" }),
         ...measuredWith(),
       );
-      expect(effects).toEqual([planSent(null, "flac")]);
+      expect(effects).toEqual([methodRequestSent(null, "flac")]);
     });
 
-    it("waits for the preferences before asking for the plan", () => {
+    it("waits for the preferences before asking for the playback method", () => {
       const [, effects] = apply(environmentMeasured, ...measuredWith());
       expect(effects).toEqual([]);
     });
@@ -109,10 +109,10 @@ describe("updateMediaScreen", () => {
         ...measuredWith(),
         environmentMeasured,
       );
-      expect(effects).toEqual([planSent(null, "flac")]);
+      expect(effects).toEqual([methodRequestSent(null, "flac")]);
     });
 
-    it("holds the plan while the first track choice is open", () => {
+    it("holds the playback method request while the first track choice is open", () => {
       const [, effects] = apply(
         environmentMeasured,
         loaded,
@@ -121,14 +121,14 @@ describe("updateMediaScreen", () => {
       expect(effects).toEqual([]);
     });
 
-    it("asks for a plan with the chosen tracks", () => {
+    it("asks for a playback method with the chosen tracks", () => {
       const [, effects] = apply(
         actions.tracksChosen({ video: 0, audio: 2 }),
         loaded,
         ...measuredWith(exampleTracksTwoAudio),
         environmentMeasured,
       );
-      expect(effects).toContainEqual(planSent({ video: 0, audio: 2 }));
+      expect(effects).toContainEqual(methodRequestSent({ video: 0, audio: 2 }));
     });
 
     it("saves the chosen tracks through the server", () => {
@@ -150,17 +150,17 @@ describe("updateMediaScreen", () => {
       });
     });
 
-    it("plans with no selection when the first choice is cancelled", () => {
+    it("asks for a playback method with no selection when the first choice is cancelled", () => {
       const [, effects] = apply(
         actions.trackChoiceCancelled(),
         loaded,
         ...measuredWith(exampleTracksTwoAudio),
         environmentMeasured,
       );
-      expect(effects).toEqual([planSent(null)]);
+      expect(effects).toEqual([methodRequestSent(null)]);
     });
 
-    it("keeps the first plan's audio target when the tracks change", () => {
+    it("keeps the first request's audio target when the tracks change", () => {
       const [, effects] = apply(
         actions.tracksChosen({ video: 0, audio: 1 }),
         actions.preferencesLoaded({ losslessAudio: "true" }),
@@ -168,10 +168,12 @@ describe("updateMediaScreen", () => {
         environmentMeasured,
         actions.preferenceSet("losslessAudio", "false"),
       );
-      expect(effects).toContainEqual(planSent({ video: 0, audio: 1 }, "flac"));
+      expect(effects).toContainEqual(
+        methodRequestSent({ video: 0, audio: 1 }, "flac"),
+      );
     });
 
-    it("leaves the plan alone when the preference changes", () => {
+    it("leaves the playback method request alone when the preference changes", () => {
       const [, effects] = apply(
         actions.preferenceSet("losslessAudio", "true"),
         loaded,
@@ -191,9 +193,9 @@ describe("updateMediaScreen", () => {
       expect(effects).toEqual([]);
     });
 
-    it("remembers that the notice is due when a plan calls for it while the track choice is open", () => {
+    it("remembers that the notice is due when a playback method calls for it while the track choice is open", () => {
       const [screen] = apply(
-        planSettled(exampleTranscodePlayback),
+        methodSettled(exampleTranscodePlayback),
         loaded,
         ...measuredWith(),
         environmentMeasured,

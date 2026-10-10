@@ -12,7 +12,7 @@ pub mod local_dictionaries;
 pub mod media;
 pub mod media_frame;
 pub mod media_import;
-pub mod media_playback;
+pub mod media_playback_method;
 pub mod media_stream;
 pub mod media_support;
 pub mod media_tracks;

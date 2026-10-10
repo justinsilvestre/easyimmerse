@@ -3,7 +3,7 @@ import type { AudioTarget } from "./AudioTarget";
 import type { PlaybackEnvironment } from "./PlaybackEnvironment";
 import type { TrackSelection } from "./TrackSelection";
 
-export type PlaybackRequest = { environment: PlaybackEnvironment, 
+export type PlaybackMethodRequest = { environment: PlaybackEnvironment, 
 /**
  * The tracks to play; the default selection when absent.
  */

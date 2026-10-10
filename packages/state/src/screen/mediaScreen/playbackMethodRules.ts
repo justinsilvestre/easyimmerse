@@ -1,6 +1,6 @@
 import type {
   ContainerInfo,
-  PlaybackPlan,
+  PlaybackMethod,
   TrackInfo,
   TrackSelection,
 } from "@easyimmerse/types";
@@ -47,12 +47,12 @@ export function needsTrackChoice(
   );
 }
 
-/** True when a converting plan copies every chosen track, so nothing is re-encoded. */
-export function copiesChosenTracksOnly(plan: PlaybackPlan): boolean {
-  if (plan.kind !== "convert") return false;
+/** True when a converting method copies every chosen track, so nothing is re-encoded. */
+export function copiesChosenTracksOnly(method: PlaybackMethod): boolean {
+  if (method.kind !== "convert") return false;
   return (
-    (plan.video === null || plan.video.action === "copy") &&
-    (plan.audio === null || plan.audio.action === "copy")
+    (method.video === null || method.video.action === "copy") &&
+    (method.audio === null || method.audio.action === "copy")
   );
 }
 

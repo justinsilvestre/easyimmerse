@@ -1,6 +1,6 @@
 import type {
   PlaybackEnvironment,
-  PlaybackResponse,
+  PlaybackMethodResponse,
   TrackInfo,
   TracksResponse,
 } from "@easyimmerse/types";
@@ -68,9 +68,9 @@ export const exampleEnvironment: PlaybackEnvironment = {
   mse_codec_strings: ["avc1.4D000C", "mp4a.40.2"],
 };
 
-/** A plan for tests that converts by copying every chosen track. */
-export const exampleCopyPlayback: PlaybackResponse = {
-  plan: {
+/** A playback method for tests that converts by copying every chosen track. */
+export const exampleCopyPlayback: PlaybackMethodResponse = {
+  method: {
     kind: "convert",
     video: { action: "copy", index: 0 },
     audio: { action: "copy", index: 1 },
@@ -79,9 +79,9 @@ export const exampleCopyPlayback: PlaybackResponse = {
   playlist_path: "/conversions/copy0001/index.m3u8",
 };
 
-/** A plan for tests that re-encodes the audio track. */
-export const exampleTranscodePlayback: PlaybackResponse = {
-  plan: {
+/** A playback method for tests that re-encodes the audio track. */
+export const exampleTranscodePlayback: PlaybackMethodResponse = {
+  method: {
     kind: "convert",
     video: { action: "copy", index: 0 },
     audio: { action: "transcode", index: 1, target: "aac" },

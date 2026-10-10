@@ -14,12 +14,15 @@ import {
   saveSelectionRequest,
   tracksRequest,
 } from "./playbackRequests.ts";
-import { sendFirstPlan, sendPlan } from "./sendPlan.ts";
+import {
+  requestFirstPlaybackMethod,
+  requestPlaybackMethod,
+} from "./requestPlaybackMethod.ts";
 
 /**
  * Works out how a file on the server's disk plays: reads its record, asks for its tracks, measures the browser,
- * and asks for a plan with the track choice and the lossless-audio preference. The first plan waits while the user
- * makes the first track choice; each later choice is saved and planned anew. A file the browser holds is probed for pictures instead.
+ * and asks for a playback method with the track choice and the lossless-audio preference. The first request waits while the user
+ * makes the first track choice; each later choice is saved and asked about anew. A file the browser holds is probed for pictures instead.
  */
 export function updatePathPlayback(
   playback: PathPlayback | null,
@@ -32,29 +35,33 @@ export function updatePathPlayback(
       return requestSettled(playback, action, app);
     case "playbackEnvironmentMeasured":
       return playback !== null && action.mediaFileId === route.mediaFileId
-        ? sendFirstPlan(
+        ? requestFirstPlaybackMethod(
             { ...playback, environment: action.environment },
             app,
             app.preferences,
           )
         : updated(playback);
     case "preferencesLoaded":
-      return sendFirstPlan(
+      return requestFirstPlaybackMethod(
         playback,
         app,
         withLoadedPreferences(app.preferences, action.preferences),
       );
     case "tracksChosen": {
       if (playback === null) return updated(playback);
-      // The new plan decides afresh whether the notice is due.
+      // The new playback method decides afresh whether the notice is due.
       const chosen = {
         ...playback,
         selection: action.selection,
         noticeDue: false,
       };
-      const [planned, effects] = sendPlan(chosen, route, app.preferences);
+      const [requested, effects] = requestPlaybackMethod(
+        chosen,
+        route,
+        app.preferences,
+      );
       return updated(
-        planned,
+        requested,
         ...effects,
         saveSelectionRequest(route, action.selection),
       );
@@ -62,8 +69,8 @@ export function updatePathPlayback(
     case "trackChoiceCancelled":
       if (playback === null) return updated(playback);
       // A due notice opens as the choice closes.
-      return playback.planRequest === null
-        ? sendPlan(playback, route, app.preferences)
+      return playback.methodRequest === null
+        ? requestPlaybackMethod(playback, route, app.preferences)
         : updated({ ...playback, noticeDue: false });
     case "conversionNoticeAccepted":
       return updated(
@@ -76,7 +83,7 @@ export function updatePathPlayback(
   }
 }
 
-/** Takes the open file's record and its tracks as they arrive, and a plan calling for the notice while the track choice is open. */
+/** Takes the open file's record and its tracks as they arrive, and a playback method calling for the notice while the track choice is open. */
 function requestSettled(
   playback: PathPlayback | null,
   action: AppAction,
@@ -97,7 +104,7 @@ function requestSettled(
       ? updated(playback)
       : updated(playback, measureRequest(route, action.outcome.data));
   if (
-    isSettled(action, ids.plan, "planPlayback") &&
+    isSettled(action, ids.method, "choosePlaybackMethod") &&
     action.outcome.ok &&
     playback !== null &&
     app.screen.dialog?.kind === "trackChoice"

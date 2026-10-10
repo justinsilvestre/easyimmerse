@@ -3,7 +3,7 @@
 use crate::container::{ContainerInfo, TrackInfo};
 use crate::conversion_settings::{AudioTarget, ConversionSettings, VideoTarget};
 use crate::playback_environment::{PlaybackEngine, PlaybackEnvironment};
-use crate::playback_plan::{AudioAction, UnsupportedReason, VideoAction};
+use crate::playback_method::{AudioAction, UnsupportedReason, VideoAction};
 use crate::transcode_video::{PictureSize, fit_picture, transcode_bit_rate};
 
 /// MP3 inside fragmented MP4 is valid but silent in WebKit, so it is never copied there.
@@ -13,7 +13,7 @@ const WEBKIT_UNCOPYABLE_VIDEO_PREFIX: &str = "avc1.6E";
 
 /// Copies audio the client decodes from fragmented MP4, and otherwise transcodes it to the
 /// audio target. FLAC that the client cannot play falls back to AAC.
-pub(crate) fn plan_audio_action(
+pub(crate) fn choose_audio_action(
     track: &TrackInfo,
     environment: &PlaybackEnvironment,
     settings: &ConversionSettings,
@@ -49,7 +49,7 @@ fn can_copy_audio(track: &TrackInfo, environment: &PlaybackEnvironment) -> bool 
 
 /// Copies video the client decodes from fragmented MP4, and otherwise transcodes it to H.264
 /// when the server has an encoder and the client plays the result.
-pub(crate) fn plan_video_action(
+pub(crate) fn choose_video_action(
     track: &TrackInfo,
     container: &ContainerInfo,
     environment: &PlaybackEnvironment,
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn copies_audio_the_client_accepts() {
-        let action = plan_audio_action(
+        let action = choose_audio_action(
             &audio_track("aac", Some("mp4a.40.2")),
             &environment(PlaybackEngine::Chromium, &["mp4a.40.2"]),
             &settings(AudioTarget::Aac, None),
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn transcodes_vorbis_to_the_audio_target() {
-        let action = plan_audio_action(
+        let action = choose_audio_action(
             &audio_track("vorbis", None),
             &environment(PlaybackEngine::Chromium, &["mp4a.40.2", "fLaC"]),
             &settings(AudioTarget::Flac, None),
@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn falls_back_from_flac_to_aac_when_the_client_rejects_flac() {
-        let action = plan_audio_action(
+        let action = choose_audio_action(
             &audio_track("vorbis", None),
             &environment(PlaybackEngine::WebKit, &["mp4a.40.2"]),
             &settings(AudioTarget::Flac, None),
@@ -199,7 +199,7 @@ mod tests {
 
     #[test]
     fn never_copies_mp3_in_webkit() {
-        let action = plan_audio_action(
+        let action = choose_audio_action(
             &audio_track("mp3", Some("mp4a.6B")),
             &environment(PlaybackEngine::WebKit, &["mp4a.6B", "mp4a.40.2"]),
             &settings(AudioTarget::Aac, None),
@@ -215,7 +215,7 @@ mod tests {
 
     #[test]
     fn refuses_audio_when_the_client_accepts_no_target() {
-        let action = plan_audio_action(
+        let action = choose_audio_action(
             &audio_track("vorbis", None),
             &environment(PlaybackEngine::Gecko, &[]),
             &settings(AudioTarget::Aac, None),
@@ -225,7 +225,7 @@ mod tests {
 
     #[test]
     fn copies_video_the_client_accepts() {
-        let action = plan_video_action(
+        let action = choose_video_action(
             &video_track(Some("avc1.64001F")),
             &empty_container(),
             &environment(PlaybackEngine::WebKit, &["avc1.64001F"]),
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn never_copies_high_10_in_webkit() {
-        let action = plan_video_action(
+        let action = choose_video_action(
             &video_track(Some("avc1.6E0028")),
             &empty_container(),
             &environment(PlaybackEngine::WebKit, &["avc1.6E0028", "avc1.640033"]),
@@ -250,7 +250,7 @@ mod tests {
 
     #[test]
     fn copies_high_10_in_chromium() {
-        let action = plan_video_action(
+        let action = choose_video_action(
             &video_track(Some("avc1.6E0028")),
             &empty_container(),
             &environment(PlaybackEngine::Chromium, &["avc1.6E0028"]),
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn transcodes_with_the_encoder_and_the_bit_rate_rule() {
-        let action = plan_video_action(
+        let action = choose_video_action(
             &video_track(None),
             &empty_container(),
             &environment(PlaybackEngine::Chromium, &["avc1.640033"]),
@@ -285,7 +285,7 @@ mod tests {
             bit_rate: Some(3_000_000),
             ..empty_container()
         };
-        let action = plan_video_action(
+        let action = choose_video_action(
             &video_track(None),
             &container,
             &environment(PlaybackEngine::Chromium, &["avc1.640033"]),
@@ -305,7 +305,7 @@ mod tests {
 
     #[test]
     fn refuses_video_without_an_encoder() {
-        let action = plan_video_action(
+        let action = choose_video_action(
             &video_track(None),
             &empty_container(),
             &environment(PlaybackEngine::Chromium, &["avc1.640033"]),
@@ -321,7 +321,7 @@ mod tests {
             height: Some(7680),
             ..video_track(None)
         };
-        let action = plan_video_action(
+        let action = choose_video_action(
             &track,
             &empty_container(),
             &environment(PlaybackEngine::Chromium, &["avc1.640033"]),

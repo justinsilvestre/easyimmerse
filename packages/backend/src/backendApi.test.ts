@@ -1,7 +1,7 @@
 import type {
   LookupResponse,
   MediaFile,
-  PlaybackRequest,
+  PlaybackMethodRequest,
   SourceStepResponse,
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
@@ -118,7 +118,7 @@ function createStore(client: BackendClient) {
 
 const mediaArgs = { projectId: "p1", mediaFileId: "m1" };
 
-const playbackRequest: PlaybackRequest = {
+const playbackRequest: PlaybackMethodRequest = {
   environment: {
     engine: "webkit",
     can_play_type: "probably",
@@ -388,17 +388,17 @@ describe("backendApi", () => {
     ]);
   });
 
-  it("posts the playback request for planPlayback", async () => {
+  it("posts the playback request for choosePlaybackMethod", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
-      backendApi.endpoints.planPlayback.initiate({
+      backendApi.endpoints.choosePlaybackMethod.initiate({
         ...mediaArgs,
         request: playbackRequest,
       }),
     );
     expect(client.requests[0]).toEqual({
       method: "POST",
-      path: "/projects/p1/media/m1/playback",
+      path: "/projects/p1/media/m1/playback-method",
       body: { kind: "json", value: playbackRequest },
     });
   });

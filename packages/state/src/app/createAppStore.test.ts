@@ -79,7 +79,7 @@ describe("createAppStore", () => {
     expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 90 });
   });
 
-  it("asks for a media file's plan with the browser's measured support", async () => {
+  it("asks for a media file's playback method with the browser's measured support", async () => {
     const server = createFakeServerStoreParts();
     const store = createAppStore(createRecordingEffects(), server);
     store.dispatch(actions.preferencesLoaded({}));
@@ -96,7 +96,7 @@ describe("createAppStore", () => {
       { ok: true, data: exampleTracksOneEach },
     );
     await vi.waitUntil(() =>
-      server.sentRequests.some(({ kind }) => kind === "planPlayback"),
+      server.sentRequests.some(({ kind }) => kind === "choosePlaybackMethod"),
     );
     expect(server.sentRequests.at(-1)).toMatchObject({
       request: { environment: { engine: "webkit", can_play_type: "no" } },

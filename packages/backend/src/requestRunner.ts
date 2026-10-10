@@ -104,8 +104,8 @@ export const requestEndpoints = {
       { projectId, mediaFileId },
       { subscribe: false },
     ),
-  planPlayback: ({ projectId, mediaFileId, request }) =>
-    backendApi.endpoints.planPlayback.initiate(
+  choosePlaybackMethod: ({ projectId, mediaFileId, request }) =>
+    backendApi.endpoints.choosePlaybackMethod.initiate(
       { projectId, mediaFileId, request },
       { subscribe: false },
     ),

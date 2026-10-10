@@ -9,7 +9,7 @@ import {
 import {
   environmentMeasured,
   mediaFilesListed,
-  planSettled,
+  methodSettled,
   tracksSettled,
 } from "../screen/mediaScreen/playbackTestActions.ts";
 import { updatePreferences } from "./updatePreferences.ts";
@@ -27,7 +27,7 @@ const openConversionNotice: AppAction[] = [
   mediaFilesListed(),
   tracksSettled(exampleTracksOneEach),
   environmentMeasured,
-  planSettled(exampleTranscodePlayback),
+  methodSettled(exampleTranscodePlayback),
 ];
 
 const translationsOn = actions.preferenceSet("showTranslations", "true");

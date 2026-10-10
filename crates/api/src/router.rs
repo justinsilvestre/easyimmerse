@@ -16,8 +16,8 @@ use crate::auth::host_check::check_host;
 use crate::routes::{
     conversion_cache, conversions, dictionaries, dictionary_batch_lookup, dictionary_imports,
     dictionary_lookup, dictionary_media, documents, flashcards, health, local_dictionaries, media,
-    media_frame, media_import, media_playback, media_stream, media_tracks, media_waveform, openapi,
-    plugins, preferences, projects, source_form, subtitles, timed_text,
+    media_frame, media_import, media_playback_method, media_stream, media_tracks, media_waveform,
+    openapi, plugins, preferences, projects, source_form, subtitles, timed_text,
 };
 use crate::state::AppState;
 
@@ -104,7 +104,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             media_tracks::set_media_track_selection,
             media_tracks::clear_media_track_selection
         ))
-        .routes(routes!(media_playback::plan_media_playback))
+        .routes(routes!(media_playback_method::choose_media_playback_method))
         .routes(routes!(media_waveform::get_media_waveform))
         .routes(routes!(conversions::get_conversion_playlist))
         .routes(routes!(conversions::get_conversion_init_segment))

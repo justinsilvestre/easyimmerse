@@ -86,7 +86,7 @@ type MediaScreenSetup = {
   batchLookups?: "unavailable" | "immediate" | "held";
   /** Canned responses that add to or replace the screen's usual ones. */
   responses?: Record<string, FakeResponse>;
-  /** The routes that answer the file's tracks and plan; by default, those of a file that plays directly. */
+  /** The routes that answer the file's tracks and playback method; by default, those of a file that plays directly. */
   playbackRoutes?: readonly FakeRoute[];
   /** Called after each commit of the screen, through React's `Profiler`. */
   onCommit?: () => void;

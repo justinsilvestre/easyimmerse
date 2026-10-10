@@ -1,6 +1,6 @@
 import type {
   ContainerInfo,
-  PlaybackPlan,
+  PlaybackMethod,
   TrackInfo,
 } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
@@ -10,7 +10,7 @@ import {
   needsTrackChoice,
   parseTrackSelection,
   selectedFrameRate,
-} from "./playbackPlanRules.ts";
+} from "./playbackMethodRules.ts";
 
 const baseTrack: TrackInfo = {
   index: 0,
@@ -93,26 +93,26 @@ describe("needsTrackChoice", () => {
 
 describe("copiesChosenTracksOnly", () => {
   it("is true when video and audio are copied", () => {
-    const plan: PlaybackPlan = {
+    const method: PlaybackMethod = {
       kind: "convert",
       video: { action: "copy", index: 0 },
       audio: { action: "copy", index: 1 },
       reasons: ["container_unsupported"],
     };
-    expect(copiesChosenTracksOnly(plan)).toBe(true);
+    expect(copiesChosenTracksOnly(method)).toBe(true);
   });
 
   it("is false when audio is transcoded", () => {
-    const plan: PlaybackPlan = {
+    const method: PlaybackMethod = {
       kind: "convert",
       video: { action: "copy", index: 0 },
       audio: { action: "transcode", index: 1, target: "aac" },
       reasons: ["codec_unsupported"],
     };
-    expect(copiesChosenTracksOnly(plan)).toBe(false);
+    expect(copiesChosenTracksOnly(method)).toBe(false);
   });
 
-  it("is false for a direct plan", () => {
+  it("is false for a direct method", () => {
     expect(copiesChosenTracksOnly({ kind: "direct" })).toBe(false);
   });
 });

@@ -2,4 +2,4 @@
 import type { ConversionPlan } from "./ConversionPlan";
 import type { UnsupportedReason } from "./UnsupportedReason";
 
-export type PlaybackPlan = { "kind": "direct" } | { "kind": "convert" } & ConversionPlan | { "kind": "unsupported", reason: UnsupportedReason, };
+export type PlaybackMethod = { "kind": "direct" } | { "kind": "convert" } & ConversionPlan | { "kind": "unsupported", reason: UnsupportedReason, };

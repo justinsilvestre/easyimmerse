@@ -140,7 +140,7 @@ export {
   needsTrackChoice,
   selectedFrameRate,
   tracksOfKind,
-} from "./screen/mediaScreen/playbackPlanRules.ts";
+} from "./screen/mediaScreen/playbackMethodRules.ts";
 export {
   selectDialog,
   selectPathPlayback,

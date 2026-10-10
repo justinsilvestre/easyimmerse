@@ -5,7 +5,7 @@ export {
   selectCachedMediaTracks,
   selectCachedWaveformWindow,
   selectMediaTracksEntry,
-  selectPlaybackPlanEntry,
+  selectPlaybackMethodEntry,
   useCaptureFrameQuery,
   useCreateFlashcardMutation,
   useDeleteFlashcardMutation,
@@ -24,7 +24,7 @@ export {
   useListSubtitleTracksQuery,
   useLookupTextQuery,
   useOpenBookQuery,
-  usePlanPlaybackQuery,
+  useChoosePlaybackMethodQuery,
   useProbePicturesQuery,
   useUpdateFlashcardMutation,
 } from "./backendApi.ts";

@@ -55,7 +55,7 @@ export const screenActions = {
   /** The user asked to play a flashcard's clip from its start, pausing at its end. */
   clipPlayRequested: (clip: AudioClip) =>
     ({ type: "clipPlayRequested", clip }) as const,
-  /** The browser's media support for a file's formats, as measured for its playback plan. */
+  /** The browser's media support for a file's formats, as measured to choose its playback method. */
   playbackEnvironmentMeasured: (
     mediaFileId: string,
     environment: PlaybackEnvironment,

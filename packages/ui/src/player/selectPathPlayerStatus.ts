@@ -1,6 +1,6 @@
 import {
   selectMediaTracksEntry,
-  selectPlaybackPlanEntry,
+  selectPlaybackMethodEntry,
 } from "@easyimmerse/backend";
 import type { RootState } from "@easyimmerse/state";
 import {
@@ -16,18 +16,18 @@ import { loadingPlayback } from "./PlayerStatus.ts";
 
 /**
  * Returns what the player shows for the open file on the server's disk,
- * from the tracks and the plan that the media screen's update asked for.
+ * from the tracks and the playback method that the media screen's update asked for.
  */
 export const selectPathPlayerStatus = createSelector(
   [
     selectServerConfig,
     selectRoute,
     tracksEntryOf,
-    planEntryOf,
+    methodEntryOf,
     selectPathPlayback,
     selectPreference("conversionNoticeDismissed"),
   ],
-  (server, route, tracks, plan, playback, noticeDismissed) => {
+  (server, route, tracks, methodEntry, playback, noticeDismissed) => {
     const file = openFileOf(route);
     if (file === null) return loadingPlayback;
     return derivePlayerStatus({
@@ -35,8 +35,8 @@ export const selectPathPlayerStatus = createSelector(
       ...file,
       tracks: tracks?.data,
       tracksError: tracks?.error,
-      playback: plan?.data,
-      playbackError: plan?.error,
+      playback: methodEntry?.data,
+      playbackError: methodEntry?.error,
       selection: playback?.selection ?? null,
       noticeSettled:
         noticeDismissed === "true" || playback?.isConversionAccepted === true,
@@ -58,10 +58,10 @@ function tracksEntryOf(state: RootState) {
     : undefined;
 }
 
-function planEntryOf(state: RootState) {
+function methodEntryOf(state: RootState) {
   const file = openFileOf(selectRoute(state));
-  const request = selectPathPlayback(state)?.planRequest ?? null;
+  const request = selectPathPlayback(state)?.methodRequest ?? null;
   return file !== null && request !== null
-    ? selectPlaybackPlanEntry(state, { ...file, request })
+    ? selectPlaybackMethodEntry(state, { ...file, request })
     : undefined;
 }

@@ -1,43 +1,43 @@
-//! Decides whether a client plays a file directly, after conversion, or not at all.
+//! Chooses whether a client plays a file directly, after conversion, or not at all.
 
 use crate::container::{ContainerInfo, TrackInfo, TrackKind};
 use crate::conversion_settings::ConversionSettings;
 use crate::direct_playback::{DirectSupport, direct_mime_type, direct_support};
 use crate::playback_environment::PlaybackEnvironment;
-use crate::playback_plan::{ConversionPlan, ConversionReason, PlaybackPlan, UnsupportedReason};
-use crate::track_actions::{plan_audio_action, plan_video_action};
+use crate::playback_method::{ConversionPlan, ConversionReason, PlaybackMethod, UnsupportedReason};
+use crate::track_actions::{choose_audio_action, choose_video_action};
 use crate::track_selection::{TrackSelection, default_track_selection};
 
-/// Plans playback of the selected tracks for a client. `settings` is `None` when the server
+/// Chooses how a client plays the selected tracks. `settings` is `None` when the server
 /// has no conversion service, in which case anything but direct playback is unsupported.
-pub fn plan_playback(
+pub fn choose_playback_method(
     container: &ContainerInfo,
     selection: &TrackSelection,
     environment: &PlaybackEnvironment,
     settings: Option<&ConversionSettings>,
-) -> PlaybackPlan {
+) -> PlaybackMethod {
     let (video, audio) = match select_tracks(container, selection) {
         Ok(tracks) => tracks,
-        Err(reason) => return PlaybackPlan::Unsupported { reason },
+        Err(reason) => return PlaybackMethod::Unsupported { reason },
     };
     let reasons = direct_playback_obstacles(container, selection, environment);
     if reasons.is_empty() {
-        return PlaybackPlan::Direct;
+        return PlaybackMethod::Direct;
     }
     let Some(settings) = settings else {
-        return PlaybackPlan::Unsupported {
+        return PlaybackMethod::Unsupported {
             reason: UnsupportedReason::ConversionUnavailable,
         };
     };
-    let video = video.map(|track| plan_video_action(track, container, environment, settings));
-    let audio = audio.map(|track| plan_audio_action(track, environment, settings));
+    let video = video.map(|track| choose_video_action(track, container, environment, settings));
+    let audio = audio.map(|track| choose_audio_action(track, environment, settings));
     match (video.transpose(), audio.transpose()) {
-        (Ok(video), Ok(audio)) => PlaybackPlan::Convert(ConversionPlan {
+        (Ok(video), Ok(audio)) => PlaybackMethod::Convert(ConversionPlan {
             video,
             audio,
             reasons,
         }),
-        (Err(reason), _) | (_, Err(reason)) => PlaybackPlan::Unsupported { reason },
+        (Err(reason), _) | (_, Err(reason)) => PlaybackMethod::Unsupported { reason },
     }
 }
 
@@ -100,7 +100,7 @@ mod tests {
     use crate::container::ContainerFormat;
     use crate::conversion_settings::{AudioTarget, VideoTarget};
     use crate::playback_environment::{CanPlayAnswer, PlaybackEngine};
-    use crate::playback_plan::{AudioAction, VideoAction};
+    use crate::playback_method::{AudioAction, VideoAction};
 
     fn track(index: u32, kind: TrackKind, codec: &str, codec_string: Option<&str>) -> TrackInfo {
         TrackInfo {
@@ -161,26 +161,26 @@ mod tests {
 
     #[test]
     fn plays_a_playable_mp4_directly() {
-        let plan = plan_playback(
+        let method = choose_playback_method(
             &h264_aac(ContainerFormat::Mp4),
             &both_tracks(),
             &chromium(CanPlayAnswer::Probably),
             Some(&settings()),
         );
-        assert_eq!(plan, PlaybackPlan::Direct);
+        assert_eq!(method, PlaybackMethod::Direct);
     }
 
     #[test]
     fn remuxes_a_matroska_file_by_copying_both_tracks() {
-        let plan = plan_playback(
+        let method = choose_playback_method(
             &h264_aac(ContainerFormat::Matroska),
             &both_tracks(),
             &chromium(CanPlayAnswer::No),
             Some(&settings()),
         );
         assert_eq!(
-            plan,
-            PlaybackPlan::Convert(ConversionPlan {
+            method,
+            PlaybackMethod::Convert(ConversionPlan {
                 video: Some(VideoAction::Copy { index: 0 }),
                 audio: Some(AudioAction::Copy { index: 1 }),
                 reasons: vec![ConversionReason::ContainerUnsupported],
@@ -190,15 +190,15 @@ mod tests {
 
     #[test]
     fn converts_an_mp4_when_the_client_rejects_its_codecs() {
-        let plan = plan_playback(
+        let method = choose_playback_method(
             &h264_aac(ContainerFormat::Mp4),
             &both_tracks(),
             &chromium(CanPlayAnswer::No),
             Some(&settings()),
         );
         assert!(
-            matches!(&plan, PlaybackPlan::Convert(conversion) if conversion.reasons == [ConversionReason::CodecUnsupported]),
-            "{plan:?}"
+            matches!(&method, PlaybackMethod::Convert(conversion) if conversion.reasons == [ConversionReason::CodecUnsupported]),
+            "{method:?}"
         );
     }
 
@@ -212,15 +212,15 @@ mod tests {
             video: None,
             audio: Some(0),
         };
-        let plan = plan_playback(
+        let method = choose_playback_method(
             &container,
             &selection,
             &chromium(CanPlayAnswer::Probably),
             Some(&settings()),
         );
         assert_eq!(
-            plan,
-            PlaybackPlan::Convert(ConversionPlan {
+            method,
+            PlaybackMethod::Convert(ConversionPlan {
                 video: None,
                 audio: Some(AudioAction::Copy { index: 0 }),
                 reasons: vec![ConversionReason::InaccurateSeeking],
@@ -238,29 +238,29 @@ mod tests {
             video: Some(0),
             audio: Some(2),
         };
-        let plan = plan_playback(
+        let method = choose_playback_method(
             &container,
             &selection,
             &chromium(CanPlayAnswer::Probably),
             Some(&settings()),
         );
         assert!(
-            matches!(&plan, PlaybackPlan::Convert(conversion) if conversion.reasons == [ConversionReason::NonDefaultTracks]),
-            "{plan:?}"
+            matches!(&method, PlaybackMethod::Convert(conversion) if conversion.reasons == [ConversionReason::NonDefaultTracks]),
+            "{method:?}"
         );
     }
 
     #[test]
     fn refuses_conversion_without_a_conversion_service() {
-        let plan = plan_playback(
+        let method = choose_playback_method(
             &h264_aac(ContainerFormat::Matroska),
             &both_tracks(),
             &chromium(CanPlayAnswer::No),
             None,
         );
         assert_eq!(
-            plan,
-            PlaybackPlan::Unsupported {
+            method,
+            PlaybackMethod::Unsupported {
                 reason: UnsupportedReason::ConversionUnavailable
             }
         );
@@ -272,15 +272,15 @@ mod tests {
             video: Some(5),
             audio: Some(1),
         };
-        let plan = plan_playback(
+        let method = choose_playback_method(
             &h264_aac(ContainerFormat::Mp4),
             &selection,
             &chromium(CanPlayAnswer::Probably),
             Some(&settings()),
         );
         assert_eq!(
-            plan,
-            PlaybackPlan::Unsupported {
+            method,
+            PlaybackMethod::Unsupported {
                 reason: UnsupportedReason::TrackNotFound
             }
         );
@@ -292,15 +292,15 @@ mod tests {
             ContainerFormat::Matroska,
             vec![track(0, TrackKind::Subtitle, "subrip", None)],
         );
-        let plan = plan_playback(
+        let method = choose_playback_method(
             &container,
             &TrackSelection::default(),
             &chromium(CanPlayAnswer::No),
             Some(&settings()),
         );
         assert_eq!(
-            plan,
-            PlaybackPlan::Unsupported {
+            method,
+            PlaybackMethod::Unsupported {
                 reason: UnsupportedReason::NoTracks
             }
         );

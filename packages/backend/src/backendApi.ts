@@ -30,8 +30,8 @@ import type {
   MediaSourceJob,
   NewFlashcard,
   ParseTimedTextRequest,
-  PlaybackRequest,
-  PlaybackResponse,
+  PlaybackMethodRequest,
+  PlaybackMethodResponse,
   PluginForm,
   Project,
   ProjectSettings,
@@ -93,7 +93,9 @@ type SourceStepArgs = MediaFileArgs & { request: SourceStepRequest };
 
 type MediaFileArgs = { projectId: string; mediaFileId: string };
 
-type PlanPlaybackArgs = MediaFileArgs & { request: PlaybackRequest };
+type ChoosePlaybackMethodArgs = MediaFileArgs & {
+  request: PlaybackMethodRequest;
+};
 
 type SaveTrackSelectionArgs = MediaFileArgs & { selection: TrackSelection };
 
@@ -361,10 +363,13 @@ export const backendApi = createApi({
         path: `${mediaFilePath(args)}/tracks`,
       }),
     }),
-    planPlayback: build.query<PlaybackResponse, PlanPlaybackArgs>({
+    choosePlaybackMethod: build.query<
+      PlaybackMethodResponse,
+      ChoosePlaybackMethodArgs
+    >({
       query: ({ request, ...args }) => ({
         method: "POST",
-        path: `${mediaFilePath(args)}/playback`,
+        path: `${mediaFilePath(args)}/playback-method`,
         body: { kind: "json", value: request },
       }),
     }),
@@ -645,7 +650,7 @@ export const {
   useListMediaFilesQuery,
   useListPluginsQuery,
   useGetMediaTracksQuery,
-  usePlanPlaybackQuery,
+  useChoosePlaybackMethodQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
   useGetSubtitleCuesQuery,
@@ -723,18 +728,22 @@ export function selectMediaTracksEntry(
   return cacheEntryOf<TracksResponse>(state, "getMediaTracks", file);
 }
 
-/** The cache entry of a media file's playback plan, or undefined while the cache holds none. */
-export function selectPlaybackPlanEntry(
+/** The cache entry of a media file's playback method, or undefined while the cache holds none. */
+export function selectPlaybackMethodEntry(
   state: unknown,
-  args: PlanPlaybackArgs,
-): CacheEntry<PlaybackResponse> {
-  return cacheEntryOf<PlaybackResponse>(state, "planPlayback", args);
+  args: ChoosePlaybackMethodArgs,
+): CacheEntry<PlaybackMethodResponse> {
+  return cacheEntryOf<PlaybackMethodResponse>(
+    state,
+    "choosePlaybackMethod",
+    args,
+  );
 }
 
 /** Reads a query's entry straight from the cache, without building a selector for its arguments. */
 function cacheEntryOf<Data>(
   state: unknown,
-  endpointName: "getMediaTracks" | "planPlayback",
+  endpointName: "getMediaTracks" | "choosePlaybackMethod",
   queryArgs: unknown,
 ): CacheEntry<Data> {
   const key = defaultSerializeQueryArgs({

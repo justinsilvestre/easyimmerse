@@ -16,8 +16,8 @@ import type {
   MediaFile,
   MediaSourceJob,
   ParseTimedTextRequest,
-  PlaybackRequest,
-  PlaybackResponse,
+  PlaybackMethodRequest,
+  PlaybackMethodResponse,
   PluginForm,
   Project,
   ProjectSettings,
@@ -78,10 +78,10 @@ export type ServerRequest =
     }
   | { kind: "getMediaTracks"; projectId: string; mediaFileId: string }
   | {
-      kind: "planPlayback";
+      kind: "choosePlaybackMethod";
       projectId: string;
       mediaFileId: string;
-      request: PlaybackRequest;
+      request: PlaybackMethodRequest;
     }
   | {
       kind: "saveTrackSelection";
@@ -152,7 +152,7 @@ export type ServerResponses = {
   getWaveformWindow: WaveformResponse;
   lookupText: LookupResponse;
   getMediaTracks: TracksResponse;
-  planPlayback: PlaybackResponse;
+  choosePlaybackMethod: PlaybackMethodResponse;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   saveTrackSelection: void;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.

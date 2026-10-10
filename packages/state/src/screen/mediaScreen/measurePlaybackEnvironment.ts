@@ -13,7 +13,7 @@ const conversionTargetCodecStrings: readonly string[] = [
 ];
 
 /**
- * Describes the browser's media support to the playback planner: the engine, whether the file's own
+ * Describes the browser's media support to the server as it chooses a playback method: the engine, whether the file's own
  * MIME type plays in a media element, and which codec strings, among the file's and the conversion targets',
  * Media Source Extensions accept in fragmented MP4.
  */

@@ -84,7 +84,7 @@ export type ScreenState = {
     | { kind: "filePick"; for: "subtitles" }
     /**
      * The choice of the open file's tracks. `selection` is what it shows, null for each kind's default track.
-     * In the `choosing` stage it is the first choice, due before the first play, and holds the plan until answered;
+     * In the `choosing` stage it is the first choice, due before the first play, and holds the playback method request until answered;
      * in the `confirming` stage it was reopened while the file plays, which goes on until the user chooses.
      */
     | {

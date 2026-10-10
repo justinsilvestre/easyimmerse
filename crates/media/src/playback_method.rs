@@ -1,4 +1,4 @@
-//! The outcome of planning how a client plays a file.
+//! How a client plays a file: directly, after conversion, or not at all.
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -10,7 +10,7 @@ use crate::transcode_video::PictureSize;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 #[ts(export)]
-pub enum PlaybackPlan {
+pub enum PlaybackMethod {
     /// The client plays the file's own bytes in a media element.
     Direct,
     /// The server converts the file into HLS with fragmented MP4 segments while it plays.

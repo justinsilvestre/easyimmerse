@@ -1,6 +1,6 @@
 import {
   selectMediaTracksEntry,
-  selectPlaybackPlanEntry,
+  selectPlaybackMethodEntry,
 } from "@easyimmerse/backend";
 import { actions, selectPathPlayback } from "@easyimmerse/state";
 import { describe, expect, it, vi } from "vitest";
@@ -13,8 +13,8 @@ import {
 } from "../testSupport/mediaFixtureResponses.ts";
 import { selectPathPlayerStatus } from "./selectPathPlayerStatus.ts";
 
-/** Opens m1, which plays directly, and waits until its plan is in the cache. */
-async function storeWithPlan() {
+/** Opens m1, which plays directly, and waits until its playback method is in the cache. */
+async function storeWithMethod() {
   const client = createFakeBackendClient(
     fixtureResponses,
     directPlaybackRoutes,
@@ -33,37 +33,39 @@ describe("selectPathPlayerStatus", () => {
     expect(selectPathPlayerStatus(store.getState()).status).toBe("loading");
   });
 
-  it("plays the file's stream once its plan has arrived", async () => {
-    const store = await storeWithPlan();
+  it("plays the file's stream once its playback method has arrived", async () => {
+    const store = await storeWithMethod();
     expect(selectPathPlayerStatus(store.getState())).toMatchObject({
       source: { kind: "direct" },
     });
   });
 
   it("keeps its answer while the player's time moves", async () => {
-    const store = await storeWithPlan();
+    const store = await storeWithMethod();
     const before = selectPathPlayerStatus(store.getState());
     store.dispatch(actions.playerTimeChanged(3));
     expect(selectPathPlayerStatus(store.getState())).toBe(before);
   });
 
   it("reads the tracks' cache entry by the same reference while the player's time moves", async () => {
-    const store = await storeWithPlan();
+    const store = await storeWithMethod();
     const before = selectMediaTracksEntry(store.getState(), file);
     store.dispatch(actions.playerTimeChanged(3));
     expect(selectMediaTracksEntry(store.getState(), file)).toBe(before);
   });
 
-  it("reads the plan's cache entry by the same reference while the player's time moves", async () => {
-    const store = await storeWithPlan();
-    const planArgs = () => {
-      const request = selectPathPlayback(store.getState())?.planRequest;
-      if (!request) throw new Error("The plan was never requested.");
+  it("reads the playback method's cache entry by the same reference while the player's time moves", async () => {
+    const store = await storeWithMethod();
+    const methodArgs = () => {
+      const request = selectPathPlayback(store.getState())?.methodRequest;
+      if (!request) throw new Error("The playback method was never requested.");
       return { ...file, request };
     };
-    const before = selectPlaybackPlanEntry(store.getState(), planArgs());
+    const before = selectPlaybackMethodEntry(store.getState(), methodArgs());
     store.dispatch(actions.playerTimeChanged(3));
-    expect(selectPlaybackPlanEntry(store.getState(), planArgs())).toBe(before);
+    expect(selectPlaybackMethodEntry(store.getState(), methodArgs())).toBe(
+      before,
+    );
   });
 });
 

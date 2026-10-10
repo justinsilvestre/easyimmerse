@@ -6,7 +6,7 @@ import {
 } from "./examplePlayback.ts";
 
 describe("isConversionNoticeDue", () => {
-  it("is due for a plan that re-encodes a track", () => {
+  it("is due for a method that re-encodes a track", () => {
     expect(isConversionNoticeDue(exampleTranscodePlayback, false)).toBe(true);
   });
 
@@ -14,17 +14,17 @@ describe("isConversionNoticeDue", () => {
     expect(isConversionNoticeDue(exampleTranscodePlayback, true)).toBe(false);
   });
 
-  it("is not due for a plan that only copies the tracks", () => {
+  it("is not due for a method that only copies the tracks", () => {
     expect(isConversionNoticeDue(exampleCopyPlayback, false)).toBe(false);
   });
 
-  it("is not due for a converting plan that names no playlist", () => {
+  it("is not due for a converting method that names no playlist", () => {
     const noPlaylist = { ...exampleTranscodePlayback, playlist_path: null };
     expect(isConversionNoticeDue(noPlaylist, false)).toBe(false);
   });
 
-  it("is not due for a direct plan", () => {
-    const direct = { plan: { kind: "direct" }, playlist_path: null } as const;
+  it("is not due for a direct method", () => {
+    const direct = { method: { kind: "direct" }, playlist_path: null } as const;
     expect(isConversionNoticeDue(direct, false)).toBe(false);
   });
 });

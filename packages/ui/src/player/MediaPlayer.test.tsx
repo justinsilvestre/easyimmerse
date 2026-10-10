@@ -94,7 +94,9 @@ const findAlertText = async () =>
   (await screen.findByRole("alert")).textContent;
 
 function playbackRequests(requests: BackendRequest[]) {
-  return requests.filter((request) => request.path.endsWith("/playback"));
+  return requests.filter((request) =>
+    request.path.endsWith("/playback-method"),
+  );
 }
 
 function requestBody(request: BackendRequest | undefined): unknown {
@@ -286,7 +288,7 @@ describe("MediaPlayer", () => {
   });
 
   describe("conversion notice", () => {
-    it("opens before a plan that re-encodes a track", async () => {
+    it("opens before a playback method that re-encodes a track", async () => {
       renderPlayer(transcodePlaybackRoutes, { mediaFiles: withSavedSelection });
       expect(
         await screen.findByRole("dialog", {
@@ -364,7 +366,7 @@ describe("MediaPlayer", () => {
   });
 
   describe("failures", () => {
-    it("explains an unsupported plan in plain words", async () => {
+    it("explains an unsupported playback method in plain words", async () => {
       renderPlayer(unsupportedPlaybackRoutes);
       expect(await findAlertText()).toBe(
         "The media could not be played. This video's picture is too tall to convert.",

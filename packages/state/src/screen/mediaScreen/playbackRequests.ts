@@ -1,17 +1,17 @@
 import type {
-  PlaybackRequest,
+  PlaybackMethodRequest,
   TrackSelection,
   TracksResponse,
 } from "@easyimmerse/types";
 import type { Effect } from "../../app/effect.ts";
 import type { MediaRoute } from "../../route/route.ts";
-import { containerCodecStrings } from "./playbackPlanRules.ts";
+import { containerCodecStrings } from "./playbackMethodRules.ts";
 
 /** The ids of the media screen's playback requests. Sending one again under its id aborts the one still running. */
 export const playbackRequestIds = (mediaFileId: string) => ({
   mediaFile: `media/${mediaFileId}/mediaFile`,
   tracks: `media/${mediaFileId}/tracks`,
-  plan: `media/${mediaFileId}/playbackPlan`,
+  method: `media/${mediaFileId}/playbackMethod`,
   saveSelection: `media/${mediaFileId}/saveTrackSelection`,
 });
 
@@ -33,15 +33,15 @@ export function tracksRequest({ projectId, mediaFileId }: MediaRoute) {
   } satisfies Effect;
 }
 
-/** Asks for the plan of the open file. */
-export function planRequest(
+/** Asks how the browser can play the open file. */
+export function playbackMethodRequest(
   { projectId, mediaFileId }: MediaRoute,
-  request: PlaybackRequest,
+  request: PlaybackMethodRequest,
 ) {
   return {
     type: "sendRequest",
-    id: playbackRequestIds(mediaFileId).plan,
-    request: { kind: "planPlayback", projectId, mediaFileId, request },
+    id: playbackRequestIds(mediaFileId).method,
+    request: { kind: "choosePlaybackMethod", projectId, mediaFileId, request },
   } satisfies Effect;
 }
 
