@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
+import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import type { Route } from "./route.ts";
 import { nextRoute, routeAfter } from "./updateRoute.ts";
 
@@ -76,32 +77,30 @@ describe("nextRoute", () => {
   });
 });
 
+const picked = {
+  name: "a.mkv",
+  source: { kind: "path", path: "/videos/a.mkv" },
+} as const;
+
+const pickedInProject = [
+  actions.navigated({ type: "openProject", projectId: "p1" }),
+  actions.mediaFileChosen(picked),
+];
+
+const added = actions.requestSettled(
+  "project/p1/addMediaFile",
+  { kind: "addMediaFile", projectId: "p1", request: picked },
+  { ok: true, data: exampleMediaFile("m1", "a.mkv") },
+);
+
 describe("routeAfter", () => {
   it("opens the media file that a settled pick names", () => {
-    const picked = {
-      name: "a.mkv",
-      source: { kind: "path", path: "/a.mkv" },
-    } as const;
-    const app = stateAfter(
-      actions.navigated({ type: "openProject", projectId: "p1" }),
-      actions.mediaFileChosen(picked),
-    );
-    const added = actions.requestSettled(
-      "project/p1/addMediaFile",
-      { kind: "addMediaFile", projectId: "p1", request: picked },
-      {
-        ok: true,
-        data: {
-          id: "m1",
-          project_id: "p1",
-          ...picked,
-          created_at_ms: 0,
-          track_selection_json: null,
-          origin: null,
-        },
-      },
-    );
-    expect(routeAfter(app, added)).toEqual(media);
+    expect(routeAfter(stateAfter(...pickedInProject), added)).toEqual(media);
+  });
+
+  it("opens the media file that a settled pick names beneath Settings opened meanwhile", () => {
+    const app = stateAfter(...pickedInProject, actions.settingsRequested());
+    expect(routeAfter(app, added)).toEqual(settingsOver(media));
   });
 
   it("takes the route's own next step for any other action", () => {

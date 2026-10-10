@@ -1,9 +1,10 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { Effect } from "../../app/effect.ts";
+import type { PickedMediaFile } from "../../platform/effects.ts";
 import type { MainRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { ProjectScreenState } from "../screenState.ts";
-import { existingNamed } from "./mediaFileOpenedByPick.ts";
+import { findMediaFileNamed } from "./mediaFileOpenedByPick.ts";
 import { mediaFilePickRequestIds } from "./mediaFilePickRequestIds.ts";
 
 type ProjectRoute = Extract<MainRoute, { screen: "project" }>;
@@ -37,34 +38,32 @@ export function updateProjectScreen(
       if (isSettled(action, ids.list, "listMediaFiles"))
         // A list that fails to load lets the file be sent anyway.
         return action.outcome.ok &&
-          existingNamed(action.outcome.data, pending.name)
+          findMediaFileNamed(action.outcome.data, pending.name)
           ? [
               { ...screen, pendingMediaFile: null },
-              [
-                {
-                  type: "showNotification",
-                  message: `“${pending.name}” is already in the project.`,
-                },
-              ],
+              [alreadyInProject(pending.name)],
             ]
-          : [
-              screen,
-              [
-                {
-                  type: "sendRequest",
-                  id: ids.add,
-                  request: {
-                    kind: "addMediaFile",
-                    projectId,
-                    request: pending,
-                  },
-                },
-              ],
-            ];
+          : [screen, [sendPickedFile(projectId, pending)]];
       if (isSettled(action, ids.add, "addMediaFile"))
         return [{ ...screen, pendingMediaFile: null }, []];
       return [screen, []];
     default:
       return [screen, []];
   }
+}
+
+/** Sends a picked media file to the project. */
+function sendPickedFile(projectId: string, file: PickedMediaFile): Effect {
+  return {
+    type: "sendRequest",
+    id: mediaFilePickRequestIds(projectId).add,
+    request: { kind: "addMediaFile", projectId, request: file },
+  };
+}
+
+function alreadyInProject(name: string): Effect {
+  return {
+    type: "showNotification",
+    message: `“${name}” is already in the project.`,
+  };
 }

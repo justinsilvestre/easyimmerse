@@ -643,7 +643,6 @@ export const {
   useGetConversionCacheStatusQuery,
   useClearConversionCacheMutation,
   useSetConversionCacheBudgetMutation,
-  useParseTimedTextMutation,
   useOpenBookQuery,
   useImportDictionaryMutation,
   usePreviewDictionaryTableMutation,

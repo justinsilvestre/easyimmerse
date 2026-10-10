@@ -1,9 +1,9 @@
-import type { MediaFile } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
 import type { PickedMediaFile } from "../../platform/effects.ts";
+import { exampleMediaFile } from "../../server/exampleMediaFile.ts";
 import type { ServerRequest } from "../../server/serverRequest.ts";
 import { mediaFileOpenedByPick } from "./mediaFileOpenedByPick.ts";
 
@@ -25,27 +25,17 @@ const pickedInProject: AppAction[] = [
   actions.mediaFileChosen(picked),
 ];
 
-function mediaFileNamed(name: string): MediaFile {
-  return {
-    id: `m-${name}`,
-    project_id: "p1",
-    name,
-    source: { kind: "path", path: `/videos/${name}` },
-    created_at_ms: 0,
-    track_selection_json: null,
-    origin: null,
-  };
-}
-
 const listed = (...names: string[]) =>
   actions.requestSettled("project/p1/listMediaFiles", listRequest, {
     ok: true,
-    data: { media_files: names.map(mediaFileNamed) },
+    data: {
+      media_files: names.map((name) => exampleMediaFile(`m-${name}`, name)),
+    },
   });
 
 const added = actions.requestSettled("project/p1/addMediaFile", addRequest, {
   ok: true,
-  data: mediaFileNamed("pilot.mkv"),
+  data: exampleMediaFile("m-pilot.mkv", "pilot.mkv"),
 });
 
 describe("mediaFileOpenedByPick", () => {

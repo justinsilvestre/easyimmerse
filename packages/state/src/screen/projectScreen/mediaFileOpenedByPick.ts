@@ -19,12 +19,12 @@ export function mediaFileOpenedByPick(
   if (isSettled(action, ids.add, "addMediaFile"))
     return action.outcome.ok ? action.outcome.data.id : null;
   if (isSettled(action, ids.list, "listMediaFiles") && action.outcome.ok)
-    return existingNamed(action.outcome.data, pending.name)?.id ?? null;
+    return findMediaFileNamed(action.outcome.data, pending.name)?.id ?? null;
   return null;
 }
 
 /** Returns the project's media file with the given name, if there is one. */
-export function existingNamed(
+export function findMediaFileNamed(
   list: ListMediaFilesResponse,
   name: string,
 ): MediaFile | undefined {

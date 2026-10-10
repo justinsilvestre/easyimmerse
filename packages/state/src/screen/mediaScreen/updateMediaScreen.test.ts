@@ -169,6 +169,17 @@ describe("updateMediaScreen", () => {
       expect(screen.pendingSubtitleFile).toBeNull();
     });
 
+    it("ignores a listing it did not ask for", () => {
+      const [, effects] = apply(
+        actions.requestSettled("other", tracksRequest, {
+          ok: true,
+          data: { tracks: [], selection: targetShown },
+        }),
+        actions.subtitleFileChosen(srt),
+      );
+      expect(effects).toEqual([]);
+    });
+
     it("ignores a listing once no file is chosen", () => {
       const [, effects] = apply(tracksListed(targetShown));
       expect(effects).toEqual([]);

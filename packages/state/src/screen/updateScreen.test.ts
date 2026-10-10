@@ -1,9 +1,9 @@
-import type { MediaFile } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
+import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { updateScreen } from "./updateScreen.ts";
 
 /** Applies an action to the screens after the given earlier actions. */
@@ -15,15 +15,6 @@ const apply = (action: AppAction, ...before: AppAction[]) => {
 const pickedMediaFile: PickedMediaFile = {
   name: "episode.mkv",
   source: { kind: "path", path: "/videos/episode.mkv" },
-};
-
-const mediaFileM1: MediaFile = {
-  id: "m1",
-  project_id: "p1",
-  ...pickedMediaFile,
-  created_at_ms: 0,
-  track_selection_json: null,
-  origin: null,
 };
 
 const mediaFileAddFailed = actions.requestSettled(
@@ -107,9 +98,13 @@ describe("updateScreen", () => {
     expect(screen.main).toBe(app.screen.main);
   });
 
-  it("forgets the chosen media file for mediaFileAdded", () => {
+  it("opens the media screen once the picked file is added", () => {
     const [screen] = apply(
-      actions.mediaFileAdded("m1"),
+      actions.requestSettled(
+        "project/p1/addMediaFile",
+        { kind: "addMediaFile", projectId: "p1", request: pickedMediaFile },
+        { ok: true, data: exampleMediaFile("m1", "episode.mkv") },
+      ),
       actions.navigated({ type: "openProject", projectId: "p1" }),
       actions.mediaFileChosen(pickedMediaFile),
     );
@@ -155,7 +150,7 @@ describe("updateScreen", () => {
         { kind: "listMediaFiles", projectId: "p1" },
         {
           ok: true,
-          data: { media_files: [{ ...mediaFileM1, name: "episode.mkv" }] },
+          data: { media_files: [exampleMediaFile("m1", "episode.mkv")] },
         },
       ),
       actions.navigated({ type: "openProject", projectId: "p1" }),

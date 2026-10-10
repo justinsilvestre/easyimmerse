@@ -30,7 +30,6 @@ export {
   useLookupTextQuery,
   useMarkProjectOpenedMutation,
   useOpenBookQuery,
-  useParseTimedTextMutation,
   usePlanPlaybackQuery,
   usePreviewDictionaryTableMutation,
   usePreviewLocalDictionaryTableMutation,

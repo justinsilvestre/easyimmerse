@@ -19,9 +19,11 @@ const pickedMediaFile: PickedMediaFile = {
   source: { kind: "path", path: "/a" },
 };
 
+const parseSource = { kind: "inline", text: "" } as const;
+
 const parseRequest: ServerRequest = {
   kind: "parseTimedText",
-  request: { source: { kind: "inline", text: "" }, format: null },
+  request: { source: parseSource, format: null },
 };
 
 const cue: Cue = { index: 1, start_ms: 0, end_ms: 1000, text: "Hi" };
@@ -65,6 +67,7 @@ describe("screenSelectors", () => {
     const parsed = {
       app: stateAfter(
         actions.navigated({ type: "continueOffline" }),
+        actions.subtitleFileChosen({ name: "a.srt", source: parseSource }),
         actions.requestSettled("offline/parseTimedText", parseRequest, {
           ok: true,
           data: { format: "srt", cues: [cue] },
@@ -78,6 +81,7 @@ describe("screenSelectors", () => {
     const failed = {
       app: stateAfter(
         actions.navigated({ type: "continueOffline" }),
+        actions.subtitleFileChosen({ name: "a.srt", source: parseSource }),
         actions.requestSettled("offline/parseTimedText", parseRequest, {
           ok: false,
           error: { status: 400, message: "not a subtitles file" },

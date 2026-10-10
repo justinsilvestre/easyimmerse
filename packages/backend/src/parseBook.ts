@@ -1,14 +1,24 @@
 import { documentFormatOf } from "@easyimmerse/state";
-import type { Document, DocumentFormat, MediaFile } from "@easyimmerse/types";
+import type {
+  Document,
+  DocumentFormat,
+  MediaFile,
+  ParseLocalDocumentRequest,
+} from "@easyimmerse/types";
+import type { QueryReturnValue } from "@reduxjs/toolkit/query";
 import type { BackendError, BackendRequest } from "./backendClient.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 
 /** A book to parse: its file's name, which gives the format, and where the file lives. */
 export type BookArgs = Pick<MediaFile, "name" | "source">;
 
-type BookResult = { data: Document } | { error: BackendError };
+type BookResult = QueryReturnValue<Document, BackendError, undefined>;
 
-type BookBaseQuery = (request: BackendRequest) => unknown;
+type BookBaseQuery = (
+  request: BackendRequest,
+) =>
+  | QueryReturnValue<unknown, BackendError>
+  | PromiseLike<QueryReturnValue<unknown, BackendError>>;
 
 /** The failure for a file a browser added, on a platform that holds no browser files. */
 const browserFileUnreachable: BackendError = {
@@ -49,7 +59,10 @@ function parseLocalRequest(
   return {
     method: "POST",
     path: "/documents/parse-local",
-    body: { kind: "json", value: { path, format } },
+    body: {
+      kind: "json",
+      value: { path, format } satisfies ParseLocalDocumentRequest,
+    },
   };
 }
 

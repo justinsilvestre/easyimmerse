@@ -21,6 +21,8 @@ export type OfflineScreenState = {
   kind: "offline";
   cues: readonly Cue[];
   hasFailed: boolean;
+  /** True while the file last picked is being parsed. */
+  parsing: boolean;
 };
 
 /** The project overview's state: a picked media file, held while its requests run. */
@@ -62,7 +64,7 @@ export function initialMainScreen(route: MainRoute): MainScreenState {
     case "projectSettings":
       return { kind: route.screen };
     case "offline":
-      return { kind: "offline", cues: [], hasFailed: false };
+      return { kind: "offline", cues: [], hasFailed: false, parsing: false };
     case "project":
       return { kind: "project", pendingMediaFile: null };
     case "media":
