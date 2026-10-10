@@ -11,7 +11,7 @@ export function createEffectsMiddleware(
   return (api) => (next) => (action) => {
     const result = next(action);
     for (const effect of drainEffects())
-      runEffect(effect, effects, api.dispatch);
+      runEffect(effect, { effects, dispatch: api.dispatch });
     return result;
   };
 }

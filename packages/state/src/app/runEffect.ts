@@ -7,12 +7,14 @@ import { unsavedWorkEffectRunners } from "../unsavedWork/unsavedWork.ts";
 import type { AppAction } from "./appAction.ts";
 import type { Effect } from "./effect.ts";
 
+/** What an effect runner may use: the platform's effects and the store's dispatch. */
+export type EffectContext = {
+  effects: Effects;
+  dispatch: (action: AppAction) => void;
+};
+
 /** Performs one kind of effect. Effects that produce a result dispatch the corresponding action once it arrives. */
-export type EffectRunner<E> = (
-  effect: E,
-  effects: Effects,
-  dispatch: (action: AppAction) => void,
-) => void;
+export type EffectRunner<E> = (effect: E, context: EffectContext) => void;
 
 /** A runner for every type of a feature's effects. */
 export type EffectRunners<E extends { type: string }> = {
@@ -28,11 +30,7 @@ const effectRunners = {
 } satisfies EffectRunners<Effect>;
 
 /** Performs one effect through the platform's effects. */
-export function runEffect(
-  effect: Effect,
-  effects: Effects,
-  dispatch: (action: AppAction) => void,
-): void {
+export function runEffect(effect: Effect, context: EffectContext): void {
   const run = effectRunners[effect.type] as EffectRunner<Effect>;
-  run(effect, effects, dispatch);
+  run(effect, context);
 }

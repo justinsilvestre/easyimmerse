@@ -7,17 +7,19 @@ import type { PreferenceKey, PreferenceValues } from "./preferencesState.ts";
 
 /** Performs the preferences' effects. A preference that cannot be saved is dropped. */
 export const preferencesEffectRunners = {
-  savePreference: (effect, effects) => {
+  savePreference: (effect, { effects }) => {
     effects.savePreference(effect.key, effect.value).catch(ignoreFailure);
   },
-  loadPreferences: (effect, effects, dispatch) => {
+  loadPreferences: (effect, { effects, dispatch }) => {
     loadPreferences(effects, effect.keys).then((preferences) =>
       dispatch(actions.preferencesLoaded(preferences)),
     );
   },
-  setPlayerVolume: (effect, effects) => effects.setPlayerVolume(effect.volume),
-  setPlayerMuted: (effect, effects) => effects.setPlayerMuted(effect.isMuted),
-  setPlayerSpeed: (effect, effects) => effects.setPlayerSpeed(effect.speed),
+  setPlayerVolume: (effect, { effects }) =>
+    effects.setPlayerVolume(effect.volume),
+  setPlayerMuted: (effect, { effects }) =>
+    effects.setPlayerMuted(effect.isMuted),
+  setPlayerSpeed: (effect, { effects }) => effects.setPlayerSpeed(effect.speed),
 } satisfies EffectRunners<PreferencesEffect>;
 
 /** Reads each stored preference, leaving out those that are unset or cannot be read. */

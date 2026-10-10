@@ -47,5 +47,5 @@ export const unsavedWorkFeature: Feature<UnsavedWorkState> = {
 
 /** Performs the unsaved work's effect. */
 export const unsavedWorkEffectRunners = {
-  guardClose: (effect, effects) => effects.guardClose(effect.isActive),
+  guardClose: (effect, { effects }) => effects.guardClose(effect.isActive),
 } satisfies EffectRunners<UnsavedWorkEffect>;

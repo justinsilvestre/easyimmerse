@@ -4,11 +4,11 @@ import type { ScreenEffect } from "./screenEffect.ts";
 
 /** Performs the screens' effects. A file pick that fails counts as cancelled. */
 export const screenEffectRunners = {
-  seekPlayer: (effect, effects) => effects.seekPlayer(effect.seconds),
-  togglePlayer: (_, effects) => effects.togglePlayer(),
-  playPlayer: (_, effects) => effects.playPlayer(),
-  pausePlayer: (_, effects) => effects.pausePlayer(),
-  pickFile: (effect, effects, dispatch) => {
+  seekPlayer: (effect, { effects }) => effects.seekPlayer(effect.seconds),
+  togglePlayer: (_, { effects }) => effects.togglePlayer(),
+  playPlayer: (_, { effects }) => effects.playPlayer(),
+  pausePlayer: (_, { effects }) => effects.pausePlayer(),
+  pickFile: (effect, { effects, dispatch }) => {
     effects
       .pickFile(effect.accept)
       .then((file) =>
@@ -16,7 +16,7 @@ export const screenEffectRunners = {
       )
       .catch(() => dispatch(actions.filePickCancelled()));
   },
-  pickMediaFile: (effect, effects, dispatch) => {
+  pickMediaFile: (effect, { effects, dispatch }) => {
     effects
       .pickMediaFile(effect.accept)
       .then((file) =>
@@ -28,7 +28,7 @@ export const screenEffectRunners = {
       )
       .catch(() => dispatch(actions.mediaFilePickCancelled()));
   },
-  pickDictionaryFile: (effect, effects, dispatch) => {
+  pickDictionaryFile: (effect, { effects, dispatch }) => {
     effects
       .pickDictionaryFile(effect.accept)
       .then((file) =>

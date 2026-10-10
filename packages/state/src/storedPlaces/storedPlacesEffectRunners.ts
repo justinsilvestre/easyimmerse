@@ -10,7 +10,7 @@ import type { StoredPlacesEffect } from "./storedPlacesEffect.ts";
 
 /** Performs the stored places' effects. A stored place that cannot be read counts as absent. */
 export const storedPlacesEffectRunners = {
-  loadReadingLocation: ({ mediaFileId }, effects, dispatch) => {
+  loadReadingLocation: ({ mediaFileId }, { effects, dispatch }) => {
     effects
       .loadPreference(readingLocationKey(mediaFileId))
       .catch(() => null)
@@ -23,12 +23,12 @@ export const storedPlacesEffectRunners = {
         ),
       );
   },
-  saveReadingLocation: ({ mediaFileId, location }, effects) => {
+  saveReadingLocation: ({ mediaFileId, location }, { effects }) => {
     effects
       .savePreference(readingLocationKey(mediaFileId), JSON.stringify(location))
       .catch(ignoreFailure);
   },
-  loadPlaybackPosition: ({ mediaFileId }, effects, dispatch) => {
+  loadPlaybackPosition: ({ mediaFileId }, { effects, dispatch }) => {
     effects
       .loadPreference(playbackPositionKey(mediaFileId))
       .catch(() => null)
@@ -41,7 +41,7 @@ export const storedPlacesEffectRunners = {
         ),
       );
   },
-  savePlaybackPosition: ({ mediaFileId, ms }, effects) => {
+  savePlaybackPosition: ({ mediaFileId, ms }, { effects }) => {
     effects
       .savePreference(playbackPositionKey(mediaFileId), String(Math.round(ms)))
       .catch(ignoreFailure);
