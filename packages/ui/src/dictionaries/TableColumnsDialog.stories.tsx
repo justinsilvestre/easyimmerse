@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { TableColumnsDialog } from "./TableColumnsDialog.tsx";
 
 const meta = {
   title: "Dictionaries/TableColumnsDialog",
   component: TableColumnsDialog,
+  decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
     fileName: "animals.csv",

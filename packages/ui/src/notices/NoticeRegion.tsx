@@ -13,6 +13,7 @@ import { Notice } from "./Notice.tsx";
  * Shows the app's notices at the bottom of the window, above the home indicator on a phone with one. Each failure is an alert, announced as soon as it appears;
  * other notices sit in a polite live region, announced once the screen reader is idle. Their buttons follow the page in keyboard order.
  * A transient notice waits while the pointer or focus is on it.
+ * While a modal dialog is open, the dialog shows its own region and a region outside any dialog hides, status line included, so each notice shows once.
  */
 export function NoticeRegion({
   statusLine,
@@ -25,7 +26,7 @@ export function NoticeRegion({
   return (
     <section
       aria-label="Notifications"
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex flex-col items-center gap-2 px-4"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex flex-col items-center gap-2 px-4 [body:has(dialog:modal)_&:not(dialog_*)]:invisible"
     >
       {statusLine}
       <NoticeList notices={notices.filter(isFailure)} />

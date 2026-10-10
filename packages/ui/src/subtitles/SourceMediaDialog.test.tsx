@@ -2,6 +2,7 @@ import type { FormInput } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { exampleSourceMediaForm } from "../plugins/examplePluginForms.ts";
+import { TestStoreProvider } from "../testSupport/TestStoreProvider.tsx";
 import { SourceMediaDialog } from "./SourceMediaDialog.tsx";
 
 afterEach(cleanup);
@@ -20,6 +21,7 @@ function renderDialog(
       onClose={() => undefined}
       {...props}
     />,
+    { wrapper: TestStoreProvider },
   );
   return { actions };
 }

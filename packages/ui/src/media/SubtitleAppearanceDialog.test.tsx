@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { TestStoreProvider } from "../testSupport/TestStoreProvider.tsx";
 import { SubtitleAppearanceDialog } from "./SubtitleAppearanceDialog.tsx";
 import {
   defaultSubtitleAppearance,
@@ -19,6 +20,7 @@ function renderDialog(
       onChange={(changed) => changes.push(changed)}
       onClose={() => closings.push("closed")}
     />,
+    { wrapper: TestStoreProvider },
   );
   return { changes, closings };
 }

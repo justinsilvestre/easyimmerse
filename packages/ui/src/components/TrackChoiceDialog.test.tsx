@@ -1,6 +1,7 @@
 import type { TrackSelection } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { TestStoreProvider } from "../testSupport/TestStoreProvider.tsx";
 import { TrackChoiceDialog } from "./TrackChoiceDialog.tsx";
 import type { TrackChoice } from "./trackChoiceLabels.ts";
 
@@ -55,6 +56,7 @@ function renderDialog(selection: TrackSelection | null = null) {
         cancelled += 1;
       }}
     />,
+    { wrapper: TestStoreProvider },
   );
   return { chosen, selected, wasCancelled: () => cancelled > 0 };
 }

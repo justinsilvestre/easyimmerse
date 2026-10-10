@@ -16,6 +16,7 @@ import {
   isWasmBuilt,
   parseDocumentWithWasm,
 } from "../storybook/parseDocumentWithWasm.ts";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import {
   exampleNovel,
   examplePlainText,
@@ -231,6 +232,7 @@ export const UnsavedWork: Story = {
 };
 
 export const FlashcardStarted: Story = {
+  decorators: [withAppStore],
   args: {
     sidePanel: (
       <FlashcardEditor

@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { TestStoreProvider } from "../testSupport/TestStoreProvider.tsx";
 import { ConversionNoticeDialog } from "./ConversionNoticeDialog.tsx";
 
 afterEach(cleanup);
@@ -13,6 +14,7 @@ function renderDialog(dismissForGood = true) {
       onPlay={() => calls.push("play")}
       onCancel={() => calls.push("cancel")}
     />,
+    { wrapper: TestStoreProvider },
   );
   return { calls };
 }

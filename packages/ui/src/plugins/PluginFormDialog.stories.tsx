@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { exampleImportForm, exampleNoticeForm } from "./examplePluginForms.ts";
 import { PluginFormDialog } from "./PluginFormDialog.tsx";
 
 const meta = {
   title: "Plugins/PluginFormDialog",
   component: PluginFormDialog,
+  decorators: [withAppStore],
   args: {
     form: exampleImportForm,
     fallbackTitle: "Add from a video site",

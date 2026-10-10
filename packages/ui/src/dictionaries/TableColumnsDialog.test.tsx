@@ -1,6 +1,7 @@
 import type { ColumnRole, TablePreview } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { TestStoreProvider } from "../testSupport/TestStoreProvider.tsx";
 import { TableColumnsDialog } from "./TableColumnsDialog.tsx";
 
 afterEach(cleanup);
@@ -28,6 +29,7 @@ function renderDialog(hint: string | null = null) {
       onImport={() => events.push("import")}
       onCancel={() => events.push("cancel")}
     />,
+    { wrapper: TestStoreProvider },
   );
   return events;
 }
