@@ -159,6 +159,7 @@ describe("updateScreen", () => {
         buffered: [],
         isPlaying: false,
       },
+      loop: null,
       pendingSubtitleFile: null,
       waveform: initialWaveform,
     });

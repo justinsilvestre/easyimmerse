@@ -193,6 +193,21 @@ describe("MediaPlayer", () => {
       expect(selectCurrentTime(store.getState())).toBe(3);
     });
 
+    it("ends the clip loop when the element lands outside the clip after a seek", async () => {
+      const { store } = renderPlayer(directPlaybackRoutes);
+      const video = await findVideo();
+      act(() => {
+        store.dispatch(actions.playerPlayingChanged(true));
+        store.dispatch(
+          actions.editedClipOpened({ start_ms: 1_000, end_ms: 2_000 }),
+        );
+      });
+      video.currentTime = 40;
+      fireEvent.seeked(video);
+      const main = store.getState().app.screen.main;
+      expect(main.kind === "media" && main.loop).toBeNull();
+    });
+
     it("reports the element's duration to the store", async () => {
       const { store } = renderPlayer(directPlaybackRoutes);
       const video = await findVideo();

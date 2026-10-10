@@ -39,7 +39,6 @@ import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
 import { parseSubtitleAppearance } from "../media/subtitleAppearance.ts";
-import { useClipLoop } from "../media/useClipLoop.ts";
 import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
 import { useShownCue } from "../media/useShownCue.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
@@ -64,7 +63,7 @@ import { useSourceMedia } from "../subtitles/useSourceMedia.ts";
  * C saves a flashcard from the cursor as a double-click there would, or as the New flashcard button would when there is no cursor;
  * and E makes the same flashcard but opens it in the editor instead, unless a card is open there already.
  * The file resumes where playback last was, as `useResumePlayback` describes.
- * Opening a flashcard seeks to its clip, which loops while playing, as `useClipLoop` describes.
+ * Opening a flashcard seeks to its clip, which loops while playing, as `updateClipLoop` in the state package describes.
  * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
  */
 export function MediaScreen({
@@ -111,12 +110,6 @@ export function MediaScreen({
     [storedAppearance],
   );
   const editedContent = flashcards.edited?.editor.content;
-  useClipLoop(
-    flashcards.edited?.session ?? null,
-    editedContent?.audio_context ?? null,
-    { isPlaying: player.isPlaying, currentMs },
-    (ms) => dispatch(actions.seekRequested(ms / 1000)),
-  );
   const isEditorOpen = flashcards.edited !== null;
   const fullscreen = useFullscreen();
   // Passed through MediaView to the panel toggles, which mark the subtitles panel's toggle unavailable meanwhile.

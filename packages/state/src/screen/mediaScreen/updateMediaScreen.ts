@@ -5,8 +5,9 @@ import type { PickedFile } from "../../platform/effects.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { MediaScreenState } from "../screenState.ts";
-import type { PlayerState } from "./playerState.ts";
 import { roleForNewTrack } from "./roleForNewTrack.ts";
+import { seekTo, withPlayer } from "./seekTo.ts";
+import { updateClipLoop } from "./updateClipLoop.ts";
 import { updateWaveform } from "./updateWaveform.ts";
 
 const subtitlesNotAdded: Effect = {
@@ -14,26 +15,39 @@ const subtitlesNotAdded: Effect = {
   message: "The subtitles file could not be added",
 };
 
-/** Updates the media screen: its player, the subtitles file picked for it, and its waveform. */
+type MediaScreenUpdate = (
+  screen: MediaScreenState,
+  action: AppAction,
+  route: MediaRoute,
+) => readonly [MediaScreenState, readonly Effect[]];
+
+/** The parts of the media screen's update, in the order each sees an action. The loop comes after the player has recorded a time. */
+const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
+  (screen, action, route) => {
+    const [waveform, effects] = updateWaveform(screen.waveform, action, route);
+    return [
+      waveform === screen.waveform ? screen : { ...screen, waveform },
+      effects,
+    ];
+  },
+  updatePlayerAndSubtitles,
+  updateClipLoop,
+];
+
+/** Updates the media screen: its player, the clip loop, the subtitles file picked for it, and its waveform. */
 export function updateMediaScreen(
   screen: MediaScreenState,
   action: AppAction,
   route: MediaRoute,
 ): readonly [MediaScreenState, readonly Effect[]] {
-  const [waveform, waveformEffects] = updateWaveform(
-    screen.waveform,
-    action,
-    route,
-  );
-  const [updated, effects] = updatePlayerAndSubtitles(
-    waveform === screen.waveform ? screen : { ...screen, waveform },
-    action,
-    route,
-  );
-  return [
-    updated,
-    waveformEffects.length === 0 ? effects : [...waveformEffects, ...effects],
-  ];
+  let next = screen;
+  const effects: Effect[] = [];
+  for (const update of mediaScreenUpdates) {
+    const [updated, partEffects] = update(next, action, route);
+    next = updated;
+    effects.push(...partEffects);
+  }
+  return [next, effects];
 }
 
 function updatePlayerAndSubtitles(
@@ -43,10 +57,7 @@ function updatePlayerAndSubtitles(
 ): readonly [MediaScreenState, readonly Effect[]] {
   switch (action.type) {
     case "seekRequested":
-      return [
-        withPlayer(screen, { currentTimeSeconds: action.seconds }),
-        [{ type: "seekPlayer", seconds: action.seconds }],
-      ];
+      return seekTo(screen, action.seconds * 1000);
     case "playerTimeChanged":
       return [withPlayer(screen, { currentTimeSeconds: action.seconds }), []];
     case "playerDurationChanged":
@@ -123,11 +134,4 @@ function sendSubtitleFile(
       },
     },
   };
-}
-
-function withPlayer(
-  screen: MediaScreenState,
-  player: Partial<PlayerState>,
-): MediaScreenState {
-  return { ...screen, player: { ...screen.player, ...player } };
 }

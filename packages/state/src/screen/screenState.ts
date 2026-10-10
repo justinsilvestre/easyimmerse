@@ -1,4 +1,4 @@
-import type { Cue } from "@easyimmerse/types";
+import type { AudioClip, Cue } from "@easyimmerse/types";
 import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
 import type { MainRoute } from "../route/route.ts";
 import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
@@ -12,6 +12,8 @@ import type { MediaImportWizard } from "./projectScreen/mediaImportWizard.ts";
 export type MediaScreenState = {
   kind: "media";
   player: PlayerState;
+  /** The clip of the flashcard open in the editor while playback loops it; null while nothing loops. */
+  loop: AudioClip | null;
   /** A picked subtitles file waiting to be added to the open media file. */
   pendingSubtitleFile: PickedFile | null;
   waveform: WaveformState;
@@ -67,6 +69,7 @@ export function initialMainScreen(route: MainRoute): MainScreenState {
       return {
         kind: "media",
         player: initialPlayerState,
+        loop: null,
         pendingSubtitleFile: null,
         waveform: initialWaveform,
       };

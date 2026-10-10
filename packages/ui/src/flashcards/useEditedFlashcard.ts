@@ -1,4 +1,6 @@
 import { type RefObject, useCallback, useReducer, useRef } from "react";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { clipActionOf } from "./clipActionOf.ts";
 import {
   type CardSession,
   type EditedFlashcardAction,
@@ -8,14 +10,22 @@ import {
 /**
  * The card open in the editor, with a dispatch that also records, as each action is dispatched, which opening the editor will show.
  * A save that settles before React has rendered the latest actions is thereby judged against the card that will be on screen.
+ * The dispatch also tells the store's clip loop when a card opens or closes and when its clip moves.
  */
 export function useEditedFlashcard() {
+  const dispatch = useAppDispatch();
   const [edited, dispatchToEditor] = useReducer(reduceEditedFlashcard, null);
   const openSession: RefObject<CardSession | null> = useRef(null);
-  const dispatchEdited = useCallback((action: EditedFlashcardAction) => {
-    openSession.current = openSessionAfter(openSession.current, action);
-    dispatchToEditor(action);
-  }, []);
+  const dispatchEdited = useCallback(
+    (action: EditedFlashcardAction) => {
+      const before = openSession.current;
+      openSession.current = openSessionAfter(before, action);
+      dispatchToEditor(action);
+      const clipAction = clipActionOf(before, openSession.current, action);
+      if (clipAction !== null) dispatch(clipAction);
+    },
+    [dispatch],
+  );
   return { edited, dispatchEdited, openSession };
 }
 
