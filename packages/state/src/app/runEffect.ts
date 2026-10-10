@@ -33,7 +33,7 @@ const effectRunners = {
   ...timerEffectRunners,
 } satisfies EffectRunners<Effect>;
 
-/** Performs one effect through the platform's effects. */
+/** Performs one effect through the context's collaborators. */
 export function runEffect(effect: Effect, context: EffectContext): void {
   const run = effectRunners[effect.type] as EffectRunner<Effect>;
   run(effect, context);

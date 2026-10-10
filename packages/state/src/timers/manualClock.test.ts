@@ -82,6 +82,20 @@ describe("createManualClock", () => {
       clock.setTimeout(restart, 0);
     };
     clock.setTimeout(restart, 0);
-    expect(() => clock.advanceBy(1)).toThrow(/restart themselves/);
+    expect(() => clock.advanceBy(1)).toThrow(/keeps restarting itself/);
+  });
+
+  it("treats a negative delay as zero", () => {
+    const clock = createManualClock();
+    const fired: string[] = [];
+    clock.setTimeout(() => fired.push("zero"), 0);
+    clock.setTimeout(() => fired.push("negative"), -5);
+    clock.advanceBy(0);
+    expect(fired).toEqual(["zero", "negative"]);
+  });
+
+  it("throws a RangeError when asked to move time backwards", () => {
+    const clock = createManualClock();
+    expect(() => clock.advanceBy(-1)).toThrow(RangeError);
   });
 });

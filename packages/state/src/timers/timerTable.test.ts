@@ -74,4 +74,22 @@ describe("createTimerTable", () => {
     clock.advanceBy(200);
     expect(fired).toEqual(["again"]);
   });
+
+  it("does not fire a timer that an earlier timer cancels in the same advance", () => {
+    const clock = createManualClock();
+    const fired: string[] = [];
+    const timers = createTimerTable(clock);
+    timers.start("a", 100, () => timers.cancel("b"));
+    timers.start("b", 200, () => fired.push("b"));
+    clock.advanceBy(200);
+    expect(fired).toEqual([]);
+  });
+
+  it("fires a zero-delay timer on advanceBy(0)", () => {
+    const clock = createManualClock();
+    const fired: string[] = [];
+    createTimerTable(clock).start("a", 0, () => fired.push("a"));
+    clock.advanceBy(0);
+    expect(fired).toEqual(["a"]);
+  });
 });
