@@ -380,6 +380,13 @@ describe("updateFlashcardForm", () => {
     ).toMatchObject({ flashcardId: "f-wordless" });
   });
 
+  it("opens no flashcard for no word when the E key is pressed at a cursor", () => {
+    const app = appAfter(actions.lookupCursorMoved(cat, "mouse"));
+    expect(
+      formUpdate(app, requestCursorFlashcard(cat, "editor")).form,
+    ).toBeNull();
+  });
+
   it("gives a new card a screenshot once the file is found to show pictures", () => {
     const app = appAfter(startNew("f1", "Katze"));
     expect(
