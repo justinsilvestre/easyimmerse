@@ -23,9 +23,8 @@ export function renderWithAppStore(
     client,
     options.server ?? null,
     browserFileRegistry,
+    options.storedPreferences,
   );
-  for (const [key, value] of Object.entries(options.storedPreferences ?? {}))
-    effects.preferences.set(key, value);
   render(
     <AppStoreProviders
       store={store}

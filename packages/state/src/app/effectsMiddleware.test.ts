@@ -160,7 +160,9 @@ describe("effectsMiddleware", () => {
     const store = createAppStore(effects, createFakeServerStoreParts());
     store.dispatch(actions.openMediaFileRequested("p1", "m1"));
     store.dispatch(actions.seekRequested(12.5));
-    expect(effects.calls).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);
+    expect(effects.calls.filter(({ type }) => type === "seekPlayer")).toEqual([
+      { type: "seekPlayer", seconds: 12.5 },
+    ]);
   });
 
   it("dispatches subtitleFileChosen once the file pick resolves", async () => {
@@ -254,12 +256,11 @@ describe("effectsMiddleware", () => {
     });
   });
 
-  it("dispatches preferencesLoaded with the stored values after preferencesLoadRequested", async () => {
+  it("dispatches preferencesLoaded with the stored values once the store has started", async () => {
     const effects = createRecordingEffects();
     effects.preferences.set("showTranslations", "true");
     const server = createFakeServerStoreParts();
-    const store = createAppStore(effects, server);
-    store.dispatch(actions.preferencesLoadRequested());
+    createAppStore(effects, server);
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
         actions.preferencesLoaded({ showTranslations: "true" }),
@@ -271,8 +272,7 @@ describe("effectsMiddleware", () => {
     const effects = createRecordingEffects();
     effects.loadPreference = () => Promise.reject(new Error("storage locked"));
     const server = createFakeServerStoreParts();
-    const store = createAppStore(effects, server);
-    store.dispatch(actions.preferencesLoadRequested());
+    createAppStore(effects, server);
     await vi.waitFor(() => {
       expect(server.dispatchedActions).toContainEqual(
         actions.preferencesLoaded({}),

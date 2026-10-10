@@ -49,6 +49,12 @@ describe("createAppStore", () => {
     expect(store.getState().app.route.screen).toBe("settings");
   });
 
+  it("dispatches appStarted once it is created", () => {
+    const server = createFakeServerStoreParts();
+    createAppStore(createRecordingEffects(), server);
+    expect(server.dispatchedActions).toEqual([actions.appStarted()]);
+  });
+
   it("builds the store through the given enhancer composer", () => {
     const composed: StoreEnhancer[][] = [];
     createAppStore(

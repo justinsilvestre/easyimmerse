@@ -67,10 +67,12 @@ function createPendingPick<F>(description: string) {
   };
 }
 
-/** Builds an Effects implementation for tests that records calls instead of performing them. */
-export function createRecordingEffects(): RecordingEffects {
+/** Builds an Effects implementation for tests that records calls instead of performing them, over a preference store holding the given values. */
+export function createRecordingEffects(
+  storedPreferences: Record<string, string> = {},
+): RecordingEffects {
   const calls: EffectCall[] = [];
-  const preferences = new Map<string, string>();
+  const preferences = new Map(Object.entries(storedPreferences));
   const filePick = createPendingPick<PickedFile>("file pick");
   const mediaFilePick = createPendingPick<PickedMediaFile>("media file pick");
   const dictionaryFilePick = createPendingPick<PickedDictionaryFile>(

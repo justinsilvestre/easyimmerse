@@ -176,11 +176,7 @@ describe("updateScreen", () => {
 
   it("keeps the screens as they are for an action they do not handle", () => {
     const app = stateAfter(...playingM2);
-    const [screen] = updateScreen(
-      app.screen,
-      actions.preferencesLoadRequested(),
-      app,
-    );
+    const [screen] = updateScreen(app.screen, actions.appStarted(), app);
     expect(screen).toBe(app.screen);
   });
 

@@ -66,7 +66,6 @@ function createTestAppStoreFollowing(
 ) {
   const testAppStore = createTestAppStore(appStore.client, appStore.server);
   testAppStore.store.dispatch(actions.systemThemeChanged(systemTheme));
-  testAppStore.store.dispatch(actions.preferencesLoadRequested());
   return testAppStore;
 }
 

@@ -39,6 +39,7 @@ export type EnhancerComposer = (...enhancers: StoreEnhancer[]) => StoreEnhancer;
  * Creates the app's store.
  * A composer other than Redux's own `compose`, such as one that connects developer tools, may wrap the store's enhancers.
  * The store opens Settings whenever the platform asks for them, for as long as it lives.
+ * Once created, it dispatches `appStarted`, which loads the stored preferences.
  */
 export function createAppStore(
   effects: Effects,
@@ -66,6 +67,7 @@ export function createAppStore(
   effects.subscribeToSettingsRequests(() =>
     store.dispatch(actions.settingsRequested()),
   );
+  store.dispatch(actions.appStarted());
   return store;
 }
 

@@ -17,8 +17,11 @@ import type { StoredPlacesAction } from "../storedPlaces/storedPlacesActions.ts"
 import { storedPlacesActions } from "../storedPlaces/storedPlacesActions.ts";
 import type { UnsavedWorkAction } from "../unsavedWork/unsavedWork.ts";
 import { unsavedWorkActions } from "../unsavedWork/unsavedWork.ts";
+import type { StartupAction } from "./startupActions.ts";
+import { startupActions } from "./startupActions.ts";
 
 const featureActionCreators = [
+  startupActions,
   routeActions,
   screenActions,
   preferencesActions,
@@ -48,6 +51,7 @@ export const actions = Object.assign(
 
 /** Any action of the app's own, from any feature. */
 export type AppAction =
+  | StartupAction
   | RouteAction
   | ScreenAction
   | PreferencesAction

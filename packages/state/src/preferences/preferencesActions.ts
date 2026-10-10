@@ -7,8 +7,6 @@ export const preferencesActions = {
     ({ type: "preferenceToggled", key }) as const,
   preferenceSet: (key: PreferenceKey, value: string) =>
     ({ type: "preferenceSet", key, value }) as const,
-  preferencesLoadRequested: () =>
-    ({ type: "preferencesLoadRequested" }) as const,
   preferencesLoaded: (preferences: PreferenceValues) =>
     ({ type: "preferencesLoaded", preferences }) as const,
   systemThemeChanged: (theme: Theme) =>

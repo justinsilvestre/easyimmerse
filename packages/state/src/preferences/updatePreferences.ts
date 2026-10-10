@@ -7,7 +7,7 @@ import type {
 } from "./preferencesState.ts";
 import { initialPreferences, preferenceKeys } from "./preferencesState.ts";
 
-/** Updates the preferences, saving each one the user changes. */
+/** Updates the preferences, loading them when the app starts and saving each one the user changes. */
 export const updatePreferences: FeatureUpdate<PreferencesState> = (
   preferences,
   action,
@@ -22,7 +22,7 @@ export const updatePreferences: FeatureUpdate<PreferencesState> = (
       return save(preferences, action.key, action.value);
     case "textScaleChosen":
       return save(preferences, "textScale", String(action.scale));
-    case "preferencesLoadRequested":
+    case "appStarted":
       return [preferences, [{ type: "loadPreferences", keys: preferenceKeys }]];
     case "preferencesLoaded":
       return [

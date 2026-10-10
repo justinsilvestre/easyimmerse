@@ -36,8 +36,8 @@ describe("updatePreferences", () => {
     ]);
   });
 
-  it("returns one loadPreferences effect with every preference key for preferencesLoadRequested", () => {
-    const [, effects] = apply(actions.preferencesLoadRequested());
+  it("loads every preference when the app starts", () => {
+    const [, effects] = apply(actions.appStarted());
     expect(effects).toEqual([
       {
         type: "loadPreferences",
