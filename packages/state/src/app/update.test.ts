@@ -125,16 +125,15 @@ describe("update", () => {
       expect(state.notices.shown).toEqual([]);
     });
 
-    it("returns the effects of the button's action", () => {
+    it("dispatches the button's action", () => {
       const [, effects] = update(
         withUndoNotice(),
         actions.noticeButtonChosen(1, undo),
       );
-      expect(effects).toEqual([
-        { type: "openExternalUrl", url: "https://example.com/undo" },
-      ]);
+      expect(effects).toEqual([{ type: "dispatch", action: undo }]);
     });
   });
+
   it("starts guarding the close when unsaved work begins", () => {
     const [, effects] = update(
       stateAfter(actions.openMediaFileRequested("p1", "m1")),

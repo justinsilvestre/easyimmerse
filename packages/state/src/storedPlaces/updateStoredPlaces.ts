@@ -1,3 +1,4 @@
+import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
 import { selectMediaScreen } from "../screen/mediaScreen/mediaScreenSelectors.ts";
@@ -61,15 +62,11 @@ export const updateStoredPlaces: FeatureUpdate<
     }
     default: {
       const left = mediaScreenLeftBy(app, action);
-      const [saved, saves] = left
-        ? saveOnLeaving(places, left)
-        : updated(places);
+      const [saved, saves] =
+        left === null ? updated(places) : saveOnLeaving(places, left);
       const entered = mediaScreenEnteredBy(app, action);
-      return updated(
-        saved,
-        ...saves,
-        ...(entered === null ? [] : placeLoads(places, entered)),
-      );
+      if (entered === null) return updated(saved, ...saves);
+      return updated(saved, ...saves, ...placeLoads(places, entered));
     }
   }
 };
@@ -110,12 +107,11 @@ function withReading(
  * Whether the file is a book is not known yet, so both are loaded; the one that does not apply loads as null.
  */
 function placeLoads(places: StoredPlacesState, mediaFileId: string) {
-  return [
-    ...(places.reading[mediaFileId] === undefined
-      ? [{ type: "loadReadingLocation", mediaFileId } as const]
-      : []),
-    ...(places.playback[mediaFileId] === undefined
-      ? [{ type: "loadPlaybackPosition", mediaFileId } as const]
-      : []),
+  const loads = [
+    places.reading[mediaFileId] === undefined &&
+      ({ type: "loadReadingLocation", mediaFileId } satisfies Effect),
+    places.playback[mediaFileId] === undefined &&
+      ({ type: "loadPlaybackPosition", mediaFileId } satisfies Effect),
   ];
+  return loads.filter((load) => load !== false);
 }

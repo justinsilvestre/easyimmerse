@@ -1,3 +1,4 @@
+import { dispatch } from "../app/dispatchEffect.ts";
 import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
@@ -28,8 +29,14 @@ export const updateNotices: FeatureUpdate<NoticesState> = (state, action) => {
       return holdChanged(state, action.id, action.by, false);
     case "noticeExpired":
     case "noticeDismissed":
-    case "noticeButtonChosen":
       return without(state, (notice) => notice.id === action.id);
+    case "noticeButtonChosen": {
+      const [rest, cancels] = without(
+        state,
+        (notice) => notice.id === action.id,
+      );
+      return updated(rest, ...cancels, dispatch(action.action));
+    }
     case "noticeWithdrawn":
       return without(state, (notice) => notice.key === action.key);
     case "textCopied":
@@ -76,10 +83,8 @@ function holdChanged(
   if (!notice || notice.heldBy[by] === isHeld) return updated(state);
   const changed = { ...notice, heldBy: { ...notice.heldBy, [by]: isHeld } };
   const shown = state.shown.map((each) => (each === notice ? changed : each));
-  return updated(
-    { ...state, shown },
-    ...(isHeld ? cancelExpiryOf(changed) : expiryTimerFor(changed)),
-  );
+  if (isHeld) return updated({ ...state, shown }, ...cancelExpiryOf(changed));
+  return updated({ ...state, shown }, ...expiryTimerFor(changed));
 }
 
 /** Starts the expiry timer of a transient notice that nothing holds. */
@@ -88,15 +93,14 @@ function expiryTimerFor(notice: Notice) {
   if (!notice.isTransient || isHeld) return [];
   const action = noticesActions.noticeExpired(notice.id);
   const id = expiryTimerId(notice.id);
-  return [{ type: "startTimer", id, ms: expiryMs, action }] satisfies Effect[];
+  return [{ type: "startTimer", id, ms: expiryMs, action } satisfies Effect];
 }
 
 function cancelExpiryOf(notice: Notice) {
-  return notice.isTransient
-    ? ([
-        { type: "cancelTimer", id: expiryTimerId(notice.id) },
-      ] satisfies Effect[])
-    : [];
+  if (!notice.isTransient) return [];
+  return [
+    { type: "cancelTimer", id: expiryTimerId(notice.id) } satisfies Effect,
+  ];
 }
 
 const expiryTimerId = (noticeId: number) => `notices/expiry/${noticeId}`;

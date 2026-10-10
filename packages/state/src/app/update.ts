@@ -43,21 +43,6 @@ export const initialAppState = Object.fromEntries(
 ) as AppState;
 
 /**
- * Computes the next state and the effects of an action, as `updateFeatures` describes.
- * A chosen notice button is two updates in one dispatch: the features see `noticeButtonChosen`, which closes the notice,
- * and then the button's action, which does what the button says.
- */
-export const update: UpdateFunction<AppState, AppAction, PerformedEffect> = (
-  state,
-  action,
-) => {
-  const [next, effects] = updateFeatures(state, action);
-  if (action.type !== "noticeButtonChosen") return updated(next, ...effects);
-  const [chosen, chosenEffects] = update(next, action.action);
-  return updated(chosen, ...effects, ...chosenEffects);
-};
-
-/**
  * Lets every feature update its own slice, each seeing the state before the action, and gathers their effects in the order of the feature table.
  * The state keeps its reference when no slice changes.
  * Beside the features, the root update takes three fixed steps: it adds the platform, screen and flashcard commands, which change no state;
@@ -65,7 +50,10 @@ export const update: UpdateFunction<AppState, AppAction, PerformedEffect> = (
  * records the requests sent, and holds back those that must wait; and it guards the app's closing whenever unsaved work
  * begins, and stops once none is left, as `closeGuardEffects` describes.
  */
-function updateFeatures(state: AppState, action: AppAction) {
+export const update: UpdateFunction<AppState, AppAction, PerformedEffect> = (
+  state,
+  action,
+) => {
   let next = state;
   const effects: Effect[] = [];
   for (const name of featureNames) {
@@ -80,7 +68,7 @@ function updateFeatures(state: AppState, action: AppAction) {
   const tracked =
     operations === next.operations ? next : { ...next, operations };
   return updated(tracked, ...performed, ...closeGuardEffects(state, tracked));
-}
+};
 
 function updateSlice<K extends keyof AppState>(
   name: K,

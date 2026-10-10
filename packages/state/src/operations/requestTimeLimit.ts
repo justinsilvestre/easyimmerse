@@ -31,7 +31,7 @@ export function timeLimitEffects(
     return [];
   const record = requests.find(({ id }) => id === action.id);
   if (record?.timeLimitMs === undefined || record.isWaiting) return [];
-  return action.type === "requestSettled"
-    ? ([{ type: "cancelTimer", id: timerIdOf(record.id) }] satisfies Effect[])
-    : ([{ type: "abortRequest", id: record.id }] satisfies Effect[]);
+  if (action.type === "requestSettled")
+    return [{ type: "cancelTimer", id: timerIdOf(record.id) } satisfies Effect];
+  return [{ type: "abortRequest", id: record.id } satisfies Effect];
 }

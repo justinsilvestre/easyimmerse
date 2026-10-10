@@ -3,7 +3,7 @@ import { combineUpdates } from "../app/combineUpdates.ts";
 import type { Feature } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
 import { mainScreenMoveOf } from "../route/mainScreenMoveOf.ts";
-import type { MainRoute } from "../route/route.ts";
+import type { MainRoute, MediaRoute } from "../route/route.ts";
 import { mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
@@ -20,7 +20,11 @@ import { updateProjectForm } from "./projectForm/updateProjectForm.ts";
 import { endImport } from "./projectScreen/mediaImportRequests.ts";
 import { updateProjectScreen } from "./projectScreen/updateProjectScreen.ts";
 import type { ScreenApp } from "./screenApp.ts";
-import type { MainScreenState, ScreenState } from "./screenState.ts";
+import type {
+  MainScreenState,
+  MediaScreenState,
+  ScreenState,
+} from "./screenState.ts";
 import { initialMainScreen, initialScreen } from "./screenState.ts";
 import { updateDialog } from "./updateDialog.ts";
 import { updateSettings } from "./updateSettings.ts";
@@ -67,7 +71,7 @@ function updateShownScreen(
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);
   if (route.screen === "newProject" || route.screen === "projectSettings")
-    return updated(main, ...updateProjectForm(route, action, app));
+    return updateProjectForm(main, action, route, app);
   return updated(main);
 }
 
@@ -77,15 +81,17 @@ function leavingEffects(main: MainScreenState, route: MainRoute) {
     return endImport(route.projectId, main.mediaImport);
   if (main.kind === "offline") return [abortParse];
   if (main.kind === "media" && route.screen === "media")
-    return [
-      ...leaveWaveform(main.waveform, route),
-      ...leaveLookup,
-      ...(main.sourceMedia === null ? [] : endSourceMedia(route.mediaFileId)),
-    ];
+    return leaveMediaScreen(main, route);
   return [];
 }
 
 /** Starts the work a main screen does as it opens. */
 function enteringEffects(route: MainRoute) {
   return route.screen === "media" ? [mediaFileRequest(route)] : [];
+}
+
+function leaveMediaScreen(main: MediaScreenState, route: MediaRoute) {
+  const leaving = [...leaveWaveform(main.waveform, route), ...leaveLookup];
+  if (main.sourceMedia === null) return leaving;
+  return [...leaving, ...endSourceMedia(route.mediaFileId)];
 }

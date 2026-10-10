@@ -28,10 +28,9 @@ export function leaveForm(form: FlashcardForm | null, app: FlashcardApp) {
       lookup: form.lookup,
       offersUndo: !isSaveAsked,
     };
-    return [
-      ...holdForLookup(waiting, app, "form"),
-      ...(isSaveAsked ? [] : [startLookupWait(card.flashcardId)]),
-    ];
+    const holding = holdForLookup(waiting, app, "form");
+    if (isSaveAsked) return holding;
+    return [...holding, startLookupWait(card.flashcardId)];
   }
   const from = "background";
   return askSave(

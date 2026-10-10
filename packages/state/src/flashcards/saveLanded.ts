@@ -11,6 +11,7 @@ import {
   wordOf,
 } from "./flashcardNotices.ts";
 import type { SavePurpose } from "./flashcardRequests.ts";
+import type { SaveUndo } from "./flashcardSaves.ts";
 import type { FlashcardSettled } from "./settleFlashcardRequest.ts";
 
 type Save = Extract<FlashcardSettled, { request: { kind: "saveFlashcard" } }>;
@@ -31,19 +32,32 @@ export function saveLanded({ id, request }: Save, app: FlashcardApp) {
     before: purpose.before,
   };
   return [
-    ...(selectFailedSave(app, flashcardId)
-      ? [
-          forgetFailedSave(flashcardId),
-          withdraw(flashcardNoticeKeys.saveRefused(flashcardId)),
-        ]
-      : []),
+    ...failedSaveForgetting(app, flashcardId),
     ...selectWaitingRetries(app, flashcardId, id).map(
       (waitingId) => ({ type: "abortRequest", id: waitingId }) satisfies Effect,
     ),
-    ...(isUndoOffered(purpose, id, app)
-      ? [show(flashcardNotices.savedWithUndo(undo))]
-      : []),
+    ...undoNotices(purpose, id, app, undo),
   ];
+}
+
+/** Forgets the failed save of the flashcard, if it has one, and withdraws the notice of its refusal. */
+function failedSaveForgetting(app: FlashcardApp, flashcardId: string) {
+  if (!selectFailedSave(app, flashcardId)) return [];
+  return [
+    forgetFailedSave(flashcardId),
+    withdraw(flashcardNoticeKeys.saveRefused(flashcardId)),
+  ];
+}
+
+/** Shows the undo toast of a landed save that offers one. */
+function undoNotices(
+  purpose: CardSave,
+  id: string,
+  app: FlashcardApp,
+  undo: SaveUndo,
+) {
+  if (!isUndoOffered(purpose, id, app)) return [];
+  return [show(flashcardNotices.savedWithUndo(undo))];
 }
 
 /** A form's save offers Undo only while its card is still open; a Retry never does. */

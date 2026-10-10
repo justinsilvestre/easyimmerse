@@ -37,11 +37,15 @@ export function closeForm(form: FlashcardForm | null, app: FlashcardApp) {
       card,
       selectShownMediaFile(app).projectId,
     );
-  return updated(
-    null,
-    ...(card.isChanged ? [show(flashcardNotices.formDiscarded(card))] : []),
-    ...(rollback ? [sendFlashcardRequest(rollback, app, "form")] : []),
-  );
+  const notices = discardNotices(card);
+  if (!rollback) return updated(null, ...notices);
+  return updated(null, ...notices, sendFlashcardRequest(rollback, app, "form"));
+}
+
+/** Returns the undo toast of a discarded card, which only a changed card needs. */
+function discardNotices(card: FlashcardForm["card"]) {
+  if (!card.isChanged) return [];
+  return [show(flashcardNotices.formDiscarded(card))];
 }
 
 /** Deletes the open flashcard, or closes a new one at once, unless Save has been pressed. */

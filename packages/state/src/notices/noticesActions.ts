@@ -45,7 +45,7 @@ export const noticesActions = {
     type: "noticeDismissed",
     id,
   }),
-  /** The user chose a button that carries an action: the notice closes and the action runs, in one dispatch. */
+  /** The user chose a button that carries an action: the notice closes, and the action is dispatched after it. */
   noticeButtonChosen: (
     id: number,
     action: AppAction,

@@ -29,7 +29,7 @@ export function discardFailedSave(flashcardId: string, app: FlashcardApp) {
   const rollback =
     rollbackIfDiscarded &&
     rollbackRequest(rollbackIfDiscarded, card, projectId);
-  return [
+  const discarding = [
     forgetFailedSave(flashcardId),
     withdraw(flashcardNoticeKeys.saveRefused(flashcardId)),
     show(
@@ -38,8 +38,9 @@ export function discardFailedSave(flashcardId: string, app: FlashcardApp) {
         kept: withoutDoubt(kept),
       }),
     ),
-    ...(rollback ? [sendFlashcardRequest(rollback, app, "background")] : []),
   ];
+  if (!rollback) return discarding;
+  return [...discarding, sendFlashcardRequest(rollback, app, "background")];
 }
 
 /** Keeps a discarded failed save again, unless the form holds its flashcard meanwhile, whose copy is then the newer one. */
