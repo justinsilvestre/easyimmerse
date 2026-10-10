@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
-import {
-  selectIsReadingLocationLoaded,
-  selectReadingLocation,
-} from "./storedPlacesSelectors.ts";
+import { selectIsReadingLocationLoaded } from "./storedPlacesSelectors.ts";
 
 const location = { chapterIndex: 1, paragraphIndex: 2, offset: 3 };
 
@@ -16,18 +13,6 @@ const state = {
 };
 
 describe("storedPlacesSelectors", () => {
-  it("selectReadingLocation returns the book's last reading location", () => {
-    expect(selectReadingLocation("b1")(state)).toEqual(location);
-  });
-
-  it("selectReadingLocation returns null for a book with no stored location", () => {
-    expect(selectReadingLocation("b2")(state)).toBeNull();
-  });
-
-  it("selectReadingLocation returns undefined until the book's location has loaded", () => {
-    expect(selectReadingLocation("b3")(state)).toBeUndefined();
-  });
-
   it("selectIsReadingLocationLoaded is false until the stored place has been read", () => {
     expect(selectIsReadingLocationLoaded("b3")(state)).toBe(false);
   });

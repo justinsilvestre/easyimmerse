@@ -135,6 +135,18 @@ describe("ReaderScreen", () => {
     );
   });
 
+  it("shows the chapter chosen from the contents", async () => {
+    renderReader();
+    await chapterHeading();
+    fireEvent.click(screen.getByRole("button", { name: "Contents" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: /Chapter Two/,
+      }),
+    );
+    expect((await chapterHeading()).textContent).toBe("Chapter Two");
+  });
+
   it("saves the place when the reader moves into another chapter", async () => {
     const { effects } = renderReader();
     await chapterHeading();

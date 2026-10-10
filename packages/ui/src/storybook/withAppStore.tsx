@@ -2,6 +2,7 @@ import type { BackendClient } from "@easyimmerse/backend";
 import { createApplyAppearance } from "@easyimmerse/effects-web";
 import type {
   BrowserFileRegistry,
+  Effects,
   ServerConfig,
   Theme,
 } from "@easyimmerse/state";
@@ -12,11 +13,13 @@ import { browserFrameCapturer } from "../player/browserFrameCapturer.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 
-/** Set under `parameters.appStore` to replace the fixture backend or to connect a browser file registry. */
+/** Set under `parameters.appStore` to replace the fixture backend, to connect a browser file registry, or to keep preferences somewhere lasting. */
 type AppStoreParameters = {
   client?: BackendClient;
   server?: ServerConfig;
   browserFileRegistry?: BrowserFileRegistry<File>;
+  /** Where the store reads and writes its preferences, such as the reading place; in memory by default. */
+  preferenceStorage?: Pick<Effects, "loadPreference" | "savePreference">;
 };
 
 /**
@@ -65,6 +68,7 @@ function createTestAppStoreFollowing(
 ) {
   const effects = {
     ...createRecordingEffects(),
+    ...appStore.preferenceStorage,
     applyAppearance: createApplyAppearance(document.documentElement),
   };
   const testAppStore = createTestAppStore(

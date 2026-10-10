@@ -1,12 +1,13 @@
 import {
   type AppAction,
   actions,
-  type ReaderLocation,
-  selectReadingLocation,
+  selectIsReadingLocationLoaded,
+  selectPreference,
+  selectPreferencesLoaded,
 } from "@easyimmerse/state";
 import type { Document, LookupResult } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ComponentProps, useEffect, useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { fn } from "storybook/test";
 import { exampleLanguages } from "../flashcards/exampleFlashcard.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
@@ -34,7 +35,7 @@ import {
 } from "./exampleDocuments.ts";
 import {
   defaultReaderPreferences,
-  type ReaderPreferences,
+  parseReaderPreferences,
 } from "./readerPreferences.ts";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 import type { ReaderWord } from "./useWordPointer.ts";
@@ -323,32 +324,23 @@ const fixtureFiles = [
 
 type OpenFile = { name: string; document: Document };
 
-/** Reads the browser's storage, which may be unavailable, as in a private window. */
-function readStored<Value>(key: string): Value | undefined {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored === null ? undefined : JSON.parse(stored);
-  } catch {
-    return undefined;
-  }
-}
-
-function writeStored(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // The reader works the same without storage; it only forgets the place.
-  }
-}
-
-/** Keeps the reading place of an open file in the browser's storage, so that reopening the file after a reload returns to it. */
-function RememberedPlace({ name }: { name: string }) {
-  const location = useAppSelector(selectReadingLocation(name));
-  useEffect(() => {
-    if (location) writeStored(`reader-location:${name}`, location);
-  }, [name, location]);
-  return null;
-}
+/** Keeps the store's preferences, the reading place among them, in the browser's storage, which may be unavailable, as in a private window. */
+const browserPreferenceStorage = {
+  loadPreference: async (key: string) => {
+    try {
+      return localStorage.getItem(`storybook:${key}`);
+    } catch {
+      return null;
+    }
+  },
+  savePreference: async (key: string, value: string) => {
+    try {
+      localStorage.setItem(`storybook:${key}`, value);
+    } catch {
+      // The reader works the same without storage; it only forgets the place and the appearance.
+    }
+  },
+};
 
 /**
  * Opens a fixture or a file of your own with the app's Rust parser, built to WebAssembly.
@@ -357,6 +349,13 @@ function RememberedPlace({ name }: { name: string }) {
 function FileReader(args: ReaderViewProps) {
   const dispatch = useAppDispatch();
   const [file, setFile] = useState<OpenFile | null>(null);
+  const isPlaceLoaded = useAppSelector(
+    selectIsReadingLocationLoaded(file?.name ?? ""),
+  );
+  const preferencesLoaded = useAppSelector(selectPreferencesLoaded);
+  const storedPreferences = useAppSelector(
+    selectPreference("readerPreferences"),
+  );
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState("de");
   const open = async (name: string, bytes: Promise<ArrayBuffer>) => {
@@ -364,39 +363,36 @@ function FileReader(args: ReaderViewProps) {
       setError(null);
       const document = await parseDocumentWithWasm(new Uint8Array(await bytes));
       dispatch(actions.openMediaFileRequested("p1", name));
-      dispatch(
-        actions.readingLocationLoaded(
-          name,
-          readStored<ReaderLocation>(`reader-location:${name}`) ?? null,
-        ),
-      );
       setFile({ name, document: unwrapHardLineBreaks(document) });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
+  if (file && (!isPlaceLoaded || !preferencesLoaded)) return null;
   if (file)
     return (
-      <>
-        <RememberedPlace name={file.name} />
-        <StatefulReader
-          {...args}
-          mediaFileId={file.name}
-          document={file.document}
-          title={file.document.title || file.name}
-          language={file.document.language ?? language}
-          preferences={
-            readStored<ReaderPreferences>("reader-preferences") ??
-            args.preferences
-          }
-          callbacks={{
-            ...args.callbacks,
-            onBack: () => setFile(null),
-            onPreferencesChange: (preferences) =>
-              writeStored("reader-preferences", preferences),
-          }}
-        />
-      </>
+      <StatefulReader
+        {...args}
+        mediaFileId={file.name}
+        document={file.document}
+        title={file.document.title || file.name}
+        language={file.document.language ?? language}
+        preferences={parseReaderPreferences(storedPreferences)}
+        callbacks={{
+          ...args.callbacks,
+          onBack: () => {
+            dispatch(actions.closeMedia());
+            setFile(null);
+          },
+          onPreferencesChange: (preferences) =>
+            dispatch(
+              actions.preferenceSet(
+                "readerPreferences",
+                JSON.stringify(preferences),
+              ),
+            ),
+        }}
+      />
     );
   return (
     <main
@@ -465,5 +461,6 @@ function FileReader(args: ReaderViewProps) {
 }
 
 export const OpenAFile: Story = {
+  parameters: { appStore: { preferenceStorage: browserPreferenceStorage } },
   render: (args) => <FileReader {...args} />,
 };

@@ -48,7 +48,8 @@ export function ScrolledChapter({
       scroller.current?.focus({ preventScroll: true });
   }, []);
 
-  // Scroll to the reader's place on opening, after each jump, and whenever the text moves. The jump count and the key call for it.
+  // Scroll to the reader's place on opening, after each jump, and whenever the text moves.
+  // It runs again when the jump count or the layout key changes.
   // The location is read here but not followed, since the column's own reports move it.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useLayoutEffect(() => {
