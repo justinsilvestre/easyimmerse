@@ -1,5 +1,7 @@
 import type { ImportProgress, TablePreview } from "@easyimmerse/types";
+import { createSelector } from "reselect";
 import type { RootState } from "../../app/createAppStore.ts";
+import type { JobsState } from "../../operations/jobs.ts";
 import { jobKey } from "../../operations/jobs.ts";
 import type { DictionaryImportWizard } from "./dictionaryImportWizard.ts";
 
@@ -25,17 +27,24 @@ const nothingShown: DictionaryImportView = {
   pendingTable: null,
 };
 
-/** Selects what the dictionaries page shows of the dictionary import, with its job's progress. */
-export function selectDictionaryImport(state: RootState): DictionaryImportView {
-  const wizard = state.app.screen.settings?.dictionaryImport ?? null;
-  return wizard === null
-    ? nothingShown
-    : { ...nothingShown, ...viewOf(wizard, state) };
-}
+/**
+ * Selects what the dictionaries page shows of the dictionary import, with its job's progress.
+ * The result keeps its reference while the wizard and the jobs do.
+ */
+export const selectDictionaryImport = createSelector(
+  [
+    (state: RootState) => state.app.screen.settings?.dictionaryImport ?? null,
+    (state: RootState) => state.app.operations.jobs,
+  ],
+  (wizard, jobs): DictionaryImportView =>
+    wizard === null
+      ? nothingShown
+      : { ...nothingShown, ...viewOf(wizard, jobs) },
+);
 
 function viewOf(
   wizard: DictionaryImportWizard,
-  state: RootState,
+  jobs: JobsState,
 ): Partial<DictionaryImportView> {
   switch (wizard.stage) {
     case "previewing":
@@ -44,7 +53,7 @@ function viewOf(
     case "importing":
       return {
         addingFile: wizard.file.name,
-        progress: progressOf(wizard.jobId, state),
+        progress: progressOf(wizard.jobId, jobs),
       };
     case "choosingColumns":
       return {
@@ -57,8 +66,8 @@ function viewOf(
   }
 }
 
-function progressOf(jobId: string, state: RootState): ImportProgress | null {
-  const job = state.app.operations.jobs[jobKey("dictionaryImport", jobId)];
+function progressOf(jobId: string, jobs: JobsState): ImportProgress | null {
+  const job = jobs[jobKey("dictionaryImport", jobId)];
   return job?.kind === "dictionaryImport"
     ? (job.report?.progress ?? null)
     : null;

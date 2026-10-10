@@ -4,6 +4,10 @@ import { trackJobs } from "./trackJobs.ts";
 
 const key = "jobs/dictionaryImport/job1";
 const request = { kind: "getImportJob", jobId: "job1" } as const;
+const watch = {
+  type: "watchJob",
+  job: { kind: "dictionaryImport", request },
+} as const;
 const watched: JobsState = {
   [key]: { kind: "dictionaryImport", request, status: "running", report: null },
 };
@@ -11,17 +15,21 @@ const watched: JobsState = {
 describe("trackJobs", () => {
   describe("for watchJob", () => {
     it("asks for the job's status at once", () => {
-      const [, effects] = trackJobs({}, [
-        { type: "watchJob", key, job: { kind: "dictionaryImport", request } },
-      ]);
+      const [, effects] = trackJobs({}, [watch]);
       expect(effects).toEqual([{ type: "sendRequest", id: key, request }]);
     });
 
     it("records the job as running, with no report yet", () => {
-      const [jobs] = trackJobs({}, [
-        { type: "watchJob", key, job: { kind: "dictionaryImport", request } },
-      ]);
+      const [jobs] = trackJobs({}, [watch]);
       expect(jobs).toEqual(watched);
+    });
+
+    it("restarts a job watched again", () => {
+      const [, effects] = trackJobs(watched, [watch]);
+      expect(effects).toEqual([
+        { type: "cancelTimer", id: key },
+        { type: "sendRequest", id: key, request },
+      ]);
     });
   });
 
@@ -45,8 +53,17 @@ describe("trackJobs", () => {
     });
   });
 
-  it("passes other effects through and keeps the jobs as they are", () => {
-    const [jobs] = trackJobs(watched, [{ type: "cancelTimer", id: "other" }]);
-    expect(jobs).toBe(watched);
+  describe("for any other effect", () => {
+    const other = { type: "cancelTimer", id: "other" } as const;
+
+    it("passes it through", () => {
+      const [, effects] = trackJobs(watched, [other]);
+      expect(effects).toEqual([other]);
+    });
+
+    it("keeps the jobs as they are", () => {
+      const [jobs] = trackJobs(watched, [other]);
+      expect(jobs).toBe(watched);
+    });
   });
 });

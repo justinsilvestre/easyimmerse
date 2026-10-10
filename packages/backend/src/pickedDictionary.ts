@@ -1,12 +1,17 @@
 import type { PickedDictionaryFile } from "@easyimmerse/state";
 import type {
   ImportJobStarted,
-  ImportLocalDictionaryRequest,
   TableLayout,
   TablePreview,
 } from "@easyimmerse/types";
 import type { QueryReturnValue } from "@reduxjs/toolkit/query";
 import type { BackendError, BackendRequest } from "./backendClient.ts";
+import {
+  importBytesRequest,
+  importLocalRequest,
+  previewBytesRequest,
+  previewLocalRequest,
+} from "./dictionaryRequests.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { readPickedFile } from "./readPickedFile.ts";
 
@@ -50,72 +55,11 @@ export async function previewPickedDictionaryTable(
 ): Promise<Result<TablePreview>> {
   if (file.source.kind === "path")
     return (await baseQuery(
-      jsonPost("/dictionaries/preview-local", { path: file.source.path }),
+      previewLocalRequest(file.source.path),
     )) as Result<TablePreview>;
   const read = await readPickedFile(file, browserFileRegistry);
   if ("error" in read) return read;
-  return (await baseQuery({
-    ...bytesPost("/dictionaries/preview", read.bytes, { fileName: file.name }),
-    offlineOperation: {
-      kind: "previewDictionaryTable",
-      fileName: file.name,
-      bytes: read.bytes,
-    },
-  })) as Result<TablePreview>;
-}
-
-function importLocalRequest(
-  path: string,
-  tableLayout: TableLayout | null,
-): BackendRequest {
-  const value: ImportLocalDictionaryRequest =
-    tableLayout === null ? { path } : { path, tableLayout };
-  return jsonPost("/dictionaries/import-local", value);
-}
-
-function importBytesRequest(
-  fileName: string,
-  bytes: Uint8Array,
-  tableLayout: TableLayout | null,
-): BackendRequest {
-  const query = { fileName, ...tableLayoutQuery(tableLayout) };
-  return {
-    ...bytesPost("/dictionaries", bytes, query),
-    offlineOperation: {
-      kind: "importDictionary",
-      fileName,
-      bytes,
-      tableLayout,
-    },
-  };
-}
-
-function jsonPost(path: string, value: unknown): BackendRequest {
-  return { method: "POST", path, body: { kind: "json", value } };
-}
-
-function bytesPost(
-  path: string,
-  bytes: Uint8Array,
-  query: Record<string, string>,
-): BackendRequest {
-  return {
-    method: "POST",
-    path,
-    query,
-    body: {
-      kind: "bytes",
-      value: bytes,
-      contentType: "application/octet-stream",
-    },
-  };
-}
-
-/** The query parameters that replace the detected layout of a table. */
-function tableLayoutQuery(layout: TableLayout | null): Record<string, string> {
-  if (layout === null) return {};
-  return {
-    columns: layout.columns.join(","),
-    hasHeader: String(layout.hasHeader),
-  };
+  return (await baseQuery(
+    previewBytesRequest(file.name, read.bytes),
+  )) as Result<TablePreview>;
 }

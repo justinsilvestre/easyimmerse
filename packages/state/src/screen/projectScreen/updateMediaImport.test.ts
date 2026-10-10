@@ -2,6 +2,7 @@ import type { MediaSourceJob } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
 import { runningMediaSourceJob } from "../../operations/exampleJobReports.ts";
+import { exampleMediaFile } from "../../server/exampleMediaFile.ts";
 import { showingForm, subtitlesForm } from "./exampleMediaImport.ts";
 import type { MediaImportWizard } from "./mediaImportWizard.ts";
 import { updateMediaImport } from "./updateMediaImport.ts";
@@ -44,6 +45,8 @@ const fetchChecked = (job: Partial<MediaSourceJob>) =>
     ok: true,
     data: { ...runningMediaSourceJob, ...job },
   });
+const pilot = exampleMediaFile("m1", "pilot.mkv");
+const skippedEnglish = { id: "en", reason: "the plugin did not fetch it" };
 const failure = (message: string) =>
   ({ ok: false, error: { status: 500, message } }) as const;
 
@@ -128,7 +131,6 @@ describe("updateMediaImport", () => {
     expect(effects).toEqual([
       {
         type: "watchJob",
-        key: jobKey,
         job: { kind: "mediaSource", request: statusRequest },
       },
     ]);
@@ -149,9 +151,8 @@ describe("updateMediaImport", () => {
       fetching,
       fetchChecked({
         status: "done",
-        skipped_subtitles: [
-          { id: "en", reason: "the plugin did not fetch it" },
-        ],
+        media_file: pilot,
+        skipped_subtitles: [skippedEnglish],
       }),
       "p1",
     );
@@ -164,10 +165,42 @@ describe("updateMediaImport", () => {
     ]);
   });
 
+  it("names no skipped subtitles when the fetch added no file", () => {
+    const [, effects] = updateMediaImport(
+      fetching,
+      fetchChecked({ status: "done", skipped_subtitles: [skippedEnglish] }),
+      "p1",
+    );
+    expect(effects).toEqual([]);
+  });
+
   it("says the media could not be added when the fetch's status cannot be fetched", () => {
     const lost = actions.requestSettled(jobKey, statusRequest, failure(""));
     const [wizard] = updateMediaImport(fetching, lost, "p1");
     expect(wizard?.error).toBe("The media could not be added.");
+  });
+
+  it("stops watching the fetch when another action is taken", () => {
+    const [, effects] = updateMediaImport(
+      fetching,
+      actions.mediaImportStepTaken("add", input),
+      "p1",
+    );
+    expect(effects).toContainEqual({ type: "unwatchJob", key: jobKey });
+  });
+
+  it("aborts the form and step requests when the dialog closes", () => {
+    const [, effects] = updateMediaImport(
+      fetching,
+      actions.mediaImportClosed(),
+      "p1",
+    );
+    expect(effects).toEqual(
+      expect.arrayContaining([
+        { type: "abortRequest", id: "project/p1/mediaImport/form" },
+        { type: "abortRequest", id: "project/p1/mediaImport/step" },
+      ]),
+    );
   });
 
   it("stops watching the fetch when the dialog closes", () => {

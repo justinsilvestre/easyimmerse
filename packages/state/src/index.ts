@@ -58,6 +58,7 @@ export {
   isDocumentFileName,
 } from "./screen/mediaFileExtensions.ts";
 export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
+export type { MediaImportSource } from "./screen/projectScreen/mediaImportWizard.ts";
 export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
 export { skippedSubtitlesMessage } from "./screen/projectScreen/skippedSubtitlesMessage.ts";
 export {

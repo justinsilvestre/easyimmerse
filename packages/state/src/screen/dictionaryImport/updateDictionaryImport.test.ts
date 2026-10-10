@@ -167,7 +167,6 @@ describe("updateDictionaryImport", () => {
       expect(effects).toEqual([
         {
           type: "watchJob",
-          key: "jobs/dictionaryImport/job1",
           job: { kind: "dictionaryImport", request: statusRequest },
         },
       ]);

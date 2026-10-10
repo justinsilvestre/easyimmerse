@@ -1,9 +1,11 @@
 import type { Effect, PerformedEffect } from "../app/effect.ts";
 import type { JobsState } from "./jobs.ts";
+import { jobKey } from "./jobs.ts";
 
 /**
  * Records the jobs that the effects start watching, forgets those they stop watching, and returns the effects to perform.
- * A watched job's status is asked for at once; an unwatched job's timer is cancelled and its status request aborted.
+ * A watched job's status is asked for at once, and a job watched again starts over;
+ * an unwatched job's timer is cancelled and its status request aborted.
  */
 export function trackJobs(
   jobs: JobsState,
@@ -13,7 +15,10 @@ export function trackJobs(
   const performed: PerformedEffect[] = [];
   for (const effect of effects) {
     if (effect.type === "watchJob") {
-      const { key, job } = effect;
+      const { job } = effect;
+      const key = jobKey(job.kind, job.request.jobId);
+      if (tracked[key] !== undefined)
+        performed.push({ type: "cancelTimer", id: key });
       tracked = {
         ...tracked,
         [key]: { ...job, status: "running", report: null },

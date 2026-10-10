@@ -5,7 +5,11 @@ import {
   useListPluginsQuery,
   useRemoveMediaFileMutation,
 } from "@easyimmerse/backend";
-import { actions, selectMediaImport } from "@easyimmerse/state";
+import {
+  actions,
+  type MediaImportSource,
+  selectMediaImport,
+} from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -14,7 +18,7 @@ import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
 import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
 import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
-import { type ImportSource, MediaSection } from "../projects/MediaSection.tsx";
+import { MediaSection } from "../projects/MediaSection.tsx";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
 import { ProjectView } from "../projects/ProjectView.tsx";
 
@@ -112,7 +116,7 @@ export function ProjectOverview({
  * The installed media-source plugins, with the labels of their import buttons.
  * The server gives every media-source plugin a label, so the title only stands in for a missing one.
  */
-function useImportSources(): ImportSource[] {
+function useImportSources(): MediaImportSource[] {
   const plugins = useListPluginsQuery().data?.plugins ?? [];
   return plugins
     .filter((plugin) => plugin.kind === "media-source")

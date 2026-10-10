@@ -1,3 +1,4 @@
+import type { MediaImportSource } from "@easyimmerse/state";
 import { Link, Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../components/Button.tsx";
@@ -10,9 +11,6 @@ import {
   mediaCategoryLabel,
   mediaOfCategory,
 } from "./mediaCategories.ts";
-
-/** A media-source plugin offered for importing media, with the label of its button. */
-export type ImportSource = { name: string; label: string };
 
 /**
  * The project's media files, with the ways to add one: from a file, and through each installed
@@ -29,9 +27,9 @@ export function MediaSection({
 }: {
   media: readonly MediaItem[];
   /** The installed media-source plugins, each offered as a button beside "Add media". */
-  importSources: readonly ImportSource[];
+  importSources: readonly MediaImportSource[];
   onAddMedia: () => void;
-  onImportMedia: (source: ImportSource) => void;
+  onImportMedia: (source: MediaImportSource) => void;
   onOpenMedia: (mediaId: string) => void;
   onDeleteMedia: (mediaId: string) => void;
 }) {

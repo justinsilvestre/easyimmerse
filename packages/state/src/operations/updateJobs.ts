@@ -3,7 +3,13 @@ import { actions } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
 import { isAborted } from "../server/isAborted.ts";
 import type { RequestOutcome } from "../server/serverRequest.ts";
-import type { JobRecord, JobStatus, JobsState } from "./jobs.ts";
+import type {
+  JobKind,
+  JobRecord,
+  JobReports,
+  JobStatus,
+  JobsState,
+} from "./jobs.ts";
 import { pollingIntervalMs } from "./jobs.ts";
 
 /**
@@ -50,11 +56,10 @@ export function updateJobs(
 // The settled action's id is the job's key, so its data is the report of the job's kind.
 function checkedJob(job: JobRecord, outcome: RequestOutcome): JobRecord {
   if (!outcome.ok) return { ...job, status: "failed" };
-  const report = outcome.data as JobRecord["report"];
-  return { ...job, report, status: statusOf(job, report) } as JobRecord;
+  const report = outcome.data as JobReports[JobKind];
+  return { ...job, report, status: statusOf(report) } as JobRecord;
 }
 
-function statusOf(job: JobRecord, report: JobRecord["report"]): JobStatus {
-  if (report === null) return job.status;
+function statusOf(report: JobReports[JobKind]): JobStatus {
   return "state" in report ? report.state : report.status;
 }

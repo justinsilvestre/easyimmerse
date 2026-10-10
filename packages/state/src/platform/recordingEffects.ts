@@ -43,6 +43,8 @@ export type RecordingEffects = Effects & {
   resolvePickDictionaryFile(file: PickedDictionaryFile | null): void;
   /** Acts as the platform asking for the Settings screen, by calling every subscribed listener. */
   requestSettings(): void;
+  /** Lets the preference loads held so far, and every later one, read the preference store. */
+  releasePreferenceLoads(): void;
 };
 
 type PendingPick<F> = {
@@ -67,12 +69,18 @@ function createPendingPick<F>(description: string) {
   };
 }
 
-/** Builds an Effects implementation for tests that records calls instead of performing them, over a preference store holding the given values. */
+/**
+ * Builds an Effects implementation for tests that records calls instead of performing them, over a preference store holding the given values.
+ * While `holdsPreferenceLoads` is true, a preference load waits until the test calls `releasePreferenceLoads`.
+ */
 export function createRecordingEffects(
   storedPreferences: Record<string, string> = {},
+  holdsPreferenceLoads = false,
 ): RecordingEffects {
   const calls: EffectCall[] = [];
   const preferences = new Map(Object.entries(storedPreferences));
+  const preferenceLoads = Promise.withResolvers<void>();
+  if (!holdsPreferenceLoads) preferenceLoads.resolve();
   const filePick = createPendingPick<PickedFile>("file pick");
   const mediaFilePick = createPendingPick<PickedMediaFile>("media file pick");
   const dictionaryFilePick = createPendingPick<PickedDictionaryFile>(
@@ -122,6 +130,7 @@ export function createRecordingEffects(
     },
     loadPreference: async (key) => {
       calls.push({ type: "loadPreference", key });
+      await preferenceLoads.promise;
       return preferences.get(key) ?? null;
     },
     showNotification: (message) => {
@@ -155,5 +164,6 @@ export function createRecordingEffects(
     requestSettings: () => {
       for (const listener of settingsListeners) listener();
     },
+    releasePreferenceLoads: () => preferenceLoads.resolve(),
   };
 }

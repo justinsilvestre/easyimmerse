@@ -54,6 +54,20 @@ const leftProject: AppAction[] = [
 ];
 
 describe("updateScreen", () => {
+  it("aborts the media import's requests when the project is left", () => {
+    const [, effects] = apply(
+      actions.navigated({ type: "goHome" }),
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+      actions.mediaImportOpened({ name: "video-site", label: "Video site" }),
+    );
+    expect(effects).toEqual(
+      expect.arrayContaining([
+        { type: "abortRequest", id: "project/p1/mediaImport/form" },
+        { type: "abortRequest", id: "project/p1/mediaImport/step" },
+      ]),
+    );
+  });
+
   it("stops watching a media-source fetch when the project is left", () => {
     const [, effects] = apply(
       actions.navigated({ type: "goHome" }),

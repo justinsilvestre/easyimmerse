@@ -38,14 +38,15 @@ export function stepRequest(
 
 /** Starts polling a fetch that a step started. */
 export function watchFetch(projectId: string, jobId: string): Effect {
-  return {
-    type: "watchJob",
-    key: jobKey("mediaSource", jobId),
-    job: {
-      kind: "mediaSource",
-      request: { kind: "getMediaSourceJob", projectId, jobId },
-    },
-  };
+  const request = { kind: "getMediaSourceJob", projectId, jobId } as const;
+  return { type: "watchJob", job: { kind: "mediaSource", request } };
+}
+
+/** Stops polling the dialog's fetch, if it is watching one. */
+export function unwatchFetch(wizard: MediaImportWizard): Effect[] {
+  return wizard.jobId === null
+    ? []
+    : [{ type: "unwatchJob", key: jobKey("mediaSource", wizard.jobId) }];
 }
 
 /**
@@ -59,14 +60,7 @@ export function endImport(
   if (wizard === null) return [];
   const ids = mediaImportIds(projectId);
   return [
-    ...(wizard.jobId === null
-      ? []
-      : [
-          {
-            type: "unwatchJob",
-            key: jobKey("mediaSource", wizard.jobId),
-          } as const,
-        ]),
+    ...unwatchFetch(wizard),
     { type: "abortRequest", id: ids.form },
     { type: "abortRequest", id: ids.step },
   ];

@@ -27,6 +27,33 @@ describe("createRecordingEffects", () => {
     expect(await effects.loadPreference("showTranslations")).toBeNull();
   });
 
+  it("loads a preference it holds from the start", async () => {
+    const effects = createRecordingEffects({ showTranslations: "true" });
+    expect(await effects.loadPreference("showTranslations")).toBe("true");
+  });
+
+  describe("while it holds preference loads", () => {
+    it("keeps a load waiting", async () => {
+      const effects = createRecordingEffects({}, true);
+      let isLoaded = false;
+      effects.loadPreference("showTranslations").then(() => {
+        isLoaded = true;
+      });
+      for (let turn = 0; turn < 10; turn += 1) await Promise.resolve();
+      expect(isLoaded).toBe(false);
+    });
+
+    it("finishes the load once released", async () => {
+      const effects = createRecordingEffects(
+        { showTranslations: "true" },
+        true,
+      );
+      const loaded = effects.loadPreference("showTranslations");
+      effects.releasePreferenceLoads();
+      expect(await loaded).toBe("true");
+    });
+  });
+
   it("settles a pending file pick with the given file", async () => {
     const effects = createRecordingEffects();
     const pick = effects.pickFile([".srt"]);

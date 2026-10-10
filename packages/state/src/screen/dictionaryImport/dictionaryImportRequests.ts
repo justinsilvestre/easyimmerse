@@ -33,11 +33,8 @@ export function importRequest(
 
 /** Starts polling the import's job. */
 export function watchImportJob(jobId: string): Effect {
-  return {
-    type: "watchJob",
-    key: jobKey("dictionaryImport", jobId),
-    job: { kind: "dictionaryImport", request: { kind: "getImportJob", jobId } },
-  };
+  const request = { kind: "getImportJob", jobId } as const;
+  return { type: "watchJob", job: { kind: "dictionaryImport", request } };
 }
 
 /** Stops polling the wizard's job, if it is watching one. */

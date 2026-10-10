@@ -68,4 +68,11 @@ describe("selectDictionaryImport", () => {
       pendingTable: null,
     });
   });
+
+  it("gives the same result while nothing it shows changes", () => {
+    const app = stateAfter(...started, reported);
+    const before = selectDictionaryImport({ app });
+    const after = { ...app, preferences: { ...app.preferences } };
+    expect(selectDictionaryImport({ app: after })).toBe(before);
+  });
 });

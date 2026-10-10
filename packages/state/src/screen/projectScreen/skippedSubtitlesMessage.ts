@@ -1,4 +1,19 @@
-import type { PluginForm, SkippedSubtitle } from "@easyimmerse/types";
+import type {
+  MediaSourceJob,
+  PluginForm,
+  SkippedSubtitle,
+} from "@easyimmerse/types";
+import type { Effect } from "../../app/effect.ts";
+
+/** Names in a notification the chosen subtitle tracks that a fetch did not add, once the fetch has added its file. */
+export function skippedSubtitlesNotice(
+  job: MediaSourceJob,
+  form: PluginForm | null,
+): Effect[] {
+  if (job.status !== "done" || job.media_file === null) return [];
+  const message = skippedSubtitlesMessage(job.skipped_subtitles, form);
+  return message === null ? [] : [{ type: "showNotification", message }];
+}
 
 /**
  * Says which of the chosen subtitle tracks were not added and why, or null when every track was added.

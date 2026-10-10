@@ -48,6 +48,8 @@ type RenderOptions = {
   browserFileRegistry?: BrowserFileRegistry<File>;
   /** Values the device's preference store holds, which the store loads as it starts. */
   storedPreferences?: Record<string, string>;
+  /** Keeps that load waiting until the test releases it. */
+  holdsPreferenceLoads?: boolean;
   /** Actions dispatched before the file opens. By default, the stored preferences arrive empty. */
   before?: ReturnType<(typeof actions)[keyof typeof actions]>[];
 };
@@ -94,6 +96,7 @@ function renderPlayer(
       server: options.offline ? undefined : fakeServer,
       browserFileRegistry: options.browserFileRegistry,
       storedPreferences: options.storedPreferences,
+      holdsPreferenceLoads: options.holdsPreferenceLoads,
     },
   );
   act(() => {
@@ -123,6 +126,15 @@ function requestBody(request: BackendRequest | undefined): unknown {
 /** Lets the fake backend answer whatever has been asked so far. */
 async function settleRequests() {
   await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
+}
+
+async function settleTracks(requests: BackendRequest[]) {
+  await vi.waitFor(() =>
+    expect(requests.some((request) => request.path.endsWith("/tracks"))).toBe(
+      true,
+    ),
+  );
+  await settleRequests();
 }
 
 /** The fixture's video runs at 24 fps, so a seek lands half of a 24th of a second late. */
@@ -453,10 +465,13 @@ describe("MediaPlayer", () => {
     });
 
     it("asks for FLAC when the preference loads after the file opens", async () => {
-      const { client } = renderPlayer(directPlaybackRoutes, {
+      const { client, effects } = renderPlayer(directPlaybackRoutes, {
         before: [],
         storedPreferences: { losslessAudio: "true" },
+        holdsPreferenceLoads: true,
       });
+      await settleTracks(client.requests);
+      act(() => effects.releasePreferenceLoads());
       await findVideo();
       expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
         preferred_audio_target: "flac",

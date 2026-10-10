@@ -61,4 +61,11 @@ describe("selectMediaImport", () => {
     const app = stateAfter(...fetchStarted, fetchReported, lost);
     expect(selectMediaImport({ app })?.job?.status).toBe("failed");
   });
+
+  it("gives the same result while nothing it shows changes", () => {
+    const app = stateAfter(...fetchStarted, fetchReported);
+    const before = selectMediaImport({ app });
+    const after = { ...app, preferences: { ...app.preferences } };
+    expect(selectMediaImport({ app: after })).toBe(before);
+  });
 });
