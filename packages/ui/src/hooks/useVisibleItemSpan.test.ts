@@ -1,11 +1,14 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { type ItemSpan, useVisibleItemSpan } from "./useVisibleItemSpan.ts";
+import {
+  type ItemSpan,
+  isSameSpan,
+  spanOf,
+  useVisibleItemSpan,
+  visiblePositionsAfter,
+} from "./useVisibleItemSpan.ts";
 
 type Callback = (entries: Partial<IntersectionObserverEntry>[]) => void;
-
-/** The options each fake intersection observer was created with. */
-const observerOptions: (IntersectionObserverInit | undefined)[] = [];
 
 /** Installs an intersection observer that reports only what the test tells it to, and returns how to tell it. */
 function installFakeObserver() {
@@ -13,9 +16,8 @@ function installFakeObserver() {
   vi.stubGlobal(
     "IntersectionObserver",
     class {
-      constructor(callback: Callback, options?: IntersectionObserverInit) {
+      constructor(callback: Callback) {
         observers.push(callback);
-        observerOptions.push(options);
       }
       observe() {}
       disconnect() {}
@@ -44,17 +46,6 @@ describe("useVisibleItemSpan", () => {
     expect(spans).toEqual([{ first: 1, last: 3 }]);
   });
 
-  it("reports nothing when the span in view stays the same", () => {
-    const report = installFakeObserver();
-    const list = listOf(5);
-    const spans: (ItemSpan | null)[] = [];
-    renderHook(() => useVisibleItemSpan(list, [], (span) => spans.push(span)));
-    const [first, second, third] = [...list.children] as Element[];
-    report([first as Element, third as Element], true);
-    report([second as Element], true);
-    expect(spans).toHaveLength(1);
-  });
-
   it("reports null once the list is gone", () => {
     installFakeObserver();
     const spans: (ItemSpan | null)[] = [];
@@ -79,14 +70,61 @@ describe("useVisibleItemSpan", () => {
     report([list.children[2] as Element], true);
     expect(spans).toEqual([{ first: 7, last: 7 }]);
   });
+});
 
-  it("counts items within the margin around the list as in view", () => {
-    installFakeObserver();
-    renderHook(() =>
-      useVisibleItemSpan(listOf(1), [], () => undefined, {
-        rootMargin: "100% 0px",
-      }),
+describe("visiblePositionsAfter", () => {
+  it("adds a position that came into view", () => {
+    expect(
+      visiblePositionsAfter(new Set([1]), [
+        { position: 3, isIntersecting: true },
+      ]),
+    ).toEqual(new Set([1, 3]));
+  });
+
+  it("removes a position that left view", () => {
+    expect(
+      visiblePositionsAfter(new Set([1, 3]), [
+        { position: 1, isIntersecting: false },
+      ]),
+    ).toEqual(new Set([3]));
+  });
+
+  it("applies the changes of a batch in order", () => {
+    expect(
+      visiblePositionsAfter(new Set(), [
+        { position: 2, isIntersecting: true },
+        { position: 2, isIntersecting: false },
+      ]),
+    ).toEqual(new Set());
+  });
+});
+
+describe("spanOf", () => {
+  it("runs from the smallest to the largest position", () => {
+    expect(spanOf(new Set([4, 2, 7]))).toEqual({ first: 2, last: 7 });
+  });
+
+  it("returns null for no positions", () => {
+    expect(spanOf(new Set())).toBeNull();
+  });
+});
+
+describe("isSameSpan", () => {
+  it("treats two nulls as the same", () => {
+    expect(isSameSpan(null, null)).toBe(true);
+  });
+
+  it("treats spans with the same ends as the same", () => {
+    expect(isSameSpan({ first: 1, last: 3 }, { first: 1, last: 3 })).toBe(true);
+  });
+
+  it("tells apart spans with different ends", () => {
+    expect(isSameSpan({ first: 1, last: 3 }, { first: 1, last: 4 })).toBe(
+      false,
     );
-    expect(observerOptions.at(-1)?.rootMargin).toBe("100% 0px");
+  });
+
+  it("tells a span apart from null", () => {
+    expect(isSameSpan({ first: 1, last: 3 }, null)).toBe(false);
   });
 });
