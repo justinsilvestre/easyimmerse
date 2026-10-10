@@ -15,10 +15,9 @@ import type { Effect, PerformedEffect } from "./effect.ts";
 import type { Feature } from "./feature.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
-export type Update<S, A, E> = (
-  state: S,
-  action: A,
-) => readonly [S, readonly E[]];
+export type UpdateFunction<S, A, E> = (state: S, action: A) => Update<S, E>;
+
+export type Update<S, E> = readonly [S, readonly E[]];
 
 type FeatureTable = { [K in keyof AppState]: Feature<AppState[K]> };
 
@@ -45,7 +44,7 @@ export const initialAppState = Object.fromEntries(
  * A chosen notice button is two updates in one dispatch: the features see `noticeButtonChosen`, which closes the notice,
  * and then the button's action, which does what the button says.
  */
-export const update: Update<AppState, AppAction, PerformedEffect> = (
+export const update: UpdateFunction<AppState, AppAction, PerformedEffect> = (
   state,
   action,
 ) => {

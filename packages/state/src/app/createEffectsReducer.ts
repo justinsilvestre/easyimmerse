@@ -1,5 +1,5 @@
 import type { Action, Reducer } from "redux";
-import type { Update } from "./update.ts";
+import type { UpdateFunction } from "./update.ts";
 
 export type EffectsReducer<S, E> = {
   reducer: Reducer<S, Action>;
@@ -15,7 +15,7 @@ export type EffectsReducer<S, E> = {
  * channel. The effects middleware drains that queue after each dispatch.
  */
 export function createEffectsReducer<S, A extends Action, E>(
-  update: Update<S, A, E>,
+  update: UpdateFunction<S, A, E>,
   initialState: S,
   isHandled: (action: Action) => action is A,
 ): EffectsReducer<S, E> {

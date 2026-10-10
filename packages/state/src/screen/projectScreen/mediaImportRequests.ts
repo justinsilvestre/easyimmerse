@@ -10,12 +10,12 @@ export const mediaImportIds = (projectId: string) => ({
 });
 
 /** Asks a media-source plugin for the first form of its import interface. */
-export function formRequest(projectId: string, plugin: string): Effect {
+export function formRequest(projectId: string, plugin: string) {
   return {
     type: "sendRequest",
     id: mediaImportIds(projectId).form,
     request: { kind: "getImportForm", projectId, request: { plugin } },
-  };
+  } satisfies Effect;
 }
 
 /** Sends an action of the plugin's form with what the user entered. */
@@ -24,7 +24,7 @@ export function stepRequest(
   plugin: string,
   action: string,
   input: FormInput[],
-): Effect {
+) {
   return {
     type: "sendRequest",
     id: mediaImportIds(projectId).step,
@@ -33,7 +33,7 @@ export function stepRequest(
       projectId,
       request: { plugin, action, input },
     },
-  };
+  } satisfies Effect;
 }
 
 /** Starts polling a fetch that a step started. */
@@ -43,25 +43,24 @@ export function watchFetch(projectId: string, jobId: string): Effect {
 }
 
 /** Stops polling the dialog's fetch, if it is watching one. */
-export function unwatchFetch(wizard: MediaImportWizard): Effect[] {
+export function unwatchFetch(wizard: MediaImportWizard) {
   return wizard.jobId === null
     ? []
-    : [{ type: "unwatchJob", key: jobKey("mediaSource", wizard.jobId) }];
+    : ([
+        { type: "unwatchJob", key: jobKey("mediaSource", wizard.jobId) },
+      ] satisfies Effect[]);
 }
 
 /**
  * Stops what an import dialog has under way: polling its fetch, and the requests whose answers would no longer be read.
  * The server finishes a fetch it has started either way.
  */
-export function endImport(
-  projectId: string,
-  wizard: MediaImportWizard | null,
-): Effect[] {
+export function endImport(projectId: string, wizard: MediaImportWizard | null) {
   if (wizard === null) return [];
   const ids = mediaImportIds(projectId);
   return [
     ...unwatchFetch(wizard),
     { type: "abortRequest", id: ids.form },
     { type: "abortRequest", id: ids.step },
-  ];
+  ] satisfies Effect[];
 }
