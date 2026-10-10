@@ -14,7 +14,7 @@ import { useAppDispatch } from "./hooks/useAppDispatch.ts";
 import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
 import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
-import { NoticesProvider } from "./notices/NoticesContext.tsx";
+import { NoticeRegion } from "./notices/NoticeRegion.tsx";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { Screens } from "./Screens.tsx";
 
@@ -31,17 +31,16 @@ export function AppRoot({
   return (
     <Provider store={store}>
       <SharedSavingProvider>
-        <NoticesProvider statusLine={<UnsavedCardsStatus />}>
-          <PlayerRegistryContext value={playerRegistry}>
-            <BrowserFileRegistryContext value={browserFileRegistry}>
-              <WordClickMemoryProvider>
-                <AppearanceHandler />
-                <PreferencesLoader />
-                <Screens />
-              </WordClickMemoryProvider>
-            </BrowserFileRegistryContext>
-          </PlayerRegistryContext>
-        </NoticesProvider>
+        <PlayerRegistryContext value={playerRegistry}>
+          <BrowserFileRegistryContext value={browserFileRegistry}>
+            <WordClickMemoryProvider>
+              <AppearanceHandler />
+              <PreferencesLoader />
+              <Screens />
+            </WordClickMemoryProvider>
+          </BrowserFileRegistryContext>
+        </PlayerRegistryContext>
+        <NoticeRegion statusLine={<UnsavedCardsStatus />} />
       </SharedSavingProvider>
     </Provider>
   );

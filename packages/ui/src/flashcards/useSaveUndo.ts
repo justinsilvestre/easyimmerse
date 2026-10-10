@@ -1,7 +1,8 @@
+import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
-import { useNotices } from "../notices/NoticesContext.tsx";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import type { EditedFlashcard } from "./editedFlashcard.ts";
-import { flashcardNotices } from "./flashcardNotices.ts";
+import { flashcardNoticeKeys, flashcardNotices } from "./flashcardNotices.ts";
 import { useSharedSaving } from "./SharedSavingContext.tsx";
 import { useFlashcardRequests } from "./useFlashcardRequests.ts";
 import { useUnsavedWorkTracking } from "./useUnsavedWorkTracking.ts";
@@ -12,18 +13,15 @@ import { useUnsavedWorkTracking } from "./useUnsavedWorkTracking.ts";
  * An Undo is sent through the app's save queue, after any earlier work on the flashcard.
  */
 export function useSaveUndo() {
-  const { queue, undoNotices } = useSharedSaving();
-  const notices = useNotices();
+  const { queue } = useSharedSaving();
+  const dispatch = useAppDispatch();
   const requestsFor = useFlashcardRequests();
   const { track } = useUnsavedWorkTracking();
-  const withdraw = (flashcardId: string) => {
-    const id = undoNotices.get(flashcardId);
-    if (id === undefined) return;
-    undoNotices.delete(flashcardId);
-    notices.dismiss(id);
-  };
   return {
-    withdraw,
+    withdraw: (flashcardId: string) =>
+      dispatch(
+        actions.noticeWithdrawn(flashcardNoticeKeys.saveUndo(flashcardId)),
+      ),
     /**
      * Shows that `card` was saved as `saved`, with an Undo that takes the save back:
      * it deletes a new card, or puts back `before`, what a saved card held before the save.
@@ -35,20 +33,19 @@ export function useSaveUndo() {
     ) => {
       const word = card.editor.content.word;
       const undo = () => {
-        undoNotices.delete(saved.id);
         const undoing = queue.addFor(
           saved.id,
           () => requestsFor(saved.project_id).undoSave(card, saved, before),
           before ?? undefined,
         );
         track(undoing).catch(() =>
-          notices.show(flashcardNotices.undoFailed(word)),
+          dispatch(actions.noticeRequested(flashcardNotices.undoFailed(word))),
         );
       };
-      withdraw(saved.id);
-      undoNotices.set(
-        saved.id,
-        notices.show(flashcardNotices.savedWithUndo(word, undo)),
+      dispatch(
+        actions.noticeRequested(
+          flashcardNotices.savedWithUndo(saved.id, word, undo),
+        ),
       );
     },
   };

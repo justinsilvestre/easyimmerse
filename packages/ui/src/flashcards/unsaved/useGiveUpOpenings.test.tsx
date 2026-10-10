@@ -1,7 +1,7 @@
+import { selectNotices } from "@easyimmerse/state";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import { createNoticeStore } from "../../notices/noticeStore.ts";
 import { AppStoreProviders } from "../../testSupport/AppStoreProviders.tsx";
 import { createTestAppStore } from "../../testSupport/createTestAppStore.ts";
 import { createSharedSaving } from "../sharedSaving.ts";
@@ -14,7 +14,6 @@ afterEach(cleanup);
 function renderGiveUp(hasFailed: boolean) {
   const { store, playerRegistry } = createTestAppStore();
   const sharedSaving = createSharedSaving();
-  const noticeStore = createNoticeStore();
   const unsavedCards = sharedSaving.unsavedCards;
   unsavedCards.put(exampleUnsavedCard("Hund"));
   unsavedCards.put(
@@ -27,7 +26,6 @@ function renderGiveUp(hasFailed: boolean) {
       store={store}
       playerRegistry={playerRegistry}
       sharedSaving={sharedSaving}
-      noticeStore={noticeStore}
     >
       {children}
     </AppStoreProviders>
@@ -38,7 +36,8 @@ function renderGiveUp(hasFailed: boolean) {
   );
   const isOpening = (word: string) =>
     unsavedCards.find(word)?.isOpening ?? false;
-  const messages = () => noticeStore.list().map((notice) => notice.message);
+  const messages = () =>
+    selectNotices(store.getState()).map((notice) => notice.message);
   return { ...rendered, unsavedCards, isOpening, messages };
 }
 

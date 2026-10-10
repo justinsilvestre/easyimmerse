@@ -1,6 +1,6 @@
 import { actions } from "@easyimmerse/state";
 import { useAppDispatch } from "../../hooks/useAppDispatch.ts";
-import { useNotices } from "../../notices/NoticesContext.tsx";
+import { flashcardNoticeKeys } from "../flashcardNotices.ts";
 import { useUnsavedCards } from "../SharedSavingContext.tsx";
 
 /**
@@ -10,12 +10,13 @@ import { useUnsavedCards } from "../SharedSavingContext.tsx";
  */
 export function useUnsavedCardOpening() {
   const store = useUnsavedCards();
-  const notices = useNotices();
   const dispatch = useAppDispatch();
   return (flashcardId: string) => {
     const listed = store.requestOpen(flashcardId);
     if (!listed?.mediaFileId) return;
-    if (listed.noticeId !== undefined) notices.dismiss(listed.noticeId);
+    dispatch(
+      actions.noticeWithdrawn(flashcardNoticeKeys.saveRefused(flashcardId)),
+    );
     dispatch(
       actions.openMediaFileRequested(listed.projectId, listed.mediaFileId),
     );

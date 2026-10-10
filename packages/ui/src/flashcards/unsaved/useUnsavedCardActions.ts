@@ -1,14 +1,11 @@
-import { useNotices } from "../../notices/NoticesContext.tsx";
+import { actions } from "@easyimmerse/state";
+import { useAppDispatch } from "../../hooks/useAppDispatch.ts";
 import { type EditedFlashcard, flashcardIdOf } from "../editedFlashcard.ts";
-import { flashcardNotices } from "../flashcardNotices.ts";
+import { flashcardNoticeKeys, flashcardNotices } from "../flashcardNotices.ts";
 import { useUnsavedCards } from "../SharedSavingContext.tsx";
 import { useQueuedSaving } from "../useQueuedSaving.ts";
 import { isSaveRefused } from "./isSaveRefused.ts";
-import {
-  createUnsavedCard,
-  mediaFileIdOf,
-  type UnsavedCard,
-} from "./unsavedCard.ts";
+import { createUnsavedCard, mediaFileIdOf } from "./unsavedCard.ts";
 import { useUnsavedCardOpening } from "./useUnsavedCardOpening.ts";
 import { useUnsavedCardRetry } from "./useUnsavedCardRetry.ts";
 
@@ -21,12 +18,13 @@ import { useUnsavedCardRetry } from "./useUnsavedCardRetry.ts";
 export function useUnsavedCardActions() {
   const store = useUnsavedCards();
   const queued = useQueuedSaving();
-  const notices = useNotices();
+  const dispatch = useAppDispatch();
   const open = useUnsavedCardOpening();
   const retrying = useUnsavedCardRetry({ listFailure, unlistSaved });
-  const dismissNoticeOf = (listed: UnsavedCard | undefined) => {
-    if (listed?.noticeId !== undefined) notices.dismiss(listed.noticeId);
-  };
+  const withdrawRefusalOf = (flashcardId: string) =>
+    dispatch(
+      actions.noticeWithdrawn(flashcardNoticeKeys.saveRefused(flashcardId)),
+    );
   /**
    * Sends a card that has left the editor to the project `projectId`, listing it if the save fails,
    * with an Undo notice once saved when `offersUndo`.
@@ -55,35 +53,40 @@ export function useUnsavedCardActions() {
     error: unknown,
   ) {
     const isRejected = isSaveRefused(error);
-    const noticeId = isRejected ? showRefusal(card) : undefined;
-    store.put(createUnsavedCard(card, projectId, { isRejected, noticeId }));
+    if (isRejected) showRefusal(card);
+    store.put(createUnsavedCard(card, projectId, { isRejected }));
   }
   /** Shows a notice of a refused save, with Open, for a card that has a media file to open in, and Discard. */
   function showRefusal(card: EditedFlashcard) {
     const flashcardId = flashcardIdOf(card);
-    return notices.show(
-      flashcardNotices.saveRejected(card.editor.content.word, {
-        open:
-          mediaFileIdOf(card) === null ? undefined : () => open(flashcardId),
-        discard: () => discard(flashcardId),
-      }),
+    dispatch(
+      actions.noticeRequested(
+        flashcardNotices.saveRejected(flashcardId, card.editor.content.word, {
+          open:
+            mediaFileIdOf(card) === null ? undefined : () => open(flashcardId),
+          discard: () => discard(flashcardId),
+        }),
+      ),
     );
   }
   /** Takes a card off the list once a save of it has succeeded. */
   function unlistSaved(card: EditedFlashcard) {
-    dismissNoticeOf(store.remove(flashcardIdOf(card)));
+    const flashcardId = flashcardIdOf(card);
+    if (store.remove(flashcardId)) withdrawRefusalOf(flashcardId);
   }
   /** Throws the card's edits away, with a brief Undo that lists the card again. Does nothing while a retry is under way. */
   function discard(flashcardId: string) {
     if (store.find(flashcardId)?.isRetrying) return;
     const listed = store.remove(flashcardId);
     if (!listed) return;
-    dismissNoticeOf(listed);
+    withdrawRefusalOf(flashcardId);
     queued.cleanUpAfterDiscard(listed.card, listed.projectId);
     const { card, projectId, isRejected } = listed;
-    notices.show(
-      flashcardNotices.discarded(card.editor.content.word, () =>
-        store.put(createUnsavedCard(card, projectId, { isRejected })),
+    dispatch(
+      actions.noticeRequested(
+        flashcardNotices.discarded(card.editor.content.word, () =>
+          store.put(createUnsavedCard(card, projectId, { isRejected })),
+        ),
       ),
     );
   }

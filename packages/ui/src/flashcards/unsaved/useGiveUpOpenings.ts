@@ -1,5 +1,6 @@
+import { actions } from "@easyimmerse/state";
 import { useEffect } from "react";
-import { useNotices } from "../../notices/NoticesContext.tsx";
+import { useAppDispatch } from "../../hooks/useAppDispatch.ts";
 import { flashcardNotices } from "../flashcardNotices.ts";
 import { useUnsavedCards } from "../SharedSavingContext.tsx";
 
@@ -15,18 +16,20 @@ export function useGiveUpOpenings(
   hasFailed: boolean,
 ) {
   const store = useUnsavedCards();
-  const notices = useNotices();
+  const dispatch = useAppDispatch();
   useEffect(() => {
     if (!hasFailed) return;
     const tellFailures = () => {
       for (const card of store.giveUpOpenings((card) => card[field] === id))
-        notices.show(
-          flashcardNotices.openFailed(card.card.editor.content.word),
+        dispatch(
+          actions.noticeRequested(
+            flashcardNotices.openFailed(card.card.editor.content.word),
+          ),
         );
     };
     tellFailures();
     return store.subscribe(tellFailures);
-  }, [store, notices, field, id, hasFailed]);
+  }, [store, dispatch, field, id, hasFailed]);
   useEffect(
     () => () => {
       store.giveUpOpenings((card) => card[field] === id);

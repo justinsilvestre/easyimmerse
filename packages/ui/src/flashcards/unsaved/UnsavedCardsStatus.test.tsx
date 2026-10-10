@@ -14,7 +14,6 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createNoticeStore } from "../../notices/noticeStore.ts";
 import { AppStoreProviders } from "../../testSupport/AppStoreProviders.tsx";
 import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
 import { createTestAppStore } from "../../testSupport/createTestAppStore.ts";
@@ -48,13 +47,11 @@ function renderStatusOver(cards: UnsavedCard[], savesHang: boolean) {
   const { store, playerRegistry } = createTestAppStore(backend);
   const sharedSaving = createSharedSaving();
   const unsavedCardStore = sharedSaving.unsavedCards;
-  const noticeStore = createNoticeStore();
   for (const card of cards) unsavedCardStore.put(card);
   render(
     <AppStoreProviders
       store={store}
       playerRegistry={playerRegistry}
-      noticeStore={noticeStore}
       sharedSaving={sharedSaving}
     >
       <p>Screen</p>

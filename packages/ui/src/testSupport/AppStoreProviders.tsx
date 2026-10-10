@@ -6,8 +6,7 @@ import { WordClickMemoryProvider } from "../components/wordClickMemoryContext.ts
 import { SharedSavingProvider } from "../flashcards/SharedSavingContext.tsx";
 import type { SharedSaving } from "../flashcards/sharedSaving.ts";
 import { UnsavedCardsStatus } from "../flashcards/unsaved/UnsavedCardsStatus.tsx";
-import { NoticesProvider } from "../notices/NoticesContext.tsx";
-import type { NoticeStore } from "../notices/noticeStore.ts";
+import { NoticeRegion } from "../notices/NoticeRegion.tsx";
 import { PlayerRegistryContext } from "../playerRegistryContext.ts";
 import type { createTestAppStore } from "./createTestAppStore.ts";
 
@@ -17,13 +16,10 @@ export function AppStoreProviders({
   store,
   playerRegistry,
   browserFileRegistry = null,
-  noticeStore,
   sharedSaving,
   children,
 }: Pick<TestAppStore, "store" | "playerRegistry"> & {
   browserFileRegistry?: BrowserFileRegistry<File> | null;
-  /** The store of the app's notices, for a test to read; a new one when left out. */
-  noticeStore?: NoticeStore;
   /** The app's shared flashcard-saving parts, such as the list of flashcards that could not be saved, for a test to read; new ones when left out. */
   sharedSaving?: SharedSaving;
   children: ReactNode;
@@ -33,12 +29,8 @@ export function AppStoreProviders({
       <PlayerRegistryContext value={playerRegistry}>
         <BrowserFileRegistryContext value={browserFileRegistry}>
           <SharedSavingProvider shared={sharedSaving}>
-            <NoticesProvider
-              store={noticeStore}
-              statusLine={<UnsavedCardsStatus />}
-            >
-              <WordClickMemoryProvider>{children}</WordClickMemoryProvider>
-            </NoticesProvider>
+            <WordClickMemoryProvider>{children}</WordClickMemoryProvider>
+            <NoticeRegion statusLine={<UnsavedCardsStatus />} />
           </SharedSavingProvider>
         </BrowserFileRegistryContext>
       </PlayerRegistryContext>

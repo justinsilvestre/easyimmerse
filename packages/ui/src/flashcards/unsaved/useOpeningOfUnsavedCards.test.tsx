@@ -1,8 +1,8 @@
 import type { BackendRequest } from "@easyimmerse/backend";
+import { selectNotices } from "@easyimmerse/state";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createNoticeStore } from "../../notices/noticeStore.ts";
 import { AppStoreProviders } from "../../testSupport/AppStoreProviders.tsx";
 import {
   createFakeBackendClient,
@@ -47,7 +47,6 @@ function renderOpening(mediaList: MediaList) {
   };
   const { store, playerRegistry } = createTestAppStore(client);
   const sharedSaving = createSharedSaving();
-  const noticeStore = createNoticeStore();
   sharedSaving.unsavedCards.put(exampleUnsavedCard("Hund"));
   sharedSaving.unsavedCards.requestOpen("Hund");
   const opened: EditedFlashcard[] = [];
@@ -56,7 +55,6 @@ function renderOpening(mediaList: MediaList) {
       store={store}
       playerRegistry={playerRegistry}
       sharedSaving={sharedSaving}
-      noticeStore={noticeStore}
     >
       {children}
     </AppStoreProviders>
@@ -68,7 +66,8 @@ function renderOpening(mediaList: MediaList) {
   return {
     opened,
     answerMediaList: () => act(async () => answerMediaList()),
-    messages: () => noticeStore.list().map((notice) => notice.message),
+    messages: () =>
+      selectNotices(store.getState()).map((notice) => notice.message),
     isListed: () => sharedSaving.unsavedCards.find("Hund") !== undefined,
   };
 }

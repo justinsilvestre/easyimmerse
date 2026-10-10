@@ -1,6 +1,14 @@
 import type { BackendRequest } from "@easyimmerse/backend";
+import { type Notice, selectNotices } from "@easyimmerse/state";
 import type { FlashcardDraft } from "@easyimmerse/types";
-import { act, cleanup, renderHook, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  renderHook,
+  screen,
+  within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
@@ -8,7 +16,6 @@ import {
   saveLookupWaitMs,
   saveRequestLimitMs,
 } from "../lookup/lookupTiming.ts";
-import { createNoticeStore } from "../notices/noticeStore.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import {
   createFakeBackendClient,
@@ -128,6 +135,16 @@ function createFlashcardBackend(outcome: SaveOutcome) {
   });
 }
 
+/** Clicks the button labelled `label` on the notice as the notice region shows it, as the user would. */
+function clickNoticeButton(notice: Notice | undefined, label: string) {
+  if (!notice) return;
+  const item = screen.getAllByText(notice.message).at(-1)?.closest("li");
+  if (!item) throw new Error(`The notice “${notice.message}” is not shown.`);
+  act(() => {
+    fireEvent.click(within(item).getByRole("button", { name: label }));
+  });
+}
+
 /**
  * Renders the hook over a backend whose flashcard saves wait until the test lets them through,
  * and then succeed, or, while `savesFail`, fail, or, while `savesRejected`, are refused.
@@ -150,14 +167,12 @@ function renderFlashcards({ savesFail = false, savesRejected = false } = {}) {
     },
   };
   const { store, playerRegistry, effects } = createTestAppStore(holdingClient);
-  const noticeStore = createNoticeStore();
   const sharedSaving = createSharedSaving();
   const unsavedCardStore = sharedSaving.unsavedCards;
   const wrapper = ({ children }: { children: ReactNode }) => (
     <AppStoreProviders
       store={store}
       playerRegistry={playerRegistry}
-      noticeStore={noticeStore}
       sharedSaving={sharedSaving}
     >
       {children}
@@ -195,21 +210,16 @@ function renderFlashcards({ savesFail = false, savesRejected = false } = {}) {
     act(async () => {
       held.splice(index, 1)[0]?.();
     });
+  const shownNotices = () => selectNotices(store.getState());
   /** Chooses an action of the latest notice whose message starts with `message`. */
   const chooseFor = (message: string, label: string) =>
-    act(() =>
-      noticeStore
-        .list()
-        .findLast((notice) => notice.message.startsWith(message))
-        ?.actions?.find((action) => action.label === label)
-        ?.onSelect(),
+    clickNoticeButton(
+      shownNotices().findLast((notice) => notice.message.startsWith(message)),
+      label,
     );
   /** Dismisses the latest notice as the user would. */
   const dismissNotice = () =>
-    act(() => {
-      const latest = noticeStore.list().at(-1);
-      if (latest) noticeStore.dismissByUser(latest.id);
-    });
+    clickNoticeButton(shownNotices().at(-1), "Dismiss");
   /** Lets every save sent so far reach the backend. */
   const letSavesThrough = () =>
     act(async () => {
@@ -221,20 +231,17 @@ function renderFlashcards({ savesFail = false, savesRejected = false } = {}) {
     );
   /** The app's notices, each as its message followed by its actions' labels. */
   const notices = () =>
-    noticeStore
-      .list()
-      .map((notice) => [
-        notice.message,
-        ...(notice.actions ?? []).map((action) => action.label),
-      ]);
+    shownNotices().map((notice) => [
+      notice.message,
+      ...notice.buttons.map((button) => button.label),
+    ]);
   /** Chooses an action of the latest notice that offers it. */
   const choose = (label: string) =>
-    act(() =>
-      noticeStore
-        .list()
-        .flatMap((notice) => notice.actions ?? [])
-        .findLast((action) => action.label === label)
-        ?.onSelect(),
+    clickNoticeButton(
+      shownNotices().findLast((notice) =>
+        notice.buttons.some((button) => button.label === label),
+      ),
+      label,
     );
   const deletes = () =>
     requests.filter((request) => request.method === "DELETE");

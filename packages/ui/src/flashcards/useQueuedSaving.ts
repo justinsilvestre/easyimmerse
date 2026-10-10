@@ -1,6 +1,7 @@
+import { actions } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { saveRequestLimitMs } from "../lookup/lookupTiming.ts";
-import { useNotices } from "../notices/NoticesContext.tsx";
 import { type EditedFlashcard, flashcardIdOf } from "./editedFlashcard.ts";
 import { draftOfFlashcard } from "./flashcardDrafts.ts";
 import { flashcardNotices } from "./flashcardNotices.ts";
@@ -20,7 +21,7 @@ export function useQueuedSaving() {
   const { queue, savesInDoubt } = useSharedSaving();
   const requestsFor = useFlashcardRequests();
   const undo = useSaveUndo();
-  const notices = useNotices();
+  const dispatch = useAppDispatch();
   const { track } = useUnsavedWorkTracking();
   /** A saved flashcard as the latest work on it left it, which the list of flashcards may not show yet. */
   const latestOf = (flashcard: Flashcard) => queue.latestOf(flashcard);
@@ -118,8 +119,9 @@ export function useQueuedSaving() {
         before === null || card.kind === "new"
           ? () => requests.removeIfThere(flashcardId)
           : () => requests.replace(card.flashcard, before);
+      const word = card.editor.content.word;
       track(queue.addFor(flashcardId, cleanup, before ?? undefined)).catch(() =>
-        notices.show(flashcardNotices.undoFailed(card.editor.content.word)),
+        dispatch(actions.noticeRequested(flashcardNotices.undoFailed(word))),
       );
     },
   };

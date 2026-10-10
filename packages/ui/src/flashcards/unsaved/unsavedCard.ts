@@ -10,18 +10,13 @@ export type UnsavedCard = {
   readonly mediaFileId: string | null;
   /** Whether the server refused the save, so that sending it again cannot succeed. */
   readonly isRejected: boolean;
-  /** The notice that tells of the card on its own, as a refused save has, which goes once the card leaves the list. */
-  readonly noticeId?: number;
 };
 
 /** Describes `card`, of the project `projectId`, as a card that could not be saved. */
 export function createUnsavedCard(
   card: EditedFlashcard,
   projectId: string,
-  {
-    isRejected = false,
-    noticeId,
-  }: { isRejected?: boolean; noticeId?: number } = {},
+  { isRejected = false }: { isRejected?: boolean } = {},
 ): UnsavedCard {
   return {
     flashcardId: flashcardIdOf(card),
@@ -29,7 +24,6 @@ export function createUnsavedCard(
     projectId,
     mediaFileId: mediaFileIdOf(card),
     isRejected,
-    ...(noticeId === undefined ? {} : { noticeId }),
   };
 }
 

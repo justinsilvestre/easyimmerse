@@ -1,8 +1,10 @@
+import { selectNotices } from "@easyimmerse/state";
 import { X } from "lucide-react";
 import { useId, useState, useSyncExternalStore } from "react";
 import { Button } from "../../components/Button.tsx";
 import { IconButton } from "../../components/IconButton.tsx";
-import { useNotices } from "../../notices/NoticesContext.tsx";
+import { useAppSelector } from "../../hooks/useAppSelector.ts";
+import { flashcardNoticeKeys } from "../flashcardNotices.ts";
 import { useUnsavedCards } from "../SharedSavingContext.tsx";
 import type { ListedUnsavedCard } from "./unsavedCardStore.ts";
 import { useUnsavedCardActions } from "./useUnsavedCardActions.ts";
@@ -126,12 +128,11 @@ function UnsavedCardItem({ card }: { card: ListedUnsavedCard }) {
 /** The listed cards, less those whose own notice is showing. */
 function useCardsWithoutOwnNotice(): readonly ListedUnsavedCard[] {
   const store = useUnsavedCards();
-  const notices = useNotices();
   const cards = useSyncExternalStore(store.subscribe, store.list);
-  const shown = useSyncExternalStore(notices.subscribe, notices.list);
-  const shownIds = new Set(shown.map((notice) => notice.id));
+  const notices = useAppSelector(selectNotices);
+  const shownKeys = new Set(notices.map((notice) => notice.key));
   return cards.filter(
-    (card) => card.noticeId === undefined || !shownIds.has(card.noticeId),
+    (card) => !shownKeys.has(flashcardNoticeKeys.saveRefused(card.flashcardId)),
   );
 }
 
