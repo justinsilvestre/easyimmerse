@@ -90,4 +90,12 @@ describe("createRecordingEffects", () => {
     effects.requestSettings();
     expect(callCount).toBe(0);
   });
+
+  it("fires a timer on its clock once the test advances it", () => {
+    const effects = createRecordingEffects();
+    const fired: string[] = [];
+    effects.clock.setTimeout(() => fired.push("a"), 100);
+    effects.clock.advanceBy(100);
+    expect(fired).toEqual(["a"]);
+  });
 });

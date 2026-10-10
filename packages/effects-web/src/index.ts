@@ -3,7 +3,7 @@ import type {
   Effects,
   PlayerRegistry,
 } from "@easyimmerse/state";
-import { createBrowserFileRegistry } from "@easyimmerse/state";
+import { createBrowserFileRegistry, systemClock } from "@easyimmerse/state";
 import { createCloseGuard } from "./closeGuard.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { pickFile } from "./pickFile.ts";
@@ -26,6 +26,7 @@ export function createWebEffects(options: {
   );
   return {
     ...createPlayerEffects(options.playerRegistry),
+    clock: systemClock,
     pickFile,
     pickMediaFile: pickRegisteredFile,
     pickDictionaryFile: pickRegisteredFile,

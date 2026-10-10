@@ -1,3 +1,5 @@
+import type { ManualClock } from "../timers/manualClock.ts";
+import { createManualClock } from "../timers/manualClock.ts";
 import type {
   Effects,
   PickedDictionaryFile,
@@ -23,6 +25,8 @@ type EffectCall =
   | { type: "guardClose"; isActive: boolean };
 
 export type RecordingEffects = Effects & {
+  /** A clock that moves only through `advanceBy`, so no timer fires on its own or outlives its test. */
+  clock: ManualClock;
   /** Every call made so far, in order, with its arguments. */
   calls: EffectCall[];
   /** The store behind savePreference and loadPreference. Tests may seed it. */
@@ -74,6 +78,7 @@ export function createRecordingEffects(): RecordingEffects {
   );
   const settingsListeners = new Set<() => void>();
   return {
+    clock: createManualClock(),
     calls,
     preferences,
     seekPlayer: (seconds) => {

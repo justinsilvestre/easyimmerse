@@ -67,3 +67,5 @@ export {
   selectPlaybackPosition,
   selectReadingLocation,
 } from "./storedPlaces/storedPlacesSelectors.ts";
+export type { Clock } from "./timers/clock.ts";
+export { systemClock } from "./timers/clock.ts";

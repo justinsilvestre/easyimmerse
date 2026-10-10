@@ -1,4 +1,5 @@
 import type { MediaFileSource, TextSource } from "@easyimmerse/types";
+import type { Clock } from "../timers/clock.ts";
 
 export type PickedFile = { name: string; source: TextSource };
 
@@ -13,6 +14,8 @@ export type PickedDictionaryFile = { name: string; source: MediaFileSource };
 
 /** Every side effect the app can perform. Each platform implements it; tests use a recording fake. */
 export interface Effects {
+  /** The clock through which the store waits for its timers. */
+  clock: Clock;
   seekPlayer(seconds: number): void;
   /** Pauses the player when it plays, and plays it otherwise. */
   togglePlayer(): void;
