@@ -6,7 +6,7 @@ import {
 import type { Cue } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
+import { selectMediaDurationMs } from "../player/selectMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import type { FlashcardSegment } from "./waveform/flashcardSegment.ts";
 import { useWaveformWindows } from "./waveform/useWaveformWindows.ts";
@@ -55,7 +55,7 @@ export function PlayerWaveform({
   const dispatch = useAppDispatch();
   const mediaFile = useMediaFile(projectId, mediaFileId);
   const currentTimeMs = useAppSelector(selectCurrentTime) * 1000;
-  const durationMs = useMediaDurationMs(projectId, mediaFile);
+  const durationMs = useAppSelector(selectMediaDurationMs);
   const requestedSpanMs = useAppSelector(selectRequestedWaveformSpan);
   const visibleSpanMs = clampVisibleSpan(requestedSpanMs, durationMs);
   const viewStartMs = computeViewStart(

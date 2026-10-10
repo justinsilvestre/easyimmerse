@@ -680,7 +680,6 @@ export function selectCachedWaveformWindow(
   return entry.isSuccess ? entry.data : undefined;
 }
 
-/** The tracks of a media file, from the cache, or undefined until they have loaded. */
 /** The API's internal subscription actions, typed apart so that the endpoints that read them do not make `backendApi`'s type refer to itself. */
 function subscriptionActions(): SubscriptionActions {
   return backendApi.internalActions;
@@ -692,6 +691,7 @@ export function hasProbedPictures(state: unknown, file: PickedFile): boolean {
     .isSuccess;
 }
 
+/** The tracks of a media file, from the cache, or undefined until they have loaded. */
 export function selectCachedMediaTracks(
   state: unknown,
   file: MediaFileArgs,
@@ -700,6 +700,25 @@ export function selectCachedMediaTracks(
     state as BackendState,
   );
   return entry.isSuccess ? entry.data : undefined;
+}
+
+/** The cached tracks of a media file and the error of their request, each undefined while the cache holds none. */
+export function selectMediaTracksResult(state: unknown, file: MediaFileArgs) {
+  const { data, error } = backendApi.endpoints.getMediaTracks.select(file)(
+    state as BackendState,
+  );
+  return { data, error };
+}
+
+/** The cached playback plan of a media file and the error of its request, each undefined while the cache holds none. */
+export function selectPlaybackPlanResult(
+  state: unknown,
+  args: PlanPlaybackArgs,
+) {
+  const { data, error } = backendApi.endpoints.planPlayback.select(args)(
+    state as BackendState,
+  );
+  return { data, error };
 }
 
 /** The batch lookups being fetched now. */

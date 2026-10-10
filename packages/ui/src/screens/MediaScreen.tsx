@@ -46,7 +46,7 @@ import { replayTarget, skipTarget } from "../media/skipTarget.ts";
 import { parseSubtitleAppearance } from "../media/subtitleAppearance.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { selectCanChooseTracks } from "../player/selectCanChooseTracks.ts";
-import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
+import { selectMediaDurationMs } from "../player/selectMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import { SourceMediaDialog } from "../subtitles/SourceMediaDialog.tsx";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
@@ -82,7 +82,7 @@ export function MediaScreen({
   const player = useAppSelector(selectPlayer);
   const controls = useAppSelector(selectPlayerControls);
   const currentMs = player.currentTimeSeconds * 1000;
-  const durationMs = useMediaDurationMs(projectId, mediaFile);
+  const durationMs = useAppSelector(selectMediaDurationMs);
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
   const source = mediaSourceOf(

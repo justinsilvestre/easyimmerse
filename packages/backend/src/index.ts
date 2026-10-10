@@ -4,6 +4,8 @@ export {
   selectCachedLookup,
   selectCachedMediaTracks,
   selectCachedWaveformWindow,
+  selectMediaTracksResult,
+  selectPlaybackPlanResult,
   useCaptureFrameQuery,
   useCreateFlashcardMutation,
   useDeleteFlashcardMutation,

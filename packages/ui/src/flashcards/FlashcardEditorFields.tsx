@@ -3,7 +3,7 @@ import type {
   EditorState,
   FlashcardTextFieldKey,
 } from "@easyimmerse/state";
-import { actions, selectPlayerDuration } from "@easyimmerse/state";
+import { actions } from "@easyimmerse/state";
 import type { AudioClip } from "@easyimmerse/types";
 import clsx from "clsx";
 import { Minus, Play, Plus, X } from "lucide-react";
@@ -12,6 +12,7 @@ import { AutoGrowTextarea } from "../components/AutoGrowTextarea.tsx";
 import { FocusExpandingBox } from "../components/FocusExpandingBox.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { selectMediaDurationMs } from "../player/selectMediaDurationMs.ts";
 import { ClipEditor } from "./ClipEditor.tsx";
 import { moveClipEnd, moveClipStart } from "./clipView.ts";
 import {
@@ -225,7 +226,7 @@ const nudgeMs = 100;
 
 /**
  * The clip's start and end times, each between buttons that move it a tenth of a second earlier or later,
- * with the button that plays the clip beneath them. The end stays within the media once the player knows its length.
+ * with the button that plays the clip beneath them. The end stays within the media once its length is known.
  */
 function ClipTimes({
   clip,
@@ -234,9 +235,9 @@ function ClipTimes({
   clip: AudioClip;
   onClipChange: (clip: AudioClip) => void;
 }) {
-  const durationSeconds = useAppSelector(selectPlayerDuration);
+  const knownDurationMs = useAppSelector(selectMediaDurationMs);
   const durationMs =
-    durationSeconds > 0 ? durationSeconds * 1000 : Number.POSITIVE_INFINITY;
+    knownDurationMs > 0 ? knownDurationMs : Number.POSITIVE_INFINITY;
   const change = (next: AudioClip) => {
     if (next.start_ms !== clip.start_ms || next.end_ms !== clip.end_ms)
       onClipChange(next);
