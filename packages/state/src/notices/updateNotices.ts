@@ -56,7 +56,7 @@ export const noticesFeature: Feature<NoticesState> = {
   update: updateNotices,
 };
 
-/** Records a hold's change, and cancels the expiry of a held transient notice or restarts it once nothing holds it. */
+/** Records a change of hold, ignoring one that changes nothing, and cancels the expiry of a held transient notice or restarts it once nothing holds it. */
 function holdChanged(
   state: NoticesState,
   id: number,
@@ -64,7 +64,7 @@ function holdChanged(
   isHeld: boolean,
 ): Result {
   const notice = state.shown.find((shown) => shown.id === id);
-  if (!notice) return [state, []];
+  if (!notice || notice.heldBy[by] === isHeld) return [state, []];
   const changed = { ...notice, heldBy: { ...notice.heldBy, [by]: isHeld } };
   const shown = state.shown.map((each) => (each === notice ? changed : each));
   return [

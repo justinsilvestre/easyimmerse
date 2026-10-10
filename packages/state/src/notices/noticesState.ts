@@ -33,4 +33,5 @@ export type Notice = NoticeContent & {
 /** The notices on screen, oldest first, and the id the next one gets. */
 export type NoticesState = { shown: readonly Notice[]; nextId: number };
 
+/** No notices shown, and the first id to give. */
 export const initialNoticesState: NoticesState = { shown: [], nextId: 1 };

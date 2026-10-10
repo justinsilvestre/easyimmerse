@@ -35,10 +35,12 @@ export const noticesActions = {
     id,
     by,
   }),
+  /** The expiry timer of a transient notice fired. */
   noticeExpired: (id: number): Of<"noticeExpired"> => ({
     type: "noticeExpired",
     id,
   }),
+  /** The user dismissed the notice with its Dismiss button. */
   noticeDismissed: (id: number): Of<"noticeDismissed"> => ({
     type: "noticeDismissed",
     id,

@@ -54,6 +54,7 @@ export function useUnsavedCardActions() {
   ) {
     const isRejected = isSaveRefused(error);
     if (isRejected) showRefusal(card);
+    else withdrawRefusalOf(flashcardIdOf(card));
     store.put(createUnsavedCard(card, projectId, { isRejected }));
   }
   /** Shows a notice of a refused save, with Open, for a card that has a media file to open in, and Discard. */

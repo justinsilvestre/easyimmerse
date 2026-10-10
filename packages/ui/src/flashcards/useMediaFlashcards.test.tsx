@@ -751,6 +751,20 @@ describe("useMediaFlashcards", () => {
       expect(result.current.edited?.editor.content.word).toBe("Hündin");
     });
 
+    it("withdraws its notice once a later save fails for another reason", async () => {
+      const rendered = await rejectOffScreen();
+      const [listed] = rendered.unsavedCards();
+      act(() => {
+        if (listed)
+          rendered.result.current.unsavedCardActions.listFailure(
+            listed.card,
+            "p1",
+            new Error("The network is down"),
+          );
+      });
+      expect(rendered.notices()).toEqual([]);
+    });
+
     it("withdraws its notice once the card is discarded from the list", async () => {
       const { actOnUnsaved, notices } = await rejectOffScreen();
       actOnUnsaved("Hündin", "discard");

@@ -13,7 +13,6 @@ export type {
   Notice,
   NoticeButton,
   NoticeContent,
-  NoticeTone,
 } from "./notices/noticesState.ts";
 export type { BrowserFileRegistry } from "./platform/browserFileRegistry.ts";
 export { createBrowserFileRegistry } from "./platform/browserFileRegistry.ts";

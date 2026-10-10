@@ -61,4 +61,25 @@ describe("NoticeRegion", () => {
     act(() => effects.clock.advanceBy(20_000));
     expect(screen.queryByText(saved.message)).not.toBeNull();
   });
+
+  it("announces other notices politely, apart from failures", () => {
+    renderRegion(saved);
+    expect(
+      screen
+        .getByText(saved.message)
+        .closest("[aria-live]")
+        ?.getAttribute("aria-live"),
+    ).toBe("polite");
+  });
+
+  it("keeps a transient notice while focus moves between its own buttons", () => {
+    const effects = renderRegion(saved);
+    const undo = screen.getByRole("button", { name: "Undo" });
+    fireEvent.focus(undo);
+    fireEvent.blur(undo, {
+      relatedTarget: screen.getByRole("button", { name: "Dismiss" }),
+    });
+    act(() => effects.clock.advanceBy(20_000));
+    expect(screen.queryByText(saved.message)).not.toBeNull();
+  });
 });

@@ -25,8 +25,8 @@ const expiryOf1 = {
 };
 const cancelExpiryOf1 = { type: "cancelTimer", id: "notices/expiry/1" };
 
-/** Applies an action to the notices after the given earlier actions. */
-const apply = (action: AppAction, ...before: AppAction[]) => {
+/** Applies `action` to the notices after the actions `before`. */
+const apply = (before: readonly AppAction[], action: AppAction) => {
   const app = stateAfter(...before);
   return updateNotices(app.notices, action, app);
 };
@@ -43,12 +43,12 @@ describe("updateNotices", () => {
     });
 
     it("starts the expiry timer for a transient notice", () => {
-      const [, effects] = apply(actions.noticeRequested(transient));
+      const [, effects] = apply([], actions.noticeRequested(transient));
       expect(effects).toEqual([expiryOf1]);
     });
 
     it("starts no timer for a lasting notice", () => {
-      const [, effects] = apply(actions.noticeRequested(lasting));
+      const [, effects] = apply([], actions.noticeRequested(lasting));
       expect(effects).toEqual([]);
     });
 
@@ -66,16 +66,16 @@ describe("updateNotices", () => {
   describe("for noticeHeld", () => {
     it("cancels the expiry timer of a transient notice", () => {
       const [, effects] = apply(
+        [actions.noticeRequested(transient)],
         actions.noticeHeld(1, "pointer"),
-        actions.noticeRequested(transient),
       );
       expect(effects).toEqual([cancelExpiryOf1]);
     });
 
     it("returns no effect for a lasting notice", () => {
       const [, effects] = apply(
+        [actions.noticeRequested(lasting)],
         actions.noticeHeld(1, "focus"),
-        actions.noticeRequested(lasting),
       );
       expect(effects).toEqual([]);
     });
@@ -84,21 +84,38 @@ describe("updateNotices", () => {
   describe("for noticeReleased", () => {
     it("restarts the expiry timer once nothing holds the notice", () => {
       const [, effects] = apply(
+        [actions.noticeRequested(transient), actions.noticeHeld(1, "pointer")],
         actions.noticeReleased(1, "pointer"),
-        actions.noticeRequested(transient),
-        actions.noticeHeld(1, "pointer"),
       );
       expect(effects).toEqual([expiryOf1]);
     });
 
     it("starts no timer while focus still holds the notice", () => {
       const [, effects] = apply(
+        [
+          actions.noticeRequested(transient),
+          actions.noticeHeld(1, "pointer"),
+          actions.noticeHeld(1, "focus"),
+        ],
         actions.noticeReleased(1, "pointer"),
-        actions.noticeRequested(transient),
-        actions.noticeHeld(1, "pointer"),
-        actions.noticeHeld(1, "focus"),
       );
       expect(effects).toEqual([]);
+    });
+
+    describe("of a hold never taken", () => {
+      const before = [actions.noticeRequested(transient)];
+      const release = actions.noticeReleased(1, "focus");
+
+      it("keeps the same state", () => {
+        const app = stateAfter(...before);
+        const [notices] = updateNotices(app.notices, release, app);
+        expect(notices).toBe(app.notices);
+      });
+
+      it("starts no timer", () => {
+        const [, effects] = apply(before, release);
+        expect(effects).toEqual([]);
+      });
     });
 
     it("leaves the state as it is for a notice no longer shown", () => {
