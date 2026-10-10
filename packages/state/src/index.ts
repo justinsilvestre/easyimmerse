@@ -58,6 +58,14 @@ export {
   isDocumentFileName,
 } from "./screen/mediaFileExtensions.ts";
 export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
+export {
+  selectRequestedWaveformSpan,
+  selectWaveformRequests,
+} from "./screen/mediaScreen/waveformSelectors.ts";
+export type {
+  WaveformViewName,
+  WindowRequest,
+} from "./screen/mediaScreen/waveformState.ts";
 export type { WaveformWindowView } from "./screen/mediaScreen/waveformWindowPolicy.ts";
 export {
   maxVisibleSpanMs,

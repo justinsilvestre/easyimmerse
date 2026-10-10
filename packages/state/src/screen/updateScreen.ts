@@ -5,6 +5,7 @@ import type { MainRoute } from "../route/route.ts";
 import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
+import { leaveWaveform } from "./mediaScreen/updateWaveform.ts";
 import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
 import { endImport } from "./projectScreen/mediaImportRequests.ts";
 import {
@@ -64,9 +65,11 @@ export const screenFeature: Feature<ScreenState> = {
 
 /** Stops the work that belongs to a main screen being replaced. */
 function leavingEffects(main: MainScreenState, route: MainRoute): Effect[] {
-  return main.kind === "project" && route.screen === "project"
-    ? endImport(route.projectId, main.mediaImport)
-    : [];
+  if (main.kind === "project" && route.screen === "project")
+    return endImport(route.projectId, main.mediaImport);
+  if (main.kind === "media" && route.screen === "media")
+    return leaveWaveform(main.waveform, route);
+  return [];
 }
 
 /** Tells the user that adding a picked file failed, even when its screen has gone by the time the failure arrives. */

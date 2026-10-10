@@ -150,4 +150,55 @@ describe("createAppStore", () => {
       expect(statusRequests(server)).toHaveLength(1);
     });
   });
+
+  describe("when a waveform window fails", () => {
+    const windowRequest = {
+      kind: "getWaveformWindow",
+      projectId: "p1",
+      mediaFileId: "m1",
+      startMs: 0,
+      endMs: 30_000,
+    } as const;
+
+    /** Opens m1, has its only window fail, and returns the store once the failure has arrived. */
+    async function failWindow() {
+      const effects = createRecordingEffects();
+      const server = createFakeServerStoreParts();
+      const store = createAppStore(effects, server);
+      store.dispatch(actions.openMediaFileRequested("p1", "m1"));
+      store.dispatch(
+        actions.waveformViewChanged("player", {
+          viewStartMs: 0,
+          viewEndMs: 30_000,
+          focusMs: 0,
+          durationMs: 30_000,
+        }),
+      );
+      server.respond(windowRequest, {
+        ok: false,
+        error: { status: 500, message: "down" },
+      });
+      await vi.waitFor(() =>
+        expect(server.dispatchedActions).toContainEqual(
+          expect.objectContaining({ id: "media/m1/waveform/player/0" }),
+        ),
+      );
+      return { effects, server };
+    }
+
+    const windowRequests = (server: FakeServerStoreParts) =>
+      server.sentRequests.filter(({ kind }) => kind === "getWaveformWindow");
+
+    it("requests it again five seconds later", async () => {
+      const { effects, server } = await failWindow();
+      effects.clock.advanceBy(5_000);
+      expect(windowRequests(server)).toHaveLength(2);
+    });
+
+    it("does not request it again sooner", async () => {
+      const { effects, server } = await failWindow();
+      effects.clock.advanceBy(4_999);
+      expect(windowRequests(server)).toHaveLength(1);
+    });
+  });
 });

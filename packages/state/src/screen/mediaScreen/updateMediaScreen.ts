@@ -7,6 +7,7 @@ import { isSettled } from "../../server/isSettled.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import type { PlayerState } from "./playerState.ts";
 import { roleForNewTrack } from "./roleForNewTrack.ts";
+import { updateWaveform } from "./updateWaveform.ts";
 
 type MediaRoute = Extract<MainRoute, { screen: "media" }>;
 
@@ -15,8 +16,29 @@ const subtitlesNotAdded: Effect = {
   message: "The subtitles file could not be added",
 };
 
-/** Updates the media screen: its player, and the subtitles file picked for it. */
+/** Updates the media screen: its player, the subtitles file picked for it, and its waveform. */
 export function updateMediaScreen(
+  screen: MediaScreenState,
+  action: AppAction,
+  route: MediaRoute,
+): readonly [MediaScreenState, readonly Effect[]] {
+  const [waveform, waveformEffects] = updateWaveform(
+    screen.waveform,
+    action,
+    route,
+  );
+  const [updated, effects] = updatePlayerAndSubtitles(
+    waveform === screen.waveform ? screen : { ...screen, waveform },
+    action,
+    route,
+  );
+  return [
+    updated,
+    waveformEffects.length === 0 ? effects : [...waveformEffects, ...effects],
+  ];
+}
+
+function updatePlayerAndSubtitles(
   screen: MediaScreenState,
   action: AppAction,
   route: MediaRoute,

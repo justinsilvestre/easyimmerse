@@ -5,6 +5,7 @@ import { stateAfter } from "../app/stateAfter.ts";
 import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { initialWaveform } from "./mediaScreen/waveformState.ts";
 import { updateScreen } from "./updateScreen.ts";
 
 /** Applies an action to the screens after the given earlier actions. */
@@ -90,6 +91,34 @@ describe("updateScreen", () => {
     });
   });
 
+  it("cancels the retry of a failed waveform window when the media screen is left", () => {
+    const request = {
+      kind: "getWaveformWindow",
+      projectId: "p1",
+      mediaFileId: "m2",
+      startMs: 0,
+      endMs: 30_000,
+    } as const;
+    const [, effects] = apply(
+      actions.closeMedia(),
+      ...playingM2,
+      actions.waveformViewChanged("player", {
+        viewStartMs: 0,
+        viewEndMs: 30_000,
+        focusMs: 0,
+        durationMs: 30_000,
+      }),
+      actions.requestSettled("media/m2/waveform/player/0", request, {
+        ok: false,
+        error: { status: 500, message: "down" },
+      }),
+    );
+    expect(effects).toContainEqual({
+      type: "cancelTimer",
+      id: "media/m2/waveform/player/0/retry",
+    });
+  });
+
   it("records that a project was opened when its overview opens", () => {
     const [, effects] = apply(
       actions.navigated({ type: "openProject", projectId: "p1" }),
@@ -131,6 +160,7 @@ describe("updateScreen", () => {
         isPlaying: false,
       },
       pendingSubtitleFile: null,
+      waveform: initialWaveform,
     });
   });
 

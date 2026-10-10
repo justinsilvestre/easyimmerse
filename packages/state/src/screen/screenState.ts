@@ -4,6 +4,8 @@ import type { MainRoute } from "../route/route.ts";
 import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
 import type { PlayerState } from "./mediaScreen/playerState.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
+import type { WaveformState } from "./mediaScreen/waveformState.ts";
+import { initialWaveform } from "./mediaScreen/waveformState.ts";
 import type { MediaImportWizard } from "./projectScreen/mediaImportWizard.ts";
 
 /** The media screen's state, which the reader shares until it has state of its own. */
@@ -12,6 +14,7 @@ export type MediaScreenState = {
   player: PlayerState;
   /** A picked subtitles file waiting to be added to the open media file. */
   pendingSubtitleFile: PickedFile | null;
+  waveform: WaveformState;
 };
 
 /** The offline screen's state: the cues of the subtitles file last picked, parsed in the browser when no server is connected. */
@@ -65,6 +68,7 @@ export function initialMainScreen(route: MainRoute): MainScreenState {
         kind: "media",
         player: initialPlayerState,
         pendingSubtitleFile: null,
+        waveform: initialWaveform,
       };
   }
 }

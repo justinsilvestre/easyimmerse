@@ -2,6 +2,8 @@
 export const waveformWindowMs = 30_000;
 export const waveformPeaksPerSecond = 100;
 const maxWindowRequestsInFlight = 3;
+/** How long after a failed request a window may be requested again. */
+export const waveformWindowRetryMs = 5_000;
 /** The widest visible span: as many windows as can be kept arriving while the view moves. */
 export const maxVisibleSpanMs = 10 * waveformWindowMs;
 

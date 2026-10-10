@@ -46,6 +46,19 @@ const targetShown: SubtitleSelection = {
 };
 
 describe("updateMediaScreen", () => {
+  it("requests the waveform windows a view wants", () => {
+    const view = {
+      viewStartMs: 0,
+      viewEndMs: 30_000,
+      focusMs: 0,
+      durationMs: 30_000,
+    };
+    const [, effects] = apply(actions.waveformViewChanged("player", view));
+    expect(effects).toContainEqual(
+      expect.objectContaining({ id: "media/m1/waveform/player/0" }),
+    );
+  });
+
   it("stores the target as the current time for seekRequested", () => {
     const [screen] = apply(actions.seekRequested(12.5));
     expect(screen.player.currentTimeSeconds).toBe(12.5);

@@ -5,6 +5,8 @@ import type {
   PickedMediaFile,
 } from "../platform/effects.ts";
 import type { BufferedRange } from "./mediaScreen/playerState.ts";
+import type { WaveformViewName } from "./mediaScreen/waveformState.ts";
+import type { WaveformWindowView } from "./mediaScreen/waveformWindowPolicy.ts";
 import type { MediaImportSource } from "./projectScreen/mediaImportWizard.ts";
 
 /** The action creators of the screens: the player's requests and reports, and the file picks and their outcomes. */
@@ -52,6 +54,15 @@ export const screenActions = {
   /** The user dismissed the alert that a file could not be added. */
   dictionaryImportAlertDismissed: () =>
     ({ type: "dictionaryImportAlertDismissed" }) as const,
+  /** A waveform view now shows a different stretch of the file, or the file's duration became known. */
+  waveformViewChanged: (name: WaveformViewName, view: WaveformWindowView) =>
+    ({ type: "waveformViewChanged", name, view }) as const,
+  /** The user zoomed the player's waveform strip to show the given span. */
+  waveformZoomed: (spanMs: number) =>
+    ({ type: "waveformZoomed", spanMs }) as const,
+  /** The delay after a window's failed request has passed, so the window may be requested again. */
+  waveformRetryDue: (name: WaveformViewName, startMs: number) =>
+    ({ type: "waveformRetryDue", name, startMs }) as const,
 };
 
 /** An action of the screens. */
