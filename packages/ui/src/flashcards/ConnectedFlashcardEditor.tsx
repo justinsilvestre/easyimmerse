@@ -3,10 +3,10 @@ import {
   type FlashcardForm,
   isAwaitingLookup,
   saveStatusOf,
+  selectMediaDurationMs,
 } from "@easyimmerse/state";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { selectMediaDurationMs } from "../player/selectMediaDurationMs.ts";
 import { FlashcardEditor } from "./FlashcardEditor.tsx";
 import type { MediaWaveform } from "./FlashcardEditorFields.tsx";
 import type { FlashcardLanguages } from "./flashcardFields.ts";

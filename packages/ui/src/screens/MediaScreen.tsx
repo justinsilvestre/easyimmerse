@@ -1,6 +1,7 @@
 import { useListPluginsQuery } from "@easyimmerse/backend";
 import {
   actions,
+  selectCanChooseTracks,
   selectIsSubtitleAppearanceOpen,
   selectMediaKeyBinding,
   selectMediaPanels,
@@ -42,7 +43,6 @@ import { selectMediaPlayback } from "../media/selectMediaPlayback.ts";
 import { selectSubtitleAppearance } from "../media/selectSubtitleAppearance.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
-import { selectCanChooseTracks } from "../player/selectCanChooseTracks.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import { SourceMediaDialog } from "../subtitles/SourceMediaDialog.tsx";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";

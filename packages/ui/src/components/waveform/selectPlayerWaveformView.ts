@@ -1,11 +1,11 @@
 import type { RootState } from "@easyimmerse/state";
 import {
   selectCurrentTime,
+  selectMediaDurationMs,
   selectPathPlayback,
   selectRequestedWaveformSpan,
 } from "@easyimmerse/state";
 import { createSelector } from "reselect";
-import { selectMediaDurationMs } from "../../player/selectMediaDurationMs.ts";
 import { clampVisibleSpan, computeViewStart } from "./waveformGeometry.ts";
 
 /**

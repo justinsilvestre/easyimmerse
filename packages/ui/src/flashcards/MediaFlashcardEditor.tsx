@@ -1,7 +1,6 @@
-import { selectFlashcardForm } from "@easyimmerse/state";
+import { selectFlashcardForm, selectMediaDurationMs } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { selectMediaDurationMs } from "../player/selectMediaDurationMs.ts";
 import { ConnectedFlashcardEditor } from "./ConnectedFlashcardEditor.tsx";
 import type { FlashcardLanguages } from "./flashcardFields.ts";
 import { useClipWaveform } from "./useClipWaveform.ts";

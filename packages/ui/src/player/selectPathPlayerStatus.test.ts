@@ -1,8 +1,8 @@
 import {
-  selectMediaTracksEntry,
-  selectPlaybackMethodEntry,
-} from "@easyimmerse/backend";
-import { actions, selectPathPlayback } from "@easyimmerse/state";
+  actions,
+  selectOpenMethodEntry,
+  selectOpenTracksEntry,
+} from "@easyimmerse/state";
 import { describe, expect, it, vi } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
@@ -49,24 +49,15 @@ describe("selectPathPlayerStatus", () => {
 
   it("reads the tracks' cache entry by the same reference while the player's time moves", async () => {
     const store = await storeWithMethod();
-    const before = selectMediaTracksEntry(store.getState(), file);
+    const before = selectOpenTracksEntry(store.getState());
     store.dispatch(actions.playerTimeChanged(3));
-    expect(selectMediaTracksEntry(store.getState(), file)).toBe(before);
+    expect(selectOpenTracksEntry(store.getState())).toBe(before);
   });
 
   it("reads the playback method's cache entry by the same reference while the player's time moves", async () => {
     const store = await storeWithMethod();
-    const methodArgs = () => {
-      const request = selectPathPlayback(store.getState())?.methodRequest;
-      if (!request) throw new Error("The playback method was never requested.");
-      return { ...file, request };
-    };
-    const before = selectPlaybackMethodEntry(store.getState(), methodArgs());
+    const before = selectOpenMethodEntry(store.getState());
     store.dispatch(actions.playerTimeChanged(3));
-    expect(selectPlaybackMethodEntry(store.getState(), methodArgs())).toBe(
-      before,
-    );
+    expect(selectOpenMethodEntry(store.getState())).toBe(before);
   });
 });
-
-const file = { projectId: "p1", mediaFileId: "m1" };

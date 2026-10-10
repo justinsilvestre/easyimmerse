@@ -3,12 +3,7 @@ import {
   loadLicenseNoticeGroups,
 } from "@easyimmerse/licenses";
 import type { PickedDictionaryFile } from "@easyimmerse/state";
-import {
-  type CacheEntry,
-  cacheEntry,
-  cacheKey,
-  serverCachePath,
-} from "@easyimmerse/state";
+import { cacheKey, serverCachePath } from "@easyimmerse/state";
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
@@ -703,37 +698,6 @@ function subscriptionActions(): SubscriptionActions {
 export function hasProbedPictures(state: unknown, file: PickedFile): boolean {
   return backendApi.endpoints.probePictures.select(file)(state as BackendState)
     .isSuccess;
-}
-
-/** The tracks of a media file, from the cache, or undefined until they have loaded. */
-export function selectCachedMediaTracks(
-  state: unknown,
-  file: MediaFileArgs,
-): TracksResponse | undefined {
-  const entry = backendApi.endpoints.getMediaTracks.select(file)(
-    state as BackendState,
-  );
-  return entry.isSuccess ? entry.data : undefined;
-}
-
-/** The cache entry of a media file's tracks, or undefined while the cache holds none. */
-export function selectMediaTracksEntry(
-  state: unknown,
-  file: MediaFileArgs,
-): CacheEntry<"getMediaTracks"> {
-  return cacheEntry(cacheOf(state), "getMediaTracks", file);
-}
-
-/** The cache entry of a media file's playback method, or undefined while the cache holds none. */
-export function selectPlaybackMethodEntry(
-  state: unknown,
-  args: ChoosePlaybackMethodArgs,
-): CacheEntry<"choosePlaybackMethod"> {
-  return cacheEntry(cacheOf(state), "choosePlaybackMethod", args);
-}
-
-function cacheOf(state: unknown) {
-  return (state as BackendState)[backendApi.reducerPath];
 }
 
 /** The batch lookups being fetched now. */

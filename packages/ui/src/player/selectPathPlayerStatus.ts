@@ -1,10 +1,8 @@
-import {
-  selectMediaTracksEntry,
-  selectPlaybackMethodEntry,
-} from "@easyimmerse/backend";
 import type { RootState } from "@easyimmerse/state";
 import {
   mainScreenOf,
+  selectOpenMethodEntry,
+  selectOpenTracksEntry,
   selectPathPlayback,
   selectPreference,
   selectRoute,
@@ -22,8 +20,8 @@ export const selectPathPlayerStatus = createSelector(
   [
     selectServerConfig,
     selectRoute,
-    tracksEntryOf,
-    methodEntryOf,
+    selectOpenTracksEntry,
+    selectOpenMethodEntry,
     selectPathPlayback,
     selectPreference("conversionNoticeDismissed"),
   ],
@@ -48,20 +46,4 @@ function openFileOf(route: RootState["app"]["route"]) {
   const main = mainScreenOf(route);
   if (main.screen !== "media") return null;
   return { projectId: main.projectId, mediaFileId: main.mediaFileId };
-}
-
-function tracksEntryOf(state: RootState) {
-  const file = openFileOf(selectRoute(state));
-  const isAsked = selectPathPlayback(state) !== null;
-  return file !== null && isAsked
-    ? selectMediaTracksEntry(state, file)
-    : undefined;
-}
-
-function methodEntryOf(state: RootState) {
-  const file = openFileOf(selectRoute(state));
-  const request = selectPathPlayback(state)?.methodRequest ?? null;
-  return file !== null && request !== null
-    ? selectPlaybackMethodEntry(state, { ...file, request })
-    : undefined;
 }

@@ -2,10 +2,7 @@ export { skipToken } from "@reduxjs/toolkit/query";
 export {
   hasProbedPictures,
   selectCachedLookup,
-  selectCachedMediaTracks,
   selectCachedWaveformWindow,
-  selectMediaTracksEntry,
-  selectPlaybackMethodEntry,
   useCaptureFrameQuery,
   useChoosePlaybackMethodQuery,
   useCreateFlashcardMutation,

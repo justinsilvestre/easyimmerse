@@ -1,6 +1,9 @@
-import { selectPlayer, selectPlayerControls } from "@easyimmerse/state";
+import {
+  selectMediaDurationMs,
+  selectPlayer,
+  selectPlayerControls,
+} from "@easyimmerse/state";
 import { createSelector } from "reselect";
-import { selectMediaDurationMs } from "../player/selectMediaDurationMs.ts";
 import type { PlayerControlsState } from "./PlayerControlsState.ts";
 
 /** Returns the player's state as the media screen's controls show it. */

@@ -10,6 +10,7 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
+export type { ReadableState } from "./app/feature.ts";
 export type {
   EditorAction,
   EditorState,
@@ -134,6 +135,15 @@ export {
   findCueAt,
   findCueShownAt,
 } from "./screen/mediaScreen/findCue.ts";
+export {
+  selectCanChooseTracks,
+  selectOpenMethodEntry,
+  selectOpenTracksEntry,
+} from "./screen/mediaScreen/mediaCacheSelectors.ts";
+export {
+  mediaDurationMs,
+  selectMediaDurationMs,
+} from "./screen/mediaScreen/mediaDurationMs.ts";
 export type { SubtitleDisplay } from "./screen/mediaScreen/mediaPanels.ts";
 export { selectFlashcardForm } from "./screen/mediaScreen/mediaScreenSelectors.ts";
 export type { PathPlayback } from "./screen/mediaScreen/pathPlayback.ts";
