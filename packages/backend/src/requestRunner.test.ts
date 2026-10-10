@@ -134,4 +134,23 @@ describe("runRequest", () => {
     );
     expect(client.methods).toEqual(["GET"]);
   });
+
+  it("sends a source step without the form it was taken on", async () => {
+    const bodies: unknown[] = [];
+    const store = createStore({
+      send: async <T>(request: BackendRequest) => {
+        bodies.push(request.body);
+        return { data: { kind: "form", form: null } } as BackendResult<T>;
+      },
+    });
+    const request = { action: "apply", input: [] };
+    await settle(store, {
+      kind: "submitSourceStep",
+      projectId: "p1",
+      mediaFileId: "m1",
+      request,
+      form: null,
+    });
+    expect(bodies).toEqual([{ kind: "json", value: request }]);
+  });
 });

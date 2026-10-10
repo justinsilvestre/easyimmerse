@@ -19,6 +19,8 @@ import type {
   PluginForm,
   Project,
   ProjectSettings,
+  SourceStepRequest,
+  SourceStepResponse,
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
@@ -49,6 +51,15 @@ export type ServerRequest =
   | { kind: "markProjectOpened"; projectId: string }
   | { kind: "getImportForm"; projectId: string; request: ImportFormRequest }
   | { kind: "submitImportStep"; projectId: string; request: ImportStepRequest }
+  | { kind: "getSourceForm"; projectId: string; mediaFileId: string }
+  | {
+      kind: "submitSourceStep";
+      projectId: string;
+      mediaFileId: string;
+      request: SourceStepRequest;
+      /** The form the step was taken on, which names the tracks in the notice that follows. It is not sent. */
+      form: PluginForm | null;
+    }
   | { kind: "previewDictionaryTable"; file: PickedDictionaryFile }
   | {
       kind: "importDictionary";
@@ -105,6 +116,8 @@ export type ServerResponses = {
   markProjectOpened: void;
   getImportForm: PluginForm;
   submitImportStep: ImportStepResponse;
+  getSourceForm: PluginForm;
+  submitSourceStep: SourceStepResponse;
   previewDictionaryTable: TablePreview;
   importDictionary: ImportJobStarted;
   getWaveformWindow: WaveformResponse;

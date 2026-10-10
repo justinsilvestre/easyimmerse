@@ -73,6 +73,16 @@ export const requestEndpoints = {
       { projectId, request },
       { track: false },
     ),
+  getSourceForm: ({ projectId, mediaFileId }) =>
+    backendApi.endpoints.getSourceForm.initiate(
+      { projectId, mediaFileId },
+      { track: false },
+    ),
+  submitSourceStep: ({ projectId, mediaFileId, request }) =>
+    backendApi.endpoints.submitSourceStep.initiate(
+      { projectId, mediaFileId, request },
+      { track: false },
+    ),
   previewDictionaryTable: ({ file }) =>
     backendApi.endpoints.previewDictionaryTable.initiate(
       { file },
