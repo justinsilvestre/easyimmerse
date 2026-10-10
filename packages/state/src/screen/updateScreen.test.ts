@@ -347,4 +347,32 @@ describe("updateScreen", () => {
     const [, effects] = apply(actions.seekRequested(3));
     expect(effects).toEqual([]);
   });
+
+  it("tells that a dictionary could not be removed", () => {
+    const [, effects] = apply(
+      actions.requestSettled(
+        "settings/dictionaries/remove/d1",
+        { kind: "deleteDictionary", dictionaryId: "d1" },
+        { ok: false, error: { status: 500, message: "down" } },
+      ),
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotice",
+        content: transientNotice(
+          "danger",
+          "The dictionary could not be removed",
+        ),
+      },
+    ]);
+  });
+
+  it("closes the removal question when the dictionaries page closes", () => {
+    const [screen] = apply(
+      actions.navigated({ type: "closeSettings" }),
+      actions.navigated({ type: "openDictionaries" }),
+      actions.dictionaryRemovalRequested("d1"),
+    );
+    expect(screen.dialog).toBeNull();
+  });
 });

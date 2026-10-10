@@ -73,4 +73,19 @@ describe("updateSettings", () => {
     });
     expect(effects).toEqual([unwatch]);
   });
+
+  it("removes a dictionary once its removal is confirmed", () => {
+    const [, effects] = updateSettings(
+      { dictionaryImport: null },
+      actions.dictionaryRemovalConfirmed("d1"),
+      dictionariesPage,
+    );
+    expect(effects).toEqual([
+      {
+        type: "sendRequest",
+        id: "settings/dictionaries/remove/d1",
+        request: { kind: "deleteDictionary", dictionaryId: "d1" },
+      },
+    ]);
+  });
 });

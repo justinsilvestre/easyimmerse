@@ -83,6 +83,8 @@ export type ScreenState = {
     | { kind: "conversionNotice"; dismissForGood: boolean }
     /** The media screen's dialog for the size and look of the subtitles over the stage. */
     | { kind: "subtitleAppearance" }
+    /** The question whether to remove a dictionary, asked on the dictionaries page. */
+    | { kind: "removeDictionary"; dictionaryId: string }
     | null;
 };
 

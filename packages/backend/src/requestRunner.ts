@@ -109,6 +109,10 @@ export const requestEndpoints = {
     ),
   lookupText: ({ query }) =>
     backendApi.endpoints.lookupText.initiate(query, { subscribe: false }),
+  deleteDictionary: ({ dictionaryId }) =>
+    backendApi.endpoints.deleteDictionary.initiate(dictionaryId, {
+      track: false,
+    }),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

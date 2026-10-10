@@ -3,8 +3,12 @@ import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
-import type { MainRoute } from "../route/route.ts";
-import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
+import type { MainRoute, Route } from "../route/route.ts";
+import {
+  isSameMainScreen,
+  mainScreenOf,
+  settingsPageOf,
+} from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import { isAborted } from "../server/isAborted.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
@@ -49,7 +53,10 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
     app,
   );
   const dialog =
-    isLeaving && isMediaScreenDialog(updatedDialog) ? null : updatedDialog;
+    (isLeaving && isMediaScreenDialog(updatedDialog)) ||
+    isLeftDictionaryQuestion(updatedDialog, route)
+      ? null
+      : updatedDialog;
   const [settings, settingsEffects] = updateSettings(
     screen.settings,
     action,
@@ -101,7 +108,18 @@ function isMediaScreenDialog(dialog: ScreenState["dialog"]): boolean {
   );
 }
 
-/** Tells the user that adding a picked file or saving a track choice failed, even when its screen has gone by the time the failure arrives. */
+/** Tells whether a dialog is the question whether to remove a dictionary, while the dictionaries page is no longer on top. */
+function isLeftDictionaryQuestion(
+  dialog: ScreenState["dialog"],
+  route: Route,
+): boolean {
+  return (
+    dialog?.kind === "removeDictionary" &&
+    (route.screen !== "settings" || settingsPageOf(route) !== "dictionaries")
+  );
+}
+
+/** Tells the user that a change they asked for failed, even when its screen has gone by the time the failure arrives. */
 function failureNotices(action: AppAction): Effect[] {
   if (
     action.type !== "requestSettled" ||
@@ -116,6 +134,8 @@ function failureNotices(action: AppAction): Effect[] {
       return [failure("The subtitles file could not be added")];
     case "saveTrackSelection":
       return [failure("The track choice could not be saved")];
+    case "deleteDictionary":
+      return [failure("The dictionary could not be removed")];
     default:
       return [];
   }

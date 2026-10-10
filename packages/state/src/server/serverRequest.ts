@@ -70,7 +70,8 @@ export type ServerRequest =
       startMs: number;
       endMs: number;
     }
-  | { kind: "lookupText"; query: LookupQuery };
+  | { kind: "lookupText"; query: LookupQuery }
+  | { kind: "deleteDictionary"; dictionaryId: string };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -96,6 +97,8 @@ export type ServerResponses = {
   planPlayback: PlaybackResponse;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   saveTrackSelection: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  deleteDictionary: void;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

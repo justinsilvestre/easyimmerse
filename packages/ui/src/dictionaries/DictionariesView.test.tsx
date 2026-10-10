@@ -25,6 +25,8 @@ function renderView(props: Partial<Parameters<typeof DictionariesView>[0]>) {
       onBack={() => undefined}
       onAddFromFile={() => undefined}
       onRemove={() => undefined}
+      onConfirmRemoval={() => undefined}
+      onCancelRemoval={() => undefined}
       onDismissUnsupportedFile={() => undefined}
       onDismissImportFailure={() => dismissals.push("importFailure")}
       onImportTable={() => undefined}
@@ -87,6 +89,39 @@ describe("DictionariesView", () => {
       });
       fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
       expect(dismissals).toEqual(["importFailure"]);
+    });
+  });
+
+  describe("while asking whether to remove a dictionary", () => {
+    const askAboutWiktionary = () =>
+      renderView({ confirmingRemovalOf: exampleDictionaries[0] });
+
+    it("names the dictionary", () => {
+      askAboutWiktionary();
+      expect(
+        screen.getByRole("dialog", {
+          name: "Remove German-English Wiktionary?",
+        }),
+      ).toBeDefined();
+    });
+
+    it("says that the removal cannot be undone", () => {
+      askAboutWiktionary();
+      expect(screen.getByRole("dialog").textContent).toContain(
+        "cannot be undone",
+      );
+    });
+
+    it("does not say where the dictionary is kept, which differs between the apps", () => {
+      askAboutWiktionary();
+      expect(screen.getByRole("dialog").textContent).not.toContain("device");
+    });
+
+    it("focuses Cancel", () => {
+      askAboutWiktionary();
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "Cancel" }),
+      );
     });
   });
 });

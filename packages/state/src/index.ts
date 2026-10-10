@@ -55,6 +55,7 @@ export {
   selectIsSettingsOpen,
   selectRoute,
 } from "./route/routeSelectors.ts";
+export { selectRemovingDictionaryIds } from "./screen/dictionaries/selectRemovingDictionaryIds.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
 export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictionaryImport.ts";
 export {
@@ -117,6 +118,7 @@ export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
 export { skippedSubtitlesMessage } from "./screen/projectScreen/skippedSubtitlesMessage.ts";
 export {
   selectCurrentTime,
+  selectDictionaryRemovalQuestion,
   selectIsSubtitleAppearanceOpen,
   selectMediaPanels,
   selectOfflineCues,

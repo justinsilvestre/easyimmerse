@@ -569,6 +569,25 @@ export const backendApi = createApi({
         method: "DELETE",
         path: `/dictionaries/${encodeURIComponent(id)}`,
       }),
+      /** The removed dictionary leaves the list at once, rather than when the list is fetched again. */
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const isRemoved = await queryFulfilled.then(
+          () => true,
+          () => false,
+        );
+        if (isRemoved)
+          dispatch(
+            backendApi.util.updateQueryData(
+              "listDictionaries",
+              undefined,
+              (list) => {
+                list.dictionaries = list.dictionaries.filter(
+                  (dictionary) => dictionary.id !== id,
+                );
+              },
+            ),
+          );
+      },
       invalidatesTags: ["Dictionaries"],
     }),
     lookupText: build.query<LookupResponse, LookupQuery>({

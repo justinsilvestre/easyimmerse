@@ -13,6 +13,8 @@ import type { LookupAction } from "../screen/lookup/lookupActions.ts";
 import { lookupActions } from "../screen/lookup/lookupActions.ts";
 import type { ScreenAction } from "../screen/screenActions.ts";
 import { screenActions } from "../screen/screenActions.ts";
+import type { SettingsAction } from "../screen/settingsActions.ts";
+import { settingsActions } from "../screen/settingsActions.ts";
 import type { ServerAction } from "../server/serverActions.ts";
 import { serverActions } from "../server/serverActions.ts";
 import type { StoredPlacesAction } from "../storedPlaces/storedPlacesActions.ts";
@@ -26,6 +28,7 @@ const featureActionCreators = [
   startupActions,
   routeActions,
   screenActions,
+  settingsActions,
   lookupActions,
   preferencesActions,
   storedPlacesActions,
@@ -57,6 +60,7 @@ export type AppAction =
   | StartupAction
   | RouteAction
   | ScreenAction
+  | SettingsAction
   | LookupAction
   | PreferencesAction
   | StoredPlacesAction

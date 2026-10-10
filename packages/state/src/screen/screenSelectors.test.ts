@@ -6,6 +6,7 @@ import type { ServerRequest } from "../server/serverRequest.ts";
 import { initialMediaPanels } from "./mediaScreen/mediaPanels.ts";
 import {
   selectCurrentTime,
+  selectDictionaryRemovalQuestion,
   selectIsSubtitleAppearanceOpen,
   selectMediaPanels,
   selectOfflineCues,
@@ -158,5 +159,13 @@ describe("screenSelectors", () => {
     it("tells that it is closed while another dialog is open", () => {
       expect(selectIsSubtitleAppearanceOpen(playing)).toBe(false);
     });
+  });
+
+  it("selectDictionaryRemovalQuestion returns the dictionary the removal question asks about", () => {
+    const app = stateAfter(
+      actions.navigated({ type: "openDictionaries" }),
+      actions.dictionaryRemovalRequested("d1"),
+    );
+    expect(selectDictionaryRemovalQuestion({ app })).toBe("d1");
   });
 });

@@ -10,7 +10,6 @@ import { exampleDictionaries } from "../dictionaries/exampleDictionaries.ts";
 import {
   createFakeBackendClient,
   type FakeResponse,
-  fakeFailure,
 } from "../testSupport/createFakeBackendClient.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { DictionariesScreen } from "./DictionariesScreen.tsx";
@@ -81,12 +80,6 @@ function renderScreen(responses: Record<string, FakeResponse> = {}) {
   return { ...rendered, client, chooseBrowserFile, notices };
 }
 
-const serverFailure = fakeFailure({
-  status: 400,
-  code: "bad_request",
-  message: "the index is broken",
-});
-
 const requestsTo = (
   client: ReturnType<typeof createFakeBackendClient>,
   method: string,
@@ -122,174 +115,31 @@ describe("DictionariesScreen", () => {
     });
   });
 
-  describe("when Remove is clicked", () => {
-    async function pressRemove() {
-      const rendered = renderScreen();
-      fireEvent.click(
-        await screen.findByRole("button", {
-          name: "Remove German-English Wiktionary",
-        }),
-      );
-      return rendered;
-    }
+  async function confirmRemoval(responses: Record<string, FakeResponse> = {}) {
+    const rendered = renderScreen(responses);
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Remove German-English Wiktionary",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    return rendered;
+  }
 
-    it("asks for confirmation, naming the dictionary", async () => {
-      await pressRemove();
-      expect(
-        screen.getByRole("dialog", {
-          name: "Remove German-English Wiktionary?",
-        }),
-      ).toBeDefined();
-    });
+  it("removes a dictionary once its removal is confirmed", async () => {
+    const { client } = await confirmRemoval();
+    await vi.waitFor(() =>
+      expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toHaveLength(1),
+    );
+  });
 
-    it("says that the removal cannot be undone", async () => {
-      await pressRemove();
-      expect(screen.getByRole("dialog").textContent).toContain(
-        "cannot be undone",
-      );
-    });
-
-    it("does not say where the dictionary is kept, which differs between the apps", async () => {
-      await pressRemove();
-      expect(screen.getByRole("dialog").textContent).not.toContain("device");
-    });
-
-    it("focuses Cancel", async () => {
-      await pressRemove();
+  it("moves focus to the heading once the removed dictionary is gone", async () => {
+    await confirmRemoval();
+    await vi.waitFor(() =>
       expect(document.activeElement).toBe(
-        screen.getByRole("button", { name: "Cancel" }),
-      );
-    });
-
-    it("removes nothing until confirmed", async () => {
-      const { client } = await pressRemove();
-      expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toEqual([]);
-    });
-
-    it("removes the dictionary once confirmed", async () => {
-      const { client } = await pressRemove();
-      fireEvent.click(screen.getByRole("button", { name: "Remove" }));
-      await vi.waitFor(() =>
-        expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toHaveLength(
-          1,
-        ),
-      );
-    });
-
-    it("moves focus to the heading once the dictionary is gone", async () => {
-      let isRemoved = false;
-      renderScreen({
-        "GET /dictionaries": () => ({
-          dictionaries: exampleDictionaries.filter(
-            ({ id }) => !(isRemoved && id === "d1"),
-          ),
-        }),
-        "DELETE /dictionaries/d1": () => {
-          isRemoved = true;
-        },
-      });
-      fireEvent.click(
-        await screen.findByRole("button", {
-          name: "Remove German-English Wiktionary",
-        }),
-      );
-      fireEvent.click(screen.getByRole("button", { name: "Remove" }));
-      await vi.waitFor(() =>
-        expect(document.activeElement).toBe(
-          screen.getByRole("heading", { name: "Dictionaries" }),
-        ),
-      );
-    });
-
-    describe("once confirmed, until the dictionary leaves the list", () => {
-      async function confirmRemoval() {
-        const rendered = renderScreen();
-        fireEvent.click(
-          await screen.findByRole("button", {
-            name: "Remove German-English Wiktionary",
-          }),
-        );
-        fireEvent.click(screen.getByRole("button", { name: "Remove" }));
-        return rendered;
-      }
-
-      it("says that the dictionary is being removed", async () => {
-        await confirmRemoval();
-        expect((await screen.findByRole("status")).textContent).toBe(
-          "Removing…",
-        );
-      });
-
-      it("disables the dictionary's remove button", async () => {
-        await confirmRemoval();
-        await screen.findByRole("status");
-        expect(
-          screen
-            .getByRole("button", { name: "Remove German-English Wiktionary" })
-            .hasAttribute("disabled"),
-        ).toBe(true);
-      });
-
-      it("leaves the other dictionaries' remove buttons enabled", async () => {
-        await confirmRemoval();
-        await screen.findByRole("status");
-        expect(
-          screen
-            .getByRole("button", { name: "Remove DWDS Kernwortschatz" })
-            .hasAttribute("disabled"),
-        ).toBe(false);
-      });
-    });
-
-    describe("when the removal fails", () => {
-      async function confirmFailingRemoval() {
-        const rendered = renderScreen({
-          "DELETE /dictionaries/d1": serverFailure,
-        });
-        fireEvent.click(
-          await screen.findByRole("button", {
-            name: "Remove German-English Wiktionary",
-          }),
-        );
-        fireEvent.click(screen.getByRole("button", { name: "Remove" }));
-        return rendered;
-      }
-
-      it("stops saying that the dictionary is being removed", async () => {
-        await confirmFailingRemoval();
-        await vi.waitFor(() => expect(screen.queryByRole("status")).toBeNull());
-      });
-
-      it("enables the dictionary's remove button again", async () => {
-        await confirmFailingRemoval();
-        await vi.waitFor(() =>
-          expect(
-            screen
-              .getByRole("button", { name: "Remove German-English Wiktionary" })
-              .hasAttribute("disabled"),
-          ).toBe(false),
-        );
-      });
-
-      it("tells that the dictionary could not be removed", async () => {
-        const { notices } = await confirmFailingRemoval();
-        await vi.waitFor(() =>
-          expect(notices()).toEqual(["The dictionary could not be removed"]),
-        );
-      });
-    });
-
-    it("closes the question on Cancel", async () => {
-      await pressRemove();
-      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-      expect(screen.queryByRole("dialog")).toBeNull();
-    });
-
-    it("removes nothing when cancelled", async () => {
-      const { client } = await pressRemove();
-      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-      expect(requestsTo(client, "DELETE", "/dictionaries/d1")).toEqual([]);
-    });
+        screen.getByRole("heading", { name: "Dictionaries" }),
+      ),
+    );
   });
 
   it("has the server import a file the desktop app picked from its path", async () => {

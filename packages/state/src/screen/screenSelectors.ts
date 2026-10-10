@@ -37,6 +37,12 @@ export const selectMediaPanels = (state: RootState): MediaPanels =>
 export const selectIsSubtitleAppearanceOpen = (state: RootState) =>
   state.app.screen.dialog?.kind === "subtitleAppearance";
 
+/** Returns the dictionary that the removal question asks about, or null while it is not asked. */
+export const selectDictionaryRemovalQuestion = (state: RootState) =>
+  state.app.screen.dialog?.kind === "removeDictionary"
+    ? state.app.screen.dialog.dictionaryId
+    : null;
+
 /** Tells whether the platform's file picker is open for a subtitles file. */
 export const selectPendingFilePick = (state: RootState) =>
   state.app.screen.dialog?.kind === "filePick";

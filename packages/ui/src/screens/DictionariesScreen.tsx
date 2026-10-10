@@ -1,13 +1,10 @@
-import {
-  useDeleteDictionaryMutation,
-  useListDictionariesQuery,
-} from "@easyimmerse/backend";
+import { useListDictionariesQuery } from "@easyimmerse/backend";
 import {
   actions,
   selectDictionaryImport,
-  transientNotice,
+  selectDictionaryRemovalQuestion,
+  selectRemovingDictionaryIds,
 } from "@easyimmerse/state";
-import { useState } from "react";
 import { DictionariesView } from "../dictionaries/DictionariesView.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -16,27 +13,17 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 export function DictionariesScreen({ onBack }: { onBack: () => void }) {
   const dispatch = useAppDispatch();
   const list = useListDictionariesQuery();
-  const [deleteDictionary] = useDeleteDictionaryMutation();
+  const dictionaries = list.data?.dictionaries ?? [];
   const imports = useAppSelector(selectDictionaryImport);
-  const [removingIds, setRemovingIds] = useState<readonly string[]>([]);
-  const remove = (dictionaryId: string) => {
-    setRemovingIds((ids) => [...ids, dictionaryId]);
-    deleteDictionary(dictionaryId)
-      .unwrap()
-      .catch(() => {
-        setRemovingIds((ids) => ids.filter((id) => id !== dictionaryId));
-        dispatch(
-          actions.noticeRequested(
-            transientNotice("danger", "The dictionary could not be removed"),
-          ),
-        );
-      });
-  };
+  const askingId = useAppSelector(selectDictionaryRemovalQuestion);
   const dismissAlert = () => dispatch(actions.dictionaryImportAlertDismissed());
   return (
     <DictionariesView
-      dictionaries={list.data?.dictionaries ?? []}
-      removingIds={removingIds}
+      dictionaries={dictionaries}
+      removingIds={useAppSelector(selectRemovingDictionaryIds)}
+      confirmingRemovalOf={
+        dictionaries.find(({ id }) => id === askingId) ?? null
+      }
       isLoading={list.isLoading}
       loadFailed={list.isError}
       addingFile={imports.addingFile}
@@ -46,7 +33,13 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
       pendingTable={imports.pendingTable}
       onBack={onBack}
       onAddFromFile={() => dispatch(actions.dictionaryFilePickRequested())}
-      onRemove={remove}
+      onRemove={(dictionaryId) =>
+        dispatch(actions.dictionaryRemovalRequested(dictionaryId))
+      }
+      onConfirmRemoval={(dictionaryId) =>
+        dispatch(actions.dictionaryRemovalConfirmed(dictionaryId))
+      }
+      onCancelRemoval={() => dispatch(actions.dictionaryRemovalCancelled())}
       onDismissUnsupportedFile={dismissAlert}
       onDismissImportFailure={dismissAlert}
       onImportTable={(layout) =>

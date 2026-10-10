@@ -250,6 +250,36 @@ async function storeAfterAddingBook() {
   return store;
 }
 
+/** Lists two dictionaries, answers the removal of d1 with success or a failure, and leaves the list's refetch pending. */
+async function storeAfterRemovingD1(fails = false) {
+  let listCount = 0;
+  const client: BackendClient = {
+    send: <T>(request: BackendRequest) => {
+      if (request.method === "DELETE")
+        return Promise.resolve(
+          fails
+            ? { error: { status: 500, message: "failed" } }
+            : { data: undefined as T },
+        );
+      listCount += 1;
+      return listCount === 1
+        ? Promise.resolve({
+            data: { dictionaries: [{ id: "d1" }, { id: "d2" }] } as T,
+          })
+        : new Promise<never>(() => undefined);
+    },
+  };
+  const store = createStore(client);
+  await store.dispatch(backendApi.endpoints.listDictionaries.initiate());
+  await store.dispatch(backendApi.endpoints.deleteDictionary.initiate("d1"));
+  return store;
+}
+
+const listedDictionaryIds = (store: ReturnType<typeof createStore>) =>
+  backendApi.endpoints.listDictionaries
+    .select()(store.getState())
+    .data?.dictionaries.map(({ id }) => id);
+
 const updateMovedClip = () =>
   backendApi.endpoints.updateFlashcard.initiate({
     projectId: "p1",
@@ -536,6 +566,16 @@ describe("backendApi", () => {
         (request) => request.path === "/projects/p1/media/m1/subtitles",
       ),
     ).toHaveLength(1);
+  });
+
+  it("drops a removed dictionary from the list before it is fetched again", async () => {
+    const store = await storeAfterRemovingD1();
+    expect(listedDictionaryIds(store)).toEqual(["d2"]);
+  });
+
+  it("keeps a dictionary whose removal failed in the list", async () => {
+    const store = await storeAfterRemovingD1(true);
+    expect(listedDictionaryIds(store)).toEqual(["d1", "d2"]);
   });
 
   it("lists an added media file before the list is fetched again", async () => {

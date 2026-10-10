@@ -2,6 +2,7 @@ import type { AppAction } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
 import type { Route } from "../route/route.ts";
 import { settingsPageOf } from "../route/route.ts";
+import { removeDictionary } from "./dictionaries/dictionaryRemoval.ts";
 import { stopWatching } from "./dictionaryImport/dictionaryImportRequests.ts";
 import { updateDictionaryImport } from "./dictionaryImport/updateDictionaryImport.ts";
 import type { ScreenState } from "./screenState.ts";
@@ -11,6 +12,7 @@ type SettingsState = ScreenState["settings"];
 /**
  * Keeps the state of Settings while the route shows them, and drops it once they close.
  * The dictionary import lasts while the dictionaries page is on top; when the page goes, its job is no longer watched.
+ * A dictionary whose removal is confirmed there is removed.
  */
 export function updateSettings(
   settings: SettingsState,
@@ -32,6 +34,8 @@ export function updateSettings(
     next === dictionaryImport && settings !== null
       ? settings
       : { dictionaryImport: next },
-    effects,
+    action.type === "dictionaryRemovalConfirmed"
+      ? [...effects, removeDictionary(action.dictionaryId)]
+      : effects,
   ];
 }

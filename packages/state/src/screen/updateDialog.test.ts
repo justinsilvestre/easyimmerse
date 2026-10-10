@@ -101,4 +101,32 @@ describe("updateDialog", () => {
     const [dialog] = applyDialog(picking, actions.subtitleAppearanceClosed());
     expect(dialog).toBe(picking);
   });
+
+  describe("for the removal of a dictionary", () => {
+    const asking = { kind: "removeDictionary", dictionaryId: "d1" } as const;
+
+    it("asks whether to remove the dictionary", () => {
+      const [dialog] = applyDialog(
+        null,
+        actions.dictionaryRemovalRequested("d1"),
+      );
+      expect(dialog).toEqual(asking);
+    });
+
+    it("closes the question once the removal is confirmed", () => {
+      const [dialog] = applyDialog(
+        asking,
+        actions.dictionaryRemovalConfirmed("d1"),
+      );
+      expect(dialog).toBeNull();
+    });
+
+    it("closes the question when it is cancelled", () => {
+      const [dialog] = applyDialog(
+        asking,
+        actions.dictionaryRemovalCancelled(),
+      );
+      expect(dialog).toBeNull();
+    });
+  });
 });
