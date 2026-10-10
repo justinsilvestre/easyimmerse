@@ -59,6 +59,7 @@ export {
   selectRoute,
 } from "./route/routeSelectors.ts";
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
+export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictionaryImport.ts";
 export {
   documentFormatOf,
   isDocumentFileName,
@@ -68,7 +69,6 @@ export {
   selectCurrentTime,
   selectOfflineCues,
   selectOfflineParseFailed,
-  selectPendingDictionaryFile,
   selectPendingFilePick,
   selectPlayer,
   selectPlayerDuration,

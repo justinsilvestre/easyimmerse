@@ -31,7 +31,3 @@ export const selectOfflineCues = (state: RootState) =>
 /** Tells whether the subtitles file last picked on the offline screen could not be parsed. */
 export const selectOfflineParseFailed = (state: RootState) =>
   state.app.screen.main.kind === "offline" && state.app.screen.main.hasFailed;
-
-/** Returns the dictionary file picked in Settings and not yet sent. */
-export const selectPendingDictionaryFile = (state: RootState) =>
-  state.app.screen.settings?.dictionaryImport?.file ?? null;

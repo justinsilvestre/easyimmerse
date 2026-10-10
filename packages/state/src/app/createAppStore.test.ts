@@ -1,10 +1,14 @@
 import type { StoreEnhancer } from "redux";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { selectNotices } from "../notices/noticesSelectors.ts";
+import { runningImportStatus } from "../operations/exampleJobReports.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import { actions } from "./appAction.ts";
 import { createAppStore } from "./createAppStore.ts";
-import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
+import {
+  createFakeServerStoreParts,
+  type FakeServerStoreParts,
+} from "./createFakeServerStoreParts.ts";
 import { initialAppState } from "./update.ts";
 
 describe("createAppStore", () => {
@@ -91,6 +95,59 @@ describe("createAppStore", () => {
       store.dispatch(actions.noticeHeld(1, "pointer"));
       effects.clock.advanceBy(20_000);
       expect(selectNotices(store.getState())).toHaveLength(1);
+    });
+  });
+
+  describe("while a dictionary import's job runs", () => {
+    const zip = {
+      name: "jmdict.zip",
+      source: { kind: "path", path: "/d/jmdict.zip" },
+    } as const;
+    const importRequest = {
+      kind: "importDictionary",
+      file: zip,
+      tableLayout: null,
+    } as const;
+    const statusRequest = { kind: "getImportJob", jobId: "job1" } as const;
+
+    /** Starts an import whose job reports that it runs, and returns the store once that report has arrived. */
+    async function startRunningImport() {
+      const effects = createRecordingEffects();
+      const server = createFakeServerStoreParts();
+      const store = createAppStore(effects, server);
+      store.dispatch(actions.navigated({ type: "openDictionaries" }));
+      store.dispatch(actions.dictionaryFileChosen(zip));
+      server.respond(importRequest, { ok: true, data: { id: "job1" } });
+      await vi.waitFor(() => expect(statusRequests(server)).toHaveLength(1));
+      server.respond(statusRequest, { ok: true, data: runningImportStatus });
+      await vi.waitFor(() =>
+        expect(server.dispatchedActions).toContainEqual(
+          expect.objectContaining({ id: "jobs/dictionaryImport/job1" }),
+        ),
+      );
+      return { effects, server, store };
+    }
+
+    const statusRequests = (server: FakeServerStoreParts) =>
+      server.sentRequests.filter(({ kind }) => kind === "getImportJob");
+
+    it("asks for the job's status again once the interval has passed", async () => {
+      const { effects, server } = await startRunningImport();
+      effects.clock.advanceBy(500);
+      expect(statusRequests(server)).toHaveLength(2);
+    });
+
+    it("asks nothing before the interval has passed", async () => {
+      const { effects, server } = await startRunningImport();
+      effects.clock.advanceBy(499);
+      expect(statusRequests(server)).toHaveLength(1);
+    });
+
+    it("stops asking once the dictionaries page closes", async () => {
+      const { effects, server, store } = await startRunningImport();
+      store.dispatch(actions.navigated({ type: "closeSettings" }));
+      effects.clock.advanceBy(500);
+      expect(statusRequests(server)).toHaveLength(1);
     });
   });
 });

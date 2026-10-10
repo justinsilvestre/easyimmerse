@@ -1,3 +1,4 @@
+import type { TableLayout } from "@easyimmerse/types";
 import type {
   PickedDictionaryFile,
   PickedFile,
@@ -36,7 +37,14 @@ export const screenActions = {
     ({ type: "dictionaryFileChosen", file }) as const,
   dictionaryFilePickCancelled: () =>
     ({ type: "dictionaryFilePickCancelled" }) as const,
-  dictionaryFileHandled: () => ({ type: "dictionaryFileHandled" }) as const,
+  /** The user checked a previewed table's columns and asked for it to be imported with them. */
+  dictionaryColumnsChosen: (layout: TableLayout) =>
+    ({ type: "dictionaryColumnsChosen", layout }) as const,
+  dictionaryColumnsCancelled: () =>
+    ({ type: "dictionaryColumnsCancelled" }) as const,
+  /** The user dismissed the alert that a file could not be added. */
+  dictionaryImportAlertDismissed: () =>
+    ({ type: "dictionaryImportAlertDismissed" }) as const,
 };
 
 /** An action of the screens. */

@@ -2,22 +2,15 @@ import type { Cue } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
-import type { PickedMediaFile } from "../platform/effects.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import {
   selectCurrentTime,
   selectOfflineCues,
   selectOfflineParseFailed,
-  selectPendingDictionaryFile,
   selectPendingFilePick,
   selectPlayer,
   selectPlayerDuration,
 } from "./screenSelectors.ts";
-
-const pickedMediaFile: PickedMediaFile = {
-  name: "a.mp4",
-  source: { kind: "path", path: "/a" },
-};
 
 const parseSource = { kind: "inline", text: "" } as const;
 
@@ -89,15 +82,5 @@ describe("screenSelectors", () => {
       ),
     };
     expect(selectOfflineParseFailed(failed)).toBe(true);
-  });
-
-  it("selectPendingDictionaryFile returns the dictionary file waiting to be imported", () => {
-    const chosen = {
-      app: stateAfter(
-        actions.navigated({ type: "openDictionaries" }),
-        actions.dictionaryFileChosen(pickedMediaFile),
-      ),
-    };
-    expect(selectPendingDictionaryFile(chosen)?.name).toBe("a.mp4");
   });
 });

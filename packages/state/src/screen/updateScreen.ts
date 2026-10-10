@@ -35,11 +35,16 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
     ? updated
     : initialMainScreen(mainScreenOf(route));
   const [dialog, dialogEffects] = updateDialog(screen.dialog, action);
-  const settings = updateSettings(screen.settings, action, route);
+  const [settings, settingsEffects] = updateSettings(
+    screen.settings,
+    action,
+    route,
+  );
   const opened = projectOpenedBy(app, action);
   const effects = [
     ...mainEffects,
     ...dialogEffects,
+    ...settingsEffects,
     ...failureNotices(action),
     ...(opened === null ? [] : [markOpened(opened)]),
   ];

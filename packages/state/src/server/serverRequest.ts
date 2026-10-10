@@ -1,6 +1,7 @@
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  ImportJobStarted,
   ImportJobStatus,
   ListMediaFilesResponse,
   MediaFile,
@@ -8,9 +9,12 @@ import type {
   ParseTimedTextRequest,
   SubtitleTrack,
   SubtitleTracksResponse,
+  TableLayout,
+  TablePreview,
   TimedTextTrack,
 } from "@easyimmerse/types";
 import type { Dispatch } from "redux";
+import type { PickedDictionaryFile } from "../platform/effects.ts";
 
 /** A request to the server that an update may send, one member per endpoint an update needs. */
 export type ServerRequest =
@@ -26,7 +30,13 @@ export type ServerRequest =
   | { kind: "parseTimedText"; request: ParseTimedTextRequest }
   | { kind: "getImportJob"; jobId: string }
   | { kind: "getMediaSourceJob"; projectId: string; jobId: string }
-  | { kind: "markProjectOpened"; projectId: string };
+  | { kind: "markProjectOpened"; projectId: string }
+  | { kind: "previewDictionaryTable"; file: PickedDictionaryFile }
+  | {
+      kind: "importDictionary";
+      file: PickedDictionaryFile;
+      tableLayout: TableLayout | null;
+    };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -42,6 +52,8 @@ export type ServerResponses = {
   getMediaSourceJob: MediaSourceJob;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   markProjectOpened: void;
+  previewDictionaryTable: TablePreview;
+  importDictionary: ImportJobStarted;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

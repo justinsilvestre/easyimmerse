@@ -2,18 +2,18 @@ import {
   useDeleteDictionaryMutation,
   useListDictionariesQuery,
 } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, selectDictionaryImport } from "@easyimmerse/state";
 import { useState } from "react";
 import { DictionariesView } from "../dictionaries/DictionariesView.tsx";
-import { useDictionaryImport } from "../dictionaries/useDictionaryImport.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 
 /** The dictionaries settings, backed by the dictionaries the server keeps. */
 export function DictionariesScreen({ onBack }: { onBack: () => void }) {
   const dispatch = useAppDispatch();
   const list = useListDictionariesQuery();
   const [deleteDictionary] = useDeleteDictionaryMutation();
-  const imports = useDictionaryImport();
+  const imports = useAppSelector(selectDictionaryImport);
   const [removingIds, setRemovingIds] = useState<readonly string[]>([]);
   const remove = (dictionaryId: string) => {
     setRemovingIds((ids) => [...ids, dictionaryId]);
@@ -26,6 +26,7 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
         );
       });
   };
+  const dismissAlert = () => dispatch(actions.dictionaryImportAlertDismissed());
   return (
     <DictionariesView
       dictionaries={list.data?.dictionaries ?? []}
@@ -40,10 +41,12 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
       onBack={onBack}
       onAddFromFile={() => dispatch(actions.dictionaryFilePickRequested())}
       onRemove={remove}
-      onDismissUnsupportedFile={imports.dismissUnsupported}
-      onDismissImportFailure={imports.dismissFailure}
-      onImportTable={imports.importTable}
-      onCancelTable={imports.cancelTable}
+      onDismissUnsupportedFile={dismissAlert}
+      onDismissImportFailure={dismissAlert}
+      onImportTable={(layout) =>
+        dispatch(actions.dictionaryColumnsChosen(layout))
+      }
+      onCancelTable={() => dispatch(actions.dictionaryColumnsCancelled())}
     />
   );
 }

@@ -1,10 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
-import type {
-  PickedDictionaryFile,
-  PickedFile,
-  PickedMediaFile,
-} from "../platform/effects.ts";
+import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
 import type { MainRoute } from "../route/route.ts";
+import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
 import type { PlayerState } from "./mediaScreen/playerState.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
 
@@ -40,18 +37,12 @@ export type MainScreenState =
   | ProjectScreenState
   | MediaScreenState;
 
-/** The dictionary import's first stage: a picked file not yet sent. */
-export type DictionaryImportStage = {
-  stage: "fileChosen";
-  file: PickedDictionaryFile;
-};
-
 /** State that exists only while a screen is open. */
 export type ScreenState = {
   /** The main screen's own state. Replaced when the route's main screen changes. */
   main: MainScreenState;
   /** Settings open over the main screen, which stays mounted beneath them. Null while they are closed. */
-  settings: { dictionaryImport: DictionaryImportStage | null } | null;
+  settings: { dictionaryImport: DictionaryImportWizard | null } | null;
   /** The one modal dialog open, if any. The platform's file picker counts as one, though the app does not draw it. */
   dialog: { kind: "filePick"; for: "subtitles" } | null;
 };

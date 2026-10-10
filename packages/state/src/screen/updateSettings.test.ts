@@ -4,49 +4,73 @@ import type { PickedDictionaryFile } from "../platform/effects.ts";
 import type { Route } from "../route/route.ts";
 import { updateSettings } from "./updateSettings.ts";
 
-const pickedDictionaryFile: PickedDictionaryFile = {
+const zip: PickedDictionaryFile = {
   name: "jmdict.zip",
   source: { kind: "path", path: "/dictionaries/jmdict.zip" },
 };
 
-const settings: Route = {
+const dictionariesPage: Route = {
   screen: "settings",
   beneath: { screen: "home" },
-  pages: ["dictionaries"],
+  pages: ["general", "dictionaries"],
 };
 
-const chosen = {
-  dictionaryImport: { stage: "fileChosen", file: pickedDictionaryFile },
+const generalPage: Route = {
+  screen: "settings",
+  beneath: { screen: "home" },
+  pages: ["general"],
+};
+
+const importing = {
+  dictionaryImport: { stage: "importing", file: zip, jobId: "job1" },
 } as const;
+
+const closeSettings = actions.navigated({ type: "closeSettings" });
+const unwatch = { type: "unwatchJob", key: "jobs/dictionaryImport/job1" };
 
 describe("updateSettings", () => {
   it("starts with no import when Settings open", () => {
-    expect(updateSettings(null, actions.settingsRequested(), settings)).toEqual(
-      { dictionaryImport: null },
+    const [settings] = updateSettings(
+      null,
+      actions.settingsRequested(),
+      dictionariesPage,
     );
+    expect(settings).toEqual({ dictionaryImport: null });
   });
 
-  it("keeps the chosen dictionary file for dictionaryFileChosen", () => {
-    expect(
-      updateSettings(
-        { dictionaryImport: null },
-        actions.dictionaryFileChosen(pickedDictionaryFile),
-        settings,
-      ),
-    ).toEqual(chosen);
+  it("starts adding a chosen dictionary file", () => {
+    const [settings] = updateSettings(
+      { dictionaryImport: null },
+      actions.dictionaryFileChosen(zip),
+      dictionariesPage,
+    );
+    expect(settings?.dictionaryImport).toEqual({
+      stage: "starting",
+      file: zip,
+    });
   });
 
-  it("forgets the chosen dictionary file for dictionaryFileHandled", () => {
-    expect(
-      updateSettings(chosen, actions.dictionaryFileHandled(), settings),
-    ).toEqual({ dictionaryImport: null });
+  it("drops the import when the dictionaries page closes", () => {
+    const [settings] = updateSettings(importing, closeSettings, generalPage);
+    expect(settings).toEqual({ dictionaryImport: null });
+  });
+
+  it("stops watching the import's job when the dictionaries page closes", () => {
+    const [, effects] = updateSettings(importing, closeSettings, generalPage);
+    expect(effects).toEqual([unwatch]);
   });
 
   it("drops its state once Settings close", () => {
-    expect(
-      updateSettings(chosen, actions.navigated({ type: "closeSettings" }), {
-        screen: "home",
-      }),
-    ).toBeNull();
+    const [settings] = updateSettings(importing, closeSettings, {
+      screen: "home",
+    });
+    expect(settings).toBeNull();
+  });
+
+  it("stops watching the import's job once Settings close", () => {
+    const [, effects] = updateSettings(importing, closeSettings, {
+      screen: "home",
+    });
+    expect(effects).toEqual([unwatch]);
   });
 });

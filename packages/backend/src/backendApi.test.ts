@@ -332,83 +332,12 @@ describe("backendApi", () => {
     ]);
   });
 
-  it("sends the file as a raw body for importDictionary", async () => {
-    const client = createRecordingClient();
-    const bytes = new Uint8Array([80, 75]);
-    await createStore(client).dispatch(
-      backendApi.endpoints.importDictionary.initiate({
-        fileName: "jmdict.zip",
-        bytes,
-      }),
-    );
-    expect(client.requests[0]?.body).toEqual({
-      kind: "bytes",
-      value: bytes,
-      contentType: "application/octet-stream",
-    });
-  });
-
-  it("puts the file name in the query string for importDictionary", async () => {
-    const client = createRecordingClient();
-    await createStore(client).dispatch(
-      backendApi.endpoints.importDictionary.initiate({
-        fileName: "oxford.mdx",
-        bytes: new Uint8Array(),
-      }),
-    );
-    expect(client.requests[0]?.query).toEqual({ fileName: "oxford.mdx" });
-  });
-
-  it("carries the file name in the offline operation for importDictionary", async () => {
-    const client = createRecordingClient();
-    const bytes = new Uint8Array();
-    await createStore(client).dispatch(
-      backendApi.endpoints.importDictionary.initiate({
-        fileName: "words.csv",
-        bytes,
-      }),
-    );
-    expect(client.requests[0]?.offlineOperation).toEqual({
-      kind: "importDictionary",
-      fileName: "words.csv",
-      bytes,
-      tableLayout: null,
-    });
-  });
-
-  it("puts a chosen table layout in the query string for importDictionary", async () => {
-    const client = createRecordingClient();
-    await createStore(client).dispatch(
-      backendApi.endpoints.importDictionary.initiate({
-        fileName: "words.csv",
-        bytes: new Uint8Array(),
-        tableLayout: { columns: ["term", "ignored"], hasHeader: true },
-      }),
-    );
-    expect(client.requests[0]?.query).toEqual({
-      fileName: "words.csv",
-      columns: "term,ignored",
-      hasHeader: "true",
-    });
-  });
-
   it("sends GET /dictionaries/imports/{id} for getImportJob", async () => {
     const client = createRecordingClient();
     await createStore(client).dispatch(
       backendApi.endpoints.getImportJob.initiate("job 1"),
     );
     expect(client.requests[0]?.path).toBe("/dictionaries/imports/job%201");
-  });
-
-  it("sends POST /dictionaries/preview for previewDictionaryTable", async () => {
-    const client = createRecordingClient();
-    await createStore(client).dispatch(
-      backendApi.endpoints.previewDictionaryTable.initiate({
-        fileName: "words.csv",
-        bytes: new Uint8Array(),
-      }),
-    );
-    expect(client.requests[0]?.path).toBe("/dictionaries/preview");
   });
 
   it("sends DELETE /dictionaries/{id} for deleteDictionary", async () => {

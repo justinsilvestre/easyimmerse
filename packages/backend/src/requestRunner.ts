@@ -63,6 +63,16 @@ export const requestEndpoints = {
       { projectId, jobId },
       { subscribe: false, forceRefetch: true },
     ),
+  previewDictionaryTable: ({ file }) =>
+    backendApi.endpoints.previewDictionaryTable.initiate(
+      { file },
+      { track: false },
+    ),
+  importDictionary: ({ file, tableLayout }) =>
+    backendApi.endpoints.importDictionary.initiate(
+      { file, tableLayout },
+      { track: false },
+    ),
   markProjectOpened: ({ projectId }) =>
     backendApi.endpoints.markProjectOpened.initiate(projectId, {
       track: false,

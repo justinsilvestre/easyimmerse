@@ -1,3 +1,4 @@
+import type { PickedDictionaryFile } from "@easyimmerse/state";
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
@@ -12,7 +13,6 @@ import type {
   ImportFormRequest,
   ImportJobStarted,
   ImportJobStatus,
-  ImportLocalDictionaryRequest,
   ImportStepRequest,
   ImportStepResponse,
   ListDictionariesResponse,
@@ -29,7 +29,6 @@ import type {
   PlaybackRequest,
   PlaybackResponse,
   PluginForm,
-  PreviewLocalDictionaryTableRequest,
   Project,
   ProjectSettings,
   SourceStepRequest,
@@ -37,7 +36,6 @@ import type {
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
-  TableLayout,
   TablePreview,
   TimedTextTrack,
   TrackSelection,
@@ -52,18 +50,11 @@ import { injectedBaseQuery } from "./injectedBaseQuery.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
 import { type BookArgs, parseBook } from "./parseBook.ts";
-
-type ImportDictionaryArgs = {
-  fileName: string;
-  bytes: Uint8Array | Blob;
-  /** Replaces the detected layout of a CSV, TSV or Tabfile table. */
-  tableLayout?: TableLayout | null;
-};
-
-type PreviewDictionaryTableArgs = {
-  fileName: string;
-  bytes: Uint8Array | Blob;
-};
+import {
+  type ImportPickedDictionaryArgs,
+  importPickedDictionary,
+  previewPickedDictionaryTable,
+} from "./pickedDictionary.ts";
 
 type ProjectArgs = { projectId: string; settings: ProjectSettings };
 
@@ -94,17 +85,6 @@ type AddSubtitleTrackArgs = MediaFileArgs & {
 type SubtitleTrackArgs = MediaFileArgs & { trackId: string };
 
 type SubtitleSelectionArgs = MediaFileArgs & { selection: SubtitleSelection };
-
-/** Encodes a table layout as the `columns` and `hasHeader` query parameters of an import. */
-const tableLayoutQuery = (
-  layout: TableLayout | null,
-): Record<string, string> =>
-  layout === null
-    ? {}
-    : {
-        columns: layout.columns.join(","),
-        hasHeader: String(layout.hasHeader),
-      };
 
 /** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
 const lookupContextQuery = (
@@ -503,60 +483,25 @@ export const backendApi = createApi({
         parseBook(book, api.extra as BackendThunkExtra, baseQuery),
       keepUnusedDataFor: 0,
     }),
-    importDictionary: build.mutation<ImportJobStarted, ImportDictionaryArgs>({
-      query: ({ fileName, bytes, tableLayout = null }) => ({
-        method: "POST",
-        path: "/dictionaries",
-        query: { fileName, ...tableLayoutQuery(tableLayout) },
-        body: {
-          kind: "bytes",
-          value: bytes,
-          contentType: "application/octet-stream",
-        },
-        offlineOperation:
-          bytes instanceof Uint8Array
-            ? { kind: "importDictionary", fileName, bytes, tableLayout }
-            : undefined,
-      }),
+    /** Imports a picked dictionary file. The server answers with a job, which is polled through `getImportJob`. */
+    importDictionary: build.mutation<
+      ImportJobStarted,
+      ImportPickedDictionaryArgs
+    >({
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        importPickedDictionary(args, api.extra as BackendThunkExtra, baseQuery),
     }),
+    /** Reads the first rows of a picked table and the columns detected in it. */
     previewDictionaryTable: build.mutation<
       TablePreview,
-      PreviewDictionaryTableArgs
+      { file: PickedDictionaryFile }
     >({
-      query: ({ fileName, bytes }) => ({
-        method: "POST",
-        path: "/dictionaries/preview",
-        query: { fileName },
-        body: {
-          kind: "bytes",
-          value: bytes,
-          contentType: "application/octet-stream",
-        },
-        offlineOperation:
-          bytes instanceof Uint8Array
-            ? { kind: "previewDictionaryTable", fileName, bytes }
-            : undefined,
-      }),
-    }),
-    previewLocalDictionaryTable: build.mutation<
-      TablePreview,
-      PreviewLocalDictionaryTableRequest
-    >({
-      query: (request) => ({
-        method: "POST",
-        path: "/dictionaries/preview-local",
-        body: { kind: "json", value: request },
-      }),
-    }),
-    importLocalDictionary: build.mutation<
-      ImportJobStarted,
-      ImportLocalDictionaryRequest
-    >({
-      query: (request) => ({
-        method: "POST",
-        path: "/dictionaries/import-local",
-        body: { kind: "json", value: request },
-      }),
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        previewPickedDictionaryTable(
+          args,
+          api.extra as BackendThunkExtra,
+          baseQuery,
+        ),
     }),
     getImportJob: build.query<ImportJobStatus, string>({
       query: (id) => ({
@@ -643,11 +588,6 @@ export const {
   useClearConversionCacheMutation,
   useSetConversionCacheBudgetMutation,
   useOpenBookQuery,
-  useImportDictionaryMutation,
-  usePreviewDictionaryTableMutation,
-  usePreviewLocalDictionaryTableMutation,
-  useImportLocalDictionaryMutation,
-  useGetImportJobQuery,
   useListDictionariesQuery,
   useDeleteDictionaryMutation,
   useLookupTextQuery,

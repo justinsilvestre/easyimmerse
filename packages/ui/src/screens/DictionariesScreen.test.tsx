@@ -44,13 +44,6 @@ const runningJob = {
   error: null,
 };
 
-const failedJob = (error: { code: string; message: string }) => ({
-  state: "failed",
-  progress: noProgress,
-  dictionary: null,
-  error,
-});
-
 function renderScreen(responses: Record<string, FakeResponse> = {}) {
   const client = createFakeBackendClient({
     "GET /dictionaries": { dictionaries: exampleDictionaries },
@@ -94,13 +87,6 @@ const serverFailure = fakeFailure({
   code: "bad_request",
   message: "the index is broken",
 });
-
-/** A file whose bytes cannot be read, as when it was deleted after being picked. */
-class UnreadableFile extends File {
-  override arrayBuffer(): Promise<ArrayBuffer> {
-    return Promise.reject(new Error("The file could not be read."));
-  }
-}
 
 const requestsTo = (
   client: ReturnType<typeof createFakeBackendClient>,
@@ -326,44 +312,6 @@ describe("DictionariesScreen", () => {
     );
   });
 
-  describe("for a table the desktop app picked from its path", () => {
-    function chooseLocalTable(store: ReturnType<typeof renderScreen>["store"]) {
-      act(() => {
-        store.dispatch(
-          actions.dictionaryFileChosen({
-            name: "animals.csv",
-            source: { kind: "path", path: "/dictionaries/animals.csv" },
-          }),
-        );
-      });
-    }
-
-    it("shows the table's columns before importing it", async () => {
-      const { store } = renderScreen();
-      chooseLocalTable(store);
-      expect(
-        await screen.findByRole("dialog", { name: "Import animals.csv" }),
-      ).toBeDefined();
-    });
-
-    it("has the server import the path with the columns the user checked", async () => {
-      const { client, store } = renderScreen();
-      chooseLocalTable(store);
-      fireEvent.click(await screen.findByRole("button", { name: "Import" }));
-      await vi.waitFor(() =>
-        expect(
-          requestsTo(client, "POST", "/dictionaries/import-local")[0]?.body,
-        ).toEqual({
-          kind: "json",
-          value: {
-            path: "/dictionaries/animals.csv",
-            tableLayout: { columns: ["term", "definition"], hasHeader: false },
-          },
-        }),
-      );
-    });
-  });
-
   it("sends a file the browser picked as bytes", async () => {
     const { client, chooseBrowserFile } = renderScreen();
     chooseBrowserFile("jmdict.zip");
@@ -372,14 +320,6 @@ describe("DictionariesScreen", () => {
         fileName: "jmdict.zip",
       }),
     );
-  });
-
-  it("shows a table's columns before importing it", async () => {
-    const { chooseBrowserFile } = renderScreen();
-    chooseBrowserFile("animals.csv");
-    expect(
-      await screen.findByRole("dialog", { name: "Import animals.csv" }),
-    ).toBeDefined();
   });
 
   it("imports a table with the columns the user checked", async () => {
@@ -426,15 +366,6 @@ describe("DictionariesScreen", () => {
       );
     });
 
-    it("stops showing the file as being added", async () => {
-      const { chooseBrowserFile } = renderScreen();
-      chooseBrowserFile("jmdict.zip");
-      await screen.findByText("Adding jmdict.zip…");
-      await vi.waitFor(() =>
-        expect(screen.queryByText("Adding jmdict.zip…")).toBeNull(),
-      );
-    });
-
     it("fetches the list again", async () => {
       const { client, chooseBrowserFile } = renderScreen();
       await screen.findByText("DWDS Kernwortschatz");
@@ -443,103 +374,5 @@ describe("DictionariesScreen", () => {
         expect(requestsTo(client, "GET", "/dictionaries")).toHaveLength(2),
       );
     });
-  });
-
-  describe("when adding a file fails", () => {
-    it("says so when the browser no longer holds the file", async () => {
-      const { store } = renderScreen();
-      act(() => {
-        store.dispatch(
-          actions.dictionaryFileChosen({
-            name: "jmdict.zip",
-            source: { kind: "browser_file", size: 1, last_modified_ms: 1 },
-          }),
-        );
-      });
-      expect((await screen.findByRole("alert")).textContent).toBe(
-        "jmdict.zip is no longer available. Pick it again.",
-      );
-    });
-
-    it("says what the server reported when the import could not start", async () => {
-      const { chooseBrowserFile } = renderScreen({
-        "POST /dictionaries": serverFailure,
-      });
-      chooseBrowserFile("jmdict.zip");
-      expect((await screen.findByRole("alert")).textContent).toBe(
-        "jmdict.zip could not be added: the index is broken",
-      );
-    });
-
-    it("says what the server reported when the import failed", async () => {
-      const { chooseBrowserFile } = renderScreen({
-        "GET /dictionaries/imports/job1": failedJob({
-          code: "bad_request",
-          message: "term_bank_3.json is not valid JSON",
-        }),
-      });
-      chooseBrowserFile("jmdict.zip");
-      expect((await screen.findByRole("alert")).textContent).toBe(
-        "jmdict.zip could not be added: term_bank_3.json is not valid JSON",
-      );
-    });
-
-    it("keeps the alert until it is dismissed", async () => {
-      const { chooseBrowserFile } = renderScreen({
-        "POST /dictionaries": serverFailure,
-      });
-      chooseBrowserFile("jmdict.zip");
-      fireEvent.click(await screen.findByRole("button", { name: "Dismiss" }));
-      expect(screen.queryByRole("alert")).toBeNull();
-    });
-
-    it("says so when the job can no longer be found", async () => {
-      const { chooseBrowserFile } = renderScreen({
-        "GET /dictionaries/imports/job1": fakeFailure({
-          status: 404,
-          code: "not_found",
-          message: 'no import job has the id "job1"',
-        }),
-      });
-      chooseBrowserFile("jmdict.zip");
-      expect((await screen.findByRole("alert")).textContent).toContain(
-        "no import job has the id",
-      );
-    });
-
-    it("says so when a table cannot be previewed", async () => {
-      const { chooseBrowserFile } = renderScreen({
-        "POST /dictionaries/preview": serverFailure,
-      });
-      chooseBrowserFile("animals.csv");
-      expect((await screen.findByRole("alert")).textContent).toBe(
-        "animals.csv could not be added: the index is broken",
-      );
-    });
-
-    it("stops showing the file as being added when it cannot be read", async () => {
-      const { chooseBrowserFile } = renderScreen();
-      chooseBrowserFile(
-        "jmdict.zip",
-        new UnreadableFile([], "jmdict.zip", { lastModified: 1 }),
-      );
-      await screen.findByText("Adding jmdict.zip…");
-      await vi.waitFor(() =>
-        expect(screen.queryByText("Adding jmdict.zip…")).toBeNull(),
-      );
-    });
-  });
-
-  it("names a file in a format no reader supports", async () => {
-    const { chooseBrowserFile } = renderScreen({
-      "GET /dictionaries/imports/job1": failedJob({
-        code: "unsupported_dictionary_format",
-        message: "no supported dictionary format recognizes these files",
-      }),
-    });
-    chooseBrowserFile("duden.lsd");
-    expect((await screen.findByRole("alert")).textContent).toContain(
-      "is not in a format the app can read",
-    );
   });
 });
