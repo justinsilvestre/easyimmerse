@@ -19,12 +19,12 @@ export function projectOpenedBy(
 }
 
 /** Records that a project was opened, which moves it to the front of the home screen. */
-export function markOpened(projectId: string): Effect {
+export function markOpened(projectId: string) {
   return {
     type: "sendRequest",
     id: `project/${projectId}/markOpened`,
     request: { kind: "markProjectOpened", projectId },
-  };
+  } satisfies Effect;
 }
 
 function projectShownOn(route: MainRoute): string | null {

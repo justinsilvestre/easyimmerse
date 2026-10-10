@@ -10,7 +10,7 @@ import { transientNotice } from "../../notices/transientNotice.ts";
 export function skippedSubtitlesNotice(
   job: MediaSourceJob,
   form: PluginForm | null,
-): Effect[] {
+) {
   return job.status === "done" && job.media_file !== null
     ? skippedSubtitlesEffects(job.skipped_subtitles, form)
     : [];
@@ -20,11 +20,13 @@ export function skippedSubtitlesNotice(
 export function skippedSubtitlesEffects(
   skipped: readonly SkippedSubtitle[],
   form: PluginForm | null,
-): Effect[] {
+) {
   const message = skippedSubtitlesMessage(skipped, form);
   return message === null
     ? []
-    : [{ type: "showNotice", content: transientNotice("danger", message) }];
+    : ([
+        { type: "showNotice", content: transientNotice("danger", message) },
+      ] satisfies Effect[]);
 }
 
 /**

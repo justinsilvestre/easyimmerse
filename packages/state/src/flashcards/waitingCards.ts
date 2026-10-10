@@ -72,7 +72,7 @@ export function fieldsAwaitedBy(
   action: AppAction,
   state: FlashcardsState,
   context: FlashcardsContext,
-): readonly Effect[] {
+) {
   if (
     action.type !== "requestSettled" ||
     !isSettled(action, action.id, "lookupText")
@@ -88,7 +88,7 @@ export function fieldsAwaitedBy(
       results,
       context: awaiting,
     },
-  ];
+  ] satisfies Effect[];
 }
 
 function awaitingContextOf(

@@ -1,5 +1,6 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { Feature } from "../app/feature.ts";
+import { updated } from "../app/updated.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import type { JobsState } from "./jobs.ts";
 import { timeLimitEffects } from "./requestTimeLimit.ts";
@@ -62,8 +63,8 @@ export const operationsFeature: Feature<OperationsState> = {
     return requests === operations.requests &&
       jobs === operations.jobs &&
       lookupRequestsSent === operations.lookupRequestsSent
-      ? [operations, effects]
-      : [{ requests, jobs, lookupRequestsSent }, effects];
+      ? updated(operations, ...effects)
+      : updated({ requests, jobs, lookupRequestsSent }, ...effects);
   },
 };
 

@@ -1,6 +1,6 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
-import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import { withLoadedPreferences } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
@@ -15,8 +15,6 @@ import {
 } from "./playbackRequests.ts";
 import { sendFirstPlan, sendPlan, withPlayback } from "./sendPlan.ts";
 
-type Updated = readonly [MediaScreenState, readonly Effect[]];
-
 /**
  * Works out how a file on the server's disk plays: reads its record, asks for its tracks, measures the browser,
  * and asks for a plan with the track choice and the lossless-audio preference. The first plan waits while the user
@@ -27,7 +25,7 @@ export function updatePathPlayback(
   action: AppAction,
   route: MediaRoute,
   app: AppState,
-): Updated {
+) {
   const { playback } = screen;
   switch (action.type) {
     case "requestSettled":
@@ -40,7 +38,7 @@ export function updatePathPlayback(
             app.screen.dialog,
             app.preferences,
           )
-        : [screen, []];
+        : updated(screen);
     case "preferencesLoaded":
       return sendFirstPlan(
         screen,
@@ -49,30 +47,33 @@ export function updatePathPlayback(
         withLoadedPreferences(app.preferences, action.preferences),
       );
     case "tracksChosen": {
-      if (playback === null) return [screen, []];
+      if (playback === null) return updated(screen);
       // The new plan decides afresh whether the notice is due.
       const chosen = withPlayback(screen, playback, {
         selection: action.selection,
         noticeDue: false,
       });
       const [planned, effects] = sendPlan(chosen, route, app.preferences);
-      return [
+      return updated(
         planned,
-        [...effects, saveSelectionRequest(route, action.selection)],
-      ];
+        ...effects,
+        saveSelectionRequest(route, action.selection),
+      );
     }
     case "trackChoiceCancelled":
-      if (playback === null) return [screen, []];
+      if (playback === null) return updated(screen);
       // A due notice opens as the choice closes.
       return playback.planRequest === null
         ? sendPlan(screen, route, app.preferences)
-        : [withPlayback(screen, playback, { noticeDue: false }), []];
+        : updated(withPlayback(screen, playback, { noticeDue: false }));
     case "conversionNoticeAccepted":
       return playback === null
-        ? [screen, []]
-        : [withPlayback(screen, playback, { isConversionAccepted: true }), []];
+        ? updated(screen)
+        : updated(
+            withPlayback(screen, playback, { isConversionAccepted: true }),
+          );
     default:
-      return [screen, []];
+      return updated(screen);
   }
 }
 
@@ -82,20 +83,23 @@ function requestSettled(
   action: AppAction,
   route: MediaRoute,
   app: AppState,
-): Updated {
+) {
   const ids = playbackRequestIds(route.mediaFileId);
   if (isSettled(action, ids.mediaFile, "listMediaFiles") && action.outcome.ok) {
     const file = action.outcome.data.media_files.find(
       (listed) => listed.id === route.mediaFileId,
     );
     return screen.playback === null && file?.source.kind === "path"
-      ? [{ ...screen, playback: pathPlaybackOf(file) }, [tracksRequest(route)]]
-      : [screen, []];
+      ? updated(
+          { ...screen, playback: pathPlaybackOf(file) },
+          tracksRequest(route),
+        )
+      : updated(screen);
   }
   if (isSettled(action, ids.tracks, "getMediaTracks") && action.outcome.ok)
     return screen.playback === null
-      ? [screen, []]
-      : [screen, [measureRequest(route, action.outcome.data)]];
+      ? updated(screen)
+      : updated(screen, measureRequest(route, action.outcome.data));
   const { playback } = screen;
   if (
     isSettled(action, ids.plan, "planPlayback") &&
@@ -107,7 +111,7 @@ function requestSettled(
       action.outcome.data,
       isNoticeSettled(playback, app.preferences),
     );
-    return [withPlayback(screen, playback, { noticeDue }), []];
+    return updated(withPlayback(screen, playback, { noticeDue }));
   }
-  return [screen, []];
+  return updated(screen);
 }

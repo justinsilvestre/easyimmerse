@@ -2,6 +2,7 @@ import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import { updated } from "../app/updated.ts";
 import type { MainRoute, Route } from "../route/route.ts";
 import {
   isSameMainScreen,
@@ -38,7 +39,7 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
   action,
   app,
 ) => {
-  const [updated, mainEffects] = updateMainScreen(
+  const [updatedMain, mainEffects] = updateMainScreen(
     screen.main,
     action,
     mainScreenOf(app.route),
@@ -48,7 +49,7 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
   const isLeaving = !isSameMainScreen(app.route, route);
   const nextMain = isLeaving
     ? initialMainScreen(mainScreenOf(route), app.storedPlaces)
-    : updated;
+    : updatedMain;
   const [updatedDialog, dialogEffects] = updateDialog(
     screen.dialog,
     action,
@@ -67,7 +68,7 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
   const opened = projectOpenedBy(app, action);
   const effects = [
     ...mainEffects,
-    ...(isLeaving ? leavingEffects(updated, mainScreenOf(app.route)) : []),
+    ...(isLeaving ? leavingEffects(updatedMain, mainScreenOf(app.route)) : []),
     ...(isLeaving ? enteringEffects(mainScreenOf(route)) : []),
     ...dialogEffects,
     ...settingsEffects,
@@ -78,8 +79,8 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
   return nextMain === screen.main &&
     settings === screen.settings &&
     dialog === screen.dialog
-    ? [screen, effects]
-    : [{ main: nextMain, settings, dialog }, effects];
+    ? updated(screen, ...effects)
+    : updated({ main: nextMain, settings, dialog }, ...effects);
 };
 
 /** The screens as a feature: the state of the main screen, of Settings and of the open dialog. */
@@ -89,7 +90,10 @@ export const screenFeature: Feature<ScreenState> = {
 };
 
 /** Stops the work that belongs to a main screen being replaced. */
-function leavingEffects(main: MainScreenState, route: MainRoute): Effect[] {
+function leavingEffects(
+  main: MainScreenState,
+  route: MainRoute,
+): readonly Effect[] {
   if (main.kind === "project" && route.screen === "project")
     return endImport(route.projectId, main.mediaImport);
   if (main.kind === "media" && route.screen === "media")
@@ -131,13 +135,13 @@ function updateMainScreen(
   action: AppAction,
   route: MainRoute,
   app: AppState,
-): readonly [MainScreenState, readonly Effect[]] {
+) {
   if (main.kind === "media" && route.screen === "media")
     return updateMediaScreen(main, action, route, app);
   if (main.kind === "project" && route.screen === "project")
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);
   if (route.screen === "newProject" || route.screen === "projectSettings")
-    return [main, updateProjectForm(route, action, app.operations)];
-  return [main, []];
+    return updated(main, ...updateProjectForm(route, action, app.operations));
+  return updated(main);
 }

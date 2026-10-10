@@ -1,5 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
+import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import type { RequestSettled } from "../../server/serverRequest.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
 import { moveCursor, withCursor } from "./lookupCursor.ts";
@@ -8,7 +10,7 @@ import {
   lookupHoverRequestId,
   nextLookupSequence,
 } from "./lookupIds.ts";
-import { type LookupStep, show, showsOccurrence } from "./lookupMoves.ts";
+import { show, showsOccurrence } from "./lookupMoves.ts";
 import type { ChosenWord, LookupState, LookupWord } from "./lookupState.ts";
 
 /** The settle of a hover's lookup request. */
@@ -32,14 +34,15 @@ export function hoverWord(
   chosen: ChosenWord,
   player: PlayerState,
   app: AppState,
-): LookupStep {
+) {
   const { query } = chosen.word;
   if (query === null) return answer(lookup, chosen, null, player);
   const id = lookupHoverRequestId(nextLookupSequence(app));
-  return [
-    lookup,
-    [{ type: "sendRequest", id, request: { kind: "lookupText", query } }],
-  ];
+  return updated(lookup, {
+    type: "sendRequest",
+    id,
+    request: { kind: "lookupText", query },
+  } satisfies Effect);
 }
 
 /** Takes a hover lookup's answer, when it is for the word the pointer is still on. A failed lookup matched nothing. */
@@ -47,10 +50,10 @@ export function answerHover(
   lookup: LookupState,
   { request, outcome }: HoverSettle,
   player: PlayerState,
-): LookupStep {
+) {
   const pointed = lookup.cursor?.pointed;
   if (!pointed || !isSameQuery(request.query, pointed.word.query))
-    return [lookup, []];
+    return updated(lookup);
   const length = outcome.ok
     ? (outcome.data.results[0]?.matchedText.length ?? null)
     : null;
@@ -66,8 +69,8 @@ function answer(
   chosen: ChosenWord,
   matchedLength: number | null,
   player: PlayerState,
-): LookupStep {
-  if (lookup.cursor === null) return [lookup, []];
+) {
+  if (lookup.cursor === null) return updated(lookup);
   const cursor = moveCursor(lookup.cursor, {
     type: "answered",
     chosen,
@@ -77,7 +80,7 @@ function answer(
   const answered = withCursor(lookup, cursor);
   return followsPointer(answered, chosen)
     ? show(answered, chosen, player)
-    : [answered, []];
+    : updated(answered);
 }
 
 /** Tells whether an open pop-up moves to a word the pointer rests on: not while the pointer is inside it or a flashcard waits. */

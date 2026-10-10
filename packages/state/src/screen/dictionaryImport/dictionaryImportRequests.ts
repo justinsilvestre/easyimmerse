@@ -11,35 +11,40 @@ export const dictionaryImportIds = {
 };
 
 /** Asks for a picked table's first rows and detected columns. */
-export function previewRequest(file: PickedDictionaryFile): Effect {
+export function previewRequest(file: PickedDictionaryFile) {
   return {
     type: "sendRequest",
     id: dictionaryImportIds.preview,
     request: { kind: "previewDictionaryTable", file },
-  };
+  } satisfies Effect;
 }
 
 /** Sends a picked file to be imported, with the columns chosen for a table. */
 export function importRequest(
   file: PickedDictionaryFile,
   tableLayout: TableLayout | null,
-): Effect {
+) {
   return {
     type: "sendRequest",
     id: dictionaryImportIds.import,
     request: { kind: "importDictionary", file, tableLayout },
-  };
+  } satisfies Effect;
 }
 
 /** Starts polling the import's job. */
-export function watchImportJob(jobId: string): Effect {
+export function watchImportJob(jobId: string) {
   const request = { kind: "getImportJob", jobId } as const;
-  return { type: "watchJob", job: { kind: "dictionaryImport", request } };
+  return {
+    type: "watchJob",
+    job: { kind: "dictionaryImport", request },
+  } satisfies Effect;
 }
 
 /** Stops polling the wizard's job, if it is watching one. */
-export function stopWatching(wizard: DictionaryImportWizard | null): Effect[] {
+export function stopWatching(wizard: DictionaryImportWizard | null) {
   return wizard?.stage === "importing"
-    ? [{ type: "unwatchJob", key: jobKey("dictionaryImport", wizard.jobId) }]
+    ? ([
+        { type: "unwatchJob", key: jobKey("dictionaryImport", wizard.jobId) },
+      ] satisfies Effect[])
     : [];
 }

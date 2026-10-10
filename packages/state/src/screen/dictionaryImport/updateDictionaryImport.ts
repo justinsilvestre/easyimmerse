@@ -1,5 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import { isAborted } from "../../server/isAborted.ts";
 import { dictionaryImportAnswered } from "./dictionaryImportAnswered.ts";
 import {
@@ -15,64 +15,65 @@ import {
   withHeaderRowToggled,
 } from "./tableLayout.ts";
 
-type Wizard = DictionaryImportWizard | null;
-type Result = readonly [Wizard, readonly Effect[]];
-
 /**
  * Adds a dictionary from a picked file: previews a table so that the user can check its columns,
  * imports it once exactly one column holds the term,
  * sends the file to be imported, watches the import's job, and keeps a failure until it is dismissed.
  */
 export function updateDictionaryImport(
-  wizard: Wizard,
+  wizard: DictionaryImportWizard | null,
   action: AppAction,
-): Result {
+) {
   switch (action.type) {
     case "dictionaryFileChosen": {
       const { file } = action;
       return isTableFile(file.name)
-        ? [
-            { stage: "previewing", file },
-            [...stopWatching(wizard), previewRequest(file)],
-          ]
-        : [
-            { stage: "starting", file },
-            [...stopWatching(wizard), importRequest(file, null)],
-          ];
+        ? updated(
+            { stage: "previewing", file } satisfies DictionaryImportWizard,
+            ...stopWatching(wizard),
+            previewRequest(file),
+          )
+        : updated(
+            { stage: "starting", file } satisfies DictionaryImportWizard,
+            ...stopWatching(wizard),
+            importRequest(file, null),
+          );
     }
     case "dictionaryColumnRoleChosen":
       return wizard?.stage === "choosingColumns"
-        ? [
-            {
-              ...wizard,
-              layout: withColumnRole(wizard.layout, action.index, action.role),
-            },
-            [],
-          ]
-        : [wizard, []];
+        ? updated({
+            ...wizard,
+            layout: withColumnRole(wizard.layout, action.index, action.role),
+          })
+        : updated(wizard);
     case "dictionaryHeaderRowToggled":
       return wizard?.stage === "choosingColumns"
-        ? [{ ...wizard, layout: withHeaderRowToggled(wizard.layout) }, []]
-        : [wizard, []];
+        ? updated({ ...wizard, layout: withHeaderRowToggled(wizard.layout) })
+        : updated(wizard);
     case "dictionaryColumnsConfirmed":
       return wizard?.stage === "choosingColumns" &&
         termHint(wizard.layout) === null
-        ? [
-            { stage: "starting", file: wizard.file },
-            [importRequest(wizard.file, wizard.layout)],
-          ]
-        : [wizard, []];
+        ? updated(
+            {
+              stage: "starting",
+              file: wizard.file,
+            } satisfies DictionaryImportWizard,
+            importRequest(wizard.file, wizard.layout),
+          )
+        : updated(wizard);
     case "dictionaryColumnsCancelled":
-      return wizard?.stage === "choosingColumns" ? [null, []] : [wizard, []];
+      return wizard?.stage === "choosingColumns"
+        ? updated(null)
+        : updated(wizard);
     case "dictionaryImportAlertDismissed":
       return wizard?.stage === "unsupported" || wizard?.stage === "failed"
-        ? [null, []]
-        : [wizard, []];
+        ? updated(null)
+        : updated(wizard);
     case "requestSettled":
       return wizard === null || isAborted(action.outcome)
-        ? [wizard, []]
+        ? updated(wizard)
         : dictionaryImportAnswered(wizard, action);
     default:
-      return [wizard, []];
+      return updated(wizard);
   }
 }

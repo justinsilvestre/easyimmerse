@@ -1,5 +1,6 @@
 import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import { updated } from "../app/updated.ts";
 import { copyOutcomeNotice } from "./copyOutcomeNotice.ts";
 import { noticesActions } from "./noticesActions.ts";
 import {
@@ -12,8 +13,6 @@ import {
 
 /** How long a transient notice stays: long enough to read it and reach its buttons, as WCAG's timing guidance asks. */
 const expiryMs = 10_000;
-
-type Result = readonly [NoticesState, readonly Effect[]];
 
 /**
  * Shows, holds and removes the notices. A transient notice expires through a timer that a hold cancels and a release restarts.
@@ -31,19 +30,19 @@ export const updateNotices: FeatureUpdate<NoticesState> = (state, action) => {
     case "noticeExpired":
     case "noticeDismissed":
     case "noticeButtonChosen":
-      return [without(state, (notice) => notice.id === action.id), []];
+      return updated(without(state, (notice) => notice.id === action.id));
     case "noticeWithdrawn":
-      return [without(state, (notice) => notice.key === action.key), []];
+      return updated(without(state, (notice) => notice.key === action.key));
     case "textCopied":
     case "textCopyFailed":
       return show(state, copyOutcomeNotice(action));
     default:
-      return [state, []];
+      return updated(state);
   }
 };
 
 /** Shows a notice, in place of the shown notice of its key, and starts its expiry timer when it is transient. */
-function show(state: NoticesState, content: NoticeContent): Result {
+function show(state: NoticesState, content: NoticeContent) {
   const notice: Notice = {
     ...content,
     id: state.nextId,
@@ -53,10 +52,10 @@ function show(state: NoticesState, content: NoticeContent): Result {
   const others = state.shown.filter(
     (shown) => key === undefined || shown.key !== key,
   );
-  return [
+  return updated(
     { shown: [...others, notice], nextId: state.nextId + 1 },
-    expiryTimerFor(notice),
-  ];
+    ...expiryTimerFor(notice),
+  );
 }
 
 /** The notices as a feature. */
@@ -71,29 +70,31 @@ function holdChanged(
   id: number,
   by: NoticeHold,
   isHeld: boolean,
-): Result {
+) {
   const notice = state.shown.find((shown) => shown.id === id);
-  if (!notice || notice.heldBy[by] === isHeld) return [state, []];
+  if (!notice || notice.heldBy[by] === isHeld) return updated(state);
   const changed = { ...notice, heldBy: { ...notice.heldBy, [by]: isHeld } };
   const shown = state.shown.map((each) => (each === notice ? changed : each));
-  return [
+  return updated(
     { ...state, shown },
-    isHeld ? cancelExpiryOf(changed) : expiryTimerFor(changed),
-  ];
+    ...(isHeld ? cancelExpiryOf(changed) : expiryTimerFor(changed)),
+  );
 }
 
 /** Starts the expiry timer of a transient notice that nothing holds. */
-function expiryTimerFor(notice: Notice): readonly Effect[] {
+function expiryTimerFor(notice: Notice) {
   const isHeld = notice.heldBy.pointer || notice.heldBy.focus;
   if (!notice.isTransient || isHeld) return [];
   const action = noticesActions.noticeExpired(notice.id);
   const id = expiryTimerId(notice.id);
-  return [{ type: "startTimer", id, ms: expiryMs, action }];
+  return [{ type: "startTimer", id, ms: expiryMs, action }] satisfies Effect[];
 }
 
-function cancelExpiryOf(notice: Notice): readonly Effect[] {
+function cancelExpiryOf(notice: Notice) {
   return notice.isTransient
-    ? [{ type: "cancelTimer", id: expiryTimerId(notice.id) }]
+    ? ([
+        { type: "cancelTimer", id: expiryTimerId(notice.id) },
+      ] satisfies Effect[])
     : [];
 }
 

@@ -1,6 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { updateLookup } from "../lookup/updateLookup.ts";
 import { updateReaderScreen } from "../readerScreen/updateReaderScreen.ts";
@@ -29,25 +30,25 @@ type MediaScreenUpdate = (
 const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
   (screen, action, route) => {
     const [waveform, effects] = updateWaveform(screen.waveform, action, route);
-    return [
+    return updated(
       waveform === screen.waveform ? screen : { ...screen, waveform },
-      effects,
-    ];
+      ...effects,
+    );
   },
   (screen, action) => {
     // The form takes the side panel while a card is open, so the subtitles panel cannot be toggled meanwhile.
     if (action.type === "cuePanelToggled" && screen.flashcardForm !== null)
-      return [screen, []];
+      return updated(screen);
     const panels = updateMediaPanels(screen.panels, action);
-    return [panels === screen.panels ? screen : { ...screen, panels }, []];
+    return updated(panels === screen.panels ? screen : { ...screen, panels });
   },
   (screen, action) =>
     action.type === "cuePanelSpanMeasured"
-      ? [{ ...screen, cuePanelSpan: action.span }, []]
-      : [screen, []],
+      ? updated({ ...screen, cuePanelSpan: action.span })
+      : updated(screen),
   (screen, action) => {
     const reader = updateReaderScreen(screen.reader, action);
-    return [reader === screen.reader ? screen : { ...screen, reader }, []];
+    return updated(reader === screen.reader ? screen : { ...screen, reader });
   },
   updatePlayer,
   (screen, action, _route, app) => {
@@ -57,7 +58,10 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
       screen.player,
       app,
     );
-    return [lookup === screen.lookup ? screen : { ...screen, lookup }, effects];
+    return updated(
+      lookup === screen.lookup ? screen : { ...screen, lookup },
+      ...effects,
+    );
   },
   (screen, action, route, app) => {
     const [sourceMedia, effects] = updateSourceMedia(
@@ -66,15 +70,15 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
       route,
       app,
     );
-    return [
+    return updated(
       sourceMedia === screen.sourceMedia ? screen : { ...screen, sourceMedia },
-      effects,
-    ];
+      ...effects,
+    );
   },
   updateSubtitlePick,
   updateSubtitleSelection,
   (screen, action, _route, app) => updateFlashcardForm(screen, action, app),
-  (screen, action, route) => [screen, picturesProbeOf(action, route)],
+  (screen, action, route) => updated(screen, ...picturesProbeOf(action, route)),
   updateClipLoop,
   updateClipPlayback,
   updateResume,
@@ -91,13 +95,13 @@ export function updateMediaScreen(
   action: AppAction,
   route: MediaRoute,
   app: AppState,
-): readonly [MediaScreenState, readonly Effect[]] {
+) {
   let next = screen;
   const effects: Effect[] = [];
   for (const update of mediaScreenUpdates) {
-    const [updated, partEffects] = update(next, action, route, app);
-    next = updated;
+    const [updatedScreen, partEffects] = update(next, action, route, app);
+    next = updatedScreen;
     effects.push(...partEffects);
   }
-  return [next, effects];
+  return updated(next, ...effects);
 }

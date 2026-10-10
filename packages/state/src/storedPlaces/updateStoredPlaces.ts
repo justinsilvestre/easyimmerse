@@ -1,4 +1,6 @@
+import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import { updated } from "../app/updated.ts";
 import {
   mediaScreenEnteredBy,
   mediaScreenLeftBy,
@@ -11,7 +13,6 @@ import {
   type ReaderLocation,
 } from "./readingLocation.ts";
 import { saveOnLeaving, savePlayback } from "./savePlaces.ts";
-import type { StoredPlacesEffect } from "./storedPlacesEffect.ts";
 import type { StoredPlacesState } from "./storedPlacesState.ts";
 import { initialStoredPlaces } from "./storedPlacesState.ts";
 
@@ -26,45 +27,44 @@ export const updateStoredPlaces: FeatureUpdate<StoredPlacesState> = (
 ) => {
   switch (action.type) {
     case "readingLocationLoaded":
-      return [
+      return updated(
         places.reading[action.mediaFileId] === undefined
           ? withReading(places, action.mediaFileId, action.location)
           : places,
-        [],
-      ];
+      );
     case "readingLocationReported":
     case "readerJumped":
     case "readerMatchChosen":
       return readingMoved(places, action.mediaFileId, action.location);
     case "playbackPositionLoaded":
-      return [
-        {
-          ...places,
-          playback: { ...places.playback, [action.mediaFileId]: action.ms },
-        },
-        [],
-      ];
+      return updated({
+        ...places,
+        playback: { ...places.playback, [action.mediaFileId]: action.ms },
+      });
     case "playerTimeChanged": {
       const open = openMediaScreen(app);
       return open &&
         crossesSaveInterval(open.player.currentTimeSeconds, action.seconds)
         ? savePlayback(places, open, action.seconds)
-        : [places, []];
+        : updated(places);
     }
     case "playerPlayingChanged": {
       const open = openMediaScreen(app);
       return open && !action.isPlaying
         ? savePlayback(places, open, open.player.currentTimeSeconds)
-        : [places, []];
+        : updated(places);
     }
     default: {
       const left = mediaScreenLeftBy(app, action);
-      const [saved, saves] = left ? saveOnLeaving(places, left) : [places, []];
+      const [saved, saves] = left
+        ? saveOnLeaving(places, left)
+        : updated(places);
       const entered = mediaScreenEnteredBy(app, action);
-      return [
+      return updated(
         saved,
-        entered === null ? saves : [...saves, ...placeLoads(places, entered)],
-      ];
+        ...saves,
+        ...(entered === null ? [] : placeLoads(places, entered)),
+      );
     }
   }
 };
@@ -80,15 +80,17 @@ function readingMoved(
   places: StoredPlacesState,
   mediaFileId: string,
   location: ReaderLocation,
-): readonly [StoredPlacesState, StoredPlacesEffect[]] {
+) {
   const stored = places.reading[mediaFileId];
-  if (stored && isSameLocation(location, stored)) return [places, []];
-  return [
+  if (stored && isSameLocation(location, stored)) return updated(places);
+  return updated(
     withReading(places, mediaFileId, location),
-    isSameParagraph(location, stored)
+    ...(isSameParagraph(location, stored)
       ? []
-      : [{ type: "saveReadingLocation", mediaFileId, location }],
-  ];
+      : ([
+          { type: "saveReadingLocation", mediaFileId, location },
+        ] satisfies Effect[])),
+  );
 }
 
 function withReading(
@@ -103,10 +105,7 @@ function withReading(
  * Loads the stored reading place and playback position of a media file, each unless it is already known.
  * Whether the file is a book is not known yet, so both are loaded; the one that does not apply loads as null.
  */
-function placeLoads(
-  places: StoredPlacesState,
-  mediaFileId: string,
-): StoredPlacesEffect[] {
+function placeLoads(places: StoredPlacesState, mediaFileId: string) {
   return [
     ...(places.reading[mediaFileId] === undefined
       ? [{ type: "loadReadingLocation", mediaFileId } as const]

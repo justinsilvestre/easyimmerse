@@ -20,7 +20,7 @@ export function windowRequest(
   target: WindowTarget,
   startMs: number,
   endMs: number,
-): Effect {
+) {
   const { projectId, mediaFileId } = target.route;
   return {
     type: "sendRequest",
@@ -32,17 +32,17 @@ export function windowRequest(
       startMs,
       endMs,
     },
-  };
+  } satisfies Effect;
 }
 
 /** Starts the timer after which a failed window may be requested again. */
-export function retryTimer(target: WindowTarget, start: number): Effect {
+export function retryTimer(target: WindowTarget, start: number) {
   return {
     type: "startTimer",
     id: retryTimerId(target, start),
     ms: waveformWindowRetryMs,
     action: actions.waveformRetryDue(target.name, start),
-  };
+  } satisfies Effect;
 }
 
 /** The id of the timer after which a failed window may be requested again. */

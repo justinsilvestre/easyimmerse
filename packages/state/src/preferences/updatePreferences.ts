@@ -1,6 +1,6 @@
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import { updated } from "../app/updated.ts";
 import { applyingAppearance } from "./appearance.ts";
-import type { PreferencesEffect } from "./preferencesEffect.ts";
 import type {
   PlayerControls,
   PreferenceKey,
@@ -26,7 +26,7 @@ export const updatePreferences: FeatureUpdate<PreferencesState> = (
       const { dialog } = app.screen;
       return dialog?.kind === "conversionNotice" && dialog.dismissForGood
         ? save(preferences, "conversionNoticeDismissed", "true")
-        : [preferences, []];
+        : updated(preferences);
     }
     case "preferenceToggled": {
       const value =
@@ -38,30 +38,33 @@ export const updatePreferences: FeatureUpdate<PreferencesState> = (
     case "textScaleChosen":
       return save(preferences, "textScale", String(action.scale));
     case "appStarted":
-      return [preferences, [{ type: "loadPreferences", keys: preferenceKeys }]];
+      return updated(preferences, {
+        type: "loadPreferences",
+        keys: preferenceKeys,
+      });
     case "preferencesLoaded":
-      return [withLoadedPreferences(preferences, action.preferences), []];
+      return updated(withLoadedPreferences(preferences, action.preferences));
     case "systemThemeChanged":
-      return [{ ...preferences, systemTheme: action.theme }, []];
+      return updated({ ...preferences, systemTheme: action.theme });
     case "volumeChangeRequested":
-      return [
-        withControls(preferences, { volume: action.volume }),
-        [{ type: "setPlayerVolume", volume: action.volume }],
-      ];
+      return updated(withControls(preferences, { volume: action.volume }), {
+        type: "setPlayerVolume",
+        volume: action.volume,
+      });
     case "muteToggleRequested": {
       const isMuted = !preferences.playerControls.isMuted;
-      return [
-        withControls(preferences, { isMuted }),
-        [{ type: "setPlayerMuted", isMuted }],
-      ];
+      return updated(withControls(preferences, { isMuted }), {
+        type: "setPlayerMuted",
+        isMuted,
+      });
     }
     case "speedChangeRequested":
-      return [
-        withControls(preferences, { speed: action.speed }),
-        [{ type: "setPlayerSpeed", speed: action.speed }],
-      ];
+      return updated(withControls(preferences, { speed: action.speed }), {
+        type: "setPlayerSpeed",
+        speed: action.speed,
+      });
     default:
-      return [preferences, []];
+      return updated(preferences);
   }
 };
 
@@ -75,11 +78,11 @@ function save(
   preferences: PreferencesState,
   key: PreferenceKey,
   value: string,
-): readonly [PreferencesState, PreferencesEffect[]] {
-  return [
+) {
+  return updated(
     { ...preferences, values: { ...preferences.values, [key]: value } },
-    [{ type: "savePreference", key, value }],
-  ];
+    { type: "savePreference", key, value },
+  );
 }
 
 function withControls(

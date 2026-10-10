@@ -1,5 +1,4 @@
 import type { AppAction } from "../../../app/appAction.ts";
-import type { Effect } from "../../../app/effect.ts";
 import type { RequestSettled } from "../../../server/serverRequest.ts";
 import { skippedSubtitlesEffects } from "../../pluginForm/skippedSubtitlesMessage.ts";
 
@@ -12,7 +11,7 @@ type SourceStepSettled = Extract<
  * Names in a notice the subtitle tracks that a source dialog's applied changes did not add.
  * It reads the settled request, so the notice shows even when the dialog or its screen has closed meanwhile.
  */
-export function skippedSourceSubtitles(action: AppAction): Effect[] {
+export function skippedSourceSubtitles(action: AppAction) {
   if (!isSourceStepSettled(action) || !action.outcome.ok) return [];
   const answer = action.outcome.data;
   return answer.kind === "applied"

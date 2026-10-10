@@ -115,13 +115,15 @@ export function wordOf(card: FlashcardCard): string {
 }
 
 /** Shows a notice. */
-export const show = (content: NoticeContent): Effect => ({
-  type: "showNotice",
-  content,
-});
+export const show = (content: NoticeContent) =>
+  ({
+    type: "showNotice",
+    content,
+  }) satisfies Effect;
 
 /** Withdraws the shown notice of a key, if there is one. */
-export const withdraw = (key: string): Effect => ({
-  type: "withdrawNotice",
-  key,
-});
+export const withdraw = (key: string) =>
+  ({
+    type: "withdrawNotice",
+    key,
+  }) satisfies Effect;

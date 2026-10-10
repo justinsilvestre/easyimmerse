@@ -1,8 +1,6 @@
+import { updated } from "../app/updated.ts";
 import type { OpenMediaScreen } from "../screen/openMediaScreen.ts";
-import type { StoredPlacesEffect } from "./storedPlacesEffect.ts";
 import type { StoredPlacesState } from "./storedPlacesState.ts";
-
-type Result = readonly [StoredPlacesState, StoredPlacesEffect[]];
 
 /**
  * Remembers where playback is in the open media file and saves it, once the player has loaded the file.
@@ -12,14 +10,14 @@ export function savePlayback(
   places: StoredPlacesState,
   open: OpenMediaScreen,
   seconds: number,
-): Result {
-  if (open.player.durationSeconds === 0) return [places, []];
+) {
+  if (open.player.durationSeconds === 0) return updated(places);
   const { mediaFileId } = open;
   const ms = seconds * 1000;
-  return [
+  return updated(
     { ...places, playback: { ...places.playback, [mediaFileId]: ms } },
-    [{ type: "savePlaybackPosition", mediaFileId, ms }],
-  ];
+    { type: "savePlaybackPosition", mediaFileId, ms },
+  );
 }
 
 /**
@@ -29,24 +27,24 @@ export function savePlayback(
 export function saveOnLeaving(
   places: StoredPlacesState,
   left: OpenMediaScreen,
-): Result {
+) {
   const location = places.reading[left.mediaFileId];
   const [remembered, effects] = savePlayback(
     places,
     left,
     left.player.currentTimeSeconds,
   );
-  return [
+  return updated(
     remembered,
-    location
+    ...(location
       ? [
           {
             type: "saveReadingLocation",
             mediaFileId: left.mediaFileId,
             location,
-          },
+          } as const,
           ...effects,
         ]
-      : effects,
-  ];
+      : effects),
+  );
 }

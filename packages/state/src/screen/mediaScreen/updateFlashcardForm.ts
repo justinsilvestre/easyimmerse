@@ -1,14 +1,12 @@
 import type { AudioClip } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
-import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import type { FlashcardCard } from "../../flashcards/flashcardCard.ts";
 import type { FlashcardForm } from "../../flashcards/flashcardForm.ts";
 import { stepFlashcardForm } from "../../flashcards/stepFlashcardForm.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { seekTo } from "./seekTo.ts";
-
-type Step = readonly [MediaScreenState, readonly Effect[]];
 
 /**
  * Keeps the flashcard open in the form, as `stepFlashcardForm` steps it, and plays its clip:
@@ -20,21 +18,21 @@ export function updateFlashcardForm(
   screen: MediaScreenState,
   action: AppAction,
   app: AppState,
-): Step {
+) {
   const { form, opened } = stepFlashcardForm(app, action);
   const before = screen.flashcardForm;
   const next = form === before ? screen : { ...screen, flashcardForm: form };
   if (opened !== null) return playOpened(next, opened);
   if (form === null)
-    return [before === null ? next : withClip(next, null, null), []];
+    return updated(before === null ? next : withClip(next, null, null));
   const moved = movedClipOf(before, form);
-  return [moved ? followMovedClip(next, moved) : next, []];
+  return updated(moved ? followMovedClip(next, moved) : next);
 }
 
 /** Seeks to the clip of the card that opened, looping it while the player plays. */
-function playOpened(screen: MediaScreenState, opened: FlashcardCard): Step {
+function playOpened(screen: MediaScreenState, opened: FlashcardCard) {
   const clip = opened.editor.content.audio_context;
-  if (clip === null) return [withClip(screen, null, null), []];
+  if (clip === null) return updated(withClip(screen, null, null));
   const loop = screen.player.isPlaying ? clip : null;
   return seekTo(withClip(screen, loop, null), clip.start_ms);
 }

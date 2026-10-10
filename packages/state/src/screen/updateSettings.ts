@@ -1,5 +1,6 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
+import { updated } from "../app/updated.ts";
 import type { Route } from "../route/route.ts";
 import { settingsPageOf } from "../route/route.ts";
 import { updateConversionCache } from "./conversionCache/updateConversionCache.ts";
@@ -20,31 +21,33 @@ export function updateSettings(
   settings: SettingsState,
   action: AppAction,
   route: Route,
-): readonly [SettingsState, readonly Effect[]] {
+) {
   const dictionaryImport = settings?.dictionaryImport ?? null;
   if (route.screen !== "settings")
-    return [null, stopWatching(dictionaryImport)];
+    return updated(null, ...stopWatching(dictionaryImport));
   const page = settingsPageOf(route);
   const [nextImport, importEffects] =
     page === "dictionaries"
       ? updateDictionaryImport(dictionaryImport, action)
-      : [null, stopWatching(dictionaryImport)];
+      : updated(null, ...stopWatching(dictionaryImport));
   const [report, cacheEffects] =
     page === "general"
       ? updateConversionCache(settings?.conversionCacheReport ?? null, action)
-      : [null, []];
+      : updated(null);
   const removalEffects =
     page === "dictionaries" && action.type === "dictionaryRemovalConfirmed"
-      ? [removeDictionary(action.dictionaryId)]
+      ? ([removeDictionary(action.dictionaryId)] satisfies Effect[])
       : [];
   const isUnchanged =
     settings !== null &&
     nextImport === settings.dictionaryImport &&
     report === settings.conversionCacheReport;
-  return [
+  return updated(
     isUnchanged
       ? settings
       : { dictionaryImport: nextImport, conversionCacheReport: report },
-    [...importEffects, ...removalEffects, ...cacheEffects],
-  ];
+    ...importEffects,
+    ...removalEffects,
+    ...cacheEffects,
+  );
 }

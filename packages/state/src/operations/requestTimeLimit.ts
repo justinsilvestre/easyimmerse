@@ -7,13 +7,13 @@ import { operationsActions } from "./operationsActions.ts";
 const timerIdOf = (requestId: string) => `requests/limit/${requestId}`;
 
 /** Starts the time limit of a request that has just been sent. */
-export function timeLimitTimer(requestId: string, ms: number): TimerEffect {
+export function timeLimitTimer(requestId: string, ms: number) {
   return {
     type: "startTimer",
     id: timerIdOf(requestId),
     ms,
     action: operationsActions.requestTimeLimitPassed(requestId),
-  };
+  } satisfies TimerEffect;
 }
 
 /**
@@ -23,7 +23,7 @@ export function timeLimitTimer(requestId: string, ms: number): TimerEffect {
 export function timeLimitEffects(
   requests: readonly RequestRecord[],
   action: AppAction,
-): readonly Effect[] {
+) {
   if (
     action.type !== "requestSettled" &&
     action.type !== "requestTimeLimitPassed"
@@ -32,6 +32,6 @@ export function timeLimitEffects(
   const record = requests.find(({ id }) => id === action.id);
   if (record?.timeLimitMs === undefined || record.isWaiting) return [];
   return action.type === "requestSettled"
-    ? [{ type: "cancelTimer", id: timerIdOf(record.id) }]
-    : [{ type: "abortRequest", id: record.id }];
+    ? ([{ type: "cancelTimer", id: timerIdOf(record.id) }] satisfies Effect[])
+    : ([{ type: "abortRequest", id: record.id }] satisfies Effect[]);
 }

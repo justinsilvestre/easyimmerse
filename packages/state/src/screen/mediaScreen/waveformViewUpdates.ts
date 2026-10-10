@@ -1,4 +1,5 @@
 import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import { isAborted } from "../../server/isAborted.ts";
 import type { RequestSettled } from "../../server/serverRequest.ts";
 import type { WaveformViewState } from "./waveformState.ts";
@@ -21,14 +22,12 @@ export type WindowSettled = Extract<
   { request: { kind: "getWaveformWindow" } }
 >;
 
-type Updated = readonly [WaveformViewState, readonly Effect[]];
-
 /** Takes the new view and requests the windows it lacks. A null view wants nothing, so nothing more is requested. */
 export function viewChanged(
   state: WaveformViewState,
   view: WaveformWindowView | null,
   target: WindowTarget,
-): Updated {
+) {
   return requestMissing({ ...state, view }, target);
 }
 
@@ -37,9 +36,9 @@ export function windowSettled(
   state: WaveformViewState,
   action: WindowSettled,
   target: WindowTarget,
-): Updated {
+) {
   const start = action.request.startMs;
-  if (state.requests[start]?.status !== "loading") return [state, []];
+  if (state.requests[start]?.status !== "loading") return updated(state);
   if (isAborted(action.outcome))
     return requestMissing(withoutWindow(state, start), target);
   if (action.outcome.ok)
@@ -48,7 +47,7 @@ export function windowSettled(
     withStatus(state, start, "failed"),
     target,
   );
-  return [next, [retryTimer(target, start), ...effects]];
+  return updated(next, retryTimer(target, start), ...effects);
 }
 
 /** Lets a failed window be requested again, and requests what the view lacks. */
@@ -56,37 +55,34 @@ export function retryDue(
   state: WaveformViewState,
   start: number,
   target: WindowTarget,
-): Updated {
+) {
   return state.requests[start]?.status === "failed"
     ? requestMissing(withoutWindow(state, start), target)
-    : [state, []];
+    : updated(state);
 }
 
 /** Cancels the retry timers of the view's failed windows. */
-export function cancelRetries(
-  state: WaveformViewState,
-  target: WindowTarget,
-): Effect[] {
-  return [...startsWith(state, "failed")].map((start) => ({
-    type: "cancelTimer",
-    id: retryTimerId(target, start),
-  }));
+export function cancelRetries(state: WaveformViewState, target: WindowTarget) {
+  return [...startsWith(state, "failed")].map(
+    (start) =>
+      ({
+        type: "cancelTimer",
+        id: retryTimerId(target, start),
+      }) satisfies Effect,
+  );
 }
 
 /** Requests the windows that the policy picks for the view, and records each as loading. */
-function requestMissing(
-  state: WaveformViewState,
-  target: WindowTarget,
-): Updated {
+function requestMissing(state: WaveformViewState, target: WindowTarget) {
   const { view } = state;
-  if (view === null) return [state, []];
+  if (view === null) return updated(state);
   const starts = planWindowRequests(
     view,
     startsWith(state, "loaded"),
     startsWith(state, "loading"),
     startsWith(state, "failed"),
   );
-  if (starts.length === 0) return [state, []];
+  if (starts.length === 0) return updated(state);
   const requests = { ...state.requests };
   const effects: Effect[] = [];
   for (const start of starts) {
@@ -94,5 +90,5 @@ function requestMissing(
     requests[start] = { endMs, status: "loading" };
     effects.push(windowRequest(target, start, endMs));
   }
-  return [{ ...state, requests }, effects];
+  return updated({ ...state, requests }, ...effects);
 }

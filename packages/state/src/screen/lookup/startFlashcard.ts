@@ -2,6 +2,7 @@ import type { NewFlashcard } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import type { FlashcardDestination } from "../../flashcards/flashcardActions.ts";
 import type { LookupFieldsContext } from "../../flashcards/flashcardForm.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
@@ -13,7 +14,6 @@ import {
 } from "./lookupIds.ts";
 import {
   cancelCloseTimer,
-  type LookupStep,
   open,
   setAside,
   show,
@@ -63,33 +63,35 @@ export function startFlashcard(
   lookup: LookupState,
   pending: PendingFlashcard,
   player: PlayerState,
-): LookupStep {
+) {
   const { chosen, sequence } = pending;
   const { query } = chosen.word;
   const move = query === null ? show : open;
   const [opened, openEffects] =
     chosen.occurrence !== null && !showsOccurrence(lookup, chosen)
       ? move(lookup, chosen, player)
-      : [lookup, [cancelCloseTimer]];
+      : updated(lookup, cancelCloseTimer);
   if (query === null) {
     const [aside, asideEffects] = setAside(opened);
-    return [aside, [...openEffects, ...asideEffects]];
+    return updated(aside, ...openEffects, ...asideEffects);
   }
-  const send: Effect = {
+  const send = {
     type: "sendRequest",
     id: lookupRequestId(sequence),
     request: { kind: "lookupText", query },
-  };
-  const wait: Effect = {
+  } satisfies Effect;
+  const wait = {
     type: "startTimer",
     id: lookupTimerIds.flashcardWait,
     ms: flashcardLookupWaitMs,
     action: lookupActions.lookupFlashcardWaitEnded(sequence),
-  };
-  return [
+  } satisfies Effect;
+  return updated(
     { ...opened, pendingFlashcard: pending },
-    [...openEffects, send, wait],
-  ];
+    ...openEffects,
+    send,
+    wait,
+  );
 }
 
 /** What a flashcard from a word is asked for with: where it goes, the flashcard the dispatcher made, and how its definitions are sorted. */

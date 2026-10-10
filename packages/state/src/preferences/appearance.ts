@@ -1,4 +1,5 @@
 import type { FeatureUpdate } from "../app/feature.ts";
+import { updated } from "../app/updated.ts";
 import type { PreferencesState } from "./preferencesState.ts";
 import { parseTextScale } from "./textScale.ts";
 import { chooseTheme, parseThemeChoice, type Theme } from "./theme.ts";
@@ -24,8 +25,8 @@ export function applyingAppearance(
     const appearance = appearanceOf(next);
     return action.type === "appStarted" ||
       !isSameAppearance(appearance, appearanceOf(preferences))
-      ? [next, [...effects, { type: "applyAppearance", appearance }]]
-      : [next, effects];
+      ? updated(next, ...effects, { type: "applyAppearance", appearance })
+      : updated(next, ...effects);
   };
 }
 

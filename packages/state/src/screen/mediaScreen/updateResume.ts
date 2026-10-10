@@ -1,6 +1,6 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
-import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { seekTo } from "./seekTo.ts";
@@ -18,7 +18,7 @@ export function updateResume(
   action: AppAction,
   route: MediaRoute,
   app: AppState,
-): readonly [MediaScreenState, readonly Effect[]] {
+) {
   switch (action.type) {
     case "playbackPositionLoaded":
       return action.mediaFileId === route.mediaFileId &&
@@ -27,25 +27,22 @@ export function updateResume(
             { ...screen, pendingResumeMs: action.ms },
             screen.player.durationSeconds,
           )
-        : [screen, []];
+        : updated(screen);
     case "playerDurationChanged":
       return resume(screen, action.seconds);
     default:
-      return [screen, []];
+      return updated(screen);
   }
 }
 
 /** Seeks to the pending position once the player knows the duration, and clears it either way. */
-function resume(
-  screen: MediaScreenState,
-  durationSeconds: number,
-): readonly [MediaScreenState, readonly Effect[]] {
+function resume(screen: MediaScreenState, durationSeconds: number) {
   const ms = screen.pendingResumeMs;
-  if (ms === null || durationSeconds === 0) return [screen, []];
+  if (ms === null || durationSeconds === 0) return updated(screen);
   const cleared = { ...screen, pendingResumeMs: null };
   return isAwayFromEdges(ms, durationSeconds * 1000)
     ? seekTo(cleared, ms)
-    : [cleared, []];
+    : updated(cleared);
 }
 
 function isAwayFromEdges(ms: number, durationMs: number): boolean {

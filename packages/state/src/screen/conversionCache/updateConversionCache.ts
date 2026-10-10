@@ -1,5 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import { isAborted } from "../../server/isAborted.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import { conversionCacheRequestId } from "./conversionCacheRequestId.ts";
@@ -11,37 +11,27 @@ import { conversionCacheRequestId } from "./conversionCacheRequestId.ts";
 export function updateConversionCache(
   report: string | null,
   action: AppAction,
-): readonly [string | null, readonly Effect[]] {
+) {
   switch (action.type) {
     case "conversionCacheClearRequested":
-      return [
-        report,
-        [
-          {
-            type: "sendRequest",
-            id: conversionCacheRequestId("clear"),
-            request: { kind: "clearConversionCache" },
-          },
-        ],
-      ];
+      return updated(report, {
+        type: "sendRequest",
+        id: conversionCacheRequestId("clear"),
+        request: { kind: "clearConversionCache" },
+      });
     case "conversionCacheBudgetChosen":
-      return [
-        report,
-        [
-          {
-            type: "sendRequest",
-            id: conversionCacheRequestId("budget"),
-            request: {
-              kind: "setConversionCacheBudget",
-              budget: { budget_bytes: action.budgetBytes },
-            },
-          },
-        ],
-      ];
+      return updated(report, {
+        type: "sendRequest",
+        id: conversionCacheRequestId("budget"),
+        request: {
+          kind: "setConversionCacheBudget",
+          budget: { budget_bytes: action.budgetBytes },
+        },
+      });
     case "requestSettled":
-      return [reportAfter(report, action), []];
+      return updated(reportAfter(report, action));
     default:
-      return [report, []];
+      return updated(report);
   }
 }
 

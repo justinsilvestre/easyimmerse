@@ -4,7 +4,7 @@ import { transientNotice } from "../notices/transientNotice.ts";
 import { isAborted } from "../server/isAborted.ts";
 
 /** Returns the notice that tells the user a change they asked for failed, even when its screen has gone by the time the failure arrives. */
-export function failureNotices(action: AppAction): Effect[] {
+export function failureNotices(action: AppAction) {
   if (
     action.type !== "requestSettled" ||
     action.outcome.ok ||
@@ -33,6 +33,9 @@ export function failureNotices(action: AppAction): Effect[] {
   }
 }
 
-function failure(message: string): Effect {
-  return { type: "showNotice", content: transientNotice("danger", message) };
+function failure(message: string) {
+  return {
+    type: "showNotice",
+    content: transientNotice("danger", message),
+  } satisfies Effect;
 }

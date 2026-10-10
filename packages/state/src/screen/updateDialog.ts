@@ -1,6 +1,6 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
-import type { Effect } from "../app/effect.ts";
+import { updated } from "../app/updated.ts";
 import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { updatePlaybackDialog } from "./mediaScreen/updatePlaybackDialog.ts";
@@ -19,36 +19,39 @@ export function updateDialog(
   dialog: DialogState,
   action: AppAction,
   app: AppState,
-): readonly [DialogState, readonly Effect[]] {
+) {
   switch (action.type) {
     case "subtitleFilePickRequested":
-      return [
-        { kind: "filePick", for: "subtitles" },
-        [{ type: "pickFile", accept: subtitleFileExtensions }],
-      ];
+      return updated({ kind: "filePick", for: "subtitles" } as const, {
+        type: "pickFile",
+        accept: subtitleFileExtensions,
+      });
     case "subtitleFileChosen":
     case "subtitleFilePickCancelled":
-      return [dialog?.kind === "filePick" ? null : dialog, []];
+      return updated(dialog?.kind === "filePick" ? null : dialog);
     case "mediaFilePickRequested":
-      return [dialog, [{ type: "pickMediaFile", accept: mediaFileExtensions }]];
+      return updated(dialog, {
+        type: "pickMediaFile",
+        accept: mediaFileExtensions,
+      });
     case "dictionaryFilePickRequested":
-      return [
-        dialog,
-        [{ type: "pickDictionaryFile", accept: dictionaryFileExtensions }],
-      ];
+      return updated(dialog, {
+        type: "pickDictionaryFile",
+        accept: dictionaryFileExtensions,
+      });
     case "subtitleAppearanceOpened":
-      return [{ kind: "subtitleAppearance" }, []];
+      return updated({ kind: "subtitleAppearance" } as const);
     case "subtitleAppearanceClosed":
-      return [dialog?.kind === "subtitleAppearance" ? null : dialog, []];
+      return updated(dialog?.kind === "subtitleAppearance" ? null : dialog);
     case "dictionaryRemovalRequested":
-      return [
-        { kind: "removeDictionary", dictionaryId: action.dictionaryId },
-        [],
-      ];
+      return updated({
+        kind: "removeDictionary",
+        dictionaryId: action.dictionaryId,
+      } as const);
     case "dictionaryRemovalConfirmed":
     case "dictionaryRemovalCancelled":
-      return [dialog?.kind === "removeDictionary" ? null : dialog, []];
+      return updated(dialog?.kind === "removeDictionary" ? null : dialog);
     default:
-      return [updatePlaybackDialog(dialog, action, app), []];
+      return updated(updatePlaybackDialog(dialog, action, app));
   }
 }

@@ -1,5 +1,6 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import { updated } from "../app/updated.ts";
 import { discardFailedSave, restoreFailedSave } from "./failedSaveActions.ts";
 import { withFailedSave, withoutFailedSave } from "./failedSaveListing.ts";
 import {
@@ -41,7 +42,7 @@ export const updateFlashcards: FeatureUpdate<FlashcardsState> = (
   const step = stepFlashcardForm(app, action);
   const context = { app, outbox: createFlashcardOutbox(step.requestCount) };
   const stepped = withFormStep(state, step);
-  const updated = [
+  const ruled = [
     saveStarted,
     takeFinished,
     updateSlice,
@@ -50,10 +51,8 @@ export const updateFlashcards: FeatureUpdate<FlashcardsState> = (
   ].reduce((next, rule) => rule(next, action, context), stepped);
   const requestCount = context.outbox.count();
   const next =
-    requestCount === state.requestCount
-      ? updated
-      : { ...updated, requestCount };
-  return [next, [...step.effects, ...context.outbox.effects()]];
+    requestCount === state.requestCount ? ruled : { ...ruled, requestCount };
+  return updated(next, ...step.effects, ...context.outbox.effects());
 };
 
 /** The flashcards as a feature. */

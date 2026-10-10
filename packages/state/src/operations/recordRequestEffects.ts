@@ -1,4 +1,5 @@
 import type { PerformedEffect } from "../app/effect.ts";
+import { updated } from "../app/updated.ts";
 import type { ServerEffect } from "../server/serverEffect.ts";
 import type { RequestRecord } from "./operations.ts";
 
@@ -16,7 +17,7 @@ type AbortRequest = Extract<ServerEffect, { type: "abortRequest" }>;
 export function recordRequestEffects(
   requests: Requests,
   effects: readonly PerformedEffect[],
-): readonly [Requests, readonly PerformedEffect[]] {
+) {
   let recorded = requests;
   let performed: PerformedEffect[] = [];
   for (const effect of effects) {
@@ -33,17 +34,14 @@ export function recordRequestEffects(
   const withdrawn = performed.filter(
     ({ type }) => type === "settleWithdrawnRequest",
   );
-  return [forgetWithdrawn(recorded, withdrawn), performed];
+  return updated(forgetWithdrawn(recorded, withdrawn), ...performed);
 }
 
 /**
  * Records a send. A request goes out at once unless it is scoped and its id is not the one in flight.
  * A send of an id already recorded replaces that request in its place and keeps the scope it was first sent with.
  */
-function recordSend(
-  requests: Requests,
-  effect: SendRequest,
-): readonly [Requests, readonly PerformedEffect[]] {
+function recordSend(requests: Requests, effect: SendRequest) {
   const earlier = requests.find(({ id }) => id === effect.id);
   const scope = earlier ? earlier.scope : effect.scope;
   const isWaiting = scope !== undefined && (earlier?.isWaiting ?? true);
@@ -57,14 +55,11 @@ function recordSend(
   const recorded = earlier
     ? requests.map((other) => (other === earlier ? record : other))
     : [...requests, record];
-  return [recorded, isWaiting ? [] : [sendEffectOf(record)]];
+  return updated(recorded, ...(isWaiting ? [] : [sendEffectOf(record)]));
 }
 
 /** Returns the effect that performs an abort: the abort itself for a request in flight, or the settling of a waiting one. */
-function recordAbort(
-  requests: Requests,
-  effect: AbortRequest,
-): readonly PerformedEffect[] {
+function recordAbort(requests: Requests, effect: AbortRequest) {
   const aborted = requests.find(({ id }) => id === effect.id);
   if (!aborted?.isWaiting) return [effect];
   return [
@@ -73,7 +68,7 @@ function recordAbort(
       id: aborted.id,
       request: aborted.request,
     },
-  ];
+  ] satisfies PerformedEffect[];
 }
 
 function isWithdrawal(effect: PerformedEffect, id: string): boolean {
@@ -96,8 +91,14 @@ export function sendEffectOf({
   request,
   scope,
   timeLimitMs,
-}: RequestRecord): SendRequest {
+}: RequestRecord) {
   return timeLimitMs === undefined
-    ? { type: "sendRequest", id, request, scope }
-    : { type: "sendRequest", id, request, scope, timeLimitMs };
+    ? ({ type: "sendRequest", id, request, scope } satisfies SendRequest)
+    : ({
+        type: "sendRequest",
+        id,
+        request,
+        scope,
+        timeLimitMs,
+      } satisfies SendRequest);
 }

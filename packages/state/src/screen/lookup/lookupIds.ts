@@ -8,8 +8,8 @@ export const lookupTimerIds = {
 };
 
 /** Cancels the lookup's timers as its screen closes. A flashcard's request in flight is left to settle, unheeded. */
-export const leaveLookup: readonly Effect[] = Object.values(lookupTimerIds).map(
-  (id) => ({ type: "cancelTimer", id }),
+export const leaveLookup = Object.values(lookupTimerIds).map(
+  (id) => ({ type: "cancelTimer", id }) satisfies Effect,
 );
 
 const hoverRequestPrefix = "lookup/hover/";

@@ -1,12 +1,12 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
+import { updated } from "../../app/updated.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
 import { moveCursor, withCursor } from "./lookupCursor.ts";
 import {
   clickWord,
   close,
   dropPending,
-  type LookupStep,
   openSearch,
   setAside,
 } from "./lookupMoves.ts";
@@ -29,7 +29,7 @@ export function updateLookup(
   action: AppAction,
   player: PlayerState,
   app: AppState,
-): LookupStep {
+) {
   switch (action.type) {
     case "lookupWordClicked":
       return clickWord(lookup, action.chosen, action.input, player);
@@ -38,12 +38,12 @@ export function updateLookup(
     case "lookupPopupWordHeld": {
       const pending = requestedFlashcard(lookup, action, app);
       return pending === null
-        ? [lookup, []]
+        ? updated(lookup)
         : startFlashcard(lookup, pending, player);
     }
     case "lookupCursorMoved":
     case "lookupCursorLeft":
-      return [withCursor(lookup, moveCursor(lookup.cursor, action)), []];
+      return updated(withCursor(lookup, moveCursor(lookup.cursor, action)));
     case "lookupWordHovered":
       return hoverWord(lookup, action.chosen, player, app);
     case "lookupCursorLookedUp":
@@ -53,35 +53,34 @@ export function updateLookup(
     case "lookupSearchOpened":
       return openSearch(lookup, player);
     case "lookupTermSearched":
-      return [searched(dropPending(lookup), action.word), []];
+      return updated(searched(dropPending(lookup), action.word));
     case "lookupClosed":
     case "lookupCloseDue":
       return close(lookup);
     case "lookupSetAside":
       return setAside(dropPending(lookup));
     case "lookupPointerInsideChanged":
-      return [{ ...lookup, isPointerInside: action.isInside }, []];
+      return updated({ ...lookup, isPointerInside: action.isInside });
     case "lookupSizeToggled":
-      return [
-        { ...lookup, size: lookup.size === "compact" ? "expanded" : "compact" },
-        [],
-      ];
+      return updated({
+        ...lookup,
+        size: lookup.size === "compact" ? "expanded" : "compact",
+      } satisfies LookupState);
     case "playerPlayingChanged":
-      return [
+      return updated(
         action.isPlaying && lookup.pausedPlayback
           ? { ...lookup, pausedPlayback: false }
           : lookup,
-        [],
-      ];
+      );
     case "requestSettled":
       return isHoverSettle(action)
         ? answerHover(lookup, action, player)
-        : [lookup, []];
+        : updated(lookup);
     case "flashcardFieldsWritten":
     case "lookupFlashcardWaitEnded":
       return updatePendingFlashcard(lookup, action, app);
     default:
-      return [lookup, []];
+      return updated(lookup);
   }
 }
 

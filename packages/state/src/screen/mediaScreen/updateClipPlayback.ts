@@ -1,6 +1,6 @@
 import type { AudioClip } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
-import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { seekTo } from "./seekTo.ts";
 
@@ -18,7 +18,7 @@ const endToleranceMs = 1000;
 export function updateClipPlayback(
   screen: MediaScreenState,
   action: AppAction,
-): readonly [MediaScreenState, readonly Effect[]] {
+) {
   const clip = screen.clipPlayback;
   switch (action.type) {
     case "clipPlayRequested": {
@@ -26,34 +26,32 @@ export function updateClipPlayback(
         withClipPlayback(screen, action.clip),
         action.clip.start_ms,
       );
-      return [seeking, [...effects, { type: "playPlayer" }]];
+      return updated(seeking, ...effects, { type: "playPlayer" });
     }
     case "playerPlayingChanged":
-      return [action.isPlaying ? screen : withClipPlayback(screen, null), []];
+      return updated(
+        action.isPlaying ? screen : withClipPlayback(screen, null),
+      );
     case "playerTimeChanged":
       // The player's time, which the loop has already moved back to the clip's start when it loops.
       return clip === null
-        ? [screen, []]
+        ? updated(screen)
         : timeUpdated(screen, clip, screen.player.currentTimeSeconds * 1000);
     default:
-      return [screen, []];
+      return updated(screen);
   }
 }
 
 /** Pauses at the clip's end, and forgets the clip once the time has left it. */
-function timeUpdated(
-  screen: MediaScreenState,
-  clip: AudioClip,
-  ms: number,
-): readonly [MediaScreenState, readonly Effect[]] {
+function timeUpdated(screen: MediaScreenState, clip: AudioClip, ms: number) {
   if (
     ms < clip.start_ms - startToleranceMs ||
     ms > clip.end_ms + endToleranceMs
   )
-    return [withClipPlayback(screen, null), []];
+    return updated(withClipPlayback(screen, null));
   return ms >= clip.end_ms
-    ? [withClipPlayback(screen, null), [{ type: "pausePlayer" }]]
-    : [screen, []];
+    ? updated(withClipPlayback(screen, null), { type: "pausePlayer" })
+    : updated(screen);
 }
 
 function withClipPlayback(

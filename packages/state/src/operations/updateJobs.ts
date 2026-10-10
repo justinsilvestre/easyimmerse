@@ -1,6 +1,7 @@
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
+import { updated } from "../app/updated.ts";
 import { isAborted } from "../server/isAborted.ts";
 import type { RequestOutcome } from "../server/serverRequest.ts";
 import type {
@@ -16,40 +17,38 @@ import { pollingIntervalMs } from "./jobs.ts";
  * Keeps each watched job's last report, and asks for its status again after the polling interval while it runs.
  * A job whose status cannot be fetched counts as failed.
  */
-export function updateJobs(
-  jobs: JobsState,
-  action: AppAction,
-): readonly [JobsState, readonly Effect[]] {
+export function updateJobs(jobs: JobsState, action: AppAction) {
   switch (action.type) {
     case "requestSettled": {
       const job = jobs[action.id];
-      if (job === undefined || isAborted(action.outcome)) return [jobs, []];
+      if (job === undefined || isAborted(action.outcome)) return updated(jobs);
       const checked = checkedJob(job, action.outcome);
-      return [
+      return updated(
         { ...jobs, [action.id]: checked },
-        checked.status === "running"
-          ? [
+        ...(checked.status === "running"
+          ? ([
               {
                 type: "startTimer",
                 id: action.id,
                 ms: pollingIntervalMs[job.kind],
                 action: actions.jobPollDue(action.id),
               },
-            ]
-          : [],
-      ];
+            ] satisfies Effect[])
+          : []),
+      );
     }
     case "jobPollDue": {
       const job = jobs[action.key];
       return job?.status === "running"
-        ? [
-            jobs,
-            [{ type: "sendRequest", id: action.key, request: job.request }],
-          ]
-        : [jobs, []];
+        ? updated(jobs, {
+            type: "sendRequest",
+            id: action.key,
+            request: job.request,
+          })
+        : updated(jobs);
     }
     default:
-      return [jobs, []];
+      return updated(jobs);
   }
 }
 

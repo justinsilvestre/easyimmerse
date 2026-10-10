@@ -5,10 +5,10 @@ export const dictionaryRemovalId = (dictionaryId: string) =>
   `settings/dictionaries/remove/${dictionaryId}`;
 
 /** Removes a dictionary once the user has confirmed it. */
-export function removeDictionary(dictionaryId: string): Effect {
+export function removeDictionary(dictionaryId: string) {
   return {
     type: "sendRequest",
     id: dictionaryRemovalId(dictionaryId),
     request: { kind: "deleteDictionary", dictionaryId },
-  };
+  } satisfies Effect;
 }

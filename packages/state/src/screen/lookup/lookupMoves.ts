@@ -1,4 +1,5 @@
 import type { Effect } from "../../app/effect.ts";
+import { updated } from "../../app/updated.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
 import { lookupActions } from "./lookupActions.ts";
 import { lookupTimerIds } from "./lookupIds.ts";
@@ -10,21 +11,18 @@ import {
 } from "./lookupState.ts";
 import { doubleClickMs } from "./lookupTiming.ts";
 
-/** The next lookup state and the effects that go with it. */
-export type LookupStep = readonly [LookupState, readonly Effect[]];
-
 /** Closes the pop-up after the double-click interval, so that the second click of a double-click can still stop it. */
-export const startCloseTimer: Effect = {
+export const startCloseTimer = {
   type: "startTimer",
   id: lookupTimerIds.close,
   ms: doubleClickMs,
   action: lookupActions.lookupCloseDue(),
-};
+} satisfies Effect;
 
-export const cancelCloseTimer: Effect = {
+export const cancelCloseTimer = {
   type: "cancelTimer",
   id: lookupTimerIds.close,
-};
+} satisfies Effect;
 
 /** Tells whether the pop-up is open on this occurrence of a word. */
 export function showsOccurrence(
@@ -38,10 +36,12 @@ export function showsOccurrence(
 }
 
 /** Pauses playing playback for the open pop-up, and remembers that it did. A paused player is left alone. */
-export function hold(lookup: LookupState, player: PlayerState): LookupStep {
+export function hold(lookup: LookupState, player: PlayerState) {
   return player.isPlaying
-    ? [{ ...lookup, pausedPlayback: true }, [{ type: "pausePlayer" }]]
-    : [lookup, []];
+    ? updated({ ...lookup, pausedPlayback: true }, {
+        type: "pausePlayer",
+      } satisfies Effect)
+    : updated(lookup);
 }
 
 /** Shows a word, as following the pointer does, keeping a waiting flashcard. */
@@ -49,12 +49,12 @@ export function show(
   lookup: LookupState,
   chosen: ChosenWord,
   player: PlayerState,
-): LookupStep {
+) {
   const [held, effects] = hold(
     { ...lookup, popup: { mode: "word", chosen } },
     player,
   );
-  return [held, [cancelCloseTimer, ...effects]];
+  return updated(held, cancelCloseTimer, ...effects);
 }
 
 /** Opens the pop-up on a word chosen outright, which drops a flashcard still waiting. */
@@ -62,7 +62,7 @@ export const open = (
   lookup: LookupState,
   chosen: ChosenWord,
   player: PlayerState,
-): LookupStep => show(dropPending(lookup), chosen, player);
+) => show(dropPending(lookup), chosen, player);
 
 /** Lets go of a flashcard still waiting for its word's lookup, which the flashcards then keep waiting for it. */
 export function dropPending(lookup: LookupState): LookupState {
@@ -77,16 +77,15 @@ export function clickWord(
   chosen: ChosenWord,
   input: WordInput,
   player: PlayerState,
-): LookupStep {
+) {
   if (!showsOccurrence(lookup, chosen)) return open(lookup, chosen, player);
-  return input === "keyboard" ? close(lookup) : [lookup, [startCloseTimer]];
+  return input === "keyboard"
+    ? close(lookup)
+    : updated(lookup, startCloseTimer);
 }
 
 /** Opens the pop-up on its search field, which drops a flashcard still waiting. */
-export function openSearch(
-  lookup: LookupState,
-  player: PlayerState,
-): LookupStep {
+export function openSearch(lookup: LookupState, player: PlayerState) {
   return hold(
     { ...dropPending(lookup), popup: { mode: "search", chosen: null } },
     player,
@@ -94,22 +93,23 @@ export function openSearch(
 }
 
 /** Closes the pop-up, drops a waiting flashcard, and resumes playback if the pop-up paused it. */
-export function close(lookup: LookupState): LookupStep {
-  const resume: Effect[] = lookup.pausedPlayback
-    ? [{ type: "playPlayer" }]
+export function close(lookup: LookupState) {
+  const resume = lookup.pausedPlayback
+    ? ([{ type: "playPlayer" }] satisfies Effect[])
     : [];
-  return [
+  return updated(
     { ...dropPending(lookup), ...closedPopup, pausedPlayback: false },
-    [cancelCloseTimer, ...resume],
-  ];
+    cancelCloseTimer,
+    ...resume,
+  );
 }
 
 /** Closes the pop-up for something that keeps playback paused, such as a flashcard. */
-export function setAside(lookup: LookupState): LookupStep {
-  return [
+export function setAside(lookup: LookupState) {
+  return updated(
     { ...lookup, ...closedPopup, pausedPlayback: false },
-    [cancelCloseTimer],
-  ];
+    cancelCloseTimer,
+  );
 }
 
 const closedPopup = { popup: null, isPointerInside: false } as const;

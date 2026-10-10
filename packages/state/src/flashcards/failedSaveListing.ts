@@ -1,4 +1,3 @@
-import type { Effect } from "../app/effect.ts";
 import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
 import {
   flashcardNoticeKeys,
@@ -9,7 +8,7 @@ import {
 import type { FlashcardsState } from "./flashcardsState.ts";
 
 /** The notice that goes with listing a failed save: a refused save's own notice, or else the withdrawal of an earlier one. */
-export function noticeOfListing(failedSave: FailedSave): Effect {
+export function noticeOfListing(failedSave: FailedSave) {
   return failedSave.isRefused
     ? show(flashcardNotices.saveRefused(failedSave))
     : withdraw(flashcardNoticeKeys.saveRefused(failedSaveIdOf(failedSave)));

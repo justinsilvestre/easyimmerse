@@ -1,5 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { Effect } from "../../app/effect.ts";
+import type { Update } from "../../app/update.ts";
+import { updated } from "../../app/updated.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type {
@@ -27,19 +29,25 @@ export function updateWaveform(
   waveform: WaveformState,
   action: AppAction,
   route: MediaRoute,
-): readonly [WaveformState, readonly Effect[]] {
+) {
   switch (action.type) {
     case "waveformZoomed":
-      return [{ ...waveform, requestedSpanMs: action.spanMs }, []];
+      return updated({ ...waveform, requestedSpanMs: action.spanMs });
     case "waveformViewChanged": {
       const { name } = action;
-      const updated = viewChanged(waveform[name], action.view, { route, name });
-      return withView(waveform, name, updated);
+      const viewUpdate = viewChanged(waveform[name], action.view, {
+        route,
+        name,
+      });
+      return withView(waveform, name, viewUpdate);
     }
     case "waveformRetryDue": {
       const { name } = action;
-      const updated = retryDue(waveform[name], action.startMs, { route, name });
-      return withView(waveform, name, updated);
+      const viewUpdate = retryDue(waveform[name], action.startMs, {
+        route,
+        name,
+      });
+      return withView(waveform, name, viewUpdate);
     }
     case "requestSettled": {
       for (const name of viewNames) {
@@ -51,18 +59,15 @@ export function updateWaveform(
             windowSettled(waveform[name], action, target),
           );
       }
-      return [waveform, []];
+      return updated(waveform);
     }
     default:
-      return [waveform, []];
+      return updated(waveform);
   }
 }
 
 /** Cancels the retry timers of both views, for a media screen being replaced. Requests in flight are left to finish into the cache. */
-export function leaveWaveform(
-  waveform: WaveformState,
-  route: MediaRoute,
-): Effect[] {
+export function leaveWaveform(waveform: WaveformState, route: MediaRoute) {
   return viewNames.flatMap((name) =>
     cancelRetries(waveform[name], { route, name }),
   );
@@ -86,10 +91,10 @@ function isWindowSettled(
 function withView(
   waveform: WaveformState,
   name: WaveformViewName,
-  [view, effects]: readonly [WaveformViewState, readonly Effect[]],
-): readonly [WaveformState, readonly Effect[]] {
-  return [
+  [view, effects]: Update<WaveformViewState, Effect>,
+) {
+  return updated(
     view === waveform[name] ? waveform : { ...waveform, [name]: view },
-    effects,
-  ];
+    ...effects,
+  );
 }

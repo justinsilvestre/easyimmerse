@@ -13,6 +13,7 @@ import type { AppState } from "./appState.ts";
 import { closeGuardEffects } from "./closeGuard.ts";
 import type { Effect, PerformedEffect } from "./effect.ts";
 import type { Feature } from "./feature.ts";
+import { updated } from "./updated.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
 export type UpdateFunction<S, A, E> = (state: S, action: A) => Update<S, E>;
@@ -49,9 +50,9 @@ export const update: UpdateFunction<AppState, AppAction, PerformedEffect> = (
   action,
 ) => {
   const [next, effects] = updateFeatures(state, action);
-  if (action.type !== "noticeButtonChosen") return [next, effects];
+  if (action.type !== "noticeButtonChosen") return updated(next, ...effects);
   const [chosen, chosenEffects] = update(next, action.action);
-  return [chosen, [...effects, ...chosenEffects]];
+  return updated(chosen, ...effects, ...chosenEffects);
 };
 
 /**
@@ -62,10 +63,7 @@ export const update: UpdateFunction<AppState, AppAction, PerformedEffect> = (
  * records the requests sent, and holds back those that must wait; and it guards the app's closing whenever unsaved work
  * begins, and stops once none is left, as `closeGuardEffects` describes.
  */
-function updateFeatures(
-  state: AppState,
-  action: AppAction,
-): readonly [AppState, readonly PerformedEffect[]] {
+function updateFeatures(state: AppState, action: AppAction) {
   let next = state;
   const effects: Effect[] = [];
   for (const name of featureNames) {
@@ -77,14 +75,14 @@ function updateFeatures(
   const [operations, performed] = trackOperations(next.operations, effects);
   const tracked =
     operations === next.operations ? next : { ...next, operations };
-  return [tracked, [...performed, ...closeGuardEffects(state, tracked)]];
+  return updated(tracked, ...performed, ...closeGuardEffects(state, tracked));
 }
 
 function updateSlice<K extends keyof AppState>(
   name: K,
   state: AppState,
   action: AppAction,
-): readonly [AppState[K], readonly Effect[]] {
+): Update<AppState[K], Effect> {
   const feature: Feature<AppState[K]> = (features as FeatureTable)[name];
   return feature.update(state[name], action, state);
 }

@@ -19,15 +19,12 @@ export function isSourceStepInFlight(
 }
 
 /** Asks the plugin the media file was imported through for the first form of its media interface. */
-export function sourceFormRequest({
-  projectId,
-  mediaFileId,
-}: MediaRoute): Effect {
+export function sourceFormRequest({ projectId, mediaFileId }: MediaRoute) {
   return {
     type: "sendRequest",
     id: sourceMediaIds(mediaFileId).form,
     request: { kind: "getSourceForm", projectId, mediaFileId },
-  };
+  } satisfies Effect;
 }
 
 /** Sends an action of the plugin's form with what the user entered, along with the form it was taken on. */
@@ -36,7 +33,7 @@ export function sourceStepRequest(
   action: string,
   input: FormInput[],
   form: PluginForm | null,
-): Effect {
+) {
   return {
     type: "sendRequest",
     id: sourceMediaIds(mediaFileId).step,
@@ -47,7 +44,7 @@ export function sourceStepRequest(
       request: { action, input },
       form,
     },
-  };
+  } satisfies Effect;
 }
 
 /**
@@ -55,6 +52,8 @@ export function sourceStepRequest(
  * A step is left to finish: the server applies the plugin's changes either way, and its answer
  * replaces the cached tracks, where an aborted step would refetch them before the changes are applied.
  */
-export function endSourceMedia(mediaFileId: string): Effect[] {
-  return [{ type: "abortRequest", id: sourceMediaIds(mediaFileId).form }];
+export function endSourceMedia(mediaFileId: string) {
+  return [
+    { type: "abortRequest", id: sourceMediaIds(mediaFileId).form },
+  ] satisfies Effect[];
 }

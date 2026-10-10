@@ -1,4 +1,4 @@
-import type { Effect, PerformedEffect } from "../app/effect.ts";
+import type { Effect } from "../app/effect.ts";
 import type { OperationsState } from "./operations.ts";
 import { trackJobs } from "./trackJobs.ts";
 import { trackRequests } from "./trackRequests.ts";
@@ -10,7 +10,7 @@ import { trackRequests } from "./trackRequests.ts";
 export function trackOperations(
   operations: OperationsState,
   effects: readonly Effect[],
-): readonly [OperationsState, readonly PerformedEffect[]] {
+) {
   const [jobs, performed] = trackJobs(operations.jobs, effects);
   return trackRequests(
     jobs === operations.jobs ? operations : { ...operations, jobs },

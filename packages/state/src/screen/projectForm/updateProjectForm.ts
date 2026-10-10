@@ -11,11 +11,13 @@ export function updateProjectForm(
   route: ProjectFormRoute,
   action: AppAction,
   operations: OperationsState,
-): readonly Effect[] {
+) {
   if (action.type !== "projectFormSubmitted") return [];
   const id = projectFormRequestId(route);
   if (isRequestInFlight(operations, id)) return [];
-  return [{ type: "sendRequest", id, request: submission(route, action) }];
+  return [
+    { type: "sendRequest", id, request: submission(route, action) },
+  ] satisfies Effect[];
 }
 
 function submission(

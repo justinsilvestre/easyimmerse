@@ -26,10 +26,7 @@ export type OpeningSettled = {
 export type OpeningProgress = "failed" | "waiting" | "ready";
 
 /** Asks for the project and its media files on the way to opening a failed save, so that its media screen can show the form. */
-export function openingRequests(
-  flashcardId: string,
-  projectId: string,
-): readonly Effect[] {
+export function openingRequests(flashcardId: string, projectId: string) {
   const ids = openingIds(flashcardId);
   return [
     {
@@ -42,7 +39,7 @@ export function openingRequests(
       id: ids.project,
       request: { kind: "getProject", projectId },
     },
-  ];
+  ] satisfies Effect[];
 }
 
 /** The end of an opening request that this action is, or null. */

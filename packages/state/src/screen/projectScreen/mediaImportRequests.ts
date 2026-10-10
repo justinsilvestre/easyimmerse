@@ -37,9 +37,12 @@ export function stepRequest(
 }
 
 /** Starts polling a fetch that a step started. */
-export function watchFetch(projectId: string, jobId: string): Effect {
+export function watchFetch(projectId: string, jobId: string) {
   const request = { kind: "getMediaSourceJob", projectId, jobId } as const;
-  return { type: "watchJob", job: { kind: "mediaSource", request } };
+  return {
+    type: "watchJob",
+    job: { kind: "mediaSource", request },
+  } satisfies Effect;
 }
 
 /** Stops polling the dialog's fetch, if it is watching one. */

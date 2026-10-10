@@ -13,13 +13,10 @@ const picturesRequestId = (mediaFileId: string) =>
  * Asks whether the open file shows pictures once its record arrives, when the browser holds it and its name is not that of a sound file or a book.
  * A file on the server's disk is answered by its tracks instead.
  */
-export function picturesProbeOf(
-  action: AppAction,
-  route: MediaRoute,
-): readonly Effect[] {
+export function picturesProbeOf(action: AppAction, route: MediaRoute) {
   const ids = playbackRequestIds(route.mediaFileId);
   if (!isSettled(action, ids.mediaFile, "listMediaFiles") || !action.outcome.ok)
-    return [];
+    return [] satisfies Effect[];
   const file = action.outcome.data.media_files.find(
     ({ id }) => id === route.mediaFileId,
   );
@@ -28,7 +25,7 @@ export function picturesProbeOf(
     isAudioFileName(file.name) ||
     isDocumentFileName(file.name)
   )
-    return [];
+    return [] satisfies Effect[];
   const { name, source } = file;
   return [
     {
@@ -36,7 +33,7 @@ export function picturesProbeOf(
       id: picturesRequestId(route.mediaFileId),
       request: { kind: "probePictures", file: { name, source } },
     },
-  ];
+  ] satisfies Effect[];
 }
 
 /** Tells whether the action shows that the open file has pictures: its probe found them, or the server found a video track in it. */
