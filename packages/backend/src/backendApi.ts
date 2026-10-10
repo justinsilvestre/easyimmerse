@@ -1,3 +1,7 @@
+import {
+  type LicenseNoticeGroup,
+  loadLicenseNoticeGroups,
+} from "@easyimmerse/licenses";
 import type { PickedDictionaryFile } from "@easyimmerse/state";
 import type {
   AddMediaFileRequest,
@@ -53,6 +57,7 @@ import {
 } from "./browserFrames.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
+import { loadNotices } from "./licenseNotices.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
 import { type BookArgs, parseBook } from "./parseBook.ts";
@@ -509,6 +514,11 @@ export const backendApi = createApi({
       queryFn: (args, api) =>
         captureFrame(args, api.extra as BackendThunkExtra),
     }),
+    /** The open-source license notices. They are megabytes of text, so the entry goes as soon as no page shows them. */
+    licenseNotices: build.query<LicenseNoticeGroup[], void>({
+      queryFn: () => loadNotices(loadLicenseNoticeGroups),
+      keepUnusedDataFor: 0,
+    }),
     /** Imports a picked dictionary file. The server answers with a job, which is polled through `getImportJob`. */
     importDictionary: build.mutation<
       ImportJobStarted,
@@ -610,6 +620,7 @@ export const {
   useClearConversionCacheMutation,
   useSetConversionCacheBudgetMutation,
   useOpenBookQuery,
+  useLicenseNoticesQuery,
   useProbePicturesQuery,
   useCaptureFrameQuery,
   useListDictionariesQuery,

@@ -17,6 +17,7 @@ export {
   useGetSourceFormMutation,
   useGetSubtitleCuesQuery,
   useLazyLookupTextQuery,
+  useLicenseNoticesQuery,
   useListDictionariesQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListFlashcardsQuery,

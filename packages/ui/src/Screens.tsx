@@ -1,11 +1,12 @@
+import { useLicenseNoticesQuery } from "@easyimmerse/backend";
 import type {
   MainRoute,
   SettingsPage as SettingsPageName,
 } from "@easyimmerse/state";
 import { mainScreenOf, selectRoute, settingsPageOf } from "@easyimmerse/state";
+import { licenseNoticesStateOf } from "./components/licenseNoticesStateOf.ts";
 import { useAppSelector } from "./hooks/useAppSelector.ts";
 import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
-import { useLicenseNotices } from "./hooks/useLicenseNotices.ts";
 import { useNavigate } from "./hooks/useNavigate.ts";
 import { DictionariesScreen } from "./screens/DictionariesScreen.tsx";
 import { HomeScreen } from "./screens/HomeScreen.tsx";
@@ -101,7 +102,7 @@ function ConnectedSettingsScreen({
       onBack={onBack}
       onOpenDictionaries={onOpenDictionaries}
       conversionCache={useConversionCacheControls()}
-      licenseNotices={useLicenseNotices()}
+      licenseNotices={licenseNoticesStateOf(useLicenseNoticesQuery())}
     />
   );
 }

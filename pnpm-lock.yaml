@@ -364,6 +364,9 @@ importers:
 
   packages/backend:
     dependencies:
+      '@easyimmerse/licenses':
+        specifier: workspace:*
+        version: link:../licenses
       '@easyimmerse/state':
         specifier: workspace:*
         version: link:../state
