@@ -6,12 +6,14 @@ import type { MediaScreenState } from "../screenState.ts";
 import {
   exampleTracksOneEach,
   exampleTracksTwoAudio,
+  exampleTranscodePlayback,
 } from "./examplePlayback.ts";
 import {
   environmentMeasured,
   fileOnDisk,
   mediaFilesListed,
   planSent,
+  planSettled,
   tracksSettled,
 } from "./playbackTestActions.ts";
 import { updatePathPlayback } from "./updatePathPlayback.ts";
@@ -191,6 +193,17 @@ describe("updatePathPlayback", () => {
       environmentMeasured,
     );
     expect(effects).toEqual([]);
+  });
+
+  it("remembers that the notice is due when a plan calls for it while the track choice is open", () => {
+    const [screen] = apply(
+      planSettled(exampleTranscodePlayback),
+      loaded,
+      ...measuredWith(),
+      environmentMeasured,
+      actions.trackChoiceRequested(),
+    );
+    expect(screen.playback?.noticeDue).toBe(true);
   });
 
   it("records that the user let the conversion go ahead", () => {

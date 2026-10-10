@@ -3,7 +3,7 @@ import type { AppState } from "../../app/appState.ts";
 import { mainScreenOf } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { ScreenState } from "../screenState.ts";
-import { isConversionNoticeDue } from "./conversionNotice.ts";
+import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { needsTrackChoice } from "./playbackPlanRules.ts";
 import { playbackRequestIds } from "./playbackRequests.ts";
@@ -12,7 +12,8 @@ type DialogState = ScreenState["dialog"];
 
 /**
  * Opens the track choice before the first play when a kind has several tracks and no choice is saved, or when the user asks,
- * and the conversion notice when the plan re-encodes a track and the user has not settled the notice, unless the track choice is open.
+ * and the conversion notice when the plan re-encodes a track and the user has not settled the notice;
+ * a notice that comes due while the track choice is open waits until the choice is cancelled.
  * Keeps what each dialog shows until it closes. `app` is the state before the action.
  */
 export function updatePlaybackDialog(
@@ -39,8 +40,11 @@ export function updatePlaybackDialog(
       return dialog?.kind === "conversionNotice"
         ? { ...dialog, dismissForGood: !dialog.dismissForGood }
         : dialog;
-    case "tracksChosen":
     case "trackChoiceCancelled":
+      return open.playback.noticeDue
+        ? { kind: "conversionNotice", dismissForGood: true }
+        : null;
+    case "tracksChosen":
     case "conversionNoticeAccepted":
       return null;
     default:
@@ -79,10 +83,10 @@ function settledDialog(
     action.outcome.ok &&
     dialog?.kind !== "trackChoice"
   ) {
-    const isNoticeSettled =
-      app.preferences.values.conversionNoticeDismissed === "true" ||
-      open.playback.isConversionAccepted;
-    return isConversionNoticeDue(action.outcome.data, isNoticeSettled)
+    return isConversionNoticeDue(
+      action.outcome.data,
+      isNoticeSettled(open.playback, app.preferences),
+    )
       ? { kind: "conversionNotice", dismissForGood: true }
       : dialog;
   }

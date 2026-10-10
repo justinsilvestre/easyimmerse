@@ -16,6 +16,8 @@ export type PathPlayback = {
   planRequest: PlaybackRequest | null;
   /** Whether the user let the conversion go ahead, so that the notice does not return while the file stays open. */
   isConversionAccepted: boolean;
+  /** Whether a plan called for the conversion notice while the track choice was open, so that the notice opens once it closes. */
+  noticeDue: boolean;
 };
 
 /** Returns the playback of a file on the server's disk before anything about it is known but its saved track choice. */
@@ -25,5 +27,6 @@ export function pathPlaybackOf(file: MediaFile): PathPlayback {
     environment: null,
     planRequest: null,
     isConversionAccepted: false,
+    noticeDue: false,
   };
 }

@@ -1,4 +1,6 @@
 import type { PlaybackResponse } from "@easyimmerse/types";
+import type { PreferencesState } from "../../preferences/preferencesState.ts";
+import type { PathPlayback } from "./pathPlayback.ts";
 import { copiesChosenTracksOnly } from "./playbackPlanRules.ts";
 
 /**
@@ -14,5 +16,16 @@ export function isConversionNoticeDue(
     response.playlist_path !== null &&
     !copiesChosenTracksOnly(response.plan) &&
     !isSettled
+  );
+}
+
+/** Tells whether the user has settled the conversion notice: dismissed it for good, or accepted it for the open file. */
+export function isNoticeSettled(
+  playback: PathPlayback,
+  preferences: PreferencesState,
+): boolean {
+  return (
+    preferences.values.conversionNoticeDismissed === "true" ||
+    playback.isConversionAccepted
   );
 }

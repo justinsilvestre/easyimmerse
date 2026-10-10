@@ -129,6 +129,17 @@ describe("updatePlaybackDialog", () => {
     ).toMatchObject({ kind: "trackChoice" });
   });
 
+  it("opens the conversion notice when the track choice is cancelled after a plan called for it", () => {
+    expect(
+      dialogAfter(
+        actions.trackChoiceCancelled(),
+        ...playing,
+        actions.trackChoiceRequested(),
+        planSettled(exampleTranscodePlayback),
+      ),
+    ).toEqual({ kind: "conversionNotice", dismissForGood: true });
+  });
+
   it("closes the track choice when it is cancelled", () => {
     expect(
       dialogAfter(

@@ -5,6 +5,7 @@ import { withLoadedPreferences } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { MediaScreenState } from "../screenState.ts";
+import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
 import { pathPlaybackOf } from "./pathPlayback.ts";
 import {
   measureRequest,
@@ -30,7 +31,7 @@ export function updatePathPlayback(
   const { playback } = screen;
   switch (action.type) {
     case "requestSettled":
-      return requestSettled(screen, action, route);
+      return requestSettled(screen, action, route, app);
     case "playbackEnvironmentMeasured":
       return playback !== null && action.mediaFileId === route.mediaFileId
         ? sendFirstPlan(
@@ -49,8 +50,10 @@ export function updatePathPlayback(
       );
     case "tracksChosen": {
       if (playback === null) return [screen, []];
+      // The new plan decides afresh whether the notice is due.
       const chosen = withPlayback(screen, playback, {
         selection: action.selection,
+        noticeDue: false,
       });
       const [planned, effects] = sendPlan(chosen, route, app.preferences);
       return [
@@ -59,9 +62,11 @@ export function updatePathPlayback(
       ];
     }
     case "trackChoiceCancelled":
-      return playback?.planRequest === null
+      if (playback === null) return [screen, []];
+      // A due notice opens as the choice closes.
+      return playback.planRequest === null
         ? sendPlan(screen, route, app.preferences)
-        : [screen, []];
+        : [withPlayback(screen, playback, { noticeDue: false }), []];
     case "conversionNoticeAccepted":
       return playback === null
         ? [screen, []]
@@ -71,11 +76,12 @@ export function updatePathPlayback(
   }
 }
 
-/** Takes the open file's record and its tracks as they arrive. */
+/** Takes the open file's record and its tracks as they arrive, and a plan calling for the notice while the track choice is open. */
 function requestSettled(
   screen: MediaScreenState,
   action: AppAction,
   route: MediaRoute,
+  app: AppState,
 ): Updated {
   const ids = playbackRequestIds(route.mediaFileId);
   if (isSettled(action, ids.mediaFile, "listMediaFiles") && action.outcome.ok) {
@@ -90,5 +96,18 @@ function requestSettled(
     return screen.playback === null
       ? [screen, []]
       : [screen, [measureRequest(route, action.outcome.data)]];
+  const { playback } = screen;
+  if (
+    isSettled(action, ids.plan, "planPlayback") &&
+    action.outcome.ok &&
+    playback !== null &&
+    app.screen.dialog?.kind === "trackChoice"
+  ) {
+    const noticeDue = isConversionNoticeDue(
+      action.outcome.data,
+      isNoticeSettled(playback, app.preferences),
+    );
+    return [withPlayback(screen, playback, { noticeDue }), []];
+  }
   return [screen, []];
 }
