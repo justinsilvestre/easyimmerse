@@ -49,6 +49,10 @@ export { createHttpBackendClient } from "./httpBackendClient.ts";
 export { lookUpTextAhead } from "./lookUpTextAhead.ts";
 export { lookupStartsIn } from "./lookupPositions.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
+export {
+  type LookupRange,
+  usePrefetchLookupRangeQuery,
+} from "./prefetchLookupRange.ts";
 export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
 export { resolveServerConfig } from "./resolveServerConfig.ts";
 export { createWasmBackendClient } from "./wasmBackendClient.ts";
