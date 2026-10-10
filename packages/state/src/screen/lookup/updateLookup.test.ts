@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
-import { applyToLookup as apply, cat, dog } from "./lookupTestSupport.ts";
+import {
+  applyToLookup as apply,
+  cat,
+  dog,
+  hoverSettled,
+  restingOn,
+} from "./lookupTestSupport.ts";
 
+/** The answer of the hover lookup with this sequence for "dog". */
+const dogAnswered = (sequence: number) => hoverSettled(sequence, dog, "dog");
 const clickedCat = actions.lookupWordClicked(cat, "mouse");
 const playing = actions.playerPlayingChanged(true);
 const paused = actions.playerPlayingChanged(false);
@@ -59,46 +67,50 @@ describe("updateLookup", () => {
   });
 
   it("follows a word the pointer rests on", () => {
-    const [lookup] = apply(actions.lookupWordRestedOn(dog), clickedCat);
+    const [lookup] = apply(dogAnswered(1), clickedCat, ...restingOn(dog));
     expect(lookup.popup?.chosen).toEqual(dog);
   });
 
   it("does not open for a word the pointer rests on", () => {
-    const [lookup] = apply(actions.lookupWordRestedOn(dog));
+    const [lookup] = apply(dogAnswered(1), ...restingOn(dog));
     expect(lookup.popup).toBeNull();
   });
 
   it("stays on its word while the pointer is inside it", () => {
     const [lookup] = apply(
-      actions.lookupWordRestedOn(dog),
+      dogAnswered(1),
       clickedCat,
       actions.lookupPointerInsideChanged(true),
+      ...restingOn(dog),
     );
     expect(lookup.popup?.chosen).toEqual(cat);
   });
 
   it("follows the pointer again once it has left the pop-up", () => {
     const [lookup] = apply(
-      actions.lookupWordRestedOn(dog),
+      dogAnswered(1),
       clickedCat,
       actions.lookupPointerInsideChanged(true),
       actions.lookupPointerInsideChanged(false),
+      ...restingOn(dog),
     );
     expect(lookup.popup?.chosen).toEqual(dog);
   });
 
   it("stays on its word while a flashcard waits for its lookup", () => {
     const [lookup] = apply(
-      actions.lookupWordRestedOn(dog),
+      dogAnswered(2),
       actions.lookupFlashcardRequested(cat, "save"),
+      ...restingOn(dog),
     );
     expect(lookup.popup?.chosen).toEqual(cat);
   });
 
   it("does not follow the pointer while it shows its search field", () => {
     const [lookup] = apply(
-      actions.lookupWordRestedOn(dog),
+      dogAnswered(1),
       actions.lookupSearchOpened(),
+      ...restingOn(dog),
     );
     expect(lookup.popup?.chosen).toBeNull();
   });

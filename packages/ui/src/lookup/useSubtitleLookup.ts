@@ -1,23 +1,29 @@
+import { actions, selectLookupCursor } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { type ComponentProps, type RefObject, useMemo } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
-import type {
-  ActiveCueWord,
-  CueWordGestures,
+import { type CueTextCursor, cuePositionOf } from "../media/cueCursor.ts";
+import {
+  type ActiveCueWord,
+  activeCueWordOf,
+  type CueWordGestures,
 } from "../media/cueWordGestures.ts";
-import { useCueCursor } from "../media/useCueCursor.ts";
 import { chosenWordAt } from "./chosenWordAt.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
+import { matchedLengthAhead } from "./matchedLengthAhead.ts";
+import { selectCursorMatchedLength } from "./selectCursorMatchedLength.ts";
 import type { LookupFlashcardStarts } from "./useLookupFlashcardHandoff.ts";
 import { useWordLookup } from "./useWordLookup.ts";
 
 /**
  * Looks up words of the subtitles in the dictionary pop-up, which pauses playback while it is open
  * and resumes it when closed, unless the lookup led on to a flashcard or to the dictionaries settings.
- * Keeps the one lookup cursor of the subtitles, which the mouse and the keyboard move alike, wherever the subtitles are shown.
+ * Moves the screen's one lookup cursor, which the mouse and the keyboard move alike, wherever the subtitles are shown.
  * While the screen that `screenRef` marks is in reach, the L key looks up from the cursor as a click there would,
  * or opens the pop-up's search field when there is no cursor,
  * and the C key saves a flashcard from the cursor as a double-click there would, or for no word when there is no cursor.
@@ -31,24 +37,19 @@ export function useSubtitleLookup(
   starts: LookupFlashcardStarts,
   screenRef: RefObject<Element | null>,
 ) {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const lookup = useWordLookup(languages, starts);
+  const cursor = useCuePosition();
   const chosenAt = (hit: WordHit, cue: Cue) =>
     chosenWordAt(hit, cue, lookup.wordOf);
-  const { cursor, position, point, answer } = useCueCursor(
-    (hit, cue) => chosenAt(hit, cue).word.query,
+  const startFlashcardAtCursor = (destination: "save" | "editor") =>
+    dispatch(actions.lookupFlashcardAtCursorRequested(destination));
+  useKeyboardShortcut(
+    "l",
+    () => dispatch(actions.lookupCursorLookedUp()),
+    screenRef,
   );
-  const lookUpCursor = () => {
-    if (cursor?.hit.element.isConnected)
-      lookup.clickWord(chosenAt(cursor.hit, cursor.cue), "keyboard");
-    else lookup.openSearch();
-  };
-  useKeyboardShortcut("l", lookUpCursor, screenRef);
-  const startFlashcardAtCursor = (destination: "save" | "editor") => {
-    if (cursor?.hit.element.isConnected)
-      lookup.startFlashcardFor(chosenAt(cursor.hit, cursor.cue), destination);
-    else starts[destination]("", null, null);
-  };
   useKeyboardShortcut("c", () => startFlashcardAtCursor("save"), screenRef);
   const popup = lookup.popup && {
     anchored: lookup.popup.anchored,
@@ -60,19 +61,27 @@ export function useSubtitleLookup(
   };
   const wordGestures = useStableCallbacks<Required<CueWordGestures>>({
     onWordClick: (hit, cue) => lookup.clickWord(chosenAt(hit, cue), hit.input),
-    onWordPointed: point,
-    onWordHover: (hit, cue) => lookup.hoverWord(chosenAt(hit, cue)),
-    onWordHoverAnswered: (hit, matchedLength, cue) => {
-      answer(hit, matchedLength, cue);
-      lookup.restOnWord(chosenAt(hit, cue));
-    },
+    onWordPointed: (hit, input, cue) =>
+      dispatch(
+        hit
+          ? actions.lookupCursorMoved(
+              chosenAt(hit, cue),
+              input,
+              cursor?.matchedLength,
+            )
+          : actions.lookupCursorLeft(input),
+      ),
+    onWordHover: (hit, cue) =>
+      dispatch(actions.lookupWordHovered(chosenAt(hit, cue))),
+    lookUpMatchedLength: (hit, cue) =>
+      matchedLengthAhead(dispatch, chosenAt(hit, cue).word.query),
     onWordDoubleClick: (hit, cue) =>
       lookup.startFlashcardFor(chosenAt(hit, cue)),
     onWordHold: (hit, cue) => lookup.startFlashcardFor(chosenAt(hit, cue)),
   });
   return {
-    activeWord: useActiveCueWord(lookup.activeOccurrence, cursor === null),
-    cursor: position,
+    activeWord: useActiveCueWord(lookup.activeOccurrence, cursor !== null),
+    cursor,
     popup,
     openSearch: lookup.openSearch,
     /**
@@ -84,26 +93,26 @@ export function useSubtitleLookup(
   };
 }
 
-/**
- * The word of a cue the pop-up shows, as one object for as long as it shows the same word with the same match
- * and its highlight stays on or off.
- */
+/** The lookup cursor's place in the subtitles, highlighted at once when its word's lookup is cached, as one object while it stays the same. */
+function useCuePosition(): CueTextCursor | null {
+  const cursor = useAppSelector(selectLookupCursor);
+  const matchedLength = useAppSelector(selectCursorMatchedLength);
+  const position = cuePositionOf(cursor, matchedLength);
+  const { cueIndex, start, input } = position ?? {};
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the position's fields, not its identity, decide it.
+  return useMemo(() => position, [cueIndex, start, input, matchedLength]);
+}
+
+/** The word of a cue the pop-up shows, as `activeCueWordOf` gives it, as one object while it stays the same. */
 function useActiveCueWord(
   occurrence: ReturnType<typeof useWordLookup>["activeOccurrence"],
-  isHighlighted: boolean,
+  hasCursor: boolean,
 ): ActiveCueWord | undefined {
-  const cueIndex =
-    occurrence?.source?.kind === "cue"
-      ? occurrence.source.cue.index
-      : undefined;
-  const start = occurrence?.start;
-  const length = occurrence?.length;
-  const popupId = occurrence?.popupId;
+  const active = activeCueWordOf(occurrence, hasCursor);
+  const { cueIndex, start, length, popupId, isHighlighted } = active ?? {};
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the word's fields, not its identity, decide it.
   return useMemo(
-    () =>
-      cueIndex === undefined || start === undefined || popupId === undefined
-        ? undefined
-        : { cueIndex, start, length, popupId, isHighlighted },
+    () => active,
     [cueIndex, start, length, popupId, isHighlighted],
   );
 }

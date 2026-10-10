@@ -4,7 +4,8 @@ import type { WordGestures } from "./useWordGestures.ts";
 
 /**
  * The lookup cursor of a clickable text: `cursor` when it is given, with null for none,
- * as when a screen keeps one cursor for several texts; otherwise a cursor the text keeps for itself, which goes when the text changes.
+ * as when a screen keeps one cursor for several texts; otherwise a cursor the text keeps for itself, which goes when the text changes
+ * and highlights a word or character with no lookup of its own.
  * Returns the cursor, and the gestures to report to, which move a cursor the text keeps before passing on to `gestures`.
  */
 export function useTextCursor(
@@ -29,22 +30,12 @@ export function useTextCursor(
                 type: "pointed",
                 start: hit.start,
                 input,
-                // Without a lookup to wait for, the answer is known at once: nothing matched.
-                matchedLength: gestures.onWordHover ? undefined : null,
+                // A text that keeps its own cursor looks nothing up, so the answer is known at once: nothing matched.
+                matchedLength: null,
               }
             : { type: "left", input },
         );
       gestures.onWordPointed?.(hit, input);
-    },
-    onWordHoverAnswered: (hit, matchedLength) => {
-      if (isOwn)
-        dispatch({
-          type: "answered",
-          start: hit.start,
-          input: hit.input,
-          matchedLength,
-        });
-      gestures.onWordHoverAnswered?.(hit, matchedLength);
     },
   };
   return {

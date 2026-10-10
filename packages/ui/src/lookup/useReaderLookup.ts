@@ -1,5 +1,6 @@
-import type { ChosenWord } from "@easyimmerse/state";
-import { type ComponentProps, useRef } from "react";
+import { actions, type ChosenWord } from "@easyimmerse/state";
+import type { ComponentProps } from "react";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import type {
   ReaderWord,
@@ -14,12 +15,14 @@ import { useWordLookup } from "./useWordLookup.ts";
  * A flashcard made from a word opens in the editor through `startFlashcard`.
  * Returns the gestures for the text's words, the pop-up's props, or null while it is closed,
  * the rectangle of the word the pop-up stands beside, the word it highlights,
- * and what the L key does: look up the word under the mouse as a click on it would, or else open the search field.
+ * and what the L key does: look up the word at the screen's lookup cursor, which the mouse moves, as a click on it would,
+ * or else open the search field.
  */
 export function useReaderLookup(
   languages: { target: string; translation: string },
   startFlashcard: StartFlashcardFromLookup,
 ) {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const lookup = useWordLookup(languages, {
     save: startFlashcard,
@@ -54,15 +57,15 @@ export function useReaderLookup(
     } satisfies ComponentProps<typeof DictionaryPopup>,
   };
   const occurrence = lookup.activeOccurrence;
-  // To do in step 10a: the word under the mouse is kept in a ref for the L key, which the sweep is to judge.
-  const pointed = useRef<ReaderWord | null>(null);
   const wordGestures: ReaderWordGestures = {
     onWordClick: (word, input) => lookup.clickWord(chosenFor(word), input),
-    onWordPointed: (word) => {
-      pointed.current = word;
-    },
-    onWordHover: (word) => lookup.hoverWord(chosenFor(word)),
-    onWordHoverAnswered: (word) => lookup.restOnWord(chosenFor(word)),
+    onWordPointed: (word) =>
+      dispatch(
+        word
+          ? actions.lookupCursorMoved(chosenFor(word), "mouse")
+          : actions.lookupCursorLeft("mouse"),
+      ),
+    onWordHover: (word) => dispatch(actions.lookupWordHovered(chosenFor(word))),
     onWordDoubleClick: (word) => lookup.startFlashcardFor(chosenFor(word)),
     onWordHold: (word) => lookup.startFlashcardFor(chosenFor(word)),
   };
@@ -81,11 +84,7 @@ export function useReaderLookup(
           }
         : undefined,
     openSearch: lookup.openSearch,
-    lookUpPointedWord: () => {
-      if (pointed.current)
-        lookup.clickWord(chosenFor(pointed.current), "keyboard");
-      else lookup.openSearch();
-    },
+    lookUpPointedWord: () => dispatch(actions.lookupCursorLookedUp()),
     close: lookup.close,
   };
 }

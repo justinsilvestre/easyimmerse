@@ -5,7 +5,9 @@ import {
   applyToLookup as apply,
   cat,
   dog,
+  hoverSettled,
   lookupSettled,
+  restingOn,
 } from "./lookupTestSupport.ts";
 
 const saveCat = actions.lookupFlashcardRequested(cat, "save");
@@ -156,7 +158,11 @@ describe("updateLookup for a flashcard started from a word", () => {
   });
 
   it("keeps the flashcard when the mouse rests on another word", () => {
-    const [lookup] = apply(actions.lookupWordRestedOn(dog), saveCat);
+    const [lookup] = apply(
+      hoverSettled(2, dog, "dog"),
+      saveCat,
+      ...restingOn(dog),
+    );
     expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
   });
 

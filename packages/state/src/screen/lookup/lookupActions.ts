@@ -5,9 +5,6 @@ export const lookupActions = {
   /** A word of the text clicked, tapped, or activated from the keyboard. */
   lookupWordClicked: (chosen: ChosenWord, input: WordInput) =>
     ({ type: "lookupWordClicked", chosen, input }) as const,
-  /** The mouse or the keyboard rests on a word whose hover lookup has answered. */
-  lookupWordRestedOn: (chosen: ChosenWord) =>
-    ({ type: "lookupWordRestedOn", chosen }) as const,
   /**
    * The mouse or the keyboard points at a word, reported at once. `shownMatchedLength` is the match the cursor shows now,
    * which may come from the cache, so that a mouse moving within it keeps the cursor.

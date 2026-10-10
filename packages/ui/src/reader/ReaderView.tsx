@@ -247,7 +247,6 @@ export function ReaderView(props: ReaderViewProps) {
     onWordDoubleClick: callbacks.onWordDoubleClick,
     onWordPointed: callbacks.onWordPointed,
     onWordHover: callbacks.onWordHover,
-    onWordHoverAnswered: callbacks.onWordHoverAnswered,
     onWordHold: callbacks.onWordHold,
     onBlankClick: (event) => {
       if (hasLookup) return callbacks.onDismissLookup();

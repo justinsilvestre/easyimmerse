@@ -3,7 +3,6 @@ import { useId } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { hoverMatchLength } from "./hoverMatchLength.ts";
 import { lookupPopupProps, matchedLengthOf } from "./lookupPopupProps.ts";
 import { lookupWordOf } from "./lookupWordOf.ts";
 import { popupFlashcardOf } from "./popupFlashcardOf.ts";
@@ -16,7 +15,6 @@ import {
 /**
  * Drives the dictionary pop-up for words in a text, such as subtitles or an ebook, through the screen's lookup in the store:
  * a click opens it at the word, or closes it when it shows that word already;
- * a hover looks the word up ahead of a click, and once that lookup answers an open pop-up moves to the word;
  * and a double-click or held tap turns the word into a flashcard filled from its lookup, started through `starts`.
  * Words inside the pop-up are looked up in it with a double-click, or turned into flashcards with a held tap.
  */
@@ -73,14 +71,10 @@ export function useWordLookup(
     wordOf,
     clickWord: (word: ChosenWord, input: WordHit["input"]) =>
       dispatch(actions.lookupWordClicked(word, input)),
-    restOnWord: (word: ChosenWord) =>
-      dispatch(actions.lookupWordRestedOn(word)),
     startFlashcardFor: (
       word: ChosenWord,
       destination: "save" | "editor" = "save",
     ) => dispatch(actions.lookupFlashcardRequested(word, destination)),
-    hoverWord: (word: ChosenWord) =>
-      hoverMatchLength(dispatch, word.word.query),
     openSearch: () => dispatch(actions.lookupSearchOpened()),
     close: () => dispatch(actions.lookupClosed()),
     /** Closes the pop-up for something else that keeps playback paused, such as the dictionaries settings. */

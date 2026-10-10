@@ -246,7 +246,6 @@ const meta = {
     wordGestures: {
       onWordClick: fn(),
       onWordDoubleClick: fn(),
-      onWordHoverAnswered: fn(),
       onWordHold: fn(),
     },
     onLookup: fn(),

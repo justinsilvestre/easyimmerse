@@ -6,11 +6,9 @@ import {
   clickWord,
   close,
   dropPending,
-  followsPointer,
   type LookupStep,
   openSearch,
   setAside,
-  show,
 } from "./lookupMoves.ts";
 import type { LookupPopup, LookupState, LookupWord } from "./lookupState.ts";
 import { startFlashcard } from "./startFlashcard.ts";
@@ -39,10 +37,6 @@ export function updateLookup(
   switch (action.type) {
     case "lookupWordClicked":
       return clickWord(lookup, action.chosen, action.input, player);
-    case "lookupWordRestedOn":
-      return followsPointer(lookup, action.chosen)
-        ? show(lookup, action.chosen, player)
-        : [lookup, []];
     case "lookupFlashcardRequested":
       return startFlashcard(lookup, action, player, app);
     case "lookupCursorMoved":

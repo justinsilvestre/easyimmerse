@@ -121,8 +121,8 @@ function StatefulReader(args: ReaderViewProps) {
           args.callbacks.onWordClick(clicked, input);
           setWord(clicked);
         },
-        onWordHoverAnswered: (hovered) => {
-          args.callbacks.onWordHoverAnswered?.(hovered);
+        onWordHover: (hovered) => {
+          args.callbacks.onWordHover(hovered);
           if (word) setWord(hovered);
         },
         onDismissLookup: () => {
@@ -154,7 +154,6 @@ const meta = {
       onWordClick: fn(),
       onWordDoubleClick: fn(),
       onWordHover: fn(),
-      onWordHoverAnswered: fn(),
       onWordHold: fn(),
       onDismissLookup: fn(),
       onLocationChange: fn(),
