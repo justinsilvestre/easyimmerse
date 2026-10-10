@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
+import { useElementSize } from "../../hooks/useElementSize.ts";
 import { drawBars } from "./drawBars.ts";
 import { fitCanvas } from "./fitCanvas.ts";
 import { layOutBars } from "./layOutBars.ts";
-import { useElementSize } from "./useElementSize.ts";
 
 /**
  * Draws audio peaks as evenly spaced bars mirrored around the middle, filling its container.
@@ -21,16 +21,19 @@ export function WaveformBars({
   to?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const size = useElementSize(canvasRef);
+  const { width, height } = useElementSize(canvasRef);
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx || size.widthPx === 0 || to <= from) return;
-    const pixelRatio = fitCanvas(canvas, ctx, size);
+    if (!canvas || !ctx || width === 0 || to <= from) return;
+    const pixelRatio = fitCanvas(canvas, ctx, {
+      widthPx: width,
+      heightPx: height,
+    });
     ctx.fillStyle = getComputedStyle(canvas).color;
-    const frame = { from, to, widthPx: size.widthPx, pixelRatio };
-    drawBars(ctx, layOutBars(peaks, frame), size.heightPx);
-  }, [peaks, from, to, size]);
+    const frame = { from, to, widthPx: width, pixelRatio };
+    drawBars(ctx, layOutBars(peaks, frame), height);
+  }, [peaks, from, to, width, height]);
   return (
     <canvas
       ref={canvasRef}

@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useElementSize } from "../hooks/useElementSize.ts";
 import { type PageLayout, pageLayoutOf } from "./pageLayout.ts";
 import {
   locationOfPage,
@@ -199,21 +200,6 @@ function pagedText(
   layout: PageLayout | null,
 ): PagedText | null {
   return columns && layout ? { columns, stride: layout.stride } : null;
-}
-
-function useElementSize(ref: { current: HTMLElement | null }) {
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const measure = () =>
-      setSize({ width: element.clientWidth, height: element.clientHeight });
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [ref]);
-  return size;
 }
 
 /** Whether the page's web fonts have loaded, after which text takes up a different amount of space. */

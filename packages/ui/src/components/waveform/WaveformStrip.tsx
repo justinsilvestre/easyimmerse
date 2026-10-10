@@ -1,13 +1,13 @@
 import type { Cue } from "@easyimmerse/types";
 import type { KeyboardEvent } from "react";
 import { useEffect, useRef } from "react";
+import { useElementSize } from "../../hooks/useElementSize.ts";
 import { formatPlayerTime } from "../formatPlayerTime.ts";
 import { barPeaksInView } from "./barPeaksInView.ts";
 import { drawWaveformOverlay } from "./drawWaveformOverlay.ts";
 import { fitCanvas } from "./fitCanvas.ts";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
 import type { WaveformWindows } from "./selectWaveformWindows.ts";
-import { useElementSize } from "./useElementSize.ts";
 import { useWaveformInteraction } from "./useWaveformInteraction.ts";
 import { WaveformBars } from "./WaveformBars.tsx";
 import { WaveformZoomControl } from "./WaveformZoomControl.tsx";
@@ -39,7 +39,7 @@ export type WaveformStripProps = WaveformGestureHandlers & {
 export function WaveformStrip(props: WaveformStripProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { widthPx } = useElementSize(containerRef);
+  const { width: widthPx } = useElementSize(containerRef);
   const view: WaveformView = {
     startMs: computeViewStart(
       props.currentTimeMs,
