@@ -50,7 +50,7 @@ function MainScreen({ route }: { route: MainRoute }) {
     case "offline":
       return <OfflineScreen onBack={goHome} />;
     case "newProject":
-      return <NewProjectScreen onCreated={openProject} onCancel={goHome} />;
+      return <NewProjectScreen onCancel={goHome} />;
     case "project":
     case "media":
       return (

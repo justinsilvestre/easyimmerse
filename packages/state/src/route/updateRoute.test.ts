@@ -3,6 +3,10 @@ import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import {
+  exampleProject,
+  exampleProjectSettings,
+} from "../server/exampleProject.ts";
 import type { Route } from "./route.ts";
 import { nextRoute, routeAfter } from "./updateRoute.ts";
 
@@ -113,7 +117,39 @@ const fetchDone = actions.requestSettled(
   },
 );
 
+const created = actions.requestSettled(
+  "newProject/create",
+  { kind: "createProject", settings: exampleProjectSettings },
+  { ok: true, data: exampleProject("p3") },
+);
+
 describe("routeAfter", () => {
+  it("opens the project the new project form created", () => {
+    const app = stateAfter(actions.navigated({ type: "createProject" }));
+    expect(routeAfter(app, created)).toEqual({
+      screen: "project",
+      projectId: "p3",
+    });
+  });
+
+  it("stays where the user went when a creation settles after the form was left", () => {
+    const app = stateAfter(
+      actions.navigated({ type: "createProject" }),
+      actions.navigated({ type: "goHome" }),
+    );
+    expect(routeAfter(app, created)).toEqual({ screen: "home" });
+  });
+
+  it("stays on the form when the creation failed", () => {
+    const app = stateAfter(actions.navigated({ type: "createProject" }));
+    const failed = actions.requestSettled(
+      "newProject/create",
+      { kind: "createProject", settings: exampleProjectSettings },
+      { ok: false, error: { status: 500, message: "down" } },
+    );
+    expect(routeAfter(app, failed)).toEqual({ screen: "newProject" });
+  });
+
   it("opens the media file that a settled pick names", () => {
     expect(routeAfter(stateAfter(...pickedInProject), added)).toEqual(media);
   });

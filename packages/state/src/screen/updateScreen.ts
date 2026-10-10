@@ -16,6 +16,7 @@ import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
 import { leaveWaveform } from "./mediaScreen/updateWaveform.ts";
 import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
+import { updateProjectForm } from "./projectForm/updateProjectForm.ts";
 import { endImport } from "./projectScreen/mediaImportRequests.ts";
 import {
   markOpened,
@@ -136,6 +137,8 @@ function failureNotices(action: AppAction): Effect[] {
       return [failure("The track choice could not be saved")];
     case "deleteDictionary":
       return [failure("The dictionary could not be removed")];
+    case "createProject":
+      return [failure("The project could not be created")];
     default:
       return [];
   }
@@ -156,5 +159,7 @@ function updateMainScreen(
   if (main.kind === "project" && route.screen === "project")
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);
+  if (main.kind === "newProject" && route.screen === "newProject")
+    return [main, updateProjectForm(route, action, app.operations)];
   return [main, []];
 }

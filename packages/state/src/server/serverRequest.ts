@@ -17,6 +17,8 @@ import type {
   PlaybackRequest,
   PlaybackResponse,
   PluginForm,
+  Project,
+  ProjectSettings,
   SubtitleTrack,
   SubtitleTracksResponse,
   TableLayout,
@@ -75,7 +77,8 @@ export type ServerRequest =
   | { kind: "lookupText"; query: LookupQuery }
   | { kind: "deleteDictionary"; dictionaryId: string }
   | { kind: "clearConversionCache" }
-  | { kind: "setConversionCacheBudget"; budget: ConversionCacheBudget };
+  | { kind: "setConversionCacheBudget"; budget: ConversionCacheBudget }
+  | { kind: "createProject"; settings: ProjectSettings };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -105,6 +108,7 @@ export type ServerResponses = {
   deleteDictionary: void;
   clearConversionCache: ConversionCacheStatus;
   setConversionCacheBudget: ConversionCacheStatus;
+  createProject: Project;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

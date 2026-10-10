@@ -1,9 +1,10 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Feature } from "../app/feature.ts";
+import { projectOpenedByForm } from "../screen/projectForm/projectOpenedByForm.ts";
 import { mediaFileOpenedBy } from "../screen/projectScreen/mediaFileOpenedBy.ts";
 import type { MainRoute, Route } from "./route.ts";
-import { initialRoute, navigate } from "./route.ts";
+import { initialRoute, mainScreenOf, navigate } from "./route.ts";
 
 /** Returns where the app is after an action. */
 export function nextRoute(route: Route, action: AppAction): Route {
@@ -33,8 +34,17 @@ export function nextRoute(route: Route, action: AppAction): Route {
   }
 }
 
-/** Returns where the app is after an action, including the media file that a settled pick or fetch opens. */
+/**
+ * Returns where the app is after an action, including the media file that a settled pick or fetch opens,
+ * and the project that a settled project form opens.
+ */
 export function routeAfter(app: AppState, action: AppAction): Route {
+  const project = projectOpenedByForm(mainScreenOf(app.route), action);
+  if (project !== null)
+    return withMainRoute(app.route, () => ({
+      screen: "project",
+      projectId: project,
+    }));
   const opened = mediaFileOpenedBy(app, action);
   return opened === null
     ? nextRoute(app.route, action)

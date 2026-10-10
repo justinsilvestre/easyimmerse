@@ -2,6 +2,7 @@ import type {
   AudioClip,
   FormInput,
   PlaybackEnvironment,
+  ProjectSettings,
   TableLayout,
   TrackSelection,
 } from "@easyimmerse/types";
@@ -116,6 +117,9 @@ export const screenActions = {
   /** The user dismissed the alert that a file could not be added. */
   dictionaryImportAlertDismissed: () =>
     ({ type: "dictionaryImportAlertDismissed" }) as const,
+  /** The user submitted a project form: the new project's settings, or an existing project's. */
+  projectFormSubmitted: (settings: ProjectSettings) =>
+    ({ type: "projectFormSubmitted", settings }) as const,
   /** A waveform view now shows a different stretch of the file, or its duration became known; null once it is no longer shown. */
   waveformViewChanged: (
     name: WaveformViewName,

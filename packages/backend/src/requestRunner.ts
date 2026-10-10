@@ -121,6 +121,8 @@ export const requestEndpoints = {
     backendApi.endpoints.setConversionCacheBudget.initiate(budget, {
       track: false,
     }),
+  createProject: ({ settings }) =>
+    backendApi.endpoints.createProject.initiate(settings, { track: false }),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

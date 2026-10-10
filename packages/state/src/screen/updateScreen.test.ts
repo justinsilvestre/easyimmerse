@@ -6,6 +6,7 @@ import { transientNotice } from "../notices/transientNotice.ts";
 import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { exampleProjectSettings } from "../server/exampleProject.ts";
 import { mediaFilesListed } from "./mediaScreen/playbackTestActions.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
 import { updateScreen } from "./updateScreen.ts";
@@ -374,5 +375,35 @@ describe("updateScreen", () => {
       actions.dictionaryRemovalRequested("d1"),
     );
     expect(screen.dialog).toBeNull();
+  });
+
+  it("tells that a project could not be created", () => {
+    const [, effects] = apply(
+      actions.requestSettled(
+        "newProject/create",
+        { kind: "createProject", settings: exampleProjectSettings },
+        { ok: false, error: { status: 500, message: "down" } },
+      ),
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotice",
+        content: transientNotice("danger", "The project could not be created"),
+      },
+    ]);
+  });
+
+  it("creates a project when the new project form is submitted", () => {
+    const [, effects] = apply(
+      actions.projectFormSubmitted(exampleProjectSettings),
+      actions.navigated({ type: "createProject" }),
+    );
+    expect(effects).toEqual([
+      {
+        type: "sendRequest",
+        id: "newProject/create",
+        request: { kind: "createProject", settings: exampleProjectSettings },
+      },
+    ]);
   });
 });
