@@ -1,4 +1,3 @@
-import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
 import {
@@ -83,14 +82,10 @@ function readingMoved(
 ) {
   const stored = places.reading[mediaFileId];
   if (stored && isSameLocation(location, stored)) return updated(places);
-  return updated(
-    withReading(places, mediaFileId, location),
-    ...(isSameParagraph(location, stored)
-      ? []
-      : ([
-          { type: "saveReadingLocation", mediaFileId, location },
-        ] satisfies Effect[])),
-  );
+  const moved = withReading(places, mediaFileId, location);
+  return isSameParagraph(location, stored)
+    ? updated(moved)
+    : updated(moved, { type: "saveReadingLocation", mediaFileId, location });
 }
 
 function withReading(

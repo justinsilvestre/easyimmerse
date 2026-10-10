@@ -1,7 +1,6 @@
 import type { SubtitleSelection } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
-import type { Effect } from "../../app/effect.ts";
 import { updated } from "../../app/updated.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import type { MediaScreenState } from "../screenState.ts";
@@ -29,5 +28,5 @@ export function updateSubtitleSelection(
       mediaFileId,
       selection,
     },
-  } satisfies Effect);
+  });
 }

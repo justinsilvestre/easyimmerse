@@ -22,10 +22,10 @@ export function updateDialog(
 ) {
   switch (action.type) {
     case "subtitleFilePickRequested":
-      return updated({ kind: "filePick", for: "subtitles" } as const, {
-        type: "pickFile",
-        accept: subtitleFileExtensions,
-      });
+      return updated(
+        { kind: "filePick", for: "subtitles" },
+        { type: "pickFile", accept: subtitleFileExtensions },
+      );
     case "subtitleFileChosen":
     case "subtitleFilePickCancelled":
       return updated(dialog?.kind === "filePick" ? null : dialog);
@@ -40,14 +40,14 @@ export function updateDialog(
         accept: dictionaryFileExtensions,
       });
     case "subtitleAppearanceOpened":
-      return updated({ kind: "subtitleAppearance" } as const);
+      return updated({ kind: "subtitleAppearance" });
     case "subtitleAppearanceClosed":
       return updated(dialog?.kind === "subtitleAppearance" ? null : dialog);
     case "dictionaryRemovalRequested":
       return updated({
         kind: "removeDictionary",
         dictionaryId: action.dictionaryId,
-      } as const);
+      });
     case "dictionaryRemovalConfirmed":
     case "dictionaryRemovalCancelled":
       return updated(dialog?.kind === "removeDictionary" ? null : dialog);

@@ -16,7 +16,7 @@ const picturesRequestId = (mediaFileId: string) =>
 export function picturesProbeOf(action: AppAction, route: MediaRoute) {
   const ids = playbackRequestIds(route.mediaFileId);
   if (!isSettled(action, ids.mediaFile, "listMediaFiles") || !action.outcome.ok)
-    return [] satisfies Effect[];
+    return [];
   const file = action.outcome.data.media_files.find(
     ({ id }) => id === route.mediaFileId,
   );
@@ -25,7 +25,7 @@ export function picturesProbeOf(action: AppAction, route: MediaRoute) {
     isAudioFileName(file.name) ||
     isDocumentFileName(file.name)
   )
-    return [] satisfies Effect[];
+    return [];
   const { name, source } = file;
   return [
     {

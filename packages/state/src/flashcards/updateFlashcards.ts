@@ -42,7 +42,7 @@ export const updateFlashcards: FeatureUpdate<FlashcardsState> = (
   const step = stepFlashcardForm(app, action);
   const context = { app, outbox: createFlashcardOutbox(step.requestCount) };
   const stepped = withFormStep(state, step);
-  const ruled = [
+  const afterRules = [
     saveStarted,
     takeFinished,
     updateSlice,
@@ -51,7 +51,9 @@ export const updateFlashcards: FeatureUpdate<FlashcardsState> = (
   ].reduce((next, rule) => rule(next, action, context), stepped);
   const requestCount = context.outbox.count();
   const next =
-    requestCount === state.requestCount ? ruled : { ...ruled, requestCount };
+    requestCount === state.requestCount
+      ? afterRules
+      : { ...afterRules, requestCount };
   return updated(next, ...step.effects, ...context.outbox.effects());
 };
 

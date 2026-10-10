@@ -1,6 +1,5 @@
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
-import type { Effect } from "../app/effect.ts";
 import { updated } from "../app/updated.ts";
 import { isAborted } from "../server/isAborted.ts";
 import type { RequestOutcome } from "../server/serverRequest.ts";
@@ -23,19 +22,15 @@ export function updateJobs(jobs: JobsState, action: AppAction) {
       const job = jobs[action.id];
       if (job === undefined || isAborted(action.outcome)) return updated(jobs);
       const checked = checkedJob(job, action.outcome);
-      return updated(
-        { ...jobs, [action.id]: checked },
-        ...(checked.status === "running"
-          ? [
-              {
-                type: "startTimer",
-                id: action.id,
-                ms: pollingIntervalMs[job.kind],
-                action: actions.jobPollDue(action.id),
-              },
-            ]
-          : []),
-      );
+      const next = { ...jobs, [action.id]: checked };
+      return checked.status === "running"
+        ? updated(next, {
+            type: "startTimer",
+            id: action.id,
+            ms: pollingIntervalMs[job.kind],
+            action: actions.jobPollDue(action.id),
+          })
+        : updated(next);
     }
     case "jobPollDue": {
       const job = jobs[action.key];

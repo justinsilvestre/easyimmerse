@@ -29,12 +29,12 @@ export function updateDictionaryImport(
       const { file } = action;
       return isTableFile(file.name)
         ? updated(
-            { stage: "previewing", file } satisfies DictionaryImportWizard,
+            { stage: "previewing", file },
             ...stopWatching(wizard),
             previewRequest(file),
           )
         : updated(
-            { stage: "starting", file } satisfies DictionaryImportWizard,
+            { stage: "starting", file },
             ...stopWatching(wizard),
             importRequest(file, null),
           );
@@ -54,10 +54,7 @@ export function updateDictionaryImport(
       return wizard?.stage === "choosingColumns" &&
         termHint(wizard.layout) === null
         ? updated(
-            {
-              stage: "starting",
-              file: wizard.file,
-            } satisfies DictionaryImportWizard,
+            { stage: "starting", file: wizard.file },
             importRequest(wizard.file, wizard.layout),
           )
         : updated(wizard);

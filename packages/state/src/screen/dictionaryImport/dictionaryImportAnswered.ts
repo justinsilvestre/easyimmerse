@@ -1,4 +1,3 @@
-import type { Effect } from "../../app/effect.ts";
 import { updated } from "../../app/updated.ts";
 import { transientNotice } from "../../notices/transientNotice.ts";
 import { jobKey } from "../../operations/jobs.ts";
@@ -32,7 +31,7 @@ export function dictionaryImportAnswered(
           file: wizard.file,
           preview: action.outcome.data,
           layout: action.outcome.data.layout,
-        } satisfies DictionaryImportWizard)
+        })
       : updated(failedImport(wizard.file.name, action.outcome.error));
   if (
     wizard.stage === "starting" &&
@@ -44,7 +43,7 @@ export function dictionaryImportAnswered(
             stage: "importing",
             file: wizard.file,
             jobId: action.outcome.data.id,
-          } satisfies DictionaryImportWizard,
+          },
           watchImportJob(action.outcome.data.id),
         )
       : updated(failedImport(wizard.file.name, action.outcome.error));
@@ -69,7 +68,7 @@ function importJobChecked(
     return updated(null, ...stop, {
       type: "showNotice",
       content: transientNotice("success", `Added ${dictionary.title}`),
-    } satisfies Effect);
+    });
   if (state === "failed" && error !== null)
     return updated(failedImport(wizard.file.name, error), ...stop);
   return updated(wizard);

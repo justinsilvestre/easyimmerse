@@ -1,6 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
-import type { Effect } from "../../app/effect.ts";
 import { updated } from "../../app/updated.ts";
 import type { RequestSettled } from "../../server/serverRequest.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
@@ -42,7 +41,7 @@ export function hoverWord(
     type: "sendRequest",
     id,
     request: { kind: "lookupText", query },
-  } satisfies Effect);
+  });
 }
 
 /** Takes a hover lookup's answer, when it is for the word the pointer is still on. A failed lookup matched nothing. */

@@ -1,5 +1,4 @@
 import type { AppAction } from "../app/appAction.ts";
-import type { Effect } from "../app/effect.ts";
 import { updated } from "../app/updated.ts";
 import type { Route } from "../route/route.ts";
 import { settingsPageOf } from "../route/route.ts";
@@ -36,7 +35,7 @@ export function updateSettings(
       : updated(null);
   const removalEffects =
     page === "dictionaries" && action.type === "dictionaryRemovalConfirmed"
-      ? ([removeDictionary(action.dictionaryId)] satisfies Effect[])
+      ? [removeDictionary(action.dictionaryId)]
       : [];
   const isUnchanged =
     settings !== null &&

@@ -23,15 +23,18 @@ export function updateSubtitlePick(
   switch (action.type) {
     case "subtitleFileChosen":
       // The new track's role depends on the current selection, which the listing returns.
-      return updated({ ...screen, pendingSubtitleFile: action.file }, {
-        type: "sendRequest",
-        id: tracksRequestId(route),
-        request: {
-          kind: "listSubtitleTracks",
-          projectId: route.projectId,
-          mediaFileId: route.mediaFileId,
+      return updated(
+        { ...screen, pendingSubtitleFile: action.file },
+        {
+          type: "sendRequest",
+          id: tracksRequestId(route),
+          request: {
+            kind: "listSubtitleTracks",
+            projectId: route.projectId,
+            mediaFileId: route.mediaFileId,
+          },
         },
-      } satisfies Effect);
+      );
     case "requestSettled": {
       const pending = screen.pendingSubtitleFile;
       if (

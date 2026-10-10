@@ -65,7 +65,7 @@ export function updateLookup(
       return updated({
         ...lookup,
         size: lookup.size === "compact" ? "expanded" : "compact",
-      } satisfies LookupState);
+      });
     case "playerPlayingChanged":
       return updated(
         action.isPlaying && lookup.pausedPlayback

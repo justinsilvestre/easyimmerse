@@ -34,17 +34,12 @@ export function saveOnLeaving(
     left,
     left.player.currentTimeSeconds,
   );
-  return updated(
-    remembered,
-    ...(location
-      ? [
-          {
-            type: "saveReadingLocation",
-            mediaFileId: left.mediaFileId,
-            location,
-          } as const,
-          ...effects,
-        ]
-      : effects),
-  );
+  const { mediaFileId } = left;
+  return location
+    ? updated(
+        remembered,
+        { type: "saveReadingLocation", mediaFileId, location },
+        ...effects,
+      )
+    : updated(remembered, ...effects);
 }

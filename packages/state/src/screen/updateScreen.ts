@@ -1,6 +1,5 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
-import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
 import type { MainRoute, Route } from "../route/route.ts";
@@ -90,10 +89,7 @@ export const screenFeature: Feature<ScreenState> = {
 };
 
 /** Stops the work that belongs to a main screen being replaced. */
-function leavingEffects(
-  main: MainScreenState,
-  route: MainRoute,
-): readonly Effect[] {
+function leavingEffects(main: MainScreenState, route: MainRoute) {
   if (main.kind === "project" && route.screen === "project")
     return endImport(route.projectId, main.mediaImport);
   if (main.kind === "media" && route.screen === "media")
@@ -106,7 +102,7 @@ function leavingEffects(
 }
 
 /** Starts the work a main screen does as it opens. */
-function enteringEffects(route: MainRoute): Effect[] {
+function enteringEffects(route: MainRoute) {
   return route.screen === "media" ? [mediaFileRequest(route)] : [];
 }
 

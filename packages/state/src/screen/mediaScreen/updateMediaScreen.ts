@@ -1,6 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
+import type { Update } from "../../app/update.ts";
 import { updated } from "../../app/updated.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { updateLookup } from "../lookup/updateLookup.ts";
@@ -24,7 +25,7 @@ type MediaScreenUpdate = (
   action: AppAction,
   route: MediaRoute,
   app: AppState,
-) => readonly [MediaScreenState, readonly Effect[]];
+) => Update<MediaScreenState, Effect>;
 
 /** The parts of the media screen's update, in the order each sees an action. The loop comes after the player has recorded a time, and the clip Play after the loop has moved it. */
 const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
@@ -99,8 +100,8 @@ export function updateMediaScreen(
   let next = screen;
   const effects: Effect[] = [];
   for (const update of mediaScreenUpdates) {
-    const [updatedScreen, partEffects] = update(next, action, route, app);
-    next = updatedScreen;
+    const [partScreen, partEffects] = update(next, action, route, app);
+    next = partScreen;
     effects.push(...partEffects);
   }
   return updated(next, ...effects);

@@ -38,9 +38,7 @@ export function showsOccurrence(
 /** Pauses playing playback for the open pop-up, and remembers that it did. A paused player is left alone. */
 export function hold(lookup: LookupState, player: PlayerState) {
   return player.isPlaying
-    ? updated({ ...lookup, pausedPlayback: true }, {
-        type: "pausePlayer",
-      } satisfies Effect)
+    ? updated({ ...lookup, pausedPlayback: true }, { type: "pausePlayer" })
     : updated(lookup);
 }
 
@@ -94,14 +92,14 @@ export function openSearch(lookup: LookupState, player: PlayerState) {
 
 /** Closes the pop-up, drops a waiting flashcard, and resumes playback if the pop-up paused it. */
 export function close(lookup: LookupState) {
-  const resume = lookup.pausedPlayback
-    ? ([{ type: "playPlayer" }] satisfies Effect[])
-    : [];
-  return updated(
-    { ...dropPending(lookup), ...closedPopup, pausedPlayback: false },
-    cancelCloseTimer,
-    ...resume,
-  );
+  const closed = {
+    ...dropPending(lookup),
+    ...closedPopup,
+    pausedPlayback: false,
+  };
+  return lookup.pausedPlayback
+    ? updated(closed, cancelCloseTimer, { type: "playPlayer" })
+    : updated(closed, cancelCloseTimer);
 }
 
 /** Closes the pop-up for something that keeps playback paused, such as a flashcard. */
