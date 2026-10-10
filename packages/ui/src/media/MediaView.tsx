@@ -1,3 +1,4 @@
+import type { SubtitleDisplay } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import clsx from "clsx";
 import { ArrowLeft } from "lucide-react";
@@ -22,7 +23,7 @@ import { SourceChip } from "./SourceChip.tsx";
 import { SubtitleAppearanceDialog } from "./SubtitleAppearanceDialog.tsx";
 import { SubtitleBand } from "./SubtitleBand.tsx";
 import { SubtitleLookupButtons } from "./SubtitleLookupButtons.tsx";
-import { type SubtitleDisplay, SubtitleOverlay } from "./SubtitleOverlay.tsx";
+import { SubtitleOverlay } from "./SubtitleOverlay.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 import type { SubtitleAppearance } from "./subtitleAppearance.ts";
 import {

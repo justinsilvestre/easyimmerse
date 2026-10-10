@@ -37,6 +37,18 @@ export const screenActions = {
   /** The clip of the flashcard open in the editor has new edges. */
   editedClipMoved: (clip: AudioClip) =>
     ({ type: "editedClipMoved", clip }) as const,
+  /** The user opened or closed the media screen's subtitles panel. */
+  cuePanelToggled: () => ({ type: "cuePanelToggled" }) as const,
+  /** The user showed or hid the media screen's waveform. */
+  waveformToggled: () => ({ type: "waveformToggled" }) as const,
+  /** The user moved on to the next choice of subtitles over the stage: both, the target language, or the translation. */
+  subtitleDisplayCycled: () => ({ type: "subtitleDisplayCycled" }) as const,
+  /** The user hid or showed the subtitles over the stage. */
+  subtitlesToggled: () => ({ type: "subtitlesToggled" }) as const,
+  subtitleAppearanceOpened: () =>
+    ({ type: "subtitleAppearanceOpened" }) as const,
+  subtitleAppearanceClosed: () =>
+    ({ type: "subtitleAppearanceClosed" }) as const,
   /** The user asked to play a flashcard's clip from its start, pausing at its end. */
   clipPlayRequested: (clip: AudioClip) =>
     ({ type: "clipPlayRequested", clip }) as const,

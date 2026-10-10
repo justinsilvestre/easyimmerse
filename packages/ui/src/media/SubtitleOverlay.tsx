@@ -1,3 +1,4 @@
+import type { SubtitleDisplay } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { memo } from "react";
 import { ClickableText, stripMarkup } from "../components/ClickableText.tsx";
@@ -13,9 +14,6 @@ import {
 import type { SubtitleAppearance } from "./subtitleAppearance.ts";
 import { subtitleBoxStyles } from "./subtitleBoxStyles.ts";
 import { useFocusFollowsCue } from "./useFocusFollowsCue.ts";
-
-/** Which subtitles lie over the video: both with the target language on top, or one of them. */
-export type SubtitleDisplay = "both" | "target" | "translation";
 
 /**
  * The subtitles of the media screen, in a clear box across the whole width of the stage,

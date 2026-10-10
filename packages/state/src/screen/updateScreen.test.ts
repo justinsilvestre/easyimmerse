@@ -292,6 +292,15 @@ describe("updateScreen", () => {
     expect(screen.dialog).toBeNull();
   });
 
+  it("closes the subtitle appearance dialog when the media screen is left", () => {
+    const [screen] = apply(
+      actions.closeMedia(),
+      actions.openMediaFileRequested("p1", "m1"),
+      actions.subtitleAppearanceOpened(),
+    );
+    expect(screen.dialog).toBeNull();
+  });
+
   it("returns a notice when the track choice could not be saved", () => {
     const [, effects] = apply(
       actions.requestSettled(

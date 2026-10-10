@@ -6,6 +6,8 @@ import { initialStoredPlaces } from "../storedPlaces/storedPlacesState.ts";
 import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
 import type { LookupState } from "./lookup/lookupState.ts";
 import { initialLookup } from "./lookup/lookupState.ts";
+import type { MediaPanels } from "./mediaScreen/mediaPanels.ts";
+import { initialMediaPanels } from "./mediaScreen/mediaPanels.ts";
 import type { PathPlayback } from "./mediaScreen/pathPlayback.ts";
 import type { PlayerState } from "./mediaScreen/playerState.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
@@ -28,6 +30,7 @@ export type MediaScreenState = {
   /** A picked subtitles file waiting to be added to the open media file. */
   pendingSubtitleFile: PickedFile | null;
   waveform: WaveformState;
+  panels: MediaPanels;
   /** The dictionary pop-up and the flashcard waiting for a word's lookup, in the subtitles or in a book. */
   lookup: LookupState;
 };
@@ -78,6 +81,8 @@ export type ScreenState = {
       }
     /** The notice that the open file is converted as it plays, with the state of its "Don't show this again" box. */
     | { kind: "conversionNotice"; dismissForGood: boolean }
+    /** The media screen's dialog for the size and look of the subtitles over the stage. */
+    | { kind: "subtitleAppearance" }
     | null;
 };
 
@@ -105,6 +110,7 @@ export function initialMainScreen(
         playback: null,
         pendingSubtitleFile: null,
         waveform: initialWaveform,
+        panels: initialMediaPanels,
         lookup: initialLookup,
       };
   }

@@ -49,7 +49,7 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
     app,
   );
   const dialog =
-    isLeaving && isPlaybackDialog(updatedDialog) ? null : updatedDialog;
+    isLeaving && isMediaScreenDialog(updatedDialog) ? null : updatedDialog;
   const [settings, settingsEffects] = updateSettings(
     screen.settings,
     action,
@@ -92,9 +92,13 @@ function enteringEffects(route: MainRoute): Effect[] {
   return route.screen === "media" ? [mediaFileRequest(route)] : [];
 }
 
-/** Tells whether a dialog belongs to the media screen's playback, which closes with the screen. */
-function isPlaybackDialog(dialog: ScreenState["dialog"]): boolean {
-  return dialog?.kind === "trackChoice" || dialog?.kind === "conversionNotice";
+/** Tells whether a dialog belongs to the media screen, which closes with the screen. */
+function isMediaScreenDialog(dialog: ScreenState["dialog"]): boolean {
+  return (
+    dialog?.kind === "trackChoice" ||
+    dialog?.kind === "conversionNotice" ||
+    dialog?.kind === "subtitleAppearance"
+  );
 }
 
 /** Tells the user that adding a picked file or saving a track choice failed, even when its screen has gone by the time the failure arrives. */

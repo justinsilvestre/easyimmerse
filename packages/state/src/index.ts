@@ -88,6 +88,10 @@ export {
   findCueAt,
   findCueShownAt,
 } from "./screen/mediaScreen/findCue.ts";
+export {
+  type SubtitleDisplay,
+  selectMediaPanels,
+} from "./screen/mediaScreen/mediaPanels.ts";
 export type { PathPlayback } from "./screen/mediaScreen/pathPlayback.ts";
 export {
   needsTrackChoice,

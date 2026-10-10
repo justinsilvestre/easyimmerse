@@ -83,4 +83,22 @@ describe("updateDialog", () => {
       { type: "pickDictionaryFile", accept: dictionaryFileExtensions },
     ]);
   });
+
+  it("opens the subtitle appearance dialog for subtitleAppearanceOpened", () => {
+    const [dialog] = applyDialog(null, actions.subtitleAppearanceOpened());
+    expect(dialog).toEqual({ kind: "subtitleAppearance" });
+  });
+
+  it("closes the subtitle appearance dialog for subtitleAppearanceClosed", () => {
+    const [dialog] = applyDialog(
+      { kind: "subtitleAppearance" },
+      actions.subtitleAppearanceClosed(),
+    );
+    expect(dialog).toBeNull();
+  });
+
+  it("leaves another dialog open for subtitleAppearanceClosed", () => {
+    const [dialog] = applyDialog(picking, actions.subtitleAppearanceClosed());
+    expect(dialog).toBe(picking);
+  });
 });

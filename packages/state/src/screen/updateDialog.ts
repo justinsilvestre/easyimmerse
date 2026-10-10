@@ -12,6 +12,7 @@ const subtitleFileExtensions: readonly string[] = [".srt", ".vtt"];
 
 /**
  * Opens the platform's file picker for a pick request, and marks the subtitles pick as open until it ends.
+ * Opens and closes the media screen's subtitle appearance dialog.
  * The media screen's playback dialogs follow `updatePlaybackDialog`. `app` is the state before the action.
  */
 export function updateDialog(
@@ -35,6 +36,10 @@ export function updateDialog(
         dialog,
         [{ type: "pickDictionaryFile", accept: dictionaryFileExtensions }],
       ];
+    case "subtitleAppearanceOpened":
+      return [{ kind: "subtitleAppearance" }, []];
+    case "subtitleAppearanceClosed":
+      return [dialog?.kind === "subtitleAppearance" ? null : dialog, []];
     default:
       return [updatePlaybackDialog(dialog, action, app), []];
   }

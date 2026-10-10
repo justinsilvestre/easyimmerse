@@ -41,6 +41,11 @@ describe("updateMediaScreen", () => {
     expect(effects).toEqual([{ type: "pausePlayer" }]);
   });
 
+  it("shows the waveform for waveformToggled", () => {
+    const [screen] = apply(actions.waveformToggled());
+    expect(screen.panels.waveform).toBe(true);
+  });
+
   it("seeks the player for seekRequested", () => {
     const [, effects] = apply(actions.seekRequested(12.5));
     expect(effects).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);

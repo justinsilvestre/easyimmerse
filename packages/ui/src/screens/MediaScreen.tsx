@@ -1,13 +1,15 @@
 import { useListPluginsQuery } from "@easyimmerse/backend";
 import {
   actions,
+  selectDialog,
+  selectMediaPanels,
   selectPlayer,
   selectPlayerControls,
   selectPreference,
   selectShownCue,
 } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
-import { useMemo, useReducer, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
@@ -34,7 +36,6 @@ import { cuesToPrefetch } from "../media/cuesToPrefetch.ts";
 import { findAdjacentCue, findTranslationOf } from "../media/findCue.ts";
 import { flashcardWordRanges } from "../media/flashcardWordRanges.ts";
 import { MediaView } from "../media/MediaView.tsx";
-import { initialMediaPanels, reduceMediaPanels } from "../media/mediaPanels.ts";
 import { mediaSourceOf } from "../media/mediaSourceOf.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
@@ -92,10 +93,9 @@ export function MediaScreen({
   );
   const hasScreenshots = screenshotSource !== null;
   const flashcards = useMediaFlashcards(projectId, mediaFileId, hasScreenshots);
-  const [panels, dispatchPanels] = useReducer(
-    reduceMediaPanels,
-    initialMediaPanels,
-  );
+  const panels = useAppSelector(selectMediaPanels);
+  const isSubtitleAppearanceOpen =
+    useAppSelector(selectDialog)?.kind === "subtitleAppearance";
   // Computed once per change of either list, so that each cue's ranges keep their identity and its memoised card does not render again.
   const wordRanges = useMemo(
     () => flashcardWordRanges(flashcards.flashcards, subtitles.cues),
@@ -196,15 +196,15 @@ export function MediaScreen({
     onVolumeChange: (volume) => dispatch(actions.volumeChangeRequested(volume)),
     onToggleMute: () => dispatch(actions.muteToggleRequested()),
     onSpeedChange: (speed) => dispatch(actions.speedChangeRequested(speed)),
-    onToggleSubtitleDisplay: () =>
-      dispatchPanels({ type: "subtitleDisplayCycled" }),
-    onToggleSubtitles: () => dispatchPanels({ type: "subtitlesToggled" }),
+    onToggleSubtitleDisplay: () => dispatch(actions.subtitleDisplayCycled()),
+    onToggleSubtitles: () => dispatch(actions.subtitlesToggled()),
     onOpenSubtitleAppearance: () =>
-      dispatchPanels({ type: "subtitleAppearanceOpened" }),
+      dispatch(actions.subtitleAppearanceOpened()),
+    // The editor takes the side panel while a card is open. Transitional until the open card is in the store.
     onToggleCuePanel: () => {
-      if (!isEditorOpen) dispatchPanels({ type: "cuePanelToggled" });
+      if (!isEditorOpen) dispatch(actions.cuePanelToggled());
     },
-    onToggleWaveform: () => dispatchPanels({ type: "waveformToggled" }),
+    onToggleWaveform: () => dispatch(actions.waveformToggled()),
     onToggleFullscreen: fullscreen.isSupported ? fullscreen.toggle : undefined,
     onOpenTracks: canChooseTracks
       ? () => dispatch(actions.trackChoiceRequested())
@@ -277,7 +277,7 @@ export function MediaScreen({
         panels={shownPanels}
         subtitleDisplay={panels.subtitleDisplay}
         subtitleAppearance={subtitleAppearance}
-        isSubtitleAppearanceOpen={panels.isSubtitleAppearanceOpen}
+        isSubtitleAppearanceOpen={isSubtitleAppearanceOpen}
         onSubtitleAppearanceChange={(appearance) =>
           dispatch(
             actions.preferenceSet(
@@ -287,7 +287,7 @@ export function MediaScreen({
           )
         }
         onCloseSubtitleAppearance={() =>
-          dispatchPanels({ type: "subtitleAppearanceClosed" })
+          dispatch(actions.subtitleAppearanceClosed())
         }
         flashcardWordRanges={wordRanges}
         playerCallbacks={playerCallbacks}
