@@ -88,10 +88,7 @@ export {
   findCueAt,
   findCueShownAt,
 } from "./screen/mediaScreen/findCue.ts";
-export {
-  type SubtitleDisplay,
-  selectMediaPanels,
-} from "./screen/mediaScreen/mediaPanels.ts";
+export type { SubtitleDisplay } from "./screen/mediaScreen/mediaPanels.ts";
 export type { PathPlayback } from "./screen/mediaScreen/pathPlayback.ts";
 export {
   needsTrackChoice,
@@ -120,6 +117,8 @@ export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
 export { skippedSubtitlesMessage } from "./screen/projectScreen/skippedSubtitlesMessage.ts";
 export {
   selectCurrentTime,
+  selectIsSubtitleAppearanceOpen,
+  selectMediaPanels,
   selectOfflineCues,
   selectOfflineParseFailed,
   selectPendingFilePick,

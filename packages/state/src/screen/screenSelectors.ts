@@ -1,5 +1,7 @@
 import type { Cue } from "@easyimmerse/types";
 import type { RootState } from "../app/createAppStore.ts";
+import type { MediaPanels } from "./mediaScreen/mediaPanels.ts";
+import { initialMediaPanels } from "./mediaScreen/mediaPanels.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
 
 /** Returns the open media file's player, or an idle player when no media screen is open. */
@@ -24,6 +26,16 @@ export const selectPlayerFailure = (
   const { failure } = selectPlayer(state);
   return failure !== null && failure.url === url ? failure.cause : null;
 };
+
+/** Returns the open media screen's panels, or the panels a media screen starts with while none is open. */
+export const selectMediaPanels = (state: RootState): MediaPanels =>
+  state.app.screen.main.kind === "media"
+    ? state.app.screen.main.panels
+    : initialMediaPanels;
+
+/** Tells whether the media screen's subtitle appearance dialog is open. */
+export const selectIsSubtitleAppearanceOpen = (state: RootState) =>
+  state.app.screen.dialog?.kind === "subtitleAppearance";
 
 /** Tells whether the platform's file picker is open for a subtitles file. */
 export const selectPendingFilePick = (state: RootState) =>

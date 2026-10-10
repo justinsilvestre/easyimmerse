@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
-import { stateAfter } from "../../app/stateAfter.ts";
-import {
-  initialMediaPanels,
-  selectMediaPanels,
-  updateMediaPanels,
-} from "./mediaPanels.ts";
+import { initialMediaPanels, updateMediaPanels } from "./mediaPanels.ts";
 
 describe("initialMediaPanels", () => {
   it("opens the subtitles panel", () => {
@@ -79,31 +74,5 @@ describe("updateMediaPanels", () => {
     expect(
       updateMediaPanels(initialMediaPanels, actions.playerTimeChanged(3)),
     ).toBe(initialMediaPanels);
-  });
-});
-
-describe("selectMediaPanels", () => {
-  const openM1 = actions.openMediaFileRequested("p1", "m1");
-
-  it("returns the open media screen's panels", () => {
-    const state = { app: stateAfter(openM1, actions.waveformToggled()) };
-    expect(selectMediaPanels(state).waveform).toBe(true);
-  });
-
-  it("returns the panels a media screen starts with once another file opens", () => {
-    const state = {
-      app: stateAfter(
-        openM1,
-        actions.waveformToggled(),
-        actions.openMediaFileRequested("p1", "m2"),
-      ),
-    };
-    expect(selectMediaPanels(state)).toEqual(initialMediaPanels);
-  });
-
-  it("returns the panels a media screen starts with while none is open", () => {
-    expect(selectMediaPanels({ app: stateAfter() })).toEqual(
-      initialMediaPanels,
-    );
   });
 });

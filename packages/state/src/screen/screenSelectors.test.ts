@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
+import { initialMediaPanels } from "./mediaScreen/mediaPanels.ts";
 import {
   selectCurrentTime,
+  selectIsSubtitleAppearanceOpen,
+  selectMediaPanels,
   selectOfflineCues,
   selectOfflineParseFailed,
   selectPendingFilePick,
@@ -112,6 +115,48 @@ describe("screenSelectors", () => {
         ),
       };
       expect(selectPlayerFailure(reopened, "a.mp4")).toBeNull();
+    });
+  });
+
+  describe("selectMediaPanels", () => {
+    const openM1 = actions.openMediaFileRequested("p1", "m1");
+
+    it("returns the open media screen's panels", () => {
+      const state = { app: stateAfter(openM1, actions.waveformToggled()) };
+      expect(selectMediaPanels(state).waveform).toBe(true);
+    });
+
+    it("returns the panels a media screen starts with once another file opens", () => {
+      const state = {
+        app: stateAfter(
+          openM1,
+          actions.waveformToggled(),
+          actions.openMediaFileRequested("p1", "m2"),
+        ),
+      };
+      expect(selectMediaPanels(state)).toEqual(initialMediaPanels);
+    });
+
+    it("returns the panels a media screen starts with while none is open", () => {
+      expect(selectMediaPanels({ app: stateAfter() })).toEqual(
+        initialMediaPanels,
+      );
+    });
+  });
+
+  describe("selectIsSubtitleAppearanceOpen", () => {
+    it("tells that the subtitle appearance dialog is open", () => {
+      const state = {
+        app: stateAfter(
+          actions.openMediaFileRequested("p1", "m1"),
+          actions.subtitleAppearanceOpened(),
+        ),
+      };
+      expect(selectIsSubtitleAppearanceOpen(state)).toBe(true);
+    });
+
+    it("tells that it is closed while another dialog is open", () => {
+      expect(selectIsSubtitleAppearanceOpen(playing)).toBe(false);
     });
   });
 });

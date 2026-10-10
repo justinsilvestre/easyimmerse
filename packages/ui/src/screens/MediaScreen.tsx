@@ -1,7 +1,7 @@
 import { useListPluginsQuery } from "@easyimmerse/backend";
 import {
   actions,
-  selectDialog,
+  selectIsSubtitleAppearanceOpen,
   selectMediaPanels,
   selectPlayer,
   selectPlayerControls,
@@ -94,8 +94,9 @@ export function MediaScreen({
   const hasScreenshots = screenshotSource !== null;
   const flashcards = useMediaFlashcards(projectId, mediaFileId, hasScreenshots);
   const panels = useAppSelector(selectMediaPanels);
-  const isSubtitleAppearanceOpen =
-    useAppSelector(selectDialog)?.kind === "subtitleAppearance";
+  const isSubtitleAppearanceOpen = useAppSelector(
+    selectIsSubtitleAppearanceOpen,
+  );
   // Computed once per change of either list, so that each cue's ranges keep their identity and its memoised card does not render again.
   const wordRanges = useMemo(
     () => flashcardWordRanges(flashcards.flashcards, subtitles.cues),

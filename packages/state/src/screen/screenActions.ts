@@ -45,8 +45,10 @@ export const screenActions = {
   subtitleDisplayCycled: () => ({ type: "subtitleDisplayCycled" }) as const,
   /** The user hid or showed the subtitles over the stage. */
   subtitlesToggled: () => ({ type: "subtitlesToggled" }) as const,
+  /** The user opened the dialog for the size and look of the subtitles over the stage. */
   subtitleAppearanceOpened: () =>
     ({ type: "subtitleAppearanceOpened" }) as const,
+  /** The user closed the subtitle appearance dialog. */
   subtitleAppearanceClosed: () =>
     ({ type: "subtitleAppearanceClosed" }) as const,
   /** The user asked to play a flashcard's clip from its start, pausing at its end. */

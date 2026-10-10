@@ -1,5 +1,4 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { RootState } from "../../app/createAppStore.ts";
 
 /** Which subtitles lie over the media screen's stage: both languages, or one of them alone. */
 export type SubtitleDisplay = "both" | "target" | "translation";
@@ -48,9 +47,3 @@ export function updateMediaPanels(
       return panels;
   }
 }
-
-/** Returns the open media screen's panels, or the panels a media screen starts with while none is open. */
-export const selectMediaPanels = (state: RootState): MediaPanels =>
-  state.app.screen.main.kind === "media"
-    ? state.app.screen.main.panels
-    : initialMediaPanels;
