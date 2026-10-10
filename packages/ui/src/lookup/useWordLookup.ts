@@ -32,21 +32,15 @@ export function useWordLookup(
   const chosen = lookup?.popup?.chosen ?? null;
   const wordOf = (term: string, text: Parameters<typeof lookupWordOf>[1]) =>
     lookupWordOf(term, text, languages.target, display.isCovered);
-  /** A word inside the pop-up, at the place of the word the pop-up shows. */
-  const inPopup = (term: string): ChosenWord => ({
-    word: wordOf(term, { text: term }),
-    source: chosen?.source ?? null,
-    occurrence: null,
-    anchor: chosen?.anchor ?? null,
-  });
   return {
     popup: lookupPopupProps(lookup, popupId, display, {
-      onSearch: (term) =>
-        dispatch(actions.lookupTermSearched(inPopup(term.trim()).word)),
-      wordActions: {
-        onFlashcard: (term) =>
-          dispatch(actions.lookupFlashcardRequested(inPopup(term), "save")),
+      onSearch: (term) => {
+        const trimmed = term.trim();
+        dispatch(
+          actions.lookupTermSearched(wordOf(trimmed, { text: trimmed })),
+        );
       },
+      onWordHold: (term) => dispatch(actions.lookupPopupWordHeld(term)),
       onCreateFlashcard: (entryIndex) => {
         const { results, dictionaries } = display;
         const flashcard = popupFlashcardOf(

@@ -156,7 +156,7 @@ describe("DictionaryPopup", () => {
         state={foundState}
         resolveMediaUrl={() => null}
         mode="word"
-        wordActions={{ onFlashcard: (word) => flashcards.push(word) }}
+        onWordHold={(word) => flashcards.push(word)}
         onSearch={() => undefined}
         onCreateFlashcard={() => undefined}
         onClose={() => undefined}

@@ -11,7 +11,7 @@ import { yomitanClassName } from "./yomitanClassName.ts";
 
 /**
  * Renders one definition in the form its dictionary wrote it: plain text, Yomitan structured content, HTML, Pango or XDXF markup, or a pointer to a base form.
- * Double-clicked words go to `onWordLookup`, links to other headwords go to `onLookup`, and images come from `resolveMediaUrl`. Nothing in a definition can run code or load remote resources.
+ * Double-clicked words go to `onWordLookup`, held words to `onWordHold`, links to other headwords go to `onLookup`, and images come from `resolveMediaUrl`. Nothing in a definition can run code or load remote resources.
  * Place it inside its dictionary's `DictionaryScope`, where `DictionaryStylesheets` applies the dictionary's own stylesheet.
  */
 export function DefinitionView({
@@ -19,12 +19,14 @@ export function DefinitionView({
   dictionaryId,
   resolveMediaUrl,
   onWordLookup,
+  onWordHold,
   onLookup,
 }: {
   definition: Definition;
   dictionaryId: string;
   resolveMediaUrl: ResolveMediaUrl;
   onWordLookup: (word: string) => void;
+  onWordHold?: (word: string) => void;
   onLookup: (term: string) => void;
 }) {
   return (
@@ -33,6 +35,7 @@ export function DefinitionView({
         dictionaryId,
         resolveMediaUrl,
         onWordLookup,
+        onWordHold,
         onLookup,
         isPlainText: false,
       }}

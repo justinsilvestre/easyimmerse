@@ -10,7 +10,6 @@ import { KanjiCard } from "./KanjiCard.tsx";
 import { LookupResultCard } from "./LookupResultCard.tsx";
 import type { LookupDisplayState } from "./lookupDisplayState.ts";
 import { type PopupSize, popupHeight, popupWidth } from "./popupSize.ts";
-import { type PopupWordActions, PopupWordContext } from "./popupWordContext.ts";
 import { DictionaryStylesheets } from "./stylesheet/DictionaryStylesheets.tsx";
 import { usePopupDismissal } from "./usePopupDismissal.ts";
 
@@ -20,7 +19,7 @@ import { usePopupDismissal } from "./usePopupDismissal.ts";
  * Double-clicking a word inside the pop-up, or following a link to another headword, looks it up in turn;
  * a single click on a word does nothing, so that it reaches the entry's own clickable elements.
  * A flashcard comes from every result with the header button (`entryIndex` null) or from one result with its own button,
- * and, through `wordActions`, from a word inside the pop-up that is held on a touch screen.
+ * and, through `onWordHold`, from a word inside the pop-up that is held on a touch screen.
  * When no dictionary has an entry for the word, the header button still makes a flashcard, with the word and its sentence only.
  * While such a flashcard waits for its word's lookup, `pendingFlashcard` names the word.
  * A thin bar along its bottom edge asks, through `onToggleSize`, to switch the pop-up between its two `size`s, to show more or less of the entries.
@@ -37,7 +36,7 @@ export function DictionaryPopup({
   onSearch,
   onCreateFlashcard,
   onToggleSize,
-  wordActions = null,
+  onWordHold,
   pendingFlashcard = null,
   onClose,
   onSetUpDictionary,
@@ -51,7 +50,7 @@ export function DictionaryPopup({
   onSearch: (term: string) => void;
   onCreateFlashcard: (entryIndex: number | null) => void;
   onToggleSize?: () => void;
-  wordActions?: PopupWordActions | null;
+  onWordHold?: (word: string) => void;
   pendingFlashcard?: string | null;
   onClose: () => void;
   onSetUpDictionary: () => void;
@@ -96,15 +95,14 @@ export function DictionaryPopup({
             Making a flashcard for “{pendingFlashcard}”…
           </p>
         )}
-        <PopupWordContext value={wordActions}>
-          <Body
-            state={state}
-            resolveMediaUrl={resolveMediaUrl}
-            onSearch={onSearch}
-            onCreateFlashcard={onCreateFlashcard}
-            onSetUpDictionary={onSetUpDictionary}
-          />
-        </PopupWordContext>
+        <Body
+          state={state}
+          resolveMediaUrl={resolveMediaUrl}
+          onSearch={onSearch}
+          onWordHold={onWordHold}
+          onCreateFlashcard={onCreateFlashcard}
+          onSetUpDictionary={onSetUpDictionary}
+        />
       </div>
       <SizeToggle isExpanded={isExpanded} onToggle={onToggleSize} />
     </section>
@@ -203,12 +201,14 @@ function Body({
   state,
   resolveMediaUrl,
   onSearch,
+  onWordHold,
   onCreateFlashcard,
   onSetUpDictionary,
 }: {
   state: LookupDisplayState | null;
   resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
+  onWordHold?: (word: string) => void;
   onCreateFlashcard: (entryIndex: number | null) => void;
   onSetUpDictionary: () => void;
 }) {
@@ -258,6 +258,7 @@ function Body({
               result={result}
               resolveMediaUrl={resolveMediaUrl}
               onWordLookup={onSearch}
+              onWordHold={onWordHold}
               onLookup={onSearch}
               onCreateFlashcard={() => onCreateFlashcard(index)}
             />
@@ -267,6 +268,7 @@ function Body({
               key={`${kanji.dictionaryId}-${kanji.entry.character}`}
               result={kanji}
               onWordLookup={onSearch}
+              onWordHold={onWordHold}
             />
           ))}
         </>
