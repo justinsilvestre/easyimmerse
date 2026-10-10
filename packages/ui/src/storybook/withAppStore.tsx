@@ -8,6 +8,7 @@ import type {
 import { actions, createRecordingEffects } from "@easyimmerse/state";
 import type { Decorator } from "@storybook/react-vite";
 import { type ReactNode, useEffect, useState } from "react";
+import { browserFrameCapturer } from "../player/browserFrameCapturer.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 
@@ -69,7 +70,10 @@ function createTestAppStoreFollowing(
   const testAppStore = createTestAppStore(
     appStore.client,
     appStore.server,
-    null,
+    appStore.browserFileRegistry && {
+      registry: appStore.browserFileRegistry,
+      frameCapturer: browserFrameCapturer,
+    },
     effects,
   );
   testAppStore.store.dispatch(actions.systemThemeChanged(systemTheme));

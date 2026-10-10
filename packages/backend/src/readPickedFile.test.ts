@@ -1,6 +1,6 @@
 import { createBrowserFileRegistry } from "@easyimmerse/state";
 import { describe, expect, it } from "vitest";
-import { readPickedFile } from "./readPickedFile.ts";
+import { isSamePickedFile, readPickedFile } from "./readPickedFile.ts";
 
 /** A file whose bytes cannot be read, as when it was deleted after being picked. */
 class UnreadableFile extends File {
@@ -47,5 +47,33 @@ describe("readPickedFile", () => {
         message: "The file could not be read.",
       },
     });
+  });
+});
+
+describe("isSamePickedFile", () => {
+  const picked = {
+    name: "clip.mp4",
+    source: { kind: "browser_file", size: 5, last_modified_ms: 1 } as const,
+  };
+
+  it("matches a file with the same name and source", () => {
+    expect(
+      isSamePickedFile(picked, { ...picked, source: { ...picked.source } }),
+    ).toBe(true);
+  });
+
+  it("tells apart files whose sources differ", () => {
+    expect(
+      isSamePickedFile(picked, {
+        ...picked,
+        source: { ...picked.source, size: 6 },
+      }),
+    ).toBe(false);
+  });
+
+  it("tells apart files whose names differ", () => {
+    expect(isSamePickedFile(picked, { ...picked, name: "other.mp4" })).toBe(
+      false,
+    );
   });
 });

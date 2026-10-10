@@ -43,43 +43,18 @@ describe("createFrameCapturer", () => {
     expect(await capturer.capture(videoFile(), 2500)).toBe("frame-at-2.5");
   });
 
-  it("knows no frame before capturing it", () => {
-    const capturer = createFrameCapturer(createFakePlatform());
-    expect(capturer.peek(videoFile(), 2500)).toBeUndefined();
-  });
-
-  it("remembers a captured frame by file and time", async () => {
-    const capturer = createFrameCapturer(createFakePlatform());
-    const file = videoFile();
-    await capturer.capture(file, 2500);
-    expect(capturer.peek(file, 2500)).toBe("frame-at-2.5");
-  });
-
-  it("does not remember a frame for another file", async () => {
-    const capturer = createFrameCapturer(createFakePlatform());
-    await capturer.capture(videoFile(), 2500);
-    expect(capturer.peek(videoFile(), 2500)).toBeUndefined();
-  });
-
-  it("captures a remembered frame only once", async () => {
-    const platform = createFakePlatform();
-    const capturer = createFrameCapturer(platform);
-    const file = videoFile();
-    await capturer.capture(file, 2500);
-    await capturer.capture(file, 2500);
-    expect(platform.captured).toEqual([2.5]);
-  });
-
   it("finds no frame in a file without pictures", async () => {
     const capturer = createFrameCapturer(createFakePlatform());
     expect(await capturer.capture(new Blob([]), 2500)).toBeNull();
   });
 
-  it("remembers that a file has no pictures at any time", async () => {
-    const capturer = createFrameCapturer(createFakePlatform());
+  it("opens a file without pictures only once", async () => {
+    const platform = createFakePlatform();
+    const capturer = createFrameCapturer(platform);
     const file = new Blob([]);
     await capturer.capture(file, 2500);
-    expect(capturer.peek(file, 9000)).toBeNull();
+    await capturer.capture(file, 9000);
+    expect(platform.opened).toHaveLength(1);
   });
 
   it("finds no frame when drawing it fails", async () => {
@@ -90,47 +65,41 @@ describe("createFrameCapturer", () => {
     expect(await capturer.capture(videoFile(), 2500)).toBeNull();
   });
 
-  it("opens a file once for captures asked for together", async () => {
-    const platform = createFakePlatform();
-    const capturer = createFrameCapturer(platform);
-    const file = videoFile();
-    await Promise.all([
-      capturer.capture(file, 1000),
-      capturer.capture(file, 2000),
-    ]);
-    expect(platform.opened).toHaveLength(1);
-  });
-
   it("closes the video once no capture is waiting", async () => {
     const platform = createFakePlatform();
     const capturer = createFrameCapturer(platform);
     const file = videoFile();
+    await Promise.all([capturer.probe(file), capturer.capture(file, 1000)]);
+    expect(platform.closed).toEqual([file]);
+  });
+
+  it("skips a capture superseded by a later one of the same file before its turn", async () => {
+    const platform = createFakePlatform();
+    const capturer = createFrameCapturer(platform);
+    const file = videoFile();
     await Promise.all([
       capturer.capture(file, 1000),
       capturer.capture(file, 2000),
     ]);
-    expect(platform.closed).toEqual([file]);
+    expect(platform.captured).toEqual([2]);
   });
 
-  it("skips a capture whose signal aborted before its turn", async () => {
+  it("resolves a superseded capture with no answer", async () => {
+    const capturer = createFrameCapturer(createFakePlatform());
+    const file = videoFile();
+    const superseded = capturer.capture(file, 1000);
+    capturer.capture(file, 2000);
+    expect(await superseded).toBeUndefined();
+  });
+
+  it("keeps a capture asked for before one of another file", async () => {
     const platform = createFakePlatform();
     const capturer = createFrameCapturer(platform);
-    const file = videoFile();
-    const controller = new AbortController();
-    const first = capturer.capture(file, 1000);
-    const skipped = capturer.capture(file, 2000, controller.signal);
-    controller.abort();
-    await Promise.all([first, skipped]);
-    expect(platform.captured).toEqual([1]);
-  });
-
-  it("resolves a skipped capture with no answer", async () => {
-    const capturer = createFrameCapturer(createFakePlatform());
-    const controller = new AbortController();
-    controller.abort();
-    expect(
-      await capturer.capture(videoFile(), 2000, controller.signal),
-    ).toBeUndefined();
+    await Promise.all([
+      capturer.capture(videoFile(), 1000),
+      capturer.capture(videoFile(), 2000),
+    ]);
+    expect(platform.captured).toEqual([1, 2]);
   });
 
   describe("when probing a file for pictures", () => {
@@ -144,23 +113,13 @@ describe("createFrameCapturer", () => {
       expect(await capturer.probe(new Blob([]))).toBe(false);
     });
 
-    it("knows nothing about a file before probing it", () => {
-      const capturer = createFrameCapturer(createFakePlatform());
-      expect(capturer.peekPictures(videoFile())).toBeUndefined();
-    });
-
-    it("remembers what it found", async () => {
-      const capturer = createFrameCapturer(createFakePlatform());
-      const file = new Blob([]);
-      await capturer.probe(file);
-      expect(capturer.peekPictures(file)).toBe(false);
-    });
-
-    it("learns it from a capture too", async () => {
-      const capturer = createFrameCapturer(createFakePlatform());
+    it("answers from what a capture found without opening the file again", async () => {
+      const platform = createFakePlatform();
+      const capturer = createFrameCapturer(platform);
       const file = videoFile();
       await capturer.capture(file, 1000);
-      expect(capturer.peekPictures(file)).toBe(true);
+      await capturer.probe(file);
+      expect(platform.opened).toHaveLength(1);
     });
 
     it("opens a probed file only once for a capture asked for together", async () => {
@@ -169,15 +128,6 @@ describe("createFrameCapturer", () => {
       const file = videoFile();
       await Promise.all([capturer.probe(file), capturer.capture(file, 1000)]);
       expect(platform.opened).toHaveLength(1);
-    });
-
-    it("skips a probe whose signal aborted before its turn", async () => {
-      const capturer = createFrameCapturer(createFakePlatform());
-      const controller = new AbortController();
-      controller.abort();
-      expect(
-        await capturer.probe(videoFile(), controller.signal),
-      ).toBeUndefined();
     });
   });
 });

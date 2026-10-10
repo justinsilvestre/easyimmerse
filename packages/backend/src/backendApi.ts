@@ -46,6 +46,7 @@ import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import type { BackendError } from "./backendClient.ts";
 import {
+  type CapturedFrame,
   captureFrame,
   type FrameArgs,
   probePictures,
@@ -500,8 +501,11 @@ export const backendApi = createApi({
         probePictures(file, api.extra as BackendThunkExtra),
       keepUnusedDataFor: Infinity,
     }),
-    /** A frame of a file the browser holds. A frame is a large data URL, so an unused one goes after RTK Query's default minute. */
-    captureFrame: build.query<string | null, FrameArgs>({
+    /**
+     * A frame of a file the browser holds, with the file it comes from, since a query hook's last data outlives a change of its arguments.
+     * A frame is a large data URL, so an unused one goes after RTK Query's default minute.
+     */
+    captureFrame: build.query<CapturedFrame, FrameArgs>({
       queryFn: (args, api) =>
         captureFrame(args, api.extra as BackendThunkExtra),
     }),

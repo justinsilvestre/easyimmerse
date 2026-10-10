@@ -1,3 +1,5 @@
+import type { FrameCapturer } from "@easyimmerse/backend";
+import type { AppStore } from "@easyimmerse/state";
 import {
   actions,
   createBrowserFileRegistry,
@@ -20,12 +22,8 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  createFrameCapturer,
-  type FrameCapturer,
-} from "../player/browserFrameCapturer.ts";
+import { createFrameCapturer } from "../player/browserFrameCapturer.ts";
 import type { FrameSource } from "../player/captureVideoFrame.ts";
-import { FrameCapturerContext } from "../player/frameCapturerContext.ts";
 import {
   createFakeBackendClient,
   fakeFailure,
@@ -92,11 +90,13 @@ function renderBrowserVideoScreen(
     "POST /projects/p1/flashcards": savedFlashcard,
   });
   const rendered = renderWithAppStore(
-    <FrameCapturerContext value={capturer}>
-      <MediaScreen project={fixtureProject} mediaFileId="m3" />
-    </FrameCapturerContext>,
+    <MediaScreen project={fixtureProject} mediaFileId="m3" />,
     client,
-    { server: fakeServer, browserFileRegistry: registry },
+    {
+      server: fakeServer,
+      browserFileRegistry: registry,
+      frameCapturer: capturer,
+    },
   );
   act(() => {
     rendered.store.dispatch(actions.preferencesLoaded({}));
@@ -121,17 +121,25 @@ function createWaitingFrameCapturer() {
   return { capturer, answer };
 }
 
+/** Whether the cache holds the answer of a pictures probe. */
+function hasProbeAnswered(store: AppStore) {
+  const { queries } = store.getState().backend as {
+    queries: Record<string, { endpointName?: string; status?: string }>;
+  };
+  return Object.values(queries).some(
+    (entry) =>
+      entry.endpointName === "probePictures" && entry.status === "fulfilled",
+  );
+}
+
 /** Starts a new flashcard from a word in the subtitles before the probe answers, then lets it answer. */
 async function startFlashcardBeforeProbe(hasPictures: boolean) {
-  const file = browserVideo();
   const { capturer, answer } = createWaitingFrameCapturer();
-  const rendered = renderBrowserVideoScreen(file, capturer);
+  const rendered = renderBrowserVideoScreen(browserVideo(), capturer);
   const list = await findSubtitles();
   await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
   answer(hasPictures);
-  await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(hasPictures));
-  // The screen learns the answer only after the probe's own callback, which may run after the check above.
-  await act(async () => undefined);
+  await vi.waitFor(() => expect(hasProbeAnswered(rendered.store)).toBe(true));
   return rendered;
 }
 
@@ -940,10 +948,11 @@ describe("MediaScreen", () => {
     });
 
     it("leaves the screenshot out of a new flashcard once the file turns out to have no pictures", async () => {
-      const file = browserVideo();
-      const capturer = createFakeFrameCapturer(false);
-      const { client } = renderBrowserVideoScreen(file, capturer);
-      await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(false));
+      const { client, store } = renderBrowserVideoScreen(
+        browserVideo(),
+        createFakeFrameCapturer(false),
+      );
+      await vi.waitFor(() => expect(hasProbeAnswered(store)).toBe(true));
       expect(await savedScreenshotOfNewFlashcard(client)).toBeNull();
     });
 

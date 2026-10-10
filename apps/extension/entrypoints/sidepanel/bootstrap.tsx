@@ -12,7 +12,7 @@ import {
   createBrowserFileRegistry,
   createPlayerRegistry,
 } from "@easyimmerse/state";
-import { AppRoot } from "@easyimmerse/ui";
+import { AppRoot, browserFrameCapturer } from "@easyimmerse/ui";
 import { loadOfflineWasm } from "@easyimmerse/wasm";
 import wasmUrl from "@easyimmerse/wasm/pkg/easyimmerse_wasm_bg.wasm?url";
 import { createRoot } from "react-dom/client";
@@ -30,7 +30,10 @@ export async function bootstrap(): Promise<void> {
   });
   const store = createAppStore(
     effects,
-    createBackendStoreParts(client, server, browserFileRegistry),
+    createBackendStoreParts(client, server, {
+      registry: browserFileRegistry,
+      frameCapturer: browserFrameCapturer,
+    }),
   );
   createRoot(findRootElement()).render(
     <AppRoot

@@ -1,5 +1,5 @@
 import type { BrowserFileRegistry } from "@easyimmerse/state";
-import type { MediaFile } from "@easyimmerse/types";
+import type { MediaFile, MediaFileSource } from "@easyimmerse/types";
 import type { BackendError } from "./backendClient.ts";
 
 /** A file a browser picked, named as its media file names it. */
@@ -30,6 +30,17 @@ export function findPickedFile(
   if (browserFileRegistry === null) return { error: browserFileUnreachable };
   const held = browserFileRegistry.find(file.name, file.source);
   return held === null ? { error: browserFileGone } : { file: held };
+}
+
+/** Whether two picked files name the same file. */
+export function isSamePickedFile(a: PickedFile, b: PickedFile): boolean {
+  return a.name === b.name && sourceKeyOf(a.source) === sourceKeyOf(b.source);
+}
+
+function sourceKeyOf(source: MediaFileSource): string {
+  return source.kind === "path"
+    ? `path:${source.path}`
+    : `browser:${source.size}:${source.last_modified_ms}`;
 }
 
 /** Reads the bytes of a file that a browser picked and still holds. */

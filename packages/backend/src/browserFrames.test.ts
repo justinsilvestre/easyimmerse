@@ -60,7 +60,7 @@ describe("captureFrame", () => {
       createRecordingCapturer("frame").capturer,
     );
     expect(await captureFrame({ file, atMs: 1000 }, extra)).toEqual({
-      data: "frame",
+      data: { file, url: "frame" },
     });
   });
 
@@ -74,7 +74,7 @@ describe("captureFrame", () => {
   it("answers null for a frame that cannot be drawn", async () => {
     const { file, extra } = heldVideo(createRecordingCapturer(null).capturer);
     expect(await captureFrame({ file, atMs: 1000 }, extra)).toEqual({
-      data: null,
+      data: { file, url: null },
     });
   });
 

@@ -41,7 +41,10 @@ export type {
   BackendError,
   BackendRequest,
 } from "./backendClient.ts";
-export { createBackendStoreParts } from "./backendStoreParts.ts";
+export {
+  type BrowserFiles,
+  createBackendStoreParts,
+} from "./backendStoreParts.ts";
 export {
   buildAuthorizationHeader,
   buildConversionFileUrl,
@@ -54,5 +57,6 @@ export { lookupStartsIn } from "./lookupPositions.ts";
 export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
 export { usePrefetchLookupRangeQuery } from "./prefetchLookupRange.ts";
 export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
+export { isSamePickedFile } from "./readPickedFile.ts";
 export { resolveServerConfig } from "./resolveServerConfig.ts";
 export { createWasmBackendClient } from "./wasmBackendClient.ts";
