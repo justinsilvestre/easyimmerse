@@ -1,4 +1,5 @@
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import { applyingAppearance } from "./appearance.ts";
 import type { PreferencesEffect } from "./preferencesEffect.ts";
 import type {
   PlayerControls,
@@ -64,10 +65,10 @@ export const updatePreferences: FeatureUpdate<PreferencesState> = (
   }
 };
 
-/** The preferences as a feature: the stored preferences, the system theme and the player's controls. */
+/** The preferences as a feature: the stored preferences, the system theme and the player's controls, with the appearance they call for applied. */
 export const preferencesFeature: Feature<PreferencesState> = {
   initialState: initialPreferences,
-  update: updatePreferences,
+  update: applyingAppearance(updatePreferences),
 };
 
 function save(

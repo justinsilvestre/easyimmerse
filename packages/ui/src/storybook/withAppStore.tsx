@@ -1,14 +1,13 @@
 import type { BackendClient } from "@easyimmerse/backend";
+import { createApplyAppearance } from "@easyimmerse/effects-web";
 import type {
   BrowserFileRegistry,
   ServerConfig,
   Theme,
 } from "@easyimmerse/state";
-import { actions } from "@easyimmerse/state";
+import { actions, createRecordingEffects } from "@easyimmerse/state";
 import type { Decorator } from "@storybook/react-vite";
 import { type ReactNode, useEffect, useState } from "react";
-import { useApplyTextScale } from "../hooks/useApplyTextScale.ts";
-import { useApplyTheme } from "../hooks/useApplyTheme.ts";
 import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 
@@ -20,7 +19,7 @@ type AppStoreParameters = {
 };
 
 /**
- * Renders a story inside a fresh app store with recording effects, a fake backend that answers with the fixture responses, and a player registry.
+ * Renders a story inside a fresh app store with recording effects that apply the appearance to the page, a fake backend that answers with the fixture responses, and a player registry.
  * The stored preferences load as they do when the app starts.
  * The toolbar's theme stands in for the system theme, so the theme toggle in a story switches the page as it does in the app.
  */
@@ -54,7 +53,6 @@ function StoryAppStore({
       playerRegistry={playerRegistry}
       browserFileRegistry={appStore.browserFileRegistry ?? null}
     >
-      <StoryThemeHandler />
       {children}
     </AppStoreProviders>
   );
@@ -64,13 +62,16 @@ function createTestAppStoreFollowing(
   systemTheme: Theme,
   appStore: AppStoreParameters,
 ) {
-  const testAppStore = createTestAppStore(appStore.client, appStore.server);
+  const effects = {
+    ...createRecordingEffects(),
+    applyAppearance: createApplyAppearance(document.documentElement),
+  };
+  const testAppStore = createTestAppStore(
+    appStore.client,
+    appStore.server,
+    null,
+    effects,
+  );
   testAppStore.store.dispatch(actions.systemThemeChanged(systemTheme));
   return testAppStore;
-}
-
-function StoryThemeHandler() {
-  useApplyTheme();
-  useApplyTextScale();
-  return null;
 }

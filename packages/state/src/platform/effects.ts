@@ -1,4 +1,6 @@
 import type { MediaFileSource, TextSource } from "@easyimmerse/types";
+import type { Appearance } from "../preferences/appearance.ts";
+import type { Theme } from "../preferences/theme.ts";
 import type { Clock } from "../timers/clock.ts";
 
 export type PickedFile = { name: string; source: TextSource };
@@ -55,4 +57,11 @@ export interface Effects {
    * Returns a function that stops the calls.
    */
   subscribeToSettingsRequests(listener: () => void): () => void;
+  /** Shows the document in the given theme and at the given text scale. */
+  applyAppearance(appearance: Appearance): void;
+  /**
+   * Calls the listener with the operating system's light or dark theme, at once where the platform can tell it, and again whenever it changes.
+   * Returns a function that stops the calls.
+   */
+  subscribeToSystemTheme(listener: (theme: Theme) => void): () => void;
 }

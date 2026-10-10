@@ -4,6 +4,7 @@ import type {
   PlayerRegistry,
 } from "@easyimmerse/state";
 import { createBrowserFileRegistry, systemClock } from "@easyimmerse/state";
+import { createApplyAppearance } from "./applyAppearance.ts";
 import { createCloseGuard } from "./closeGuard.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { pickFile } from "./pickFile.ts";
@@ -11,6 +12,7 @@ import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
 import { createPlayerEffects } from "./playerEffects.ts";
 import { createPreferenceStore } from "./preferenceStore.ts";
 import { readPlaybackProbes } from "./readPlaybackProbes.ts";
+import { createSubscribeToSystemTheme } from "./subscribeToSystemTheme.ts";
 
 /** Builds the browser implementation of the app's side effects. */
 export function createWebEffects(options: {
@@ -34,6 +36,10 @@ export function createWebEffects(options: {
     openExternalUrl,
     guardClose: createCloseGuard(),
     subscribeToSettingsRequests: ignoreSettingsRequests,
+    applyAppearance: createApplyAppearance(document.documentElement),
+    subscribeToSystemTheme: createSubscribeToSystemTheme(
+      window.matchMedia("(prefers-color-scheme: dark)"),
+    ),
   };
 }
 
@@ -42,4 +48,5 @@ function ignoreSettingsRequests(): () => void {
   return () => undefined;
 }
 
+export { createApplyAppearance } from "./applyAppearance.ts";
 export type { PreferenceStore } from "./preferenceStore.ts";

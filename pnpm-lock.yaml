@@ -596,6 +596,9 @@ importers:
       '@easyimmerse/config':
         specifier: workspace:*
         version: link:../config
+      '@easyimmerse/effects-web':
+        specifier: workspace:*
+        version: link:../effects-web
       '@easyimmerse/fixtures':
         specifier: workspace:*
         version: link:../../fixtures

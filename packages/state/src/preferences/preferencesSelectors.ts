@@ -1,7 +1,7 @@
 import type { RootState } from "../app/createAppStore.ts";
+import { appearanceOf } from "./appearance.ts";
 import type { PreferenceKey } from "./preferencesState.ts";
-import { parseTextScale } from "./textScale.ts";
-import { chooseTheme, parseThemeChoice } from "./theme.ts";
+import { parseThemeChoice } from "./theme.ts";
 
 /** Returns a stored preference's value, or undefined while it is unset. */
 export const selectPreference = (key: PreferenceKey) => (state: RootState) =>
@@ -21,8 +21,8 @@ export const selectThemeChoice = (state: RootState) =>
 
 /** Returns the theme the app shows: the one the user chose, or else the operating system's. */
 export const selectTheme = (state: RootState) =>
-  chooseTheme(selectThemeChoice(state), state.app.preferences.systemTheme);
+  appearanceOf(state.app.preferences).theme;
 
 /** Returns the text scale the user chose, as a percentage, or 100 until one is chosen. */
 export const selectTextScale = (state: RootState) =>
-  parseTextScale(state.app.preferences.values.textScale);
+  appearanceOf(state.app.preferences).textScale;

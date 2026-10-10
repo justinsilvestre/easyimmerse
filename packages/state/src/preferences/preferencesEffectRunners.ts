@@ -20,6 +20,8 @@ export const preferencesEffectRunners = {
   setPlayerMuted: (effect, { effects }) =>
     effects.setPlayerMuted(effect.isMuted),
   setPlayerSpeed: (effect, { effects }) => effects.setPlayerSpeed(effect.speed),
+  applyAppearance: (effect, { effects }) =>
+    effects.applyAppearance(effect.appearance),
 } satisfies EffectRunners<PreferencesEffect>;
 
 /** Reads each stored preference, leaving out those that are unset or cannot be read. */

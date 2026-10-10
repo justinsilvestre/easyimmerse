@@ -28,6 +28,7 @@ export type {
 export type { PlayerRegistry } from "./platform/playerRegistry.ts";
 export { createPlayerRegistry } from "./platform/playerRegistry.ts";
 export { createRecordingEffects } from "./platform/recordingEffects.ts";
+export type { Appearance } from "./preferences/appearance.ts";
 export {
   selectPlayerControls,
   selectPreference,

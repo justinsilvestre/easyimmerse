@@ -1,3 +1,5 @@
+import type { Appearance } from "../preferences/appearance.ts";
+import type { Theme } from "../preferences/theme.ts";
 import type { ManualClock } from "../timers/manualClock.ts";
 import { createManualClock } from "../timers/manualClock.ts";
 import type {
@@ -29,7 +31,8 @@ type EffectCall =
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
   | { type: "openExternalUrl"; url: string }
-  | { type: "guardClose"; isActive: boolean };
+  | { type: "guardClose"; isActive: boolean }
+  | { type: "applyAppearance"; appearance: Appearance };
 
 export type RecordingEffects = Effects & {
   /** A clock that moves only through `advanceBy`, so no timer fires on its own or outlives its test. */
@@ -50,6 +53,8 @@ export type RecordingEffects = Effects & {
   resolvePickDictionaryFile(file: PickedDictionaryFile | null): void;
   /** Acts as the platform asking for the Settings screen, by calling every subscribed listener. */
   requestSettings(): void;
+  /** Acts as the operating system switching between light and dark, by calling every subscribed listener. */
+  changeSystemTheme(theme: Theme): void;
   /** Lets the preference loads held so far, and every later one, read the preference store. */
   releasePreferenceLoads(): void;
 };
@@ -94,6 +99,7 @@ export function createRecordingEffects(
     "dictionary file pick",
   );
   const settingsListeners = new Set<() => void>();
+  const systemThemeListeners = new Set<(theme: Theme) => void>();
   return {
     clock: createManualClock(),
     calls,
@@ -151,6 +157,13 @@ export function createRecordingEffects(
       settingsListeners.add(listener);
       return () => settingsListeners.delete(listener);
     },
+    applyAppearance: (appearance) => {
+      calls.push({ type: "applyAppearance", appearance });
+    },
+    subscribeToSystemTheme: (listener) => {
+      systemThemeListeners.add(listener);
+      return () => systemThemeListeners.delete(listener);
+    },
     resolvePickFile: (file) => {
       filePick.take().resolve(file);
     },
@@ -168,6 +181,9 @@ export function createRecordingEffects(
     },
     requestSettings: () => {
       for (const listener of settingsListeners) listener();
+    },
+    changeSystemTheme: (theme) => {
+      for (const listener of systemThemeListeners) listener(theme);
     },
     releasePreferenceLoads: () => preferenceLoads.resolve(),
   };

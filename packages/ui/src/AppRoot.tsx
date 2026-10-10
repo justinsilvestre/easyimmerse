@@ -8,9 +8,6 @@ import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
 import { WordClickMemoryProvider } from "./components/wordClickMemoryContext.tsx";
 import { SharedSavingProvider } from "./flashcards/SharedSavingContext.tsx";
 import { UnsavedCardsStatus } from "./flashcards/unsaved/UnsavedCardsStatus.tsx";
-import { useApplyTextScale } from "./hooks/useApplyTextScale.ts";
-import { useApplyTheme } from "./hooks/useApplyTheme.ts";
-import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
 import { NoticeRegion } from "./notices/NoticeRegion.tsx";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { Screens } from "./Screens.tsx";
@@ -31,7 +28,6 @@ export function AppRoot({
         <PlayerRegistryContext value={playerRegistry}>
           <BrowserFileRegistryContext value={browserFileRegistry}>
             <WordClickMemoryProvider>
-              <AppearanceHandler />
               <Screens />
             </WordClickMemoryProvider>
           </BrowserFileRegistryContext>
@@ -40,12 +36,4 @@ export function AppRoot({
       </SharedSavingProvider>
     </Provider>
   );
-}
-
-/** Follows the operating system's theme unless the user has switched it, and shows the chosen theme and text size. */
-function AppearanceHandler() {
-  useTrackSystemTheme();
-  useApplyTheme();
-  useApplyTextScale();
-  return null;
 }

@@ -55,6 +55,13 @@ describe("createAppStore", () => {
     expect(store.getState().app.route.screen).toBe("settings");
   });
 
+  it("takes the operating system's theme as the platform reports it", () => {
+    const effects = createRecordingEffects();
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    effects.changeSystemTheme("dark");
+    expect(store.getState().app.preferences.systemTheme).toBe("dark");
+  });
+
   it("dispatches appStarted once it is created", () => {
     const server = createFakeServerStoreParts();
     createAppStore(createRecordingEffects(), server);
