@@ -1,7 +1,7 @@
 import {
   skipToken,
-  useGetMediaTracksQuery,
   useChoosePlaybackMethodQuery,
+  useGetMediaTracksQuery,
 } from "@easyimmerse/backend";
 import { selectPathPlayback } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
