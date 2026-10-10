@@ -1,4 +1,4 @@
-import { selectCachedMediaTracks } from "@easyimmerse/backend";
+import { selectMediaTracksEntry } from "@easyimmerse/backend";
 import type { RootState } from "@easyimmerse/state";
 import {
   mainScreenOf,
@@ -13,6 +13,7 @@ export function selectMediaDurationMs(state: RootState): number {
   const route = mainScreenOf(selectRoute(state));
   if (route.screen !== "media") return 0;
   const { projectId, mediaFileId } = route;
-  const tracks = selectCachedMediaTracks(state, { projectId, mediaFileId });
-  return tracks?.container.duration_ms ?? 0;
+  // The path player's query hook keeps this entry in the cache while the media screen shows the file.
+  const tracks = selectMediaTracksEntry(state, { projectId, mediaFileId });
+  return tracks?.data?.container.duration_ms ?? 0;
 }

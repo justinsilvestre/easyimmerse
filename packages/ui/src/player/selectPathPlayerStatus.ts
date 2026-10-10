@@ -1,6 +1,6 @@
 import {
-  selectMediaTracksResult,
-  selectPlaybackPlanResult,
+  selectMediaTracksEntry,
+  selectPlaybackPlanEntry,
 } from "@easyimmerse/backend";
 import type { RootState } from "@easyimmerse/state";
 import {
@@ -22,32 +22,21 @@ export const selectPathPlayerStatus = createSelector(
   [
     selectServerConfig,
     selectRoute,
-    (state: RootState) => tracksResultOf(state).data,
-    (state: RootState) => tracksResultOf(state).error,
-    (state: RootState) => planResultOf(state).data,
-    (state: RootState) => planResultOf(state).error,
+    tracksEntryOf,
+    planEntryOf,
     selectPathPlayback,
     selectPreference("conversionNoticeDismissed"),
   ],
-  (
-    server,
-    route,
-    tracks,
-    tracksError,
-    plan,
-    planError,
-    playback,
-    noticeDismissed,
-  ) => {
+  (server, route, tracks, plan, playback, noticeDismissed) => {
     const file = openFileOf(route);
     if (file === null) return loadingPlayback;
     return derivePlayerStatus({
       server,
       ...file,
-      tracks,
-      tracksError,
-      playback: plan,
-      playbackError: planError,
+      tracks: tracks?.data,
+      tracksError: tracks?.error,
+      playback: plan?.data,
+      playbackError: plan?.error,
       selection: playback?.selection ?? null,
       noticeSettled:
         noticeDismissed === "true" || playback?.isConversionAccepted === true,
@@ -55,26 +44,24 @@ export const selectPathPlayerStatus = createSelector(
   },
 );
 
-const noResult = { data: undefined, error: undefined };
-
 function openFileOf(route: RootState["app"]["route"]) {
   const main = mainScreenOf(route);
   if (main.screen !== "media") return null;
   return { projectId: main.projectId, mediaFileId: main.mediaFileId };
 }
 
-function tracksResultOf(state: RootState) {
+function tracksEntryOf(state: RootState) {
   const file = openFileOf(selectRoute(state));
   const isAsked = selectPathPlayback(state) !== null;
   return file !== null && isAsked
-    ? selectMediaTracksResult(state, file)
-    : noResult;
+    ? selectMediaTracksEntry(state, file)
+    : undefined;
 }
 
-function planResultOf(state: RootState) {
+function planEntryOf(state: RootState) {
   const file = openFileOf(selectRoute(state));
   const request = selectPathPlayback(state)?.planRequest ?? null;
   return file !== null && request !== null
-    ? selectPlaybackPlanResult(state, { ...file, request })
-    : noResult;
+    ? selectPlaybackPlanEntry(state, { ...file, request })
+    : undefined;
 }
