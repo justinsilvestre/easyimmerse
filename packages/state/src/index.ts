@@ -26,6 +26,18 @@ export type { PlayerRegistry } from "./playerRegistry.ts";
 export { createPlayerRegistry } from "./playerRegistry.ts";
 export type { ReaderLocation } from "./readingLocation.ts";
 export { createRecordingEffects } from "./recordingEffects.ts";
+export type {
+  MainRoute,
+  NavigationStep,
+  Route,
+  SettingsPage,
+} from "./route.ts";
+export {
+  initialRoute,
+  mainScreenOf,
+  navigate,
+  settingsPageOf,
+} from "./route.ts";
 export {
   selectChosenDictionaryFile,
   selectChosenMediaFile,

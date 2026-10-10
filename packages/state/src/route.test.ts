@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Navigation } from "./navigation.ts";
-import { initialNavigation, mainScreenOf, navigate } from "./navigation.ts";
+import type { Route } from "./route.ts";
+import { initialRoute, mainScreenOf, navigate } from "./route.ts";
 
-const project: Navigation = { screen: "project", projectId: "p1" };
+const project: Route = { screen: "project", projectId: "p1" };
 
 describe("navigate", () => {
   it("opens settings over the current screen", () => {
@@ -57,7 +57,7 @@ describe("navigate", () => {
 
   it("opens a project from home", () => {
     expect(
-      navigate(initialNavigation, { type: "openProject", projectId: "p2" }),
+      navigate(initialRoute, { type: "openProject", projectId: "p2" }),
     ).toEqual({ screen: "project", projectId: "p2" });
   });
 
@@ -68,13 +68,13 @@ describe("navigate", () => {
   });
 
   it("opens the new project form", () => {
-    expect(navigate(initialNavigation, { type: "createProject" })).toEqual({
+    expect(navigate(initialRoute, { type: "createProject" })).toEqual({
       screen: "newProject",
     });
   });
 
   it("continues offline from home", () => {
-    expect(navigate(initialNavigation, { type: "continueOffline" })).toEqual({
+    expect(navigate(initialRoute, { type: "continueOffline" })).toEqual({
       screen: "offline",
     });
   });

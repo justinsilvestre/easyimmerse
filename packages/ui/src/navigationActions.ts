@@ -1,15 +1,15 @@
 import {
   type AppAction,
   actions,
+  type NavigationStep,
   type RootState,
   selectCurrentMediaFileId,
 } from "@easyimmerse/state";
-import type { NavigationAction } from "./navigation.ts";
 import type { NavigationActions } from "./navigationContext.ts";
 
 /** The navigation steps any screen may take, carried out through the app root's `dispatchNavigation` and the app's store. */
 export function createNavigationActions(
-  dispatchNavigation: (action: NavigationAction) => void,
+  dispatchNavigation: (action: NavigationStep) => void,
   store: {
     dispatch: (action: AppAction) => unknown;
     getState: () => RootState;

@@ -1,6 +1,9 @@
-import { type AppAction, actions } from "@easyimmerse/state";
+import {
+  type AppAction,
+  actions,
+  type NavigationStep,
+} from "@easyimmerse/state";
 import { describe, expect, it } from "vitest";
-import type { NavigationAction } from "./navigation.ts";
 import { createNavigationActions } from "./navigationActions.ts";
 import { createTestAppStore } from "./testSupport/createTestAppStore.ts";
 
@@ -9,7 +12,7 @@ function navigationWith(mediaFileId: string | null) {
   const { store } = createTestAppStore();
   if (mediaFileId !== null) store.dispatch(actions.openMedia(mediaFileId));
   const dispatched: AppAction["type"][] = [];
-  const navigated: NavigationAction[] = [];
+  const navigated: NavigationStep[] = [];
   const recordingStore = {
     getState: store.getState,
     dispatch: (action: AppAction) => {

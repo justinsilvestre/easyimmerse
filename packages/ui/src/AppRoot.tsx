@@ -2,9 +2,18 @@ import type {
   AppStore,
   BrowserFileRegistry,
   Effects,
+  MainRoute,
+  NavigationStep,
   PlayerRegistry,
+  Route,
 } from "@easyimmerse/state";
-import { actions } from "@easyimmerse/state";
+import {
+  actions,
+  initialRoute,
+  mainScreenOf,
+  navigate,
+  settingsPageOf,
+} from "@easyimmerse/state";
 import { useEffect, useReducer } from "react";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
@@ -17,17 +26,6 @@ import { useApplyTheme } from "./hooks/useApplyTheme.ts";
 import { useConversionCacheControls } from "./hooks/useConversionCacheControls.ts";
 import { useLicenseNotices } from "./hooks/useLicenseNotices.ts";
 import { useTrackSystemTheme } from "./hooks/useTrackSystemTheme.ts";
-import type {
-  MainNavigation,
-  Navigation,
-  NavigationAction,
-} from "./navigation.ts";
-import {
-  initialNavigation,
-  mainScreenOf,
-  navigate,
-  settingsPageOf,
-} from "./navigation.ts";
 import { createNavigationActions } from "./navigationActions.ts";
 import {
   NavigationActionsContext,
@@ -55,10 +53,7 @@ export function AppRoot({
   /** Where the web app keeps the media files it picked. Absent on platforms that read files from disk. */
   browserFileRegistry?: BrowserFileRegistry<File> | null;
 }) {
-  const [navigation, dispatchNavigation] = useReducer(
-    navigate,
-    initialNavigation,
-  );
+  const [navigation, dispatchNavigation] = useReducer(navigate, initialRoute);
   const navigationActions = createNavigationActions(dispatchNavigation, store);
   useEffect(
     () =>
@@ -106,8 +101,8 @@ function MainScreen({
   navigation,
   dispatchNavigation,
 }: {
-  navigation: MainNavigation;
-  dispatchNavigation: (action: NavigationAction) => void;
+  navigation: MainRoute;
+  dispatchNavigation: (action: NavigationStep) => void;
 }) {
   const openProject = (projectId: string) =>
     dispatchNavigation({ type: "openProject", projectId });
@@ -155,8 +150,8 @@ function SettingsPage({
   navigation,
   dispatchNavigation,
 }: {
-  navigation: Extract<Navigation, { screen: "settings" }>;
-  dispatchNavigation: (action: NavigationAction) => void;
+  navigation: Extract<Route, { screen: "settings" }>;
+  dispatchNavigation: (action: NavigationStep) => void;
 }) {
   const onBack = () => dispatchNavigation({ type: "closeSettings" });
   switch (settingsPageOf(navigation)) {
