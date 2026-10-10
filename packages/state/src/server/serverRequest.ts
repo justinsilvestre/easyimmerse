@@ -78,7 +78,8 @@ export type ServerRequest =
   | { kind: "deleteDictionary"; dictionaryId: string }
   | { kind: "clearConversionCache" }
   | { kind: "setConversionCacheBudget"; budget: ConversionCacheBudget }
-  | { kind: "createProject"; settings: ProjectSettings };
+  | { kind: "createProject"; settings: ProjectSettings }
+  | { kind: "updateProject"; projectId: string; settings: ProjectSettings };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -109,6 +110,7 @@ export type ServerResponses = {
   clearConversionCache: ConversionCacheStatus;
   setConversionCacheBudget: ConversionCacheStatus;
   createProject: Project;
+  updateProject: Project;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

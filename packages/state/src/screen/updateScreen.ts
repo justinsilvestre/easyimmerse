@@ -139,6 +139,8 @@ function failureNotices(action: AppAction): Effect[] {
       return [failure("The dictionary could not be removed")];
     case "createProject":
       return [failure("The project could not be created")];
+    case "updateProject":
+      return [failure("The settings could not be saved")];
     default:
       return [];
   }
@@ -159,7 +161,7 @@ function updateMainScreen(
   if (main.kind === "project" && route.screen === "project")
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);
-  if (main.kind === "newProject" && route.screen === "newProject")
+  if (route.screen === "newProject" || route.screen === "projectSettings")
     return [main, updateProjectForm(route, action, app.operations)];
   return [main, []];
 }

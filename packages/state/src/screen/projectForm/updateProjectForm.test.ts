@@ -52,4 +52,19 @@ describe("updateProjectForm", () => {
     );
     expect(effects).toEqual([]);
   });
+
+  it("saves the settings of the project the settings form belongs to", () => {
+    const effects = updateProjectForm(
+      { screen: "projectSettings", projectId: "p1" },
+      submitted,
+      idle,
+    );
+    expect(effects).toEqual([
+      {
+        type: "sendRequest",
+        id: "projectSettings/p1/save",
+        request: { kind: "updateProject", projectId: "p1", settings: korean },
+      },
+    ]);
+  });
 });

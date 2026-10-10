@@ -140,6 +140,22 @@ describe("routeAfter", () => {
     expect(routeAfter(app, created)).toEqual({ screen: "home" });
   });
 
+  it("returns to the project once its settings are saved", () => {
+    const app = stateAfter(
+      actions.navigated({ type: "openProjectSettings", projectId: "p1" }),
+    );
+    const saved = actions.requestSettled(
+      "projectSettings/p1/save",
+      {
+        kind: "updateProject",
+        projectId: "p1",
+        settings: exampleProjectSettings,
+      },
+      { ok: true, data: exampleProject("p1") },
+    );
+    expect(routeAfter(app, saved)).toEqual(project);
+  });
+
   it("stays on the form when the creation failed", () => {
     const app = stateAfter(actions.navigated({ type: "createProject" }));
     const failed = actions.requestSettled(

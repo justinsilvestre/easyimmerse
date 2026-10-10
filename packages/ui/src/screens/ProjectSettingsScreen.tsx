@@ -1,14 +1,10 @@
-import {
-  useGetProjectQuery,
-  useUpdateProjectMutation,
-} from "@easyimmerse/backend";
-import { actions, transientNotice } from "@easyimmerse/state";
-import type { ProjectSettings } from "@easyimmerse/types";
+import { useGetProjectQuery } from "@easyimmerse/backend";
+import { actions } from "@easyimmerse/state";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { ProjectSettingsView } from "../projects/ProjectSettingsView.tsx";
 
-/** The form for an existing project's settings, which returns to the project once saved. */
+/** The form for an existing project's settings, which returns to the project once saved. `onDone` leaves without saving. */
 export function ProjectSettingsScreen({
   projectId,
   onDone,
@@ -18,7 +14,6 @@ export function ProjectSettingsScreen({
 }) {
   const dispatch = useAppDispatch();
   const { data: project, error } = useGetProjectQuery(projectId);
-  const [updateProject] = useUpdateProjectMutation();
   if (error)
     return (
       <ScreenLayout>
@@ -26,22 +21,11 @@ export function ProjectSettingsScreen({
       </ScreenLayout>
     );
   if (project === undefined) return null;
-  const submit = (settings: ProjectSettings) =>
-    updateProject({ projectId, settings })
-      .unwrap()
-      .then(onDone)
-      .catch(() =>
-        dispatch(
-          actions.noticeRequested(
-            transientNotice("danger", "The settings could not be saved"),
-          ),
-        ),
-      );
   return (
     <ProjectSettingsView
       mode="edit"
       initialValues={project.settings}
-      onSubmit={submit}
+      onSubmit={(settings) => dispatch(actions.projectFormSubmitted(settings))}
       onCancel={onDone}
     />
   );

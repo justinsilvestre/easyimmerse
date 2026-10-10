@@ -406,4 +406,24 @@ describe("updateScreen", () => {
       },
     ]);
   });
+
+  it("tells that a project's settings could not be saved", () => {
+    const [, effects] = apply(
+      actions.requestSettled(
+        "projectSettings/p1/save",
+        {
+          kind: "updateProject",
+          projectId: "p1",
+          settings: exampleProjectSettings,
+        },
+        { ok: false, error: { status: 500, message: "down" } },
+      ),
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotice",
+        content: transientNotice("danger", "The settings could not be saved"),
+      },
+    ]);
+  });
 });

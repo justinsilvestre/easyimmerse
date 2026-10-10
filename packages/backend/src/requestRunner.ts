@@ -123,6 +123,11 @@ export const requestEndpoints = {
     }),
   createProject: ({ settings }) =>
     backendApi.endpoints.createProject.initiate(settings, { track: false }),
+  updateProject: ({ projectId, settings }) =>
+    backendApi.endpoints.updateProject.initiate(
+      { projectId, settings },
+      { track: false },
+    ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**
