@@ -14,6 +14,7 @@ export function nextRoute(route: Route, action: AppAction): Route {
     case "settingsRequested":
       return navigate(route, { type: "openSettings" });
     case "openMediaFileRequested":
+    case "failedSaveOpened":
       return {
         screen: "media",
         projectId: action.projectId,

@@ -11,11 +11,7 @@ import {
   setAside,
 } from "./lookupMoves.ts";
 import type { LookupPopup, LookupState, LookupWord } from "./lookupState.ts";
-import { startFlashcard } from "./startFlashcard.ts";
-import {
-  startFlashcardAtCursor,
-  startPopupWordFlashcard,
-} from "./startFlashcardAtCursor.ts";
+import { requestedFlashcard, startFlashcard } from "./startFlashcard.ts";
 import { answerHover, hoverWord, isHoverSettle } from "./updateLookupCursor.ts";
 import { updatePendingFlashcard } from "./updatePendingFlashcard.ts";
 
@@ -25,7 +21,7 @@ import { updatePendingFlashcard } from "./updatePendingFlashcard.ts";
  * A click on the word shown closes the pop-up after the double-click interval, so that a double-click can still stop it.
  * Keeps the lookup cursor where the mouse or the keyboard points, with the length its word's lookup matched once a hover answers;
  * that answer also moves an open pop-up to the word, unless the pointer is inside the pop-up or a flashcard waits.
- * The L, C and E keys act on the cursor's word.
+ * The L key acts on the cursor's word.
  * `app` is the state before the action.
  */
 export function updateLookup(
@@ -38,7 +34,12 @@ export function updateLookup(
     case "lookupWordClicked":
       return clickWord(lookup, action.chosen, action.input, player);
     case "lookupFlashcardRequested":
-      return startFlashcard(lookup, action, player, app);
+    case "lookupPopupWordHeld": {
+      const pending = requestedFlashcard(lookup, action, app);
+      return pending === null
+        ? [lookup, []]
+        : startFlashcard(lookup, pending, player);
+    }
     case "lookupCursorMoved":
     case "lookupCursorLeft":
       return [withCursor(lookup, moveCursor(lookup.cursor, action)), []];
@@ -48,10 +49,6 @@ export function updateLookup(
       return lookup.cursor === null
         ? openSearch(lookup, player)
         : clickWord(lookup, lookup.cursor.chosen, "keyboard", player);
-    case "lookupFlashcardAtCursorRequested":
-      return startFlashcardAtCursor(lookup, action.destination, player, app);
-    case "lookupPopupWordHeld":
-      return startPopupWordFlashcard(lookup, action.term, player, app);
     case "lookupSearchOpened":
       return openSearch(lookup, player);
     case "lookupTermSearched":
@@ -78,10 +75,10 @@ export function updateLookup(
     case "requestSettled":
       return isHoverSettle(action)
         ? answerHover(lookup, action, player)
-        : updatePendingFlashcard(lookup, action);
+        : [lookup, []];
+    case "flashcardFieldsWritten":
     case "lookupFlashcardWaitEnded":
-    case "lookupFlashcardTaken":
-      return updatePendingFlashcard(lookup, action);
+      return updatePendingFlashcard(lookup, action, app);
     default:
       return [lookup, []];
   }

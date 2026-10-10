@@ -1,3 +1,4 @@
+import type { FlashcardsState } from "../flashcards/flashcardsState.ts";
 import type { NoticesState } from "../notices/noticesState.ts";
 import type { OperationsState } from "../operations/operations.ts";
 import type { PreferencesState } from "../preferences/preferencesState.ts";
@@ -5,7 +6,6 @@ import type { Route } from "../route/route.ts";
 import type { ScreenState } from "../screen/screenState.ts";
 import type { ServerState } from "../server/serverState.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
-import type { UnsavedWorkState } from "../unsavedWork/unsavedWork.ts";
 
 /** The app's own state, one slice per feature. */
 export type AppState = {
@@ -18,7 +18,7 @@ export type AppState = {
   server: ServerState;
   preferences: PreferencesState;
   storedPlaces: StoredPlacesState;
-  unsavedWork: UnsavedWorkState;
+  flashcards: FlashcardsState;
   notices: NoticesState;
   operations: OperationsState;
 };

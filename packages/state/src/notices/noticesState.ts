@@ -3,12 +3,8 @@ import type { AppAction } from "../app/appAction.ts";
 /** How a notice looks: what kind of news it brings. */
 export type NoticeTone = "success" | "info" | "danger";
 
-/** Something the user can do about a notice, such as Undo. Choosing it closes the notice. */
-export type NoticeButton = { label: string } & (
-  | { action: AppAction }
-  /** A callback the UI runs after closing the notice. It goes once the flashcard notices carry actions. */
-  | { onSelect: () => void }
-);
+/** Something the user can do about a notice, such as Undo. Choosing it closes the notice and dispatches its action. */
+export type NoticeButton = { label: string; action: AppAction };
 
 /** A notice to show: a transient one goes after a while, a lasting one stays until the user acts on it or dismisses it. */
 export type NoticeContent = {

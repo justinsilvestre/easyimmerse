@@ -6,7 +6,7 @@ import {
 import { createNativeEffects } from "@easyimmerse/effects-native";
 import type { ServerConfig } from "@easyimmerse/state";
 import { createAppStore, createPlayerRegistry } from "@easyimmerse/state";
-import { AppRoot } from "@easyimmerse/ui";
+import { AppRoot, definitionMarkdown } from "@easyimmerse/ui";
 import { createRoot } from "react-dom/client";
 import "@easyimmerse/ui/styles.css";
 
@@ -14,7 +14,11 @@ import "@easyimmerse/ui/styles.css";
 export function bootstrap(): void {
   const server = readInjectedServerConfig();
   const playerRegistry = createPlayerRegistry();
-  const effects = createNativeEffects({ playerRegistry, server });
+  const effects = createNativeEffects({
+    playerRegistry,
+    server,
+    writeDefinitionMarkdown: definitionMarkdown,
+  });
   const store = createAppStore(
     effects,
     createBackendStoreParts(createHttpBackendClient(server), server),

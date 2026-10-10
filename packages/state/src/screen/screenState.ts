@@ -1,4 +1,5 @@
 import type { AudioClip, Cue, TrackSelection } from "@easyimmerse/types";
+import type { FlashcardForm } from "../flashcards/flashcardForm.ts";
 import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
 import type { MainRoute } from "../route/route.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
@@ -20,7 +21,12 @@ import type { MediaImportWizard } from "./projectScreen/mediaImportWizard.ts";
 export type MediaScreenState = {
   kind: "media";
   player: PlayerState;
-  /** The clip of the flashcard open in the editor while playback loops it; null while nothing loops. */
+  /**
+   * The flashcard open in the form, or null when the form is closed.
+   * Leaving the screen saves its card in the background, so the form never outlives the screen.
+   */
+  flashcardForm: FlashcardForm | null;
+  /** The clip of the flashcard open in the form while playback loops it; null while nothing loops. */
   loop: AudioClip | null;
   /** The clip that the editor's Play button started, which pauses the player at its end; null when nothing is to pause. */
   clipPlayback: AudioClip | null;
@@ -123,6 +129,7 @@ export function initialMainScreen(
         panels: initialMediaPanels,
         lookup: initialLookup,
         sourceMedia: null,
+        flashcardForm: null,
       };
   }
 }

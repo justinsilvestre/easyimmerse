@@ -3,6 +3,8 @@ import type {
   AddSubtitleTrackRequest,
   ConversionCacheBudget,
   ConversionCacheStatus,
+  Flashcard,
+  FlashcardDraft,
   ImportFormRequest,
   ImportJobStarted,
   ImportJobStatus,
@@ -32,7 +34,14 @@ import type {
   WaveformResponse,
 } from "@easyimmerse/types";
 import type { Dispatch } from "redux";
-import type { PickedDictionaryFile } from "../platform/effects.ts";
+import type {
+  DeletePurpose,
+  SavePurpose,
+} from "../flashcards/flashcardRequests.ts";
+import type {
+  PickedDictionaryFile,
+  PickedMediaFile,
+} from "../platform/effects.ts";
 
 /** A request to the server that an update may send, one member per endpoint an update needs. */
 export type ServerRequest =
@@ -98,7 +107,25 @@ export type ServerRequest =
       projectId: string;
       mediaFileId: string;
       selection: SubtitleSelection;
-    };
+    }
+  /** Creates a new flashcard under its id, or replaces an existing one. `purpose` comes back with the outcome and is not sent. */
+  | {
+      kind: "saveFlashcard";
+      projectId: string;
+      flashcardId: string;
+      draft: FlashcardDraft;
+      isNew: boolean;
+      purpose: SavePurpose;
+    }
+  /** Deletes a flashcard. `purpose` comes back with the outcome and is not sent. */
+  | {
+      kind: "deleteFlashcard";
+      projectId: string;
+      flashcardId: string;
+      purpose: DeletePurpose;
+    }
+  /** Opens a media file the browser holds to learn whether it shows pictures. */
+  | { kind: "probePictures"; file: PickedMediaFile };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -136,6 +163,10 @@ export type ServerResponses = {
   removeMediaFile: void;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   setSubtitleSelection: void;
+  saveFlashcard: Flashcard;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  deleteFlashcard: void;
+  probePictures: boolean;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

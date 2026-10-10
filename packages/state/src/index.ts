@@ -8,6 +8,56 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
+export type {
+  EditorAction,
+  EditorState,
+  FlashcardTextFieldKey,
+} from "./flashcards/editFlashcard.ts";
+export {
+  moveClipEndpoint,
+  reduceEditor,
+  toggleField,
+} from "./flashcards/editFlashcard.ts";
+export type { FailedSave } from "./flashcards/failedSave.ts";
+export type { FlashcardDestination } from "./flashcards/flashcardActions.ts";
+export type { FlashcardCard } from "./flashcards/flashcardCard.ts";
+export {
+  flashcardIdOf,
+  newFlashcardSegmentId,
+  segmentIdOf,
+} from "./flashcards/flashcardCard.ts";
+export {
+  draftOfCard,
+  screenshotForClip,
+} from "./flashcards/flashcardDrafts.ts";
+export type {
+  FlashcardForm,
+  LookupFieldsContext,
+} from "./flashcards/flashcardForm.ts";
+export type {
+  DrawnFlashcard,
+  MediaFlashcards,
+} from "./flashcards/flashcardsSelectors.ts";
+export {
+  selectFlashcardForm,
+  selectMediaFlashcards,
+} from "./flashcards/flashcardsSelectors.ts";
+export { isSameLanguage, primarySubtag } from "./flashcards/languageTags.ts";
+export type {
+  DefinitionWriter,
+  LookupFlashcardFields,
+} from "./flashcards/lookupFields.ts";
+export { flashcardFieldsFromLookup } from "./flashcards/lookupFields.ts";
+export {
+  isAwaitingLookup,
+  type SaveStage,
+  saveStatusOf,
+} from "./flashcards/saveStage.ts";
+export {
+  type StatusLineSave,
+  selectStatusLineSaves,
+} from "./flashcards/selectStatusLineSaves.ts";
+export { selectUnsavedWorkCount } from "./flashcards/unsavedWorkCount.ts";
 export { selectNotices } from "./notices/noticesSelectors.ts";
 export type {
   Notice,
@@ -60,7 +110,6 @@ export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
 export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictionaryImport.ts";
 export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
 export {
-  selectFinishedLookupFlashcard,
   selectLookup,
   selectLookupCursor,
 } from "./screen/lookup/lookupSelectors.ts";
@@ -83,6 +132,7 @@ export {
 } from "./screen/lookup/textCursor.ts";
 export {
   documentFormatOf,
+  isAudioFileName,
   isDocumentFileName,
 } from "./screen/mediaFileExtensions.ts";
 export { isConversionNoticeDue } from "./screen/mediaScreen/conversionNotice.ts";

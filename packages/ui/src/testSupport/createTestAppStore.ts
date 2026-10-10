@@ -6,6 +6,7 @@ import {
   createPlayerRegistry,
   createRecordingEffects,
 } from "@easyimmerse/state";
+import { definitionMarkdown } from "../lookup/definitionMarkdown.ts";
 import { createFakeBackendClient } from "./createFakeBackendClient.ts";
 import { fixtureResponses } from "./fixtureResponses.ts";
 
@@ -19,7 +20,11 @@ export function createTestAppStore(
   client: BackendClient = createFakeBackendClient(fixtureResponses),
   server: ServerConfig | null = null,
   browserFiles: BrowserFiles | null = null,
-  effects: ReturnType<typeof createRecordingEffects> = createRecordingEffects(),
+  effects: ReturnType<typeof createRecordingEffects> = createRecordingEffects(
+    {},
+    false,
+    definitionMarkdown,
+  ),
 ) {
   const store = createAppStore(
     effects,

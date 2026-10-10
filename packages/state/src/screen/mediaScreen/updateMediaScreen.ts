@@ -5,9 +5,11 @@ import type { MediaRoute } from "../../route/route.ts";
 import { updateLookup } from "../lookup/updateLookup.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateMediaPanels } from "./mediaPanels.ts";
+import { picturesProbeOf } from "./picturesProbe.ts";
 import { updateSourceMedia } from "./sourceMedia/updateSourceMedia.ts";
 import { updateClipLoop } from "./updateClipLoop.ts";
 import { updateClipPlayback } from "./updateClipPlayback.ts";
+import { updateFlashcardForm } from "./updateFlashcardForm.ts";
 import { updatePathPlayback } from "./updatePathPlayback.ts";
 import { updatePlayer } from "./updatePlayer.ts";
 import { updateResume } from "./updateResume.ts";
@@ -32,6 +34,9 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
     ];
   },
   (screen, action) => {
+    // The form takes the side panel while a card is open, so the subtitles panel cannot be toggled meanwhile.
+    if (action.type === "cuePanelToggled" && screen.flashcardForm !== null)
+      return [screen, []];
     const panels = updateMediaPanels(screen.panels, action);
     return [panels === screen.panels ? screen : { ...screen, panels }, []];
   },
@@ -59,6 +64,8 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
   },
   updateSubtitlePick,
   updateSubtitleSelection,
+  (screen, action, _route, app) => updateFlashcardForm(screen, action, app),
+  (screen, action, route) => [screen, picturesProbeOf(action, route)],
   updateClipLoop,
   updateClipPlayback,
   updateResume,
@@ -66,7 +73,7 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
 ];
 
 /**
- * Updates the media screen: its player, the dictionary pop-up, the plugin source dialog, the clip loop, the clip Play, the resume seek, how a file on the server's disk plays,
+ * Updates the media screen: its player, the dictionary pop-up, the plugin source dialog, the flashcard form, the clip loop, the clip Play, the resume seek, how a file on the server's disk plays,
  * the subtitles file picked for it and the tracks chosen to show, its waveform, and the panels around its stage.
  * `app` is the state before the action.
  */

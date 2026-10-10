@@ -6,7 +6,6 @@ import type {
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
 import { WordClickMemoryProvider } from "./components/wordClickMemoryContext.tsx";
-import { SharedSavingProvider } from "./flashcards/SharedSavingContext.tsx";
 import { UnsavedCardsStatus } from "./flashcards/unsaved/UnsavedCardsStatus.tsx";
 import { NoticeRegion } from "./notices/NoticeRegion.tsx";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
@@ -24,16 +23,14 @@ export function AppRoot({
 }) {
   return (
     <Provider store={store}>
-      <SharedSavingProvider>
-        <PlayerRegistryContext value={playerRegistry}>
-          <BrowserFileRegistryContext value={browserFileRegistry}>
-            <WordClickMemoryProvider>
-              <Screens />
-            </WordClickMemoryProvider>
-          </BrowserFileRegistryContext>
-        </PlayerRegistryContext>
-        <NoticeRegion statusLine={<UnsavedCardsStatus />} />
-      </SharedSavingProvider>
+      <PlayerRegistryContext value={playerRegistry}>
+        <BrowserFileRegistryContext value={browserFileRegistry}>
+          <WordClickMemoryProvider>
+            <Screens />
+          </WordClickMemoryProvider>
+        </BrowserFileRegistryContext>
+      </PlayerRegistryContext>
+      <NoticeRegion statusLine={<UnsavedCardsStatus />} />
     </Provider>
   );
 }

@@ -5,6 +5,7 @@ import {
   cat,
   chosenWord,
   dog,
+  holdInPopup,
   hoverSettled,
   mediaScreenAfter,
   restingOn,
@@ -155,51 +156,10 @@ describe("updateLookup", () => {
     });
   });
 
-  describe("with C", () => {
-    it("starts a flashcard for the cursor's word", () => {
-      const [lookup] = apply(
-        actions.lookupFlashcardAtCursorRequested("save"),
-        actions.lookupCursorMoved(cat, "keyboard"),
-      );
-      expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
-    });
-
-    it("starts a ready flashcard for no word when there is no cursor", () => {
-      const [lookup] = apply(actions.lookupFlashcardAtCursorRequested("save"));
-      expect(lookup.pendingFlashcard).toEqual({
-        sequence: 1,
-        chosen: {
-          word: { term: "", query: null },
-          source: null,
-          occurrence: null,
-          anchor: null,
-        },
-        destination: "save",
-        stage: "ready",
-      });
-    });
-
-    it("keeps a flashcard that waits for its lookup when there is no cursor", () => {
-      const [lookup] = apply(
-        actions.lookupFlashcardAtCursorRequested("save"),
-        actions.lookupFlashcardRequested(cat, "save"),
-      );
-      expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
-    });
-
-    it("leaves the pop-up open when there is no cursor", () => {
-      const [lookup] = apply(
-        actions.lookupFlashcardAtCursorRequested("save"),
-        actions.lookupWordClicked(cat, "mouse"),
-      );
-      expect(lookup.popup?.chosen).toEqual(cat);
-    });
-  });
-
   describe("with a word held in the pop-up", () => {
     it("starts a flashcard for it with the passage and place of the word the pop-up shows", () => {
       const [lookup] = apply(
-        actions.lookupPopupWordHeld("Katze"),
+        holdInPopup("Katze"),
         actions.lookupWordClicked(cat, "mouse"),
       );
       expect(lookup.pendingFlashcard?.chosen).toEqual({
@@ -212,7 +172,7 @@ describe("updateLookup", () => {
 
     it("does nothing while the pop-up shows no word", () => {
       const [lookup] = apply(
-        actions.lookupPopupWordHeld("Katze"),
+        holdInPopup("Katze"),
         actions.lookupSearchOpened(),
       );
       expect(lookup.pendingFlashcard).toBeNull();

@@ -2,6 +2,11 @@ import type { Cue, LookupResponse, LookupResult } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
+import {
+  exampleContext,
+  exampleNewFlashcard,
+} from "../../flashcards/exampleFlashcards.ts";
+import type { FlashcardDestination } from "../../flashcards/flashcardActions.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { lookupHoverRequestId, lookupRequestId } from "./lookupIds.ts";
 import type { ChosenWord } from "./lookupState.ts";
@@ -46,6 +51,31 @@ export function chosenWord(
 
 export const cat = chosenWord("cat", 4);
 export const dog = chosenWord("dog", 0);
+
+/** A flashcard asked for from a word, under an id named after the word, saved at once unless it goes to the form. */
+export const requestFlashcard = (
+  chosen: ChosenWord,
+  destination: FlashcardDestination = "save",
+) =>
+  actions.lookupFlashcardRequested(
+    chosen,
+    destination,
+    exampleNewFlashcard(`f-${chosen.word.term}`, chosen.word.term),
+    exampleContext,
+  );
+
+/** A word held inside the pop-up, which becomes a flashcard saved at once. */
+export const holdInPopup = (term: string) =>
+  actions.lookupPopupWordHeld(
+    term,
+    "save",
+    exampleNewFlashcard(`f-${term}`, term),
+    exampleContext,
+  );
+
+/** The fields of the lookup of the flashcard with this sequence, written once the lookup settled; null when it found nothing. */
+export const fieldsWritten = (sequence: number) =>
+  actions.flashcardFieldsWritten(lookupRequestId(sequence), null);
 
 /** The settle of the lookup of the flashcard with this sequence, for the word given. */
 export const lookupSettled = (

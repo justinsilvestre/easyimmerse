@@ -34,12 +34,6 @@ export const screenActions = {
   /** The media element could not play the source at `url`, for the reason given in `cause`. */
   playerFailed: (url: string, cause: string) =>
     ({ type: "playerFailed", url, cause }) as const,
-  /** A flashcard opened in the editor, with its clip, or null when it has none. Transitional until the open card is in the store. */
-  editedClipOpened: (clip: AudioClip | null) =>
-    ({ type: "editedClipOpened", clip }) as const,
-  /** The clip of the flashcard open in the editor has new edges. */
-  editedClipMoved: (clip: AudioClip) =>
-    ({ type: "editedClipMoved", clip }) as const,
   /** The user opened or closed the media screen's subtitles panel. */
   cuePanelToggled: () => ({ type: "cuePanelToggled" }) as const,
   /** The user showed or hid the media screen's waveform. */
@@ -57,8 +51,6 @@ export const screenActions = {
   /** The user asked to play a flashcard's clip from its start, pausing at its end. */
   clipPlayRequested: (clip: AudioClip) =>
     ({ type: "clipPlayRequested", clip }) as const,
-  /** The flashcard open in the editor has closed. */
-  editedClipClosed: () => ({ type: "editedClipClosed" }) as const,
   /** The browser's media support for a file's formats, as measured for its playback plan. */
   playbackEnvironmentMeasured: (
     mediaFileId: string,

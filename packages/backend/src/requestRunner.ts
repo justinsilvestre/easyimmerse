@@ -148,6 +148,23 @@ export const requestEndpoints = {
       { projectId, settings },
       { track: false },
     ),
+  saveFlashcard: ({ projectId, flashcardId, draft, isNew }) =>
+    isNew
+      ? backendApi.endpoints.createFlashcard.initiate(
+          { projectId, flashcard: { id: flashcardId, draft } },
+          { track: false },
+        )
+      : backendApi.endpoints.updateFlashcard.initiate(
+          { projectId, flashcardId, draft },
+          { track: false },
+        ),
+  deleteFlashcard: ({ projectId, flashcardId }) =>
+    backendApi.endpoints.deleteFlashcard.initiate(
+      { projectId, flashcardId },
+      { track: false },
+    ),
+  probePictures: ({ file }) =>
+    backendApi.endpoints.probePictures.initiate(file, { subscribe: false }),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

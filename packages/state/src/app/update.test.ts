@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import {
+  exampleListedFlashcard,
+  exampleNewFlashcard,
+} from "../flashcards/exampleFlashcards.ts";
 import type { RequestRecord } from "../operations/operations.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import { actions } from "./appAction.ts";
@@ -100,5 +104,35 @@ describe("update", () => {
         { type: "openExternalUrl", url: "https://example.com/undo" },
       ]);
     });
+  });
+  it("starts guarding the close when unsaved work begins", () => {
+    const [, effects] = update(
+      stateAfter(actions.openMediaFileRequested("p1", "m1")),
+      actions.flashcardStarted(exampleNewFlashcard("f1", "Katze"), "save"),
+    );
+    expect(effects).toContainEqual({ type: "guardClose", isActive: true });
+  });
+
+  it("stops guarding the close when it ends", () => {
+    const app = stateAfter(
+      actions.openMediaFileRequested("p1", "m1"),
+      actions.flashcardStarted(exampleNewFlashcard("f1", "Katze"), "save"),
+    );
+    const save = app.operations.requests.find(
+      ({ request }) => request.kind === "saveFlashcard",
+    );
+    if (save === undefined) throw new Error("No save was sent.");
+    const [, effects] = update(
+      app,
+      actions.requestSettled(
+        save.id,
+        save.request as never,
+        {
+          ok: true,
+          data: exampleListedFlashcard("f1", "Katze"),
+        } as never,
+      ),
+    );
+    expect(effects).toContainEqual({ type: "guardClose", isActive: false });
   });
 });

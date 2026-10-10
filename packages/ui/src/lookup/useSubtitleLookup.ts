@@ -1,8 +1,13 @@
-import { actions } from "@easyimmerse/state";
+import {
+  actions,
+  type FlashcardDestination,
+  selectLookupCursor,
+} from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { type ComponentProps, type RefObject, useMemo } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
@@ -15,8 +20,8 @@ import { useCuePosition } from "../media/useCuePosition.ts";
 import { chosenWordAt } from "./chosenWordAt.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import { matchedLengthAhead } from "./matchedLengthAhead.ts";
-import type { LookupFlashcardStarts } from "./useLookupFlashcardHandoff.ts";
 import { useWordLookup } from "./useWordLookup.ts";
+import type { WordFlashcards } from "./wordFlashcards.ts";
 
 /**
  * Looks up words of the subtitles in the dictionary pop-up, which pauses playback while it is open
@@ -32,17 +37,20 @@ import { useWordLookup } from "./useWordLookup.ts";
  */
 export function useSubtitleLookup(
   languages: { target: string; translation: string },
-  starts: LookupFlashcardStarts,
+  flashcards: WordFlashcards,
   screenRef: RefObject<Element | null>,
 ) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const lookup = useWordLookup(languages, starts);
+  const lookup = useWordLookup(languages, flashcards);
   const cursor = useCuePosition();
+  const cursorWord = useAppSelector(selectLookupCursor)?.chosen;
   const chosenAt = (hit: WordHit, cue: Cue) =>
     chosenWordAt(hit, cue, lookup.wordOf);
-  const startFlashcardAtCursor = (destination: "save" | "editor") =>
-    dispatch(actions.lookupFlashcardAtCursorRequested(destination));
+  const startFlashcardAtCursor = (destination: FlashcardDestination) =>
+    cursorWord
+      ? lookup.startFlashcardFor(cursorWord, destination)
+      : lookup.startWordlessFlashcard(destination);
   useKeyboardShortcut(
     "l",
     () => dispatch(actions.lookupCursorLookedUp()),
@@ -87,6 +95,8 @@ export function useSubtitleLookup(
      * or, when there is no cursor, for no word; saved at once, or opened in the editor, as `destination` says.
      */
     startFlashcardAtCursor,
+    /** Saves a flashcard for no word, from the cue shown now, as the New flashcard button does. */
+    startWordlessFlashcard: lookup.startWordlessFlashcard,
     wordGestures,
   };
 }

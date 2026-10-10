@@ -1,13 +1,14 @@
-import { selectNotices } from "@easyimmerse/state";
+import {
+  actions,
+  type StatusLineSave,
+  selectStatusLineSaves,
+} from "@easyimmerse/state";
 import { X } from "lucide-react";
-import { useId, useState, useSyncExternalStore } from "react";
+import { useId, useState } from "react";
 import { Button } from "../../components/Button.tsx";
 import { IconButton } from "../../components/IconButton.tsx";
+import { useAppDispatch } from "../../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../../hooks/useAppSelector.ts";
-import { flashcardNoticeKeys } from "../flashcardNotices.ts";
-import { useUnsavedCards } from "../SharedSavingContext.tsx";
-import type { ListedUnsavedCard } from "./unsavedCardStore.ts";
-import { useUnsavedCardActions } from "./useUnsavedCardActions.ts";
 
 /**
  * One lasting line that counts the flashcards that could not be saved, and expands into a list of them,
@@ -15,12 +16,12 @@ import { useUnsavedCardActions } from "./useUnsavedCardActions.ts";
  * A card whose own notice is showing, as a refused save's is, is left to that notice, so that one failure shows once.
  */
 export function UnsavedCardsStatus() {
-  const cards = useCardsWithoutOwnNotice();
-  const actions = useUnsavedCardActions();
+  const saves = useAppSelector(selectStatusLineSaves);
+  const dispatch = useAppDispatch();
   const [isExpanded, setExpanded] = useState(false);
   const listId = useId();
-  const hasCards = cards.length > 0;
-  const canRetry = cards.some((card) => !card.isRejected);
+  const hasCards = saves.length > 0;
+  const canRetry = saves.some((save) => !save.isRefused);
   return (
     <div
       className={
@@ -36,10 +37,13 @@ export function UnsavedCardsStatus() {
           aria-atomic
           className={hasCards ? "flex-1" : "sr-only"}
         >
-          {countText(cards.length)}
+          {countText(saves.length)}
         </p>
         {hasCards && canRetry && (
-          <Button size="sm" onClick={actions.retryAll}>
+          <Button
+            size="sm"
+            onClick={() => dispatch(actions.allFailedSavesRetried())}
+          >
             Retry all
           </Button>
         )}
@@ -70,8 +74,8 @@ export function UnsavedCardsStatus() {
           aria-label="Flashcards not saved"
           className="flex flex-col gap-1"
         >
-          {cards.map((card) => (
-            <UnsavedCardItem key={card.flashcardId} card={card} />
+          {saves.map((save) => (
+            <UnsavedCardItem key={save.flashcardId} save={save} />
           ))}
         </ul>
       )}
@@ -79,33 +83,36 @@ export function UnsavedCardsStatus() {
   );
 }
 
-function UnsavedCardItem({ card }: { card: ListedUnsavedCard }) {
-  const actions = useUnsavedCardActions();
-  const word = card.card.editor.content.word;
+function UnsavedCardItem({ save }: { save: StatusLineSave }) {
+  const dispatch = useAppDispatch();
+  const { flashcardId, projectId, mediaFileId, isRefused, isRetrying } = save;
+  const word = save.card.editor.content.word;
   return (
     <li className="flex items-center gap-2">
       <span className="flex-1">
         {word}
-        {card.isRejected && " (refused by the server)"}
-        {card.isRetrying && " (saving…)"}
+        {isRefused && " (refused by the server)"}
+        {isRetrying && " (saving…)"}
       </span>
-      {!card.isRejected && (
+      {!isRefused && (
         <Button
           size="sm"
           aria-label={`Retry “${word}”`}
-          aria-disabled={card.isRetrying || undefined}
-          onClick={() => {
-            if (!card.isRetrying) actions.retry(card.flashcardId);
-          }}
+          aria-disabled={isRetrying || undefined}
+          onClick={() => dispatch(actions.failedSaveRetried(flashcardId))}
         >
           Retry
         </Button>
       )}
-      {card.mediaFileId !== null && (
+      {mediaFileId !== null && (
         <Button
           size="sm"
           aria-label={`Open “${word}”`}
-          onClick={() => actions.open(card.flashcardId)}
+          onClick={() =>
+            dispatch(
+              actions.failedSaveOpened(flashcardId, projectId, mediaFileId),
+            )
+          }
         >
           Open
         </Button>
@@ -114,25 +121,12 @@ function UnsavedCardItem({ card }: { card: ListedUnsavedCard }) {
         size="sm"
         variant="danger"
         aria-label={`Discard “${word}”`}
-        aria-disabled={card.isRetrying || undefined}
-        onClick={() => {
-          if (!card.isRetrying) actions.discard(card.flashcardId);
-        }}
+        aria-disabled={isRetrying || undefined}
+        onClick={() => dispatch(actions.failedSaveDiscarded(flashcardId))}
       >
         Discard
       </Button>
     </li>
-  );
-}
-
-/** The listed cards, less those whose own notice is showing. */
-function useCardsWithoutOwnNotice(): readonly ListedUnsavedCard[] {
-  const store = useUnsavedCards();
-  const cards = useSyncExternalStore(store.subscribe, store.list);
-  const notices = useAppSelector(selectNotices);
-  const shownKeys = new Set(notices.map((notice) => notice.key));
-  return cards.filter(
-    (card) => !shownKeys.has(flashcardNoticeKeys.saveRefused(card.flashcardId)),
   );
 }
 

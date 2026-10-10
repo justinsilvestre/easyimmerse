@@ -1,9 +1,9 @@
+import { type EditorAction, reduceEditor } from "@easyimmerse/state";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useReducer } from "react";
 import { fn } from "storybook/test";
 import { generateExamplePeaks } from "../media/examplePeaks.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
-import { type EditorAction, reduceEditor } from "./editFlashcard.ts";
 import { exampleFlashcard, exampleScreenshotUrl } from "./exampleFlashcard.ts";
 import { MediaFields } from "./FlashcardEditorFields.tsx";
 import { fieldsOfPreset } from "./flashcardPresets.ts";

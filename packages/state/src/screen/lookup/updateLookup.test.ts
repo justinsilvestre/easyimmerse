@@ -5,6 +5,7 @@ import {
   cat,
   dog,
   hoverSettled,
+  requestFlashcard,
   restingOn,
 } from "./lookupTestSupport.ts";
 
@@ -100,7 +101,7 @@ describe("updateLookup", () => {
   it("stays on its word while a flashcard waits for its lookup", () => {
     const [lookup] = apply(
       dogAnswered(2),
-      actions.lookupFlashcardRequested(cat, "save"),
+      requestFlashcard(cat),
       ...restingOn(dog),
     );
     expect(lookup.popup?.chosen).toEqual(cat);

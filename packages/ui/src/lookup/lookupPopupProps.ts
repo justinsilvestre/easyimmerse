@@ -43,8 +43,7 @@ export function lookupPopupProps(
       size: lookup.size,
       onToggleSize,
       resolveMediaUrl: display.resolveMediaUrl,
-      pendingFlashcard:
-        pending?.stage === "waiting" ? pending.chosen.word.term : null,
+      pendingFlashcard: pending?.chosen.word.term ?? null,
       ...handlers,
     } satisfies Omit<
       ComponentProps<typeof DictionaryPopup>,

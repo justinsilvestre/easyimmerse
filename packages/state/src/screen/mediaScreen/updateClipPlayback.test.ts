@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
+import { openWithClip } from "../../flashcards/exampleFlashcards.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateClipPlayback } from "./updateClipPlayback.ts";
 import { updatePlayer } from "./updatePlayer.ts";
 
 const clip: AudioClip = { start_ms: 1_750, end_ms: 3_000 };
+const otherClip: AudioClip = { start_ms: 30_000, end_ms: 31_000 };
 const requested = actions.clipPlayRequested(clip);
 const playing = actions.playerPlayingChanged(true);
 
@@ -88,19 +90,36 @@ describe("updateClipPlayback", () => {
   });
 
   it("waits for the moved clip's end", () => {
-    const moved = actions.editedClipMoved({ start_ms: 1_750, end_ms: 4_000 });
-    expect(effectsAt(3.1, requested, playing, moved)).toEqual([]);
+    const moved = actions.flashcardEdited({
+      type: "clipChanged",
+      clip: { start_ms: 1_750, end_ms: 4_000 },
+    });
+    expect(
+      effectsAt(3.1, openWithClip(clip), requested, playing, moved),
+    ).toEqual([]);
   });
 
   it("leaves playback alone once the card closes", () => {
     expect(
-      effectsAt(3.1, requested, playing, actions.editedClipClosed()),
+      effectsAt(
+        3.1,
+        openWithClip(clip),
+        requested,
+        playing,
+        actions.flashcardClosed(),
+      ),
     ).toEqual([]);
   });
 
   it("leaves playback alone once another card opens", () => {
     expect(
-      effectsAt(3.1, requested, playing, actions.editedClipOpened(null)),
+      effectsAt(
+        3.1,
+        openWithClip(clip),
+        requested,
+        playing,
+        openWithClip(otherClip),
+      ),
     ).toEqual([]);
   });
 

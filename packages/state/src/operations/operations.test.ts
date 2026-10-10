@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { initialAppState } from "../app/update.ts";
-import { cat } from "../screen/lookup/lookupTestSupport.ts";
+import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import { operationsFeature } from "./operations.ts";
 
@@ -53,7 +53,7 @@ describe("operationsFeature", () => {
   it("counts the flashcards started from words, which number their lookups' requests", () => {
     const [next] = operationsFeature.update(
       operationsFeature.initialState,
-      actions.lookupFlashcardRequested(cat, "save"),
+      requestFlashcard(cat),
       initialAppState,
     );
     expect(next.lookupRequestsSent).toBe(1);

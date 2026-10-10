@@ -12,7 +12,11 @@ import {
   createBrowserFileRegistry,
   createPlayerRegistry,
 } from "@easyimmerse/state";
-import { AppRoot, browserFrameCapturer } from "@easyimmerse/ui";
+import {
+  AppRoot,
+  browserFrameCapturer,
+  definitionMarkdown,
+} from "@easyimmerse/ui";
 import { loadOfflineWasm } from "@easyimmerse/wasm";
 import wasmUrl from "@easyimmerse/wasm/pkg/easyimmerse_wasm_bg.wasm?url";
 import { createRoot } from "react-dom/client";
@@ -27,6 +31,7 @@ export async function bootstrap(): Promise<void> {
   const effects = createExtensionEffects({
     playerRegistry,
     browserFileRegistry,
+    writeDefinitionMarkdown: definitionMarkdown,
   });
   const store = createAppStore(
     effects,

@@ -1,6 +1,8 @@
 import { useListPluginsQuery } from "@easyimmerse/backend";
 import {
   actions,
+  isAwaitingLookup,
+  saveStatusOf,
   selectIsSubtitleAppearanceOpen,
   selectMediaPanels,
   selectPlayer,
@@ -16,7 +18,6 @@ import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
 import { draftFromCue } from "../flashcards/draftFromCue.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
-import { isAwaitingLookup, saveStatusOf } from "../flashcards/saveStage.ts";
 import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
@@ -29,7 +30,7 @@ import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import type { ItemSpan } from "../hooks/useVisibleItemSpan.ts";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
-import type { StartFlashcardFromLookup } from "../lookup/lookupPlace.ts";
+import type { LookupPlace } from "../lookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
 import { wordLookupsIn } from "../lookup/wordLookupsIn.ts";
@@ -63,8 +64,8 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * C saves a flashcard from the cursor as a double-click there would, or as the New flashcard button would when there is no cursor;
  * and E makes the same flashcard but opens it in the editor instead, unless a card is open there already.
  * The file resumes where playback last was, as `updateResume` in the state package describes.
- * Opening a flashcard seeks to its clip, which loops while playing, as `updateClipLoop` in the state package describes.
- * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
+ * Opening a flashcard seeks to its clip, which loops while playing, as `updateFlashcardForm` in the state package describes.
+ * While a card is open the editor takes the side panel, so the store keeps the subtitles panel's toggle unavailable until it closes.
  */
 export function MediaScreen({
   project,
@@ -92,7 +93,7 @@ export function MediaScreen({
     selectShownCue(state, subtitles.cues),
   );
   const hasScreenshots = screenshotSource !== null;
-  const flashcards = useMediaFlashcards(projectId, mediaFileId, hasScreenshots);
+  const flashcards = useMediaFlashcards(projectId, mediaFileId);
   const panels = useAppSelector(selectMediaPanels);
   const isSubtitleAppearanceOpen = useAppSelector(
     selectIsSubtitleAppearanceOpen,
@@ -109,8 +110,9 @@ export function MediaScreen({
     () => parseSubtitleAppearance(storedAppearance),
     [storedAppearance],
   );
-  const editedContent = flashcards.edited?.editor.content;
-  const isEditorOpen = flashcards.edited !== null;
+  const { form } = flashcards;
+  const editedContent = form?.card.editor.content;
+  const isEditorOpen = form !== null;
   const fullscreen = useFullscreen();
   // Passed through MediaView to the panel toggles, which mark the subtitles panel's toggle unavailable meanwhile.
   const shownPanels = {
@@ -133,33 +135,22 @@ export function MediaScreen({
     targetSubtitlesId: subtitles.selection.target_track_id,
     translationSubtitlesId: subtitles.selection.translation_track_id,
   };
-  /**
-   * Hands `start` a flashcard for a word from its cue, or else from the cue at the current time,
-   * filled from its lookup now or, through `lateFields`, once the lookup answers.
-   */
-  const flashcardStarter =
-    (start: typeof flashcards.start): StartFlashcardFromLookup =>
-    (word, place, lookupFields, lateFields) => {
-      if (mediaFile === null) return;
-      const cue = place?.source.kind === "cue" ? place.source.cue : shownCue;
-      const draft = draftFromCue({
-        word,
-        wordStart: place?.start ?? null,
-        cue,
-        translationCue: cue
-          ? findTranslationOf(cue, subtitles.translationCues)
-          : null,
-        mediaFile,
-        settings,
-        hasScreenshots,
-      });
-      const started = lookupFields
-        ? { ...draft, content: { ...draft.content, ...lookupFields } }
-        : draft;
-      start(started, lateFields);
-    };
-  const createFlashcard = flashcardStarter(flashcards.create);
-  const openNewFlashcard = flashcardStarter(flashcards.start);
+  /** The draft of a flashcard for a word from its cue, or else from the cue at the current time, or null until the file's record arrives. */
+  const draftFor = (word: string, place: LookupPlace | null) => {
+    if (mediaFile === null) return null;
+    const cue = place?.source.kind === "cue" ? place.source.cue : shownCue;
+    return draftFromCue({
+      word,
+      wordStart: place?.start ?? null,
+      cue,
+      translationCue: cue
+        ? findTranslationOf(cue, subtitles.translationCues)
+        : null,
+      mediaFile,
+      settings,
+      hasScreenshots,
+    });
+  };
   const languages = {
     target: settings.target_language,
     translation: settings.translation_language,
@@ -175,7 +166,7 @@ export function MediaScreen({
   const screenRef = useRef<HTMLDivElement>(null);
   const lookup = useSubtitleLookup(
     languages,
-    { save: createFlashcard, editor: openNewFlashcard },
+    { draftFor, savesAtOnce: true },
     screenRef,
   );
   useKeyboardShortcut(
@@ -201,10 +192,7 @@ export function MediaScreen({
     onToggleSubtitles: () => dispatch(actions.subtitlesToggled()),
     onOpenSubtitleAppearance: () =>
       dispatch(actions.subtitleAppearanceOpened()),
-    // The editor takes the side panel while a card is open. Transitional until the open card is in the store.
-    onToggleCuePanel: () => {
-      if (!isEditorOpen) dispatch(actions.cuePanelToggled());
-    },
+    onToggleCuePanel: () => dispatch(actions.cuePanelToggled()),
     onToggleWaveform: () => dispatch(actions.waveformToggled()),
     onToggleFullscreen: fullscreen.isSupported ? fullscreen.toggle : undefined,
     onOpenTracks: canChooseTracks
@@ -301,7 +289,7 @@ export function MediaScreen({
         wordGestures={lookup.wordGestures}
         onCueStep={cueSteps.step}
         onLookup={lookup.openSearch}
-        onAddFlashcard={() => createFlashcard("", null, null)}
+        onAddFlashcard={() => lookup.startWordlessFlashcard("save")}
         lookup={
           lookup.popup && (
             <AnchoredPopup {...lookup.popup.anchored}>
@@ -310,22 +298,18 @@ export function MediaScreen({
           )
         }
         sidePanel={
-          flashcards.edited !== null ? (
+          form !== null ? (
             <FlashcardEditor
-              key={
-                flashcards.edited.kind === "new"
-                  ? "new"
-                  : flashcards.edited.flashcard.id
-              }
-              state={flashcards.edited.editor}
+              key={form.card.kind === "new" ? "new" : form.card.flashcard.id}
+              state={form.card.editor}
               dispatch={flashcards.edit}
               languages={languages}
               waveform={clipWaveform}
               screenshotUrl={screenshotUrl}
-              saveStatus={saveStatusOf(flashcards.edited.stage)}
-              isNew={flashcards.edited.kind === "new"}
-              isAwaitingLookup={isAwaitingLookup(flashcards.edited.stage)}
-              hasSaveFailed={flashcards.saveFailed}
+              saveStatus={saveStatusOf(form.stage)}
+              isNew={form.card.kind === "new"}
+              isAwaitingLookup={isAwaitingLookup(form.stage)}
+              hasSaveFailed={form.saveFailure !== null}
               onSave={flashcards.save}
               onDelete={flashcards.remove}
               onClose={flashcards.close}

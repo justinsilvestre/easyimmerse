@@ -1,3 +1,4 @@
+import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
@@ -11,46 +12,53 @@ import {
   cancelCloseTimer,
   type LookupStep,
   open,
+  setAside,
   showsOccurrence,
 } from "./lookupMoves.ts";
 import type {
   ChosenWord,
   LookupState,
+  LookupWord,
   PendingFlashcard,
 } from "./lookupState.ts";
 import { flashcardLookupWaitMs } from "./lookupTiming.ts";
-import { finish } from "./updatePendingFlashcard.ts";
 
-/** A flashcard asked for from a word, saved at once or opened in the editor. */
-export type FlashcardRequest = {
-  chosen: ChosenWord;
-  destination: PendingFlashcard["destination"];
-};
+/**
+ * The flashcard that a word's action asks for, numbered after the lookups asked for before,
+ * or null when the action asks for none, as a word held in a pop-up that shows nothing.
+ */
+export function requestedFlashcard(
+  lookup: LookupState,
+  action: AppAction,
+  app: AppState,
+): PendingFlashcard | null {
+  if (action.type === "lookupFlashcardRequested")
+    return pendingFor(action.chosen, action, app);
+  if (action.type !== "lookupPopupWordHeld") return null;
+  const chosen = popupWordChosen(lookup, action.term);
+  return chosen && pendingFor(chosen, action, app);
+}
 
 /**
  * Starts a flashcard from a word, showing the word in the pop-up when it comes from the text,
- * and waits up to `flashcardLookupWaitMs` for the word's lookup; with nothing to look up, it is ready at once.
+ * and waits up to `flashcardLookupWaitMs` for the word's lookup. With nothing to look up, the pop-up is set aside at once
+ * and the flashcards take the card straight away.
  */
 export function startFlashcard(
   lookup: LookupState,
-  { chosen, destination }: FlashcardRequest,
+  pending: PendingFlashcard,
   player: PlayerState,
-  app: AppState,
 ): LookupStep {
+  const { chosen, sequence } = pending;
   const [opened, openEffects] =
     chosen.occurrence !== null && !showsOccurrence(lookup, chosen)
       ? open(lookup, chosen, player)
       : [lookup, [cancelCloseTimer]];
-  const sequence = nextLookupSequence(app);
-  const pending: PendingFlashcard = {
-    sequence,
-    chosen,
-    destination,
-    stage: "waiting",
-  };
   const { query } = chosen.word;
-  if (query === null)
-    return finish(opened, { ...pending, stage: "ready" }, openEffects);
+  if (query === null) {
+    const [aside, asideEffects] = setAside(opened);
+    return [aside, [...openEffects, ...asideEffects]];
+  }
   const send: Effect = {
     type: "sendRequest",
     id: lookupRequestId(sequence),
@@ -68,29 +76,40 @@ export function startFlashcard(
   ];
 }
 
-/**
- * Starts a flashcard for no word, as the C key does with no cursor. It is ready at once, and the pop-up stays as it is.
- * While a word's flashcard waits for its lookup, it starts nothing, so that the waiting flashcard is kept.
- * Transitional: the hand-off passes it to the flashcard hooks until C1 makes it the flashcards' own new-card branch.
- */
-export function startWordlessFlashcard(
-  lookup: LookupState,
-  destination: PendingFlashcard["destination"],
+type FlashcardRequestAction = Extract<
+  AppAction,
+  { type: "lookupFlashcardRequested" } | { type: "lookupPopupWordHeld" }
+>;
+
+function pendingFor(
+  chosen: ChosenWord,
+  { destination, flashcard, context }: FlashcardRequestAction,
   app: AppState,
-): LookupStep {
-  if (lookup.pendingFlashcard?.stage === "waiting") return [lookup, []];
-  const pendingFlashcard: PendingFlashcard = {
+): PendingFlashcard {
+  return {
     sequence: nextLookupSequence(app),
-    chosen: noWord,
+    chosen,
     destination,
-    stage: "ready",
+    draft: flashcard.draft,
+    flashcardId: flashcard.id,
+    context,
   };
-  return [{ ...lookup, pendingFlashcard }, []];
 }
 
-const noWord: ChosenWord = {
-  word: { term: "", query: null },
-  source: null,
-  occurrence: null,
-  anchor: null,
-};
+/** A word held inside the pop-up, with the passage and place of the word the pop-up shows, or null when it shows none. */
+function popupWordChosen(lookup: LookupState, term: string): ChosenWord | null {
+  const shown = lookup.popup?.chosen;
+  if (!shown) return null;
+  return {
+    word: wordInPopup(term, shown.word),
+    source: shown.source,
+    occurrence: null,
+    anchor: shown.anchor,
+  };
+}
+
+/** A word of the pop-up looked up in the language of the word the pop-up shows, or not at all when that one is not. */
+function wordInPopup(term: string, shown: LookupWord): LookupWord {
+  const query = shown.query && { text: term, language: shown.query.language };
+  return { term, query };
+}

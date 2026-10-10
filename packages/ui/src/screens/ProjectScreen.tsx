@@ -9,7 +9,6 @@ import {
 import type { Project } from "@easyimmerse/types";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
-import { useGiveUpOpenings } from "../flashcards/unsaved/useGiveUpOpenings.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { MediaScreen } from "./MediaScreen.tsx";
 import { ProjectOverview } from "./ProjectOverview.tsx";
@@ -30,7 +29,6 @@ export function ProjectScreen({
 }) {
   const { data: project, error } = useGetProjectQuery(projectId);
   const mediaFileId = useAppSelector(selectCurrentMediaFileId);
-  useGiveUpOpenings("projectId", projectId, error !== undefined);
   if (error)
     return (
       <ScreenLayout>

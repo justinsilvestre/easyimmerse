@@ -1,9 +1,9 @@
+import { reduceEditor } from "@easyimmerse/state";
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { useReducer } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
-import { reduceEditor } from "./editFlashcard.ts";
 import {
   exampleFlashcard,
   exampleLanguages,

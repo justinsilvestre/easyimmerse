@@ -1,9 +1,11 @@
-import type { ChosenWord } from "@easyimmerse/state";
-import type { DictionarySummary, LookupResult } from "@easyimmerse/types";
 import {
+  type ChosenWord,
   flashcardFieldsFromLookup,
+  type LookupFieldsContext,
   type LookupFlashcardFields,
-} from "./flashcardFieldsFromLookup.ts";
+} from "@easyimmerse/state";
+import type { LookupResult } from "@easyimmerse/types";
+import { definitionMarkdown } from "./definitionMarkdown.ts";
 import { type LookupPlace, placeOf } from "./lookupPlace.ts";
 
 /**
@@ -14,8 +16,7 @@ export function popupFlashcardOf(
   results: readonly LookupResult[],
   entryIndex: number | null,
   chosen: ChosenWord | null,
-  languages: { target: string; translation: string },
-  dictionaries: readonly DictionarySummary[],
+  context: LookupFieldsContext,
 ): {
   word: string;
   place: LookupPlace | null;
@@ -24,8 +25,8 @@ export function popupFlashcardOf(
   const fields = flashcardFieldsFromLookup(
     results,
     entryIndex,
-    languages,
-    dictionaries,
+    context,
+    definitionMarkdown,
   );
   return {
     word: fields?.word ?? chosen?.word.term ?? "",

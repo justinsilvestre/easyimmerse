@@ -1,6 +1,4 @@
 import type {
-  Flashcard,
-  FlashcardDraft,
   LookupResponse,
   MediaFile,
   PlaybackRequest,
@@ -135,40 +133,6 @@ const srtRequest = {
   format: null,
 } as const;
 
-const savedFlashcard: Flashcard = {
-  id: "f1",
-  project_id: "p1",
-  media_file_id: "m1",
-  cue_index: null,
-  word_start: null,
-  content: {
-    word: "Hund",
-    word_pronunciation: "",
-    l1_definition: "",
-    l2_definition: "",
-    text_context: "",
-    text_context_translation: "",
-    text_context_pronunciation: "",
-    audio_context: { start_ms: 1000, end_ms: 2000 },
-    screenshot: null,
-    tags: [],
-  },
-  included_fields: ["word"],
-  created_at_ms: 0,
-  updated_at_ms: 0,
-};
-
-const movedClipDraft: FlashcardDraft = {
-  media_file_id: "m1",
-  cue_index: null,
-  word_start: null,
-  content: {
-    ...savedFlashcard.content,
-    audio_context: { start_ms: 500, end_ms: 2000 },
-  },
-  included_fields: ["word"],
-};
-
 const subtitleTracks: SubtitleTracksResponse = {
   tracks: [],
   selection: { target_track_id: "s1", translation_track_id: null },
@@ -192,16 +156,6 @@ function createStubbedClient(
       return new Promise<never>(() => undefined);
     },
   };
-}
-
-async function storeWithFlashcards(failsWrites = false) {
-  const client = createStubbedClient(
-    { "GET /projects/p1/flashcards": { flashcards: [savedFlashcard] } },
-    failsWrites,
-  );
-  const store = createStore(client);
-  await store.dispatch(backendApi.endpoints.listFlashcards.initiate("p1"));
-  return store;
 }
 
 async function storeWithSubtitleTracks(failsWrites = false) {
@@ -280,22 +234,11 @@ const listedDictionaryIds = (store: ReturnType<typeof createStore>) =>
     .select()(store.getState())
     .data?.dictionaries.map(({ id }) => id);
 
-const updateMovedClip = () =>
-  backendApi.endpoints.updateFlashcard.initiate({
-    projectId: "p1",
-    flashcardId: "f1",
-    draft: movedClipDraft,
-  });
-
 const chooseTranslation = () =>
   backendApi.endpoints.setSubtitleSelection.initiate({
     ...mediaArgs,
     selection: { target_track_id: "s1", translation_track_id: "s2" },
   });
-
-const listedClip = (store: ReturnType<typeof createStore>) =>
-  backendApi.endpoints.listFlashcards.select("p1")(store.getState()).data
-    ?.flashcards[0]?.content.audio_context;
 
 const listedSelection = (store: ReturnType<typeof createStore>) =>
   backendApi.endpoints.listSubtitleTracks.select(mediaArgs)(store.getState())
@@ -587,18 +530,6 @@ describe("backendApi", () => {
   });
 
   describe("while a change is being saved", () => {
-    it("shows an updated flashcard in the cached list at once", async () => {
-      const store = await storeWithFlashcards();
-      store.dispatch(updateMovedClip());
-      expect(listedClip(store)).toEqual({ start_ms: 500, end_ms: 2000 });
-    });
-
-    it("restores the cached flashcard when the update fails", async () => {
-      const store = await storeWithFlashcards(true);
-      await store.dispatch(updateMovedClip());
-      expect(listedClip(store)).toEqual({ start_ms: 1000, end_ms: 2000 });
-    });
-
     it("shows a chosen subtitle selection in the cached list at once", async () => {
       const store = await storeWithSubtitleTracks();
       store.dispatch(chooseTranslation());

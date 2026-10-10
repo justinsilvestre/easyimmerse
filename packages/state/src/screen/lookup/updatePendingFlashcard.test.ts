@@ -5,12 +5,14 @@ import {
   applyToLookup as apply,
   cat,
   dog,
+  fieldsWritten,
   hoverSettled,
   lookupSettled,
+  requestFlashcard,
   restingOn,
 } from "./lookupTestSupport.ts";
 
-const saveCat = actions.lookupFlashcardRequested(cat, "save");
+const saveCat = requestFlashcard(cat);
 const uncoveredCat = { ...cat, word: { term: "cat", query: null } };
 
 describe("updateLookup for a flashcard started from a word", () => {
@@ -40,12 +42,7 @@ describe("updateLookup for a flashcard started from a word", () => {
 
   it("names the word while it waits", () => {
     const [lookup] = apply(saveCat);
-    expect(lookup.pendingFlashcard).toEqual({
-      sequence: 1,
-      chosen: cat,
-      destination: "save",
-      stage: "waiting",
-    });
+    expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
   });
 
   it("cancels the close of the pop-up on the second click of a double-click", () => {
@@ -54,22 +51,18 @@ describe("updateLookup for a flashcard started from a word", () => {
     expect(effects).toContainEqual({ type: "cancelTimer", id: "lookup/close" });
   });
 
-  it("is ready once the word's lookup answers", () => {
+  it("keeps waiting when the word's lookup settles, until its fields are written", () => {
     const [lookup] = apply(lookupSettled(1, cat), saveCat);
-    expect(lookup.pendingFlashcard?.stage).toBe("ready");
+    expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
   });
 
-  it("is ready once the word's lookup fails", () => {
-    const failed = lookupSettled(1, cat, {
-      ok: false,
-      error: { status: 500, message: "down" },
-    });
-    const [lookup] = apply(failed, saveCat);
-    expect(lookup.pendingFlashcard?.stage).toBe("ready");
+  it("hands the flashcard over once the fields of its lookup are written", () => {
+    const [lookup] = apply(fieldsWritten(1), saveCat);
+    expect(lookup.pendingFlashcard).toBeNull();
   });
 
-  it("closes the pop-up once ready", () => {
-    const [lookup] = apply(lookupSettled(1, cat), saveCat);
+  it("closes the pop-up once the fields of its lookup are written", () => {
+    const [lookup] = apply(fieldsWritten(1), saveCat);
     expect(lookup.popup).toBeNull();
   });
 
@@ -79,54 +72,42 @@ describe("updateLookup for a flashcard started from a word", () => {
       actions.playerPlayingChanged(true),
       saveCat,
       actions.playerPlayingChanged(false),
-      lookupSettled(1, cat),
+      fieldsWritten(1),
     );
     expect(effects).not.toContainEqual({ type: "playPlayer" });
   });
 
-  it("stops waiting once ready", () => {
-    const [, effects] = apply(lookupSettled(1, cat), saveCat);
+  it("stops waiting once the fields of its lookup are written", () => {
+    const [, effects] = apply(fieldsWritten(1), saveCat);
     expect(effects).toContainEqual({
       type: "cancelTimer",
       id: "lookup/flashcardWait",
     });
   });
 
-  it("starts late once the wait runs out", () => {
+  it("hands the flashcard over once the wait runs out", () => {
     const [lookup] = apply(actions.lookupFlashcardWaitEnded(1), saveCat);
-    expect(lookup.pendingFlashcard?.stage).toBe("late");
+    expect(lookup.pendingFlashcard).toBeNull();
   });
 
-  it("stays late when the lookup answers after the wait", () => {
-    const [lookup] = apply(
-      lookupSettled(1, cat),
-      saveCat,
-      actions.lookupFlashcardWaitEnded(1),
-    );
-    expect(lookup.pendingFlashcard?.stage).toBe("late");
+  it("closes the pop-up once the wait runs out", () => {
+    const [lookup] = apply(actions.lookupFlashcardWaitEnded(1), saveCat);
+    expect(lookup.popup).toBeNull();
   });
 
-  it("is ready at once when no dictionary covers the word's language", () => {
-    const [lookup] = apply(
-      actions.lookupFlashcardRequested(uncoveredCat, "save"),
-    );
-    expect(lookup.pendingFlashcard?.stage).toBe("ready");
+  it("holds no flashcard when no dictionary covers the word's language", () => {
+    const [lookup] = apply(requestFlashcard(uncoveredCat));
+    expect(lookup.pendingFlashcard).toBeNull();
   });
 
   it("sends nothing when no dictionary covers the word's language", () => {
-    const [, effects] = apply(
-      actions.lookupFlashcardRequested(uncoveredCat, "save"),
-    );
+    const [, effects] = apply(requestFlashcard(uncoveredCat));
     expect(effects.filter(({ type }) => type === "sendRequest")).toEqual([]);
   });
 
-  it("ignores the answer to an earlier flashcard's lookup", () => {
-    const [lookup] = apply(
-      lookupSettled(1, cat),
-      saveCat,
-      actions.lookupFlashcardRequested(dog, "save"),
-    );
-    expect(lookup.pendingFlashcard?.stage).toBe("waiting");
+  it("ignores the fields of an earlier flashcard's lookup", () => {
+    const [lookup] = apply(fieldsWritten(1), saveCat, requestFlashcard(dog));
+    expect(lookup.pendingFlashcard?.chosen).toEqual(dog);
   });
 
   it("ignores the wait of a flashcard dropped before it", () => {
@@ -134,9 +115,9 @@ describe("updateLookup for a flashcard started from a word", () => {
       actions.lookupFlashcardWaitEnded(1),
       saveCat,
       actions.lookupClosed(),
-      actions.lookupFlashcardRequested(dog, "save"),
+      requestFlashcard(dog),
     );
-    expect(lookup.pendingFlashcard?.stage).toBe("waiting");
+    expect(lookup.pendingFlashcard?.chosen).toEqual(dog);
   });
 
   it("drops the flashcard when the pop-up closes", () => {
@@ -166,20 +147,8 @@ describe("updateLookup for a flashcard started from a word", () => {
     expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
   });
 
-  it("forgets the flashcard once it is taken", () => {
-    const [lookup] = apply(
-      actions.lookupFlashcardTaken(1),
-      saveCat,
-      lookupSettled(1, cat),
-    );
-    expect(lookup.pendingFlashcard).toBeNull();
-  });
-
   it("numbers each flashcard after the one before", () => {
-    const [lookup] = apply(
-      actions.lookupFlashcardRequested(dog, "editor"),
-      saveCat,
-    );
+    const [lookup] = apply(requestFlashcard(dog, "editor"), saveCat);
     expect(lookup.pendingFlashcard?.sequence).toBe(2);
   });
 
@@ -199,7 +168,7 @@ describe("updateLookup for a flashcard started from a word", () => {
     const katze = { term: "Katze", query: { text: "Katze", language: "de" } };
     const held = { ...cat, word: katze, occurrence: null };
     const [lookup] = apply(
-      actions.lookupFlashcardRequested(held, "save"),
+      requestFlashcard(held),
       actions.lookupWordClicked(dog, "mouse"),
     );
     expect(lookup.popup?.chosen).toEqual(dog);

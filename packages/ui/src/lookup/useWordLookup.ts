@@ -5,29 +5,29 @@ import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { lookupPopupProps, matchedLengthOf } from "./lookupPopupProps.ts";
 import { lookupWordOf } from "./lookupWordOf.ts";
-import { popupFlashcardOf } from "./popupFlashcardOf.ts";
 import { useLookupDisplay } from "./useLookupDisplay.ts";
-import {
-  type LookupFlashcardStarts,
-  useLookupFlashcardHandoff,
-} from "./useLookupFlashcardHandoff.ts";
+import { useLookupFlashcards } from "./useLookupFlashcards.ts";
+import type { WordFlashcards } from "./wordFlashcards.ts";
 
 /**
  * Drives the dictionary pop-up for words in a text, such as subtitles or an ebook, through the screen's lookup in the store:
  * a click opens it at the word, or closes it when it shows that word already;
- * and a double-click or held tap turns the word into a flashcard filled from its lookup, started through `starts`.
+ * and a double-click or held tap turns the word into a flashcard filled from its lookup, made as `flashcards` says.
  * Words inside the pop-up are looked up in it with a double-click, or turned into flashcards with a held tap.
  */
 export function useWordLookup(
   languages: { target: string; translation: string },
-  starts: LookupFlashcardStarts,
+  flashcards: WordFlashcards,
 ) {
   const dispatch = useAppDispatch();
   const lookup = useAppSelector(selectLookup);
   const display = useLookupDisplay(lookup?.popup ?? null, languages.target);
-  useLookupFlashcardHandoff(starts, languages, display.dictionaries);
   const popupId = useId();
   const chosen = lookup?.popup?.chosen ?? null;
+  const made = useLookupFlashcards(flashcards, chosen, {
+    languages,
+    dictionaries: display.dictionaries,
+  });
   const wordOf = (term: string, text: Parameters<typeof lookupWordOf>[1]) =>
     lookupWordOf(term, text, languages.target, display.isCovered);
   return {
@@ -38,19 +38,9 @@ export function useWordLookup(
           actions.lookupTermSearched(wordOf(trimmed, { text: trimmed })),
         );
       },
-      onWordHold: (term) => dispatch(actions.lookupPopupWordHeld(term)),
-      onCreateFlashcard: (entryIndex) => {
-        const { results, dictionaries } = display;
-        const flashcard = popupFlashcardOf(
-          results,
-          entryIndex,
-          chosen,
-          languages,
-          dictionaries,
-        );
-        dispatch(actions.lookupSetAside());
-        starts.save(flashcard.word, flashcard.place, flashcard.fields);
-      },
+      onWordHold: made.holdWord,
+      onCreateFlashcard: (entryIndex) =>
+        made.createFromPopup(display.results, entryIndex),
       onClose: () => dispatch(actions.lookupClosed()),
       onToggleSize: () => dispatch(actions.lookupSizeToggled()),
       onPointerInsideChange: (isInside) =>
@@ -71,10 +61,8 @@ export function useWordLookup(
     wordOf,
     clickWord: (word: ChosenWord, input: WordHit["input"]) =>
       dispatch(actions.lookupWordClicked(word, input)),
-    startFlashcardFor: (
-      word: ChosenWord,
-      destination: "save" | "editor" = "save",
-    ) => dispatch(actions.lookupFlashcardRequested(word, destination)),
+    startFlashcardFor: made.startFlashcardFor,
+    startWordlessFlashcard: made.startWordlessFlashcard,
     openSearch: () => dispatch(actions.lookupSearchOpened()),
     close: () => dispatch(actions.lookupClosed()),
     /** Closes the pop-up for something else that keeps playback paused, such as the dictionaries settings. */

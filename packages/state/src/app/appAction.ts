@@ -1,4 +1,6 @@
 import type { Action } from "redux";
+import type { FlashcardAction } from "../flashcards/flashcardActions.ts";
+import { flashcardActions } from "../flashcards/flashcardActions.ts";
 import type { NoticesAction } from "../notices/noticesActions.ts";
 import { noticesActions } from "../notices/noticesActions.ts";
 import type { OperationsAction } from "../operations/operationsActions.ts";
@@ -19,8 +21,6 @@ import type { ServerAction } from "../server/serverActions.ts";
 import { serverActions } from "../server/serverActions.ts";
 import type { StoredPlacesAction } from "../storedPlaces/storedPlacesActions.ts";
 import { storedPlacesActions } from "../storedPlaces/storedPlacesActions.ts";
-import type { UnsavedWorkAction } from "../unsavedWork/unsavedWork.ts";
-import { unsavedWorkActions } from "../unsavedWork/unsavedWork.ts";
 import type { StartupAction } from "./startupActions.ts";
 import { startupActions } from "./startupActions.ts";
 
@@ -32,7 +32,7 @@ const featureActionCreators = [
   lookupActions,
   preferencesActions,
   storedPlacesActions,
-  unsavedWorkActions,
+  flashcardActions,
   platformActions,
   serverActions,
   noticesActions,
@@ -64,7 +64,7 @@ export type AppAction =
   | LookupAction
   | PreferencesAction
   | StoredPlacesAction
-  | UnsavedWorkAction
+  | FlashcardAction
   | PlatformAction
   | ServerAction
   | NoticesAction

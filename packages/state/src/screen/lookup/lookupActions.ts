@@ -1,3 +1,6 @@
+import type { NewFlashcard } from "@easyimmerse/types";
+import type { FlashcardDestination } from "../../flashcards/flashcardActions.ts";
+import type { LookupFieldsContext } from "../../flashcards/flashcardForm.ts";
 import type { ChosenWord, LookupWord, WordInput } from "./lookupState.ts";
 
 /** The action creators of the dictionary pop-up and of the flashcards started from its words. */
@@ -23,17 +26,40 @@ export const lookupActions = {
     ({ type: "lookupWordHovered", chosen }) as const,
   /** The L key: looks up the word at the cursor, or opens the search field when there is no cursor. */
   lookupCursorLookedUp: () => ({ type: "lookupCursorLookedUp" }) as const,
-  /** The C or E key: a flashcard from the word at the cursor, or for no word when there is no cursor. */
-  lookupFlashcardAtCursorRequested: (destination: "save" | "editor") =>
-    ({ type: "lookupFlashcardAtCursorRequested", destination }) as const,
-  /** A word inside the pop-up held on a touch screen, which becomes a flashcard. */
-  lookupPopupWordHeld: (term: string) =>
-    ({ type: "lookupPopupWordHeld", term }) as const,
-  /** A flashcard asked for from a word, by a double-click, a held tap or a key. */
+  /**
+   * A word inside the pop-up held on a touch screen, which becomes a flashcard filled from its lookup.
+   * `flashcard` holds the id and draft the dispatcher made, and `context` sorts the lookup's definitions into its fields.
+   */
+  lookupPopupWordHeld: (
+    term: string,
+    destination: FlashcardDestination,
+    flashcard: NewFlashcard,
+    context: LookupFieldsContext,
+  ) =>
+    ({
+      type: "lookupPopupWordHeld",
+      term,
+      destination,
+      flashcard,
+      context,
+    }) as const,
+  /**
+   * A flashcard asked for from a word, by a double-click, a held tap or a key, to be filled from the word's lookup.
+   * `flashcard` holds the id and draft the dispatcher made, and `context` sorts the lookup's definitions into its fields.
+   */
   lookupFlashcardRequested: (
     chosen: ChosenWord,
-    destination: "save" | "editor",
-  ) => ({ type: "lookupFlashcardRequested", chosen, destination }) as const,
+    destination: FlashcardDestination,
+    flashcard: NewFlashcard,
+    context: LookupFieldsContext,
+  ) =>
+    ({
+      type: "lookupFlashcardRequested",
+      chosen,
+      destination,
+      flashcard,
+      context,
+    }) as const,
   lookupSearchOpened: () => ({ type: "lookupSearchOpened" }) as const,
   /** A word typed into the pop-up's field, or double-clicked or linked inside it. */
   lookupTermSearched: (word: LookupWord) =>
@@ -49,9 +75,6 @@ export const lookupActions = {
   /** The wait for the lookup of the flashcard with this sequence has run out. */
   lookupFlashcardWaitEnded: (sequence: number) =>
     ({ type: "lookupFlashcardWaitEnded", sequence }) as const,
-  /** The flashcard with this sequence has been handed to the flashcard hooks. */
-  lookupFlashcardTaken: (sequence: number) =>
-    ({ type: "lookupFlashcardTaken", sequence }) as const,
 };
 
 /** An action of the lookup. */

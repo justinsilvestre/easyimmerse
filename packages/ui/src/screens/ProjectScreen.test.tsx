@@ -7,25 +7,14 @@ import type {
   MediaSourceJob,
   PluginForm,
 } from "@easyimmerse/types";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSharedSaving } from "../flashcards/sharedSaving.ts";
-import { exampleUnsavedCard } from "../flashcards/unsaved/exampleUnsavedCard.ts";
 import { exampleRunningJob } from "../projects/exampleMediaSourceJob.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
-import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import {
   createFakeBackendClient,
   type FakeResponse,
-  fakeFailure,
 } from "../testSupport/createFakeBackendClient.ts";
-import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 import {
   fixtureMediaFiles,
   fixtureMediaSourcePlugin,
@@ -356,35 +345,5 @@ describe("ProjectScreen", () => {
     await screen.findByRole("heading", { name: "Alpha" });
     fireEvent.click(screen.getByRole("button", { name: "Project settings" }));
     expect(opened).toBe(true);
-  });
-
-  it("tells that a flashcard waiting to open there could not be opened when the project fails to load", async () => {
-    const { store, playerRegistry } = createTestAppStore(
-      createFakeBackendClient({
-        ...fixtureResponses,
-        "GET /projects/p1": fakeFailure({ status: 500, message: "Gone" }),
-      }),
-    );
-    const sharedSaving = createSharedSaving();
-    sharedSaving.unsavedCards.put(exampleUnsavedCard("Hund"));
-    sharedSaving.unsavedCards.requestOpen("Hund");
-    render(
-      <AppStoreProviders
-        store={store}
-        playerRegistry={playerRegistry}
-        sharedSaving={sharedSaving}
-      >
-        <ProjectScreen
-          projectId="p1"
-          onBack={() => undefined}
-          onEditSettings={() => undefined}
-        />
-      </AppStoreProviders>,
-    );
-    expect(
-      await screen.findByText(
-        "Couldn't open the flashcard for “Hund”. It is still listed among the flashcards not saved.",
-      ),
-    ).toBeDefined();
   });
 });

@@ -1,3 +1,4 @@
+import { flashcardsFeature } from "../flashcards/updateFlashcards.ts";
 import { noticesFeature } from "../notices/updateNotices.ts";
 import { operationsFeature } from "../operations/operations.ts";
 import { trackOperations } from "../operations/trackOperations.ts";
@@ -7,9 +8,9 @@ import { routeFeature } from "../route/updateRoute.ts";
 import { screenFeature } from "../screen/updateScreen.ts";
 import { serverFeature } from "../server/serverState.ts";
 import { storedPlacesFeature } from "../storedPlaces/updateStoredPlaces.ts";
-import { unsavedWorkFeature } from "../unsavedWork/unsavedWork.ts";
 import type { AppAction } from "./appAction.ts";
 import type { AppState } from "./appState.ts";
+import { closeGuardEffects } from "./closeGuard.ts";
 import type { Effect, PerformedEffect } from "./effect.ts";
 import type { Feature } from "./feature.ts";
 
@@ -27,7 +28,7 @@ const features = {
   server: serverFeature,
   preferences: preferencesFeature,
   storedPlaces: storedPlacesFeature,
-  unsavedWork: unsavedWorkFeature,
+  flashcards: flashcardsFeature,
   notices: noticesFeature,
   operations: operationsFeature,
 } satisfies FeatureTable;
@@ -57,9 +58,10 @@ export const update: Update<AppState, AppAction, PerformedEffect> = (
 /**
  * Lets every feature update its own slice, each seeing the state before the action, and gathers their effects in the order of the feature table.
  * The state keeps its reference when no slice changes.
- * The root update looks at the features' effects in exactly two places: it adds the platform commands, which change no state,
- * and it passes every effect through `trackOperations`, which turns the jobs watched into status requests and timers,
- * records the requests sent, and holds back those that must wait.
+ * Beside the features, the root update takes three fixed steps: it adds the platform commands, which change no state;
+ * it passes every effect through `trackOperations`, which turns the jobs watched into status requests and timers,
+ * records the requests sent, and holds back those that must wait; and it guards the app's closing whenever unsaved work
+ * begins, and stops once none is left, as `closeGuardEffects` describes.
  */
 function updateFeatures(
   state: AppState,
@@ -74,10 +76,9 @@ function updateFeatures(
   }
   effects.push(...platformCommands(action));
   const [operations, performed] = trackOperations(next.operations, effects);
-  return [
-    operations === next.operations ? next : { ...next, operations },
-    performed,
-  ];
+  const tracked =
+    operations === next.operations ? next : { ...next, operations };
+  return [tracked, [...performed, ...closeGuardEffects(state, tracked)]];
 }
 
 function updateSlice<K extends keyof AppState>(

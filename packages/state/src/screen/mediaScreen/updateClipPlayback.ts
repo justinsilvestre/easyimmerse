@@ -13,7 +13,7 @@ const endToleranceMs = 1000;
  * Plays the clip of the flashcard open in the editor from its start, and pauses the player once playback reaches its end.
  * Playback that the user pauses, or moves away from the clip, before then is left to play on, as is a clip that loops.
  * It reads the player's time after the player and the loop have seen the action, so it follows them in `updateMediaScreen`.
- * The clip follows its edges as they move, and is forgotten when the card closes or another opens.
+ * `updateFlashcardForm` moves the clip with its edges, and forgets it when the card closes or another opens.
  */
 export function updateClipPlayback(
   screen: MediaScreenState,
@@ -28,14 +28,6 @@ export function updateClipPlayback(
       );
       return [seeking, [...effects, { type: "playPlayer" }]];
     }
-    case "editedClipMoved":
-      return [
-        clip === null ? screen : withClipPlayback(screen, action.clip),
-        [],
-      ];
-    case "editedClipOpened":
-    case "editedClipClosed":
-      return [withClipPlayback(screen, null), []];
     case "playerPlayingChanged":
       return [action.isPlaying ? screen : withClipPlayback(screen, null), []];
     case "playerTimeChanged":

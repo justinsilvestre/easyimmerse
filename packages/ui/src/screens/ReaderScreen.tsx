@@ -5,6 +5,7 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
+  isAwaitingLookup,
   type ReaderLocation,
   selectPreference,
   selectPreferencesLoaded,
@@ -13,12 +14,10 @@ import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo, useState } from "react";
 import { draftFromText } from "../flashcards/draftFromText.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
-import { isAwaitingLookup } from "../flashcards/saveStage.ts";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
-import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.ts";
 import type { LookupPlace } from "../lookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useReaderLookup } from "../lookup/useReaderLookup.ts";
@@ -105,33 +104,21 @@ function BookReader({
     () => parseReaderPreferences(storedPreferences),
     [storedPreferences],
   );
-  const flashcards = useMediaFlashcards(project.id, mediaFile.id, false);
+  const flashcards = useMediaFlashcards(project.id, mediaFile.id);
+  const { form } = flashcards;
   const languages = {
     target: settings.target_language,
     translation: settings.translation_language,
   };
-  /**
-   * Starts a flashcard for a word with its sentence as context,
-   * filled from its lookup now or, through `lateFields`, once the lookup answers.
-   */
-  const startFlashcard = (
-    word: string,
-    place: LookupPlace | null,
-    lookupFields: LookupFlashcardFields | null,
-    lateFields?: Promise<LookupFlashcardFields | null>,
-  ) => {
-    const draft = draftFromText({
+  /** The draft of a flashcard for a word, with its sentence as context. */
+  const draftFor = (word: string, place: LookupPlace | null) =>
+    draftFromText({
       word,
       sentence: place?.source.kind === "text" ? place.source.sentence : "",
       mediaFile,
       settings,
     });
-    const started = lookupFields
-      ? { ...draft, content: { ...draft.content, ...lookupFields } }
-      : draft;
-    flashcards.start(started, lateFields);
-  };
-  const lookup = useReaderLookup(languages, startFlashcard);
+  const lookup = useReaderLookup(languages, draftFor);
   const textLanguage = document.language ?? settings.target_language;
   const [nearbySentences, setNearbySentences] = useState<readonly string[]>([]);
   useLookupPrefetch(languages.target, nearbySentences, (sentence) =>
@@ -165,17 +152,13 @@ function BookReader({
           ),
       }}
       sidePanel={
-        flashcards.edited && (
+        form && (
           <FlashcardEditor
-            key={
-              flashcards.edited.kind === "new"
-                ? "new"
-                : flashcards.edited.flashcard.id
-            }
-            state={flashcards.edited.editor}
-            isNew={flashcards.edited.kind === "new"}
-            isAwaitingLookup={isAwaitingLookup(flashcards.edited.stage)}
-            hasSaveFailed={flashcards.saveFailed}
+            key={form.card.kind === "new" ? "new" : form.card.flashcard.id}
+            state={form.card.editor}
+            isNew={form.card.kind === "new"}
+            isAwaitingLookup={isAwaitingLookup(form.stage)}
+            hasSaveFailed={form.saveFailure !== null}
             dispatch={flashcards.edit}
             languages={languages}
             waveform={null}

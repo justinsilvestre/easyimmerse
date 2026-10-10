@@ -1,3 +1,8 @@
+import type {
+  EditorAction,
+  EditorState,
+  FlashcardTextFieldKey,
+} from "@easyimmerse/state";
 import { actions, selectPlayerDuration } from "@easyimmerse/state";
 import type { AudioClip } from "@easyimmerse/types";
 import clsx from "clsx";
@@ -9,10 +14,8 @@ import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { ClipEditor } from "./ClipEditor.tsx";
 import { moveClipEnd, moveClipStart } from "./clipView.ts";
-import type { EditorAction, EditorState } from "./editFlashcard.ts";
 import {
   type FlashcardLanguages,
-  type FlashcardTextFieldKey,
   findFlashcardField,
 } from "./flashcardFields.ts";
 import { formatClipDuration, formatClipTime } from "./formatClipTime.ts";

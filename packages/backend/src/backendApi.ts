@@ -233,25 +233,6 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/flashcards/${flashcardId}`,
         body: { kind: "json", value: draft },
       }),
-      // The list shows the change at once, so that a dragged clip does not jump back while the request runs.
-      async onQueryStarted(
-        { projectId, flashcardId, draft },
-        { dispatch, queryFulfilled },
-      ) {
-        const patch = dispatch(
-          backendApi.util.updateQueryData(
-            "listFlashcards",
-            projectId,
-            (list) => {
-              const flashcard = list.flashcards.find(
-                ({ id }) => id === flashcardId,
-              );
-              if (flashcard) Object.assign(flashcard, draft);
-            },
-          ),
-        );
-        await queryFulfilled.catch(patch.undo);
-      },
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
       ],

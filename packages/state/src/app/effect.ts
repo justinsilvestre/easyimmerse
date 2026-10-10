@@ -1,3 +1,4 @@
+import type { FlashcardsEffect } from "../flashcards/flashcardsEffect.ts";
 import type { NoticesEffect } from "../notices/noticesEffect.ts";
 import type { JobsEffect } from "../operations/jobsEffect.ts";
 import type { PlatformEffect } from "../platform/platformCommands.ts";
@@ -6,14 +7,13 @@ import type { ScreenEffect } from "../screen/screenEffect.ts";
 import type { ServerEffect } from "../server/serverEffect.ts";
 import type { StoredPlacesEffect } from "../storedPlaces/storedPlacesEffect.ts";
 import type { TimerEffect } from "../timers/timerEffect.ts";
-import type { UnsavedWorkEffect } from "../unsavedWork/unsavedWork.ts";
 
 /** A description of a side effect to perform. Effects are plain data and contain no code. */
 export type Effect =
   | ScreenEffect
   | PreferencesEffect
   | StoredPlacesEffect
-  | UnsavedWorkEffect
+  | FlashcardsEffect
   | NoticesEffect
   | PlatformEffect
   | TimerEffect

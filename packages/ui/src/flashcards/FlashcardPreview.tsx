@@ -1,3 +1,4 @@
+import type { FlashcardTextFieldKey } from "@easyimmerse/state";
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import clsx from "clsx";
 import { Play } from "lucide-react";
@@ -5,7 +6,6 @@ import { Badge } from "../components/Badge.tsx";
 import { splitIntoWords } from "../components/ClickableText.tsx";
 import {
   type FlashcardLanguages,
-  type FlashcardTextFieldKey,
   findFlashcardField,
 } from "./flashcardFields.ts";
 

@@ -1,3 +1,4 @@
+import { flashcardsEffectRunners } from "../flashcards/flashcardsEffectRunners.ts";
 import { noticesEffectRunners } from "../notices/noticesEffectRunners.ts";
 import type { Effects } from "../platform/effects.ts";
 import { platformEffectRunners } from "../platform/platformEffectRunners.ts";
@@ -8,7 +9,6 @@ import { serverEffectRunners } from "../server/serverEffectRunners.ts";
 import { storedPlacesEffectRunners } from "../storedPlaces/storedPlacesEffectRunners.ts";
 import { timerEffectRunners } from "../timers/timerEffectRunners.ts";
 import type { TimerTable } from "../timers/timerTable.ts";
-import { unsavedWorkEffectRunners } from "../unsavedWork/unsavedWork.ts";
 import type { AppAction } from "./appAction.ts";
 import type { PerformedEffect } from "./effect.ts";
 
@@ -32,7 +32,7 @@ const effectRunners = {
   ...screenEffectRunners,
   ...preferencesEffectRunners,
   ...storedPlacesEffectRunners,
-  ...unsavedWorkEffectRunners,
+  ...flashcardsEffectRunners,
   ...noticesEffectRunners,
   ...platformEffectRunners,
   ...timerEffectRunners,

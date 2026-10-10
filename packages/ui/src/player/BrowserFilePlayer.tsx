@@ -1,7 +1,7 @@
+import { isAudioFileName } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
 import { useEffect, useMemo } from "react";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
-import { isAudioFileName } from "./isAudioFileName.ts";
 import { PlayerPanel } from "./PlayerPanel.tsx";
 import type { PlayerStatus } from "./PlayerStatus.ts";
 import { failedPlayback, loadingPlayback } from "./PlayerStatus.ts";

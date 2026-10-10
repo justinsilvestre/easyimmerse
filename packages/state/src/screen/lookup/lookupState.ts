@@ -1,4 +1,6 @@
-import type { Cue, LookupQuery } from "@easyimmerse/types";
+import type { Cue, FlashcardDraft, LookupQuery } from "@easyimmerse/types";
+import type { FlashcardDestination } from "../../flashcards/flashcardActions.ts";
+import type { LookupFieldsContext } from "../../flashcards/flashcardForm.ts";
 import type { ReaderLocation } from "../../storedPlaces/readingLocation.ts";
 
 /** What pointed at or activated a word. */
@@ -66,14 +68,15 @@ export type LookupCursor = {
   pointed: ChosenWord;
 };
 
-/** A flashcard started from a word, waiting for the word's lookup. */
+/** A flashcard started from a word, waiting at most `flashcardLookupWaitMs` for the word's lookup. */
 export type PendingFlashcard = {
   sequence: number;
   chosen: ChosenWord;
-  /** Whether the flashcard is saved at once or opened in the editor. */
-  destination: "save" | "editor";
-  /** waiting: for at most `flashcardLookupWaitMs`; ready: the lookup answered or failed in time; late: the wait ran out first. */
-  stage: "waiting" | "ready" | "late";
+  destination: FlashcardDestination;
+  /** The draft built when the flashcard was asked for, before the lookup's fields fill it. */
+  draft: FlashcardDraft;
+  flashcardId: string;
+  context: LookupFieldsContext;
 };
 
 /** The dictionary pop-up of the media screen or the reader, its lookup cursor, and the flashcard that waits for a word's lookup. */

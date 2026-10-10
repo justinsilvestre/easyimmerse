@@ -1,7 +1,8 @@
+import { flashcardFieldsFromLookup } from "@easyimmerse/state";
 import type { DictionarySummary } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
+import { definitionMarkdown } from "./definitionMarkdown.ts";
 import { exampleResults } from "./exampleLookup.ts";
-import { flashcardFieldsFromLookup } from "./flashcardFieldsFromLookup.ts";
 
 function summary(id: string, targetLanguage: string | null): DictionarySummary {
   return {
@@ -23,13 +24,20 @@ const dictionaries = [summary("wiktionary-de-en", "en"), summary("dwds", "de")];
 
 const languages = { target: "de", translation: "en" };
 
-const fieldsOf = (entryIndex: number | null) =>
+/** The fields of the example results, as the app's Markdown writer writes them, with the project's dictionaries given. */
+const fieldsWith = (
+  entryIndex: number | null,
+  summaries: readonly DictionarySummary[],
+) =>
   flashcardFieldsFromLookup(
     exampleResults,
     entryIndex,
-    languages,
-    dictionaries,
+    { languages, dictionaries: summaries },
+    definitionMarkdown,
   );
+
+const fieldsOf = (entryIndex: number | null) =>
+  fieldsWith(entryIndex, dictionaries);
 
 describe("flashcardFieldsFromLookup", () => {
   it("takes the word from the first result's term", () => {
@@ -65,21 +73,23 @@ describe("flashcardFieldsFromLookup", () => {
   });
 
   it("counts a dictionary that does not state its language as defining in the translation language", () => {
-    expect(
-      flashcardFieldsFromLookup(exampleResults, 1, languages, [])
-        ?.l2_definition,
-    ).toBe("");
+    expect(fieldsWith(1, [])?.l2_definition).toBe("");
   });
 
   it("leaves out of L1 the definitions in a third language", () => {
     expect(
-      flashcardFieldsFromLookup(exampleResults, 1, languages, [
-        summary("wiktionary-de-en", "fr"),
-      ])?.l1_definition,
+      fieldsWith(1, [summary("wiktionary-de-en", "fr")])?.l1_definition,
     ).toBe("");
   });
 
   it("fills nothing when nothing was found", () => {
-    expect(flashcardFieldsFromLookup([], null, languages, [])).toBeNull();
+    expect(
+      flashcardFieldsFromLookup(
+        [],
+        null,
+        { languages, dictionaries: [] },
+        definitionMarkdown,
+      ),
+    ).toBeNull();
   });
 });

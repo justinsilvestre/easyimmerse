@@ -1,10 +1,9 @@
+import { screenshotForClip } from "@easyimmerse/state";
 import type {
-  AudioClip,
   Cue,
   FlashcardDraft,
   MediaFile,
   ProjectSettings,
-  Screenshot,
 } from "@easyimmerse/types";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import { mediaNameTag } from "./mediaNameTag.ts";
@@ -67,9 +66,4 @@ function isWordAt(
   start: number | null,
 ): start is number {
   return start !== null && word !== "" && text.startsWith(word, start);
-}
-
-/** The screenshot a new flashcard starts with: the frame in the middle of its clip. */
-export function screenshotForClip(clip: AudioClip): Screenshot {
-  return { at_ms: Math.round((clip.start_ms + clip.end_ms) / 2) };
 }

@@ -1,51 +1,28 @@
 import type { AppAction } from "../../app/appAction.ts";
+import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
-import { isSettled } from "../../server/isSettled.ts";
-import { lookupRequestId, lookupTimerIds } from "./lookupIds.ts";
+import { lookupFlashcardFinishedBy } from "./lookupFlashcardFinishedBy.ts";
+import { lookupTimerIds } from "./lookupIds.ts";
 import { type LookupStep, setAside } from "./lookupMoves.ts";
-import type { LookupState, PendingFlashcard } from "./lookupState.ts";
+import type { LookupState } from "./lookupState.ts";
 
 const cancelWait: Effect = {
   type: "cancelTimer",
   id: lookupTimerIds.flashcardWait,
 };
 
-/** Ends the wait for a flashcard's lookup when the lookup settles or the wait runs out, and forgets the flashcard once it is taken. */
+/**
+ * Hands over the flashcard waiting for its word's lookup once the lookup's fields are written or the wait runs out,
+ * setting the pop-up aside for it; the flashcards take it from there.
+ */
 export function updatePendingFlashcard(
   lookup: LookupState,
   action: AppAction,
+  app: AppState,
 ): LookupStep {
-  const pending = lookup.pendingFlashcard;
-  if (pending === null) return [lookup, []];
-  const isWaiting = pending.stage === "waiting";
-  switch (action.type) {
-    case "requestSettled":
-      return isWaiting &&
-        isSettled(action, lookupRequestId(pending.sequence), "lookupText")
-        ? finish(lookup, { ...pending, stage: "ready" }, [cancelWait])
-        : [lookup, []];
-    case "lookupFlashcardWaitEnded":
-      return isWaiting && action.sequence === pending.sequence
-        ? finish(lookup, { ...pending, stage: "late" }, [])
-        : [lookup, []];
-    case "lookupFlashcardTaken":
-      return action.sequence === pending.sequence
-        ? [{ ...lookup, pendingFlashcard: null }, []]
-        : [lookup, []];
-    default:
-      return [lookup, []];
-  }
-}
-
-/** Sets the pop-up aside for a flashcard that no longer waits for its lookup, ready or late. */
-export function finish(
-  lookup: LookupState,
-  pending: PendingFlashcard,
-  effects: readonly Effect[],
-): LookupStep {
-  const [aside, asideEffects] = setAside({
-    ...lookup,
-    pendingFlashcard: pending,
-  });
-  return [aside, [...effects, ...asideEffects]];
+  const finished = lookupFlashcardFinishedBy(app, action);
+  if (finished === null || finished.pending !== lookup.pendingFlashcard)
+    return [lookup, []];
+  const [aside, effects] = setAside({ ...lookup, pendingFlashcard: null });
+  return [aside, finished.how === "ready" ? [cancelWait, ...effects] : effects];
 }

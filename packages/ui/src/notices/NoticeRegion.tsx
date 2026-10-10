@@ -1,8 +1,4 @@
-import type {
-  AppDispatch,
-  NoticeButton,
-  Notice as ShownNotice,
-} from "@easyimmerse/state";
+import type { Notice as ShownNotice } from "@easyimmerse/state";
 import { actions, selectNotices } from "@easyimmerse/state";
 import type { ReactNode } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -68,21 +64,12 @@ function NoticeItem({ notice }: { notice: ShownNotice }) {
           message={notice.message}
           actions={notice.buttons.map((button) => ({
             label: button.label,
-            onSelect: () => choose(dispatch, id, button),
+            onSelect: () =>
+              dispatch(actions.noticeButtonChosen(id, button.action)),
           }))}
           onDismiss={() => dispatch(actions.noticeDismissed(id))}
         />
       </div>
     </li>
   );
-}
-
-/** Closes the notice and does what the button says. A button with a callback closes the notice before running it. */
-function choose(dispatch: AppDispatch, id: number, button: NoticeButton) {
-  if ("action" in button) {
-    dispatch(actions.noticeButtonChosen(id, button.action));
-    return;
-  }
-  dispatch(actions.noticeDismissed(id));
-  button.onSelect();
 }

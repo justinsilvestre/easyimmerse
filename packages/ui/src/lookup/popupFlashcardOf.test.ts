@@ -31,7 +31,7 @@ const languages = { target: "de", translation: "en" };
 const dictionaries = [summary("wiktionary-de-en", "en"), summary("dwds", "de")];
 
 const flashcardOf = (results = exampleResults) =>
-  popupFlashcardOf(results, null, chosen, languages, dictionaries);
+  popupFlashcardOf(results, null, chosen, { languages, dictionaries });
 
 describe("popupFlashcardOf", () => {
   it("takes the word from the dictionary rather than the term looked up", () => {

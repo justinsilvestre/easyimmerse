@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
+import { openWithClip } from "../../flashcards/exampleFlashcards.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateMediaScreen } from "./updateMediaScreen.ts";
 
@@ -51,7 +52,7 @@ describe("updateMediaScreen", () => {
     const [, effects] = apply(
       actions.playerTimeChanged(3.1),
       actions.playerPlayingChanged(true),
-      actions.editedClipOpened(clip),
+      openWithClip(clip),
       actions.clipPlayRequested(clip),
     );
     expect(effects).not.toContainEqual({ type: "pausePlayer" });
@@ -60,5 +61,13 @@ describe("updateMediaScreen", () => {
   it("seeks the player for seekRequested", () => {
     const [, effects] = apply(actions.seekRequested(12.5));
     expect(effects).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);
+  });
+
+  it("keeps the subtitles panel as it is when it is toggled while a flashcard is open", () => {
+    const [screen] = apply(
+      actions.cuePanelToggled(),
+      openWithClip({ start_ms: 0, end_ms: 1_000 }),
+    );
+    expect(screen.panels.cues).toBe(true);
   });
 });

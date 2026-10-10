@@ -1,9 +1,9 @@
+import type { EditorAction } from "@easyimmerse/state";
 import { actions } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
-import type { EditorAction } from "./editFlashcard.ts";
 import { exampleFlashcard } from "./exampleFlashcard.ts";
 import { MediaFields, type MediaWaveform } from "./FlashcardEditorFields.tsx";
 import { fieldsOfPreset } from "./flashcardPresets.ts";

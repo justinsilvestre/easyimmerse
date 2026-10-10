@@ -1,3 +1,4 @@
+import type { EditorAction, EditorState } from "@easyimmerse/state";
 import clsx from "clsx";
 import { X } from "lucide-react";
 import { useId, useState } from "react";
@@ -6,7 +7,6 @@ import { IconButton } from "../components/IconButton.tsx";
 import { MenuButton } from "../components/MenuButton.tsx";
 import { ModalDialog } from "../components/ModalDialog.tsx";
 import { TagsField } from "../components/TagsField.tsx";
-import type { EditorAction, EditorState } from "./editFlashcard.ts";
 import {
   MediaFields,
   type MediaWaveform,

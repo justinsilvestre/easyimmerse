@@ -1,5 +1,10 @@
 import { createWebEffects } from "@easyimmerse/effects-web";
-import type { Effects, PlayerRegistry, ServerConfig } from "@easyimmerse/state";
+import type {
+  DefinitionWriter,
+  Effects,
+  PlayerRegistry,
+  ServerConfig,
+} from "@easyimmerse/state";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { desktopDictionaryExtensions } from "./desktopDictionaryExtensions.ts";
@@ -18,9 +23,11 @@ import { createWindowCloseGuard } from "./windowCloseGuard.ts";
 export function createNativeEffects(options: {
   playerRegistry: PlayerRegistry;
   server: ServerConfig;
+  writeDefinitionMarkdown: DefinitionWriter;
 }): Effects {
   const webEffects = createWebEffects({
     playerRegistry: options.playerRegistry,
+    writeDefinitionMarkdown: options.writeDefinitionMarkdown,
   });
   const preferences = createServerPreferenceStore(options.server);
   return {

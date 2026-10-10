@@ -22,7 +22,10 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createFrameCapturer } from "../player/browserFrameCapturer.ts";
 import type { FrameSource } from "../player/captureVideoFrame.ts";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
+import {
+  createFakeBackendClient,
+  fakeFailure,
+} from "../testSupport/createFakeBackendClient.ts";
 import { createFakeFrameCapturer } from "../testSupport/createFakeFrameCapturer.ts";
 import { doubleClick } from "../testSupport/doubleClick.ts";
 import {
@@ -306,6 +309,27 @@ describe("MediaScreen", () => {
       media_file_id: "m1",
       content: { word: "fressen" },
     });
+  });
+
+  it("lists a flashcard whose background save fails and saves it on Retry", async () => {
+    let saves = 0;
+    renderMediaScreen({
+      responses: {
+        "POST /projects/p1/flashcards": () => {
+          saves += 1;
+          return saves === 1
+            ? fakeFailure({ status: 500, message: "Unavailable" })
+            : savedFlashcard;
+        },
+      },
+    });
+    const list = await findSubtitles();
+    doubleClick(within(list).getByRole("button", { name: "cat" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Show" }));
+    fireEvent.click(screen.getByRole("button", { name: "Retry “fressen”" }));
+    await vi.waitFor(() =>
+      expect(screen.queryByText("1 flashcard not saved")).toBeNull(),
+    );
   });
 
   describe("on a double-click on a word of the subtitles", () => {

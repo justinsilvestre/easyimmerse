@@ -1,5 +1,6 @@
 import type {
   BrowserFileRegistry,
+  DefinitionWriter,
   Effects,
   PlayerRegistry,
 } from "@easyimmerse/state";
@@ -20,6 +21,8 @@ export function createWebEffects(options: {
   playerRegistry: PlayerRegistry;
   /** Where picked media and dictionary files are kept; pass the app's own to read them back later. */
   browserFileRegistry?: BrowserFileRegistry<File>;
+  /** Writes a dictionary definition as Markdown; the UI package provides the writer, which reads markup with the DOM's parser. */
+  writeDefinitionMarkdown: DefinitionWriter;
 }): Effects {
   const preferences = createPreferenceStore();
   const pickRegisteredFile = createPickRegisteredFile(
@@ -32,6 +35,7 @@ export function createWebEffects(options: {
     pickMediaFile: pickRegisteredFile,
     pickDictionaryFile: pickRegisteredFile,
     readPlaybackProbes,
+    writeDefinitionMarkdown: options.writeDefinitionMarkdown,
     savePreference: preferences.save,
     loadPreference: preferences.load,
     openExternalUrl,

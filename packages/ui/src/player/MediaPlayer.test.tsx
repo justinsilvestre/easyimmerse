@@ -11,6 +11,7 @@ import {
 import type { ListMediaFilesResponse, MediaFile } from "@easyimmerse/types";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import type { FakeRoute } from "../testSupport/createFakeBackendClient.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
 import {
@@ -162,7 +163,22 @@ describe("MediaPlayer", () => {
       act(() => {
         store.dispatch(actions.playerPlayingChanged(true));
         store.dispatch(
-          actions.editedClipOpened({ start_ms: 1_000, end_ms: 2_000 }),
+          actions.flashcardStarted(
+            {
+              id: "f1",
+              draft: {
+                media_file_id: "m1",
+                cue_index: null,
+                word_start: null,
+                content: {
+                  ...exampleFlashcard,
+                  audio_context: { start_ms: 1_000, end_ms: 2_000 },
+                },
+                included_fields: ["word"],
+              },
+            },
+            "editor",
+          ),
         );
       });
       video.currentTime = 40;

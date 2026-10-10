@@ -7,12 +7,12 @@ import type {
   ReaderWordGestures,
 } from "../reader/useWordPointer.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
-import type { StartFlashcardFromLookup } from "./lookupPlace.ts";
 import { useWordLookup } from "./useWordLookup.ts";
+import type { WordFlashcards } from "./wordFlashcards.ts";
 
 /**
  * Looks up words of an ebook or text in the dictionary pop-up, with the same gestures as the subtitles' words.
- * A flashcard made from a word opens in the editor through `startFlashcard`.
+ * A flashcard made from a word opens in the form, with the draft `draftFor` makes.
  * Returns the gestures for the text's words, the pop-up's props, or null while it is closed,
  * the rectangle of the word the pop-up stands beside, the word it highlights,
  * and what the L key does: look up the word at the screen's lookup cursor, which the mouse moves, as a click on it would,
@@ -20,14 +20,11 @@ import { useWordLookup } from "./useWordLookup.ts";
  */
 export function useReaderLookup(
   languages: { target: string; translation: string },
-  startFlashcard: StartFlashcardFromLookup,
+  draftFor: WordFlashcards["draftFor"],
 ) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const lookup = useWordLookup(languages, {
-    save: startFlashcard,
-    editor: startFlashcard,
-  });
+  const lookup = useWordLookup(languages, { draftFor, savesAtOnce: false });
   const chosenFor = (word: ReaderWord): ChosenWord => {
     const { chapterIndex, paragraphIndex, offset } = word.location;
     const { top, bottom, left, right } = word.rect;

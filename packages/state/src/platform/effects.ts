@@ -1,4 +1,8 @@
-import type { MediaFileSource, TextSource } from "@easyimmerse/types";
+import type {
+  Definition,
+  MediaFileSource,
+  TextSource,
+} from "@easyimmerse/types";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
 import type { Clock } from "../timers/clock.ts";
@@ -44,6 +48,11 @@ export interface Effects {
   ): Promise<PickedDictionaryFile | null>;
   /** Reads how the platform's media element and Media Source Extensions answer questions about formats. */
   readPlaybackProbes(): PlaybackProbes;
+  /**
+   * Writes a dictionary definition as the Markdown a flashcard field holds, following the form in which the app renders it.
+   * Its markup is read with the platform's own parser, which is why the platform provides it.
+   */
+  writeDefinitionMarkdown(definition: Definition): string;
   savePreference(key: string, value: string): Promise<void>;
   loadPreference(key: string): Promise<string | null>;
   openExternalUrl(url: string): void;

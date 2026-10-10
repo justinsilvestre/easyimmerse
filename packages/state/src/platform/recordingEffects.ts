@@ -1,3 +1,4 @@
+import type { DefinitionWriter } from "../flashcards/lookupFields.ts";
 import type { Appearance } from "../preferences/appearance.ts";
 import type { Theme } from "../preferences/theme.ts";
 import type { ManualClock } from "../timers/manualClock.ts";
@@ -84,13 +85,19 @@ function createPendingPick<F>(description: string) {
   };
 }
 
+/** Writes a definition as its plain text, which is all a test of the state needs; the UI's tests pass the app's own writer. */
+const plainDefinitionText: DefinitionWriter = (definition) =>
+  definition.kind === "text" ? definition.text.trim() : "";
+
 /**
  * Builds an Effects implementation for tests that records calls instead of performing them, over a preference store holding the given values.
  * While `holdsPreferenceLoads` is true, a preference load waits until the test calls `releasePreferenceLoads`.
+ * Definitions are written as Markdown by `writeDefinitionMarkdown`, which keeps only plain text unless another writer is given.
  */
 export function createRecordingEffects(
   storedPreferences: Record<string, string> = {},
   holdsPreferenceLoads = false,
+  writeDefinitionMarkdown: DefinitionWriter = plainDefinitionText,
 ): RecordingEffects {
   const calls: EffectCall[] = [];
   const preferences = new Map(Object.entries(storedPreferences));
@@ -142,6 +149,7 @@ export function createRecordingEffects(
       return dictionaryFilePick.start();
     },
     readPlaybackProbes: () => recordedPlaybackProbes,
+    writeDefinitionMarkdown,
     savePreference: async (key, value) => {
       calls.push({ type: "savePreference", key, value });
       preferences.set(key, value);

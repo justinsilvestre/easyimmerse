@@ -5,9 +5,8 @@ import type { MediaScreenState } from "../screenState.ts";
 import { seekTo } from "./seekTo.ts";
 
 /**
- * Plays the clip of the flashcard open in the editor. Opening a card seeks to its clip's start, and if the player was playing,
- * the clip loops: playback that reaches its end seeks back to its start. The loop follows the clip's edges as they move,
- * and ends when the card closes, when playback pauses, or when a seek lands outside the clip.
+ * Loops the clip of the flashcard open in the form, which `updateFlashcardForm` starts as the card opens:
+ * playback that reaches the clip's end seeks back to its start. The loop ends when playback pauses or a seek lands outside the clip.
  * The loop's own seek to the start reports a time inside the clip, so no guard against it is needed;
  * the platform's player lands seeks half a frame later still. Reported times are compared in whole milliseconds.
  */
@@ -17,17 +16,6 @@ export function updateClipLoop(
 ): readonly [MediaScreenState, readonly Effect[]] {
   const { loop } = screen;
   switch (action.type) {
-    case "editedClipOpened":
-      return action.clip === null
-        ? [withLoop(screen, null), []]
-        : seekTo(
-            withLoop(screen, screen.player.isPlaying ? action.clip : null),
-            action.clip.start_ms,
-          );
-    case "editedClipMoved":
-      return [loop === null ? screen : withLoop(screen, action.clip), []];
-    case "editedClipClosed":
-      return [withLoop(screen, null), []];
     case "playerPlayingChanged":
       return [action.isPlaying ? screen : withLoop(screen, null), []];
     case "seekRequested":
