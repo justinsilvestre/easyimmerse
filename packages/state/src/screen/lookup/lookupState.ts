@@ -48,6 +48,24 @@ export type LookupPopup = {
   chosen: ChosenWord | null;
 };
 
+/**
+ * The lookup cursor of the screen: the word the mouse or the keyboard points at, which the L, C and E keys act on
+ * and the highlight starts at. The subtitles and the reader share it, as they share the pop-up.
+ */
+export type LookupCursor = {
+  /** The word the cursor lies on. */
+  chosen: ChosenWord;
+  /** What placed the cursor, which alone can take it away again. */
+  input: WordInput;
+  /** How much of the passage the lookup from `chosen` matched, or null when it matched nothing; unset until known. */
+  matchedLength?: number | null;
+  /**
+   * The word under the pointer. It differs from `chosen` only while the mouse moves within the highlight,
+   * which keeps the cursor still until this word's hover lookup answers.
+   */
+  pointed: ChosenWord;
+};
+
 /** A flashcard started from a word, waiting for the word's lookup. */
 export type PendingFlashcard = {
   sequence: number;
@@ -58,9 +76,10 @@ export type PendingFlashcard = {
   stage: "waiting" | "ready" | "late";
 };
 
-/** The dictionary pop-up of the media screen or the reader, and the flashcard that waits for a word's lookup. */
+/** The dictionary pop-up of the media screen or the reader, its lookup cursor, and the flashcard that waits for a word's lookup. */
 export type LookupState = {
   popup: LookupPopup | null;
+  cursor: LookupCursor | null;
   pendingFlashcard: PendingFlashcard | null;
   isPointerInside: boolean;
   /** Whether the pop-up paused playback, so that closing it resumes playback, unless the user has resumed it already. */
@@ -72,6 +91,7 @@ export type LookupState = {
 /** The lookup of a screen as it opens. */
 export const initialLookup: LookupState = {
   popup: null,
+  cursor: null,
   pendingFlashcard: null,
   isPointerInside: false,
   pausedPlayback: false,

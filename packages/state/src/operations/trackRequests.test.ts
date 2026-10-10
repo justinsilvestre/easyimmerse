@@ -24,7 +24,7 @@ function send(
 }
 
 function operationsWith(...requests: RequestRecord[]): OperationsState {
-  return { requests, jobs: {}, lookupFlashcardsStarted: 0 };
+  return { requests, jobs: {}, lookupRequestsSent: 0 };
 }
 
 describe("trackRequests", () => {

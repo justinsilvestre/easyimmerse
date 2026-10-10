@@ -6,6 +6,7 @@ import {
   type ChosenWord,
   isSameOccurrence,
   type LookupState,
+  type WordInput,
 } from "./lookupState.ts";
 import { doubleClickMs } from "./lookupTiming.ts";
 
@@ -67,6 +68,41 @@ export function dropPending(lookup: LookupState): LookupState {
   return lookup.pendingFlashcard === null
     ? lookup
     : { ...lookup, pendingFlashcard: null };
+}
+
+/** Opens the pop-up on a word clicked, tapped or activated, or closes it when it shows that word already. */
+export function clickWord(
+  lookup: LookupState,
+  chosen: ChosenWord,
+  input: WordInput,
+  player: PlayerState,
+): LookupStep {
+  if (!showsOccurrence(lookup, chosen)) return open(lookup, chosen, player);
+  return input === "keyboard" ? close(lookup) : [lookup, [startCloseTimer]];
+}
+
+/** Opens the pop-up on its search field, which drops a flashcard still waiting. */
+export function openSearch(
+  lookup: LookupState,
+  player: PlayerState,
+): LookupStep {
+  return hold(
+    { ...dropPending(lookup), popup: { mode: "search", chosen: null } },
+    player,
+  );
+}
+
+/** Tells whether an open pop-up moves to a word the pointer rests on: not while the pointer is inside it or a flashcard waits. */
+export function followsPointer(
+  lookup: LookupState,
+  chosen: ChosenWord,
+): boolean {
+  return (
+    lookup.popup?.mode === "word" &&
+    !lookup.isPointerInside &&
+    lookup.pendingFlashcard === null &&
+    !showsOccurrence(lookup, chosen)
+  );
 }
 
 /** Closes the pop-up, drops a waiting flashcard, and resumes playback if the pop-up paused it. */

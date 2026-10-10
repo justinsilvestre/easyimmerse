@@ -8,6 +8,30 @@ export const lookupActions = {
   /** The mouse or the keyboard rests on a word whose hover lookup has answered. */
   lookupWordRestedOn: (chosen: ChosenWord) =>
     ({ type: "lookupWordRestedOn", chosen }) as const,
+  /**
+   * The mouse or the keyboard points at a word, reported at once. `shownMatchedLength` is the match the cursor shows now,
+   * which may come from the cache, so that a mouse moving within it keeps the cursor.
+   */
+  lookupCursorMoved: (
+    chosen: ChosenWord,
+    input: WordInput,
+    shownMatchedLength?: number | null,
+  ) =>
+    ({ type: "lookupCursorMoved", chosen, input, shownMatchedLength }) as const,
+  /** The mouse left the words, or keyboard focus left them or Escape was pressed. */
+  lookupCursorLeft: (input: WordInput) =>
+    ({ type: "lookupCursorLeft", input }) as const,
+  /** The mouse has rested on a word for the hover delay, or the keyboard has moved to it. */
+  lookupWordHovered: (chosen: ChosenWord) =>
+    ({ type: "lookupWordHovered", chosen }) as const,
+  /** The L key: looks up the word at the cursor, or opens the search field when there is no cursor. */
+  lookupCursorLookedUp: () => ({ type: "lookupCursorLookedUp" }) as const,
+  /** The C or E key: a flashcard from the word at the cursor, or for no word when there is no cursor. */
+  lookupFlashcardAtCursorRequested: (destination: "save" | "editor") =>
+    ({ type: "lookupFlashcardAtCursorRequested", destination }) as const,
+  /** A word inside the pop-up held on a touch screen, which becomes a flashcard. */
+  lookupPopupWordHeld: (term: string) =>
+    ({ type: "lookupPopupWordHeld", term }) as const,
   /** A flashcard asked for from a word, by a double-click, a held tap or a key. */
   lookupFlashcardRequested: (
     chosen: ChosenWord,

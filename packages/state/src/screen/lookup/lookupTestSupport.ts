@@ -1,21 +1,33 @@
-import type { LookupResponse } from "@easyimmerse/types";
+import type { Cue, LookupResponse, LookupResult } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
 import type { MediaScreenState } from "../screenState.ts";
-import { lookupRequestId } from "./lookupIds.ts";
+import { lookupHoverRequestId, lookupRequestId } from "./lookupIds.ts";
 import type { ChosenWord } from "./lookupState.ts";
 import { updateLookup } from "./updateLookup.ts";
 
-const cue = {
+const firstCue: Cue = {
   index: 1,
   start_ms: 0,
   end_ms: 2000,
   text: "The cat is sleeping.",
 };
 
-/** A word of the cue above, chosen at its offset there. */
-export function chosenWord(term: string, start: number): ChosenWord {
+/** A cue after the first, with another passage. */
+export const secondCue: Cue = {
+  index: 2,
+  start_ms: 2000,
+  end_ms: 4000,
+  text: "The dog is eating.",
+};
+
+/** A word of a cue, the first unless another is given, chosen at its offset there. */
+export function chosenWord(
+  term: string,
+  start: number,
+  cue: Cue = firstCue,
+): ChosenWord {
   return {
     word: {
       term,
@@ -27,8 +39,8 @@ export function chosenWord(term: string, start: number): ChosenWord {
       },
     },
     source: { kind: "cue", cue },
-    occurrence: { passage: "1", start },
-    anchor: { elementId: `word-${start}` },
+    occurrence: { passage: String(cue.index), start },
+    anchor: { elementId: `word-${cue.index}-${start}` },
   };
 }
 
@@ -54,6 +66,49 @@ export const lookupSettled = (
     },
     outcome,
   );
+
+/** The mouse pointing at a word and resting there for the hover delay. */
+export const restingOn = (chosen: ChosenWord) =>
+  [
+    actions.lookupCursorMoved(chosen, "mouse"),
+    actions.lookupWordHovered(chosen),
+  ] as const;
+
+/** The settle of the hover lookup with this sequence for the word given: matching `matchedText`, or failed when it is null. */
+export const hoverSettled = (
+  sequence: number,
+  chosen: ChosenWord,
+  matchedText: string | null,
+) =>
+  actions.requestSettled(
+    lookupHoverRequestId(sequence),
+    {
+      kind: "lookupText",
+      query: chosen.word.query ?? { text: "", language: "de" },
+    },
+    matchedText === null
+      ? { ok: false, error: { status: 500, message: "failed" } }
+      : {
+          ok: true,
+          data: {
+            results: [resultMatching(matchedText)],
+            kanji: [],
+            stylesheets: [],
+          },
+        },
+  );
+
+function resultMatching(matchedText: string): LookupResult {
+  return {
+    matchedText,
+    term: matchedText,
+    reading: null,
+    inflectionChains: [],
+    definitions: [],
+    frequencies: [],
+    pronunciations: [],
+  };
+}
 
 /** Applies an action to the lookup of m1's media screen after the given earlier actions. */
 export function applyToLookup(action: AppAction, ...before: AppAction[]) {

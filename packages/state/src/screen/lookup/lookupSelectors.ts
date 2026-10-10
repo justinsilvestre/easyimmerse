@@ -1,5 +1,9 @@
 import type { RootState } from "../../app/createAppStore.ts";
-import type { LookupState, PendingFlashcard } from "./lookupState.ts";
+import type {
+  LookupCursor,
+  LookupState,
+  PendingFlashcard,
+} from "./lookupState.ts";
 
 /** Returns the dictionary pop-up's state of the media screen or the reader, or null on any other screen. */
 export const selectLookup = (state: RootState): LookupState | null =>
@@ -12,3 +16,7 @@ export const selectFinishedLookupFlashcard = (
   const pending = selectLookup(state)?.pendingFlashcard ?? null;
   return pending?.stage === "waiting" ? null : pending;
 };
+
+/** Returns the lookup cursor of the media screen or the reader, or null when there is none. */
+export const selectLookupCursor = (state: RootState): LookupCursor | null =>
+  selectLookup(state)?.cursor ?? null;

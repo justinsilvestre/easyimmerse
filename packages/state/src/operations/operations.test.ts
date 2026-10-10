@@ -21,7 +21,7 @@ describe("operationsFeature", () => {
         { id: "b", request: second, isWaiting: false },
       ],
       jobs: {},
-      lookupFlashcardsStarted: 0,
+      lookupRequestsSent: 0,
     };
     const [next] = operationsFeature.update(
       operations,
@@ -32,7 +32,7 @@ describe("operationsFeature", () => {
   });
 
   it("keeps the operations as they are when the settled request is not recorded", () => {
-    const operations = { requests: [], jobs: {}, lookupFlashcardsStarted: 0 };
+    const operations = { requests: [], jobs: {}, lookupRequestsSent: 0 };
     const [next] = operationsFeature.update(
       operations,
       settledFirst,
@@ -41,12 +41,21 @@ describe("operationsFeature", () => {
     expect(next).toBe(operations);
   });
 
+  it("counts the hovers, which number their lookups' requests", () => {
+    const [next] = operationsFeature.update(
+      operationsFeature.initialState,
+      actions.lookupWordHovered(cat),
+      initialAppState,
+    );
+    expect(next.lookupRequestsSent).toBe(1);
+  });
+
   it("counts the flashcards started from words, which number their lookups' requests", () => {
     const [next] = operationsFeature.update(
       operationsFeature.initialState,
       actions.lookupFlashcardRequested(cat, "save"),
       initialAppState,
     );
-    expect(next.lookupFlashcardsStarted).toBe(1);
+    expect(next.lookupRequestsSent).toBe(1);
   });
 });

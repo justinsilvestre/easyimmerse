@@ -1,3 +1,4 @@
+import type { AppAction } from "../app/appAction.ts";
 import type { Feature } from "../app/feature.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import type { JobsState } from "./jobs.ts";
@@ -23,10 +24,10 @@ export type OperationsState = {
   /** Server jobs being polled, of either kind, until the feature that started each one stops watching it. */
   jobs: JobsState;
   /**
-   * How many flashcards have been started from words' lookups since the app started.
-   * It numbers their lookup requests, so that no screen's request reuses the id of one still in flight from an earlier screen.
+   * How many lookup requests the lookup feature has asked for since the app started, for flashcards and for hovers.
+   * It numbers them, so that no screen's request reuses the id of one still in flight from an earlier screen.
    */
-  lookupFlashcardsStarted: number;
+  lookupRequestsSent: number;
 };
 
 /**
@@ -34,21 +35,20 @@ export type OperationsState = {
  * the root update records the requests sent and the jobs watched.
  */
 export const operationsFeature: Feature<OperationsState> = {
-  initialState: { requests: [], jobs: {}, lookupFlashcardsStarted: 0 },
+  initialState: { requests: [], jobs: {}, lookupRequestsSent: 0 },
   update: (operations, action) => {
     const [jobs, effects] = updateJobs(operations.jobs, action);
     const requests = forgetSettled(
       operations.requests,
       action.type === "requestSettled" ? action.id : null,
     );
-    const lookupFlashcardsStarted =
-      operations.lookupFlashcardsStarted +
-      (action.type === "lookupFlashcardRequested" ? 1 : 0);
+    const lookupRequestsSent =
+      operations.lookupRequestsSent + (isLookupRequest(action) ? 1 : 0);
     return requests === operations.requests &&
       jobs === operations.jobs &&
-      lookupFlashcardsStarted === operations.lookupFlashcardsStarted
+      lookupRequestsSent === operations.lookupRequestsSent
       ? [operations, effects]
-      : [{ requests, jobs, lookupFlashcardsStarted }, effects];
+      : [{ requests, jobs, lookupRequestsSent }, effects];
   },
 };
 
@@ -60,3 +60,15 @@ function forgetSettled(
   const remaining = requests.filter(({ id }) => id !== settledId);
   return remaining.length === requests.length ? requests : remaining;
 }
+
+/** Tells whether the action numbers a lookup request, whether or not one is then sent. */
+function isLookupRequest(action: AppAction): boolean {
+  return lookupRequestActions.has(action.type);
+}
+
+const lookupRequestActions: ReadonlySet<AppAction["type"]> = new Set([
+  "lookupFlashcardRequested",
+  "lookupFlashcardAtCursorRequested",
+  "lookupPopupWordHeld",
+  "lookupWordHovered",
+]);

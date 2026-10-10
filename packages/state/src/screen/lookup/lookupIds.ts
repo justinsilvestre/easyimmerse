@@ -12,12 +12,27 @@ export const leaveLookup: readonly Effect[] = Object.values(lookupTimerIds).map(
   (id) => ({ type: "cancelTimer", id }),
 );
 
+const hoverRequestPrefix = "lookup/hover/";
+
 /** The id of the lookup request of the flashcard with this sequence. */
 export function lookupRequestId(sequence: number): string {
   return `lookup/flashcard/${sequence}`;
 }
 
-/** The sequence of the next flashcard started from a word, counted over the whole session by the operations feature. */
-export function nextFlashcardSequence(app: AppState): number {
-  return app.operations.lookupFlashcardsStarted + 1;
+/** The id of the lookup request of the hover with this sequence. */
+export function lookupHoverRequestId(sequence: number): string {
+  return `${hoverRequestPrefix}${sequence}`;
+}
+
+/** Tells whether a request id is that of a hover's lookup. */
+export function isHoverRequestId(id: string): boolean {
+  return id.startsWith(hoverRequestPrefix);
+}
+
+/**
+ * The sequence of the next lookup request, of a flashcard or a hover, counted over the whole session by the operations feature,
+ * so that no screen's request reuses the id of one still in flight from an earlier screen.
+ */
+export function nextLookupSequence(app: AppState): number {
+  return app.operations.lookupRequestsSent + 1;
 }

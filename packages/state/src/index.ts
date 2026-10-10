@@ -60,16 +60,19 @@ export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictiona
 export {
   selectFinishedLookupFlashcard,
   selectLookup,
+  selectLookupCursor,
 } from "./screen/lookup/lookupSelectors.ts";
 export type {
   AnchorRect,
   ChosenWord,
   LookupAnchor,
+  LookupCursor,
   LookupPopup,
   LookupSource,
   LookupState,
   LookupWord,
   PendingFlashcard,
+  WordInput,
   WordOccurrence,
 } from "./screen/lookup/lookupState.ts";
 export { doubleClickMs } from "./screen/lookup/lookupTiming.ts";

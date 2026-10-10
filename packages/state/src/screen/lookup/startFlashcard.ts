@@ -1,4 +1,3 @@
-import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
@@ -6,7 +5,7 @@ import { lookupActions } from "./lookupActions.ts";
 import {
   lookupRequestId,
   lookupTimerIds,
-  nextFlashcardSequence,
+  nextLookupSequence,
 } from "./lookupIds.ts";
 import {
   cancelCloseTimer,
@@ -14,9 +13,19 @@ import {
   open,
   showsOccurrence,
 } from "./lookupMoves.ts";
-import type { LookupState, PendingFlashcard } from "./lookupState.ts";
+import type {
+  ChosenWord,
+  LookupState,
+  PendingFlashcard,
+} from "./lookupState.ts";
 import { flashcardLookupWaitMs } from "./lookupTiming.ts";
 import { finish } from "./updatePendingFlashcard.ts";
+
+/** A flashcard asked for from a word, saved at once or opened in the editor. */
+export type FlashcardRequest = {
+  chosen: ChosenWord;
+  destination: PendingFlashcard["destination"];
+};
 
 /**
  * Starts a flashcard from a word, showing the word in the pop-up when it comes from the text,
@@ -24,10 +33,7 @@ import { finish } from "./updatePendingFlashcard.ts";
  */
 export function startFlashcard(
   lookup: LookupState,
-  {
-    chosen,
-    destination,
-  }: Extract<AppAction, { type: "lookupFlashcardRequested" }>,
+  { chosen, destination }: FlashcardRequest,
   player: PlayerState,
   app: AppState,
 ): LookupStep {
@@ -35,7 +41,7 @@ export function startFlashcard(
     chosen.occurrence !== null && !showsOccurrence(lookup, chosen)
       ? open(lookup, chosen, player)
       : [lookup, [cancelCloseTimer]];
-  const sequence = nextFlashcardSequence(app);
+  const sequence = nextLookupSequence(app);
   const pending: PendingFlashcard = {
     sequence,
     chosen,
@@ -61,3 +67,28 @@ export function startFlashcard(
     [...openEffects, send, wait],
   ];
 }
+
+/**
+ * Starts a flashcard for no word, as the C key does with no cursor. It is ready at once, and the pop-up stays as it is.
+ * Transitional: the hand-off passes it to the flashcard hooks until C1 makes it the flashcards' own new-card branch.
+ */
+export function startWordlessFlashcard(
+  lookup: LookupState,
+  destination: PendingFlashcard["destination"],
+  app: AppState,
+): LookupStep {
+  const pendingFlashcard: PendingFlashcard = {
+    sequence: nextLookupSequence(app),
+    chosen: noWord,
+    destination,
+    stage: "ready",
+  };
+  return [{ ...lookup, pendingFlashcard }, []];
+}
+
+const noWord: ChosenWord = {
+  word: { term: "", query: null },
+  source: null,
+  occurrence: null,
+  anchor: null,
+};

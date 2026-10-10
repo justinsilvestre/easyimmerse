@@ -4,6 +4,7 @@ import { stateAfter } from "../../app/stateAfter.ts";
 import {
   selectFinishedLookupFlashcard,
   selectLookup,
+  selectLookupCursor,
 } from "./lookupSelectors.ts";
 import { cat, lookupSettled } from "./lookupTestSupport.ts";
 
@@ -40,5 +41,18 @@ describe("selectFinishedLookupFlashcard", () => {
     expect(
       selectFinishedLookupFlashcard({ app: stateAfter(openM1, saveCat) }),
     ).toBeNull();
+  });
+});
+
+describe("selectLookupCursor", () => {
+  it("returns the open screen's lookup cursor", () => {
+    const state = {
+      app: stateAfter(openM1, actions.lookupCursorMoved(cat, "mouse")),
+    };
+    expect(selectLookupCursor(state)?.chosen).toEqual(cat);
+  });
+
+  it("returns null outside the media screen", () => {
+    expect(selectLookupCursor({ app: stateAfter() })).toBeNull();
   });
 });
