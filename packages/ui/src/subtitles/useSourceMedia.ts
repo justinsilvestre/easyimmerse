@@ -2,7 +2,11 @@ import {
   useGetSourceFormMutation,
   useSubmitSourceStepMutation,
 } from "@easyimmerse/backend";
-import { actions, skippedSubtitlesMessage } from "@easyimmerse/state";
+import {
+  actions,
+  skippedSubtitlesMessage,
+  transientNotice,
+} from "@easyimmerse/state";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { usePluginFormSession } from "../plugins/usePluginFormSession.ts";
 
@@ -29,7 +33,9 @@ export function useSourceMedia(projectId: string, mediaFileId: string) {
           if (answer.kind === "form") return { form: answer.form };
           const message = skippedSubtitlesMessage(answer.skipped, form);
           if (message !== null)
-            dispatch(actions.notificationRequested(message));
+            dispatch(
+              actions.noticeRequested(transientNotice("danger", message)),
+            );
           return { outcome: "applied" };
         });
     },

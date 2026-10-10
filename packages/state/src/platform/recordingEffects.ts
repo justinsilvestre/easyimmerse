@@ -28,7 +28,6 @@ type EffectCall =
   | { type: "pickDictionaryFile"; accept: readonly string[] }
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
-  | { type: "showNotification"; message: string }
   | { type: "openExternalUrl"; url: string }
   | { type: "guardClose"; isActive: boolean };
 
@@ -141,9 +140,6 @@ export function createRecordingEffects(
       calls.push({ type: "loadPreference", key });
       await preferenceLoads.promise;
       return preferences.get(key) ?? null;
-    },
-    showNotification: (message) => {
-      calls.push({ type: "showNotification", message });
     },
     openExternalUrl: (url) => {
       calls.push({ type: "openExternalUrl", url });

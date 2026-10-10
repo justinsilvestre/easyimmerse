@@ -1,6 +1,7 @@
 import type { MediaSourceJob } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
+import { transientNotice } from "../../notices/transientNotice.ts";
 import { runningMediaSourceJob } from "../../operations/exampleJobReports.ts";
 import { exampleMediaFile } from "../../server/exampleMediaFile.ts";
 import { showingForm, subtitlesForm } from "./exampleMediaImport.ts";
@@ -158,9 +159,11 @@ describe("updateMediaImport", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotification",
-        message:
+        type: "showNotice",
+        content: transientNotice(
+          "danger",
           "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+        ),
       },
     ]);
   });

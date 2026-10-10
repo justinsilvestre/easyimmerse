@@ -2,7 +2,7 @@ import {
   useGetProjectQuery,
   useUpdateProjectMutation,
 } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, transientNotice } from "@easyimmerse/state";
 import type { ProjectSettings } from "@easyimmerse/types";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -32,7 +32,9 @@ export function ProjectSettingsScreen({
       .then(onDone)
       .catch(() =>
         dispatch(
-          actions.notificationRequested("The settings could not be saved"),
+          actions.noticeRequested(
+            transientNotice("danger", "The settings could not be saved"),
+          ),
         ),
       );
   return (

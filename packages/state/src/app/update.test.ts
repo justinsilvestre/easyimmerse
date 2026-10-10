@@ -13,7 +13,7 @@ const settledFirst = actions.requestSettled("a", first, {
   data: { media_files: [] },
 });
 
-const undo = actions.notificationRequested("Undone");
+const undo = actions.externalLinkRequested("https://example.com/undo");
 
 /** The state with one lasting notice whose Undo button carries `undo`. */
 const withUndoNotice = () =>
@@ -57,9 +57,11 @@ describe("update", () => {
   it("returns the platform's commands after the features' effects", () => {
     const [, effects] = update(
       initialAppState,
-      actions.notificationRequested("Saved"),
+      actions.externalLinkRequested("https://example.com"),
     );
-    expect(effects).toEqual([{ type: "showNotification", message: "Saved" }]);
+    expect(effects).toEqual([
+      { type: "openExternalUrl", url: "https://example.com" },
+    ]);
   });
 
   it("leaves every slice as it is for an action no feature handles", () => {
@@ -95,7 +97,7 @@ describe("update", () => {
         actions.noticeButtonChosen(1, undo),
       );
       expect(effects).toEqual([
-        { type: "showNotification", message: "Undone" },
+        { type: "openExternalUrl", url: "https://example.com/undo" },
       ]);
     });
   });

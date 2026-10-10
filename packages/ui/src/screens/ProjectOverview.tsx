@@ -8,7 +8,9 @@ import {
 import {
   actions,
   type MediaImportSource,
+  type NoticeTone,
   selectMediaImport,
+  transientNotice,
 } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -37,10 +39,10 @@ export function ProjectOverview({
   onEditSettings: () => void;
 }) {
   const dispatch = useAppDispatch();
-  const notify = (message: string) =>
-    dispatch(actions.notificationRequested(message));
+  const notify = (tone: NoticeTone, message: string) =>
+    dispatch(actions.noticeRequested(transientNotice(tone, message)));
   const notYet = () =>
-    notify("Reviewing and exporting flashcards is not available yet.");
+    notify("info", "Reviewing and exporting flashcards is not available yet.");
   const media = useMediaItems(project.id);
   const [removeMediaFile] = useRemoveMediaFileMutation();
   const importSources = useImportSources();
@@ -78,7 +80,9 @@ export function ProjectOverview({
             removeMediaFile({ projectId: project.id, mediaFileId })
               .unwrap()
               .then(() => dispatch(actions.mediaFileRemoved(mediaFileId)))
-              .catch(() => notify("The media file could not be removed"))
+              .catch(() =>
+                notify("danger", "The media file could not be removed"),
+              )
           }
         />
       )}

@@ -2,7 +2,11 @@ import {
   useDeleteDictionaryMutation,
   useListDictionariesQuery,
 } from "@easyimmerse/backend";
-import { actions, selectDictionaryImport } from "@easyimmerse/state";
+import {
+  actions,
+  selectDictionaryImport,
+  transientNotice,
+} from "@easyimmerse/state";
 import { useState } from "react";
 import { DictionariesView } from "../dictionaries/DictionariesView.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -22,7 +26,9 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
       .catch(() => {
         setRemovingIds((ids) => ids.filter((id) => id !== dictionaryId));
         dispatch(
-          actions.notificationRequested("The dictionary could not be removed"),
+          actions.noticeRequested(
+            transientNotice("danger", "The dictionary could not be removed"),
+          ),
         );
       });
   };

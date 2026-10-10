@@ -25,7 +25,7 @@ const pickedMediaFile: PickedMediaFile = {
   source: { kind: "path", path: "/videos/episode.mkv" },
 };
 
-const timerAction = actions.notificationRequested("Time is up");
+const timerAction = actions.externalLinkRequested("https://example.com");
 
 const startTimer: PerformedEffect = {
   type: "startTimer",

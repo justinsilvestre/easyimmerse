@@ -1,4 +1,5 @@
 import type { Effect } from "../../app/effect.ts";
+import { transientNotice } from "../../notices/transientNotice.ts";
 import { jobKey } from "../../operations/jobs.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type {
@@ -70,7 +71,10 @@ function importJobChecked(
       null,
       [
         ...stop,
-        { type: "showNotification", message: `Added ${dictionary.title}` },
+        {
+          type: "showNotice",
+          content: transientNotice("success", `Added ${dictionary.title}`),
+        },
       ],
     ];
   if (state === "failed" && error !== null)

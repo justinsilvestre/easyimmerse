@@ -6,6 +6,7 @@ import type {
 } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
+import { transientNotice } from "../../notices/transientNotice.ts";
 import { runningImportStatus } from "../../operations/exampleJobReports.ts";
 import type { PickedDictionaryFile } from "../../platform/effects.ts";
 import type { DictionaryImportWizard } from "./dictionaryImportWizard.ts";
@@ -193,8 +194,8 @@ describe("updateDictionaryImport", () => {
         checked({ state: "done", dictionary: wiktionary }),
       );
       expect(effects).toContainEqual({
-        type: "showNotification",
-        message: "Added German-English Wiktionary",
+        type: "showNotice",
+        content: transientNotice("success", "Added German-English Wiktionary"),
       });
     });
 

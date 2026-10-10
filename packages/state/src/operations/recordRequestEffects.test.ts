@@ -145,11 +145,11 @@ describe("recordRequestEffects", () => {
   });
 
   it("passes other effects through", () => {
-    const notice: PerformedEffect = {
-      type: "showNotification",
-      message: "Saved",
+    const link: PerformedEffect = {
+      type: "openExternalUrl",
+      url: "https://example.com",
     };
-    const [, effects] = recordRequestEffects(requestsOf(), [notice]);
-    expect(effects).toEqual([notice]);
+    const [, effects] = recordRequestEffects(requestsOf(), [link]);
+    expect(effects).toEqual([link]);
   });
 });

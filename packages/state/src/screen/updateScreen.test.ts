@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
+import { transientNotice } from "../notices/transientNotice.ts";
 import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
@@ -220,7 +221,7 @@ describe("updateScreen", () => {
     expect(screen.main).toEqual({ kind: "home" });
   });
 
-  it("returns a notification when a picked media file could not be added", () => {
+  it("returns a notice when a picked media file could not be added", () => {
     const [, effects] = apply(
       mediaFileAddFailed,
       actions.navigated({ type: "openProject", projectId: "p1" }),
@@ -228,18 +229,18 @@ describe("updateScreen", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotification",
-        message: "The media file could not be added",
+        type: "showNotice",
+        content: transientNotice("danger", "The media file could not be added"),
       },
     ]);
   });
 
-  it("returns a notification when a picked media file could not be added after the project was left", () => {
+  it("returns a notice when a picked media file could not be added after the project was left", () => {
     const [, effects] = apply(mediaFileAddFailed, ...leftProject);
     expect(effects).toEqual([
       {
-        type: "showNotification",
-        message: "The media file could not be added",
+        type: "showNotice",
+        content: transientNotice("danger", "The media file could not be added"),
       },
     ]);
   });
@@ -258,17 +259,23 @@ describe("updateScreen", () => {
       actions.mediaFileChosen(pickedMediaFile),
     );
     expect(effects).toContainEqual({
-      type: "showNotification",
-      message: "“episode.mkv” is already in the project.",
+      type: "showNotice",
+      content: transientNotice(
+        "info",
+        "“episode.mkv” is already in the project.",
+      ),
     });
   });
 
-  it("returns a notification when a picked subtitles file could not be added", () => {
+  it("returns a notice when a picked subtitles file could not be added", () => {
     const [, effects] = apply(subtitleFileAddFailed, ...playingM2);
     expect(effects).toEqual([
       {
-        type: "showNotification",
-        message: "The subtitles file could not be added",
+        type: "showNotice",
+        content: transientNotice(
+          "danger",
+          "The subtitles file could not be added",
+        ),
       },
     ]);
   });
@@ -298,7 +305,7 @@ describe("updateScreen", () => {
     expect(screen.dialog).toBeNull();
   });
 
-  it("returns a notification when the track choice could not be saved", () => {
+  it("returns a notice when the track choice could not be saved", () => {
     const [, effects] = apply(
       actions.requestSettled(
         "media/m2/saveTrackSelection",
@@ -314,13 +321,16 @@ describe("updateScreen", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotification",
-        message: "The track choice could not be saved",
+        type: "showNotice",
+        content: transientNotice(
+          "danger",
+          "The track choice could not be saved",
+        ),
       },
     ]);
   });
 
-  it("returns no notification for a track choice whose save was replaced", () => {
+  it("returns no notice for a track choice whose save was replaced", () => {
     const [, effects] = apply(
       actions.requestSettled(
         "media/m2/saveTrackSelection",

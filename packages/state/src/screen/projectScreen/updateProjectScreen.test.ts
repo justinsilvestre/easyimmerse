@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
+import { transientNotice } from "../../notices/transientNotice.ts";
 import type { PickedMediaFile } from "../../platform/effects.ts";
 import { exampleMediaFile } from "../../server/exampleMediaFile.ts";
 import type { ServerRequest } from "../../server/serverRequest.ts";
@@ -101,8 +102,11 @@ describe("updateProjectScreen", () => {
     const [, effects] = updateProjectScreen(chosen, listed("pilot.mkv"), route);
     expect(effects).toEqual([
       {
-        type: "showNotification",
-        message: "“pilot.mkv” is already in the project.",
+        type: "showNotice",
+        content: transientNotice(
+          "info",
+          "“pilot.mkv” is already in the project.",
+        ),
       },
     ]);
   });

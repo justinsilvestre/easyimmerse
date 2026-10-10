@@ -4,15 +4,18 @@ import type {
   SkippedSubtitle,
 } from "@easyimmerse/types";
 import type { Effect } from "../../app/effect.ts";
+import { transientNotice } from "../../notices/transientNotice.ts";
 
-/** Names in a notification the chosen subtitle tracks that a fetch did not add, once the fetch has added its file. */
+/** Names in a notice the chosen subtitle tracks that a fetch did not add, once the fetch has added its file. */
 export function skippedSubtitlesNotice(
   job: MediaSourceJob,
   form: PluginForm | null,
 ): Effect[] {
   if (job.status !== "done" || job.media_file === null) return [];
   const message = skippedSubtitlesMessage(job.skipped_subtitles, form);
-  return message === null ? [] : [{ type: "showNotification", message }];
+  return message === null
+    ? []
+    : [{ type: "showNotice", content: transientNotice("danger", message) }];
 }
 
 /**

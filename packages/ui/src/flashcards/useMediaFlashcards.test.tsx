@@ -233,10 +233,6 @@ function renderFlashcards({ savesFail = false, savesRejected = false } = {}) {
     act(async () => {
       for (const resolve of held.splice(0)) resolve();
     });
-  const notifications = () =>
-    effects.calls.flatMap((call) =>
-      call.type === "showNotification" ? [call.message] : [],
-    );
   /** The app's notices, each as its message followed by its actions' labels. */
   const notices = () =>
     shownNotices().map((notice) => [
@@ -261,7 +257,6 @@ function renderFlashcards({ savesFail = false, savesRejected = false } = {}) {
     deletes,
     letSavesThrough,
     letSavesSucceed,
-    notifications,
     notices,
     choose,
     chooseFor,
@@ -1024,9 +1019,9 @@ describe("useMediaFlashcards", () => {
       expect(result.current.saveFailed).toBe(false);
     });
 
-    it("sends no passing notification, since the editor tells of it", async () => {
-      const { notifications } = await failHund();
-      expect(notifications()).toEqual([]);
+    it("shows no notice, since the editor tells of it", async () => {
+      const { notices } = await failHund();
+      expect(notices()).toEqual([]);
     });
 
     it("lists the card among the flashcards not saved once it is closed", async () => {

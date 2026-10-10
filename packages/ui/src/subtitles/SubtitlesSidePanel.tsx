@@ -1,4 +1,4 @@
-import { actions } from "@easyimmerse/state";
+import { actions, transientNotice } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import type { Range } from "../components/RunText.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -78,8 +78,11 @@ export function SubtitlesSidePanel({
         onAddSubtitlesFile={subtitles.requestFile}
         onGenerateSubtitles={() =>
           dispatch(
-            actions.notificationRequested(
-              "Generating subtitles is not available yet.",
+            actions.noticeRequested(
+              transientNotice(
+                "info",
+                "Generating subtitles is not available yet.",
+              ),
             ),
           )
         }

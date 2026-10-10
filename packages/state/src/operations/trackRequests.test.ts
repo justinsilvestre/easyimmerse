@@ -88,7 +88,7 @@ describe("trackRequests", () => {
   it("keeps the operations as they are when no effect concerns a request", () => {
     const operations = operationsWith(sent("a", first, "s"));
     const [next] = trackRequests(operations, [
-      { type: "showNotification", message: "Saved" },
+      { type: "openExternalUrl", url: "https://example.com" },
     ]);
     expect(next).toBe(operations);
   });

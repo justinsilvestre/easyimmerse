@@ -2,6 +2,7 @@ import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import { transientNotice } from "../notices/transientNotice.ts";
 import type { MainRoute } from "../route/route.ts";
 import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
@@ -106,18 +107,18 @@ function failureNotices(action: AppAction): Effect[] {
     return [];
   switch (action.request.kind) {
     case "addMediaFile":
-      return [notice("The media file could not be added")];
+      return [failure("The media file could not be added")];
     case "addSubtitleTrack":
-      return [notice("The subtitles file could not be added")];
+      return [failure("The subtitles file could not be added")];
     case "saveTrackSelection":
-      return [notice("The track choice could not be saved")];
+      return [failure("The track choice could not be saved")];
     default:
       return [];
   }
 }
 
-function notice(message: string): Effect {
-  return { type: "showNotification", message };
+function failure(message: string): Effect {
+  return { type: "showNotice", content: transientNotice("danger", message) };
 }
 
 function updateMainScreen(

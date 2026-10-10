@@ -3,6 +3,7 @@ import {
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
   selectCurrentTime,
+  selectNotices,
   selectPreference,
 } from "@easyimmerse/state";
 import type {
@@ -826,16 +827,16 @@ describe("MediaScreen", () => {
     });
 
     it("names the subtitles that the plugin's changes did not add", async () => {
-      const { effects } = renderImported(
+      const { store } = renderImported(
         applied([{ id: "en", reason: "the plugin did not fetch it" }]),
       );
       await applyEnglish();
       await vi.waitFor(() =>
-        expect(effects.calls).toContainEqual({
-          type: "showNotification",
-          message:
-            "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
-        }),
+        expect(
+          selectNotices(store.getState()).map((notice) => notice.message),
+        ).toContain(
+          "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+        ),
       );
     });
 

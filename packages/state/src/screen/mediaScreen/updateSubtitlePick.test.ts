@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
+import { transientNotice } from "../../notices/transientNotice.ts";
 import type { PickedFile } from "../../platform/effects.ts";
 import type { ServerRequest } from "../../server/serverRequest.ts";
 import type { MediaScreenState } from "../screenState.ts";
@@ -97,8 +98,11 @@ describe("updateSubtitlePick", () => {
     const [, effects] = apply(tracksFailed, actions.subtitleFileChosen(srt));
     expect(effects).toEqual([
       {
-        type: "showNotification",
-        message: "The subtitles file could not be added",
+        type: "showNotice",
+        content: transientNotice(
+          "danger",
+          "The subtitles file could not be added",
+        ),
       },
     ]);
   });

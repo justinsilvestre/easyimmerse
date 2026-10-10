@@ -2,7 +2,7 @@ import {
   useCreateProjectMutation,
   useListProjectsQuery,
 } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, transientNotice } from "@easyimmerse/state";
 import type { ProjectSettings } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { newProjectSettings } from "../projects/newProjectSettings.ts";
@@ -26,7 +26,9 @@ export function NewProjectScreen({
       .then((project) => onCreated(project.id))
       .catch(() =>
         dispatch(
-          actions.notificationRequested("The project could not be created"),
+          actions.noticeRequested(
+            transientNotice("danger", "The project could not be created"),
+          ),
         ),
       );
   return (

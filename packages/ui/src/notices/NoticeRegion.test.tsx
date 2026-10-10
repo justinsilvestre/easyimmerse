@@ -17,7 +17,12 @@ afterEach(cleanup);
 const saved: NoticeContent = {
   tone: "success",
   message: "Saved the flashcard for “Hund”.",
-  buttons: [{ label: "Undo", action: actions.notificationRequested("Undone") }],
+  buttons: [
+    {
+      label: "Undo",
+      action: actions.externalLinkRequested("https://example.com/undo"),
+    },
+  ],
   isTransient: true,
 };
 
@@ -50,8 +55,8 @@ describe("NoticeRegion", () => {
     const effects = renderRegion(saved);
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(effects.calls).toContainEqual({
-      type: "showNotification",
-      message: "Undone",
+      type: "openExternalUrl",
+      url: "https://example.com/undo",
     });
   });
 

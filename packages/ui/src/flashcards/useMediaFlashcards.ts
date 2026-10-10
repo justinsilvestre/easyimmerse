@@ -1,5 +1,5 @@
 import { useListFlashcardsQuery } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, transientNotice } from "@easyimmerse/state";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { useEffect, useMemo } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
@@ -39,8 +39,8 @@ export function useMediaFlashcards(
   hasScreenshots: boolean,
 ) {
   const dispatch = useAppDispatch();
-  const notify = (message: string) =>
-    dispatch(actions.notificationRequested(message));
+  const notifyFailure = (message: string) =>
+    dispatch(actions.noticeRequested(transientNotice("danger", message)));
   const { data } = useListFlashcardsQuery(projectId);
   const flashcards = useMemo(
     () =>
@@ -168,7 +168,7 @@ export function useMediaFlashcards(
       saving
         .remove(edited.flashcard)
         .then(close)
-        .catch(() => notify("The flashcard could not be deleted"));
+        .catch(() => notifyFailure("The flashcard could not be deleted"));
     },
     ...flashcardRetiming(edited, edit),
   };

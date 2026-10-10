@@ -1,6 +1,7 @@
 import type { SubtitleSelection } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
 import type { Effect } from "../../app/effect.ts";
+import { transientNotice } from "../../notices/transientNotice.ts";
 import type { PickedFile } from "../../platform/effects.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
@@ -8,8 +9,8 @@ import type { MediaScreenState } from "../screenState.ts";
 import { roleForNewTrack } from "./roleForNewTrack.ts";
 
 const subtitlesNotAdded: Effect = {
-  type: "showNotification",
-  message: "The subtitles file could not be added",
+  type: "showNotice",
+  content: transientNotice("danger", "The subtitles file could not be added"),
 };
 
 /** Adds a picked subtitles file to the open media file, once the tracks' listing tells which role is free for it. */

@@ -4,16 +4,14 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { desktopDictionaryExtensions } from "./desktopDictionaryExtensions.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
-import { sendOsNotification } from "./osNotification.ts";
 import { pickPath } from "./pickPath.ts";
 import { createServerPreferenceStore } from "./serverPreferenceStore.ts";
-import { createShowNotification } from "./showNotification.ts";
 import { subscribeToSettingsRequests } from "./subscribeToSettingsRequests.ts";
 import { createWindowCloseGuard } from "./windowCloseGuard.ts";
 
 /**
  * Builds the Tauri implementation of the app's side effects.
- * Native dialogs, notifications, and external links go through Tauri plugins;
+ * Native dialogs and external links go through Tauri plugins;
  * preferences are stored by the embedded server; the Settings menu item reaches the page as a Tauri event;
  * and closing the window while a flashcard has unsaved changes or is being saved asks first.
  */
@@ -33,10 +31,6 @@ export function createNativeEffects(options: {
       pickPath("Dictionaries", desktopDictionaryExtensions(accept)),
     savePreference: preferences.save,
     loadPreference: preferences.load,
-    showNotification: createShowNotification(
-      sendOsNotification,
-      webEffects.showNotification,
-    ),
     openExternalUrl,
     guardClose: createWindowCloseGuard(
       getCurrentWindow(),

@@ -44,7 +44,6 @@ export interface Effects {
   readPlaybackProbes(): PlaybackProbes;
   savePreference(key: string, value: string): Promise<void>;
   loadPreference(key: string): Promise<string | null>;
-  showNotification(message: string): void;
   openExternalUrl(url: string): void;
   /**
    * Warns before the app or its page closes while `isActive`, as while a flashcard is being saved or has unsaved changes.

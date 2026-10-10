@@ -2,6 +2,7 @@ import {
   actions,
   createBrowserFileRegistry,
   dictionaryFileExtensions,
+  selectNotices,
 } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -75,11 +76,9 @@ function renderScreen(responses: Record<string, FakeResponse> = {}) {
       );
     });
   };
-  const notifications = () =>
-    rendered.effects.calls.flatMap((call) =>
-      call.type === "showNotification" ? [call.message] : [],
-    );
-  return { ...rendered, client, chooseBrowserFile, notifications };
+  const notices = () =>
+    selectNotices(rendered.store.getState()).map((notice) => notice.message);
+  return { ...rendered, client, chooseBrowserFile, notices };
 }
 
 const serverFailure = fakeFailure({
@@ -272,12 +271,10 @@ describe("DictionariesScreen", () => {
         );
       });
 
-      it("notifies that the dictionary could not be removed", async () => {
-        const { notifications } = await confirmFailingRemoval();
+      it("tells that the dictionary could not be removed", async () => {
+        const { notices } = await confirmFailingRemoval();
         await vi.waitFor(() =>
-          expect(notifications()).toEqual([
-            "The dictionary could not be removed",
-          ]),
+          expect(notices()).toEqual(["The dictionary could not be removed"]),
         );
       });
     });
@@ -359,10 +356,10 @@ describe("DictionariesScreen", () => {
 
   describe("once the server has imported a file", () => {
     it("names the added dictionary", async () => {
-      const { chooseBrowserFile, notifications } = renderScreen();
+      const { chooseBrowserFile, notices } = renderScreen();
       chooseBrowserFile("jmdict.zip");
       await vi.waitFor(() =>
-        expect(notifications()).toEqual(["Added German-English Wiktionary"]),
+        expect(notices()).toEqual(["Added German-English Wiktionary"]),
       );
     });
 

@@ -1,3 +1,4 @@
+import type { NoticesEffect } from "../notices/noticesEffect.ts";
 import type { JobsEffect } from "../operations/jobsEffect.ts";
 import type { PlatformEffect } from "../platform/platformCommands.ts";
 import type { PreferencesEffect } from "../preferences/preferencesEffect.ts";
@@ -13,6 +14,7 @@ export type Effect =
   | PreferencesEffect
   | StoredPlacesEffect
   | UnsavedWorkEffect
+  | NoticesEffect
   | PlatformEffect
   | TimerEffect
   | ServerEffect

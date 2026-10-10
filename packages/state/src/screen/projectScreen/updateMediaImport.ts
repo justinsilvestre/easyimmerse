@@ -16,7 +16,7 @@ type Result = readonly [Wizard, readonly Effect[]];
 /**
  * Runs a media-source plugin's import dialog: asks for its forms, sends each action with what the user entered,
  * and watches the fetch the last action starts. Once the fetch is done, the route opens the added file,
- * and any chosen subtitle tracks that were not added are named in a notification.
+ * and any chosen subtitle tracks that were not added are named in a notice.
  */
 export function updateMediaImport(
   wizard: Wizard,

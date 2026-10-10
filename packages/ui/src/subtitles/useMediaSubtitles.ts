@@ -4,7 +4,7 @@ import {
   useListSubtitleTracksQuery,
   useSetSubtitleSelectionMutation,
 } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, transientNotice } from "@easyimmerse/state";
 import type {
   Cue,
   SubtitleRole,
@@ -38,7 +38,9 @@ export function useMediaSubtitles(projectId: string, mediaFileId: string) {
       .unwrap()
       .catch(() =>
         dispatch(
-          actions.notificationRequested("The subtitles could not be changed"),
+          actions.noticeRequested(
+            transientNotice("danger", "The subtitles could not be changed"),
+          ),
         ),
       );
   return {
