@@ -97,6 +97,9 @@ export const screenActions = {
   mediaFileChosen: (file: PickedMediaFile) =>
     ({ type: "mediaFileChosen", file }) as const,
   mediaFilePickCancelled: () => ({ type: "mediaFilePickCancelled" }) as const,
+  /** The user asked to remove a media file from the project shown. */
+  mediaFileRemovalRequested: (mediaFileId: string) =>
+    ({ type: "mediaFileRemovalRequested", mediaFileId }) as const,
   dictionaryFilePickRequested: () =>
     ({ type: "dictionaryFilePickRequested" }) as const,
   dictionaryFileChosen: (file: PickedDictionaryFile) =>

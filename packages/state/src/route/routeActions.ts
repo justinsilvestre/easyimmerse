@@ -11,9 +11,6 @@ export const routeActions = {
   settingsRequested: () => ({ type: "settingsRequested" }) as const,
   /** Leaves the open media file for its project's overview. */
   closeMedia: () => ({ type: "closeMedia" }) as const,
-  /** A media file was removed from its project; if it was open, its project's overview shows instead. */
-  mediaFileRemoved: (mediaFileId: string) =>
-    ({ type: "mediaFileRemoved", mediaFileId }) as const,
 };
 
 /** An action that moves the app from one place to another. */

@@ -123,6 +123,11 @@ export const requestEndpoints = {
     }),
   createProject: ({ settings }) =>
     backendApi.endpoints.createProject.initiate(settings, { track: false }),
+  removeMediaFile: ({ projectId, mediaFileId }) =>
+    backendApi.endpoints.removeMediaFile.initiate(
+      { projectId, mediaFileId },
+      { track: false },
+    ),
   updateProject: ({ projectId, settings }) =>
     backendApi.endpoints.updateProject.initiate(
       { projectId, settings },

@@ -23,12 +23,17 @@ export function nextRoute(route: Route, action: AppAction): Route {
       return withMainRoute(route, (main) =>
         main.screen === "media" ? projectRouteOf(main) : main,
       );
-    case "mediaFileRemoved":
+    case "requestSettled": {
+      // A media file removed from its project, if it is open, gives way to its project's overview.
+      if (action.request.kind !== "removeMediaFile" || !action.outcome.ok)
+        return route;
+      const { mediaFileId } = action.request;
       return withMainRoute(route, (main) =>
-        main.screen === "media" && main.mediaFileId === action.mediaFileId
+        main.screen === "media" && main.mediaFileId === mediaFileId
           ? projectRouteOf(main)
           : main,
       );
+    }
     default:
       return route;
   }

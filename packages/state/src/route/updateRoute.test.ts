@@ -14,6 +14,13 @@ const project: Route = { screen: "project", projectId: "p1" };
 
 const media: Route = { screen: "media", projectId: "p1", mediaFileId: "m1" };
 
+const mediaFileRemoved = (mediaFileId: string) =>
+  actions.requestSettled(
+    `project/p1/removeMediaFile/${mediaFileId}`,
+    { kind: "removeMediaFile", projectId: "p1", mediaFileId },
+    { ok: true, data: undefined },
+  );
+
 const settingsOver = (beneath: Route): Route =>
   nextRoute(beneath, actions.settingsRequested());
 
@@ -54,12 +61,21 @@ describe("nextRoute", () => {
     expect(nextRoute(media, actions.closeMedia())).toEqual(project);
   });
 
-  it("returns to the project for mediaFileRemoved when the open file is removed", () => {
-    expect(nextRoute(media, actions.mediaFileRemoved("m1"))).toEqual(project);
+  it("returns to the project once the open file's removal succeeds", () => {
+    expect(nextRoute(media, mediaFileRemoved("m1"))).toEqual(project);
   });
 
-  it("keeps the open media file for mediaFileRemoved when another is removed", () => {
-    expect(nextRoute(media, actions.mediaFileRemoved("m2"))).toBe(media);
+  it("keeps the open media file once another file's removal succeeds", () => {
+    expect(nextRoute(media, mediaFileRemoved("m2"))).toBe(media);
+  });
+
+  it("keeps the open media file when its removal failed", () => {
+    const failed = actions.requestSettled(
+      "project/p1/removeMediaFile/m1",
+      { kind: "removeMediaFile", projectId: "p1", mediaFileId: "m1" },
+      { ok: false, error: { status: 500, message: "down" } },
+    );
+    expect(nextRoute(media, failed)).toBe(media);
   });
 
   it("stays put for an action that does not move the app", () => {

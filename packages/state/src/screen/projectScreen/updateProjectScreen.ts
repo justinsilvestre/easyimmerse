@@ -12,7 +12,7 @@ import { updateMediaImport } from "./updateMediaImport.ts";
 type ProjectRoute = Extract<MainRoute, { screen: "project" }>;
 
 /**
- * Updates the project overview: its media import dialog, and the adding of a picked media file.
+ * Updates the project overview: its media import dialog, the adding of a picked media file, and the removal of a media file.
  * The route then opens the added, existing or fetched file (see `mediaFileOpenedBy`), which replaces this screen.
  */
 export function updateProjectScreen(
@@ -30,7 +30,20 @@ export function updateProjectScreen(
     mediaImport === screen.mediaImport
       ? withPick
       : { ...withPick, mediaImport },
-    [...pickEffects, ...importEffects],
+    [...pickEffects, ...importEffects, ...removalEffects(action, route)],
+  ];
+}
+
+/** Removes a media file from the project when the user asks. Its id names the file, so that removals of two files run side by side. */
+function removalEffects(action: AppAction, { projectId }: ProjectRoute) {
+  if (action.type !== "mediaFileRemovalRequested") return [];
+  const { mediaFileId } = action;
+  return [
+    {
+      type: "sendRequest",
+      id: `project/${projectId}/removeMediaFile/${mediaFileId}`,
+      request: { kind: "removeMediaFile", projectId, mediaFileId },
+    } satisfies Effect,
   ];
 }
 

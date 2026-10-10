@@ -426,4 +426,23 @@ describe("updateScreen", () => {
       },
     ]);
   });
+
+  it("tells that a media file could not be removed", () => {
+    const [, effects] = apply(
+      actions.requestSettled(
+        "project/p1/removeMediaFile/m2",
+        { kind: "removeMediaFile", projectId: "p1", mediaFileId: "m2" },
+        { ok: false, error: { status: 500, message: "down" } },
+      ),
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotice",
+        content: transientNotice(
+          "danger",
+          "The media file could not be removed",
+        ),
+      },
+    ]);
+  });
 });

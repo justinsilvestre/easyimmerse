@@ -140,4 +140,23 @@ describe("updateProjectScreen", () => {
     const [, effects] = updateProjectScreen(idle, listed(), route);
     expect(effects).toEqual([]);
   });
+
+  it("removes a media file from the project when asked", () => {
+    const [, effects] = updateProjectScreen(
+      idle,
+      actions.mediaFileRemovalRequested("m2"),
+      route,
+    );
+    expect(effects).toEqual([
+      {
+        type: "sendRequest",
+        id: "project/p1/removeMediaFile/m2",
+        request: {
+          kind: "removeMediaFile",
+          projectId: "p1",
+          mediaFileId: "m2",
+        },
+      },
+    ]);
+  });
 });

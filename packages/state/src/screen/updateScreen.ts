@@ -141,6 +141,8 @@ function failureNotices(action: AppAction): Effect[] {
       return [failure("The project could not be created")];
     case "updateProject":
       return [failure("The settings could not be saved")];
+    case "removeMediaFile":
+      return [failure("The media file could not be removed")];
     default:
       return [];
   }
