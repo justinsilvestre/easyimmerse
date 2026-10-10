@@ -1,3 +1,9 @@
+import type { WaveformWindowView } from "@easyimmerse/state";
+import {
+  planWindowRequests,
+  wantedWindows,
+  waveformWindowMs,
+} from "@easyimmerse/state";
 import type { WaveformWindowEntry } from "./waveformWindowEntries.ts";
 import {
   evictStale,
@@ -5,12 +11,6 @@ import {
   loadedWindows,
   markWanted,
 } from "./waveformWindowEntries.ts";
-import type { WaveformWindowView } from "./waveformWindowPolicy.ts";
-import {
-  planWindowRequests,
-  wantedWindows,
-  waveformWindowMs,
-} from "./waveformWindowPolicy.ts";
 
 /** Loads one window's peaks, or null when the window has none, as for a file without audio. */
 export type FetchWaveformWindow = (

@@ -1,9 +1,6 @@
+import { waveformPeaksPerSecond, waveformWindowMs } from "@easyimmerse/state";
 import { peaksPerBar } from "./layOutBars.ts";
 import type { WaveformView } from "./waveformGeometry.ts";
-import {
-  waveformPeaksPerSecond,
-  waveformWindowMs,
-} from "./waveformWindowPolicy.ts";
 
 const peakMs = 1000 / waveformPeaksPerSecond;
 const peaksPerWindow = waveformWindowMs / peakMs;

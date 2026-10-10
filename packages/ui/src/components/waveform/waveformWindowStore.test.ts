@@ -1,5 +1,5 @@
+import type { WaveformWindowView } from "@easyimmerse/state";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { WaveformWindowView } from "./waveformWindowPolicy.ts";
 import {
   createWaveformWindowStore,
   waveformWindowRetentionMs,

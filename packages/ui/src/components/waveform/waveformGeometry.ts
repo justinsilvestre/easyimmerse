@@ -1,4 +1,4 @@
-import { maxVisibleSpanMs } from "./waveformWindowPolicy.ts";
+import { maxVisibleSpanMs } from "@easyimmerse/state";
 
 /** The narrowest visible span. */
 const minVisibleSpanMs = 2_000;

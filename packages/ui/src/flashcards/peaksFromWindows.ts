@@ -1,4 +1,4 @@
-import { waveformPeaksPerSecond } from "../components/waveform/waveformWindowPolicy.ts";
+import { waveformPeaksPerSecond } from "@easyimmerse/state";
 
 /** How many peaks per second the clip editor draws, fewer than the windows hold so a long file stays light. */
 const clipPeaksPerSecond = 20;

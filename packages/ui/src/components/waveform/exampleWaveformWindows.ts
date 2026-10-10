@@ -1,7 +1,4 @@
-import {
-  waveformPeaksPerSecond,
-  waveformWindowMs,
-} from "./waveformWindowPolicy.ts";
+import { waveformPeaksPerSecond, waveformWindowMs } from "@easyimmerse/state";
 
 /** Makes peaks windows that look like speech, keyed by their start, for stories. */
 export function exampleWaveformWindows(

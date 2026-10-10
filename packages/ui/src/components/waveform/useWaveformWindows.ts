@@ -1,5 +1,5 @@
+import type { WaveformWindowView } from "@easyimmerse/state";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import type { WaveformWindowView } from "./waveformWindowPolicy.ts";
 import type {
   FetchWaveformWindow,
   WaveformWindowStore,
