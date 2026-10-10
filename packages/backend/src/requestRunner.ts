@@ -52,7 +52,10 @@ export const requestEndpoints = {
     ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
-/** Sends a request through its endpoint in the store that `dispatch` belongs to, and reports its outcome. */
+/**
+ * Sends a request through its endpoint in the store that `dispatch` belongs to, and reports its outcome.
+ * Aborting a query that another caller started does not stop it, and the request then settles with its data.
+ */
 export const runRequest: RequestRunner = (request, dispatch) => {
   const start = requestEndpoints[request.kind] as StartRequest<
     typeof request.kind

@@ -92,7 +92,8 @@ describe("runRequest", () => {
   it("leaves no mutation entry once a mutation settles", async () => {
     const store = createStore(answering({ data: mediaFile }));
     await settle(store, adding);
-    expect(store.getState().backend).toMatchObject({ mutations: {} });
+    const backend = store.getState().backend as { mutations: object };
+    expect(backend.mutations).toEqual({});
   });
 
   it("refetches a subscribed media list once a media file is added", async () => {

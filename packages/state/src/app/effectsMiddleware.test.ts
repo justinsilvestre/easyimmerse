@@ -7,6 +7,7 @@ import type {
 } from "../platform/effects.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import type { RequestOutcome, ServerRequest } from "../server/serverRequest.ts";
+import { abortedFailure } from "../server/serverRequest.ts";
 import { actions } from "./appAction.ts";
 import { createAppStore } from "./createAppStore.ts";
 import type { FakeServerStoreParts } from "./createFakeServerStoreParts.ts";
@@ -42,7 +43,7 @@ const listed: RequestOutcome<"listMediaFiles"> = {
 
 const aborted: RequestOutcome<"listMediaFiles"> = {
   ok: false,
-  error: { status: "ABORTED", message: "The request was aborted." },
+  error: abortedFailure,
 };
 
 const sendListing: Effect = { type: "sendRequest", id: "a", request: listing };
@@ -118,7 +119,7 @@ describe("effectsMiddleware", () => {
     });
   });
 
-  it("dispatches only the outcome of the request a later send with its id replaced it with", async () => {
+  it("drops the outcome of a replaced request", async () => {
     const server = createFakeServerStoreParts();
     const dispatched = dispatchedBy(
       createRecordingEffects(),
@@ -133,19 +134,21 @@ describe("effectsMiddleware", () => {
     });
   });
 
-  it("settles a withdrawn request as aborted without sending it", async () => {
+  it("settles a withdrawn request as aborted", () => {
+    const dispatched = dispatchedBy(createRecordingEffects(), [
+      { type: "settleWithdrawnRequest", id: "a", request: listing },
+    ]);
+    expect(dispatched).toEqual([actions.requestSettled("a", listing, aborted)]);
+  });
+
+  it("does not send a withdrawn request", () => {
     const server = createFakeServerStoreParts();
-    const dispatched = dispatchedBy(
+    dispatchedBy(
       createRecordingEffects(),
       [{ type: "settleWithdrawnRequest", id: "a", request: listing }],
       server,
     );
-    await vi.waitFor(() => {
-      expect([dispatched, server.sentRequests]).toEqual([
-        [actions.requestSettled("a", listing, aborted)],
-        [],
-      ]);
-    });
+    expect(server.sentRequests).toEqual([]);
   });
 
   it("calls seekPlayer after seekRequested is dispatched", () => {

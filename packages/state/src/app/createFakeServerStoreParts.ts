@@ -62,11 +62,13 @@ export function createFakeServerStoreParts(
     },
     runRequest: runRequest as RequestRunner,
     respond: (request, outcome) => {
-      const entry = pending.find((other) =>
-        isSameRequest(other.request, request),
+      const entry = pending.find(
+        (other) => canonicalJson(other.request) === canonicalJson(request),
       );
       if (!settle(entry, outcome))
-        throw new Error(`No ${request.kind} request like this one is pending.`);
+        throw new Error(
+          `No request equal to ${canonicalJson(request)} is pending. ${describePending(pending)}`,
+        );
     },
     serverConfig,
   };
@@ -82,7 +84,21 @@ function startPending(request: ServerRequest) {
   return { entry: { request, settle: resolve }, settled };
 }
 
-// Requests are plain data, so their JSON forms are equal when the requests are, given the same key order.
-function isSameRequest(left: ServerRequest, right: ServerRequest): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+/** Writes a request as JSON with every object's keys sorted, so that equal requests give equal text. */
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(value, (_key, inner: unknown) =>
+    typeof inner === "object" && inner !== null && !Array.isArray(inner)
+      ? Object.fromEntries(
+          Object.entries(inner).sort(([left], [right]) =>
+            left < right ? -1 : 1,
+          ),
+        )
+      : inner,
+  );
+}
+
+function describePending(pending: readonly Pending[]): string {
+  return pending.length === 0
+    ? "No request is pending."
+    : `Pending: ${pending.map(({ request }) => canonicalJson(request)).join(", ")}.`;
 }

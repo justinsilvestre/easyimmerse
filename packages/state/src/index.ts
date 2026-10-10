@@ -64,7 +64,6 @@ export type {
   RequestFailure,
   RequestOutcome,
   RequestRunner,
-  RequestSettled,
   RunningRequest,
   ServerRequest,
   ServerRequestKind,

@@ -14,6 +14,8 @@ export function createVitestConfig(options: {
       typecheck: {
         enabled: options.typecheck ?? false,
         include: ["src/**/*.test-d.ts"],
+        // Type errors outside the type-level tests are left to each package's typecheck script.
+        ignoreSourceErrors: true,
       },
     },
   });
