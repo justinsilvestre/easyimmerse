@@ -26,8 +26,6 @@ export const screenActions = {
     ({ type: "subtitleFileChosen", file }) as const,
   subtitleFilePickCancelled: () =>
     ({ type: "subtitleFilePickCancelled" }) as const,
-  subtitleFileAdded: () => ({ type: "subtitleFileAdded" }) as const,
-  subtitleFileAddFailed: () => ({ type: "subtitleFileAddFailed" }) as const,
   mediaFilePickRequested: () => ({ type: "mediaFilePickRequested" }) as const,
   mediaFileChosen: (file: PickedMediaFile) =>
     ({ type: "mediaFileChosen", file }) as const,

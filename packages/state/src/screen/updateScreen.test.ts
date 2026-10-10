@@ -32,6 +32,22 @@ const mediaFileAddFailed = actions.requestSettled(
   { ok: false, error: { status: 500, message: "down" } },
 );
 
+const subtitleFileAddFailed = actions.requestSettled(
+  "media/m2/addSubtitleTrack",
+  {
+    kind: "addSubtitleTrack",
+    projectId: "p1",
+    mediaFileId: "m2",
+    request: {
+      name: "english.srt",
+      source: { kind: "inline", text: "" },
+      format: null,
+      role: "target",
+    },
+  },
+  { ok: false, error: { status: 500, message: "down" } },
+);
+
 /** The media screen of m2 with its player loaded and at 5 seconds. */
 const playingM2: AppAction[] = [
   actions.openMediaFileRequested("p1", "m2"),
@@ -153,8 +169,8 @@ describe("updateScreen", () => {
     ]);
   });
 
-  it("returns a notification for subtitleFileAddFailed", () => {
-    const [, effects] = apply(actions.subtitleFileAddFailed(), ...playingM2);
+  it("returns a notification when a picked subtitles file could not be added", () => {
+    const [, effects] = apply(subtitleFileAddFailed, ...playingM2);
     expect(effects).toEqual([
       {
         type: "showNotification",

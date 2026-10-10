@@ -32,12 +32,6 @@ export const selectOfflineCues = (state: RootState) =>
 export const selectOfflineParseFailed = (state: RootState) =>
   state.app.screen.main.kind === "offline" && state.app.screen.main.hasFailed;
 
-/** Returns the subtitles file picked and not yet sent to the open media file. */
-export const selectPendingSubtitleFile = (state: RootState) =>
-  state.app.screen.main.kind === "media"
-    ? state.app.screen.main.pendingSubtitleFile
-    : null;
-
 /** Returns the dictionary file picked in Settings and not yet sent. */
 export const selectPendingDictionaryFile = (state: RootState) =>
   state.app.screen.settings?.dictionaryImport?.file ?? null;

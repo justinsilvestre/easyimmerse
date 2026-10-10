@@ -63,7 +63,6 @@ export {
   selectOfflineParseFailed,
   selectPendingDictionaryFile,
   selectPendingFilePick,
-  selectPendingSubtitleFile,
   selectPlayer,
   selectPlayerDuration,
 } from "./screen/screenSelectors.ts";

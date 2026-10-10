@@ -48,12 +48,15 @@ export const screenFeature: Feature<ScreenState> = {
 
 /** Tells the user that adding a picked file failed, even when its screen has gone by the time the failure arrives. */
 function failureNotices(action: AppAction): Effect[] {
-  if (action.type === "subtitleFileAddFailed")
-    return [notice("The subtitles file could not be added")];
   if (action.type !== "requestSettled" || action.outcome.ok) return [];
-  return action.request.kind === "addMediaFile"
-    ? [notice("The media file could not be added")]
-    : [];
+  switch (action.request.kind) {
+    case "addMediaFile":
+      return [notice("The media file could not be added")];
+    case "addSubtitleTrack":
+      return [notice("The subtitles file could not be added")];
+    default:
+      return [];
+  }
 }
 
 function notice(message: string): Effect {
@@ -65,7 +68,8 @@ function updateMainScreen(
   action: AppAction,
   route: MainRoute,
 ): readonly [MainScreenState, readonly Effect[]] {
-  if (main.kind === "media") return updateMediaScreen(main, action);
+  if (main.kind === "media" && route.screen === "media")
+    return updateMediaScreen(main, action, route);
   if (main.kind === "project" && route.screen === "project")
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);
