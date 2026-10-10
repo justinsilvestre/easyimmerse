@@ -1,5 +1,5 @@
 import { type ComponentProps, useRef } from "react";
-import { useNavigationActions } from "../navigationContext.ts";
+import { useNavigate } from "../hooks/useNavigate.ts";
 import type {
   ReaderWord,
   ReaderWordGestures,
@@ -29,7 +29,8 @@ export function useReaderLookup(
   languages: { target: string; translation: string },
   startFlashcard: StartFlashcardFromLookup<ReaderWord>,
 ) {
-  const { openDictionaries } = useNavigationActions();
+  const navigate = useNavigate();
+  const openDictionaries = () => navigate({ type: "openDictionaries" });
   const lookup = useWordLookup<ReaderWord>({
     languages,
     hold: noHold,

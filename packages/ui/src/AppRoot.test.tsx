@@ -51,9 +51,7 @@ function renderAppRoot() {
   const effects = createRecordingEffects();
   const playerRegistry = createPlayerRegistry();
   const store = createAppStore(effects, backendStoreParts);
-  render(
-    <AppRoot store={store} playerRegistry={playerRegistry} effects={effects} />,
-  );
+  render(<AppRoot store={store} playerRegistry={playerRegistry} />);
   return { effects, playerRegistry, store };
 }
 
@@ -184,11 +182,5 @@ describe("AppRoot", () => {
       type: "loadPreference",
       key: "losslessAudio",
     });
-  });
-
-  it("opens Settings when the platform asks for it", () => {
-    const { effects } = renderAppRoot();
-    act(() => effects.requestSettings());
-    expect(screen.getByRole("heading", { name: "Settings" })).toBeDefined();
   });
 });

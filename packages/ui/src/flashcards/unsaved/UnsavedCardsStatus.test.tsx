@@ -1,5 +1,10 @@
 import type { BackendRequest } from "@easyimmerse/backend";
 import { resetBackend } from "@easyimmerse/backend";
+import {
+  type AppStore,
+  selectCurrentMediaFileId,
+  selectRoute,
+} from "@easyimmerse/state";
 import type { NewFlashcard } from "@easyimmerse/types";
 import {
   act,
@@ -10,7 +15,6 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { NavigationActionsContext } from "../../navigationContext.ts";
 import { createNoticeStore } from "../../notices/noticeStore.ts";
 import { AppStoreProviders } from "../../testSupport/AppStoreProviders.tsx";
 import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
@@ -49,28 +53,26 @@ function renderStatusOver(cards: UnsavedCard[], savesHang: boolean) {
   const sharedSaving = createSharedSaving();
   const unsavedCardStore = sharedSaving.unsavedCards;
   const noticeStore = createNoticeStore();
-  const openedMediaFiles: string[] = [];
   for (const card of cards) unsavedCardStore.put(card);
   render(
-    <NavigationActionsContext
-      value={{
-        openSettings: () => undefined,
-        openDictionaries: () => undefined,
-        openMediaFile: (projectId, mediaFileId) =>
-          openedMediaFiles.push(`${projectId}/${mediaFileId}`),
-      }}
+    <AppStoreProviders
+      store={store}
+      playerRegistry={playerRegistry}
+      noticeStore={noticeStore}
+      sharedSaving={sharedSaving}
     >
-      <AppStoreProviders
-        store={store}
-        playerRegistry={playerRegistry}
-        noticeStore={noticeStore}
-        sharedSaving={sharedSaving}
-      >
-        <p>Screen</p>
-      </AppStoreProviders>
-    </NavigationActionsContext>,
+      <p>Screen</p>
+    </AppStoreProviders>,
   );
-  return { unsavedCardStore, openedMediaFiles, saves: backend.saves };
+  const shownMediaFile = () => shownMediaFileOf(store);
+  return { unsavedCardStore, shownMediaFile, saves: backend.saves };
+}
+
+/** The project and media file the store shows, as "projectId/mediaFileId", or null when no project is open. */
+function shownMediaFileOf(store: AppStore): string | null {
+  const route = selectRoute(store.getState());
+  if (route.screen !== "project") return null;
+  return `${route.projectId}/${selectCurrentMediaFileId(store.getState())}`;
 }
 
 /** Renders the status line over the given cards, with saves that succeed. */
@@ -213,17 +215,17 @@ describe("UnsavedCardsStatus", () => {
     });
 
     it("opens the flashcard's media file on Open", () => {
-      const { openedMediaFiles } = retryHund();
+      const { shownMediaFile } = retryHund();
       fireEvent.click(screen.getByRole("button", { name: "Open “Hund”" }));
-      expect(openedMediaFiles).toEqual(["p1/m1"]);
+      expect(shownMediaFile()).toBe("p1/m1");
     });
   });
 
   it("opens a flashcard's media file on its Open", () => {
-    const { openedMediaFiles } = renderStatus(exampleUnsavedCard("Hund"));
+    const { shownMediaFile } = renderStatus(exampleUnsavedCard("Hund"));
     expand();
     fireEvent.click(screen.getByRole("button", { name: "Open “Hund”" }));
-    expect(openedMediaFiles).toEqual(["p1/m1"]);
+    expect(shownMediaFile()).toBe("p1/m1");
   });
 
   it("keeps a flashcard listed on Open until its screen takes it", () => {

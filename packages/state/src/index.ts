@@ -32,12 +32,7 @@ export type {
   Route,
   SettingsPage,
 } from "./route.ts";
-export {
-  initialRoute,
-  mainScreenOf,
-  navigate,
-  settingsPageOf,
-} from "./route.ts";
+export { mainScreenOf, settingsPageOf } from "./route.ts";
 export {
   selectChosenDictionaryFile,
   selectChosenMediaFile,

@@ -1,4 +1,5 @@
-import { useNavigationActions } from "../../navigationContext.ts";
+import { actions } from "@easyimmerse/state";
+import { useAppDispatch } from "../../hooks/useAppDispatch.ts";
 import { useNotices } from "../../notices/NoticesContext.tsx";
 import { useUnsavedCards } from "../SharedSavingContext.tsx";
 
@@ -10,11 +11,13 @@ import { useUnsavedCards } from "../SharedSavingContext.tsx";
 export function useUnsavedCardOpening() {
   const store = useUnsavedCards();
   const notices = useNotices();
-  const navigation = useNavigationActions();
+  const dispatch = useAppDispatch();
   return (flashcardId: string) => {
     const listed = store.requestOpen(flashcardId);
     if (!listed?.mediaFileId) return;
     if (listed.noticeId !== undefined) notices.dismiss(listed.noticeId);
-    navigation.openMediaFile(listed.projectId, listed.mediaFileId);
+    dispatch(
+      actions.openMediaFileRequested(listed.projectId, listed.mediaFileId),
+    );
   };
 }

@@ -1,7 +1,13 @@
 import { resetBackend } from "@easyimmerse/backend";
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { actions } from "@easyimmerse/state";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { SettingsOpenContext } from "../navigationContext.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { SettingsScreen } from "./SettingsScreen.tsx";
 
@@ -40,14 +46,15 @@ describe("SettingsScreen", () => {
   });
 
   it("marks the footer's Settings control as the page already open", () => {
-    renderWithAppStore(
-      <SettingsOpenContext value={true}>
-        <SettingsScreen
-          onBack={() => undefined}
-          onOpenDictionaries={() => undefined}
-        />
-      </SettingsOpenContext>,
+    const { store } = renderWithAppStore(
+      <SettingsScreen
+        onBack={() => undefined}
+        onOpenDictionaries={() => undefined}
+      />,
     );
+    act(() => {
+      store.dispatch(actions.navigated({ type: "openSettings" }));
+    });
     expect(
       screen
         .getByRole("button", { name: "Settings" })

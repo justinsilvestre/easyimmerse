@@ -33,7 +33,6 @@ export async function bootstrap(): Promise<void> {
     <AppRoot
       store={store}
       playerRegistry={playerRegistry}
-      effects={effects}
       browserFileRegistry={browserFileRegistry}
     />,
   );

@@ -1,5 +1,5 @@
 import { resetBackend } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import { actions, selectRoute } from "@easyimmerse/state";
 import {
   act,
   cleanup,
@@ -742,8 +742,12 @@ describe("MediaScreen lookup", () => {
     }
 
     it("opens the dictionaries settings", async () => {
-      const { navigation } = await pressAddDictionary();
-      expect(navigation.dictionariesOpenCount).toBe(1);
+      const { store } = await pressAddDictionary();
+      expect(selectRoute(store.getState())).toEqual({
+        screen: "settings",
+        beneath: { screen: "home" },
+        pages: ["dictionaries"],
+      });
     });
 
     it("keeps playback paused behind them", async () => {

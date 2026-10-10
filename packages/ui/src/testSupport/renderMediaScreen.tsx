@@ -14,7 +14,6 @@ import { act, fireEvent, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
-import { NavigationActionsContext } from "../navigationContext.ts";
 import { MediaScreen } from "../screens/MediaScreen.tsx";
 import {
   createFakeBackendClient,
@@ -93,7 +92,6 @@ type MediaScreenSetup = {
 
 /**
  * Renders the media screen on the sample video and subtitles of the fixture project, with the given flashcards and dictionaries.
- * Opening the dictionaries settings is counted in `navigation`.
  */
 export function renderMediaScreen({
   flashcards = [],
@@ -123,19 +121,8 @@ export function renderMediaScreen({
     ),
     { unansweredLookups, slowLookups, failingLookups, batchLookupMs },
   );
-  const navigation = { dictionariesOpenCount: 0 };
   const rendered = renderWithAppStore(
-    <NavigationActionsContext
-      value={{
-        openSettings: () => undefined,
-        openDictionaries: () => {
-          navigation.dictionariesOpenCount += 1;
-        },
-        openMediaFile: () => undefined,
-      }}
-    >
-      <MediaScreen project={fixtureProject} mediaFileId="m1" />
-    </NavigationActionsContext>,
+    <MediaScreen project={fixtureProject} mediaFileId="m1" />,
     client,
     { server: fakeServer },
   );
@@ -143,7 +130,7 @@ export function renderMediaScreen({
     rendered.store.dispatch(actions.preferencesLoaded({}));
     rendered.store.dispatch(actions.openMedia("m1"));
   });
-  return { ...rendered, client, navigation };
+  return { ...rendered, client };
 }
 
 /** Wraps a client so that lookups of the given texts never answer, answer late, or fail late. */

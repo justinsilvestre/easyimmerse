@@ -8,7 +8,7 @@ import {
 import { actions } from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useNavigationActions } from "../navigationContext.ts";
+import { useNavigate } from "../hooks/useNavigate.ts";
 import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
 import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
@@ -42,7 +42,8 @@ export function ProjectOverview({
   const importSources = useImportSources();
   const importMedia = useImportMedia(project.id);
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
-  const { openDictionaries } = useNavigationActions();
+  const navigate = useNavigate();
+  const openDictionaries = () => navigate({ type: "openDictionaries" });
   const { settings } = project;
   return (
     <ProjectView

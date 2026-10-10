@@ -8,6 +8,7 @@ import {
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
+import { useNavigate } from "../hooks/useNavigate.ts";
 import { usePlaybackPause } from "../hooks/usePlaybackPause.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
 import { reduceCueCursor } from "../media/cueCursor.ts";
@@ -15,7 +16,6 @@ import type {
   ActiveCueWord,
   CueWordGestures,
 } from "../media/cueWordGestures.ts";
-import { useNavigationActions } from "../navigationContext.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import type { LookupRequest } from "./lookupPopup.ts";
 import { lookupTextAt } from "./lookupTextAt.ts";
@@ -42,7 +42,8 @@ export function useSubtitleLookup(
   screenRef: RefObject<Element | null>,
 ) {
   const pause = usePlaybackPause();
-  const { openDictionaries } = useNavigationActions();
+  const navigate = useNavigate();
+  const openDictionaries = () => navigate({ type: "openDictionaries" });
   const lookup = useWordLookup<Cue>({
     languages,
     hold: { hold: pause.pause, release: pause.resume, forget: pause.forget },
