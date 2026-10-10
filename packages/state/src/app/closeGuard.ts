@@ -8,6 +8,7 @@ export function closeGuardEffects(
   after: AppState,
 ): readonly PerformedEffect[] {
   if (before === after) return [];
+  // The selector remembers the count of `before` from the previous action, when that state was `after`.
   const wasActive = selectUnsavedWorkCount(before) > 0;
   const isActive = selectUnsavedWorkCount(after) > 0;
   return wasActive === isActive ? [] : [{ type: "guardClose", isActive }];

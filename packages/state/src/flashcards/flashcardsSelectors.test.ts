@@ -172,4 +172,11 @@ describe("selectUnsavedWorkCount", () => {
   it("counts a flashcard from a word that waits for its lookup", () => {
     expect(selectUnsavedWorkCount(appAfter(requestFlashcard(cat)))).toBe(1);
   });
+
+  it("counts the work once for each action that changes the state", () => {
+    const app = appAfter(startNew("f1", "Katze"));
+    selectUnsavedWorkCount.resetRecomputations();
+    applied(app, typeWord("Kater"));
+    expect(selectUnsavedWorkCount.recomputations()).toBe(1);
+  });
 });

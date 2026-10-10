@@ -2,7 +2,6 @@ import { createSelector } from "reselect";
 import type { AppState } from "../app/appState.ts";
 import type { FailedRequest } from "../operations/failedRequests.ts";
 import type { RequestRecord } from "../operations/operations.ts";
-import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import {
   type FailedSave,
   failedSaveKeptId,
@@ -21,11 +20,13 @@ type OperationsApp = Pick<AppState, "operations">;
  */
 export const selectFailedSaves = createSelector(
   [(app: OperationsApp) => app.operations],
-  (operations) =>
-    operations.failedRequests.flatMap((kept) => {
-      const failedSave = selectKeptFailedSave({ operations }, kept);
+  (operations) => {
+    const inFlightIds = new Set(operations.requests.map(({ id }) => id));
+    return operations.failedRequests.flatMap((kept) => {
+      const failedSave = failedSaveOf(kept, inFlightIds);
       return failedSave ? [failedSave] : [];
-    }),
+    });
+  },
   { memoizeOptions: { resultEqualityCheck: isSameFailedSaves } },
 );
 
@@ -44,32 +45,8 @@ export function selectKeptFailedSave(
   app: OperationsApp,
   kept: FailedRequest,
 ): FailedSave | null {
-  const { request, failure } = kept;
-  if (!isFailedSaveKeptId(kept.id) || request.kind !== "saveFlashcard")
-    return null;
-  if (request.purpose.type !== "save") return null;
-  const { card, rollbackIfDiscarded } = request.purpose;
-  return {
-    card,
-    projectId: request.projectId,
-    mediaFileId: mediaFileIdOf(card),
-    isRefused: isSaveRefused(failure),
-    isOpening: selectIsOpeningInFlight(app, request.flashcardId),
-    rollbackIfDiscarded,
-    kept,
-  };
-}
-
-/** Tells whether the requests on the way to opening a flashcard's failed save are under way. */
-export function selectIsOpeningInFlight(
-  app: OperationsApp,
-  flashcardId: string,
-): boolean {
-  const ids = openingIds(flashcardId);
-  return (
-    selectIsRequestInFlight(app, ids.mediaFiles) ||
-    selectIsRequestInFlight(app, ids.project)
-  );
+  const inFlightIds = new Set(app.operations.requests.map(({ id }) => id));
+  return failedSaveOf(kept, inFlightIds);
 }
 
 /** Returns the pending Retry of a flashcard, or undefined when none is pending. */
@@ -84,6 +61,36 @@ export function selectPendingRetry(
       request.purpose.type === "save" &&
       request.purpose.from === "retry",
   );
+}
+
+/** The failed save a kept request holds, given the ids of the requests in flight, or null when the request is not a kept card save. */
+function failedSaveOf(
+  kept: FailedRequest,
+  inFlightIds: ReadonlySet<string>,
+): FailedSave | null {
+  const { request, failure } = kept;
+  if (!isFailedSaveKeptId(kept.id) || request.kind !== "saveFlashcard")
+    return null;
+  if (request.purpose.type !== "save") return null;
+  const { card, rollbackIfDiscarded } = request.purpose;
+  return {
+    card,
+    projectId: request.projectId,
+    mediaFileId: mediaFileIdOf(card),
+    isRefused: isSaveRefused(failure),
+    isOpening: isOpeningIn(inFlightIds, request.flashcardId),
+    rollbackIfDiscarded,
+    kept,
+  };
+}
+
+/** Tells whether the requests on the way to opening a flashcard's failed save are under way. */
+function isOpeningIn(
+  inFlightIds: ReadonlySet<string>,
+  flashcardId: string,
+): boolean {
+  const ids = openingIds(flashcardId);
+  return inFlightIds.has(ids.mediaFiles) || inFlightIds.has(ids.project);
 }
 
 function isSameFailedSaves(

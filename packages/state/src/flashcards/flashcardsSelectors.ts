@@ -68,24 +68,32 @@ export function selectContentBeforeSave(
     : null;
 }
 
+/** The app state that the unsaved work count reads. */
+type UnsavedWorkApp = Pick<AppState, "operations" | "route" | "screen">;
+
 /**
  * Counts the pieces of flashcard work that closing the app would lose: the open form while it is changed,
  * asked to save, sending or failed; each flashcard request pending or held for its lookup; each failed save;
  * and a flashcard from a word waiting for its lookup. Only whether the count is zero matters.
  */
-export function selectUnsavedWorkCount(
-  app: Pick<AppState, "operations" | "route" | "screen">,
-): number {
-  const requests = app.operations.requests.filter(({ scope }) =>
-    isFlashcardScope(scope),
-  ).length;
-  return (
-    (isFormAtRisk(selectFlashcardForm(app)) ? 1 : 0) +
-    requests +
-    selectFailedSaves(app).length +
-    (selectPendingFlashcard(app) === null ? 0 : 1)
-  );
-}
+export const selectUnsavedWorkCount = createSelector(
+  [
+    (app: UnsavedWorkApp) => app.operations,
+    (app: UnsavedWorkApp) => selectFlashcardForm(app),
+    (app: UnsavedWorkApp) => selectPendingFlashcard(app),
+  ],
+  (operations, form, pending): number => {
+    const requests = operations.requests.filter(({ scope }) =>
+      isFlashcardScope(scope),
+    ).length;
+    return (
+      (isFormAtRisk(form) ? 1 : 0) +
+      requests +
+      selectFailedSaves({ operations }).length +
+      (pending === null ? 0 : 1)
+    );
+  },
+);
 
 function drawnFlashcards(
   flashcards: readonly Flashcard[],
