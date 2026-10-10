@@ -6,13 +6,12 @@ import {
 } from "./failedSave.ts";
 import { noticeOfListing, withFailedSave } from "./failedSaveListing.ts";
 import type { Rollback } from "./flashcardForm.ts";
-import type { SavePurpose } from "./flashcardRequests.ts";
-import type { FlashcardSettled } from "./flashcardSettled.ts";
-import type { FlashcardsContext } from "./flashcardsContext.ts";
+import type { FlashcardsContext, SavePurpose } from "./flashcardRequests.ts";
 import { formOf } from "./flashcardsOnScreen.ts";
 import type { FlashcardsState } from "./flashcardsState.ts";
 import { isSaveRefused } from "./isSaveRefused.ts";
 import { isCardOf } from "./latestFlashcard.ts";
+import type { FlashcardSettled } from "./settleFlashcardRequest.ts";
 
 type Save = Extract<FlashcardSettled, { request: { kind: "saveFlashcard" } }>;
 type CardSave = Extract<SavePurpose, { type: "save" }>;
@@ -35,6 +34,8 @@ export function cardSaveFailed(
     (failedSave) => failedSaveIdOf(failedSave) === request.flashcardId,
   );
   if (purpose.from === "retry" && listed === undefined) return state;
+  // A waiting Retry aborted because an earlier save landed also counts as in doubt here. That is harmless:
+  // the landing took the flashcard off the list, so the line above returns before this.
   const doubt: Rollback | null =
     error.status === "ABORTED"
       ? { content: purpose.before, retryRequestId: null }

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
-import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
+import {
+  cat,
+  requestCursorFlashcard,
+  requestFlashcard,
+} from "../screen/lookup/lookupTestSupport.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProject } from "../server/exampleProject.ts";
 import { exampleListedFlashcard } from "./exampleFlashcards.ts";
@@ -21,11 +25,24 @@ import {
 import type { FormStep } from "./formStep.ts";
 
 const save = actions.flashcardSaveRequested();
-const openHund = actions.flashcardOpened(hund);
+const openHund = actions.flashcardOpened("h", hund);
 const lateCat = [
   requestFlashcard(cat, "editor"),
   actions.lookupFlashcardWaitEnded(1),
 ];
+
+/** The probe of m1 finding that it shows pictures. */
+const picturesFound = actions.requestSettled(
+  "media/m1/pictures",
+  {
+    kind: "probePictures",
+    file: {
+      name: "m1.mp4",
+      source: { kind: "browser_file", size: 1, last_modified_ms: 1 },
+    },
+  },
+  { ok: true, data: true },
+);
 
 /** The flashcard ids and origins of the saves a step asks for. */
 const savesOf = ({ effects }: FormStep) =>
@@ -329,6 +346,12 @@ describe("stepFlashcardForm", () => {
     });
   });
 
+  it("opens a failed save never saved, with its edits, from its id alone", () => {
+    expect(
+      step(failedF1(), actions.flashcardOpened("f1", null)).form?.card,
+    ).toMatchObject({ flashcardId: "f1", isChanged: true });
+  });
+
   it("reopens a closed card with its edits on Undo", () => {
     const app = appAfter(startNew("f1", "Katze"), typeWord("Kater"));
     const closed = formAfter(app)?.card;
@@ -339,6 +362,26 @@ describe("stepFlashcardForm", () => {
         actions.formDiscardUndone(closed),
       ).form?.card.editor.content.word,
     ).toBe("Kater");
+  });
+
+  it("opens a flashcard for no word when the E key is pressed with no cursor", () => {
+    expect(
+      step(appAfter(), requestCursorFlashcard("editor")).form?.card,
+    ).toMatchObject({ flashcardId: "f-wordless" });
+  });
+
+  it("gives a new card a screenshot once the file is found to show pictures", () => {
+    const app = appAfter(startNew("f1", "Katze"));
+    expect(
+      step(app, picturesFound).form?.card.editor.content.screenshot,
+    ).not.toBeNull();
+  });
+
+  it("adds no screenshot while the card is being sent", () => {
+    const app = appAfter(startNew("f1", "Katze"), save);
+    expect(
+      step(app, picturesFound).form?.card.editor.content.screenshot,
+    ).toBeNull();
   });
 
   it("does nothing on another screen", () => {

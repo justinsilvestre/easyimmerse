@@ -14,8 +14,8 @@ import {
   type Rollback,
 } from "./flashcardForm.ts";
 import { flashcardNoticeKeys, withdraw } from "./flashcardNotices.ts";
-import type { FormContext } from "./formContext.ts";
 import { replaceForm } from "./formLeaving.ts";
+import type { FormContext } from "./formStep.ts";
 import { latestFlashcard, retryOf } from "./latestFlashcard.ts";
 
 /** The form for a flashcard from a word: filled from its lookup when that answered in time, or else awaiting it. */
@@ -35,17 +35,19 @@ export function formFromLookup({
 
 /**
  * Opens a flashcard of the list as the latest work on it leaves it, withdrawing the Undo of its last save,
- * since undoing it now would change the card under the form. A failed save of the flashcard opens instead, with its edits.
+ * since undoing it now would change the card under the form. A failed save of the flashcard opens instead, with its edits,
+ * whether or not the list has the flashcard.
  */
 export function openListed(
   form: FlashcardForm | null,
-  listed: Flashcard,
+  { flashcardId, listed }: { flashcardId: string; listed: Flashcard | null },
   context: FormContext,
-): FlashcardForm {
+): FlashcardForm | null {
   const failedSave = context.app.flashcards.failedSaves.find(
-    (each) => failedSaveIdOf(each) === listed.id,
+    (each) => failedSaveIdOf(each) === flashcardId,
   );
   if (failedSave) return takeFailedSave(form, failedSave, context);
+  if (listed === null) return form;
   context.step.outbox.add(withdraw(flashcardNoticeKeys.saveUndo(listed.id)));
   const card = existingCard(latestFlashcard(listed, context.app));
   return replaceForm(form, openedForm(card), context);

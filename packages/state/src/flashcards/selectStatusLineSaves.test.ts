@@ -15,7 +15,7 @@ import { selectStatusLineSaves } from "./selectStatusLineSaves.ts";
 /** The app with hund changed to "Hündin" and its background save failed with the status given. */
 function hundFailed(status: number) {
   const app = appAfter(
-    actions.flashcardOpened(hund),
+    actions.flashcardOpened("h", hund),
     typeWord("Hündin"),
     startNew("f2"),
   );

@@ -64,6 +64,17 @@ export const requestFlashcard = (
     exampleContext,
   );
 
+/** The C key: a flashcard for the cursor's word, under the id f-cursor, or for no word, under the id f-wordless, when there is no cursor. */
+export const requestCursorFlashcard = (
+  destination: FlashcardDestination = "save",
+) =>
+  actions.lookupCursorFlashcardRequested(
+    destination,
+    exampleNewFlashcard("f-cursor", "cursor"),
+    exampleNewFlashcard("f-wordless", ""),
+    exampleContext,
+  );
+
 /** A word held inside the pop-up, which becomes a flashcard saved at once. */
 export const holdInPopup = (term: string) =>
   actions.lookupPopupWordHeld(

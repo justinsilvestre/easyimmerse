@@ -1,6 +1,6 @@
 import type { FlashcardForm } from "./flashcardForm.ts";
 import { askSave } from "./flashcardSaves.ts";
-import type { FormContext } from "./formContext.ts";
+import type { FormContext } from "./formStep.ts";
 import { startLookupWait } from "./lookupWait.ts";
 import { isAwaitingLookup } from "./saveStage.ts";
 

@@ -16,7 +16,7 @@ import {
 
 const katze = exampleListedFlashcard("k", "Katze");
 const listed = [hund, katze];
-const openHund = actions.flashcardOpened(hund);
+const openHund = actions.flashcardOpened("h", hund);
 
 const drawnWords = (app: AppState) =>
   selectMediaFlashcards({ app }, listed, "m1").drawn.map(
@@ -30,6 +30,16 @@ function hundFailed(status: number) {
 }
 
 describe("selectMediaFlashcards", () => {
+  it("keeps its result when only the count of flashcard requests changes", () => {
+    const app = appAfter();
+    const counted = {
+      ...app,
+      flashcards: { ...app.flashcards, requestCount: 9 },
+    };
+    const before = selectMediaFlashcards({ app }, listed, "m1");
+    expect(selectMediaFlashcards({ app: counted }, listed, "m1")).toBe(before);
+  });
+
   it("draws the listed flashcards while none is open", () => {
     expect(drawnWords(appAfter())).toEqual(["h:Hund", "k:Katze"]);
   });

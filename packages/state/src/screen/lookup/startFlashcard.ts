@@ -1,6 +1,9 @@
+import type { NewFlashcard } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
+import type { FlashcardDestination } from "../../flashcards/flashcardActions.ts";
+import type { LookupFieldsContext } from "../../flashcards/flashcardForm.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
 import { lookupActions } from "./lookupActions.ts";
 import {
@@ -26,7 +29,7 @@ import { flashcardLookupWaitMs } from "./lookupTiming.ts";
 
 /**
  * The flashcard that a word's action asks for, numbered after the lookups asked for before,
- * or null when the action asks for none, as a word held in a pop-up that shows nothing.
+ * or null when the action asks for none, as a word held in a pop-up that shows nothing or the C key with no cursor.
  */
 export function requestedFlashcard(
   lookup: LookupState,
@@ -35,6 +38,16 @@ export function requestedFlashcard(
 ): PendingFlashcard | null {
   if (action.type === "lookupFlashcardRequested")
     return pendingFor(action.chosen, action, app);
+  if (action.type === "lookupCursorFlashcardRequested") {
+    const { atCursor } = action;
+    return lookup.cursor && atCursor
+      ? pendingFor(
+          lookup.cursor.chosen,
+          { ...action, flashcard: atCursor },
+          app,
+        )
+      : null;
+  }
   if (action.type !== "lookupPopupWordHeld") return null;
   const chosen = popupWordChosen(lookup, action.term);
   return chosen && pendingFor(chosen, action, app);
@@ -78,14 +91,16 @@ export function startFlashcard(
   ];
 }
 
-type FlashcardRequestAction = Extract<
-  AppAction,
-  { type: "lookupFlashcardRequested" } | { type: "lookupPopupWordHeld" }
->;
+/** What a flashcard from a word is asked for with: where it goes, the flashcard the dispatcher made, and how its definitions are sorted. */
+type FlashcardRequest = {
+  destination: FlashcardDestination;
+  flashcard: NewFlashcard;
+  context: LookupFieldsContext;
+};
 
 function pendingFor(
   chosen: ChosenWord,
-  { destination, flashcard, context }: FlashcardRequestAction,
+  { destination, flashcard, context }: FlashcardRequest,
   app: AppState,
 ): PendingFlashcard {
   return {

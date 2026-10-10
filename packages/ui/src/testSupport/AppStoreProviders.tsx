@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "../browserFileRegistryContext.ts";
 import { WordClickMemoryProvider } from "../components/wordClickMemoryContext.tsx";
-import { UnsavedCardsStatus } from "../flashcards/unsaved/UnsavedCardsStatus.tsx";
+import { FailedSavesStatus } from "../flashcards/unsaved/FailedSavesStatus.tsx";
 import { NoticeRegion } from "../notices/NoticeRegion.tsx";
 import { PlayerRegistryContext } from "../playerRegistryContext.ts";
 import type { createTestAppStore } from "./createTestAppStore.ts";
@@ -24,7 +24,7 @@ export function AppStoreProviders({
       <PlayerRegistryContext value={playerRegistry}>
         <BrowserFileRegistryContext value={browserFileRegistry}>
           <WordClickMemoryProvider>{children}</WordClickMemoryProvider>
-          <NoticeRegion statusLine={<UnsavedCardsStatus />} />
+          <NoticeRegion statusLine={<FailedSavesStatus />} />
         </BrowserFileRegistryContext>
       </PlayerRegistryContext>
     </Provider>

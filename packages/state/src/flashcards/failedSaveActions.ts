@@ -10,8 +10,8 @@ import {
   show,
   withdraw,
 } from "./flashcardNotices.ts";
+import type { FlashcardsContext } from "./flashcardRequests.ts";
 import { rollbackRequest } from "./flashcardSaves.ts";
-import type { FlashcardsContext } from "./flashcardsContext.ts";
 import { formOf } from "./flashcardsOnScreen.ts";
 import type { FlashcardsState } from "./flashcardsState.ts";
 import { isCardOf, retryOf } from "./latestFlashcard.ts";

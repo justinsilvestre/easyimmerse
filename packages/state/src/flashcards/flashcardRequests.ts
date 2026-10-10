@@ -1,4 +1,5 @@
 import type { FlashcardDraft } from "@easyimmerse/types";
+import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
@@ -56,6 +57,9 @@ export type FlashcardOutbox = {
   /** How many flashcard requests have been asked for since the app started, these included. */
   count(): number;
 };
+
+/** What the flashcards feature's rules read and write as they run: the state before the action, and the outbox they fill. */
+export type FlashcardsContext = { app: AppState; outbox: FlashcardOutbox };
 
 /** Creates an empty outbox whose first request follows the `count` asked for before. */
 export function createFlashcardOutbox(count: number): FlashcardOutbox {

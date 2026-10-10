@@ -41,7 +41,7 @@ describe("updateFlashcardForm", () => {
 
   it("seeks nothing for a card without a clip", () => {
     const [, effects] = apply(
-      actions.flashcardOpened({
+      actions.flashcardOpened("h", {
         id: "h",
         project_id: "p1",
         media_file_id: "m1",

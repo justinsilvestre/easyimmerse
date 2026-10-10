@@ -2,8 +2,8 @@ import type { Flashcard, NewFlashcard } from "@easyimmerse/types";
 import type { EditorAction } from "./editFlashcard.ts";
 import type { FailedSave } from "./failedSave.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
+import type { SaveUndo } from "./flashcardSaves.ts";
 import type { LookupFlashcardFields } from "./lookupFields.ts";
-import type { SaveUndo } from "./saveUndo.ts";
 
 /** Whether a flashcard is saved at once, or opened in the flashcard-editing form. */
 export type FlashcardDestination = "save" | "editor";
@@ -15,9 +15,12 @@ export const flashcardActions = {
     flashcard: NewFlashcard,
     destination: FlashcardDestination,
   ) => ({ type: "flashcardStarted", flashcard, destination }) as const,
-  /** The user opened a flashcard from its waveform segment or its cue's mark; `listed` is the cached record. */
-  flashcardOpened: (listed: Flashcard) =>
-    ({ type: "flashcardOpened", listed }) as const,
+  /**
+   * The user opened a flashcard from its waveform segment or its cue's mark.
+   * `listed` is the cached record, or null for a failed save that was never saved, which only the store holds.
+   */
+  flashcardOpened: (flashcardId: string, listed: Flashcard | null) =>
+    ({ type: "flashcardOpened", flashcardId, listed }) as const,
   /** The user changed the open card: a field, the clip, the screenshot time or the included fields. */
   flashcardEdited: (edit: EditorAction) =>
     ({ type: "flashcardEdited", edit }) as const,

@@ -1,4 +1,6 @@
+import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
+import type { MediaRoute } from "../route/route.ts";
 import type { FailedSave } from "./failedSave.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
@@ -33,6 +35,13 @@ export type FormStepBuilder = {
   wait(card: WaitingCard): void;
   take(flashcardId: string): void;
   finish(form: FlashcardForm | null): FormStep;
+};
+
+/** What the form's rules read and write as they run: the state before the action, the screen's route, and the step they build. */
+export type FormContext = {
+  app: AppState;
+  route: MediaRoute;
+  step: FormStepBuilder;
 };
 
 /** Starts an empty step whose requests follow the `requestCount` asked for before. */

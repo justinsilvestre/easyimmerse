@@ -54,7 +54,7 @@ const saves = (client: Awaited<ReturnType<typeof renderFailedSaves>>) =>
 const expand = () =>
   fireEvent.click(screen.getByRole("button", { name: "Show" }));
 
-describe("UnsavedCardsStatus", () => {
+describe("FailedSavesStatus", () => {
   it("counts the flashcards not saved", async () => {
     await renderFailedSaves("fressen", "schlafen");
     expect(screen.getByText("2 flashcards not saved")).toBeTruthy();

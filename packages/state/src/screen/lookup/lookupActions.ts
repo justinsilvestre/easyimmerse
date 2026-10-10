@@ -60,6 +60,23 @@ export const lookupActions = {
       flashcard,
       context,
     }) as const,
+  /**
+   * The C or E key: a flashcard for the cursor's word, filled from its lookup, or for no word when there is no cursor.
+   * The dispatcher makes both flashcards, `atCursor` from the cursor it saw, or null when it could make none.
+   */
+  lookupCursorFlashcardRequested: (
+    destination: FlashcardDestination,
+    atCursor: NewFlashcard | null,
+    wordless: NewFlashcard | null,
+    context: LookupFieldsContext,
+  ) =>
+    ({
+      type: "lookupCursorFlashcardRequested",
+      destination,
+      atCursor,
+      wordless,
+      context,
+    }) as const,
   lookupSearchOpened: () => ({ type: "lookupSearchOpened" }) as const,
   /** A word typed into the pop-up's field, or double-clicked or linked inside it. */
   lookupTermSearched: (word: LookupWord) =>

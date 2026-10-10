@@ -6,6 +6,7 @@ import {
   cat,
   dog,
   holdInPopup,
+  requestCursorFlashcard,
   requestFlashcard,
 } from "../screen/lookup/lookupTestSupport.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
@@ -35,7 +36,7 @@ import {
 
 const save = actions.flashcardSaveRequested();
 const close = actions.flashcardClosed();
-const openHund = actions.flashcardOpened(hund);
+const openHund = actions.flashcardOpened("h", hund);
 
 /** The app with hund changed to "Hündin" and left, so that its background save is in flight as flashcard/1. */
 const hundSaving = () => appAfter(openHund, typeWord("Hündin"), startNew("f2"));
@@ -409,6 +410,14 @@ describe("updateFlashcards", () => {
     ).toEqual([]);
   });
 
+  it("when the C key is pressed with no cursor, saves a flashcard for no word", () => {
+    expect(
+      requestsAsked(appAfter(), requestCursorFlashcard()).map(
+        ({ request }) => request.flashcardId,
+      ),
+    ).toEqual(["f-wordless"]);
+  });
+
   describe("for a flashcard from a word saved at once", () => {
     it("saves it filled from its lookup once the fields are written", () => {
       const app = appAfter(requestFlashcard(cat));
@@ -508,6 +517,18 @@ describe("updateFlashcards", () => {
       const app = appAfter(requestFlashcard(cat, "editor"));
       expect(
         applied(app, actions.lookupClosed()).flashcards.waitingForLookup.map(
+          ({ card }) => card.flashcardId,
+        ),
+      ).toEqual(["f-cat"]);
+    });
+
+    it("when the C key is pressed on another word before its lookup answers, keeps it waiting", () => {
+      const app = appAfter(
+        actions.lookupCursorMoved(dog, "mouse"),
+        requestFlashcard(cat),
+      );
+      expect(
+        applied(app, requestCursorFlashcard()).flashcards.waitingForLookup.map(
           ({ card }) => card.flashcardId,
         ),
       ).toEqual(["f-cat"]);

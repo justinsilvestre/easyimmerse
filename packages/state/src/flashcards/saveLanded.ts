@@ -8,11 +8,10 @@ import {
   withdraw,
   wordOf,
 } from "./flashcardNotices.ts";
-import type { SavePurpose } from "./flashcardRequests.ts";
-import type { FlashcardSettled } from "./flashcardSettled.ts";
-import type { FlashcardsContext } from "./flashcardsContext.ts";
+import type { FlashcardsContext, SavePurpose } from "./flashcardRequests.ts";
 import { formOf } from "./flashcardsOnScreen.ts";
 import type { FlashcardsState } from "./flashcardsState.ts";
+import type { FlashcardSettled } from "./settleFlashcardRequest.ts";
 
 type Save = Extract<FlashcardSettled, { request: { kind: "saveFlashcard" } }>;
 type CardSave = Extract<SavePurpose, { type: "save" }>;

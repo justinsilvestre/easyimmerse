@@ -1,4 +1,3 @@
-import type { NewFlashcard } from "@easyimmerse/types";
 import type { AppAction } from "../app/appAction.ts";
 import {
   type FinishedLookupFlashcard,
@@ -6,22 +5,25 @@ import {
 } from "../screen/lookup/lookupFlashcardFinishedBy.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
 import { newCard, withLookupFields } from "./flashcardCard.ts";
+import type { FlashcardsContext } from "./flashcardRequests.ts";
 import { askSave } from "./flashcardSaves.ts";
-import type { FlashcardsContext } from "./flashcardsContext.ts";
+import { flashcardStartedBy } from "./flashcardStartedBy.ts";
 import { mediaScreenOf } from "./flashcardsOnScreen.ts";
 import type { FlashcardsState } from "./flashcardsState.ts";
 import { startLookupWait } from "./lookupWait.ts";
 
-/** Saves at once a card made with no lookup to wait for, offering Undo once it lands. */
+/** Saves at once a card started to be saved with no lookup to wait for, offering Undo once it lands. */
 export function saveStarted(
-  flashcard: NewFlashcard,
+  state: FlashcardsState,
+  action: AppAction,
   { app, outbox }: FlashcardsContext,
-): void {
+): FlashcardsState {
+  const started = flashcardStartedBy(app, action);
   const projectId = mediaScreenOf(app)?.route.projectId;
-  if (projectId === undefined) return;
+  if (started?.destination !== "save" || projectId === undefined) return state;
   askSave(
     {
-      card: newCard(flashcard),
+      card: newCard(started.flashcard),
       projectId,
       from: "background",
       offersUndo: true,
@@ -30,6 +32,7 @@ export function saveStarted(
     app,
     outbox,
   );
+  return state;
 }
 
 /** Takes a flashcard from a word whose lookup no longer holds it, as `takeLookupFlashcard` describes. */

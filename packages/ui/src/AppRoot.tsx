@@ -6,7 +6,7 @@ import type {
 import { Provider } from "react-redux";
 import { BrowserFileRegistryContext } from "./browserFileRegistryContext.ts";
 import { WordClickMemoryProvider } from "./components/wordClickMemoryContext.tsx";
-import { UnsavedCardsStatus } from "./flashcards/unsaved/UnsavedCardsStatus.tsx";
+import { FailedSavesStatus } from "./flashcards/unsaved/FailedSavesStatus.tsx";
 import { NoticeRegion } from "./notices/NoticeRegion.tsx";
 import { PlayerRegistryContext } from "./playerRegistryContext.ts";
 import { Screens } from "./Screens.tsx";
@@ -30,7 +30,7 @@ export function AppRoot({
           </WordClickMemoryProvider>
         </BrowserFileRegistryContext>
       </PlayerRegistryContext>
-      <NoticeRegion statusLine={<UnsavedCardsStatus />} />
+      <NoticeRegion statusLine={<FailedSavesStatus />} />
     </Provider>
   );
 }

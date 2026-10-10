@@ -26,10 +26,8 @@ export function useMediaFlashcards(projectId: string, mediaFileId: string) {
     dispatch(actions.flashcardEdited(action));
   /** Opens a listed flashcard, or a failed save never saved, which goes to the form with its edits. */
   const open = (id: string) => {
-    const card = flashcards.find((flashcard) => flashcard.id === id);
-    if (card) dispatch(actions.flashcardOpened(card));
-    else if (drawn.some((flashcard) => flashcard.id === id))
-      dispatch(actions.failedSaveOpened(id, projectId, mediaFileId));
+    const card = flashcards.find((flashcard) => flashcard.id === id) ?? null;
+    dispatch(actions.flashcardOpened(id, card));
   };
   return {
     flashcards,

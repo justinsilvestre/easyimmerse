@@ -14,7 +14,7 @@ import type { WordFlashcards } from "./wordFlashcards.ts";
 /**
  * Asks for flashcards from words, each with an id and a draft made here, as `flashcards` says the screen makes them:
  * from a word of the text or held in the pop-up, filled from its lookup once it answers;
- * from the pop-up's flashcard buttons, filled from what the pop-up shows; and for no word.
+ * from the pop-up's flashcard buttons, filled from what the pop-up shows; from the cursor's word or, without a cursor, for no word; and for no word.
  * `shown` is the word the pop-up shows, and `context` sorts definitions into the fields.
  */
 export function useLookupFlashcards(
@@ -83,6 +83,22 @@ export function useLookupFlashcards(
         ),
       );
     },
+    /**
+     * Starts a flashcard for the cursor's word once its lookup answers, or for no word when the store has no cursor,
+     * saved at once or opened in the form as `destination` says.
+     */
+    startFlashcardAtCursor: (
+      cursorWord: ChosenWord | null,
+      destination: FlashcardDestination,
+    ) =>
+      dispatch(
+        actions.lookupCursorFlashcardRequested(
+          destinationOf(destination),
+          cursorWord && newFlashcard(cursorWord.word.term, placeOf(cursorWord)),
+          newFlashcard("", null),
+          context,
+        ),
+      ),
     /** Makes a flashcard for no word, saved at once or opened in the form as `destination` says. */
     startWordlessFlashcard: (destination: FlashcardDestination) => {
       const flashcard = newFlashcard("", null);

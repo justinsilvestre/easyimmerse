@@ -8,6 +8,7 @@ import { updateJobs } from "./updateJobs.ts";
 /** The actions that number a lookup request, whether or not one is then sent. */
 const lookupRequestActions: ReadonlySet<AppAction["type"]> = new Set([
   "lookupFlashcardRequested",
+  "lookupCursorFlashcardRequested",
   "lookupPopupWordHeld",
   "lookupWordHovered",
 ]);

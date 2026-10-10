@@ -62,6 +62,7 @@ export function useWordLookup(
     clickWord: (word: ChosenWord, input: WordHit["input"]) =>
       dispatch(actions.lookupWordClicked(word, input)),
     startFlashcardFor: made.startFlashcardFor,
+    startFlashcardAtCursor: made.startFlashcardAtCursor,
     startWordlessFlashcard: made.startWordlessFlashcard,
     openSearch: () => dispatch(actions.lookupSearchOpened()),
     close: () => dispatch(actions.lookupClosed()),

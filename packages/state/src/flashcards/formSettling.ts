@@ -1,8 +1,8 @@
 import { isAborted } from "../server/isAborted.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
 import type { FlashcardForm, Rollback } from "./flashcardForm.ts";
-import type { FlashcardSettled } from "./flashcardSettled.ts";
 import { isSaveRefused } from "./isSaveRefused.ts";
+import type { FlashcardSettled } from "./settleFlashcardRequest.ts";
 
 /**
  * Takes the outcome of a flashcard request into the form.

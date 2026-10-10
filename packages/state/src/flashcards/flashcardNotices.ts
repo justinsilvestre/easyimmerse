@@ -4,7 +4,7 @@ import { transientNotice } from "../notices/transientNotice.ts";
 import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
 import { flashcardActions } from "./flashcardActions.ts";
 import { type FlashcardCard, flashcardIdOf } from "./flashcardCard.ts";
-import type { SaveUndo } from "./saveUndo.ts";
+import type { SaveUndo } from "./flashcardSaves.ts";
 
 /** The keys of the flashcard notices, by which the flashcards feature replaces or withdraws them. */
 export const flashcardNoticeKeys = {

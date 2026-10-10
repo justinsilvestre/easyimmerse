@@ -32,10 +32,11 @@ export const selectMediaFlashcards = createSelector(
     (_state: RootState, listed: readonly Flashcard[] | undefined) => listed,
     (_state: RootState, _listed: unknown, mediaFileId: string) => mediaFileId,
     selectFlashcardRequests,
-    (state: RootState) => state.app.flashcards,
+    (state: RootState) => state.app.flashcards.confirmed,
+    (state: RootState) => state.app.flashcards.failedSaves,
     selectFlashcardForm,
   ],
-  (listed, mediaFileId, requests, { confirmed, failedSaves }, form) => {
+  (listed, mediaFileId, requests, confirmed, failedSaves, form) => {
     const flashcards = (listed ?? [])
       .filter((flashcard) => flashcard.media_file_id === mediaFileId)
       .map((flashcard) => latestOf(flashcard, requests, confirmed));

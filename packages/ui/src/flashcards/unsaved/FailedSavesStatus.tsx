@@ -15,7 +15,7 @@ import { useAppSelector } from "../../hooks/useAppSelector.ts";
  * each with Retry, Open and Discard. The count is a live region, announced when it first appears and when it changes.
  * A card whose own notice is showing, as a refused save's is, is left to that notice, so that one failure shows once.
  */
-export function UnsavedCardsStatus() {
+export function FailedSavesStatus() {
   const saves = useAppSelector(selectStatusLineSaves);
   const dispatch = useAppDispatch();
   const [isExpanded, setExpanded] = useState(false);

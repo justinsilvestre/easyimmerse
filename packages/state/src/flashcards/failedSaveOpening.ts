@@ -15,7 +15,7 @@ import {
   withdraw,
   wordOf,
 } from "./flashcardNotices.ts";
-import type { FlashcardsContext } from "./flashcardsContext.ts";
+import type { FlashcardsContext } from "./flashcardRequests.ts";
 import type { FlashcardsState } from "./flashcardsState.ts";
 
 /**

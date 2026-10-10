@@ -34,6 +34,7 @@ export function updateLookup(
     case "lookupWordClicked":
       return clickWord(lookup, action.chosen, action.input, player);
     case "lookupFlashcardRequested":
+    case "lookupCursorFlashcardRequested":
     case "lookupPopupWordHeld": {
       const pending = requestedFlashcard(lookup, action, app);
       return pending === null

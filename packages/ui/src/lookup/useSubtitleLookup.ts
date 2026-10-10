@@ -48,9 +48,7 @@ export function useSubtitleLookup(
   const chosenAt = (hit: WordHit, cue: Cue) =>
     chosenWordAt(hit, cue, lookup.wordOf);
   const startFlashcardAtCursor = (destination: FlashcardDestination) =>
-    cursorWord
-      ? lookup.startFlashcardFor(cursorWord, destination)
-      : lookup.startWordlessFlashcard(destination);
+    lookup.startFlashcardAtCursor(cursorWord ?? null, destination);
   useKeyboardShortcut(
     "l",
     () => dispatch(actions.lookupCursorLookedUp()),

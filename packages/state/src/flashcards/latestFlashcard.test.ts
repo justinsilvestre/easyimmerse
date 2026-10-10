@@ -14,7 +14,7 @@ import { latestFlashcard } from "./latestFlashcard.ts";
 
 /** The app with hund changed to the word and left, so that its save is in flight as flashcard/1. */
 const savingHundAs = (word: string) =>
-  appAfter(actions.flashcardOpened(hund), typeWord(word), startNew("f2"));
+  appAfter(actions.flashcardOpened("h", hund), typeWord(word), startNew("f2"));
 
 /** The app once hund's save as "Hündin" has returned the flashcard updated at `updatedAtMs`. */
 function hundConfirmed(updatedAtMs: number) {

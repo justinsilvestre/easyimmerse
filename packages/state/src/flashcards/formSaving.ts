@@ -2,7 +2,7 @@ import type { EditorAction } from "./editFlashcard.ts";
 import { editCard, flashcardIdOf, withLookupFields } from "./flashcardCard.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
 import { askSave } from "./flashcardSaves.ts";
-import type { FormContext } from "./formContext.ts";
+import type { FormContext } from "./formStep.ts";
 import type { LookupFlashcardFields } from "./lookupFields.ts";
 import { cancelLookupWait, startLookupWait } from "./lookupWait.ts";
 import { isLocked } from "./saveStage.ts";

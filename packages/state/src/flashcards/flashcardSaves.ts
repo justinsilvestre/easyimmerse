@@ -1,3 +1,4 @@
+import type { FlashcardDraft } from "@easyimmerse/types";
 import type { AppState } from "../app/appState.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
@@ -10,7 +11,6 @@ import type {
   SavePurpose,
 } from "./flashcardRequests.ts";
 import { contentBefore } from "./latestFlashcard.ts";
-import type { SaveUndo } from "./saveUndo.ts";
 
 /** A save of a card to ask for, with where it comes from and whether its landing offers Undo. */
 export type SaveOrder = {
@@ -67,6 +67,14 @@ export function rollbackRequest(
         purpose,
       };
 }
+
+/** What the Undo of a save needs: the flashcard, its word for the notices, and what it held before the save, or null for a new flashcard. */
+export type SaveUndo = {
+  projectId: string;
+  flashcardId: string;
+  word: string;
+  before: FlashcardDraft | null;
+};
 
 /** The request that takes back a save: a deletion of a new flashcard, or the content from before the save. */
 export function undoRequest({

@@ -9,14 +9,16 @@ import {
 } from "./failedSaveOpening.ts";
 import { retryAllFailedSaves, retryFailedSave } from "./failedSaveRetry.ts";
 import { formDiscardedKeyPrefix, withdraw } from "./flashcardNotices.ts";
+import type { FlashcardsContext } from "./flashcardRequests.ts";
 import { createFlashcardOutbox } from "./flashcardRequests.ts";
 import { undoRequest } from "./flashcardSaves.ts";
-import { isFlashcardSettled } from "./flashcardSettled.ts";
-import type { FlashcardsContext } from "./flashcardsContext.ts";
 import { isLeavingScreen } from "./flashcardsOnScreen.ts";
 import { type FlashcardsState, initialFlashcards } from "./flashcardsState.ts";
 import type { FormStep } from "./formStep.ts";
-import { settleFlashcardRequest } from "./settleFlashcardRequest.ts";
+import {
+  isFlashcardSettled,
+  settleFlashcardRequest,
+} from "./settleFlashcardRequest.ts";
 import { saveStarted, takeFinished } from "./startedCards.ts";
 import { stepFlashcardForm } from "./stepFlashcardForm.ts";
 import {
@@ -40,6 +42,7 @@ export const updateFlashcards: FeatureUpdate<FlashcardsState> = (
   const context = { app, outbox: createFlashcardOutbox(step.requestCount) };
   const stepped = withFormStep(state, step);
   const updated = [
+    saveStarted,
     takeFinished,
     updateSlice,
     withdrawFormNotices,
@@ -65,9 +68,6 @@ function updateSlice(
   context: FlashcardsContext,
 ): FlashcardsState {
   switch (action.type) {
-    case "flashcardStarted":
-      if (action.destination === "save") saveStarted(action.flashcard, context);
-      return state;
     case "flashcardFieldsWritten":
       return fillWaitingCards(state, action.requestId, action.fields, context);
     case "flashcardLookupWaitEnded":

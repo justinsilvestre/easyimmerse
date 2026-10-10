@@ -49,7 +49,7 @@ function FailedSaves({ words }: { words: readonly string[] }) {
 }
 
 const meta = {
-  title: "Flashcards/UnsavedCardsStatus",
+  title: "Flashcards/FailedSavesStatus",
   component: FailedSaves,
   decorators: [withAppStore],
   args: { words: ["fressen", "schlafen"] },

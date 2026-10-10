@@ -9,7 +9,7 @@ import {
   withdraw,
 } from "./flashcardNotices.ts";
 import { rollbackRequest } from "./flashcardSaves.ts";
-import type { FormContext } from "./formContext.ts";
+import type { FormContext } from "./formStep.ts";
 import { isLocked } from "./saveStage.ts";
 
 /**

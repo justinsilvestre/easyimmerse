@@ -1,7 +1,7 @@
 import { failedSaveIdOf } from "./failedSave.ts";
 import { findFailedSave } from "./failedSaveListing.ts";
+import type { FlashcardsContext } from "./flashcardRequests.ts";
 import { askSave } from "./flashcardSaves.ts";
-import type { FlashcardsContext } from "./flashcardsContext.ts";
 import type { FlashcardsState } from "./flashcardsState.ts";
 import { retryOf } from "./latestFlashcard.ts";
 

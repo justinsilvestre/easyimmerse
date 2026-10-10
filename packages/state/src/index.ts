@@ -18,26 +18,13 @@ export {
   reduceEditor,
   toggleField,
 } from "./flashcards/editFlashcard.ts";
-export type { FailedSave } from "./flashcards/failedSave.ts";
 export type { FlashcardDestination } from "./flashcards/flashcardActions.ts";
-export type { FlashcardCard } from "./flashcards/flashcardCard.ts";
-export {
-  flashcardIdOf,
-  newFlashcardSegmentId,
-  segmentIdOf,
-} from "./flashcards/flashcardCard.ts";
-export {
-  draftOfCard,
-  screenshotForClip,
-} from "./flashcards/flashcardDrafts.ts";
+export { segmentIdOf } from "./flashcards/flashcardCard.ts";
+export { screenshotForClip } from "./flashcards/flashcardDrafts.ts";
 export type {
   FlashcardForm,
   LookupFieldsContext,
 } from "./flashcards/flashcardForm.ts";
-export type {
-  DrawnFlashcard,
-  MediaFlashcards,
-} from "./flashcards/flashcardsSelectors.ts";
 export {
   selectFlashcardForm,
   selectMediaFlashcards,
@@ -48,11 +35,7 @@ export type {
   LookupFlashcardFields,
 } from "./flashcards/lookupFields.ts";
 export { flashcardFieldsFromLookup } from "./flashcards/lookupFields.ts";
-export {
-  isAwaitingLookup,
-  type SaveStage,
-  saveStatusOf,
-} from "./flashcards/saveStage.ts";
+export { isAwaitingLookup, saveStatusOf } from "./flashcards/saveStage.ts";
 export {
   type StatusLineSave,
   selectStatusLineSaves,

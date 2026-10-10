@@ -1,9 +1,16 @@
+import type { AppAction } from "../app/appAction.ts";
+import type { RequestSettled } from "../server/serverRequest.ts";
 import { cardSaveFailed } from "./cardSaveFailed.ts";
 import { flashcardNotices, show } from "./flashcardNotices.ts";
-import type { FlashcardSettled } from "./flashcardSettled.ts";
-import type { FlashcardsContext } from "./flashcardsContext.ts";
+import type { FlashcardsContext } from "./flashcardRequests.ts";
 import type { FlashcardsState } from "./flashcardsState.ts";
 import { saveLanded } from "./saveLanded.ts";
+
+/** The end of a request that writes a flashcard. */
+export type FlashcardSettled = Extract<
+  RequestSettled,
+  { request: { kind: "saveFlashcard" | "deleteFlashcard" } }
+>;
 
 type Settled<K> = Extract<FlashcardSettled, { request: { kind: K } }>;
 
@@ -30,6 +37,17 @@ export function settleFlashcardRequest(
     return cardSaveFailed(state, save, save.outcome.error, context);
   context.outbox.add(show(flashcardNotices.undoFailed(purpose.word)));
   return state;
+}
+
+/** Tells whether the action is the end of a request that writes a flashcard. */
+export function isFlashcardSettled(
+  action: AppAction,
+): action is FlashcardSettled {
+  return (
+    action.type === "requestSettled" &&
+    (action.request.kind === "saveFlashcard" ||
+      action.request.kind === "deleteFlashcard")
+  );
 }
 
 /** Forgets a deleted flashcard's returned version, counting a rollback's deletion of a flashcard that was never created as done. */

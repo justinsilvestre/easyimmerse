@@ -9,10 +9,9 @@ import {
 } from "./failedSaveOpeningRequests.ts";
 import { newCard, withScreenshot } from "./flashcardCard.ts";
 import { type FlashcardForm, openedForm } from "./flashcardForm.ts";
-import { isFlashcardSettled } from "./flashcardSettled.ts";
+import { flashcardStartedBy } from "./flashcardStartedBy.ts";
 import { isLeavingScreen, mediaScreenOf } from "./flashcardsOnScreen.ts";
 import { closeForm, deleteFromForm } from "./formClosing.ts";
-import type { FormContext } from "./formContext.ts";
 import { leaveForm, replaceForm } from "./formLeaving.ts";
 import {
   formFromLookup,
@@ -27,8 +26,10 @@ import {
   requestSave,
 } from "./formSaving.ts";
 import { settleInForm } from "./formSettling.ts";
+import type { FormContext } from "./formStep.ts";
 import { createFormStep, type FormStep } from "./formStep.ts";
 import { isCardOf } from "./latestFlashcard.ts";
+import { isFlashcardSettled } from "./settleFlashcardRequest.ts";
 
 /**
  * Steps the flashcard-editing form of the open media screen or reader through an action, and returns the next form
@@ -60,13 +61,14 @@ function nextForm(
   )
     return replaceForm(form, formFromLookup(finished), context);
   if (picturesFoundBy(action, route, app)) return withPictures(form);
+  const started = flashcardStartedBy(app, action);
+  if (started)
+    return started.destination === "editor"
+      ? replaceForm(form, openedForm(newCard(started.flashcard)), context)
+      : form;
   switch (action.type) {
-    case "flashcardStarted":
-      return action.destination === "editor"
-        ? replaceForm(form, openedForm(newCard(action.flashcard)), context)
-        : form;
     case "flashcardOpened":
-      return openListed(form, action.listed, context);
+      return openListed(form, action, context);
     case "formDiscardUndone":
       return replaceForm(form, restoredForm(action.card), context);
     case "flashcardEdited":
