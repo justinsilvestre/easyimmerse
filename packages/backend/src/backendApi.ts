@@ -6,7 +6,6 @@ import type {
   ConversionCacheBudget,
   ConversionCacheStatus,
   Document,
-  DocumentFormat,
   EmbeddedSubtitleTracksResponse,
   Flashcard,
   FlashcardDraft,
@@ -26,7 +25,6 @@ import type {
   MediaFile,
   MediaSourceJob,
   NewFlashcard,
-  ParseLocalDocumentRequest,
   ParseTimedTextRequest,
   PlaybackRequest,
   PlaybackResponse,
@@ -49,15 +47,11 @@ import type {
 import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import type { BackendError } from "./backendClient.ts";
+import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
-
-type ParseDocumentArgs = {
-  bytes: Uint8Array | Blob;
-  format: DocumentFormat | null;
-  contentType: string;
-};
+import { type BookArgs, parseBook } from "./parseBook.ts";
 
 type ImportDictionaryArgs = {
   fileName: string;
@@ -503,24 +497,11 @@ export const backendApi = createApi({
         offlineOperation: { kind: "parseTimedText", request },
       }),
     }),
-    parseDocument: build.mutation<Document, ParseDocumentArgs>({
-      query: ({ bytes, format, contentType }) => ({
-        method: "POST",
-        path: "/documents/parse",
-        query: format === null ? undefined : { format },
-        body: { kind: "bytes", value: bytes, contentType },
-        offlineOperation:
-          bytes instanceof Uint8Array
-            ? { kind: "parseDocument", bytes, format }
-            : undefined,
-      }),
-    }),
-    parseLocalDocument: build.mutation<Document, ParseLocalDocumentRequest>({
-      query: (request) => ({
-        method: "POST",
-        path: "/documents/parse-local",
-        body: { kind: "json", value: request },
-      }),
+    /** Parses a book once while it is read. The entry goes as soon as no reader shows the book, since a document can be large. */
+    openBook: build.query<Document, BookArgs>({
+      queryFn: (book, api, _extraOptions, baseQuery) =>
+        parseBook(book, api.extra as BackendThunkExtra, baseQuery),
+      keepUnusedDataFor: 0,
     }),
     importDictionary: build.mutation<ImportJobStarted, ImportDictionaryArgs>({
       query: ({ fileName, bytes, tableLayout = null }) => ({
@@ -663,8 +644,7 @@ export const {
   useClearConversionCacheMutation,
   useSetConversionCacheBudgetMutation,
   useParseTimedTextMutation,
-  useParseDocumentMutation,
-  useParseLocalDocumentMutation,
+  useOpenBookQuery,
   useImportDictionaryMutation,
   usePreviewDictionaryTableMutation,
   usePreviewLocalDictionaryTableMutation,

@@ -1,4 +1,8 @@
-import { useListMediaFilesQuery } from "@easyimmerse/backend";
+import {
+  skipToken,
+  useListMediaFilesQuery,
+  useOpenBookQuery,
+} from "@easyimmerse/backend";
 import {
   actions,
   type ReaderLocation,
@@ -18,11 +22,11 @@ import type { LookupFlashcardFields } from "../lookup/flashcardFieldsFromLookup.
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useReaderLookup } from "../lookup/useReaderLookup.ts";
 import type { WordPlace } from "../lookup/useWordLookup.ts";
+import { bookFailureSentence } from "../reader/bookFailureSentence.ts";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { ReaderView } from "../reader/ReaderView.tsx";
 import { parseReaderPreferences } from "../reader/readerPreferences.ts";
 import { sentenceWordLookups } from "../reader/sentenceWordLookups.ts";
-import { useOpenedBook } from "../reader/useOpenedBook.ts";
 import { useOpeningLocation } from "../reader/useOpeningLocation.ts";
 import type { ReaderWord } from "../reader/useWordPointer.ts";
 
@@ -42,7 +46,9 @@ export function ReaderScreen({
   const dispatch = useAppDispatch();
   const { data } = useListMediaFilesQuery(project.id);
   const mediaFile = data?.media_files.find((file) => file.id === mediaFileId);
-  const book = useOpenedBook(mediaFile ?? null);
+  const book = useOpenBookQuery(
+    mediaFile ? { name: mediaFile.name, source: mediaFile.source } : skipToken,
+  );
   const location = useOpeningLocation(mediaFileId);
   const preferencesLoaded = useAppSelector(selectPreferencesLoaded);
   const close = () => dispatch(actions.closeMedia());
@@ -55,11 +61,17 @@ export function ReaderScreen({
         onBack={close}
       />
     );
-  if (book.status === "failed")
-    return <ReaderStatus title={title} failure={book.cause} onBack={close} />;
+  if (book.error)
+    return (
+      <ReaderStatus
+        title={title}
+        failure={bookFailureSentence(book.error)}
+        onBack={close}
+      />
+    );
   if (
     !mediaFile ||
-    book.status === "loading" ||
+    !book.currentData ||
     location === undefined ||
     !preferencesLoaded
   )
@@ -68,7 +80,7 @@ export function ReaderScreen({
     <BookReader
       project={project}
       mediaFile={mediaFile}
-      document={book.document}
+      document={book.currentData}
       initialLocation={location ?? undefined}
     />
   );

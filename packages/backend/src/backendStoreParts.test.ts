@@ -1,5 +1,9 @@
 import type { RootState } from "@easyimmerse/state";
-import { createAppStore, createRecordingEffects } from "@easyimmerse/state";
+import {
+  createAppStore,
+  createBrowserFileRegistry,
+  createRecordingEffects,
+} from "@easyimmerse/state";
 import type { UnknownAction } from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import { describe, expect, it } from "vitest";
@@ -36,6 +40,20 @@ describe("createBackendStoreParts", () => {
     const dispatch = store.dispatch as unknown as ThunkCapableDispatch;
     const result = await dispatch(backendApi.endpoints.listProjects.initiate());
     expect(result.data).toEqual({ projects: [] });
+  });
+
+  it("hands the browser file registry to the book query", async () => {
+    const registry = createBrowserFileRegistry<File>();
+    const source = registry.register(new File(["x"], "notes.txt"));
+    const store = createAppStore(
+      createRecordingEffects(),
+      createBackendStoreParts(client, null, registry),
+    );
+    const dispatch = store.dispatch as unknown as ThunkCapableDispatch;
+    const result = await dispatch(
+      backendApi.endpoints.openBook.initiate({ name: "notes.txt", source }),
+    );
+    expect(result.error).toBeUndefined();
   });
 
   it("carries the request runner", () => {

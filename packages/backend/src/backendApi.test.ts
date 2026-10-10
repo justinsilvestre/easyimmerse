@@ -103,7 +103,7 @@ async function storeAfterApplyingSourceStep(
 }
 
 function createStore(client: BackendClient) {
-  const extra: BackendThunkExtra = { client };
+  const extra: BackendThunkExtra = { client, browserFileRegistry: null };
   return configureStore({
     reducer: { [backendApi.reducerPath]: backendApi.reducer },
     middleware: (getDefault) =>
@@ -469,18 +469,6 @@ describe("backendApi", () => {
       backendApi.endpoints.lookupText.initiate({ text: "猫", language: "ja" }),
     );
     expect(result.data?.stylesheets).toEqual(response.stylesheets);
-  });
-
-  it("puts the format in the query string for parseDocument", async () => {
-    const client = createRecordingClient();
-    await createStore(client).dispatch(
-      backendApi.endpoints.parseDocument.initiate({
-        bytes: new Uint8Array(),
-        format: "epub",
-        contentType: "application/epub+zip",
-      }),
-    );
-    expect(client.requests[0]?.query).toEqual({ format: "epub" });
   });
 
   it("sends GET .../tracks for getMediaTracks", async () => {

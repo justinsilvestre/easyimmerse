@@ -1,3 +1,4 @@
+import type { BrowserFileRegistry } from "@easyimmerse/state";
 import type { BaseQueryFn } from "@reduxjs/toolkit/query";
 import type {
   BackendClient,
@@ -6,7 +7,11 @@ import type {
 } from "./backendClient.ts";
 
 /** What the backend's thunk middleware passes to every thunk and base query as their extra argument. */
-export type BackendThunkExtra = { client: BackendClient };
+export type BackendThunkExtra = {
+  client: BackendClient;
+  /** The files a browser picked, on the platforms that hold any. */
+  browserFileRegistry: BrowserFileRegistry<File> | null;
+};
 
 /** The RTK Query base query. It sends each request through the client the store was created with. */
 export const injectedBaseQuery: BaseQueryFn<

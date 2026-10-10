@@ -27,7 +27,7 @@ export async function bootstrap(): Promise<void> {
   const effects = createWebEffects({ playerRegistry, browserFileRegistry });
   const store = createAppStore(
     effects,
-    createBackendStoreParts(client, server),
+    createBackendStoreParts(client, server, browserFileRegistry),
     findDevToolsComposer(),
   );
   createRoot(findRootElement()).render(

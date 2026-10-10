@@ -18,9 +18,11 @@ export function renderWithAppStore(
   client?: BackendClient,
   options: RenderOptions = {},
 ) {
+  const browserFileRegistry = options.browserFileRegistry ?? null;
   const { effects, store, playerRegistry } = createTestAppStore(
     client,
     options.server ?? null,
+    browserFileRegistry,
   );
   for (const [key, value] of Object.entries(options.storedPreferences ?? {}))
     effects.preferences.set(key, value);
@@ -28,7 +30,7 @@ export function renderWithAppStore(
     <AppStoreProviders
       store={store}
       playerRegistry={playerRegistry}
-      browserFileRegistry={options.browserFileRegistry ?? null}
+      browserFileRegistry={browserFileRegistry}
     >
       {element}
     </AppStoreProviders>,

@@ -1,8 +1,4 @@
-import {
-  actions,
-  createBrowserFileRegistry,
-  selectCurrentMediaFileId,
-} from "@easyimmerse/state";
+import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
 import type { Document, MediaFile } from "@easyimmerse/types";
 import {
   act,
@@ -85,17 +81,6 @@ function renderReader({
 const chapterHeading = () => screen.findByRole("heading", { level: 2 });
 
 describe("ReaderScreen", () => {
-  it("has the server parse a book on its disk", async () => {
-    const { client } = renderReader();
-    await chapterHeading();
-    expect(
-      client.requests.find((request) => request.path.startsWith("/documents")),
-    ).toMatchObject({
-      path: "/documents/parse-local",
-      body: { value: { path: "/books/sample.epub", format: "epub" } },
-    });
-  });
-
   it("opens a book never read before at its start", async () => {
     renderReader();
     expect((await chapterHeading()).textContent).toBe("Chapter One");
@@ -163,24 +148,6 @@ describe("ReaderScreen", () => {
       JSON.parse(effects.preferences.get("readingLocation:b1") ?? "{}")
         .chapterIndex,
     ).toBe(1);
-  });
-
-  it("parses the bytes of a file the browser holds", async () => {
-    const registry = createBrowserFileRegistry<File>();
-    const file = new File(["The cat sat."], "notes.txt", { lastModified: 5 });
-    const mediaFile = {
-      ...bookFile,
-      name: "notes.txt",
-      source: registry.register(file),
-    };
-    const { client } = renderReader({
-      mediaFile,
-      options: { browserFileRegistry: registry },
-    });
-    await chapterHeading();
-    expect(client.requests.map((request) => request.path)).toContain(
-      "/documents/parse",
-    );
   });
 
   it("explains a book that can no longer be found", async () => {

@@ -30,7 +30,7 @@ export async function bootstrap(): Promise<void> {
   });
   const store = createAppStore(
     effects,
-    createBackendStoreParts(client, server),
+    createBackendStoreParts(client, server, browserFileRegistry),
   );
   createRoot(findRootElement()).render(
     <AppRoot
