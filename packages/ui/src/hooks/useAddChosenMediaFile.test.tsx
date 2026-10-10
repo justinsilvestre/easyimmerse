@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
 import { act, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -10,10 +9,7 @@ import {
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { useAddChosenMediaFile } from "./useAddChosenMediaFile.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function AddsChosenMediaFile() {
   useAddChosenMediaFile("p1");

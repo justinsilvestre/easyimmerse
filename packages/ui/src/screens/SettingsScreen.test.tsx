@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import {
   act,
@@ -11,10 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { SettingsScreen } from "./SettingsScreen.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 describe("SettingsScreen", () => {
   it("calls onBack when Back is clicked", () => {

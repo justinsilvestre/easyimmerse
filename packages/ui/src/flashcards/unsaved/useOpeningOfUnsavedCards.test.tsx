@@ -1,5 +1,4 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -19,10 +18,7 @@ import { createSharedSaving } from "../sharedSaving.ts";
 import { exampleUnsavedCard } from "./exampleUnsavedCard.ts";
 import { useOpeningOfUnsavedCards } from "./useOpeningOfUnsavedCards.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 type MediaList = "found" | "missing" | "failing";
 

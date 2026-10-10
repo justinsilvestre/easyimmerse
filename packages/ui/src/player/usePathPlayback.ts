@@ -1,5 +1,4 @@
 import {
-  getServerConfig,
   skipToken,
   useGetMediaTracksQuery,
   usePlanPlaybackQuery,
@@ -9,6 +8,7 @@ import {
   actions,
   selectPreference,
   selectPreferencesLoaded,
+  selectServerConfig,
 } from "@easyimmerse/state";
 import type {
   AudioTarget,
@@ -52,6 +52,7 @@ export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
   const preferredAudioTarget = usePreferredAudioTarget();
   const noticeDismissed =
     useAppSelector(selectPreference("conversionNoticeDismissed")) === "true";
+  const server = useAppSelector(selectServerConfig);
   const container = tracks.data?.container;
   const choiceDue =
     container !== undefined &&
@@ -84,7 +85,7 @@ export function usePathPlayback(projectId: string, mediaFile: MediaFile) {
   const [saveSelection] = useSaveTrackSelectionMutation();
 
   const playerStatus: PlayerStatus = derivePlayerStatus({
-    server: getServerConfig(),
+    server,
     projectId,
     mediaFileId,
     tracks: tracks.data,

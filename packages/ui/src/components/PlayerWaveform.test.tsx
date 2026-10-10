@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import { act, cleanup, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -8,10 +7,7 @@ import { directPlaybackRoutes } from "../testSupport/mediaFixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { PlayerWaveform } from "./PlayerWaveform.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function renderWaveform(mediaFileId: string) {
   const client = createFakeBackendClient(

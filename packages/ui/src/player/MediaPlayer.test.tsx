@@ -1,5 +1,4 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import type { BrowserFileRegistry } from "@easyimmerse/state";
 import {
   actions,
@@ -33,10 +32,7 @@ import { MediaPlayer } from "./MediaPlayer.tsx";
 import { stagePictureAttribute } from "./stagePicture.ts";
 import { TrackChoiceContext } from "./trackChoiceContext.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 const episode = fixtureMediaFiles.media_files[0] as MediaFile;
 

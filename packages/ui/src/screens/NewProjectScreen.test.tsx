@@ -1,5 +1,4 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
@@ -10,10 +9,7 @@ import {
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { NewProjectScreen } from "./NewProjectScreen.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function renderForm(onCreated: (projectId: string) => void = () => undefined) {
   const client = createFakeBackendClient({

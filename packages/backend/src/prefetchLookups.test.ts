@@ -7,9 +7,12 @@ import type {
   LookupResult,
 } from "@easyimmerse/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BackendError, BackendRequest } from "./backendClient.ts";
-import { backendStoreParts } from "./backendStoreParts.ts";
-import { configureBackend, resetBackend } from "./configureBackend.ts";
+import type {
+  BackendClient,
+  BackendError,
+  BackendRequest,
+} from "./backendClient.ts";
+import { createBackendStoreParts } from "./backendStoreParts.ts";
 import { lookUpTextAhead } from "./lookUpTextAhead.ts";
 import { prefetchLookups } from "./prefetchLookups.ts";
 
@@ -54,7 +57,7 @@ function createConfiguredStore(
 ) {
   const requests: BackendRequest[] = [];
   const { promise: released, resolve: release } = Promise.withResolvers<void>();
-  configureBackend({
+  const client: BackendClient = {
     send: async <T>(request: BackendRequest) => {
       requests.push(request);
       if (request.body?.kind !== "json") return { data: emptyResponse as T };
@@ -63,8 +66,11 @@ function createConfiguredStore(
       const error = failBatch(batch);
       return error ? { error } : { data: answerBatch(batch) as T };
     },
-  });
-  const store = createAppStore(createRecordingEffects(), backendStoreParts);
+  };
+  const store = createAppStore(
+    createRecordingEffects(),
+    createBackendStoreParts(client, null),
+  );
   return { store, requests, release };
 }
 
@@ -93,7 +99,6 @@ function batchesOf(requests: readonly BackendRequest[]): BatchLookupRequest[] {
 }
 
 afterEach(() => {
-  resetBackend();
   vi.useRealTimers();
 });
 

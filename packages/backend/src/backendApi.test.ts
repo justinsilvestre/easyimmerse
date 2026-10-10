@@ -8,10 +8,10 @@ import type {
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
-import { configureBackend, resetBackend } from "./configureBackend.ts";
+import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 
 function createRecordingClient(): BackendClient & {
   requests: BackendRequest[];
@@ -88,8 +88,7 @@ function createApplyingSourceStepClient(): BackendClient & {
 async function storeAfterApplyingSourceStep(
   client: BackendClient = createApplyingSourceStepClient(),
 ) {
-  configureBackend(client);
-  const store = createStore();
+  const store = createStore(client);
   await store.dispatch(
     backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
   );
@@ -103,10 +102,14 @@ async function storeAfterApplyingSourceStep(
   return store;
 }
 
-function createStore() {
+function createStore(client: BackendClient) {
+  const extra: BackendThunkExtra = { client };
   return configureStore({
     reducer: { [backendApi.reducerPath]: backendApi.reducer },
-    middleware: (getDefault) => getDefault().concat(backendApi.middleware),
+    middleware: (getDefault) =>
+      getDefault({ thunk: { extraArgument: extra } }).concat(
+        backendApi.middleware,
+      ),
   });
 }
 
@@ -187,25 +190,21 @@ function createStubbedClient(
 }
 
 async function storeWithFlashcards(failsWrites = false) {
-  configureBackend(
-    createStubbedClient(
-      { "GET /projects/p1/flashcards": { flashcards: [savedFlashcard] } },
-      failsWrites,
-    ),
+  const client = createStubbedClient(
+    { "GET /projects/p1/flashcards": { flashcards: [savedFlashcard] } },
+    failsWrites,
   );
-  const store = createStore();
+  const store = createStore(client);
   await store.dispatch(backendApi.endpoints.listFlashcards.initiate("p1"));
   return store;
 }
 
 async function storeWithSubtitleTracks(failsWrites = false) {
-  configureBackend(
-    createStubbedClient(
-      { "GET /projects/p1/media/m1/subtitles": subtitleTracks },
-      failsWrites,
-    ),
+  const client = createStubbedClient(
+    { "GET /projects/p1/media/m1/subtitles": subtitleTracks },
+    failsWrites,
   );
-  const store = createStore();
+  const store = createStore(client);
   await store.dispatch(
     backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
   );
@@ -225,7 +224,7 @@ const addedBook: MediaFile = {
 /** Lists no media files at first, adds a book, and leaves the list's refetch pending. */
 async function storeAfterAddingBook() {
   let listCount = 0;
-  configureBackend({
+  const client: BackendClient = {
     send: <T>(request: BackendRequest) => {
       if (request.method === "POST")
         return Promise.resolve({ data: addedBook as T });
@@ -234,8 +233,8 @@ async function storeAfterAddingBook() {
         ? Promise.resolve({ data: { media_files: [] } as T })
         : new Promise<never>(() => undefined);
     },
-  });
-  const store = createStore();
+  };
+  const store = createStore(client);
   await store.dispatch(backendApi.endpoints.listMediaFiles.initiate("p1"));
   await store.dispatch(
     backendApi.endpoints.addMediaFile.initiate({
@@ -267,29 +266,17 @@ const listedSelection = (store: ReturnType<typeof createStore>) =>
   backendApi.endpoints.listSubtitleTracks.select(mediaArgs)(store.getState())
     .data?.selection;
 
-afterEach(resetBackend);
-
 describe("backendApi", () => {
-  it("throws a clear error when no client is configured", async () => {
-    const store = createStore();
-    const result = await store.dispatch(
-      backendApi.endpoints.listProjects.initiate(),
-    );
-    expect(result.error).toMatchObject({
-      message: expect.stringContaining("No backend client is configured"),
-    });
-  });
-
   it("sends GET /projects for listProjects", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(backendApi.endpoints.listProjects.initiate());
+    await createStore(client).dispatch(
+      backendApi.endpoints.listProjects.initiate(),
+    );
     expect(client.requests).toEqual([{ method: "GET", path: "/projects" }]);
   });
 
   it("returns the client's data for listProjects", async () => {
-    configureBackend(createRecordingClient());
-    const result = await createStore().dispatch(
+    const result = await createStore(createRecordingClient()).dispatch(
       backendApi.endpoints.listProjects.initiate(),
     );
     expect(result.data).toEqual({ projects: [] });
@@ -297,8 +284,7 @@ describe("backendApi", () => {
 
   it("carries the offline operation for parseTimedText", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.parseTimedText.initiate(srtRequest),
     );
     expect(client.requests[0]?.offlineOperation).toEqual({
@@ -309,8 +295,7 @@ describe("backendApi", () => {
 
   it("sends GET /projects/{id}/media for listMediaFiles", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.listMediaFiles.initiate("p1"),
     );
     expect(client.requests).toEqual([
@@ -320,12 +305,11 @@ describe("backendApi", () => {
 
   it("posts the name and source for addMediaFile", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
     const request = {
       name: "a.mp4",
       source: { kind: "path", path: "/a.mp4" },
     } as const;
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.addMediaFile.initiate({ projectId: "p1", request }),
     );
     expect(client.requests[0]).toEqual({
@@ -337,8 +321,7 @@ describe("backendApi", () => {
 
   it("sends DELETE /projects/{id}/media/{media_id} for removeMediaFile", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.removeMediaFile.initiate({
         projectId: "p1",
         mediaFileId: "m1",
@@ -351,9 +334,8 @@ describe("backendApi", () => {
 
   it("sends the file as a raw body for importDictionary", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
     const bytes = new Uint8Array([80, 75]);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.importDictionary.initiate({
         fileName: "jmdict.zip",
         bytes,
@@ -368,8 +350,7 @@ describe("backendApi", () => {
 
   it("puts the file name in the query string for importDictionary", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.importDictionary.initiate({
         fileName: "oxford.mdx",
         bytes: new Uint8Array(),
@@ -380,9 +361,8 @@ describe("backendApi", () => {
 
   it("carries the file name in the offline operation for importDictionary", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
     const bytes = new Uint8Array();
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.importDictionary.initiate({
         fileName: "words.csv",
         bytes,
@@ -398,8 +378,7 @@ describe("backendApi", () => {
 
   it("puts a chosen table layout in the query string for importDictionary", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.importDictionary.initiate({
         fileName: "words.csv",
         bytes: new Uint8Array(),
@@ -415,8 +394,7 @@ describe("backendApi", () => {
 
   it("sends GET /dictionaries/imports/{id} for getImportJob", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.getImportJob.initiate("job 1"),
     );
     expect(client.requests[0]?.path).toBe("/dictionaries/imports/job%201");
@@ -424,8 +402,7 @@ describe("backendApi", () => {
 
   it("sends POST /dictionaries/preview for previewDictionaryTable", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.previewDictionaryTable.initiate({
         fileName: "words.csv",
         bytes: new Uint8Array(),
@@ -436,8 +413,7 @@ describe("backendApi", () => {
 
   it("sends DELETE /dictionaries/{id} for deleteDictionary", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.deleteDictionary.initiate("d1"),
     );
     expect(client.requests).toEqual([
@@ -447,8 +423,7 @@ describe("backendApi", () => {
 
   it("puts the text and language in the query string for lookupText", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.lookupText.initiate({
         text: "猫が",
         language: "ja",
@@ -465,8 +440,7 @@ describe("backendApi", () => {
 
   it("puts the context and offset in the query string for lookupText", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.lookupText.initiate({
         text: "rufe dich an.",
         language: "de",
@@ -488,10 +462,10 @@ describe("backendApi", () => {
       kanji: [],
       stylesheets: [{ dictionaryId: "d1", css: "b { color: red }" }],
     };
-    configureBackend({
+    const client = {
       send: async <T>() => ({ data: response as T }),
-    });
-    const result = await createStore().dispatch(
+    };
+    const result = await createStore(client).dispatch(
       backendApi.endpoints.lookupText.initiate({ text: "猫", language: "ja" }),
     );
     expect(result.data?.stylesheets).toEqual(response.stylesheets);
@@ -499,8 +473,7 @@ describe("backendApi", () => {
 
   it("puts the format in the query string for parseDocument", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.parseDocument.initiate({
         bytes: new Uint8Array(),
         format: "epub",
@@ -512,8 +485,7 @@ describe("backendApi", () => {
 
   it("sends GET .../tracks for getMediaTracks", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.getMediaTracks.initiate(mediaArgs),
     );
     expect(client.requests).toEqual([
@@ -523,8 +495,7 @@ describe("backendApi", () => {
 
   it("posts the playback request for planPlayback", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.planPlayback.initiate({
         ...mediaArgs,
         request: playbackRequest,
@@ -539,8 +510,7 @@ describe("backendApi", () => {
 
   it("puts the selection for saveTrackSelection", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.saveTrackSelection.initiate({
         ...mediaArgs,
         selection: { video: 0, audio: 2 },
@@ -555,8 +525,7 @@ describe("backendApi", () => {
 
   it("puts the window bounds in the query string for getWaveformWindow", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.getWaveformWindow.initiate({
         ...mediaArgs,
         startMs: 30_000,
@@ -572,8 +541,7 @@ describe("backendApi", () => {
 
   it("sends GET .../embedded-subtitles for listEmbeddedSubtitleTracks", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.listEmbeddedSubtitleTracks.initiate(mediaArgs),
     );
     expect(client.requests).toEqual([
@@ -583,8 +551,7 @@ describe("backendApi", () => {
 
   it("sends GET .../subtitles for listSubtitleTracks", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs),
     );
     expect(client.requests).toEqual([
@@ -594,8 +561,7 @@ describe("backendApi", () => {
 
   it("sends GET /conversion-cache for getConversionCacheStatus", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.getConversionCacheStatus.initiate(),
     );
     expect(client.requests).toEqual([
@@ -605,8 +571,7 @@ describe("backendApi", () => {
 
   it("sends POST /conversion-cache/clear for clearConversionCache", async () => {
     const client = createRecordingClient();
-    configureBackend(client);
-    await createStore().dispatch(
+    await createStore(client).dispatch(
       backendApi.endpoints.clearConversionCache.initiate(),
     );
     expect(client.requests).toEqual([
@@ -616,8 +581,7 @@ describe("backendApi", () => {
 
   it("fetches the subtitle tracks again after a source step fails", async () => {
     const client = createFailingSourceStepClient();
-    configureBackend(client);
-    const store = createStore();
+    const store = createStore(client);
     store.dispatch(backendApi.endpoints.listSubtitleTracks.initiate(mediaArgs));
     await store.dispatch(
       backendApi.endpoints.submitSourceStep.initiate({

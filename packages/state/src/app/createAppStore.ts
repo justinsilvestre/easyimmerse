@@ -6,6 +6,7 @@ import {
   legacy_createStore as createStore,
 } from "redux";
 import type { Effects } from "../platform/effects.ts";
+import type { ServerConfig } from "../server/serverState.ts";
 import type { AppAction } from "./appAction.ts";
 import { actions, isAppAction } from "./appAction.ts";
 import type { AppState } from "./appState.ts";
@@ -18,6 +19,8 @@ export type ServerStoreParts = {
   reducerPath: string;
   reducer: Reducer;
   middleware: Middleware;
+  /** The server the parts send requests to, or null when the app runs offline. */
+  serverConfig: ServerConfig | null;
 };
 
 export type RootState = { app: AppState } & Record<string, unknown>;
@@ -39,7 +42,11 @@ export function createAppStore(
   server: ServerStoreParts,
   composeEnhancers: EnhancerComposer = compose,
 ): AppStore {
-  const app = createEffectsReducer(update, initialAppState, isAppAction);
+  const app = createEffectsReducer(
+    update,
+    initialStateWith(server.serverConfig),
+    isAppAction,
+  );
   const rootReducer: Reducer<RootState, AppAction> = combineReducers({
     app: app.reducer,
     [server.reducerPath]: server.reducer,
@@ -57,4 +64,9 @@ export function createAppStore(
     store.dispatch(actions.settingsRequested()),
   );
   return store;
+}
+
+/** The initial app state, with the server the store was created for. */
+function initialStateWith(serverConfig: ServerConfig | null): AppState {
+  return { ...initialAppState, server: { config: serverConfig } };
 }

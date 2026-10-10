@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { cleanup, fireEvent, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -24,7 +23,6 @@ vi.mock("../components/ClickableText.tsx", async (importOriginal) => {
 
 afterEach(() => {
   cleanup();
-  resetBackend();
   renderCounts.clear();
 });
 

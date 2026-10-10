@@ -3,6 +3,7 @@ import { platformCommands } from "../platform/platformCommands.ts";
 import { preferencesFeature } from "../preferences/updatePreferences.ts";
 import { routeFeature } from "../route/updateRoute.ts";
 import { screenFeature } from "../screen/updateScreen.ts";
+import { serverFeature } from "../server/serverState.ts";
 import { storedPlacesFeature } from "../storedPlaces/updateStoredPlaces.ts";
 import { unsavedWorkFeature } from "../unsavedWork/unsavedWork.ts";
 import type { AppAction } from "./appAction.ts";
@@ -21,6 +22,7 @@ type FeatureTable = { [K in keyof AppState]: Feature<AppState[K]> };
 const features = {
   route: routeFeature,
   screen: screenFeature,
+  server: serverFeature,
   preferences: preferencesFeature,
   storedPlaces: storedPlacesFeature,
   unsavedWork: unsavedWorkFeature,

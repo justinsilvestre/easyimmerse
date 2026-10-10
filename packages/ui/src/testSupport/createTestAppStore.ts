@@ -1,5 +1,5 @@
 import type { BackendClient } from "@easyimmerse/backend";
-import { backendStoreParts, configureBackend } from "@easyimmerse/backend";
+import { createBackendStoreParts } from "@easyimmerse/backend";
 import type { ServerConfig } from "@easyimmerse/state";
 import {
   createAppStore,
@@ -10,7 +10,7 @@ import { createFakeBackendClient } from "./createFakeBackendClient.ts";
 import { fixtureResponses } from "./fixtureResponses.ts";
 
 /**
- * Builds a fresh store with recording effects and a player registry, and points the backend at the given client.
+ * Builds a fresh store with recording effects and a player registry, whose backend requests go through the given client.
  * A server config makes hooks that build media URLs treat the client as a connected server.
  */
 export function createTestAppStore(
@@ -18,7 +18,9 @@ export function createTestAppStore(
   server: ServerConfig | null = null,
 ) {
   const effects = createRecordingEffects();
-  configureBackend(client, server);
-  const store = createAppStore(effects, backendStoreParts);
+  const store = createAppStore(
+    effects,
+    createBackendStoreParts(client, server),
+  );
   return { effects, store, playerRegistry: createPlayerRegistry() };
 }

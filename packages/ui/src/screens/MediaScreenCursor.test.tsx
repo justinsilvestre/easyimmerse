@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -8,10 +7,7 @@ import {
   requestsTo,
 } from "../testSupport/renderMediaScreen.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 /** The word in the card of the given cue, counting cards from one. */
 async function cardWord(cardNumber: number, word: string) {

@@ -1,5 +1,4 @@
 import type { BackendClient } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import { selectRoute } from "@easyimmerse/state";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -10,10 +9,7 @@ const offlineClient: BackendClient = {
   send: async () => ({ error: { status: "OFFLINE", message: "No server." } }),
 };
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function renderHome(
   callbacks: {

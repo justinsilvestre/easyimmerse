@@ -15,6 +15,15 @@ describe("createAppStore", () => {
     expect(store.getState().app).toEqual(initialAppState);
   });
 
+  it("seeds the server state from the server parts", () => {
+    const server = { serverUrl: "http://localhost:4000", token: "test-token" };
+    const store = createAppStore(
+      createRecordingEffects(),
+      createFakeServerStoreParts(server),
+    );
+    expect(store.getState().app.server).toEqual({ config: server });
+  });
+
   it("mounts the server reducer under its reducer path", () => {
     const store = createAppStore(
       createRecordingEffects(),

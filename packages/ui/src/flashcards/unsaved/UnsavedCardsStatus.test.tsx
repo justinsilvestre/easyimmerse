@@ -1,5 +1,4 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import {
   type AppStore,
   selectCurrentMediaFileId,
@@ -25,10 +24,7 @@ import { createSharedSaving } from "../sharedSaving.ts";
 import { exampleUnsavedCard } from "./exampleUnsavedCard.ts";
 import type { UnsavedCard } from "./unsavedCard.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 /** A backend that records flashcard saves and answers them with success, or, when `savesHang`, never. */
 function createSavingBackend(savesHang: boolean) {

@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import {
   actions,
   createBrowserFileRegistry,
@@ -56,7 +55,6 @@ import { MediaScreen } from "./MediaScreen.tsx";
 
 afterEach(() => {
   cleanup();
-  resetBackend();
   vi.restoreAllMocks();
 });
 

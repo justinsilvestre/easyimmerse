@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import type { BatchLookupRequest } from "@easyimmerse/types";
 import {
   act,
@@ -76,7 +75,6 @@ describe("MediaScreen lookup prefetch", () => {
     cleanup();
     clearInterval(flushDue);
     vi.useRealTimers();
-    resetBackend();
   });
 
   it("looks up the cues of the next minute in one batch, without their markup", async () => {

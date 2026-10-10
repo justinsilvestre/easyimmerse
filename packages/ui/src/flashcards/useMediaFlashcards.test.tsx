@@ -1,5 +1,4 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import type { FlashcardDraft } from "@easyimmerse/types";
 import { act, cleanup, renderHook, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -31,7 +30,6 @@ beforeEach(() => vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }));
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
-  resetBackend();
 });
 
 /** Lets every request and promise already under way run, without moving the clock. */

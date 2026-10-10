@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import {
   actions,
   createBrowserFileRegistry,
@@ -30,10 +29,7 @@ import {
 } from "../testSupport/renderWithAppStore.tsx";
 import { ReaderScreen } from "./ReaderScreen.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 const bookFile: MediaFile = {
   id: "b1",

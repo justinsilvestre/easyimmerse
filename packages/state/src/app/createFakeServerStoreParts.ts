@@ -1,10 +1,13 @@
 import type { Action } from "redux";
+import type { ServerConfig } from "../server/serverState.ts";
 import type { ServerStoreParts } from "./createAppStore.ts";
 
 type FakeServerState = { mounted: true };
 
-/** Builds trivial server store parts for tests. The middleware records every dispatched action. */
-export function createFakeServerStoreParts(): ServerStoreParts & {
+/** Builds trivial server store parts for tests, for the given server if any. The middleware records every dispatched action. */
+export function createFakeServerStoreParts(
+  serverConfig: ServerConfig | null = null,
+): ServerStoreParts & {
   dispatchedActions: Action[];
 } {
   const dispatchedActions: Action[] = [];
@@ -16,5 +19,6 @@ export function createFakeServerStoreParts(): ServerStoreParts & {
       dispatchedActions.push(action as Action);
       return next(action);
     },
+    serverConfig,
   };
 }

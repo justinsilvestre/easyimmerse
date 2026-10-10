@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -9,10 +8,7 @@ import { exampleFlashcard } from "./exampleFlashcard.ts";
 import { MediaFields, type MediaWaveform } from "./FlashcardEditorFields.tsx";
 import { fieldsOfPreset } from "./flashcardPresets.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 /** Renders the example flashcard's clip, from 1.75 to 3 seconds, recording what it dispatches to the editor and asks of the player. */
 function renderClip({

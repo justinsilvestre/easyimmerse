@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -9,10 +8,7 @@ import { createSharedSaving } from "../sharedSaving.ts";
 import { exampleUnsavedCard } from "./exampleUnsavedCard.ts";
 import { useGiveUpOpenings } from "./useGiveUpOpenings.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 /** Renders the hook for project p1 over a card of p1 waiting to open, “Hund”, and one of p2, “Katze”. */
 function renderGiveUp(hasFailed: boolean) {

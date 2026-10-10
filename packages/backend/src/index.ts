@@ -49,12 +49,7 @@ export type {
   BackendError,
   BackendRequest,
 } from "./backendClient.ts";
-export { backendStoreParts } from "./backendStoreParts.ts";
-export {
-  configureBackend,
-  getServerConfig,
-  resetBackend,
-} from "./configureBackend.ts";
+export { createBackendStoreParts } from "./backendStoreParts.ts";
 export {
   buildAuthorizationHeader,
   buildConversionFileUrl,

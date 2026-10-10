@@ -1,17 +1,18 @@
 import {
   buildDictionaryMediaUrl,
-  getServerConfig,
   lookUpTextAhead,
   selectCachedLookup,
   skipToken,
   useListDictionariesQuery,
   useLookupTextQuery,
 } from "@easyimmerse/backend";
+import { selectServerConfig } from "@easyimmerse/state";
 import type { DictionarySummary, LookupResult } from "@easyimmerse/types";
-import { useReducer } from "react";
+import { useCallback, useReducer } from "react";
 import { useStore } from "react-redux";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import {
   type LookupPopup,
@@ -46,6 +47,12 @@ export function useDictionaryLookup<S>(language: string) {
   );
   const storeDispatch = useAppDispatch();
   const store = useStore();
+  const server = useAppSelector(selectServerConfig);
+  const resolveMediaUrl = useCallback<ResolveMediaUrl>(
+    (dictionaryId, path) =>
+      server && buildDictionaryMediaUrl(server, dictionaryId, path),
+    [server],
+  );
   return {
     popup,
     request,
@@ -99,8 +106,3 @@ function outcomeOf(
     ? { kind: "answered", response: query.data }
     : { kind: "pending" };
 }
-
-const resolveMediaUrl: ResolveMediaUrl = (dictionaryId, path) => {
-  const server = getServerConfig();
-  return server && buildDictionaryMediaUrl(server, dictionaryId, path);
-};

@@ -1,7 +1,8 @@
-import { getServerConfig } from "@easyimmerse/backend";
 import type { ServerConfig } from "@easyimmerse/state";
+import { selectServerConfig } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
 import { useBrowserFileRegistry } from "../browserFileRegistryContext.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useHasPictures } from "../player/useHasPictures.ts";
 import { useHasVideo } from "../player/useHasVideo.ts";
 
@@ -33,12 +34,12 @@ export function useScreenshotSource(
       ? (registry?.find(mediaFile.name, mediaFile.source) ?? null)
       : null;
   const hasPictures = useHasPictures(browserFile);
+  const server = useAppSelector(selectServerConfig);
   if (mediaFile === null || !hasVideo) return null;
   if (mediaFile.source.kind === "browser_file")
     return browserFile !== null && hasPictures === true
       ? { kind: "browser", file: browserFile }
       : null;
-  const server = getServerConfig();
   if (mediaFile.source.kind !== "path" || server === null) return null;
   return { kind: "server", server, projectId, mediaFileId: mediaFile.id };
 }

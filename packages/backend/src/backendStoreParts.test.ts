@@ -2,36 +2,42 @@ import type { RootState } from "@easyimmerse/state";
 import { createAppStore, createRecordingEffects } from "@easyimmerse/state";
 import type { UnknownAction } from "redux";
 import type { ThunkDispatch } from "redux-thunk";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { backendApi } from "./backendApi.ts";
-import type { BackendRequest } from "./backendClient.ts";
-import { backendStoreParts } from "./backendStoreParts.ts";
-import { configureBackend, resetBackend } from "./configureBackend.ts";
+import type { BackendClient, BackendRequest } from "./backendClient.ts";
+import { createBackendStoreParts } from "./backendStoreParts.ts";
 
 type ThunkCapableDispatch = ThunkDispatch<RootState, unknown, UnknownAction>;
 
-function createConfiguredStore() {
-  configureBackend({
-    send: async <T>(_request: BackendRequest) => ({
-      data: { projects: [] } as T,
-    }),
-  });
-  return createAppStore(createRecordingEffects(), backendStoreParts);
-}
+const client: BackendClient = {
+  send: async <T>(_request: BackendRequest) => ({
+    data: { projects: [] } as T,
+  }),
+};
 
-afterEach(resetBackend);
+const server = { serverUrl: "http://localhost:4000", token: "test-token" };
 
-describe("backendStoreParts", () => {
+describe("createBackendStoreParts", () => {
   it("mounts the API reducer under the backend reducer path", () => {
-    const store = createConfiguredStore();
+    const store = createAppStore(
+      createRecordingEffects(),
+      createBackendStoreParts(client, null),
+    );
     expect(store.getState()).toHaveProperty("backend");
   });
 
-  it("lets the hand-built app store run RTK Query thunks", async () => {
-    const store = createConfiguredStore();
+  it("lets the hand-built app store run RTK Query thunks through the given client", async () => {
+    const store = createAppStore(
+      createRecordingEffects(),
+      createBackendStoreParts(client, null),
+    );
     // The app store's dispatch is typed for app actions only; thunks reach it through the middleware chain.
     const dispatch = store.dispatch as unknown as ThunkCapableDispatch;
     const result = await dispatch(backendApi.endpoints.listProjects.initiate());
     expect(result.data).toEqual({ projects: [] });
+  });
+
+  it("carries the server configuration", () => {
+    expect(createBackendStoreParts(client, server).serverConfig).toBe(server);
   });
 });

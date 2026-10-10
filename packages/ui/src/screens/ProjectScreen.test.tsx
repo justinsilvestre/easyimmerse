@@ -1,5 +1,4 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
 import type {
   ImportStepRequest,
@@ -39,10 +38,7 @@ import {
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { ProjectScreen } from "./ProjectScreen.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function renderProject(onEditSettings: () => void = () => undefined) {
   const client = createFakeBackendClient(

@@ -1,5 +1,4 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type {
   BatchLookupRequest,
@@ -54,7 +53,6 @@ const restorers: (() => void)[] = [];
 
 afterEach(() => {
   cleanup();
-  resetBackend();
   for (const restore of restorers.splice(0)) restore();
 });
 

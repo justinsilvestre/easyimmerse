@@ -1,13 +1,9 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { ConversionNoticeDialog } from "./ConversionNoticeDialog.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function renderDialog() {
   const calls: string[] = [];

@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ConversionCacheSection } from "../components/ConversionCacheSection.tsx";
@@ -11,10 +10,7 @@ import { fixtureConversionCacheStatus } from "../testSupport/mediaFixtureRespons
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { useConversionCacheControls } from "./useConversionCacheControls.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function Probe() {
   return <ConversionCacheSection {...useConversionCacheControls()} />;

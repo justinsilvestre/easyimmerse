@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { actions, selectRoute } from "@easyimmerse/state";
 import {
   act,
@@ -23,7 +22,6 @@ import {
 
 afterEach(() => {
   cleanup();
-  resetBackend();
   vi.restoreAllMocks();
 });
 

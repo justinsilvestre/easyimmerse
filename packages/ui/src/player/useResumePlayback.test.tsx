@@ -1,14 +1,10 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { actions, selectPlaybackPosition } from "@easyimmerse/state";
 import { act, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { useResumePlayback } from "./useResumePlayback.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function ResumeProbe() {
   useResumePlayback("m1");

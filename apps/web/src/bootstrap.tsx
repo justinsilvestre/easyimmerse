@@ -1,7 +1,6 @@
 import type { BackendClient } from "@easyimmerse/backend";
 import {
-  backendStoreParts,
-  configureBackend,
+  createBackendStoreParts,
   createHttpBackendClient,
   createWasmBackendClient,
   resolveServerConfig,
@@ -22,13 +21,13 @@ import "@easyimmerse/ui/styles.css";
 /** Wires the backend, effects, and store together and mounts the app. */
 export async function bootstrap(): Promise<void> {
   const server = resolveServerConfig();
-  configureBackend(await createBackendClient(server), server);
+  const client = await createBackendClient(server);
   const playerRegistry = createPlayerRegistry();
   const browserFileRegistry = createBrowserFileRegistry<File>();
   const effects = createWebEffects({ playerRegistry, browserFileRegistry });
   const store = createAppStore(
     effects,
-    backendStoreParts,
+    createBackendStoreParts(client, server),
     findDevToolsComposer(),
   );
   createRoot(findRootElement()).render(

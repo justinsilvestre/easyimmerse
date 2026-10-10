@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
@@ -6,10 +5,7 @@ import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { usePlaybackPause } from "./usePlaybackPause.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function PauseProbe() {
   const pause = usePlaybackPause();

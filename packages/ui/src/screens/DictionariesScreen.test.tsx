@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import {
   actions,
   createBrowserFileRegistry,
@@ -15,10 +14,7 @@ import {
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { DictionariesScreen } from "./DictionariesScreen.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 const tablePreview = {
   layout: { columns: ["term", "definition"], hasHeader: false },

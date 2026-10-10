@@ -1,5 +1,4 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -15,10 +14,7 @@ import { exampleFlashcard } from "./exampleFlashcard.ts";
 import { useEditedFlashcard } from "./useEditedFlashcard.ts";
 import { useFlashcardSaving } from "./useFlashcardSaving.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 const draft: FlashcardDraft = {
   media_file_id: "m1",

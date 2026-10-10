@@ -2,6 +2,7 @@ import type { OperationsState } from "../operations/operations.ts";
 import type { PreferencesState } from "../preferences/preferencesState.ts";
 import type { Route } from "../route/route.ts";
 import type { ScreenState } from "../screen/screenState.ts";
+import type { ServerState } from "../server/serverState.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
 import type { UnsavedWorkState } from "../unsavedWork/unsavedWork.ts";
 
@@ -13,6 +14,7 @@ export type AppState = {
    */
   route: Route;
   screen: ScreenState;
+  server: ServerState;
   preferences: PreferencesState;
   storedPlaces: StoredPlacesState;
   unsavedWork: UnsavedWorkState;
