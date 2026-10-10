@@ -13,6 +13,7 @@ import type {
   PickedFile,
   PickedMediaFile,
 } from "../platform/effects.ts";
+import type { ItemSpan } from "./itemSpan.ts";
 import type { BufferedRange } from "./mediaScreen/playerState.ts";
 import type { WaveformViewName } from "./mediaScreen/waveformState.ts";
 import type { WaveformWindowView } from "./mediaScreen/waveformWindowPolicy.ts";
@@ -36,6 +37,9 @@ export const screenActions = {
     ({ type: "playerFailed", url, cause }) as const,
   /** The user opened or closed the media screen's subtitles panel. */
   cuePanelToggled: () => ({ type: "cuePanelToggled" }) as const,
+  /** The cues the subtitles panel shows or nearly shows, as it measured them. */
+  cuePanelSpanMeasured: (span: ItemSpan | null) =>
+    ({ type: "cuePanelSpanMeasured", span }) as const,
   /** The user showed or hid the media screen's waveform. */
   waveformToggled: () => ({ type: "waveformToggled" }) as const,
   /** The user moved on to the next choice of subtitles over the stage: both, the target language, or the translation. */

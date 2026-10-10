@@ -3,6 +3,7 @@ import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { updateLookup } from "../lookup/updateLookup.ts";
+import { updateReaderScreen } from "../readerScreen/updateReaderScreen.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateMediaPanels } from "./mediaPanels.ts";
 import { picturesProbeOf } from "./picturesProbe.ts";
@@ -40,6 +41,14 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
     const panels = updateMediaPanels(screen.panels, action);
     return [panels === screen.panels ? screen : { ...screen, panels }, []];
   },
+  (screen, action) =>
+    action.type === "cuePanelSpanMeasured"
+      ? [{ ...screen, cuePanelSpan: action.span }, []]
+      : [screen, []],
+  (screen, action) => {
+    const reader = updateReaderScreen(screen.reader, action);
+    return [reader === screen.reader ? screen : { ...screen, reader }, []];
+  },
   updatePlayer,
   (screen, action, _route, app) => {
     const [lookup, effects] = updateLookup(
@@ -74,7 +83,7 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
 
 /**
  * Updates the media screen: its player, the dictionary pop-up, the plugin source dialog, the flashcard form, the clip loop, the clip Play, the resume seek, how a file on the server's disk plays,
- * the subtitles file picked for it and the tracks chosen to show, its waveform, and the panels around its stage.
+ * the subtitles file picked for it and the tracks chosen to show, its waveform, the panels around its stage, and the reader's own state while the file is a book.
  * `app` is the state before the action.
  */
 export function updateMediaScreen(

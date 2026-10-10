@@ -1,5 +1,6 @@
 import type { Cue } from "@easyimmerse/types";
 import type { RootState } from "../app/createAppStore.ts";
+import type { ItemSpan } from "./itemSpan.ts";
 import type { MediaPanels } from "./mediaScreen/mediaPanels.ts";
 import { initialMediaPanels } from "./mediaScreen/mediaPanels.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
@@ -32,6 +33,12 @@ export const selectMediaPanels = (state: RootState): MediaPanels =>
   state.app.screen.main.kind === "media"
     ? state.app.screen.main.panels
     : initialMediaPanels;
+
+/** Returns the cues the subtitles panel shows or nearly shows, or null. */
+export const selectCuePanelSpan = (state: RootState): ItemSpan | null =>
+  state.app.screen.main.kind === "media"
+    ? state.app.screen.main.cuePanelSpan
+    : null;
 
 /** Tells whether the media screen's subtitle appearance dialog is open. */
 export const selectIsSubtitleAppearanceOpen = (state: RootState) =>

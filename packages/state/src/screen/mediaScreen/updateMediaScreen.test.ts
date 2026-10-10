@@ -70,4 +70,14 @@ describe("updateMediaScreen", () => {
     );
     expect(screen.panels.cues).toBe(true);
   });
+
+  it("keeps the cue panel's measured span", () => {
+    const [screen] = apply(actions.cuePanelSpanMeasured({ first: 3, last: 9 }));
+    expect(screen.cuePanelSpan).toEqual({ first: 3, last: 9 });
+  });
+
+  it("keeps the reader's state", () => {
+    const [screen] = apply(actions.readerPanelOpened("contents"));
+    expect(screen.reader.panel).toBe("contents");
+  });
 });

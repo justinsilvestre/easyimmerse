@@ -34,6 +34,15 @@ export function isSameParagraph(
   );
 }
 
+/** Whether two places are the same character. */
+export function isSameLocation(a: ReaderLocation, b: ReaderLocation): boolean {
+  return (
+    a.chapterIndex === b.chapterIndex &&
+    a.paragraphIndex === b.paragraphIndex &&
+    a.offset === b.offset
+  );
+}
+
 function parseJson(value: string | null): unknown {
   try {
     return value === null ? null : JSON.parse(value);

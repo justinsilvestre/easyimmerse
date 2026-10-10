@@ -5,7 +5,11 @@ import {
   openMediaScreen,
 } from "../screen/openMediaScreen.ts";
 import { crossesSaveInterval } from "./playbackPosition.ts";
-import { isSameParagraph, type ReaderLocation } from "./readingLocation.ts";
+import {
+  isSameLocation,
+  isSameParagraph,
+  type ReaderLocation,
+} from "./readingLocation.ts";
 import { saveOnLeaving, savePlayback } from "./savePlaces.ts";
 import type { StoredPlacesEffect } from "./storedPlacesEffect.ts";
 import type { StoredPlacesState } from "./storedPlacesState.ts";
@@ -29,18 +33,9 @@ export const updateStoredPlaces: FeatureUpdate<StoredPlacesState> = (
         [],
       ];
     case "readingLocationReported":
-      return [
-        withReading(places, action.mediaFileId, action.location),
-        isSameParagraph(action.location, places.reading[action.mediaFileId])
-          ? []
-          : [
-              {
-                type: "saveReadingLocation",
-                mediaFileId: action.mediaFileId,
-                location: action.location,
-              },
-            ],
-      ];
+    case "readerJumped":
+    case "readerMatchChosen":
+      return readingMoved(places, action.mediaFileId, action.location);
     case "playbackPositionLoaded":
       return [
         {
@@ -79,6 +74,22 @@ export const storedPlacesFeature: Feature<StoredPlacesState> = {
   initialState: initialStoredPlaces,
   update: updateStoredPlaces,
 };
+
+/** Records the new reading place, and saves it when it lies in another paragraph. */
+function readingMoved(
+  places: StoredPlacesState,
+  mediaFileId: string,
+  location: ReaderLocation,
+): readonly [StoredPlacesState, StoredPlacesEffect[]] {
+  const stored = places.reading[mediaFileId];
+  if (stored && isSameLocation(location, stored)) return [places, []];
+  return [
+    withReading(places, mediaFileId, location),
+    isSameParagraph(location, stored)
+      ? []
+      : [{ type: "saveReadingLocation", mediaFileId, location }],
+  ];
+}
 
 function withReading(
   places: StoredPlacesState,

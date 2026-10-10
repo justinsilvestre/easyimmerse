@@ -13,6 +13,8 @@ import type { RouteAction } from "../route/routeActions.ts";
 import { routeActions } from "../route/routeActions.ts";
 import type { LookupAction } from "../screen/lookup/lookupActions.ts";
 import { lookupActions } from "../screen/lookup/lookupActions.ts";
+import type { ReaderScreenAction } from "../screen/readerScreen/readerScreenActions.ts";
+import { readerScreenActions } from "../screen/readerScreen/readerScreenActions.ts";
 import type { ScreenAction } from "../screen/screenActions.ts";
 import { screenActions } from "../screen/screenActions.ts";
 import type { SettingsAction } from "../screen/settingsActions.ts";
@@ -30,6 +32,7 @@ const featureActionCreators = [
   screenActions,
   settingsActions,
   lookupActions,
+  readerScreenActions,
   preferencesActions,
   storedPlacesActions,
   flashcardActions,
@@ -62,6 +65,7 @@ export type AppAction =
   | ScreenAction
   | SettingsAction
   | LookupAction
+  | ReaderScreenAction
   | PreferencesAction
   | StoredPlacesAction
   | FlashcardAction

@@ -5,6 +5,7 @@ import type { MainRoute } from "../route/route.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
 import { initialStoredPlaces } from "../storedPlaces/storedPlacesState.ts";
 import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
+import type { ItemSpan } from "./itemSpan.ts";
 import type { LookupState } from "./lookup/lookupState.ts";
 import { initialLookup } from "./lookup/lookupState.ts";
 import type { MediaPanels } from "./mediaScreen/mediaPanels.ts";
@@ -16,6 +17,8 @@ import type { WaveformState } from "./mediaScreen/waveformState.ts";
 import { initialWaveform } from "./mediaScreen/waveformState.ts";
 import type { PluginFormWizard } from "./pluginForm/pluginFormWizard.ts";
 import type { MediaImportWizard } from "./projectScreen/mediaImportWizard.ts";
+import type { ReaderScreenState } from "./readerScreen/readerScreenState.ts";
+import { initialReaderScreen } from "./readerScreen/readerScreenState.ts";
 
 /** The media screen's state, which the reader shares until it has state of its own. */
 export type MediaScreenState = {
@@ -42,6 +45,10 @@ export type MediaScreenState = {
   lookup: LookupState;
   /** The dialog of the plugin the media file was imported through, or null while it is closed. */
   sourceMedia: PluginFormWizard | null;
+  /** The reader's state, while the open file is a book. Shared with the media screen until the route can tell a book. */
+  reader: ReaderScreenState;
+  /** The cues the subtitles panel shows or nearly shows, by position; null while it is closed or unmeasured. */
+  cuePanelSpan: ItemSpan | null;
 };
 
 /** The offline screen's state: the cues of the subtitles file last picked, parsed in the browser when no server is connected. */
@@ -130,6 +137,8 @@ export function initialMainScreen(
         lookup: initialLookup,
         sourceMedia: null,
         flashcardForm: null,
+        reader: initialReaderScreen,
+        cuePanelSpan: null,
       };
   }
 }

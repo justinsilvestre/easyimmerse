@@ -92,6 +92,45 @@ describe("updateStoredPlaces", () => {
       expect(effects).toEqual([]);
     });
 
+    it("keeps the same state when the reported location has not moved", () => {
+      const app = stateAfter(...openBook(location));
+      const [places] = updateStoredPlaces(
+        app.storedPlaces,
+        actions.readingLocationReported("b1", { ...location }),
+        app,
+      );
+      expect(places).toBe(app.storedPlaces);
+    });
+
+    it("stores the jumped-to location for readerJumped", () => {
+      const moved = { ...location, paragraphIndex: 9 };
+      const [places] = apply(
+        actions.readerJumped("b1", moved),
+        ...openBook(location),
+      );
+      expect(places.reading.b1).toEqual(moved);
+    });
+
+    it("returns a saveReadingLocation effect for readerJumped into a new paragraph", () => {
+      const moved = { ...location, paragraphIndex: 9 };
+      const [, effects] = apply(
+        actions.readerJumped("b1", moved),
+        ...openBook(location),
+      );
+      expect(effects).toEqual([
+        { type: "saveReadingLocation", mediaFileId: "b1", location: moved },
+      ]);
+    });
+
+    it("stores the match's location for readerMatchChosen", () => {
+      const match = { chapterIndex: 2, paragraphIndex: 0, offset: 7 };
+      const [places] = apply(
+        actions.readerMatchChosen("b1", 3, match),
+        ...openBook(location),
+      );
+      expect(places.reading.b1).toEqual(match);
+    });
+
     it("returns a saveReadingLocation effect with the last location for closeMedia", () => {
       const [, effects] = apply(actions.closeMedia(), ...openBook(location));
       expect(effects).toEqual([

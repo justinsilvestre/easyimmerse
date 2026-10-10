@@ -5,6 +5,7 @@ import { stateAfter } from "../app/stateAfter.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import { initialMediaPanels } from "./mediaScreen/mediaPanels.ts";
 import {
+  selectCuePanelSpan,
   selectCurrentTime,
   selectDictionaryRemovalQuestion,
   selectIsSubtitleAppearanceOpen,
@@ -142,6 +143,22 @@ describe("screenSelectors", () => {
       expect(selectMediaPanels({ app: stateAfter() })).toEqual(
         initialMediaPanels,
       );
+    });
+  });
+
+  describe("selectCuePanelSpan", () => {
+    it("returns the cue panel's measured span", () => {
+      const state = {
+        app: stateAfter(
+          actions.openMediaFileRequested("p1", "m1"),
+          actions.cuePanelSpanMeasured({ first: 1, last: 4 }),
+        ),
+      };
+      expect(selectCuePanelSpan(state)).toEqual({ first: 1, last: 4 });
+    });
+
+    it("returns null while no media screen is open", () => {
+      expect(selectCuePanelSpan({ app: stateAfter() })).toBeNull();
     });
   });
 

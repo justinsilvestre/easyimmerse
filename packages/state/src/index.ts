@@ -92,6 +92,7 @@ export { selectConversionCacheReport } from "./screen/conversionCache/selectConv
 export { dictionaryFileExtensions } from "./screen/dictionaryFileExtensions.ts";
 export { selectDictionaryImport } from "./screen/dictionaryImport/selectDictionaryImport.ts";
 export { selectRemovingDictionaryIds } from "./screen/dictionaryRemoval/selectRemovingDictionaryIds.ts";
+export type { ItemSpan } from "./screen/itemSpan.ts";
 export {
   selectLookup,
   selectLookupCursor,
@@ -150,7 +151,15 @@ export {
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
 export type { MediaImportSource } from "./screen/projectScreen/mediaImportWizard.ts";
 export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
+export type { ReaderScreenAction } from "./screen/readerScreen/readerScreenActions.ts";
+export { selectReaderScreen } from "./screen/readerScreen/readerScreenSelectors.ts";
+export type {
+  ReaderPanel,
+  ReaderScreenState,
+} from "./screen/readerScreen/readerScreenState.ts";
+export { initialReaderScreen } from "./screen/readerScreen/readerScreenState.ts";
 export {
+  selectCuePanelSpan,
   selectCurrentTime,
   selectDictionaryRemovalQuestion,
   selectIsSubtitleAppearanceOpen,
@@ -175,6 +184,9 @@ export { abortedFailure } from "./server/serverRequest.ts";
 export { selectServerConfig } from "./server/serverSelectors.ts";
 export type { ServerConfig } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
-export { selectReadingLocation } from "./storedPlaces/storedPlacesSelectors.ts";
+export {
+  selectIsReadingLocationLoaded,
+  selectReadingLocation,
+} from "./storedPlaces/storedPlacesSelectors.ts";
 export type { Clock } from "./timers/clock.ts";
 export { systemClock } from "./timers/clock.ts";
