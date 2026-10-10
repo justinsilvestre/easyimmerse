@@ -33,15 +33,9 @@ Each bug report is to be logged in this format:
 
 ## Flashcards
 
-- Retry drops a pending Open 2026-10-06
-  - Press Open on a flashcard listed as not saved, then Retry before its screen has loaded, or the reverse. When the Retry fails, or succeeds after a retiming, the flashcard stays listed but no longer waits to open, so the screen appears without it and with no notice.
-  - A flashcard the user asked to open should still open once its screen shows, unless the Retry saved it and took it off the list.
 - Unsaved cards lack cue marks 2026-10-06
   - List a flashcard as not saved, including one never saved, and look at the subtitle list: only cues of saved flashcards are marked.
   - A flashcard listed as not saved should get the same mark on its cue, since the waveform already draws it.
-- Listed card also open in form 2026-10-06
-  - Reopen a saved flashcard from the waveform while its background save is still under way, and let that save fail. The same flashcard is then both listed with older edits and open in the form; Open on the listed entry then saves the form's newer edits in the background and loads the older ones. Undo of a Discard can create the same state.
-  - A flashcard should be either listed or open in the form, not both, and the form's newer copy should win.
 - Headword cards lose their underline 2026-10-07
   - Double-click an inflected word in the subtitles, such as "frisst", when the dictionary answers with its headword, "fressen". The flashcard takes the headword as its word.
   - The subtitle shows no dotted underline for that flashcard, because the headword does not appear in the cue. The word the flashcard was made from should be marked even when the flashcard's word is its dictionary form.

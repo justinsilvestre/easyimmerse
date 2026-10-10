@@ -1,7 +1,8 @@
+import { flashcardFieldsFromLookup } from "@easyimmerse/state";
 import type { DictionarySummary } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
+import { definitionMarkdown } from "./definitionMarkdown.ts";
 import { exampleResults } from "./exampleLookup.ts";
-import { flashcardFieldsFromLookup } from "./flashcardFieldsFromLookup.ts";
 
 function summary(id: string, targetLanguage: string | null): DictionarySummary {
   return {
@@ -23,21 +24,16 @@ const dictionaries = [summary("wiktionary-de-en", "en"), summary("dwds", "de")];
 
 const languages = { target: "de", translation: "en" };
 
-const fieldsOf = (entryIndex: number | null) =>
-  flashcardFieldsFromLookup(
-    exampleResults,
-    entryIndex,
-    languages,
-    dictionaries,
-  );
-
-describe("flashcardFieldsFromLookup", () => {
-  it("takes the word from the first result's term", () => {
-    expect(fieldsOf(null)?.word).toBe("fressen");
-  });
-
-  it("fills L1 with the definitions in the translation language of every result for the matched text", () => {
-    expect(fieldsOf(null)?.l1_definition).toBe(
+describe("flashcardFieldsFromLookup with the app's Markdown writer", () => {
+  it("fills L1 with each definition's Markdown, its examples included", () => {
+    expect(
+      flashcardFieldsFromLookup(
+        exampleResults,
+        null,
+        { languages, dictionaries },
+        definitionMarkdown,
+      )?.l1_definition,
+    ).toBe(
       [
         "to eat (of an animal); to devour",
         "(colloquial, of a person) to gobble, to wolf down",
@@ -46,40 +42,5 @@ describe("flashcardFieldsFromLookup", () => {
         "(colloquial, derogatory) grub, chow",
       ].join("\n"),
     );
-  });
-
-  it("fills L2 with the definitions in the target language", () => {
-    expect(fieldsOf(null)?.l2_definition).toBe(
-      "(von Tieren) Nahrung zu sich nehmen\n(umgangssprachlich, von Menschen) gierig und viel essen",
-    );
-  });
-
-  it("takes only the chosen entry's definitions", () => {
-    expect(fieldsOf(1)?.l1_definition).toBe(
-      "food or feed for animals\n(colloquial, derogatory) grub, chow",
-    );
-  });
-
-  it("takes the word from the chosen entry", () => {
-    expect(fieldsOf(1)?.word).toBe("Fressen");
-  });
-
-  it("counts a dictionary that does not state its language as defining in the translation language", () => {
-    expect(
-      flashcardFieldsFromLookup(exampleResults, 1, languages, [])
-        ?.l2_definition,
-    ).toBe("");
-  });
-
-  it("leaves out of L1 the definitions in a third language", () => {
-    expect(
-      flashcardFieldsFromLookup(exampleResults, 1, languages, [
-        summary("wiktionary-de-en", "fr"),
-      ])?.l1_definition,
-    ).toBe("");
-  });
-
-  it("fills nothing when nothing was found", () => {
-    expect(flashcardFieldsFromLookup([], null, languages, [])).toBeNull();
   });
 });

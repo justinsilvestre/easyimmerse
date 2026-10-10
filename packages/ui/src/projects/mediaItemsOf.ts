@@ -1,6 +1,5 @@
-import { isDocumentFileName } from "@easyimmerse/state";
+import { isAudioFileName, isDocumentFileName } from "@easyimmerse/state";
 import type { Flashcard, MediaFile } from "@easyimmerse/types";
-import { isAudioFileName } from "../player/isAudioFileName.ts";
 import type { MediaItem } from "./MediaList.tsx";
 
 /** Describes each media file as the project screen lists it, with the number of flashcards made from it. */

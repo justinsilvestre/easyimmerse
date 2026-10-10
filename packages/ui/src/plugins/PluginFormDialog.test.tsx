@@ -1,6 +1,7 @@
 import type { FormInput, PluginForm } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { TestStoreProvider } from "../testSupport/TestStoreProvider.tsx";
 import { exampleImportForm, exampleNoticeForm } from "./examplePluginForms.ts";
 import { PluginFormDialog } from "./PluginFormDialog.tsx";
 
@@ -27,7 +28,9 @@ function renderDialog(
       }}
     />
   );
-  const { rerender } = render(dialog(form));
+  const { rerender } = render(dialog(form), {
+    wrapper: TestStoreProvider,
+  });
   return {
     submissions,
     closings: () => closings,

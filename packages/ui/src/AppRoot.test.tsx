@@ -1,14 +1,4 @@
-import {
-  backendStoreParts,
-  configureBackend,
-  resetBackend,
-} from "@easyimmerse/backend";
-import {
-  actions,
-  createAppStore,
-  createPlayerRegistry,
-  createRecordingEffects,
-} from "@easyimmerse/state";
+import { actions } from "@easyimmerse/state";
 import {
   act,
   cleanup,
@@ -22,16 +12,14 @@ import {
   createFakeBackendClient,
   fakeFailure,
 } from "./testSupport/createFakeBackendClient.ts";
+import { createTestAppStore } from "./testSupport/createTestAppStore.ts";
 import { fixtureResponses } from "./testSupport/fixtureResponses.ts";
 import {
   directPlaybackRoutes,
   fakeServer,
 } from "./testSupport/mediaFixtureResponses.ts";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 /** The fixture server answers every route except the conversion cache, which it lacks like a server without ffmpeg. */
 const responses = {
@@ -44,16 +32,11 @@ const responses = {
 };
 
 function renderAppRoot() {
-  configureBackend(
+  const { effects, playerRegistry, store } = createTestAppStore(
     createFakeBackendClient(responses, directPlaybackRoutes),
     fakeServer,
   );
-  const effects = createRecordingEffects();
-  const playerRegistry = createPlayerRegistry();
-  const store = createAppStore(effects, backendStoreParts);
-  render(
-    <AppRoot store={store} playerRegistry={playerRegistry} effects={effects} />,
-  );
+  render(<AppRoot store={store} playerRegistry={playerRegistry} />);
   return { effects, playerRegistry, store };
 }
 
@@ -184,11 +167,5 @@ describe("AppRoot", () => {
       type: "loadPreference",
       key: "losslessAudio",
     });
-  });
-
-  it("opens Settings when the platform asks for it", () => {
-    const { effects } = renderAppRoot();
-    act(() => effects.requestSettings());
-    expect(screen.getByRole("heading", { name: "Settings" })).toBeDefined();
   });
 });

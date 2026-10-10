@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { RemoveDictionaryDialog } from "./RemoveDictionaryDialog.tsx";
 
 const meta = {
   title: "Dictionaries/RemoveDictionaryDialog",
   component: RemoveDictionaryDialog,
+  decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
     title: "German-English Wiktionary",

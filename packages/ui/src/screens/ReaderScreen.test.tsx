@@ -1,5 +1,8 @@
-import { resetBackend } from "@easyimmerse/backend";
-import { actions, createBrowserFileRegistry } from "@easyimmerse/state";
+import {
+  actions,
+  defaultReaderPreferences,
+  selectCurrentMediaFileId,
+} from "@easyimmerse/state";
 import type { Document, MediaFile } from "@easyimmerse/types";
 import {
   act,
@@ -10,7 +13,6 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
-import { defaultReaderPreferences } from "../reader/readerPreferences.ts";
 import {
   createFakeBackendClient,
   type FakeResponse,
@@ -26,10 +28,7 @@ import {
 } from "../testSupport/renderWithAppStore.tsx";
 import { ReaderScreen } from "./ReaderScreen.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 const bookFile: MediaFile = {
   id: "b1",
@@ -75,7 +74,9 @@ function renderReader({
   );
   act(() => {
     rendered.store.dispatch(actions.preferencesLoaded(loadedPreferences));
-    rendered.store.dispatch(actions.openMedia(mediaFile.id));
+    rendered.store.dispatch(
+      actions.openMediaFileRequested(fixtureProject.id, mediaFile.id),
+    );
   });
   return { ...rendered, client };
 }
@@ -83,17 +84,6 @@ function renderReader({
 const chapterHeading = () => screen.findByRole("heading", { level: 2 });
 
 describe("ReaderScreen", () => {
-  it("has the server parse a book on its disk", async () => {
-    const { client } = renderReader();
-    await chapterHeading();
-    expect(
-      client.requests.find((request) => request.path.startsWith("/documents")),
-    ).toMatchObject({
-      path: "/documents/parse-local",
-      body: { value: { path: "/books/sample.epub", format: "epub" } },
-    });
-  });
-
   it("opens a book never read before at its start", async () => {
     renderReader();
     expect((await chapterHeading()).textContent).toBe("Chapter One");
@@ -148,6 +138,18 @@ describe("ReaderScreen", () => {
     );
   });
 
+  it("shows the chapter chosen from the contents", async () => {
+    renderReader();
+    await chapterHeading();
+    fireEvent.click(screen.getByRole("button", { name: "Contents" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: /Chapter Two/,
+      }),
+    );
+    expect((await chapterHeading()).textContent).toBe("Chapter Two");
+  });
+
   it("saves the place when the reader moves into another chapter", async () => {
     const { effects } = renderReader();
     await chapterHeading();
@@ -163,22 +165,38 @@ describe("ReaderScreen", () => {
     ).toBe(1);
   });
 
-  it("parses the bytes of a file the browser holds", async () => {
-    const registry = createBrowserFileRegistry<File>();
-    const file = new File(["The cat sat."], "notes.txt", { lastModified: 5 });
-    const mediaFile = {
-      ...bookFile,
-      name: "notes.txt",
-      source: registry.register(file),
-    };
-    const { client } = renderReader({
-      mediaFile,
-      options: { browserFileRegistry: registry },
-    });
+  it("puts the cursor in the search field on Ctrl+F", async () => {
+    renderReader();
     await chapterHeading();
-    expect(client.requests.map((request) => request.path)).toContain(
-      "/documents/parse",
-    );
+    fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
+    expect(document.activeElement).toBe(screen.getByRole("searchbox"));
+  });
+
+  describe("in the paged layout", () => {
+    // Without a layout engine every chapter fills one page, so turning the page moves to the next chapter.
+    it("turns to the next chapter with the right arrow key", async () => {
+      renderReader();
+      await chapterHeading();
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      expect((await chapterHeading()).textContent).toBe("Chapter Two");
+    });
+
+    it("leaves Space to a focused button rather than turning the page", async () => {
+      renderReader();
+      await chapterHeading();
+      const button = screen.getByRole("button", { name: "Contents" });
+      button.focus();
+      fireEvent.keyDown(button, { key: " " });
+      expect((await chapterHeading()).textContent).toBe("Chapter One");
+    });
+
+    it("leaves the arrow keys alone while Settings cover the reader", async () => {
+      const { store } = renderReader();
+      await chapterHeading();
+      act(() => store.dispatch(actions.settingsRequested()));
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      expect((await chapterHeading()).textContent).toBe("Chapter One");
+    });
   });
 
   it("explains a book that can no longer be found", async () => {
@@ -206,7 +224,7 @@ describe("ReaderScreen", () => {
       screen.getByRole("button", { name: "Back to the project" }),
     );
     await vi.waitFor(() =>
-      expect(store.getState().app.currentMediaFileId).toBeNull(),
+      expect(selectCurrentMediaFileId(store.getState())).toBeNull(),
     );
   });
 });

@@ -1,4 +1,4 @@
-//! The request and response bodies of the media tracks, playback, and conversion cache routes.
+//! The request and response bodies of the media tracks, playback method, and conversion cache routes.
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -7,7 +7,7 @@ use utoipa::ToSchema;
 use crate::container::ContainerInfo;
 use crate::conversion_settings::AudioTarget;
 use crate::playback_environment::PlaybackEnvironment;
-use crate::playback_plan::PlaybackPlan;
+use crate::playback_method::PlaybackMethod;
 use crate::track_selection::TrackSelection;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
@@ -22,7 +22,7 @@ pub struct TracksResponse {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
-pub struct PlaybackRequest {
+pub struct PlaybackMethodRequest {
     pub environment: PlaybackEnvironment,
     /// The tracks to play; the default selection when absent.
     pub selection: Option<TrackSelection>,
@@ -32,9 +32,9 @@ pub struct PlaybackRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
-pub struct PlaybackResponse {
-    pub plan: PlaybackPlan,
-    /// The path of the HLS playlist, present only when the plan converts.
+pub struct PlaybackMethodResponse {
+    pub method: PlaybackMethod,
+    /// The path of the HLS playlist, present only when the method converts.
     pub playlist_path: Option<String>,
 }
 

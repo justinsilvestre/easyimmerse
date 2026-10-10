@@ -1,0 +1,61 @@
+import type { BackendRequest } from "@easyimmerse/backend";
+import { actions, selectWaveformRequests } from "@easyimmerse/state";
+import { describe, expect, it, vi } from "vitest";
+import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
+import { createTestAppStore } from "../../testSupport/createTestAppStore.ts";
+import { fixtureResponses } from "../../testSupport/fixtureResponses.ts";
+import { selectWaveformWindows } from "./selectWaveformWindows.ts";
+
+/** A store whose server answers each window with the given peaks, once the player strip of m1, 600 s long and at 10 s, has requested the windows from 0 s to 90 s. */
+function storeWithWindows(peaks: readonly number[]) {
+  const client = createFakeBackendClient(fixtureResponses, [
+    [
+      "GET",
+      /\/waveform$/,
+      (request: BackendRequest) => ({
+        start_ms: Number(request.query?.start_ms),
+        peaks,
+      }),
+    ],
+  ]);
+  const { store } = createTestAppStore(client);
+  store.dispatch(actions.openMediaFileRequested("p1", "m1"));
+  store.dispatch(actions.playerDurationChanged(600));
+  store.dispatch(actions.playerTimeChanged(10));
+  store.dispatch(actions.waveformToggled());
+  return store;
+}
+
+const windowStarts = (store: ReturnType<typeof storeWithWindows>) => [
+  ...selectWaveformWindows(store.getState(), "player").keys(),
+];
+
+/** Tells whether every window the player view requested has settled. */
+const haveSettled = (store: ReturnType<typeof storeWithWindows>) => {
+  const requests = Object.values(
+    selectWaveformRequests(store.getState(), "player"),
+  );
+  return (
+    requests.length > 0 &&
+    requests.every((request) => request?.status !== "loading")
+  );
+};
+
+describe("selectWaveformWindows", () => {
+  it("selects the peaks of the windows that have loaded", async () => {
+    const store = storeWithWindows([10, 20]);
+    await vi.waitUntil(() => haveSettled(store));
+    expect(windowStarts(store)).toEqual([0, 30_000, 60_000]);
+  });
+
+  it("leaves out windows the server found no peaks for", async () => {
+    const store = storeWithWindows([]);
+    await vi.waitUntil(() => haveSettled(store));
+    expect(windowStarts(store)).toEqual([]);
+  });
+
+  it("selects nothing while no media screen is open", () => {
+    const { store } = createTestAppStore();
+    expect(selectWaveformWindows(store.getState(), "player").size).toBe(0);
+  });
+});

@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  findFlashcardField,
-  labelOfFieldGroup,
-  toggleField,
-} from "./flashcardFields.ts";
+import { findFlashcardField, labelOfFieldGroup } from "./flashcardFields.ts";
 
 const languages = { target: "de", translation: "en" };
 
@@ -28,15 +24,5 @@ describe("labelOfFieldGroup", () => {
 
   it("names the media group", () => {
     expect(labelOfFieldGroup("media", languages)).toBe("Media and tags");
-  });
-});
-
-describe("toggleField", () => {
-  it("adds a field that is not selected", () => {
-    expect(toggleField(["word"], "tags")).toEqual(["word", "tags"]);
-  });
-
-  it("removes a field that is selected", () => {
-    expect(toggleField(["word", "tags"], "tags")).toEqual(["word"]);
   });
 });

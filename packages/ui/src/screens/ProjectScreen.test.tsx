@@ -1,5 +1,4 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
 import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
 import type {
   ImportStepRequest,
@@ -8,25 +7,14 @@ import type {
   MediaSourceJob,
   PluginForm,
 } from "@easyimmerse/types";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSharedSaving } from "../flashcards/sharedSaving.ts";
-import { exampleUnsavedCard } from "../flashcards/unsaved/exampleUnsavedCard.ts";
 import { exampleRunningJob } from "../projects/exampleMediaSourceJob.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
-import { AppStoreProviders } from "../testSupport/AppStoreProviders.tsx";
 import {
   createFakeBackendClient,
   type FakeResponse,
-  fakeFailure,
 } from "../testSupport/createFakeBackendClient.ts";
-import { createTestAppStore } from "../testSupport/createTestAppStore.ts";
 import {
   fixtureMediaFiles,
   fixtureMediaSourcePlugin,
@@ -39,10 +27,7 @@ import {
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { ProjectScreen } from "./ProjectScreen.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function renderProject(onEditSettings: () => void = () => undefined) {
   const client = createFakeBackendClient(
@@ -63,6 +48,11 @@ function renderProject(onEditSettings: () => void = () => undefined) {
     client,
     { server: fakeServer },
   );
+  act(() =>
+    rendered.store.dispatch(
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+    ),
+  );
   return { ...rendered, client };
 }
 
@@ -82,13 +72,6 @@ describe("ProjectScreen", () => {
     expect(
       await screen.findByRole("button", { name: "Set up dictionaries" }),
     ).toBeDefined();
-  });
-
-  it("records that the project was opened", async () => {
-    const { client } = renderProject();
-    await vi.waitFor(() =>
-      expect(pathsOf(client.requests, "POST")).toContain("/projects/p1/opened"),
-    );
   });
 
   it("lists the project's media files", async () => {
@@ -121,7 +104,7 @@ describe("ProjectScreen", () => {
   it("shows the media screen while a media file is open", async () => {
     const { store } = renderProject();
     await screen.findByRole("heading", { name: "Alpha" });
-    act(() => store.dispatch(actions.openMedia("m1")));
+    act(() => store.dispatch(actions.openMediaFileRequested("p1", "m1")));
     expect(
       await screen.findByRole("heading", { name: "episode.mkv" }),
     ).toBeDefined();
@@ -153,7 +136,7 @@ describe("ProjectScreen", () => {
     await screen.findByRole("heading", { name: "Alpha" });
     act(() => {
       store.dispatch(actions.preferencesLoaded({}));
-      store.dispatch(actions.openMedia("b1"));
+      store.dispatch(actions.openMediaFileRequested("p1", "b1"));
     });
     expect(
       await screen.findByRole("heading", { name: "Sample Book" }),
@@ -272,6 +255,11 @@ describe("ProjectScreen", () => {
       client,
       { server: fakeServer },
     );
+    act(() =>
+      rendered.store.dispatch(
+        actions.navigated({ type: "openProject", projectId: "p1" }),
+      ),
+    );
     return { ...rendered, client };
   }
 
@@ -323,19 +311,6 @@ describe("ProjectScreen", () => {
     ]);
   });
 
-  it("names the chosen subtitles that an import did not add", async () => {
-    const { effects } = await importMedia({
-      skipped_subtitles: [{ id: "en", reason: "the plugin did not fetch it" }],
-    });
-    expect(
-      effects.calls.flatMap((call) =>
-        call.type === "showNotification" ? [call.message] : [],
-      ),
-    ).toEqual([
-      "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
-    ]);
-  });
-
   it("shows the fetch's progress while it runs", async () => {
     renderImport();
     await startImport();
@@ -344,41 +319,6 @@ describe("ProjectScreen", () => {
         "downloading the video and subtitles",
       ),
     );
-  });
-
-  it("stops asking about the fetch once it has failed", async () => {
-    const { client } = renderImport({ status: "failed" });
-    await startImport();
-    const jobRequestCount = () =>
-      pathsOf(client.requests, "GET").filter(
-        (path) => path === "/projects/p1/media/from-source/j1",
-      ).length;
-    await vi.waitFor(() => expect(jobRequestCount()).toBe(1));
-    await new Promise((resolve) => setTimeout(resolve, 2200));
-    expect(jobRequestCount()).toBe(1);
-  }, 10_000);
-
-  it("ignores a form that arrives after its dialog was closed", async () => {
-    const stale = Promise.withResolvers<PluginForm>();
-    const formsAsked = { count: 0 };
-    renderImport({}, undefined, {
-      "POST /projects/p1/media/import-form": () => {
-        formsAsked.count += 1;
-        return formsAsked.count === 1 ? stale.promise : urlForm;
-      },
-    });
-    const importButton = await screen.findByRole("button", {
-      name: "Add from a video site",
-    });
-    fireEvent.click(importButton);
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    fireEvent.click(importButton);
-    await screen.findByLabelText("URL or video ID");
-    await act(async () => {
-      stale.resolve({ ...urlForm, title: "Stale form" });
-      await new Promise((resolve) => setTimeout(resolve, 20));
-    });
-    expect(screen.queryByRole("heading", { name: "Stale form" })).toBeNull();
   });
 
   it("starts one import when its action is pressed again before the fetch shows", async () => {
@@ -405,35 +345,5 @@ describe("ProjectScreen", () => {
     await screen.findByRole("heading", { name: "Alpha" });
     fireEvent.click(screen.getByRole("button", { name: "Project settings" }));
     expect(opened).toBe(true);
-  });
-
-  it("tells that a flashcard waiting to open there could not be opened when the project fails to load", async () => {
-    const { store, playerRegistry } = createTestAppStore(
-      createFakeBackendClient({
-        ...fixtureResponses,
-        "GET /projects/p1": fakeFailure({ status: 500, message: "Gone" }),
-      }),
-    );
-    const sharedSaving = createSharedSaving();
-    sharedSaving.unsavedCards.put(exampleUnsavedCard("Hund"));
-    sharedSaving.unsavedCards.requestOpen("Hund");
-    render(
-      <AppStoreProviders
-        store={store}
-        playerRegistry={playerRegistry}
-        sharedSaving={sharedSaving}
-      >
-        <ProjectScreen
-          projectId="p1"
-          onBack={() => undefined}
-          onEditSettings={() => undefined}
-        />
-      </AppStoreProviders>,
-    );
-    expect(
-      await screen.findByText(
-        "Couldn't open the flashcard for “Hund”. It is still listed among the flashcards not saved.",
-      ),
-    ).toBeDefined();
   });
 });

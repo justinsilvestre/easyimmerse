@@ -14,6 +14,8 @@ type DefinitionContextValue = {
   resolveMediaUrl: ResolveMediaUrl;
   /** Looks up a word of the definition that was double-clicked. */
   onWordLookup: (word: string) => void;
+  /** Makes a flashcard of a word of the definition held on a touch screen; absent where words have no such action. */
+  onWordHold?: (word: string) => void;
   /** Looks up a term that a link in the definition points to. */
   onLookup: (term: string) => void;
   /** Whether text renders without clickable words, as inside a link or a reading above a word. */

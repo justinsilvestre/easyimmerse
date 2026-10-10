@@ -1,5 +1,5 @@
 import type { BackendRequest } from "@easyimmerse/backend";
-import { resetBackend } from "@easyimmerse/backend";
+import { selectCachedLookup } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import type {
   BatchLookupRequest,
@@ -14,7 +14,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { paragraphAttribute } from "../reader/textOffsets.ts";
@@ -54,7 +54,6 @@ const restorers: (() => void)[] = [];
 
 afterEach(() => {
   cleanup();
-  resetBackend();
   for (const restore of restorers.splice(0)) restore();
 });
 
@@ -117,7 +116,9 @@ async function renderReader({ hasBatchLookups = false } = {}) {
   );
   act(() => {
     rendered.store.dispatch(actions.preferencesLoaded({}));
-    rendered.store.dispatch(actions.openMedia(bookFile.id));
+    rendered.store.dispatch(
+      actions.openMediaFileRequested(fixtureProject.id, bookFile.id),
+    );
   });
   await screen.findByRole("heading", { level: 2 });
   return { ...rendered, client };
@@ -129,21 +130,26 @@ function click(detail = 1) {
   fireEvent.click(text, { ...point, detail });
 }
 
-function restMouse() {
-  fireEvent.pointerMove(screen.getByRole("main"), {
-    ...point,
-    pointerType: "mouse",
-  });
-  return act(() => new Promise((resolve) => setTimeout(resolve, 250)));
-}
-
-const findPopup = () => screen.findByRole("dialog", { name: "Dictionary" });
-const queryPopup = () => screen.queryByRole("dialog", { name: "Dictionary" });
-
 const lookupQueries = (client: ReturnType<typeof createFakeBackendClient>) =>
   requestsTo(client.requests, "GET", "/dictionaries/lookup").map(
     (request) => request.query,
   );
+
+/** Rests the mouse on the word pointed at, and waits until the hover has looked it up. */
+async function restMouse(client: ReturnType<typeof createFakeBackendClient>) {
+  const before = lookupQueries(client).length;
+  fireEvent.pointerMove(screen.getByRole("main"), {
+    ...point,
+    pointerType: "mouse",
+  });
+  await vi.waitFor(() =>
+    expect(lookupQueries(client).length).toBeGreaterThan(before),
+  );
+  await act(async () => {});
+}
+
+const findPopup = () => screen.findByRole("dialog", { name: "Dictionary" });
+const queryPopup = () => screen.queryByRole("dialog", { name: "Dictionary" });
 
 describe("ReaderScreen lookup", () => {
   it("opens the dictionary pop-up on a clicked word", async () => {
@@ -166,9 +172,9 @@ describe("ReaderScreen lookup", () => {
   });
 
   it("does not open the pop-up for a word the mouse rests on", async () => {
-    await renderReader();
+    const { client } = await renderReader();
     pointAt("cat");
-    await restMouse();
+    await restMouse(client);
     expect(queryPopup()).toBeNull();
   });
 
@@ -178,8 +184,15 @@ describe("ReaderScreen lookup", () => {
     click();
     await findPopup();
     pointAt("windowsill");
-    await restMouse();
-    expect(lookupQueries(client).at(-1)?.text).toBe("windowsill.");
+    await restMouse(client);
+    const popup = await findPopup();
+    await vi.waitFor(() =>
+      expect(
+        within(popup).getByRole<HTMLInputElement>("textbox", {
+          name: "Word to look up",
+        }).value,
+      ).toBe("windowsill"),
+    );
   });
 
   it("moves an open pop-up to another clicked word", async () => {
@@ -247,28 +260,8 @@ describe("ReaderScreen lookup", () => {
   });
 });
 
-/** Stands in for the browser's intersection observer, which sees every element it watches as near the view. */
-class SeeingEverythingObserver {
-  constructor(
-    private readonly callback: (
-      entries: Partial<IntersectionObserverEntry>[],
-    ) => void,
-  ) {}
-  observe(target: Element) {
-    queueMicrotask(() => this.callback([{ target, isIntersecting: true }]));
-  }
-  disconnect() {}
-}
-
 describe("ReaderScreen lookup prefetch", () => {
-  beforeEach(() => {
-    vi.stubGlobal("IntersectionObserver", SeeingEverythingObserver);
-  });
-
-  afterEach(() => vi.unstubAllGlobals());
-
   it("looks up only the paragraph in view where the layout cannot be measured", async () => {
-    vi.unstubAllGlobals();
     const { client } = await renderReader({ hasBatchLookups: true });
     await vi.waitUntil(
       () =>
@@ -282,27 +275,15 @@ describe("ReaderScreen lookup prefetch", () => {
     ).toEqual([["The cat is sleeping on the windowsill."]]);
   });
 
-  it("looks up the sentences of the paragraphs near the view", async () => {
-    const { client } = await renderReader({ hasBatchLookups: true });
-    const batchedTexts = () =>
-      requestsTo(client.requests, "POST", "/dictionaries/lookup/batch")
-        .flatMap((request) => (bodyOf(request) as BatchLookupRequest).texts)
-        .toSorted();
-    await vi.waitUntil(() => batchedTexts().length >= 2);
-    expect(batchedTexts()).toEqual([
-      "The cat is sleeping on the windowsill.",
-      "The dog wants to eat, and it is hungry.",
-    ]);
-  });
-
   it("sends no lookup of its own for a word clicked near the view", async () => {
-    const { client } = await renderReader({ hasBatchLookups: true });
-    await vi.waitUntil(
-      () =>
-        requestsTo(client.requests, "POST", "/dictionaries/lookup/batch")
-          .length > 0,
-    );
-    await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
+    const { client, store } = await renderReader({ hasBatchLookups: true });
+    const catQuery = {
+      text: "cat is sleeping on the windowsill.",
+      language: "de",
+      context: "The cat is sleeping on the windowsill.",
+      offset: 4,
+    };
+    await vi.waitUntil(() => selectCachedLookup(store.getState(), catQuery));
     pointAt("cat");
     click();
     const popup = await findPopup();

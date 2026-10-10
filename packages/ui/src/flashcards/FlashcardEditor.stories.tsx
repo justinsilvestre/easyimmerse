@@ -1,10 +1,9 @@
+import { type EditorAction, reduceEditor } from "@easyimmerse/state";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ComponentProps } from "react";
 import { useReducer } from "react";
 import { fn } from "storybook/test";
 import { generateExamplePeaks } from "../media/examplePeaks.ts";
-import { withAppStore } from "../storybook/withAppStore.tsx";
-import { type EditorAction, reduceEditor } from "./editFlashcard.ts";
 import {
   exampleFlashcard,
   exampleLanguages,
@@ -30,7 +29,6 @@ const meta = {
   component: FlashcardEditor,
   render: (args) => <EditorWithState {...args} />,
   decorators: [
-    withAppStore,
     (Story) => (
       <div className="h-[36rem] w-full max-w-96">
         <Story />
@@ -49,6 +47,7 @@ const meta = {
     onSave: fn(),
     onDelete: fn(),
     onClose: fn(),
+    onPlayClip: fn(),
   },
 } satisfies Meta<typeof FlashcardEditor>;
 

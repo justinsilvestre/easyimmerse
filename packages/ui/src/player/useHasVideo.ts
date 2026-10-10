@@ -1,6 +1,6 @@
 import { skipToken, useGetMediaTracksQuery } from "@easyimmerse/backend";
+import { isAudioFileName } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
-import { isAudioFileName } from "./isAudioFileName.ts";
 
 /**
  * Whether the media file shows pictures: probed by the server for a file on its disk,

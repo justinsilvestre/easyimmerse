@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import { TrackChoiceDialog } from "./TrackChoiceDialog.tsx";
 
 const meta = {
   title: "Components/TrackChoiceDialog",
   component: TrackChoiceDialog,
+  decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
     videoTracks: [],
@@ -24,6 +26,8 @@ const meta = {
         isDefault: false,
       },
     ],
+    selection: null,
+    onSelect: fn(),
     onChoose: fn(),
     onCancel: fn(),
   },

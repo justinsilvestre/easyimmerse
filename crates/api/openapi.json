@@ -2953,13 +2953,13 @@
         ]
       }
     },
-    "/projects/{id}/media/{media_id}/playback": {
+    "/projects/{id}/media/{media_id}/playback-method": {
       "post": {
         "tags": [
           "media"
         ],
-        "summary": "Plans playback for the client's environment. A converting plan registers the conversion\nand names its playlist. Without a conversion service, anything that would need conversion\ncomes back unsupported with the reason `conversion_unavailable`.",
-        "operationId": "planMediaPlayback",
+        "summary": "Chooses how the client's environment plays the file. A converting method registers the conversion and names its playlist.\nWithout a conversion service, anything that would need conversion comes back unsupported with the reason `conversion_unavailable`.",
+        "operationId": "chooseMediaPlaybackMethod",
         "parameters": [
           {
             "name": "id",
@@ -2984,7 +2984,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PlaybackRequest"
+                "$ref": "#/components/schemas/PlaybackMethodRequest"
               }
             }
           },
@@ -2992,11 +2992,11 @@
         },
         "responses": {
           "200": {
-            "description": "The plan and, when converting, the playlist path",
+            "description": "The playback method and, when converting, the playlist path",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlaybackResponse"
+                  "$ref": "#/components/schemas/PlaybackMethodResponse"
                 }
               }
             }
@@ -6582,7 +6582,7 @@
           }
         }
       },
-      "PlaybackPlan": {
+      "PlaybackMethod": {
         "oneOf": [
           {
             "type": "object",
@@ -6642,7 +6642,7 @@
           }
         ]
       },
-      "PlaybackRequest": {
+      "PlaybackMethodRequest": {
         "type": "object",
         "required": [
           "environment"
@@ -6675,21 +6675,21 @@
           }
         }
       },
-      "PlaybackResponse": {
+      "PlaybackMethodResponse": {
         "type": "object",
         "required": [
-          "plan"
+          "method"
         ],
         "properties": {
-          "plan": {
-            "$ref": "#/components/schemas/PlaybackPlan"
+          "method": {
+            "$ref": "#/components/schemas/PlaybackMethod"
           },
           "playlist_path": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The path of the HLS playlist, present only when the plan converts."
+            "description": "The path of the HLS playlist, present only when the method converts."
           }
         }
       },

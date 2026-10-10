@@ -109,7 +109,10 @@ const withFixtureFile: Decorator = (Story) => (
 const meta = {
   title: "Player/MediaPlayer",
   component: MediaPlayer,
-  decorators: [withDispatchedActions(actions.openMedia("m1")), withAppStore],
+  decorators: [
+    withDispatchedActions(actions.openMediaFileRequested("p1", "m1")),
+    withAppStore,
+  ],
   parameters: { layout: "padded" },
   args: { projectId: "p1" },
 } satisfies Meta<typeof MediaPlayer>;
@@ -124,7 +127,10 @@ export const Loading: Story = {
 };
 
 export const DirectFromBrowserFile: Story = {
-  decorators: [withDispatchedActions(actions.openMedia("m2")), withFixtureFile],
+  decorators: [
+    withDispatchedActions(actions.openMediaFileRequested("p1", "m2")),
+    withFixtureFile,
+  ],
   parameters: {
     appStore: { client: browserFileClient, browserFileRegistry: browserFiles },
   },

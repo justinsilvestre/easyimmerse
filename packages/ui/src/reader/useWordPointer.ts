@@ -27,13 +27,8 @@ export type ReaderWordGestures = {
   onWordDoubleClick: (word: ReaderWord) => void;
   /** The word the mouse pointer is over, reported at once each time it changes, and as null when it leaves the words. */
   onWordPointed?: (word: ReaderWord | null) => void;
-  /**
-   * A mouse pointer that has stayed on the word for the brief moment that tells pointing at it from sweeping across the text.
-   * It may answer with a promise, such as that of the word's lookup, for `onWordHoverAnswered` to wait for.
-   */
-  onWordHover: (word: ReaderWord) => unknown;
-  /** The answer of `onWordHover` settling while the mouse is still on the word; at once when there is none to wait for. */
-  onWordHoverAnswered?: (word: ReaderWord) => void;
+  /** A mouse pointer that has stayed on the word for the brief moment that tells pointing at it from sweeping across the text. */
+  onWordHover: (word: ReaderWord) => void;
   /** A touch held on the word. The click that ends it is not reported. */
   onWordHold: (word: ReaderWord) => void;
 };
@@ -65,9 +60,6 @@ export function useWordPointer(
   const hovered = useRef<ReaderWord | null>(null);
   const findWord = (point: ViewportPoint) =>
     wordAtPoint(point, chapterIndex, language);
-  const reportAnswer = (word: ReaderWord) => {
-    if (hovered.current === word) latest.current.onWordHoverAnswered?.(word);
-  };
   const reportClick = (
     event: MouseEvent<HTMLElement>,
     word: ReaderWord,
@@ -113,15 +105,7 @@ export function useWordPointer(
       hovered.current = word;
       latest.current.onWordPointed?.(word);
       if (!word) return hoverTimer.cancel();
-      hoverTimer.restart(hoverMs, () => {
-        const answer = latest.current.onWordHover(word);
-        if (answer instanceof Promise)
-          answer.then(
-            () => reportAnswer(word),
-            () => reportAnswer(word),
-          );
-        else reportAnswer(word);
-      });
+      hoverTimer.restart(hoverMs, () => latest.current.onWordHover(word));
     },
     onPointerLeave: () => {
       if (hovered.current !== null) latest.current.onWordPointed?.(null);

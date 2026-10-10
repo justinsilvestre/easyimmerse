@@ -62,7 +62,10 @@ async fn converting_server() -> (TestServer, TempDir, String) {
 
 async fn playlist_path(server: &TestServer, media_id: &str) -> String {
     let response = server
-        .post_json(&media_route(media_id, "playback"), &chromium_request())
+        .post_json(
+            &media_route(media_id, "playback-method"),
+            &chromium_request(),
+        )
         .await;
     assert_eq!(response.status, 200, "{}", response.text());
     response.json()["playlist_path"]
@@ -146,7 +149,10 @@ async fn embedded_subtitles_need_local_path_permission() {
 async fn playback_needs_local_path_permission() {
     let (server, media_id) = server_without_local_paths().await;
     let response = server
-        .post_json(&media_route(&media_id, "playback"), &chromium_request())
+        .post_json(
+            &media_route(&media_id, "playback-method"),
+            &chromium_request(),
+        )
         .await;
     assert_eq!(response.status, 403);
 }
@@ -191,10 +197,13 @@ async fn playback_without_a_conversion_service_is_unsupported() {
     let server = spawn_test_server(true).await;
     let media_id = add_path_media(&server, MKV).await;
     let response = server
-        .post_json(&media_route(&media_id, "playback"), &chromium_request())
+        .post_json(
+            &media_route(&media_id, "playback-method"),
+            &chromium_request(),
+        )
         .await;
     assert_eq!(
-        response.json()["plan"],
+        response.json()["method"],
         json!({ "kind": "unsupported", "reason": "conversion_unavailable" })
     );
 }
@@ -206,11 +215,14 @@ async fn playback_of_a_matroska_file_converts_by_copying() {
     }
     let (server, _cache_dir, media_id) = converting_server().await;
     let response = server
-        .post_json(&media_route(&media_id, "playback"), &chromium_request())
+        .post_json(
+            &media_route(&media_id, "playback-method"),
+            &chromium_request(),
+        )
         .await;
-    let plan = &response.json()["plan"];
+    let method = &response.json()["method"];
     assert_eq!(
-        (plan["kind"].clone(), plan["video"]["action"].clone()),
+        (method["kind"].clone(), method["video"]["action"].clone()),
         (json!("convert"), json!("copy"))
     );
 }

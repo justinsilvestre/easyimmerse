@@ -571,7 +571,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/projects/{id}/media/{media_id}/playback": {
+    "/projects/{id}/media/{media_id}/playback-method": {
         parameters: {
             query?: never;
             header?: never;
@@ -581,11 +581,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Plans playback for the client's environment. A converting plan registers the conversion
-         *     and names its playlist. Without a conversion service, anything that would need conversion
-         *     comes back unsupported with the reason `conversion_unavailable`.
+         * Chooses how the client's environment plays the file. A converting method registers the conversion and names its playlist.
+         *     Without a conversion service, anything that would need conversion comes back unsupported with the reason `conversion_unavailable`.
          */
-        post: operations["planMediaPlayback"];
+        post: operations["chooseMediaPlaybackMethod"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1472,7 +1471,7 @@ export interface components {
             /** @description The RFC 6381 codec strings that `MediaSource.isTypeSupported` accepts in fragmented MP4. */
             mse_codec_strings: string[];
         };
-        PlaybackPlan: {
+        PlaybackMethod: {
             /** @enum {string} */
             kind: "direct";
         } | (components["schemas"]["ConversionPlan"] & {
@@ -1483,14 +1482,14 @@ export interface components {
             kind: "unsupported";
             reason: components["schemas"]["UnsupportedReason"];
         };
-        PlaybackRequest: {
+        PlaybackMethodRequest: {
             environment: components["schemas"]["PlaybackEnvironment"];
             preferred_audio_target?: components["schemas"]["AudioTarget"] | null;
             selection?: components["schemas"]["TrackSelection"] | null;
         };
-        PlaybackResponse: {
-            plan: components["schemas"]["PlaybackPlan"];
-            /** @description The path of the HLS playlist, present only when the plan converts. */
+        PlaybackMethodResponse: {
+            method: components["schemas"]["PlaybackMethod"];
+            /** @description The path of the HLS playlist, present only when the method converts. */
             playlist_path?: string | null;
         };
         /** @description A form a plugin asks the app to show. The app adds a way to close it. */
@@ -4044,7 +4043,7 @@ export interface operations {
             };
         };
     };
-    planMediaPlayback: {
+    chooseMediaPlaybackMethod: {
         parameters: {
             query?: never;
             header?: never;
@@ -4058,17 +4057,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PlaybackRequest"];
+                "application/json": components["schemas"]["PlaybackMethodRequest"];
             };
         };
         responses: {
-            /** @description The plan and, when converting, the playlist path */
+            /** @description The playback method and, when converting, the playlist path */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlaybackResponse"];
+                    "application/json": components["schemas"]["PlaybackMethodResponse"];
                 };
             };
             /** @description The file could not be probed */

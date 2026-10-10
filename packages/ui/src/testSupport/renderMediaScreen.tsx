@@ -11,14 +11,15 @@ import type {
   NewFlashcard,
 } from "@easyimmerse/types";
 import { act, fireEvent, screen } from "@testing-library/react";
+import { Profiler } from "react";
 import { vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
-import { NavigationActionsContext } from "../navigationContext.ts";
 import { MediaScreen } from "../screens/MediaScreen.tsx";
 import {
   createFakeBackendClient,
   type FakeResponse,
+  type FakeRoute,
 } from "./createFakeBackendClient.ts";
 import {
   fixtureProject,
@@ -76,36 +77,35 @@ type MediaScreenSetup = {
   /** The cues of the media file's subtitles, in place of the fixture track's. */
   cues?: Cue[];
   dictionaries?: DictionarySummary[];
-  /** The texts whose lookups never answer. Every other lookup finds the example results. */
-  unansweredLookups?: readonly string[];
-  /** The texts whose lookups answer only after the given number of milliseconds. */
-  slowLookups?: Readonly<Record<string, number>>;
-  /** The texts whose lookups fail after the given number of milliseconds. */
-  failingLookups?: Readonly<Record<string, number>>;
+  /** The texts whose lookups wait until the test answers or fails them. Every other lookup finds the example results at once. */
+  heldLookups?: readonly string[];
   /**
-   * How many milliseconds batch lookups take to find the example results at every position of every text,
-   * or null, the default, for a server that offers no batch lookups.
+   * How the server answers batch lookups, which find the example results at every position of every text:
+   * not at all, as a server without them, the default; at once; or once the test releases them.
    */
-  batchLookupMs?: number | null;
+  batchLookups?: "unavailable" | "immediate" | "held";
   /** Canned responses that add to or replace the screen's usual ones. */
   responses?: Record<string, FakeResponse>;
+  /** The routes that answer the file's tracks and playback method; by default, those of a file that plays directly. */
+  playbackRoutes?: readonly FakeRoute[];
+  /** Called after each commit of the screen, through React's `Profiler`. */
+  onCommit?: () => void;
 };
 
 /**
  * Renders the media screen on the sample video and subtitles of the fixture project, with the given flashcards and dictionaries.
- * Opening the dictionaries settings is counted in `navigation`.
  */
 export function renderMediaScreen({
   flashcards = [],
   cues = fixtureTrack.cues,
   dictionaries = germanDictionaries,
-  unansweredLookups = [],
-  slowLookups = {},
-  failingLookups = {},
-  batchLookupMs = null,
+  heldLookups = [],
+  batchLookups = "unavailable",
   responses = {},
+  playbackRoutes = directPlaybackRoutes,
+  onCommit,
 }: MediaScreenSetup = {}) {
-  const client = withLookupTiming(
+  const client = withHeldLookups(
     createFakeBackendClient(
       {
         ...fixtureResponses,
@@ -119,77 +119,84 @@ export function renderMediaScreen({
         "POST /projects/p1/flashcards": savedFlashcard,
         ...responses,
       },
-      directPlaybackRoutes,
+      playbackRoutes,
     ),
-    { unansweredLookups, slowLookups, failingLookups, batchLookupMs },
+    heldLookups,
+    batchLookups,
   );
-  const navigation = { dictionariesOpenCount: 0 };
   const rendered = renderWithAppStore(
-    <NavigationActionsContext
-      value={{
-        openSettings: () => undefined,
-        openDictionaries: () => {
-          navigation.dictionariesOpenCount += 1;
-        },
-        openMediaFile: () => undefined,
-      }}
-    >
+    <Profiler id="MediaScreen" onRender={() => onCommit?.()}>
       <MediaScreen project={fixtureProject} mediaFileId="m1" />
-    </NavigationActionsContext>,
+    </Profiler>,
     client,
     { server: fakeServer },
   );
   act(() => {
     rendered.store.dispatch(actions.preferencesLoaded({}));
-    rendered.store.dispatch(actions.openMedia("m1"));
+    rendered.store.dispatch(
+      actions.openMediaFileRequested(fixtureProject.id, "m1"),
+    );
   });
-  return { ...rendered, client, navigation };
+  /** Moves the store's clock on, firing the timers that fall due, such as the pop-up's close and a flashcard's wait for its lookup. */
+  const advanceClock = (ms: number) =>
+    act(() => rendered.effects.clock.advanceBy(ms));
+  return { ...rendered, client, advanceClock };
 }
 
-/** Wraps a client so that lookups of the given texts never answer, answer late, or fail late. */
-function withLookupTiming(
+type Release = () => void;
+
+/**
+ * Wraps a client so that lookups of the given texts, and batch lookups when held, wait until the test lets them go:
+ * `answerLookup` and `failLookup` for a text, and `releaseBatches` for every batch so far.
+ */
+function withHeldLookups(
   client: ReturnType<typeof createFakeBackendClient>,
-  {
-    unansweredLookups,
-    slowLookups,
-    failingLookups,
-    batchLookupMs,
-  }: Required<
-    Pick<
-      MediaScreenSetup,
-      "unansweredLookups" | "slowLookups" | "failingLookups" | "batchLookupMs"
-    >
-  >,
-): ReturnType<typeof createFakeBackendClient> {
+  heldLookups: readonly string[],
+  batchLookups: NonNullable<MediaScreenSetup["batchLookups"]>,
+) {
+  const held = new Map<string, Release[]>();
+  const failed = new Set<string>();
+  const heldBatches: Release[] = [];
+  const hold = (into: Release[]) =>
+    new Promise<void>((resolve) => into.push(resolve));
+  const releaseText = (text: string) => {
+    for (const release of held.get(text)?.splice(0) ?? []) release();
+  };
+  const send = async <T,>(request: BackendRequest) => {
+    if (
+      request.path === "/dictionaries/lookup/batch" &&
+      batchLookups !== "unavailable"
+    ) {
+      client.requests.push(request);
+      if (batchLookups === "held") await hold(heldBatches);
+      return { data: answerBatch(bodyOf(request) as BatchLookupRequest) as T };
+    }
+    const text =
+      request.path === "/dictionaries/lookup" ? request.query?.text : null;
+    if (text == null || !heldLookups.includes(text))
+      return client.send<T>(request);
+    client.requests.push(request);
+    if (!held.has(text)) held.set(text, []);
+    await hold(held.get(text) as Release[]);
+    return failed.has(text)
+      ? { error: { status: 500, message: "The dictionaries are unavailable" } }
+      : client.send<T>(request);
+  };
   return {
     requests: client.requests,
-    send: <T,>(request: BackendRequest) => {
-      if (
-        request.path === "/dictionaries/lookup/batch" &&
-        batchLookupMs !== null
-      ) {
-        client.requests.push(request);
-        const answer = answerBatch(bodyOf(request) as BatchLookupRequest);
-        return after(batchLookupMs).then(() => ({ data: answer as T }));
-      }
-      const text =
-        request.path === "/dictionaries/lookup" ? request.query?.text : null;
-      if (text == null) return client.send<T>(request);
-      if (unansweredLookups.includes(text)) {
-        client.requests.push(request);
-        return new Promise(() => undefined);
-      }
-      const failMs = failingLookups[text];
-      if (failMs !== undefined) {
-        client.requests.push(request);
-        return after(failMs).then(() => ({
-          error: { status: 500, message: "The dictionaries are unavailable" },
-        }));
-      }
-      const delayMs = slowLookups[text];
-      if (delayMs === undefined) return client.send<T>(request);
-      return after(delayMs).then(() => client.send<T>(request));
+    send,
+    /** Lets the held lookups of the text answer, with the example results. */
+    answerLookup: (text: string) => act(async () => releaseText(text)),
+    /** Lets the held lookups of the text fail. */
+    failLookup: (text: string) => {
+      failed.add(text);
+      return act(async () => releaseText(text));
     },
+    /** Lets every batch lookup held so far answer. */
+    releaseBatches: () =>
+      act(async () => {
+        for (const release of heldBatches.splice(0)) release();
+      }),
   };
 }
 
@@ -209,9 +216,6 @@ function answerBatch({ texts }: BatchLookupRequest): BatchLookupResponse {
     stylesheets: [],
   };
 }
-
-const after = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export async function findSubtitles() {
   await screen.findByRole("button", { name: "night" });
@@ -237,6 +241,19 @@ export function createdDraftOf(
   request: BackendRequest | undefined,
 ): FlashcardDraft | undefined {
   return (bodyOf(request) as NewFlashcard | undefined)?.draft;
+}
+
+/** Waits until the client has sent a request, for when its answer cannot be seen on the page. */
+export async function findRequestTo(
+  client: { requests: BackendRequest[] },
+  method: string,
+  path: string,
+) {
+  return vi.waitFor(() => {
+    const [request] = requestsTo(client.requests, method, path);
+    if (!request) throw new Error(`No request to ${method} ${path} yet.`);
+    return request;
+  });
 }
 
 /** Starts a flashcard for a word with the E key while the mouse is on it, and waits for the editor, which opens once the word's lookup answers. */

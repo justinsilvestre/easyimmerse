@@ -1,15 +1,13 @@
-import type { Document } from "@easyimmerse/types";
 import {
-  type ReactNode,
-  useDeferredValue,
-  useEffect,
-  useEffectEvent,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
+  actions,
+  type ReaderPreferences,
+  type ReaderScreenAction,
+  type ReaderScreenState,
+} from "@easyimmerse/state";
+import type { Document } from "@easyimmerse/types";
+import { type ReactNode, useDeferredValue, useMemo, useRef } from "react";
 import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
+import type { AnchorRect } from "../lookup/placeAtAnchor.ts";
 import type { PopupSize } from "../lookup/popupSize.ts";
 import { AppearancePanel } from "./AppearancePanel.tsx";
 import { ChapterEnd } from "./ChapterEnd.tsx";
@@ -22,65 +20,57 @@ import {
 } from "./chapterSections.ts";
 import { chapterLabelOf, chapterTitleOf } from "./chapterTitles.ts";
 import { LookupAnchor } from "./LookupAnchor.tsx";
-import {
-  PagedChapter,
-  type PageInfo,
-  type PageTurner,
-} from "./PagedChapter.tsx";
+import { PagedChapter } from "./PagedChapter.tsx";
 import { ReaderFooter } from "./ReaderFooter.tsx";
 import { ReaderToolbar } from "./ReaderToolbar.tsx";
+import { type ReaderControls, useReaderControls } from "./readerControls.ts";
 import {
   fontFamilies,
   fontSizesRem,
   lineHeights,
   lineLengthsEm,
-  type ReaderPreferences,
 } from "./readerPreferences.ts";
 import {
-  initialReaderState,
-  type ReaderPanel,
-  updateReader,
-} from "./readerState.ts";
-import {
   chapterStartProgresses,
-  clampToBook,
   locationAtProgress,
   progressAt,
   type ReaderLocation,
-  startOfBook,
 } from "./readingProgress.ts";
 import { ScrolledChapter } from "./ScrolledChapter.tsx";
 import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
-import { sentencesNearView } from "./sentencesNearView.ts";
-import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
-import { useLookedUpHighlight } from "./useLookedUpHighlight.ts";
-import { useParagraphsNearView } from "./useParagraphsNearView.ts";
-import { useReaderKeys } from "./useReaderKeys.ts";
 import {
-  type ReaderWord,
-  type ReaderWordGestures,
-  useWordPointer,
-} from "./useWordPointer.ts";
+  type HighlightedWord,
+  useLookedUpHighlight,
+} from "./useLookedUpHighlight.ts";
+import { useParagraphsNearView } from "./useParagraphsNearView.ts";
+import { type ReaderWordGestures, useWordPointer } from "./useWordPointer.ts";
 
 export type ReaderCallbacks = ReaderWordGestures & {
   onBack: () => void;
   /** Opens the dictionary pop-up with a field to type a word into. */
   onLookup: () => void;
-  /** The L key, which does what `onLookup` does unless this says otherwise, as looking up the word under the mouse. */
-  onLookupKey?: () => void;
-  /** Escape, or a click or tap beside the dictionary pop-up and off the words, which closes it. */
+  /** A click or tap beside the dictionary pop-up and off the words, which closes it. */
   onDismissLookup: () => void;
   /** The pointer entering or leaving the dictionary pop-up. */
   onPointerInsideLookupChange?: (isInside: boolean) => void;
-  onLocationChange: (location: ReaderLocation) => void;
-  /** Receives the sentences near the view, as `sentencesNearView` picks them, each time the view moves. */
-  onNearbySentencesChange?: (sentences: readonly string[]) => void;
   onPreferencesChange: (preferences: ReaderPreferences) => void;
 };
 
+/** The actions the reader view dispatches. */
+export type ReaderViewAction =
+  | ReaderScreenAction
+  | ReturnType<typeof actions.readingLocationReported>;
+
 type ReaderViewProps = {
+  /** The book's media file, under which the reader's place is stored. */
+  mediaFileId: string;
+  /** The book's text, with its hard line breaks already unwrapped. */
   document: Document;
+  /** The reader's place, which the text shows and keeps through changes of layout. */
+  location: ReaderLocation;
+  reader: ReaderScreenState;
+  dispatch: (action: ReaderViewAction) => void;
   /** The book's title, or the file's name when the book has none. */
   title: string;
   /** The name of the project the book belongs to, which the way back is named after. */
@@ -88,28 +78,25 @@ type ReaderViewProps = {
   /** The language of the text, which sets its word boundaries and hyphenation. */
   language: string;
   preferences: ReaderPreferences;
-  /** Where to open the book. A place past the end of the book opens at the end. */
-  initialLocation?: ReaderLocation;
-  /** The panel open at first, for showing a panel in a story. */
-  initialPanel?: ReaderPanel;
-  initialSearchQuery?: string;
   callbacks: ReaderCallbacks;
-  /** The dictionary pop-up, placed beside `lookupWord`. */
+  /** The dictionary pop-up, placed beside `lookupRect`. */
   lookup?: ReactNode;
   /** The pop-up's size, which sets how it is placed. */
   lookupSize?: PopupSize;
-  /** The word of the text the pop-up opened on, which it stands beside. */
-  lookupWord?: ReaderWord;
+  /** Where the word of the text the pop-up opened on lies in the window, which the pop-up stands beside. */
+  lookupRect?: AnchorRect | null;
   /**
    * The word of the text the pop-up shows, which is highlighted as in the subtitles once its lookup has answered:
    * a word written with spaces whole, and in a script without spaces the characters the lookup matched,
    * or the character it looked up from when `matchedLength` is null because nothing matched.
    */
-  highlightedWord?: { word: ReaderWord; matchedLength?: number | null };
+  highlightedWord?: { word: HighlightedWord; matchedLength?: number | null };
   /** Notices to show under the toolbar, such as the unsaved-work banner. */
   headerContent?: ReactNode;
-  /** A panel laid over the text at the side, such as the flashcard editor. The reader's keys leave it alone. */
+  /** A panel laid over the text at the side, such as the flashcard editor. */
   sidePanel?: ReactNode;
+  /** The parts of the view that the reader's keys work, from the screen that binds the keys. */
+  controls?: ReaderControls;
 };
 
 const searchLimit = 500;
@@ -125,32 +112,19 @@ const sectionCharacterLimit = 250_000;
  * Words are looked up and turned into flashcards with the same gestures as in the subtitles.
  */
 export function ReaderView(props: ReaderViewProps) {
+  const { document, location, reader, dispatch, mediaFileId } = props;
   const { preferences, callbacks } = props;
-  const document = useMemo(
-    () => unwrapHardLineBreaks(props.document),
-    [props.document],
-  );
-  const [state, dispatch] = useReducer(
-    updateReader,
-    props.initialLocation ?? startOfBook,
-    (location) => ({
-      ...initialReaderState(clampToBook(document, location)),
-      panel: props.initialPanel ?? null,
-      search: { query: props.initialSearchQuery ?? "", activeMatchIndex: null },
-    }),
-  );
-  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
-  const turner = useRef<PageTurner>(null);
-  const searchInput = useRef<HTMLInputElement>(null);
+  const ownControls = useReaderControls();
+  const { pageTurner: turner, searchInput } = props.controls ?? ownControls;
   const isWide = useMediaQuery(wideScreenQuery);
   const isPaged = preferences.layout === "pages";
 
-  const query = useDeferredValue(state.search.query);
+  const query = useDeferredValue(reader.search.query);
   const matches = useMemo(
     () => searchDocument(document, query, searchLimit),
     [document, query],
   );
-  const chapterIndex = state.location.chapterIndex;
+  const chapterIndex = location.chapterIndex;
   const chapter = document.chapters[chapterIndex] ?? {
     title: null,
     paragraphs: [],
@@ -159,57 +133,35 @@ export function ReaderView(props: ReaderViewProps) {
     () => sectionsOf(chapter.paragraphs, sectionCharacterLimit),
     [chapter],
   );
-  const sectionIndex = sectionIndexAt(sections, state.location.paragraphIndex);
+  const sectionIndex = sectionIndexAt(sections, location.paragraphIndex);
   const marks = useMemo(
     () =>
       matches.flatMap((match, index) =>
         match.chapterIndex === chapterIndex
-          ? [{ ...match, isActive: index === state.search.activeMatchIndex }]
+          ? [{ ...match, isActive: index === reader.search.activeMatchIndex }]
           : [],
       ),
-    [matches, chapterIndex, state.search.activeMatchIndex],
+    [matches, chapterIndex, reader.search.activeMatchIndex],
   );
   const chapterStarts = useMemo(
     () => chapterStartProgresses(document),
     [document],
   );
-  const progress = progressAt(document, state.location);
+  const progress = progressAt(document, location);
 
-  const reportLocation = useEffectEvent(callbacks.onLocationChange);
-  useEffect(() => {
-    reportLocation(state.location);
-  }, [state.location]);
   const textContainer = useRef<HTMLElement>(null);
   const shownText = useMemo(
     () => [chapter, sectionIndex, layoutKeyOf(preferences)],
     [chapter, sectionIndex, preferences],
   );
-  const measuredNear = useParagraphsNearView(textContainer, isPaged, shownText);
-  const reportNearby = useEffectEvent((sentences: readonly string[]) =>
-    callbacks.onNearbySentencesChange?.(sentences),
+  useParagraphsNearView(textContainer, isPaged, shownText, (span) =>
+    dispatch(actions.readerNearSpanMeasured(span)),
   );
-  const { paragraphIndex, offset } = state.location;
-  const nearFirst = measuredNear?.first ?? paragraphIndex;
-  const nearLast = measuredNear?.last ?? paragraphIndex;
-  useEffect(() => {
-    const paragraphs = document.chapters[chapterIndex]?.paragraphs ?? [];
-    const near = { first: nearFirst, last: nearLast };
-    const place = { paragraphIndex, offset };
-    reportNearby(sentencesNearView(paragraphs, near, place, props.language));
-  }, [
-    document,
-    chapterIndex,
-    nearFirst,
-    nearLast,
-    paragraphIndex,
-    offset,
-    props.language,
-  ]);
   const hasLookup = props.lookup != null;
   useLookedUpHighlight(props.highlightedWord);
 
-  const jumpTo = (location: ReaderLocation) =>
-    dispatch({ type: "jumped", location });
+  const jumpTo = (to: ReaderLocation) =>
+    dispatch(actions.readerJumped(mediaFileId, to));
   const goToChapter = (index: number, edge: "start" | "end") => {
     const paragraphs = document.chapters[index]?.paragraphs;
     if (!paragraphs) return;
@@ -229,32 +181,19 @@ export function ReaderView(props: ReaderViewProps) {
     if (isPaged) turner.current?.[direction]();
     else goToChapter(chapterIndex + (direction === "next" ? 1 : -1), "start");
   };
-  useReaderKeys({
-    isPaged,
-    isPanelOpen: state.panel !== null || props.sidePanel != null,
-    onTurn: turn,
-    onOpenSearch: () => {
-      dispatch({ type: "panelOpened", panel: "search" });
-      searchInput.current?.focus();
-      searchInput.current?.select();
-    },
-    onLookup: callbacks.onLookupKey ?? callbacks.onLookup,
-    onEscape: callbacks.onDismissLookup,
-  });
 
   const wordPointer = useWordPointer(chapterIndex, props.language, {
     onWordClick: callbacks.onWordClick,
     onWordDoubleClick: callbacks.onWordDoubleClick,
     onWordPointed: callbacks.onWordPointed,
     onWordHover: callbacks.onWordHover,
-    onWordHoverAnswered: callbacks.onWordHoverAnswered,
     onWordHold: callbacks.onWordHold,
     onBlankClick: (event) => {
       if (hasLookup) return callbacks.onDismissLookup();
       const share = event.clientX / window.innerWidth;
       if (isPaged && share < 0.25) turn("previous");
       else if (isPaged && share > 0.75) turn("next");
-      else dispatch({ type: "chromeToggled" });
+      else dispatch(actions.readerChromeToggled());
     },
   });
 
@@ -270,9 +209,10 @@ export function ReaderView(props: ReaderViewProps) {
     />
   );
   const chapterTitle = chapterTitleOf(document, chapterIndex);
-  const showChrome = () => dispatch({ type: "chromeShown" });
+  const showChrome = () => dispatch(actions.readerChromeShown());
+  const closePanel = () => dispatch(actions.readerPanelClosed());
   const closePanelOnPhone = () => {
-    if (!isWide) dispatch({ type: "panelClosed" });
+    if (!isWide) closePanel();
   };
 
   return (
@@ -289,13 +229,13 @@ export function ReaderView(props: ReaderViewProps) {
         title={props.title}
         projectName={props.projectName}
         chapterTitle={chapterTitle}
-        isVisible={state.isChromeVisible}
-        panel={state.panel}
+        isVisible={reader.isChromeVisible}
+        panel={reader.panel}
         hasContents={document.chapters.length > 1}
         headerContent={props.headerContent}
         onBack={callbacks.onBack}
         onLookup={callbacks.onLookup}
-        onTogglePanel={(panel) => dispatch({ type: "panelToggled", panel })}
+        onTogglePanel={(panel) => dispatch(actions.readerPanelToggled(panel))}
         onReveal={showChrome}
       />
       <main
@@ -314,15 +254,19 @@ export function ReaderView(props: ReaderViewProps) {
             <PagedChapter
               ref={turner}
               chapterIndex={chapterIndex}
-              initialLocation={state.location}
-              jump={state.jump}
+              location={location}
+              jumpCount={reader.jumpCount}
               layoutKey={layoutKey}
               maxColumnWidthEm={lineLengthsEm[preferences.lineLength]}
-              onLocationChange={(location) => {
-                dispatch({ type: "locationReported", location });
-                dispatch({ type: "chromeHidden" });
+              onLocationChange={(reported) => {
+                dispatch(
+                  actions.readingLocationReported(mediaFileId, reported),
+                );
+                dispatch(actions.readerChromeHidden());
               }}
-              onPageChange={setPageInfo}
+              onPageMeasured={(info) =>
+                dispatch(actions.readerPageMeasured(info))
+              }
               onPastEnd={() => goToSection(sectionIndex + 1, "start")}
               onBeforeStart={() => goToSection(sectionIndex - 1, "end")}
             >
@@ -332,17 +276,19 @@ export function ReaderView(props: ReaderViewProps) {
         ) : (
           <ScrolledChapter
             chapterIndex={chapterIndex}
-            initialLocation={state.location}
-            jump={state.jump}
+            location={location}
+            jumpCount={reader.jumpCount}
             layoutKey={layoutKey}
             maxColumnWidthEm={lineLengthsEm[preferences.lineLength]}
-            onLocationChange={(location) =>
-              dispatch({ type: "locationReported", location })
+            onLocationChange={(reported) =>
+              dispatch(actions.readingLocationReported(mediaFileId, reported))
             }
             onScrollDirection={(direction) =>
-              dispatch({
-                type: direction === "down" ? "chromeHidden" : "chromeShown",
-              })
+              dispatch(
+                direction === "down"
+                  ? actions.readerChromeHidden()
+                  : actions.readerChromeShown(),
+              )
             }
             footer={
               <ChapterEnd
@@ -361,10 +307,10 @@ export function ReaderView(props: ReaderViewProps) {
       </main>
       <ReaderFooter
         progress={progress}
-        pageInfo={isPaged && sections.length === 1 ? pageInfo : null}
+        pageInfo={isPaged && sections.length === 1 ? reader.pageInfo : null}
         chapterTitle={chapterTitle}
         chapterStarts={chapterStarts}
-        isVisible={state.isChromeVisible}
+        isVisible={reader.isChromeVisible}
         chapterTitleAt={(at) =>
           chapterTitleOf(
             document,
@@ -376,7 +322,7 @@ export function ReaderView(props: ReaderViewProps) {
       />
       {props.lookup && (
         <LookupAnchor
-          wordRect={props.lookupWord?.rect ?? null}
+          wordRect={props.lookupRect ?? null}
           isWide={isWide}
           size={props.lookupSize}
           onPointerInsideChange={callbacks.onPointerInsideLookupChange}
@@ -389,7 +335,7 @@ export function ReaderView(props: ReaderViewProps) {
           {props.sidePanel}
         </aside>
       )}
-      {state.panel === "contents" && (
+      {reader.panel === "contents" && (
         <ContentsPanel
           document={document}
           title={props.title}
@@ -397,44 +343,42 @@ export function ReaderView(props: ReaderViewProps) {
           progress={progress}
           onChooseChapter={(index) => {
             goToChapter(index, "start");
-            dispatch({ type: "panelClosed" });
+            closePanel();
           }}
-          onClose={() => dispatch({ type: "panelClosed" })}
+          onClose={closePanel}
         />
       )}
-      {state.panel === "search" && (
+      {reader.panel === "search" && (
         <SearchPanel
           document={document}
-          query={state.search.query}
+          query={reader.search.query}
           matches={matches}
           isTruncated={matches.length >= searchLimit}
-          activeMatchIndex={state.search.activeMatchIndex}
+          activeMatchIndex={reader.search.activeMatchIndex}
           inputRef={searchInput}
           onQueryChange={(value) =>
-            dispatch({ type: "searchChanged", query: value })
+            dispatch(actions.readerSearchChanged(value))
           }
           onChooseMatch={(index) => {
             const match = matches[index];
             if (!match) return;
-            dispatch({
-              type: "matchChosen",
-              index,
-              location: {
+            dispatch(
+              actions.readerMatchChosen(mediaFileId, index, {
                 chapterIndex: match.chapterIndex,
                 paragraphIndex: match.paragraphIndex,
                 offset: match.start,
-              },
-            });
+              }),
+            );
             closePanelOnPhone();
           }}
-          onClose={() => dispatch({ type: "panelClosed" })}
+          onClose={closePanel}
         />
       )}
-      {state.panel === "appearance" && (
+      {reader.panel === "appearance" && (
         <AppearancePanel
           preferences={preferences}
           onChange={callbacks.onPreferencesChange}
-          onClose={() => dispatch({ type: "panelClosed" })}
+          onClose={closePanel}
         />
       )}
     </div>

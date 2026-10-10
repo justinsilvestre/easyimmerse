@@ -1,11 +1,16 @@
-import type { ServerConfig } from "@easyimmerse/backend";
 import {
   buildAuthorizationHeader,
   buildConversionFileUrl,
   buildMediaStreamUrl,
 } from "@easyimmerse/backend";
+import type { ServerConfig } from "@easyimmerse/state";
+import {
+  isConversionNoticeDue,
+  selectedFrameRate,
+  tracksOfKind,
+} from "@easyimmerse/state";
 import type {
-  PlaybackResponse,
+  PlaybackMethodResponse,
   TrackSelection,
   TracksResponse,
 } from "@easyimmerse/types";
@@ -16,11 +21,6 @@ import {
   describeRequestError,
   describeUnsupportedReason,
 } from "./playbackFailure.ts";
-import {
-  copiesChosenTracksOnly,
-  selectedFrameRate,
-  tracksOfKind,
-} from "./playbackPlanRules.ts";
 
 export type PlayerStatusInputs = {
   server: ServerConfig | null;
@@ -28,7 +28,7 @@ export type PlayerStatusInputs = {
   mediaFileId: string;
   tracks: TracksResponse | undefined;
   tracksError: RequestError;
-  playback: PlaybackResponse | undefined;
+  playback: PlaybackMethodResponse | undefined;
   playbackError: RequestError;
   selection: TrackSelection | null;
   /** True when the conversion notice is not due: the preference dismissed it, or the user accepted it for this file. */
@@ -47,23 +47,23 @@ export function derivePlayerStatus(inputs: PlayerStatusInputs): PlayerStatus {
     return failedPlayback(describeRequestError(inputs.playbackError));
   if (inputs.tracks === undefined || inputs.playback === undefined)
     return loadingPlayback;
-  return planState(inputs, inputs.server, inputs.tracks, inputs.playback);
+  return methodState(inputs, inputs.server, inputs.tracks, inputs.playback);
 }
 
-function planState(
+function methodState(
   inputs: PlayerStatusInputs,
   server: ServerConfig,
   tracks: TracksResponse,
-  playback: PlaybackResponse,
+  playback: PlaybackMethodResponse,
 ): PlayerStatus {
-  const { plan } = playback;
-  if (plan.kind === "unsupported")
-    return failedPlayback(describeUnsupportedReason(plan.reason));
+  const { method } = playback;
+  if (method.kind === "unsupported")
+    return failedPlayback(describeUnsupportedReason(method.reason));
   const media = {
     frameRate: selectedFrameRate(tracks.container, inputs.selection),
     hasVideo: tracksOfKind(tracks.container, "video").length > 0,
   };
-  if (plan.kind === "direct")
+  if (method.kind === "direct")
     return {
       status: "ready",
       ...media,
@@ -74,9 +74,9 @@ function planState(
     };
   if (playback.playlist_path === null)
     return failedPlayback(
-      "The server planned a conversion but named no playlist.",
+      "The server chose a conversion but named no playlist.",
     );
-  if (!copiesChosenTracksOnly(plan) && !inputs.noticeSettled)
+  if (isConversionNoticeDue(playback, inputs.noticeSettled))
     return { status: "notice" };
   return {
     status: "ready",

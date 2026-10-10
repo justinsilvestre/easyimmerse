@@ -1,9 +1,9 @@
+import type { ReaderPanel } from "@easyimmerse/state";
 import clsx from "clsx";
 import { ALargeSmall, ArrowLeft, BookA, List, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "../components/Button.tsx";
 import { IconButton } from "../components/IconButton.tsx";
-import type { ReaderPanel } from "./readerState.ts";
 
 /**
  * The bar over the top of the page, which fades away while the reader reads.

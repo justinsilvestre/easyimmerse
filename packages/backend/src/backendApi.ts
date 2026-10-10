@@ -1,3 +1,9 @@
+import {
+  type LicenseNoticeGroup,
+  loadLicenseNoticeGroups,
+} from "@easyimmerse/licenses";
+import type { PickedDictionaryFile } from "@easyimmerse/state";
+import { cacheKey, serverCachePath } from "@easyimmerse/state";
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
@@ -6,14 +12,12 @@ import type {
   ConversionCacheBudget,
   ConversionCacheStatus,
   Document,
-  DocumentFormat,
   EmbeddedSubtitleTracksResponse,
   Flashcard,
   FlashcardDraft,
   ImportFormRequest,
   ImportJobStarted,
   ImportJobStatus,
-  ImportLocalDictionaryRequest,
   ImportStepRequest,
   ImportStepResponse,
   ListDictionariesResponse,
@@ -26,12 +30,10 @@ import type {
   MediaFile,
   MediaSourceJob,
   NewFlashcard,
-  ParseLocalDocumentRequest,
   ParseTimedTextRequest,
-  PlaybackRequest,
-  PlaybackResponse,
+  PlaybackMethodRequest,
+  PlaybackMethodResponse,
   PluginForm,
-  PreviewLocalDictionaryTableRequest,
   Project,
   ProjectSettings,
   SourceStepRequest,
@@ -39,7 +41,6 @@ import type {
   SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
-  TableLayout,
   TablePreview,
   TimedTextTrack,
   TrackSelection,
@@ -49,27 +50,28 @@ import type {
 import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import type { BackendError } from "./backendClient.ts";
+import {
+  type CapturedFrame,
+  captureFrame,
+  type FrameArgs,
+  probePictures,
+} from "./browserFrames.ts";
+import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
+import {
+  isQuerySubscribed,
+  type SubscriptionActions,
+} from "./isQuerySubscribed.ts";
+import { loadLicenseNotices } from "./loadLicenseNotices.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
 import { lookupResponseAt } from "./lookupResponseAt.ts";
-
-type ParseDocumentArgs = {
-  bytes: Uint8Array | Blob;
-  format: DocumentFormat | null;
-  contentType: string;
-};
-
-type ImportDictionaryArgs = {
-  fileName: string;
-  bytes: Uint8Array | Blob;
-  /** Replaces the detected layout of a CSV, TSV or Tabfile table. */
-  tableLayout?: TableLayout | null;
-};
-
-type PreviewDictionaryTableArgs = {
-  fileName: string;
-  bytes: Uint8Array | Blob;
-};
+import { type BookArgs, parseBook } from "./parseBook.ts";
+import {
+  type ImportPickedDictionaryArgs,
+  importPickedDictionary,
+  previewPickedDictionaryTable,
+} from "./pickedDictionary.ts";
+import type { PickedFile } from "./readPickedFile.ts";
 
 type ProjectArgs = { projectId: string; settings: ProjectSettings };
 
@@ -87,7 +89,9 @@ type SourceStepArgs = MediaFileArgs & { request: SourceStepRequest };
 
 type MediaFileArgs = { projectId: string; mediaFileId: string };
 
-type PlanPlaybackArgs = MediaFileArgs & { request: PlaybackRequest };
+type ChoosePlaybackMethodArgs = MediaFileArgs & {
+  request: PlaybackMethodRequest;
+};
 
 type SaveTrackSelectionArgs = MediaFileArgs & { selection: TrackSelection };
 
@@ -100,17 +104,6 @@ type AddSubtitleTrackArgs = MediaFileArgs & {
 type SubtitleTrackArgs = MediaFileArgs & { trackId: string };
 
 type SubtitleSelectionArgs = MediaFileArgs & { selection: SubtitleSelection };
-
-/** Encodes a table layout as the `columns` and `hasHeader` query parameters of an import. */
-const tableLayoutQuery = (
-  layout: TableLayout | null,
-): Record<string, string> =>
-  layout === null
-    ? {}
-    : {
-        columns: layout.columns.join(","),
-        hasHeader: String(layout.hasHeader),
-      };
 
 /** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
 const lookupContextQuery = (
@@ -151,6 +144,29 @@ function listMediaFileAtOnce(
   );
 }
 
+/**
+ * Puts the flashcard a save returned into the project's cached list, in place of an older version of it.
+ * The list shows the saved flashcard at once, while the refetch that the invalidation starts may come later.
+ */
+async function listSavedFlashcard(
+  dispatch: (action: unknown) => unknown,
+  projectId: string,
+  queryFulfilled: Promise<{ data: Flashcard }>,
+) {
+  const result = await queryFulfilled.catch(() => null);
+  if (result === null) return;
+  const saved = result.data;
+  dispatch(
+    backendApi.util.updateQueryData("listFlashcards", projectId, (list) => {
+      const index = list.flashcards.findIndex(({ id }) => id === saved.id);
+      const listed = list.flashcards[index];
+      if (listed === undefined) list.flashcards.push(saved);
+      else if (listed.updated_at_ms <= saved.updated_at_ms)
+        list.flashcards[index] = saved;
+    }),
+  );
+}
+
 const mediaFileAddedTags = (projectId: string) =>
   [
     { type: "MediaFiles", id: projectId },
@@ -160,7 +176,10 @@ const mediaFileAddedTags = (projectId: string) =>
 
 /** The server operations the app uses, one endpoint each. Bodies and paths follow the OpenAPI document. */
 export const backendApi = createApi({
-  reducerPath: "backend",
+  reducerPath: serverCachePath,
+  // The state package reads entries from the cache, so it decides the keys they are stored under.
+  serializeQueryArgs: ({ endpointName, queryArgs }) =>
+    cacheKey(endpointName, queryArgs),
   baseQuery: injectedBaseQuery,
   tagTypes: [
     "Projects",
@@ -228,6 +247,9 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/flashcards`,
         body: { kind: "json", value: flashcard },
       }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        await listSavedFlashcard(dispatch, projectId, queryFulfilled);
+      },
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
         { type: "Projects", id: projectId },
@@ -243,24 +265,8 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/flashcards/${flashcardId}`,
         body: { kind: "json", value: draft },
       }),
-      // The list shows the change at once, so that a dragged clip does not jump back while the request runs.
-      async onQueryStarted(
-        { projectId, flashcardId, draft },
-        { dispatch, queryFulfilled },
-      ) {
-        const patch = dispatch(
-          backendApi.util.updateQueryData(
-            "listFlashcards",
-            projectId,
-            (list) => {
-              const flashcard = list.flashcards.find(
-                ({ id }) => id === flashcardId,
-              );
-              if (flashcard) Object.assign(flashcard, draft);
-            },
-          ),
-        );
-        await queryFulfilled.catch(patch.undo);
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        await listSavedFlashcard(dispatch, projectId, queryFulfilled);
       },
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
@@ -356,10 +362,13 @@ export const backendApi = createApi({
         path: `${mediaFilePath(args)}/tracks`,
       }),
     }),
-    planPlayback: build.query<PlaybackResponse, PlanPlaybackArgs>({
+    choosePlaybackMethod: build.query<
+      PlaybackMethodResponse,
+      ChoosePlaybackMethodArgs
+    >({
       query: ({ request, ...args }) => ({
         method: "POST",
-        path: `${mediaFilePath(args)}/playback`,
+        path: `${mediaFilePath(args)}/playback-method`,
         body: { kind: "json", value: request },
       }),
     }),
@@ -373,7 +382,12 @@ export const backendApi = createApi({
         { type: "MediaFiles", id: projectId },
       ],
     }),
+    /**
+     * One window of a media file's waveform peaks. The media screen's update requests the windows,
+     * and the waveform reads their peaks from the cache, which keeps every window for the rest of the session.
+     */
     getWaveformWindow: build.query<WaveformResponse, WaveformWindowArgs>({
+      keepUnusedDataFor: Infinity,
       query: ({ startMs, endMs, ...args }) => ({
         method: "GET",
         path: `${mediaFilePath(args)}/waveform`,
@@ -503,79 +517,54 @@ export const backendApi = createApi({
         offlineOperation: { kind: "parseTimedText", request },
       }),
     }),
-    parseDocument: build.mutation<Document, ParseDocumentArgs>({
-      query: ({ bytes, format, contentType }) => ({
-        method: "POST",
-        path: "/documents/parse",
-        query: format === null ? undefined : { format },
-        body: { kind: "bytes", value: bytes, contentType },
-        offlineOperation:
-          bytes instanceof Uint8Array
-            ? { kind: "parseDocument", bytes, format }
-            : undefined,
-      }),
+    /** Parses a book once while it is read. The entry goes as soon as no reader shows the book, since a document can be large. */
+    openBook: build.query<Document, BookArgs>({
+      queryFn: (book, api, _extraOptions, baseQuery) =>
+        parseBook(book, api.extra as BackendThunkExtra, baseQuery),
+      keepUnusedDataFor: 0,
     }),
-    parseLocalDocument: build.mutation<Document, ParseLocalDocumentRequest>({
-      query: (request) => ({
-        method: "POST",
-        path: "/documents/parse-local",
-        body: { kind: "json", value: request },
-      }),
+    /** Whether a file the browser holds shows pictures. The answer is kept for the session, since it is small and the flashcard rules will read it. */
+    probePictures: build.query<boolean, PickedFile>({
+      queryFn: (file, api) =>
+        probePictures(file, api.extra as BackendThunkExtra),
+      keepUnusedDataFor: Infinity,
     }),
-    importDictionary: build.mutation<ImportJobStarted, ImportDictionaryArgs>({
-      query: ({ fileName, bytes, tableLayout = null }) => ({
-        method: "POST",
-        path: "/dictionaries",
-        query: { fileName, ...tableLayoutQuery(tableLayout) },
-        body: {
-          kind: "bytes",
-          value: bytes,
-          contentType: "application/octet-stream",
-        },
-        offlineOperation:
-          bytes instanceof Uint8Array
-            ? { kind: "importDictionary", fileName, bytes, tableLayout }
-            : undefined,
-      }),
+    /**
+     * A frame of a file the browser holds, with the file it comes from, since a query hook's last data outlives a change of its arguments.
+     * A frame is a large data URL, so an unused one goes after RTK Query's default minute.
+     */
+    captureFrame: build.query<CapturedFrame, FrameArgs>({
+      queryFn: (args, api) =>
+        captureFrame(
+          args,
+          api.extra as BackendThunkExtra,
+          () => !isQuerySubscribed(api, subscriptionActions()),
+        ),
     }),
+    /** The open-source license notices. They are megabytes of text, so the entry goes as soon as no page shows them. */
+    licenseNotices: build.query<LicenseNoticeGroup[], void>({
+      queryFn: () => loadLicenseNotices(loadLicenseNoticeGroups),
+      keepUnusedDataFor: 0,
+    }),
+    /** Imports a picked dictionary file. The server answers with a job, which is polled through `getImportJob`. */
+    importDictionary: build.mutation<
+      ImportJobStarted,
+      ImportPickedDictionaryArgs
+    >({
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        importPickedDictionary(args, api.extra as BackendThunkExtra, baseQuery),
+    }),
+    /** Reads the first rows of a picked table and the columns detected in it. */
     previewDictionaryTable: build.mutation<
       TablePreview,
-      PreviewDictionaryTableArgs
+      { file: PickedDictionaryFile }
     >({
-      query: ({ fileName, bytes }) => ({
-        method: "POST",
-        path: "/dictionaries/preview",
-        query: { fileName },
-        body: {
-          kind: "bytes",
-          value: bytes,
-          contentType: "application/octet-stream",
-        },
-        offlineOperation:
-          bytes instanceof Uint8Array
-            ? { kind: "previewDictionaryTable", fileName, bytes }
-            : undefined,
-      }),
-    }),
-    previewLocalDictionaryTable: build.mutation<
-      TablePreview,
-      PreviewLocalDictionaryTableRequest
-    >({
-      query: (request) => ({
-        method: "POST",
-        path: "/dictionaries/preview-local",
-        body: { kind: "json", value: request },
-      }),
-    }),
-    importLocalDictionary: build.mutation<
-      ImportJobStarted,
-      ImportLocalDictionaryRequest
-    >({
-      query: (request) => ({
-        method: "POST",
-        path: "/dictionaries/import-local",
-        body: { kind: "json", value: request },
-      }),
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        previewPickedDictionaryTable(
+          args,
+          api.extra as BackendThunkExtra,
+          baseQuery,
+        ),
     }),
     getImportJob: build.query<ImportJobStatus, string>({
       query: (id) => ({
@@ -599,6 +588,25 @@ export const backendApi = createApi({
         method: "DELETE",
         path: `/dictionaries/${encodeURIComponent(id)}`,
       }),
+      /** The removed dictionary leaves the list at once, rather than when the list is fetched again. */
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const isRemoved = await queryFulfilled.then(
+          () => true,
+          () => false,
+        );
+        if (isRemoved)
+          dispatch(
+            backendApi.util.updateQueryData(
+              "listDictionaries",
+              undefined,
+              (list) => {
+                list.dictionaries = list.dictionaries.filter(
+                  (dictionary) => dictionary.id !== id,
+                );
+              },
+            ),
+          );
+      },
       invalidatesTags: ["Dictionaries"],
     }),
     lookupText: build.query<LookupResponse, LookupQuery>({
@@ -634,44 +642,23 @@ export const backendApi = createApi({
 export const {
   useListProjectsQuery,
   useGetProjectQuery,
-  useCreateProjectMutation,
-  useUpdateProjectMutation,
-  useMarkProjectOpenedMutation,
   useListFlashcardsQuery,
   useCreateFlashcardMutation,
   useUpdateFlashcardMutation,
   useDeleteFlashcardMutation,
   useListMediaFilesQuery,
-  useAddMediaFileMutation,
-  useGetImportFormMutation,
-  useSubmitImportStepMutation,
-  useGetMediaSourceJobQuery,
   useListPluginsQuery,
-  useRemoveMediaFileMutation,
   useGetMediaTracksQuery,
-  usePlanPlaybackQuery,
-  useSaveTrackSelectionMutation,
-  useLazyGetWaveformWindowQuery,
+  useChoosePlaybackMethodQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
-  useGetSourceFormMutation,
-  useSubmitSourceStepMutation,
-  useAddSubtitleTrackMutation,
   useGetSubtitleCuesQuery,
-  useSetSubtitleSelectionMutation,
   useGetConversionCacheStatusQuery,
-  useClearConversionCacheMutation,
-  useSetConversionCacheBudgetMutation,
-  useParseTimedTextMutation,
-  useParseDocumentMutation,
-  useParseLocalDocumentMutation,
-  useImportDictionaryMutation,
-  usePreviewDictionaryTableMutation,
-  usePreviewLocalDictionaryTableMutation,
-  useImportLocalDictionaryMutation,
-  useGetImportJobQuery,
+  useOpenBookQuery,
+  useLicenseNoticesQuery,
+  useProbePicturesQuery,
+  useCaptureFrameQuery,
   useListDictionariesQuery,
-  useDeleteDictionaryMutation,
   useLookupTextQuery,
   useLazyLookupTextQuery,
 } = backendApi;
@@ -689,6 +676,28 @@ export function selectCachedLookup(
     state as BackendState,
   );
   return entry.isSuccess ? entry.data : undefined;
+}
+
+/** The cached peaks window of a media file from one time to another, or undefined when none is cached. */
+export function selectCachedWaveformWindow(
+  state: unknown,
+  window: WaveformWindowArgs,
+): WaveformResponse | undefined {
+  const entry = backendApi.endpoints.getWaveformWindow.select(window)(
+    state as BackendState,
+  );
+  return entry.isSuccess ? entry.data : undefined;
+}
+
+/** The API's internal subscription actions, typed apart so that the endpoints that read them do not make `backendApi`'s type refer to itself. */
+function subscriptionActions(): SubscriptionActions {
+  return backendApi.internalActions;
+}
+
+/** Whether the cache holds the answer of the pictures probe of a file the browser holds. */
+export function hasProbedPictures(state: unknown, file: PickedFile): boolean {
+  return backendApi.endpoints.probePictures.select(file)(state as BackendState)
+    .isSuccess;
 }
 
 /** The batch lookups being fetched now. */

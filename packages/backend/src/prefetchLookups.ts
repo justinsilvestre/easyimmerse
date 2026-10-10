@@ -1,10 +1,6 @@
-import type { AppDispatch } from "@easyimmerse/state";
 import type { LookupQuery } from "@easyimmerse/types";
-import {
-  backendApi,
-  lookupCacheSeconds,
-  selectRunningBatches,
-} from "./backendApi.ts";
+import { agingLookupEntries } from "./agingLookups.ts";
+import { backendApi, selectRunningBatches } from "./backendApi.ts";
 import { hasFailedLately } from "./failedPassages.ts";
 import {
   type BackendThunkDispatch,
@@ -19,8 +15,6 @@ import {
 
 /** How often a caller should prefetch the passages it keeps in range, so that their cached lookups never expire. */
 export const prefetchRepeatMs = 60_000;
-/** How old a cached lookup grows before a prefetch caches it afresh, so that it outlives the next prefetch. */
-const refreshAfterMs = (lookupCacheSeconds * 1000) / 2;
 
 type BackendState = Parameters<typeof selectRunningBatches>[0];
 
@@ -30,23 +24,25 @@ type BackendState = Parameters<typeof selectRunningBatches>[0];
  * Lookups that a batch would not answer are left to be made on their own when needed,
  * and passages that are cached, being fetched, or whose batch failed lately are left out.
  * Cached lookups are kept from expiring as long as prefetches that include them run at least every `prefetchRepeatMs`.
+ * `now` is the time of the prefetch, in milliseconds since the epoch.
  * The promise resolves once every batch has answered or failed.
  */
 export async function prefetchLookups(
-  dispatch: AppDispatch,
+  thunkDispatch: BackendThunkDispatch,
   lookups: readonly LookupQuery[],
+  now: number,
 ): Promise<void> {
-  // The app store's dispatch is typed for app actions only; thunks reach it through the middleware chain.
-  const thunkDispatch = dispatch as unknown as BackendThunkDispatch;
-  const state = thunkDispatch((_, getState) => getState());
+  const [state, { failedPassages }] = thunkDispatch(
+    (_, getState, extra) => [getState(), extra] as const,
+  );
   const reachable = lookupsInBatchReach(lookups);
-  refreshAgingLookups(thunkDispatch, state, reachable);
+  refreshAgingLookups(thunkDispatch, state, reachable, now);
   const missing = passagesToFetch(state, reachable).filter(
-    (passage) => !hasFailedLately(thunkDispatch, passage),
+    (passage) => !hasFailedLately(failedPassages.retryTimes, passage, now),
   );
   await Promise.all(
     batchesOf(missing).map((batch) =>
-      fetchLookupBatch(thunkDispatch, batch, reachable),
+      fetchLookupBatch(thunkDispatch, batch, reachable, now),
     ),
   );
 }
@@ -81,21 +77,8 @@ function refreshAgingLookups(
   dispatch: BackendThunkDispatch,
   state: BackendState,
   lookups: readonly LookupQuery[],
+  now: number,
 ) {
-  const aging = lookups.flatMap((lookup) => {
-    const entry = backendApi.endpoints.lookupText.select(lookup)(state);
-    const fulfilledAt = entry.fulfilledTimeStamp ?? Date.now();
-    const isAging =
-      entry.isSuccess && Date.now() - fulfilledAt >= refreshAfterMs;
-    return isAging
-      ? [
-          {
-            endpointName: "lookupText" as const,
-            arg: lookup,
-            value: entry.data,
-          },
-        ]
-      : [];
-  });
+  const aging = agingLookupEntries(state, lookups, now);
   if (aging.length > 0) dispatch(backendApi.util.upsertQueryEntries(aging));
 }

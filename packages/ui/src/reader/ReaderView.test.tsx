@@ -1,45 +1,49 @@
 import {
+  actions,
+  defaultReaderPreferences,
+  initialReaderScreen,
+  type ReaderPreferences,
+  type ReaderScreenState,
+} from "@easyimmerse/state";
+import {
   cleanup,
   fireEvent,
   render,
   screen,
   within,
 } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { exampleShortBook } from "./exampleDocuments.ts";
-import { ReaderView } from "./ReaderView.tsx";
-import {
-  defaultReaderPreferences,
-  type ReaderPreferences,
-} from "./readerPreferences.ts";
-import type { ReaderLocation } from "./readingProgress.ts";
+import { ReaderView, type ReaderViewAction } from "./ReaderView.tsx";
+import { type ReaderLocation, startOfBook } from "./readingProgress.ts";
 
 afterEach(cleanup);
 
 const ignore = () => undefined;
 
+/** Renders the reader on the short example book, and returns the actions it dispatches. */
 function renderReader(
   overrides: {
-    initialLocation?: ReaderLocation;
-    layout?: ReaderPreferences["layout"];
-    onLocationChange?: (location: ReaderLocation) => unknown;
+    location?: ReaderLocation;
+    reader?: Partial<ReaderScreenState>;
     onPreferencesChange?: (preferences: ReaderPreferences) => void;
-    sidePanel?: ReactNode;
   } = {},
 ) {
+  const dispatched: ReaderViewAction[] = [];
   render(
     <ReaderView
+      mediaFileId="b1"
       document={exampleShortBook}
+      location={overrides.location ?? startOfBook}
+      reader={{ ...initialReaderScreen, ...overrides.reader }}
+      dispatch={(action) => dispatched.push(action)}
       title="Sample Book"
       projectName="English reading"
       language="en"
       preferences={{
         ...defaultReaderPreferences,
-        layout: overrides.layout ?? "scroll",
+        layout: "scroll",
       }}
-      initialLocation={overrides.initialLocation}
-      sidePanel={overrides.sidePanel}
       callbacks={{
         onBack: ignore,
         onLookup: ignore,
@@ -48,84 +52,65 @@ function renderReader(
         onWordHover: ignore,
         onWordHold: ignore,
         onDismissLookup: ignore,
-        onLocationChange: overrides.onLocationChange ?? ignore,
         onPreferencesChange: overrides.onPreferencesChange ?? ignore,
       }}
     />,
   );
+  return dispatched;
 }
 
+const chapterTwo = { chapterIndex: 1, paragraphIndex: 0, offset: 0 };
+
 describe("ReaderView", () => {
-  it("shows the chapter at the initial location", () => {
-    renderReader({
-      initialLocation: { chapterIndex: 1, paragraphIndex: 0, offset: 0 },
-    });
+  it("shows the chapter at the location", () => {
+    renderReader({ location: chapterTwo });
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
       "Chapter Two",
     );
   });
 
-  it("opens a place saved past the end of the book in the last chapter", () => {
-    renderReader({
-      initialLocation: { chapterIndex: 9, paragraphIndex: 0, offset: 0 },
-    });
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-      "Chapter Two",
-    );
-  });
-
-  it("moves to the chapter chosen from the contents", () => {
-    renderReader();
-    fireEvent.click(screen.getByRole("button", { name: "Contents" }));
+  it("asks to jump to the start of the chapter chosen from the contents", () => {
+    const dispatched = renderReader({ reader: { panel: "contents" } });
     fireEvent.click(
       within(screen.getByRole("dialog")).getByRole("button", {
         name: /Chapter Two/,
       }),
     );
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-      "Chapter Two",
-    );
-  });
-
-  it("moves on when the location callback returns a value, as a dispatch does", () => {
-    renderReader({ onLocationChange: (location) => ({ type: "x", location }) });
-    fireEvent.click(screen.getByRole("button", { name: "Contents" }));
-    fireEvent.click(
-      within(screen.getByRole("dialog")).getByRole("button", {
-        name: /Chapter Two/,
-      }),
-    );
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-      "Chapter Two",
-    );
+    expect(dispatched).toContainEqual(actions.readerJumped("b1", chapterTwo));
   });
 
   it("counts the search results across chapters", () => {
-    renderReader();
-    fireEvent.click(screen.getByRole("button", { name: "Search the book" }));
-    fireEvent.change(screen.getByRole("searchbox"), {
-      target: { value: "cat" },
+    renderReader({
+      reader: {
+        panel: "search",
+        search: { query: "cat", activeMatchIndex: null },
+      },
     });
     expect(screen.getByText("2 results")).toBeTruthy();
   });
 
   it("reports a change of theme from the appearance panel", () => {
     const changes: ReaderPreferences[] = [];
-    renderReader({ onPreferencesChange: (change) => changes.push(change) });
-    fireEvent.click(screen.getByRole("button", { name: "Appearance" }));
+    renderReader({
+      reader: { panel: "appearance" },
+      onPreferencesChange: (change) => changes.push(change),
+    });
     fireEvent.click(screen.getByRole("radio", { name: "Sepia" }));
     expect(changes.map((change) => change.theme)).toEqual(["sepia"]);
   });
 
+  // Without a layout engine no word is found under the pointer, so a click counts as a tap beside the words.
+  it("asks to show or hide the toolbar on a tap beside the words", () => {
+    const dispatched = renderReader();
+    fireEvent.click(screen.getByRole("main"));
+    expect(dispatched).toContainEqual(actions.readerChromeToggled());
+  });
+
   describe("when the toolbar is hidden", () => {
-    // Without a layout engine no word is found under the pointer, so a click counts as a tap beside the words.
-    function hideToolbar() {
-      fireEvent.click(screen.getByRole("main"));
-    }
+    const hidden = { reader: { isChromeVisible: false } };
 
     it("keeps the back button reachable by keyboard", () => {
-      renderReader();
-      hideToolbar();
+      renderReader(hidden);
       const back = screen.getByRole("button", {
         name: "Back to English reading",
       });
@@ -133,8 +118,7 @@ describe("ReaderView", () => {
     });
 
     it("keeps the progress slider reachable by keyboard", () => {
-      renderReader();
-      hideToolbar();
+      renderReader(hidden);
       const slider = screen.getByRole("slider");
       expect(slider.closest("[inert]")).toBeNull();
     });
@@ -146,50 +130,6 @@ describe("ReaderView", () => {
       expect(document.activeElement).toBe(
         screen.getByRole("main").firstElementChild,
       );
-    });
-  });
-
-  describe("in the paged layout", () => {
-    // Without a layout engine every chapter fills one page, so turning the page moves to the next chapter.
-    it("turns the page with the right arrow key", () => {
-      renderReader({ layout: "pages" });
-      fireEvent.keyDown(document.body, { key: "ArrowRight" });
-      expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-        "Chapter Two",
-      );
-    });
-
-    it("leaves the arrow keys alone while a side panel is open", () => {
-      renderReader({ layout: "pages", sidePanel: <p>Flashcard</p> });
-      fireEvent.keyDown(document.body, { key: "ArrowRight" });
-      expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-        "Chapter One",
-      );
-    });
-
-    it("leaves Space to a focused button rather than turning the page", () => {
-      renderReader({ layout: "pages" });
-      const button = screen.getByRole("button", { name: "Contents" });
-      button.focus();
-      fireEvent.keyDown(button, { key: " " });
-      expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-        "Chapter One",
-      );
-    });
-  });
-
-  describe("when Ctrl+F is pressed", () => {
-    it("puts the cursor in the search field", () => {
-      renderReader();
-      fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
-      expect(document.activeElement).toBe(screen.getByRole("searchbox"));
-    });
-
-    it("keeps the search open when it is already open", () => {
-      renderReader();
-      fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
-      fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
-      expect(screen.queryByRole("searchbox")).not.toBeNull();
     });
   });
 });

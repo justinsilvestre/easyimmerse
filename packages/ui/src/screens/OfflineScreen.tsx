@@ -1,12 +1,10 @@
-import { useParseTimedTextMutation } from "@easyimmerse/backend";
-import type { PickedFile } from "@easyimmerse/state";
 import {
   actions,
-  selectChosenSubtitleFile,
+  selectOfflineCues,
+  selectOfflineParseFailed,
   selectPendingFilePick,
 } from "@easyimmerse/state";
 import { FilePlus } from "lucide-react";
-import { useEffect, useRef } from "react";
 import { Button } from "../components/Button.tsx";
 import { EmptyState } from "../components/EmptyState.tsx";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
@@ -21,8 +19,9 @@ import { CuePanel } from "../media/CuePanel.tsx";
 export function OfflineScreen({ onBack }: { onBack: () => void }) {
   const dispatch = useAppDispatch();
   const isPicking = useAppSelector(selectPendingFilePick);
-  const { cues, hasFailed } = useParsedChosenFile();
-  const openFile = () => dispatch(actions.filePickRequested());
+  const cues = useAppSelector(selectOfflineCues);
+  const hasFailed = useAppSelector(selectOfflineParseFailed);
+  const openFile = () => dispatch(actions.subtitleFilePickRequested());
   return (
     <ScreenLayout onBack={onBack} backLabel="Projects">
       <h1 className="text-xl font-semibold">Working offline</h1>
@@ -56,20 +55,4 @@ export function OfflineScreen({ onBack }: { onBack: () => void }) {
       )}
     </ScreenLayout>
   );
-}
-
-/** Parses the subtitles file the user picked, in WebAssembly when no server is connected. */
-function useParsedChosenFile() {
-  const dispatch = useAppDispatch();
-  const chosen = useAppSelector(selectChosenSubtitleFile);
-  const [parseTimedText, { data, isError }] = useParseTimedTextMutation();
-  const sent = useRef<PickedFile | null>(null);
-  useEffect(() => {
-    if (chosen === null || sent.current === chosen) return;
-    sent.current = chosen;
-    parseTimedText({ source: chosen.source, format: null }).finally(() =>
-      dispatch(actions.subtitleFileAdded()),
-    );
-  }, [chosen, parseTimedText, dispatch]);
-  return { cues: data?.cues ?? [], hasFailed: isError };
 }

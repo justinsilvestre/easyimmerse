@@ -1,7 +1,7 @@
+import type { TextCursor } from "@easyimmerse/state";
 import { type FocusEvent, type KeyboardEvent, useRef, useState } from "react";
 import { textStepOfKey } from "./cursorKeys.ts";
 import { clickableWordAttribute } from "./lookupTrigger.ts";
-import type { TextCursor } from "./textCursor.ts";
 import { stepTextCursor } from "./textCursorStep.ts";
 import { hitAt, type WordHit } from "./useWordGestures.ts";
 import { wordPressKeyHandlers } from "./wordPressKeys.ts";

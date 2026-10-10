@@ -1,11 +1,9 @@
+import { actions } from "@easyimmerse/state";
 import type { MediaSourceLogLine } from "@easyimmerse/types";
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "../components/Button.tsx";
-import { copyTextToClipboard } from "./copyTextToClipboard.ts";
-
-/** How long the copy button confirms a copy before reading "Copy" again. */
-const COPIED_MS = 2000;
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 
 /**
  * The log lines, newest at the bottom, kept scrolled to the latest while they arrive,
@@ -49,15 +47,9 @@ export function formatLog(lines: readonly MediaSourceLogLine[]): string {
 }
 
 function CopyLogButton({ lines }: { lines: readonly MediaSourceLogLine[] }) {
-  const [isCopied, setIsCopied] = useState(false);
-  useEffect(() => {
-    if (!isCopied) return;
-    const timeout = setTimeout(() => setIsCopied(false), COPIED_MS);
-    return () => clearTimeout(timeout);
-  }, [isCopied]);
-  const copy = () => {
-    void copyTextToClipboard(formatLog(lines)).then(() => setIsCopied(true));
-  };
+  const dispatch = useAppDispatch();
+  const copy = () =>
+    dispatch(actions.textCopyRequested(formatLog(lines), "log"));
   return (
     <Button
       size="sm"
@@ -65,7 +57,7 @@ function CopyLogButton({ lines }: { lines: readonly MediaSourceLogLine[] }) {
       aria-disabled={lines.length === 0}
       onClick={lines.length === 0 ? undefined : copy}
     >
-      {isCopied ? "Copied" : "Copy"}
+      Copy
     </Button>
   );
 }

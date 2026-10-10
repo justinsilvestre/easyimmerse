@@ -17,7 +17,7 @@ function FullscreenProbe() {
 }
 
 /** jsdom has no fullscreen support, so the element the browser would report is defined on the document by hand. */
-function fakeFullscreenElement(element: Element | null) {
+function fakeFullscreenElement(element: Element | null | undefined) {
   Object.defineProperty(document, "fullscreenElement", {
     configurable: true,
     get: () => element,
@@ -27,6 +27,12 @@ function fakeFullscreenElement(element: Element | null) {
 describe("useFullscreen", () => {
   it("reports a page that does not fill the screen", () => {
     fakeFullscreenElement(null);
+    render(<FullscreenProbe />);
+    expect(screen.getByRole("button").textContent).toBe("windowed");
+  });
+
+  it("reports a page in a browser without the Fullscreen API as not filling the screen", () => {
+    fakeFullscreenElement(undefined);
     render(<FullscreenProbe />);
     expect(screen.getByRole("button").textContent).toBe("windowed");
   });

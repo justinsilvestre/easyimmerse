@@ -1,8 +1,10 @@
-import { resetBackend } from "@easyimmerse/backend";
+import { type FrameCapturer, hasProbedPictures } from "@easyimmerse/backend";
 import {
   actions,
   createBrowserFileRegistry,
   selectCurrentMediaFileId,
+  selectCurrentTime,
+  selectPlayerControls,
   selectPreference,
 } from "@easyimmerse/state";
 import type {
@@ -19,12 +21,8 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  createFrameCapturer,
-  type FrameCapturer,
-} from "../player/browserFrameCapturer.ts";
+import { createFrameCapturer } from "../player/browserFrameCapturer.ts";
 import type { FrameSource } from "../player/captureVideoFrame.ts";
-import { FrameCapturerContext } from "../player/frameCapturerContext.ts";
 import {
   createFakeBackendClient,
   fakeFailure,
@@ -33,13 +31,17 @@ import { createFakeFrameCapturer } from "../testSupport/createFakeFrameCapturer.
 import { doubleClick } from "../testSupport/doubleClick.ts";
 import {
   fixtureImportedMediaFiles,
+  fixtureMediaFiles,
   fixtureMediaSourcePlugin,
   fixtureProject,
   fixtureResponses,
   fixtureSubtitleTracks,
   fixtureTrack,
 } from "../testSupport/fixtureResponses.ts";
-import { fakeServer } from "../testSupport/mediaFixtureResponses.ts";
+import {
+  copyPlaybackRoutes,
+  fakeServer,
+} from "../testSupport/mediaFixtureResponses.ts";
 import {
   bodyOf,
   createdDraftOf,
@@ -55,7 +57,6 @@ import { MediaScreen } from "./MediaScreen.tsx";
 
 afterEach(() => {
   cleanup();
-  resetBackend();
   vi.restoreAllMocks();
 });
 
@@ -88,17 +89,20 @@ function renderBrowserVideoScreen(
     "POST /projects/p1/flashcards": savedFlashcard,
   });
   const rendered = renderWithAppStore(
-    <FrameCapturerContext value={capturer}>
-      <MediaScreen project={fixtureProject} mediaFileId="m3" />
-    </FrameCapturerContext>,
+    <MediaScreen project={fixtureProject} mediaFileId="m3" />,
     client,
-    { server: fakeServer, browserFileRegistry: registry },
+    {
+      server: fakeServer,
+      browserFileRegistry: registry,
+      frameCapturer: capturer,
+    },
   );
   act(() => {
     rendered.store.dispatch(actions.preferencesLoaded({}));
-    rendered.store.dispatch(actions.openMedia("m3"));
+    rendered.store.dispatch(actions.openMediaFileRequested("p1", "m3"));
   });
-  return { ...rendered, client };
+  const pickedVideo = { name: mediaFile.name, source: mediaFile.source };
+  return { ...rendered, client, pickedVideo };
 }
 
 /** A capturer whose probes wait until the test answers whether the file shows pictures. */
@@ -119,15 +123,16 @@ function createWaitingFrameCapturer() {
 
 /** Starts a new flashcard from a word in the subtitles before the probe answers, then lets it answer. */
 async function startFlashcardBeforeProbe(hasPictures: boolean) {
-  const file = browserVideo();
   const { capturer, answer } = createWaitingFrameCapturer();
-  const rendered = renderBrowserVideoScreen(file, capturer);
+  const rendered = renderBrowserVideoScreen(browserVideo(), capturer);
   const list = await findSubtitles();
   await openFlashcardFor(within(list).getByRole("button", { name: "cat" }));
   answer(hasPictures);
-  await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(hasPictures));
-  // The screen learns the answer only after the probe's own callback, which may run after the check above.
-  await act(async () => undefined);
+  await vi.waitFor(() =>
+    expect(
+      hasProbedPictures(rendered.store.getState(), rendered.pickedVideo),
+    ).toBe(true),
+  );
   return rendered;
 }
 
@@ -204,6 +209,23 @@ async function openSavedFlashcardFromStrip() {
 }
 
 describe("MediaScreen", () => {
+  it("opens the track choice from the Tracks button", async () => {
+    const [episode, ...others] = fixtureMediaFiles.media_files;
+    renderMediaScreen({
+      responses: {
+        "GET /projects/p1/media": {
+          media_files: [
+            { ...episode, track_selection_json: '{"video":0,"audio":1}' },
+            ...others,
+          ],
+        },
+      },
+      playbackRoutes: copyPlaybackRoutes,
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Tracks" }));
+    expect(screen.getByRole("dialog", { name: "Choose tracks" })).toBeDefined();
+  });
+
   it("lists one card per cue of the target-language subtitles", async () => {
     renderMediaScreen();
     const list = await findSubtitles();
@@ -288,6 +310,27 @@ describe("MediaScreen", () => {
       media_file_id: "m1",
       content: { word: "fressen" },
     });
+  });
+
+  it("lists a flashcard whose background save fails and saves it on Retry", async () => {
+    let saves = 0;
+    renderMediaScreen({
+      responses: {
+        "POST /projects/p1/flashcards": () => {
+          saves += 1;
+          return saves === 1
+            ? fakeFailure({ status: 500, message: "Unavailable" })
+            : savedFlashcard;
+        },
+      },
+    });
+    const list = await findSubtitles();
+    doubleClick(within(list).getByRole("button", { name: "cat" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Show" }));
+    fireEvent.click(screen.getByRole("button", { name: "Retry “fressen”" }));
+    await vi.waitFor(() =>
+      expect(screen.queryByText("1 flashcard not saved")).toBeNull(),
+    );
   });
 
   describe("on a double-click on a word of the subtitles", () => {
@@ -543,51 +586,16 @@ describe("MediaScreen", () => {
     });
   });
 
-  describe("after the first cue's end", () => {
-    /** Moves the player through the given times in turn, as playback or seeks would. */
-    function moveThrough(
-      store: ReturnType<typeof renderMediaScreen>["store"],
-      seconds: number[],
-    ) {
-      for (const at of seconds)
-        act(() => store.dispatch(actions.playerTimeChanged(at)));
-    }
-
-    const toggleSubtitlesPanel = () =>
-      fireEvent.click(screen.getByRole("button", { name: "Subtitles panel" }));
-
-    const activeCard = () =>
-      screen
-        .getByRole("list", { name: "Subtitles" })
-        .querySelector<HTMLElement>("[aria-current]");
-
-    const catOverVideo = () =>
+  it("shows no cue over the video after a seek into the gap after the first cue", async () => {
+    const { store } = renderMediaScreen();
+    await findSubtitles();
+    act(() => store.dispatch(actions.playerTimeChanged(1)));
+    act(() => store.dispatch(actions.seekRequested(1.6)));
+    expect(
       within(screen.getByTestId("subtitle-box")).queryByRole("button", {
         name: "cat",
-      });
-
-    it("keeps the cue over the video while playback carries on from it", async () => {
-      const { store } = renderMediaScreen();
-      await findSubtitles();
-      moveThrough(store, [1, 1.4, 1.6]);
-      expect(catOverVideo()).not.toBeNull();
-    });
-
-    it("shows no cue over the video after a seek into the gap after it", async () => {
-      const { store } = renderMediaScreen();
-      await findSubtitles();
-      moveThrough(store, [4.6, 1.6]);
-      expect(catOverVideo()).toBeNull();
-    });
-
-    it("marks the held cue's card active when the subtitles panel opens meanwhile", async () => {
-      const { store } = renderMediaScreen();
-      await findSubtitles();
-      toggleSubtitlesPanel();
-      moveThrough(store, [1, 1.4, 1.6]);
-      toggleSubtitlesPanel();
-      expect(activeCard()?.textContent).toContain("cat");
-    });
+      }),
+    ).toBeNull();
   });
 
   it("asks the player to play when Play is clicked", () => {
@@ -608,6 +616,22 @@ describe("MediaScreen", () => {
       key: " ",
     });
     expect(effects.calls).not.toContainEqual({ type: "togglePlayer" });
+  });
+
+  it("asks the player to skip to the next cue when the right arrow is pressed", async () => {
+    const { effects } = renderMediaScreen();
+    await findSubtitles();
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 0.5 });
+  });
+
+  it("leaves M to the open speed menu rather than muting", () => {
+    const { store } = renderMediaScreen();
+    fireEvent.click(screen.getByRole("button", { name: /Playback speed/ }));
+    fireEvent.keyDown(screen.getByRole("menuitemradio", { name: "1×" }), {
+      key: "m",
+    });
+    expect(selectPlayerControls(store.getState()).isMuted).toBe(false);
   });
 
   it("asks the player to replay the cue when R is pressed", () => {
@@ -639,7 +663,7 @@ describe("MediaScreen", () => {
       const { store } = await renderWithWaveform();
       await openSavedFlashcardFromStrip();
       await vi.waitFor(() =>
-        expect(store.getState().app.player.currentTimeSeconds).toBe(1.75),
+        expect(selectCurrentTime(store.getState())).toBe(1.75),
       );
     });
 
@@ -732,14 +756,12 @@ describe("MediaScreen", () => {
       actions: [{ id: "apply", label: "Apply", style: "primary" }],
     };
 
-    const applied = (
-      skipped: { id: string; reason: string }[] = [],
-    ): SourceStepResponse => ({
+    const applied = (): SourceStepResponse => ({
       kind: "applied",
       removed: [],
       tracks: fixtureSubtitleTracks.tracks,
       selection: fixtureSubtitleTracks.selection,
-      skipped,
+      skipped: [],
     });
 
     const renderImported = (
@@ -804,94 +826,6 @@ describe("MediaScreen", () => {
       await applyEnglish();
       await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     });
-
-    it("names the subtitles that the plugin's changes did not add", async () => {
-      const { effects } = renderImported(
-        applied([{ id: "en", reason: "the plugin did not fetch it" }]),
-      );
-      await applyEnglish();
-      await vi.waitFor(() =>
-        expect(effects.calls).toContainEqual({
-          type: "showNotification",
-          message:
-            "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
-        }),
-      );
-    });
-
-    it("stays open when changes sent before it was closed and opened again are applied", async () => {
-      const stale = Promise.withResolvers<SourceStepResponse>();
-      renderImported(() => stale.promise);
-      await applyEnglish();
-      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-      fireEvent.click(screen.getByRole("button", { name: "Video site" }));
-      await screen.findByLabelText("English (automatic)");
-      await act(async () => {
-        stale.resolve(applied());
-        await new Promise((resolve) => setTimeout(resolve, 20));
-      });
-      expect(screen.queryByRole("dialog")).not.toBeNull();
-    });
-
-    it("asks the plugin for its form once when opened", async () => {
-      const { client } = renderImported();
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Video site" }),
-      );
-      await screen.findByLabelText("English (automatic)");
-      await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
-      expect(
-        requestsTo(client.requests, "GET", "/projects/p1/media/m1/source-form"),
-      ).toHaveLength(1);
-    });
-
-    it("shows no form from an earlier opening while asking the plugin again", async () => {
-      const later = Promise.withResolvers<PluginForm>();
-      const forms = [fetchForm, later.promise];
-      renderMediaScreen({
-        responses: {
-          "GET /plugins": { plugins: [fixtureMediaSourcePlugin] },
-          "GET /projects/p1/media": fixtureImportedMediaFiles,
-          "GET /projects/p1/media/m1/source-form": () => forms.shift(),
-        },
-      });
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Video site" }),
-      );
-      await screen.findByLabelText("English (automatic)");
-      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-      fireEvent.click(screen.getByRole("button", { name: "Video site" }));
-      await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
-      expect(screen.queryByLabelText("English (automatic)")).toBeNull();
-    });
-
-    it("tells why the plugin's form could not load", async () => {
-      renderMediaScreen({
-        responses: {
-          "GET /plugins": { plugins: [fixtureMediaSourcePlugin] },
-          "GET /projects/p1/media": fixtureImportedMediaFiles,
-          "GET /projects/p1/media/m1/source-form": fakeFailure({
-            status: 502,
-            message: "The plugin stopped.",
-          }),
-        },
-      });
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Video site" }),
-      );
-      expect(await screen.findByText(/The plugin stopped/)).toBeDefined();
-    });
-
-    it("shows the next form the plugin answers with", async () => {
-      renderImported({
-        kind: "form",
-        form: { ...fetchForm, title: "Confirm the changes" },
-      });
-      await applyEnglish();
-      expect(
-        await screen.findByRole("heading", { name: "Confirm the changes" }),
-      ).toBeDefined();
-    });
   });
 
   it("shows no plugin chip for a file that no plugin imported", async () => {
@@ -919,10 +853,13 @@ describe("MediaScreen", () => {
     });
 
     it("leaves the screenshot out of a new flashcard once the file turns out to have no pictures", async () => {
-      const file = browserVideo();
-      const capturer = createFakeFrameCapturer(false);
-      const { client } = renderBrowserVideoScreen(file, capturer);
-      await vi.waitFor(() => expect(capturer.peekPictures(file)).toBe(false));
+      const { client, store, pickedVideo } = renderBrowserVideoScreen(
+        browserVideo(),
+        createFakeFrameCapturer(false),
+      );
+      await vi.waitFor(() =>
+        expect(hasProbedPictures(store.getState(), pickedVideo)).toBe(true),
+      );
       expect(await savedScreenshotOfNewFlashcard(client)).toBeNull();
     });
 

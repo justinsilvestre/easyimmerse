@@ -1,4 +1,4 @@
-import type { ItemSpan } from "../hooks/useVisibleItemSpan.ts";
+import type { ItemSpan } from "@easyimmerse/state";
 import type { ReaderLocation } from "./readingProgress.ts";
 import { zeroWidthSpace } from "./unwrapHardLineBreaks.ts";
 import { sentencesOf } from "./wordAt.ts";

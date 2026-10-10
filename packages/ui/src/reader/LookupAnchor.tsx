@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import { useViewportSize } from "../hooks/useViewportSize.ts";
-import { placeAtAnchor } from "../lookup/placeAtAnchor.ts";
+import { type AnchorRect, placeAtAnchor } from "../lookup/placeAtAnchor.ts";
 import { type PopupSize, popupWidthPx } from "../lookup/popupSize.ts";
 import { useIsGliding } from "../lookup/useIsGliding.ts";
 
@@ -18,7 +18,7 @@ export function LookupAnchor({
   onPointerInsideChange,
   children,
 }: {
-  wordRect: DOMRect | null;
+  wordRect: AnchorRect | null;
   isWide: boolean;
   size?: PopupSize;
   onPointerInsideChange?: (isInside: boolean) => void;

@@ -1,8 +1,6 @@
-import { actions } from "@easyimmerse/state";
+import type { ItemSpan } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import type { Range } from "../components/RunText.tsx";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import type { ItemSpan } from "../hooks/useVisibleItemSpan.ts";
 import { CuePanel } from "../media/CuePanel.tsx";
 import type { CueTextCursor } from "../media/cueCursor.ts";
 import type {
@@ -24,6 +22,8 @@ export function SubtitlesSidePanel({
   activeWord,
   cursor,
   wordGestures,
+  onSeek,
+  onGenerateSubtitles,
   onOpenFlashcardForCue,
   onVisibleCuesChange,
 }: {
@@ -41,12 +41,15 @@ export function SubtitlesSidePanel({
   /** The lookup cursor of the subtitles, or null when there is none. */
   cursor?: CueTextCursor | null;
   wordGestures: CueWordGestures;
+  /** Moves playback to a time in milliseconds, as a click on a cue's time does. */
+  onSeek: (ms: number) => void;
+  /** Offers to make subtitles for a file that has none. */
+  onGenerateSubtitles: () => void;
   /** Opens the flashcard made from a cue, from the mark on that cue's card. */
   onOpenFlashcardForCue?: (cueIndex: number) => void;
   /** Receives the positions among the cues of the cards in view, each time they change, and null once the panel is gone. */
   onVisibleCuesChange?: (span: ItemSpan | null) => void;
 }) {
-  const dispatch = useAppDispatch();
   return (
     <>
       <SubtitleTrackBar
@@ -71,18 +74,12 @@ export function SubtitlesSidePanel({
         flashcardWordRanges={flashcardWordRanges}
         activeWord={activeWord}
         cursor={cursor}
-        onSeek={(ms) => dispatch(actions.seekRequested(ms / 1000))}
+        onSeek={onSeek}
         wordGestures={wordGestures}
         onOpenFlashcardForCue={onOpenFlashcardForCue}
         onVisibleCuesChange={onVisibleCuesChange}
         onAddSubtitlesFile={subtitles.requestFile}
-        onGenerateSubtitles={() =>
-          dispatch(
-            actions.notificationRequested(
-              "Generating subtitles is not available yet.",
-            ),
-          )
-        }
+        onGenerateSubtitles={onGenerateSubtitles}
       />
     </>
   );

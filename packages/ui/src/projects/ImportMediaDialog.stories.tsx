@@ -4,6 +4,7 @@ import {
   exampleImportForm,
   exampleLookedUpForm,
 } from "../plugins/examplePluginForms.ts";
+import { withAppStore } from "../storybook/withAppStore.tsx";
 import {
   exampleFailedJob,
   exampleRunningJob,
@@ -14,6 +15,7 @@ const meta = {
   title: "Projects/ImportMediaDialog",
   component: ImportMediaDialog,
   parameters: { layout: "fullscreen" },
+  decorators: [withAppStore],
   args: {
     label: "Add from a video site",
     form: exampleImportForm,

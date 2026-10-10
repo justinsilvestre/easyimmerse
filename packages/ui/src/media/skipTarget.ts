@@ -1,5 +1,5 @@
+import { findCueShownAt } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
-import { findCueShownAt } from "./findCue.ts";
 
 /** How far a skip goes when there are no cues to skip to. */
 const skipStepMs = 5_000;

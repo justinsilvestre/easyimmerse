@@ -1,5 +1,5 @@
+import { toggleField } from "@easyimmerse/state";
 import type { FlashcardFieldKey, ProjectSettings } from "@easyimmerse/types";
-import { toggleField } from "../flashcards/flashcardFields.ts";
 import {
   type FlashcardPreset,
   fieldsOfPreset,

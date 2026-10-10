@@ -5,12 +5,14 @@ import type { AnchorRect } from "./placeAtAnchor.ts";
 
 afterEach(() => {
   cleanup();
+  document.body.replaceChildren();
   vi.restoreAllMocks();
 });
 
 /** A word on the page whose place the test sets. */
 function createWord(rect: AnchorRect) {
   const word = document.createElement("span");
+  word.id = "word";
   document.body.append(word);
   let current = rect;
   vi.spyOn(word, "getBoundingClientRect").mockImplementation(
@@ -38,7 +40,7 @@ const topWord = { top: 40, bottom: 60, left: 100, right: 140 };
 
 function renderAt(word: Element, size?: "compact" | "expanded") {
   const { container } = render(
-    <AnchoredPopup anchor={word} size={size}>
+    <AnchoredPopup anchor={{ elementId: word.id }} size={size}>
       <section aria-label="Dictionary" />
     </AnchoredPopup>,
   );

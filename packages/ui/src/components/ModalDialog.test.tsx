@@ -1,6 +1,13 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
+import { TestStoreProvider } from "../testSupport/TestStoreProvider.tsx";
 import { ModalDialog } from "./ModalDialog.tsx";
 
 afterEach(cleanup);
@@ -30,7 +37,7 @@ function DialogOpener({ onCancel }: { onCancel?: () => void }) {
 }
 
 function openDialog(onCancel?: () => void) {
-  render(<DialogOpener onCancel={onCancel} />);
+  render(<DialogOpener onCancel={onCancel} />, { wrapper: TestStoreProvider });
   const opener = screen.getByRole("button", { name: "Open" });
   opener.focus();
   fireEvent.click(opener);
@@ -63,5 +70,14 @@ describe("ModalDialog", () => {
     const opener = openDialog();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(document.activeElement).toBe(opener);
+  });
+
+  it("shows notices inside itself, where the inert page beneath would hide them", () => {
+    openDialog();
+    expect(
+      within(screen.getByRole("dialog")).queryByRole("region", {
+        name: "Notifications",
+      }),
+    ).not.toBeNull();
   });
 });

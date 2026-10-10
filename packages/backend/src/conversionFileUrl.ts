@@ -1,4 +1,4 @@
-import type { ServerConfig } from "./resolveServerConfig.ts";
+import type { ServerConfig } from "@easyimmerse/state";
 
 /**
  * Builds the URL of a converted media file, such as the HLS playlist the playback route names.

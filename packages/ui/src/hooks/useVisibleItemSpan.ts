@@ -1,7 +1,5 @@
+import type { ItemSpan } from "@easyimmerse/state";
 import { useEffect, useEffectEvent } from "react";
-
-/** A run of a list's items, by their positions in it, from the first to the last. */
-export type ItemSpan = { first: number; last: number };
 
 type SpanOptions = {
   /** How far around the list an item still counts as in view, as a CSS margin, such as `100% 0px` for one list height above and below. */
@@ -34,18 +32,19 @@ export function useVisibleItemSpan(
   useEffect(() => {
     if (!list || typeof IntersectionObserver === "undefined") return;
     const positions = new Map(watched(list));
-    const visible = new Set<number>();
+    let visible: ReadonlySet<number> = new Set();
     let reported: ItemSpan | null = null;
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          const position = positions.get(entry.target) ?? 0;
-          if (entry.isIntersecting) visible.add(position);
-          else visible.delete(position);
-        }
+        visible = visiblePositionsAfter(
+          visible,
+          entries.map((entry) => ({
+            position: positions.get(entry.target) ?? 0,
+            isIntersecting: entry.isIntersecting,
+          })),
+        );
         const span = spanOf(visible);
-        if (span?.first === reported?.first && span?.last === reported?.last)
-          return;
+        if (isSameSpan(span, reported)) return;
         reported = span;
         report(span);
       },
@@ -67,7 +66,29 @@ function indexOf(_item: Element, index: number): number {
   return index;
 }
 
-function spanOf(positions: ReadonlySet<number>): ItemSpan | null {
+/** A change the observer reported: the item at `position` came into view or left it. */
+type IntersectionChange = { position: number; isIntersecting: boolean };
+
+/** Returns the positions in view once a batch of changes applies, in order. */
+export function visiblePositionsAfter(
+  visible: ReadonlySet<number>,
+  changes: readonly IntersectionChange[],
+): ReadonlySet<number> {
+  const next = new Set(visible);
+  for (const { position, isIntersecting } of changes) {
+    if (isIntersecting) next.add(position);
+    else next.delete(position);
+  }
+  return next;
+}
+
+/** The span from the smallest to the largest position, or null for none. */
+export function spanOf(positions: ReadonlySet<number>): ItemSpan | null {
   if (positions.size === 0) return null;
   return { first: Math.min(...positions), last: Math.max(...positions) };
+}
+
+/** Whether two spans cover the same items. */
+export function isSameSpan(a: ItemSpan | null, b: ItemSpan | null): boolean {
+  return a?.first === b?.first && a?.last === b?.last;
 }

@@ -1,35 +1,29 @@
+import { useListDictionariesQuery } from "@easyimmerse/backend";
 import {
-  useDeleteDictionaryMutation,
-  useListDictionariesQuery,
-} from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
-import { useState } from "react";
+  actions,
+  selectDictionaryImport,
+  selectDictionaryRemovalQuestion,
+  selectRemovingDictionaryIds,
+} from "@easyimmerse/state";
 import { DictionariesView } from "../dictionaries/DictionariesView.tsx";
-import { useDictionaryImport } from "../dictionaries/useDictionaryImport.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 
 /** The dictionaries settings, backed by the dictionaries the server keeps. */
 export function DictionariesScreen({ onBack }: { onBack: () => void }) {
   const dispatch = useAppDispatch();
   const list = useListDictionariesQuery();
-  const [deleteDictionary] = useDeleteDictionaryMutation();
-  const imports = useDictionaryImport();
-  const [removingIds, setRemovingIds] = useState<readonly string[]>([]);
-  const remove = (dictionaryId: string) => {
-    setRemovingIds((ids) => [...ids, dictionaryId]);
-    deleteDictionary(dictionaryId)
-      .unwrap()
-      .catch(() => {
-        setRemovingIds((ids) => ids.filter((id) => id !== dictionaryId));
-        dispatch(
-          actions.notificationRequested("The dictionary could not be removed"),
-        );
-      });
-  };
+  const dictionaries = list.data?.dictionaries ?? [];
+  const imports = useAppSelector(selectDictionaryImport);
+  const askingId = useAppSelector(selectDictionaryRemovalQuestion);
+  const dismissAlert = () => dispatch(actions.dictionaryImportAlertDismissed());
   return (
     <DictionariesView
-      dictionaries={list.data?.dictionaries ?? []}
-      removingIds={removingIds}
+      dictionaries={dictionaries}
+      removingIds={useAppSelector(selectRemovingDictionaryIds)}
+      confirmingRemovalOf={
+        dictionaries.find(({ id }) => id === askingId) ?? null
+      }
       isLoading={list.isLoading}
       loadFailed={list.isError}
       addingFile={imports.addingFile}
@@ -39,11 +33,21 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
       pendingTable={imports.pendingTable}
       onBack={onBack}
       onAddFromFile={() => dispatch(actions.dictionaryFilePickRequested())}
-      onRemove={remove}
-      onDismissUnsupportedFile={imports.dismissUnsupported}
-      onDismissImportFailure={imports.dismissFailure}
-      onImportTable={imports.importTable}
-      onCancelTable={imports.cancelTable}
+      onRemove={(dictionaryId) =>
+        dispatch(actions.dictionaryRemovalRequested(dictionaryId))
+      }
+      onConfirmRemoval={() => dispatch(actions.dictionaryRemovalConfirmed())}
+      onCancelRemoval={() => dispatch(actions.dictionaryRemovalCancelled())}
+      onDismissUnsupportedFile={dismissAlert}
+      onDismissImportFailure={dismissAlert}
+      onTableColumnRoleChosen={(index, role) =>
+        dispatch(actions.dictionaryColumnRoleChosen(index, role))
+      }
+      onTableHeaderRowToggled={() =>
+        dispatch(actions.dictionaryHeaderRowToggled())
+      }
+      onImportTable={() => dispatch(actions.dictionaryColumnsConfirmed())}
+      onCancelTable={() => dispatch(actions.dictionaryColumnsCancelled())}
     />
   );
 }

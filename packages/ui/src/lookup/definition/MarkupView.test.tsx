@@ -120,7 +120,7 @@ describe("MarkupView", () => {
 
     it("drops an id that holds whitespace", () => {
       const { container } = renderDefinition(html('<p id="a b">x</p>'));
-      expect(container.querySelector("[id]")).toBeNull();
+      expect(container.querySelector("p[id]")).toBeNull();
     });
 
     it("links a same-document link to the prefixed id", () => {

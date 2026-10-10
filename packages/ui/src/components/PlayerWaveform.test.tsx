@@ -1,4 +1,3 @@
-import { resetBackend } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import { act, cleanup, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -8,20 +7,18 @@ import { directPlaybackRoutes } from "../testSupport/mediaFixtureResponses.ts";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { PlayerWaveform } from "./PlayerWaveform.tsx";
 
-afterEach(() => {
-  cleanup();
-  resetBackend();
-});
+afterEach(cleanup);
 
 function renderWaveform(mediaFileId: string) {
   const client = createFakeBackendClient(
     fixtureResponses,
     directPlaybackRoutes,
   );
-  const rendered = renderWithAppStore(
-    <PlayerWaveform projectId="p1" mediaFileId={mediaFileId} />,
-    client,
-  );
+  const rendered = renderWithAppStore(<PlayerWaveform />, client);
+  act(() => {
+    rendered.store.dispatch(actions.openMediaFileRequested("p1", mediaFileId));
+    rendered.store.dispatch(actions.waveformToggled());
+  });
   return { ...rendered, client };
 }
 

@@ -171,7 +171,7 @@ The core logic and shared code for the TypeScript layer lives in `packages/`.
 ```
 packages/             the TypeScript workspace
 ├── types/            types generated from Rust (src/generated/) and from the OpenAPI document (src/openapi/)
-├── state/            the Redux store, actions, update functions, and the Effects interface
+├── state/ *          the Redux store, actions, update functions, and the Effects interface
 ├── backend/          the RTK Query endpoints
 ├── ui/               screens and components, with their Storybook stories beside them
 ├── effects-web/      each platform's implementation of the Effects interface
@@ -200,6 +200,7 @@ Notes on the internals of individual parts live beside them:
 - [apps/native/README.md](apps/native/README.md): the Tauri shell, the ffmpeg sidecars, and the Android and iOS builds and end-to-end tests.
 - [crates/conversion/README.md](crates/conversion/README.md): the conversion service's measured behaviour that is left as it is.
 - [crates/plugins/README.md](crates/plugins/README.md): the plugin host's execution modes, its iOS and Android constraints, and the `plugin-check` feature.
+- [packages/state/README.md](packages/state/README.md): the state package's pipeline, folders, and test helpers.
 - [packages/wasm/README.md](packages/wasm/README.md): the offline WebAssembly package and its build.
 - [fixtures/README.md](fixtures/README.md): the sample files shared by every layer's tests.
 - [plugins/plugin-manifest.md](plugins/plugin-manifest.md): the `plugin.toml` format of the example plugins.

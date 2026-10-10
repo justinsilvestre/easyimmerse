@@ -14,8 +14,8 @@ const directionThresholdPx = 6;
  */
 export function ScrolledChapter({
   chapterIndex,
-  initialLocation,
-  jump,
+  location,
+  jumpCount,
   layoutKey,
   maxColumnWidthEm,
   onLocationChange,
@@ -24,9 +24,10 @@ export function ScrolledChapter({
   footer,
 }: {
   chapterIndex: number;
-  /** The reader's place when the text first appears. */
-  initialLocation: ReaderLocation;
-  jump: { location: ReaderLocation; id: number };
+  /** The reader's place, which the column scrolls to on opening, after each jump, and when the layout changes. */
+  location: ReaderLocation;
+  /** Changes with each jump to `location`. */
+  jumpCount: number;
   layoutKey: string;
   maxColumnWidthEm: number;
   onLocationChange: (location: ReaderLocation) => void;
@@ -37,8 +38,6 @@ export function ScrolledChapter({
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
-  const anchor = useRef(initialLocation);
-  const appliedJumpId = useRef(jump.id);
   const lastScrollTop = useRef(0);
   const frame = useRef(0);
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
@@ -49,17 +48,15 @@ export function ScrolledChapter({
       scroller.current?.focus({ preventScroll: true });
   }, []);
 
-  // Scroll back to the reader's place whenever the text moves. The key is what moves it.
+  // Scroll to the reader's place on opening, after each jump, and whenever the text moves.
+  // It runs again when the jump count or the layout key changes.
+  // The location is read here but not followed, since the column's own reports move it.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useLayoutEffect(() => {
-    if (appliedJumpId.current !== jump.id) {
-      appliedJumpId.current = jump.id;
-      anchor.current = jump.location;
-    }
     if (scroller.current && content.current)
-      scrollTo(scroller.current, content.current, anchor.current);
+      scrollTo(scroller.current, content.current, location);
     lastScrollTop.current = scroller.current?.scrollTop ?? 0;
-  }, [jump, layoutKey]);
+  }, [jumpCount, layoutKey]);
 
   const onScroll = () => {
     cancelAnimationFrame(frame.current);
@@ -71,8 +68,7 @@ export function ScrolledChapter({
         onScrollDirection(delta > 0 ? "down" : "up");
         lastScrollTop.current = view.scrollTop;
       }
-      anchor.current = locationAtTop(view, content.current, chapterIndex);
-      onLocationChange(anchor.current);
+      onLocationChange(locationAtTop(view, content.current, chapterIndex));
     });
   };
 

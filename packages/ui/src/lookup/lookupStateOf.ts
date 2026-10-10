@@ -1,5 +1,5 @@
 import type { LookupResponse } from "@easyimmerse/types";
-import type { LookupState } from "./lookupState.ts";
+import type { LookupDisplayState } from "./lookupDisplayState.ts";
 
 /** Where the lookup request for a term stands. */
 export type LookupOutcome =
@@ -11,7 +11,7 @@ export type LookupOutcome =
 export function lookupStateOf(
   term: string,
   outcome: LookupOutcome,
-): LookupState {
+): LookupDisplayState {
   switch (outcome.kind) {
     case "pending":
       return { kind: "loading", term };

@@ -75,9 +75,9 @@ describe("chapterStartProgresses", () => {
 });
 
 describe("clampToBook", () => {
-  it("keeps a location inside the book", () => {
+  it("returns the location itself when it lies within the book", () => {
     const location = { chapterIndex: 0, paragraphIndex: 1, offset: 3 };
-    expect(clampToBook(createDocument(), location)).toEqual(location);
+    expect(clampToBook(createDocument(), location)).toBe(location);
   });
 
   it("moves a location past the last chapter to the end of the book", () => {

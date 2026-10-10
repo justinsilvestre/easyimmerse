@@ -1,7 +1,7 @@
+import type { ChosenWord, LookupCursor } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import type { WordHit } from "../components/useWordGestures.ts";
-import { type CueCursor, reduceCueCursor } from "./cueCursor.ts";
+import { cuePositionOf, cursorIn } from "./cueCursor.ts";
 
 const firstCue: Cue = {
   index: 1,
@@ -16,90 +16,50 @@ const secondCue: Cue = {
   text: "The dog eats.",
 };
 
-function hitAt(start: number, input: WordHit["input"]): WordHit {
-  return {
-    word: "cat",
-    start,
-    element: document.createElement("span"),
-    input,
-  };
-}
+const cat: ChosenWord = {
+  word: { term: "cat", query: null },
+  source: { kind: "cue", cue: firstCue },
+  occurrence: { passage: "1", start: 4 },
+  anchor: { elementId: "cat" },
+};
 
-/** A cursor the mouse put on "cat" of the first cue, whose lookup matched three characters. */
-function answeredCursor(): CueCursor {
-  const hit = hitAt(4, "mouse");
-  return {
-    cue: firstCue,
-    hit,
-    position: { cueIndex: 1, start: 4, input: "mouse", matchedLength: 3 },
-  };
-}
+const catCursor: LookupCursor = { chosen: cat, input: "mouse", pointed: cat };
 
-describe("reduceCueCursor", () => {
-  it("places the cursor in the cue pointed at", () => {
-    const cursor = reduceCueCursor(answeredCursor(), {
-      type: "pointed",
-      cue: secondCue,
-      hit: hitAt(4, "keyboard"),
-    });
-    expect(cursor?.position).toEqual({
-      cueIndex: 2,
+describe("cuePositionOf", () => {
+  it("places the cursor in its cue with the length its highlight covers", () => {
+    expect(cuePositionOf(catCursor, 3)).toEqual({
+      cueIndex: 1,
       start: 4,
-      input: "keyboard",
-    });
-  });
-
-  it("keeps the cursor while the mouse moves within the text its lookup matched", () => {
-    const cursor = answeredCursor();
-    expect(
-      reduceCueCursor(cursor, {
-        type: "pointed",
-        cue: firstCue,
-        hit: hitAt(5, "mouse"),
-      }),
-    ).toBe(cursor);
-  });
-
-  it("starts afresh at the same place in another cue", () => {
-    const cursor = reduceCueCursor(answeredCursor(), {
-      type: "pointed",
-      cue: secondCue,
-      hit: hitAt(4, "mouse"),
-    });
-    expect(cursor?.position.matchedLength).toBeUndefined();
-  });
-
-  it("takes the length a cached lookup matched when pointed", () => {
-    const cursor = reduceCueCursor(null, {
-      type: "pointed",
-      cue: secondCue,
-      hit: hitAt(4, "mouse"),
+      input: "mouse",
       matchedLength: 3,
     });
-    expect(cursor?.position.matchedLength).toBe(3);
   });
 
-  it("keeps the length the lookup matched once it answers", () => {
-    const hit = hitAt(4, "keyboard");
-    const cursor = reduceCueCursor(null, {
-      type: "answered",
-      cue: secondCue,
-      hit,
-      matchedLength: 3,
+  it("leaves the length unset while it is unknown", () => {
+    expect(cuePositionOf(catCursor, undefined)).toEqual({
+      cueIndex: 1,
+      start: 4,
+      input: "mouse",
     });
-    expect(cursor?.position.matchedLength).toBe(3);
   });
 
-  it("goes when the input that placed it leaves", () => {
-    expect(
-      reduceCueCursor(answeredCursor(), { type: "left", input: "mouse" }),
-    ).toBeNull();
+  it("gives no place to a cursor outside the subtitles", () => {
+    const inBook: LookupCursor = {
+      ...catCursor,
+      chosen: { ...catCursor.chosen, source: null },
+    };
+    expect(cuePositionOf(inBook, 3)).toBeNull();
+  });
+});
+
+describe("cursorIn", () => {
+  const position = { cueIndex: 1, start: 4, input: "mouse" as const };
+
+  it("gives the cursor to the card of its cue", () => {
+    expect(cursorIn(position, firstCue)).toBe(position);
   });
 
-  it("stays when another input leaves", () => {
-    const cursor = answeredCursor();
-    expect(reduceCueCursor(cursor, { type: "left", input: "keyboard" })).toBe(
-      cursor,
-    );
+  it("gives null to the card of another cue, which then keeps its props while the cursor moves", () => {
+    expect(cursorIn(position, secondCue)).toBeNull();
   });
 });

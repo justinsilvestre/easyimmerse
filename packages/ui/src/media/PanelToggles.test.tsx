@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { PanelToggles } from "./PanelToggles.tsx";
 import type { PlayerPanelsState } from "./PlayerControls.tsx";
 
@@ -14,13 +14,14 @@ function renderToggles({
   panels?: PlayerPanelsState;
   onToggleFullscreen?: () => void;
 } = {}) {
+  const cuePanelToggles: string[] = [];
   const callbacks = {
-    onToggleCuePanel: vi.fn(),
+    onToggleCuePanel: () => cuePanelToggles.push("toggled"),
     onToggleWaveform: ignore,
     onToggleFullscreen,
   };
   render(<PanelToggles panels={panels} callbacks={callbacks} />);
-  return callbacks;
+  return cuePanelToggles;
 }
 
 describe("PanelToggles", () => {
@@ -54,10 +55,10 @@ describe("PanelToggles", () => {
   });
 
   it("leaves the subtitles panel alone while the flashcard editor holds it", () => {
-    const { onToggleCuePanel } = renderToggles({
+    const cuePanelToggles = renderToggles({
       panels: { cues: true, waveform: false, isCuePanelTakenByEditor: true },
     });
     fireEvent.click(screen.getByRole("button", { name: "Subtitles panel" }));
-    expect(onToggleCuePanel).not.toHaveBeenCalled();
+    expect(cuePanelToggles).toEqual([]);
   });
 });

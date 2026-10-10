@@ -1,11 +1,10 @@
 import {
-  prefetchLookups,
   prefetchRepeatMs,
   useListDictionariesQuery,
+  usePrefetchLookupRangeQuery,
 } from "@easyimmerse/backend";
-import { useEffect, useEffectEvent } from "react";
+import { useMemo } from "react";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { lookupQueryOf } from "./lookupQueryOf.ts";
 import type { LookupText } from "./lookupTextAt.ts";
 
@@ -22,21 +21,24 @@ export function useLookupPrefetch(
   passages: readonly string[],
   lookupsIn: (passage: string) => readonly LookupText[],
 ) {
-  const dispatch = useAppDispatch();
   const listed = useListDictionariesQuery().data?.dictionaries;
   const isCovered = listed?.some((d) => coversLanguage(d, language)) ?? false;
-  const prefetch = useEffectEvent(() => {
-    const lookups = passages.flatMap((passage) =>
-      lookupsIn(passage).map((lookup) => lookupQueryOf(lookup, language)),
-    );
-    void prefetchLookups(dispatch, lookups);
-  });
   const rangeKey = passages.join("\u0000");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the range and the dictionaries are what call for another prefetch.
-  useEffect(() => {
-    if (!isCovered) return;
-    prefetch();
-    const timer = setInterval(prefetch, prefetchRepeatMs);
-    return () => clearInterval(timer);
-  }, [isCovered, rangeKey, listed, language]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the passages, by their key, decide the lookups.
+  const lookups = useMemo(
+    () =>
+      passages.flatMap((passage) =>
+        lookupsIn(passage).map((lookup) => lookupQueryOf(lookup, language)),
+      ),
+    [rangeKey, language],
+  );
+  usePrefetchLookupRangeQuery(
+    { language, lookups },
+    {
+      skip: !isCovered,
+      pollingInterval: prefetchRepeatMs,
+      // Nothing here reads the range's result, so its starting and settling do not render the component.
+      selectFromResult: () => ({}),
+    },
+  );
 }

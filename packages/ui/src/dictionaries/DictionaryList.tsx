@@ -1,7 +1,7 @@
+import { primarySubtag } from "@easyimmerse/state";
 import { languageName } from "../projects/languages.ts";
 import { DictionaryRow } from "./DictionaryRow.tsx";
 import type { DictionaryItem } from "./dictionaryItem.ts";
-import { primarySubtag } from "./dictionaryLanguages.ts";
 
 /**
  * Lists dictionaries grouped by the language they are looked up in, whatever the script or region, with those that do not state it last.

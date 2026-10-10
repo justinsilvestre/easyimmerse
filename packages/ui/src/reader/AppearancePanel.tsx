@@ -1,3 +1,4 @@
+import type { ReaderPreferences } from "@easyimmerse/state";
 import clsx from "clsx";
 import { AArrowDown, AArrowUp } from "lucide-react";
 import { ChoiceRow } from "../components/ChoiceRow.tsx";
@@ -7,7 +8,6 @@ import {
   fontFamilies,
   fontSizePercentOf,
   fontSizesRem,
-  type ReaderPreferences,
 } from "./readerPreferences.ts";
 
 type Theme = ReaderPreferences["theme"];

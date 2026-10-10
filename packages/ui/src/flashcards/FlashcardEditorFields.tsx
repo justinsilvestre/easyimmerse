@@ -1,22 +1,18 @@
-import {
-  actions,
-  selectPlayer,
-  selectPlayerDuration,
+import type {
+  EditorAction,
+  EditorState,
+  FlashcardTextFieldKey,
 } from "@easyimmerse/state";
 import type { AudioClip } from "@easyimmerse/types";
 import clsx from "clsx";
 import { Minus, Play, Plus, X } from "lucide-react";
-import { type ReactNode, useEffect, useId, useRef } from "react";
+import { type ReactNode, useId } from "react";
 import { AutoGrowTextarea } from "../components/AutoGrowTextarea.tsx";
 import { FocusExpandingBox } from "../components/FocusExpandingBox.tsx";
-import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { ClipEditor } from "./ClipEditor.tsx";
 import { moveClipEnd, moveClipStart } from "./clipView.ts";
-import type { EditorAction, EditorState } from "./editFlashcard.ts";
 import {
   type FlashcardLanguages,
-  type FlashcardTextFieldKey,
   findFlashcardField,
 } from "./flashcardFields.ts";
 import { formatClipDuration, formatClipTime } from "./formatClipTime.ts";
@@ -165,14 +161,20 @@ export function MediaFields({
   state,
   waveform,
   screenshotUrl,
+  mediaDurationMs,
   dispatch,
+  onPlayClip,
   isReadOnly = false,
 }: {
   state: EditorState;
   waveform: MediaWaveform | null;
   /** The image of the screenshot at its current time, or null when none can be shown. */
   screenshotUrl: string | null;
+  /** The media file's length, which the clip's end stays within; zero while it is unknown. */
+  mediaDurationMs: number;
   dispatch: (action: EditorAction) => void;
+  /** Plays the clip on the media player. */
+  onPlayClip: (clip: AudioClip) => void;
   isReadOnly?: boolean;
 }) {
   const { content } = state;
@@ -193,7 +195,12 @@ export function MediaFields({
           className="min-w-0 flex-1"
         >
           {waveform === null ? (
-            <ClipTimes clip={clip} onClipChange={changeClip} />
+            <ClipTimes
+              clip={clip}
+              mediaDurationMs={mediaDurationMs}
+              onClipChange={changeClip}
+              onPlayClip={onPlayClip}
+            />
           ) : (
             <ClipEditor
               peaks={waveform.peaks}
@@ -204,7 +211,7 @@ export function MediaFields({
               onScreenshotMsChange={(ms) =>
                 dispatch({ type: "screenshotMsChanged", ms })
               }
-              controls={<ClipPlayback clip={clip} />}
+              controls={<ClipPlayback clip={clip} onPlay={onPlayClip} />}
             />
           )}
         </fieldset>
@@ -226,18 +233,21 @@ const nudgeMs = 100;
 
 /**
  * The clip's start and end times, each between buttons that move it a tenth of a second earlier or later,
- * with the button that plays the clip beneath them. The end stays within the media once the player knows its length.
+ * with the button that plays the clip beneath them. The end stays within the media once its length is known.
  */
 function ClipTimes({
   clip,
+  mediaDurationMs,
   onClipChange,
+  onPlayClip,
 }: {
   clip: AudioClip;
+  mediaDurationMs: number;
   onClipChange: (clip: AudioClip) => void;
+  onPlayClip: (clip: AudioClip) => void;
 }) {
-  const durationSeconds = useAppSelector(selectPlayerDuration);
   const durationMs =
-    durationSeconds > 0 ? durationSeconds * 1000 : Number.POSITIVE_INFINITY;
+    mediaDurationMs > 0 ? mediaDurationMs : Number.POSITIVE_INFINITY;
   const change = (next: AudioClip) => {
     if (next.start_ms !== clip.start_ms || next.end_ms !== clip.end_ms)
       onClipChange(next);
@@ -262,7 +272,7 @@ function ClipTimes({
           }
         />
       </div>
-      <ClipPlayback clip={clip} />
+      <ClipPlayback clip={clip} onPlay={onPlayClip} />
     </div>
   );
 }
@@ -315,15 +325,20 @@ function NudgeButton({
 }
 
 /** The button that plays the clip on the media player, with the clip's length beside it. */
-function ClipPlayback({ clip }: { clip: AudioClip }) {
-  const playClip = usePlayClip(clip);
+function ClipPlayback({
+  clip,
+  onPlay,
+}: {
+  clip: AudioClip;
+  onPlay: (clip: AudioClip) => void;
+}) {
   return (
     <span className="flex items-center gap-1.5">
       {/* Named for the clip, so that screen readers tell it apart from the player's own Play. */}
       <button
         type="button"
         aria-label="Play the clip"
-        onClick={playClip}
+        onClick={() => onPlay(clip)}
         className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium text-accent-fg pointer-coarse:py-2 hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-accent"
       >
         <Play className="size-3.5" aria-hidden />
@@ -334,46 +349,6 @@ function ClipPlayback({ clip }: { clip: AudioClip }) {
       </span>
     </span>
   );
-}
-
-/** How far before the clip's start the player may report itself and still count as playing the clip. */
-const startToleranceMs = 250;
-/** How far past the clip's end the player may report itself and still be paused there, rather than having been moved on by the user. */
-const endToleranceMs = 1000;
-
-/**
- * Plays the clip on the media player from its start, and pauses the player once playback reaches the clip's end.
- * Playback the user pauses, or moves away from the clip, before then is theirs, and is left to play on.
- */
-function usePlayClip(clip: AudioClip): () => void {
-  const dispatch = useAppDispatch();
-  const { currentTimeSeconds, isPlaying } = useAppSelector(selectPlayer);
-  // "requested" until the player reports that it plays, then "playing" until the clip ends or the user takes over.
-  const playback = useRef<"requested" | "playing" | null>(null);
-  useEffect(() => {
-    if (isPlaying && playback.current === "requested")
-      playback.current = "playing";
-    else if (!isPlaying && playback.current === "playing")
-      playback.current = null;
-  }, [isPlaying]);
-  useEffect(() => {
-    if (playback.current === null) return;
-    const ms = currentTimeSeconds * 1000;
-    if (
-      ms < clip.start_ms - startToleranceMs ||
-      ms > clip.end_ms + endToleranceMs
-    ) {
-      playback.current = null;
-    } else if (ms >= clip.end_ms) {
-      playback.current = null;
-      dispatch(actions.pauseRequested());
-    }
-  }, [currentTimeSeconds, clip.start_ms, clip.end_ms, dispatch]);
-  return () => {
-    playback.current = isPlaying ? "playing" : "requested";
-    dispatch(actions.seekRequested(clip.start_ms / 1000));
-    dispatch(actions.playRequested());
-  };
 }
 
 function ScreenshotThumbnail({

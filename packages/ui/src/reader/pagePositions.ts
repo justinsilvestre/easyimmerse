@@ -51,6 +51,27 @@ export function locationOfPage(
   return { chapterIndex, paragraphIndex: paragraphIndexOf(paragraph), offset };
 }
 
+/**
+ * The location a turn from one page towards another reports: the first character of the nearest page, going on in the same direction,
+ * whose location lies past the page the turn started from. A page whose first character lies on a later page,
+ * such as one that holds only a chapter heading, is passed over. Null when no page in that direction will do.
+ */
+export function locationTurningTo(
+  text: PagedText,
+  from: number,
+  to: number,
+  chapterIndex: number,
+): ReaderLocation | null {
+  const direction = Math.sign(to - from);
+  const pageCount = pageCountOf(text);
+  for (let page = to; page >= 0 && page < pageCount; page += direction) {
+    const location = locationOfPage(text, page, chapterIndex);
+    const landing = pageOfLocation(text, location);
+    if (Math.sign(landing - from) === direction) return location;
+  }
+  return null;
+}
+
 /** How many pages the chapter fills, measured by where its last paragraph ends. */
 export function pageCountOf(text: PagedText): number {
   const last = paragraphsOf(text.columns).at(-1)?.getClientRects();

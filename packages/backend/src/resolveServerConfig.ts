@@ -1,4 +1,4 @@
-export type ServerConfig = { serverUrl: string; token: string };
+import type { ServerConfig } from "@easyimmerse/state";
 
 declare global {
   /** Injected by a native shell before the app's script runs. */

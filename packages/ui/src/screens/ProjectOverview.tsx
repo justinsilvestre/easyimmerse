@@ -3,20 +3,24 @@ import {
   useListFlashcardsQuery,
   useListMediaFilesQuery,
   useListPluginsQuery,
-  useRemoveMediaFileMutation,
 } from "@easyimmerse/backend";
-import { actions } from "@easyimmerse/state";
+import {
+  actions,
+  type MediaImportSource,
+  selectMediaImport,
+  transientNotice,
+} from "@easyimmerse/state";
 import type { Project } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useNavigationActions } from "../navigationContext.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { useNavigate } from "../hooks/useNavigate.ts";
 import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
 import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
 import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
-import { type ImportSource, MediaSection } from "../projects/MediaSection.tsx";
+import { MediaSection } from "../projects/MediaSection.tsx";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
 import { ProjectView } from "../projects/ProjectView.tsx";
-import { useImportMedia } from "../projects/useImportMedia.ts";
 
 /**
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
@@ -33,16 +37,21 @@ export function ProjectOverview({
   onEditSettings: () => void;
 }) {
   const dispatch = useAppDispatch();
-  const notify = (message: string) =>
-    dispatch(actions.notificationRequested(message));
   const notYet = () =>
-    notify("Reviewing and exporting flashcards is not available yet.");
+    dispatch(
+      actions.noticeRequested(
+        transientNotice(
+          "info",
+          "Reviewing and exporting flashcards is not available yet.",
+        ),
+      ),
+    );
   const media = useMediaItems(project.id);
-  const [removeMediaFile] = useRemoveMediaFileMutation();
   const importSources = useImportSources();
-  const importMedia = useImportMedia(project.id);
+  const importMedia = useAppSelector(selectMediaImport);
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
-  const { openDictionaries } = useNavigationActions();
+  const navigate = useNavigate();
+  const openDictionaries = () => navigate({ type: "openDictionaries" });
   const { settings } = project;
   return (
     <ProjectView
@@ -63,27 +72,28 @@ export function ProjectOverview({
           media={media.items}
           importSources={importSources}
           onAddMedia={() => dispatch(actions.mediaFilePickRequested())}
-          onImportMedia={importMedia.open}
+          onImportMedia={(source) =>
+            dispatch(actions.mediaImportOpened(source))
+          }
           onOpenMedia={(mediaFileId) =>
-            dispatch(actions.openMedia(mediaFileId))
+            dispatch(actions.openMediaFileRequested(project.id, mediaFileId))
           }
           onDeleteMedia={(mediaFileId) =>
-            removeMediaFile({ projectId: project.id, mediaFileId })
-              .unwrap()
-              .then(() => dispatch(actions.mediaFileRemoved(mediaFileId)))
-              .catch(() => notify("The media file could not be removed"))
+            dispatch(actions.mediaFileRemovalRequested(mediaFileId))
           }
         />
       )}
-      {importMedia.source && (
+      {importMedia && (
         <ImportMediaDialog
           label={importMedia.source.label}
           form={importMedia.form}
           isBusy={importMedia.isBusy}
           job={importMedia.job}
           error={importMedia.error}
-          onAction={importMedia.act}
-          onClose={importMedia.close}
+          onAction={(actionId, input) =>
+            dispatch(actions.mediaImportStepTaken(actionId, input))
+          }
+          onClose={() => dispatch(actions.mediaImportClosed())}
         />
       )}
       <FlashcardSyncPanel
@@ -107,7 +117,7 @@ export function ProjectOverview({
  * The installed media-source plugins, with the labels of their import buttons.
  * The server gives every media-source plugin a label, so the title only stands in for a missing one.
  */
-function useImportSources(): ImportSource[] {
+function useImportSources(): MediaImportSource[] {
   const plugins = useListPluginsQuery().data?.plugins ?? [];
   return plugins
     .filter((plugin) => plugin.kind === "media-source")
