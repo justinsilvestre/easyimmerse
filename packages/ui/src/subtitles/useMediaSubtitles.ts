@@ -2,9 +2,8 @@ import {
   skipToken,
   useGetSubtitleCuesQuery,
   useListSubtitleTracksQuery,
-  useSetSubtitleSelectionMutation,
 } from "@easyimmerse/backend";
-import { actions, transientNotice } from "@easyimmerse/state";
+import { actions } from "@easyimmerse/state";
 import type {
   Cue,
   SubtitleRole,
@@ -29,20 +28,8 @@ export function useMediaSubtitles(projectId: string, mediaFileId: string) {
   const selection = list.data?.selection ?? noSelection;
   const target = useCues(args, selection.target_track_id);
   const translation = useCues(args, selection.translation_track_id);
-  const [setSelection] = useSetSubtitleSelectionMutation();
   const choose = (role: SubtitleRole, trackId: string | null) =>
-    setSelection({
-      ...args,
-      selection: { ...selection, [`${role}_track_id`]: trackId },
-    })
-      .unwrap()
-      .catch(() =>
-        dispatch(
-          actions.noticeRequested(
-            transientNotice("danger", "The subtitles could not be changed"),
-          ),
-        ),
-      );
+    dispatch(actions.subtitleTrackChosen(role, trackId, selection));
   return {
     options: (list.data?.tracks ?? []).map(optionOf),
     selection,

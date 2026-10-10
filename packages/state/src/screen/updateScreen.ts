@@ -143,6 +143,8 @@ function failureNotices(action: AppAction): Effect[] {
       return [failure("The settings could not be saved")];
     case "removeMediaFile":
       return [failure("The media file could not be removed")];
+    case "setSubtitleSelection":
+      return [failure("The subtitles could not be changed")];
     default:
       return [];
   }

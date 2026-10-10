@@ -3,6 +3,8 @@ import type {
   FormInput,
   PlaybackEnvironment,
   ProjectSettings,
+  SubtitleRole,
+  SubtitleSelection,
   TableLayout,
   TrackSelection,
 } from "@easyimmerse/types";
@@ -87,6 +89,12 @@ export const screenActions = {
   pauseRequested: () => ({ type: "pauseRequested" }) as const,
   playerPlayingChanged: (isPlaying: boolean) =>
     ({ type: "playerPlayingChanged", isPlaying }) as const,
+  /** The user chose a track for a role of the subtitles, or none; `shown` is the selection the track bar showed. */
+  subtitleTrackChosen: (
+    role: SubtitleRole,
+    trackId: string | null,
+    shown: SubtitleSelection,
+  ) => ({ type: "subtitleTrackChosen", role, trackId, shown }) as const,
   subtitleFilePickRequested: () =>
     ({ type: "subtitleFilePickRequested" }) as const,
   subtitleFileChosen: (file: PickedFile) =>

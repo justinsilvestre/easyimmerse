@@ -11,6 +11,7 @@ import { updatePathPlayback } from "./updatePathPlayback.ts";
 import { updatePlayer } from "./updatePlayer.ts";
 import { updateResume } from "./updateResume.ts";
 import { updateSubtitlePick } from "./updateSubtitlePick.ts";
+import { updateSubtitleSelection } from "./updateSubtitleSelection.ts";
 import { updateWaveform } from "./updateWaveform.ts";
 
 type MediaScreenUpdate = (
@@ -44,6 +45,7 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
     return [lookup === screen.lookup ? screen : { ...screen, lookup }, effects];
   },
   updateSubtitlePick,
+  updateSubtitleSelection,
   updateClipLoop,
   updateClipPlayback,
   updateResume,
@@ -52,7 +54,7 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
 
 /**
  * Updates the media screen: its player, the dictionary pop-up, the clip loop, the clip Play, the resume seek, how a file on the server's disk plays,
- * the subtitles file picked for it, its waveform, and the panels around its stage.
+ * the subtitles file picked for it and the tracks chosen to show, its waveform, and the panels around its stage.
  * `app` is the state before the action.
  */
 export function updateMediaScreen(

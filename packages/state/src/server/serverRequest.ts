@@ -19,6 +19,7 @@ import type {
   PluginForm,
   Project,
   ProjectSettings,
+  SubtitleSelection,
   SubtitleTrack,
   SubtitleTracksResponse,
   TableLayout,
@@ -80,7 +81,13 @@ export type ServerRequest =
   | { kind: "setConversionCacheBudget"; budget: ConversionCacheBudget }
   | { kind: "createProject"; settings: ProjectSettings }
   | { kind: "updateProject"; projectId: string; settings: ProjectSettings }
-  | { kind: "removeMediaFile"; projectId: string; mediaFileId: string };
+  | { kind: "removeMediaFile"; projectId: string; mediaFileId: string }
+  | {
+      kind: "setSubtitleSelection";
+      projectId: string;
+      mediaFileId: string;
+      selection: SubtitleSelection;
+    };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -114,6 +121,8 @@ export type ServerResponses = {
   updateProject: Project;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   removeMediaFile: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  setSubtitleSelection: void;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

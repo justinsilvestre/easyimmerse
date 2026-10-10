@@ -445,4 +445,28 @@ describe("updateScreen", () => {
       },
     ]);
   });
+
+  it("tells that the subtitles could not be changed", () => {
+    const [, effects] = apply(
+      actions.requestSettled(
+        "media/m2/subtitleSelection/s1/none",
+        {
+          kind: "setSubtitleSelection",
+          projectId: "p1",
+          mediaFileId: "m2",
+          selection: { target_track_id: "s1", translation_track_id: null },
+        },
+        { ok: false, error: { status: 500, message: "down" } },
+      ),
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotice",
+        content: transientNotice(
+          "danger",
+          "The subtitles could not be changed",
+        ),
+      },
+    ]);
+  });
 });

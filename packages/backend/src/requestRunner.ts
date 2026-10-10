@@ -128,6 +128,11 @@ export const requestEndpoints = {
       { projectId, mediaFileId },
       { track: false },
     ),
+  setSubtitleSelection: ({ projectId, mediaFileId, selection }) =>
+    backendApi.endpoints.setSubtitleSelection.initiate(
+      { projectId, mediaFileId, selection },
+      { track: false },
+    ),
   updateProject: ({ projectId, settings }) =>
     backendApi.endpoints.updateProject.initiate(
       { projectId, settings },
