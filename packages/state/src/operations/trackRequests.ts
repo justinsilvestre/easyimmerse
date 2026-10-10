@@ -1,6 +1,7 @@
 import type { PerformedEffect } from "../app/effect.ts";
 import type { OperationsState, RequestRecord } from "./operations.ts";
 import { recordRequestEffects, sendEffectOf } from "./recordRequestEffects.ts";
+import { timeLimitTimer } from "./requestTimeLimit.ts";
 
 type Requests = readonly RequestRecord[];
 
@@ -10,6 +11,7 @@ type Requests = readonly RequestRecord[];
  * then the first waiting request of each scope with none in flight is sent.
  * The abort of a waiting request forgets it and settles it as aborted, since it was never sent,
  * unless the same effects send its id again, which replaces it instead.
+ * A request with a time limit starts it as it goes out.
  */
 export function trackRequests(
   operations: OperationsState,
@@ -22,8 +24,19 @@ export function trackRequests(
   const [requests, started] = startNextOfEachScope(recorded);
   return [
     requests === operations.requests ? operations : { ...operations, requests },
-    [...performed, ...started],
+    withTimeLimits([...performed, ...started]),
   ];
+}
+
+/** Adds the start of its time limit after each send of a request that has one. */
+function withTimeLimits(
+  effects: readonly PerformedEffect[],
+): readonly PerformedEffect[] {
+  return effects.flatMap((effect) =>
+    effect.type === "sendRequest" && effect.timeLimitMs !== undefined
+      ? [effect, timeLimitTimer(effect.id, effect.timeLimitMs)]
+      : [effect],
+  );
 }
 
 /** Sends the first waiting request of each scope that has no request in flight. */

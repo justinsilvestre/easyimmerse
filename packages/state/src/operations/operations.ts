@@ -2,6 +2,7 @@ import type { AppAction } from "../app/appAction.ts";
 import type { Feature } from "../app/feature.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import type { JobsState } from "./jobs.ts";
+import { timeLimitEffects } from "./requestTimeLimit.ts";
 import { updateJobs } from "./updateJobs.ts";
 
 /** The actions that number a lookup request, whether or not one is then sent. */
@@ -23,6 +24,8 @@ export type RequestRecord = {
   scope?: string;
   /** True while the request waits for an earlier request of its scope to settle. */
   isWaiting: boolean;
+  /** How long the request may go unanswered once sent before it is aborted, if it has such a limit. */
+  timeLimitMs?: number;
 };
 
 /** Work under way that any feature may ask about. */
@@ -39,13 +42,17 @@ export type OperationsState = {
 };
 
 /**
- * The operations as a feature. It forgets a request once it settles and polls the watched jobs;
+ * The operations as a feature. It forgets a request once it settles, aborts one that passes its time limit, and polls the watched jobs;
  * the root update records the requests sent and the jobs watched.
  */
 export const operationsFeature: Feature<OperationsState> = {
   initialState: { requests: [], jobs: {}, lookupRequestsSent: 0 },
   update: (operations, action) => {
-    const [jobs, effects] = updateJobs(operations.jobs, action);
+    const [jobs, jobEffects] = updateJobs(operations.jobs, action);
+    const effects = [
+      ...jobEffects,
+      ...timeLimitEffects(operations.requests, action),
+    ];
     const requests = forgetSettled(
       operations.requests,
       action.type === "requestSettled" ? action.id : null,

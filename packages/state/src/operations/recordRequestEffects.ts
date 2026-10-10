@@ -52,6 +52,7 @@ function recordSend(
     request: effect.request,
     scope,
     isWaiting,
+    timeLimitMs: effect.timeLimitMs,
   };
   const recorded = earlier
     ? requests.map((other) => (other === earlier ? record : other))
@@ -94,6 +95,9 @@ export function sendEffectOf({
   id,
   request,
   scope,
+  timeLimitMs,
 }: RequestRecord): SendRequest {
-  return { type: "sendRequest", id, request, scope };
+  return timeLimitMs === undefined
+    ? { type: "sendRequest", id, request, scope }
+    : { type: "sendRequest", id, request, scope, timeLimitMs };
 }
