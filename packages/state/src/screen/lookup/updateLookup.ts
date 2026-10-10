@@ -1,7 +1,11 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
-import type { PlayerState } from "../mediaScreen/playerState.ts";
+import { mediaScreenOf } from "../../flashcards/flashcardsOnScreen.ts";
+import {
+  initialPlayerState,
+  type PlayerState,
+} from "../mediaScreen/playerState.ts";
 import { moveCursor, withCursor } from "./lookupCursor.ts";
 import {
   clickWord,
@@ -27,9 +31,9 @@ import { updatePendingFlashcard } from "./updatePendingFlashcard.ts";
 export function updateLookup(
   lookup: LookupState,
   action: AppAction,
-  player: PlayerState,
   app: AppState,
 ) {
+  const player = playerOf(app);
   switch (action.type) {
     case "lookupWordClicked":
       return clickWord(lookup, action.chosen, action.input, player);
@@ -98,4 +102,9 @@ function searched(lookup: LookupState, word: LookupWord): LookupState {
     },
   };
   return { ...lookup, popup };
+}
+
+/** The open media screen's player before the action, or an idle player. */
+function playerOf(app: AppState): PlayerState {
+  return mediaScreenOf(app)?.screen.playing.player ?? initialPlayerState;
 }

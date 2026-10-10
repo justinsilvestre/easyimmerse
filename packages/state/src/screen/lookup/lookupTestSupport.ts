@@ -1,16 +1,14 @@
 import type { Cue, LookupResponse, LookupResult } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
-import { stateAfter } from "../../app/stateAfter.ts";
 import {
   exampleContext,
   exampleNewFlashcard,
 } from "../../flashcards/exampleFlashcards.ts";
 import type { FlashcardDestination } from "../../flashcards/flashcardActions.ts";
-import type { MediaScreenState } from "../screenState.ts";
+import { applyToMediaScreen } from "../mediaScreen/mediaScreenTestSupport.ts";
 import { lookupHoverRequestId, lookupRequestId } from "./lookupIds.ts";
 import type { ChosenWord } from "./lookupState.ts";
-import { updateLookup } from "./updateLookup.ts";
 
 const firstCue: Cue = {
   index: 1,
@@ -158,14 +156,8 @@ function resultMatching(matchedText: string): LookupResult {
   };
 }
 
-/** Applies an action to the lookup of m1's media screen after the given earlier actions. */
+/** Applies an action to m1's media screen after the given earlier actions, and returns its lookup with the effects. */
 export function applyToLookup(action: AppAction, ...before: AppAction[]) {
-  const { app, screen } = mediaScreenAfter(...before);
-  return updateLookup(screen.lookup, action, screen.player, app);
-}
-
-/** The app, and m1's media screen in it, after the given actions. */
-export function mediaScreenAfter(...before: AppAction[]) {
-  const app = stateAfter(actions.openMediaFileRequested("p1", "m1"), ...before);
-  return { app, screen: app.screen.main as MediaScreenState };
+  const [screen, effects] = applyToMediaScreen(action, ...before);
+  return [screen.lookup, effects] as const;
 }

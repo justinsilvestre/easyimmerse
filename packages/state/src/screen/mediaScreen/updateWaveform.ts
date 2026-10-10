@@ -1,4 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
+import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
 import type { Update } from "../../app/update.ts";
 import { updated } from "../../app/updated.ts";
@@ -28,6 +29,7 @@ const viewNames: readonly WaveformViewName[] = ["player", "clip"];
 export function updateWaveform(
   waveform: WaveformState,
   action: AppAction,
+  _app: AppState,
   route: MediaRoute,
 ) {
   switch (action.type) {

@@ -2,7 +2,7 @@ import type { AudioTarget, PlaybackRequest } from "@easyimmerse/types";
 import { updated } from "../../app/updated.ts";
 import type { PreferencesState } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
-import type { MediaScreenState, ScreenState } from "../screenState.ts";
+import type { ScreenState } from "../screenState.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { planRequest } from "./playbackRequests.ts";
 
@@ -11,16 +11,16 @@ type PlanPreferences = Pick<PreferencesState, "values" | "isLoaded">;
 
 /** Sends the first plan, unless one was sent or the first track choice is open. */
 export function sendFirstPlan(
-  screen: MediaScreenState,
+  playback: PathPlayback | null,
   route: MediaRoute,
   dialog: ScreenState["dialog"],
   preferences: PlanPreferences,
 ) {
   const isChoosing =
     dialog?.kind === "trackChoice" && dialog.stage === "choosing";
-  return screen.playback?.planRequest === null && !isChoosing
-    ? sendPlan(screen, route, preferences)
-    : updated(screen);
+  return playback?.planRequest === null && !isChoosing
+    ? sendPlan(playback, route, preferences)
+    : updated(playback);
 }
 
 /**
@@ -28,21 +28,20 @@ export function sendFirstPlan(
  * or of the preference, once loaded, for the first.
  */
 export function sendPlan(
-  screen: MediaScreenState,
+  playback: PathPlayback | null,
   route: MediaRoute,
   preferences: PlanPreferences,
 ) {
-  const { playback } = screen;
-  if (playback?.environment == null) return updated(screen);
+  if (playback?.environment == null) return updated(playback);
   const sent = playback.planRequest;
-  if (sent === null && !preferences.isLoaded) return updated(screen);
+  if (sent === null && !preferences.isLoaded) return updated(playback);
   const request = {
     environment: playback.environment,
     selection: playback.selection,
     preferred_audio_target: audioTargetOf(sent, preferences),
   };
   return updated(
-    withPlayback(screen, playback, { planRequest: request }),
+    { ...playback, planRequest: request },
     planRequest(route, request),
   );
 }
@@ -54,13 +53,4 @@ function audioTargetOf(
 ): AudioTarget | null {
   if (sent !== null) return sent.preferred_audio_target;
   return preferences.values.losslessAudio === "true" ? "flac" : null;
-}
-
-/** Returns the screen with some of its playback's fields replaced. */
-export function withPlayback(
-  screen: MediaScreenState,
-  playback: PathPlayback,
-  changes: Partial<PathPlayback>,
-): MediaScreenState {
-  return { ...screen, playback: { ...playback, ...changes } };
 }

@@ -133,7 +133,7 @@ function updateMainScreen(
   app: AppState,
 ) {
   if (main.kind === "media" && route.screen === "media")
-    return updateMediaScreen(main, action, route, app);
+    return updateMediaScreen(main, action, app, route);
   if (main.kind === "project" && route.screen === "project")
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);

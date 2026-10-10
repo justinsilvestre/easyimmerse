@@ -12,7 +12,7 @@ export function openMediaScreen(app: AppState): OpenMediaScreen | null {
   const route = mainScreenOf(app.route);
   const main = app.screen.main;
   return route.screen === "media" && main.kind === "media"
-    ? { mediaFileId: route.mediaFileId, player: main.player }
+    ? { mediaFileId: route.mediaFileId, player: main.playing.player }
     : null;
 }
 

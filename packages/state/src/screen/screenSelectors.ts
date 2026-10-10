@@ -8,7 +8,7 @@ import { initialPlayerState } from "./mediaScreen/playerState.ts";
 /** Returns the open media file's player, or an idle player when no media screen is open. */
 export const selectPlayer = (state: RootState) =>
   state.app.screen.main.kind === "media"
-    ? state.app.screen.main.player
+    ? state.app.screen.main.playing.player
     : initialPlayerState;
 
 /** Returns where the player is, in seconds. */

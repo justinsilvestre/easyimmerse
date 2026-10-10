@@ -1,4 +1,4 @@
-import type { AudioClip, Cue, TrackSelection } from "@easyimmerse/types";
+import type { Cue, TrackSelection } from "@easyimmerse/types";
 import type { FlashcardForm } from "../flashcards/flashcardForm.ts";
 import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
 import type { MainRoute } from "../route/route.ts";
@@ -11,8 +11,8 @@ import { initialLookup } from "./lookup/lookupState.ts";
 import type { MediaPanels } from "./mediaScreen/mediaPanels.ts";
 import { initialMediaPanels } from "./mediaScreen/mediaPanels.ts";
 import type { PathPlayback } from "./mediaScreen/pathPlayback.ts";
-import type { PlayerState } from "./mediaScreen/playerState.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
+import type { PlayingState } from "./mediaScreen/playingState.ts";
 import type { WaveformState } from "./mediaScreen/waveformState.ts";
 import { initialWaveform } from "./mediaScreen/waveformState.ts";
 import type { PluginFormWizard } from "./pluginForm/pluginFormWizard.ts";
@@ -23,18 +23,12 @@ import { initialReaderScreen } from "./readerScreen/readerScreenState.ts";
 /** The media screen's state, which the reader shares until it has state of its own. */
 export type MediaScreenState = {
   kind: "media";
-  player: PlayerState;
   /**
    * The flashcard open in the form, or null when the form is closed.
    * Leaving the screen saves its card in the background, so the form never outlives the screen.
    */
   flashcardForm: FlashcardForm | null;
-  /** The clip of the flashcard open in the form while playback loops it; null while nothing loops. */
-  loop: AudioClip | null;
-  /** The clip that the editor's Play button started, which pauses the player at its end; null when nothing is to pause. */
-  clipPlayback: AudioClip | null;
-  /** The stored position to seek to once the player has loaded the file; null once it is used, or when there is none. */
-  pendingResumeMs: number | null;
+  playing: PlayingState;
   /** How a file on the server's disk is to be played; null for a file the browser holds, or until the file's record arrives. */
   playback: PathPlayback | null;
   /** A picked subtitles file waiting to be added to the open media file. */
@@ -126,10 +120,12 @@ export function initialMainScreen(
     case "media":
       return {
         kind: "media",
-        player: initialPlayerState,
-        loop: null,
-        clipPlayback: null,
-        pendingResumeMs: storedPlaces.playback[route.mediaFileId] ?? null,
+        playing: {
+          player: initialPlayerState,
+          loop: null,
+          clipPlayback: null,
+          pendingResumeMs: storedPlaces.playback[route.mediaFileId] ?? null,
+        },
         playback: null,
         pendingSubtitleFile: null,
         waveform: initialWaveform,

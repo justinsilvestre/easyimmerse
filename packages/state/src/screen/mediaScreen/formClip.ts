@@ -4,37 +4,37 @@ import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
 import type { FlashcardCard } from "../../flashcards/flashcardCard.ts";
 import type { FlashcardForm } from "../../flashcards/flashcardForm.ts";
+import { formOf } from "../../flashcards/flashcardsOnScreen.ts";
 import { stepFlashcardForm } from "../../flashcards/stepFlashcardForm.ts";
-import type { MediaScreenState } from "../screenState.ts";
+import type { PlayingState } from "./playingState.ts";
 import { seekTo } from "./seekTo.ts";
 
 /**
- * Keeps the flashcard open in the form, as `stepFlashcardForm` steps it, and plays its clip:
+ * Plays the clip of the flashcard open in the form, as `stepFlashcardForm` steps the form:
  * a card opening seeks to its clip's start and loops the clip if the player was playing,
  * the loop and the clip Play follow the clip's edges as they move, and both end once the form closes.
  * `app` is the state before the action.
  */
-export function updateFlashcardForm(
-  screen: MediaScreenState,
+export function followFormClip(
+  playing: PlayingState,
   action: AppAction,
   app: AppState,
 ) {
   const { form, opened } = stepFlashcardForm(app, action);
-  const before = screen.flashcardForm;
-  const next = form === before ? screen : { ...screen, flashcardForm: form };
-  if (opened !== null) return playOpened(next, opened);
+  const before = formOf(app);
+  if (opened !== null) return playOpened(playing, opened);
   if (form === null)
-    return updated(before === null ? next : withClip(next, null, null));
+    return updated(before === null ? playing : withClip(playing, null, null));
   const moved = movedClipOf(before, form);
-  return updated(moved ? followMovedClip(next, moved) : next);
+  return updated(moved ? followMovedClip(playing, moved) : playing);
 }
 
 /** Seeks to the clip of the card that opened, looping it while the player plays. */
-function playOpened(screen: MediaScreenState, opened: FlashcardCard) {
+function playOpened(playing: PlayingState, opened: FlashcardCard) {
   const clip = opened.editor.content.audio_context;
-  if (clip === null) return updated(withClip(screen, null, null));
-  const loop = screen.player.isPlaying ? clip : null;
-  return seekTo(withClip(screen, loop, null), clip.start_ms);
+  if (clip === null) return updated(withClip(playing, null, null));
+  const loop = playing.player.isPlaying ? clip : null;
+  return seekTo({ ...playing, loop, clipPlayback: null }, clip.start_ms);
 }
 
 function movedClipOf(
@@ -47,19 +47,17 @@ function movedClipOf(
     : null;
 }
 
-function followMovedClip(
-  screen: MediaScreenState,
-  clip: AudioClip,
-): MediaScreenState {
-  return withClip(screen, screen.loop && clip, screen.clipPlayback && clip);
+function followMovedClip(playing: PlayingState, clip: AudioClip) {
+  const { loop, clipPlayback } = playing;
+  return withClip(playing, loop && clip, clipPlayback && clip);
 }
 
 function withClip(
-  screen: MediaScreenState,
+  playing: PlayingState,
   loop: AudioClip | null,
   clipPlayback: AudioClip | null,
-): MediaScreenState {
-  return screen.loop === loop && screen.clipPlayback === clipPlayback
-    ? screen
-    : { ...screen, loop, clipPlayback };
+): PlayingState {
+  return playing.loop === loop && playing.clipPlayback === clipPlayback
+    ? playing
+    : { ...playing, loop, clipPlayback };
 }

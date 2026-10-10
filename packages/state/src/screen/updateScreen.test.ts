@@ -197,7 +197,7 @@ describe("updateScreen", () => {
       actions.openMediaFileRequested("p1", "m1"),
       ...playingM2,
     );
-    expect(screen.main.kind === "media" && screen.main.player).toEqual(
+    expect(screen.main.kind === "media" && screen.main.playing.player).toEqual(
       initialPlayerState,
     );
   });

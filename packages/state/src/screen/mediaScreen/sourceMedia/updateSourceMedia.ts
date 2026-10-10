@@ -25,8 +25,8 @@ import {
 export function updateSourceMedia(
   wizard: PluginFormWizard | null,
   action: AppAction,
-  route: MediaRoute,
   app: AppState,
+  route: MediaRoute,
 ) {
   switch (action.type) {
     case "sourceMediaOpened":
