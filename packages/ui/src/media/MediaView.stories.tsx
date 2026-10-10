@@ -42,6 +42,12 @@ import {
 } from "./exampleCues.ts";
 import { generateExamplePeaks } from "./examplePeaks.ts";
 import { MediaView } from "./MediaView.tsx";
+import {
+  type PlayerCallbacks,
+  PlayerControls,
+  type PlayerPanelsState,
+} from "./PlayerControls.tsx";
+import type { PlayerControlsState } from "./PlayerControlsState.ts";
 import { SubtitleTrackBar } from "./SubtitleTrackBar.tsx";
 import type { SubtitleTrackChoices } from "./SubtitleTrackChoices.ts";
 import { defaultSubtitleAppearance } from "./subtitleAppearance.ts";
@@ -198,6 +204,47 @@ function lookupPopup(
   );
 }
 
+const playerCallbacks: PlayerCallbacks = {
+  onTogglePlay: fn(),
+  onSeek: fn(),
+  onSkip: fn(),
+  onVolumeChange: fn(),
+  onSpeedChange: fn(),
+  onToggleSubtitleDisplay: fn(),
+  onToggleSubtitles: fn(),
+  onOpenSubtitleAppearance: fn(),
+  onToggleCuePanel: fn(),
+  onToggleWaveform: fn(),
+  onToggleMute: fn(),
+  onToggleFullscreen: fn(),
+};
+
+const pausedPlayback: PlayerControlsState = {
+  isPlaying: false,
+  currentMs: 6_200,
+  durationMs,
+  volume: 0.8,
+  speed: 1,
+};
+
+const panels: PlayerPanelsState = { cues: true, waveform: false };
+
+/** The control bar over the bottom of the stage, which the media screen connects to the store. */
+function controls(
+  playback: PlayerControlsState,
+  shownPanels: PlayerPanelsState = panels,
+  callbacks: PlayerCallbacks = playerCallbacks,
+) {
+  return (
+    <PlayerControls
+      playback={playback}
+      tracks={tracks}
+      panels={shownPanels}
+      callbacks={callbacks}
+    />
+  );
+}
+
 const meta = {
   title: "Media/MediaView",
   component: MediaView,
@@ -210,38 +257,19 @@ const meta = {
       source: null,
     },
     stage: videoStage(),
-    playback: {
-      isPlaying: false,
-      currentMs: 6_200,
-      durationMs,
-      volume: 0.8,
-      speed: 1,
-    },
-    tracks,
+    isPlaying: false,
+    controls: controls(pausedPlayback),
     cues: exampleCues,
     translationCues: exampleTranslationCues,
     shownCue: exampleCues[2] ?? null,
     waveform: waveform(),
-    panels: { cues: true, waveform: false },
+    panels,
     subtitleDisplay: "both",
     subtitleAppearance: defaultSubtitleAppearance,
     onSubtitleAppearanceChange: fn(),
     onCloseSubtitleAppearance: fn(),
     flashcardWordRanges: exampleFlashcardWordRanges,
-    playerCallbacks: {
-      onTogglePlay: fn(),
-      onSeek: fn(),
-      onSkip: fn(),
-      onVolumeChange: fn(),
-      onSpeedChange: fn(),
-      onToggleSubtitleDisplay: fn(),
-      onToggleSubtitles: fn(),
-      onOpenSubtitleAppearance: fn(),
-      onToggleCuePanel: fn(),
-      onToggleWaveform: fn(),
-      onToggleMute: fn(),
-      onToggleFullscreen: fn(),
-    },
+    playerCallbacks,
     onBack: fn(),
     wordGestures: {
       onWordClick: fn(),
@@ -292,7 +320,11 @@ export const OnASmallPhone: Story = {
   parameters: { viewport: { options: INITIAL_VIEWPORTS } },
   globals: { viewport: { value: "iphonex", isRotated: false } },
   args: {
-    playerCallbacks: { ...meta.args.playerCallbacks, onOpenTracks: fn() },
+    controls: controls(pausedPlayback, panels, {
+      ...playerCallbacks,
+      onOpenTracks: fn(),
+    }),
+    playerCallbacks: { ...playerCallbacks, onOpenTracks: fn() },
   },
 };
 
@@ -313,14 +345,21 @@ export const OnAShortWideWindow: Story = {
 
 /** Fullscreen while paused, with the footer laid under the controls at the bottom of the stage. */
 export const InFullscreen: Story = {
-  args: { panels: { ...meta.args.panels, isFullscreen: true } },
+  args: {
+    panels: { ...panels, isFullscreen: true },
+    controls: controls(pausedPlayback, { ...panels, isFullscreen: true }),
+  },
 };
 
 /** Fullscreen during playback, where the header, controls and footer fold away once the pointer rests. */
 export const InFullscreenWhilePlaying: Story = {
   args: {
-    panels: { ...meta.args.panels, isFullscreen: true },
-    playback: { ...meta.args.playback, isPlaying: true },
+    panels: { ...panels, isFullscreen: true },
+    isPlaying: true,
+    controls: controls(
+      { ...pausedPlayback, isPlaying: true },
+      { ...panels, isFullscreen: true },
+    ),
   },
 };
 
@@ -338,7 +377,8 @@ export const FourLineCue: Story = {
 
 export const SubtitlesHidden: Story = {
   args: {
-    panels: { cues: true, waveform: false, areSubtitlesHidden: true },
+    panels: { ...panels, areSubtitlesHidden: true },
+    controls: controls(pausedPlayback, { ...panels, areSubtitlesHidden: true }),
   },
 };
 
@@ -414,11 +454,18 @@ export const NoSubtitles: Story = {
     translationCues: [],
     shownCue: null,
     waveform: waveform([]),
-    tracks: {
-      subtitles: [],
-      targetSubtitlesId: null,
-      translationSubtitlesId: null,
-    },
+    controls: (
+      <PlayerControls
+        playback={pausedPlayback}
+        tracks={{
+          subtitles: [],
+          targetSubtitlesId: null,
+          translationSubtitlesId: null,
+        }}
+        panels={panels}
+        callbacks={playerCallbacks}
+      />
+    ),
     sidePanel: subtitlesPanel([], []),
   },
 };
@@ -438,13 +485,8 @@ export const AudioWithTranscript: Story = {
 
 export const Playing: Story = {
   args: {
-    playback: {
-      isPlaying: true,
-      currentMs: 6_200,
-      durationMs,
-      volume: 0.8,
-      speed: 1,
-    },
+    isPlaying: true,
+    controls: controls({ ...pausedPlayback, isPlaying: true }),
   },
 };
 
@@ -458,13 +500,7 @@ export const LongFile: Story = {
     cues: longFileCues,
     translationCues: longFileTranslationCues,
     shownCue: longFileCues[1] ?? null,
-    playback: {
-      isPlaying: false,
-      currentMs: 6_200,
-      durationMs: longFileDurationMs,
-      volume: 0.8,
-      speed: 1,
-    },
+    controls: controls({ ...pausedPlayback, durationMs: longFileDurationMs }),
     sidePanel: subtitlesPanel(longFileCues, longFileTranslationCues),
   },
 };

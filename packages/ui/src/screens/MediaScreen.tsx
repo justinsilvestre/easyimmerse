@@ -1,10 +1,10 @@
 import { useListPluginsQuery } from "@easyimmerse/backend";
 import {
   actions,
-  selectCuePanelSpan,
   selectIsSubtitleAppearanceOpen,
   selectMediaKeyBinding,
   selectMediaPanels,
+  selectPlayer,
   selectShownCue,
   selectSourceMedia,
   transientNotice,
@@ -14,14 +14,13 @@ import { useMemo } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
-import { ConnectedFlashcardEditor } from "../flashcards/ConnectedFlashcardEditor.tsx";
 import { draftFromCue } from "../flashcards/draftFromCue.ts";
-import { useClipWaveform } from "../flashcards/useClipWaveform.ts";
+import { MediaFlashcardEditor } from "../flashcards/MediaFlashcardEditor.tsx";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useScreenshotSource } from "../flashcards/useScreenshotSource.ts";
-import { useScreenshotUrl } from "../flashcards/useScreenshotUrl.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
+import { useAppStore } from "../hooks/useAppStore.ts";
 import { useFullscreen } from "../hooks/useFullscreen.ts";
 import { useKeyBindings } from "../hooks/useKeyBindings.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
@@ -31,13 +30,14 @@ import type { LookupPlace } from "../lookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useSubtitleLookup } from "../lookup/useSubtitleLookup.ts";
 import { wordLookupsIn } from "../lookup/wordLookupsIn.ts";
-import { cuesToPrefetch } from "../media/cuesToPrefetch.ts";
+import { ConnectedPlayerControls } from "../media/ConnectedPlayerControls.tsx";
 import { findAdjacentCue, findTranslationOf } from "../media/findCue.ts";
 import { flashcardWordRanges } from "../media/flashcardWordRanges.ts";
 import { MediaView } from "../media/MediaView.tsx";
 import { mediaSourceOf } from "../media/mediaSourceOf.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
+import { selectCuesToPrefetch } from "../media/selectCuesToPrefetch.ts";
 import { selectMediaPlayback } from "../media/selectMediaPlayback.ts";
 import { selectSubtitleAppearance } from "../media/selectSubtitleAppearance.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
@@ -75,8 +75,10 @@ export function MediaScreen({
   const projectId = project.id;
   const { settings } = project;
   const mediaFile = useMediaFile(projectId, mediaFileId);
-  const playback = useAppSelector(selectMediaPlayback);
-  const { currentMs, durationMs } = playback;
+  const store = useAppStore();
+  const isPlaying = useAppSelector((state) => selectPlayer(state).isPlaying);
+  // Read when the user acts rather than subscribed to, so that the player's time moving does not render the screen.
+  const playbackNow = () => selectMediaPlayback(store.getState());
   const screenshotSource = useScreenshotSource(projectId, mediaFile);
   const subtitles = useMediaSubtitles(projectId, mediaFileId);
   const source = mediaSourceOf(
@@ -99,9 +101,7 @@ export function MediaScreen({
     [flashcards.flashcards, subtitles.cues],
   );
   const subtitleAppearance = useAppSelector(selectSubtitleAppearance);
-  const { form } = flashcards;
-  const editedContent = form?.card.editor.content;
-  const isEditorOpen = form !== null;
+  const isEditorOpen = flashcards.editedSegmentId !== null;
   const fullscreen = useFullscreen();
   // Passed through MediaView to the panel toggles, which mark the subtitles panel's toggle unavailable meanwhile.
   const shownPanels = {
@@ -110,15 +110,6 @@ export function MediaScreen({
     isFullscreen: fullscreen.isFullscreen,
   };
   const canChooseTracks = useAppSelector(selectCanChooseTracks);
-  const clipWaveform = useClipWaveform(
-    mediaFile,
-    durationMs,
-    editedContent?.audio_context ?? null,
-  );
-  const screenshotUrl = useScreenshotUrl(
-    screenshotSource,
-    editedContent?.screenshot?.at_ms ?? null,
-  );
   const tracks: SubtitleTrackChoices = {
     subtitles: subtitles.options,
     targetSubtitlesId: subtitles.selection.target_track_id,
@@ -144,12 +135,12 @@ export function MediaScreen({
     target: settings.target_language,
     translation: settings.translation_language,
   };
-  const panelSpan = useAppSelector(selectCuePanelSpan);
+  const cuesToPrefetch = useAppSelector((state) =>
+    selectCuesToPrefetch(state, subtitles.cues),
+  );
   useLookupPrefetch(
     languages.target,
-    cuesToPrefetch(subtitles.cues, { shownCue, currentMs, panelSpan }).map(
-      (cue) => stripMarkup(cue.text),
-    ),
+    cuesToPrefetch.map((cue) => stripMarkup(cue.text)),
     wordLookupsIn,
   );
   const lookup = useSubtitleLookup(languages, {
@@ -159,12 +150,14 @@ export function MediaScreen({
   const playerCallbacks: PlayerCallbacks = {
     onTogglePlay: () => dispatch(actions.playToggleRequested()),
     onSeek: (ms) => dispatch(actions.seekRequested(ms / 1000)),
-    onSkip: (direction) =>
+    onSkip: (direction) => {
+      const { currentMs, durationMs } = playbackNow();
       dispatch(
         actions.seekRequested(
           skipTarget(subtitles.cues, currentMs, durationMs, direction) / 1000,
         ),
-      ),
+      );
+    },
     onVolumeChange: (volume) => dispatch(actions.volumeChangeRequested(volume)),
     onToggleMute: () => dispatch(actions.muteToggleRequested()),
     onSpeedChange: (speed) => dispatch(actions.speedChangeRequested(speed)),
@@ -183,7 +176,9 @@ export function MediaScreen({
     skipCue: ({ direction }) => playerCallbacks.onSkip(direction),
     replayCue: () =>
       dispatch(
-        actions.seekRequested(replayTarget(subtitles.cues, currentMs) / 1000),
+        actions.seekRequested(
+          replayTarget(subtitles.cues, playbackNow().currentMs) / 1000,
+        ),
       ),
     toggleFullscreen: fullscreen.toggle,
     startFlashcardAtCursor: ({ destination }) =>
@@ -216,8 +211,14 @@ export function MediaScreen({
           source,
         }}
         stage={<MediaPlayer projectId={projectId} />}
-        playback={playback}
-        tracks={tracks}
+        isPlaying={isPlaying}
+        controls={
+          <ConnectedPlayerControls
+            tracks={tracks}
+            panels={shownPanels}
+            callbacks={playerCallbacks}
+          />
+        }
         cues={subtitles.cues}
         translationCues={subtitles.translationCues}
         shownCue={shownCue}
@@ -266,12 +267,11 @@ export function MediaScreen({
           )
         }
         sidePanel={
-          form !== null ? (
-            <ConnectedFlashcardEditor
-              form={form}
+          isEditorOpen ? (
+            <MediaFlashcardEditor
+              mediaFile={mediaFile}
+              screenshotSource={screenshotSource}
               languages={languages}
-              waveform={clipWaveform}
-              screenshotUrl={screenshotUrl}
             />
           ) : panels.cues ? (
             <SubtitlesSidePanel
