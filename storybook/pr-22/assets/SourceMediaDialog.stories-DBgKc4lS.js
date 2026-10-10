@@ -1,0 +1,39 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{t}from"./jsx-runtime-DeHZSEgm.js";import{n,t as r}from"./withAppStore-V3il0RrJ.js";import{n as i,o as a,s as o,t as s}from"./PluginFormDialog-ClpYsL_N.js";function c({title:e,form:t,isBusy:n,error:r,onAction:i,onClose:a}){return(0,l.jsx)(s,{form:t,fallbackTitle:e,loadingMessage:`Asking the plugin what it offers…`,error:r,isBusy:n,onAction:i,onClose:a,children:n&&(0,l.jsx)(`p`,{className:`text-sm text-fg-muted`,role:`status`,children:`Working… This can take a moment.`})})}var l;function u(){return(u=e((()=>{i(),l=t(),c.__docgenInfo={description:`Shows the media interface of the plugin a media file was imported through:
+the forms it asks for, one after another, where the user fetches further subtitle tracks
+from the source and removes ones the file holds.`,methods:[],displayName:`SourceMediaDialog`,props:{title:{required:!0,tsType:{name:`string`},description:`The plugin's title, which names the dialog until the plugin's form arrives.`},form:{required:!0,tsType:{name:`union`,raw:`PluginForm | null`,elements:[{name:`signature`,type:`object`,raw:`{ title: string, 
+/**
+ * Explains the form under its title.
+ */
+description: string | null, fields: Array<FormField>, actions: Array<FormAction>, }`,signature:{properties:[{key:`title`,value:{name:`string`,required:!0}},{key:`description`,value:{name:`union`,raw:`string | null`,elements:[{name:`string`},{name:`null`}],required:!0},description:`Explains the form under its title.`},{key:`fields`,value:{name:`Array`,elements:[{name:`signature`,type:`object`,raw:`{ 
+/**
+ * Names the field in the input the app sends back.
+ */
+id: string, label: string, 
+/**
+ * Explains the field under its label.
+ */
+hint: string | null, control: FormControl, }`,signature:{properties:[{key:`id`,value:{name:`string`,required:!0},description:`Names the field in the input the app sends back.`},{key:`label`,value:{name:`string`,required:!0}},{key:`hint`,value:{name:`union`,raw:`string | null`,elements:[{name:`string`},{name:`null`}],required:!0},description:`Explains the field under its label.`},{key:`control`,value:{name:`union`,raw:`{ "kind": "text", value: string, placeholder: string | null, } | { "kind": "choose-one", options: Array<FormOption>, 
+/**
+ * The ids of the options chosen to begin with.
+ */
+chosen: Array<string>, } | { "kind": "choose-many", options: Array<FormOption>, 
+/**
+ * The ids of the options chosen to begin with.
+ */
+chosen: Array<string>, } | { "kind": "toggle", on: boolean, } | { "kind": "note", text: string, } | { "kind": "hidden", value: string, }`,elements:[{name:`signature`,type:`object`,raw:`{ "kind": "text", value: string, placeholder: string | null, }`,signature:{properties:[{key:`kind`,value:{name:`literal`,value:`"text"`,required:!0}},{key:`value`,value:{name:`string`,required:!0}},{key:`placeholder`,value:{name:`union`,raw:`string | null`,elements:[{name:`string`},{name:`null`}],required:!0}}]}},{name:`signature`,type:`object`,raw:`{ "kind": "choose-one", options: Array<FormOption>, 
+/**
+ * The ids of the options chosen to begin with.
+ */
+chosen: Array<string>, }`,signature:{properties:[{key:`kind`,value:{name:`literal`,value:`"choose-one"`,required:!0}},{key:`options`,value:{name:`Array`,elements:[{name:`signature`,type:`object`,raw:`{ id: string, label: string, 
+/**
+ * Explains the option beside its label.
+ */
+hint: string | null, }`,signature:{properties:[{key:`id`,value:{name:`string`,required:!0}},{key:`label`,value:{name:`string`,required:!0}},{key:`hint`,value:{name:`union`,raw:`string | null`,elements:[{name:`string`},{name:`null`}],required:!0},description:`Explains the option beside its label.`}]}}],raw:`Array<FormOption>`,required:!0}},{key:`chosen`,value:{name:`Array`,elements:[{name:`string`}],raw:`Array<string>`,required:!0},description:`The ids of the options chosen to begin with.`}]}},{name:`signature`,type:`object`,raw:`{ "kind": "choose-many", options: Array<FormOption>, 
+/**
+ * The ids of the options chosen to begin with.
+ */
+chosen: Array<string>, }`,signature:{properties:[{key:`kind`,value:{name:`literal`,value:`"choose-many"`,required:!0}},{key:`options`,value:{name:`Array`,elements:[{name:`signature`,type:`object`,raw:`{ id: string, label: string, 
+/**
+ * Explains the option beside its label.
+ */
+hint: string | null, }`,signature:{properties:[{key:`id`,value:{name:`string`,required:!0}},{key:`label`,value:{name:`string`,required:!0}},{key:`hint`,value:{name:`union`,raw:`string | null`,elements:[{name:`string`},{name:`null`}],required:!0},description:`Explains the option beside its label.`}]}}],raw:`Array<FormOption>`,required:!0}},{key:`chosen`,value:{name:`Array`,elements:[{name:`string`}],raw:`Array<string>`,required:!0},description:`The ids of the options chosen to begin with.`}]}},{name:`signature`,type:`object`,raw:`{ "kind": "toggle", on: boolean, }`,signature:{properties:[{key:`kind`,value:{name:`literal`,value:`"toggle"`,required:!0}},{key:`on`,value:{name:`boolean`,required:!0}}]}},{name:`signature`,type:`object`,raw:`{ "kind": "note", text: string, }`,signature:{properties:[{key:`kind`,value:{name:`literal`,value:`"note"`,required:!0}},{key:`text`,value:{name:`string`,required:!0}}]}},{name:`signature`,type:`object`,raw:`{ "kind": "hidden", value: string, }`,signature:{properties:[{key:`kind`,value:{name:`literal`,value:`"hidden"`,required:!0}},{key:`value`,value:{name:`string`,required:!0}}]}}],required:!0}}]}}],raw:`Array<FormField>`,required:!0}},{key:`actions`,value:{name:`Array`,elements:[{name:`signature`,type:`object`,raw:`{ id: string, label: string, style: FormActionStyle, }`,signature:{properties:[{key:`id`,value:{name:`string`,required:!0}},{key:`label`,value:{name:`string`,required:!0}},{key:`style`,value:{name:`union`,raw:`"primary" | "secondary" | "destructive"`,elements:[{name:`literal`,value:`"primary"`},{name:`literal`,value:`"secondary"`},{name:`literal`,value:`"destructive"`}],required:!0}}]}}],raw:`Array<FormAction>`,required:!0}}]}},{name:`null`}]},description:`The form the plugin asked for, or null while it is being asked for.`},isBusy:{required:!0,tsType:{name:`boolean`},description:`Whether the plugin is answering an action.`},error:{required:!0,tsType:{name:`union`,raw:`string | null`,elements:[{name:`string`},{name:`null`}]},description:`Why the form could not be shown or the action carried out, or null.`},onAction:{required:!0,tsType:{name:`signature`,type:`function`,raw:`(actionId: string, input: FormInput[]) => void`,signature:{arguments:[{type:{name:`string`},name:`actionId`},{type:{name:`Array`,elements:[{name:`signature`,type:`object`,raw:`{ field: string, values: Array<string>, }`,signature:{properties:[{key:`field`,value:{name:`string`,required:!0}},{key:`values`,value:{name:`Array`,elements:[{name:`string`}],raw:`Array<string>`,required:!0}}]}}],raw:`FormInput[]`},name:`input`}],return:{name:`void`}}},description:``},onClose:{required:!0,tsType:{name:`signature`,type:`function`,raw:`() => void`,signature:{arguments:[],return:{name:`void`}}},description:``}}}})))()}var d,f,p,m,h,g,_,v;function y(){return(y=e((()=>{o(),r(),u(),{fn:d}=__STORYBOOK_MODULE_TEST__,f={title:`Subtitles/SourceMediaDialog`,component:c,decorators:[n],parameters:{layout:`fullscreen`},args:{title:`Video site`,form:a,isBusy:!1,error:null,onAction:d(),onClose:d()}},p={args:{form:null}},m={},h={args:{isBusy:!0}},g={args:{error:`The subtitles could not be fetched: the video is private.`}},_={args:{form:null,error:`The plugin could not be reached.`}},v=[`AskingForTheForm`,`Offered`,`Applying`,`Failed`,`FormUnavailable`]})))()}y();export{h as Applying,p as AskingForTheForm,g as Failed,_ as FormUnavailable,m as Offered,v as __namedExportsOrder,f as default};
