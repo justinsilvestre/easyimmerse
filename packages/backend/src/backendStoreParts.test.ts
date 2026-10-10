@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
 import { createBackendStoreParts } from "./backendStoreParts.ts";
+import { runRequest } from "./requestRunner.ts";
 
 type ThunkCapableDispatch = ThunkDispatch<RootState, unknown, UnknownAction>;
 
@@ -35,6 +36,10 @@ describe("createBackendStoreParts", () => {
     const dispatch = store.dispatch as unknown as ThunkCapableDispatch;
     const result = await dispatch(backendApi.endpoints.listProjects.initiate());
     expect(result.data).toEqual({ projects: [] });
+  });
+
+  it("carries the request runner", () => {
+    expect(createBackendStoreParts(client, null).runRequest).toBe(runRequest);
   });
 
   it("carries the server configuration", () => {

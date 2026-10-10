@@ -38,6 +38,12 @@ export type RequestFailure = {
   message: string;
 };
 
+/** The failure of a request that was aborted, whether in flight or while it waited. */
+export const abortedFailure: RequestFailure = {
+  status: "ABORTED",
+  message: "The request was aborted.",
+};
+
 /** How a request of the given kind ended. */
 export type RequestOutcome<K extends ServerRequestKind = ServerRequestKind> =
   | { ok: true; data: ServerResponses[K] }
@@ -56,3 +62,13 @@ export type RequestRunner = <R extends ServerRequest>(
   request: R,
   dispatch: Dispatch,
 ) => RunningRequest<R["kind"]>;
+
+/** A request that ended, with its outcome. Each request an id names settles exactly once, an aborted one included. */
+export type RequestSettled = {
+  [K in ServerRequestKind]: {
+    type: "requestSettled";
+    id: string;
+    request: Extract<ServerRequest, { kind: K }>;
+    outcome: RequestOutcome<K>;
+  };
+}[ServerRequestKind];

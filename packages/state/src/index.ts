@@ -60,6 +60,17 @@ export {
   selectPlayer,
   selectPlayerDuration,
 } from "./screen/screenSelectors.ts";
+export type {
+  RequestFailure,
+  RequestOutcome,
+  RequestRunner,
+  RequestSettled,
+  RunningRequest,
+  ServerRequest,
+  ServerRequestKind,
+  ServerResponses,
+} from "./server/serverRequest.ts";
+export { abortedFailure } from "./server/serverRequest.ts";
 export { selectServerConfig } from "./server/serverSelectors.ts";
 export type { ServerConfig } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";

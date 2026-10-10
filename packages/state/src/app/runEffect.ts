@@ -2,6 +2,8 @@ import type { Effects } from "../platform/effects.ts";
 import { platformEffectRunners } from "../platform/platformEffectRunners.ts";
 import { preferencesEffectRunners } from "../preferences/preferencesEffectRunners.ts";
 import { screenEffectRunners } from "../screen/screenEffectRunners.ts";
+import type { RequestTable } from "../server/requestTable.ts";
+import { serverEffectRunners } from "../server/serverEffectRunners.ts";
 import { storedPlacesEffectRunners } from "../storedPlaces/storedPlacesEffectRunners.ts";
 import { timerEffectRunners } from "../timers/timerEffectRunners.ts";
 import type { TimerTable } from "../timers/timerTable.ts";
@@ -9,11 +11,12 @@ import { unsavedWorkEffectRunners } from "../unsavedWork/unsavedWork.ts";
 import type { AppAction } from "./appAction.ts";
 import type { Effect } from "./effect.ts";
 
-/** What an effect runner may use: the platform's effects, the store's dispatch, and the store's pending timers. */
+/** What an effect runner may use: the platform's effects, the store's dispatch, and the store's pending timers and requests. */
 export type EffectContext = {
   effects: Effects;
   dispatch: (action: AppAction) => void;
   timers: TimerTable;
+  requests: RequestTable;
 };
 
 /** Performs one kind of effect. Effects that produce a result dispatch the corresponding action once it arrives. */
@@ -31,6 +34,7 @@ const effectRunners = {
   ...unsavedWorkEffectRunners,
   ...platformEffectRunners,
   ...timerEffectRunners,
+  ...serverEffectRunners,
 } satisfies EffectRunners<Effect>;
 
 /** Performs one effect through the context's collaborators. */

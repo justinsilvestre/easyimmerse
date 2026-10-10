@@ -6,8 +6,10 @@ import type {
   PickedMediaFile,
 } from "../platform/effects.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
+import type { RequestOutcome, ServerRequest } from "../server/serverRequest.ts";
 import { actions } from "./appAction.ts";
 import { createAppStore } from "./createAppStore.ts";
+import type { FakeServerStoreParts } from "./createFakeServerStoreParts.ts";
 import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
 import type { Effect } from "./effect.ts";
 import { createEffectsMiddleware } from "./effectsMiddleware.ts";
@@ -31,10 +33,25 @@ const startTimer: Effect = {
   action: timerAction,
 };
 
+const listing: ServerRequest = { kind: "listMediaFiles", projectId: "p1" };
+
+const listed: RequestOutcome<"listMediaFiles"> = {
+  ok: true,
+  data: { media_files: [] },
+};
+
+const aborted: RequestOutcome<"listMediaFiles"> = {
+  ok: false,
+  error: { status: "ABORTED", message: "The request was aborted." },
+};
+
+const sendListing: Effect = { type: "sendRequest", id: "a", request: listing };
+
 /** Passes one action through an effects middleware whose reducer queued `queued`, and returns the actions the middleware dispatches, then and later. */
 function dispatchedBy(
   effects: Effects,
   queued: readonly Effect[],
+  server: FakeServerStoreParts = createFakeServerStoreParts(),
 ): UnknownAction[] {
   const dispatched: UnknownAction[] = [];
   const api: MiddlewareAPI = {
@@ -44,9 +61,9 @@ function dispatchedBy(
     },
     getState: () => ({}),
   };
-  createEffectsMiddleware(effects, () => queued)(api)(() => undefined)(
-    actions.playerTimeChanged(0),
-  );
+  createEffectsMiddleware(effects, server.runRequest, () => queued)(api)(
+    () => undefined,
+  )(actions.playerTimeChanged(0));
   return dispatched;
 }
 
@@ -66,6 +83,69 @@ describe("effectsMiddleware", () => {
     ]);
     effects.clock.advanceBy(1_000);
     expect(dispatched).toEqual([]);
+  });
+
+  it("sends a request through the server parts' runner", () => {
+    const server = createFakeServerStoreParts();
+    dispatchedBy(createRecordingEffects(), [sendListing], server);
+    expect(server.sentRequests).toEqual([listing]);
+  });
+
+  it("dispatches requestSettled once the server responds", async () => {
+    const server = createFakeServerStoreParts();
+    const dispatched = dispatchedBy(
+      createRecordingEffects(),
+      [sendListing],
+      server,
+    );
+    server.respond(listing, listed);
+    await vi.waitFor(() => {
+      expect(dispatched).toEqual([
+        actions.requestSettled("a", listing, listed),
+      ]);
+    });
+  });
+
+  it("settles an aborted request as aborted", async () => {
+    const dispatched = dispatchedBy(createRecordingEffects(), [
+      sendListing,
+      { type: "abortRequest", id: "a" },
+    ]);
+    await vi.waitFor(() => {
+      expect(dispatched).toEqual([
+        actions.requestSettled("a", listing, aborted),
+      ]);
+    });
+  });
+
+  it("dispatches only the outcome of the request a later send with its id replaced it with", async () => {
+    const server = createFakeServerStoreParts();
+    const dispatched = dispatchedBy(
+      createRecordingEffects(),
+      [sendListing, sendListing],
+      server,
+    );
+    server.respond(listing, listed);
+    await vi.waitFor(() => {
+      expect(dispatched).toEqual([
+        actions.requestSettled("a", listing, listed),
+      ]);
+    });
+  });
+
+  it("settles a withdrawn request as aborted without sending it", async () => {
+    const server = createFakeServerStoreParts();
+    const dispatched = dispatchedBy(
+      createRecordingEffects(),
+      [{ type: "settleWithdrawnRequest", id: "a", request: listing }],
+      server,
+    );
+    await vi.waitFor(() => {
+      expect([dispatched, server.sentRequests]).toEqual([
+        [actions.requestSettled("a", listing, aborted)],
+        [],
+      ]);
+    });
   });
 
   it("calls seekPlayer after seekRequested is dispatched", () => {

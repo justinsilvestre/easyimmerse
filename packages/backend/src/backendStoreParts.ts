@@ -4,9 +4,10 @@ import { withExtraArgument } from "redux-thunk";
 import { backendApi } from "./backendApi.ts";
 import type { BackendClient } from "./backendClient.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
+import { runRequest } from "./requestRunner.ts";
 
 /**
- * Builds the reducer and middleware that the app store mounts for server data, sending every request through the given client.
+ * Builds the reducer, middleware and request runner that the app store mounts for server data, sending every request through the given client.
  * `serverConfig` is the server the client talks to, or null when the app runs offline.
  */
 export function createBackendStoreParts(
@@ -17,6 +18,7 @@ export function createBackendStoreParts(
     reducerPath: backendApi.reducerPath,
     reducer: backendApi.reducer,
     middleware: createMiddleware({ client }),
+    runRequest,
     serverConfig,
   };
 }

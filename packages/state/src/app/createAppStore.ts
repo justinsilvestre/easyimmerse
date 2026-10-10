@@ -6,6 +6,7 @@ import {
   legacy_createStore as createStore,
 } from "redux";
 import type { Effects } from "../platform/effects.ts";
+import type { RequestRunner } from "../server/serverRequest.ts";
 import type { ServerConfig } from "../server/serverState.ts";
 import type { AppAction } from "./appAction.ts";
 import { actions, isAppAction } from "./appAction.ts";
@@ -14,11 +15,13 @@ import { createEffectsReducer } from "./createEffectsReducer.ts";
 import { createEffectsMiddleware } from "./effectsMiddleware.ts";
 import { initialAppState, update } from "./update.ts";
 
-/** The reducer and middleware for server data, supplied by the backend package so that this package never imports it. */
+/** The reducer, middleware and request runner for server data, supplied by the backend package so that this package never imports it. */
 export type ServerStoreParts = {
   reducerPath: string;
   reducer: Reducer;
   middleware: Middleware;
+  /** Sends one request through the server data's store, so that the endpoint's cache rules apply as they do for any other caller. */
+  runRequest: RequestRunner;
   /** The server the parts send requests to, or null when the app runs offline. */
   serverConfig: ServerConfig | null;
 };
@@ -55,7 +58,7 @@ export function createAppStore(
     rootReducer,
     composeEnhancers(
       applyMiddleware(
-        createEffectsMiddleware(effects, app.drainEffects),
+        createEffectsMiddleware(effects, server.runRequest, app.drainEffects),
         server.middleware,
       ),
     ),
