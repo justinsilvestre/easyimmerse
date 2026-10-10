@@ -92,19 +92,6 @@ export function openSearch(
   );
 }
 
-/** Tells whether an open pop-up moves to a word the pointer rests on: not while the pointer is inside it or a flashcard waits. */
-export function followsPointer(
-  lookup: LookupState,
-  chosen: ChosenWord,
-): boolean {
-  return (
-    lookup.popup?.mode === "word" &&
-    !lookup.isPointerInside &&
-    lookup.pendingFlashcard === null &&
-    !showsOccurrence(lookup, chosen)
-  );
-}
-
 /** Closes the pop-up, drops a waiting flashcard, and resumes playback if the pop-up paused it. */
 export function close(lookup: LookupState): LookupStep {
   const resume: Effect[] = lookup.pausedPlayback

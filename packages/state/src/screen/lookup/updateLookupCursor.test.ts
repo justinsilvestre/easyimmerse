@@ -6,9 +6,11 @@ import {
   chosenWord,
   dog,
   hoverSettled,
+  mediaScreenAfter,
   restingOn,
   secondCue,
 } from "./lookupTestSupport.ts";
+import { updateLookup } from "./updateLookup.ts";
 
 const atInCat = chosenWord("at", 5);
 const dogInSecondCue = chosenWord("dog", 4, secondCue);
@@ -23,6 +25,18 @@ describe("updateLookup", () => {
         actions.lookupCursorMoved(cat, "mouse"),
       );
       expect(lookup.cursor?.chosen).toEqual(dog);
+    });
+
+    it("keeps the lookup's identity when the cursor does not move", () => {
+      const pointAtCat = actions.lookupCursorMoved(cat, "mouse");
+      const { app, screen } = mediaScreenAfter(pointAtCat);
+      const [lookup] = updateLookup(
+        screen.lookup,
+        pointAtCat,
+        screen.player,
+        app,
+      );
+      expect(lookup).toBe(screen.lookup);
     });
 
     it("takes the cursor away when the input that placed it leaves", () => {
@@ -53,6 +67,16 @@ describe("updateLookup", () => {
           request: { kind: "lookupText", query: cat.word.query },
         },
       ]);
+    });
+
+    it("sends nothing for a word with nothing to look up", () => {
+      const [, effects] = apply(actions.lookupWordHovered(uncoveredCat));
+      expect(effects).toEqual([]);
+    });
+
+    it("places no cursor for a word with nothing to look up when nothing points at it", () => {
+      const [lookup] = apply(actions.lookupWordHovered(uncoveredCat));
+      expect(lookup.cursor).toBeNull();
     });
 
     it("knows at once that a word with nothing to look up matches nothing", () => {
@@ -153,6 +177,14 @@ describe("updateLookup", () => {
         destination: "save",
         stage: "ready",
       });
+    });
+
+    it("keeps a flashcard that waits for its lookup when there is no cursor", () => {
+      const [lookup] = apply(
+        actions.lookupFlashcardAtCursorRequested("save"),
+        actions.lookupFlashcardRequested(cat, "save"),
+      );
+      expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
     });
 
     it("leaves the pop-up open when there is no cursor", () => {

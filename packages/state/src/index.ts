@@ -72,14 +72,12 @@ export type {
   LookupState,
   LookupWord,
   PendingFlashcard,
-  WordInput,
   WordOccurrence,
 } from "./screen/lookup/lookupState.ts";
 export { doubleClickMs } from "./screen/lookup/lookupTiming.ts";
 export {
   reduceTextCursor,
   type TextCursor,
-  type TextCursorAction,
 } from "./screen/lookup/textCursor.ts";
 export {
   documentFormatOf,

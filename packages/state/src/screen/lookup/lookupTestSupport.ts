@@ -112,7 +112,12 @@ function resultMatching(matchedText: string): LookupResult {
 
 /** Applies an action to the lookup of m1's media screen after the given earlier actions. */
 export function applyToLookup(action: AppAction, ...before: AppAction[]) {
-  const app = stateAfter(actions.openMediaFileRequested("p1", "m1"), ...before);
-  const screen = app.screen.main as MediaScreenState;
+  const { app, screen } = mediaScreenAfter(...before);
   return updateLookup(screen.lookup, action, screen.player, app);
+}
+
+/** The app, and m1's media screen in it, after the given actions. */
+export function mediaScreenAfter(...before: AppAction[]) {
+  const app = stateAfter(actions.openMediaFileRequested("p1", "m1"), ...before);
+  return { app, screen: app.screen.main as MediaScreenState };
 }

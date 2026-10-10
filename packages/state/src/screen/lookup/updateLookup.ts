@@ -1,7 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
-import { moveCursor } from "./lookupCursor.ts";
+import { moveCursor, withCursor } from "./lookupCursor.ts";
 import {
   clickWord,
   close,
@@ -41,7 +41,7 @@ export function updateLookup(
       return startFlashcard(lookup, action, player, app);
     case "lookupCursorMoved":
     case "lookupCursorLeft":
-      return [{ ...lookup, cursor: moveCursor(lookup.cursor, action) }, []];
+      return [withCursor(lookup, moveCursor(lookup.cursor, action)), []];
     case "lookupWordHovered":
       return hoverWord(lookup, action.chosen, player, app);
     case "lookupCursorLookedUp":

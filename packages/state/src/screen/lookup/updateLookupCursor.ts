@@ -2,13 +2,13 @@ import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { RequestSettled } from "../../server/serverRequest.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
-import { moveCursor } from "./lookupCursor.ts";
+import { moveCursor, withCursor } from "./lookupCursor.ts";
 import {
   isHoverRequestId,
   lookupHoverRequestId,
   nextLookupSequence,
 } from "./lookupIds.ts";
-import { followsPointer, type LookupStep, show } from "./lookupMoves.ts";
+import { type LookupStep, show, showsOccurrence } from "./lookupMoves.ts";
 import type { ChosenWord, LookupState, LookupWord } from "./lookupState.ts";
 
 /** The settle of a hover's lookup request. */
@@ -74,10 +74,20 @@ function answer(
     input: lookup.cursor.input,
     matchedLength,
   });
-  const answered = { ...lookup, cursor };
+  const answered = withCursor(lookup, cursor);
   return followsPointer(answered, chosen)
     ? show(answered, chosen, player)
     : [answered, []];
+}
+
+/** Tells whether an open pop-up moves to a word the pointer rests on: not while the pointer is inside it or a flashcard waits. */
+function followsPointer(lookup: LookupState, chosen: ChosenWord): boolean {
+  return (
+    lookup.popup?.mode === "word" &&
+    !lookup.isPointerInside &&
+    lookup.pendingFlashcard === null &&
+    !showsOccurrence(lookup, chosen)
+  );
 }
 
 function isSameQuery(

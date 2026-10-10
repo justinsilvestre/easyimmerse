@@ -4,6 +4,14 @@ import type { ServerRequest } from "../server/serverRequest.ts";
 import type { JobsState } from "./jobs.ts";
 import { updateJobs } from "./updateJobs.ts";
 
+/** The actions that number a lookup request, whether or not one is then sent. */
+const lookupRequestActions: ReadonlySet<AppAction["type"]> = new Set([
+  "lookupFlashcardRequested",
+  "lookupFlashcardAtCursorRequested",
+  "lookupPopupWordHeld",
+  "lookupWordHovered",
+]);
+
 /** A request sent and not yet settled. */
 export type RequestRecord = {
   id: string;
@@ -61,14 +69,7 @@ function forgetSettled(
   return remaining.length === requests.length ? requests : remaining;
 }
 
-/** Tells whether the action numbers a lookup request, whether or not one is then sent. */
+/** Tells whether the action numbers a lookup request. */
 function isLookupRequest(action: AppAction): boolean {
   return lookupRequestActions.has(action.type);
 }
-
-const lookupRequestActions: ReadonlySet<AppAction["type"]> = new Set([
-  "lookupFlashcardRequested",
-  "lookupFlashcardAtCursorRequested",
-  "lookupPopupWordHeld",
-  "lookupWordHovered",
-]);

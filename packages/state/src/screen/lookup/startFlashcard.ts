@@ -70,6 +70,7 @@ export function startFlashcard(
 
 /**
  * Starts a flashcard for no word, as the C key does with no cursor. It is ready at once, and the pop-up stays as it is.
+ * While a word's flashcard waits for its lookup, it starts nothing, so that the waiting flashcard is kept.
  * Transitional: the hand-off passes it to the flashcard hooks until C1 makes it the flashcards' own new-card branch.
  */
 export function startWordlessFlashcard(
@@ -77,6 +78,7 @@ export function startWordlessFlashcard(
   destination: PendingFlashcard["destination"],
   app: AppState,
 ): LookupStep {
+  if (lookup.pendingFlashcard?.stage === "waiting") return [lookup, []];
   const pendingFlashcard: PendingFlashcard = {
     sequence: nextLookupSequence(app),
     chosen: noWord,

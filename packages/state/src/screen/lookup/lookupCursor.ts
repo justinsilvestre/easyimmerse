@@ -1,5 +1,10 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { ChosenWord, LookupCursor, WordInput } from "./lookupState.ts";
+import type {
+  ChosenWord,
+  LookupCursor,
+  LookupState,
+  WordInput,
+} from "./lookupState.ts";
 import {
   reduceTextCursor,
   type TextCursor,
@@ -44,6 +49,14 @@ export function moveCursor(
 }
 
 type PlaceMove = Exclude<CursorMove, { type: "lookupCursorLeft" }>;
+
+/** The lookup with the cursor given, or the lookup itself when the cursor is the one it has. */
+export function withCursor(
+  lookup: LookupState,
+  cursor: LookupCursor | null,
+): LookupState {
+  return cursor === lookup.cursor ? lookup : { ...lookup, cursor };
+}
 
 function isInSamePassage(
   cursor: LookupCursor | null,
