@@ -1,34 +1,41 @@
-import type { WaveformWindowView } from "@easyimmerse/state";
-import { useEffect, useState, useSyncExternalStore } from "react";
-import type {
-  FetchWaveformWindow,
-  WaveformWindowStore,
-} from "./waveformWindowStore.ts";
-import { createWaveformWindowStore } from "./waveformWindowStore.ts";
-
-const noWindows: ReadonlyMap<number, Uint8Array> = new Map();
-const subscribeToNothing = () => () => undefined;
+import type { WaveformViewName, WaveformWindowView } from "@easyimmerse/state";
+import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
+import { useEffect } from "react";
+import { useAppDispatch } from "../../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../../hooks/useAppSelector.ts";
+import type { WaveformWindows } from "./selectWaveformWindows.ts";
+import {
+  haveSameWindows,
+  selectWaveformWindows,
+} from "./selectWaveformWindows.ts";
 
 /**
- * Keeps the peaks windows the view needs loaded, requesting them through `fetchWindow`
- * in the order the window policy sets, and returns the windows held so far by their start.
+ * Tells the store which stretch of the open media file a waveform view shows,
+ * and returns the peaks windows loaded for that view so far by their start.
  */
 export function useWaveformWindows(
-  fetchWindow: FetchWaveformWindow,
+  name: WaveformViewName,
   view: WaveformWindowView,
-): ReadonlyMap<number, Uint8Array> {
-  const [store, setStore] = useState<WaveformWindowStore | null>(null);
-  useEffect(() => {
-    const created = createWaveformWindowStore(fetchWindow);
-    setStore(created);
-    return () => created.dispose();
-  }, [fetchWindow]);
+): WaveformWindows {
+  const dispatch = useAppDispatch();
+  const mediaFileId = useAppSelector(selectCurrentMediaFileId);
   const { viewStartMs, viewEndMs, focusMs, durationMs } = view;
+  // Transitional: the update will compute the view itself once the probed duration and the open clip are in the store.
   useEffect(() => {
-    store?.update({ viewStartMs, viewEndMs, focusMs, durationMs });
-  }, [store, viewStartMs, viewEndMs, focusMs, durationMs]);
-  return useSyncExternalStore(
-    store?.subscribe ?? subscribeToNothing,
-    store?.getWindows ?? (() => noWindows),
+    if (mediaFileId === null) return;
+    const changed = { viewStartMs, viewEndMs, focusMs, durationMs };
+    dispatch(actions.waveformViewChanged(name, changed));
+  }, [
+    dispatch,
+    name,
+    mediaFileId,
+    viewStartMs,
+    viewEndMs,
+    focusMs,
+    durationMs,
+  ]);
+  return useAppSelector(
+    (state) => selectWaveformWindows(state, name),
+    haveSameWindows,
   );
 }

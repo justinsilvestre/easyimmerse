@@ -1,6 +1,7 @@
 export { skipToken } from "@reduxjs/toolkit/query";
 export {
   selectCachedLookup,
+  selectCachedWaveformWindow,
   useAddMediaFileMutation,
   useAddSubtitleTrackMutation,
   useClearConversionCacheMutation,
@@ -13,7 +14,6 @@ export {
   useGetProjectQuery,
   useGetSourceFormMutation,
   useGetSubtitleCuesQuery,
-  useLazyGetWaveformWindowQuery,
   useLazyLookupTextQuery,
   useListDictionariesQuery,
   useListEmbeddedSubtitleTracksQuery,

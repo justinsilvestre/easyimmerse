@@ -132,7 +132,6 @@ export function MediaScreen({
     [],
   );
   const clipWaveform = useClipWaveform(
-    projectId,
     mediaFile,
     durationMs,
     editedContent?.audio_context ?? null,

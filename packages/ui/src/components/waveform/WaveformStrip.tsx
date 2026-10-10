@@ -6,6 +6,7 @@ import { barPeaksInView } from "./barPeaksInView.ts";
 import { drawWaveformOverlay } from "./drawWaveformOverlay.ts";
 import { fitCanvas } from "./fitCanvas.ts";
 import type { FlashcardSegment } from "./flashcardSegment.ts";
+import type { WaveformWindows } from "./selectWaveformWindows.ts";
 import { useElementSize } from "./useElementSize.ts";
 import { useWaveformInteraction } from "./useWaveformInteraction.ts";
 import { WaveformBars } from "./WaveformBars.tsx";
@@ -21,7 +22,7 @@ const waveformStripHeightPx = 72;
 export type WaveformStripProps = WaveformGestureHandlers & {
   durationMs: number;
   currentTimeMs: number;
-  windows: ReadonlyMap<number, Uint8Array>;
+  windows: WaveformWindows;
   cues: readonly Cue[];
   flashcardSegments: readonly FlashcardSegment[];
   /** The segment of the flashcard open in the editor, the only one whose handles can be dragged. None when left out. */

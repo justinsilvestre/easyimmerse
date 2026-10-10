@@ -1,20 +1,20 @@
-import { actions, selectCurrentTime } from "@easyimmerse/state";
+import {
+  actions,
+  selectCurrentTime,
+  selectRequestedWaveformSpan,
+} from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
-import { useState } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import type { FlashcardSegment } from "./waveform/flashcardSegment.ts";
-import { useWaveformFetch } from "./waveform/useWaveformFetch.ts";
 import { useWaveformWindows } from "./waveform/useWaveformWindows.ts";
 import { WaveformStrip } from "./waveform/WaveformStrip.tsx";
 import {
   clampVisibleSpan,
   computeViewStart,
 } from "./waveform/waveformGeometry.ts";
-
-const initialVisibleSpanMs = 60_000;
 
 type FlashcardSegmentHandlers = {
   onOpenFlashcardSegment: (segmentId: string) => void;
@@ -56,19 +56,19 @@ export function PlayerWaveform({
   const mediaFile = useMediaFile(projectId, mediaFileId);
   const currentTimeMs = useAppSelector(selectCurrentTime) * 1000;
   const durationMs = useMediaDurationMs(projectId, mediaFile);
-  const fetchWindow = useWaveformFetch(projectId, mediaFile);
-  const [requestedSpanMs, setRequestedSpanMs] = useState(initialVisibleSpanMs);
+  const requestedSpanMs = useAppSelector(selectRequestedWaveformSpan);
   const visibleSpanMs = clampVisibleSpan(requestedSpanMs, durationMs);
   const viewStartMs = computeViewStart(
     currentTimeMs,
     visibleSpanMs,
     durationMs,
   );
-  const windows = useWaveformWindows(fetchWindow, {
+  // A file the browser holds has no peaks on the server, so its view wants no windows.
+  const windows = useWaveformWindows("player", {
     viewStartMs,
     viewEndMs: viewStartMs + visibleSpanMs,
     focusMs: currentTimeMs,
-    durationMs,
+    durationMs: mediaFile?.source.kind === "path" ? durationMs : 0,
   });
   return (
     <div className="border-t border-line bg-surface px-3 py-2">
@@ -80,7 +80,9 @@ export function PlayerWaveform({
         flashcardSegments={flashcardSegments}
         editableSegmentId={editableSegmentId}
         visibleSpanMs={visibleSpanMs}
-        onVisibleSpanChange={setRequestedSpanMs}
+        onVisibleSpanChange={(spanMs) =>
+          dispatch(actions.waveformZoomed(spanMs))
+        }
         onSeek={(timeMs) => dispatch(actions.seekRequested(timeMs / 1000))}
         {...segmentHandlers}
       />

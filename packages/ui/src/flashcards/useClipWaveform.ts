@@ -1,6 +1,5 @@
 import type { AudioClip, MediaFile } from "@easyimmerse/types";
 import { useMemo } from "react";
-import { useWaveformFetch } from "../components/waveform/useWaveformFetch.ts";
 import { useWaveformWindows } from "../components/waveform/useWaveformWindows.ts";
 import type { MediaWaveform } from "./FlashcardEditorFields.tsx";
 import { peaksFromWindows } from "./peaksFromWindows.ts";
@@ -13,14 +12,12 @@ const marginMs = 60_000;
  * Null for a file the server cannot read, such as one the browser holds, or before the duration is known.
  */
 export function useClipWaveform(
-  projectId: string,
   mediaFile: MediaFile | null,
   durationMs: number,
   clip: AudioClip | null,
 ): MediaWaveform | null {
-  const fetchWindow = useWaveformFetch(projectId, mediaFile);
   const isReadable = mediaFile?.source.kind === "path" && durationMs > 0;
-  const windows = useWaveformWindows(fetchWindow, {
+  const windows = useWaveformWindows("clip", {
     viewStartMs: Math.max(0, (clip?.start_ms ?? 0) - marginMs),
     viewEndMs: Math.min(durationMs, (clip?.end_ms ?? 0) + marginMs),
     focusMs: clip?.start_ms ?? 0,

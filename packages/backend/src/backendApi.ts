@@ -578,7 +578,6 @@ export const {
   useGetMediaTracksQuery,
   usePlanPlaybackQuery,
   useSaveTrackSelectionMutation,
-  useLazyGetWaveformWindowQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
   useGetSourceFormMutation,
@@ -606,6 +605,17 @@ export function selectCachedLookup(
   query: LookupQuery,
 ): LookupResponse | undefined {
   const entry = backendApi.endpoints.lookupText.select(query)(
+    state as BackendState,
+  );
+  return entry.isSuccess ? entry.data : undefined;
+}
+
+/** The cached peaks window of a media file from one time to another, or undefined when none is cached. */
+export function selectCachedWaveformWindow(
+  state: unknown,
+  window: WaveformWindowArgs,
+): WaveformResponse | undefined {
+  const entry = backendApi.endpoints.getWaveformWindow.select(window)(
     state as BackendState,
   );
   return entry.isSuccess ? entry.data : undefined;

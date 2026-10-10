@@ -69,8 +69,6 @@ export type {
 export type { WaveformWindowView } from "./screen/mediaScreen/waveformWindowPolicy.ts";
 export {
   maxVisibleSpanMs,
-  planWindowRequests,
-  wantedWindows,
   waveformPeaksPerSecond,
   waveformWindowMs,
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
