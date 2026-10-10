@@ -3,6 +3,7 @@ import { actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { exampleProject } from "../server/exampleProject.ts";
 import { exampleListedFlashcard } from "./exampleFlashcards.ts";
 import {
   appAfter,
@@ -79,9 +80,18 @@ describe("stepFlashcardForm", () => {
   });
 
   it("when a failed save is opened, keeps its flashcard id", () => {
-    const app = applied(failedF1(), actions.failedSaveOpened("f1", "p1", "m1"));
-    const opened = settle(app, "flashcards/opening/f1", {
-      data: { media_files: [exampleMediaFile("m1", "m1.mp4")] },
+    const opening = applied(
+      failedF1(),
+      actions.failedSaveOpened("f1", "p1", "m1"),
+    );
+    const app = applied(
+      opening,
+      settle(opening, "flashcards/opening/f1", {
+        data: { media_files: [exampleMediaFile("m1", "m1.mp4")] },
+      }),
+    );
+    const opened = settle(app, "flashcards/opening/f1/project", {
+      data: exampleProject("p1"),
     });
     expect(step(app, opened).form?.card).toMatchObject({ flashcardId: "f1" });
   });
@@ -343,5 +353,44 @@ describe("stepFlashcardForm", () => {
       step(app, settle(app, "flashcard/1", failure("ABORTED"))).form
         ?.rollbackIfDiscarded,
     ).toMatchObject({ content: { content: { word: "Hund" } } });
+  });
+
+  it("when an earlier background save of the open card fails, marks the card changed", () => {
+    const app = applied(hundSaving(), openHund);
+    expect(
+      step(app, settle(app, "flashcard/1", failure(500))).form?.card.isChanged,
+    ).toBe(true);
+  });
+
+  it("when a form save fails after its card left and was reopened, marks the card changed", () => {
+    const app = appAfter(
+      openHund,
+      typeWord("Hündin"),
+      save,
+      startNew("f2"),
+      openHund,
+    );
+    expect(
+      step(app, settle(app, "flashcard/1", failure(500))).form?.card.isChanged,
+    ).toBe(true);
+  });
+
+  it("when a later save of the open card's flashcard succeeds, takes the card out of doubt", () => {
+    const reopened = applied(
+      hundSaving(),
+      openHund,
+      typeWord("Hündchen"),
+      startNew("f3"),
+      openHund,
+    );
+    const app = applied(
+      reopened,
+      settle(reopened, "flashcard/1", failure("ABORTED")),
+    );
+    const saved = exampleListedFlashcard("h", "Hündchen", 3);
+    expect(
+      step(app, settle(app, "flashcard/3", landed(saved))).form
+        ?.rollbackIfDiscarded,
+    ).toBeNull();
   });
 });

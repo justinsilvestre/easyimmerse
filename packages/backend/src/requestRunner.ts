@@ -42,6 +42,8 @@ export const requestEndpoints = {
       { projectId, mediaFileId, request },
       { track: false },
     ),
+  getProject: ({ projectId }) =>
+    backendApi.endpoints.getProject.initiate(projectId, { subscribe: false }),
   listMediaFiles: ({ projectId }) =>
     backendApi.endpoints.listMediaFiles.initiate(projectId, {
       subscribe: false,

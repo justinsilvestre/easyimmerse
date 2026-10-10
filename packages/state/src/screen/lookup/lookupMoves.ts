@@ -64,6 +64,7 @@ export const open = (
   player: PlayerState,
 ): LookupStep => show(dropPending(lookup), chosen, player);
 
+/** Lets go of a flashcard still waiting for its word's lookup, which the flashcards then keep waiting for it. */
 export function dropPending(lookup: LookupState): LookupState {
   return lookup.pendingFlashcard === null
     ? lookup

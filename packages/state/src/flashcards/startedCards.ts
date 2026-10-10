@@ -48,7 +48,7 @@ export function takeFinished(
 /**
  * Takes a flashcard from a word that no longer waits for its lookup, unless it opens in the form:
  * one to be saved at once is saved, filled from its lookup when that answered in time, or else waits up to ten seconds more;
- * one the screen left waits likewise, whatever it was for, so that the user's attempt to make it is never lost.
+ * one abandoned by the screen or the pop-up waits likewise, whatever it was for, so that the user's attempt to make it is never lost.
  */
 function takeLookupFlashcard(
   state: FlashcardsState,
@@ -56,7 +56,7 @@ function takeLookupFlashcard(
   projectId: string,
   context: FlashcardsContext,
 ): FlashcardsState {
-  if (pending.destination === "editor" && how !== "left") return state;
+  if (pending.destination === "editor" && how !== "abandoned") return state;
   const card = newCard({ id: pending.flashcardId, draft: pending.draft });
   if (how === "ready") {
     const filled = withLookupFields(card, fields);

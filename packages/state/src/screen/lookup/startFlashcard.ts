@@ -13,6 +13,7 @@ import {
   type LookupStep,
   open,
   setAside,
+  show,
   showsOccurrence,
 } from "./lookupMoves.ts";
 import type {
@@ -41,8 +42,8 @@ export function requestedFlashcard(
 
 /**
  * Starts a flashcard from a word, showing the word in the pop-up when it comes from the text,
- * and waits up to `flashcardLookupWaitMs` for the word's lookup. With nothing to look up, the pop-up is set aside at once
- * and the flashcards take the card straight away.
+ * and waits up to `flashcardLookupWaitMs` for the word's lookup, in place of a flashcard still waiting.
+ * With nothing to look up, the pop-up is set aside at once, the flashcards take the card straight away, and a flashcard still waiting keeps waiting.
  */
 export function startFlashcard(
   lookup: LookupState,
@@ -50,11 +51,12 @@ export function startFlashcard(
   player: PlayerState,
 ): LookupStep {
   const { chosen, sequence } = pending;
+  const { query } = chosen.word;
+  const move = query === null ? show : open;
   const [opened, openEffects] =
     chosen.occurrence !== null && !showsOccurrence(lookup, chosen)
-      ? open(lookup, chosen, player)
+      ? move(lookup, chosen, player)
       : [lookup, [cancelCloseTimer]];
-  const { query } = chosen.word;
   if (query === null) {
     const [aside, asideEffects] = setAside(opened);
     return [aside, [...openEffects, ...asideEffects]];

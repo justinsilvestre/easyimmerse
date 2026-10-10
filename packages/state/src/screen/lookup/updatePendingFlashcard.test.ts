@@ -105,12 +105,18 @@ describe("updateLookup for a flashcard started from a word", () => {
     expect(effects.filter(({ type }) => type === "sendRequest")).toEqual([]);
   });
 
+  it("keeps waiting when a flashcard for another word no dictionary covers is asked for", () => {
+    const uncoveredDog = { ...dog, word: { term: "dog", query: null } };
+    const [lookup] = apply(requestFlashcard(uncoveredDog), saveCat);
+    expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
+  });
+
   it("ignores the fields of an earlier flashcard's lookup", () => {
     const [lookup] = apply(fieldsWritten(1), saveCat, requestFlashcard(dog));
     expect(lookup.pendingFlashcard?.chosen).toEqual(dog);
   });
 
-  it("ignores the wait of a flashcard dropped before it", () => {
+  it("ignores the wait of a flashcard handed over before it", () => {
     const [lookup] = apply(
       actions.lookupFlashcardWaitEnded(1),
       saveCat,
@@ -120,17 +126,17 @@ describe("updateLookup for a flashcard started from a word", () => {
     expect(lookup.pendingFlashcard?.chosen).toEqual(dog);
   });
 
-  it("drops the flashcard when the pop-up closes", () => {
+  it("hands the flashcard over when the pop-up closes", () => {
     const [lookup] = apply(actions.lookupClosed(), saveCat);
     expect(lookup.pendingFlashcard).toBeNull();
   });
 
-  it("drops the flashcard when another word is clicked", () => {
+  it("hands the flashcard over when another word is clicked", () => {
     const [lookup] = apply(actions.lookupWordClicked(dog, "mouse"), saveCat);
     expect(lookup.pendingFlashcard).toBeNull();
   });
 
-  it("drops the flashcard when a word is searched", () => {
+  it("hands the flashcard over when a word is searched", () => {
     const [lookup] = apply(
       actions.lookupTermSearched({ term: "Hund", query: null }),
       saveCat,

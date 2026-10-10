@@ -10,6 +10,7 @@ import { isSaveRefused } from "./isSaveRefused.ts";
  * and a save that ran out of time puts the card in doubt.
  * Any other request's success on the form's flashcard takes the card out of doubt, as does the failure of the Retry that put it there;
  * another save of it that runs out of time puts the card in doubt, unless it already is.
+ * Another save of it that fails marks the card changed, since the form then holds edits saved nowhere.
  */
 export function settleInForm(
   form: FlashcardForm,
@@ -18,13 +19,8 @@ export function settleInForm(
   if (settled.id === form.sentRequestId) return settleOwn(form, settled);
   if (settled.request.flashcardId !== flashcardIdOf(form.card)) return form;
   if (settled.outcome.ok) return withRollback(form, null);
-  const rollback = form.rollbackIfDiscarded;
-  if (rollback === null) return withRollback(form, doubtOf(settled));
-  if (rollback.retryRequestId !== settled.id) return form;
-  return withRollback(
-    form,
-    isAborted(settled.outcome) ? { ...rollback, retryRequestId: null } : null,
-  );
+  const rollback = rollbackAfterFailure(form.rollbackIfDiscarded, settled);
+  return withRollback(markedChanged(form, settled), rollback);
 }
 
 function settleOwn(
@@ -45,6 +41,34 @@ function settleOwn(
       form.rollbackIfDiscarded ??
       (isAborted(outcome) ? { content: before, retryRequestId: null } : null),
   };
+}
+
+/**
+ * The form's doubt after another request of its flashcard failed: begun by a save that ran out of time,
+ * or ended by any other failure of the Retry that began it.
+ * A waiting Retry aborted because an earlier save of the flashcard landed also counts as running out of time.
+ * That doubt is harmless: the Retry was never sent, and what it would put back is what the saves ahead of it wrote.
+ */
+function rollbackAfterFailure(
+  rollback: Rollback | null,
+  settled: FlashcardSettled,
+): Rollback | null {
+  if (rollback === null) return doubtOf(settled);
+  if (rollback.retryRequestId !== settled.id) return rollback;
+  return isAborted(settled.outcome)
+    ? { ...rollback, retryRequestId: null }
+    : null;
+}
+
+function markedChanged(
+  form: FlashcardForm,
+  { request }: FlashcardSettled,
+): FlashcardForm {
+  const isCardSave =
+    request.kind === "saveFlashcard" && request.purpose.type === "save";
+  return isCardSave && !form.card.isChanged
+    ? { ...form, card: { ...form.card, isChanged: true } }
+    : form;
 }
 
 /** The doubt a failed save of the flashcard leaves when it ran out of time, and so may still land. */

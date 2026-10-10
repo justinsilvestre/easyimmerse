@@ -52,6 +52,7 @@ export type ServerRequest =
       mediaFileId: string;
       request: AddSubtitleTrackRequest;
     }
+  | { kind: "getProject"; projectId: string }
   | { kind: "listMediaFiles"; projectId: string }
   | { kind: "addMediaFile"; projectId: string; request: AddMediaFileRequest }
   | { kind: "parseTimedText"; request: ParseTimedTextRequest }
@@ -134,6 +135,7 @@ export type ServerRequestKind = ServerRequest["kind"];
 export type ServerResponses = {
   listSubtitleTracks: SubtitleTracksResponse;
   addSubtitleTrack: SubtitleTrack;
+  getProject: Project;
   listMediaFiles: ListMediaFilesResponse;
   addMediaFile: MediaFile;
   parseTimedText: TimedTextTrack;

@@ -2,8 +2,14 @@ import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { NoticeContent } from "../notices/noticesState.ts";
-import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
+import {
+  cat,
+  dog,
+  holdInPopup,
+  requestFlashcard,
+} from "../screen/lookup/lookupTestSupport.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { exampleProject } from "../server/exampleProject.ts";
 import {
   exampleContext,
   exampleDraft,
@@ -47,6 +53,24 @@ function f1TimedOut(): AppState {
     app,
     actions.requestTimeLimitPassed("flashcard/1"),
     settle(app, "flashcard/1", failure("ABORTED")),
+  );
+}
+
+const mediaFiles = {
+  data: { media_files: [exampleMediaFile("m1", "m1.mp4")] },
+};
+const project = { data: exampleProject("p1") };
+
+/** The app with hund's failed save opened on m1, its media files and then its project having arrived. */
+function hundOpened(): AppState {
+  const app = applied(hundFailed(), actions.failedSaveOpened("h", "p1", "m1"));
+  const withFiles = applied(
+    app,
+    settle(app, "flashcards/opening/h", mediaFiles),
+  );
+  return applied(
+    withFiles,
+    settle(withFiles, "flashcards/opening/h/project", project),
   );
 }
 
@@ -457,6 +481,45 @@ describe("updateFlashcards", () => {
         ),
       ).toEqual(["f-cat"]);
     });
+
+    it.each([
+      ["the pop-up is closed", actions.lookupClosed()],
+      ["the pop-up's close timer ends", actions.lookupCloseDue()],
+      ["the pop-up is set aside", actions.lookupSetAside()],
+      ["another word is clicked", actions.lookupWordClicked(dog, "mouse")],
+      ["the L key is pressed", actions.lookupCursorLookedUp()],
+      ["the search field is opened", actions.lookupSearchOpened()],
+      [
+        "a word is searched",
+        actions.lookupTermSearched({ term: "Hund", query: null }),
+      ],
+      ["another word's flashcard is asked for", requestFlashcard(dog)],
+      ["a word in the pop-up is held", holdInPopup("Katze")],
+    ])("when %s before its lookup answers, keeps it waiting", (_, action) => {
+      const app = appAfter(requestFlashcard(cat));
+      expect(
+        applied(app, action).flashcards.waitingForLookup.map(
+          ({ card }) => card.flashcardId,
+        ),
+      ).toEqual(["f-cat"]);
+    });
+
+    it("when the pop-up is closed while a word's flashcard for the form waits for its lookup, keeps it waiting", () => {
+      const app = appAfter(requestFlashcard(cat, "editor"));
+      expect(
+        applied(app, actions.lookupClosed()).flashcards.waitingForLookup.map(
+          ({ card }) => card.flashcardId,
+        ),
+      ).toEqual(["f-cat"]);
+    });
+
+    it("when its word is clicked again with the mouse, leaves it pending", () => {
+      const app = appAfter(requestFlashcard(cat));
+      expect(
+        applied(app, actions.lookupWordClicked(cat, "mouse")).flashcards
+          .waitingForLookup,
+      ).toEqual([]);
+    });
   });
 
   describe("for a refused save", () => {
@@ -540,15 +603,66 @@ describe("updateFlashcards", () => {
       expect(app.flashcards.failedSaves[0]?.isOpening).toBe(false);
     });
 
-    it("takes it off the list once the form takes it", () => {
+    it("asks for the project on the way", () => {
+      expect(
+        flashcardEffects(
+          hundFailed(),
+          actions.failedSaveOpened("h", "p1", "m1"),
+        ),
+      ).toContainEqual({
+        type: "sendRequest",
+        id: "flashcards/opening/h/project",
+        request: { kind: "getProject", projectId: "p1" },
+      });
+    });
+
+    it("says it could not be opened when the project fails to load", () => {
       const app = applied(
         hundFailed(),
         actions.failedSaveOpened("h", "p1", "m1"),
       );
-      const opened = settle(app, "flashcards/opening/h", {
-        data: { media_files: [exampleMediaFile("m1", "m1.mp4")] },
-      });
-      expect(failedIds(applied(app, opened))).toEqual([]);
+      const [notice] = noticesShown(
+        app,
+        settle(app, "flashcards/opening/h/project", failure(500)),
+      );
+      expect(notice?.message).toBe(
+        "Couldn't open the flashcard for “Hündin”. It is still listed among the flashcards not saved.",
+      );
+    });
+
+    it("keeps it listed while the project is still loading", () => {
+      const app = applied(
+        hundFailed(),
+        actions.failedSaveOpened("h", "p1", "m1"),
+      );
+      expect(
+        failedIds(
+          applied(app, settle(app, "flashcards/opening/h", mediaFiles)),
+        ),
+      ).toEqual(["h"]);
+    });
+
+    it("takes it off the list once the form takes it", () => {
+      expect(failedIds(hundOpened())).toEqual([]);
+    });
+
+    it("takes it off the list once the media files arrive after the project", () => {
+      const app = applied(
+        hundFailed(),
+        actions.failedSaveOpened("h", "p1", "m1"),
+      );
+      const withProject = applied(
+        app,
+        settle(app, "flashcards/opening/h/project", project),
+      );
+      expect(
+        failedIds(
+          applied(
+            withProject,
+            settle(withProject, "flashcards/opening/h", mediaFiles),
+          ),
+        ),
+      ).toEqual([]);
     });
   });
 

@@ -3,7 +3,10 @@ import type { AppState } from "../app/appState.ts";
 import { lookupFlashcardFinishedBy } from "../screen/lookup/lookupFlashcardFinishedBy.ts";
 import { picturesFoundBy } from "../screen/mediaScreen/picturesProbe.ts";
 import { failedSaveIdOf } from "./failedSave.ts";
-import { hasFoundFile, openingSettledBy } from "./failedSaveOpening.ts";
+import {
+  openingProgress,
+  openingSettledBy,
+} from "./failedSaveOpeningRequests.ts";
 import { newCard, withScreenshot } from "./flashcardCard.ts";
 import { type FlashcardForm, openedForm } from "./flashcardForm.ts";
 import { isFlashcardSettled } from "./flashcardSettled.ts";
@@ -51,7 +54,10 @@ function nextForm(
     return null;
   }
   const finished = lookupFlashcardFinishedBy(app, action);
-  if (finished?.pending.destination === "editor" && finished.how !== "left")
+  if (
+    finished?.pending.destination === "editor" &&
+    finished.how !== "abandoned"
+  )
     return replaceForm(form, formFromLookup(finished), context);
   if (picturesFoundBy(action, route, app)) return withPictures(form);
   switch (action.type) {
@@ -86,7 +92,7 @@ function nextForm(
   }
 }
 
-/** Takes the outcome of a flashcard request, or of the request on the way to opening a failed save here. */
+/** Takes the outcome of a flashcard request, or of the last of the requests on the way to opening a failed save here. */
 function settled(
   form: FlashcardForm | null,
   action: AppAction,
@@ -100,7 +106,7 @@ function settled(
   return opening &&
     failedSave?.isOpening &&
     failedSave.mediaFileId === context.route.mediaFileId &&
-    hasFoundFile(opening.settled, failedSave)
+    openingProgress(opening, failedSave, context.app) === "ready"
     ? takeFailedSave(form, failedSave, context)
     : form;
 }
