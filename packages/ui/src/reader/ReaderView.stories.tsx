@@ -1,11 +1,19 @@
+import {
+  type AppAction,
+  actions,
+  type ReaderLocation,
+  selectReadingLocation,
+} from "@easyimmerse/state";
 import type { Document, LookupResult } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, useEffect, useState } from "react";
 import { fn } from "storybook/test";
 import { exampleLanguages } from "../flashcards/exampleFlashcard.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
 import { UnsavedWorkBanner } from "../flashcards/UnsavedWorkBanner.tsx";
+import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
@@ -17,19 +25,21 @@ import {
   parseDocumentWithWasm,
 } from "../storybook/parseDocumentWithWasm.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
+import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
+import { ConnectedReaderView } from "./ConnectedReaderView.tsx";
 import {
   exampleNovel,
   examplePlainText,
   exampleShortBook,
 } from "./exampleDocuments.ts";
-import { ReaderView } from "./ReaderView.tsx";
 import {
   defaultReaderPreferences,
   type ReaderPreferences,
 } from "./readerPreferences.ts";
+import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 import type { ReaderWord } from "./useWordPointer.ts";
 
-type ReaderViewProps = ComponentProps<typeof ReaderView>;
+type ReaderViewProps = ComponentProps<typeof ConnectedReaderView>;
 
 /** Enough senses that the pop-up must scroll to show them all. */
 const longEntrySenses = [
@@ -110,7 +120,7 @@ function StatefulReader(args: ReaderViewProps) {
       ? args.lookup
       : undefined;
   return (
-    <ReaderView
+    <ConnectedReaderView
       {...args}
       preferences={preferences}
       lookup={lookup}
@@ -141,9 +151,11 @@ function StatefulReader(args: ReaderViewProps) {
 
 const meta = {
   title: "Reader/ReaderView",
-  component: ReaderView,
+  component: ConnectedReaderView,
+  decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
+    mediaFileId: "b1",
     document: exampleNovel,
     title: "Die Verwandlung",
     projectName: "German reading",
@@ -157,31 +169,45 @@ const meta = {
       onWordHover: fn(),
       onWordHold: fn(),
       onDismissLookup: fn(),
-      onLocationChange: fn(),
       onPreferencesChange: fn(),
     },
   },
   render: (args) => <StatefulReader {...args} />,
-} satisfies Meta<typeof ReaderView>;
+} satisfies Meta<typeof ConnectedReaderView>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Pages: Story = {};
+/**
+ * Opens the book's screen in the story's store, which holds the reader's state, then dispatches the story's own actions.
+ * Without the screen open, the reader shows its defaults and its panels do not open.
+ */
+const openedWith = (...storyActions: AppAction[]) => [
+  withDispatchedActions(
+    actions.openMediaFileRequested("p1", "b1"),
+    ...storyActions,
+  ),
+];
+
+export const Pages: Story = { decorators: openedWith() };
 
 export const Sepia: Story = {
+  decorators: openedWith(),
   args: { preferences: { ...defaultReaderPreferences, theme: "sepia" } },
 };
 
 export const Dark: Story = {
+  decorators: openedWith(),
   args: { preferences: { ...defaultReaderPreferences, theme: "dark" } },
 };
 
 export const Scrolling: Story = {
+  decorators: openedWith(),
   args: { preferences: { ...defaultReaderPreferences, layout: "scroll" } },
 };
 
 export const LargeSansSerif: Story = {
+  decorators: openedWith(),
   args: {
     preferences: {
       ...defaultReaderPreferences,
@@ -194,31 +220,44 @@ export const LargeSansSerif: Story = {
 };
 
 export const ResumedInPartTwo: Story = {
-  args: {
-    initialLocation: { chapterIndex: 1, paragraphIndex: 12, offset: 0 },
-  },
+  decorators: openedWith(
+    actions.readerJumped("b1", {
+      chapterIndex: 1,
+      paragraphIndex: 12,
+      offset: 0,
+    }),
+  ),
 };
 
 export const Contents: Story = {
-  args: {
-    initialLocation: { chapterIndex: 1, paragraphIndex: 30, offset: 0 },
-    initialPanel: "contents",
-  },
+  decorators: openedWith(
+    actions.readerJumped("b1", {
+      chapterIndex: 1,
+      paragraphIndex: 30,
+      offset: 0,
+    }),
+    actions.readerPanelOpened("contents"),
+  ),
 };
 
 export const Search: Story = {
-  args: { initialPanel: "search", initialSearchQuery: "Prokurist" },
+  decorators: openedWith(
+    actions.readerPanelOpened("search"),
+    actions.readerSearchChanged("Prokurist"),
+  ),
 };
 
 export const Appearance: Story = {
-  args: { initialPanel: "appearance" },
+  decorators: openedWith(actions.readerPanelOpened("appearance")),
 };
 
 export const WordLookedUp: Story = {
+  decorators: openedWith(),
   args: { lookup: popupFor("fressen", fn()) },
 };
 
 export const UnsavedWork: Story = {
+  decorators: openedWith(),
   args: {
     headerContent: (
       <UnsavedWorkBanner
@@ -232,7 +271,7 @@ export const UnsavedWork: Story = {
 };
 
 export const FlashcardStarted: Story = {
-  decorators: [withAppStore],
+  decorators: openedWith(),
   args: {
     sidePanel: (
       <FlashcardEditor
@@ -264,10 +303,15 @@ export const FlashcardStarted: Story = {
 };
 
 export const PlainTextFile: Story = {
-  args: { document: examplePlainText, title: "die-verwandlung.txt" },
+  decorators: openedWith(),
+  args: {
+    document: unwrapHardLineBreaks(examplePlainText),
+    title: "die-verwandlung.txt",
+  },
 };
 
 export const ShortBook: Story = {
+  decorators: openedWith(),
   args: { document: exampleShortBook, title: "Sample Book", language: "en" },
 };
 
@@ -297,11 +341,21 @@ function writeStored(key: string, value: unknown) {
   }
 }
 
+/** Keeps the reading place of an open file in the browser's storage, so that reopening the file after a reload returns to it. */
+function RememberedPlace({ name }: { name: string }) {
+  const location = useAppSelector(selectReadingLocation(name));
+  useEffect(() => {
+    if (location) writeStored(`reader-location:${name}`, location);
+  }, [name, location]);
+  return null;
+}
+
 /**
  * Opens a fixture or a file of your own with the app's Rust parser, built to WebAssembly.
  * The reading position and the appearance are kept in the browser's storage, so that reopening a file returns to the same place.
  */
 function FileReader(args: ReaderViewProps) {
+  const dispatch = useAppDispatch();
   const [file, setFile] = useState<OpenFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState("de");
@@ -309,32 +363,40 @@ function FileReader(args: ReaderViewProps) {
     try {
       setError(null);
       const document = await parseDocumentWithWasm(new Uint8Array(await bytes));
-      setFile({ name, document });
+      dispatch(actions.openMediaFileRequested("p1", name));
+      dispatch(
+        actions.readingLocationLoaded(
+          name,
+          readStored<ReaderLocation>(`reader-location:${name}`) ?? null,
+        ),
+      );
+      setFile({ name, document: unwrapHardLineBreaks(document) });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
   if (file)
     return (
-      <StatefulReader
-        {...args}
-        document={file.document}
-        title={file.document.title || file.name}
-        language={file.document.language ?? language}
-        preferences={
-          readStored<ReaderPreferences>("reader-preferences") ??
-          args.preferences
-        }
-        initialLocation={readStored(`reader-location:${file.name}`)}
-        callbacks={{
-          ...args.callbacks,
-          onBack: () => setFile(null),
-          onLocationChange: (location) =>
-            writeStored(`reader-location:${file.name}`, location),
-          onPreferencesChange: (preferences) =>
-            writeStored("reader-preferences", preferences),
-        }}
-      />
+      <>
+        <RememberedPlace name={file.name} />
+        <StatefulReader
+          {...args}
+          mediaFileId={file.name}
+          document={file.document}
+          title={file.document.title || file.name}
+          language={file.document.language ?? language}
+          preferences={
+            readStored<ReaderPreferences>("reader-preferences") ??
+            args.preferences
+          }
+          callbacks={{
+            ...args.callbacks,
+            onBack: () => setFile(null),
+            onPreferencesChange: (preferences) =>
+              writeStored("reader-preferences", preferences),
+          }}
+        />
+      </>
     );
   return (
     <main

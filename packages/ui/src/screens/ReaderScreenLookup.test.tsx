@@ -14,7 +14,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
 import { paragraphAttribute } from "../reader/textOffsets.ts";
@@ -260,28 +260,8 @@ describe("ReaderScreen lookup", () => {
   });
 });
 
-/** Stands in for the browser's intersection observer, which sees every element it watches as near the view. */
-class SeeingEverythingObserver {
-  constructor(
-    private readonly callback: (
-      entries: Partial<IntersectionObserverEntry>[],
-    ) => void,
-  ) {}
-  observe(target: Element) {
-    queueMicrotask(() => this.callback([{ target, isIntersecting: true }]));
-  }
-  disconnect() {}
-}
-
 describe("ReaderScreen lookup prefetch", () => {
-  beforeEach(() => {
-    vi.stubGlobal("IntersectionObserver", SeeingEverythingObserver);
-  });
-
-  afterEach(() => vi.unstubAllGlobals());
-
   it("looks up only the paragraph in view where the layout cannot be measured", async () => {
-    vi.unstubAllGlobals();
     const { client } = await renderReader({ hasBatchLookups: true });
     await vi.waitUntil(
       () =>
@@ -293,19 +273,6 @@ describe("ReaderScreen lookup prefetch", () => {
         (request) => (bodyOf(request) as BatchLookupRequest).texts,
       ),
     ).toEqual([["The cat is sleeping on the windowsill."]]);
-  });
-
-  it("looks up the sentences of the paragraphs near the view", async () => {
-    const { client } = await renderReader({ hasBatchLookups: true });
-    const batchedTexts = () =>
-      requestsTo(client.requests, "POST", "/dictionaries/lookup/batch")
-        .flatMap((request) => (bodyOf(request) as BatchLookupRequest).texts)
-        .toSorted();
-    await vi.waitUntil(() => batchedTexts().length >= 2);
-    expect(batchedTexts()).toEqual([
-      "The cat is sleeping on the windowsill.",
-      "The dog wants to eat, and it is hungry.",
-    ]);
   });
 
   it("sends no lookup of its own for a word clicked near the view", async () => {

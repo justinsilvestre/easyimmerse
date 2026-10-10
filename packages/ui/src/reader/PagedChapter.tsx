@@ -39,8 +39,8 @@ const gapEm = 3;
  */
 export function PagedChapter({
   chapterIndex,
-  initialLocation,
-  jump,
+  location,
+  jumpCount,
   layoutKey,
   maxColumnWidthEm,
   ref,
@@ -51,10 +51,10 @@ export function PagedChapter({
   children,
 }: {
   chapterIndex: number;
-  /** The reader's place when the text first appears. */
-  initialLocation: ReaderLocation;
-  /** A location to show, applied once per id. */
-  jump: { location: ReaderLocation; id: number };
+  /** The reader's place, which the pages are turned to when they are laid out and after each jump. */
+  location: ReaderLocation;
+  /** Changes with each jump to `location`. */
+  jumpCount: number;
   /** Changes whenever a preference that moves the text changes, such as the font size. */
   layoutKey: string;
   maxColumnWidthEm: number;
@@ -72,8 +72,6 @@ export function PagedChapter({
   const fontsLoaded = useFontsLoaded();
   const [layout, setLayout] = useState<PageLayout | null>(null);
   const [view, setView] = useState({ page: 0, pageCount: 1, animates: false });
-  const anchor = useRef(initialLocation);
-  const appliedJumpId = useRef(jump.id);
   const reportsLocation = useRef(false);
 
   // Measure the font to size the columns. The key and size are what make the measurement stale.
@@ -88,29 +86,25 @@ export function PagedChapter({
     );
   }, [size, layoutKey, maxColumnWidthEm, fontsLoaded]);
 
-  // Once the columns are laid out, count the pages and find the reader's place among them.
+  // Once the columns are laid out, count the pages and find the reader's place among them, and again after each jump.
+  // The location is read here but not followed, since the chapter's own reports move it.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useLayoutEffect(() => {
     const text = pagedText(columns.current, layout);
     if (!text) return;
-    if (appliedJumpId.current !== jump.id) {
-      appliedJumpId.current = jump.id;
-      anchor.current = jump.location;
-    }
     setView({
-      page: pageOfLocation(text, anchor.current),
+      page: pageOfLocation(text, location),
       pageCount: pageCountOf(text),
       animates: false,
     });
-  }, [layout, size.height, jump]);
+  }, [layout, size.height, jumpCount]);
 
   const reportView = useEffectEvent((shown: typeof view) => {
     onPageChange({ page: shown.page, pageCount: shown.pageCount });
     const text = pagedText(columns.current, layout);
     if (!reportsLocation.current || !text) return;
     reportsLocation.current = false;
-    anchor.current = locationOfPage(text, shown.page, chapterIndex);
-    onLocationChange(anchor.current);
+    onLocationChange(locationOfPage(text, shown.page, chapterIndex));
   });
   useEffect(() => reportView(view), [view]);
 

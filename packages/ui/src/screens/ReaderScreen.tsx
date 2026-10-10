@@ -6,12 +6,12 @@ import {
 import {
   actions,
   isAwaitingLookup,
-  type ReaderLocation,
+  selectIsReadingLocationLoaded,
   selectPreference,
   selectPreferencesLoaded,
 } from "@easyimmerse/state";
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { draftFromText } from "../flashcards/draftFromText.ts";
 import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
@@ -22,11 +22,12 @@ import type { LookupPlace } from "../lookup/lookupPlace.ts";
 import { useLookupPrefetch } from "../lookup/useLookupPrefetch.ts";
 import { useReaderLookup } from "../lookup/useReaderLookup.ts";
 import { bookFailureSentence } from "../reader/bookFailureSentence.ts";
+import { ConnectedReaderView } from "../reader/ConnectedReaderView.tsx";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
-import { ReaderView } from "../reader/ReaderView.tsx";
 import { parseReaderPreferences } from "../reader/readerPreferences.ts";
+import { selectNearbySentences } from "../reader/selectNearbySentences.ts";
 import { sentenceWordLookups } from "../reader/sentenceWordLookups.ts";
-import { useOpeningLocation } from "../reader/useOpeningLocation.ts";
+import { unwrapHardLineBreaks } from "../reader/unwrapHardLineBreaks.ts";
 
 /**
  * The screen for reading one of the project's ebooks or text files.
@@ -47,7 +48,9 @@ export function ReaderScreen({
   const book = useOpenBookQuery(
     mediaFile ? { name: mediaFile.name, source: mediaFile.source } : skipToken,
   );
-  const location = useOpeningLocation(mediaFileId);
+  const isPlaceLoaded = useAppSelector(
+    selectIsReadingLocationLoaded(mediaFileId),
+  );
   const preferencesLoaded = useAppSelector(selectPreferencesLoaded);
   const close = () => dispatch(actions.closeMedia());
   const title = mediaFile?.name ?? "";
@@ -67,19 +70,13 @@ export function ReaderScreen({
         onBack={close}
       />
     );
-  if (
-    !mediaFile ||
-    !book.currentData ||
-    location === undefined ||
-    !preferencesLoaded
-  )
+  if (!mediaFile || !book.currentData || !isPlaceLoaded || !preferencesLoaded)
     return <ReaderStatus title={title} onBack={close} />;
   return (
     <BookReader
       project={project}
       mediaFile={mediaFile}
       document={book.currentData}
-      initialLocation={location ?? undefined}
     />
   );
 }
@@ -88,12 +85,10 @@ function BookReader({
   project,
   mediaFile,
   document,
-  initialLocation,
 }: {
   project: Project;
   mediaFile: MediaFile;
   document: Document;
-  initialLocation?: ReaderLocation;
 }) {
   const dispatch = useAppDispatch();
   const { settings } = project;
@@ -119,19 +114,22 @@ function BookReader({
       settings,
     });
   const lookup = useReaderLookup(languages, draftFor);
+  const text = useMemo(() => unwrapHardLineBreaks(document), [document]);
   const textLanguage = document.language ?? settings.target_language;
-  const [nearbySentences, setNearbySentences] = useState<readonly string[]>([]);
+  const nearbySentences = useAppSelector((state) =>
+    selectNearbySentences(state, text, mediaFile.id, textLanguage),
+  );
   useLookupPrefetch(languages.target, nearbySentences, (sentence) =>
     sentenceWordLookups(sentence, textLanguage),
   );
   return (
-    <ReaderView
-      document={document}
+    <ConnectedReaderView
+      mediaFileId={mediaFile.id}
+      document={text}
       title={document.title || mediaFile.name}
       projectName={settings.name}
       language={textLanguage}
       preferences={preferences}
-      initialLocation={initialLocation}
       lookup={lookup.popup && <DictionaryPopup {...lookup.popup.props} />}
       lookupSize={lookup.popup?.size}
       lookupRect={lookup.popup?.rect}
@@ -143,9 +141,6 @@ function BookReader({
         onLookupKey: lookup.lookUpPointedWord,
         onDismissLookup: lookup.close,
         onPointerInsideLookupChange: lookup.popup?.onPointerInsideChange,
-        onLocationChange: (location) =>
-          dispatch(actions.readingLocationReported(mediaFile.id, location)),
-        onNearbySentencesChange: setNearbySentences,
         onPreferencesChange: (changed) =>
           dispatch(
             actions.preferenceSet("readerPreferences", JSON.stringify(changed)),

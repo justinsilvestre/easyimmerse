@@ -150,6 +150,13 @@ describe("ReaderScreen", () => {
     ).toBe(1);
   });
 
+  it("puts the cursor in the search field on Ctrl+F", async () => {
+    renderReader();
+    await chapterHeading();
+    fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
+    expect(document.activeElement).toBe(screen.getByRole("searchbox"));
+  });
+
   it("explains a book that can no longer be found", async () => {
     renderReader({
       parsed: fakeFailure({ status: 404, message: "no file at that path" }),
