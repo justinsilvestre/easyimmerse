@@ -5,15 +5,14 @@ import {
 } from "@easyimmerse/backend";
 import {
   actions,
-  isAwaitingLookup,
   selectIsReadingLocationLoaded,
   selectPreferencesLoaded,
   selectReaderPreferences,
 } from "@easyimmerse/state";
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo } from "react";
+import { ConnectedFlashcardEditor } from "../flashcards/ConnectedFlashcardEditor.tsx";
 import { draftFromText } from "../flashcards/draftFromText.ts";
-import { FlashcardEditor } from "../flashcards/FlashcardEditor.tsx";
 import { useMediaFlashcards } from "../flashcards/useMediaFlashcards.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
@@ -143,23 +142,7 @@ function BookReader({
             actions.preferenceSet("readerPreferences", JSON.stringify(changed)),
           ),
       }}
-      sidePanel={
-        form && (
-          <FlashcardEditor
-            key={form.card.kind === "new" ? "new" : form.card.flashcard.id}
-            state={form.card.editor}
-            isNew={form.card.kind === "new"}
-            isAwaitingLookup={isAwaitingLookup(form.stage)}
-            hasSaveFailed={form.saveFailure !== null}
-            dispatch={flashcards.edit}
-            languages={languages}
-            waveform={null}
-            onSave={flashcards.save}
-            onDelete={flashcards.remove}
-            onClose={flashcards.close}
-          />
-        )
-      }
+      sidePanel={form && <ConnectedFlashcardEditor languages={languages} />}
     />
   );
 }

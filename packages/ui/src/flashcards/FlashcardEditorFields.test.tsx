@@ -1,25 +1,26 @@
 import type { EditorAction } from "@easyimmerse/state";
-import { actions } from "@easyimmerse/state";
-import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import type { AudioClip } from "@easyimmerse/types";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
-import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { exampleFlashcard } from "./exampleFlashcard.ts";
 import { MediaFields, type MediaWaveform } from "./FlashcardEditorFields.tsx";
 import { fieldsOfPreset } from "./flashcardPresets.ts";
 
 afterEach(cleanup);
 
-/** Renders the example flashcard's clip, from 1.75 to 3 seconds, recording what it dispatches to the editor and asks of the player. */
+/** Renders the example flashcard's clip, from 1.75 to 3 seconds, recording what it dispatches to the editor and the clips it plays. */
 function renderClip({
   waveform = null,
   isReadOnly = false,
+  mediaDurationMs = 0,
 }: {
   waveform?: MediaWaveform | null;
   isReadOnly?: boolean;
+  mediaDurationMs?: number;
 } = {}) {
   const edits: EditorAction[] = [];
-  const rendered = renderWithAppStore(
+  const playedClips: AudioClip[] = [];
+  render(
     <MediaFields
       state={{
         content: exampleFlashcard,
@@ -27,19 +28,15 @@ function renderClip({
       }}
       waveform={waveform}
       screenshotUrl={null}
+      mediaDurationMs={mediaDurationMs}
       dispatch={(action) => edits.push(action)}
+      onPlayClip={(clip) => playedClips.push(clip)}
       isReadOnly={isReadOnly}
     />,
-    createFakeBackendClient({}),
   );
-  act(() =>
-    rendered.store.dispatch(actions.openMediaFileRequested("p1", "m1")),
-  );
-  const playerCalls = () =>
-    rendered.effects.calls.filter((call) => call.type.endsWith("Player"));
   const press = (name: string) =>
     fireEvent.click(screen.getByRole("button", { name }));
-  return { edits, playerCalls, press };
+  return { edits, playedClips, press };
 }
 
 describe("MediaFields without a waveform", () => {
@@ -78,6 +75,14 @@ describe("MediaFields without a waveform", () => {
     ]);
   });
 
+  it("keeps the clip's end within the media", () => {
+    const { edits, press } = renderClip({ mediaDurationMs: 3050 });
+    press("Clip end later");
+    expect(edits).toEqual([
+      { type: "clipChanged", clip: { start_ms: 1750, end_ms: 3050 } },
+    ]);
+  });
+
   it("makes the clip's buttons inert while read-only", () => {
     renderClip({ isReadOnly: true });
     expect(
@@ -96,13 +101,10 @@ describe("MediaFields' Play button", () => {
     ).toBe("Play");
   });
 
-  it("seeks to the clip's start and then plays", () => {
-    const { playerCalls, press } = renderClip();
+  it("plays the clip", () => {
+    const { playedClips, press } = renderClip();
     press("Play the clip");
-    expect(playerCalls()).toEqual([
-      { type: "seekPlayer", seconds: 1.75 },
-      { type: "playPlayer" },
-    ]);
+    expect(playedClips).toEqual([{ start_ms: 1750, end_ms: 3000 }]);
   });
 
   it("is offered beside the waveform", () => {

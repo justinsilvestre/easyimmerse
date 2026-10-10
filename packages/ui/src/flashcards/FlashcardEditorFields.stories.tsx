@@ -3,7 +3,6 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useReducer } from "react";
 import { fn } from "storybook/test";
 import { generateExamplePeaks } from "../media/examplePeaks.ts";
-import { withAppStore } from "../storybook/withAppStore.tsx";
 import { exampleFlashcard, exampleScreenshotUrl } from "./exampleFlashcard.ts";
 import { MediaFields } from "./FlashcardEditorFields.tsx";
 import { fieldsOfPreset } from "./flashcardPresets.ts";
@@ -23,7 +22,6 @@ const meta = {
   component: MediaFields,
   render: (args) => <MediaFieldsWithState {...args} />,
   decorators: [
-    withAppStore,
     (Story) => (
       <div className="w-full max-w-80">
         <Story />
@@ -38,6 +36,8 @@ const meta = {
     dispatch: fn(),
     screenshotUrl: exampleScreenshotUrl,
     waveform: { peaks: generateExamplePeaks(240), durationMs: 24_000 },
+    mediaDurationMs: 24_000,
+    onPlayClip: fn(),
   },
 } satisfies Meta<typeof MediaFields>;
 

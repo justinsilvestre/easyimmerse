@@ -4,7 +4,6 @@ import type { ComponentProps } from "react";
 import { useReducer } from "react";
 import { fn } from "storybook/test";
 import { generateExamplePeaks } from "../media/examplePeaks.ts";
-import { withAppStore } from "../storybook/withAppStore.tsx";
 import {
   exampleFlashcard,
   exampleLanguages,
@@ -30,7 +29,6 @@ const meta = {
   component: FlashcardEditor,
   render: (args) => <EditorWithState {...args} />,
   decorators: [
-    withAppStore,
     (Story) => (
       <div className="h-[36rem] w-full max-w-96">
         <Story />
@@ -49,6 +47,7 @@ const meta = {
     onSave: fn(),
     onDelete: fn(),
     onClose: fn(),
+    onPlayClip: fn(),
   },
 } satisfies Meta<typeof FlashcardEditor>;
 
