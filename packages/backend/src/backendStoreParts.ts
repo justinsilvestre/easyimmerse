@@ -26,6 +26,7 @@ export function createBackendStoreParts(
     middleware: createMiddleware({
       client,
       browserFileRegistry,
+      frameCapturer: null,
       failedPassages: { retryTimes: {} },
     }),
     runRequest,

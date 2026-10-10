@@ -106,6 +106,7 @@ function createStore(client: BackendClient) {
   const extra: BackendThunkExtra = {
     client,
     browserFileRegistry: null,
+    frameCapturer: null,
     failedPassages: { retryTimes: {} },
   };
   return configureStore({

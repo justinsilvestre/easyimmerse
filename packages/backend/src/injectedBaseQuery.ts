@@ -6,12 +6,15 @@ import type {
   BackendRequest,
 } from "./backendClient.ts";
 import type { FailedPassages } from "./failedPassages.ts";
+import type { FrameCapturer } from "./frameCapturer.ts";
 
 /** What the backend's thunk middleware passes to every thunk and base query as their extra argument. */
 export type BackendThunkExtra = {
   client: BackendClient;
   /** The files a browser picked, on the platforms that hold any. */
   browserFileRegistry: BrowserFileRegistry<File> | null;
+  /** Draws frames from the files a browser picked, on the platforms that hold any. */
+  frameCapturer: FrameCapturer | null;
   /** The passages whose prefetched batch failed lately in this store. */
   failedPassages: FailedPassages;
 };

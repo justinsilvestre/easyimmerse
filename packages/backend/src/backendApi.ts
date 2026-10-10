@@ -45,6 +45,11 @@ import type {
 import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import type { BackendError } from "./backendClient.ts";
+import {
+  captureFrame,
+  type FrameArgs,
+  probePictures,
+} from "./browserFrames.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
 import { lookupsInBatchReach } from "./lookupBatches.ts";
@@ -55,6 +60,7 @@ import {
   importPickedDictionary,
   previewPickedDictionaryTable,
 } from "./pickedDictionary.ts";
+import type { PickedFile } from "./readPickedFile.ts";
 
 type ProjectArgs = { projectId: string; settings: ProjectSettings };
 
@@ -488,6 +494,17 @@ export const backendApi = createApi({
         parseBook(book, api.extra as BackendThunkExtra, baseQuery),
       keepUnusedDataFor: 0,
     }),
+    /** Whether a file the browser holds shows pictures. The answer is kept for the session, since it is small and the flashcard rules will read it. */
+    probePictures: build.query<boolean, PickedFile>({
+      queryFn: (file, api) =>
+        probePictures(file, api.extra as BackendThunkExtra),
+      keepUnusedDataFor: Infinity,
+    }),
+    /** A frame of a file the browser holds. A frame is a large data URL, so an unused one goes after RTK Query's default minute. */
+    captureFrame: build.query<string | null, FrameArgs>({
+      queryFn: (args, api) =>
+        captureFrame(args, api.extra as BackendThunkExtra),
+    }),
     /** Imports a picked dictionary file. The server answers with a job, which is polled through `getImportJob`. */
     importDictionary: build.mutation<
       ImportJobStarted,
@@ -589,6 +606,8 @@ export const {
   useClearConversionCacheMutation,
   useSetConversionCacheBudgetMutation,
   useOpenBookQuery,
+  useProbePicturesQuery,
+  useCaptureFrameQuery,
   useListDictionariesQuery,
   useDeleteDictionaryMutation,
   useLookupTextQuery,

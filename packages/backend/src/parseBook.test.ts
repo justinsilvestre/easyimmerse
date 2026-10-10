@@ -27,6 +27,7 @@ function extraWith(
   return {
     client: { send: async () => ({ data: null as never }) },
     browserFileRegistry,
+    frameCapturer: null,
     failedPassages: { retryTimes: {} },
   };
 }

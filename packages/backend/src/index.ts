@@ -5,6 +5,7 @@ export {
   selectCachedWaveformWindow,
   useAddMediaFileMutation,
   useAddSubtitleTrackMutation,
+  useCaptureFrameQuery,
   useClearConversionCacheMutation,
   useCreateFlashcardMutation,
   useCreateProjectMutation,
@@ -26,6 +27,7 @@ export {
   useLookupTextQuery,
   useOpenBookQuery,
   usePlanPlaybackQuery,
+  useProbePicturesQuery,
   useRemoveMediaFileMutation,
   useSaveTrackSelectionMutation,
   useSetConversionCacheBudgetMutation,
@@ -45,6 +47,7 @@ export {
   buildConversionFileUrl,
 } from "./conversionFileUrl.ts";
 export { buildDictionaryMediaUrl } from "./dictionaryMediaUrl.ts";
+export type { FrameCapturer } from "./frameCapturer.ts";
 export { createHttpBackendClient } from "./httpBackendClient.ts";
 export { lookUpTextAhead } from "./lookUpTextAhead.ts";
 export { lookupStartsIn } from "./lookupPositions.ts";
