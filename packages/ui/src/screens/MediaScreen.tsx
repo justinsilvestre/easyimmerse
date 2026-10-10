@@ -268,6 +268,7 @@ export function MediaScreen({
         sidePanel={
           form !== null ? (
             <ConnectedFlashcardEditor
+              form={form}
               languages={languages}
               waveform={clipWaveform}
               screenshotUrl={screenshotUrl}
