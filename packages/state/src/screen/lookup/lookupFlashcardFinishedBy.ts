@@ -1,9 +1,4 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
-import {
-  isLeavingScreen,
-  mediaScreenOf,
-} from "../../flashcards/flashcardsOnScreen.ts";
 import type { LookupFlashcardFields } from "../../flashcards/lookupFields.ts";
 import { lookupRequestId } from "./lookupIds.ts";
 import { showsOccurrence } from "./lookupMoves.ts";
@@ -28,17 +23,15 @@ export type FinishedLookupFlashcard = {
  * or at once when no dictionary covers the word's language.
  */
 export function lookupFlashcardFinishedBy(
-  app: AppState,
+  lookup: LookupState,
   action: AppAction,
 ): FinishedLookupFlashcard | null {
-  const lookup = mediaScreenOf(app)?.screen.lookup;
-  if (!lookup) return null;
-  const requested = requestedFlashcard(lookup, action, app);
+  const requested = requestedFlashcard(lookup, action);
   if (requested?.chosen.word.query === null)
     return { pending: requested, how: "ready", fields: null };
   const pending = lookup.pendingFlashcard;
   if (pending === null) return null;
-  if (isLeavingScreen(app, action) || dropsPending(lookup, action))
+  if (action.type === "mediaScreenLeft" || dropsPending(lookup, action))
     return { pending, how: "abandoned", fields: null };
   if (
     action.type === "flashcardFieldsWritten" &&

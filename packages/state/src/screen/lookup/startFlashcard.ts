@@ -1,6 +1,5 @@
 import type { NewFlashcard } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
 import { updated } from "../../app/updated.ts";
 import type { FlashcardDestination } from "../../flashcards/flashcardActions.ts";
@@ -24,30 +23,25 @@ import type {
 import { flashcardLookupWaitMs } from "./lookupTiming.ts";
 
 /**
- * The flashcard that a word's action asks for, numbered after the lookups asked for before,
+ * The flashcard that a word's action asks for,
  * or null when the action asks for none, as a word held in a pop-up that shows nothing or the C key with no cursor shown.
  */
 export function requestedFlashcard(
   lookup: LookupState,
   action: AppAction,
-  app: AppState,
 ): PendingFlashcard | null {
   if (action.type === "lookupFlashcardRequested")
-    return pendingFor(action.chosen, action, app);
+    return pendingFor(action.chosen, action);
   if (action.type === "lookupCursorFlashcardRequested") {
     const { atCursor } = action;
     return (
       atCursor &&
-      pendingFor(
-        atCursor.chosen,
-        { ...action, flashcard: atCursor.flashcard },
-        app,
-      )
+      pendingFor(atCursor.chosen, { ...action, flashcard: atCursor.flashcard })
     );
   }
   if (action.type !== "lookupPopupWordHeld") return null;
   const chosen = popupWordChosen(lookup, action.term);
-  return chosen && pendingFor(chosen, action, app);
+  return chosen && pendingFor(chosen, action);
 }
 
 /**
@@ -100,7 +94,6 @@ type FlashcardRequest = {
 function pendingFor(
   chosen: ChosenWord,
   { destination, flashcard, context }: FlashcardRequest,
-  _app: AppState,
 ): PendingFlashcard {
   return {
     chosen,

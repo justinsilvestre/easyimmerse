@@ -1,11 +1,6 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
-import { mediaScreenOf } from "../../flashcards/flashcardsOnScreen.ts";
-import {
-  initialPlayerState,
-  type PlayerState,
-} from "../mediaScreen/playerState.ts";
+import type { PlayerState } from "../mediaScreen/playerState.ts";
 import { moveCursor, withCursor } from "./lookupCursor.ts";
 import {
   clickWord,
@@ -26,21 +21,20 @@ import { updatePendingFlashcard } from "./updatePendingFlashcard.ts";
  * Keeps the lookup cursor where the mouse or the keyboard points, with the length its word's lookup matched once a hover answers;
  * that answer also moves an open pop-up to the word, unless the pointer is inside the pop-up or a flashcard waits.
  * The L key acts on the cursor's word.
- * `app` is the state before the action.
+ * `player` is the media screen's player before the action, which a pop-up opening while it plays pauses.
  */
 export function updateLookup(
   lookup: LookupState,
   action: AppAction,
-  app: AppState,
+  player: PlayerState,
 ) {
-  const player = playerOf(app);
   switch (action.type) {
     case "lookupWordClicked":
       return clickWord(lookup, action.chosen, action.input, player);
     case "lookupFlashcardRequested":
     case "lookupCursorFlashcardRequested":
     case "lookupPopupWordHeld": {
-      const pending = requestedFlashcard(lookup, action, app);
+      const pending = requestedFlashcard(lookup, action);
       return pending === null
         ? updated(lookup)
         : startFlashcard(lookup, pending, player);
@@ -49,7 +43,7 @@ export function updateLookup(
     case "lookupCursorLeft":
       return updated(withCursor(lookup, moveCursor(lookup.cursor, action)));
     case "lookupWordHovered":
-      return hoverWord(lookup, action.chosen, player, app);
+      return hoverWord(lookup, action.chosen, player);
     case "lookupCursorLookedUp":
       return lookup.cursor === null
         ? openSearch(lookup, player)
@@ -82,7 +76,7 @@ export function updateLookup(
         : updated(lookup);
     case "flashcardFieldsWritten":
     case "lookupFlashcardWaitEnded":
-      return updatePendingFlashcard(lookup, action, app);
+      return updatePendingFlashcard(lookup, action);
     default:
       return updated(lookup);
   }
@@ -102,9 +96,4 @@ function searched(lookup: LookupState, word: LookupWord): LookupState {
     },
   };
   return { ...lookup, popup };
-}
-
-/** The open media screen's player before the action, or an idle player. */
-function playerOf(app: AppState): PlayerState {
-  return mediaScreenOf(app)?.screen.playing.player ?? initialPlayerState;
 }

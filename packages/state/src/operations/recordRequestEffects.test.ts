@@ -144,6 +144,21 @@ describe("recordRequestEffects", () => {
     expect(effects).toEqual([{ type: "abortRequest", id: "a" }]);
   });
 
+  it("refuses two sends of the same id in one update", () => {
+    expect(() =>
+      recordRequestEffects(requestsOf(), [send("a", first), send("a", second)]),
+    ).toThrow("a");
+  });
+
+  it("lets an id be sent again in one update once it is aborted", () => {
+    const [requests] = recordRequestEffects(requestsOf(), [
+      send("a", first),
+      { type: "abortRequest", id: "a" },
+      send("a", second),
+    ]);
+    expect(requests).toEqual([sent("a", second)]);
+  });
+
   it("passes other effects through", () => {
     const link: PerformedEffect = {
       type: "openExternalUrl",

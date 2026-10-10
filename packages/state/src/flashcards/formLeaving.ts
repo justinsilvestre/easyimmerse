@@ -1,6 +1,7 @@
 import type { AppState } from "../app/appState.ts";
 import { dispatch } from "../app/dispatchEffect.ts";
 import { updated } from "../app/updated.ts";
+import { shownMediaFile } from "../screen/mediaScreen/shownMediaScreen.ts";
 import { flashcardActions } from "./flashcardActions.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
 import { askSave } from "./flashcardSaves.ts";
@@ -14,20 +15,16 @@ import { holdForLookup } from "./waitingCards.ts";
  * within the ten seconds counted from Save when it was pressed, or from now. Any other card is saved in the background,
  * with an undo toast once it lands.
  */
-export function leaveForm(
-  form: FlashcardForm | null,
-  app: AppState,
-  projectId: string,
-) {
+export function leaveForm(form: FlashcardForm | null, app: AppState) {
   if (form === null || form.stage === "sending") return [];
   const { card, rollbackIfDiscarded } = form;
+  const { projectId } = shownMediaFile(app);
   if (card.kind === "existing" && !card.isChanged && form.stage === "editing")
     return [];
   if (isAwaitingLookup(form.stage) && card.kind === "new" && form.lookup) {
     const isSaveAsked = form.stage === "awaitingLookupToSave";
     const waiting = {
       card,
-      projectId,
       lookup: form.lookup,
       offersUndo: !isSaveAsked,
     };
@@ -49,12 +46,11 @@ export function replaceForm(
   form: FlashcardForm | null,
   next: FlashcardForm,
   app: AppState,
-  projectId: string,
 ) {
   const { audio_context } = next.card.editor.content;
   return updated(
     next,
-    ...leaveForm(form, app, projectId),
+    ...leaveForm(form, app),
     dispatch(flashcardActions.flashcardFormOpened(audio_context)),
   );
 }

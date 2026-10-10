@@ -1,5 +1,6 @@
 import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
+import { shownMediaFile } from "../screen/mediaScreen/shownMediaScreen.ts";
 import { keepFailedSave } from "./failedSaveKeeping.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
@@ -18,20 +19,20 @@ import { isLocked } from "./saveStage.ts";
  * A card whose save the user asked for failed is kept among the failed saves rather than dropped.
  * A changed card is discarded with an undo toast that reopens it, and a card in doubt takes back the save that may have landed.
  */
-export function closeForm(
-  form: FlashcardForm | null,
-  app: AppState,
-  projectId: string,
-) {
+export function closeForm(form: FlashcardForm | null, app: AppState) {
   if (form === null || isLocked(form.stage)) return updated(form);
   const { card, rollbackIfDiscarded, saveFailure } = form;
   if (saveFailure !== null) {
-    const failedCard = { card, projectId, rollbackIfDiscarded };
+    const failedCard = {
+      card,
+      projectId: shownMediaFile(app).projectId,
+      rollbackIfDiscarded,
+    };
     return updated(null, ...keepFailedSave(failedCard, saveFailure, app));
   }
   const rollback =
     rollbackIfDiscarded &&
-    rollbackRequest(rollbackIfDiscarded, card, projectId);
+    rollbackRequest(rollbackIfDiscarded, card, shownMediaFile(app).projectId);
   return updated(
     null,
     ...(card.isChanged ? [show(flashcardNotices.formDiscarded(card))] : []),
@@ -40,18 +41,14 @@ export function closeForm(
 }
 
 /** Deletes the open flashcard, or closes a new one at once, unless Save has been pressed. */
-export function deleteFromForm(
-  form: FlashcardForm,
-  app: AppState,
-  projectId: string,
-) {
+export function deleteFromForm(form: FlashcardForm, app: AppState) {
   if (isLocked(form.stage)) return updated(form);
   if (form.card.kind === "new") return updated(null);
   const flashcardId = flashcardIdOf(form.card);
   const sending = sendFlashcardRequest(
     {
       kind: "deleteFlashcard",
-      projectId,
+      projectId: shownMediaFile(app).projectId,
       flashcardId,
       purpose: { type: "delete" },
     },

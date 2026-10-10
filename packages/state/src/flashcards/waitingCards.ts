@@ -3,6 +3,7 @@ import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import type { RequestRecord } from "../operations/operations.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
+import { shownMediaFile } from "../screen/mediaScreen/shownMediaScreen.ts";
 import { isSettled } from "../server/isSettled.ts";
 import { type NewCard, withLookupFields } from "./flashcardCard.ts";
 import type { LookupFieldsContext } from "./flashcardForm.ts";
@@ -19,7 +20,6 @@ import { cancelLookupWait } from "./lookupWait.ts";
 /** A new card to save once its word's lookup answers or the wait for it ends. */
 export type WaitingCard = {
   card: NewCard;
-  projectId: string;
   lookup: { requestId: string; context: LookupFieldsContext };
   /** False when the user had pressed Save, since such a save shows no undo toast. */
   offersUndo: boolean;
@@ -34,15 +34,15 @@ type HeldSave = {
   purpose: Extract<SavePurpose, { type: "save" }>;
 };
 
-/** Asks for the save of a card held for its word's lookup. */
+/** Asks for the save of a card held for its word's lookup, in the project of the media screen shown. */
 export function holdForLookup(
-  { card, projectId, lookup, offersUndo }: WaitingCard,
+  { card, lookup, offersUndo }: WaitingCard,
   app: AppState,
   sender: FlashcardSender,
 ) {
   const order = {
     card,
-    projectId,
+    projectId: shownMediaFile(app).projectId,
     from: "background",
     offersUndo,
     rollbackIfDiscarded: null,

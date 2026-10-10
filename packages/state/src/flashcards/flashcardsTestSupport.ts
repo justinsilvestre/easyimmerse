@@ -4,8 +4,8 @@ import { actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import { stateAfter, updatedAsDispatched } from "../app/stateAfter.ts";
-import { update } from "../app/update.ts";
 import { mainScreenOf } from "../route/route.ts";
+import { mediaScreenActionOf } from "../screen/mediaScreen/shownMediaScreen.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
 import {
   exampleListedFlashcard,
@@ -77,9 +77,8 @@ export const landed = (flashcard: Flashcard) => ({ data: flashcard });
 
 /** The form the app has after an action, with the effects its update returns. */
 export function formUpdate(app: AppState, action: AppAction) {
-  const route = mainScreenOf(app.route);
-  if (route.screen !== "media") throw new Error("No media screen is open.");
-  const [form, effects] = updateFlashcardForm(formOf(app), action, app, route);
+  const seen = mediaScreenActionOf(app, action);
+  const [form, effects] = updateFlashcardForm(formOf(app), seen, app);
   return { form, effects };
 }
 

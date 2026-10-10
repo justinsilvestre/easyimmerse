@@ -1,10 +1,11 @@
 import type { AudioTarget, PlaybackRequest } from "@easyimmerse/types";
+import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
 import type { PreferencesState } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
-import type { ScreenState } from "../screenState.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { planRequest } from "./playbackRequests.ts";
+import { shownMediaFile } from "./shownMediaScreen.ts";
 
 /** The preferences as far as a plan needs them: their values, and whether they have loaded. */
 type PlanPreferences = Pick<PreferencesState, "values" | "isLoaded">;
@@ -12,14 +13,14 @@ type PlanPreferences = Pick<PreferencesState, "values" | "isLoaded">;
 /** Sends the first plan, unless one was sent or the first track choice is open. */
 export function sendFirstPlan(
   playback: PathPlayback | null,
-  route: MediaRoute,
-  dialog: ScreenState["dialog"],
+  app: Pick<AppState, "route" | "screen">,
   preferences: PlanPreferences,
 ) {
+  const { dialog } = app.screen;
   const isChoosing =
     dialog?.kind === "trackChoice" && dialog.stage === "choosing";
   return playback?.planRequest === null && !isChoosing
-    ? sendPlan(playback, route, preferences)
+    ? sendPlan(playback, shownMediaFile(app), preferences)
     : updated(playback);
 }
 

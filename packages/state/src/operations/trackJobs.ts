@@ -1,6 +1,7 @@
 import type { Effect, PerformedEffect } from "../app/effect.ts";
 import { updated } from "../app/updated.ts";
 import type { FailedRequestsEffect } from "./failedRequests.ts";
+import type { FreeIdRequestEffect } from "./freeIdRequests.ts";
 import type { JobsState } from "./jobs.ts";
 import { jobKey } from "./jobs.ts";
 
@@ -11,7 +12,10 @@ import { jobKey } from "./jobs.ts";
  */
 export function trackJobs(
   jobs: JobsState,
-  effects: readonly Exclude<Effect, FailedRequestsEffect>[],
+  effects: readonly Exclude<
+    Effect,
+    FailedRequestsEffect | FreeIdRequestEffect
+  >[],
 ) {
   let tracked = jobs;
   const performed: PerformedEffect[] = [];

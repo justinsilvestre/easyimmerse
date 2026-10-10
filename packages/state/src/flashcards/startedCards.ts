@@ -5,6 +5,10 @@ import {
   lookupFlashcardFinishedBy,
 } from "../screen/lookup/lookupFlashcardFinishedBy.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
+import {
+  mediaScreenActionOf,
+  shownMediaFile,
+} from "../screen/mediaScreen/shownMediaScreen.ts";
 import { newCard, withLookupFields } from "./flashcardCard.ts";
 import { askSave } from "./flashcardSaves.ts";
 import { flashcardStartedBy } from "./flashcardStartedBy.ts";
@@ -32,11 +36,11 @@ export function saveStarted(action: AppAction, app: AppState) {
 
 /** Takes a flashcard from a word whose lookup no longer holds it, as `takeLookupFlashcard` describes. */
 export function takeFinished(action: AppAction, app: AppState) {
-  const finished = lookupFlashcardFinishedBy(app, action);
-  const projectId = mediaScreenOf(app)?.route.projectId;
-  return finished !== null && projectId !== undefined
-    ? takeLookupFlashcard(finished, projectId, app)
-    : [];
+  const onScreen = mediaScreenOf(app);
+  if (onScreen === null) return [];
+  const seen = mediaScreenActionOf(app, action);
+  const finished = lookupFlashcardFinishedBy(onScreen.screen.lookup, seen);
+  return finished ? takeLookupFlashcard(finished, app) : [];
 }
 
 /**
@@ -46,9 +50,9 @@ export function takeFinished(action: AppAction, app: AppState) {
  */
 function takeLookupFlashcard(
   { pending, how, fields }: FinishedLookupFlashcard,
-  projectId: string,
   app: AppState,
 ) {
+  const { projectId } = shownMediaFile(app);
   if (pending.destination === "editor" && how !== "abandoned") return [];
   const card = newCard({ id: pending.flashcardId, draft: pending.draft });
   if (how === "ready") {
@@ -62,7 +66,7 @@ function takeLookupFlashcard(
   }
   const requestId = lookupRequestId(pending.flashcardId);
   const lookup = { requestId, context: pending.context };
-  const waiting = { card, projectId, lookup, offersUndo: true };
+  const waiting = { card, lookup, offersUndo: true };
   return [
     startLookupWait(card.flashcardId),
     ...holdForLookup(waiting, app, "background"),

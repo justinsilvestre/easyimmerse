@@ -5,7 +5,6 @@ import { stateAfter } from "../../app/stateAfter.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateMediaScreen } from "./updateMediaScreen.ts";
 
-const route = { screen: "media", projectId: "p1", mediaFileId: "m1" } as const;
 const open = actions.openMediaFileRequested("p1", "m1");
 const loaded = (ms: number | null) => actions.playbackPositionLoaded("m1", ms);
 const duration = actions.playerDurationChanged(600);
@@ -17,12 +16,7 @@ const applyAfter = (
   afterOpening: AppAction[],
 ) => {
   const app = stateAfter(...beforeOpening, open, ...afterOpening);
-  return updateMediaScreen(
-    app.screen.main as MediaScreenState,
-    action,
-    app,
-    route,
-  );
+  return updateMediaScreen(app.screen.main as MediaScreenState, action, app);
 };
 
 /** Applies an action to the media screen of m1 after the given earlier actions. */

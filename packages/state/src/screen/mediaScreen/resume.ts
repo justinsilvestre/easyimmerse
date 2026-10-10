@@ -1,9 +1,9 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
-import type { MediaRoute } from "../../route/route.ts";
 import type { PlayingState } from "./playingState.ts";
 import { seekTo } from "./seekTo.ts";
+import { shownMediaFile } from "./shownMediaScreen.ts";
 
 /** A stored position this close to the start or the end of the file starts the file over instead. */
 const resumeMarginMs = 5_000;
@@ -17,11 +17,11 @@ type PositionLoaded = Extract<AppAction, { type: "playbackPositionLoaded" }>;
 export function positionLoaded(
   playing: PlayingState,
   action: PositionLoaded,
-  route: MediaRoute,
   app: AppState,
 ) {
-  return action.mediaFileId === route.mediaFileId &&
-    app.storedPlaces.playback[route.mediaFileId] === undefined
+  const { mediaFileId } = shownMediaFile(app);
+  return action.mediaFileId === mediaFileId &&
+    app.storedPlaces.playback[mediaFileId] === undefined
     ? resume(
         { ...playing, pendingResumeMs: action.ms },
         playing.player.durationSeconds,

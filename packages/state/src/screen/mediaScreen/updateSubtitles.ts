@@ -8,6 +8,7 @@ import type { PickedFile } from "../../platform/effects.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import { roleForNewTrack } from "./roleForNewTrack.ts";
+import { shownMediaFile } from "./shownMediaScreen.ts";
 import { subtitleSelectionId } from "./subtitleSelectionId.ts";
 
 const subtitlesNotAdded = {
@@ -22,9 +23,9 @@ const subtitlesNotAdded = {
 export function updateSubtitles(
   pending: PickedFile | null,
   action: AppAction,
-  _app: AppState,
-  route: MediaRoute,
+  app: AppState,
 ) {
+  const route = shownMediaFile(app);
   switch (action.type) {
     case "subtitleTrackChosen":
       return updated(pending, saveSelection(action, route));
@@ -56,23 +57,23 @@ export function updateSubtitles(
   }
 }
 
-function tracksRequestId(route: MediaRoute): string {
-  return `media/${route.mediaFileId}/listSubtitleTracks`;
+function tracksRequestId({ mediaFileId }: MediaRoute): string {
+  return `media/${mediaFileId}/listSubtitleTracks`;
 }
 
 /** Sends a picked subtitles file to the open media file, in the role the current selection leaves for it. */
 function sendSubtitleFile(
-  route: MediaRoute,
+  { projectId, mediaFileId }: MediaRoute,
   file: PickedFile,
   selection: SubtitleSelection,
 ) {
   return {
     type: "sendRequest",
-    id: `media/${route.mediaFileId}/addSubtitleTrack`,
+    id: `media/${mediaFileId}/addSubtitleTrack`,
     request: {
       kind: "addSubtitleTrack",
-      projectId: route.projectId,
-      mediaFileId: route.mediaFileId,
+      projectId,
+      mediaFileId,
       request: {
         name: file.name,
         source: file.source,

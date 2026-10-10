@@ -1,6 +1,7 @@
 import type { FlashcardsEffect } from "../flashcards/flashcardsEffect.ts";
 import type { NoticesEffect } from "../notices/noticesEffect.ts";
 import type { FailedRequestsEffect } from "../operations/failedRequests.ts";
+import type { FreeIdRequestEffect } from "../operations/freeIdRequests.ts";
 import type { JobsEffect } from "../operations/jobsEffect.ts";
 import type { PlatformEffect } from "../platform/platformCommands.ts";
 import type { PreferencesEffect } from "../preferences/preferencesEffect.ts";
@@ -22,10 +23,11 @@ export type Effect =
   | ServerEffect
   | JobsEffect
   | DispatchEffect
-  | FailedRequestsEffect;
+  | FailedRequestsEffect
+  | FreeIdRequestEffect;
 
 /** An effect that the middleware performs: every effect except those the root update translates into others. */
 export type PerformedEffect = Exclude<
   Effect,
-  JobsEffect | FailedRequestsEffect
+  JobsEffect | FailedRequestsEffect | FreeIdRequestEffect
 >;

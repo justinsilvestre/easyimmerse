@@ -12,6 +12,7 @@ import { routeAfter } from "../route/updateRoute.ts";
 import { failureNotices } from "./failureNotices.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
 import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
+import { mediaScreenActionOf } from "./mediaScreen/shownMediaScreen.ts";
 import { skippedSourceSubtitles } from "./mediaScreen/sourceMedia/skippedSourceSubtitles.ts";
 import { endSourceMedia } from "./mediaScreen/sourceMedia/sourceMediaRequests.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
@@ -133,7 +134,7 @@ function updateMainScreen(
   app: AppState,
 ) {
   if (main.kind === "media" && route.screen === "media")
-    return updateMediaScreen(main, action, app, route);
+    return updateMediaScreen(main, mediaScreenActionOf(app, action), app);
   if (main.kind === "project" && route.screen === "project")
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);

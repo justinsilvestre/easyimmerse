@@ -61,8 +61,8 @@ describe("updateMediaScreen", () => {
         const [, effects] = apply(actions.lookupWordHovered(cat));
         expect(effects).toEqual([
           {
-            type: "sendRequest",
-            id: "lookup/hover/1",
+            type: "sendRequestWithFreeId",
+            prefix: "lookup/hover",
             request: { kind: "lookupText", query: cat.word.query },
           },
         ]);

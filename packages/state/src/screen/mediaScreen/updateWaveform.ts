@@ -5,6 +5,7 @@ import type { Update } from "../../app/update.ts";
 import { updated } from "../../app/updated.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
+import { shownMediaFile } from "./shownMediaScreen.ts";
 import type {
   WaveformState,
   WaveformViewName,
@@ -29,9 +30,9 @@ const viewNames: readonly WaveformViewName[] = ["player", "clip"];
 export function updateWaveform(
   waveform: WaveformState,
   action: AppAction,
-  _app: AppState,
-  route: MediaRoute,
+  app: AppState,
 ) {
+  const route = shownMediaFile(app);
   switch (action.type) {
     case "waveformZoomed":
       return updated({ ...waveform, requestedSpanMs: action.spanMs });
@@ -53,7 +54,7 @@ export function updateWaveform(
     }
     case "requestSettled": {
       for (const name of viewNames) {
-        const target = { route, name };
+        const target = { route: route, name };
         if (isWindowSettled(action, target))
           return withView(
             waveform,

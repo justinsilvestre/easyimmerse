@@ -48,13 +48,12 @@ export function openListed(
   form: FlashcardForm | null,
   { flashcardId, listed }: { flashcardId: string; listed: Flashcard | null },
   app: AppState,
-  projectId: string,
 ) {
   const failedSave = findFailedSave(app, flashcardId);
-  if (failedSave) return takeFailedSave(form, failedSave, app, projectId);
+  if (failedSave) return takeFailedSave(form, failedSave, app);
   if (listed === null) return updated(form);
   const card = existingCard(latestFlashcard(listed, app));
-  const [opened, effects] = replaceForm(form, openedForm(card), app, projectId);
+  const [opened, effects] = replaceForm(form, openedForm(card), app);
   return updated(
     opened,
     withdraw(flashcardNoticeKeys.saveUndo(listed.id)),
@@ -70,7 +69,6 @@ export function takeFailedSave(
   form: FlashcardForm | null,
   failedSave: FailedSave,
   app: AppState,
-  projectId: string,
 ) {
   const flashcardId = failedSaveIdOf(failedSave);
   const retry = retryOf(app, flashcardId);
@@ -80,7 +78,7 @@ export function takeFailedSave(
       ? { content: retry.request.purpose.before, retryRequestId: retry.id }
       : failedSave.rollbackIfDiscarded;
   const restored = restoredForm(failedSave.card, rollback);
-  const [opened, effects] = replaceForm(form, restored, app, projectId);
+  const [opened, effects] = replaceForm(form, restored, app);
   return updated(
     opened,
     forgetFailedSave(flashcardId),

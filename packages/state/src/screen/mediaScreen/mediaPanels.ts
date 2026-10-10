@@ -32,24 +32,23 @@ const nextDisplay: Record<SubtitleDisplay, SubtitleDisplay> = {
 /**
  * Opens and closes the panels around the media screen's stage, and cycles and hides the subtitles over it.
  * The flashcard form takes the side panel while a card is open, so the subtitles panel cannot be toggled meanwhile.
- * `app` is the state before the action.
  */
 export function updateMediaPanels(
   panels: MediaPanels,
   action: AppAction,
   app: AppState,
 ) {
-  return updated(nextPanels(panels, action, app));
+  return updated(nextPanels(panels, action, formOf(app) !== null));
 }
 
 function nextPanels(
   panels: MediaPanels,
   action: AppAction,
-  app: AppState,
+  isFormOpen: boolean,
 ): MediaPanels {
   switch (action.type) {
     case "cuePanelToggled":
-      return formOf(app) === null ? { ...panels, cues: !panels.cues } : panels;
+      return isFormOpen ? panels : { ...panels, cues: !panels.cues };
     case "waveformToggled":
       return { ...panels, waveform: !panels.waveform };
     case "subtitleDisplayCycled":

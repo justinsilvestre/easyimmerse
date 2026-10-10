@@ -1,5 +1,6 @@
 import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
+import { shownMediaFile } from "../screen/mediaScreen/shownMediaScreen.ts";
 import type { EditorAction } from "./editFlashcard.ts";
 import { editCard, flashcardIdOf, withLookupFields } from "./flashcardCard.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
@@ -25,12 +26,8 @@ export function editForm(
 }
 
 /** Sends the open card's save, or, while its word's lookup is on its way, waits up to ten seconds for it. */
-export function requestSave(
-  form: FlashcardForm,
-  app: AppState,
-  projectId: string,
-) {
-  if (form.stage === "editing") return sendFromForm(form, app, projectId);
+export function requestSave(form: FlashcardForm, app: AppState) {
+  if (form.stage === "editing") return sendFromForm(form, app);
   if (form.stage !== "awaitingLookup") return updated(form);
   return updated(
     { ...form, stage: "awaitingLookupToSave", saveFailure: null },
@@ -43,30 +40,26 @@ export function fillFromLookup(
   form: FlashcardForm,
   fields: LookupFlashcardFields | null,
   app: AppState,
-  projectId: string,
 ) {
   const card =
     form.card.kind === "new" ? withLookupFields(form.card, fields) : form.card;
   const filled = { ...form, card, lookup: null };
   if (form.stage !== "awaitingLookupToSave")
     return updated({ ...filled, stage: "editing" });
-  const [sent, effects] = sendFromForm(filled, app, projectId);
+  const [sent, effects] = sendFromForm(filled, app);
   return updated(sent, cancelLookupWait(flashcardIdOf(card)), ...effects);
 }
 
 /** Gives up the lookup a save waited for once the wait has run out, and sends the card as it is. */
-export function giveUpLookup(
-  form: FlashcardForm,
-  app: AppState,
-  projectId: string,
-) {
+export function giveUpLookup(form: FlashcardForm, app: AppState) {
   return form.stage === "awaitingLookupToSave"
-    ? sendFromForm({ ...form, lookup: null }, app, projectId)
+    ? sendFromForm({ ...form, lookup: null }, app)
     : updated(form);
 }
 
-function sendFromForm(form: FlashcardForm, app: AppState, projectId: string) {
+function sendFromForm(form: FlashcardForm, app: AppState) {
   const { card, rollbackIfDiscarded } = form;
+  const { projectId } = shownMediaFile(app);
   const [withdrawal, sending] = askSave(
     { card, projectId, from: "form", offersUndo: true, rollbackIfDiscarded },
     app,

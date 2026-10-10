@@ -1,10 +1,10 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
-import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import { isAudioFileName, isDocumentFileName } from "../mediaFileExtensions.ts";
 import { playbackRequestIds } from "./playbackRequests.ts";
+import { shownMediaFile } from "./shownMediaScreen.ts";
 
 const picturesRequestId = (mediaFileId: string) =>
   `media/${mediaFileId}/pictures`;
@@ -13,12 +13,16 @@ const picturesRequestId = (mediaFileId: string) =>
  * Asks whether the open file shows pictures once its record arrives, when the browser holds it and its name is not that of a sound file or a book.
  * A file on the server's disk is answered by its tracks instead.
  */
-export function picturesProbeOf(action: AppAction, route: MediaRoute) {
-  const ids = playbackRequestIds(route.mediaFileId);
+export function picturesProbeOf(
+  action: AppAction,
+  app: Pick<AppState, "route">,
+) {
+  const { mediaFileId } = shownMediaFile(app);
+  const ids = playbackRequestIds(mediaFileId);
   if (!isSettled(action, ids.mediaFile, "listMediaFiles") || !action.outcome.ok)
     return [];
   const file = action.outcome.data.media_files.find(
-    ({ id }) => id === route.mediaFileId,
+    ({ id }) => id === mediaFileId,
   );
   if (
     file?.source.kind !== "browser_file" ||
@@ -30,7 +34,7 @@ export function picturesProbeOf(action: AppAction, route: MediaRoute) {
   return [
     {
       type: "sendRequest",
-      id: picturesRequestId(route.mediaFileId),
+      id: picturesRequestId(mediaFileId),
       request: { kind: "probePictures", file: { name, source } },
     },
   ] satisfies Effect[];
@@ -39,10 +43,9 @@ export function picturesProbeOf(action: AppAction, route: MediaRoute) {
 /** Tells whether the action shows that the open file has pictures: its probe found them, or the server found a video track in it. */
 export function picturesFoundBy(
   action: AppAction,
-  route: MediaRoute,
-  app: AppState,
+  app: Pick<AppState, "route" | "server">,
 ): boolean {
-  const { mediaFileId } = route;
+  const { mediaFileId } = shownMediaFile(app);
   if (isSettled(action, picturesRequestId(mediaFileId), "probePictures"))
     return action.outcome.ok && action.outcome.data;
   if (

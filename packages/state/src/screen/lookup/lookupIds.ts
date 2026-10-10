@@ -1,6 +1,5 @@
-import type { AppState } from "../../app/appState.ts";
+import type { LookupQuery } from "@easyimmerse/types";
 import type { Effect } from "../../app/effect.ts";
-import { freeRequestId } from "../../operations/freeRequestId.ts";
 
 /** The ids of the lookup's timers. Starting one again replaces it. */
 export const lookupTimerIds = {
@@ -20,9 +19,16 @@ export function lookupRequestId(flashcardId: string): string {
   return `lookup/flashcard/${flashcardId}`;
 }
 
-/** The id of the next hover's lookup request: the first not in flight, so that none is shared with a request from an earlier screen. */
-export function nextHoverRequestId(app: AppState): string {
-  return freeRequestId(hoverRequestPrefix, app.operations.requests);
+/**
+ * Looks up a hovered word under the first id free for hovers, which the operations choose,
+ * so that none is shared with a request from an earlier screen.
+ */
+export function hoverLookupRequest(query: LookupQuery) {
+  return {
+    type: "sendRequestWithFreeId",
+    prefix: hoverRequestPrefix,
+    request: { kind: "lookupText", query },
+  } satisfies Effect;
 }
 
 /** Tells whether a request id is that of a hover's lookup. */

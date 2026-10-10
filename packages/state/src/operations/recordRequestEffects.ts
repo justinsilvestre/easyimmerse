@@ -13,6 +13,7 @@ type AbortRequest = Extract<ServerEffect, { type: "abortRequest" }>;
  * Records the requests that the effects send and abort, and returns the effects to perform in their place.
  * A scoped send is recorded as waiting and held back unless its id is the one in flight. A held send is recorded as waiting.
  * The abort of a waiting request forgets it and settles it as aborted, unless the same effects send its id again.
+ * Sending one id twice, with no abort between, throws: it is a mistake in the update that asked for it.
  */
 export function recordRequestEffects(
   requests: Requests,
@@ -20,13 +21,21 @@ export function recordRequestEffects(
 ) {
   let recorded = requests;
   let performed: PerformedEffect[] = [];
+  const sentIds = new Set<string>();
   for (const effect of effects) {
     if (effect.type === "sendRequest") {
+      // Two sends of one id in one update, with no abort between them, would leave only the second, so they are a mistake in whichever update asked for them.
+      if (sentIds.has(effect.id))
+        throw new Error(
+          `The request ${effect.id} was sent twice in one update.`,
+        );
+      sentIds.add(effect.id);
       performed = performed.filter((other) => !isWithdrawal(other, effect.id));
       const [next, toPerform] = recordSend(recorded, effect);
       recorded = next;
       performed.push(...toPerform);
     } else if (effect.type === "abortRequest") {
+      sentIds.delete(effect.id);
       if (!performed.some((other) => isWithdrawal(other, effect.id)))
         performed.push(recordAbort(recorded, effect));
     } else performed.push(effect);

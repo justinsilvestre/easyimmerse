@@ -1,10 +1,9 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
 import type { RequestSettled } from "../../server/serverRequest.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
 import { moveCursor, withCursor } from "./lookupCursor.ts";
-import { isHoverRequestId, nextHoverRequestId } from "./lookupIds.ts";
+import { hoverLookupRequest, isHoverRequestId } from "./lookupIds.ts";
 import { show, showsOccurrence } from "./lookupMoves.ts";
 import type { ChosenWord, LookupState, LookupWord } from "./lookupState.ts";
 
@@ -28,16 +27,10 @@ export function hoverWord(
   lookup: LookupState,
   chosen: ChosenWord,
   player: PlayerState,
-  app: AppState,
 ) {
   const { query } = chosen.word;
   if (query === null) return answer(lookup, chosen, null, player);
-  const id = nextHoverRequestId(app);
-  return updated(lookup, {
-    type: "sendRequest",
-    id,
-    request: { kind: "lookupText", query },
-  });
+  return updated(lookup, hoverLookupRequest(query));
 }
 
 /** Takes a hover lookup's answer, when it is for the word the pointer is still on. A failed lookup matched nothing. */

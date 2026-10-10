@@ -117,6 +117,11 @@ export const screenActions = {
     ({ type: "mediaImportStepTaken", action, input }) as const,
   /** The user closed the media import dialog. The server finishes a fetch it has started. */
   mediaImportClosed: () => ({ type: "mediaImportClosed" }) as const,
+  /**
+   * The route moved away from the media screen. The screens pass it to the media screen in place of the action that moved the route,
+   * within the same update; it is never dispatched.
+   */
+  mediaScreenLeft: () => ({ type: "mediaScreenLeft" }) as const,
   /** The user opened the media interface of the plugin the open media file was imported through. */
   sourceMediaOpened: () => ({ type: "sourceMediaOpened" }) as const,
   /** The user pressed an action of the source dialog's form, with what they entered. */

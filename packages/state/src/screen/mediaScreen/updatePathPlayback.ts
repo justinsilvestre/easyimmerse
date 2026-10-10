@@ -15,36 +15,34 @@ import {
   tracksRequest,
 } from "./playbackRequests.ts";
 import { sendFirstPlan, sendPlan } from "./sendPlan.ts";
+import { shownMediaFile } from "./shownMediaScreen.ts";
 
 /**
  * Works out how a file on the server's disk plays: reads its record, asks for its tracks, measures the browser,
  * and asks for a plan with the track choice and the lossless-audio preference. The first plan waits while the user
  * makes the first track choice; each later choice is saved and planned anew. A file the browser holds is probed for pictures instead.
- * `app` is the state before the action.
  */
 export function updatePathPlayback(
   playback: PathPlayback | null,
   action: AppAction,
   app: AppState,
-  route: MediaRoute,
 ) {
+  const route = shownMediaFile(app);
   switch (action.type) {
     case "requestSettled":
-      return requestSettled(playback, action, app, route);
+      return requestSettled(playback, action, app);
     case "playbackEnvironmentMeasured":
       return playback !== null && action.mediaFileId === route.mediaFileId
         ? sendFirstPlan(
             { ...playback, environment: action.environment },
-            route,
-            app.screen.dialog,
+            app,
             app.preferences,
           )
         : updated(playback);
     case "preferencesLoaded":
       return sendFirstPlan(
         playback,
-        route,
-        app.screen.dialog,
+        app,
         withLoadedPreferences(app.preferences, action.preferences),
       );
     case "tracksChosen": {
@@ -84,8 +82,8 @@ function requestSettled(
   playback: PathPlayback | null,
   action: AppAction,
   app: AppState,
-  route: MediaRoute,
 ) {
+  const route = shownMediaFile(app);
   const ids = playbackRequestIds(route.mediaFileId);
   if (isSettled(action, ids.mediaFile, "listMediaFiles") && action.outcome.ok) {
     const file = action.outcome.data.media_files.find(
@@ -93,7 +91,7 @@ function requestSettled(
     );
     return playback === null && file?.source.kind === "path"
       ? updated(pathPlaybackOf(file), tracksRequest(route))
-      : updated(playback, ...picturesProbeOf(action, route));
+      : updated(playback, ...picturesProbeOf(action, app));
   }
   if (isSettled(action, ids.tracks, "getMediaTracks") && action.outcome.ok)
     return playback === null

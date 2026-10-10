@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
+import { stateAfter } from "../../app/stateAfter.ts";
+import { update } from "../../app/update.ts";
 import {
   applyToLookup as apply,
   cat,
@@ -194,12 +196,13 @@ describe("updateMediaScreen", () => {
     });
 
     it("numbers a hover's lookup after one still in flight from an earlier opening", () => {
-      const [, effects] = apply(
-        actions.lookupWordHovered(dog),
+      const app = stateAfter(
+        actions.openMediaFileRequested("p1", "m1"),
         actions.lookupWordHovered(cat),
         actions.closeMedia(),
         actions.openMediaFileRequested("p1", "m1"),
       );
+      const [, effects] = update(app, actions.lookupWordHovered(dog));
       expect(effects).toContainEqual(
         expect.objectContaining({ id: "lookup/hover/2" }),
       );
