@@ -1,3 +1,4 @@
+import { selectMediaTracksEntry } from "@easyimmerse/backend";
 import { actions } from "@easyimmerse/state";
 import { describe, expect, it, vi } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
@@ -19,10 +20,12 @@ async function storeWithTracks() {
   store.dispatch(actions.openMediaFileRequested("p1", "m1"));
   await vi.waitFor(() =>
     expect(
-      client.requests.some((request) => request.path.endsWith("/tracks")),
-    ).toBe(true),
+      selectMediaTracksEntry(store.getState(), {
+        projectId: "p1",
+        mediaFileId: "m1",
+      })?.data,
+    ).toBeDefined(),
   );
-  await new Promise((resolve) => setTimeout(resolve, 0));
   return store;
 }
 

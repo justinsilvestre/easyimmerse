@@ -94,10 +94,13 @@ export function PagedChapter({
   useLayoutEffect(() => {
     const text = pagedText(columns.current, layout);
     if (!text) return;
-    setView({
-      page: pageOfLocation(text, location),
-      pageCount: pageCountOf(text),
-    });
+    const page = pageOfLocation(text, location);
+    const pageCount = pageCountOf(text);
+    setView((shown) =>
+      shown.page === page && shown.pageCount === pageCount
+        ? shown
+        : { page, pageCount },
+    );
   }, [layout, size.height, location]);
 
   const reportPage = useEffectEvent(onPageMeasured);

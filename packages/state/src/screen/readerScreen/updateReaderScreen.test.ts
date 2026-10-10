@@ -76,5 +76,12 @@ describe("updateMediaScreen", () => {
       );
       expect(screen.reader.pageInfo).toEqual({ page: 3, pageCount: 9 });
     });
+
+    it("keeps the reader's state when the measured page is unchanged", () => {
+      const measured = actions.readerPageMeasured({ page: 3, pageCount: 9 });
+      const before = mediaScreenAfter(measured);
+      const [screen] = applyToMediaScreenIn(before, measured);
+      expect(screen.reader).toBe(before.screen.reader);
+    });
   });
 });
