@@ -1,10 +1,10 @@
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
-import { selectOpenMediaScreen } from "../screen/mediaScreen/mediaScreenSelectors.ts";
+import { selectMediaScreen } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import {
   mediaScreenEnteredBy,
   mediaScreenLeftBy,
-} from "../screen/openMediaScreen.ts";
+} from "../screen/mediaScreenRouteChanges.ts";
 import { crossesSaveInterval } from "./playbackPosition.ts";
 import {
   isSameLocation,
@@ -41,16 +41,23 @@ export const updateStoredPlaces: FeatureUpdate<StoredPlacesState> = (
         playback: { ...places.playback, [action.mediaFileId]: action.ms },
       });
     case "playerTimeChanged": {
-      const open = selectOpenMediaScreen(app);
+      const open = selectMediaScreen(app);
       return open &&
-        crossesSaveInterval(open.player.currentTimeSeconds, action.seconds)
+        crossesSaveInterval(
+          open.screen.playing.player.currentTimeSeconds,
+          action.seconds,
+        )
         ? savePlayback(places, open, action.seconds)
         : updated(places);
     }
     case "playerPlayingChanged": {
-      const open = selectOpenMediaScreen(app);
+      const open = selectMediaScreen(app);
       return open && !action.isPlaying
-        ? savePlayback(places, open, open.player.currentTimeSeconds)
+        ? savePlayback(
+            places,
+            open,
+            open.screen.playing.player.currentTimeSeconds,
+          )
         : updated(places);
     }
     default: {

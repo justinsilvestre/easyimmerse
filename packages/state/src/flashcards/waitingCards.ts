@@ -60,14 +60,14 @@ export function fillWaitingCards(
   fields: LookupFlashcardFields | null,
   app: AppState,
 ) {
-  return heldSavesOf(app)
+  return selectHeldSaves(app)
     .filter((held) => held.heldFor === requestId)
     .flatMap((held) => release(held, withLookupFields(held.card, fields), app));
 }
 
 /** Releases as it is the held save whose wait for its lookup has run out. */
 export function sendLateCard(flashcardId: string, app: AppState) {
-  return heldSavesOf(app)
+  return selectHeldSaves(app)
     .filter((held) => held.card.flashcardId === flashcardId)
     .flatMap((held) => release(held, held.card, app));
 }
@@ -86,7 +86,7 @@ function release(
   ];
 }
 
-function heldSavesOf(app: AppState): HeldSave[] {
+function selectHeldSaves(app: Pick<AppState, "operations">): HeldSave[] {
   return app.operations.requests.flatMap(heldSaveOf);
 }
 
@@ -104,7 +104,7 @@ export function fieldsAwaitedBy(action: AppAction, app: AppState) {
     !isSettled(action, action.id, "lookupText")
   )
     return [];
-  const awaiting = awaitingContextOf(action.id, app);
+  const awaiting = selectAwaitingLookupContext(action.id, app);
   if (awaiting === null) return [];
   const results = action.outcome.ok ? action.outcome.data.results : [];
   return [
@@ -117,7 +117,7 @@ export function fieldsAwaitedBy(action: AppAction, app: AppState) {
   ] satisfies Effect[];
 }
 
-function awaitingContextOf(
+function selectAwaitingLookupContext(
   requestId: string,
   app: AppState,
 ): LookupFieldsContext | null {
@@ -126,6 +126,8 @@ function awaitingContextOf(
     return pending.context;
   const formLookup = selectFlashcardForm(app)?.lookup;
   if (formLookup?.requestId === requestId) return formLookup.context;
-  const held = heldSavesOf(app).find(({ heldFor }) => heldFor === requestId);
+  const held = selectHeldSaves(app).find(
+    ({ heldFor }) => heldFor === requestId,
+  );
   return held?.purpose.lookupContext ?? null;
 }

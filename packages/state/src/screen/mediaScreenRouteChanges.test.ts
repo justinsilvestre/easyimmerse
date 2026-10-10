@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
-import { mediaScreenEnteredBy, mediaScreenLeftBy } from "./openMediaScreen.ts";
+import {
+  mediaScreenEnteredBy,
+  mediaScreenLeftBy,
+} from "./mediaScreenRouteChanges.ts";
 
 const open = stateAfter(
   actions.openMediaFileRequested("p1", "m1"),
@@ -10,9 +13,9 @@ const open = stateAfter(
 
 describe("mediaScreenLeftBy", () => {
   it("returns the media screen that the route change closes", () => {
-    expect(mediaScreenLeftBy(open, actions.closeMedia())?.mediaFileId).toBe(
-      "m1",
-    );
+    expect(
+      mediaScreenLeftBy(open, actions.closeMedia())?.route.mediaFileId,
+    ).toBe("m1");
   });
 
   it("returns null while the media screen stays open", () => {

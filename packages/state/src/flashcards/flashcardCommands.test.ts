@@ -28,8 +28,8 @@ import {
   hund,
   landed,
   noticesShown,
-  requestIdsOf,
   requestsAsked,
+  selectRequestIds,
   settle,
   startNew,
   typeWord,
@@ -226,7 +226,7 @@ describe("flashcardCommands", () => {
       typeWord("Hündchen"),
       startNew("f3"),
     );
-    const [first, second] = requestIdsOf(app, "h");
+    const [first, second] = selectRequestIds(app, "h");
     if (!first || !second) throw new Error("Hund has no two saves.");
     const firstLanded = applied(
       app,
@@ -282,7 +282,7 @@ describe("flashcardCommands", () => {
 
   it("when a later save of the flashcard succeeds, clears its rollback", () => {
     const app = applied(f1TimedOut(), actions.failedSaveRetried("f1"));
-    const [retry] = requestIdsOf(app, "f1");
+    const [retry] = selectRequestIds(app, "f1");
     if (!retry) throw new Error("No Retry was sent.");
     const retried = applied(
       app,
@@ -311,7 +311,7 @@ describe("flashcardCommands", () => {
 
   it("when a rollback deletion answers 404, counts it as done", () => {
     const app = applied(f1TimedOut(), actions.failedSaveDiscarded("f1"));
-    const [rollback] = requestIdsOf(app, "f1");
+    const [rollback] = selectRequestIds(app, "f1");
     if (!rollback) throw new Error("No rollback was sent.");
     expect(noticesShown(app, settle(app, rollback, failure(404)))).toEqual([]);
   });
@@ -367,7 +367,7 @@ describe("flashcardCommands", () => {
           before: exampleDraft("Hund"),
         }),
       );
-      const [, undo] = requestIdsOf(app, "h");
+      const [, undo] = selectRequestIds(app, "h");
       if (!undo) throw new Error("No Undo was sent.");
       const [notice] = noticesShown(app, settle(app, undo, failure(500)));
       expect(notice?.message).toBe(
@@ -814,7 +814,7 @@ describe("flashcardCommands", () => {
         before: exampleDraft("Hund"),
       }),
     );
-    const [undo] = requestIdsOf(app, "h");
+    const [undo] = selectRequestIds(app, "h");
     if (!undo) throw new Error("No Undo was sent.");
     const landing = settle(
       app,
@@ -846,7 +846,7 @@ describe("flashcardCommands", () => {
       actions.failedSaveOpened("h", "p1", "m1"),
       actions.failedSaveRetried("h"),
     );
-    const [retry] = requestIdsOf(app, "h");
+    const [retry] = selectRequestIds(app, "h");
     if (!retry) throw new Error("No Retry was sent.");
     const failed = applied(app, settle(app, retry, failure(500)));
     expect(selectFailedSaves(failed)[0]?.isOpening).toBe(true);

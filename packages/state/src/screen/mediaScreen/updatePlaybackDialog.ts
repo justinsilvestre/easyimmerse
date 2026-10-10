@@ -4,6 +4,7 @@ import { mainScreenOf } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { ScreenState } from "../screenState.ts";
 import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
+import { selectMediaScreen } from "./mediaScreenSelectors.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { needsTrackChoice } from "./playbackPlanRules.ts";
 import { playbackRequestIds } from "./playbackRequests.ts";
@@ -21,7 +22,7 @@ export function updatePlaybackDialog(
   action: AppAction,
   app: AppState,
 ): DialogState {
-  const open = openPathPlayback(app);
+  const open = selectOpenPathPlayback(app);
   if (open === null) return dialog;
   switch (action.type) {
     case "requestSettled":
@@ -54,13 +55,13 @@ export function updatePlaybackDialog(
 
 type OpenPathPlayback = { mediaFileId: string; playback: PathPlayback };
 
-function openPathPlayback(app: AppState): OpenPathPlayback | null {
-  const route = mainScreenOf(app.route);
-  const main = app.screen.main;
-  return route.screen === "media" &&
-    main.kind === "media" &&
-    main.playback !== null
-    ? { mediaFileId: route.mediaFileId, playback: main.playback }
+function selectOpenPathPlayback(
+  app: Pick<AppState, "route" | "screen">,
+): OpenPathPlayback | null {
+  const open = selectMediaScreen(app);
+  const playback = open?.screen.playback ?? null;
+  return open && playback
+    ? { mediaFileId: open.route.mediaFileId, playback }
     : null;
 }
 

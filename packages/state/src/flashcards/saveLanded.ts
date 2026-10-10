@@ -37,7 +37,7 @@ export function saveLanded({ id, request }: Save, app: AppState) {
           withdraw(flashcardNoticeKeys.saveRefused(flashcardId)),
         ]
       : []),
-    ...waitingRetriesOf(app, flashcardId, id).map(
+    ...selectWaitingRetries(app, flashcardId, id).map(
       (waitingId) => ({ type: "abortRequest", id: waitingId }) satisfies Effect,
     ),
     ...(isUndoOffered(purpose, id, app)
@@ -54,8 +54,8 @@ function isUndoOffered(purpose: CardSave, id: string, app: AppState): boolean {
 }
 
 /** The waiting Retries of a flashcard other than the request that just landed, which that request has made pointless. */
-function waitingRetriesOf(
-  app: AppState,
+function selectWaitingRetries(
+  app: Pick<AppState, "operations">,
   flashcardId: string,
   landedId: string,
 ): readonly string[] {

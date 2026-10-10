@@ -61,7 +61,7 @@ export function settle(
 }
 
 /** The ids of the pending requests of a flashcard, in the order they were asked for. */
-export const requestIdsOf = (app: AppState, flashcardId: string) =>
+export const selectRequestIds = (app: AppState, flashcardId: string) =>
   app.operations.requests.flatMap(({ id, request }) =>
     "flashcardId" in request && request.flashcardId === flashcardId ? [id] : [],
   );
