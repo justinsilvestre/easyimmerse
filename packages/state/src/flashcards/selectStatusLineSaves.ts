@@ -1,5 +1,6 @@
 import { createSelector } from "reselect";
 import type { RootState } from "../app/createAppStore.ts";
+import { haveSameItems } from "../app/haveSameItems.ts";
 import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
 import { selectFailedSaves } from "./failedSaveSelectors.ts";
 import { flashcardNoticeKeys } from "./flashcardNotices.ts";
@@ -12,30 +13,38 @@ export type StatusLineSave = FailedSave & {
   isRetrying: boolean;
 };
 
-/** Returns the failed saves the status line lists: all but those whose refused save's own notice is showing. */
+/**
+ * Returns the failed saves the status line lists: all but those whose refused save's own notice is showing.
+ * The result keeps its reference while the saves it lists stay the same, as when a notice of something else shows or closes.
+ */
 export const selectStatusLineSaves = createSelector(
   [
-    (state: RootState) => selectFailedSaves(state.app),
+    (state: RootState) => selectMarkedFailedSaves(state),
     (state: RootState) => state.app.notices.shown,
-    selectFlashcardRequests,
   ],
-  (failedSaves, notices, requests): readonly StatusLineSave[] => {
+  (saves, notices): readonly StatusLineSave[] => {
     const shownKeys = new Set(notices.map(({ key }) => key));
-    return failedSaves
-      .map((failedSave) => {
-        const flashcardId = failedSaveIdOf(failedSave);
-        const isRetrying = requests.some(
-          ({ request }) =>
-            request.kind === "saveFlashcard" &&
-            request.flashcardId === flashcardId &&
-            request.purpose.type === "save" &&
-            request.purpose.from === "retry",
-        );
-        return { ...failedSave, flashcardId, isRetrying };
-      })
-      .filter(
-        ({ flashcardId }) =>
-          !shownKeys.has(flashcardNoticeKeys.saveRefused(flashcardId)),
-      );
+    return saves.filter(
+      ({ flashcardId }) =>
+        !shownKeys.has(flashcardNoticeKeys.saveRefused(flashcardId)),
+    );
   },
+  { memoizeOptions: { resultEqualityCheck: haveSameItems } },
+);
+
+/** Returns every failed save, marked with whether its Retry is under way. */
+const selectMarkedFailedSaves = createSelector(
+  [(state: RootState) => selectFailedSaves(state.app), selectFlashcardRequests],
+  (failedSaves, requests): readonly StatusLineSave[] =>
+    failedSaves.map((failedSave) => {
+      const flashcardId = failedSaveIdOf(failedSave);
+      const isRetrying = requests.some(
+        ({ request }) =>
+          request.kind === "saveFlashcard" &&
+          request.flashcardId === flashcardId &&
+          request.purpose.type === "save" &&
+          request.purpose.from === "retry",
+      );
+      return { ...failedSave, flashcardId, isRetrying };
+    }),
 );

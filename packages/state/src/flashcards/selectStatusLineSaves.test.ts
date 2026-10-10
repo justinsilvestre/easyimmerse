@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
+import { transientNotice } from "../notices/transientNotice.ts";
 import { cat } from "../screen/lookup/lookupTestSupport.ts";
 import { selectFailedSaves } from "./failedSaveSelectors.ts";
 import { flashcardNotices } from "./flashcardNotices.ts";
@@ -56,6 +57,16 @@ describe("selectStatusLineSaves", () => {
     const first = selectStatusLineSaves({ app });
     const ticked = applied(app, actions.playerTimeChanged(1.5));
     expect(selectStatusLineSaves({ app: ticked })).toBe(first);
+  });
+
+  it("keeps returning the same saves when a notice of something else shows", () => {
+    const app = hundFailed(500);
+    const first = selectStatusLineSaves({ app });
+    const noticed = applied(
+      app,
+      actions.noticeRequested({ ...transientNotice("info", "Kept"), key: "k" }),
+    );
+    expect(selectStatusLineSaves({ app: noticed })).toBe(first);
   });
 
   it("marks a failed save whose Retry is under way", () => {
