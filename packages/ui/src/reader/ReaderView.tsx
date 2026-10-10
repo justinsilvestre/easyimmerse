@@ -127,6 +127,7 @@ export function ReaderView(props: ReaderViewProps) {
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
   const turner = useRef<PageTurner>(null);
   const searchInput = useRef<HTMLInputElement>(null);
+  const root = useRef<HTMLDivElement>(null);
   const isWide = useMediaQuery(wideScreenQuery);
   const isPaged = preferences.layout === "pages";
 
@@ -192,18 +193,21 @@ export function ReaderView(props: ReaderViewProps) {
     if (isPaged) turner.current?.[direction]();
     else goToChapter(chapterIndex + (direction === "next" ? 1 : -1), "start");
   };
-  useReaderKeys({
-    isPaged,
-    isPanelOpen: reader.panel !== null || props.sidePanel != null,
-    onTurn: turn,
-    onOpenSearch: () => {
-      dispatch(actions.readerPanelOpened("search"));
-      searchInput.current?.focus();
-      searchInput.current?.select();
+  useReaderKeys(
+    {
+      isPaged,
+      isPanelOpen: reader.panel !== null || props.sidePanel != null,
+      onTurn: turn,
+      onOpenSearch: () => {
+        dispatch(actions.readerPanelOpened("search"));
+        searchInput.current?.focus();
+        searchInput.current?.select();
+      },
+      onLookup: callbacks.onLookupKey ?? callbacks.onLookup,
+      onEscape: callbacks.onDismissLookup,
     },
-    onLookup: callbacks.onLookupKey ?? callbacks.onLookup,
-    onEscape: callbacks.onDismissLookup,
-  });
+    root,
+  );
 
   const wordPointer = useWordPointer(chapterIndex, props.language, {
     onWordClick: callbacks.onWordClick,
@@ -240,6 +244,7 @@ export function ReaderView(props: ReaderViewProps) {
 
   return (
     <div
+      ref={root}
       data-theme={preferences.theme === "auto" ? undefined : preferences.theme}
       className="relative h-dvh overflow-hidden bg-canvas text-fg"
       onPointerMove={(event) => {

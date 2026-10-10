@@ -1,4 +1,5 @@
-import { useEffect, useEffectEvent } from "react";
+import { type RefObject, useEffect, useEffectEvent } from "react";
+import { isOutOfReach } from "../hooks/isOutOfReach.ts";
 
 type ReaderKeyHandlers = {
   isPaged: boolean;
@@ -15,10 +16,14 @@ type ReaderKeyHandlers = {
  * Ctrl+F or Cmd+F searches the book, whose other pages the browser's own search cannot see.
  * L looks up a word.
  * The scrolling layout leaves the scrolling keys to the browser, and a focused control keeps the keys it uses itself.
+ * All keys are left alone while the reader that `scopeRef` marks lies beneath another screen or under a modal dialog.
  */
-export function useReaderKeys(handlers: ReaderKeyHandlers) {
+export function useReaderKeys(
+  handlers: ReaderKeyHandlers,
+  scopeRef: RefObject<Element | null>,
+) {
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    if (event.defaultPrevented) return;
+    if (event.defaultPrevented || isOutOfReach(scopeRef.current)) return;
     const action = actionOf(event, handlers);
     if (!action) return;
     event.preventDefault();

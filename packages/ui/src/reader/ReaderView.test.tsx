@@ -32,10 +32,12 @@ function renderReader(
     layout?: ReaderPreferences["layout"];
     onPreferencesChange?: (preferences: ReaderPreferences) => void;
     sidePanel?: ReactNode;
+    /** What covers the reader: Settings, which make it inert, or a modal dialog. */
+    coveredBy?: "settings" | "dialog";
   } = {},
 ) {
   const dispatched: ReaderViewAction[] = [];
-  render(
+  const view = (
     <ReaderView
       mediaFileId="b1"
       document={exampleShortBook}
@@ -60,7 +62,13 @@ function renderReader(
         onDismissLookup: ignore,
         onPreferencesChange: overrides.onPreferencesChange ?? ignore,
       }}
-    />,
+    />
+  );
+  render(
+    <>
+      <div inert={overrides.coveredBy === "settings"}>{view}</div>
+      {overrides.coveredBy === "dialog" && <dialog open aria-label="Tracks" />}
+    </>,
   );
   return dispatched;
 }
@@ -121,6 +129,12 @@ describe("ReaderView", () => {
     expect(dispatched).toContainEqual(actions.readerPanelOpened("search"));
   });
 
+  it("leaves Ctrl+F to the browser while Settings cover the reader", () => {
+    const dispatched = renderReader({ coveredBy: "settings" });
+    fireEvent.keyDown(document.body, { key: "f", ctrlKey: true });
+    expect(dispatched).not.toContainEqual(actions.readerPanelOpened("search"));
+  });
+
   describe("when the toolbar is hidden", () => {
     const hidden = { reader: { isChromeVisible: false } };
 
@@ -161,6 +175,21 @@ describe("ReaderView", () => {
         layout: "pages",
         sidePanel: <p>Flashcard</p>,
       });
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      expect(jumps(dispatched)).toEqual([]);
+    });
+
+    it("leaves the arrow keys alone while Settings cover the reader", () => {
+      const dispatched = renderReader({
+        layout: "pages",
+        coveredBy: "settings",
+      });
+      fireEvent.keyDown(document.body, { key: "ArrowRight" });
+      expect(jumps(dispatched)).toEqual([]);
+    });
+
+    it("leaves the arrow keys alone while a modal dialog is open", () => {
+      const dispatched = renderReader({ layout: "pages", coveredBy: "dialog" });
       fireEvent.keyDown(document.body, { key: "ArrowRight" });
       expect(jumps(dispatched)).toEqual([]);
     });
