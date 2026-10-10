@@ -10,7 +10,7 @@ import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
 import { exampleTermEntry } from "../lookup/exampleTermEntry.ts";
-import type { LookupState } from "../lookup/lookupState.ts";
+import type { LookupDisplayState } from "../lookup/lookupDisplayState.ts";
 import { languageOptions } from "../projects/languages.ts";
 import {
   isWasmBuilt,
@@ -67,7 +67,7 @@ const ungezieferResult: LookupResult = {
   pronunciations: [],
 };
 
-function lookupStateOf(word: string): LookupState {
+function lookupStateOf(word: string): LookupDisplayState {
   const results = [...exampleResults, ungezieferResult].filter(
     (result) => result.term.toLowerCase() === word.toLowerCase(),
   );

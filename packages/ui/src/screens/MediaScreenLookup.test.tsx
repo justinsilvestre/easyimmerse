@@ -119,6 +119,27 @@ describe("MediaScreen lookup", () => {
     expect(await findPopupShowing("devour")).toBeDefined();
   });
 
+  it("saves a flashcard from its button with the dictionary's word", async () => {
+    const { client } = renderMediaScreen();
+    const popup = await lookUpInPanel("cat");
+    fireEvent.click(
+      await within(popup).findByRole("button", { name: "New flashcard" }),
+    );
+    expect((await findCreatedContent(client)).word).toBe("fressen");
+  });
+
+  it("saves a flashcard for a word held inside it", async () => {
+    const { client } = renderMediaScreen();
+    const popup = await lookUpInPanel("cat");
+    const devour = await within(popup).findByRole("button", { name: "devour" });
+    // The hold is the gesture's own half-second timer, which runs in real time.
+    fireEvent.pointerDown(devour, { pointerType: "touch" });
+    const draft = await vi.waitFor(() => findCreatedDraft(client), {
+      timeout: 2000,
+    });
+    expect(draft.content.word).toBe("fressen");
+  });
+
   it("pauses playback while it is open and resumes it when it closes", async () => {
     const { effects, store } = renderMediaScreen();
     act(() => store.dispatch(actions.playerPlayingChanged(true)));

@@ -33,7 +33,7 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
       screen.lookup,
       action,
       screen.player,
-      app.operations.requests,
+      app,
     );
     return [lookup === screen.lookup ? screen : { ...screen, lookup }, effects];
   },

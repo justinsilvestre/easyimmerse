@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
-import { applyToLookup as apply, cat, dog } from "./lookupTestWords.ts";
+import { applyToLookup as apply, cat, dog } from "./lookupTestSupport.ts";
 
 const clickedCat = actions.lookupWordClicked(cat, "mouse");
 const playing = actions.playerPlayingChanged(true);

@@ -67,14 +67,9 @@ export type {
   LookupState,
   LookupWord,
   PendingFlashcard,
-  WordInput,
   WordOccurrence,
 } from "./screen/lookup/lookupState.ts";
-export { isSameOccurrence } from "./screen/lookup/lookupState.ts";
-export {
-  doubleClickMs,
-  flashcardLookupWaitMs,
-} from "./screen/lookup/lookupTiming.ts";
+export { doubleClickMs } from "./screen/lookup/lookupTiming.ts";
 export {
   documentFormatOf,
   isDocumentFileName,

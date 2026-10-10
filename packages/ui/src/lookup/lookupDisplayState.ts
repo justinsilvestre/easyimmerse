@@ -5,7 +5,7 @@ import type {
 } from "@easyimmerse/types";
 
 /** What the dictionary pop-up shows for the word under the pointer or typed into its search field. */
-export type LookupState =
+export type LookupDisplayState =
   | { kind: "loading"; term: string }
   | {
       kind: "found";

@@ -11,7 +11,6 @@ import type {
   NewFlashcard,
 } from "@easyimmerse/types";
 import { act, fireEvent, screen } from "@testing-library/react";
-import { Profiler } from "react";
 import { vi } from "vitest";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 import { exampleResults } from "../lookup/exampleLookup.ts";
@@ -88,8 +87,8 @@ type MediaScreenSetup = {
   responses?: Record<string, FakeResponse>;
   /** The routes that answer the file's tracks and plan; by default, those of a file that plays directly. */
   playbackRoutes?: readonly FakeRoute[];
-  /** Called after each commit of the screen, through React's `Profiler`. */
-  onCommit?: () => void;
+  /** Called after each commit of the subtitles panel, through React's `Profiler`. */
+  onSubtitlesCommit?: () => void;
 };
 
 /**
@@ -103,7 +102,7 @@ export function renderMediaScreen({
   batchLookups = "unavailable",
   responses = {},
   playbackRoutes = directPlaybackRoutes,
-  onCommit,
+  onSubtitlesCommit,
 }: MediaScreenSetup = {}) {
   const client = withHeldLookups(
     createFakeBackendClient(
@@ -125,9 +124,11 @@ export function renderMediaScreen({
     batchLookups,
   );
   const rendered = renderWithAppStore(
-    <Profiler id="MediaScreen" onRender={() => onCommit?.()}>
-      <MediaScreen project={fixtureProject} mediaFileId="m1" />
-    </Profiler>,
+    <MediaScreen
+      project={fixtureProject}
+      mediaFileId="m1"
+      onSubtitlesCommit={onSubtitlesCommit}
+    />,
     client,
     { server: fakeServer },
   );
@@ -243,7 +244,6 @@ export function createdDraftOf(
   return (bodyOf(request) as NewFlashcard | undefined)?.draft;
 }
 
-/** Starts a flashcard for a word with the E key while the mouse is on it, and waits for the editor, which opens once the word's lookup answers. */
 /** Waits until the client has sent a request, for when its answer cannot be seen on the page. */
 export async function findRequestTo(
   client: { requests: BackendRequest[] },
@@ -257,6 +257,7 @@ export async function findRequestTo(
   });
 }
 
+/** Starts a flashcard for a word with the E key while the mouse is on it, and waits for the editor, which opens once the word's lookup answers. */
 export async function openFlashcardFor(element: HTMLElement) {
   fireEvent.pointerEnter(element, { pointerType: "mouse" });
   fireEvent.keyDown(document.body, { key: "e" });

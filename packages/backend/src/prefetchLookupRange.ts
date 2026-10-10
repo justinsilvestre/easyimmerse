@@ -1,4 +1,3 @@
-import type { AppDispatch } from "@easyimmerse/state";
 import type { LookupQuery } from "@easyimmerse/types";
 import { backendApi } from "./backendApi.ts";
 import { prefetchLookups } from "./prefetchLookups.ts";
@@ -22,8 +21,7 @@ const withPrefetch = backendApi.injectEndpoints({
      */
     prefetchLookupRange: build.query<null, LookupRange>({
       queryFn: async ({ lookups }, api) => {
-        // The thunk's dispatch reaches the same store, whose app dispatch `prefetchLookups` takes.
-        await prefetchLookups(api.dispatch as unknown as AppDispatch, lookups);
+        await prefetchLookups(api.dispatch, lookups);
         return { data: null };
       },
       serializeQueryArgs: ({ queryArgs }) => lookupRangeKey(queryArgs),

@@ -22,6 +22,11 @@ export type OperationsState = {
   requests: readonly RequestRecord[];
   /** Server jobs being polled, of either kind, until the feature that started each one stops watching it. */
   jobs: JobsState;
+  /**
+   * How many flashcards have been started from words' lookups since the app started.
+   * It numbers their lookup requests, so that no screen's request reuses the id of one still in flight from an earlier screen.
+   */
+  lookupFlashcardsStarted: number;
 };
 
 /**
@@ -29,16 +34,21 @@ export type OperationsState = {
  * the root update records the requests sent and the jobs watched.
  */
 export const operationsFeature: Feature<OperationsState> = {
-  initialState: { requests: [], jobs: {} },
+  initialState: { requests: [], jobs: {}, lookupFlashcardsStarted: 0 },
   update: (operations, action) => {
     const [jobs, effects] = updateJobs(operations.jobs, action);
     const requests = forgetSettled(
       operations.requests,
       action.type === "requestSettled" ? action.id : null,
     );
-    return requests === operations.requests && jobs === operations.jobs
+    const lookupFlashcardsStarted =
+      operations.lookupFlashcardsStarted +
+      (action.type === "lookupFlashcardRequested" ? 1 : 0);
+    return requests === operations.requests &&
+      jobs === operations.jobs &&
+      lookupFlashcardsStarted === operations.lookupFlashcardsStarted
       ? [operations, effects]
-      : [{ requests, jobs }, effects];
+      : [{ requests, jobs, lookupFlashcardsStarted }, effects];
   },
 };
 

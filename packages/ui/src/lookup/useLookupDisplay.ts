@@ -10,7 +10,7 @@ import { useCallback } from "react";
 import { coversLanguage } from "../dictionaries/dictionaryLanguages.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
-import type { LookupState } from "./lookupState.ts";
+import type { LookupDisplayState } from "./lookupDisplayState.ts";
 import { type LookupOutcome, lookupStateOf } from "./lookupStateOf.ts";
 
 const noDictionaries: readonly DictionarySummary[] = [];
@@ -34,7 +34,7 @@ export function useLookupDisplay(popup: LookupPopup | null, language: string) {
   );
   const isMissingDictionary =
     !isCovered || (chosen !== null && chosen.word.query === null);
-  const state: LookupState | null = isMissingDictionary
+  const state: LookupDisplayState | null = isMissingDictionary
     ? { kind: "noDictionary", language, term: chosen?.word.term }
     : chosen && lookupStateOf(chosen.word.term, outcomeOf(lookup));
   return {

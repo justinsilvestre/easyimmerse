@@ -1,18 +1,18 @@
-import type { LookupState as LookupSlice } from "@easyimmerse/state";
+import type { LookupState } from "@easyimmerse/state";
 import type { LookupResult } from "@easyimmerse/types";
 import type { ComponentProps } from "react";
 import type { AnchoredPopup } from "./AnchoredPopup.tsx";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
-import type { LookupState } from "./lookupState.ts";
+import type { LookupDisplayState } from "./lookupDisplayState.ts";
 
 /** What the pop-up shows, as `useLookupDisplay` reads it. */
 type Display = {
-  state: LookupState | null;
+  state: LookupDisplayState | null;
   resolveMediaUrl: ComponentProps<typeof DictionaryPopup>["resolveMediaUrl"];
 };
 
 /** The pop-up's handlers, each dispatching to the lookup. */
-export type LookupPopupHandlers = Pick<
+type LookupPopupHandlers = Pick<
   ComponentProps<typeof DictionaryPopup>,
   "onSearch" | "wordActions" | "onCreateFlashcard" | "onClose"
 > & {
@@ -22,7 +22,7 @@ export type LookupPopupHandlers = Pick<
 
 /** The props of the pop-up and of the wrapper that places it, or null while it is closed. */
 export function lookupPopupProps(
-  lookup: LookupSlice | null,
+  lookup: LookupState | null,
   popupId: string,
   display: Display,
   { onToggleSize, onPointerInsideChange, ...handlers }: LookupPopupHandlers,
@@ -55,7 +55,7 @@ export function lookupPopupProps(
 
 /** The length of text the pop-up's lookup matched: undefined while it is being looked up, and null when nothing matched. */
 export function matchedLengthOf(
-  state: LookupState | null,
+  state: LookupDisplayState | null,
   results: readonly LookupResult[],
 ): number | null | undefined {
   return state?.kind === "loading"

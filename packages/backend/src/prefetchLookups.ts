@@ -1,4 +1,3 @@
-import type { AppDispatch } from "@easyimmerse/state";
 import type { LookupQuery } from "@easyimmerse/types";
 import {
   backendApi,
@@ -33,11 +32,9 @@ type BackendState = Parameters<typeof selectRunningBatches>[0];
  * The promise resolves once every batch has answered or failed.
  */
 export async function prefetchLookups(
-  dispatch: AppDispatch,
+  thunkDispatch: BackendThunkDispatch,
   lookups: readonly LookupQuery[],
 ): Promise<void> {
-  // The app store's dispatch is typed for app actions only; thunks reach it through the middleware chain.
-  const thunkDispatch = dispatch as unknown as BackendThunkDispatch;
   const state = thunkDispatch((_, getState) => getState());
   const reachable = lookupsInBatchReach(lookups);
   refreshAgingLookups(thunkDispatch, state, reachable);

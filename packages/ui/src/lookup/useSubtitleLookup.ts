@@ -1,24 +1,16 @@
-import type { ChosenWord } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
-import {
-  type ComponentProps,
-  type RefObject,
-  useMemo,
-  useReducer,
-} from "react";
-import { stripMarkup } from "../components/ClickableText.tsx";
+import { type ComponentProps, type RefObject, useMemo } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
-import { type CueCursor, reduceCueCursor } from "../media/cueCursor.ts";
 import type {
   ActiveCueWord,
   CueWordGestures,
 } from "../media/cueWordGestures.ts";
+import { useCueCursor } from "../media/useCueCursor.ts";
+import { chosenWordAt } from "./chosenWordAt.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
-import { lookupTextAt } from "./lookupTextAt.ts";
-import { useCachedMatchLength } from "./useCachedMatchLength.ts";
 import type { LookupFlashcardStarts } from "./useLookupFlashcardHandoff.ts";
 import { useWordLookup } from "./useWordLookup.ts";
 
@@ -41,20 +33,11 @@ export function useSubtitleLookup(
 ) {
   const navigate = useNavigate();
   const lookup = useWordLookup(languages, starts);
-  const chosenAt = (hit: WordHit, cue: Cue): ChosenWord => ({
-    word: lookup.wordOf(
-      hit.word,
-      lookupTextAt(stripMarkup(cue.text), hit.start),
-    ),
-    source: { kind: "cue", cue },
-    occurrence: { passage: String(cue.index), start: hit.start },
-    anchor: { elementId: hit.element.id },
-  });
-  const [cursor, dispatchCursor] = useReducer(reduceCueCursor, null);
-  const cursorMatch = useCachedMatchLength(
-    cursor ? chosenAt(cursor.hit, cursor.cue).word.query : undefined,
+  const chosenAt = (hit: WordHit, cue: Cue) =>
+    chosenWordAt(hit, cue, lookup.wordOf);
+  const { cursor, position, point, answer } = useCueCursor(
+    (hit, cue) => chosenAt(hit, cue).word.query,
   );
-  const position = useShownCursor(cursor, cursorMatch);
   const lookUpCursor = () => {
     if (cursor?.hit.element.isConnected)
       lookup.clickWord(chosenAt(cursor.hit, cursor.cue), "keyboard");
@@ -77,20 +60,10 @@ export function useSubtitleLookup(
   };
   const wordGestures = useStableCallbacks<Required<CueWordGestures>>({
     onWordClick: (hit, cue) => lookup.clickWord(chosenAt(hit, cue), hit.input),
-    onWordPointed: (hit, input, cue) =>
-      dispatchCursor(
-        hit
-          ? {
-              type: "pointed",
-              cue,
-              hit,
-              shownMatchedLength: position?.matchedLength,
-            }
-          : { type: "left", input },
-      ),
+    onWordPointed: point,
     onWordHover: (hit, cue) => lookup.hoverWord(chosenAt(hit, cue)),
     onWordHoverAnswered: (hit, matchedLength, cue) => {
-      dispatchCursor({ type: "answered", cue, hit, matchedLength });
+      answer(hit, matchedLength, cue);
       lookup.restOnWord(chosenAt(hit, cue));
     },
     onWordDoubleClick: (hit, cue) =>
@@ -109,23 +82,6 @@ export function useSubtitleLookup(
     startFlashcardAtCursor,
     wordGestures,
   };
-}
-
-/** The cursor's place, with the length its word's cached lookup matched until the cursor's own lookup has answered. */
-function useShownCursor(
-  cursor: CueCursor | null,
-  cachedMatch: number | null | undefined,
-) {
-  const position = cursor?.position ?? null;
-  return useMemo(
-    () =>
-      position === null ||
-      position.matchedLength !== undefined ||
-      cachedMatch === undefined
-        ? position
-        : { ...position, matchedLength: cachedMatch },
-    [position, cachedMatch],
-  );
 }
 
 /**

@@ -62,8 +62,6 @@ export type PendingFlashcard = {
 export type LookupState = {
   popup: LookupPopup | null;
   pendingFlashcard: PendingFlashcard | null;
-  /** The sequence of the last flashcard started from a word on this screen. */
-  lastFlashcardSequence: number;
   isPointerInside: boolean;
   /** Whether the pop-up paused playback, so that closing it resumes playback, unless the user has resumed it already. */
   pausedPlayback: boolean;
@@ -75,7 +73,6 @@ export type LookupState = {
 export const initialLookup: LookupState = {
   popup: null,
   pendingFlashcard: null,
-  lastFlashcardSequence: 0,
   isPointerInside: false,
   pausedPlayback: false,
   size: "compact",

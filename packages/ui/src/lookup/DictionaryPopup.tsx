@@ -8,7 +8,7 @@ import { languageName } from "../projects/languages.ts";
 import type { ResolveMediaUrl } from "./definition/definitionContext.ts";
 import { KanjiCard } from "./KanjiCard.tsx";
 import { LookupResultCard } from "./LookupResultCard.tsx";
-import type { LookupState } from "./lookupState.ts";
+import type { LookupDisplayState } from "./lookupDisplayState.ts";
 import { type PopupSize, popupHeight, popupWidth } from "./popupSize.ts";
 import { type PopupWordActions, PopupWordContext } from "./popupWordContext.ts";
 import { DictionaryStylesheets } from "./stylesheet/DictionaryStylesheets.tsx";
@@ -44,7 +44,7 @@ export function DictionaryPopup({
 }: {
   /** Lets the word the pop-up shows name it as the element it controls. */
   id?: string;
-  state: LookupState | null;
+  state: LookupDisplayState | null;
   mode: "word" | "search";
   size?: PopupSize;
   resolveMediaUrl: ResolveMediaUrl;
@@ -139,7 +139,7 @@ function SizeToggle({
  * The word the pop-up shows: the beginning of the term that its best result matched, once found,
  * since a run of Japanese is looked up from a character to the run's end.
  */
-function termOf(state: LookupState | null): string {
+function termOf(state: LookupDisplayState | null): string {
   const term = state?.term ?? "";
   const matched =
     state?.kind === "found" ? state.results[0]?.matchedText : undefined;
@@ -206,7 +206,7 @@ function Body({
   onCreateFlashcard,
   onSetUpDictionary,
 }: {
-  state: LookupState | null;
+  state: LookupDisplayState | null;
   resolveMediaUrl: ResolveMediaUrl;
   onSearch: (term: string) => void;
   onCreateFlashcard: (entryIndex: number | null) => void;

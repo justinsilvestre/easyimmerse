@@ -6,7 +6,7 @@ import {
   selectPreference,
 } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
-import { useMemo, useReducer, useRef, useState } from "react";
+import { Profiler, useMemo, useReducer, useRef, useState } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
@@ -68,9 +68,12 @@ import { useSourceMedia } from "../subtitles/useSourceMedia.ts";
 export function MediaScreen({
   project,
   mediaFileId,
+  onSubtitlesCommit,
 }: {
   project: Project;
   mediaFileId: string;
+  /** Called after each commit of the subtitles panel, through React's `Profiler`, for tests that keep its renders in check. */
+  onSubtitlesCommit?: () => void;
 }) {
   const dispatch = useAppDispatch();
   const projectId = project.id;
@@ -327,19 +330,24 @@ export function MediaScreen({
               onClose={flashcards.close}
             />
           ) : panels.cues ? (
-            <SubtitlesSidePanel
-              subtitles={subtitles}
-              tracks={tracks}
-              languages={languages}
-              shownCue={shownCue}
-              flashcardCueIndexes={flashcards.cueIndexes}
-              flashcardWordRanges={wordRanges}
-              activeWord={lookup.activeWord}
-              cursor={lookup.cursor}
-              wordGestures={lookup.wordGestures}
-              onOpenFlashcardForCue={flashcards.openForCue}
-              onVisibleCuesChange={setPanelSpan}
-            />
+            <Profiler
+              id="SubtitlesSidePanel"
+              onRender={() => onSubtitlesCommit?.()}
+            >
+              <SubtitlesSidePanel
+                subtitles={subtitles}
+                tracks={tracks}
+                languages={languages}
+                shownCue={shownCue}
+                flashcardCueIndexes={flashcards.cueIndexes}
+                flashcardWordRanges={wordRanges}
+                activeWord={lookup.activeWord}
+                cursor={lookup.cursor}
+                wordGestures={lookup.wordGestures}
+                onOpenFlashcardForCue={flashcards.openForCue}
+                onVisibleCuesChange={setPanelSpan}
+              />
+            </Profiler>
           ) : undefined
         }
       />

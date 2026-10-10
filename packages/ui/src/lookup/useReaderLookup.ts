@@ -54,6 +54,7 @@ export function useReaderLookup(
     } satisfies ComponentProps<typeof DictionaryPopup>,
   };
   const occurrence = lookup.activeOccurrence;
+  // To do in step 10a: the word under the mouse is kept in a ref for the L key, which the sweep is to judge.
   const pointed = useRef<ReaderWord | null>(null);
   const wordGestures: ReaderWordGestures = {
     onWordClick: (word, input) => lookup.clickWord(chosenFor(word), input),

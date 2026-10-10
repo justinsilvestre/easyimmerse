@@ -1,4 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
+import type { AppState } from "../../app/appState.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
 import {
   close,
@@ -17,23 +18,21 @@ import type {
   LookupState,
   LookupWord,
 } from "./lookupState.ts";
-import {
-  startFlashcard,
-  updatePendingFlashcard,
-} from "./updatePendingFlashcard.ts";
+import { startFlashcard } from "./startFlashcard.ts";
+import { updatePendingFlashcard } from "./updatePendingFlashcard.ts";
 
 /**
  * Opens, moves and closes the dictionary pop-up, pausing playback while it is open and resuming it when it closes,
  * and starts flashcards from words once their lookups answer.
  * A click on the word shown closes the pop-up after the double-click interval, so that a double-click can still stop it.
  * A word the pointer rests on moves an open pop-up, unless the pointer is inside it or a flashcard waits.
- * `requests` are the requests in flight, which flashcards' request ids must not repeat.
+ * `app` is the state before the action.
  */
 export function updateLookup(
   lookup: LookupState,
   action: AppAction,
   player: PlayerState,
-  requests: readonly { id: string }[],
+  app: AppState,
 ): LookupStep {
   switch (action.type) {
     case "lookupWordClicked":
@@ -47,7 +46,7 @@ export function updateLookup(
         ? show(lookup, action.chosen, player)
         : [lookup, []];
     case "lookupFlashcardRequested":
-      return startFlashcard(lookup, action, player, requests);
+      return startFlashcard(lookup, action, player, app);
     case "lookupSearchOpened":
       return hold(
         { ...dropPending(lookup), popup: { mode: "search", chosen: null } },

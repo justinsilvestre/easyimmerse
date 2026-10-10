@@ -27,7 +27,10 @@ const withUndoNotice = () =>
   );
 
 function withRequests(...requests: RequestRecord[]) {
-  return { ...initialAppState, operations: { requests, jobs: {} } };
+  return {
+    ...initialAppState,
+    operations: { requests, jobs: {}, lookupFlashcardsStarted: 0 },
+  };
 }
 
 describe("update", () => {

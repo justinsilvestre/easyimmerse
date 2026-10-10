@@ -1,19 +1,12 @@
-import { lookUpTextAhead } from "@easyimmerse/backend";
-import {
-  type AppDispatch,
-  actions,
-  type ChosenWord,
-  selectLookup,
-} from "@easyimmerse/state";
-import type { LookupQuery } from "@easyimmerse/types";
+import { actions, type ChosenWord, selectLookup } from "@easyimmerse/state";
 import { useId } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
-import { flashcardFieldsFromLookup } from "./flashcardFieldsFromLookup.ts";
-import { placeOf } from "./lookupPlace.ts";
+import { hoverMatchLength } from "./hoverMatchLength.ts";
 import { lookupPopupProps, matchedLengthOf } from "./lookupPopupProps.ts";
 import { lookupWordOf } from "./lookupWordOf.ts";
+import { popupFlashcardOf } from "./popupFlashcardOf.ts";
 import { useLookupDisplay } from "./useLookupDisplay.ts";
 import {
   type LookupFlashcardStarts,
@@ -56,18 +49,15 @@ export function useWordLookup(
       },
       onCreateFlashcard: (entryIndex) => {
         const { results, dictionaries } = display;
-        const fields = flashcardFieldsFromLookup(
+        const flashcard = popupFlashcardOf(
           results,
           entryIndex,
+          chosen,
           languages,
           dictionaries,
         );
         dispatch(actions.lookupSetAside());
-        starts.save(
-          fields?.word ?? chosen?.word.term ?? "",
-          placeOf(chosen),
-          fields,
-        );
+        starts.save(flashcard.word, flashcard.place, flashcard.fields);
       },
       onClose: () => dispatch(actions.lookupClosed()),
       onToggleSize: () => dispatch(actions.lookupSizeToggled()),
@@ -105,19 +95,4 @@ export function useWordLookup(
       next();
     },
   };
-}
-
-/**
- * Looks a hovered word up ahead of a click, and resolves to the length of the text its best result matched,
- * or null when nothing matched, the lookup failed, or there is nothing to look up.
- */
-function hoverMatchLength(
-  dispatch: AppDispatch,
-  query: LookupQuery | null,
-): Promise<number | null> {
-  if (query === null) return Promise.resolve(null);
-  return lookUpTextAhead(dispatch, query).then(
-    (response) => response.results[0]?.matchedText.length ?? null,
-    () => null,
-  );
 }

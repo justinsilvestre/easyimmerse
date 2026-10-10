@@ -29,7 +29,7 @@ import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import { exampleResults } from "../lookup/exampleLookup.ts";
 import { resolveExampleMediaUrl } from "../lookup/exampleMedia.ts";
-import type { LookupState } from "../lookup/lookupState.ts";
+import type { LookupDisplayState } from "../lookup/lookupDisplayState.ts";
 import type { PopupSize } from "../lookup/popupSize.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { CuePanel } from "./CuePanel.tsx";
@@ -179,7 +179,10 @@ function subtitlesPanel(
   );
 }
 
-function lookupPopup(state: LookupState | null, mode: "word" | "search") {
+function lookupPopup(
+  state: LookupDisplayState | null,
+  mode: "word" | "search",
+) {
   return (
     <AnchoredPopup anchor={null}>
       <DictionaryPopup

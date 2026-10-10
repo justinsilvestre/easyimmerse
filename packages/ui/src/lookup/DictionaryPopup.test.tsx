@@ -14,18 +14,18 @@ import {
   exampleKanjiResult,
 } from "./exampleJapaneseLookup.ts";
 import { exampleResults } from "./exampleLookup.ts";
-import type { LookupState } from "./lookupState.ts";
+import type { LookupDisplayState } from "./lookupDisplayState.ts";
 
 afterEach(cleanup);
 
 type PopupHandlers = {
-  state?: LookupState;
+  state?: LookupDisplayState;
   onSearch?: (term: string) => void;
   onCreateFlashcard?: (entryIndex: number | null) => void;
   onClose?: () => void;
 };
 
-const foundState: LookupState = {
+const foundState: LookupDisplayState = {
   kind: "found",
   term: "fressen",
   results: exampleResults,
@@ -260,7 +260,7 @@ function SearchOpener() {
   );
 }
 
-function renderState(state: LookupState) {
+function renderState(state: LookupDisplayState) {
   render(
     <DictionaryPopup
       state={state}

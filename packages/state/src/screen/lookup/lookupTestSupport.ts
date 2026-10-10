@@ -59,10 +59,5 @@ export const lookupSettled = (
 export function applyToLookup(action: AppAction, ...before: AppAction[]) {
   const app = stateAfter(actions.openMediaFileRequested("p1", "m1"), ...before);
   const screen = app.screen.main as MediaScreenState;
-  return updateLookup(
-    screen.lookup,
-    action,
-    screen.player,
-    app.operations.requests,
-  );
+  return updateLookup(screen.lookup, action, screen.player, app);
 }

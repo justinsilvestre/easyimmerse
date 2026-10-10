@@ -6,7 +6,7 @@ import {
   cat,
   dog,
   lookupSettled,
-} from "./lookupTestWords.ts";
+} from "./lookupTestSupport.ts";
 
 const saveCat = actions.lookupFlashcardRequested(cat, "save");
 const uncoveredCat = { ...cat, word: { term: "cat", query: null } };
@@ -118,8 +118,12 @@ describe("updateLookup for a flashcard started from a word", () => {
     expect(effects.filter(({ type }) => type === "sendRequest")).toEqual([]);
   });
 
-  it("ignores the answer to another word's lookup", () => {
-    const [lookup] = apply(lookupSettled(1, dog), saveCat);
+  it("ignores the answer to an earlier flashcard's lookup", () => {
+    const [lookup] = apply(
+      lookupSettled(1, cat),
+      saveCat,
+      actions.lookupFlashcardRequested(dog, "save"),
+    );
     expect(lookup.pendingFlashcard?.stage).toBe("waiting");
   });
 
