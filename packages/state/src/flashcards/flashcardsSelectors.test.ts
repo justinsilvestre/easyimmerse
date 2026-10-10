@@ -101,6 +101,15 @@ describe("selectMediaFlashcards", () => {
     expect(selectMediaFlashcards({ app: ticked }, listed, "m1")).toBe(first);
   });
 
+  it("keeps returning the same listed flashcards while the open card is edited", () => {
+    const app = appAfter(openHund);
+    const { flashcards } = selectMediaFlashcards({ app }, listed, "m1");
+    const typed = applied(app, typeWord("Hündin"));
+    expect(selectMediaFlashcards({ app: typed }, listed, "m1").flashcards).toBe(
+      flashcards,
+    );
+  });
+
   it("leaves out the flashcards of other media files", () => {
     const other = { ...katze, media_file_id: "m2" };
     const { flashcards } = selectMediaFlashcards(

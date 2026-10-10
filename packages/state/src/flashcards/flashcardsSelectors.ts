@@ -30,21 +30,34 @@ export type MediaFlashcards = {
 /** Returns the flashcards of a media file, from the cached list `listed`, as `MediaFlashcards` describes. */
 export const selectMediaFlashcards = createSelector(
   [
-    (_state: RootState, listed: readonly Flashcard[] | undefined) => listed,
+    (
+      state: RootState,
+      listed: readonly Flashcard[] | undefined,
+      mediaFileId: string,
+    ) => selectListedMediaFlashcards(state, listed, mediaFileId),
     (_state: RootState, _listed: unknown, mediaFileId: string) => mediaFileId,
-    selectFlashcardRequests,
     (state: RootState) => selectFailedSaves(state.app),
     (state: RootState) => selectFlashcardForm(state.app),
   ],
-  (listed, mediaFileId, requests, failedSaves, form) => {
-    const flashcards = (listed ?? [])
-      .filter((flashcard) => flashcard.media_file_id === mediaFileId)
-      .map((flashcard) => latestOf(flashcard, requests));
+  (flashcards, mediaFileId, failedSaves, form) => {
     const failed = failedSaves.filter(
       (failedSave) => failedSave.mediaFileId === mediaFileId,
     );
     return { flashcards, drawn: drawnFlashcards(flashcards, failed, form) };
   },
+);
+
+/** The listed flashcards of a media file, kept apart from the open card so that editing it leaves them as they were. */
+const selectListedMediaFlashcards = createSelector(
+  [
+    (_state: RootState, listed: readonly Flashcard[] | undefined) => listed,
+    (_state: RootState, _listed: unknown, mediaFileId: string) => mediaFileId,
+    selectFlashcardRequests,
+  ],
+  (listed, mediaFileId, requests) =>
+    (listed ?? [])
+      .filter((flashcard) => flashcard.media_file_id === mediaFileId)
+      .map((flashcard) => latestOf(flashcard, requests)),
 );
 
 /**
