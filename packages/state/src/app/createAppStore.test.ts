@@ -1,5 +1,6 @@
 import type { StoreEnhancer } from "redux";
 import { describe, expect, it } from "vitest";
+import { selectNotices } from "../notices/noticesSelectors.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import { actions } from "./appAction.ts";
 import { createAppStore } from "./createAppStore.ts";
@@ -59,5 +60,31 @@ describe("createAppStore", () => {
       },
     );
     expect(composed).toHaveLength(1);
+  });
+
+  describe("for a transient notice", () => {
+    const saved = {
+      tone: "success",
+      message: "Saved",
+      buttons: [],
+      isTransient: true,
+    } as const;
+
+    it("removes it ten seconds after it was shown", () => {
+      const effects = createRecordingEffects();
+      const store = createAppStore(effects, createFakeServerStoreParts());
+      store.dispatch(actions.noticeRequested(saved));
+      effects.clock.advanceBy(10_000);
+      expect(selectNotices(store.getState())).toEqual([]);
+    });
+
+    it("keeps it while the pointer rests on it", () => {
+      const effects = createRecordingEffects();
+      const store = createAppStore(effects, createFakeServerStoreParts());
+      store.dispatch(actions.noticeRequested(saved));
+      store.dispatch(actions.noticeHeld(1, "pointer"));
+      effects.clock.advanceBy(20_000);
+      expect(selectNotices(store.getState())).toHaveLength(1);
+    });
   });
 });

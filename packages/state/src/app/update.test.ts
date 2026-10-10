@@ -13,6 +13,19 @@ const settledFirst = actions.requestSettled("a", first, {
   data: { media_files: [] },
 });
 
+const undo = actions.notificationRequested("Undone");
+
+/** The state with one lasting notice whose Undo button carries `undo`. */
+const withUndoNotice = () =>
+  stateAfter(
+    actions.noticeRequested({
+      tone: "danger",
+      message: "Refused",
+      buttons: [{ label: "Undo", action: undo }],
+      isTransient: false,
+    }),
+  );
+
 function withRequests(...requests: RequestRecord[]) {
   return { ...initialAppState, operations: { requests } };
 }
@@ -60,6 +73,26 @@ describe("update", () => {
       const [, effects] = update(state, settledFirst);
       expect(effects).toEqual([
         { type: "sendRequest", id: "b", request: second, scope: "s" },
+      ]);
+    });
+  });
+
+  describe("for a chosen notice button", () => {
+    it("closes the notice", () => {
+      const [state] = update(
+        withUndoNotice(),
+        actions.noticeButtonChosen(1, undo),
+      );
+      expect(state.notices.shown).toEqual([]);
+    });
+
+    it("returns the effects of the button's action", () => {
+      const [, effects] = update(
+        withUndoNotice(),
+        actions.noticeButtonChosen(1, undo),
+      );
+      expect(effects).toEqual([
+        { type: "showNotification", message: "Undone" },
       ]);
     });
   });

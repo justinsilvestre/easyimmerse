@@ -1,3 +1,4 @@
+import { noticesFeature } from "../notices/updateNotices.ts";
 import { operationsFeature } from "../operations/operations.ts";
 import { trackRequests } from "../operations/trackRequests.ts";
 import { platformCommands } from "../platform/platformCommands.ts";
@@ -27,6 +28,7 @@ const features = {
   preferences: preferencesFeature,
   storedPlaces: storedPlacesFeature,
   unsavedWork: unsavedWorkFeature,
+  notices: noticesFeature,
   operations: operationsFeature,
 } satisfies FeatureTable;
 
@@ -38,12 +40,27 @@ export const initialAppState = Object.fromEntries(
 ) as AppState;
 
 /**
+ * Computes the next state and the effects of an action, as `updateFeatures` describes.
+ * A chosen notice button is two updates in one dispatch: the features see `noticeButtonChosen`, which closes the notice,
+ * and then the button's action, which does what the button says.
+ */
+export const update: Update<AppState, AppAction, Effect> = (state, action) => {
+  const [next, effects] = updateFeatures(state, action);
+  if (action.type !== "noticeButtonChosen") return [next, effects];
+  const [chosen, chosenEffects] = update(next, action.action);
+  return [chosen, [...effects, ...chosenEffects]];
+};
+
+/**
  * Lets every feature update its own slice, each seeing the state before the action, and gathers their effects in the order of the feature table.
  * The state keeps its reference when no slice changes.
  * The root update looks at the features' effects in exactly two places: it adds the platform commands, which change no state,
  * and it passes every effect through `trackRequests`, which records the requests sent and holds back those that must wait.
  */
-export const update: Update<AppState, AppAction, Effect> = (state, action) => {
+function updateFeatures(
+  state: AppState,
+  action: AppAction,
+): readonly [AppState, readonly Effect[]] {
   let next = state;
   const effects: Effect[] = [];
   for (const name of featureNames) {
@@ -57,7 +74,7 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
     operations === next.operations ? next : { ...next, operations },
     performed,
   ];
-};
+}
 
 function updateSlice<K extends keyof AppState>(
   name: K,

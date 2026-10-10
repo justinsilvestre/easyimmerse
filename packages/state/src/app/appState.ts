@@ -1,3 +1,4 @@
+import type { NoticesState } from "../notices/noticesState.ts";
 import type { OperationsState } from "../operations/operations.ts";
 import type { PreferencesState } from "../preferences/preferencesState.ts";
 import type { Route } from "../route/route.ts";
@@ -18,5 +19,6 @@ export type AppState = {
   preferences: PreferencesState;
   storedPlaces: StoredPlacesState;
   unsavedWork: UnsavedWorkState;
+  notices: NoticesState;
   operations: OperationsState;
 };
