@@ -1,4 +1,5 @@
 import { operationsFeature } from "../operations/operations.ts";
+import { trackRequests } from "../operations/trackRequests.ts";
 import { platformCommands } from "../platform/platformCommands.ts";
 import { preferencesFeature } from "../preferences/updatePreferences.ts";
 import { routeFeature } from "../route/updateRoute.ts";
@@ -39,7 +40,8 @@ export const initialAppState = Object.fromEntries(
 /**
  * Lets every feature update its own slice, each seeing the state before the action, and gathers their effects in the order of the feature table.
  * The state keeps its reference when no slice changes.
- * The platform commands are the only effects that do not come from a feature, since they change no state.
+ * The root update looks at the features' effects in exactly two places: it adds the platform commands, which change no state,
+ * and it passes every effect through `trackRequests`, which records the requests sent and holds back those that must wait.
  */
 export const update: Update<AppState, AppAction, Effect> = (state, action) => {
   let next = state;
@@ -49,7 +51,12 @@ export const update: Update<AppState, AppAction, Effect> = (state, action) => {
     if (slice !== state[name]) next = { ...next, [name]: slice };
     effects.push(...sliceEffects);
   }
-  return [next, [...effects, ...platformCommands(action)]];
+  effects.push(...platformCommands(action));
+  const [operations, performed] = trackRequests(next.operations, effects);
+  return [
+    operations === next.operations ? next : { ...next, operations },
+    performed,
+  ];
 };
 
 function updateSlice<K extends keyof AppState>(
