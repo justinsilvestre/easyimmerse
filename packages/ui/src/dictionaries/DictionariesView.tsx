@@ -1,4 +1,5 @@
 import type {
+  ColumnRole,
   ImportProgress,
   TableLayout,
   TablePreview,
@@ -44,6 +45,8 @@ export function DictionariesView({
   onCancelRemoval,
   onDismissUnsupportedFile,
   onDismissImportFailure,
+  onTableColumnRoleChosen,
+  onTableHeaderRowToggled,
   onImportTable,
   onCancelTable,
 }: {
@@ -64,8 +67,13 @@ export function DictionariesView({
   unsupportedFile: string | null;
   /** Why the last file could not be added for another reason, until dismissed. */
   importFailure?: string | null;
-  /** The table file the user is adding, with its first rows and detected columns, until imported or cancelled. */
-  pendingTable: { fileName: string; preview: TablePreview } | null;
+  /** The table file the user is adding, with its first rows, its columns as set so far and why it cannot be imported yet, until imported or cancelled. */
+  pendingTable: {
+    fileName: string;
+    preview: TablePreview;
+    layout: TableLayout;
+    hint: string | null;
+  } | null;
   /** Leaves for wherever the dictionaries were opened from, such as Settings or a word's pop-up, so its button says only Back. */
   onBack: () => void;
   onAddFromRegistry?: () => void;
@@ -78,7 +86,9 @@ export function DictionariesView({
   onCancelRemoval: () => void;
   onDismissUnsupportedFile: () => void;
   onDismissImportFailure: () => void;
-  onImportTable: (layout: TableLayout) => void;
+  onTableColumnRoleChosen: (index: number, role: ColumnRole) => void;
+  onTableHeaderRowToggled: () => void;
+  onImportTable: () => void;
   onCancelTable: () => void;
 }) {
   const headingRef = useHeadingFocusAfterRemoval(
@@ -182,6 +192,10 @@ export function DictionariesView({
         <TableColumnsDialog
           fileName={pendingTable.fileName}
           preview={pendingTable.preview}
+          layout={pendingTable.layout}
+          hint={pendingTable.hint}
+          onColumnRoleChosen={onTableColumnRoleChosen}
+          onHeaderRowToggled={onTableHeaderRowToggled}
           onImport={onImportTable}
           onCancel={onCancelTable}
         />

@@ -29,6 +29,8 @@ function renderView(props: Partial<Parameters<typeof DictionariesView>[0]>) {
       onCancelRemoval={() => undefined}
       onDismissUnsupportedFile={() => undefined}
       onDismissImportFailure={() => dismissals.push("importFailure")}
+      onTableColumnRoleChosen={() => undefined}
+      onTableHeaderRowToggled={() => undefined}
       onImportTable={() => undefined}
       onCancelTable={() => undefined}
       {...props}

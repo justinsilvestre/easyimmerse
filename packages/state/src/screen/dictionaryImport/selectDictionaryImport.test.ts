@@ -20,6 +20,28 @@ const started = [
   ),
 ];
 
+const csv: PickedDictionaryFile = {
+  name: "animals.csv",
+  source: { kind: "path", path: "/d/animals.csv" },
+};
+
+/** A table previewed with no term column detected. */
+const previewedWithoutTerm = [
+  actions.navigated({ type: "openDictionaries" }),
+  actions.dictionaryFileChosen(csv),
+  actions.requestSettled(
+    "settings/dictionaryImport/preview",
+    { kind: "previewDictionaryTable", file: csv },
+    {
+      ok: true,
+      data: {
+        layout: { columns: ["ignored", "definition"], hasHeader: false },
+        rows: [["Hund", "dog"]],
+      },
+    },
+  ),
+];
+
 const reported = actions.requestSettled(
   "jobs/dictionaryImport/job1",
   { kind: "getImportJob", jobId: "job1" },
@@ -56,6 +78,24 @@ describe("selectDictionaryImport", () => {
     );
     expect(selectDictionaryImport({ app }).importFailure).toBe(
       "jmdict.zip could not be added: broken",
+    );
+  });
+
+  it("gives the table's columns as the user has set them", () => {
+    const app = stateAfter(
+      ...previewedWithoutTerm,
+      actions.dictionaryColumnRoleChosen(0, "term"),
+    );
+    expect(selectDictionaryImport({ app }).pendingTable?.layout).toEqual({
+      columns: ["term", "definition"],
+      hasHeader: false,
+    });
+  });
+
+  it("says why the table cannot be imported yet", () => {
+    const app = stateAfter(...previewedWithoutTerm);
+    expect(selectDictionaryImport({ app }).pendingTable?.hint).toBe(
+      "Choose the column that holds the term.",
     );
   });
 

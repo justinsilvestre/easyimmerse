@@ -1,9 +1,14 @@
-import type { ImportProgress, TablePreview } from "@easyimmerse/types";
+import type {
+  ImportProgress,
+  TableLayout,
+  TablePreview,
+} from "@easyimmerse/types";
 import { createSelector } from "reselect";
 import type { RootState } from "../../app/createAppStore.ts";
 import type { JobsState } from "../../operations/jobs.ts";
 import { jobKey } from "../../operations/jobs.ts";
 import type { DictionaryImportWizard } from "./dictionaryImportWizard.ts";
+import { termHint } from "./tableLayout.ts";
 
 /** What the dictionaries page shows of adding a dictionary from a file. */
 export type DictionaryImportView = {
@@ -15,8 +20,13 @@ export type DictionaryImportView = {
   unsupportedFile: string | null;
   /** Why the last file could not be added for another reason, until dismissed. */
   importFailure: string | null;
-  /** The table whose columns the user is checking. */
-  pendingTable: { fileName: string; preview: TablePreview } | null;
+  /** The table whose columns the user is checking, with the columns as set so far and why they cannot be imported yet, if so. */
+  pendingTable: {
+    fileName: string;
+    preview: TablePreview;
+    layout: TableLayout;
+    hint: string | null;
+  } | null;
 };
 
 const nothingShown: DictionaryImportView = {
@@ -57,7 +67,12 @@ function viewOf(
       };
     case "choosingColumns":
       return {
-        pendingTable: { fileName: wizard.file.name, preview: wizard.preview },
+        pendingTable: {
+          fileName: wizard.file.name,
+          preview: wizard.preview,
+          layout: wizard.layout,
+          hint: termHint(wizard.layout),
+        },
       };
     case "unsupported":
       return { unsupportedFile: wizard.fileName };

@@ -32,6 +32,7 @@ export function dictionaryImportAnswered(
             stage: "choosingColumns",
             file: wizard.file,
             preview: action.outcome.data,
+            layout: action.outcome.data.layout,
           },
           [],
         ]

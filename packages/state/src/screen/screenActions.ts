@@ -1,11 +1,11 @@
 import type {
   AudioClip,
+  ColumnRole,
   FormInput,
   PlaybackEnvironment,
   ProjectSettings,
   SubtitleRole,
   SubtitleSelection,
-  TableLayout,
   TrackSelection,
 } from "@easyimmerse/types";
 import type {
@@ -126,9 +126,15 @@ export const screenActions = {
   sourceMediaStepTaken: (action: string, input: FormInput[]) =>
     ({ type: "sourceMediaStepTaken", action, input }) as const,
   sourceMediaClosed: () => ({ type: "sourceMediaClosed" }) as const,
+  /** The user chose what a previewed table's column holds. */
+  dictionaryColumnRoleChosen: (index: number, role: ColumnRole) =>
+    ({ type: "dictionaryColumnRoleChosen", index, role }) as const,
+  /** The user switched whether a previewed table's first row is a header. */
+  dictionaryHeaderRowToggled: () =>
+    ({ type: "dictionaryHeaderRowToggled" }) as const,
   /** The user checked a previewed table's columns and asked for it to be imported with them. */
-  dictionaryColumnsChosen: (layout: TableLayout) =>
-    ({ type: "dictionaryColumnsChosen", layout }) as const,
+  dictionaryColumnsConfirmed: () =>
+    ({ type: "dictionaryColumnsConfirmed" }) as const,
   dictionaryColumnsCancelled: () =>
     ({ type: "dictionaryColumnsCancelled" }) as const,
   /** The user dismissed the alert that a file could not be added. */

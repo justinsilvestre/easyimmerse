@@ -9,12 +9,18 @@ import {
 } from "./dictionaryImportRequests.ts";
 import type { DictionaryImportWizard } from "./dictionaryImportWizard.ts";
 import { isTableFile } from "./isTableFile.ts";
+import {
+  termHint,
+  withColumnRole,
+  withHeaderRowToggled,
+} from "./tableLayout.ts";
 
 type Wizard = DictionaryImportWizard | null;
 type Result = readonly [Wizard, readonly Effect[]];
 
 /**
  * Adds a dictionary from a picked file: previews a table so that the user can check its columns,
+ * imports it once exactly one column holds the term,
  * sends the file to be imported, watches the import's job, and keeps a failure until it is dismissed.
  */
 export function updateDictionaryImport(
@@ -34,11 +40,26 @@ export function updateDictionaryImport(
             [...stopWatching(wizard), importRequest(file, null)],
           ];
     }
-    case "dictionaryColumnsChosen":
+    case "dictionaryColumnRoleChosen":
       return wizard?.stage === "choosingColumns"
         ? [
+            {
+              ...wizard,
+              layout: withColumnRole(wizard.layout, action.index, action.role),
+            },
+            [],
+          ]
+        : [wizard, []];
+    case "dictionaryHeaderRowToggled":
+      return wizard?.stage === "choosingColumns"
+        ? [{ ...wizard, layout: withHeaderRowToggled(wizard.layout) }, []]
+        : [wizard, []];
+    case "dictionaryColumnsConfirmed":
+      return wizard?.stage === "choosingColumns" &&
+        termHint(wizard.layout) === null
+        ? [
             { stage: "starting", file: wizard.file },
-            [importRequest(wizard.file, action.layout)],
+            [importRequest(wizard.file, wizard.layout)],
           ]
         : [wizard, []];
     case "dictionaryColumnsCancelled":

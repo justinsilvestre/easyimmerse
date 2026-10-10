@@ -42,9 +42,13 @@ export function DictionariesScreen({ onBack }: { onBack: () => void }) {
       onCancelRemoval={() => dispatch(actions.dictionaryRemovalCancelled())}
       onDismissUnsupportedFile={dismissAlert}
       onDismissImportFailure={dismissAlert}
-      onImportTable={(layout) =>
-        dispatch(actions.dictionaryColumnsChosen(layout))
+      onTableColumnRoleChosen={(index, role) =>
+        dispatch(actions.dictionaryColumnRoleChosen(index, role))
       }
+      onTableHeaderRowToggled={() =>
+        dispatch(actions.dictionaryHeaderRowToggled())
+      }
+      onImportTable={() => dispatch(actions.dictionaryColumnsConfirmed())}
       onCancelTable={() => dispatch(actions.dictionaryColumnsCancelled())}
     />
   );

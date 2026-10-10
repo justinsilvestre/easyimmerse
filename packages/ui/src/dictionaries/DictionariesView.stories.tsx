@@ -24,6 +24,8 @@ const meta = {
     onCancelRemoval: fn(),
     onDismissUnsupportedFile: fn(),
     onDismissImportFailure: fn(),
+    onTableColumnRoleChosen: fn(),
+    onTableHeaderRowToggled: fn(),
     onImportTable: fn(),
     onCancelTable: fn(),
   },
@@ -108,6 +110,8 @@ export const AddingTable: Story = {
           ["鳥", "とり", "bird"],
         ],
       },
+      layout: { columns: ["term", "reading", "definition"], hasHeader: false },
+      hint: null,
     },
   },
 };

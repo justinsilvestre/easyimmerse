@@ -1,6 +1,6 @@
 import type { ColumnRole, TableLayout, TablePreview } from "@easyimmerse/types";
 import clsx from "clsx";
-import { useId, useReducer } from "react";
+import { useId } from "react";
 import { Button } from "../components/Button.tsx";
 import { CheckboxField } from "../components/CheckboxField.tsx";
 import { ModalDialog } from "../components/ModalDialog.tsx";
@@ -20,40 +20,29 @@ const columnRoleOptions = Object.entries(columnRoleLabels) as [
   string,
 ][];
 
-type LayoutChange =
-  | { type: "columnChosen"; index: number; role: ColumnRole }
-  | { type: "headerToggled" };
-
-function changeLayout(layout: TableLayout, change: LayoutChange): TableLayout {
-  switch (change.type) {
-    case "columnChosen":
-      return {
-        ...layout,
-        columns: layout.columns.map((role, index) =>
-          index === change.index ? change.role : role,
-        ),
-      };
-    case "headerToggled":
-      return { ...layout, hasHeader: !layout.hasHeader };
-  }
-}
-
-/** Shows the first rows of a table file with what each column holds, detected by the app, for the user to correct before importing. */
+/** Shows the first rows of a table file with what each column holds, first as detected by the app, for the user to correct before importing. */
 export function TableColumnsDialog({
   fileName,
   preview,
+  layout,
+  hint,
+  onColumnRoleChosen,
+  onHeaderRowToggled,
   onImport,
   onCancel,
 }: {
   fileName: string;
   preview: TablePreview;
-  onImport: (layout: TableLayout) => void;
+  /** What each column holds and whether the first row is a header, as set so far. */
+  layout: TableLayout;
+  /** Why the table cannot be imported with this layout, or null when it can. */
+  hint: string | null;
+  onColumnRoleChosen: (index: number, role: ColumnRole) => void;
+  onHeaderRowToggled: () => void;
+  onImport: () => void;
   onCancel: () => void;
 }) {
-  const [layout, dispatch] = useReducer(changeLayout, preview.layout);
   const hintId = useId();
-  const termCount = layout.columns.filter((role) => role === "term").length;
-  const hint = termHint(termCount);
   return (
     <ModalDialog
       title={`Import ${fileName}`}
@@ -67,7 +56,7 @@ export function TableColumnsDialog({
             variant="primary"
             disabled={hint !== null}
             aria-describedby={hint ? hintId : undefined}
-            onClick={() => onImport(layout)}
+            onClick={onImport}
           >
             Import
           </Button>
@@ -90,11 +79,10 @@ export function TableColumnsDialog({
                     aria-label={`Column ${index + 1}`}
                     value={role}
                     onChange={(event) =>
-                      dispatch({
-                        type: "columnChosen",
+                      onColumnRoleChosen(
                         index,
-                        role: event.target.value as ColumnRole,
-                      })
+                        event.target.value as ColumnRole,
+                      )
                     }
                     className="w-full rounded border border-line-strong bg-surface px-1.5 py-1 text-xs font-medium text-fg focus:border-accent focus:outline-2 focus:outline-accent/30"
                   >
@@ -142,7 +130,7 @@ export function TableColumnsDialog({
       <CheckboxField
         label="First row is a header"
         checked={layout.hasHeader}
-        onChange={() => dispatch({ type: "headerToggled" })}
+        onChange={onHeaderRowToggled}
       />
       {hint && (
         <p id={hintId} className="text-xs text-fg-muted">
@@ -151,10 +139,4 @@ export function TableColumnsDialog({
       )}
     </ModalDialog>
   );
-}
-
-function termHint(termCount: number): string | null {
-  if (termCount === 0) return "Choose the column that holds the term.";
-  if (termCount > 1) return "Only one column can hold the term.";
-  return null;
 }

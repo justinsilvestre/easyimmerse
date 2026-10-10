@@ -18,6 +18,10 @@ const meta = {
         ["馬", "うま", "horse"],
       ],
     },
+    layout: { columns: ["term", "reading", "definition"], hasHeader: false },
+    hint: null,
+    onColumnRoleChosen: fn(),
+    onHeaderRowToggled: fn(),
     onImport: fn(),
     onCancel: fn(),
   },
@@ -41,6 +45,7 @@ export const GermanWithHeader: Story = {
         ["Haus", "house"],
       ],
     },
+    layout: { columns: ["term", "definition"], hasHeader: true },
   },
 };
 
@@ -66,6 +71,18 @@ export const WideTable: Story = {
         ["飲む", "のむ", "to drink", "呑む", "v5m", "540", "Core 2k"],
       ],
     },
+    layout: {
+      columns: [
+        "term",
+        "reading",
+        "definition",
+        "alternates",
+        "tags",
+        "frequency",
+        "ignored",
+      ],
+      hasHeader: true,
+    },
   },
 };
 
@@ -78,5 +95,7 @@ export const WithoutTerm: Story = {
         ["a loyal pet", "Old English docga"],
       ],
     },
+    layout: { columns: ["definition", "definition"], hasHeader: false },
+    hint: "Choose the column that holds the term.",
   },
 };

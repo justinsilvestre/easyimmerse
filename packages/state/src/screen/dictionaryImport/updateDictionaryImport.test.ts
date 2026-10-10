@@ -24,7 +24,6 @@ const preview: TablePreview = {
   layout: { columns: ["term", "definition"], hasHeader: false },
   rows: [["Hund", "dog"]],
 };
-const layout: TableLayout = { columns: ["term", "ignored"], hasHeader: true };
 const wiktionary = {
   id: "d1",
   title: "German-English Wiktionary",
@@ -35,6 +34,11 @@ const choosing: DictionaryImportWizard = {
   stage: "choosingColumns",
   file: csv,
   preview,
+  layout: preview.layout,
+};
+const choosingWithoutTerm: DictionaryImportWizard = {
+  ...choosing,
+  layout: { columns: ["ignored", "definition"], hasHeader: false },
 };
 const starting: DictionaryImportWizard = { stage: "starting", file: zip };
 const importing: DictionaryImportWizard = {
@@ -134,18 +138,54 @@ describe("updateDictionaryImport", () => {
       });
     });
 
-    it("imports the table with the columns the user checked", () => {
-      const [, effects] = updateDictionaryImport(
+    it("gives a column the role the user chose", () => {
+      const [wizard] = updateDictionaryImport(
         choosing,
-        actions.dictionaryColumnsChosen(layout),
+        actions.dictionaryColumnRoleChosen(1, "ignored"),
+      );
+      expect(wizard).toEqual({
+        ...choosing,
+        layout: { columns: ["term", "ignored"], hasHeader: false },
+      });
+    });
+
+    it("marks the first row as a header when the user says so", () => {
+      const [wizard] = updateDictionaryImport(
+        choosing,
+        actions.dictionaryHeaderRowToggled(),
+      );
+      expect(wizard).toEqual({
+        ...choosing,
+        layout: { ...preview.layout, hasHeader: true },
+      });
+    });
+
+    it("imports the table with the columns the user chose", () => {
+      const [, effects] = updateDictionaryImport(
+        {
+          ...choosing,
+          layout: { columns: ["term", "ignored"], hasHeader: true },
+        },
+        actions.dictionaryColumnsConfirmed(),
       );
       expect(effects).toEqual([
         {
           type: "sendRequest",
           id: "settings/dictionaryImport/import",
-          request: importRequest(csv, layout),
+          request: importRequest(csv, {
+            columns: ["term", "ignored"],
+            hasHeader: true,
+          }),
         },
       ]);
+    });
+
+    it("imports nothing while no column holds the term", () => {
+      const [wizard] = updateDictionaryImport(
+        choosingWithoutTerm,
+        actions.dictionaryColumnsConfirmed(),
+      );
+      expect(wizard).toBe(choosingWithoutTerm);
     });
 
     it("ends the wizard when the columns are cancelled", () => {
