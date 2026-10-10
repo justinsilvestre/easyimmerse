@@ -159,10 +159,12 @@ describe("updateMediaImport", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice(
-          "danger",
-          "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice(
+            "danger",
+            "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+          ),
         ),
       },
     ]);

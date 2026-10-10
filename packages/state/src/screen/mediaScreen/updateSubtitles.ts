@@ -1,6 +1,7 @@
 import type { SubtitleSelection } from "@easyimmerse/types";
-import type { AppAction } from "../../app/appAction.ts";
+import { type AppAction, actions } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
+import { dispatch } from "../../app/dispatchEffect.ts";
 import type { Effect } from "../../app/effect.ts";
 import { updated } from "../../app/updated.ts";
 import { transientNotice } from "../../notices/transientNotice.ts";
@@ -11,10 +12,12 @@ import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import { roleForNewTrack } from "./roleForNewTrack.ts";
 import { subtitleSelectionId } from "./subtitleSelectionId.ts";
 
-const subtitlesNotAdded = {
-  type: "showNotice",
-  content: transientNotice("danger", "The subtitles file could not be added"),
-} satisfies Effect;
+const subtitlesNotAdded = () =>
+  dispatch(
+    actions.noticeRequested(
+      transientNotice("danger", "The subtitles file could not be added"),
+    ),
+  );
 
 /**
  * Adds a picked subtitles file to the open media file, once the tracks' listing tells which role is free for it,
@@ -50,7 +53,7 @@ export function updateSubtitles(
         null,
         action.outcome.ok
           ? sendSubtitleFile(route, pending, action.outcome.data.selection)
-          : subtitlesNotAdded,
+          : subtitlesNotAdded(),
       );
     default:
       return updated(pending);

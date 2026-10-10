@@ -1,5 +1,6 @@
-import type { AppAction } from "../../app/appAction.ts";
+import { type AppAction, actions } from "../../app/appAction.ts";
 import { combineUpdates } from "../../app/combineUpdates.ts";
+import { dispatch } from "../../app/dispatchEffect.ts";
 import type { Effect } from "../../app/effect.ts";
 import { updated } from "../../app/updated.ts";
 import { transientNotice } from "../../notices/transientNotice.ts";
@@ -85,8 +86,9 @@ function sendPickedFile(projectId: string, file: PickedMediaFile) {
 }
 
 function alreadyInProject(name: string) {
-  return {
-    type: "showNotice",
-    content: transientNotice("info", `“${name}” is already in the project.`),
-  } satisfies Effect;
+  return dispatch(
+    actions.noticeRequested(
+      transientNotice("info", `“${name}” is already in the project.`),
+    ),
+  );
 }

@@ -1,5 +1,5 @@
-import type { AppAction } from "../app/appAction.ts";
-import type { Effect } from "../app/effect.ts";
+import { type AppAction, actions } from "../app/appAction.ts";
+import { dispatch } from "../app/dispatchEffect.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
 import { isAborted } from "../server/isAborted.ts";
 
@@ -34,8 +34,5 @@ export function failureNotices(action: AppAction) {
 }
 
 function failure(message: string) {
-  return {
-    type: "showNotice",
-    content: transientNotice("danger", message),
-  } satisfies Effect;
+  return dispatch(actions.noticeRequested(transientNotice("danger", message)));
 }

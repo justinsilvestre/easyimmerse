@@ -234,8 +234,10 @@ describe("updateDictionaryImport", () => {
         checked({ state: "done", dictionary: wiktionary }),
       );
       expect(effects).toContainEqual({
-        type: "showNotice",
-        content: transientNotice("success", "Added German-English Wiktionary"),
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("success", "Added German-English Wiktionary"),
+        ),
       });
     });
 

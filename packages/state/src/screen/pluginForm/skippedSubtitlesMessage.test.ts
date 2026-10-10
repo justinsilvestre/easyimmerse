@@ -1,5 +1,6 @@
 import type { PluginForm } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
+import { actions } from "../../app/appAction.ts";
 import { transientNotice } from "../../notices/transientNotice.ts";
 import {
   skippedSubtitlesEffects,
@@ -58,10 +59,12 @@ describe("skippedSubtitlesEffects", () => {
   it("names the skipped tracks in a notice", () => {
     expect(skippedSubtitlesEffects([notFetched], form)).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice(
-          "danger",
-          "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice(
+            "danger",
+            "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+          ),
         ),
       },
     ]);

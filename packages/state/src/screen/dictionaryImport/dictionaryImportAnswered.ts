@@ -1,3 +1,5 @@
+import { actions } from "../../app/appAction.ts";
+import { dispatch } from "../../app/dispatchEffect.ts";
 import { updated } from "../../app/updated.ts";
 import { transientNotice } from "../../notices/transientNotice.ts";
 import { jobKey } from "../../operations/jobs.ts";
@@ -65,10 +67,15 @@ function importJobChecked(
     return updated(failedImport(wizard.file.name, outcome.error), ...stop);
   const { state, dictionary, error } = outcome.data;
   if (state === "done" && dictionary !== null)
-    return updated(null, ...stop, {
-      type: "showNotice",
-      content: transientNotice("success", `Added ${dictionary.title}`),
-    });
+    return updated(
+      null,
+      ...stop,
+      dispatch(
+        actions.noticeRequested(
+          transientNotice("success", `Added ${dictionary.title}`),
+        ),
+      ),
+    );
   if (state === "failed" && error !== null)
     return updated(failedImport(wizard.file.name, error), ...stop);
   return updated(wizard);

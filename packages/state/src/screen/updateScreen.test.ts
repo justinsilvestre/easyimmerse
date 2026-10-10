@@ -218,10 +218,9 @@ describe("updateScreen", () => {
       actions.mediaFileChosen(pickedMediaFile),
     );
     expect(effects).toContainEqual({
-      type: "showNotice",
-      content: transientNotice(
-        "info",
-        "“episode.mkv” is already in the project.",
+      type: "dispatch",
+      action: actions.noticeRequested(
+        transientNotice("info", "“episode.mkv” is already in the project."),
       ),
     });
   });

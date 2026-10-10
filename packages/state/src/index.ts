@@ -10,7 +10,6 @@ export type {
   ServerStoreParts,
 } from "./app/createAppStore.ts";
 export { createAppStore } from "./app/createAppStore.ts";
-export type { ReadableState } from "./app/feature.ts";
 export type {
   EditorAction,
   EditorState,
@@ -28,10 +27,7 @@ export type {
   FlashcardForm,
   LookupFieldsContext,
 } from "./flashcards/flashcardForm.ts";
-export {
-  selectMediaFlashcards,
-  selectUnsavedWorkCount,
-} from "./flashcards/flashcardsSelectors.ts";
+export { selectMediaFlashcards } from "./flashcards/flashcardsSelectors.ts";
 export { isSameLanguage, primarySubtag } from "./flashcards/languageTags.ts";
 export type {
   DefinitionWriter,
@@ -49,7 +45,6 @@ export { selectReaderKeyBinding } from "./keys/selectReaderKeyBinding.ts";
 export { selectNotices } from "./notices/noticesSelectors.ts";
 export type {
   Notice,
-  NoticeButton,
   NoticeContent,
   NoticeTone,
 } from "./notices/noticesState.ts";
@@ -71,7 +66,6 @@ export {
   selectPlayerControls,
   selectPreference,
   selectPreferencesLoaded,
-  selectTextScale,
   selectTheme,
   selectThemeChoice,
 } from "./preferences/preferencesSelectors.ts";
@@ -117,8 +111,6 @@ export type {
   LookupSource,
   LookupState,
   LookupWord,
-  PendingFlashcard,
-  WordOccurrence,
 } from "./screen/lookup/lookupState.ts";
 export { doubleClickMs } from "./screen/lookup/lookupTiming.ts";
 export {
@@ -146,9 +138,7 @@ export {
 } from "./screen/mediaScreen/mediaDurationMs.ts";
 export type { SubtitleDisplay } from "./screen/mediaScreen/mediaPanels.ts";
 export { selectFlashcardForm } from "./screen/mediaScreen/mediaScreenSelectors.ts";
-export type { PathPlayback } from "./screen/mediaScreen/pathPlayback.ts";
 export {
-  needsTrackChoice,
   selectedFrameRate,
   tracksOfKind,
 } from "./screen/mediaScreen/playbackMethodRules.ts";
@@ -168,9 +158,7 @@ export {
   computeViewStart,
 } from "./screen/mediaScreen/waveformSpan.ts";
 export type { WaveformViewName } from "./screen/mediaScreen/waveformState.ts";
-export type { WaveformWindowView } from "./screen/mediaScreen/waveformWindowPolicy.ts";
 export {
-  maxVisibleSpanMs,
   waveformPeaksPerSecond,
   waveformWindowMs,
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
@@ -197,18 +185,10 @@ export {
   selectPlayerDuration,
   selectPlayerFailure,
 } from "./screen/screenSelectors.ts";
-export type {
-  CachedQueries,
-  CacheEntry,
-  ServerCacheSlice,
-} from "./server/cacheEntry.ts";
+export type { ServerCacheSlice } from "./server/cacheEntry.ts";
 export { cacheEntry, serverCachePath } from "./server/cacheEntry.ts";
 export { cacheKey } from "./server/cacheKey.ts";
-export {
-  emptyServerCache,
-  serverCacheWith,
-  withEmptyServerCache,
-} from "./server/serverCacheWith.ts";
+export { serverCacheWith } from "./server/serverCacheWith.ts";
 export type {
   RequestFailure,
   RequestOutcome,

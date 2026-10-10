@@ -1,5 +1,4 @@
 import type { FlashcardsEffect } from "../flashcards/flashcardsEffect.ts";
-import type { NoticesEffect } from "../notices/noticesEffect.ts";
 import type { FailedRequestsEffect } from "../operations/failedRequests.ts";
 import type { FreeIdRequestEffect } from "../operations/freeIdRequests.ts";
 import type { JobsEffect } from "../operations/jobsEffect.ts";
@@ -17,7 +16,6 @@ export type Effect =
   | PreferencesEffect
   | StoredPlacesEffect
   | FlashcardsEffect
-  | NoticesEffect
   | PlatformEffect
   | TimerEffect
   | ServerEffect

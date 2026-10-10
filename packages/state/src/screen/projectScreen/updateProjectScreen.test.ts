@@ -102,10 +102,9 @@ describe("updateProjectScreen", () => {
     const [, effects] = updateProjectScreen(chosen, listed("pilot.mkv"), route);
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice(
-          "info",
-          "“pilot.mkv” is already in the project.",
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("info", "“pilot.mkv” is already in the project."),
         ),
       },
     ]);

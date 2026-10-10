@@ -379,8 +379,8 @@ describe("flashcardCommands", () => {
   it("withdraws the Undo of a flashcard's save once it opens in the form", () => {
     const app = hundSaving();
     expect(flashcardEffects(app, openHund)).toContainEqual({
-      type: "withdrawNotice",
-      key: "saveUndo:h",
+      type: "dispatch",
+      action: actions.noticeWithdrawn("saveUndo:h"),
     });
   });
 
@@ -791,8 +791,8 @@ describe("flashcardCommands", () => {
       close,
     );
     expect(flashcardEffects(closed, actions.closeMedia())).toContainEqual({
-      type: "withdrawNotice",
-      key: "formDiscarded:f1",
+      type: "dispatch",
+      action: actions.noticeWithdrawn("formDiscarded:f1"),
     });
   });
 

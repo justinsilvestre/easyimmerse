@@ -62,10 +62,12 @@ describe("screenCommands", () => {
       sourceStepSettled({ ok: true, data: applied(skipped) }),
     );
     expect(effects).toContainEqual({
-      type: "showNotice",
-      content: transientNotice(
-        "danger",
-        "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+      type: "dispatch",
+      action: actions.noticeRequested(
+        transientNotice(
+          "danger",
+          "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+        ),
       ),
     });
   });
@@ -89,8 +91,10 @@ describe("screenCommands", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice("danger", "The media file could not be added"),
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The media file could not be added"),
+        ),
       },
     ]);
   });
@@ -99,8 +103,10 @@ describe("screenCommands", () => {
     const effects = apply(mediaFileAddFailed, ...leftProject);
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice("danger", "The media file could not be added"),
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The media file could not be added"),
+        ),
       },
     ]);
   });
@@ -109,10 +115,9 @@ describe("screenCommands", () => {
     const effects = apply(subtitleFileAddFailed, ...playingM2);
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice(
-          "danger",
-          "The subtitles file could not be added",
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The subtitles file could not be added"),
         ),
       },
     ]);
@@ -134,10 +139,9 @@ describe("screenCommands", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice(
-          "danger",
-          "The track choice could not be saved",
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The track choice could not be saved"),
         ),
       },
     ]);
@@ -170,10 +174,9 @@ describe("screenCommands", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice(
-          "danger",
-          "The dictionary could not be removed",
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The dictionary could not be removed"),
         ),
       },
     ]);
@@ -189,8 +192,10 @@ describe("screenCommands", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice("danger", "The project could not be created"),
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The project could not be created"),
+        ),
       },
     ]);
   });
@@ -209,8 +214,10 @@ describe("screenCommands", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice("danger", "The settings could not be saved"),
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The settings could not be saved"),
+        ),
       },
     ]);
   });
@@ -225,10 +232,9 @@ describe("screenCommands", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice(
-          "danger",
-          "The media file could not be removed",
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The media file could not be removed"),
         ),
       },
     ]);
@@ -249,10 +255,9 @@ describe("screenCommands", () => {
     );
     expect(effects).toEqual([
       {
-        type: "showNotice",
-        content: transientNotice(
-          "danger",
-          "The subtitles could not be changed",
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The subtitles could not be changed"),
         ),
       },
     ]);

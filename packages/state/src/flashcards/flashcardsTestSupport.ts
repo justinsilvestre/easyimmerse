@@ -111,7 +111,9 @@ export function requestsAsked(app: AppState, action: AppAction) {
 /** The notices the flashcards feature asks to show on an action. */
 export function noticesShown(app: AppState, action: AppAction) {
   return flashcardEffects(app, action).flatMap((effect) =>
-    effect.type === "showNotice" ? [effect.content] : [],
+    effect.type === "dispatch" && effect.action.type === "noticeRequested"
+      ? [effect.action.content]
+      : [],
   );
 }
 

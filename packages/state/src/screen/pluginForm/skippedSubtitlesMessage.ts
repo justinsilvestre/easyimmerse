@@ -3,7 +3,8 @@ import type {
   PluginForm,
   SkippedSubtitle,
 } from "@easyimmerse/types";
-import type { Effect } from "../../app/effect.ts";
+import { actions } from "../../app/appAction.ts";
+import { dispatch } from "../../app/dispatchEffect.ts";
 import { transientNotice } from "../../notices/transientNotice.ts";
 
 /** Names in a notice the chosen subtitle tracks that a fetch did not add, once the fetch has added its file. */
@@ -24,9 +25,7 @@ export function skippedSubtitlesEffects(
   const message = skippedSubtitlesMessage(skipped, form);
   return message === null
     ? []
-    : ([
-        { type: "showNotice", content: transientNotice("danger", message) },
-      ] satisfies Effect[]);
+    : [dispatch(actions.noticeRequested(transientNotice("danger", message)))];
 }
 
 /**

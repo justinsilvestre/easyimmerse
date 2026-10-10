@@ -91,10 +91,9 @@ describe("updateMediaScreen", () => {
       const [, effects] = apply(tracksFailed, actions.subtitleFileChosen(srt));
       expect(effects).toEqual([
         {
-          type: "showNotice",
-          content: transientNotice(
-            "danger",
-            "The subtitles file could not be added",
+          type: "dispatch",
+          action: actions.noticeRequested(
+            transientNotice("danger", "The subtitles file could not be added"),
           ),
         },
       ]);

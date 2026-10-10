@@ -1,4 +1,5 @@
-import type { Effect } from "../app/effect.ts";
+import { actions } from "../app/appAction.ts";
+import { dispatch } from "../app/dispatchEffect.ts";
 import type { NoticeContent } from "../notices/noticesState.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
 import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
@@ -118,14 +119,7 @@ export function wordOf(card: FlashcardCard): string {
 
 /** Shows a notice. */
 export const show = (content: NoticeContent) =>
-  ({
-    type: "showNotice",
-    content,
-  }) satisfies Effect;
+  dispatch(actions.noticeRequested(content));
 
 /** Withdraws the shown notice of a key, if there is one. */
-export const withdraw = (key: string) =>
-  ({
-    type: "withdrawNotice",
-    key,
-  }) satisfies Effect;
+export const withdraw = (key: string) => dispatch(actions.noticeWithdrawn(key));

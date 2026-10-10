@@ -1,5 +1,4 @@
 import { flashcardsEffectRunners } from "../flashcards/flashcardsEffectRunners.ts";
-import { noticesEffectRunners } from "../notices/noticesEffectRunners.ts";
 import type { Effects } from "../platform/effects.ts";
 import { platformEffectRunners } from "../platform/platformEffectRunners.ts";
 import { preferencesEffectRunners } from "../preferences/preferencesEffectRunners.ts";
@@ -34,7 +33,6 @@ const effectRunners = {
   ...preferencesEffectRunners,
   ...storedPlacesEffectRunners,
   ...flashcardsEffectRunners,
-  ...noticesEffectRunners,
   ...platformEffectRunners,
   ...timerEffectRunners,
   ...serverEffectRunners,
