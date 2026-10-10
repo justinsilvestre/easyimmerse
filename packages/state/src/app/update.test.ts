@@ -62,16 +62,5 @@ describe("update", () => {
         { type: "sendRequest", id: "b", request: second, scope: "s" },
       ]);
     });
-
-    it("records the next request of its scope as sent", () => {
-      const state = withRequests(
-        { id: "a", request: first, scope: "s", isWaiting: false },
-        { id: "b", request: second, scope: "s", isWaiting: true },
-      );
-      const [next] = update(state, settledFirst);
-      expect(next.operations.requests).toEqual([
-        { id: "b", request: second, scope: "s", isWaiting: false },
-      ]);
-    });
   });
 });

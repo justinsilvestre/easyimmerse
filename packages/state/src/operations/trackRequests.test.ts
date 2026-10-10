@@ -16,9 +16,7 @@ function waiting(id: string, request: ServerRequest, scope: string) {
 }
 
 function send(id: string, request: ServerRequest, scope?: string): Effect {
-  return scope === undefined
-    ? { type: "sendRequest", id, request }
-    : { type: "sendRequest", id, request, scope };
+  return { type: "sendRequest", id, request, scope };
 }
 
 function operationsWith(...requests: RequestRecord[]): OperationsState {
@@ -38,6 +36,13 @@ describe("trackRequests", () => {
         { id: "a", request: first, isWaiting: false },
       ]);
     });
+  });
+
+  it("sends a request without a scope while another one is in flight", () => {
+    const [, effects] = trackRequests(operationsWith(sent("a", first)), [
+      send("b", second),
+    ]);
+    expect(effects).toEqual([send("b", second)]);
   });
 
   describe("when a scoped request is sent", () => {
@@ -66,6 +71,22 @@ describe("trackRequests", () => {
       ]);
     });
 
+    it("sends the first of two requests sent together to an idle scope and holds back the second", () => {
+      const [, effects] = trackRequests(operationsWith(), [
+        send("a", first, "s"),
+        send("b", second, "s"),
+      ]);
+      expect(effects).toEqual([send("a", first, "s")]);
+    });
+
+    it("treats a resend of an id with another scope as a send of that scope", () => {
+      const [, effects] = trackRequests(
+        operationsWith(sent("a", first, "s"), sent("c", first, "t")),
+        [send("a", second, "t")],
+      );
+      expect(effects).toEqual([]);
+    });
+
     it("sends requests of different scopes together", () => {
       const [, effects] = trackRequests(operationsWith(), [
         send("a", first, "s"),
@@ -83,7 +104,11 @@ describe("trackRequests", () => {
         ),
         [send("b", second, "s")],
       );
-      expect(operations.requests.map(({ id }) => id)).toEqual(["a", "b", "c"]);
+      expect(operations.requests).toEqual([
+        sent("a", first, "s"),
+        waiting("b", second, "s"),
+        waiting("c", first, "s"),
+      ]);
     });
 
     it("sends a new version of the request in flight with the same id at once", () => {
@@ -132,6 +157,39 @@ describe("trackRequests", () => {
         [{ type: "abortRequest", id: "b" }],
       );
       expect(operations.requests).toEqual([sent("a", first, "s")]);
+    });
+
+    it("settles nothing when the waiting request's id is sent again in the same update", () => {
+      const [, effects] = trackRequests(
+        operationsWith(sent("a", first, "s"), waiting("b", first, "s")),
+        [{ type: "abortRequest", id: "b" }, send("b", second, "s")],
+      );
+      expect(effects).toEqual([]);
+    });
+
+    it("keeps the request sent again in the same update waiting in the aborted one's place", () => {
+      const [operations] = trackRequests(
+        operationsWith(
+          sent("a", first, "s"),
+          waiting("b", first, "s"),
+          waiting("c", first, "s"),
+        ),
+        [{ type: "abortRequest", id: "b" }, send("b", second, "s")],
+      );
+      expect(operations.requests).toEqual([
+        sent("a", first, "s"),
+        waiting("b", second, "s"),
+        waiting("c", first, "s"),
+      ]);
+    });
+
+    it("sends only the last version of a request sent, aborted and sent again to an idle scope", () => {
+      const [, effects] = trackRequests(operationsWith(), [
+        send("b", first, "s"),
+        { type: "abortRequest", id: "b" },
+        send("b", second, "s"),
+      ]);
+      expect(effects).toEqual([send("b", second, "s")]);
     });
 
     it("performs the abort of a request in flight", () => {

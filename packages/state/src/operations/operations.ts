@@ -5,7 +5,10 @@ import type { ServerRequest } from "../server/serverRequest.ts";
 export type RequestRecord = {
   id: string;
   request: ServerRequest;
-  /** Requests with the same scope are sent one at a time, in the order they were asked for. */
+  /**
+   * Requests with the same scope are sent one at a time, in the order they were asked for.
+   * An id keeps its scope: sending the id again with another scope sends a new request of that scope.
+   */
   scope?: string;
   /** True while the request waits for an earlier request of its scope to settle. */
   isWaiting: boolean;
