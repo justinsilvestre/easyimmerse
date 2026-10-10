@@ -1,8 +1,7 @@
-import { actions, transientNotice } from "@easyimmerse/state";
+import { actions, type ItemSpan, transientNotice } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import type { Range } from "../components/RunText.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import type { ItemSpan } from "../hooks/useVisibleItemSpan.ts";
 import { CuePanel } from "../media/CuePanel.tsx";
 import type { CueTextCursor } from "../media/cueCursor.ts";
 import type {

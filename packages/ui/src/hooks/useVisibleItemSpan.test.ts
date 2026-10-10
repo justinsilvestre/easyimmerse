@@ -1,7 +1,7 @@
+import type { ItemSpan } from "@easyimmerse/state";
 import { renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  type ItemSpan,
   isSameSpan,
   spanOf,
   useVisibleItemSpan,

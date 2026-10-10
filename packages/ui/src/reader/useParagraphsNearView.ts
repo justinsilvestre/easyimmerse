@@ -1,8 +1,6 @@
+import type { ItemSpan } from "@easyimmerse/state";
 import { type RefObject, useEffect, useState } from "react";
-import {
-  type ItemSpan,
-  useVisibleItemSpan,
-} from "../hooks/useVisibleItemSpan.ts";
+import { useVisibleItemSpan } from "../hooks/useVisibleItemSpan.ts";
 import { paragraphAttribute, paragraphIndexOf } from "./textOffsets.ts";
 
 /** Marks the element that scrolls or clips the reader's text, which the text's layout components render. */

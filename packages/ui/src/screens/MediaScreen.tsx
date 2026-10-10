@@ -3,6 +3,7 @@ import {
   actions,
   isAwaitingLookup,
   saveStatusOf,
+  selectCuePanelSpan,
   selectIsSubtitleAppearanceOpen,
   selectMediaPanels,
   selectPlayer,
@@ -12,7 +13,7 @@ import {
   selectSourceMedia,
 } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
@@ -27,7 +28,6 @@ import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useFullscreen } from "../hooks/useFullscreen.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
-import type { ItemSpan } from "../hooks/useVisibleItemSpan.ts";
 import { AnchoredPopup } from "../lookup/AnchoredPopup.tsx";
 import { DictionaryPopup } from "../lookup/DictionaryPopup.tsx";
 import type { LookupPlace } from "../lookup/lookupPlace.ts";
@@ -155,7 +155,7 @@ export function MediaScreen({
     target: settings.target_language,
     translation: settings.translation_language,
   };
-  const [panelSpan, setPanelSpan] = useState<ItemSpan | null>(null);
+  const panelSpan = useAppSelector(selectCuePanelSpan);
   useLookupPrefetch(
     languages.target,
     cuesToPrefetch(subtitles.cues, { shownCue, currentMs, panelSpan }).map(
@@ -326,7 +326,9 @@ export function MediaScreen({
               cursor={lookup.cursor}
               wordGestures={lookup.wordGestures}
               onOpenFlashcardForCue={flashcards.openForCue}
-              onVisibleCuesChange={setPanelSpan}
+              onVisibleCuesChange={(span) =>
+                dispatch(actions.cuePanelSpanMeasured(span))
+              }
             />
           ) : undefined
         }

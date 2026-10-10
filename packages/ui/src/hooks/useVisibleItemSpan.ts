@@ -1,7 +1,5 @@
+import type { ItemSpan } from "@easyimmerse/state";
 import { useEffect, useEffectEvent } from "react";
-
-/** A run of a list's items, by their positions in it, from the first to the last. */
-export type ItemSpan = { first: number; last: number };
 
 type SpanOptions = {
   /** How far around the list an item still counts as in view, as a CSS margin, such as `100% 0px` for one list height above and below. */
