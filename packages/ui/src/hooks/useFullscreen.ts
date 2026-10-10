@@ -1,27 +1,31 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 /**
  * Tells whether the page fills the screen, and toggles that. Unsupported where the browser offers no fullscreen,
  * as on an iPhone, where `toggle` then does nothing.
  */
 export function useFullscreen() {
-  const [isFullscreen, setFullscreen] = useState(isPageFullscreen);
-  useEffect(() => {
-    const update = () => setFullscreen(isPageFullscreen());
-    document.addEventListener("fullscreenchange", update);
-    return () => document.removeEventListener("fullscreenchange", update);
-  }, []);
   return {
-    isFullscreen,
+    isFullscreen: useSyncExternalStore(
+      subscribeToFullscreenChange,
+      isPageFullscreen,
+      () => false,
+    ),
     isSupported: document.fullscreenEnabled === true,
-    toggle: () => {
-      if (isPageFullscreen()) document.exitFullscreen().catch(() => undefined);
-      else
-        document.documentElement.requestFullscreen?.().catch(() => undefined);
-    },
+    toggle: toggleFullscreen,
   };
+}
+
+function subscribeToFullscreenChange(onChange: () => void): () => void {
+  document.addEventListener("fullscreenchange", onChange);
+  return () => document.removeEventListener("fullscreenchange", onChange);
 }
 
 function isPageFullscreen(): boolean {
   return document.fullscreenElement !== null;
+}
+
+function toggleFullscreen(): void {
+  if (isPageFullscreen()) document.exitFullscreen().catch(() => undefined);
+  else document.documentElement.requestFullscreen?.().catch(() => undefined);
 }
