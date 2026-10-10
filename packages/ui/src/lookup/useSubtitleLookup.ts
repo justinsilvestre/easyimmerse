@@ -1,22 +1,20 @@
-import { actions, selectLookupCursor } from "@easyimmerse/state";
+import { actions } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import { type ComponentProps, type RefObject, useMemo } from "react";
 import type { WordHit } from "../components/useWordGestures.ts";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
-import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
 import { useStableCallbacks } from "../hooks/useStableCallbacks.ts";
-import { type CueTextCursor, cuePositionOf } from "../media/cueCursor.ts";
 import {
   type ActiveCueWord,
   activeCueWordOf,
   type CueWordGestures,
 } from "../media/cueWordGestures.ts";
+import { useCuePosition } from "../media/useCuePosition.ts";
 import { chosenWordAt } from "./chosenWordAt.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import { matchedLengthAhead } from "./matchedLengthAhead.ts";
-import { selectCursorMatchedLength } from "./selectCursorMatchedLength.ts";
 import type { LookupFlashcardStarts } from "./useLookupFlashcardHandoff.ts";
 import { useWordLookup } from "./useWordLookup.ts";
 
@@ -93,26 +91,18 @@ export function useSubtitleLookup(
   };
 }
 
-/** The lookup cursor's place in the subtitles, highlighted at once when its word's lookup is cached, as one object while it stays the same. */
-function useCuePosition(): CueTextCursor | null {
-  const cursor = useAppSelector(selectLookupCursor);
-  const matchedLength = useAppSelector(selectCursorMatchedLength);
-  const position = cuePositionOf(cursor, matchedLength);
-  const { cueIndex, start, input } = position ?? {};
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the position's fields, not its identity, decide it.
-  return useMemo(() => position, [cueIndex, start, input, matchedLength]);
-}
-
 /** The word of a cue the pop-up shows, as `activeCueWordOf` gives it, as one object while it stays the same. */
 function useActiveCueWord(
   occurrence: ReturnType<typeof useWordLookup>["activeOccurrence"],
   hasCursor: boolean,
 ): ActiveCueWord | undefined {
-  const active = activeCueWordOf(occurrence, hasCursor);
-  const { cueIndex, start, length, popupId, isHighlighted } = active ?? {};
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the word's fields, not its identity, decide it.
+  const { cueIndex, start, length, popupId, isHighlighted } =
+    activeCueWordOf(occurrence, hasCursor) ?? {};
   return useMemo(
-    () => active,
+    () =>
+      cueIndex === undefined || start === undefined || popupId === undefined
+        ? undefined
+        : { cueIndex, start, length, popupId, isHighlighted },
     [cueIndex, start, length, popupId, isHighlighted],
   );
 }
