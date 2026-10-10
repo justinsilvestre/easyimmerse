@@ -33,13 +33,17 @@ import { createFakeFrameCapturer } from "../testSupport/createFakeFrameCapturer.
 import { doubleClick } from "../testSupport/doubleClick.ts";
 import {
   fixtureImportedMediaFiles,
+  fixtureMediaFiles,
   fixtureMediaSourcePlugin,
   fixtureProject,
   fixtureResponses,
   fixtureSubtitleTracks,
   fixtureTrack,
 } from "../testSupport/fixtureResponses.ts";
-import { fakeServer } from "../testSupport/mediaFixtureResponses.ts";
+import {
+  copyPlaybackRoutes,
+  fakeServer,
+} from "../testSupport/mediaFixtureResponses.ts";
 import {
   bodyOf,
   createdDraftOf,
@@ -203,6 +207,23 @@ async function openSavedFlashcardFromStrip() {
 }
 
 describe("MediaScreen", () => {
+  it("opens the track choice from the Tracks button", async () => {
+    const [episode, ...others] = fixtureMediaFiles.media_files;
+    renderMediaScreen({
+      responses: {
+        "GET /projects/p1/media": {
+          media_files: [
+            { ...episode, track_selection_json: '{"video":0,"audio":1}' },
+            ...others,
+          ],
+        },
+      },
+      playbackRoutes: copyPlaybackRoutes,
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Tracks" }));
+    expect(screen.getByRole("dialog", { name: "Choose tracks" })).toBeDefined();
+  });
+
   it("lists one card per cue of the target-language subtitles", async () => {
     renderMediaScreen();
     const list = await findSubtitles();

@@ -1,5 +1,5 @@
 import { skipToken, useGetMediaTracksQuery } from "@easyimmerse/backend";
-import { selectPlayerDuration } from "@easyimmerse/state";
+import { selectPathPlayback, selectPlayerDuration } from "@easyimmerse/state";
 import type { MediaFile } from "@easyimmerse/types";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 
@@ -9,8 +9,10 @@ export function useMediaDurationMs(
   mediaFile: MediaFile | null,
 ): number {
   const playerDurationMs = useAppSelector(selectPlayerDuration) * 1000;
+  // The media screen's update asks for the tracks; the hook only reads them, once that request is sent.
+  const isAsked = useAppSelector(selectPathPlayback) !== null;
   const { data } = useGetMediaTracksQuery(
-    mediaFile?.source.kind === "path"
+    isAsked && mediaFile !== null
       ? { projectId, mediaFileId: mediaFile.id }
       : skipToken,
   );

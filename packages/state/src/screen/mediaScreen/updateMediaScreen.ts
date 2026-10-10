@@ -9,6 +9,7 @@ import type { MediaScreenState } from "../screenState.ts";
 import { roleForNewTrack } from "./roleForNewTrack.ts";
 import { seekTo, withPlayer } from "./seekTo.ts";
 import { updateClipLoop } from "./updateClipLoop.ts";
+import { updatePathPlayback } from "./updatePathPlayback.ts";
 import { updateResume } from "./updateResume.ts";
 import { updateWaveform } from "./updateWaveform.ts";
 
@@ -36,10 +37,12 @@ const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
   updatePlayerAndSubtitles,
   updateClipLoop,
   updateResume,
+  updatePathPlayback,
 ];
 
 /**
- * Updates the media screen: its player, the clip loop, the resume seek, the subtitles file picked for it, and its waveform.
+ * Updates the media screen: its player, the clip loop, the resume seek, how a file on the server's disk plays,
+ * the subtitles file picked for it, and its waveform.
  * `app` is the state before the action.
  */
 export function updateMediaScreen(

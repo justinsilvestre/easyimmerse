@@ -12,6 +12,15 @@ export type PickedMediaFile = { name: string; source: MediaFileSource };
  */
 export type PickedDictionaryFile = { name: string; source: MediaFileSource };
 
+/** What the browser answers when asked about media support. */
+export type PlaybackProbes = {
+  userAgent: string;
+  /** A media element's `canPlayType`: "", "maybe", or "probably". */
+  canPlayType: (mimeType: string) => string;
+  /** `MediaSource.isTypeSupported` or `ManagedMediaSource.isTypeSupported`, or null when the page has neither. */
+  isTypeSupported: ((mimeType: string) => boolean) | null;
+};
+
 /** Every side effect the app can perform. Each platform implements it; tests use a recording fake. */
 export interface Effects {
   /** The clock through which the store waits for its timers. */
@@ -31,6 +40,8 @@ export interface Effects {
   pickDictionaryFile(
     accept: readonly string[],
   ): Promise<PickedDictionaryFile | null>;
+  /** Reads how the platform's media element and Media Source Extensions answer questions about formats. */
+  readPlaybackProbes(): PlaybackProbes;
   savePreference(key: string, value: string): Promise<void>;
   loadPreference(key: string): Promise<string | null>;
   showNotification(message: string): void;

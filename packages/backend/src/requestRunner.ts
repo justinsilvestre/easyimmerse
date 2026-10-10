@@ -87,6 +87,21 @@ export const requestEndpoints = {
     backendApi.endpoints.markProjectOpened.initiate(projectId, {
       track: false,
     }),
+  getMediaTracks: ({ projectId, mediaFileId }) =>
+    backendApi.endpoints.getMediaTracks.initiate(
+      { projectId, mediaFileId },
+      { subscribe: false },
+    ),
+  planPlayback: ({ projectId, mediaFileId, request }) =>
+    backendApi.endpoints.planPlayback.initiate(
+      { projectId, mediaFileId, request },
+      { subscribe: false },
+    ),
+  saveTrackSelection: ({ projectId, mediaFileId, selection }) =>
+    backendApi.endpoints.saveTrackSelection.initiate(
+      { projectId, mediaFileId, selection },
+      { track: false },
+    ),
   getWaveformWindow: ({ projectId, mediaFileId, startMs, endMs }) =>
     backendApi.endpoints.getWaveformWindow.initiate(
       { projectId, mediaFileId, startMs, endMs },

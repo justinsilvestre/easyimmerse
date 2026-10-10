@@ -621,6 +621,17 @@ export function selectCachedWaveformWindow(
   return entry.isSuccess ? entry.data : undefined;
 }
 
+/** The tracks of a media file, from the cache, or undefined until they have loaded. */
+export function selectCachedMediaTracks(
+  state: unknown,
+  file: MediaFileArgs,
+): TracksResponse | undefined {
+  const entry = backendApi.endpoints.getMediaTracks.select(file)(
+    state as BackendState,
+  );
+  return entry.isSuccess ? entry.data : undefined;
+}
+
 /** The batch lookups being fetched now. */
 export function selectRunningBatches(
   state: BackendState,

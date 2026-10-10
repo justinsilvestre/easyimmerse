@@ -7,12 +7,22 @@ import type {
 } from "./preferencesState.ts";
 import { initialPreferences, preferenceKeys } from "./preferencesState.ts";
 
-/** Updates the preferences, loading them when the app starts and saving each one the user changes. */
+/**
+ * Updates the preferences, loading them when the app starts and saving each one the user changes,
+ * the conversion notice's dismissal included when it is accepted with its box ticked.
+ */
 export const updatePreferences: FeatureUpdate<PreferencesState> = (
   preferences,
   action,
+  app,
 ) => {
   switch (action.type) {
+    case "conversionNoticeAccepted": {
+      const { dialog } = app.screen;
+      return dialog?.kind === "conversionNotice" && dialog.dismissForGood
+        ? save(preferences, "conversionNoticeDismissed", "true")
+        : [preferences, []];
+    }
     case "preferenceToggled": {
       const value =
         preferences.values[action.key] === "true" ? "false" : "true";

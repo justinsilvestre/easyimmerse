@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PlaybackProbes } from "./measurePlaybackEnvironment.ts";
+import type { PlaybackProbes } from "../../platform/effects.ts";
 import {
   detectEngine,
   measurePlaybackEnvironment,

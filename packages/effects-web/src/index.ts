@@ -10,6 +10,7 @@ import { pickFile } from "./pickFile.ts";
 import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
 import { createPlayerEffects } from "./playerEffects.ts";
 import { createPreferenceStore } from "./preferenceStore.ts";
+import { readPlaybackProbes } from "./readPlaybackProbes.ts";
 import { showNotification } from "./showNotification.ts";
 
 /** Builds the browser implementation of the app's side effects. */
@@ -30,6 +31,7 @@ export function createWebEffects(options: {
     pickFile,
     pickMediaFile: pickRegisteredFile,
     pickDictionaryFile: pickRegisteredFile,
+    readPlaybackProbes,
     savePreference: preferences.save,
     loadPreference: preferences.load,
     showNotification: options.notify ?? showNotification,

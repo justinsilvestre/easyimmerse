@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { selectNotices } from "../notices/noticesSelectors.ts";
 import { runningImportStatus } from "../operations/exampleJobReports.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
+import { exampleTracksOneEach } from "../screen/mediaScreen/examplePlayback.ts";
+import { fileOnDisk } from "../screen/mediaScreen/playbackTestActions.ts";
 import { actions } from "./appAction.ts";
 import { createAppStore } from "./createAppStore.ts";
 import {
@@ -68,6 +70,30 @@ describe("createAppStore", () => {
     );
     store.dispatch(actions.playerDurationChanged(600));
     expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 90 });
+  });
+
+  it("asks for a media file's plan with the browser's measured support", async () => {
+    const server = createFakeServerStoreParts();
+    const store = createAppStore(createRecordingEffects(), server);
+    store.dispatch(actions.preferencesLoaded({}));
+    store.dispatch(actions.openMediaFileRequested("p1", "m1"));
+    server.respond(
+      { kind: "listMediaFiles", projectId: "p1" },
+      { ok: true, data: { media_files: [fileOnDisk] } },
+    );
+    await vi.waitUntil(() =>
+      server.sentRequests.some(({ kind }) => kind === "getMediaTracks"),
+    );
+    server.respond(
+      { kind: "getMediaTracks", projectId: "p1", mediaFileId: "m1" },
+      { ok: true, data: exampleTracksOneEach },
+    );
+    await vi.waitUntil(() =>
+      server.sentRequests.some(({ kind }) => kind === "planPlayback"),
+    );
+    expect(server.sentRequests.at(-1)).toMatchObject({
+      request: { environment: { engine: "webkit", can_play_type: "no" } },
+    });
   });
 
   it("builds the store through the given enhancer composer", () => {

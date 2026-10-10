@@ -5,6 +5,8 @@ import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import type { MainRoute } from "../route/route.ts";
 import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
+import { isAborted } from "../server/isAborted.ts";
+import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
 import { leaveWaveform } from "./mediaScreen/updateWaveform.ts";
 import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
@@ -39,7 +41,13 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
   const nextMain = isLeaving
     ? initialMainScreen(mainScreenOf(route), app.storedPlaces)
     : updated;
-  const [dialog, dialogEffects] = updateDialog(screen.dialog, action);
+  const [updatedDialog, dialogEffects] = updateDialog(
+    screen.dialog,
+    action,
+    app,
+  );
+  const dialog =
+    isLeaving && isPlaybackDialog(updatedDialog) ? null : updatedDialog;
   const [settings, settingsEffects] = updateSettings(
     screen.settings,
     action,
@@ -49,6 +57,7 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
   const effects = [
     ...mainEffects,
     ...(isLeaving ? leavingEffects(updated, mainScreenOf(app.route)) : []),
+    ...(isLeaving ? enteringEffects(mainScreenOf(route)) : []),
     ...dialogEffects,
     ...settingsEffects,
     ...failureNotices(action),
@@ -76,14 +85,31 @@ function leavingEffects(main: MainScreenState, route: MainRoute): Effect[] {
   return [];
 }
 
-/** Tells the user that adding a picked file failed, even when its screen has gone by the time the failure arrives. */
+/** Starts the work a main screen does as it opens. */
+function enteringEffects(route: MainRoute): Effect[] {
+  return route.screen === "media" ? [mediaFileRequest(route)] : [];
+}
+
+/** Tells whether a dialog belongs to the media screen's playback, which closes with the screen. */
+function isPlaybackDialog(dialog: ScreenState["dialog"]): boolean {
+  return dialog?.kind === "trackChoice" || dialog?.kind === "conversionNotice";
+}
+
+/** Tells the user that adding a picked file or saving a track choice failed, even when its screen has gone by the time the failure arrives. */
 function failureNotices(action: AppAction): Effect[] {
-  if (action.type !== "requestSettled" || action.outcome.ok) return [];
+  if (
+    action.type !== "requestSettled" ||
+    action.outcome.ok ||
+    isAborted(action.outcome)
+  )
+    return [];
   switch (action.request.kind) {
     case "addMediaFile":
       return [notice("The media file could not be added")];
     case "addSubtitleTrack":
       return [notice("The subtitles file could not be added")];
+    case "saveTrackSelection":
+      return [notice("The track choice could not be saved")];
     default:
       return [];
   }

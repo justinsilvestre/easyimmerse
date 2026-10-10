@@ -1,9 +1,10 @@
-import type { AudioClip, Cue } from "@easyimmerse/types";
+import type { AudioClip, Cue, TrackSelection } from "@easyimmerse/types";
 import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
 import type { MainRoute } from "../route/route.ts";
 import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
 import { initialStoredPlaces } from "../storedPlaces/storedPlacesState.ts";
 import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
+import type { PathPlayback } from "./mediaScreen/pathPlayback.ts";
 import type { PlayerState } from "./mediaScreen/playerState.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
 import type { WaveformState } from "./mediaScreen/waveformState.ts";
@@ -18,6 +19,8 @@ export type MediaScreenState = {
   loop: AudioClip | null;
   /** The stored position to seek to once the player has loaded the file; null once it is used, or when there is none. */
   pendingResumeMs: number | null;
+  /** How a file on the server's disk is to be played; null for a file the browser holds, or until the file's record arrives. */
+  playback: PathPlayback | null;
   /** A picked subtitles file waiting to be added to the open media file. */
   pendingSubtitleFile: PickedFile | null;
   waveform: WaveformState;
@@ -55,7 +58,21 @@ export type ScreenState = {
   /** Settings open over the main screen, which stays mounted beneath them. Null while they are closed. */
   settings: { dictionaryImport: DictionaryImportWizard | null } | null;
   /** The one modal dialog open, if any. The platform's file picker counts as one, though the app does not draw it. */
-  dialog: { kind: "filePick"; for: "subtitles" } | null;
+  dialog:
+    | { kind: "filePick"; for: "subtitles" }
+    /**
+     * The choice of the open file's tracks. `selection` is what it shows, null for each kind's default track.
+     * In the `choosing` stage it is the first choice, due before the first play, and holds the plan until answered;
+     * in the `confirming` stage it was reopened while the file plays, which goes on until the user chooses.
+     */
+    | {
+        kind: "trackChoice";
+        selection: TrackSelection | null;
+        stage: "choosing" | "confirming";
+      }
+    /** The notice that the open file is converted as it plays, with the state of its "Don't show this again" box. */
+    | { kind: "conversionNotice"; dismissForGood: boolean }
+    | null;
 };
 
 /** Returns the state a main screen starts with, given the places already known to resume from. */
@@ -78,6 +95,7 @@ export function initialMainScreen(
         player: initialPlayerState,
         loop: null,
         pendingResumeMs: storedPlaces.playback[route.mediaFileId] ?? null,
+        playback: null,
         pendingSubtitleFile: null,
         waveform: initialWaveform,
       };

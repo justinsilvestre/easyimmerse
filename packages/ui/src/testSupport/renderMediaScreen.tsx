@@ -18,6 +18,7 @@ import { MediaScreen } from "../screens/MediaScreen.tsx";
 import {
   createFakeBackendClient,
   type FakeResponse,
+  type FakeRoute,
 } from "./createFakeBackendClient.ts";
 import {
   fixtureProject,
@@ -88,6 +89,8 @@ type MediaScreenSetup = {
   batchLookupMs?: number | null;
   /** Canned responses that add to or replace the screen's usual ones. */
   responses?: Record<string, FakeResponse>;
+  /** The routes that answer the file's tracks and plan; by default, those of a file that plays directly. */
+  playbackRoutes?: readonly FakeRoute[];
 };
 
 /**
@@ -102,6 +105,7 @@ export function renderMediaScreen({
   failingLookups = {},
   batchLookupMs = null,
   responses = {},
+  playbackRoutes = directPlaybackRoutes,
 }: MediaScreenSetup = {}) {
   const client = withLookupTiming(
     createFakeBackendClient(
@@ -117,7 +121,7 @@ export function renderMediaScreen({
         "POST /projects/p1/flashcards": savedFlashcard,
         ...responses,
       },
-      directPlaybackRoutes,
+      playbackRoutes,
     ),
     { unansweredLookups, slowLookups, failingLookups, batchLookupMs },
   );

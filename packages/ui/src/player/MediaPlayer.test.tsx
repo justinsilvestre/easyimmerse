@@ -10,7 +10,6 @@ import {
 } from "@easyimmerse/state";
 import type { ListMediaFilesResponse, MediaFile } from "@easyimmerse/types";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
-import { type ReactNode, useCallback, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FakeRoute } from "../testSupport/createFakeBackendClient.ts";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
@@ -30,7 +29,6 @@ import { createFakeHls } from "./fakeHls.ts";
 import { HlsLoaderContext } from "./hlsLoaderContext.ts";
 import { MediaPlayer } from "./MediaPlayer.tsx";
 import { stagePictureAttribute } from "./stagePicture.ts";
-import { TrackChoiceContext } from "./trackChoiceContext.ts";
 
 afterEach(cleanup);
 
@@ -54,25 +52,6 @@ type RenderOptions = {
   before?: ReturnType<(typeof actions)[keyof typeof actions]>[];
 };
 
-/** Stands in for the screen, which shows a Tracks button while the player offers a track choice. */
-function TrackChoiceProbe({ children }: { children: ReactNode }) {
-  const [openTracks, setOpenTracks] = useState<(() => void) | null>(null);
-  const offer = useCallback(
-    (open: (() => void) | null) => setOpenTracks(() => open),
-    [],
-  );
-  return (
-    <TrackChoiceContext value={offer}>
-      {children}
-      {openTracks && (
-        <button type="button" onClick={openTracks}>
-          Tracks
-        </button>
-      )}
-    </TrackChoiceContext>
-  );
-}
-
 function renderPlayer(
   routes: readonly FakeRoute[],
   options: RenderOptions = {},
@@ -87,9 +66,7 @@ function renderPlayer(
   const fakeHls = createFakeHls();
   const rendered = renderWithAppStore(
     <HlsLoaderContext value={async () => fakeHls.Hls}>
-      <TrackChoiceProbe>
-        <MediaPlayer projectId="p1" />
-      </TrackChoiceProbe>
+      <MediaPlayer projectId="p1" />
     </HlsLoaderContext>,
     client,
     {
@@ -121,20 +98,6 @@ function playbackRequests(requests: BackendRequest[]) {
 
 function requestBody(request: BackendRequest | undefined): unknown {
   return request?.body?.kind === "json" ? request.body.value : undefined;
-}
-
-/** Lets the fake backend answer whatever has been asked so far. */
-async function settleRequests() {
-  await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
-}
-
-async function settleTracks(requests: BackendRequest[]) {
-  await vi.waitFor(() =>
-    expect(requests.some((request) => request.path.endsWith("/tracks"))).toBe(
-      true,
-    ),
-  );
-  await settleRequests();
 }
 
 /** The fixture's video runs at 24 fps, so a seek lands half of a 24th of a second late. */
@@ -315,25 +278,6 @@ describe("MediaPlayer", () => {
       ).toBeDefined();
     });
 
-    it("stays closed for a plan that only copies the tracks", async () => {
-      const { hls } = renderPlayer(copyPlaybackRoutes, {
-        mediaFiles: withSavedSelection,
-      });
-      await vi.waitFor(() => expect(hls[0]).toBeDefined());
-      expect(screen.queryByRole("dialog")).toBeNull();
-    });
-
-    it("stays closed once the preference dismisses it", async () => {
-      const { hls } = renderPlayer(transcodePlaybackRoutes, {
-        mediaFiles: withSavedSelection,
-        before: [
-          actions.preferencesLoaded({ conversionNoticeDismissed: "true" }),
-        ],
-      });
-      await vi.waitFor(() => expect(hls[0]).toBeDefined());
-      expect(screen.queryByRole("dialog")).toBeNull();
-    });
-
     it("starts the stream when Play is clicked", async () => {
       const { hls } = renderPlayer(transcodePlaybackRoutes, {
         mediaFiles: withSavedSelection,
@@ -365,30 +309,12 @@ describe("MediaPlayer", () => {
       ).toBeDefined();
     });
 
-    it("holds the playback request until the choice is made", async () => {
-      const { client } = renderPlayer(copyPlaybackRoutes);
-      await screen.findByRole("dialog", { name: "Choose tracks" });
-      expect(playbackRequests(client.requests)).toHaveLength(0);
-    });
-
     it("stays closed when a choice is saved", async () => {
       const { hls } = renderPlayer(copyPlaybackRoutes, {
         mediaFiles: withSavedSelection,
       });
       await vi.waitFor(() => expect(hls[0]).toBeDefined());
       expect(screen.queryByRole("dialog")).toBeNull();
-    });
-
-    it("sends the saved choice with the playback request", async () => {
-      const { client } = renderPlayer(copyPlaybackRoutes, {
-        mediaFiles: withSavedSelection,
-      });
-      await vi.waitFor(() =>
-        expect(playbackRequests(client.requests)).toHaveLength(1),
-      );
-      expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
-        selection: { video: 0, audio: 2 },
-      });
     });
 
     it("saves the choice through the server", async () => {
@@ -416,110 +342,6 @@ describe("MediaPlayer", () => {
       );
       expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
         selection: { video: 0, audio: 2 },
-      });
-    });
-
-    it("plays the default tracks when the choice is cancelled", async () => {
-      const { client } = renderPlayer(copyPlaybackRoutes);
-      await screen.findByRole("dialog", { name: "Choose tracks" });
-      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-      await vi.waitFor(() =>
-        expect(playbackRequests(client.requests)).toHaveLength(1),
-      );
-      expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
-        selection: null,
-      });
-    });
-
-    it("reopens from the Tracks button", async () => {
-      const { hls } = renderPlayer(copyPlaybackRoutes, {
-        mediaFiles: withSavedSelection,
-      });
-      await vi.waitFor(() => expect(hls[0]).toBeDefined());
-      fireEvent.click(screen.getByRole("button", { name: "Tracks" }));
-      expect(
-        screen.getByRole("dialog", { name: "Choose tracks" }),
-      ).toBeDefined();
-    });
-
-    it("leaves playback alone when the Tracks button is clicked", async () => {
-      const { effects, hls } = renderPlayer(copyPlaybackRoutes, {
-        mediaFiles: withSavedSelection,
-      });
-      await vi.waitFor(() => expect(hls[0]).toBeDefined());
-      fireEvent.click(screen.getByRole("button", { name: "Tracks" }));
-      expect(effects.calls).not.toContainEqual({ type: "togglePlayer" });
-    });
-
-    it("asks for a new plan when the tracks change", async () => {
-      const { client, hls } = renderPlayer(copyPlaybackRoutes, {
-        mediaFiles: withSavedSelection,
-      });
-      await vi.waitFor(() => expect(hls[0]).toBeDefined());
-      fireEvent.click(screen.getByRole("button", { name: "Tracks" }));
-      fireEvent.click(screen.getByRole("radio", { name: /Japanese/ }));
-      fireEvent.click(screen.getByRole("button", { name: "Choose" }));
-      await vi.waitFor(() =>
-        expect(playbackRequests(client.requests)).toHaveLength(2),
-      );
-      expect(requestBody(playbackRequests(client.requests)[1])).toMatchObject({
-        selection: { video: 0, audio: 1 },
-      });
-    });
-  });
-
-  describe("preferences", () => {
-    it("asks for FLAC when lossless audio is preferred", async () => {
-      const { client } = renderPlayer(directPlaybackRoutes, {
-        before: [actions.preferencesLoaded({ losslessAudio: "true" })],
-      });
-      await findVideo();
-      expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
-        preferred_audio_target: "flac",
-      });
-    });
-
-    it("asks for FLAC when the preference loads after the file opens", async () => {
-      const { client, effects } = renderPlayer(directPlaybackRoutes, {
-        before: [],
-        storedPreferences: { losslessAudio: "true" },
-        holdsPreferenceLoads: true,
-      });
-      await settleTracks(client.requests);
-      act(() => effects.releasePreferenceLoads());
-      await findVideo();
-      expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
-        preferred_audio_target: "flac",
-      });
-    });
-
-    it("keeps the playing file's plan when the preference changes", async () => {
-      const { client, store } = renderPlayer(directPlaybackRoutes);
-      await findVideo();
-      act(() => {
-        store.dispatch(actions.preferenceSet("losslessAudio", "true"));
-      });
-      await settleRequests();
-      expect(playbackRequests(client.requests)).toHaveLength(1);
-    });
-
-    it("leaves the audio target to the server otherwise", async () => {
-      const { client } = renderPlayer(directPlaybackRoutes);
-      await findVideo();
-      expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
-        preferred_audio_target: null,
-      });
-    });
-
-    it("sends the measured environment", async () => {
-      const { client } = renderPlayer(directPlaybackRoutes);
-      await findVideo();
-      expect(requestBody(playbackRequests(client.requests)[0])).toMatchObject({
-        environment: {
-          engine: expect.stringMatching(/webkit|chromium|gecko/),
-          can_play_type: "no",
-          mse_codec_strings: [],
-        },
       });
     });
   });

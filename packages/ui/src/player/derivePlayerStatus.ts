@@ -4,6 +4,11 @@ import {
   buildMediaStreamUrl,
 } from "@easyimmerse/backend";
 import type { ServerConfig } from "@easyimmerse/state";
+import {
+  isConversionNoticeDue,
+  selectedFrameRate,
+  tracksOfKind,
+} from "@easyimmerse/state";
 import type {
   PlaybackResponse,
   TrackSelection,
@@ -16,11 +21,6 @@ import {
   describeRequestError,
   describeUnsupportedReason,
 } from "./playbackFailure.ts";
-import {
-  copiesChosenTracksOnly,
-  selectedFrameRate,
-  tracksOfKind,
-} from "./playbackPlanRules.ts";
 
 export type PlayerStatusInputs = {
   server: ServerConfig | null;
@@ -76,7 +76,7 @@ function planState(
     return failedPlayback(
       "The server planned a conversion but named no playlist.",
     );
-  if (!copiesChosenTracksOnly(plan) && !inputs.noticeSettled)
+  if (isConversionNoticeDue(playback, inputs.noticeSettled))
     return { status: "notice" };
   return {
     status: "ready",

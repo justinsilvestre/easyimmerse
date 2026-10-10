@@ -5,7 +5,15 @@ import type {
   PickedDictionaryFile,
   PickedFile,
   PickedMediaFile,
+  PlaybackProbes,
 } from "./effects.ts";
+
+/** The recording effects' answers about media support: a WebKit browser that plays MP4 directly and through Media Source Extensions. */
+export const recordedPlaybackProbes: PlaybackProbes = {
+  userAgent: "AppleWebKit/605.1.15 (KHTML, like Gecko)",
+  canPlayType: (mimeType) => (mimeType.startsWith("video/mp4") ? "maybe" : ""),
+  isTypeSupported: (mimeType) => mimeType.includes("mp4"),
+};
 
 type EffectCall =
   | { type: "seekPlayer"; seconds: number }
@@ -124,6 +132,7 @@ export function createRecordingEffects(
       calls.push({ type: "pickDictionaryFile", accept });
       return dictionaryFilePick.start();
     },
+    readPlaybackProbes: () => recordedPlaybackProbes,
     savePreference: async (key, value) => {
       calls.push({ type: "savePreference", key, value });
       preferences.set(key, value);

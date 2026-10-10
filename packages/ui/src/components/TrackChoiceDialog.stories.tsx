@@ -24,6 +24,8 @@ const meta = {
         isDefault: false,
       },
     ],
+    selection: null,
+    onSelect: fn(),
     onChoose: fn(),
     onCancel: fn(),
   },

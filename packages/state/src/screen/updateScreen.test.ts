@@ -5,6 +5,7 @@ import { stateAfter } from "../app/stateAfter.ts";
 import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
+import { mediaFilesListed } from "./mediaScreen/playbackTestActions.ts";
 import { initialWaveform } from "./mediaScreen/waveformState.ts";
 import { updateScreen } from "./updateScreen.ts";
 
@@ -161,6 +162,7 @@ describe("updateScreen", () => {
       },
       loop: null,
       pendingResumeMs: null,
+      playback: null,
       pendingSubtitleFile: null,
       waveform: initialWaveform,
     });
@@ -240,12 +242,10 @@ describe("updateScreen", () => {
       actions.navigated({ type: "openProject", projectId: "p1" }),
       actions.mediaFileChosen(pickedMediaFile),
     );
-    expect(effects).toEqual([
-      {
-        type: "showNotification",
-        message: "“episode.mkv” is already in the project.",
-      },
-    ]);
+    expect(effects).toContainEqual({
+      type: "showNotification",
+      message: "“episode.mkv” is already in the project.",
+    });
   });
 
   it("returns a notification when a picked subtitles file could not be added", () => {
@@ -262,6 +262,64 @@ describe("updateScreen", () => {
     const app = stateAfter(...playingM2);
     const [screen] = updateScreen(app.screen, actions.appStarted(), app);
     expect(screen).toBe(app.screen);
+  });
+
+  it("asks for the media file's record when its media screen opens", () => {
+    const [, effects] = apply(actions.openMediaFileRequested("p1", "m1"));
+    expect(effects).toContainEqual({
+      type: "sendRequest",
+      id: "media/m1/mediaFile",
+      request: { kind: "listMediaFiles", projectId: "p1" },
+    });
+  });
+
+  it("closes the track choice when the media screen is left", () => {
+    const [screen] = apply(
+      actions.closeMedia(),
+      actions.openMediaFileRequested("p1", "m1"),
+      mediaFilesListed(),
+      actions.trackChoiceRequested(),
+    );
+    expect(screen.dialog).toBeNull();
+  });
+
+  it("returns a notification when the track choice could not be saved", () => {
+    const [, effects] = apply(
+      actions.requestSettled(
+        "media/m2/saveTrackSelection",
+        {
+          kind: "saveTrackSelection",
+          projectId: "p1",
+          mediaFileId: "m2",
+          selection: { video: 0, audio: 1 },
+        },
+        { ok: false, error: { status: 500, message: "down" } },
+      ),
+      ...playingM2,
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotification",
+        message: "The track choice could not be saved",
+      },
+    ]);
+  });
+
+  it("returns no notification for a track choice whose save was replaced", () => {
+    const [, effects] = apply(
+      actions.requestSettled(
+        "media/m2/saveTrackSelection",
+        {
+          kind: "saveTrackSelection",
+          projectId: "p1",
+          mediaFileId: "m2",
+          selection: { video: 0, audio: 1 },
+        },
+        { ok: false, error: { status: "ABORTED", message: "aborted" } },
+      ),
+      ...playingM2,
+    );
+    expect(effects).toEqual([]);
   });
 
   it("returns the player's effects only while the media screen is open", () => {

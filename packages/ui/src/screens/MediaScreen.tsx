@@ -6,7 +6,7 @@ import {
   selectPreference,
 } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
-import { useCallback, useMemo, useReducer, useRef, useState } from "react";
+import { useMemo, useReducer, useRef, useState } from "react";
 import { stripMarkup } from "../components/ClickableText.tsx";
 import type { LineStep } from "../components/cursorKeys.ts";
 import { PlayerWaveform } from "../components/PlayerWaveform.tsx";
@@ -42,7 +42,7 @@ import { parseSubtitleAppearance } from "../media/subtitleAppearance.ts";
 import { usePlayerShortcuts } from "../media/usePlayerShortcuts.ts";
 import { useShownCue } from "../media/useShownCue.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
-import { TrackChoiceContext } from "../player/trackChoiceContext.ts";
+import { selectCanChooseTracks } from "../player/selectCanChooseTracks.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
 import { SourceMediaDialog } from "../subtitles/SourceMediaDialog.tsx";
@@ -116,12 +116,7 @@ export function MediaScreen({
     isCuePanelTakenByEditor: isEditorOpen,
     isFullscreen: fullscreen.isFullscreen,
   };
-  // The player offers the track choice once it knows the file's tracks; the control bar shows a Tracks button meanwhile.
-  const [openTracks, setOpenTracks] = useState<(() => void) | null>(null);
-  const offerTrackChoice = useCallback(
-    (open: (() => void) | null) => setOpenTracks(() => open),
-    [],
-  );
+  const canChooseTracks = useAppSelector(selectCanChooseTracks);
   const clipWaveform = useClipWaveform(
     mediaFile,
     durationMs,
@@ -206,7 +201,9 @@ export function MediaScreen({
     },
     onToggleWaveform: () => dispatchPanels({ type: "waveformToggled" }),
     onToggleFullscreen: fullscreen.isSupported ? fullscreen.toggle : undefined,
-    onOpenTracks: openTracks ?? undefined,
+    onOpenTracks: canChooseTracks
+      ? () => dispatch(actions.trackChoiceRequested())
+      : undefined,
   };
   usePlayerShortcuts(
     {
@@ -244,11 +241,7 @@ export function MediaScreen({
           projectName: settings.name,
           source,
         }}
-        stage={
-          <TrackChoiceContext value={offerTrackChoice}>
-            <MediaPlayer projectId={projectId} />
-          </TrackChoiceContext>
-        }
+        stage={<MediaPlayer projectId={projectId} />}
         playback={{
           isPlaying: player.isPlaying,
           currentMs,

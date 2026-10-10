@@ -2,6 +2,16 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
+import {
+  exampleTracksOneEach,
+  exampleTranscodePlayback,
+} from "../screen/mediaScreen/examplePlayback.ts";
+import {
+  environmentMeasured,
+  mediaFilesListed,
+  planSettled,
+  tracksSettled,
+} from "../screen/mediaScreen/playbackTestActions.ts";
 import { updatePreferences } from "./updatePreferences.ts";
 
 /** Applies an action to the preferences after the given earlier actions. */
@@ -9,6 +19,16 @@ const apply = (action: AppAction, ...before: AppAction[]) => {
   const app = stateAfter(...before);
   return updatePreferences(app.preferences, action, app);
 };
+
+/** The actions that open the conversion notice on the media screen of m1. */
+const openConversionNotice: AppAction[] = [
+  actions.openMediaFileRequested("p1", "m1"),
+  actions.preferencesLoaded({}),
+  mediaFilesListed(),
+  tracksSettled(exampleTracksOneEach),
+  environmentMeasured,
+  planSettled(exampleTranscodePlayback),
+];
 
 const translationsOn = actions.preferenceSet("showTranslations", "true");
 
@@ -116,6 +136,23 @@ describe("updatePreferences", () => {
   it("stores the operating system's theme for systemThemeChanged", () => {
     const [preferences] = apply(actions.systemThemeChanged("dark"));
     expect(preferences.systemTheme).toBe("dark");
+  });
+
+  it("stores the conversion notice's dismissal when it is accepted with its box ticked", () => {
+    const [preferences] = apply(
+      actions.conversionNoticeAccepted(),
+      ...openConversionNotice,
+    );
+    expect(preferences.values.conversionNoticeDismissed).toBe("true");
+  });
+
+  it("stores nothing when the conversion notice is accepted with its box cleared", () => {
+    const [, effects] = apply(
+      actions.conversionNoticeAccepted(),
+      ...openConversionNotice,
+      actions.conversionNoticeDismissalToggled(),
+    );
+    expect(effects).toEqual([]);
   });
 
   describe("for the player controls", () => {

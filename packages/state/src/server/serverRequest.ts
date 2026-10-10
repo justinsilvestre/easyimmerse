@@ -10,12 +10,16 @@ import type {
   MediaFile,
   MediaSourceJob,
   ParseTimedTextRequest,
+  PlaybackRequest,
+  PlaybackResponse,
   PluginForm,
   SubtitleTrack,
   SubtitleTracksResponse,
   TableLayout,
   TablePreview,
   TimedTextTrack,
+  TrackSelection,
+  TracksResponse,
   WaveformResponse,
 } from "@easyimmerse/types";
 import type { Dispatch } from "redux";
@@ -44,6 +48,19 @@ export type ServerRequest =
       file: PickedDictionaryFile;
       tableLayout: TableLayout | null;
     }
+  | { kind: "getMediaTracks"; projectId: string; mediaFileId: string }
+  | {
+      kind: "planPlayback";
+      projectId: string;
+      mediaFileId: string;
+      request: PlaybackRequest;
+    }
+  | {
+      kind: "saveTrackSelection";
+      projectId: string;
+      mediaFileId: string;
+      selection: TrackSelection;
+    }
   | {
       kind: "getWaveformWindow";
       projectId: string;
@@ -71,6 +88,10 @@ export type ServerResponses = {
   previewDictionaryTable: TablePreview;
   importDictionary: ImportJobStarted;
   getWaveformWindow: WaveformResponse;
+  getMediaTracks: TracksResponse;
+  planPlayback: PlaybackResponse;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  saveTrackSelection: void;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

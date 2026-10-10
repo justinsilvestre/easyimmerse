@@ -1,4 +1,10 @@
-import type { AudioClip, FormInput, TableLayout } from "@easyimmerse/types";
+import type {
+  AudioClip,
+  FormInput,
+  PlaybackEnvironment,
+  TableLayout,
+  TrackSelection,
+} from "@easyimmerse/types";
 import type {
   PickedDictionaryFile,
   PickedFile,
@@ -30,6 +36,31 @@ export const screenActions = {
     ({ type: "editedClipMoved", clip }) as const,
   /** The flashcard open in the editor has closed. */
   editedClipClosed: () => ({ type: "editedClipClosed" }) as const,
+  /** The browser's media support for a file's formats, as measured for its playback plan. */
+  playbackEnvironmentMeasured: (
+    mediaFileId: string,
+    environment: PlaybackEnvironment,
+  ) =>
+    ({
+      type: "playbackEnvironmentMeasured",
+      mediaFileId,
+      environment,
+    }) as const,
+  /** The user asked to choose the open file's tracks again. */
+  trackChoiceRequested: () => ({ type: "trackChoiceRequested" }) as const,
+  /** The user selected other tracks in the track choice, before choosing them. */
+  trackChoiceChanged: (selection: TrackSelection) =>
+    ({ type: "trackChoiceChanged", selection }) as const,
+  /** The user chose the tracks to play. */
+  tracksChosen: (selection: TrackSelection) =>
+    ({ type: "tracksChosen", selection }) as const,
+  trackChoiceCancelled: () => ({ type: "trackChoiceCancelled" }) as const,
+  /** The user ticked or cleared the conversion notice's "Don't show this again" box. */
+  conversionNoticeDismissalToggled: () =>
+    ({ type: "conversionNoticeDismissalToggled" }) as const,
+  /** The user let the conversion of the open file go ahead. */
+  conversionNoticeAccepted: () =>
+    ({ type: "conversionNoticeAccepted" }) as const,
   playToggleRequested: () => ({ type: "playToggleRequested" }) as const,
   playRequested: () => ({ type: "playRequested" }) as const,
   pauseRequested: () => ({ type: "pauseRequested" }) as const,

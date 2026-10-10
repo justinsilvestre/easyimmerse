@@ -21,6 +21,7 @@ export type {
   PickedDictionaryFile,
   PickedFile,
   PickedMediaFile,
+  PlaybackProbes,
 } from "./platform/effects.ts";
 export type { PlayerRegistry } from "./platform/playerRegistry.ts";
 export { createPlayerRegistry } from "./platform/playerRegistry.ts";
@@ -57,6 +58,17 @@ export {
   documentFormatOf,
   isDocumentFileName,
 } from "./screen/mediaFileExtensions.ts";
+export { isConversionNoticeDue } from "./screen/mediaScreen/conversionNotice.ts";
+export type { PathPlayback } from "./screen/mediaScreen/pathPlayback.ts";
+export {
+  needsTrackChoice,
+  selectedFrameRate,
+  tracksOfKind,
+} from "./screen/mediaScreen/playbackPlanRules.ts";
+export {
+  selectDialog,
+  selectPathPlayback,
+} from "./screen/mediaScreen/playbackSelectors.ts";
 export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
 export {
   selectRequestedWaveformSpan,
