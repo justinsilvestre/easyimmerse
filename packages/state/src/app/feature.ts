@@ -17,7 +17,10 @@ export type FeatureUpdate<S, Deps extends keyof ReadableState = never> = (
   app: Pick<ReadableState, Deps>,
 ) => Update<S, Effect>;
 
-/** A slice of the app state with its starting value and its update. */
+/**
+ * A slice of the app state with its starting value and its update.
+ * A feature may instead keep no slice and contribute only effects through a command function listed in `app/update.ts`, as the platform, screen and flashcard features do.
+ */
 export type Feature<S, Deps extends keyof ReadableState = never> = {
   initialState: S;
   update: FeatureUpdate<S, Deps>;
