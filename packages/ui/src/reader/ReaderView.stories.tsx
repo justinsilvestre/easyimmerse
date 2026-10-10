@@ -1,9 +1,11 @@
 import {
   type AppAction,
   actions,
+  defaultReaderPreferences,
+  type ReaderPreferences,
   selectIsReadingLocationLoaded,
-  selectPreference,
   selectPreferencesLoaded,
+  selectReaderPreferences,
 } from "@easyimmerse/state";
 import type { Document, LookupResult } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -33,14 +35,15 @@ import {
   examplePlainText,
   exampleShortBook,
 } from "./exampleDocuments.ts";
-import {
-  defaultReaderPreferences,
-  parseReaderPreferences,
-} from "./readerPreferences.ts";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
+import { useReaderKeyBindings } from "./useReaderKeyBindings.ts";
 import type { ReaderWord } from "./useWordPointer.ts";
 
-type ReaderViewProps = ComponentProps<typeof ConnectedReaderView>;
+/** The reader's props apart from those the stories take from the store: its preferences, and the controls its keys work. */
+type ReaderStoryArgs = Omit<
+  ComponentProps<typeof ConnectedReaderView>,
+  "preferences" | "controls"
+>;
 
 /** Enough senses that the pop-up must scroll to show them all. */
 const longEntrySenses = [
@@ -103,12 +106,18 @@ function popupFor(word: string, onClose: () => void) {
 }
 
 /**
- * Keeps the preferences and the looked-up word in state, so that the appearance controls and the dictionary pop-up work in every story.
+ * Keeps the preferences in the story's store and the looked-up word in state, so that the appearance controls,
+ * the keys and the dictionary pop-up work in every story.
  * A click opens the pop-up on a word, and resting the mouse on another moves it there.
  * "Ungeziefer" and "fressen" have entries.
+ * Escape and L act on the store's lookup, so they leave alone a pop-up that the story opened itself.
  */
-function StatefulReader(args: ReaderViewProps) {
-  const [preferences, setPreferences] = useState(args.preferences);
+function StatefulReader(args: ReaderStoryArgs) {
+  const dispatch = useAppDispatch();
+  const preferences = useAppSelector((state) =>
+    selectReaderPreferences(state.app),
+  );
+  const controls = useReaderKeyBindings();
   const [word, setWord] = useState<ReaderWord | null>(null);
   const [isInitialLookupOpen, setInitialLookupOpen] = useState(true);
   const close = () => {
@@ -124,6 +133,7 @@ function StatefulReader(args: ReaderViewProps) {
     <ConnectedReaderView
       {...args}
       preferences={preferences}
+      controls={controls}
       lookup={lookup}
       lookupRect={word?.rect}
       highlightedWord={word ? { word } : undefined}
@@ -143,7 +153,7 @@ function StatefulReader(args: ReaderViewProps) {
         },
         onPreferencesChange: (changed) => {
           args.callbacks.onPreferencesChange(changed);
-          setPreferences(changed);
+          dispatch(storingPreferences(changed));
         },
       }}
     />
@@ -152,7 +162,7 @@ function StatefulReader(args: ReaderViewProps) {
 
 const meta = {
   title: "Reader/ReaderView",
-  component: ConnectedReaderView,
+  component: StatefulReader,
   decorators: [withAppStore],
   parameters: { layout: "fullscreen" },
   args: {
@@ -161,7 +171,6 @@ const meta = {
     title: "Die Verwandlung",
     projectName: "German reading",
     language: "de",
-    preferences: defaultReaderPreferences,
     callbacks: {
       onBack: fn(),
       onLookup: fn(),
@@ -173,8 +182,7 @@ const meta = {
       onPreferencesChange: fn(),
     },
   },
-  render: (args) => <StatefulReader {...args} />,
-} satisfies Meta<typeof ConnectedReaderView>;
+} satisfies Meta<typeof StatefulReader>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -190,34 +198,36 @@ const openedWith = (...storyActions: AppAction[]) => [
   ),
 ];
 
+/** Stores the reader's preferences, changed from the defaults as given. */
+const storingPreferences = (changed: Partial<ReaderPreferences>) =>
+  actions.preferenceSet(
+    "readerPreferences",
+    JSON.stringify({ ...defaultReaderPreferences, ...changed }),
+  );
+
 export const Pages: Story = { decorators: openedWith() };
 
 export const Sepia: Story = {
-  decorators: openedWith(),
-  args: { preferences: { ...defaultReaderPreferences, theme: "sepia" } },
+  decorators: openedWith(storingPreferences({ theme: "sepia" })),
 };
 
 export const Dark: Story = {
-  decorators: openedWith(),
-  args: { preferences: { ...defaultReaderPreferences, theme: "dark" } },
+  decorators: openedWith(storingPreferences({ theme: "dark" })),
 };
 
 export const Scrolling: Story = {
-  decorators: openedWith(),
-  args: { preferences: { ...defaultReaderPreferences, layout: "scroll" } },
+  decorators: openedWith(storingPreferences({ layout: "scroll" })),
 };
 
 export const LargeSansSerif: Story = {
-  decorators: openedWith(),
-  args: {
-    preferences: {
-      ...defaultReaderPreferences,
+  decorators: openedWith(
+    storingPreferences({
       font: "sans",
       fontSizeStep: 6,
       isJustified: false,
       lineSpacing: "relaxed",
-    },
-  },
+    }),
+  ),
 };
 
 export const ResumedInPartTwo: Story = {
@@ -346,16 +356,13 @@ const browserPreferenceStorage = {
  * Opens a fixture or a file of your own with the app's Rust parser, built to WebAssembly.
  * The reading position and the appearance are kept in the browser's storage, so that reopening a file returns to the same place.
  */
-function FileReader(args: ReaderViewProps) {
+function FileReader(args: ReaderStoryArgs) {
   const dispatch = useAppDispatch();
   const [file, setFile] = useState<OpenFile | null>(null);
   const isPlaceLoaded = useAppSelector(
     selectIsReadingLocationLoaded(file?.name ?? ""),
   );
   const preferencesLoaded = useAppSelector(selectPreferencesLoaded);
-  const storedPreferences = useAppSelector(
-    selectPreference("readerPreferences"),
-  );
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState("de");
   const open = async (name: string, bytes: Promise<ArrayBuffer>) => {
@@ -377,20 +384,12 @@ function FileReader(args: ReaderViewProps) {
         document={file.document}
         title={file.document.title || file.name}
         language={file.document.language ?? language}
-        preferences={parseReaderPreferences(storedPreferences)}
         callbacks={{
           ...args.callbacks,
           onBack: () => {
             dispatch(actions.closeMedia());
             setFile(null);
           },
-          onPreferencesChange: (preferences) =>
-            dispatch(
-              actions.preferenceSet(
-                "readerPreferences",
-                JSON.stringify(preferences),
-              ),
-            ),
         }}
       />
     );

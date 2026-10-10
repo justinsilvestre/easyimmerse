@@ -1,8 +1,8 @@
 import {
   actions,
+  type ReaderPreferences,
   type ReaderScreenAction,
   type ReaderScreenState,
-  selectReaderKeyBinding,
 } from "@easyimmerse/state";
 import type { Document } from "@easyimmerse/types";
 import {
@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { useKeyBindings } from "../hooks/useKeyBindings.ts";
 import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
 import type { AnchorRect } from "../lookup/placeAtAnchor.ts";
 import type { PopupSize } from "../lookup/popupSize.ts";
@@ -27,19 +26,15 @@ import {
 } from "./chapterSections.ts";
 import { chapterLabelOf, chapterTitleOf } from "./chapterTitles.ts";
 import { LookupAnchor } from "./LookupAnchor.tsx";
-import {
-  PagedChapter,
-  type PageInfo,
-  type PageTurner,
-} from "./PagedChapter.tsx";
+import { PagedChapter, type PageInfo } from "./PagedChapter.tsx";
 import { ReaderFooter } from "./ReaderFooter.tsx";
 import { ReaderToolbar } from "./ReaderToolbar.tsx";
+import { type ReaderControls, useReaderControls } from "./readerControls.ts";
 import {
   fontFamilies,
   fontSizesRem,
   lineHeights,
   lineLengthsEm,
-  type ReaderPreferences,
 } from "./readerPreferences.ts";
 import {
   chapterStartProgresses,
@@ -106,6 +101,8 @@ type ReaderViewProps = {
   headerContent?: ReactNode;
   /** A panel laid over the text at the side, such as the flashcard editor. */
   sidePanel?: ReactNode;
+  /** The parts of the view that the reader's keys work, from the screen that binds the keys. */
+  controls?: ReaderControls;
 };
 
 const searchLimit = 500;
@@ -124,8 +121,8 @@ export function ReaderView(props: ReaderViewProps) {
   const { document, location, reader, dispatch, mediaFileId } = props;
   const { preferences, callbacks } = props;
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
-  const turner = useRef<PageTurner>(null);
-  const searchInput = useRef<HTMLInputElement>(null);
+  const ownControls = useReaderControls();
+  const { pageTurner: turner, searchInput } = props.controls ?? ownControls;
   const isWide = useMediaQuery(wideScreenQuery);
   const isPaged = preferences.layout === "pages";
 
@@ -191,14 +188,6 @@ export function ReaderView(props: ReaderViewProps) {
     if (isPaged) turner.current?.[direction]();
     else goToChapter(chapterIndex + (direction === "next" ? 1 : -1), "start");
   };
-  useKeyBindings(selectReaderKeyBinding, {
-    turnPage: ({ direction }) => turn(direction),
-    openBookSearch: () => {
-      dispatch(actions.readerPanelOpened("search"));
-      searchInput.current?.focus();
-      searchInput.current?.select();
-    },
-  });
 
   const wordPointer = useWordPointer(chapterIndex, props.language, {
     onWordClick: callbacks.onWordClick,

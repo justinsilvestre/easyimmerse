@@ -1,5 +1,6 @@
 import type { AppState } from "../../app/appState.ts";
 import type { RootState } from "../../app/createAppStore.ts";
+import { selectReaderPreferences } from "../../preferences/readerPreferences.ts";
 import {
   selectFlashcardForm,
   selectMediaScreen,
@@ -23,20 +24,9 @@ export function selectIsReaderPanelOpen(
   return panel !== null || selectFlashcardForm(app) !== null;
 }
 
-/**
- * Tells whether the reader lays the text out in pages rather than in one scrolling column.
- * Pages are the default, so a stored layout that is missing or unreadable counts as paged.
- */
+/** Tells whether the reader lays the text out in pages rather than in one scrolling column. */
 export function selectIsReaderPaged(
   app: Pick<AppState, "preferences">,
 ): boolean {
-  return storedLayoutOf(app.preferences.values.readerPreferences) !== "scroll";
-}
-
-function storedLayoutOf(stored: string | undefined): unknown {
-  try {
-    return JSON.parse(stored ?? "null")?.layout;
-  } catch {
-    return undefined;
-  }
+  return selectReaderPreferences(app).layout === "pages";
 }

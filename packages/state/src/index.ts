@@ -1,5 +1,6 @@
 export type { AppAction } from "./app/appAction.ts";
 export { actions } from "./app/appAction.ts";
+export type { AppState } from "./app/appState.ts";
 export type {
   AppDispatch,
   AppStore,
@@ -76,6 +77,12 @@ export type {
   PlayerControls,
   PreferenceKey,
 } from "./preferences/preferencesState.ts";
+export type { ReaderPreferences } from "./preferences/readerPreferences.ts";
+export {
+  defaultReaderPreferences,
+  readerFontSizeStepCount,
+  selectReaderPreferences,
+} from "./preferences/readerPreferences.ts";
 export { defaultTextScale } from "./preferences/textScale.ts";
 export type { Theme, ThemeChoice } from "./preferences/theme.ts";
 export { themeChoices } from "./preferences/theme.ts";

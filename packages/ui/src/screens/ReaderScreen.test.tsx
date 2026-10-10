@@ -1,4 +1,8 @@
-import { actions, selectCurrentMediaFileId } from "@easyimmerse/state";
+import {
+  actions,
+  defaultReaderPreferences,
+  selectCurrentMediaFileId,
+} from "@easyimmerse/state";
 import type { Document, MediaFile } from "@easyimmerse/types";
 import {
   act,
@@ -9,7 +13,6 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { exampleShortBook } from "../reader/exampleDocuments.ts";
-import { defaultReaderPreferences } from "../reader/readerPreferences.ts";
 import {
   createFakeBackendClient,
   type FakeResponse,

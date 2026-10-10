@@ -1,27 +1,27 @@
 import {
   actions,
+  defaultReaderPreferences,
   initialReaderScreen,
+  type ReaderPreferences,
   type ReaderScreenState,
 } from "@easyimmerse/state";
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { exampleShortBook } from "./exampleDocuments.ts";
 import { ReaderView, type ReaderViewAction } from "./ReaderView.tsx";
-import {
-  defaultReaderPreferences,
-  type ReaderPreferences,
-} from "./readerPreferences.ts";
 import { type ReaderLocation, startOfBook } from "./readingProgress.ts";
 
 afterEach(cleanup);
 
 const ignore = () => undefined;
 
-/**
- * Renders the reader on the short example book, and returns the actions it dispatches.
- * The store it renders in only serves the keys, which `ReaderScreen`'s tests cover.
- */
+/** Renders the reader on the short example book, and returns the actions it dispatches. */
 function renderReader(
   overrides: {
     location?: ReaderLocation;
@@ -30,7 +30,7 @@ function renderReader(
   } = {},
 ) {
   const dispatched: ReaderViewAction[] = [];
-  renderWithAppStore(
+  render(
     <ReaderView
       mediaFileId="b1"
       document={exampleShortBook}

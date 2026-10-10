@@ -7,8 +7,8 @@ import {
   actions,
   isAwaitingLookup,
   selectIsReadingLocationLoaded,
-  selectPreference,
   selectPreferencesLoaded,
+  selectReaderPreferences,
 } from "@easyimmerse/state";
 import type { Document, MediaFile, Project } from "@easyimmerse/types";
 import { useMemo } from "react";
@@ -24,16 +24,16 @@ import { useReaderLookup } from "../lookup/useReaderLookup.ts";
 import { bookFailureSentence } from "../reader/bookFailureSentence.ts";
 import { ConnectedReaderView } from "../reader/ConnectedReaderView.tsx";
 import { ReaderStatus } from "../reader/ReaderStatus.tsx";
-import { parseReaderPreferences } from "../reader/readerPreferences.ts";
 import { selectNearbySentences } from "../reader/selectNearbySentences.ts";
 import { sentenceWordLookups } from "../reader/sentenceWordLookups.ts";
 import { unwrapHardLineBreaks } from "../reader/unwrapHardLineBreaks.ts";
+import { useReaderKeyBindings } from "../reader/useReaderKeyBindings.ts";
 
 /**
  * The screen for reading one of the project's ebooks or text files.
  * The book opens where it was last left, in the appearance last chosen.
  * Words are looked up in the dictionary pop-up as in the subtitles, and a flashcard made from one is filled from its lookup, with its sentence as context.
- * The L key looks up the word under the mouse, or opens the pop-up's search field when the mouse is on no word.
+ * The keys work as `selectReaderKeyBinding` in the state package describes.
  */
 export function ReaderScreen({
   project,
@@ -92,13 +92,10 @@ function BookReader({
 }) {
   const dispatch = useAppDispatch();
   const { settings } = project;
-  const storedPreferences = useAppSelector(
-    selectPreference("readerPreferences"),
+  const preferences = useAppSelector((state) =>
+    selectReaderPreferences(state.app),
   );
-  const preferences = useMemo(
-    () => parseReaderPreferences(storedPreferences),
-    [storedPreferences],
-  );
+  const controls = useReaderKeyBindings();
   const flashcards = useMediaFlashcards(project.id, mediaFile.id);
   const { form } = flashcards;
   const languages = {
@@ -130,6 +127,7 @@ function BookReader({
       projectName={settings.name}
       language={textLanguage}
       preferences={preferences}
+      controls={controls}
       lookup={lookup.popup && <DictionaryPopup {...lookup.popup.props} />}
       lookupSize={lookup.popup?.size}
       lookupRect={lookup.popup?.rect}
