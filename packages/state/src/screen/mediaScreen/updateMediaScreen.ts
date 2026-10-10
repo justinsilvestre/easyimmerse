@@ -6,7 +6,7 @@ import { updateLookup } from "../lookup/updateLookup.ts";
 import { updateReaderScreen } from "../readerScreen/updateReaderScreen.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateMediaPanels } from "./mediaPanels.ts";
-import { shownMediaScreen } from "./shownMediaScreen.ts";
+import { selectShownMediaScreen } from "./mediaScreenSelectors.ts";
 import { updateSourceMedia } from "./sourceMedia/updateSourceMedia.ts";
 import { updatePathPlayback } from "./updatePathPlayback.ts";
 import { updatePlaying } from "./updatePlaying.ts";
@@ -23,7 +23,7 @@ export const updateMediaScreen = combineUpdates<MediaScreenState, [AppState]>({
     updated(action.type === "cuePanelSpanMeasured" ? action.span : span),
   reader: (reader, action) => updated(updateReaderScreen(reader, action)),
   lookup: (lookup, action, app) =>
-    updateLookup(lookup, action, shownMediaScreen(app).playing.player),
+    updateLookup(lookup, action, selectShownMediaScreen(app).playing.player),
   sourceMedia: updateSourceMedia,
   pendingSubtitleFile: updateSubtitles,
   playback: updatePathPlayback,

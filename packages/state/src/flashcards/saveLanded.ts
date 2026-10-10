@@ -1,7 +1,8 @@
 import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
-import { findFailedSave } from "./failedSave.ts";
+import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { forgetFailedSave } from "./failedSaveKeeping.ts";
+import { selectFailedSave } from "./failedSaveSelectors.ts";
 import {
   flashcardNoticeKeys,
   flashcardNotices,
@@ -10,7 +11,6 @@ import {
   wordOf,
 } from "./flashcardNotices.ts";
 import type { SavePurpose } from "./flashcardRequests.ts";
-import { formOf } from "./flashcardsOnScreen.ts";
 import type { FlashcardSettled } from "./settleFlashcardRequest.ts";
 
 type Save = Extract<FlashcardSettled, { request: { kind: "saveFlashcard" } }>;
@@ -31,7 +31,7 @@ export function saveLanded({ id, request }: Save, app: AppState) {
     before: purpose.before,
   };
   return [
-    ...(findFailedSave(app, flashcardId)
+    ...(selectFailedSave(app, flashcardId)
       ? [
           forgetFailedSave(flashcardId),
           withdraw(flashcardNoticeKeys.saveRefused(flashcardId)),
@@ -48,7 +48,8 @@ export function saveLanded({ id, request }: Save, app: AppState) {
 
 /** A form's save offers Undo only while its card is still open; a Retry never does. */
 function isUndoOffered(purpose: CardSave, id: string, app: AppState): boolean {
-  if (purpose.from === "form") return formOf(app)?.sentRequestId === id;
+  if (purpose.from === "form")
+    return selectFlashcardForm(app)?.sentRequestId === id;
   return purpose.offersUndo;
 }
 

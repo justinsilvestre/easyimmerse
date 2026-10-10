@@ -5,6 +5,7 @@ import { withLoadedPreferences } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
+import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { pathPlaybackOf } from "./pathPlayback.ts";
 import { picturesProbeOf } from "./picturesProbe.ts";
@@ -15,7 +16,6 @@ import {
   tracksRequest,
 } from "./playbackRequests.ts";
 import { sendFirstPlan, sendPlan } from "./sendPlan.ts";
-import { shownMediaFile } from "./shownMediaScreen.ts";
 
 /**
  * Works out how a file on the server's disk plays: reads its record, asks for its tracks, measures the browser,
@@ -27,7 +27,7 @@ export function updatePathPlayback(
   action: AppAction,
   app: AppState,
 ) {
-  const route = shownMediaFile(app);
+  const route = selectShownMediaFile(app);
   switch (action.type) {
     case "requestSettled":
       return requestSettled(playback, action, app);
@@ -83,7 +83,7 @@ function requestSettled(
   action: AppAction,
   app: AppState,
 ) {
-  const route = shownMediaFile(app);
+  const route = selectShownMediaFile(app);
   const ids = playbackRequestIds(route.mediaFileId);
   if (isSettled(action, ids.mediaFile, "listMediaFiles") && action.outcome.ok) {
     const file = action.outcome.data.media_files.find(

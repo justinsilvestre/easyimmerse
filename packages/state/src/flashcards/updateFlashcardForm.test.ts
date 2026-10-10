@@ -6,6 +6,7 @@ import {
   requestCursorFlashcard,
   requestFlashcard,
 } from "../screen/lookup/lookupTestSupport.ts";
+import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProject } from "../server/exampleProject.ts";
 import { exampleListedFlashcard } from "./exampleFlashcards.ts";
@@ -14,7 +15,6 @@ import {
   applied,
   createNew,
   failure,
-  formAfter,
   formUpdate,
   hund,
   landed,
@@ -155,7 +155,7 @@ describe("updateFlashcardForm", () => {
       actions.requestTimeLimitPassed("flashcard/f1/1"),
       settle(sending, "flashcard/f1/1", failure("ABORTED")),
     );
-    expect(formAfter(app)).toMatchObject({
+    expect(selectFlashcardForm(app)).toMatchObject({
       stage: "editing",
       saveFailure: { status: "ABORTED" },
     });
@@ -364,7 +364,7 @@ describe("updateFlashcardForm", () => {
 
   it("reopens a closed card with its edits on Undo", () => {
     const app = appAfter(startNew("f1", "Katze"), typeWord("Kater"));
-    const closed = formAfter(app)?.card;
+    const closed = selectFlashcardForm(app)?.card;
     if (!closed) throw new Error("No card is open.");
     expect(
       formUpdate(

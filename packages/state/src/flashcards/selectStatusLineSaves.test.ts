@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { cat } from "../screen/lookup/lookupTestSupport.ts";
-import { failedSavesOf } from "./failedSave.ts";
+import { selectFailedSaves } from "./failedSaveSelectors.ts";
 import { flashcardNotices } from "./flashcardNotices.ts";
 import {
   appAfter,
@@ -35,7 +35,7 @@ describe("selectStatusLineSaves", () => {
 
   it("leaves out a refused save while its own notice shows", () => {
     const app = hundFailed(422);
-    const [failedSave] = failedSavesOf(app.operations);
+    const [failedSave] = selectFailedSaves(app);
     if (!failedSave) throw new Error("Nothing is listed.");
     const shown = applied(
       app,

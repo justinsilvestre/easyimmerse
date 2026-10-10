@@ -3,7 +3,7 @@ import { actions } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
 import type { MediaScreenState } from "../screenState.ts";
-import { mediaScreenActionOf } from "./shownMediaScreen.ts";
+import { mediaScreenActionOf } from "./mediaScreenActionOf.ts";
 import { updateMediaScreen } from "./updateMediaScreen.ts";
 
 /** The app, and m1's media screen in it, after the given actions. */

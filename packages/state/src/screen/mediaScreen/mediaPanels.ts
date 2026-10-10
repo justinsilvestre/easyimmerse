@@ -1,7 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
-import { formOf } from "../../flashcards/flashcardsOnScreen.ts";
+import { selectFlashcardForm } from "./mediaScreenSelectors.ts";
 
 /** Which subtitles lie over the media screen's stage: both languages, or one of them alone. */
 export type SubtitleDisplay = "both" | "target" | "translation";
@@ -38,7 +38,7 @@ export function updateMediaPanels(
   action: AppAction,
   app: AppState,
 ) {
-  return updated(nextPanels(panels, action, formOf(app) !== null));
+  return updated(nextPanels(panels, action, selectFlashcardForm(app) !== null));
 }
 
 function nextPanels(

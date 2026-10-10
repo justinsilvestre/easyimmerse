@@ -1,15 +1,15 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
-import { isRequestInFlight } from "../operations/isRequestInFlight.ts";
-import type { OperationsState } from "../operations/operations.ts";
+import { selectIsRequestInFlight } from "../operations/operationsSelectors.ts";
 import { isSettled } from "../server/isSettled.ts";
 import type { FailedSave } from "./failedSave.ts";
 
 const openingPrefix = "flashcards/opening/";
 const projectSuffix = "/project";
 
-const openingIds = (flashcardId: string) => ({
+/** The ids of the requests on the way to opening a flashcard's failed save. */
+export const openingIds = (flashcardId: string) => ({
   mediaFiles: `${openingPrefix}${flashcardId}`,
   project: `${openingPrefix}${flashcardId}${projectSuffix}`,
 });
@@ -45,25 +45,13 @@ export function openingRequests(flashcardId: string, projectId: string) {
   ] satisfies Effect[];
 }
 
-/** Tells whether the requests on the way to opening a flashcard's failed save are under way. */
-export function isOpeningInFlight(
-  operations: OperationsState,
-  flashcardId: string,
-): boolean {
-  const ids = openingIds(flashcardId);
-  return (
-    isRequestInFlight(operations, ids.mediaFiles) ||
-    isRequestInFlight(operations, ids.project)
-  );
-}
-
 /** Gives up the opening of a flashcard's failed save, aborting its requests under way. */
 export function openingAborts(
-  operations: OperationsState,
+  app: Pick<AppState, "operations">,
   flashcardId: string,
 ) {
   return Object.values(openingIds(flashcardId))
-    .filter((id) => isRequestInFlight(operations, id))
+    .filter((id) => selectIsRequestInFlight(app, id))
     .map((id) => ({ type: "abortRequest", id }) satisfies Effect);
 }
 
@@ -101,9 +89,7 @@ export function openingProgress(
   app: AppState,
 ): OpeningProgress {
   if (!opening.hasFound(failedSave)) return "failed";
-  return isRequestInFlight(app.operations, opening.otherId)
-    ? "waiting"
-    : "ready";
+  return selectIsRequestInFlight(app, opening.otherId) ? "waiting" : "ready";
 }
 
 const isAbortedOutcome = (outcome: {

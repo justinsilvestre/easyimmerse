@@ -1,4 +1,4 @@
-import { unsavedWorkCount } from "../flashcards/unsavedWorkCount.ts";
+import { selectUnsavedWorkCount } from "../flashcards/flashcardsSelectors.ts";
 import type { AppState } from "./appState.ts";
 import type { PerformedEffect } from "./effect.ts";
 
@@ -8,7 +8,7 @@ export function closeGuardEffects(
   after: AppState,
 ): readonly PerformedEffect[] {
   if (before === after) return [];
-  const wasActive = unsavedWorkCount(before) > 0;
-  const isActive = unsavedWorkCount(after) > 0;
+  const wasActive = selectUnsavedWorkCount(before) > 0;
+  const isActive = selectUnsavedWorkCount(after) > 0;
   return wasActive === isActive ? [] : [{ type: "guardClose", isActive }];
 }

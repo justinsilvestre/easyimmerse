@@ -3,7 +3,11 @@ import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import type { RequestRecord } from "../operations/operations.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
-import { shownMediaFile } from "../screen/mediaScreen/shownMediaScreen.ts";
+import { selectPendingFlashcard } from "../screen/lookup/lookupSelectors.ts";
+import {
+  selectFlashcardForm,
+  selectShownMediaFile,
+} from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { isSettled } from "../server/isSettled.ts";
 import { type NewCard, withLookupFields } from "./flashcardCard.ts";
 import type { LookupFieldsContext } from "./flashcardForm.ts";
@@ -13,7 +17,6 @@ import {
   type SavePurpose,
 } from "./flashcardRequests.ts";
 import { askSave, saveRequest } from "./flashcardSaves.ts";
-import { formOf, pendingFlashcardOf } from "./flashcardsOnScreen.ts";
 import type { LookupFlashcardFields } from "./lookupFields.ts";
 import { cancelLookupWait } from "./lookupWait.ts";
 
@@ -42,7 +45,7 @@ export function holdForLookup(
 ) {
   const order = {
     card,
-    projectId: shownMediaFile(app).projectId,
+    projectId: selectShownMediaFile(app).projectId,
     from: "background",
     offersUndo,
     rollbackIfDiscarded: null,
@@ -118,10 +121,10 @@ function awaitingContextOf(
   requestId: string,
   app: AppState,
 ): LookupFieldsContext | null {
-  const pending = pendingFlashcardOf(app);
+  const pending = selectPendingFlashcard(app);
   if (pending && lookupRequestId(pending.flashcardId) === requestId)
     return pending.context;
-  const formLookup = formOf(app)?.lookup;
+  const formLookup = selectFlashcardForm(app)?.lookup;
   if (formLookup?.requestId === requestId) return formLookup.context;
   const held = heldSavesOf(app).find(({ heldFor }) => heldFor === requestId);
   return held?.purpose.lookupContext ?? null;

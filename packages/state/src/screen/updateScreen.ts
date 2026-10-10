@@ -11,8 +11,8 @@ import {
 import { routeAfter } from "../route/updateRoute.ts";
 import { failureNotices } from "./failureNotices.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
+import { mediaScreenActionOf } from "./mediaScreen/mediaScreenActionOf.ts";
 import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
-import { mediaScreenActionOf } from "./mediaScreen/shownMediaScreen.ts";
 import { skippedSourceSubtitles } from "./mediaScreen/sourceMedia/skippedSourceSubtitles.ts";
 import { endSourceMedia } from "./mediaScreen/sourceMedia/sourceMediaRequests.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
@@ -139,6 +139,6 @@ function updateMainScreen(
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);
   if (route.screen === "newProject" || route.screen === "projectSettings")
-    return updated(main, ...updateProjectForm(route, action, app.operations));
+    return updated(main, ...updateProjectForm(route, action, app));
   return updated(main);
 }

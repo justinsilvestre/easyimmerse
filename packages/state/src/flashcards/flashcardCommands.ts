@@ -10,7 +10,7 @@ import { retryAllFailedSaves, retryFailedSave } from "./failedSaveRetry.ts";
 import { formDiscardedKeyPrefix, withdraw } from "./flashcardNotices.ts";
 import { sendFlashcardRequest } from "./flashcardRequests.ts";
 import { undoRequest } from "./flashcardSaves.ts";
-import { isLeavingScreen } from "./flashcardsOnScreen.ts";
+import { isLeavingScreen } from "./isLeavingScreen.ts";
 import {
   isFlashcardSettled,
   settleFlashcardRequest,

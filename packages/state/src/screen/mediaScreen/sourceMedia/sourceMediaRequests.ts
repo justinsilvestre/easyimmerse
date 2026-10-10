@@ -1,7 +1,5 @@
 import type { FormInput, PluginForm } from "@easyimmerse/types";
 import type { Effect } from "../../../app/effect.ts";
-import { isRequestInFlight } from "../../../operations/isRequestInFlight.ts";
-import type { OperationsState } from "../../../operations/operations.ts";
 import type { MediaRoute } from "../../../route/route.ts";
 
 /** The ids of the requests that a media file's source dialog sends. */
@@ -9,14 +7,6 @@ export const sourceMediaIds = (mediaFileId: string) => ({
   form: `media/${mediaFileId}/sourceMedia/form`,
   step: `media/${mediaFileId}/sourceMedia/step`,
 });
-
-/** Tells whether a step of the media file's source dialog is in flight, sent from any opening of the dialog. */
-export function isSourceStepInFlight(
-  operations: OperationsState,
-  mediaFileId: string,
-): boolean {
-  return isRequestInFlight(operations, sourceMediaIds(mediaFileId).step);
-}
 
 /** Asks the plugin the media file was imported through for the first form of its media interface. */
 export function sourceFormRequest({ projectId, mediaFileId }: MediaRoute) {

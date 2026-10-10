@@ -1,8 +1,10 @@
 import type { PluginForm } from "@easyimmerse/types";
 import { createSelector } from "reselect";
+import type { AppState } from "../../../app/appState.ts";
 import type { RootState } from "../../../app/createAppStore.ts";
+import { selectIsRequestInFlight } from "../../../operations/operationsSelectors.ts";
 import { mainScreenOf } from "../../../route/route.ts";
-import { isSourceStepInFlight } from "./sourceMediaRequests.ts";
+import { sourceMediaIds } from "./sourceMediaRequests.ts";
 
 /** What the source dialog shows. */
 export type SourceMediaView = {
@@ -26,10 +28,18 @@ export const selectSourceMedia = createSelector(
       const main = mainScreenOf(state.app.route);
       return (
         main.screen === "media" &&
-        isSourceStepInFlight(state.app.operations, main.mediaFileId)
+        selectIsSourceStepInFlight(state.app, main.mediaFileId)
       );
     },
   ],
   (wizard, isBusy): SourceMediaView | null =>
     wizard === null ? null : { form: wizard.form, error: wizard.error, isBusy },
 );
+
+/** Tells whether a step of the media file's source dialog is in flight, sent from any opening of the dialog. */
+export function selectIsSourceStepInFlight(
+  app: Pick<AppState, "operations">,
+  mediaFileId: string,
+): boolean {
+  return selectIsRequestInFlight(app, sourceMediaIds(mediaFileId).step);
+}

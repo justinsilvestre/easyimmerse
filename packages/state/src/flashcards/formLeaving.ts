@@ -1,7 +1,7 @@
 import type { AppState } from "../app/appState.ts";
 import { dispatch } from "../app/dispatchEffect.ts";
 import { updated } from "../app/updated.ts";
-import { shownMediaFile } from "../screen/mediaScreen/shownMediaScreen.ts";
+import { selectShownMediaFile } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { flashcardActions } from "./flashcardActions.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
 import { askSave } from "./flashcardSaves.ts";
@@ -18,7 +18,7 @@ import { holdForLookup } from "./waitingCards.ts";
 export function leaveForm(form: FlashcardForm | null, app: AppState) {
   if (form === null || form.stage === "sending") return [];
   const { card, rollbackIfDiscarded } = form;
-  const { projectId } = shownMediaFile(app);
+  const { projectId } = selectShownMediaFile(app);
   if (card.kind === "existing" && !card.isChanged && form.stage === "editing")
     return [];
   if (isAwaitingLookup(form.stage) && card.kind === "new" && form.lookup) {

@@ -1,7 +1,13 @@
 import type { AppState } from "../app/appState.ts";
 import type { FailedRequest } from "../operations/failedRequests.ts";
-import { failedSaveIdOf, failedSaveOf, findFailedSave } from "./failedSave.ts";
+import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
+import { failedSaveIdOf } from "./failedSave.ts";
 import { forgetFailedSave, keepAgain } from "./failedSaveKeeping.ts";
+import {
+  selectFailedSave,
+  selectKeptFailedSave,
+  selectPendingRetry,
+} from "./failedSaveSelectors.ts";
 import {
   flashcardNoticeKeys,
   flashcardNotices,
@@ -10,16 +16,15 @@ import {
 } from "./flashcardNotices.ts";
 import { sendFlashcardRequest } from "./flashcardRequests.ts";
 import { rollbackRequest } from "./flashcardSaves.ts";
-import { formOf } from "./flashcardsOnScreen.ts";
-import { isCardOf, retryOf } from "./latestFlashcard.ts";
+import { isCardOf } from "./latestFlashcard.ts";
 
 /**
  * Throws a failed save's edits away, with an undo toast that keeps it again, and takes back a save of it in doubt.
  * It does nothing while a Retry of the card is under way.
  */
 export function discardFailedSave(flashcardId: string, app: AppState) {
-  const failedSave = findFailedSave(app, flashcardId);
-  if (!failedSave || retryOf(app, flashcardId)) return [];
+  const failedSave = selectFailedSave(app, flashcardId);
+  if (!failedSave || selectPendingRetry(app, flashcardId)) return [];
   const { card, projectId, rollbackIfDiscarded, kept } = failedSave;
   const rollback =
     rollbackIfDiscarded &&
@@ -39,8 +44,8 @@ export function discardFailedSave(flashcardId: string, app: AppState) {
 
 /** Keeps a discarded failed save again, unless the form holds its flashcard meanwhile, whose copy is then the newer one. */
 export function restoreFailedSave(kept: FailedRequest, app: AppState) {
-  const failedSave = failedSaveOf(kept, app.operations);
-  const form = formOf(app);
+  const failedSave = selectKeptFailedSave(app, kept);
+  const form = selectFlashcardForm(app);
   if (failedSave === null) return [];
   if (form && isCardOf(form.card, failedSaveIdOf(failedSave))) return [];
   return [keepAgain(kept)];

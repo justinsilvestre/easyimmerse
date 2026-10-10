@@ -3,9 +3,9 @@ import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
 import type { PreferencesState } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
+import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { planRequest } from "./playbackRequests.ts";
-import { shownMediaFile } from "./shownMediaScreen.ts";
 
 /** The preferences as far as a plan needs them: their values, and whether they have loaded. */
 type PlanPreferences = Pick<PreferencesState, "values" | "isLoaded">;
@@ -20,7 +20,7 @@ export function sendFirstPlan(
   const isChoosing =
     dialog?.kind === "trackChoice" && dialog.stage === "choosing";
   return playback?.planRequest === null && !isChoosing
-    ? sendPlan(playback, shownMediaFile(app), preferences)
+    ? sendPlan(playback, selectShownMediaFile(app), preferences)
     : updated(playback);
 }
 

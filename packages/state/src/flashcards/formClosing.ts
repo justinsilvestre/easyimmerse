@@ -1,6 +1,6 @@
 import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
-import { shownMediaFile } from "../screen/mediaScreen/shownMediaScreen.ts";
+import { selectShownMediaFile } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { keepFailedSave } from "./failedSaveKeeping.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
@@ -25,14 +25,18 @@ export function closeForm(form: FlashcardForm | null, app: AppState) {
   if (saveFailure !== null) {
     const failedCard = {
       card,
-      projectId: shownMediaFile(app).projectId,
+      projectId: selectShownMediaFile(app).projectId,
       rollbackIfDiscarded,
     };
     return updated(null, ...keepFailedSave(failedCard, saveFailure, app));
   }
   const rollback =
     rollbackIfDiscarded &&
-    rollbackRequest(rollbackIfDiscarded, card, shownMediaFile(app).projectId);
+    rollbackRequest(
+      rollbackIfDiscarded,
+      card,
+      selectShownMediaFile(app).projectId,
+    );
   return updated(
     null,
     ...(card.isChanged ? [show(flashcardNotices.formDiscarded(card))] : []),
@@ -48,7 +52,7 @@ export function deleteFromForm(form: FlashcardForm, app: AppState) {
   const sending = sendFlashcardRequest(
     {
       kind: "deleteFlashcard",
-      projectId: shownMediaFile(app).projectId,
+      projectId: selectShownMediaFile(app).projectId,
       flashcardId,
       purpose: { type: "delete" },
     },

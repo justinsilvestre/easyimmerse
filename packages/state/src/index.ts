@@ -26,8 +26,8 @@ export type {
   LookupFieldsContext,
 } from "./flashcards/flashcardForm.ts";
 export {
-  selectFlashcardForm,
   selectMediaFlashcards,
+  selectUnsavedWorkCount,
 } from "./flashcards/flashcardsSelectors.ts";
 export { isSameLanguage, primarySubtag } from "./flashcards/languageTags.ts";
 export type {
@@ -40,7 +40,6 @@ export {
   type StatusLineSave,
   selectStatusLineSaves,
 } from "./flashcards/selectStatusLineSaves.ts";
-export { selectUnsavedWorkCount } from "./flashcards/unsavedWorkCount.ts";
 export { selectNotices } from "./notices/noticesSelectors.ts";
 export type {
   Notice,
@@ -125,6 +124,7 @@ export {
   findCueShownAt,
 } from "./screen/mediaScreen/findCue.ts";
 export type { SubtitleDisplay } from "./screen/mediaScreen/mediaPanels.ts";
+export { selectFlashcardForm } from "./screen/mediaScreen/mediaScreenSelectors.ts";
 export type { PathPlayback } from "./screen/mediaScreen/pathPlayback.ts";
 export {
   needsTrackChoice,
@@ -137,7 +137,7 @@ export {
 } from "./screen/mediaScreen/playbackSelectors.ts";
 export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
 export { selectShownCue } from "./screen/mediaScreen/selectShownCue.ts";
-export { selectSourceMedia } from "./screen/mediaScreen/sourceMedia/selectSourceMedia.ts";
+export { selectSourceMedia } from "./screen/mediaScreen/sourceMedia/sourceMediaSelectors.ts";
 export {
   selectRequestedWaveformSpan,
   selectWaveformRequests,

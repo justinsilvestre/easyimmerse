@@ -7,14 +7,14 @@ import {
   type PluginFormWizard,
   stepSent,
 } from "../../pluginForm/pluginFormWizard.ts";
-import { shownMediaFile } from "../shownMediaScreen.ts";
+import { selectShownMediaFile } from "../mediaScreenSelectors.ts";
 import { sourceMediaAnswered } from "./sourceMediaAnswered.ts";
 import {
   endSourceMedia,
-  isSourceStepInFlight,
   sourceFormRequest,
   sourceStepRequest,
 } from "./sourceMediaRequests.ts";
+import { selectIsSourceStepInFlight } from "./sourceMediaSelectors.ts";
 
 /**
  * Runs the media interface of the plugin a media file was imported through: asks for its forms,
@@ -26,15 +26,12 @@ export function updateSourceMedia(
   action: AppAction,
   app: AppState,
 ) {
-  const route = shownMediaFile(app);
+  const route = selectShownMediaFile(app);
   switch (action.type) {
     case "sourceMediaOpened":
       return updated(openedPluginForm, sourceFormRequest(route));
     case "sourceMediaStepTaken":
-      if (
-        wizard === null ||
-        isSourceStepInFlight(app.operations, route.mediaFileId)
-      )
+      if (wizard === null || selectIsSourceStepInFlight(app, route.mediaFileId))
         return updated(wizard);
       return updated(
         stepSent(wizard),

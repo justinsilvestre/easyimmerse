@@ -1,9 +1,9 @@
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
+import { selectOpenMediaScreen } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import {
   mediaScreenEnteredBy,
   mediaScreenLeftBy,
-  openMediaScreen,
 } from "../screen/openMediaScreen.ts";
 import { crossesSaveInterval } from "./playbackPosition.ts";
 import {
@@ -41,14 +41,14 @@ export const updateStoredPlaces: FeatureUpdate<StoredPlacesState> = (
         playback: { ...places.playback, [action.mediaFileId]: action.ms },
       });
     case "playerTimeChanged": {
-      const open = openMediaScreen(app);
+      const open = selectOpenMediaScreen(app);
       return open &&
         crossesSaveInterval(open.player.currentTimeSeconds, action.seconds)
         ? savePlayback(places, open, action.seconds)
         : updated(places);
     }
     case "playerPlayingChanged": {
-      const open = openMediaScreen(app);
+      const open = selectOpenMediaScreen(app);
       return open && !action.isPlaying
         ? savePlayback(places, open, open.player.currentTimeSeconds)
         : updated(places);

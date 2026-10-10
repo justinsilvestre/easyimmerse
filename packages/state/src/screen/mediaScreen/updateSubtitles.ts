@@ -7,8 +7,8 @@ import { transientNotice } from "../../notices/transientNotice.ts";
 import type { PickedFile } from "../../platform/effects.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
+import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import { roleForNewTrack } from "./roleForNewTrack.ts";
-import { shownMediaFile } from "./shownMediaScreen.ts";
 import { subtitleSelectionId } from "./subtitleSelectionId.ts";
 
 const subtitlesNotAdded = {
@@ -25,7 +25,7 @@ export function updateSubtitles(
   action: AppAction,
   app: AppState,
 ) {
-  const route = shownMediaFile(app);
+  const route = selectShownMediaFile(app);
   switch (action.type) {
     case "subtitleTrackChosen":
       return updated(pending, saveSelection(action, route));

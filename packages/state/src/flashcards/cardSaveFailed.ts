@@ -1,10 +1,11 @@
 import type { AppState } from "../app/appState.ts";
+import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
-import { type FailedSave, findFailedSave } from "./failedSave.ts";
+import type { FailedSave } from "./failedSave.ts";
 import { type FailedCard, keepFailedSave } from "./failedSaveKeeping.ts";
+import { selectFailedSave } from "./failedSaveSelectors.ts";
 import type { Rollback } from "./flashcardForm.ts";
 import type { SavePurpose } from "./flashcardRequests.ts";
-import { formOf } from "./flashcardsOnScreen.ts";
 import { isCardOf } from "./latestFlashcard.ts";
 import type { FlashcardSettled } from "./settleFlashcardRequest.ts";
 
@@ -22,9 +23,9 @@ export function cardSaveFailed(
   app: AppState,
 ) {
   const purpose = request.purpose as CardSave;
-  const form = formOf(app);
+  const form = selectFlashcardForm(app);
   if (form && isCardOf(form.card, request.flashcardId)) return [];
-  const listed = findFailedSave(app, request.flashcardId);
+  const listed = selectFailedSave(app, request.flashcardId);
   if (purpose.from === "retry" && listed === undefined) return [];
   // A waiting Retry aborted because an earlier save landed also counts as in doubt here. That is harmless:
   // the landing forgot the failed save, so the line above returns before this.

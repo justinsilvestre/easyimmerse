@@ -2,13 +2,14 @@ import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import { mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
-import { failedSaveIdOf, failedSavesOf, findFailedSave } from "./failedSave.ts";
+import { failedSaveIdOf } from "./failedSave.ts";
 import {
   openingAborts,
   openingProgress,
   openingRequests,
   openingSettledBy,
 } from "./failedSaveOpeningRequests.ts";
+import { selectFailedSave, selectFailedSaves } from "./failedSaveSelectors.ts";
 import {
   flashcardNoticeKeys,
   flashcardNotices,
@@ -22,9 +23,9 @@ import {
  * which takes it once both have come. A media file's form has at most one card on the way, so any other opening there is given up.
  */
 export function openFailedSave(flashcardId: string, app: AppState) {
-  const opening = findFailedSave(app, flashcardId);
+  const opening = selectFailedSave(app, flashcardId);
   if (opening?.mediaFileId == null) return [];
-  const others = failedSavesOf(app.operations).filter(
+  const others = selectFailedSaves(app).filter(
     (other) =>
       other.isOpening &&
       other.mediaFileId === opening.mediaFileId &&
@@ -32,9 +33,7 @@ export function openFailedSave(flashcardId: string, app: AppState) {
   );
   return [
     withdraw(flashcardNoticeKeys.saveRefused(flashcardId)),
-    ...others.flatMap((other) =>
-      openingAborts(app.operations, failedSaveIdOf(other)),
-    ),
+    ...others.flatMap((other) => openingAborts(app, failedSaveIdOf(other))),
     ...openingRequests(flashcardId, opening.projectId),
   ];
 }
@@ -45,13 +44,13 @@ export function openFailedSave(flashcardId: string, app: AppState) {
  */
 export function settleOpening(action: AppAction, app: AppState) {
   const opening = openingSettledBy(action);
-  const failedSave = opening && findFailedSave(app, opening.flashcardId);
+  const failedSave = opening && selectFailedSave(app, opening.flashcardId);
   if (!opening || opening.isAborted || !failedSave?.isOpening) return [];
   if (failedSave.mediaFileId !== shownMediaFileId(mainScreenOf(app.route)))
     return [];
   if (openingProgress(opening, failedSave, app) !== "failed") return [];
   return [
-    ...openingAborts(app.operations, opening.flashcardId).filter(
+    ...openingAborts(app, opening.flashcardId).filter(
       (abort) => abort.id === opening.otherId,
     ),
     show(flashcardNotices.openFailed(wordOf(failedSave.card))),
@@ -63,11 +62,9 @@ export function giveUpOpeningsAway(action: AppAction, app: AppState) {
   const shownBefore = shownMediaFileId(mainScreenOf(app.route));
   const shown = shownMediaFileId(mainScreenOf(routeAfter(app, action)));
   if (shown === shownBefore) return [];
-  return failedSavesOf(app.operations)
+  return selectFailedSaves(app)
     .filter(({ isOpening, mediaFileId }) => isOpening && mediaFileId !== shown)
-    .flatMap((failedSave) =>
-      openingAborts(app.operations, failedSaveIdOf(failedSave)),
-    );
+    .flatMap((failedSave) => openingAborts(app, failedSaveIdOf(failedSave)));
 }
 
 function shownMediaFileId(

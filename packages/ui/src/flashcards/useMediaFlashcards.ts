@@ -18,7 +18,7 @@ import { flashcardSegmentsOf } from "./flashcardSegmentsOf.ts";
 export function useMediaFlashcards(projectId: string, mediaFileId: string) {
   const dispatch = useAppDispatch();
   const listed = useListFlashcardsQuery(projectId).data?.flashcards;
-  const form = useAppSelector(selectFlashcardForm);
+  const form = useAppSelector((state) => selectFlashcardForm(state.app));
   const { flashcards, drawn } = useAppSelector((state) =>
     selectMediaFlashcards(state, listed, mediaFileId),
   );

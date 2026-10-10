@@ -1,6 +1,6 @@
 import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
-import { shownMediaFile } from "../screen/mediaScreen/shownMediaScreen.ts";
+import { selectShownMediaFile } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import type { EditorAction } from "./editFlashcard.ts";
 import { editCard, flashcardIdOf, withLookupFields } from "./flashcardCard.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
@@ -59,7 +59,7 @@ export function giveUpLookup(form: FlashcardForm, app: AppState) {
 
 function sendFromForm(form: FlashcardForm, app: AppState) {
   const { card, rollbackIfDiscarded } = form;
-  const { projectId } = shownMediaFile(app);
+  const { projectId } = selectShownMediaFile(app);
   const [withdrawal, sending] = askSave(
     { card, projectId, from: "form", offersUndo: true, rollbackIfDiscarded },
     app,

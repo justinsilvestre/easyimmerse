@@ -3,8 +3,8 @@ import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import { isAudioFileName, isDocumentFileName } from "../mediaFileExtensions.ts";
+import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import { playbackRequestIds } from "./playbackRequests.ts";
-import { shownMediaFile } from "./shownMediaScreen.ts";
 
 const picturesRequestId = (mediaFileId: string) =>
   `media/${mediaFileId}/pictures`;
@@ -17,7 +17,7 @@ export function picturesProbeOf(
   action: AppAction,
   app: Pick<AppState, "route">,
 ) {
-  const { mediaFileId } = shownMediaFile(app);
+  const { mediaFileId } = selectShownMediaFile(app);
   const ids = playbackRequestIds(mediaFileId);
   if (!isSettled(action, ids.mediaFile, "listMediaFiles") || !action.outcome.ok)
     return [];
@@ -45,7 +45,7 @@ export function picturesFoundBy(
   action: AppAction,
   app: Pick<AppState, "route" | "server">,
 ): boolean {
-  const { mediaFileId } = shownMediaFile(app);
+  const { mediaFileId } = selectShownMediaFile(app);
   if (isSettled(action, picturesRequestId(mediaFileId), "probePictures"))
     return action.outcome.ok && action.outcome.data;
   if (

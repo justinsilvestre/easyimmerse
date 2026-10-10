@@ -3,12 +3,9 @@ import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
 import type { FinishedLookupFlashcard } from "../screen/lookup/lookupFlashcardFinishedBy.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
-import {
-  type FailedSave,
-  failedSaveIdOf,
-  findFailedSave,
-} from "./failedSave.ts";
+import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
 import { forgetFailedSave } from "./failedSaveKeeping.ts";
+import { selectFailedSave, selectPendingRetry } from "./failedSaveSelectors.ts";
 import {
   existingCard,
   type FlashcardCard,
@@ -21,8 +18,8 @@ import {
   type Rollback,
 } from "./flashcardForm.ts";
 import { flashcardNoticeKeys, withdraw } from "./flashcardNotices.ts";
+import { selectLatestFlashcard } from "./flashcardsSelectors.ts";
 import { replaceForm } from "./formLeaving.ts";
-import { latestFlashcard, retryOf } from "./latestFlashcard.ts";
 
 /** The form for a flashcard from a word: filled from its lookup when that answered in time, or else awaiting it. */
 export function formFromLookup({
@@ -49,10 +46,10 @@ export function openListed(
   { flashcardId, listed }: { flashcardId: string; listed: Flashcard | null },
   app: AppState,
 ) {
-  const failedSave = findFailedSave(app, flashcardId);
+  const failedSave = selectFailedSave(app, flashcardId);
   if (failedSave) return takeFailedSave(form, failedSave, app);
   if (listed === null) return updated(form);
-  const card = existingCard(latestFlashcard(listed, app));
+  const card = existingCard(selectLatestFlashcard(app, listed));
   const [opened, effects] = replaceForm(form, openedForm(card), app);
   return updated(
     opened,
@@ -71,7 +68,7 @@ export function takeFailedSave(
   app: AppState,
 ) {
   const flashcardId = failedSaveIdOf(failedSave);
-  const retry = retryOf(app, flashcardId);
+  const retry = selectPendingRetry(app, flashcardId);
   const rollback: Rollback | null =
     retry?.request.kind === "saveFlashcard" &&
     retry.request.purpose.type === "save"

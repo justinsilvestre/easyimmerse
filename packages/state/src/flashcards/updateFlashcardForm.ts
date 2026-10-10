@@ -3,16 +3,16 @@ import type { AppState } from "../app/appState.ts";
 import { updated } from "../app/updated.ts";
 import type { MediaRoute } from "../route/route.ts";
 import { lookupFlashcardFinishedBy } from "../screen/lookup/lookupFlashcardFinishedBy.ts";
-import { picturesFoundBy } from "../screen/mediaScreen/picturesProbe.ts";
 import {
-  shownMediaFile,
-  shownMediaScreen,
-} from "../screen/mediaScreen/shownMediaScreen.ts";
-import { findFailedSave } from "./failedSave.ts";
+  selectShownMediaFile,
+  selectShownMediaScreen,
+} from "../screen/mediaScreen/mediaScreenSelectors.ts";
+import { picturesFoundBy } from "../screen/mediaScreen/picturesProbe.ts";
 import {
   openingProgress,
   openingSettledBy,
 } from "./failedSaveOpeningRequests.ts";
+import { selectFailedSave } from "./failedSaveSelectors.ts";
 import { newCard, withScreenshot } from "./flashcardCard.ts";
 import { type FlashcardForm, openedForm } from "./flashcardForm.ts";
 import { flashcardStartedBy } from "./flashcardStartedBy.ts";
@@ -43,11 +43,11 @@ export function updateFlashcardForm(
   action: AppAction,
   app: AppState,
 ) {
-  const route = shownMediaFile(app);
+  const route = selectShownMediaFile(app);
   if (action.type === "mediaScreenLeft")
     return updated(null, ...leaveForm(form, app));
   const finished = lookupFlashcardFinishedBy(
-    shownMediaScreen(app).lookup,
+    selectShownMediaScreen(app).lookup,
     action,
   );
   if (
@@ -94,10 +94,10 @@ function settled(form: FlashcardForm | null, action: AppAction, app: AppState) {
   if (isFlashcardSettled(action))
     return updated(form && settleInForm(form, action));
   const opening = openingSettledBy(action);
-  const failedSave = opening && findFailedSave(app, opening.flashcardId);
+  const failedSave = opening && selectFailedSave(app, opening.flashcardId);
   return opening &&
     failedSave?.isOpening &&
-    failedSave.mediaFileId === shownMediaFile(app).mediaFileId &&
+    failedSave.mediaFileId === selectShownMediaFile(app).mediaFileId &&
     openingProgress(opening, failedSave, app) === "ready"
     ? takeFailedSave(form, failedSave, app)
     : updated(form);

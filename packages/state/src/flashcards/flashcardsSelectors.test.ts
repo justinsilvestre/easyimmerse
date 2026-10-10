@@ -1,14 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
-import { cat } from "../screen/lookup/lookupTestSupport.ts";
+import { cat, requestFlashcard } from "../screen/lookup/lookupTestSupport.ts";
 import { exampleListedFlashcard } from "./exampleFlashcards.ts";
-import { selectMediaFlashcards } from "./flashcardsSelectors.ts";
+import {
+  selectLatestFlashcard,
+  selectMediaFlashcards,
+  selectUnsavedWorkCount,
+} from "./flashcardsSelectors.ts";
 import {
   appAfter,
   applied,
+  createNew,
   failure,
   hund,
+  landed,
   settle,
   startNew,
   typeWord,
@@ -17,6 +23,17 @@ import {
 const katze = exampleListedFlashcard("k", "Katze");
 const listed = [hund, katze];
 const openHund = actions.flashcardOpened("h", hund);
+
+/** The app with hund changed to the word and left, so that its save is in flight as flashcard/h/1. */
+const savingHundAs = (word: string) =>
+  appAfter(openHund, typeWord(word), startNew("f2"));
+
+/** The app once hund's save as "Hündin" has landed. */
+function hundSaved() {
+  const app = savingHundAs("Hündin");
+  const saved = exampleListedFlashcard("h", "Hündin", 2);
+  return applied(app, settle(app, "flashcard/h/1", landed(saved)));
+}
 
 const drawnWords = (app: AppState) =>
   selectMediaFlashcards({ app }, listed, "m1").drawn.map(
@@ -92,5 +109,67 @@ describe("selectMediaFlashcards", () => {
       "m1",
     );
     expect(flashcards.map(({ id }) => id)).toEqual(["h"]);
+  });
+});
+
+describe("selectLatestFlashcard", () => {
+  it("prefers the draft of the latest pending save", () => {
+    expect(
+      selectLatestFlashcard(savingHundAs("Hündin"), hund).content.word,
+    ).toBe("Hündin");
+  });
+
+  it("is the listed flashcard once no save of it is pending", () => {
+    expect(selectLatestFlashcard(hundSaved(), hund).content.word).toBe("Hund");
+  });
+});
+
+describe("selectUnsavedWorkCount", () => {
+  it("counts nothing while the open card is unchanged", () => {
+    expect(selectUnsavedWorkCount(appAfter(startNew("f1", "Katze")))).toBe(0);
+  });
+
+  it("counts a changed form", () => {
+    expect(
+      selectUnsavedWorkCount(
+        appAfter(startNew("f1", "Katze"), typeWord("Kater")),
+      ),
+    ).toBe(1);
+  });
+
+  it("counts a form whose save failed", () => {
+    const app = appAfter(
+      startNew("f1", "Katze"),
+      actions.flashcardSaveRequested(),
+    );
+    const failed = applied(app, settle(app, "flashcard/f1/1", failure(500)));
+    expect(selectUnsavedWorkCount(failed)).toBe(1);
+  });
+
+  it("counts each pending flashcard request", () => {
+    expect(
+      selectUnsavedWorkCount(appAfter(createNew("f1"), createNew("f2"))),
+    ).toBe(2);
+  });
+
+  it("counts each card waiting for its lookup", () => {
+    const app = appAfter(
+      requestFlashcard(cat),
+      actions.lookupFlashcardWaitEnded("f-cat"),
+    );
+    expect(selectUnsavedWorkCount(app)).toBe(1);
+  });
+
+  it("counts each failed save", () => {
+    const app = appAfter(createNew("f1"));
+    expect(
+      selectUnsavedWorkCount(
+        applied(app, settle(app, "flashcard/f1/background/1", failure(500))),
+      ),
+    ).toBe(1);
+  });
+
+  it("counts a flashcard from a word that waits for its lookup", () => {
+    expect(selectUnsavedWorkCount(appAfter(requestFlashcard(cat)))).toBe(1);
   });
 });

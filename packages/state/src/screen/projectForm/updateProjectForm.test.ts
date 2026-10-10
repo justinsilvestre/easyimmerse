@@ -6,12 +6,12 @@ import { updateProjectForm } from "./updateProjectForm.ts";
 
 const submitted = actions.projectFormSubmitted(korean);
 
-const idle = stateAfter().operations;
+const idle = stateAfter();
 
 const creating = stateAfter(
   actions.navigated({ type: "createProject" }),
   submitted,
-).operations;
+);
 
 describe("updateProjectForm", () => {
   it("creates a project from the new project form", () => {

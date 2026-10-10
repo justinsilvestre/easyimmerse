@@ -9,6 +9,7 @@ import {
   requestCursorFlashcard,
   requestFlashcard,
 } from "../screen/lookup/lookupTestSupport.ts";
+import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProject } from "../server/exampleProject.ts";
 import {
@@ -16,14 +17,13 @@ import {
   exampleDraft,
   exampleListedFlashcard,
 } from "./exampleFlashcards.ts";
-import { failedSavesOf } from "./failedSave.ts";
+import { selectFailedSaves } from "./failedSaveSelectors.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
 import {
   appAfter,
   applied,
   failure,
   flashcardEffects,
-  formAfter,
   heldCardIds,
   hund,
   landed,
@@ -84,14 +84,16 @@ function buttonOf(notice: NoticeContent | undefined, label: string) {
 }
 
 const failedIds = (app: AppState) =>
-  failedSavesOf(app.operations).map(({ card }) => flashcardIdOf(card));
+  selectFailedSaves(app).map(({ card }) => flashcardIdOf(card));
 
 describe("flashcardCommands", () => {
   it("when a changed form is closed, offers an undo toast that reopens the card", () => {
     const app = appAfter(startNew("f1", "Katze"), typeWord("Kater"));
     const [toast] = noticesShown(app, close);
     const reopened = applied(app, close, buttonOf(toast, "Undo"));
-    expect(formAfter(reopened)?.card.editor.content.word).toBe("Kater");
+    expect(selectFlashcardForm(reopened)?.card.editor.content.word).toBe(
+      "Kater",
+    );
   });
 
   it("when a failed save is discarded, offers an undo toast that lists it again", () => {
@@ -244,9 +246,7 @@ describe("flashcardCommands", () => {
   });
 
   it("when a save's time limit passes, gives its card a rollback", () => {
-    expect(
-      failedSavesOf(f1TimedOut().operations)[0]?.rollbackIfDiscarded,
-    ).toEqual({
+    expect(selectFailedSaves(f1TimedOut())[0]?.rollbackIfDiscarded).toEqual({
       content: null,
       retryRequestId: null,
     });
@@ -288,7 +288,7 @@ describe("flashcardCommands", () => {
       app,
       settle(app, retry, landed(exampleListedFlashcard("f1", "Katze"))),
     );
-    expect(failedSavesOf(retried.operations)).toEqual([]);
+    expect(selectFailedSaves(retried)).toEqual([]);
   });
 
   it("when a closed form in doubt is discarded from the status line, sends its rollback", () => {
@@ -575,9 +575,7 @@ describe("flashcardCommands", () => {
     });
 
     it("lists the card as refused", () => {
-      expect(failedSavesOf(hundFailed(422).operations)[0]?.isRefused).toBe(
-        true,
-      );
+      expect(selectFailedSaves(hundFailed(422))[0]?.isRefused).toBe(true);
     });
 
     it("sends nothing on Retry", () => {
@@ -593,7 +591,7 @@ describe("flashcardCommands", () => {
         hundFailed(),
         actions.failedSaveOpened("h", "p1", "m1"),
       );
-      expect(failedSavesOf(app.operations)[0]?.isOpening).toBe(true);
+      expect(selectFailedSaves(app)[0]?.isOpening).toBe(true);
     });
 
     it("says it could not be opened when its media file is gone", () => {
@@ -851,6 +849,6 @@ describe("flashcardCommands", () => {
     const [retry] = requestIdsOf(app, "h");
     if (!retry) throw new Error("No Retry was sent.");
     const failed = applied(app, settle(app, retry, failure(500)));
-    expect(failedSavesOf(failed.operations)[0]?.isOpening).toBe(true);
+    expect(selectFailedSaves(failed)[0]?.isOpening).toBe(true);
   });
 });

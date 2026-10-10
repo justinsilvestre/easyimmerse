@@ -1,13 +1,17 @@
-import type { Flashcard } from "@easyimmerse/types";
+import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { createSelector } from "reselect";
+import type { AppState } from "../app/appState.ts";
 import type { RootState } from "../app/createAppStore.ts";
+import { selectPendingFlashcard } from "../screen/lookup/lookupSelectors.ts";
+import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
-import { newFlashcardSegmentId } from "./flashcardCard.ts";
+import { selectFailedSaves } from "./failedSaveSelectors.ts";
+import { type FlashcardCard, newFlashcardSegmentId } from "./flashcardCard.ts";
+import { draftOfFlashcard } from "./flashcardDrafts.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
-import { formOf } from "./flashcardsOnScreen.ts";
+import { isFlashcardScope } from "./flashcardRequests.ts";
 import { latestOf } from "./latestFlashcard.ts";
 import { selectFlashcardRequests } from "./selectFlashcardRequests.ts";
-import { selectFailedSaves } from "./selectStatusLineSaves.ts";
 
 /** A flashcard as the waveform draws it: its id, or the new card's segment id, and the content the app holds for it. */
 export type DrawnFlashcard = Pick<Flashcard, "id" | "content">;
@@ -23,18 +27,14 @@ export type MediaFlashcards = {
   drawn: readonly DrawnFlashcard[];
 };
 
-/** Returns the flashcard open in the form, or null. */
-export const selectFlashcardForm = (state: RootState): FlashcardForm | null =>
-  formOf(state.app);
-
 /** Returns the flashcards of a media file, from the cached list `listed`, as `MediaFlashcards` describes. */
 export const selectMediaFlashcards = createSelector(
   [
     (_state: RootState, listed: readonly Flashcard[] | undefined) => listed,
     (_state: RootState, _listed: unknown, mediaFileId: string) => mediaFileId,
     selectFlashcardRequests,
-    selectFailedSaves,
-    selectFlashcardForm,
+    (state: RootState) => selectFailedSaves(state.app),
+    (state: RootState) => selectFlashcardForm(state.app),
   ],
   (listed, mediaFileId, requests, failedSaves, form) => {
     const flashcards = (listed ?? [])
@@ -46,6 +46,46 @@ export const selectMediaFlashcards = createSelector(
     return { flashcards, drawn: drawnFlashcards(flashcards, failed, form) };
   },
 );
+
+/**
+ * Returns a flashcard as the latest work on it leaves it, which the cached list, holding `listed`, may not show yet:
+ * `listed` with the draft of its latest pending save.
+ */
+export function selectLatestFlashcard(
+  app: Pick<AppState, "operations">,
+  listed: Flashcard,
+): Flashcard {
+  return latestOf(listed, app.operations.requests);
+}
+
+/** Returns what a card's flashcard holds before a save asked for now: its latest content for a saved one, or nothing for a new one. */
+export function selectContentBeforeSave(
+  app: Pick<AppState, "operations">,
+  card: FlashcardCard,
+): FlashcardDraft | null {
+  return card.kind === "existing"
+    ? draftOfFlashcard(selectLatestFlashcard(app, card.flashcard))
+    : null;
+}
+
+/**
+ * Counts the pieces of flashcard work that closing the app would lose: the open form while it is changed,
+ * asked to save, sending or failed; each flashcard request pending or held for its lookup; each failed save;
+ * and a flashcard from a word waiting for its lookup. Only whether the count is zero matters.
+ */
+export function selectUnsavedWorkCount(
+  app: Pick<AppState, "operations" | "route" | "screen">,
+): number {
+  const requests = app.operations.requests.filter(({ scope }) =>
+    isFlashcardScope(scope),
+  ).length;
+  return (
+    (isFormAtRisk(selectFlashcardForm(app)) ? 1 : 0) +
+    requests +
+    selectFailedSaves(app).length +
+    (selectPendingFlashcard(app) === null ? 0 : 1)
+  );
+}
 
 function drawnFlashcards(
   flashcards: readonly Flashcard[],
@@ -75,4 +115,14 @@ function drawnFlashcards(
         { id: newFlashcardSegmentId, content: form.card.editor.content },
       ]
     : drawn;
+}
+
+function isFormAtRisk(form: FlashcardForm | null): boolean {
+  return (
+    form !== null &&
+    (form.card.isChanged ||
+      form.stage === "awaitingLookupToSave" ||
+      form.stage === "sending" ||
+      form.saveFailure !== null)
+  );
 }

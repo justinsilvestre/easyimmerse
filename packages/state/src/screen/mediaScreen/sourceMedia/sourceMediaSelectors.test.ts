@@ -8,7 +8,7 @@ import {
   sourceFormSettled,
   sourceStepSettled,
 } from "./exampleSourceMedia.ts";
-import { selectSourceMedia } from "./selectSourceMedia.ts";
+import { selectSourceMedia } from "./sourceMediaSelectors.ts";
 
 const showingForm = [
   actions.openMediaFileRequested("p1", "m1"),

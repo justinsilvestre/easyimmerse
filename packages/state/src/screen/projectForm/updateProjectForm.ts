@@ -1,7 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
+import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
-import { isRequestInFlight } from "../../operations/isRequestInFlight.ts";
-import type { OperationsState } from "../../operations/operations.ts";
+import { selectIsRequestInFlight } from "../../operations/operationsSelectors.ts";
 import type { ServerRequest } from "../../server/serverRequest.ts";
 import type { ProjectFormRoute } from "./projectFormRoute.ts";
 import { projectFormRequestId } from "./projectFormRoute.ts";
@@ -10,11 +10,11 @@ import { projectFormRequestId } from "./projectFormRoute.ts";
 export function updateProjectForm(
   route: ProjectFormRoute,
   action: AppAction,
-  operations: OperationsState,
+  app: Pick<AppState, "operations">,
 ) {
   if (action.type !== "projectFormSubmitted") return [];
   const id = projectFormRequestId(route);
-  if (isRequestInFlight(operations, id)) return [];
+  if (selectIsRequestInFlight(app, id)) return [];
   return [
     { type: "sendRequest", id, request: submission(route, action) },
   ] satisfies Effect[];

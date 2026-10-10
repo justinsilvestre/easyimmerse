@@ -11,7 +11,7 @@ import {
   type SavePurpose,
   sendFlashcardRequest,
 } from "./flashcardRequests.ts";
-import { contentBefore } from "./latestFlashcard.ts";
+import { selectContentBeforeSave } from "./flashcardsSelectors.ts";
 
 type CardSave = Extract<SavePurpose, { type: "save" }>;
 
@@ -52,7 +52,7 @@ export function saveRequest(order: SaveOrder, app: AppState) {
     purpose: {
       type: "save",
       card,
-      before: contentBefore(card, app),
+      before: selectContentBeforeSave(app, card),
       ...purpose,
     },
   } satisfies FlashcardRequest;

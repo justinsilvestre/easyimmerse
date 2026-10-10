@@ -5,21 +5,21 @@ import {
   lookupFlashcardFinishedBy,
 } from "../screen/lookup/lookupFlashcardFinishedBy.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
+import { mediaScreenActionOf } from "../screen/mediaScreen/mediaScreenActionOf.ts";
 import {
-  mediaScreenActionOf,
-  shownMediaFile,
-} from "../screen/mediaScreen/shownMediaScreen.ts";
+  selectMediaScreen,
+  selectShownMediaFile,
+} from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { newCard, withLookupFields } from "./flashcardCard.ts";
 import { askSave } from "./flashcardSaves.ts";
 import { flashcardStartedBy } from "./flashcardStartedBy.ts";
-import { mediaScreenOf } from "./flashcardsOnScreen.ts";
 import { startLookupWait } from "./lookupWait.ts";
 import { holdForLookup } from "./waitingCards.ts";
 
 /** Saves at once a card started to be saved with no lookup to wait for, offering Undo once it lands. */
 export function saveStarted(action: AppAction, app: AppState) {
   const started = flashcardStartedBy(action);
-  const projectId = mediaScreenOf(app)?.route.projectId;
+  const projectId = selectMediaScreen(app)?.route.projectId;
   if (started?.destination !== "save" || projectId === undefined) return [];
   return askSave(
     {
@@ -36,7 +36,7 @@ export function saveStarted(action: AppAction, app: AppState) {
 
 /** Takes a flashcard from a word whose lookup no longer holds it, as `takeLookupFlashcard` describes. */
 export function takeFinished(action: AppAction, app: AppState) {
-  const onScreen = mediaScreenOf(app);
+  const onScreen = selectMediaScreen(app);
   if (onScreen === null) return [];
   const seen = mediaScreenActionOf(app, action);
   const finished = lookupFlashcardFinishedBy(onScreen.screen.lookup, seen);
@@ -52,7 +52,7 @@ function takeLookupFlashcard(
   { pending, how, fields }: FinishedLookupFlashcard,
   app: AppState,
 ) {
-  const { projectId } = shownMediaFile(app);
+  const { projectId } = selectShownMediaFile(app);
   if (pending.destination === "editor" && how !== "abandoned") return [];
   const card = newCard({ id: pending.flashcardId, draft: pending.draft });
   if (how === "ready") {

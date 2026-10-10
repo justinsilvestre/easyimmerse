@@ -3,11 +3,11 @@ import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
 import { endLoopOutside, loopAtEnd } from "./clipLoop.ts";
 import { pauseAtClipEnd, playClip } from "./clipPlayback.ts";
+import { selectShownMediaScreen } from "./mediaScreenSelectors.ts";
 import { formClipOf, type PlayingState } from "./playingState.ts";
 import { playOpenedCard } from "./playOpenedCard.ts";
 import { positionLoaded, resume } from "./resume.ts";
 import { seekTo, withPlayer } from "./seekTo.ts";
-import { shownMediaScreen } from "./shownMediaScreen.ts";
 
 /**
  * Records what the player reports, passes the user's requests on to the platform's player,
@@ -19,7 +19,7 @@ export function updatePlaying(
   action: AppAction,
   app: AppState,
 ) {
-  const clip = formClipOf(shownMediaScreen(app));
+  const clip = formClipOf(selectShownMediaScreen(app));
   switch (action.type) {
     case "seekRequested": {
       const [sought, effects] = seekTo(playing, action.seconds * 1000);

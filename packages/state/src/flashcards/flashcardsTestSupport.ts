@@ -5,15 +5,14 @@ import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import { stateAfter, updatedAsDispatched } from "../app/stateAfter.ts";
 import { mainScreenOf } from "../route/route.ts";
-import { mediaScreenActionOf } from "../screen/mediaScreen/shownMediaScreen.ts";
+import { mediaScreenActionOf } from "../screen/mediaScreen/mediaScreenActionOf.ts";
+import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
 import {
   exampleListedFlashcard,
   exampleNewFlashcard,
 } from "./exampleFlashcards.ts";
 import { flashcardCommands } from "./flashcardCommands.ts";
-import type { FlashcardForm } from "./flashcardForm.ts";
-import { formOf } from "./flashcardsOnScreen.ts";
 import { updateFlashcardForm } from "./updateFlashcardForm.ts";
 
 export const openM1 = actions.openMediaFileRequested("p1", "m1");
@@ -78,12 +77,13 @@ export const landed = (flashcard: Flashcard) => ({ data: flashcard });
 /** The form the app has after an action, with the effects its update returns. */
 export function formUpdate(app: AppState, action: AppAction) {
   const seen = mediaScreenActionOf(app, action);
-  const [form, effects] = updateFlashcardForm(formOf(app), seen, app);
+  const [form, effects] = updateFlashcardForm(
+    selectFlashcardForm(app),
+    seen,
+    app,
+  );
   return { form, effects };
 }
-
-/** The form after the actions. */
-export const formAfter = (app: AppState): FlashcardForm | null => formOf(app);
 
 /** The effects the form and the flashcard commands return for an action, before the root update holds back scoped requests. */
 export function flashcardEffects(

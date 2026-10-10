@@ -5,7 +5,7 @@ import type { Update } from "../../app/update.ts";
 import { updated } from "../../app/updated.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
-import { shownMediaFile } from "./shownMediaScreen.ts";
+import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import type {
   WaveformState,
   WaveformViewName,
@@ -32,7 +32,7 @@ export function updateWaveform(
   action: AppAction,
   app: AppState,
 ) {
-  const route = shownMediaFile(app);
+  const route = selectShownMediaFile(app);
   switch (action.type) {
     case "waveformZoomed":
       return updated({ ...waveform, requestedSpanMs: action.spanMs });
