@@ -1,9 +1,9 @@
 import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
-import { forgetFailedSave } from "./failedSaveKeeping.ts";
-import { selectFailedSave } from "./failedSaveSelectors.ts";
-import type { FlashcardApp } from "./flashcardApp.ts";
+import { selectFailedSave } from "./failedSave.ts";
+import { forgetFailedSave } from "./failedSaveCommands.ts";
+import type { FlashcardApp } from "./flashcardForm.ts";
 import {
   flashcardNoticeKeys,
   flashcardNotices,

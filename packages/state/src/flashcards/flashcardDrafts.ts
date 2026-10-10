@@ -4,7 +4,9 @@ import type {
   FlashcardDraft,
   Screenshot,
 } from "@easyimmerse/types";
+import type { RequestRecord } from "../operations/operations.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
+import { flashcardScope } from "./flashcardRequests.ts";
 
 /** What a saved flashcard holds, as the draft that would save it as it is. */
 export function draftOfFlashcard(flashcard: Flashcard): FlashcardDraft {
@@ -34,20 +36,39 @@ export function draftOfCard(card: FlashcardCard): FlashcardDraft {
   };
 }
 
-function isWordAtStart(draft: FlashcardDraft, word: string): boolean {
-  const start = draft.word_start;
-  return start !== null && draft.content.text_context.startsWith(word, start);
-}
-
-/** The flashcard as `draft` would leave it. */
-export function withDraft(
-  flashcard: Flashcard,
-  draft: FlashcardDraft,
+/** Returns `listed` with the draft of its latest save among the pending `requests`, or `listed` itself when none is pending. */
+export function latestOf(
+  listed: Flashcard,
+  requests: readonly RequestRecord[],
 ): Flashcard {
-  return { ...flashcard, ...draft };
+  const draft = latestSaveDraft(requests, listed.id);
+  return draft ? withDraft(listed, draft) : listed;
 }
 
 /** The screenshot a new flashcard starts with: the frame in the middle of its clip. */
 export function screenshotForClip(clip: AudioClip): Screenshot {
   return { at_ms: Math.round((clip.start_ms + clip.end_ms) / 2) };
+}
+
+function withDraft(flashcard: Flashcard, draft: FlashcardDraft): Flashcard {
+  return { ...flashcard, ...draft };
+}
+
+function isWordAtStart(draft: FlashcardDraft, word: string): boolean {
+  const start = draft.word_start;
+  return start !== null && draft.content.text_context.startsWith(word, start);
+}
+
+/** The draft of the latest pending save of a flashcard, or null when no save of it is pending. */
+function latestSaveDraft(
+  requests: readonly RequestRecord[],
+  flashcardId: string,
+): FlashcardDraft | null {
+  const scope = flashcardScope(flashcardId);
+  const saves = requests.flatMap(({ request, scope: recordScope }) =>
+    request.kind === "saveFlashcard" && recordScope === scope
+      ? [request.draft]
+      : [],
+  );
+  return saves.at(-1) ?? null;
 }

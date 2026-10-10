@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
 import { transientNotice } from "../notices/transientNotice.ts";
 import { cat } from "../screen/lookup/lookupTestSupport.ts";
-import { selectFailedSaves } from "./failedSaveSelectors.ts";
+import { selectFailedSaves } from "./failedSave.ts";
 import { flashcardNotices } from "./flashcardNotices.ts";
 import {
   appAfter,

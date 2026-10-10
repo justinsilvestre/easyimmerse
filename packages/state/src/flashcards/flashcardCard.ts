@@ -105,6 +105,10 @@ export function flashcardIdOf(card: FlashcardCard): string {
   return card.kind === "existing" ? card.flashcard.id : card.flashcardId;
 }
 
+/** Tells whether a card's flashcard is the one this id names. */
+export const isCardOf = (card: FlashcardCard, flashcardId: string) =>
+  flashcardIdOf(card) === flashcardId;
+
 /** The media file whose form edits the card, or null when the card has none. */
 export function mediaFileIdOf(card: FlashcardCard): string | null {
   return card.kind === "new"

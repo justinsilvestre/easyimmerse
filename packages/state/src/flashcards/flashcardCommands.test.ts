@@ -17,7 +17,7 @@ import {
   exampleDraft,
   exampleListedFlashcard,
 } from "./exampleFlashcards.ts";
-import { selectFailedSaves } from "./failedSaveSelectors.ts";
+import { selectFailedSaves } from "./failedSave.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
 import {
   appAfter,

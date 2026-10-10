@@ -7,7 +7,6 @@ import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { pathPlaybackOf } from "./pathPlayback.ts";
 import { picturesProbeOf } from "./picturesProbe.ts";
-import type { PlaybackApp } from "./playbackApp.ts";
 import {
   measureRequest,
   playbackRequestIds,
@@ -18,6 +17,7 @@ import {
   requestFirstPlaybackMethod,
   requestPlaybackMethod,
 } from "./requestPlaybackMethod.ts";
+import type { PlaybackApp } from "./updatePlaybackDialog.ts";
 
 /**
  * Works out how a file on the server's disk plays: reads its record, asks for its tracks, measures the browser,

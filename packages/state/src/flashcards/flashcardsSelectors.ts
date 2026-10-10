@@ -4,14 +4,18 @@ import type { AppState } from "../app/appState.ts";
 import type { AppRoot } from "../app/createAppStore.ts";
 import { selectPendingFlashcard } from "../screen/lookup/lookupSelectors.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
-import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
-import { selectFailedSaves } from "./failedSaveSelectors.ts";
+import {
+  type FailedSave,
+  failedSaveIdOf,
+  selectFailedSaves,
+} from "./failedSave.ts";
 import { type FlashcardCard, newFlashcardSegmentId } from "./flashcardCard.ts";
-import { draftOfFlashcard } from "./flashcardDrafts.ts";
+import { draftOfFlashcard, latestOf } from "./flashcardDrafts.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
-import { isFlashcardScope } from "./flashcardRequests.ts";
-import { latestOf } from "./latestFlashcard.ts";
-import { selectFlashcardRequests } from "./selectFlashcardRequests.ts";
+import {
+  isFlashcardScope,
+  selectFlashcardRequests,
+} from "./flashcardRequests.ts";
 
 /** A flashcard as the waveform draws it: its id, or the new card's segment id, and the content the app holds for it. */
 export type DrawnFlashcard = Pick<Flashcard, "id" | "content">;

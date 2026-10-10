@@ -5,11 +5,13 @@ import type { ScreenState } from "../screenState.ts";
 import { isConversionNoticeDue, isNoticeSettled } from "./conversionNotice.ts";
 import { selectMediaScreen } from "./mediaScreenSelectors.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
-import type { PlaybackApp } from "./playbackApp.ts";
 import { needsTrackChoice } from "./playbackMethodRules.ts";
 import { playbackRequestIds } from "./playbackRequests.ts";
 
 type DialogState = ScreenState["dialog"];
+
+/** The slices of the app state that the playback rules read: the shown media screen and the preferences. */
+export type PlaybackApp = Pick<AppState, "route" | "screen" | "preferences">;
 
 /**
  * Opens the track choice before the first play when a kind has several tracks and no choice is saved, or when the user asks,

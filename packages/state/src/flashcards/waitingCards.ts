@@ -9,9 +9,9 @@ import {
   selectShownMediaFile,
 } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { isSettled } from "../server/isSettled.ts";
-import type { FlashcardApp } from "./flashcardApp.ts";
+import { flashcardActions } from "./flashcardActions.ts";
 import { type NewCard, withLookupFields } from "./flashcardCard.ts";
-import type { LookupFieldsContext } from "./flashcardForm.ts";
+import type { FlashcardApp, LookupFieldsContext } from "./flashcardForm.ts";
 import {
   type FlashcardSender,
   releaseFlashcardRequest,
@@ -19,7 +19,9 @@ import {
 } from "./flashcardRequests.ts";
 import { askSave, saveRequest } from "./flashcardSaves.ts";
 import type { LookupFlashcardFields } from "./lookupFields.ts";
-import { cancelLookupWait } from "./lookupWait.ts";
+
+/** How long a save waits for a lookup still on its way before it saves the flashcard as it is. */
+const saveLookupWaitMs = 10_000;
 
 /** A new card to save once its word's lookup answers or the wait for it ends. */
 export type WaitingCard = {
@@ -73,6 +75,44 @@ export function sendLateCard(flashcardId: string, app: FlashcardApp) {
     .flatMap((held) => release(held, held.card, app));
 }
 
+/** Asks for the fields of a settled lookup that a flashcard waits for: the word's pending flashcard, the form's card or a held save. */
+export function fieldsAwaitedBy(action: AppAction, app: FlashcardApp) {
+  if (
+    action.type !== "requestSettled" ||
+    !isSettled(action, action.id, "lookupText")
+  )
+    return [];
+  const awaiting = selectAwaitingLookupContext(action.id, app);
+  if (awaiting === null) return [];
+  const results = action.outcome.ok ? action.outcome.data.results : [];
+  return [
+    {
+      type: "writeFlashcardFields",
+      requestId: action.id,
+      results,
+      context: awaiting,
+    },
+  ] satisfies Effect[];
+}
+
+/** Starts the wait of a card's save for its word's lookup. */
+export function startLookupWait(flashcardId: string) {
+  return {
+    type: "startTimer",
+    id: lookupWaitTimerIdOf(flashcardId),
+    ms: saveLookupWaitMs,
+    action: flashcardActions.flashcardLookupWaitEnded(flashcardId),
+  } satisfies Effect;
+}
+
+/** Ends the wait of a card's save for its word's lookup, which has answered. */
+export function cancelLookupWait(flashcardId: string) {
+  return {
+    type: "cancelTimer",
+    id: lookupWaitTimerIdOf(flashcardId),
+  } satisfies Effect;
+}
+
 function release(
   { id, projectId, purpose }: HeldSave,
   card: NewCard,
@@ -98,26 +138,6 @@ function heldSaveOf({ id, request, heldFor }: RequestRecord): HeldSave[] {
   return [{ id, heldFor, projectId, card: purpose.card, purpose }];
 }
 
-/** Asks for the fields of a settled lookup that a flashcard waits for: the word's pending flashcard, the form's card or a held save. */
-export function fieldsAwaitedBy(action: AppAction, app: FlashcardApp) {
-  if (
-    action.type !== "requestSettled" ||
-    !isSettled(action, action.id, "lookupText")
-  )
-    return [];
-  const awaiting = selectAwaitingLookupContext(action.id, app);
-  if (awaiting === null) return [];
-  const results = action.outcome.ok ? action.outcome.data.results : [];
-  return [
-    {
-      type: "writeFlashcardFields",
-      requestId: action.id,
-      results,
-      context: awaiting,
-    },
-  ] satisfies Effect[];
-}
-
 function selectAwaitingLookupContext(
   requestId: string,
   app: FlashcardApp,
@@ -131,4 +151,8 @@ function selectAwaitingLookupContext(
     ({ heldFor }) => heldFor === requestId,
   );
   return held?.purpose.lookupContext ?? null;
+}
+
+function lookupWaitTimerIdOf(flashcardId: string) {
+  return `flashcards/lookupWait/${flashcardId}`;
 }

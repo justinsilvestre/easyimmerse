@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RequestFailure } from "../server/serverRequest.ts";
-import { isSaveRefused } from "./isSaveRefused.ts";
+import { isSaveRefused } from "./failedSave.ts";
 
 const failure = (status: RequestFailure["status"]): RequestFailure => ({
   status,

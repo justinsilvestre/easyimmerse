@@ -1,14 +1,18 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import { mainScreenMoveOf } from "../route/mainScreenMoveOf.ts";
-import { discardFailedSave, restoreFailedSave } from "./failedSaveActions.ts";
+import {
+  discardFailedSave,
+  restoreFailedSave,
+  retryAllFailedSaves,
+  retryFailedSave,
+} from "./failedSaveCommands.ts";
 import {
   giveUpOpeningsAway,
   openFailedSave,
   settleOpening,
 } from "./failedSaveOpening.ts";
-import { retryAllFailedSaves, retryFailedSave } from "./failedSaveRetry.ts";
-import type { FlashcardApp } from "./flashcardApp.ts";
+import type { FlashcardApp } from "./flashcardForm.ts";
 import { formDiscardedKeyPrefix, withdraw } from "./flashcardNotices.ts";
 import { sendFlashcardRequest } from "./flashcardRequests.ts";
 import { undoRequest } from "./flashcardSaves.ts";

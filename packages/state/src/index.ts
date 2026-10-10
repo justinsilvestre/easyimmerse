@@ -27,6 +27,10 @@ export type {
   FlashcardForm,
   LookupFieldsContext,
 } from "./flashcards/flashcardForm.ts";
+export {
+  isAwaitingLookup,
+  saveStatusOf,
+} from "./flashcards/flashcardForm.ts";
 export { selectMediaFlashcards } from "./flashcards/flashcardsSelectors.ts";
 export { isSameLanguage, primarySubtag } from "./flashcards/languageTags.ts";
 export type {
@@ -34,7 +38,6 @@ export type {
   LookupFlashcardFields,
 } from "./flashcards/lookupFields.ts";
 export { flashcardFieldsFromLookup } from "./flashcards/lookupFields.ts";
-export { isAwaitingLookup, saveStatusOf } from "./flashcards/saveStage.ts";
 export {
   type StatusLineSave,
   selectStatusLineSaves,

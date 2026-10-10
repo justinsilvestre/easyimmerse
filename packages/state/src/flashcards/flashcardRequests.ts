@@ -1,6 +1,9 @@
 import type { FlashcardDraft } from "@easyimmerse/types";
+import { createSelector } from "reselect";
 import type { AppState } from "../app/appState.ts";
+import type { AppRoot } from "../app/createAppStore.ts";
 import type { Effect } from "../app/effect.ts";
+import { haveSameItems } from "../app/haveSameItems.ts";
 import { freeRequestId } from "../operations/freeRequestId.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
@@ -49,6 +52,13 @@ export function flashcardScope(flashcardId: string): string {
 export function isFlashcardScope(scope: string | undefined): boolean {
   return scope?.startsWith("flashcard:") ?? false;
 }
+
+/** Returns the pending flashcard requests, as the same array while they stay the same, so that other requests do not draw the flashcards again. */
+export const selectFlashcardRequests = createSelector(
+  [(state: AppRoot) => state.app.operations.requests],
+  (requests) => requests.filter(({ scope }) => isFlashcardScope(scope)),
+  { memoizeOptions: { resultEqualityCheck: haveSameItems } },
+);
 
 /**
  * Who sends a flashcard request: the form, or the commands outside it.

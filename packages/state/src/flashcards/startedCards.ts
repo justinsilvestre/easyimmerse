@@ -1,20 +1,22 @@
+import type { NewFlashcard } from "@easyimmerse/types";
 import type { AppAction } from "../app/appAction.ts";
 import {
   type FinishedLookupFlashcard,
   lookupFlashcardFinishedBy,
 } from "../screen/lookup/lookupFlashcardFinishedBy.ts";
 import { lookupRequestId } from "../screen/lookup/lookupIds.ts";
+import type { LookupState } from "../screen/lookup/lookupState.ts";
+import { requestedFlashcard } from "../screen/lookup/startFlashcard.ts";
 import { mediaScreenActionOf } from "../screen/mediaScreen/mediaScreenActionOf.ts";
 import {
   selectMediaScreen,
   selectShownMediaFile,
 } from "../screen/mediaScreen/mediaScreenSelectors.ts";
-import type { FlashcardApp } from "./flashcardApp.ts";
+import type { FlashcardDestination } from "./flashcardActions.ts";
 import { newCard, withLookupFields } from "./flashcardCard.ts";
+import type { FlashcardApp } from "./flashcardForm.ts";
 import { askSave } from "./flashcardSaves.ts";
-import { flashcardStartedBy } from "./flashcardStartedBy.ts";
-import { startLookupWait } from "./lookupWait.ts";
-import { holdForLookup } from "./waitingCards.ts";
+import { holdForLookup, startLookupWait } from "./waitingCards.ts";
 
 /** Saves at once a card started to be saved with no lookup to wait for, offering Undo once it lands. */
 export function saveStarted(action: AppAction, app: FlashcardApp) {
@@ -42,6 +44,21 @@ export function takeFinished(action: AppAction, app: FlashcardApp) {
   const seen = mediaScreenActionOf(app, action);
   const finished = lookupFlashcardFinishedBy(onScreen.screen.lookup, seen);
   return finished ? takeLookupFlashcard(finished, app) : [];
+}
+
+/**
+ * The flashcard that needs no lookup an action starts, with where it goes: one started outright,
+ * or the one for no word that the C or E key asks for when it starts none for the lookup cursor's word.
+ */
+export function flashcardStartedBy(
+  lookup: LookupState,
+  action: AppAction,
+): { flashcard: NewFlashcard; destination: FlashcardDestination } | null {
+  if (action.type === "flashcardStarted") return action;
+  if (action.type !== "lookupCursorFlashcardRequested") return null;
+  return action.wordless === null || requestedFlashcard(lookup, action)
+    ? null
+    : { flashcard: action.wordless, destination: action.destination };
 }
 
 /**

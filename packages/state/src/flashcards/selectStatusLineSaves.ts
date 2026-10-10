@@ -1,10 +1,13 @@
 import { createSelector } from "reselect";
 import type { AppRoot } from "../app/createAppStore.ts";
 import { haveSameItems } from "../app/haveSameItems.ts";
-import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
-import { selectFailedSaves } from "./failedSaveSelectors.ts";
+import {
+  type FailedSave,
+  failedSaveIdOf,
+  selectFailedSaves,
+} from "./failedSave.ts";
 import { flashcardNoticeKeys } from "./flashcardNotices.ts";
-import { selectFlashcardRequests } from "./selectFlashcardRequests.ts";
+import { selectFlashcardRequests } from "./flashcardRequests.ts";
 
 /** A failed save as the status line lists it. */
 export type StatusLineSave = FailedSave & {

@@ -6,8 +6,10 @@ import { routeAfter } from "../route/updateRoute.ts";
 import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import { removeDictionary } from "./dictionaryRemoval/removeDictionary.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
-import type { PlaybackApp } from "./mediaScreen/playbackApp.ts";
-import { updatePlaybackDialog } from "./mediaScreen/updatePlaybackDialog.ts";
+import {
+  type PlaybackApp,
+  updatePlaybackDialog,
+} from "./mediaScreen/updatePlaybackDialog.ts";
 import type { ScreenState } from "./screenState.ts";
 
 type DialogState = ScreenState["dialog"];
