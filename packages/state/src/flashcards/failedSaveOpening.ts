@@ -1,7 +1,7 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
+import { mainScreenMoveOf } from "../route/mainScreenMoveOf.ts";
 import { mainScreenOf } from "../route/route.ts";
-import { routeAfter } from "../route/updateRoute.ts";
 import { failedSaveIdOf } from "./failedSave.ts";
 import {
   openingAborts,
@@ -59,9 +59,10 @@ export function settleOpening(action: AppAction, app: AppState) {
 
 /** Gives up, without a word, the openings of failed saves on a media file that the route moves away from. */
 export function giveUpOpeningsAway(action: AppAction, app: AppState) {
-  const shownBefore = shownMediaFileId(mainScreenOf(app.route));
-  const shown = shownMediaFileId(mainScreenOf(routeAfter(app, action)));
-  if (shown === shownBefore) return [];
+  const move = mainScreenMoveOf(app, action);
+  if (move === null) return [];
+  const shown = shownMediaFileId(move.to);
+  if (shown === shownMediaFileId(move.from)) return [];
   return selectFailedSaves(app)
     .filter(({ isOpening, mediaFileId }) => isOpening && mediaFileId !== shown)
     .flatMap((failedSave) => openingAborts(app, failedSaveIdOf(failedSave)));

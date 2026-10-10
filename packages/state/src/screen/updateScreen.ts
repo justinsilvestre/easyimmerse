@@ -2,12 +2,9 @@ import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
+import { mainScreenMoveOf } from "../route/mainScreenMoveOf.ts";
 import type { MainRoute, Route } from "../route/route.ts";
-import {
-  isSameMainScreen,
-  mainScreenOf,
-  settingsPageOf,
-} from "../route/route.ts";
+import { mainScreenOf, settingsPageOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
 import { failureNotices } from "./failureNotices.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
@@ -46,17 +43,16 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
     app,
   );
   const route = routeAfter(app, action);
-  const isLeaving = !isSameMainScreen(app.route, route);
-  const nextMain = isLeaving
-    ? initialMainScreen(mainScreenOf(route), app.storedPlaces)
-    : updatedMain;
+  const move = mainScreenMoveOf(app, action);
+  const nextMain =
+    move !== null ? initialMainScreen(move.to, app.storedPlaces) : updatedMain;
   const [updatedDialog, dialogEffects] = updateDialog(
     screen.dialog,
     action,
     app,
   );
   const dialog =
-    (isLeaving && isMediaScreenDialog(updatedDialog)) ||
+    (move !== null && isMediaScreenDialog(updatedDialog)) ||
     isLeftDictionaryQuestion(updatedDialog, route)
       ? null
       : updatedDialog;
@@ -68,8 +64,8 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
   const opened = projectOpenedBy(app, action);
   const effects = [
     ...mainEffects,
-    ...(isLeaving ? leavingEffects(updatedMain, mainScreenOf(app.route)) : []),
-    ...(isLeaving ? enteringEffects(mainScreenOf(route)) : []),
+    ...(move !== null ? leavingEffects(updatedMain, move.from) : []),
+    ...(move !== null ? enteringEffects(move.to) : []),
     ...dialogEffects,
     ...settingsEffects,
     ...failureNotices(action),

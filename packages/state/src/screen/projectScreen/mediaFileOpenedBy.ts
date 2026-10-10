@@ -1,8 +1,8 @@
 import type { ListMediaFilesResponse, MediaFile } from "@easyimmerse/types";
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
 import { jobKey } from "../../operations/jobs.ts";
 import { mainScreenOf } from "../../route/route.ts";
+import type { RouteApp } from "../../route/updateRoute.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { ProjectScreenState } from "../screenState.ts";
 import { mediaFilePickRequestIds } from "./mediaFilePickRequestIds.ts";
@@ -12,7 +12,7 @@ import { mediaFilePickRequestIds } from "./mediaFilePickRequestIds.ts";
  * the file a pick added, the one of the same name a pick found already in the project, or the file a media-source fetch added.
  */
 export function mediaFileOpenedBy(
-  app: AppState,
+  app: RouteApp,
   action: AppAction,
 ): string | null {
   const main = app.screen.main;

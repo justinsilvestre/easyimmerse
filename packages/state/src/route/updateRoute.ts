@@ -40,11 +40,14 @@ export function nextRoute(route: Route, action: AppAction): Route {
   }
 }
 
+/** The part of the app state that decides where the app goes next. */
+export type RouteApp = Pick<AppState, "route" | "screen">;
+
 /**
  * Returns where the app is after an action, including the media file that a settled pick or fetch opens,
  * and the project that a settled project form opens.
  */
-export function routeAfter(app: AppState, action: AppAction): Route {
+export function routeAfter(app: RouteApp, action: AppAction): Route {
   const project = projectOpenedByForm(mainScreenOf(app.route), action);
   if (project !== null)
     return withMainRoute(app.route, () => ({

@@ -1,5 +1,6 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
+import { mainScreenMoveOf } from "../route/mainScreenMoveOf.ts";
 import { discardFailedSave, restoreFailedSave } from "./failedSaveActions.ts";
 import {
   giveUpOpeningsAway,
@@ -10,7 +11,6 @@ import { retryAllFailedSaves, retryFailedSave } from "./failedSaveRetry.ts";
 import { formDiscardedKeyPrefix, withdraw } from "./flashcardNotices.ts";
 import { sendFlashcardRequest } from "./flashcardRequests.ts";
 import { undoRequest } from "./flashcardSaves.ts";
-import { isLeavingScreen } from "./isLeavingScreen.ts";
 import {
   isFlashcardSettled,
   settleFlashcardRequest,
@@ -72,7 +72,7 @@ function answer(action: AppAction, app: AppState) {
 
 /** Withdraws, as the screen closes, the undo toasts of closed forms, since their Undo needs the form. */
 function withdrawFormNotices(action: AppAction, app: AppState) {
-  if (!isLeavingScreen(app, action)) return [];
+  if (mainScreenMoveOf(app, action)?.from.screen !== "media") return [];
   return app.notices.shown.flatMap(({ key }) =>
     key?.startsWith(formDiscardedKeyPrefix) ? [withdraw(key)] : [],
   );

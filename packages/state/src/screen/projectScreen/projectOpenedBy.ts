@@ -1,21 +1,23 @@
 import type { AppAction } from "../../app/appAction.ts";
-import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
+import { mainScreenMoveOf } from "../../route/mainScreenMoveOf.ts";
 import type { MainRoute } from "../../route/route.ts";
-import { mainScreenOf } from "../../route/route.ts";
-import { routeAfter } from "../../route/updateRoute.ts";
+import type { RouteApp } from "../../route/updateRoute.ts";
 
 /**
  * Returns the project that the action's route change opens, or null when the same project stays open or none opens.
  * Moving between a project's overview and its media files keeps the project open; its settings do not.
  */
 export function projectOpenedBy(
-  app: AppState,
+  app: RouteApp,
   action: AppAction,
 ): string | null {
-  const before = projectShownOn(mainScreenOf(app.route));
-  const after = projectShownOn(mainScreenOf(routeAfter(app, action)));
-  return after !== null && after !== before ? after : null;
+  const move = mainScreenMoveOf(app, action);
+  if (move === null) return null;
+  const opened = projectShownOn(move.to);
+  return opened !== null && opened !== projectShownOn(move.from)
+    ? opened
+    : null;
 }
 
 /** Records that a project was opened, which moves it to the front of the home screen. */
