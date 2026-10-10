@@ -160,6 +160,7 @@ describe("updateScreen", () => {
         isPlaying: false,
       },
       loop: null,
+      pendingResumeMs: null,
       pendingSubtitleFile: null,
       waveform: initialWaveform,
     });

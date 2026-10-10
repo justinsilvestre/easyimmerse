@@ -45,7 +45,6 @@ import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { TrackChoiceContext } from "../player/trackChoiceContext.ts";
 import { useMediaDurationMs } from "../player/useMediaDurationMs.ts";
 import { useMediaFile } from "../player/useMediaFile.ts";
-import { useResumePlayback } from "../player/useResumePlayback.ts";
 import { SourceMediaDialog } from "../subtitles/SourceMediaDialog.tsx";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
 import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
@@ -62,7 +61,7 @@ import { useSourceMedia } from "../subtitles/useSourceMedia.ts";
  * and Up and Down skip to the previous or next cue. L looks up from the cursor, wherever the mouse or the keyboard put it;
  * C saves a flashcard from the cursor as a double-click there would, or as the New flashcard button would when there is no cursor;
  * and E makes the same flashcard but opens it in the editor instead, unless a card is open there already.
- * The file resumes where playback last was, as `useResumePlayback` describes.
+ * The file resumes where playback last was, as `updateResume` in the state package describes.
  * Opening a flashcard seeks to its clip, which loops while playing, as `updateClipLoop` in the state package describes.
  * While a card is open the editor takes the side panel, so the subtitles panel's toggle is unavailable until it closes.
  */
@@ -77,7 +76,6 @@ export function MediaScreen({
   const projectId = project.id;
   const { settings } = project;
   const mediaFile = useMediaFile(projectId, mediaFileId);
-  useResumePlayback(mediaFileId);
   const player = useAppSelector(selectPlayer);
   const controls = useAppSelector(selectPlayerControls);
   const currentMs = player.currentTimeSeconds * 1000;

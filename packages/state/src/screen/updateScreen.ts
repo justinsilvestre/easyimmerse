@@ -1,4 +1,5 @@
 import type { AppAction } from "../app/appAction.ts";
+import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
 import type { MainRoute } from "../route/route.ts";
@@ -31,10 +32,13 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
     screen.main,
     action,
     mainScreenOf(app.route),
+    app,
   );
   const route = routeAfter(app, action);
   const isLeaving = !isSameMainScreen(app.route, route);
-  const nextMain = isLeaving ? initialMainScreen(mainScreenOf(route)) : updated;
+  const nextMain = isLeaving
+    ? initialMainScreen(mainScreenOf(route), app.storedPlaces)
+    : updated;
   const [dialog, dialogEffects] = updateDialog(screen.dialog, action);
   const [settings, settingsEffects] = updateSettings(
     screen.settings,
@@ -93,9 +97,10 @@ function updateMainScreen(
   main: MainScreenState,
   action: AppAction,
   route: MainRoute,
+  app: AppState,
 ): readonly [MainScreenState, readonly Effect[]] {
   if (main.kind === "media" && route.screen === "media")
-    return updateMediaScreen(main, action, route);
+    return updateMediaScreen(main, action, route, app);
   if (main.kind === "project" && route.screen === "project")
     return updateProjectScreen(main, action, route);
   if (main.kind === "offline") return updateOfflineScreen(main, action);

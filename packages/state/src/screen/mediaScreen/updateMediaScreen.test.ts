@@ -10,9 +10,13 @@ import { updateMediaScreen } from "./updateMediaScreen.ts";
 
 /** Applies an action to the media screen of m1 after the given earlier actions. */
 const apply = (action: AppAction, ...before: AppAction[]) => {
-  const main = stateAfter(actions.openMediaFileRequested("p1", "m1"), ...before)
-    .screen.main as MediaScreenState;
-  return updateMediaScreen(main, action, route);
+  const app = stateAfter(actions.openMediaFileRequested("p1", "m1"), ...before);
+  return updateMediaScreen(
+    app.screen.main as MediaScreenState,
+    action,
+    route,
+    app,
+  );
 };
 
 const route = { screen: "media", projectId: "p1", mediaFileId: "m1" } as const;

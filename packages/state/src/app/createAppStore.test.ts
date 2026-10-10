@@ -59,6 +59,17 @@ describe("createAppStore", () => {
     expect(server.dispatchedActions).toEqual([actions.appStarted()]);
   });
 
+  it("resumes a media file where playback last was", async () => {
+    const effects = createRecordingEffects({ "playbackPosition:m1": "90000" });
+    const store = createAppStore(effects, createFakeServerStoreParts());
+    store.dispatch(actions.openMediaFileRequested("p1", "m1"));
+    await vi.waitFor(() =>
+      expect(store.getState().app.storedPlaces.playback.m1).toBe(90_000),
+    );
+    store.dispatch(actions.playerDurationChanged(600));
+    expect(effects.calls).toContainEqual({ type: "seekPlayer", seconds: 90 });
+  });
+
   it("builds the store through the given enhancer composer", () => {
     const composed: StoreEnhancer[][] = [];
     createAppStore(

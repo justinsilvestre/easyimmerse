@@ -1,6 +1,8 @@
 import type { AudioClip, Cue } from "@easyimmerse/types";
 import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
 import type { MainRoute } from "../route/route.ts";
+import type { StoredPlacesState } from "../storedPlaces/storedPlacesState.ts";
+import { initialStoredPlaces } from "../storedPlaces/storedPlacesState.ts";
 import type { DictionaryImportWizard } from "./dictionaryImport/dictionaryImportWizard.ts";
 import type { PlayerState } from "./mediaScreen/playerState.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
@@ -14,6 +16,8 @@ export type MediaScreenState = {
   player: PlayerState;
   /** The clip of the flashcard open in the editor while playback loops it; null while nothing loops. */
   loop: AudioClip | null;
+  /** The stored position to seek to once the player has loaded the file; null once it is used, or when there is none. */
+  pendingResumeMs: number | null;
   /** A picked subtitles file waiting to be added to the open media file. */
   pendingSubtitleFile: PickedFile | null;
   waveform: WaveformState;
@@ -54,8 +58,11 @@ export type ScreenState = {
   dialog: { kind: "filePick"; for: "subtitles" } | null;
 };
 
-/** Returns the state a main screen starts with. */
-export function initialMainScreen(route: MainRoute): MainScreenState {
+/** Returns the state a main screen starts with, given the places already known to resume from. */
+export function initialMainScreen(
+  route: MainRoute,
+  storedPlaces: StoredPlacesState = initialStoredPlaces,
+): MainScreenState {
   switch (route.screen) {
     case "home":
     case "newProject":
@@ -70,6 +77,7 @@ export function initialMainScreen(route: MainRoute): MainScreenState {
         kind: "media",
         player: initialPlayerState,
         loop: null,
+        pendingResumeMs: storedPlaces.playback[route.mediaFileId] ?? null,
         pendingSubtitleFile: null,
         waveform: initialWaveform,
       };
