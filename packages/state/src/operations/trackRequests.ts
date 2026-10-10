@@ -52,19 +52,24 @@ function recordEffects(
 
 /**
  * Records a send. A request goes out at once unless it is scoped and its id is not the one in flight.
- * A send of an id recorded with the same scope replaces that request in its place; with another scope, it is a new request.
+ * A send of an id already recorded replaces that request in its place and keeps the scope it was first sent with.
  */
 function recordSend(
   requests: Requests,
-  { id, request, scope }: SendRequest,
+  effect: SendRequest,
 ): readonly [Requests, readonly Effect[]] {
-  const found = requests.find((record) => record.id === id);
-  const earlier = found?.scope === scope ? found : undefined;
+  const earlier = requests.find(({ id }) => id === effect.id);
+  const scope = earlier ? earlier.scope : effect.scope;
   const isWaiting = scope !== undefined && (earlier?.isWaiting ?? true);
-  const record: RequestRecord = { id, request, scope, isWaiting };
+  const record: RequestRecord = {
+    id: effect.id,
+    request: effect.request,
+    scope,
+    isWaiting,
+  };
   const recorded = earlier
     ? requests.map((other) => (other === earlier ? record : other))
-    : [...requests.filter((other) => other !== found), record];
+    : [...requests, record];
   return [recorded, isWaiting ? [] : [sendEffectOf(record)]];
 }
 

@@ -79,12 +79,15 @@ describe("trackRequests", () => {
       expect(effects).toEqual([send("a", first, "s")]);
     });
 
-    it("treats a resend of an id with another scope as a send of that scope", () => {
-      const [, effects] = trackRequests(
+    it("keeps the scope an id was first sent with", () => {
+      const [operations] = trackRequests(
         operationsWith(sent("a", first, "s"), sent("c", first, "t")),
         [send("a", second, "t")],
       );
-      expect(effects).toEqual([]);
+      expect(operations.requests).toEqual([
+        sent("a", second, "s"),
+        sent("c", first, "t"),
+      ]);
     });
 
     it("sends requests of different scopes together", () => {

@@ -7,7 +7,7 @@ export type RequestRecord = {
   request: ServerRequest;
   /**
    * Requests with the same scope are sent one at a time, in the order they were asked for.
-   * An id keeps its scope: sending the id again with another scope sends a new request of that scope.
+   * An id keeps the scope it was first sent with: while it is recorded, a resend's scope is ignored.
    */
   scope?: string;
   /** True while the request waits for an earlier request of its scope to settle. */
