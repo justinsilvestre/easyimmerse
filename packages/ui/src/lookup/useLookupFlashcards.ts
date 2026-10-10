@@ -84,21 +84,25 @@ export function useLookupFlashcards(
       );
     },
     /**
-     * Starts a flashcard for the cursor's word once its lookup answers, or for no word when the store has no cursor,
+     * Starts a flashcard for the cursor's word shown once its lookup answers, or for no word when no cursor is shown,
      * saved at once or opened in the form as `destination` says.
      */
     startFlashcardAtCursor: (
       cursorWord: ChosenWord | null,
       destination: FlashcardDestination,
-    ) =>
+    ) => {
+      const flashcard =
+        cursorWord && newFlashcard(cursorWord.word.term, placeOf(cursorWord));
+      if (cursorWord && !flashcard) return;
       dispatch(
         actions.lookupCursorFlashcardRequested(
           destinationOf(destination),
-          cursorWord && newFlashcard(cursorWord.word.term, placeOf(cursorWord)),
+          cursorWord && flashcard && { chosen: cursorWord, flashcard },
           newFlashcard("", null),
           context,
         ),
-      ),
+      );
+    },
     /** Makes a flashcard for no word, saved at once or opened in the form as `destination` says. */
     startWordlessFlashcard: (destination: FlashcardDestination) => {
       const flashcard = newFlashcard("", null);

@@ -412,10 +412,45 @@ describe("updateFlashcards", () => {
 
   it("when the C key is pressed with no cursor, saves a flashcard for no word", () => {
     expect(
-      requestsAsked(appAfter(), requestCursorFlashcard()).map(
+      requestsAsked(appAfter(), requestCursorFlashcard(null)).map(
         ({ request }) => request.flashcardId,
       ),
     ).toEqual(["f-wordless"]);
+  });
+
+  it("when the C key is pressed with no cursor shown while the store has one, saves a flashcard for no word", () => {
+    const app = appAfter(actions.lookupCursorMoved(dog, "mouse"));
+    expect(
+      requestsAsked(app, requestCursorFlashcard(null)).map(
+        ({ request }) => request.flashcardId,
+      ),
+    ).toEqual(["f-wordless"]);
+  });
+
+  it("when the C key is pressed on a word shown at the cursor that the store has cleared, saves no flashcard for no word", () => {
+    expect(requestsAsked(appAfter(), requestCursorFlashcard(cat))).toEqual([]);
+  });
+
+  it("when a flashcard for a word no dictionary covers is asked for, saves it at once", () => {
+    const app = appAfter(requestFlashcard(cat));
+    const uncoveredDog = { ...dog, word: { term: "dog", query: null } };
+    expect(
+      requestsAsked(app, requestFlashcard(uncoveredDog)).map(
+        ({ request }) => request.flashcardId,
+      ),
+    ).toEqual(["f-dog"]);
+  });
+
+  it("when a flashcard for a word no dictionary covers is asked for, keeps the waiting word's flashcard pending", () => {
+    const app = appAfter(requestFlashcard(cat));
+    const uncoveredDog = { ...dog, word: { term: "dog", query: null } };
+    expect(
+      applied(
+        app,
+        requestFlashcard(uncoveredDog),
+        actions.lookupFlashcardWaitEnded(1),
+      ).flashcards.waitingForLookup.map(({ card }) => card.flashcardId),
+    ).toEqual(["f-cat"]);
   });
 
   describe("for a flashcard from a word saved at once", () => {
@@ -528,9 +563,10 @@ describe("updateFlashcards", () => {
         requestFlashcard(cat),
       );
       expect(
-        applied(app, requestCursorFlashcard()).flashcards.waitingForLookup.map(
-          ({ card }) => card.flashcardId,
-        ),
+        applied(
+          app,
+          requestCursorFlashcard(dog),
+        ).flashcards.waitingForLookup.map(({ card }) => card.flashcardId),
       ).toEqual(["f-cat"]);
     });
 
@@ -649,6 +685,35 @@ describe("updateFlashcards", () => {
       expect(notice?.message).toBe(
         "Couldn't open the flashcard for “Hündin”. It is still listed among the flashcards not saved.",
       );
+    });
+
+    it("says it could not be opened when the project fails to load after the media files arrived", () => {
+      const app = applied(
+        hundFailed(),
+        actions.failedSaveOpened("h", "p1", "m1"),
+      );
+      const withFiles = applied(
+        app,
+        settle(app, "flashcards/opening/h", mediaFiles),
+      );
+      const [notice] = noticesShown(
+        withFiles,
+        settle(withFiles, "flashcards/opening/h/project", failure(500)),
+      );
+      expect(notice?.message).toBe(
+        "Couldn't open the flashcard for “Hündin”. It is still listed among the flashcards not saved.",
+      );
+    });
+
+    it("says nothing of a failure that arrives after the user went elsewhere", () => {
+      const app = applied(
+        hundFailed(),
+        actions.failedSaveOpened("h", "p1", "m1"),
+        actions.closeMedia(),
+      );
+      expect(
+        noticesShown(app, settle(app, "flashcards/opening/h", failure(500))),
+      ).toEqual([]);
     });
 
     it("keeps it listed while the project is still loading", () => {

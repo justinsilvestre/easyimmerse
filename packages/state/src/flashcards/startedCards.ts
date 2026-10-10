@@ -18,7 +18,7 @@ export function saveStarted(
   action: AppAction,
   { app, outbox }: FlashcardsContext,
 ): FlashcardsState {
-  const started = flashcardStartedBy(app, action);
+  const started = flashcardStartedBy(action);
   const projectId = mediaScreenOf(app)?.route.projectId;
   if (started?.destination !== "save" || projectId === undefined) return state;
   askSave(

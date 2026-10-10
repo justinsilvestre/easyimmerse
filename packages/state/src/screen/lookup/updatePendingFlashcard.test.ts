@@ -114,14 +114,27 @@ describe("updateLookup for a flashcard started from a word", () => {
 
   it("starts a flashcard for the cursor's word on the C key", () => {
     const [lookup] = apply(
-      requestCursorFlashcard(),
+      requestCursorFlashcard(dog),
       actions.lookupCursorMoved(dog, "mouse"),
     );
     expect(lookup.pendingFlashcard?.chosen).toEqual(dog);
   });
 
+  it("starts a flashcard for the word the cursor showed when the C key was pressed, after the store's cursor moved", () => {
+    const [lookup] = apply(
+      requestCursorFlashcard(cat),
+      actions.lookupCursorMoved(dog, "mouse"),
+    );
+    expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
+  });
+
+  it("starts a flashcard for the word the cursor showed when the C key was pressed, after the store's cursor was cleared", () => {
+    const [lookup] = apply(requestCursorFlashcard(cat));
+    expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
+  });
+
   it("keeps waiting when the C key is pressed with no cursor", () => {
-    const [lookup] = apply(requestCursorFlashcard(), saveCat);
+    const [lookup] = apply(requestCursorFlashcard(null), saveCat);
     expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
   });
 

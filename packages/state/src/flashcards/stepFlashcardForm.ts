@@ -61,7 +61,7 @@ function nextForm(
   )
     return replaceForm(form, formFromLookup(finished), context);
   if (picturesFoundBy(action, route, app)) return withPictures(form);
-  const started = flashcardStartedBy(app, action);
+  const started = flashcardStartedBy(action);
   if (started)
     return started.destination === "editor"
       ? replaceForm(form, openedForm(newCard(started.flashcard)), context)

@@ -68,9 +68,7 @@ function dropsPending(lookup: LookupState, action: AppAction): boolean {
     case "lookupFlashcardRequested":
       return action.chosen.word.query !== null;
     case "lookupCursorFlashcardRequested":
-      return (
-        action.atCursor !== null && lookup.cursor?.chosen.word.query != null
-      );
+      return action.atCursor?.chosen.word.query != null;
     case "lookupPopupWordHeld":
       return lookup.popup?.chosen?.word.query != null;
     default:

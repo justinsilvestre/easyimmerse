@@ -366,7 +366,7 @@ describe("stepFlashcardForm", () => {
 
   it("opens a flashcard for no word when the E key is pressed with no cursor", () => {
     expect(
-      step(appAfter(), requestCursorFlashcard("editor")).form?.card,
+      step(appAfter(), requestCursorFlashcard(null, "editor")).form?.card,
     ).toMatchObject({ flashcardId: "f-wordless" });
   });
 
