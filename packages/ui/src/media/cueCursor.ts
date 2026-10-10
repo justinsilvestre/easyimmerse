@@ -1,9 +1,9 @@
-import type { Cue } from "@easyimmerse/types";
 import {
   reduceTextCursor,
   type TextCursor,
   type TextCursorAction,
-} from "../components/textCursor.ts";
+} from "@easyimmerse/state";
+import type { Cue } from "@easyimmerse/types";
 import type { WordHit } from "../components/useWordGestures.ts";
 
 /** Where the lookup cursor lies in the subtitles: the cue's index, and the place in its text without markup. */

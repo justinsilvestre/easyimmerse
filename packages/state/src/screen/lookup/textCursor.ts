@@ -1,4 +1,4 @@
-import type { WordHit } from "./useWordGestures.ts";
+import type { WordInput } from "./lookupState.ts";
 
 /**
  * The lookup cursor within a text: what a lookup by the L key, or by Enter on the focused word, starts from.
@@ -9,7 +9,7 @@ export type TextCursor = {
   /** The offset the cursor points at, in UTF-16 code units. */
   start: number;
   /** What placed the cursor, which alone can take it away again. */
-  input: WordHit["input"];
+  input: WordInput;
   /**
    * How much of the text the lookup from `start` matched, or null when it matched nothing.
    * It is unset until that lookup's answer is known, from the cache at once or when the lookup answers; meanwhile nothing is highlighted.
@@ -21,17 +21,17 @@ export type TextCursorAction =
   | {
       type: "pointed";
       start: number;
-      input: WordHit["input"];
+      input: WordInput;
       /** The length a cached lookup from `start` matched, or null when it matched nothing; unset when no answer is cached. */
       matchedLength?: number | null;
     }
   | {
       type: "answered";
       start: number;
-      input: WordHit["input"];
+      input: WordInput;
       matchedLength: number | null;
     }
-  | { type: "left"; input: WordHit["input"] }
+  | { type: "left"; input: WordInput }
   | { type: "cleared" };
 
 /**
@@ -72,7 +72,7 @@ function isSameCursor(cursor: TextCursor | null, other: TextCursor): boolean {
 
 function keepsCursor(
   cursor: TextCursor | null,
-  pointed: { start: number; input: WordHit["input"] },
+  pointed: { start: number; input: WordInput },
 ): cursor is TextCursor {
   if (cursor === null || cursor.input !== pointed.input) return false;
   if (cursor.start === pointed.start) return true;

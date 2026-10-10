@@ -1,5 +1,5 @@
+import { reduceTextCursor, type TextCursor } from "@easyimmerse/state";
 import { useReducer, useState } from "react";
-import { reduceTextCursor, type TextCursor } from "./textCursor.ts";
 import type { WordGestures } from "./useWordGestures.ts";
 
 /**

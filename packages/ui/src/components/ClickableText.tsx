@@ -1,3 +1,4 @@
+import type { TextCursor } from "@easyimmerse/state";
 import {
   chineseAndJapaneseCharacterRanges,
   southEastAsianCharacterRanges,
@@ -10,7 +11,6 @@ import {
 } from "./lookupTrigger.ts";
 import { type Range, RunText } from "./RunText.tsx";
 import { runLookupEnd } from "./runLookupStarts.ts";
-import type { TextCursor } from "./textCursor.ts";
 import { useKeyboardCursor } from "./useKeyboardCursor.ts";
 import { useTextCursor } from "./useTextCursor.ts";
 import { useWordGestures, type WordGestures } from "./useWordGestures.ts";
