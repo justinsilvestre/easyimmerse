@@ -11,8 +11,17 @@ export function skippedSubtitlesNotice(
   job: MediaSourceJob,
   form: PluginForm | null,
 ): Effect[] {
-  if (job.status !== "done" || job.media_file === null) return [];
-  const message = skippedSubtitlesMessage(job.skipped_subtitles, form);
+  return job.status === "done" && job.media_file !== null
+    ? skippedSubtitlesEffects(job.skipped_subtitles, form)
+    : [];
+}
+
+/** Names in a notice the chosen subtitle tracks that were not added, or returns no effect when every track was added. */
+export function skippedSubtitlesEffects(
+  skipped: readonly SkippedSubtitle[],
+  form: PluginForm | null,
+): Effect[] {
+  const message = skippedSubtitlesMessage(skipped, form);
   return message === null
     ? []
     : [{ type: "showNotice", content: transientNotice("danger", message) }];

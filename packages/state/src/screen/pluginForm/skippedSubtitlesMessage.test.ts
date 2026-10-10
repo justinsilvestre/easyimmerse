@@ -1,6 +1,10 @@
 import type { PluginForm } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import { skippedSubtitlesMessage } from "./skippedSubtitlesMessage.ts";
+import { transientNotice } from "../../notices/transientNotice.ts";
+import {
+  skippedSubtitlesEffects,
+  skippedSubtitlesMessage,
+} from "./skippedSubtitlesMessage.ts";
 
 const form: PluginForm = {
   title: "Add from a video site",
@@ -43,5 +47,23 @@ describe("skippedSubtitlesMessage", () => {
     expect(skippedSubtitlesMessage([notFetched, parseFailure], null)).toBe(
       "The subtitles “en” were not added: the plugin did not fetch it. The subtitles “ja” were not added: its file could not be parsed.",
     );
+  });
+});
+
+describe("skippedSubtitlesEffects", () => {
+  it("shows no notice when no track was skipped", () => {
+    expect(skippedSubtitlesEffects([], form)).toEqual([]);
+  });
+
+  it("names the skipped tracks in a notice", () => {
+    expect(skippedSubtitlesEffects([notFetched], form)).toEqual([
+      {
+        type: "showNotice",
+        content: transientNotice(
+          "danger",
+          "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+        ),
+      },
+    ]);
   });
 });

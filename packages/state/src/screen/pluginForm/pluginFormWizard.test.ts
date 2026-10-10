@@ -1,5 +1,5 @@
+import type { PluginForm } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import { subtitlesForm } from "../projectScreen/exampleMediaImport.ts";
 import {
   formShown,
   openedPluginForm,
@@ -7,6 +7,13 @@ import {
   requestFailed,
   stepSent,
 } from "./pluginFormWizard.ts";
+
+const subtitlesForm: PluginForm = {
+  title: "Subtitles",
+  description: null,
+  fields: [],
+  actions: [{ id: "add", label: "Add", style: "primary" }],
+};
 
 const showing: PluginFormWizard = {
   form: subtitlesForm,

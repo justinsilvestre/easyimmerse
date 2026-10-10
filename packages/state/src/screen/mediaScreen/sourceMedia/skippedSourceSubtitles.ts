@@ -1,8 +1,7 @@
 import type { AppAction } from "../../../app/appAction.ts";
 import type { Effect } from "../../../app/effect.ts";
-import { transientNotice } from "../../../notices/transientNotice.ts";
 import type { RequestSettled } from "../../../server/serverRequest.ts";
-import { skippedSubtitlesMessage } from "../../pluginForm/skippedSubtitlesMessage.ts";
+import { skippedSubtitlesEffects } from "../../pluginForm/skippedSubtitlesMessage.ts";
 
 type SourceStepSettled = Extract<
   RequestSettled,
@@ -16,13 +15,9 @@ type SourceStepSettled = Extract<
 export function skippedSourceSubtitles(action: AppAction): Effect[] {
   if (!isSourceStepSettled(action) || !action.outcome.ok) return [];
   const answer = action.outcome.data;
-  const message =
-    answer.kind === "applied"
-      ? skippedSubtitlesMessage(answer.skipped, action.request.form)
-      : null;
-  return message === null
-    ? []
-    : [{ type: "showNotice", content: transientNotice("danger", message) }];
+  return answer.kind === "applied"
+    ? skippedSubtitlesEffects(answer.skipped, action.request.form)
+    : [];
 }
 
 function isSourceStepSettled(action: AppAction): action is SourceStepSettled {

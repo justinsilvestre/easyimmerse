@@ -119,12 +119,14 @@ export const screenActions = {
   /** The user pressed an action of the media import dialog's form, with what they entered. */
   mediaImportStepTaken: (action: string, input: FormInput[]) =>
     ({ type: "mediaImportStepTaken", action, input }) as const,
+  /** The user closed the media import dialog. The server finishes a fetch it has started. */
   mediaImportClosed: () => ({ type: "mediaImportClosed" }) as const,
   /** The user opened the media interface of the plugin the open media file was imported through. */
   sourceMediaOpened: () => ({ type: "sourceMediaOpened" }) as const,
   /** The user pressed an action of the source dialog's form, with what they entered. */
   sourceMediaStepTaken: (action: string, input: FormInput[]) =>
     ({ type: "sourceMediaStepTaken", action, input }) as const,
+  /** The user closed the source dialog. A step in flight is left to finish, and its skipped tracks are still named. */
   sourceMediaClosed: () => ({ type: "sourceMediaClosed" }) as const,
   /** The user chose what a previewed table's column holds. */
   dictionaryColumnRoleChosen: (index: number, role: ColumnRole) =>

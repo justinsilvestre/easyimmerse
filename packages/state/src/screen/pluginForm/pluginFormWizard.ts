@@ -10,7 +10,7 @@ export type PluginFormWizard = {
   form: PluginForm | null;
   /** True while the plugin answers an action. */
   isAwaitingAnswer: boolean;
-  /** Why the form could not be shown or the last action failed. */
+  /** Why the last request failed: the form, an action, or, for a wizard that watches a job, the job's status. */
   error: string | null;
 };
 

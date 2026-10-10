@@ -715,14 +715,12 @@ describe("MediaScreen", () => {
       actions: [{ id: "apply", label: "Apply", style: "primary" }],
     };
 
-    const applied = (
-      skipped: { id: string; reason: string }[] = [],
-    ): SourceStepResponse => ({
+    const applied = (): SourceStepResponse => ({
       kind: "applied",
       removed: [],
       tracks: fixtureSubtitleTracks.tracks,
       selection: fixtureSubtitleTracks.selection,
-      skipped,
+      skipped: [],
     });
 
     const renderImported = (

@@ -1,7 +1,6 @@
 import type { AppAction } from "../../../app/appAction.ts";
 import type { AppState } from "../../../app/appState.ts";
 import type { Effect } from "../../../app/effect.ts";
-import { isRequestInFlight } from "../../../operations/isRequestInFlight.ts";
 import type { MediaRoute } from "../../../route/route.ts";
 import { isAborted } from "../../../server/isAborted.ts";
 import {
@@ -12,8 +11,8 @@ import {
 import { sourceMediaAnswered } from "./sourceMediaAnswered.ts";
 import {
   endSourceMedia,
+  isSourceStepInFlight,
   sourceFormRequest,
-  sourceMediaIds,
   sourceStepRequest,
 } from "./sourceMediaRequests.ts";
 
@@ -38,10 +37,7 @@ export function updateSourceMedia(
     case "sourceMediaStepTaken":
       if (
         wizard === null ||
-        isRequestInFlight(
-          app.operations,
-          sourceMediaIds(route.mediaFileId).step,
-        )
+        isSourceStepInFlight(app.operations, route.mediaFileId)
       )
         return [wizard, []];
       return [
