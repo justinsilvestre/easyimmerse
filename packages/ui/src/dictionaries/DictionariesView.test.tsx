@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { renderWithAppStore } from "../testSupport/renderWithAppStore.tsx";
 import { DictionariesView } from "./DictionariesView.tsx";
 import { exampleDictionaries } from "./exampleDictionaries.ts";
@@ -16,7 +16,7 @@ const progress = {
 };
 
 function renderView(props: Partial<Parameters<typeof DictionariesView>[0]>) {
-  const onDismissImportFailure = vi.fn();
+  const dismissals: string[] = [];
   renderWithAppStore(
     <DictionariesView
       dictionaries={exampleDictionaries}
@@ -26,13 +26,13 @@ function renderView(props: Partial<Parameters<typeof DictionariesView>[0]>) {
       onAddFromFile={() => undefined}
       onRemove={() => undefined}
       onDismissUnsupportedFile={() => undefined}
-      onDismissImportFailure={onDismissImportFailure}
+      onDismissImportFailure={() => dismissals.push("importFailure")}
       onImportTable={() => undefined}
       onCancelTable={() => undefined}
       {...props}
     />,
   );
-  return { onDismissImportFailure };
+  return { dismissals };
 }
 
 describe("DictionariesView", () => {
@@ -82,11 +82,11 @@ describe("DictionariesView", () => {
     });
 
     it("lets the alert be dismissed", () => {
-      const { onDismissImportFailure } = renderView({
+      const { dismissals } = renderView({
         importFailure: "jmdict.zip could not be added: broken",
       });
       fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
-      expect(onDismissImportFailure).toHaveBeenCalledOnce();
+      expect(dismissals).toEqual(["importFailure"]);
     });
   });
 });

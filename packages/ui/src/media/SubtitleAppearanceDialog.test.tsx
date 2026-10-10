@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { SubtitleAppearanceDialog } from "./SubtitleAppearanceDialog.tsx";
 import {
   defaultSubtitleAppearance,
@@ -11,9 +11,16 @@ afterEach(cleanup);
 function renderDialog(
   appearance: SubtitleAppearance = defaultSubtitleAppearance,
 ) {
-  const callbacks = { onChange: vi.fn(), onClose: vi.fn() };
-  render(<SubtitleAppearanceDialog appearance={appearance} {...callbacks} />);
-  return callbacks;
+  const changes: SubtitleAppearance[] = [];
+  const closings: string[] = [];
+  render(
+    <SubtitleAppearanceDialog
+      appearance={appearance}
+      onChange={(changed) => changes.push(changed)}
+      onClose={() => closings.push("closed")}
+    />,
+  );
+  return { changes, closings };
 }
 
 describe("SubtitleAppearanceDialog", () => {
@@ -25,26 +32,25 @@ describe("SubtitleAppearanceDialog", () => {
   });
 
   it("applies a change at once", () => {
-    const { onChange } = renderDialog();
+    const { changes } = renderDialog();
     fireEvent.click(screen.getByRole("radio", { name: "Heavy" }));
-    expect(onChange).toHaveBeenCalledWith({
-      ...defaultSubtitleAppearance,
-      textShadow: "heavy",
-    });
+    expect(changes).toEqual([
+      { ...defaultSubtitleAppearance, textShadow: "heavy" },
+    ]);
   });
 
   it("restores the defaults", () => {
-    const { onChange } = renderDialog({
+    const { changes } = renderDialog({
       ...defaultSubtitleAppearance,
       textColor: "black",
     });
     fireEvent.click(screen.getByRole("button", { name: "Restore defaults" }));
-    expect(onChange).toHaveBeenCalledWith(defaultSubtitleAppearance);
+    expect(changes).toEqual([defaultSubtitleAppearance]);
   });
 
   it("closes from Done", () => {
-    const { onClose } = renderDialog();
+    const { closings } = renderDialog();
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(closings).toEqual(["closed"]);
   });
 });
