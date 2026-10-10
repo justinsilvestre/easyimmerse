@@ -1,0 +1,94 @@
+import type { MediaFile } from "@easyimmerse/types";
+import { describe, expect, it } from "vitest";
+import type { AppAction } from "../../app/appAction.ts";
+import { actions } from "../../app/appAction.ts";
+import { stateAfter } from "../../app/stateAfter.ts";
+import type { PickedMediaFile } from "../../platform/effects.ts";
+import type { ServerRequest } from "../../server/serverRequest.ts";
+import { mediaFileOpenedByPick } from "./mediaFileOpenedByPick.ts";
+
+const picked: PickedMediaFile = {
+  name: "pilot.mkv",
+  source: { kind: "path", path: "/videos/pilot.mkv" },
+};
+
+const listRequest: ServerRequest = { kind: "listMediaFiles", projectId: "p1" };
+
+const addRequest: ServerRequest = {
+  kind: "addMediaFile",
+  projectId: "p1",
+  request: picked,
+};
+
+const pickedInProject: AppAction[] = [
+  actions.navigated({ type: "openProject", projectId: "p1" }),
+  actions.mediaFileChosen(picked),
+];
+
+function mediaFileNamed(name: string): MediaFile {
+  return {
+    id: `m-${name}`,
+    project_id: "p1",
+    name,
+    source: { kind: "path", path: `/videos/${name}` },
+    created_at_ms: 0,
+    track_selection_json: null,
+    origin: null,
+  };
+}
+
+const listed = (...names: string[]) =>
+  actions.requestSettled("project/p1/listMediaFiles", listRequest, {
+    ok: true,
+    data: { media_files: names.map(mediaFileNamed) },
+  });
+
+const added = actions.requestSettled("project/p1/addMediaFile", addRequest, {
+  ok: true,
+  data: mediaFileNamed("pilot.mkv"),
+});
+
+describe("mediaFileOpenedByPick", () => {
+  it("returns the file that the add created", () => {
+    expect(mediaFileOpenedByPick(stateAfter(...pickedInProject), added)).toBe(
+      "m-pilot.mkv",
+    );
+  });
+
+  it("returns the file of the same name already in the project", () => {
+    expect(
+      mediaFileOpenedByPick(
+        stateAfter(...pickedInProject),
+        listed("episode.mkv", "pilot.mkv"),
+      ),
+    ).toBe("m-pilot.mkv");
+  });
+
+  it("returns null while no file of that name is in the project", () => {
+    expect(
+      mediaFileOpenedByPick(
+        stateAfter(...pickedInProject),
+        listed("episode.mkv"),
+      ),
+    ).toBeNull();
+  });
+
+  it("returns null for an add that failed", () => {
+    const failed = actions.requestSettled(
+      "project/p1/addMediaFile",
+      addRequest,
+      { ok: false, error: { status: 500, message: "down" } },
+    );
+    expect(
+      mediaFileOpenedByPick(stateAfter(...pickedInProject), failed),
+    ).toBeNull();
+  });
+
+  it("returns null for an add that settles after the project was left", () => {
+    const app = stateAfter(
+      ...pickedInProject,
+      actions.navigated({ type: "goHome" }),
+    );
+    expect(mediaFileOpenedByPick(app, added)).toBeNull();
+  });
+});

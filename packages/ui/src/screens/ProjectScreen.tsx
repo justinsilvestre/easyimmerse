@@ -12,7 +12,6 @@ import { useEffect } from "react";
 import { ScreenLayout } from "../components/ScreenLayout.tsx";
 import { LoadingStatus, Skeleton } from "../components/Skeleton.tsx";
 import { useGiveUpOpenings } from "../flashcards/unsaved/useGiveUpOpenings.ts";
-import { useAddChosenMediaFile } from "../hooks/useAddChosenMediaFile.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { MediaScreen } from "./MediaScreen.tsx";
 import { ProjectOverview } from "./ProjectOverview.tsx";
@@ -35,7 +34,6 @@ export function ProjectScreen({
   const mediaFileId = useAppSelector(selectCurrentMediaFileId);
   useMarkOpened(projectId);
   useGiveUpOpenings("projectId", projectId, error !== undefined);
-  useAddChosenMediaFile(projectId);
   if (error)
     return (
       <ScreenLayout>

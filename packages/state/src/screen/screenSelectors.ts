@@ -38,12 +38,6 @@ export const selectPendingSubtitleFile = (state: RootState) =>
     ? state.app.screen.main.pendingSubtitleFile
     : null;
 
-/** Returns the media file picked and not yet added to the open project. */
-export const selectPendingMediaFile = (state: RootState) =>
-  state.app.screen.main.kind === "project"
-    ? state.app.screen.main.pendingMediaFile
-    : null;
-
 /** Returns the dictionary file picked in Settings and not yet sent. */
 export const selectPendingDictionaryFile = (state: RootState) =>
   state.app.screen.settings?.dictionaryImport?.file ?? null;

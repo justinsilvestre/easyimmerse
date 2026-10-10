@@ -1,3 +1,4 @@
+import type { MediaFile } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
@@ -15,6 +16,21 @@ const pickedMediaFile: PickedMediaFile = {
   name: "episode.mkv",
   source: { kind: "path", path: "/videos/episode.mkv" },
 };
+
+const mediaFileM1: MediaFile = {
+  id: "m1",
+  project_id: "p1",
+  ...pickedMediaFile,
+  created_at_ms: 0,
+  track_selection_json: null,
+  origin: null,
+};
+
+const mediaFileAddFailed = actions.requestSettled(
+  "project/p1/addMediaFile",
+  { kind: "addMediaFile", projectId: "p1", request: pickedMediaFile },
+  { ok: false, error: { status: 500, message: "down" } },
+);
 
 /** The media screen of m2 with its player loaded and at 5 seconds. */
 const playingM2: AppAction[] = [
@@ -92,10 +108,11 @@ describe("updateScreen", () => {
     expect(screen.main).toEqual({ kind: "home" });
   });
 
-  it("returns a notification for mediaFileAddFailed", () => {
+  it("returns a notification when a picked media file could not be added", () => {
     const [, effects] = apply(
-      actions.mediaFileAddFailed(),
+      mediaFileAddFailed,
       actions.navigated({ type: "openProject", projectId: "p1" }),
+      actions.mediaFileChosen(pickedMediaFile),
     );
     expect(effects).toEqual([
       {
@@ -105,12 +122,33 @@ describe("updateScreen", () => {
     ]);
   });
 
-  it("returns a notification for mediaFileAddFailed after the project was left", () => {
-    const [, effects] = apply(actions.mediaFileAddFailed(), ...leftProject);
+  it("returns a notification when a picked media file could not be added after the project was left", () => {
+    const [, effects] = apply(mediaFileAddFailed, ...leftProject);
     expect(effects).toEqual([
       {
         type: "showNotification",
         message: "The media file could not be added",
+      },
+    ]);
+  });
+
+  it("lets the project screen tell of a duplicate as the route opens the existing file", () => {
+    const [, effects] = apply(
+      actions.requestSettled(
+        "project/p1/listMediaFiles",
+        { kind: "listMediaFiles", projectId: "p1" },
+        {
+          ok: true,
+          data: { media_files: [{ ...mediaFileM1, name: "episode.mkv" }] },
+        },
+      ),
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+      actions.mediaFileChosen(pickedMediaFile),
+    );
+    expect(effects).toEqual([
+      {
+        type: "showNotification",
+        message: "“episode.mkv” is already in the project.",
       },
     ]);
   });

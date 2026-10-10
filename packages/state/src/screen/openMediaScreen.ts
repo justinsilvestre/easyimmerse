@@ -1,7 +1,7 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
-import { nextRoute } from "../route/updateRoute.ts";
+import { routeAfter } from "../route/updateRoute.ts";
 import type { PlayerState } from "./mediaScreen/playerState.ts";
 
 /** The media screen open on the main screen, with the id of its media file. */
@@ -22,7 +22,7 @@ export function mediaScreenLeftBy(
   action: AppAction,
 ): OpenMediaScreen | null {
   const open = openMediaScreen(app);
-  return open && !isSameMainScreen(app.route, nextRoute(app.route, action))
+  return open && !isSameMainScreen(app.route, routeAfter(app, action))
     ? open
     : null;
 }

@@ -1,8 +1,9 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
 import type { Feature, FeatureUpdate } from "../app/feature.ts";
+import type { MainRoute } from "../route/route.ts";
 import { isSameMainScreen, mainScreenOf } from "../route/route.ts";
-import { nextRoute } from "../route/updateRoute.ts";
+import { routeAfter } from "../route/updateRoute.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
 import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
 import { updateProjectScreen } from "./projectScreen/updateProjectScreen.ts";
@@ -11,17 +12,24 @@ import { initialMainScreen, initialScreen } from "./screenState.ts";
 import { updateDialog } from "./updateDialog.ts";
 import { updateSettings } from "./updateSettings.ts";
 
-/** Updates the screens, starting the main screen over whenever the route moves to a different one. */
+/**
+ * Updates the screens. The main screen sees every action first, the one that leaves it included,
+ * and starts over whenever the route moves to a different main screen.
+ */
 export const updateScreen: FeatureUpdate<ScreenState> = (
   screen,
   action,
   app,
 ) => {
-  const route = nextRoute(app.route, action);
-  const main = isSameMainScreen(app.route, route)
-    ? screen.main
+  const [updated, mainEffects] = updateMainScreen(
+    screen.main,
+    action,
+    mainScreenOf(app.route),
+  );
+  const route = routeAfter(app, action);
+  const nextMain = isSameMainScreen(app.route, route)
+    ? updated
     : initialMainScreen(mainScreenOf(route));
-  const [nextMain, mainEffects] = updateMainScreen(main, action);
   const [dialog, dialogEffects] = updateDialog(screen.dialog, action);
   const settings = updateSettings(screen.settings, action, route);
   const effects = [...mainEffects, ...dialogEffects, ...failureNotices(action)];
@@ -40,14 +48,12 @@ export const screenFeature: Feature<ScreenState> = {
 
 /** Tells the user that adding a picked file failed, even when its screen has gone by the time the failure arrives. */
 function failureNotices(action: AppAction): Effect[] {
-  switch (action.type) {
-    case "mediaFileAddFailed":
-      return [notice("The media file could not be added")];
-    case "subtitleFileAddFailed":
-      return [notice("The subtitles file could not be added")];
-    default:
-      return [];
-  }
+  if (action.type === "subtitleFileAddFailed")
+    return [notice("The subtitles file could not be added")];
+  if (action.type !== "requestSettled" || action.outcome.ok) return [];
+  return action.request.kind === "addMediaFile"
+    ? [notice("The media file could not be added")]
+    : [];
 }
 
 function notice(message: string): Effect {
@@ -57,15 +63,11 @@ function notice(message: string): Effect {
 function updateMainScreen(
   main: MainScreenState,
   action: AppAction,
+  route: MainRoute,
 ): readonly [MainScreenState, readonly Effect[]] {
-  switch (main.kind) {
-    case "media":
-      return updateMediaScreen(main, action);
-    case "project":
-      return [updateProjectScreen(main, action), []];
-    case "offline":
-      return updateOfflineScreen(main, action);
-    default:
-      return [main, []];
-  }
+  if (main.kind === "media") return updateMediaScreen(main, action);
+  if (main.kind === "project" && route.screen === "project")
+    return updateProjectScreen(main, action, route);
+  if (main.kind === "offline") return updateOfflineScreen(main, action);
+  return [main, []];
 }

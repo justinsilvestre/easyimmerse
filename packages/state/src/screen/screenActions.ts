@@ -32,7 +32,6 @@ export const screenActions = {
   mediaFileChosen: (file: PickedMediaFile) =>
     ({ type: "mediaFileChosen", file }) as const,
   mediaFilePickCancelled: () => ({ type: "mediaFilePickCancelled" }) as const,
-  mediaFileAddFailed: () => ({ type: "mediaFileAddFailed" }) as const,
   dictionaryFilePickRequested: () =>
     ({ type: "dictionaryFilePickRequested" }) as const,
   dictionaryFileChosen: (file: PickedDictionaryFile) =>

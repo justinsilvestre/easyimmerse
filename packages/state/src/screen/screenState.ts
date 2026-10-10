@@ -23,14 +23,19 @@ export type OfflineScreenState = {
   hasFailed: boolean;
 };
 
+/** The project overview's state: a picked media file, held while its requests run. */
+export type ProjectScreenState = {
+  kind: "project";
+  pendingMediaFile: PickedMediaFile | null;
+};
+
 /** The main screen's own state, keyed by the route's main screen. The ids it belongs to are in the route. */
 export type MainScreenState =
   | { kind: "home" }
   | { kind: "newProject" }
   | { kind: "projectSettings" }
   | OfflineScreenState
-  /** A picked media file waiting to be added to the project. */
-  | { kind: "project"; pendingMediaFile: PickedMediaFile | null }
+  | ProjectScreenState
   | MediaScreenState;
 
 /** The dictionary import's first stage: a picked file not yet sent. */

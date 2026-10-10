@@ -10,7 +10,6 @@ import {
   selectOfflineParseFailed,
   selectPendingDictionaryFile,
   selectPendingFilePick,
-  selectPendingMediaFile,
   selectPlayer,
   selectPlayerDuration,
 } from "./screenSelectors.ts";
@@ -60,16 +59,6 @@ describe("screenSelectors", () => {
 
   it("selectPendingFilePick returns whether a file pick is pending", () => {
     expect(selectPendingFilePick(playing)).toBe(true);
-  });
-
-  it("selectPendingMediaFile returns the media file waiting to be added", () => {
-    const chosen = {
-      app: stateAfter(
-        actions.navigated({ type: "openProject", projectId: "p1" }),
-        actions.mediaFileChosen(pickedMediaFile),
-      ),
-    };
-    expect(selectPendingMediaFile(chosen)?.name).toBe("a.mp4");
   });
 
   it("selectOfflineCues returns the cues of the file parsed offline", () => {

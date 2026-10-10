@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
+import { stateAfter } from "../app/stateAfter.ts";
 import type { Route } from "./route.ts";
-import { nextRoute } from "./updateRoute.ts";
+import { nextRoute, routeAfter } from "./updateRoute.ts";
 
 const project: Route = { screen: "project", projectId: "p1" };
 
@@ -72,5 +73,40 @@ describe("nextRoute", () => {
 
   it("stays put for an action that does not move the app", () => {
     expect(nextRoute(media, actions.playerTimeChanged(3))).toBe(media);
+  });
+});
+
+describe("routeAfter", () => {
+  it("opens the media file that a settled pick names", () => {
+    const picked = {
+      name: "a.mkv",
+      source: { kind: "path", path: "/a.mkv" },
+    } as const;
+    const app = stateAfter(
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+      actions.mediaFileChosen(picked),
+    );
+    const added = actions.requestSettled(
+      "project/p1/addMediaFile",
+      { kind: "addMediaFile", projectId: "p1", request: picked },
+      {
+        ok: true,
+        data: {
+          id: "m1",
+          project_id: "p1",
+          ...picked,
+          created_at_ms: 0,
+          track_selection_json: null,
+          origin: null,
+        },
+      },
+    );
+    expect(routeAfter(app, added)).toEqual(media);
+  });
+
+  it("takes the route's own next step for any other action", () => {
+    expect(routeAfter(stateAfter(), actions.settingsRequested())).toEqual(
+      settingsOver({ screen: "home" }),
+    );
   });
 });

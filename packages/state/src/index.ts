@@ -63,7 +63,6 @@ export {
   selectOfflineParseFailed,
   selectPendingDictionaryFile,
   selectPendingFilePick,
-  selectPendingMediaFile,
   selectPendingSubtitleFile,
   selectPlayer,
   selectPlayerDuration,
