@@ -150,33 +150,6 @@ describe("updateNotices", () => {
     expect(messages).toEqual(["Other"]);
   });
 
-  it("cancels the expiry timer of the notice the user dismissed", () => {
-    const [, effects] = apply(
-      [actions.noticeRequested(transient)],
-      actions.noticeDismissed(1),
-    );
-    expect(effects).toEqual([cancelExpiryOf1]);
-  });
-
-  it("cancels the expiry timer of the notice that a notice of the same key replaces", () => {
-    const keyed = { ...lasting, key: "saveUndo:f1" };
-    const [, effects] = apply(
-      [actions.noticeRequested({ ...transient, key: "saveUndo:f1" })],
-      actions.noticeRequested(keyed),
-    );
-    expect(effects).toEqual([cancelExpiryOf1]);
-  });
-
-  it("gives a new notice the first id that no shown notice has", () => {
-    const app = stateAfter(
-      actions.noticeRequested(transient),
-      actions.noticeRequested({ ...transient, message: "Other" }),
-      actions.noticeDismissed(1),
-      actions.noticeRequested({ ...transient, message: "Third" }),
-    );
-    expect(app.notices.shown.map(({ id }) => id)).toEqual([2, 1]);
-  });
-
   it("removes the notice whose button was chosen", () => {
     const messages = messagesAfter(
       actions.noticeRequested(transient),

@@ -17,7 +17,8 @@ const expiryMs = 10_000;
 
 /**
  * Shows, holds and removes the notices. A transient notice expires through a timer that a hold cancels and a release restarts.
- * A notice requested with a key replaces the shown notice of that key. Removing a notice cancels its timer.
+ * A notice requested with a key replaces the shown notice of that key. Removing a notice leaves its timer running;
+ * the stale expiry then finds no notice with its id, since ids are never reused.
  */
 export const updateNotices: FeatureUpdate<NoticesState> = (state, action) => {
   switch (action.type) {
@@ -29,16 +30,14 @@ export const updateNotices: FeatureUpdate<NoticesState> = (state, action) => {
       return holdChanged(state, action.id, action.by, false);
     case "noticeExpired":
     case "noticeDismissed":
-      return without(state, (notice) => notice.id === action.id);
-    case "noticeButtonChosen": {
-      const [rest, cancels] = without(
-        state,
-        (notice) => notice.id === action.id,
+      return updated(without(state, (notice) => notice.id === action.id));
+    case "noticeButtonChosen":
+      return updated(
+        without(state, (notice) => notice.id === action.id),
+        dispatch(action.action),
       );
-      return updated(rest, ...cancels, dispatch(action.action));
-    }
     case "noticeWithdrawn":
-      return without(state, (notice) => notice.key === action.key);
+      return updated(without(state, (notice) => notice.key === action.key));
     case "textCopied":
     case "textCopyFailed":
       return show(state, copyOutcomeNotice(action));
@@ -49,19 +48,17 @@ export const updateNotices: FeatureUpdate<NoticesState> = (state, action) => {
 
 /** Shows a notice, in place of the shown notice of its key, and starts its expiry timer when it is transient. */
 function show(state: NoticesState, content: NoticeContent) {
-  const { key } = content;
-  const [rest, cancels] = without(
-    state,
-    (shown) => key !== undefined && shown.key === key,
-  );
   const notice: Notice = {
     ...content,
-    id: freeNoticeId(rest.shown),
+    id: state.nextId,
     heldBy: { pointer: false, focus: false },
   };
+  const { key } = notice;
+  const others = state.shown.filter(
+    (shown) => key === undefined || shown.key !== key,
+  );
   return updated(
-    { shown: [...rest.shown, notice] },
-    ...cancels,
+    { shown: [...others, notice], nextId: state.nextId + 1 },
     ...expiryTimerFor(notice),
   );
 }
@@ -105,18 +102,11 @@ function cancelExpiryOf(notice: Notice) {
 
 const expiryTimerId = (noticeId: number) => `notices/expiry/${noticeId}`;
 
-/** Removes the notices that match and cancels their expiry timers, keeping the same state when none matches. */
-function without(state: NoticesState, matches: (notice: Notice) => boolean) {
-  const removed = state.shown.filter(matches);
-  if (removed.length === 0) return updated(state);
+/** Removes the notices that match, keeping the same state when none does. */
+function without(
+  state: NoticesState,
+  matches: (notice: Notice) => boolean,
+): NoticesState {
   const shown = state.shown.filter((notice) => !matches(notice));
-  return updated({ shown }, ...removed.flatMap(cancelExpiryOf));
-}
-
-/** Returns the smallest positive id that no shown notice has. */
-function freeNoticeId(shown: readonly Notice[]): number {
-  const used = new Set(shown.map(({ id }) => id));
-  let id = 1;
-  while (used.has(id)) id += 1;
-  return id;
+  return shown.length === state.shown.length ? state : { ...state, shown };
 }
