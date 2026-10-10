@@ -1,6 +1,6 @@
 import type { Middleware } from "redux";
+import type { Effects } from "../platform/effects.ts";
 import type { Effect } from "./effect.ts";
-import type { Effects } from "./effects.ts";
 import { runEffect } from "./runEffect.ts";
 
 /** Builds the middleware that performs the effects queued by the app reducer after each dispatch. */

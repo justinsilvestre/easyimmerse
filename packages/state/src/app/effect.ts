@@ -1,5 +1,5 @@
+import type { ReaderLocation } from "../storedPlaces/readingLocation.ts";
 import type { PreferenceKey } from "./appState.ts";
-import type { ReaderLocation } from "./readingLocation.ts";
 
 /** A description of a side effect to perform. Effects are plain data and contain no code. */
 export type Effect =

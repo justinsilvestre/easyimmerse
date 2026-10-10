@@ -1,12 +1,15 @@
+import { navigate } from "../route/route.ts";
+import { dictionaryFileExtensions } from "../screen/dictionaryFileExtensions.ts";
+import { mediaFileExtensions } from "../screen/mediaFileExtensions.ts";
+import { crossesSaveInterval } from "../storedPlaces/playbackPosition.ts";
+import {
+  isSameParagraph,
+  type ReaderLocation,
+} from "../storedPlaces/readingLocation.ts";
 import { type AppAction, actions } from "./actions.ts";
 import type { AppState, PreferenceKey } from "./appState.ts";
 import { initialPlayerState, preferenceKeys } from "./appState.ts";
-import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import type { Effect } from "./effect.ts";
-import { mediaFileExtensions } from "./mediaFileExtensions.ts";
-import { crossesSaveInterval } from "./playbackPosition.ts";
-import { isSameParagraph, type ReaderLocation } from "./readingLocation.ts";
-import { navigate } from "./route.ts";
 
 /** Computes the next state and the effects to perform in response to an action. */
 export type Update<S, A, E> = (

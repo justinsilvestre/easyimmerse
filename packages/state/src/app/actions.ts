@@ -1,13 +1,13 @@
 import type { Action } from "redux";
-import type { AppState, BufferedRange, PreferenceKey } from "./appState.ts";
 import type {
   PickedDictionaryFile,
   PickedFile,
   PickedMediaFile,
-} from "./effects.ts";
-import type { ReaderLocation } from "./readingLocation.ts";
-import type { NavigationStep } from "./route.ts";
-import type { Theme } from "./theme.ts";
+} from "../platform/effects.ts";
+import type { Theme } from "../preferences/theme.ts";
+import type { NavigationStep } from "../route/route.ts";
+import type { ReaderLocation } from "../storedPlaces/readingLocation.ts";
+import type { AppState, BufferedRange, PreferenceKey } from "./appState.ts";
 
 export const actions = {
   seekRequested: (seconds: number) =>

@@ -1,17 +1,17 @@
-import type { AppAction } from "./actions.ts";
-import { actions } from "./actions.ts";
-import type { AppState, PreferenceKey } from "./appState.ts";
-import type { Effect } from "./effect.ts";
-import type { Effects } from "./effects.ts";
+import type { Effects } from "../platform/effects.ts";
 import {
   parsePlaybackPosition,
   playbackPositionKey,
-} from "./playbackPosition.ts";
+} from "../storedPlaces/playbackPosition.ts";
 import {
   parseReadingLocation,
   type ReaderLocation,
   readingLocationKey,
-} from "./readingLocation.ts";
+} from "../storedPlaces/readingLocation.ts";
+import type { AppAction } from "./actions.ts";
+import { actions } from "./actions.ts";
+import type { AppState, PreferenceKey } from "./appState.ts";
+import type { Effect } from "./effect.ts";
 
 /** Performs one effect. Effects that produce a result dispatch the corresponding action once it arrives. */
 export function runEffect(

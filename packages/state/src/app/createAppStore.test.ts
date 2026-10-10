@@ -1,10 +1,10 @@
 import type { StoreEnhancer } from "redux";
 import { describe, expect, it } from "vitest";
+import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import { actions } from "./actions.ts";
 import { initialAppState } from "./appState.ts";
 import { createAppStore } from "./createAppStore.ts";
 import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
-import { createRecordingEffects } from "./recordingEffects.ts";
 
 describe("createAppStore", () => {
   it("starts the app slice at the initial app state", () => {

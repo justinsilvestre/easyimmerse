@@ -1,7 +1,7 @@
+import { parseTextScale } from "../preferences/textScale.ts";
+import { chooseTheme, parseThemeChoice } from "../preferences/theme.ts";
 import type { PreferenceKey } from "./appState.ts";
 import type { RootState } from "./createAppStore.ts";
-import { parseTextScale } from "./textScale.ts";
-import { chooseTheme, parseThemeChoice } from "./theme.ts";
 
 /** Returns where the app is. */
 export const selectRoute = (state: RootState) => state.app.route;

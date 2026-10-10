@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { actions } from "./actions.ts";
-import type { AppState } from "./appState.ts";
-import { initialAppState } from "./appState.ts";
-import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import type {
   PickedDictionaryFile,
   PickedFile,
   PickedMediaFile,
-} from "./effects.ts";
-import { mediaFileExtensions } from "./mediaFileExtensions.ts";
-import type { ReaderLocation } from "./readingLocation.ts";
+} from "../platform/effects.ts";
+import { dictionaryFileExtensions } from "../screen/dictionaryFileExtensions.ts";
+import { mediaFileExtensions } from "../screen/mediaFileExtensions.ts";
+import type { ReaderLocation } from "../storedPlaces/readingLocation.ts";
+import { actions } from "./actions.ts";
+import type { AppState } from "./appState.ts";
+import { initialAppState } from "./appState.ts";
 import { update } from "./update.ts";
 
 const pickedFile: PickedFile = {

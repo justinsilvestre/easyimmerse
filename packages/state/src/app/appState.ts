@@ -2,10 +2,10 @@ import type {
   PickedDictionaryFile,
   PickedFile,
   PickedMediaFile,
-} from "./effects.ts";
-import type { ReaderLocation } from "./readingLocation.ts";
-import { initialRoute, type Route } from "./route.ts";
-import type { Theme } from "./theme.ts";
+} from "../platform/effects.ts";
+import type { Theme } from "../preferences/theme.ts";
+import { initialRoute, type Route } from "../route/route.ts";
+import type { ReaderLocation } from "../storedPlaces/readingLocation.ts";
 
 export type PreferenceKey =
   | "showTranslations"

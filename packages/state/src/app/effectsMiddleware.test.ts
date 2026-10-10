@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
+import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
+import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import { actions } from "./actions.ts";
 import { createAppStore } from "./createAppStore.ts";
 import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
-import type { PickedFile, PickedMediaFile } from "./effects.ts";
-import { createRecordingEffects } from "./recordingEffects.ts";
 
 const pickedFile: PickedFile = {
   name: "episode.srt",

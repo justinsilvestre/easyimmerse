@@ -5,12 +5,12 @@ import {
   compose,
   legacy_createStore as createStore,
 } from "redux";
+import type { Effects } from "../platform/effects.ts";
 import type { AppAction } from "./actions.ts";
 import { actions, isAppAction } from "./actions.ts";
 import type { AppState } from "./appState.ts";
 import { initialAppState } from "./appState.ts";
 import { createEffectsReducer } from "./createEffectsReducer.ts";
-import type { Effects } from "./effects.ts";
 import { createEffectsMiddleware } from "./effectsMiddleware.ts";
 import { update } from "./update.ts";
 
