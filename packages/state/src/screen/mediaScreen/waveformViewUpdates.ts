@@ -22,23 +22,18 @@ export type WindowSettled = Extract<
   { request: { kind: "getWaveformWindow" } }
 >;
 
-/** Takes the new view and requests the windows it lacks. A null view wants nothing, so nothing more is requested. */
-export function viewChanged(
-  state: WaveformViewState,
-  view: WaveformWindowView | null,
-  target: WindowTarget,
-) {
-  return requestMissing({ ...state, view }, target);
-}
+/** The stretch of the file a view loads, or null when it loads nothing, with the media file and view the requests are for. */
+export type ViewTarget = WindowTarget & { view: WaveformWindowView | null };
 
 /** Records how a window's request ended, starts its retry timer when it failed, and fills the slot it frees. */
 export function windowSettled(
   state: WaveformViewState,
   action: WindowSettled,
-  target: WindowTarget,
+  target: ViewTarget,
 ) {
   const start = action.request.startMs;
-  if (state.requests[start]?.status !== "loading") return updated(state);
+  if (state.requests[start]?.status !== "loading")
+    return requestMissing(state, target);
   if (isAborted(action.outcome))
     return requestMissing(withoutWindow(state, start), target);
   if (action.outcome.ok)
@@ -54,11 +49,14 @@ export function windowSettled(
 export function retryDue(
   state: WaveformViewState,
   start: number,
-  target: WindowTarget,
+  target: ViewTarget,
 ) {
-  return state.requests[start]?.status === "failed"
-    ? requestMissing(withoutWindow(state, start), target)
-    : updated(state);
+  return requestMissing(
+    state.requests[start]?.status === "failed"
+      ? withoutWindow(state, start)
+      : state,
+    target,
+  );
 }
 
 /** Cancels the retry timers of the view's failed windows. */
@@ -72,9 +70,9 @@ export function cancelRetries(state: WaveformViewState, target: WindowTarget) {
   );
 }
 
-/** Requests the windows that the policy picks for the view, and records each as loading. */
-function requestMissing(state: WaveformViewState, target: WindowTarget) {
-  const { view } = state;
+/** Requests the windows that the policy picks for the view, and records each as loading. A view that loads nothing requests nothing. */
+export function requestMissing(state: WaveformViewState, target: ViewTarget) {
+  const { view } = target;
   if (view === null) return updated(state);
   const starts = planWindowRequests(
     view,

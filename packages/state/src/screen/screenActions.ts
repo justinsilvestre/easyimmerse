@@ -16,7 +16,6 @@ import type {
 import type { ItemSpan } from "./itemSpan.ts";
 import type { BufferedRange } from "./mediaScreen/playerState.ts";
 import type { WaveformViewName } from "./mediaScreen/waveformState.ts";
-import type { WaveformWindowView } from "./mediaScreen/waveformWindowPolicy.ts";
 import type { MediaImportSource } from "./projectScreen/mediaImportWizard.ts";
 
 /** The action creators of the screens: the player's requests and reports, and the file picks and their outcomes. */
@@ -146,11 +145,6 @@ export const screenActions = {
   /** The user submitted a project form: the new project's settings, or an existing project's. */
   projectFormSubmitted: (settings: ProjectSettings) =>
     ({ type: "projectFormSubmitted", settings }) as const,
-  /** A waveform view now shows a different stretch of the file, or its duration became known; null once it is no longer shown. */
-  waveformViewChanged: (
-    name: WaveformViewName,
-    view: WaveformWindowView | null,
-  ) => ({ type: "waveformViewChanged", name, view }) as const,
   /** The user zoomed the player's waveform strip to show the given span. */
   waveformZoomed: (spanMs: number) =>
     ({ type: "waveformZoomed", spanMs }) as const,

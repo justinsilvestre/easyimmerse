@@ -1,5 +1,3 @@
-import type { WaveformWindowView } from "./waveformWindowPolicy.ts";
-
 /** The two views that fetch waveform windows: the strip under the player, and the clip in the flashcard editor. */
 export type WaveformViewName = "player" | "clip";
 
@@ -12,9 +10,8 @@ export type WindowRequest = {
   status: "loading" | "loaded" | "failed";
 };
 
-/** The windows one view wants, and the requests for them by window start. */
+/** The requests for one view's windows, by window start. */
 export type WaveformViewState = {
-  view: WaveformWindowView | null;
   requests: Partial<Record<number, WindowRequest>>;
 };
 
@@ -29,8 +26,8 @@ export type WaveformState = {
 /** The waveform before any view is known. */
 export const initialWaveform: WaveformState = {
   requestedSpanMs: 60_000,
-  player: { view: null, requests: {} },
-  clip: { view: null, requests: {} },
+  player: { requests: {} },
+  clip: { requests: {} },
 };
 
 /** The starts of the view's windows whose requests stand as given. */

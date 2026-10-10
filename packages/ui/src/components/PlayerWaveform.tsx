@@ -41,7 +41,7 @@ export function PlayerWaveform({
 }) {
   const dispatch = useAppDispatch();
   const view = useAppSelector(selectPlayerWaveformView);
-  const windows = useWaveformWindows("player", view.windowView);
+  const windows = useWaveformWindows("player");
   return (
     <div className="border-t border-line bg-surface px-3 py-2">
       <WaveformStrip

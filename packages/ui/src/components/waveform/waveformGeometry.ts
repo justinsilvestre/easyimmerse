@@ -1,7 +1,4 @@
-import { maxVisibleSpanMs } from "@easyimmerse/state";
-
-/** The narrowest visible span. */
-const minVisibleSpanMs = 2_000;
+import { clampVisibleSpan } from "@easyimmerse/state";
 
 /** The span of media the strip shows and the width it is drawn at. */
 export type WaveformView = {
@@ -9,25 +6,6 @@ export type WaveformView = {
   spanMs: number;
   widthPx: number;
 };
-
-/** Clamps a wanted span to the zoom limits and to the media's length. */
-export function clampVisibleSpan(spanMs: number, durationMs: number): number {
-  const widest = Math.min(
-    maxVisibleSpanMs,
-    Math.max(durationMs, minVisibleSpanMs),
-  );
-  return Math.min(Math.max(spanMs, minVisibleSpanMs), widest);
-}
-
-/** Centres the view on the current time, except at the ends of the media. */
-export function computeViewStart(
-  currentTimeMs: number,
-  spanMs: number,
-  durationMs: number,
-): number {
-  const latestStart = Math.max(0, durationMs - spanMs);
-  return Math.min(Math.max(currentTimeMs - spanMs / 2, 0), latestStart);
-}
 
 export function timeAtX(view: WaveformView, x: number): number {
   return view.startMs + (x / view.widthPx) * view.spanMs;

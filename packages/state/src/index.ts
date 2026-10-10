@@ -163,6 +163,10 @@ export {
   selectRequestedWaveformSpan,
   selectWaveformRequests,
 } from "./screen/mediaScreen/waveformSelectors.ts";
+export {
+  clampVisibleSpan,
+  computeViewStart,
+} from "./screen/mediaScreen/waveformSpan.ts";
 export type { WaveformViewName } from "./screen/mediaScreen/waveformState.ts";
 export type { WaveformWindowView } from "./screen/mediaScreen/waveformWindowPolicy.ts";
 export {
@@ -203,6 +207,7 @@ export { cacheKey } from "./server/cacheKey.ts";
 export {
   emptyServerCache,
   serverCacheWith,
+  withEmptyServerCache,
 } from "./server/serverCacheWith.ts";
 export type {
   RequestFailure,

@@ -15,23 +15,16 @@ function renderWaveform(mediaFileId: string) {
     directPlaybackRoutes,
   );
   const rendered = renderWithAppStore(<PlayerWaveform />, client);
-  act(() =>
-    rendered.store.dispatch(actions.openMediaFileRequested("p1", mediaFileId)),
-  );
+  act(() => {
+    rendered.store.dispatch(actions.openMediaFileRequested("p1", mediaFileId));
+    rendered.store.dispatch(actions.waveformToggled());
+  });
   return { ...rendered, client };
 }
 
 const waveformRequests = (
   client: ReturnType<typeof renderWaveform>["client"],
 ) => client.requests.filter((request) => request.path.endsWith("/waveform"));
-
-const waveformOf = (store: ReturnType<typeof renderWaveform>["store"]) =>
-  (
-    store.getState().app.screen.main as Extract<
-      ReturnType<typeof store.getState>["app"]["screen"]["main"],
-      { kind: "media" }
-    >
-  ).waveform;
 
 const findSlider = () =>
   screen.getByRole("slider", { name: "Playback position" });
@@ -74,12 +67,5 @@ describe("PlayerWaveform", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
     });
     expect(waveformRequests(client)).toHaveLength(0);
-  });
-
-  it("stops wanting peaks windows once it is unmounted", async () => {
-    const { store } = renderWaveform("m1");
-    await vi.waitUntil(() => waveformOf(store).player.view !== null);
-    cleanup();
-    expect(waveformOf(store).player.view).toBeNull();
   });
 });

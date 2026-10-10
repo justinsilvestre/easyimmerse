@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
+import { withEmptyServerCache } from "../../server/serverCacheWith.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateMediaScreen } from "./updateMediaScreen.ts";
 
@@ -16,7 +17,11 @@ const applyAfter = (
   afterOpening: AppAction[],
 ) => {
   const app = stateAfter(...beforeOpening, open, ...afterOpening);
-  return updateMediaScreen(app.screen.main as MediaScreenState, action, app);
+  return updateMediaScreen(
+    app.screen.main as MediaScreenState,
+    action,
+    withEmptyServerCache(app),
+  );
 };
 
 /** Applies an action to the media screen of m1 after the given earlier actions. */

@@ -1,3 +1,4 @@
+import { clampVisibleSpan } from "@easyimmerse/state";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { fn } from "storybook/test";
@@ -8,7 +9,6 @@ import {
 } from "./exampleWaveformWindows.ts";
 import type { WaveformStripProps } from "./WaveformStrip.tsx";
 import { WaveformStrip } from "./WaveformStrip.tsx";
-import { clampVisibleSpan } from "./waveformGeometry.ts";
 
 const durationMs = 10 * 60_000;
 

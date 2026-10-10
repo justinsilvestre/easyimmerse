@@ -1,3 +1,4 @@
+import { computeViewStart } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
 import type { KeyboardEvent } from "react";
 import { useEffect, useRef } from "react";
@@ -13,7 +14,7 @@ import { WaveformBars } from "./WaveformBars.tsx";
 import { WaveformZoomControl } from "./WaveformZoomControl.tsx";
 import { applyDrag } from "./waveformDrag.ts";
 import type { WaveformView } from "./waveformGeometry.ts";
-import { canZoom, computeViewStart, zoomedSpan } from "./waveformGeometry.ts";
+import { canZoom, zoomedSpan } from "./waveformGeometry.ts";
 import type { WaveformGestureHandlers } from "./waveformGestureHandlers.ts";
 
 const waveformStripHeightPx = 72;

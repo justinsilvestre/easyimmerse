@@ -1,6 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
+import { withEmptyServerCache } from "../../server/serverCacheWith.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { mediaScreenActionOf } from "./mediaScreenActionOf.ts";
 import { updateMediaScreen } from "./updateMediaScreen.ts";
@@ -8,7 +9,10 @@ import { updateMediaScreen } from "./updateMediaScreen.ts";
 /** The app, and m1's media screen in it, after the given actions. */
 export function mediaScreenAfter(...before: AppAction[]) {
   const app = stateAfter(actions.openMediaFileRequested("p1", "m1"), ...before);
-  return { app, screen: app.screen.main as MediaScreenState };
+  return {
+    app: withEmptyServerCache(app),
+    screen: app.screen.main as MediaScreenState,
+  };
 }
 
 /** Applies an action to m1's media screen after the given earlier actions. */

@@ -212,29 +212,54 @@ describe("createAppStore", () => {
     });
   });
 
-  describe("when a waveform window fails", () => {
+  describe("for a file on the server's disk with the waveform panel open", () => {
+    const tracksRequest = {
+      kind: "getMediaTracks",
+      projectId: "p1",
+      mediaFileId: "m1",
+    } as const;
+
+    /** m1 is 10 s long, so the player strip's only window ends there. */
     const windowRequest = {
       kind: "getWaveformWindow",
       projectId: "p1",
       mediaFileId: "m1",
       startMs: 0,
-      endMs: 30_000,
+      endMs: 10_000,
     } as const;
 
-    /** Opens m1, has its only window fail, and returns the store once the failure has arrived. */
-    async function failWindow() {
+    /** Opens m1 with the waveform panel open, and returns the store once m1's tracks have been asked for. */
+    async function openWithWaveform() {
       const effects = createRecordingEffects();
       const server = createFakeServerStoreParts();
       const store = createAppStore(effects, server);
       store.dispatch(actions.openMediaFileRequested("p1", "m1"));
-      store.dispatch(
-        actions.waveformViewChanged("player", {
-          viewStartMs: 0,
-          viewEndMs: 30_000,
-          focusMs: 0,
-          durationMs: 30_000,
-        }),
+      store.dispatch(actions.waveformToggled());
+      server.respond(
+        { kind: "listMediaFiles", projectId: "p1" },
+        { ok: true, data: { media_files: [fileOnDisk] } },
       );
+      await vi.waitUntil(() =>
+        server.sentRequests.some(({ kind }) => kind === "getMediaTracks"),
+      );
+      return { effects, server };
+    }
+
+    const windowRequests = (server: FakeServerStoreParts) =>
+      server.sentRequests.filter(({ kind }) => kind === "getWaveformWindow");
+
+    it("requests the player strip's window once the probe gives the file's length", async () => {
+      const { server } = await openWithWaveform();
+      server.respond(tracksRequest, { ok: true, data: exampleTracksOneEach });
+      await vi.waitUntil(() => windowRequests(server).length > 0);
+      expect(windowRequests(server)).toEqual([windowRequest]);
+    });
+
+    /** Has the player strip's only window fail, and returns the store once the failure has arrived. */
+    async function failWindow() {
+      const { effects, server } = await openWithWaveform();
+      server.respond(tracksRequest, { ok: true, data: exampleTracksOneEach });
+      await vi.waitUntil(() => windowRequests(server).length > 0);
       server.respond(windowRequest, {
         ok: false,
         error: { status: 500, message: "down" },
@@ -248,16 +273,13 @@ describe("createAppStore", () => {
       return { effects, server };
     }
 
-    const windowRequests = (server: FakeServerStoreParts) =>
-      server.sentRequests.filter(({ kind }) => kind === "getWaveformWindow");
-
-    it("requests it again five seconds later", async () => {
+    it("requests a failed window again five seconds later", async () => {
       const { effects, server } = await failWindow();
       effects.clock.advanceBy(5_000);
       expect(windowRequests(server)).toHaveLength(2);
     });
 
-    it("does not request it again sooner", async () => {
+    it("does not request a failed window again sooner", async () => {
       const { effects, server } = await failWindow();
       effects.clock.advanceBy(4_999);
       expect(windowRequests(server)).toHaveLength(1);

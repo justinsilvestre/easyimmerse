@@ -7,6 +7,7 @@ import { runningMediaSourceJob } from "../operations/exampleJobReports.ts";
 import type { PickedMediaFile } from "../platform/effects.ts";
 import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProjectSettings } from "../server/exampleProject.ts";
+import { withEmptyServerCache } from "../server/serverCacheWith.ts";
 import { mediaFilesListed } from "./mediaScreen/playbackTestActions.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
 import { updateScreen } from "./updateScreen.ts";
@@ -14,7 +15,7 @@ import { updateScreen } from "./updateScreen.ts";
 /** Applies an action to the screens after the given earlier actions. */
 const apply = (action: AppAction, ...before: AppAction[]) => {
   const app = stateAfter(...before);
-  return updateScreen(app.screen, action, app);
+  return updateScreen(app.screen, action, withEmptyServerCache(app));
 };
 
 const pickedMediaFile: PickedMediaFile = {
@@ -94,12 +95,12 @@ describe("updateScreen", () => {
     const [, effects] = apply(
       actions.closeMedia(),
       ...playingM2,
-      actions.waveformViewChanged("player", {
-        viewStartMs: 0,
-        viewEndMs: 30_000,
-        focusMs: 0,
-        durationMs: 30_000,
-      }),
+      actions.requestSettled(
+        "media/m2/mediaFile",
+        { kind: "listMediaFiles", projectId: "p1" },
+        { ok: true, data: { media_files: [exampleMediaFile("m2", "m2.mkv")] } },
+      ),
+      actions.waveformToggled(),
       actions.requestSettled("media/m2/waveform/player/0", request, {
         ok: false,
         error: { status: 500, message: "down" },
@@ -167,14 +168,18 @@ describe("updateScreen", () => {
     const [screen] = updateScreen(
       app.screen,
       actions.openMediaFileRequested("p1", "m2"),
-      app,
+      withEmptyServerCache(app),
     );
     expect(screen.main).toBe(app.screen.main);
   });
 
   it("keeps the main screen while Settings open over it", () => {
     const app = stateAfter(...playingM2);
-    const [screen] = updateScreen(app.screen, actions.settingsRequested(), app);
+    const [screen] = updateScreen(
+      app.screen,
+      actions.settingsRequested(),
+      withEmptyServerCache(app),
+    );
     expect(screen.main).toBe(app.screen.main);
   });
 
@@ -223,7 +228,11 @@ describe("updateScreen", () => {
 
   it("keeps the screens as they are for an action they do not handle", () => {
     const app = stateAfter(...playingM2);
-    const [screen] = updateScreen(app.screen, actions.appStarted(), app);
+    const [screen] = updateScreen(
+      app.screen,
+      actions.appStarted(),
+      withEmptyServerCache(app),
+    );
     expect(screen).toBe(app.screen);
   });
 

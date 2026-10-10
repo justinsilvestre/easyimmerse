@@ -3,18 +3,12 @@ import { actions, selectWaveformRequests } from "@easyimmerse/state";
 import { describe, expect, it, vi } from "vitest";
 import { createFakeBackendClient } from "../../testSupport/createFakeBackendClient.ts";
 import { createTestAppStore } from "../../testSupport/createTestAppStore.ts";
+import { fixtureResponses } from "../../testSupport/fixtureResponses.ts";
 import { selectWaveformWindows } from "./selectWaveformWindows.ts";
 
-const view = {
-  viewStartMs: 0,
-  viewEndMs: 60_000,
-  focusMs: 10_000,
-  durationMs: 600_000,
-};
-
-/** A store whose server answers each window with the given peaks, after the player view above has requested its windows. */
+/** A store whose server answers each window with the given peaks, once the player strip of m1, 600 s long and at 10 s, has requested the windows from 0 s to 90 s. */
 function storeWithWindows(peaks: readonly number[]) {
-  const client = createFakeBackendClient({}, [
+  const client = createFakeBackendClient(fixtureResponses, [
     [
       "GET",
       /\/waveform$/,
@@ -26,7 +20,9 @@ function storeWithWindows(peaks: readonly number[]) {
   ]);
   const { store } = createTestAppStore(client);
   store.dispatch(actions.openMediaFileRequested("p1", "m1"));
-  store.dispatch(actions.waveformViewChanged("player", view));
+  store.dispatch(actions.playerDurationChanged(600));
+  store.dispatch(actions.playerTimeChanged(10));
+  store.dispatch(actions.waveformToggled());
   return store;
 }
 
