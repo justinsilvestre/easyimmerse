@@ -26,14 +26,14 @@ export function updateJobs(jobs: JobsState, action: AppAction) {
       return updated(
         { ...jobs, [action.id]: checked },
         ...(checked.status === "running"
-          ? ([
+          ? [
               {
                 type: "startTimer",
                 id: action.id,
                 ms: pollingIntervalMs[job.kind],
                 action: actions.jobPollDue(action.id),
               },
-            ] satisfies Effect[])
+            ]
           : []),
       );
     }
