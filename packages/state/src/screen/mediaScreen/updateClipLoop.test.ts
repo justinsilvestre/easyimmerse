@@ -152,4 +152,14 @@ describe("updateClipLoop", () => {
     );
     expect(screen.loop).toEqual(otherClip);
   });
+
+  it("keeps looping when the player reports its own seek to a start that floats cannot hold exactly", () => {
+    const oddClip: AudioClip = { start_ms: 1_001, end_ms: 3_000 };
+    const [screen] = apply(
+      actions.playerSeeking(1.001),
+      playing,
+      actions.editedClipOpened(oddClip),
+    );
+    expect(screen.loop).toBe(oddClip);
+  });
 });

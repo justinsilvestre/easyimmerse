@@ -5,16 +5,18 @@ import { actions } from "../../app/appAction.ts";
 import { stateAfter } from "../../app/stateAfter.ts";
 import type { MediaScreenState } from "../screenState.ts";
 import { updateClipPlayback } from "./updateClipPlayback.ts";
+import { updatePlayer } from "./updatePlayer.ts";
 
 const clip: AudioClip = { start_ms: 1_750, end_ms: 3_000 };
 const requested = actions.clipPlayRequested(clip);
 const playing = actions.playerPlayingChanged(true);
 
-/** Applies an action to the media screen of m1 after the given earlier actions. */
+/** Applies an action to the media screen of m1 after the given earlier actions, once the player has recorded it, as in `updateMediaScreen`. */
 const apply = (action: AppAction, ...before: AppAction[]) => {
   const main = stateAfter(actions.openMediaFileRequested("p1", "m1"), ...before)
     .screen.main as MediaScreenState;
-  return updateClipPlayback(main, action);
+  const [recorded] = updatePlayer(main, action);
+  return updateClipPlayback(recorded, action);
 };
 
 /** Returns what the player is asked to do when it reports a time after the given earlier actions. */

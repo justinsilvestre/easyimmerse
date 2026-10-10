@@ -43,10 +43,6 @@ describe("shownCueAt", () => {
       expect(shownCueAt(cues, 2_000, 2_000)).toBeNull();
     });
 
-    it("shows no cue after a seek back from a later cue into the gap", () => {
-      expect(shownCueAt(cues, 4_000, 4_000)).toBeNull();
-    });
-
     it("keeps a later cue after a seek into the gap before it", () => {
       expect(shownCueAt(cues, 7_500, 4_000)).toBe(second);
     });
@@ -100,6 +96,12 @@ describe("selectShownCue", () => {
         actions.playerTimeChanged(7.5),
       ),
     ).toBe(2);
+  });
+
+  it("shows no cue after a seek back from a later cue into the gap", () => {
+    expect(
+      shownIndexAfter(actions.seekRequested(6.5), actions.seekRequested(4)),
+    ).toBeNull();
   });
 
   it("shows no cue while no media screen is open", () => {

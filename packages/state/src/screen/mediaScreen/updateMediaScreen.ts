@@ -20,7 +20,7 @@ type MediaScreenUpdate = (
   app: AppState,
 ) => readonly [MediaScreenState, readonly Effect[]];
 
-/** The parts of the media screen's update, in the order each sees an action. The loop comes after the player has recorded a time. */
+/** The parts of the media screen's update, in the order each sees an action. The loop comes after the player has recorded a time, and the clip Play after the loop has moved it. */
 const mediaScreenUpdates: readonly MediaScreenUpdate[] = [
   (screen, action, route) => {
     const [waveform, effects] = updateWaveform(screen.waveform, action, route);

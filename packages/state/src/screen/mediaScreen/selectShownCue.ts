@@ -16,11 +16,14 @@ export const selectShownCue = (
   return shownCueAt(
     cues,
     currentTimeSeconds * 1000,
-    lastSeekSeconds === null ? null : lastSeekSeconds * 1000,
+    lastSeekSeconds === null ? null : Math.round(lastSeekSeconds * 1000),
   );
 };
 
-/** Finds the cue shown at `ms`, given where the last seek went, or null when the player has not sought. */
+/**
+ * Finds the cue shown at `ms`. `lastSeekMs` is where the last seek went,
+ * or null when the player has not sought since the file opened.
+ */
 export function shownCueAt(
   cues: readonly Cue[],
   ms: number,

@@ -46,6 +46,17 @@ describe("updateMediaScreen", () => {
     expect(screen.panels.waveform).toBe(true);
   });
 
+  it("pauses nothing when Play is pressed while the clip loops and playback reaches its end", () => {
+    const clip = { start_ms: 1_750, end_ms: 3_000 };
+    const [, effects] = apply(
+      actions.playerTimeChanged(3.1),
+      actions.playerPlayingChanged(true),
+      actions.editedClipOpened(clip),
+      actions.clipPlayRequested(clip),
+    );
+    expect(effects).not.toContainEqual({ type: "pausePlayer" });
+  });
+
   it("seeks the player for seekRequested", () => {
     const [, effects] = apply(actions.seekRequested(12.5));
     expect(effects).toEqual([{ type: "seekPlayer", seconds: 12.5 }]);
