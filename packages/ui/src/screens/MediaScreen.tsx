@@ -7,6 +7,7 @@ import {
   selectPlayerControls,
   selectPreference,
   selectShownCue,
+  selectSourceMedia,
 } from "@easyimmerse/state";
 import type { Cue, Project } from "@easyimmerse/types";
 import { useMemo, useRef, useState } from "react";
@@ -49,7 +50,6 @@ import { useMediaFile } from "../player/useMediaFile.ts";
 import { SourceMediaDialog } from "../subtitles/SourceMediaDialog.tsx";
 import { SubtitlesSidePanel } from "../subtitles/SubtitlesSidePanel.tsx";
 import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
-import { useSourceMedia } from "../subtitles/useSourceMedia.ts";
 
 /**
  * The screen for watching or listening to one of the project's media files:
@@ -87,7 +87,7 @@ export function MediaScreen({
     mediaFile?.origin ?? null,
     useListPluginsQuery().data?.plugins,
   );
-  const sourceMedia = useSourceMedia(projectId, mediaFileId);
+  const sourceMedia = useAppSelector(selectSourceMedia);
   const shownCue = useAppSelector((state) =>
     selectShownCue(state, subtitles.cues),
   );
@@ -230,14 +230,16 @@ export function MediaScreen({
   });
   return (
     <>
-      {sourceMedia.isOpen && source && (
+      {sourceMedia && source && (
         <SourceMediaDialog
           title={source.title}
           form={sourceMedia.form}
           isBusy={sourceMedia.isBusy}
           error={sourceMedia.error}
-          onAction={sourceMedia.act}
-          onClose={sourceMedia.close}
+          onAction={(actionId, input) =>
+            dispatch(actions.sourceMediaStepTaken(actionId, input))
+          }
+          onClose={() => dispatch(actions.sourceMediaClosed())}
         />
       )}
       <MediaView
@@ -293,7 +295,7 @@ export function MediaScreen({
         flashcardWordRanges={wordRanges}
         playerCallbacks={playerCallbacks}
         onBack={() => dispatch(actions.closeMedia())}
-        onOpenSource={sourceMedia.open}
+        onOpenSource={() => dispatch(actions.sourceMediaOpened())}
         activeWord={lookup.activeWord}
         cursor={lookup.cursor}
         wordGestures={lookup.wordGestures}

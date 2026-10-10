@@ -103,6 +103,7 @@ export {
 } from "./screen/mediaScreen/playbackSelectors.ts";
 export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
 export { selectShownCue } from "./screen/mediaScreen/selectShownCue.ts";
+export { selectSourceMedia } from "./screen/mediaScreen/sourceMedia/selectSourceMedia.ts";
 export {
   selectRequestedWaveformSpan,
   selectWaveformRequests,

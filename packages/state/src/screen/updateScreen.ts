@@ -12,6 +12,8 @@ import { routeAfter } from "../route/updateRoute.ts";
 import { failureNotices } from "./failureNotices.ts";
 import { leaveLookup } from "./lookup/lookupIds.ts";
 import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
+import { skippedSourceSubtitles } from "./mediaScreen/sourceMedia/skippedSourceSubtitles.ts";
+import { endSourceMedia } from "./mediaScreen/sourceMedia/sourceMediaRequests.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
 import { leaveWaveform } from "./mediaScreen/updateWaveform.ts";
 import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
@@ -70,6 +72,7 @@ export const updateScreen: FeatureUpdate<ScreenState> = (
     ...dialogEffects,
     ...settingsEffects,
     ...failureNotices(action),
+    ...skippedSourceSubtitles(action),
     ...(opened === null ? [] : [markOpened(opened)]),
   ];
   return nextMain === screen.main &&
@@ -90,7 +93,11 @@ function leavingEffects(main: MainScreenState, route: MainRoute): Effect[] {
   if (main.kind === "project" && route.screen === "project")
     return endImport(route.projectId, main.mediaImport);
   if (main.kind === "media" && route.screen === "media")
-    return [...leaveWaveform(main.waveform, route), ...leaveLookup];
+    return [
+      ...leaveWaveform(main.waveform, route),
+      ...leaveLookup,
+      ...(main.sourceMedia === null ? [] : endSourceMedia(route.mediaFileId)),
+    ];
   return [];
 }
 

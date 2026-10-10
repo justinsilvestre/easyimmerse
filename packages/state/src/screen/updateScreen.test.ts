@@ -9,6 +9,10 @@ import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProjectSettings } from "../server/exampleProject.ts";
 import { mediaFilesListed } from "./mediaScreen/playbackTestActions.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
+import {
+  applied,
+  sourceStepSettled,
+} from "./mediaScreen/sourceMedia/exampleSourceMedia.ts";
 import { updateScreen } from "./updateScreen.ts";
 
 /** Applies an action to the screens after the given earlier actions. */
@@ -132,6 +136,32 @@ describe("updateScreen", () => {
     expect(effects).toContainEqual({
       type: "cancelTimer",
       id: "lookup/flashcardWait",
+    });
+  });
+
+  it("aborts the source dialog's form request when the media screen closes", () => {
+    const [, effects] = apply(
+      actions.closeMedia(),
+      ...playingM2,
+      actions.sourceMediaOpened(),
+    );
+    expect(effects).toContainEqual({
+      type: "abortRequest",
+      id: "media/m2/sourceMedia/form",
+    });
+  });
+
+  it("names the subtitles that a source dialog's changes did not add, even once the screen has closed", () => {
+    const skipped = [{ id: "en", reason: "the plugin did not fetch it" }];
+    const [, effects] = apply(
+      sourceStepSettled({ ok: true, data: applied(skipped) }),
+    );
+    expect(effects).toContainEqual({
+      type: "showNotice",
+      content: transientNotice(
+        "danger",
+        "The subtitles “English (automatic)” were not added: the plugin did not fetch it.",
+      ),
     });
   });
 

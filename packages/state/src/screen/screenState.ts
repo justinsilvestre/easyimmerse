@@ -13,6 +13,7 @@ import type { PlayerState } from "./mediaScreen/playerState.ts";
 import { initialPlayerState } from "./mediaScreen/playerState.ts";
 import type { WaveformState } from "./mediaScreen/waveformState.ts";
 import { initialWaveform } from "./mediaScreen/waveformState.ts";
+import type { PluginFormWizard } from "./pluginForm/pluginFormWizard.ts";
 import type { MediaImportWizard } from "./projectScreen/mediaImportWizard.ts";
 
 /** The media screen's state, which the reader shares until it has state of its own. */
@@ -33,6 +34,8 @@ export type MediaScreenState = {
   panels: MediaPanels;
   /** The dictionary pop-up and the flashcard waiting for a word's lookup, in the subtitles or in a book. */
   lookup: LookupState;
+  /** The dialog of the plugin the media file was imported through, or null while it is closed. */
+  sourceMedia: PluginFormWizard | null;
 };
 
 /** The offline screen's state: the cues of the subtitles file last picked, parsed in the browser when no server is connected. */
@@ -119,6 +122,7 @@ export function initialMainScreen(
         waveform: initialWaveform,
         panels: initialMediaPanels,
         lookup: initialLookup,
+        sourceMedia: null,
       };
   }
 }
