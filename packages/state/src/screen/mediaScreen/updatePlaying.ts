@@ -4,8 +4,8 @@ import { updated } from "../../app/updated.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { endLoopOutside, loopAtEnd } from "./clipLoop.ts";
 import { pauseAtClipEnd, playClip } from "./clipPlayback.ts";
-import { followFormClip } from "./formClip.ts";
 import type { PlayingState } from "./playingState.ts";
+import { openClipOf, playOpenedCard } from "./playOpenedCard.ts";
 import { positionLoaded, resume } from "./resume.ts";
 import { seekTo, withPlayer } from "./seekTo.ts";
 
@@ -20,16 +20,18 @@ export function updatePlaying(
   app: AppState,
   route: MediaRoute,
 ) {
+  const clip = openClipOf(app);
   switch (action.type) {
     case "seekRequested": {
       const [sought, effects] = seekTo(playing, action.seconds * 1000);
-      return updated(endLoopOutside(sought, action.seconds), ...effects);
+      return updated(endLoopOutside(sought, action.seconds, clip), ...effects);
     }
     case "playerSeeking":
       return updated(
         endLoopOutside(
           withPlayer(playing, { lastSeekSeconds: action.seconds }),
           action.seconds,
+          clip,
         ),
       );
     case "playerTimeChanged": {
@@ -37,8 +39,8 @@ export function updatePlaying(
       const recorded = withPlayer(playing, {
         currentTimeSeconds: action.seconds,
       });
-      const [looped, loopEffects] = loopAtEnd(recorded, action.seconds);
-      const [paused, pauseEffects] = pauseAtClipEnd(looped);
+      const [looped, loopEffects] = loopAtEnd(recorded, action.seconds, clip);
+      const [paused, pauseEffects] = pauseAtClipEnd(looped, clip);
       return updated(paused, ...loopEffects, ...pauseEffects);
     }
     case "playerPlayingChanged": {
@@ -47,7 +49,7 @@ export function updatePlaying(
       return updated(
         action.isPlaying
           ? recorded
-          : { ...recorded, loop: null, clipPlayback: null },
+          : { ...recorded, isLooping: false, isPlayingClip: false },
       );
     }
     case "playerDurationChanged":
@@ -73,7 +75,9 @@ export function updatePlaying(
       return playClip(playing, action.clip);
     case "playbackPositionLoaded":
       return positionLoaded(playing, action, route, app);
+    case "flashcardFormOpened":
+      return playOpenedCard(playing, action.clip);
     default:
-      return followFormClip(playing, action, app);
+      return updated(playing);
   }
 }

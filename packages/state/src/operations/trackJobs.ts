@@ -1,5 +1,6 @@
 import type { Effect, PerformedEffect } from "../app/effect.ts";
 import { updated } from "../app/updated.ts";
+import type { FailedRequestsEffect } from "./failedRequests.ts";
 import type { JobsState } from "./jobs.ts";
 import { jobKey } from "./jobs.ts";
 
@@ -8,7 +9,10 @@ import { jobKey } from "./jobs.ts";
  * A watched job's status is asked for at once, and a job watched again starts over;
  * an unwatched job's timer is cancelled and its status request aborted.
  */
-export function trackJobs(jobs: JobsState, effects: readonly Effect[]) {
+export function trackJobs(
+  jobs: JobsState,
+  effects: readonly Exclude<Effect, FailedRequestsEffect>[],
+) {
   let tracked = jobs;
   const performed: PerformedEffect[] = [];
   for (const effect of effects) {

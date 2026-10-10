@@ -1,5 +1,6 @@
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
+import { freeRequestId } from "../../operations/freeRequestId.ts";
 
 /** The ids of the lookup's timers. Starting one again replaces it. */
 export const lookupTimerIds = {
@@ -12,27 +13,19 @@ export const leaveLookup = Object.values(lookupTimerIds).map(
   (id) => ({ type: "cancelTimer", id }) satisfies Effect,
 );
 
-const hoverRequestPrefix = "lookup/hover/";
+const hoverRequestPrefix = "lookup/hover";
 
-/** The id of the lookup request of the flashcard with this sequence. */
-export function lookupRequestId(sequence: number): string {
-  return `lookup/flashcard/${sequence}`;
+/** The id of the lookup request of the flashcard with this id, which the dispatcher made unique. */
+export function lookupRequestId(flashcardId: string): string {
+  return `lookup/flashcard/${flashcardId}`;
 }
 
-/** The id of the lookup request of the hover with this sequence. */
-export function lookupHoverRequestId(sequence: number): string {
-  return `${hoverRequestPrefix}${sequence}`;
+/** The id of the next hover's lookup request: the first not in flight, so that none is shared with a request from an earlier screen. */
+export function nextHoverRequestId(app: AppState): string {
+  return freeRequestId(hoverRequestPrefix, app.operations.requests);
 }
 
 /** Tells whether a request id is that of a hover's lookup. */
 export function isHoverRequestId(id: string): boolean {
-  return id.startsWith(hoverRequestPrefix);
-}
-
-/**
- * The sequence of the next lookup request, of a flashcard or a hover, counted over the whole session by the operations feature,
- * so that no screen's request reuses the id of one still in flight from an earlier screen.
- */
-export function nextLookupSequence(app: AppState): number {
-  return app.operations.lookupRequestsSent + 1;
+  return id.startsWith(`${hoverRequestPrefix}/`);
 }

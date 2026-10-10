@@ -1,18 +1,10 @@
-import type { AppAction } from "../app/appAction.ts";
 import type { Feature } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
+import type { FailedRequest } from "./failedRequests.ts";
 import type { JobsState } from "./jobs.ts";
 import { timeLimitEffects } from "./requestTimeLimit.ts";
 import { updateJobs } from "./updateJobs.ts";
-
-/** The actions that number a lookup request, whether or not one is then sent. */
-const lookupRequestActions: ReadonlySet<AppAction["type"]> = new Set([
-  "lookupFlashcardRequested",
-  "lookupCursorFlashcardRequested",
-  "lookupPopupWordHeld",
-  "lookupWordHovered",
-]);
 
 /** A request sent and not yet settled. */
 export type RequestRecord = {
@@ -27,19 +19,18 @@ export type RequestRecord = {
   isWaiting: boolean;
   /** How long the request may go unanswered once sent before it is aborted, if it has such a limit. */
   timeLimitMs?: number;
+  /** The id of the request this one is held for. A held request is not sent until its id is sent again without it. */
+  heldFor?: string;
 };
 
 /** Work under way that any feature may ask about. */
 export type OperationsState = {
   /** Every request sent and not yet settled, in the order they were asked for. */
   requests: readonly RequestRecord[];
+  /** The failed requests that features keep, so that the user can send them again or drop them. */
+  failedRequests: readonly FailedRequest[];
   /** Server jobs being polled, of either kind, until the feature that started each one stops watching it. */
   jobs: JobsState;
-  /**
-   * How many lookup requests the lookup feature has asked for since the app started, for flashcards and for hovers.
-   * It numbers them, so that no screen's request reuses the id of one still in flight from an earlier screen.
-   */
-  lookupRequestsSent: number;
 };
 
 /**
@@ -47,7 +38,7 @@ export type OperationsState = {
  * the root update records the requests sent and the jobs watched.
  */
 export const operationsFeature: Feature<OperationsState> = {
-  initialState: { requests: [], jobs: {}, lookupRequestsSent: 0 },
+  initialState: { requests: [], failedRequests: [], jobs: {} },
   update: (operations, action) => {
     const [jobs, jobEffects] = updateJobs(operations.jobs, action);
     const effects = [
@@ -58,13 +49,9 @@ export const operationsFeature: Feature<OperationsState> = {
       operations.requests,
       action.type === "requestSettled" ? action.id : null,
     );
-    const lookupRequestsSent =
-      operations.lookupRequestsSent + (isLookupRequest(action) ? 1 : 0);
-    return requests === operations.requests &&
-      jobs === operations.jobs &&
-      lookupRequestsSent === operations.lookupRequestsSent
+    return requests === operations.requests && jobs === operations.jobs
       ? updated(operations, ...effects)
-      : updated({ requests, jobs, lookupRequestsSent }, ...effects);
+      : updated({ ...operations, requests, jobs }, ...effects);
   },
 };
 
@@ -75,9 +62,4 @@ function forgetSettled(
   if (settledId === null) return requests;
   const remaining = requests.filter(({ id }) => id !== settledId);
   return remaining.length === requests.length ? requests : remaining;
-}
-
-/** Tells whether the action numbers a lookup request. */
-function isLookupRequest(action: AppAction): boolean {
-  return lookupRequestActions.has(action.type);
 }

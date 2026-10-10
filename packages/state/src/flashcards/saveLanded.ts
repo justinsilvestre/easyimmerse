@@ -1,6 +1,7 @@
-import type { Flashcard } from "@easyimmerse/types";
 import type { AppState } from "../app/appState.ts";
-import { withoutFailedSave } from "./failedSaveListing.ts";
+import type { Effect } from "../app/effect.ts";
+import { findFailedSave } from "./failedSave.ts";
+import { forgetFailedSave } from "./failedSaveKeeping.ts";
 import {
   flashcardNoticeKeys,
   flashcardNotices,
@@ -8,49 +9,41 @@ import {
   withdraw,
   wordOf,
 } from "./flashcardNotices.ts";
-import type { FlashcardsContext, SavePurpose } from "./flashcardRequests.ts";
+import type { SavePurpose } from "./flashcardRequests.ts";
 import { formOf } from "./flashcardsOnScreen.ts";
-import type { FlashcardsState } from "./flashcardsState.ts";
 import type { FlashcardSettled } from "./settleFlashcardRequest.ts";
 
 type Save = Extract<FlashcardSettled, { request: { kind: "saveFlashcard" } }>;
 type CardSave = Extract<SavePurpose, { type: "save" }>;
 
 /**
- * Keeps the flashcard a save returned until the list catches up. A save of a card also takes the flashcard off the failed saves,
- * since it holds the newer edits, drops a Retry of it still waiting, and shows its undo toast when it offers one.
+ * Forgets the failed save of a flashcard whose card was saved, since the save holds the newer edits,
+ * drops a Retry of it still waiting, and shows its undo toast when the save offers one.
  * An Undo or rollback that lands leaves the failed saves as they are.
  */
-export function saveLanded(
-  state: FlashcardsState,
-  { id, request }: Save,
-  flashcard: Flashcard,
-  { app, outbox }: FlashcardsContext,
-): FlashcardsState {
-  const { flashcardId, purpose } = request;
-  const confirmed = { ...state.confirmed, [flashcardId]: flashcard };
-  if (purpose.type !== "save") return { ...state, confirmed };
-  const failedSaves = withoutFailedSave(state.failedSaves, flashcardId);
-  if (failedSaves !== state.failedSaves)
-    outbox.add(withdraw(flashcardNoticeKeys.saveRefused(flashcardId)));
-  for (const waitingId of waitingRetriesOf(app, flashcardId, id))
-    outbox.add({ type: "abortRequest", id: waitingId });
-  if (isUndoOffered(purpose, id, app)) {
-    const { projectId } = request;
-    const { before } = purpose;
-    const word = wordOf(purpose.card);
-    outbox.add(
-      show(
-        flashcardNotices.savedWithUndo({
-          projectId,
-          flashcardId,
-          word,
-          before,
-        }),
-      ),
-    );
-  }
-  return { ...state, confirmed, failedSaves };
+export function saveLanded({ id, request }: Save, app: AppState) {
+  const { flashcardId, projectId, purpose } = request;
+  if (purpose.type !== "save") return [];
+  const undo = {
+    projectId,
+    flashcardId,
+    word: wordOf(purpose.card),
+    before: purpose.before,
+  };
+  return [
+    ...(findFailedSave(app, flashcardId)
+      ? [
+          forgetFailedSave(flashcardId),
+          withdraw(flashcardNoticeKeys.saveRefused(flashcardId)),
+        ]
+      : []),
+    ...waitingRetriesOf(app, flashcardId, id).map(
+      (waitingId) => ({ type: "abortRequest", id: waitingId }) satisfies Effect,
+    ),
+    ...(isUndoOffered(purpose, id, app)
+      ? [show(flashcardNotices.savedWithUndo(undo))]
+      : []),
+  ];
 }
 
 /** A form's save offers Undo only while its card is still open; a Retry never does. */

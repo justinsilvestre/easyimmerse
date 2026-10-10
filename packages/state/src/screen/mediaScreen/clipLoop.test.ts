@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
 import { openWithClip } from "../../flashcards/exampleFlashcards.ts";
 import { applyToMediaScreen as apply } from "./mediaScreenTestSupport.ts";
+import { loopClipOf } from "./playingState.ts";
 
 const clip: AudioClip = { start_ms: 10_000, end_ms: 12_000 };
 const playing = actions.playerPlayingChanged(true);
@@ -13,7 +14,7 @@ describe("updateMediaScreen", () => {
   describe("for the clip loop", () => {
     it("does not loop when the player was paused as the card opened", () => {
       const [screen] = apply(playing, opened);
-      expect(screen.playing.loop).toBeNull();
+      expect(loopClipOf(screen)).toBeNull();
     });
 
     it("follows the clip's end as it is dragged", () => {
@@ -74,32 +75,32 @@ describe("updateMediaScreen", () => {
         playing,
         opened,
       );
-      expect(screen.playing.loop).toBeNull();
+      expect(loopClipOf(screen)).toBeNull();
     });
 
     it("stops looping once the user seeks past the clip", () => {
       const [screen] = apply(actions.seekRequested(40), playing, opened);
-      expect(screen.playing.loop).toBeNull();
+      expect(loopClipOf(screen)).toBeNull();
     });
 
     it("stops looping once the user seeks before the clip", () => {
       const [screen] = apply(actions.seekRequested(2), playing, opened);
-      expect(screen.playing.loop).toBeNull();
+      expect(loopClipOf(screen)).toBeNull();
     });
 
     it("keeps looping after the user seeks inside the clip", () => {
       const [screen] = apply(actions.seekRequested(10.5), playing, opened);
-      expect(screen.playing.loop).toEqual(clip);
+      expect(loopClipOf(screen)).toEqual(clip);
     });
 
     it("stops looping once the player starts a seek outside the clip", () => {
       const [screen] = apply(actions.playerSeeking(40), playing, opened);
-      expect(screen.playing.loop).toBeNull();
+      expect(loopClipOf(screen)).toBeNull();
     });
 
     it("keeps looping when the player starts a seek inside the clip", () => {
       const [screen] = apply(actions.playerSeeking(10.02), playing, opened);
-      expect(screen.playing.loop).toEqual(clip);
+      expect(loopClipOf(screen)).toEqual(clip);
     });
 
     it("keeps looping when the player reports its own seek to a start that floats cannot hold exactly", () => {
@@ -109,7 +110,7 @@ describe("updateMediaScreen", () => {
         playing,
         openWithClip(oddClip),
       );
-      expect(screen.playing.loop).toBe(oddClip);
+      expect(loopClipOf(screen)).toBe(oddClip);
     });
   });
 });

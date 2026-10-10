@@ -8,8 +8,8 @@ type Requests = readonly RequestRecord[];
 
 /**
  * Records the requests that the effects send and abort, and returns the effects to perform.
- * A scoped request waits, and its send is held back, while another request of its scope is in flight;
- * then the first waiting request of each scope with none in flight is sent.
+ * A scoped request waits, and its send is held back, while another request of its scope is in flight or held;
+ * then the first waiting request of each scope with none in flight or held is sent. A held request waits until it is released.
  * The abort of a waiting request forgets it and settles it as aborted, since it was never sent,
  * unless the same effects send its id again, which replaces it instead.
  * A request with a time limit starts it as it goes out.
@@ -38,10 +38,12 @@ function withTimeLimits(effects: readonly PerformedEffect[]) {
   );
 }
 
-/** Sends the first waiting request of each scope that has no request in flight. */
+/** Sends the first waiting request of each scope that has no request in flight or held. */
 function startNextOfEachScope(requests: Requests) {
   const busyScopes = new Set(
-    requests.filter((record) => !record.isWaiting).map(({ scope }) => scope),
+    requests
+      .filter((record) => !record.isWaiting || record.heldFor !== undefined)
+      .map(({ scope }) => scope),
   );
   const next: RequestRecord[] = [];
   const started: PerformedEffect[] = [];

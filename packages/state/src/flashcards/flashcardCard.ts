@@ -28,7 +28,7 @@ export type FlashcardCard =
     }
   | {
       kind: "existing";
-      /** The flashcard as the form opened it, already overlaid with its latest pending or confirmed content. */
+      /** The flashcard as the form opened it, already overlaid with the draft of its latest pending save. */
       flashcard: Flashcard;
       editor: EditorState;
       isChanged: boolean;

@@ -70,7 +70,6 @@ export type LookupCursor = {
 
 /** A flashcard started from a word, waiting at most `flashcardLookupWaitMs` for the word's lookup. */
 export type PendingFlashcard = {
-  sequence: number;
   chosen: ChosenWord;
   destination: FlashcardDestination;
   /** The draft built when the flashcard was asked for, before the lookup's fields fill it. */

@@ -33,7 +33,7 @@ const withUndoNotice = () =>
 function withRequests(...requests: RequestRecord[]) {
   return {
     ...initialAppState,
-    operations: { requests, jobs: {}, lookupRequestsSent: 0 },
+    operations: { requests, failedRequests: [], jobs: {} },
   };
 }
 

@@ -10,6 +10,7 @@ import { storedPlacesEffectRunners } from "../storedPlaces/storedPlacesEffectRun
 import { timerEffectRunners } from "../timers/timerEffectRunners.ts";
 import type { TimerTable } from "../timers/timerTable.ts";
 import type { AppAction } from "./appAction.ts";
+import { dispatchEffectRunners } from "./dispatchEffect.ts";
 import type { PerformedEffect } from "./effect.ts";
 
 /** What an effect runner may use: the platform's effects, the store's dispatch, and the store's pending timers and requests. */
@@ -37,6 +38,7 @@ const effectRunners = {
   ...platformEffectRunners,
   ...timerEffectRunners,
   ...serverEffectRunners,
+  ...dispatchEffectRunners,
 } satisfies EffectRunners<PerformedEffect>;
 
 /** Performs one effect through the context's collaborators. */

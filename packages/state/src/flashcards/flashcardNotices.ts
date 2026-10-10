@@ -39,8 +39,10 @@ export const flashcardNotices = {
    * The server refused a card's save, so that sending it again cannot succeed. Dismissing the notice only hides it.
    * A card without a media file has no form to open in, so it has no Open.
    */
-  saveRefused: (failedSave: FailedSave): NoticeContent => {
-    const flashcardId = failedSaveIdOf(failedSave);
+  saveRefused: (
+    failedSave: Pick<FailedSave, "card" | "projectId" | "mediaFileId">,
+  ): NoticeContent => {
+    const flashcardId = flashcardIdOf(failedSave.card);
     const { projectId, mediaFileId } = failedSave;
     const open =
       mediaFileId === null
@@ -87,7 +89,7 @@ export const flashcardNotices = {
     buttons: [
       {
         label: "Undo",
-        action: flashcardActions.failedSaveDiscardUndone(failedSave),
+        action: flashcardActions.failedSaveDiscardUndone(failedSave.kept),
       },
     ],
     isTransient: true,

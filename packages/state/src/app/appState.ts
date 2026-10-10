@@ -1,4 +1,3 @@
-import type { FlashcardsState } from "../flashcards/flashcardsState.ts";
 import type { NoticesState } from "../notices/noticesState.ts";
 import type { OperationsState } from "../operations/operations.ts";
 import type { PreferencesState } from "../preferences/preferencesState.ts";
@@ -18,7 +17,6 @@ export type AppState = {
   server: ServerState;
   preferences: PreferencesState;
   storedPlaces: StoredPlacesState;
-  flashcards: FlashcardsState;
   notices: NoticesState;
   operations: OperationsState;
 };

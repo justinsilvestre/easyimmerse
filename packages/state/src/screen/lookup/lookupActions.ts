@@ -89,9 +89,9 @@ export const lookupActions = {
   lookupSizeToggled: () => ({ type: "lookupSizeToggled" }) as const,
   lookupPointerInsideChanged: (isInside: boolean) =>
     ({ type: "lookupPointerInsideChanged", isInside }) as const,
-  /** The wait for the lookup of the flashcard with this sequence has run out. */
-  lookupFlashcardWaitEnded: (sequence: number) =>
-    ({ type: "lookupFlashcardWaitEnded", sequence }) as const,
+  /** The wait for the lookup of the flashcard with this id has run out. */
+  lookupFlashcardWaitEnded: (flashcardId: string) =>
+    ({ type: "lookupFlashcardWaitEnded", flashcardId }) as const,
 };
 
 /** An action of the lookup. */

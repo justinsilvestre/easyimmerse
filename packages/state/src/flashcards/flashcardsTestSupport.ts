@@ -3,17 +3,18 @@ import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
-import { stateAfter } from "../app/stateAfter.ts";
+import { stateAfter, updatedAsDispatched } from "../app/stateAfter.ts";
 import { update } from "../app/update.ts";
+import { mainScreenOf } from "../route/route.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
 import {
   exampleListedFlashcard,
   exampleNewFlashcard,
 } from "./exampleFlashcards.ts";
+import { flashcardCommands } from "./flashcardCommands.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
 import { formOf } from "./flashcardsOnScreen.ts";
-import { stepFlashcardForm } from "./stepFlashcardForm.ts";
-import { updateFlashcards } from "./updateFlashcards.ts";
+import { updateFlashcardForm } from "./updateFlashcardForm.ts";
 
 export const openM1 = actions.openMediaFileRequested("p1", "m1");
 
@@ -38,7 +39,7 @@ export const appAfter = (...done: AppAction[]): AppState =>
 
 /** Applies more actions to an app state through the root update. */
 export function applied(app: AppState, ...done: AppAction[]): AppState {
-  return done.reduce((state, action) => update(state, action)[0], app);
+  return done.reduce(updatedAsDispatched, app);
 }
 
 /** The settle of the recorded request with this id: a success with `data`, or a failure. */
@@ -74,19 +75,26 @@ export const failure = (status: RequestFailure["status"]) => ({
 /** A save landing with the given flashcard. */
 export const landed = (flashcard: Flashcard) => ({ data: flashcard });
 
-/** Steps the form of the app through an action. */
-export const step = (app: AppState, action: AppAction) =>
-  stepFlashcardForm(app, action);
+/** The form the app has after an action, with the effects its update returns. */
+export function formUpdate(app: AppState, action: AppAction) {
+  const route = mainScreenOf(app.route);
+  if (route.screen !== "media") throw new Error("No media screen is open.");
+  const [form, effects] = updateFlashcardForm(formOf(app), action, app, route);
+  return { form, effects };
+}
 
 /** The form after the actions. */
 export const formAfter = (app: AppState): FlashcardForm | null => formOf(app);
 
-/** The effects the flashcards feature returns for an action, before the root update holds back scoped requests. */
+/** The effects the form and the flashcard commands return for an action, before the root update holds back scoped requests. */
 export function flashcardEffects(
   app: AppState,
   action: AppAction,
 ): readonly Effect[] {
-  return updateFlashcards(app.flashcards, action, app)[1];
+  const route = mainScreenOf(app.route);
+  const formEffects =
+    route.screen === "media" ? formUpdate(app, action).effects : [];
+  return [...formEffects, ...flashcardCommands(action, app)];
 }
 
 /** The flashcard requests the flashcards feature asks for on an action, with their ids and scopes. */
@@ -105,5 +113,14 @@ export function requestsAsked(app: AppState, action: AppAction) {
 export function noticesShown(app: AppState, action: AppAction) {
   return flashcardEffects(app, action).flatMap((effect) =>
     effect.type === "showNotice" ? [effect.content] : [],
+  );
+}
+
+/** The flashcard ids of the saves held for their word's lookup. */
+export function heldCardIds(app: AppState): string[] {
+  return app.operations.requests.flatMap(({ request, heldFor }) =>
+    heldFor !== undefined && request.kind === "saveFlashcard"
+      ? [request.flashcardId]
+      : [],
   );
 }

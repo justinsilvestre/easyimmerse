@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
-import { lookupRequestId } from "./lookupIds.ts";
 import {
   applyToLookup as apply,
   cat,
@@ -27,7 +26,7 @@ describe("updateMediaScreen", () => {
       const [, effects] = apply(saveCat);
       expect(effects).toContainEqual({
         type: "sendRequest",
-        id: "lookup/flashcard/1",
+        id: "lookup/flashcard/f-cat",
         request: { kind: "lookupText", query: cat.word.query },
       });
     });
@@ -38,7 +37,7 @@ describe("updateMediaScreen", () => {
         type: "startTimer",
         id: "lookup/flashcardWait",
         ms: 1500,
-        action: actions.lookupFlashcardWaitEnded(1),
+        action: actions.lookupFlashcardWaitEnded("f-cat"),
       });
     });
 
@@ -57,17 +56,17 @@ describe("updateMediaScreen", () => {
     });
 
     it("keeps waiting when the word's lookup settles, until its fields are written", () => {
-      const [lookup] = apply(lookupSettled(1, cat), saveCat);
+      const [lookup] = apply(lookupSettled("f-cat", cat), saveCat);
       expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
     });
 
     it("hands the flashcard over once the fields of its lookup are written", () => {
-      const [lookup] = apply(fieldsWritten(1), saveCat);
+      const [lookup] = apply(fieldsWritten("f-cat"), saveCat);
       expect(lookup.pendingFlashcard).toBeNull();
     });
 
     it("closes the pop-up once the fields of its lookup are written", () => {
-      const [lookup] = apply(fieldsWritten(1), saveCat);
+      const [lookup] = apply(fieldsWritten("f-cat"), saveCat);
       expect(lookup.popup).toBeNull();
     });
 
@@ -77,13 +76,13 @@ describe("updateMediaScreen", () => {
         actions.playerPlayingChanged(true),
         saveCat,
         actions.playerPlayingChanged(false),
-        fieldsWritten(1),
+        fieldsWritten("f-cat"),
       );
       expect(effects).not.toContainEqual({ type: "playPlayer" });
     });
 
     it("stops waiting once the fields of its lookup are written", () => {
-      const [, effects] = apply(fieldsWritten(1), saveCat);
+      const [, effects] = apply(fieldsWritten("f-cat"), saveCat);
       expect(effects).toContainEqual({
         type: "cancelTimer",
         id: "lookup/flashcardWait",
@@ -91,12 +90,18 @@ describe("updateMediaScreen", () => {
     });
 
     it("hands the flashcard over once the wait runs out", () => {
-      const [lookup] = apply(actions.lookupFlashcardWaitEnded(1), saveCat);
+      const [lookup] = apply(
+        actions.lookupFlashcardWaitEnded("f-cat"),
+        saveCat,
+      );
       expect(lookup.pendingFlashcard).toBeNull();
     });
 
     it("closes the pop-up once the wait runs out", () => {
-      const [lookup] = apply(actions.lookupFlashcardWaitEnded(1), saveCat);
+      const [lookup] = apply(
+        actions.lookupFlashcardWaitEnded("f-cat"),
+        saveCat,
+      );
       expect(lookup.popup).toBeNull();
     });
 
@@ -143,13 +148,17 @@ describe("updateMediaScreen", () => {
     });
 
     it("ignores the fields of an earlier flashcard's lookup", () => {
-      const [lookup] = apply(fieldsWritten(1), saveCat, requestFlashcard(dog));
+      const [lookup] = apply(
+        fieldsWritten("f-cat"),
+        saveCat,
+        requestFlashcard(dog),
+      );
       expect(lookup.pendingFlashcard?.chosen).toEqual(dog);
     });
 
     it("ignores the wait of a flashcard handed over before it", () => {
       const [lookup] = apply(
-        actions.lookupFlashcardWaitEnded(1),
+        actions.lookupFlashcardWaitEnded("f-cat"),
         saveCat,
         actions.lookupClosed(),
         requestFlashcard(dog),
@@ -177,27 +186,22 @@ describe("updateMediaScreen", () => {
 
     it("keeps the flashcard when the mouse rests on another word", () => {
       const [lookup] = apply(
-        hoverSettled(2, dog, "dog"),
+        hoverSettled(1, dog, "dog"),
         saveCat,
         ...restingOn(dog),
       );
       expect(lookup.pendingFlashcard?.chosen).toEqual(cat);
     });
 
-    it("numbers each flashcard after the one before", () => {
-      const [lookup] = apply(requestFlashcard(dog, "editor"), saveCat);
-      expect(lookup.pendingFlashcard?.sequence).toBe(2);
-    });
-
-    it("numbers a flashcard after a request still in flight from an earlier opening", () => {
+    it("numbers a hover's lookup after one still in flight from an earlier opening", () => {
       const [, effects] = apply(
-        saveCat,
-        saveCat,
+        actions.lookupWordHovered(dog),
+        actions.lookupWordHovered(cat),
         actions.closeMedia(),
         actions.openMediaFileRequested("p1", "m1"),
       );
       expect(effects).toContainEqual(
-        expect.objectContaining({ id: lookupRequestId(2) }),
+        expect.objectContaining({ id: "lookup/hover/2" }),
       );
     });
 

@@ -19,7 +19,7 @@ const limitOfB: Effect = {
 function withRequests(...requests: RequestRecord[]) {
   return {
     ...initialAppState,
-    operations: { requests, jobs: {}, lookupRequestsSent: 0 },
+    operations: { requests, failedRequests: [], jobs: {} },
   };
 }
 

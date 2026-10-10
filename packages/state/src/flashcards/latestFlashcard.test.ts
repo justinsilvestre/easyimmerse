@@ -12,15 +12,15 @@ import {
 } from "./flashcardsTestSupport.ts";
 import { latestFlashcard } from "./latestFlashcard.ts";
 
-/** The app with hund changed to the word and left, so that its save is in flight as flashcard/1. */
+/** The app with hund changed to the word and left, so that its save is in flight as flashcard/h/1. */
 const savingHundAs = (word: string) =>
   appAfter(actions.flashcardOpened("h", hund), typeWord(word), startNew("f2"));
 
-/** The app once hund's save as "Hündin" has returned the flashcard updated at `updatedAtMs`. */
-function hundConfirmed(updatedAtMs: number) {
+/** The app once hund's save as "Hündin" has landed. */
+function hundSaved() {
   const app = savingHundAs("Hündin");
-  const saved = exampleListedFlashcard("h", "Hündin", updatedAtMs);
-  return applied(app, settle(app, "flashcard/1", landed(saved)));
+  const saved = exampleListedFlashcard("h", "Hündin", 2);
+  return applied(app, settle(app, "flashcard/h/1", landed(saved)));
 }
 
 describe("latestFlashcard", () => {
@@ -30,12 +30,7 @@ describe("latestFlashcard", () => {
     );
   });
 
-  it("prefers the confirmed flashcard over an older listed one", () => {
-    expect(latestFlashcard(hund, hundConfirmed(2)).content.word).toBe("Hündin");
-  });
-
-  it("prefers the listed flashcard once it is as new", () => {
-    const listed = exampleListedFlashcard("h", "Hund", 2);
-    expect(latestFlashcard(listed, hundConfirmed(2)).content.word).toBe("Hund");
+  it("is the listed flashcard once no save of it is pending", () => {
+    expect(latestFlashcard(hund, hundSaved()).content.word).toBe("Hund");
   });
 });

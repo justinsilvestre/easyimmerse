@@ -26,20 +26,10 @@ const drawnWords = (app: AppState) =>
 /** The app with hund changed to "Hündin" and its background save failed with the status given. */
 function hundFailed(status: number) {
   const app = appAfter(openHund, typeWord("Hündin"), startNew("f2"));
-  return applied(app, settle(app, "flashcard/1", failure(status)));
+  return applied(app, settle(app, "flashcard/h/1", failure(status)));
 }
 
 describe("selectMediaFlashcards", () => {
-  it("keeps its result when only the count of flashcard requests changes", () => {
-    const app = appAfter();
-    const counted = {
-      ...app,
-      flashcards: { ...app.flashcards, requestCount: 9 },
-    };
-    const before = selectMediaFlashcards({ app }, listed, "m1");
-    expect(selectMediaFlashcards({ app: counted }, listed, "m1")).toBe(before);
-  });
-
   it("draws the listed flashcards while none is open", () => {
     expect(drawnWords(appAfter())).toEqual(["h:Hund", "k:Katze"]);
   });
@@ -65,7 +55,7 @@ describe("selectMediaFlashcards", () => {
 
   it("draws a failed save that was never saved after the listed ones", () => {
     const app = appAfter(startNew("f1", "Maus"), startNew("f2", "Igel"));
-    const failed = applied(app, settle(app, "flashcard/1", failure(500)));
+    const failed = applied(app, settle(app, "flashcard/f1/1", failure(500)));
     expect(drawnWords(failed)).toEqual([
       "h:Hund",
       "k:Katze",

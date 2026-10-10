@@ -4,14 +4,17 @@ import type { PlayingState } from "./playingState.ts";
 import { seekTo } from "./seekTo.ts";
 
 /**
- * Seeks back to the start of the clip that loops, which `followFormClip` starts as a card opens, once playback reaches its end.
+ * Seeks back to the start of the clip that loops, which `playOpenedCard` starts as a card opens, once playback reaches its end.
  * The loop's own seek to the start reports a time inside the clip, so no guard against it is needed;
  * the platform's player lands seeks half a frame later still.
  */
-export function loopAtEnd(playing: PlayingState, seconds: number) {
-  const { loop } = playing;
-  return loop !== null && seconds * 1000 >= loop.end_ms
-    ? seekTo(playing, loop.start_ms)
+export function loopAtEnd(
+  playing: PlayingState,
+  seconds: number,
+  clip: AudioClip | null,
+) {
+  return playing.isLooping && clip !== null && seconds * 1000 >= clip.end_ms
+    ? seekTo(playing, clip.start_ms)
     : updated(playing);
 }
 
@@ -19,10 +22,11 @@ export function loopAtEnd(playing: PlayingState, seconds: number) {
 export function endLoopOutside(
   playing: PlayingState,
   seconds: number,
+  clip: AudioClip | null,
 ): PlayingState {
-  const { loop } = playing;
-  return loop !== null && !isInside(loop, Math.round(seconds * 1000))
-    ? { ...playing, loop: null }
+  return playing.isLooping &&
+    (clip === null || !isInside(clip, Math.round(seconds * 1000)))
+    ? { ...playing, isLooping: false }
     : playing;
 }
 

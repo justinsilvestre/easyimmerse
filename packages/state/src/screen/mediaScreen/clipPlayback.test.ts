@@ -9,6 +9,8 @@ const clip: AudioClip = { start_ms: 1_750, end_ms: 3_000 };
 const otherClip: AudioClip = { start_ms: 30_000, end_ms: 31_000 };
 const requested = actions.clipPlayRequested(clip);
 const playing = actions.playerPlayingChanged(true);
+/** The card whose clip the editor's Play button plays. */
+const opened = openWithClip(clip);
 
 /** Returns what the player is asked to do when it reports a time after the given earlier actions. */
 const effectsAt = (seconds: number, ...before: AppAction[]) =>
@@ -30,40 +32,66 @@ describe("updateMediaScreen", () => {
     });
 
     it("pauses the player once playback reaches the clip's end", () => {
-      expect(effectsAt(3.1, requested, playing)).toEqual([
+      expect(effectsAt(3.1, opened, requested, playing)).toEqual([
         { type: "pausePlayer" },
       ]);
     });
 
     it("pauses the player once a player that was not yet playing reaches the clip's end", () => {
-      expect(effectsAt(3.1, requested)).toEqual([{ type: "pausePlayer" }]);
+      expect(effectsAt(3.1, opened, requested)).toEqual([
+        { type: "pausePlayer" },
+      ]);
     });
 
     it("leaves playback alone before the clip's end", () => {
-      expect(effectsAt(2.5, requested, playing)).toEqual([]);
+      expect(effectsAt(2.5, opened, requested, playing)).toEqual([]);
     });
 
     it("pauses only once", () => {
       expect(
-        effectsAt(3.2, requested, playing, actions.playerTimeChanged(3.1)),
+        effectsAt(
+          3.2,
+          opened,
+          requested,
+          playing,
+          actions.playerTimeChanged(3.1),
+        ),
       ).toEqual([]);
     });
 
     it("leaves playback alone once the user has moved away from the clip", () => {
       expect(
-        effectsAt(3.1, requested, playing, actions.playerTimeChanged(12)),
+        effectsAt(
+          3.1,
+          opened,
+          requested,
+          playing,
+          actions.playerTimeChanged(12),
+        ),
       ).toEqual([]);
     });
 
     it("leaves playback alone once the user has moved to well before the clip", () => {
       expect(
-        effectsAt(3.1, requested, playing, actions.playerTimeChanged(1)),
+        effectsAt(
+          3.1,
+          opened,
+          requested,
+          playing,
+          actions.playerTimeChanged(1),
+        ),
       ).toEqual([]);
     });
 
     it("keeps the clip while the player reports a time just before its start", () => {
       expect(
-        effectsAt(3.1, requested, playing, actions.playerTimeChanged(1.6)),
+        effectsAt(
+          3.1,
+          opened,
+          requested,
+          playing,
+          actions.playerTimeChanged(1.6),
+        ),
       ).toEqual([{ type: "pausePlayer" }]);
     });
 
@@ -71,6 +99,7 @@ describe("updateMediaScreen", () => {
       expect(
         effectsAt(
           3.1,
+          opened,
           requested,
           playing,
           actions.playerPlayingChanged(false),

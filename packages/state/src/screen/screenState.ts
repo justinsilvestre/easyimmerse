@@ -122,8 +122,8 @@ export function initialMainScreen(
         kind: "media",
         playing: {
           player: initialPlayerState,
-          loop: null,
-          clipPlayback: null,
+          isLooping: false,
+          isPlayingClip: false,
           pendingResumeMs: storedPlaces.playback[route.mediaFileId] ?? null,
         },
         playback: null,

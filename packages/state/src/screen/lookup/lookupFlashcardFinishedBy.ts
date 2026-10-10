@@ -42,11 +42,11 @@ export function lookupFlashcardFinishedBy(
     return { pending, how: "abandoned", fields: null };
   if (
     action.type === "flashcardFieldsWritten" &&
-    action.requestId === lookupRequestId(pending.sequence)
+    action.requestId === lookupRequestId(pending.flashcardId)
   )
     return { pending, how: "ready", fields: action.fields };
   return action.type === "lookupFlashcardWaitEnded" &&
-    action.sequence === pending.sequence
+    action.flashcardId === pending.flashcardId
     ? { pending, how: "late", fields: null }
     : null;
 }

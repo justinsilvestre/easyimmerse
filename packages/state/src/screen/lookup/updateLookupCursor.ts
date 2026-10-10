@@ -4,11 +4,7 @@ import { updated } from "../../app/updated.ts";
 import type { RequestSettled } from "../../server/serverRequest.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
 import { moveCursor, withCursor } from "./lookupCursor.ts";
-import {
-  isHoverRequestId,
-  lookupHoverRequestId,
-  nextLookupSequence,
-} from "./lookupIds.ts";
+import { isHoverRequestId, nextHoverRequestId } from "./lookupIds.ts";
 import { show, showsOccurrence } from "./lookupMoves.ts";
 import type { ChosenWord, LookupState, LookupWord } from "./lookupState.ts";
 
@@ -36,7 +32,7 @@ export function hoverWord(
 ) {
   const { query } = chosen.word;
   if (query === null) return answer(lookup, chosen, null, player);
-  const id = lookupHoverRequestId(nextLookupSequence(app));
+  const id = nextHoverRequestId(app);
   return updated(lookup, {
     type: "sendRequest",
     id,

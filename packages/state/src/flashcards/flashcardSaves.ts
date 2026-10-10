@@ -5,38 +5,48 @@ import { flashcardIdOf } from "./flashcardCard.ts";
 import { draftOfCard } from "./flashcardDrafts.ts";
 import type { Rollback } from "./flashcardForm.ts";
 import { flashcardNoticeKeys, withdraw, wordOf } from "./flashcardNotices.ts";
-import type {
-  FlashcardOutbox,
-  FlashcardRequest,
-  SavePurpose,
+import {
+  type FlashcardRequest,
+  type FlashcardSender,
+  type SavePurpose,
+  sendFlashcardRequest,
 } from "./flashcardRequests.ts";
 import { contentBefore } from "./latestFlashcard.ts";
 
+type CardSave = Extract<SavePurpose, { type: "save" }>;
+
 /** A save of a card to ask for, with where it comes from and whether its landing offers Undo. */
-export type SaveOrder = {
-  card: FlashcardCard;
-  projectId: string;
-  from: Extract<SavePurpose, { type: "save" }>["from"];
-  offersUndo: boolean;
-  rollbackIfDiscarded: Rollback | null;
-};
+export type SaveOrder = Pick<
+  CardSave,
+  "card" | "from" | "offersUndo" | "rollbackIfDiscarded" | "lookupContext"
+> & { projectId: string };
 
 /**
- * Asks for a save of a card in its flashcard's scope, and returns the request's id.
+ * Asks for a save of a card in its flashcard's scope, held for the request `heldFor` names if it is given.
  * It records what the flashcard holds before it, and withdraws the Undo of an earlier save, since only the latest save can be undone.
+ * The effect that sends the save comes last.
  */
 export function askSave(
   order: SaveOrder,
   app: AppState,
-  outbox: FlashcardOutbox,
-): string {
+  sender: FlashcardSender,
+  heldFor?: string,
+) {
+  const request = saveRequest(order, app);
+  const sending = sendFlashcardRequest(request, app, sender, heldFor);
+  const withdrawal = withdraw(
+    flashcardNoticeKeys.saveUndo(request.flashcardId),
+  );
+  return [withdrawal, sending] as const;
+}
+
+/** The request that saves a card, recording what the flashcard holds before it. */
+export function saveRequest(order: SaveOrder, app: AppState) {
   const { card, projectId, ...purpose } = order;
-  const flashcardId = flashcardIdOf(card);
-  outbox.add(withdraw(flashcardNoticeKeys.saveUndo(flashcardId)));
-  return outbox.send({
+  return {
     kind: "saveFlashcard",
     projectId,
-    flashcardId,
+    flashcardId: flashcardIdOf(card),
     draft: draftOfCard(card),
     isNew: card.kind === "new",
     purpose: {
@@ -45,7 +55,7 @@ export function askSave(
       before: contentBefore(card, app),
       ...purpose,
     },
-  });
+  } satisfies FlashcardRequest;
 }
 
 /** The request that takes back a save in doubt of a discarded card: a deletion of a new flashcard, or its earlier content. */

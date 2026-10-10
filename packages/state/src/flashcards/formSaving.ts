@@ -1,8 +1,9 @@
+import type { AppState } from "../app/appState.ts";
+import { updated } from "../app/updated.ts";
 import type { EditorAction } from "./editFlashcard.ts";
 import { editCard, flashcardIdOf, withLookupFields } from "./flashcardCard.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
 import { askSave } from "./flashcardSaves.ts";
-import type { FormContext } from "./formStep.ts";
 import type { LookupFlashcardFields } from "./lookupFields.ts";
 import { cancelLookupWait, startLookupWait } from "./lookupWait.ts";
 import { isLocked } from "./saveStage.ts";
@@ -26,49 +27,54 @@ export function editForm(
 /** Sends the open card's save, or, while its word's lookup is on its way, waits up to ten seconds for it. */
 export function requestSave(
   form: FlashcardForm,
-  context: FormContext,
-): FlashcardForm {
-  if (form.stage === "editing") return sendFromForm(form, context);
-  if (form.stage !== "awaitingLookup") return form;
-  context.step.outbox.add(startLookupWait(flashcardIdOf(form.card)));
-  return { ...form, stage: "awaitingLookupToSave", saveFailure: null };
+  app: AppState,
+  projectId: string,
+) {
+  if (form.stage === "editing") return sendFromForm(form, app, projectId);
+  if (form.stage !== "awaitingLookup") return updated(form);
+  return updated(
+    { ...form, stage: "awaitingLookupToSave", saveFailure: null },
+    startLookupWait(flashcardIdOf(form.card)),
+  );
 }
 
 /** Fills the card's untyped fields from its lookup's answer, and sends a save that waited for it. */
 export function fillFromLookup(
   form: FlashcardForm,
   fields: LookupFlashcardFields | null,
-  context: FormContext,
-): FlashcardForm {
+  app: AppState,
+  projectId: string,
+) {
   const card =
     form.card.kind === "new" ? withLookupFields(form.card, fields) : form.card;
   const filled = { ...form, card, lookup: null };
   if (form.stage !== "awaitingLookupToSave")
-    return { ...filled, stage: "editing" };
-  context.step.outbox.add(cancelLookupWait(flashcardIdOf(card)));
-  return sendFromForm(filled, context);
+    return updated({ ...filled, stage: "editing" });
+  const [sent, effects] = sendFromForm(filled, app, projectId);
+  return updated(sent, cancelLookupWait(flashcardIdOf(card)), ...effects);
 }
 
 /** Gives up the lookup a save waited for once the wait has run out, and sends the card as it is. */
 export function giveUpLookup(
   form: FlashcardForm,
-  context: FormContext,
-): FlashcardForm {
+  app: AppState,
+  projectId: string,
+) {
   return form.stage === "awaitingLookupToSave"
-    ? sendFromForm({ ...form, lookup: null }, context)
-    : form;
+    ? sendFromForm({ ...form, lookup: null }, app, projectId)
+    : updated(form);
 }
 
-function sendFromForm(
-  form: FlashcardForm,
-  { app, route, step }: FormContext,
-): FlashcardForm {
+function sendFromForm(form: FlashcardForm, app: AppState, projectId: string) {
   const { card, rollbackIfDiscarded } = form;
-  const { projectId } = route;
-  const sentRequestId = askSave(
+  const [withdrawal, sending] = askSave(
     { card, projectId, from: "form", offersUndo: true, rollbackIfDiscarded },
     app,
-    step.outbox,
+    "form",
   );
-  return { ...form, stage: "sending", sentRequestId, saveFailure: null };
+  return updated(
+    { ...form, stage: "sending", sentRequestId: sending.id, saveFailure: null },
+    withdrawal,
+    sending,
+  );
 }

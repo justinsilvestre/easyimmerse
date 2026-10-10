@@ -2,6 +2,7 @@ import type { AppAction } from "../app/appAction.ts";
 import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
 import { isRequestInFlight } from "../operations/isRequestInFlight.ts";
+import type { OperationsState } from "../operations/operations.ts";
 import { isSettled } from "../server/isSettled.ts";
 import type { FailedSave } from "./failedSave.ts";
 
@@ -18,6 +19,8 @@ export type OpeningSettled = {
   flashcardId: string;
   /** The id of the other request on the way to opening the same failed save. */
   otherId: string;
+  /** Whether the request was aborted, as when the opening was given up, which needs no word. */
+  isAborted: boolean;
   /** Tells whether the request brought what the opening needs: the project, or media files that include the failed save's file. */
   hasFound: (failedSave: FailedSave) => boolean;
 };
@@ -42,6 +45,28 @@ export function openingRequests(flashcardId: string, projectId: string) {
   ] satisfies Effect[];
 }
 
+/** Tells whether the requests on the way to opening a flashcard's failed save are under way. */
+export function isOpeningInFlight(
+  operations: OperationsState,
+  flashcardId: string,
+): boolean {
+  const ids = openingIds(flashcardId);
+  return (
+    isRequestInFlight(operations, ids.mediaFiles) ||
+    isRequestInFlight(operations, ids.project)
+  );
+}
+
+/** Gives up the opening of a flashcard's failed save, aborting its requests under way. */
+export function openingAborts(
+  operations: OperationsState,
+  flashcardId: string,
+) {
+  return Object.values(openingIds(flashcardId))
+    .filter((id) => isRequestInFlight(operations, id))
+    .map((id) => ({ type: "abortRequest", id }) satisfies Effect);
+}
+
 /** The end of an opening request that this action is, or null. */
 export function openingSettledBy(action: AppAction): OpeningSettled | null {
   if (action.type !== "requestSettled" || !action.id.startsWith(openingPrefix))
@@ -54,13 +79,15 @@ export function openingSettledBy(action: AppAction): OpeningSettled | null {
     const flashcardId = rest.slice(0, -projectSuffix.length);
     const isLoaded = action.outcome.ok;
     const otherId = openingIds(flashcardId).mediaFiles;
-    return { flashcardId, otherId, hasFound: () => isLoaded };
+    const isAborted = isAbortedOutcome(action.outcome);
+    return { flashcardId, otherId, isAborted, hasFound: () => isLoaded };
   }
   if (!isSettled(action, action.id, "listMediaFiles")) return null;
   const { outcome } = action;
   return {
     flashcardId: rest,
     otherId: openingIds(rest).project,
+    isAborted: isAbortedOutcome(outcome),
     hasFound: ({ mediaFileId }) =>
       outcome.ok &&
       outcome.data.media_files.some(({ id }) => id === mediaFileId),
@@ -78,3 +105,8 @@ export function openingProgress(
     ? "waiting"
     : "ready";
 }
+
+const isAbortedOutcome = (outcome: {
+  ok: boolean;
+  error?: { status: unknown };
+}) => !outcome.ok && outcome.error?.status === "ABORTED";

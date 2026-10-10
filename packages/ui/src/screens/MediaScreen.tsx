@@ -64,7 +64,7 @@ import { useMediaSubtitles } from "../subtitles/useMediaSubtitles.ts";
  * C saves a flashcard from the cursor as a double-click there would, or as the New flashcard button would when there is no cursor;
  * and E makes the same flashcard but opens it in the editor instead, unless a card is open there already.
  * The file resumes where playback last was, as `resume` in the state package describes.
- * Opening a flashcard seeks to its clip, which loops while playing, as `followFormClip` in the state package describes.
+ * Opening a flashcard seeks to its clip, which loops while playing, as `playOpenedCard` in the state package describes.
  * While a card is open the editor takes the side panel, so the store keeps the subtitles panel's toggle unavailable until it closes.
  */
 export function MediaScreen({

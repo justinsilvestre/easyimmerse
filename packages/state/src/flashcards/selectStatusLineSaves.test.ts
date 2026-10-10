@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../app/appAction.ts";
+import { failedSavesOf } from "./failedSave.ts";
 import { flashcardNotices } from "./flashcardNotices.ts";
 import {
   appAfter,
@@ -19,7 +20,7 @@ function hundFailed(status: number) {
     typeWord("Hündin"),
     startNew("f2"),
   );
-  return applied(app, settle(app, "flashcard/1", failure(status)));
+  return applied(app, settle(app, "flashcard/h/1", failure(status)));
 }
 
 describe("selectStatusLineSaves", () => {
@@ -33,7 +34,7 @@ describe("selectStatusLineSaves", () => {
 
   it("leaves out a refused save while its own notice shows", () => {
     const app = hundFailed(422);
-    const failedSave = app.flashcards.failedSaves[0];
+    const [failedSave] = failedSavesOf(app.operations);
     if (!failedSave) throw new Error("Nothing is listed.");
     const shown = applied(
       app,

@@ -141,6 +141,29 @@ function listMediaFileAtOnce(
   );
 }
 
+/**
+ * Puts the flashcard a save returned into the project's cached list, in place of an older version of it.
+ * The list shows the saved flashcard at once, while the refetch that the invalidation starts may come later.
+ */
+async function listSavedFlashcard(
+  dispatch: (action: unknown) => unknown,
+  projectId: string,
+  queryFulfilled: Promise<{ data: Flashcard }>,
+) {
+  const result = await queryFulfilled.catch(() => null);
+  if (result === null) return;
+  const saved = result.data;
+  dispatch(
+    backendApi.util.updateQueryData("listFlashcards", projectId, (list) => {
+      const index = list.flashcards.findIndex(({ id }) => id === saved.id);
+      const listed = list.flashcards[index];
+      if (listed === undefined) list.flashcards.push(saved);
+      else if (listed.updated_at_ms <= saved.updated_at_ms)
+        list.flashcards[index] = saved;
+    }),
+  );
+}
+
 const mediaFileAddedTags = (projectId: string) =>
   [
     { type: "MediaFiles", id: projectId },
@@ -218,6 +241,9 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/flashcards`,
         body: { kind: "json", value: flashcard },
       }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        await listSavedFlashcard(dispatch, projectId, queryFulfilled);
+      },
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
         { type: "Projects", id: projectId },
@@ -233,6 +259,9 @@ export const backendApi = createApi({
         path: `/projects/${projectId}/flashcards/${flashcardId}`,
         body: { kind: "json", value: draft },
       }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        await listSavedFlashcard(dispatch, projectId, queryFulfilled);
+      },
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
       ],

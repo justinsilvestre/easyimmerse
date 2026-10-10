@@ -1,4 +1,5 @@
 import type { DictionarySummary, FlashcardDraft } from "@easyimmerse/types";
+import type { RequestFailure } from "../server/serverRequest.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
 import type { SaveStage } from "./saveStage.ts";
 
@@ -16,9 +17,6 @@ export type Rollback = {
   retryRequestId: string | null;
 };
 
-/** How the save the user last asked for failed: unanswered or turned away in a way that may pass, or refused outright. */
-export type SaveFailure = "failed" | "refused";
-
 /** The flashcard open in the flashcard-editing form, with how far its save has got. */
 export type FlashcardForm = {
   card: FlashcardCard;
@@ -28,7 +26,7 @@ export type FlashcardForm = {
   /** The save or deletion this opening sent. Its outcome reaches the form only while this id is here. */
   sentRequestId: string | null;
   /** How the save the user last asked for failed; the form says so until Save is pressed again. */
-  saveFailure: SaveFailure | null;
+  saveFailure: RequestFailure | null;
   rollbackIfDiscarded: Rollback | null;
 };
 

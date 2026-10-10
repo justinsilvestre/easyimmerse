@@ -1,5 +1,6 @@
-import { createFailedSave } from "./failedSave.ts";
-import { noticeOfListing } from "./failedSaveListing.ts";
+import type { AppState } from "../app/appState.ts";
+import { updated } from "../app/updated.ts";
+import { keepFailedSave } from "./failedSaveKeeping.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
 import type { FlashcardForm } from "./flashcardForm.ts";
 import {
@@ -8,56 +9,58 @@ import {
   show,
   withdraw,
 } from "./flashcardNotices.ts";
+import { sendFlashcardRequest } from "./flashcardRequests.ts";
 import { rollbackRequest } from "./flashcardSaves.ts";
-import type { FormContext } from "./formStep.ts";
 import { isLocked } from "./saveStage.ts";
 
 /**
  * Closes the form without saving, unless Save has been pressed.
- * A card whose save the user asked for failed is listed among the failed saves rather than dropped.
+ * A card whose save the user asked for failed is kept among the failed saves rather than dropped.
  * A changed card is discarded with an undo toast that reopens it, and a card in doubt takes back the save that may have landed.
  */
 export function closeForm(
   form: FlashcardForm | null,
-  { route, step }: FormContext,
-): FlashcardForm | null {
-  if (form === null || isLocked(form.stage)) return form;
+  app: AppState,
+  projectId: string,
+) {
+  if (form === null || isLocked(form.stage)) return updated(form);
   const { card, rollbackIfDiscarded, saveFailure } = form;
   if (saveFailure !== null) {
-    const isRefused = saveFailure === "refused";
-    const failedSave = createFailedSave(
-      card,
-      route.projectId,
-      isRefused,
-      rollbackIfDiscarded,
-    );
-    step.list(failedSave);
-    step.outbox.add(noticeOfListing(failedSave));
-    return null;
+    const failedCard = { card, projectId, rollbackIfDiscarded };
+    return updated(null, ...keepFailedSave(failedCard, saveFailure, app));
   }
-  if (card.isChanged)
-    step.outbox.add(show(flashcardNotices.formDiscarded(card)));
-  if (rollbackIfDiscarded)
-    step.outbox.send(
-      rollbackRequest(rollbackIfDiscarded, card, route.projectId),
-    );
-  return null;
+  const rollback =
+    rollbackIfDiscarded &&
+    rollbackRequest(rollbackIfDiscarded, card, projectId);
+  return updated(
+    null,
+    ...(card.isChanged ? [show(flashcardNotices.formDiscarded(card))] : []),
+    ...(rollback ? [sendFlashcardRequest(rollback, app, "form")] : []),
+  );
 }
 
 /** Deletes the open flashcard, or closes a new one at once, unless Save has been pressed. */
 export function deleteFromForm(
   form: FlashcardForm,
-  { route, step }: FormContext,
-): FlashcardForm | null {
-  if (isLocked(form.stage)) return form;
-  if (form.card.kind === "new") return null;
+  app: AppState,
+  projectId: string,
+) {
+  if (isLocked(form.stage)) return updated(form);
+  if (form.card.kind === "new") return updated(null);
   const flashcardId = flashcardIdOf(form.card);
-  step.outbox.add(withdraw(flashcardNoticeKeys.saveUndo(flashcardId)));
-  const sentRequestId = step.outbox.send({
-    kind: "deleteFlashcard",
-    projectId: route.projectId,
-    flashcardId,
-    purpose: { type: "delete" },
-  });
-  return { ...form, sentRequestId };
+  const sending = sendFlashcardRequest(
+    {
+      kind: "deleteFlashcard",
+      projectId,
+      flashcardId,
+      purpose: { type: "delete" },
+    },
+    app,
+    "form",
+  );
+  return updated(
+    { ...form, sentRequestId: sending.id },
+    withdraw(flashcardNoticeKeys.saveUndo(flashcardId)),
+    sending,
+  );
 }

@@ -1,6 +1,6 @@
-import type { Flashcard, NewFlashcard } from "@easyimmerse/types";
+import type { AudioClip, Flashcard, NewFlashcard } from "@easyimmerse/types";
+import type { FailedRequest } from "../operations/failedRequests.ts";
 import type { EditorAction } from "./editFlashcard.ts";
-import type { FailedSave } from "./failedSave.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
 import type { SaveUndo } from "./flashcardSaves.ts";
 import type { LookupFlashcardFields } from "./lookupFields.ts";
@@ -50,11 +50,14 @@ export const flashcardActions = {
       projectId,
       mediaFileId,
     }) as const,
+  /** The form opened a card, whose clip, if it has one, the player goes to. */
+  flashcardFormOpened: (clip: AudioClip | null) =>
+    ({ type: "flashcardFormOpened", clip }) as const,
   failedSaveDiscarded: (flashcardId: string) =>
     ({ type: "failedSaveDiscarded", flashcardId }) as const,
   /** Undo on the notice of a failed save discarded, which lists it again. */
-  failedSaveDiscardUndone: (failedSave: FailedSave) =>
-    ({ type: "failedSaveDiscardUndone", failedSave }) as const,
+  failedSaveDiscardUndone: (kept: FailedRequest) =>
+    ({ type: "failedSaveDiscardUndone", kept }) as const,
   /** The ten seconds a card waits for its word's lookup before it is saved without it have passed. */
   flashcardLookupWaitEnded: (flashcardId: string) =>
     ({ type: "flashcardLookupWaitEnded", flashcardId }) as const,

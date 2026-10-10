@@ -24,7 +24,7 @@ function send(
 }
 
 function operationsWith(...requests: RequestRecord[]): OperationsState {
-  return { requests, jobs: {}, lookupRequestsSent: 0 };
+  return { requests, failedRequests: [], jobs: {} };
 }
 
 describe("trackRequests", () => {
@@ -91,5 +91,32 @@ describe("trackRequests", () => {
       { type: "openExternalUrl", url: "https://example.com" },
     ]);
     expect(next).toBe(operations);
+  });
+  describe("when a request is held for another", () => {
+    const hold = (id: string, scope: string) =>
+      ({
+        type: "sendRequest",
+        id,
+        request: first,
+        scope,
+        heldFor: "lookup",
+      }) satisfies PerformedEffect;
+
+    it("records it without sending it", () => {
+      const [, effects] = trackRequests(operationsWith(), [hold("a", "s")]);
+      expect(effects).toEqual([]);
+    });
+
+    it("keeps a later request of its scope waiting", () => {
+      const [held] = trackRequests(operationsWith(), [hold("a", "s")]);
+      const [, effects] = trackRequests(held, [send("b", second, "s")]);
+      expect(effects).toEqual([]);
+    });
+
+    it("sends it once its id is sent again without being held", () => {
+      const [held] = trackRequests(operationsWith(), [hold("a", "s")]);
+      const [, effects] = trackRequests(held, [send("a", second, "s")]);
+      expect(effects).toEqual([send("a", second, "s")]);
+    });
   });
 });

@@ -1,7 +1,6 @@
 import { isAborted } from "../server/isAborted.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
 import type { FlashcardForm, Rollback } from "./flashcardForm.ts";
-import { isSaveRefused } from "./isSaveRefused.ts";
 import type { FlashcardSettled } from "./settleFlashcardRequest.ts";
 
 /**
@@ -36,7 +35,7 @@ function settleOwn(
     ...form,
     stage: "editing",
     sentRequestId: null,
-    saveFailure: isSaveRefused(outcome.error) ? "refused" : "failed",
+    saveFailure: outcome.error,
     rollbackIfDiscarded:
       form.rollbackIfDiscarded ??
       (isAborted(outcome) ? { content: before, retryRequestId: null } : null),

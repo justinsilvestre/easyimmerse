@@ -1,15 +1,10 @@
+import type { AppState } from "../app/appState.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
-import {
-  createFailedSave,
-  type FailedSave,
-  failedSaveIdOf,
-} from "./failedSave.ts";
-import { noticeOfListing, withFailedSave } from "./failedSaveListing.ts";
+import { type FailedSave, findFailedSave } from "./failedSave.ts";
+import { type FailedCard, keepFailedSave } from "./failedSaveKeeping.ts";
 import type { Rollback } from "./flashcardForm.ts";
-import type { FlashcardsContext, SavePurpose } from "./flashcardRequests.ts";
+import type { SavePurpose } from "./flashcardRequests.ts";
 import { formOf } from "./flashcardsOnScreen.ts";
-import type { FlashcardsState } from "./flashcardsState.ts";
-import { isSaveRefused } from "./isSaveRefused.ts";
 import { isCardOf } from "./latestFlashcard.ts";
 import type { FlashcardSettled } from "./settleFlashcardRequest.ts";
 
@@ -17,40 +12,40 @@ type Save = Extract<FlashcardSettled, { request: { kind: "saveFlashcard" } }>;
 type CardSave = Extract<SavePurpose, { type: "save" }>;
 
 /**
- * Lists a card whose save failed after it left the form, or updates the failed save a Retry sent; nothing is sent again.
+ * Keeps a card whose save failed after it left the form, or updates the failed save a Retry sent; nothing is sent again.
  * The form's own save is left to the form, as is a save of the flashcard the form holds, since the form's copy is newer.
  * A save that ran out of time may still land, so its card is in doubt.
  */
 export function cardSaveFailed(
-  state: FlashcardsState,
   { id, request }: Save,
   error: RequestFailure,
-  { app, outbox }: FlashcardsContext,
-): FlashcardsState {
+  app: AppState,
+) {
   const purpose = request.purpose as CardSave;
   const form = formOf(app);
-  if (form && isCardOf(form.card, request.flashcardId)) return state;
-  const listed = state.failedSaves.find(
-    (failedSave) => failedSaveIdOf(failedSave) === request.flashcardId,
-  );
-  if (purpose.from === "retry" && listed === undefined) return state;
+  if (form && isCardOf(form.card, request.flashcardId)) return [];
+  const listed = findFailedSave(app, request.flashcardId);
+  if (purpose.from === "retry" && listed === undefined) return [];
   // A waiting Retry aborted because an earlier save landed also counts as in doubt here. That is harmless:
-  // the landing took the flashcard off the list, so the line above returns before this.
+  // the landing forgot the failed save, so the line above returns before this.
   const doubt: Rollback | null =
     error.status === "ABORTED"
       ? { content: purpose.before, retryRequestId: null }
       : null;
-  const failedSave: FailedSave = listed
-    ? { ...listed, rollbackIfDiscarded: rollbackAfterRetry(listed, id, doubt) }
-    : createFailedSave(
-        purpose.card,
-        request.projectId,
-        false,
-        purpose.rollbackIfDiscarded ?? doubt,
-      );
-  const refused = { ...failedSave, isRefused: isSaveRefused(error) };
-  outbox.add(noticeOfListing(refused));
-  return { ...state, failedSaves: withFailedSave(state.failedSaves, refused) };
+  const failedCard = (
+    listed
+      ? {
+          card: listed.card,
+          projectId: listed.projectId,
+          rollbackIfDiscarded: rollbackAfterRetry(listed, id, doubt),
+        }
+      : {
+          card: purpose.card,
+          projectId: request.projectId,
+          rollbackIfDiscarded: purpose.rollbackIfDiscarded ?? doubt,
+        }
+  ) satisfies FailedCard;
+  return keepFailedSave(failedCard, error, app);
 }
 
 /** A failed save's doubt once its Retry has failed: kept, or begun by a time-out, or ended by any other failure of the Retry that began it. */

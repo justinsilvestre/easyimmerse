@@ -16,14 +16,15 @@ import {
   exampleDraft,
   exampleListedFlashcard,
 } from "./exampleFlashcards.ts";
+import { failedSavesOf } from "./failedSave.ts";
 import { flashcardIdOf } from "./flashcardCard.ts";
 import {
   appAfter,
   applied,
-  createNew,
   failure,
   flashcardEffects,
   formAfter,
+  heldCardIds,
   hund,
   landed,
   noticesShown,
@@ -38,22 +39,22 @@ const save = actions.flashcardSaveRequested();
 const close = actions.flashcardClosed();
 const openHund = actions.flashcardOpened("h", hund);
 
-/** The app with hund changed to "Hündin" and left, so that its background save is in flight as flashcard/1. */
+/** The app with hund changed to "Hündin" and left, so that its background save is in flight as flashcard/h/1. */
 const hundSaving = () => appAfter(openHund, typeWord("Hündin"), startNew("f2"));
 
 /** The app with hund's background save failed for the given status, so that hund is a failed save. */
 function hundFailed(status: number | "ABORTED" = 500): AppState {
   const app = hundSaving();
-  return applied(app, settle(app, "flashcard/1", failure(status)));
+  return applied(app, settle(app, "flashcard/h/1", failure(status)));
 }
 
-/** The app with the new card f1's background save, flashcard/1, timed out, so that f1 is a failed save in doubt. */
+/** The app with the new card f1's background save, flashcard/f1/1, timed out, so that f1 is a failed save in doubt. */
 function f1TimedOut(): AppState {
   const app = appAfter(startNew("f1", "Katze"), startNew("f2"));
   return applied(
     app,
-    actions.requestTimeLimitPassed("flashcard/1"),
-    settle(app, "flashcard/1", failure("ABORTED")),
+    actions.requestTimeLimitPassed("flashcard/f1/1"),
+    settle(app, "flashcard/f1/1", failure("ABORTED")),
   );
 }
 
@@ -83,9 +84,9 @@ function buttonOf(notice: NoticeContent | undefined, label: string) {
 }
 
 const failedIds = (app: AppState) =>
-  app.flashcards.failedSaves.map(({ card }) => flashcardIdOf(card));
+  failedSavesOf(app.operations).map(({ card }) => flashcardIdOf(card));
 
-describe("updateFlashcards", () => {
+describe("flashcardCommands", () => {
   it("when a changed form is closed, offers an undo toast that reopens the card", () => {
     const app = appAfter(startNew("f1", "Katze"), typeWord("Kater"));
     const [toast] = noticesShown(app, close);
@@ -104,7 +105,10 @@ describe("updateFlashcards", () => {
 
   it("when a form whose save failed is closed, lists the card instead of discarding it", () => {
     const sending = appAfter(startNew("f1", "Katze"), save);
-    const app = applied(sending, settle(sending, "flashcard/1", failure(500)));
+    const app = applied(
+      sending,
+      settle(sending, "flashcard/f1/1", failure(500)),
+    );
     expect(failedIds(applied(app, close))).toEqual(["f1"]);
   });
 
@@ -121,7 +125,7 @@ describe("updateFlashcards", () => {
       app,
       settle(
         app,
-        "flashcard/1",
+        "flashcard/h/1",
         landed(exampleListedFlashcard("h", "Hündin", 2)),
       ),
     );
@@ -134,32 +138,32 @@ describe("updateFlashcards", () => {
 
   it("when a failed save is retried, sends it under the id of its first save", () => {
     const app = applied(appAfter(startNew("f1", "Katze"), startNew("f2")));
-    const failed = applied(app, settle(app, "flashcard/1", failure(500)));
+    const failed = applied(app, settle(app, "flashcard/f1/1", failure(500)));
     const [retry] = requestsAsked(failed, actions.failedSaveRetried("f1"));
     expect(retry?.request).toMatchObject({ flashcardId: "f1", isNew: true });
   });
 
-  it("numbers its request ids from its own count", () => {
-    const app = appAfter(createNew("f1"), createNew("f2"));
-    expect(requestsAsked(app, createNew("f3")).map(({ id }) => id)).toEqual([
-      "flashcard/3",
+  it("numbers a request after the requests of its flashcard still in flight", () => {
+    const app = applied(hundSaving(), openHund, typeWord("Hündchen"));
+    expect(requestsAsked(app, startNew("f3")).map(({ id }) => id)).toEqual([
+      "flashcard/h/2",
     ]);
   });
 
   it("when a background save fails, sends nothing more", () => {
     const app = hundSaving();
     expect(
-      requestsAsked(app, settle(app, "flashcard/1", failure(500))),
+      requestsAsked(app, settle(app, "flashcard/h/1", failure(500))),
     ).toEqual([]);
   });
 
   it("when a timed-out save settles, sends nothing more", () => {
     const app = applied(
       hundSaving(),
-      actions.requestTimeLimitPassed("flashcard/1"),
+      actions.requestTimeLimitPassed("flashcard/h/1"),
     );
     expect(
-      requestsAsked(app, settle(app, "flashcard/1", failure("ABORTED"))),
+      requestsAsked(app, settle(app, "flashcard/h/1", failure("ABORTED"))),
     ).toEqual([]);
   });
 
@@ -170,7 +174,7 @@ describe("updateFlashcards", () => {
         app,
         settle(
           app,
-          "flashcard/1",
+          "flashcard/f1/1",
           landed(exampleListedFlashcard("f1", "Katze")),
         ),
       ),
@@ -180,7 +184,7 @@ describe("updateFlashcards", () => {
   it("when a form save fails after its card left the form, lists the card", () => {
     const app = appAfter(startNew("f1", "Katze"), save, startNew("f2"));
     expect(
-      failedIds(applied(app, settle(app, "flashcard/1", failure(500)))),
+      failedIds(applied(app, settle(app, "flashcard/f1/1", failure(500)))),
     ).toEqual(["f1"]);
   });
 
@@ -240,12 +244,12 @@ describe("updateFlashcards", () => {
   });
 
   it("when a save's time limit passes, gives its card a rollback", () => {
-    expect(f1TimedOut().flashcards.failedSaves[0]?.rollbackIfDiscarded).toEqual(
-      {
-        content: null,
-        retryRequestId: null,
-      },
-    );
+    expect(
+      failedSavesOf(f1TimedOut().operations)[0]?.rollbackIfDiscarded,
+    ).toEqual({
+      content: null,
+      retryRequestId: null,
+    });
   });
 
   it("when a card in doubt is discarded, deletes a new flashcard", () => {
@@ -284,15 +288,15 @@ describe("updateFlashcards", () => {
       app,
       settle(app, retry, landed(exampleListedFlashcard("f1", "Katze"))),
     );
-    expect(retried.flashcards.failedSaves).toEqual([]);
+    expect(failedSavesOf(retried.operations)).toEqual([]);
   });
 
   it("when a closed form in doubt is discarded from the status line, sends its rollback", () => {
     const sending = appAfter(openHund, typeWord("Hündin"), save);
     const timedOut = applied(
       sending,
-      actions.requestTimeLimitPassed("flashcard/1"),
-      settle(sending, "flashcard/1", failure("ABORTED")),
+      actions.requestTimeLimitPassed("flashcard/h/1"),
+      settle(sending, "flashcard/h/1", failure("ABORTED")),
       close,
     );
     const [rollback] = requestsAsked(
@@ -329,20 +333,11 @@ describe("updateFlashcards", () => {
         app,
         settle(
           app,
-          "flashcard/1",
+          "flashcard/h/1",
           landed(exampleListedFlashcard("h", "Hündin", 2)),
         ),
       );
       expect(toast?.message).toBe("Saved the flashcard for “Hündin”.");
-    });
-
-    it("keeps the flashcard it returned until the list catches up", () => {
-      const app = hundSaving();
-      const saved = exampleListedFlashcard("h", "Hündin", 2);
-      expect(
-        applied(app, settle(app, "flashcard/1", landed(saved))).flashcards
-          .confirmed.h,
-      ).toEqual(saved);
     });
 
     it("deletes a new card on Undo", () => {
@@ -351,7 +346,7 @@ describe("updateFlashcards", () => {
         app,
         settle(
           app,
-          "flashcard/1",
+          "flashcard/f1/1",
           landed(exampleListedFlashcard("f1", "Katze")),
         ),
       );
@@ -392,7 +387,7 @@ describe("updateFlashcards", () => {
   it("shows no undo toast for a save the user asked for whose card waited for its lookup", () => {
     const app = appAfter(
       requestFlashcard(cat, "editor"),
-      actions.lookupFlashcardWaitEnded(1),
+      actions.lookupFlashcardWaitEnded("f-cat"),
       save,
       startNew("f2"),
       actions.flashcardLookupWaitEnded("f-cat"),
@@ -445,18 +440,20 @@ describe("updateFlashcards", () => {
     const app = appAfter(requestFlashcard(cat));
     const uncoveredDog = { ...dog, word: { term: "dog", query: null } };
     expect(
-      applied(
-        app,
-        requestFlashcard(uncoveredDog),
-        actions.lookupFlashcardWaitEnded(1),
-      ).flashcards.waitingForLookup.map(({ card }) => card.flashcardId),
+      heldCardIds(
+        applied(
+          app,
+          requestFlashcard(uncoveredDog),
+          actions.lookupFlashcardWaitEnded("f-cat"),
+        ),
+      ),
     ).toEqual(["f-cat"]);
   });
 
   describe("for a flashcard from a word saved at once", () => {
     it("saves it filled from its lookup once the fields are written", () => {
       const app = appAfter(requestFlashcard(cat));
-      const written = actions.flashcardFieldsWritten("lookup/flashcard/1", {
+      const written = actions.flashcardFieldsWritten("lookup/flashcard/f-cat", {
         word: "Katze",
         word_pronunciation: "",
         l1_definition: "cat",
@@ -470,12 +467,12 @@ describe("updateFlashcards", () => {
 
     it("asks for the fields of its lookup once the lookup settles", () => {
       const app = appAfter(requestFlashcard(cat));
-      const settled = settle(app, "lookup/flashcard/1", {
+      const settled = settle(app, "lookup/flashcard/f-cat", {
         data: { results: [], kanji: [], stylesheets: [] },
       });
       expect(flashcardEffects(app, settled)).toContainEqual({
         type: "writeFlashcardFields",
-        requestId: "lookup/flashcard/1",
+        requestId: "lookup/flashcard/f-cat",
         results: [],
         context: exampleContext,
       });
@@ -484,20 +481,17 @@ describe("updateFlashcards", () => {
     it("keeps it waiting for its lookup once the 1.5-second wait runs out", () => {
       const app = appAfter(requestFlashcard(cat));
       expect(
-        applied(
-          app,
-          actions.lookupFlashcardWaitEnded(1),
-        ).flashcards.waitingForLookup.map(({ card }) => card.flashcardId),
+        heldCardIds(applied(app, actions.lookupFlashcardWaitEnded("f-cat"))),
       ).toEqual(["f-cat"]);
     });
 
     it("saves the waiting card filled from a late answer", () => {
       const app = appAfter(
         requestFlashcard(cat),
-        actions.lookupFlashcardWaitEnded(1),
+        actions.lookupFlashcardWaitEnded("f-cat"),
       );
       const written = actions.flashcardFieldsWritten(
-        "lookup/flashcard/1",
+        "lookup/flashcard/f-cat",
         null,
       );
       expect(
@@ -508,7 +502,7 @@ describe("updateFlashcards", () => {
     it("saves the waiting card as it is once ten seconds have passed", () => {
       const app = appAfter(
         requestFlashcard(cat),
-        actions.lookupFlashcardWaitEnded(1),
+        actions.lookupFlashcardWaitEnded("f-cat"),
       );
       expect(
         requestsAsked(app, actions.flashcardLookupWaitEnded("f-cat")).map(
@@ -519,11 +513,9 @@ describe("updateFlashcards", () => {
 
     it("when the screen is left while a word's flashcard waits for its lookup, keeps it waiting", () => {
       const app = appAfter(requestFlashcard(cat, "editor"));
-      expect(
-        applied(app, actions.closeMedia()).flashcards.waitingForLookup.map(
-          ({ card }) => card.flashcardId,
-        ),
-      ).toEqual(["f-cat"]);
+      expect(heldCardIds(applied(app, actions.closeMedia()))).toEqual([
+        "f-cat",
+      ]);
     });
 
     it.each([
@@ -541,20 +533,14 @@ describe("updateFlashcards", () => {
       ["a word in the pop-up is held", holdInPopup("Katze")],
     ])("when %s before its lookup answers, keeps it waiting", (_, action) => {
       const app = appAfter(requestFlashcard(cat));
-      expect(
-        applied(app, action).flashcards.waitingForLookup.map(
-          ({ card }) => card.flashcardId,
-        ),
-      ).toEqual(["f-cat"]);
+      expect(heldCardIds(applied(app, action))).toEqual(["f-cat"]);
     });
 
     it("when the pop-up is closed while a word's flashcard for the form waits for its lookup, keeps it waiting", () => {
       const app = appAfter(requestFlashcard(cat, "editor"));
-      expect(
-        applied(app, actions.lookupClosed()).flashcards.waitingForLookup.map(
-          ({ card }) => card.flashcardId,
-        ),
-      ).toEqual(["f-cat"]);
+      expect(heldCardIds(applied(app, actions.lookupClosed()))).toEqual([
+        "f-cat",
+      ]);
     });
 
     it("when the C key is pressed on another word before its lookup answers, keeps it waiting", () => {
@@ -562,19 +548,15 @@ describe("updateFlashcards", () => {
         actions.lookupCursorMoved(dog, "mouse"),
         requestFlashcard(cat),
       );
-      expect(
-        applied(
-          app,
-          requestCursorFlashcard(dog),
-        ).flashcards.waitingForLookup.map(({ card }) => card.flashcardId),
-      ).toEqual(["f-cat"]);
+      expect(heldCardIds(applied(app, requestCursorFlashcard(dog)))).toEqual([
+        "f-cat",
+      ]);
     });
 
     it("when its word is clicked again with the mouse, leaves it pending", () => {
       const app = appAfter(requestFlashcard(cat));
       expect(
-        applied(app, actions.lookupWordClicked(cat, "mouse")).flashcards
-          .waitingForLookup,
+        heldCardIds(applied(app, actions.lookupWordClicked(cat, "mouse"))),
       ).toEqual([]);
     });
   });
@@ -584,7 +566,7 @@ describe("updateFlashcards", () => {
       const app = hundSaving();
       const [notice] = noticesShown(
         app,
-        settle(app, "flashcard/1", failure(422)),
+        settle(app, "flashcard/h/1", failure(422)),
       );
       expect(notice?.buttons.map(({ label }) => label)).toEqual([
         "Open",
@@ -593,7 +575,9 @@ describe("updateFlashcards", () => {
     });
 
     it("lists the card as refused", () => {
-      expect(hundFailed(422).flashcards.failedSaves[0]?.isRefused).toBe(true);
+      expect(failedSavesOf(hundFailed(422).operations)[0]?.isRefused).toBe(
+        true,
+      );
     });
 
     it("sends nothing on Retry", () => {
@@ -605,10 +589,11 @@ describe("updateFlashcards", () => {
 
   describe("on Open of a failed save", () => {
     it("marks it as opening", () => {
-      expect(
-        applied(hundFailed(), actions.failedSaveOpened("h", "p1", "m1"))
-          .flashcards.failedSaves[0]?.isOpening,
-      ).toBe(true);
+      const app = applied(
+        hundFailed(),
+        actions.failedSaveOpened("h", "p1", "m1"),
+      );
+      expect(failedSavesOf(app.operations)[0]?.isOpening).toBe(true);
     });
 
     it("says it could not be opened when its media file is gone", () => {
@@ -651,13 +636,15 @@ describe("updateFlashcards", () => {
       ).toEqual(["h"]);
     });
 
-    it("clears the mark once the user goes elsewhere first", () => {
+    it("gives up its opening once the user goes elsewhere first", () => {
       const app = applied(
         hundFailed(),
         actions.failedSaveOpened("h", "p1", "m1"),
-        actions.closeMedia(),
       );
-      expect(app.flashcards.failedSaves[0]?.isOpening).toBe(false);
+      expect(flashcardEffects(app, actions.closeMedia())).toContainEqual({
+        type: "abortRequest",
+        id: "flashcards/opening/h",
+      });
     });
 
     it("asks for the project on the way", () => {
@@ -768,7 +755,9 @@ describe("updateFlashcards", () => {
     it("keeps the card listed when the Retry fails", () => {
       const app = applied(hundFailed(), actions.failedSaveRetried("h"));
       expect(
-        failedIds(applied(app, settle(app, "flashcard/2", failure(500)))),
+        failedIds(
+          applied(app, settle(app, "flashcard/h/background/1", failure(500))),
+        ),
       ).toEqual(["h"]);
     });
 
@@ -780,7 +769,7 @@ describe("updateFlashcards", () => {
             app,
             settle(
               app,
-              "flashcard/2",
+              "flashcard/h/background/1",
               landed(exampleListedFlashcard("h", "Hündin", 2)),
             ),
           ),
@@ -795,7 +784,9 @@ describe("updateFlashcards", () => {
         openHund,
       );
       expect(
-        failedIds(applied(app, settle(app, "flashcard/2", failure(500)))),
+        failedIds(
+          applied(app, settle(app, "flashcard/h/background/1", failure(500))),
+        ),
       ).toEqual([]);
     });
   });
@@ -839,7 +830,7 @@ describe("updateFlashcards", () => {
     it("does not list it when an earlier background save of it fails", () => {
       const app = applied(hundSaving(), openHund);
       expect(
-        failedIds(applied(app, settle(app, "flashcard/1", failure(500)))),
+        failedIds(applied(app, settle(app, "flashcard/h/1", failure(500)))),
       ).toEqual([]);
     });
 
@@ -859,9 +850,7 @@ describe("updateFlashcards", () => {
     );
     const [retry] = requestIdsOf(app, "h");
     if (!retry) throw new Error("No Retry was sent.");
-    expect(
-      applied(app, settle(app, retry, failure(500))).flashcards.failedSaves[0]
-        ?.isOpening,
-    ).toBe(true);
+    const failed = applied(app, settle(app, retry, failure(500)));
+    expect(failedSavesOf(failed.operations)[0]?.isOpening).toBe(true);
   });
 });

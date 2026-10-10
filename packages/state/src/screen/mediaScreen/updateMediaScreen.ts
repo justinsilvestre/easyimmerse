@@ -1,8 +1,7 @@
-import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import { combineUpdates } from "../../app/combineUpdates.ts";
 import { updated } from "../../app/updated.ts";
-import { stepFlashcardForm } from "../../flashcards/stepFlashcardForm.ts";
+import { updateFlashcardForm } from "../../flashcards/updateFlashcardForm.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { updateLookup } from "../lookup/updateLookup.ts";
 import { updateReaderScreen } from "../readerScreen/updateReaderScreen.ts";
@@ -16,15 +15,13 @@ import { updateWaveform } from "./updateWaveform.ts";
 
 /**
  * Updates each part of the media screen with its own update, all from the state before the action, which `app` is.
- * The flashcard form is stepped as the flashcards feature steps it, so that the two always agree.
  */
 export const updateMediaScreen = combineUpdates<
   MediaScreenState,
   [AppState, MediaRoute]
 >({
   playing: updatePlaying,
-  flashcardForm: (_form, action, app) =>
-    updated(stepFlashcardForm(app, action).form),
+  flashcardForm: updateFlashcardForm,
   waveform: updateWaveform,
   panels: updateMediaPanels,
   cuePanelSpan: (span, action) =>

@@ -7,11 +7,7 @@ import type { FlashcardDestination } from "../../flashcards/flashcardActions.ts"
 import type { LookupFieldsContext } from "../../flashcards/flashcardForm.ts";
 import type { PlayerState } from "../mediaScreen/playerState.ts";
 import { lookupActions } from "./lookupActions.ts";
-import {
-  lookupRequestId,
-  lookupTimerIds,
-  nextLookupSequence,
-} from "./lookupIds.ts";
+import { lookupRequestId, lookupTimerIds } from "./lookupIds.ts";
 import {
   cancelCloseTimer,
   open,
@@ -64,7 +60,7 @@ export function startFlashcard(
   pending: PendingFlashcard,
   player: PlayerState,
 ) {
-  const { chosen, sequence } = pending;
+  const { chosen, flashcardId } = pending;
   const { query } = chosen.word;
   const move = query === null ? show : open;
   const [opened, openEffects] =
@@ -77,14 +73,14 @@ export function startFlashcard(
   }
   const send = {
     type: "sendRequest",
-    id: lookupRequestId(sequence),
+    id: lookupRequestId(flashcardId),
     request: { kind: "lookupText", query },
   } satisfies Effect;
   const wait = {
     type: "startTimer",
     id: lookupTimerIds.flashcardWait,
     ms: flashcardLookupWaitMs,
-    action: lookupActions.lookupFlashcardWaitEnded(sequence),
+    action: lookupActions.lookupFlashcardWaitEnded(flashcardId),
   } satisfies Effect;
   return updated(
     { ...opened, pendingFlashcard: pending },
@@ -104,10 +100,9 @@ type FlashcardRequest = {
 function pendingFor(
   chosen: ChosenWord,
   { destination, flashcard, context }: FlashcardRequest,
-  app: AppState,
+  _app: AppState,
 ): PendingFlashcard {
   return {
-    sequence: nextLookupSequence(app),
     chosen,
     destination,
     draft: flashcard.draft,

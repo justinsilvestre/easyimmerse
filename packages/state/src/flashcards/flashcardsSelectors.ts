@@ -7,6 +7,7 @@ import type { FlashcardForm } from "./flashcardForm.ts";
 import { formOf } from "./flashcardsOnScreen.ts";
 import { latestOf } from "./latestFlashcard.ts";
 import { selectFlashcardRequests } from "./selectFlashcardRequests.ts";
+import { selectFailedSaves } from "./selectStatusLineSaves.ts";
 
 /** A flashcard as the waveform draws it: its id, or the new card's segment id, and the content the app holds for it. */
 export type DrawnFlashcard = Pick<Flashcard, "id" | "content">;
@@ -32,14 +33,13 @@ export const selectMediaFlashcards = createSelector(
     (_state: RootState, listed: readonly Flashcard[] | undefined) => listed,
     (_state: RootState, _listed: unknown, mediaFileId: string) => mediaFileId,
     selectFlashcardRequests,
-    (state: RootState) => state.app.flashcards.confirmed,
-    (state: RootState) => state.app.flashcards.failedSaves,
+    selectFailedSaves,
     selectFlashcardForm,
   ],
-  (listed, mediaFileId, requests, confirmed, failedSaves, form) => {
+  (listed, mediaFileId, requests, failedSaves, form) => {
     const flashcards = (listed ?? [])
       .filter((flashcard) => flashcard.media_file_id === mediaFileId)
-      .map((flashcard) => latestOf(flashcard, requests, confirmed));
+      .map((flashcard) => latestOf(flashcard, requests));
     const failed = failedSaves.filter(
       (failedSave) => failedSave.mediaFileId === mediaFileId,
     );

@@ -31,7 +31,7 @@ describe("selectUnsavedWorkCount", () => {
       startNew("f1", "Katze"),
       actions.flashcardSaveRequested(),
     );
-    const failed = applied(app, settle(app, "flashcard/1", failure(500)));
+    const failed = applied(app, settle(app, "flashcard/f1/1", failure(500)));
     expect(countAfter(failed)).toBe(1);
   });
 
@@ -42,7 +42,7 @@ describe("selectUnsavedWorkCount", () => {
   it("counts each card waiting for its lookup", () => {
     const app = appAfter(
       requestFlashcard(cat),
-      actions.lookupFlashcardWaitEnded(1),
+      actions.lookupFlashcardWaitEnded("f-cat"),
     );
     expect(countAfter(app)).toBe(1);
   });
@@ -50,7 +50,9 @@ describe("selectUnsavedWorkCount", () => {
   it("counts each failed save", () => {
     const app = appAfter(createNew("f1"));
     expect(
-      countAfter(applied(app, settle(app, "flashcard/1", failure(500)))),
+      countAfter(
+        applied(app, settle(app, "flashcard/f1/background/1", failure(500))),
+      ),
     ).toBe(1);
   });
 

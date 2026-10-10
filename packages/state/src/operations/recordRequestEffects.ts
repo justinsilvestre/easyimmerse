@@ -11,7 +11,7 @@ type AbortRequest = Extract<ServerEffect, { type: "abortRequest" }>;
 
 /**
  * Records the requests that the effects send and abort, and returns the effects to perform in their place.
- * A scoped send is recorded as waiting and held back unless its id is the one in flight.
+ * A scoped send is recorded as waiting and held back unless its id is the one in flight. A held send is recorded as waiting.
  * The abort of a waiting request forgets it and settles it as aborted, unless the same effects send its id again.
  */
 export function recordRequestEffects(
@@ -38,20 +38,23 @@ export function recordRequestEffects(
 }
 
 /**
- * Records a send. A request goes out at once unless it is scoped and its id is not the one in flight.
+ * Records a send. A request goes out at once unless it is held, or scoped and its id is not the one in flight.
  * A send of an id already recorded replaces that request in its place and keeps the scope it was first sent with.
  */
 function recordSend(requests: Requests, effect: SendRequest) {
   const earlier = requests.find(({ id }) => id === effect.id);
   const scope = earlier ? earlier.scope : effect.scope;
-  const isWaiting = scope !== undefined && (earlier?.isWaiting ?? true);
-  const record: RequestRecord = {
+  const isWaiting =
+    effect.heldFor !== undefined ||
+    (scope !== undefined && (earlier?.isWaiting ?? true));
+  const record = {
     id: effect.id,
     request: effect.request,
     scope,
     isWaiting,
     timeLimitMs: effect.timeLimitMs,
-  };
+    ...(effect.heldFor === undefined ? {} : { heldFor: effect.heldFor }),
+  } satisfies RequestRecord;
   const recorded = earlier
     ? requests.map((other) => (other === earlier ? record : other))
     : [...requests, record];

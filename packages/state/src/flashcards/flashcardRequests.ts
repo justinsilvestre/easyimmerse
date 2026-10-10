@@ -1,9 +1,10 @@
 import type { FlashcardDraft } from "@easyimmerse/types";
 import type { AppState } from "../app/appState.ts";
 import type { Effect } from "../app/effect.ts";
+import { freeRequestId } from "../operations/freeRequestId.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import type { FlashcardCard } from "./flashcardCard.ts";
-import type { Rollback } from "./flashcardForm.ts";
+import type { LookupFieldsContext, Rollback } from "./flashcardForm.ts";
 
 /** How long a flashcard request may go unanswered, as when the connection hangs, before it counts as failed. */
 const flashcardRequestLimitMs = 30_000;
@@ -19,6 +20,8 @@ export type SavePurpose =
       offersUndo: boolean;
       /** The doubt the card already carried when this save was asked for. */
       rollbackIfDiscarded: Rollback | null;
+      /** For a save held for its word's lookup, what sorts the lookup's definitions into the card's fields. */
+      lookupContext?: LookupFieldsContext;
     }
   /** Puts back the content from before a save. */
   | { type: "undo"; word: string }
@@ -47,37 +50,41 @@ export function isFlashcardScope(scope: string | undefined): boolean {
   return scope?.startsWith("flashcard:") ?? false;
 }
 
-/** Collects what one update of the flashcards asks for, numbering its requests after those asked for before. */
-export type FlashcardOutbox = {
-  /** Asks for a flashcard request in its flashcard's scope, with the time limit, and returns the request's id. */
-  send(request: FlashcardRequest): string;
-  add(...effects: readonly Effect[]): void;
-  /** Every effect asked for so far, in order. */
-  effects(): readonly Effect[];
-  /** How many flashcard requests have been asked for since the app started, these included. */
-  count(): number;
-};
+/**
+ * Who sends a flashcard request: the form, or the commands outside it.
+ * Each numbers its requests under its own prefix, so that the two never pick the same id for one action.
+ */
+export type FlashcardSender = "form" | "background";
 
-/** What the flashcards feature's rules read and write as they run: the state before the action, and the outbox they fill. */
-export type FlashcardsContext = { app: AppState; outbox: FlashcardOutbox };
-
-/** Creates an empty outbox whose first request follows the `count` asked for before. */
-export function createFlashcardOutbox(count: number): FlashcardOutbox {
-  const effects: Effect[] = [];
-  let asked = count;
+/**
+ * Sends a flashcard request in its flashcard's scope, with the time limit, under the first id the recorded requests do not hold.
+ * A request held for another, by its id, is not sent until it is released.
+ * Since the id depends only on the recorded requests, a sender may send at most one request per flashcard in one action.
+ */
+export function sendFlashcardRequest(
+  request: FlashcardRequest,
+  app: AppState,
+  sender: FlashcardSender,
+  heldFor?: string,
+) {
+  const prefix =
+    sender === "form"
+      ? `flashcard/${request.flashcardId}`
+      : `flashcard/${request.flashcardId}/${sender}`;
+  const id = freeRequestId(prefix, app.operations.requests);
   return {
-    send: (request) => {
-      asked += 1;
-      const id = `flashcard/${asked}`;
-      const scope = flashcardScope(request.flashcardId);
-      const timeLimitMs = flashcardRequestLimitMs;
-      effects.push({ type: "sendRequest", id, request, scope, timeLimitMs });
-      return id;
-    },
-    add: (...added) => {
-      effects.push(...added);
-    },
-    effects: () => effects,
-    count: () => asked,
+    ...releaseFlashcardRequest(id, request),
+    ...(heldFor === undefined ? {} : { heldFor }),
   };
+}
+
+/** Sends a held request, under its id, as `request`. */
+export function releaseFlashcardRequest(id: string, request: FlashcardRequest) {
+  return {
+    type: "sendRequest",
+    id,
+    request,
+    scope: flashcardScope(request.flashcardId),
+    timeLimitMs: flashcardRequestLimitMs,
+  } satisfies Effect;
 }

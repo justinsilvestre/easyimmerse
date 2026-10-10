@@ -1,6 +1,6 @@
 import type { AppStore, ServerRequest } from "@easyimmerse/state";
 import { createAppStore, createRecordingEffects } from "@easyimmerse/state";
-import type { MediaFile } from "@easyimmerse/types";
+import type { Flashcard, MediaFile } from "@easyimmerse/types";
 import type { Dispatch, UnknownAction } from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import { describe, expect, it, vi } from "vitest";
@@ -57,6 +57,70 @@ const waveformWindow: ServerRequest = {
   startMs: 0,
   endMs: 30_000,
 };
+
+/** A flashcard of project p1 as the server returns it, saved at `updatedAtMs`. */
+function savedFlashcard(updatedAtMs: number) {
+  return {
+    id: "f1",
+    project_id: "p1",
+    media_file_id: "m1",
+    cue_index: null,
+    word_start: null,
+    content: {
+      word: `cat ${updatedAtMs}`,
+      word_pronunciation: "",
+      l1_definition: "",
+      l2_definition: "",
+      text_context: "",
+      text_context_translation: "",
+      text_context_pronunciation: "",
+      audio_context: null,
+      screenshot: null,
+      tags: [],
+    },
+    included_fields: [],
+    created_at_ms: 0,
+    updated_at_ms: updatedAtMs,
+  } satisfies Flashcard;
+}
+
+/** A client that lists `listed` as the project's flashcards and answers every save with `saved`. */
+function flashcardClient(
+  listed: readonly Flashcard[],
+  saved: Flashcard,
+): BackendClient {
+  return {
+    send: async <T>(request: BackendRequest) =>
+      ({
+        data: request.method === "GET" ? { flashcards: listed } : saved,
+      }) as BackendResult<T>,
+  };
+}
+
+/** The flashcards of p1 in the cached list once a save of f1 settles, after the list was fetched from `client`. */
+async function listedOnceSaved(client: BackendClient, isNew: boolean) {
+  const store = createStore(client);
+  const thunkDispatch = store.dispatch as unknown as BackendDispatch;
+  await thunkDispatch(backendApi.endpoints.listFlashcards.initiate("p1"));
+  const { content, included_fields } = savedFlashcard(0);
+  await settle(store, {
+    kind: "saveFlashcard",
+    projectId: "p1",
+    flashcardId: "f1",
+    draft: {
+      media_file_id: "m1",
+      cue_index: null,
+      word_start: null,
+      content,
+      included_fields,
+    },
+    isNew,
+    purpose: { type: "undo", word: "cat" },
+  });
+  const selectList = backendApi.endpoints.listFlashcards.select("p1");
+  const state = store.getState() as unknown as Parameters<typeof selectList>[0];
+  return selectList(state).data?.flashcards;
+}
 
 const neverAnswering: BackendClient = { send: () => new Promise(() => {}) };
 
@@ -152,5 +216,25 @@ describe("runRequest", () => {
       form: null,
     });
     expect(bodies).toEqual([{ kind: "json", value: request }]);
+  });
+
+  describe("as a flashcard save settles", () => {
+    it("lists a new flashcard in the cached list", async () => {
+      const saved = savedFlashcard(2);
+      const listed = await listedOnceSaved(flashcardClient([], saved), true);
+      expect(listed).toEqual([saved]);
+    });
+
+    it("puts a saved flashcard in place of its older version", async () => {
+      const saved = savedFlashcard(2);
+      const client = flashcardClient([savedFlashcard(1)], saved);
+      expect(await listedOnceSaved(client, false)).toEqual([saved]);
+    });
+
+    it("keeps a listed version newer than the one the save returned", async () => {
+      const newer = savedFlashcard(3);
+      const client = flashcardClient([newer], savedFlashcard(2));
+      expect(await listedOnceSaved(client, false)).toEqual([newer]);
+    });
   });
 });

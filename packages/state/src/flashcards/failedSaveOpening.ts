@@ -1,9 +1,10 @@
 import type { AppAction } from "../app/appAction.ts";
+import type { AppState } from "../app/appState.ts";
 import { mainScreenOf } from "../route/route.ts";
 import { routeAfter } from "../route/updateRoute.ts";
-import type { FailedSave } from "./failedSave.ts";
-import { changeFailedSave, findFailedSave } from "./failedSaveListing.ts";
+import { failedSaveIdOf, failedSavesOf, findFailedSave } from "./failedSave.ts";
 import {
+  openingAborts,
   openingProgress,
   openingRequests,
   openingSettledBy,
@@ -15,59 +16,62 @@ import {
   withdraw,
   wordOf,
 } from "./flashcardNotices.ts";
-import type { FlashcardsContext } from "./flashcardRequests.ts";
-import type { FlashcardsState } from "./flashcardsState.ts";
 
 /**
- * Marks a failed save to be opened in its media file's form, which takes it once that screen has the file,
- * and asks for the project and its media files on the way. A media file's form has at most one card waiting to open.
+ * Asks for the project and its media files on the way to opening a failed save in its media file's form,
+ * which takes it once both have come. A media file's form has at most one card on the way, so any other opening there is given up.
  */
-export function openFailedSave(
-  state: FlashcardsState,
-  flashcardId: string,
-  { outbox }: FlashcardsContext,
-): FlashcardsState {
-  const opening = findFailedSave(state, flashcardId);
-  if (opening?.mediaFileId == null) return state;
-  outbox.add(
+export function openFailedSave(flashcardId: string, app: AppState) {
+  const opening = findFailedSave(app, flashcardId);
+  if (opening?.mediaFileId == null) return [];
+  const others = failedSavesOf(app.operations).filter(
+    (other) =>
+      other.isOpening &&
+      other.mediaFileId === opening.mediaFileId &&
+      failedSaveIdOf(other) !== flashcardId,
+  );
+  return [
     withdraw(flashcardNoticeKeys.saveRefused(flashcardId)),
+    ...others.flatMap((other) =>
+      openingAborts(app.operations, failedSaveIdOf(other)),
+    ),
     ...openingRequests(flashcardId, opening.projectId),
-  );
-  const failedSaves = state.failedSaves.map((other) =>
-    other.mediaFileId === opening.mediaFileId
-      ? { ...other, isOpening: other === opening }
-      : other,
-  );
-  return { ...state, failedSaves };
+  ];
 }
 
-/** Clears the mark of a failed save whose project or media files failed to load or lacked its media file, and says it could not be opened. */
-export function settleOpening(
-  state: FlashcardsState,
-  action: AppAction,
-  { app, outbox }: FlashcardsContext,
-): FlashcardsState {
+/**
+ * Says that a failed save could not be opened when its project or media files failed to load or lacked its media file,
+ * and gives up the other request on the way. An opening given up, or one whose media file is no longer shown, needs no word.
+ */
+export function settleOpening(action: AppAction, app: AppState) {
   const opening = openingSettledBy(action);
-  const failedSave = opening && findFailedSave(state, opening.flashcardId);
-  if (!opening || !failedSave?.isOpening) return state;
-  if (openingProgress(opening, failedSave, app) !== "failed") return state;
-  outbox.add(show(flashcardNotices.openFailed(wordOf(failedSave.card))));
-  return changeFailedSave(state, { ...failedSave, isOpening: false });
+  const failedSave = opening && findFailedSave(app, opening.flashcardId);
+  if (!opening || opening.isAborted || !failedSave?.isOpening) return [];
+  if (failedSave.mediaFileId !== shownMediaFileId(mainScreenOf(app.route)))
+    return [];
+  if (openingProgress(opening, failedSave, app) !== "failed") return [];
+  return [
+    ...openingAborts(app.operations, opening.flashcardId).filter(
+      (abort) => abort.id === opening.otherId,
+    ),
+    show(flashcardNotices.openFailed(wordOf(failedSave.card))),
+  ];
 }
 
-/** Clears, without a word, the marks of failed saves waiting to open on a media file the route moves away from. */
-export function clearOpeningsAway(
-  state: FlashcardsState,
-  action: AppAction,
-  context: FlashcardsContext,
-): FlashcardsState {
-  const route = mainScreenOf(routeAfter(context.app, action));
-  const shown = route.screen === "media" ? route.mediaFileId : null;
-  const isAway = (failedSave: FailedSave) =>
-    failedSave.isOpening && failedSave.mediaFileId !== shown;
-  if (!state.failedSaves.some(isAway)) return state;
-  const failedSaves = state.failedSaves.map((failedSave) =>
-    isAway(failedSave) ? { ...failedSave, isOpening: false } : failedSave,
-  );
-  return { ...state, failedSaves };
+/** Gives up, without a word, the openings of failed saves on a media file that the route moves away from. */
+export function giveUpOpeningsAway(action: AppAction, app: AppState) {
+  const shownBefore = shownMediaFileId(mainScreenOf(app.route));
+  const shown = shownMediaFileId(mainScreenOf(routeAfter(app, action)));
+  if (shown === shownBefore) return [];
+  return failedSavesOf(app.operations)
+    .filter(({ isOpening, mediaFileId }) => isOpening && mediaFileId !== shown)
+    .flatMap((failedSave) =>
+      openingAborts(app.operations, failedSaveIdOf(failedSave)),
+    );
+}
+
+function shownMediaFileId(
+  route: ReturnType<typeof mainScreenOf>,
+): string | null {
+  return route.screen === "media" ? route.mediaFileId : null;
 }

@@ -185,7 +185,7 @@ describe("MediaPlayer", () => {
       fireEvent.seeking(video);
       fireEvent.timeUpdate(video);
       const main = store.getState().app.screen.main;
-      expect(main.kind === "media" && main.playing.loop).toBeNull();
+      expect(main.kind === "media" && main.playing.isLooping).toBe(false);
     });
 
     it("reports the element's duration to the store", async () => {

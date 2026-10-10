@@ -1,59 +1,56 @@
-import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
-import {
-  changeFailedSave,
-  findFailedSave,
-  withoutFailedSave,
-} from "./failedSaveListing.ts";
+import type { AppState } from "../app/appState.ts";
+import type { FailedRequest } from "../operations/failedRequests.ts";
+import { failedSaveIdOf, failedSaveOf, findFailedSave } from "./failedSave.ts";
+import { forgetFailedSave, keepAgain } from "./failedSaveKeeping.ts";
 import {
   flashcardNoticeKeys,
   flashcardNotices,
   show,
   withdraw,
 } from "./flashcardNotices.ts";
-import type { FlashcardsContext } from "./flashcardRequests.ts";
+import { sendFlashcardRequest } from "./flashcardRequests.ts";
 import { rollbackRequest } from "./flashcardSaves.ts";
 import { formOf } from "./flashcardsOnScreen.ts";
-import type { FlashcardsState } from "./flashcardsState.ts";
 import { isCardOf, retryOf } from "./latestFlashcard.ts";
 
 /**
- * Throws a failed save's edits away, with an undo toast that lists it again, and takes back a save of it in doubt.
+ * Throws a failed save's edits away, with an undo toast that keeps it again, and takes back a save of it in doubt.
  * It does nothing while a Retry of the card is under way.
  */
-export function discardFailedSave(
-  state: FlashcardsState,
-  flashcardId: string,
-  { app, outbox }: FlashcardsContext,
-): FlashcardsState {
-  const failedSave = findFailedSave(state, flashcardId);
-  if (!failedSave || retryOf(app, flashcardId)) return state;
-  const { card, projectId, rollbackIfDiscarded } = failedSave;
-  outbox.add(
+export function discardFailedSave(flashcardId: string, app: AppState) {
+  const failedSave = findFailedSave(app, flashcardId);
+  if (!failedSave || retryOf(app, flashcardId)) return [];
+  const { card, projectId, rollbackIfDiscarded, kept } = failedSave;
+  const rollback =
+    rollbackIfDiscarded &&
+    rollbackRequest(rollbackIfDiscarded, card, projectId);
+  return [
+    forgetFailedSave(flashcardId),
     withdraw(flashcardNoticeKeys.saveRefused(flashcardId)),
     show(
       flashcardNotices.failedSaveDiscarded({
         ...failedSave,
-        rollbackIfDiscarded: null,
-        isOpening: false,
+        kept: withoutDoubt(kept),
       }),
     ),
-  );
-  if (rollbackIfDiscarded)
-    outbox.send(rollbackRequest(rollbackIfDiscarded, card, projectId));
-  return {
-    ...state,
-    failedSaves: withoutFailedSave(state.failedSaves, flashcardId),
-  };
+    ...(rollback ? [sendFlashcardRequest(rollback, app, "background")] : []),
+  ];
 }
 
-/** Lists a discarded failed save again, unless the form holds its flashcard meanwhile, whose copy is then the newer one. */
-export function restoreFailedSave(
-  state: FlashcardsState,
-  failedSave: FailedSave,
-  { app }: FlashcardsContext,
-): FlashcardsState {
+/** Keeps a discarded failed save again, unless the form holds its flashcard meanwhile, whose copy is then the newer one. */
+export function restoreFailedSave(kept: FailedRequest, app: AppState) {
+  const failedSave = failedSaveOf(kept, app.operations);
   const form = formOf(app);
-  return form && isCardOf(form.card, failedSaveIdOf(failedSave))
-    ? state
-    : changeFailedSave(state, failedSave);
+  if (failedSave === null) return [];
+  if (form && isCardOf(form.card, failedSaveIdOf(failedSave))) return [];
+  return [keepAgain(kept)];
+}
+
+/** A kept save whose doubt is gone, as once the rollback that discarding it sent has taken the save back. */
+function withoutDoubt(kept: FailedRequest): FailedRequest {
+  const { request } = kept;
+  if (request.kind !== "saveFlashcard" || request.purpose.type !== "save")
+    return kept;
+  const purpose = { ...request.purpose, rollbackIfDiscarded: null };
+  return { ...kept, request: { ...request, purpose } };
 }

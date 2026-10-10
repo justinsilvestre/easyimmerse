@@ -7,7 +7,7 @@ import {
 } from "../../flashcards/exampleFlashcards.ts";
 import type { FlashcardDestination } from "../../flashcards/flashcardActions.ts";
 import { applyToMediaScreen } from "../mediaScreen/mediaScreenTestSupport.ts";
-import { lookupHoverRequestId, lookupRequestId } from "./lookupIds.ts";
+import { lookupRequestId } from "./lookupIds.ts";
 import type { ChosenWord } from "./lookupState.ts";
 
 const firstCue: Cue = {
@@ -89,13 +89,13 @@ export const holdInPopup = (term: string) =>
     exampleContext,
   );
 
-/** The fields of the lookup of the flashcard with this sequence, written once the lookup settled; null when it found nothing. */
-export const fieldsWritten = (sequence: number) =>
-  actions.flashcardFieldsWritten(lookupRequestId(sequence), null);
+/** The fields of the lookup of the flashcard with this id, written once the lookup settled; null when it found nothing. */
+export const fieldsWritten = (flashcardId: string) =>
+  actions.flashcardFieldsWritten(lookupRequestId(flashcardId), null);
 
-/** The settle of the lookup of the flashcard with this sequence, for the word given. */
+/** The settle of the lookup of the flashcard with this id, for the word given. */
 export const lookupSettled = (
-  sequence: number,
+  flashcardId: string,
   chosen: ChosenWord,
   outcome:
     | { ok: true; data: LookupResponse }
@@ -105,7 +105,7 @@ export const lookupSettled = (
   },
 ) =>
   actions.requestSettled(
-    lookupRequestId(sequence),
+    lookupRequestId(flashcardId),
     {
       kind: "lookupText",
       query: chosen.word.query ?? { text: "", language: "de" },
@@ -120,14 +120,14 @@ export const restingOn = (chosen: ChosenWord) =>
     actions.lookupWordHovered(chosen),
   ] as const;
 
-/** The settle of the hover lookup with this sequence for the word given: matching `matchedText`, or failed when it is null. */
+/** The settle of the hover lookup numbered `sequence` among those in flight, for the word given: matching `matchedText`, or failed when it is null. */
 export const hoverSettled = (
   sequence: number,
   chosen: ChosenWord,
   matchedText: string | null,
 ) =>
   actions.requestSettled(
-    lookupHoverRequestId(sequence),
+    `lookup/hover/${sequence}`,
     {
       kind: "lookupText",
       query: chosen.word.query ?? { text: "", language: "de" },
