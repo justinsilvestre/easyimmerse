@@ -3,6 +3,7 @@ import type { Feature } from "../app/feature.ts";
 /** The address of the easyImmerse server the app talks to, and the token it sends with each request. */
 export type ServerConfig = { serverUrl: string; token: string };
 
+/** The server slice of the app state. */
 export type ServerState = {
   /** The server the app talks to, or null when the app runs offline. It is set when the store is created and never changes. */
   config: ServerConfig | null;

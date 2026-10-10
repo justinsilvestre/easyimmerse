@@ -98,9 +98,7 @@ function batchesOf(requests: readonly BackendRequest[]): BatchLookupRequest[] {
   );
 }
 
-afterEach(() => {
-  vi.useRealTimers();
-});
+afterEach(() => vi.useRealTimers());
 
 describe("prefetchLookups", () => {
   it("sends each passage once in one batch", async () => {
