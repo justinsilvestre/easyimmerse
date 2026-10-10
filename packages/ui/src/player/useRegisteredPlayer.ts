@@ -13,7 +13,7 @@ type MediaEvent = SyntheticEvent<HTMLMediaElement>;
 /**
  * Makes the media element the app's current player.
  * Seeks from the store land on it half a frame after the wanted moment, play, volume, mute, and speed requests reach it,
- * and its time, duration, loaded stretches, playing state, and the times its seeks land on flow back into the store.
+ * and its time, duration, loaded stretches, playing state, and the times its seeks go to flow back into the store.
  * The element starts at the volume, mute state, and speed the store holds.
  * Returns the event handlers to put on the element.
  */
@@ -50,8 +50,9 @@ export function useRegisteredPlayer(
   return {
     onTimeUpdate: (event: MediaEvent) =>
       dispatch(actions.playerTimeChanged(event.currentTarget.currentTime)),
-    onSeeked: (event: MediaEvent) =>
-      dispatch(actions.playerSeeked(event.currentTarget.currentTime)),
+    // Reported as the seek starts, since the browser queues the time update of the new position before `seeked`.
+    onSeeking: (event: MediaEvent) =>
+      dispatch(actions.playerSeeking(event.currentTarget.currentTime)),
     onDurationChange: (event: MediaEvent) => {
       const duration = event.currentTarget.duration;
       if (Number.isFinite(duration))

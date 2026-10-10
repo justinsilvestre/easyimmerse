@@ -156,7 +156,7 @@ describe("MediaPlayer", () => {
       expect(selectCurrentTime(store.getState())).toBe(3);
     });
 
-    it("ends the clip loop when the element lands outside the clip after a seek", async () => {
+    it("ends the clip loop when the element seeks outside the clip", async () => {
       const { store } = renderPlayer(directPlaybackRoutes);
       const video = await findVideo();
       act(() => {
@@ -166,7 +166,8 @@ describe("MediaPlayer", () => {
         );
       });
       video.currentTime = 40;
-      fireEvent.seeked(video);
+      fireEvent.seeking(video);
+      fireEvent.timeUpdate(video);
       const main = store.getState().app.screen.main;
       expect(main.kind === "media" && main.loop).toBeNull();
     });

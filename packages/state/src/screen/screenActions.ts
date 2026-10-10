@@ -25,9 +25,9 @@ export const screenActions = {
     ({ type: "playerDurationChanged", seconds }) as const,
   playerBufferedChanged: (buffered: readonly BufferedRange[]) =>
     ({ type: "playerBufferedChanged", buffered }) as const,
-  /** The player has landed on a time after a seek, whether the app asked for it or not. */
-  playerSeeked: (seconds: number) =>
-    ({ type: "playerSeeked", seconds }) as const,
+  /** The player has started a seek to a time, whether the app asked for it or not. */
+  playerSeeking: (seconds: number) =>
+    ({ type: "playerSeeking", seconds }) as const,
   /** A flashcard opened in the editor, with its clip, or null when it has none. Transitional until the open card is in the store. */
   editedClipOpened: (clip: AudioClip | null) =>
     ({ type: "editedClipOpened", clip }) as const,

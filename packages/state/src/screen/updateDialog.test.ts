@@ -39,6 +39,29 @@ describe("updateDialog", () => {
     expect(dialog).toBeNull();
   });
 
+  it("leaves a track choice open when a subtitles file is chosen", () => {
+    const choosing = {
+      kind: "trackChoice",
+      selection: null,
+      stage: "choosing",
+    } as const;
+    const [dialog] = applyDialog(
+      choosing,
+      actions.subtitleFileChosen(pickedFile),
+    );
+    expect(dialog).toBe(choosing);
+  });
+
+  it("leaves a track choice open when a subtitles pick is cancelled", () => {
+    const choosing = {
+      kind: "trackChoice",
+      selection: null,
+      stage: "choosing",
+    } as const;
+    const [dialog] = applyDialog(choosing, actions.subtitleFilePickCancelled());
+    expect(dialog).toBe(choosing);
+  });
+
   it("clears the pending file pick for subtitleFilePickCancelled", () => {
     const [dialog] = applyDialog(picking, actions.subtitleFilePickCancelled());
     expect(dialog).toBeNull();

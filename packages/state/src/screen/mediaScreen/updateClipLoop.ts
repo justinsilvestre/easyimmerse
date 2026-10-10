@@ -8,7 +8,7 @@ import { seekTo } from "./seekTo.ts";
  * Plays the clip of the flashcard open in the editor. Opening a card seeks to its clip's start, and if the player was playing,
  * the clip loops: playback that reaches its end seeks back to its start. The loop follows the clip's edges as they move,
  * and ends when the card closes, when playback pauses, or when a seek lands outside the clip.
- * The loop's own seeks land on the clip's start, inside it, so they never end it.
+ * The loop's own seeks go to half a frame after the clip's start, inside the clip, so no guard against them is needed.
  */
 export function updateClipLoop(
   screen: MediaScreenState,
@@ -30,7 +30,7 @@ export function updateClipLoop(
     case "playerPlayingChanged":
       return [action.isPlaying ? screen : withLoop(screen, null), []];
     case "seekRequested":
-    case "playerSeeked":
+    case "playerSeeking":
       return [
         loop !== null && !isInside(loop, action.seconds * 1000)
           ? withLoop(screen, null)

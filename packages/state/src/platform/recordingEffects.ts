@@ -9,7 +9,7 @@ import type {
 } from "./effects.ts";
 
 /** The recording effects' answers about media support: a WebKit browser that plays MP4 directly and through Media Source Extensions. */
-export const recordedPlaybackProbes: PlaybackProbes = {
+const recordedPlaybackProbes: PlaybackProbes = {
   userAgent: "AppleWebKit/605.1.15 (KHTML, like Gecko)",
   canPlayType: (mimeType) => (mimeType.startsWith("video/mp4") ? "maybe" : ""),
   isTypeSupported: (mimeType) => mimeType.includes("mp4"),

@@ -27,7 +27,7 @@ export function updateDialog(
       ];
     case "subtitleFileChosen":
     case "subtitleFilePickCancelled":
-      return [null, []];
+      return [dialog?.kind === "filePick" ? null : dialog, []];
     case "mediaFilePickRequested":
       return [dialog, [{ type: "pickMediaFile", accept: mediaFileExtensions }]];
     case "dictionaryFilePickRequested":

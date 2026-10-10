@@ -12,7 +12,7 @@ type DialogState = ScreenState["dialog"];
 
 /**
  * Opens the track choice before the first play when a kind has several tracks and no choice is saved, or when the user asks,
- * and the conversion notice when the plan re-encodes a track and the user has not settled the notice.
+ * and the conversion notice when the plan re-encodes a track and the user has not settled the notice, unless the track choice is open.
  * Keeps what each dialog shows until it closes. `app` is the state before the action.
  */
 export function updatePlaybackDialog(
@@ -74,7 +74,11 @@ function settledDialog(
     )
       ? { kind: "trackChoice", selection: null, stage: "choosing" }
       : dialog;
-  if (isSettled(action, ids.plan, "planPlayback") && action.outcome.ok) {
+  if (
+    isSettled(action, ids.plan, "planPlayback") &&
+    action.outcome.ok &&
+    dialog?.kind !== "trackChoice"
+  ) {
     const isNoticeSettled =
       app.preferences.values.conversionNoticeDismissed === "true" ||
       open.playback.isConversionAccepted;

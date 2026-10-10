@@ -105,9 +105,6 @@ export { abortedFailure } from "./server/serverRequest.ts";
 export { selectServerConfig } from "./server/serverSelectors.ts";
 export type { ServerConfig } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";
-export {
-  selectPlaybackPosition,
-  selectReadingLocation,
-} from "./storedPlaces/storedPlacesSelectors.ts";
+export { selectReadingLocation } from "./storedPlaces/storedPlacesSelectors.ts";
 export type { Clock } from "./timers/clock.ts";
 export { systemClock } from "./timers/clock.ts";

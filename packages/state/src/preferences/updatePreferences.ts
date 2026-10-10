@@ -5,7 +5,11 @@ import type {
   PreferenceKey,
   PreferencesState,
 } from "./preferencesState.ts";
-import { initialPreferences, preferenceKeys } from "./preferencesState.ts";
+import {
+  initialPreferences,
+  preferenceKeys,
+  withLoadedPreferences,
+} from "./preferencesState.ts";
 
 /**
  * Updates the preferences, loading them when the app starts and saving each one the user changes,
@@ -35,14 +39,7 @@ export const updatePreferences: FeatureUpdate<PreferencesState> = (
     case "appStarted":
       return [preferences, [{ type: "loadPreferences", keys: preferenceKeys }]];
     case "preferencesLoaded":
-      return [
-        {
-          ...preferences,
-          values: { ...preferences.values, ...action.preferences },
-          isLoaded: true,
-        },
-        [],
-      ];
+      return [withLoadedPreferences(preferences, action.preferences), []];
     case "systemThemeChanged":
       return [{ ...preferences, systemTheme: action.theme }, []];
     case "volumeChangeRequested":

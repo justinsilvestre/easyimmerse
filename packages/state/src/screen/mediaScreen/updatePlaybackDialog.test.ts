@@ -119,6 +119,26 @@ describe("updatePlaybackDialog", () => {
     ).toBeNull();
   });
 
+  it("leaves the track choice open when a plan that re-encodes settles meanwhile", () => {
+    expect(
+      dialogAfter(
+        planSettled(exampleTranscodePlayback),
+        ...playing,
+        actions.trackChoiceRequested(),
+      ),
+    ).toMatchObject({ kind: "trackChoice" });
+  });
+
+  it("closes the track choice when it is cancelled", () => {
+    expect(
+      dialogAfter(
+        actions.trackChoiceCancelled(),
+        mediaFilesListed(),
+        tracksSettled(exampleTracksTwoAudio),
+      ),
+    ).toBeNull();
+  });
+
   it("clears the box of the conversion notice when it is toggled", () => {
     expect(
       dialogAfter(

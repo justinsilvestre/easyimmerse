@@ -65,7 +65,7 @@ describe("updateClipLoop", () => {
       playing,
       opened,
       actions.playerTimeChanged(12.1),
-      actions.playerSeeked(10.02),
+      actions.playerSeeking(10.02),
       actions.playerTimeChanged(11),
     );
     expect(effects).toEqual([{ type: "seekPlayer", seconds: 10 }]);
@@ -120,19 +120,28 @@ describe("updateClipLoop", () => {
     expect(screen.loop).toEqual(clip);
   });
 
-  it("stops looping once the player reports a seek outside the clip", () => {
-    const [screen] = apply(actions.playerSeeked(40), playing, opened);
+  it("stops looping once the player starts a seek outside the clip", () => {
+    const [screen] = apply(actions.playerSeeking(40), playing, opened);
     expect(screen.loop).toBeNull();
   });
 
-  it("keeps looping when the player reports a seek inside the clip", () => {
-    const [screen] = apply(actions.playerSeeked(10.02), playing, opened);
+  it("keeps looping when the player starts a seek inside the clip", () => {
+    const [screen] = apply(actions.playerSeeking(10.02), playing, opened);
     expect(screen.loop).toEqual(clip);
   });
 
   it("stops looping once the card closes", () => {
     const [screen] = apply(actions.editedClipClosed(), playing, opened);
     expect(screen.loop).toBeNull();
+  });
+
+  it("seeks to another card's clip start when it opens while playing", () => {
+    const [, effects] = apply(
+      actions.editedClipOpened(otherClip),
+      playing,
+      opened,
+    );
+    expect(effects).toEqual([{ type: "seekPlayer", seconds: 30 }]);
   });
 
   it("loops the clip of another card that opens while playing", () => {

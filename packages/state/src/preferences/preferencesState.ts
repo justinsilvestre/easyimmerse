@@ -52,3 +52,15 @@ export const initialPreferences: PreferencesState = {
   systemTheme: "light",
   playerControls: { volume: 1, isMuted: false, speed: 1 },
 };
+
+/** Returns the preferences with the loaded values over those already held, marked as loaded. */
+export function withLoadedPreferences(
+  preferences: PreferencesState,
+  loaded: PreferenceValues,
+): PreferencesState {
+  return {
+    ...preferences,
+    values: { ...preferences.values, ...loaded },
+    isLoaded: true,
+  };
+}

@@ -1,6 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import type { Effect } from "../../app/effect.ts";
+import { withLoadedPreferences } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { MediaScreenState } from "../screenState.ts";
@@ -35,15 +36,17 @@ export function updatePathPlayback(
         ? sendFirstPlan(
             withPlayback(screen, playback, { environment: action.environment }),
             route,
-            app,
+            app.screen.dialog,
             app.preferences,
           )
         : [screen, []];
     case "preferencesLoaded":
-      return sendFirstPlan(screen, route, app, {
-        values: { ...app.preferences.values, ...action.preferences },
-        isLoaded: true,
-      });
+      return sendFirstPlan(
+        screen,
+        route,
+        app.screen.dialog,
+        withLoadedPreferences(app.preferences, action.preferences),
+      );
     case "tracksChosen": {
       if (playback === null) return [screen, []];
       const chosen = withPlayback(screen, playback, {
