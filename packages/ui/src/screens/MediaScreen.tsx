@@ -9,7 +9,6 @@ import {
   selectMediaPanels,
   selectPlayer,
   selectPlayerControls,
-  selectPreference,
   selectShownCue,
   selectSourceMedia,
 } from "@easyimmerse/state";
@@ -42,8 +41,8 @@ import { MediaView } from "../media/MediaView.tsx";
 import { mediaSourceOf } from "../media/mediaSourceOf.ts";
 import type { PlayerCallbacks } from "../media/PlayerControls.tsx";
 import type { SubtitleTrackChoices } from "../media/SubtitleTrackChoices.ts";
+import { selectSubtitleAppearance } from "../media/selectSubtitleAppearance.ts";
 import { replayTarget, skipTarget } from "../media/skipTarget.ts";
-import { parseSubtitleAppearance } from "../media/subtitleAppearance.ts";
 import { MediaPlayer } from "../player/MediaPlayer.tsx";
 import { selectCanChooseTracks } from "../player/selectCanChooseTracks.ts";
 import { selectMediaDurationMs } from "../player/selectMediaDurationMs.ts";
@@ -104,13 +103,7 @@ export function MediaScreen({
     () => flashcardWordRanges(flashcards.flashcards, subtitles.cues),
     [flashcards.flashcards, subtitles.cues],
   );
-  const storedAppearance = useAppSelector(
-    selectPreference("subtitleAppearance"),
-  );
-  const subtitleAppearance = useMemo(
-    () => parseSubtitleAppearance(storedAppearance),
-    [storedAppearance],
-  );
+  const subtitleAppearance = useAppSelector(selectSubtitleAppearance);
   const { form } = flashcards;
   const editedContent = form?.card.editor.content;
   const isEditorOpen = form !== null;

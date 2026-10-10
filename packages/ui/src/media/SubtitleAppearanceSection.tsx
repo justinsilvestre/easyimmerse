@@ -1,12 +1,12 @@
-import { actions, selectPreference } from "@easyimmerse/state";
-import { useId, useMemo } from "react";
+import { actions } from "@easyimmerse/state";
+import { useId } from "react";
 import { Button } from "../components/Button.tsx";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { SubtitleAppearanceControls } from "./SubtitleAppearanceControls.tsx";
+import { selectSubtitleAppearance } from "./selectSubtitleAppearance.ts";
 import {
   defaultSubtitleAppearance,
-  parseSubtitleAppearance,
   type SubtitleAppearance,
 } from "./subtitleAppearance.ts";
 
@@ -17,8 +17,7 @@ import {
 export function SubtitleAppearanceSection() {
   const headingId = useId();
   const dispatch = useAppDispatch();
-  const stored = useAppSelector(selectPreference("subtitleAppearance"));
-  const appearance = useMemo(() => parseSubtitleAppearance(stored), [stored]);
+  const appearance = useAppSelector(selectSubtitleAppearance);
   const onChange = (changed: SubtitleAppearance) =>
     dispatch(
       actions.preferenceSet("subtitleAppearance", JSON.stringify(changed)),
