@@ -5,6 +5,7 @@ import { trackOperations } from "../operations/trackOperations.ts";
 import { platformCommands } from "../platform/platformCommands.ts";
 import { preferencesFeature } from "../preferences/updatePreferences.ts";
 import { routeFeature } from "../route/updateRoute.ts";
+import { screenCommands } from "../screen/screenCommands.ts";
 import { screenFeature } from "../screen/updateScreen.ts";
 import { serverFeature } from "../server/serverState.ts";
 import { storedPlacesFeature } from "../storedPlaces/updateStoredPlaces.ts";
@@ -57,7 +58,7 @@ export const update: UpdateFunction<AppState, AppAction, PerformedEffect> = (
 /**
  * Lets every feature update its own slice, each seeing the state before the action, and gathers their effects in the order of the feature table.
  * The state keeps its reference when no slice changes.
- * Beside the features, the root update takes three fixed steps: it adds the platform and flashcard commands, which change no state;
+ * Beside the features, the root update takes three fixed steps: it adds the platform, screen and flashcard commands, which change no state;
  * it passes every effect through `trackOperations`, which turns the jobs watched into status requests and timers,
  * records the requests sent, and holds back those that must wait; and it guards the app's closing whenever unsaved work
  * begins, and stops once none is left, as `closeGuardEffects` describes.
@@ -71,6 +72,7 @@ function updateFeatures(state: AppState, action: AppAction) {
     effects.push(...sliceEffects);
   }
   effects.push(...platformCommands(action));
+  effects.push(...screenCommands(action, state));
   effects.push(...flashcardCommands(action, state));
   const [operations, performed] = trackOperations(next.operations, effects);
   const tracked =

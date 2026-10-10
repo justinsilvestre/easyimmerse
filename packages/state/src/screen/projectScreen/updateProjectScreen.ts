@@ -1,4 +1,5 @@
 import type { AppAction } from "../../app/appAction.ts";
+import { combineUpdates } from "../../app/combineUpdates.ts";
 import type { Effect } from "../../app/effect.ts";
 import { updated } from "../../app/updated.ts";
 import { transientNotice } from "../../notices/transientNotice.ts";
@@ -22,22 +23,15 @@ export function updateProjectScreen(
   action: AppAction,
   route: ProjectRoute,
 ) {
-  const [withPick, pickEffects] = updatePickedMediaFile(screen, action, route);
-  const [mediaImport, importEffects] = updateMediaImport(
-    screen.mediaImport,
-    action,
-    route.projectId,
-  );
-
-  return updated(
-    mediaImport === screen.mediaImport
-      ? withPick
-      : { ...withPick, mediaImport },
-    ...pickEffects,
-    ...importEffects,
-    ...removalEffects(action, route),
-  );
+  const [next, effects] = updateParts(screen, action, route);
+  return updated(next, ...effects, ...removalEffects(action, route));
 }
+
+const updateParts = combineUpdates<ProjectScreenState, [ProjectRoute]>({
+  pendingMediaFile: updatePickedMediaFile,
+  mediaImport: (wizard, action, route) =>
+    updateMediaImport(wizard, action, route.projectId),
+});
 
 /** Removes a media file from the project when the user asks. */
 function removalEffects(action: AppAction, { projectId }: ProjectRoute) {
@@ -54,39 +48,30 @@ function removalEffects(action: AppAction, { projectId }: ProjectRoute) {
 
 /** Adds a picked media file to the project, unless a file of that name is already there. */
 function updatePickedMediaFile(
-  screen: ProjectScreenState,
+  pending: PickedMediaFile | null,
   action: AppAction,
-  route: ProjectRoute,
+  { projectId }: ProjectRoute,
 ) {
-  const { projectId } = route;
   const ids = mediaFilePickRequestIds(projectId);
-  const pending = screen.pendingMediaFile;
   switch (action.type) {
     case "mediaFileChosen":
-      return updated(
-        { ...screen, pendingMediaFile: action.file },
-        {
-          type: "sendRequest",
-          id: ids.list,
-          request: { kind: "listMediaFiles", projectId },
-        },
-      );
+      return updated(action.file, {
+        type: "sendRequest",
+        id: ids.list,
+        request: { kind: "listMediaFiles", projectId },
+      });
     case "requestSettled":
-      if (pending === null) return updated(screen);
+      if (pending === null) return updated(pending);
       if (isSettled(action, ids.list, "listMediaFiles"))
         // A list that fails to load lets the file be sent anyway.
         return action.outcome.ok &&
           findMediaFileNamed(action.outcome.data, pending.name)
-          ? updated(
-              { ...screen, pendingMediaFile: null },
-              alreadyInProject(pending.name),
-            )
-          : updated(screen, sendPickedFile(projectId, pending));
-      if (isSettled(action, ids.add, "addMediaFile"))
-        return updated({ ...screen, pendingMediaFile: null });
-      return updated(screen);
+          ? updated(null, alreadyInProject(pending.name))
+          : updated(pending, sendPickedFile(projectId, pending));
+      if (isSettled(action, ids.add, "addMediaFile")) return updated(null);
+      return updated(pending);
     default:
-      return updated(screen);
+      return updated(pending);
   }
 }
 

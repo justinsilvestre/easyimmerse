@@ -20,13 +20,17 @@ export function projectOpenedBy(
     : null;
 }
 
-/** Records that a project was opened, which moves it to the front of the home screen. */
-export function markOpened(projectId: string) {
-  return {
-    type: "sendRequest",
-    id: `project/${projectId}/markOpened`,
-    request: { kind: "markProjectOpened", projectId },
-  } satisfies Effect;
+/** Records that the project the action's route change opens was opened, which moves it to the front of the home screen. */
+export function markOpenedBy(app: RouteApp, action: AppAction) {
+  const projectId = projectOpenedBy(app, action);
+  if (projectId === null) return [];
+  return [
+    {
+      type: "sendRequest",
+      id: `project/${projectId}/markOpened`,
+      request: { kind: "markProjectOpened", projectId },
+    } satisfies Effect,
+  ];
 }
 
 function projectShownOn(route: MainRoute): string | null {

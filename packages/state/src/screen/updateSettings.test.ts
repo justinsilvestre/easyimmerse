@@ -81,21 +81,6 @@ describe("updateSettings", () => {
     expect(effects).toEqual([unwatch]);
   });
 
-  it("removes a dictionary once its removal is confirmed", () => {
-    const [, effects] = updateSettings(
-      { dictionaryImport: null, conversionCacheReport: null },
-      actions.dictionaryRemovalConfirmed("d1"),
-      dictionariesPage,
-    );
-    expect(effects).toEqual([
-      {
-        type: "sendRequest",
-        id: "settings/dictionaries/remove/d1",
-        request: { kind: "deleteDictionary", dictionaryId: "d1" },
-      },
-    ]);
-  });
-
   it("keeps the media cache's report while the general page is on top", () => {
     const [settings] = updateSettings(
       { dictionaryImport: null, conversionCacheReport: null },
@@ -116,32 +101,5 @@ describe("updateSettings", () => {
       dictionariesPage,
     );
     expect(settings?.conversionCacheReport).toBeNull();
-  });
-
-  it("sends nothing when the removal of a dictionary is asked about", () => {
-    const [, effects] = updateSettings(
-      { dictionaryImport: null, conversionCacheReport: null },
-      actions.dictionaryRemovalRequested("d1"),
-      dictionariesPage,
-    );
-    expect(effects).toEqual([]);
-  });
-
-  it("sends nothing when the removal of a dictionary is cancelled", () => {
-    const [, effects] = updateSettings(
-      { dictionaryImport: null, conversionCacheReport: null },
-      actions.dictionaryRemovalCancelled(),
-      dictionariesPage,
-    );
-    expect(effects).toEqual([]);
-  });
-
-  it("removes no dictionary for a confirmation while the general page is on top", () => {
-    const [, effects] = updateSettings(
-      { dictionaryImport: null, conversionCacheReport: null },
-      actions.dictionaryRemovalConfirmed("d1"),
-      generalPage,
-    );
-    expect(effects).toEqual([]);
   });
 });

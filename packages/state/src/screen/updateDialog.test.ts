@@ -1,17 +1,22 @@
 import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
-import { initialAppState } from "../app/update.ts";
+import { stateAfter } from "../app/stateAfter.ts";
 import type { PickedFile } from "../platform/effects.ts";
 import { dictionaryFileExtensions } from "./dictionaryFileExtensions.ts";
 import { mediaFileExtensions } from "./mediaFileExtensions.ts";
 import { updateDialog } from "./updateDialog.ts";
 
-/** Applies an action to a dialog while the app is otherwise as it starts. */
+/** The app with the dictionaries page of Settings open over the home screen. */
+const onDictionariesPage = stateAfter(
+  actions.navigated({ type: "openDictionaries" }),
+);
+
+/** Applies an action to a dialog while the dictionaries page is on top. */
 const applyDialog = (
   dialog: Parameters<typeof updateDialog>[0],
   action: AppAction,
-) => updateDialog(dialog, action, initialAppState);
+) => updateDialog(dialog, action, onDictionariesPage);
 
 const pickedFile: PickedFile = {
   name: "episode.srt",
@@ -117,6 +122,44 @@ describe("updateDialog", () => {
       const [dialog] = applyDialog(
         asking,
         actions.dictionaryRemovalConfirmed("d1"),
+      );
+      expect(dialog).toBeNull();
+    });
+
+    it("removes the dictionary once its removal is confirmed", () => {
+      const [, effects] = applyDialog(
+        asking,
+        actions.dictionaryRemovalConfirmed("d1"),
+      );
+      expect(effects).toEqual([
+        {
+          type: "sendRequest",
+          id: "settings/dictionaries/remove/d1",
+          request: { kind: "deleteDictionary", dictionaryId: "d1" },
+        },
+      ]);
+    });
+
+    it("removes no dictionary for a confirmation when no question is open", () => {
+      const [, effects] = applyDialog(
+        null,
+        actions.dictionaryRemovalConfirmed("d1"),
+      );
+      expect(effects).toEqual([]);
+    });
+
+    it("sends nothing when the removal is cancelled", () => {
+      const [, effects] = applyDialog(
+        asking,
+        actions.dictionaryRemovalCancelled(),
+      );
+      expect(effects).toEqual([]);
+    });
+
+    it("closes the question once the dictionaries page closes", () => {
+      const [dialog] = applyDialog(
+        asking,
+        actions.navigated({ type: "closeSettings" }),
       );
       expect(dialog).toBeNull();
     });
