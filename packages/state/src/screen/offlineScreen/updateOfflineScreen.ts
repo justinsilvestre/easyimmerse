@@ -1,5 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
+import type { Effect } from "../../app/effect.ts";
 import { updated } from "../../app/updated.ts";
+import { isAborted } from "../../server/isAborted.ts";
 import { isSettled } from "../../server/isSettled.ts";
 import type { OfflineScreenState } from "../screenState.ts";
 
@@ -13,7 +15,7 @@ export function updateOfflineScreen(
   switch (action.type) {
     case "subtitleFileChosen":
       return updated(
-        { ...screen, cues: [], hasFailed: false, parsing: true },
+        { ...screen, cues: [], hasFailed: false },
         {
           type: "sendRequest",
           id: parseRequestId,
@@ -24,18 +26,24 @@ export function updateOfflineScreen(
         },
       );
     case "requestSettled":
-      // A parse that settles after the screen was left belongs to a screen that is gone.
+      // A parse aborted as an earlier offline screen closed says nothing about the file picked on this one.
       if (
-        !screen.parsing ||
-        !isSettled(action, parseRequestId, "parseTimedText")
+        !isSettled(action, parseRequestId, "parseTimedText") ||
+        isAborted(action.outcome)
       )
         return updated(screen);
       return updated(
         action.outcome.ok
-          ? { ...screen, cues: action.outcome.data.cues, parsing: false }
-          : { ...screen, hasFailed: true, parsing: false },
+          ? { ...screen, cues: action.outcome.data.cues }
+          : { ...screen, hasFailed: true },
       );
     default:
       return updated(screen);
   }
 }
+
+/** Stops parsing the picked subtitles file, as the offline screen closes. */
+export const abortParse = {
+  type: "abortRequest",
+  id: parseRequestId,
+} satisfies Effect;

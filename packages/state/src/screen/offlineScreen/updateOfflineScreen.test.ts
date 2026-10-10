@@ -22,10 +22,7 @@ const empty: OfflineScreenState = {
   kind: "offline",
   cues: [],
   hasFailed: false,
-  parsing: false,
 };
-
-const parsing: OfflineScreenState = { ...empty, parsing: true };
 
 const parsed = actions.requestSettled("offline/parseTimedText", parseRequest, {
   ok: true,
@@ -57,37 +54,38 @@ describe("updateOfflineScreen", () => {
       { ...empty, cues: [cue], hasFailed: true },
       actions.subtitleFileChosen(picked),
     );
-    expect(screen).toEqual(parsing);
+    expect(screen).toEqual(empty);
   });
 
   it("keeps the cues of the parsed file", () => {
-    const [screen] = updateOfflineScreen(parsing, parsed);
+    const [screen] = updateOfflineScreen(empty, parsed);
     expect(screen.cues).toEqual([cue]);
   });
 
-  it("is no longer parsing once the parse settles", () => {
-    const [screen] = updateOfflineScreen(parsing, parsed);
-    expect(screen.parsing).toBe(false);
-  });
-
-  it("ignores a parse that settles after the screen was left and opened again", () => {
-    const [screen] = updateOfflineScreen(empty, parsed);
-    expect(screen).toBe(empty);
-  });
-
   it("marks the parse as failed", () => {
-    const [screen] = updateOfflineScreen(parsing, failed);
+    const [screen] = updateOfflineScreen(empty, failed);
     expect(screen.hasFailed).toBe(true);
+  });
+
+  it("ignores a parse that was aborted as an earlier offline screen closed", () => {
+    const [screen] = updateOfflineScreen(
+      empty,
+      actions.requestSettled("offline/parseTimedText", parseRequest, {
+        ok: false,
+        error: { status: "ABORTED", message: "aborted" },
+      }),
+    );
+    expect(screen).toBe(empty);
   });
 
   it("ignores a request that another feature sent", () => {
     const [screen] = updateOfflineScreen(
-      parsing,
+      empty,
       actions.requestSettled("other", parseRequest, {
         ok: true,
         data: { format: "srt", cues: [cue] },
       }),
     );
-    expect(screen).toBe(parsing);
+    expect(screen).toBe(empty);
   });
 });

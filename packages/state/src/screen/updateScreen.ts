@@ -12,7 +12,10 @@ import { mediaFileRequest } from "./mediaScreen/playbackRequests.ts";
 import { endSourceMedia } from "./mediaScreen/sourceMedia/sourceMediaRequests.ts";
 import { updateMediaScreen } from "./mediaScreen/updateMediaScreen.ts";
 import { leaveWaveform } from "./mediaScreen/updateWaveform.ts";
-import { updateOfflineScreen } from "./offlineScreen/updateOfflineScreen.ts";
+import {
+  abortParse,
+  updateOfflineScreen,
+} from "./offlineScreen/updateOfflineScreen.ts";
 import { updateProjectForm } from "./projectForm/updateProjectForm.ts";
 import { endImport } from "./projectScreen/mediaImportRequests.ts";
 import { updateProjectScreen } from "./projectScreen/updateProjectScreen.ts";
@@ -72,6 +75,7 @@ function updateShownScreen(
 function leavingEffects(main: MainScreenState, route: MainRoute) {
   if (main.kind === "project" && route.screen === "project")
     return endImport(route.projectId, main.mediaImport);
+  if (main.kind === "offline") return [abortParse];
   if (main.kind === "media" && route.screen === "media")
     return [
       ...leaveWaveform(main.waveform, route),

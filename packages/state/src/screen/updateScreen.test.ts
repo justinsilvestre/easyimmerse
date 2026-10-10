@@ -50,6 +50,17 @@ describe("updateScreen", () => {
     );
   });
 
+  it("aborts the parse of a subtitles file when the offline screen is left", () => {
+    const [, effects] = apply(
+      actions.navigated({ type: "goHome" }),
+      actions.navigated({ type: "continueOffline" }),
+    );
+    expect(effects).toContainEqual({
+      type: "abortRequest",
+      id: "offline/parseTimedText",
+    });
+  });
+
   it("stops watching a media-source fetch when the project is left", () => {
     const [, effects] = apply(
       actions.navigated({ type: "goHome" }),

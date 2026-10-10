@@ -26,8 +26,8 @@ export type Notice = NoticeContent & {
   heldBy: Readonly<Record<NoticeHold, boolean>>;
 };
 
-/** The notices on screen, oldest first, and the id the next one gets. */
-export type NoticesState = { shown: readonly Notice[]; nextId: number };
+/** The notices on screen, oldest first. */
+export type NoticesState = { shown: readonly Notice[] };
 
-/** No notices shown, and the first id to give. */
-export const initialNoticesState: NoticesState = { shown: [], nextId: 1 };
+/** No notices shown. */
+export const initialNoticesState: NoticesState = { shown: [] };
