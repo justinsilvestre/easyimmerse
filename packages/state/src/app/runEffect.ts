@@ -9,7 +9,7 @@ import { timerEffectRunners } from "../timers/timerEffectRunners.ts";
 import type { TimerTable } from "../timers/timerTable.ts";
 import { unsavedWorkEffectRunners } from "../unsavedWork/unsavedWork.ts";
 import type { AppAction } from "./appAction.ts";
-import type { Effect } from "./effect.ts";
+import type { PerformedEffect } from "./effect.ts";
 
 /** What an effect runner may use: the platform's effects, the store's dispatch, and the store's pending timers and requests. */
 export type EffectContext = {
@@ -35,10 +35,13 @@ const effectRunners = {
   ...platformEffectRunners,
   ...timerEffectRunners,
   ...serverEffectRunners,
-} satisfies EffectRunners<Effect>;
+} satisfies EffectRunners<PerformedEffect>;
 
 /** Performs one effect through the context's collaborators. */
-export function runEffect(effect: Effect, context: EffectContext): void {
-  const run = effectRunners[effect.type] as EffectRunner<Effect>;
+export function runEffect(
+  effect: PerformedEffect,
+  context: EffectContext,
+): void {
+  const run = effectRunners[effect.type] as EffectRunner<PerformedEffect>;
   run(effect, context);
 }

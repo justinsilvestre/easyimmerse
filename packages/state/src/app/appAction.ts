@@ -1,6 +1,8 @@
 import type { Action } from "redux";
 import type { NoticesAction } from "../notices/noticesActions.ts";
 import { noticesActions } from "../notices/noticesActions.ts";
+import type { OperationsAction } from "../operations/operationsActions.ts";
+import { operationsActions } from "../operations/operationsActions.ts";
 import type { PlatformAction } from "../platform/platformActions.ts";
 import { platformActions } from "../platform/platformActions.ts";
 import type { PreferencesAction } from "../preferences/preferencesActions.ts";
@@ -25,6 +27,7 @@ const featureActionCreators = [
   platformActions,
   serverActions,
   noticesActions,
+  operationsActions,
 ] as const;
 
 /** The action creators of each feature. A type-level test checks that no two declare the same action type. */
@@ -52,7 +55,8 @@ export type AppAction =
   | UnsavedWorkAction
   | PlatformAction
   | ServerAction
-  | NoticesAction;
+  | NoticesAction
+  | OperationsAction;
 
 /** Tells whether a Redux action is one of the app's own, as opposed to one from Redux itself or from another slice. */
 export function isAppAction(action: Action): action is AppAction {

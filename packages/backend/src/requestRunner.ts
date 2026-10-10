@@ -29,6 +29,7 @@ type StartRequest<K extends ServerRequestKind> = (
 /**
  * Starts each kind of request through its endpoint, so that its cache tags and lifecycle apply as for any other caller.
  * Queries do not subscribe, so their entry expires as any unused entry does; mutations are not tracked, so they leave no entry.
+ * A job's status is always fetched anew, since the cached status is the one the poll wants to replace.
  */
 export const requestEndpoints = {
   listSubtitleTracks: ({ projectId, mediaFileId }) =>
@@ -52,6 +53,16 @@ export const requestEndpoints = {
     ),
   parseTimedText: ({ request }) =>
     backendApi.endpoints.parseTimedText.initiate(request, { track: false }),
+  getImportJob: ({ jobId }) =>
+    backendApi.endpoints.getImportJob.initiate(jobId, {
+      subscribe: false,
+      forceRefetch: true,
+    }),
+  getMediaSourceJob: ({ projectId, jobId }) =>
+    backendApi.endpoints.getMediaSourceJob.initiate(
+      { projectId, jobId },
+      { subscribe: false, forceRefetch: true },
+    ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

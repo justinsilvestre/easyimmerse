@@ -1,5 +1,7 @@
 import type { Feature } from "../app/feature.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
+import type { JobsState } from "./jobs.ts";
+import { updateJobs } from "./updateJobs.ts";
 
 /** A request sent and not yet settled. */
 export type RequestRecord = {
@@ -18,16 +20,33 @@ export type RequestRecord = {
 export type OperationsState = {
   /** Every request sent and not yet settled, in the order they were asked for. */
   requests: readonly RequestRecord[];
+  /** Server jobs being polled, of either kind, until the feature that started each one stops watching it. */
+  jobs: JobsState;
 };
 
-/** The operations as a feature. It forgets a request once it settles; the root update records the requests sent. */
+/**
+ * The operations as a feature. It forgets a request once it settles and polls the watched jobs;
+ * the root update records the requests sent and the jobs watched.
+ */
 export const operationsFeature: Feature<OperationsState> = {
-  initialState: { requests: [] },
+  initialState: { requests: [], jobs: {} },
   update: (operations, action) => {
-    if (action.type !== "requestSettled") return [operations, []];
-    const requests = operations.requests.filter(({ id }) => id !== action.id);
-    return requests.length === operations.requests.length
-      ? [operations, []]
-      : [{ requests }, []];
+    const [jobs, effects] = updateJobs(operations.jobs, action);
+    const requests = forgetSettled(
+      operations.requests,
+      action.type === "requestSettled" ? action.id : null,
+    );
+    return requests === operations.requests && jobs === operations.jobs
+      ? [operations, effects]
+      : [{ requests, jobs }, effects];
   },
 };
+
+function forgetSettled(
+  requests: readonly RequestRecord[],
+  settledId: string | null,
+): readonly RequestRecord[] {
+  if (settledId === null) return requests;
+  const remaining = requests.filter(({ id }) => id !== settledId);
+  return remaining.length === requests.length ? requests : remaining;
+}

@@ -14,6 +14,13 @@ export type {
   NoticeButton,
   NoticeContent,
 } from "./notices/noticesState.ts";
+export type {
+  JobKind,
+  JobRecord,
+  JobReports,
+} from "./operations/jobs.ts";
+export { jobKey } from "./operations/jobs.ts";
+export { selectJob } from "./operations/operationsSelectors.ts";
 export type { BrowserFileRegistry } from "./platform/browserFileRegistry.ts";
 export { createBrowserFileRegistry } from "./platform/browserFileRegistry.ts";
 export type {

@@ -1,8 +1,10 @@
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  ImportJobStatus,
   ListMediaFilesResponse,
   MediaFile,
+  MediaSourceJob,
   ParseTimedTextRequest,
   SubtitleTrack,
   SubtitleTracksResponse,
@@ -21,7 +23,9 @@ export type ServerRequest =
     }
   | { kind: "listMediaFiles"; projectId: string }
   | { kind: "addMediaFile"; projectId: string; request: AddMediaFileRequest }
-  | { kind: "parseTimedText"; request: ParseTimedTextRequest };
+  | { kind: "parseTimedText"; request: ParseTimedTextRequest }
+  | { kind: "getImportJob"; jobId: string }
+  | { kind: "getMediaSourceJob"; projectId: string; jobId: string };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -33,6 +37,8 @@ export type ServerResponses = {
   listMediaFiles: ListMediaFilesResponse;
   addMediaFile: MediaFile;
   parseTimedText: TimedTextTrack;
+  getImportJob: ImportJobStatus;
+  getMediaSourceJob: MediaSourceJob;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

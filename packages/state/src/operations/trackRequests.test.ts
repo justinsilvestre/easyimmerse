@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Effect } from "../app/effect.ts";
+import type { PerformedEffect } from "../app/effect.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import type { OperationsState, RequestRecord } from "./operations.ts";
 import { trackRequests } from "./trackRequests.ts";
@@ -15,12 +15,16 @@ function waiting(id: string, request: ServerRequest, scope: string) {
   return { id, request, scope, isWaiting: true } satisfies RequestRecord;
 }
 
-function send(id: string, request: ServerRequest, scope?: string): Effect {
+function send(
+  id: string,
+  request: ServerRequest,
+  scope?: string,
+): PerformedEffect {
   return { type: "sendRequest", id, request, scope };
 }
 
 function operationsWith(...requests: RequestRecord[]): OperationsState {
-  return { requests };
+  return { requests, jobs: {} };
 }
 
 describe("trackRequests", () => {

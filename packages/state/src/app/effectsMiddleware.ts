@@ -3,7 +3,7 @@ import type { Effects } from "../platform/effects.ts";
 import { createRequestTable } from "../server/requestTable.ts";
 import type { RequestRunner } from "../server/serverRequest.ts";
 import { createTimerTable } from "../timers/timerTable.ts";
-import type { Effect } from "./effect.ts";
+import type { PerformedEffect } from "./effect.ts";
 import { runEffect } from "./runEffect.ts";
 
 /**
@@ -13,7 +13,7 @@ import { runEffect } from "./runEffect.ts";
 export function createEffectsMiddleware(
   effects: Effects,
   runRequest: RequestRunner,
-  drainEffects: () => readonly Effect[],
+  drainEffects: () => readonly PerformedEffect[],
 ): Middleware {
   const timers = createTimerTable(effects.clock);
   return (api) => {

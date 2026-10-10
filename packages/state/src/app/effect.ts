@@ -1,3 +1,4 @@
+import type { JobsEffect } from "../operations/jobsEffect.ts";
 import type { PlatformEffect } from "../platform/platformCommands.ts";
 import type { PreferencesEffect } from "../preferences/preferencesEffect.ts";
 import type { ScreenEffect } from "../screen/screenEffect.ts";
@@ -14,4 +15,8 @@ export type Effect =
   | UnsavedWorkEffect
   | PlatformEffect
   | TimerEffect
-  | ServerEffect;
+  | ServerEffect
+  | JobsEffect;
+
+/** An effect that the middleware performs: every effect except those the root update translates into others. */
+export type PerformedEffect = Exclude<Effect, JobsEffect>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Effect } from "../app/effect.ts";
+import type { PerformedEffect } from "../app/effect.ts";
 import type { ServerRequest } from "../server/serverRequest.ts";
 import type { RequestRecord } from "./operations.ts";
 import { recordRequestEffects } from "./recordRequestEffects.ts";
@@ -15,7 +15,11 @@ function waiting(id: string, request: ServerRequest, scope: string) {
   return { id, request, scope, isWaiting: true } satisfies RequestRecord;
 }
 
-function send(id: string, request: ServerRequest, scope?: string): Effect {
+function send(
+  id: string,
+  request: ServerRequest,
+  scope?: string,
+): PerformedEffect {
   return { type: "sendRequest", id, request, scope };
 }
 
@@ -141,7 +145,10 @@ describe("recordRequestEffects", () => {
   });
 
   it("passes other effects through", () => {
-    const notice: Effect = { type: "showNotification", message: "Saved" };
+    const notice: PerformedEffect = {
+      type: "showNotification",
+      message: "Saved",
+    };
     const [, effects] = recordRequestEffects(requestsOf(), [notice]);
     expect(effects).toEqual([notice]);
   });

@@ -12,7 +12,7 @@ import { actions } from "./appAction.ts";
 import { createAppStore } from "./createAppStore.ts";
 import type { FakeServerStoreParts } from "./createFakeServerStoreParts.ts";
 import { createFakeServerStoreParts } from "./createFakeServerStoreParts.ts";
-import type { Effect } from "./effect.ts";
+import type { PerformedEffect } from "./effect.ts";
 import { createEffectsMiddleware } from "./effectsMiddleware.ts";
 
 const pickedFile: PickedFile = {
@@ -27,7 +27,7 @@ const pickedMediaFile: PickedMediaFile = {
 
 const timerAction = actions.notificationRequested("Time is up");
 
-const startTimer: Effect = {
+const startTimer: PerformedEffect = {
   type: "startTimer",
   id: "test/a",
   ms: 1_000,
@@ -46,12 +46,16 @@ const aborted: RequestOutcome<"listMediaFiles"> = {
   error: abortedFailure,
 };
 
-const sendListing: Effect = { type: "sendRequest", id: "a", request: listing };
+const sendListing: PerformedEffect = {
+  type: "sendRequest",
+  id: "a",
+  request: listing,
+};
 
 /** Passes one action through an effects middleware whose reducer queued `queued`, and returns the actions the middleware dispatches, then and later. */
 function dispatchedBy(
   effects: Effects,
-  queued: readonly Effect[],
+  queued: readonly PerformedEffect[],
   server: FakeServerStoreParts = createFakeServerStoreParts(),
 ): UnknownAction[] {
   const dispatched: UnknownAction[] = [];

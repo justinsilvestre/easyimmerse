@@ -1,4 +1,4 @@
-import type { Effect } from "../app/effect.ts";
+import type { PerformedEffect } from "../app/effect.ts";
 import type { OperationsState, RequestRecord } from "./operations.ts";
 import { recordRequestEffects, sendEffectOf } from "./recordRequestEffects.ts";
 
@@ -13,15 +13,15 @@ type Requests = readonly RequestRecord[];
  */
 export function trackRequests(
   operations: OperationsState,
-  effects: readonly Effect[],
-): readonly [OperationsState, readonly Effect[]] {
+  effects: readonly PerformedEffect[],
+): readonly [OperationsState, readonly PerformedEffect[]] {
   const [recorded, performed] = recordRequestEffects(
     operations.requests,
     effects,
   );
   const [requests, started] = startNextOfEachScope(recorded);
   return [
-    requests === operations.requests ? operations : { requests },
+    requests === operations.requests ? operations : { ...operations, requests },
     [...performed, ...started],
   ];
 }
@@ -29,12 +29,12 @@ export function trackRequests(
 /** Sends the first waiting request of each scope that has no request in flight. */
 function startNextOfEachScope(
   requests: Requests,
-): readonly [Requests, readonly Effect[]] {
+): readonly [Requests, readonly PerformedEffect[]] {
   const busyScopes = new Set(
     requests.filter((record) => !record.isWaiting).map(({ scope }) => scope),
   );
   const next: RequestRecord[] = [];
-  const started: Effect[] = [];
+  const started: PerformedEffect[] = [];
   for (const record of requests) {
     if (!record.isWaiting || busyScopes.has(record.scope)) {
       next.push(record);

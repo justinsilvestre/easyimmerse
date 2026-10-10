@@ -19,6 +19,7 @@ describe("operationsFeature", () => {
         { id: "a", request: first, isWaiting: false },
         { id: "b", request: second, isWaiting: false },
       ],
+      jobs: {},
     };
     const [next] = operationsFeature.update(
       operations,
@@ -29,7 +30,7 @@ describe("operationsFeature", () => {
   });
 
   it("keeps the operations as they are when the settled request is not recorded", () => {
-    const operations = { requests: [] };
+    const operations = { requests: [], jobs: {} };
     const [next] = operationsFeature.update(
       operations,
       settledFirst,

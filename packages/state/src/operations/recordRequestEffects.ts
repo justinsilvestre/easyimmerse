@@ -1,4 +1,4 @@
-import type { Effect } from "../app/effect.ts";
+import type { PerformedEffect } from "../app/effect.ts";
 import type { ServerEffect } from "../server/serverEffect.ts";
 import type { RequestRecord } from "./operations.ts";
 
@@ -15,10 +15,10 @@ type AbortRequest = Extract<ServerEffect, { type: "abortRequest" }>;
  */
 export function recordRequestEffects(
   requests: Requests,
-  effects: readonly Effect[],
-): readonly [Requests, readonly Effect[]] {
+  effects: readonly PerformedEffect[],
+): readonly [Requests, readonly PerformedEffect[]] {
   let recorded = requests;
-  let performed: Effect[] = [];
+  let performed: PerformedEffect[] = [];
   for (const effect of effects) {
     if (effect.type === "sendRequest") {
       performed = performed.filter((other) => !isWithdrawal(other, effect.id));
@@ -43,7 +43,7 @@ export function recordRequestEffects(
 function recordSend(
   requests: Requests,
   effect: SendRequest,
-): readonly [Requests, readonly Effect[]] {
+): readonly [Requests, readonly PerformedEffect[]] {
   const earlier = requests.find(({ id }) => id === effect.id);
   const scope = earlier ? earlier.scope : effect.scope;
   const isWaiting = scope !== undefined && (earlier?.isWaiting ?? true);
@@ -63,7 +63,7 @@ function recordSend(
 function recordAbort(
   requests: Requests,
   effect: AbortRequest,
-): readonly Effect[] {
+): readonly PerformedEffect[] {
   const aborted = requests.find(({ id }) => id === effect.id);
   if (!aborted?.isWaiting) return [effect];
   return [
@@ -75,13 +75,13 @@ function recordAbort(
   ];
 }
 
-function isWithdrawal(effect: Effect, id: string): boolean {
+function isWithdrawal(effect: PerformedEffect, id: string): boolean {
   return effect.type === "settleWithdrawnRequest" && effect.id === id;
 }
 
 function forgetWithdrawn(
   requests: Requests,
-  withdrawn: readonly Effect[],
+  withdrawn: readonly PerformedEffect[],
 ): Requests {
   if (withdrawn.length === 0) return requests;
   return requests.filter(
