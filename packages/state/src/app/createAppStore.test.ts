@@ -4,7 +4,12 @@ import { selectNotices } from "../notices/noticesSelectors.ts";
 import { runningImportStatus } from "../operations/exampleJobReports.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import { exampleTracksOneEach } from "../screen/mediaScreen/examplePlayback.ts";
-import { fileOnDisk } from "../screen/mediaScreen/playbackTestActions.ts";
+import {
+  fileOnDisk,
+  tracksSettled,
+} from "../screen/mediaScreen/playbackTestActions.ts";
+import { cacheEntry } from "../server/cacheEntry.ts";
+import { emptyServerCache } from "../server/serverCacheWith.ts";
 import { actions } from "./appAction.ts";
 import { createAppStore } from "./createAppStore.ts";
 import {
@@ -31,12 +36,24 @@ describe("createAppStore", () => {
     expect(store.getState().app.server).toEqual({ config: server });
   });
 
-  it("mounts the server reducer under its reducer path", () => {
+  it("mounts the server cache under backend", () => {
     const store = createAppStore(
       createRecordingEffects(),
       createFakeServerStoreParts(),
     );
-    expect(store.getState().fakeServer).toEqual({ mounted: true });
+    expect(store.getState().backend).toEqual(emptyServerCache);
+  });
+
+  it("keeps the answers of settled queries in the fake server's cache", () => {
+    const store = createAppStore(
+      createRecordingEffects(),
+      createFakeServerStoreParts(),
+    );
+    store.dispatch(tracksSettled(exampleTracksOneEach));
+    const file = { projectId: "p1", mediaFileId: "m1" };
+    expect(
+      cacheEntry(store.getState().backend, "getMediaTracks", file)?.data,
+    ).toBe(exampleTracksOneEach);
   });
 
   it("passes dispatched actions through the server middleware", () => {

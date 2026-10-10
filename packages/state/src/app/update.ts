@@ -7,22 +7,28 @@ import { preferencesFeature } from "../preferences/updatePreferences.ts";
 import { routeFeature } from "../route/updateRoute.ts";
 import { screenCommands } from "../screen/screenCommands.ts";
 import { screenFeature } from "../screen/updateScreen.ts";
+import type { ServerCacheSlice } from "../server/cacheEntry.ts";
+import { emptyServerCache } from "../server/serverCacheWith.ts";
 import { serverFeature } from "../server/serverState.ts";
 import { storedPlacesFeature } from "../storedPlaces/updateStoredPlaces.ts";
 import type { AppAction } from "./appAction.ts";
 import type { AppState } from "./appState.ts";
 import { closeGuardEffects } from "./closeGuard.ts";
 import type { Effect, PerformedEffect } from "./effect.ts";
-import type { Feature } from "./feature.ts";
+import type { Feature, ReadableState } from "./feature.ts";
 import { updated } from "./updated.ts";
 
-/** Computes the next state and the effects to perform in response to an action. */
-export type UpdateFunction<S, A, E> = (state: S, action: A) => Update<S, E>;
+/** Computes the next state and the effects to perform in response to an action, given whatever else the update reads. */
+export type UpdateFunction<S, A, E, Reads extends unknown[] = []> = (
+  state: S,
+  action: A,
+  ...reads: Reads
+) => Update<S, E>;
 
 export type Update<S, E> = readonly [S, readonly E[]];
 
 type FeatureTable = {
-  [K in keyof AppState]: Feature<AppState[K], keyof AppState>;
+  [K in keyof AppState]: Feature<AppState[K], keyof ReadableState>;
 };
 
 const features = {
@@ -43,21 +49,25 @@ export const initialAppState = Object.fromEntries(
 ) as AppState;
 
 /**
- * Lets every feature update its own slice, each seeing the state before the action, and gathers their effects in the order of the feature table.
+ * Lets every feature update its own slice, each seeing the state and the server cache before the action, and gathers their effects in the order of the feature table.
  * The state keeps its reference when no slice changes.
  * Beside the features, the root update takes three fixed steps: it adds the platform, screen and flashcard commands, which change no state;
  * it passes every effect through `trackOperations`, which turns the jobs watched into status requests and timers,
  * records the requests sent, and holds back those that must wait; and it guards the app's closing whenever unsaved work
  * begins, and stops once none is left, as `closeGuardEffects` describes.
  */
-export const update: UpdateFunction<AppState, AppAction, PerformedEffect> = (
-  state,
-  action,
-) => {
+export const update: UpdateFunction<
+  AppState,
+  AppAction,
+  PerformedEffect,
+  [backend?: ServerCacheSlice]
+> = (state, action, backend = emptyServerCache) => {
+  // One object per action, holding references to the slices rather than copies of them.
+  const readable: ReadableState = { ...state, backend };
   let next = state;
   const effects: Effect[] = [];
   for (const name of featureNames) {
-    const [slice, sliceEffects] = updateSlice(name, state, action);
+    const [slice, sliceEffects] = updateSlice(name, readable, action);
     if (slice !== state[name]) next = { ...next, [name]: slice };
     effects.push(...sliceEffects);
   }
@@ -72,10 +82,10 @@ export const update: UpdateFunction<AppState, AppAction, PerformedEffect> = (
 
 function updateSlice<K extends keyof AppState>(
   name: K,
-  state: AppState,
+  state: ReadableState,
   action: AppAction,
 ): Update<AppState[K], Effect> {
-  const feature: Feature<AppState[K], keyof AppState> = (
+  const feature: Feature<AppState[K], keyof ReadableState> = (
     features as FeatureTable
   )[name];
   return feature.update(state[name], action, state);

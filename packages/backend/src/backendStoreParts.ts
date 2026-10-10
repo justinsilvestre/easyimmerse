@@ -28,7 +28,6 @@ export function createBackendStoreParts(
   browserFiles: BrowserFiles | null = null,
 ): ServerStoreParts {
   return {
-    reducerPath: backendApi.reducerPath,
     reducer: backendApi.reducer,
     middleware: createMiddleware({
       client,

@@ -1,7 +1,7 @@
 import type { PluginForm } from "@easyimmerse/types";
 import { createSelector } from "reselect";
 import type { AppState } from "../../../app/appState.ts";
-import type { RootState } from "../../../app/createAppStore.ts";
+import type { AppRoot } from "../../../app/createAppStore.ts";
 import { selectIsRequestInFlight } from "../../../operations/operationsSelectors.ts";
 import { mainScreenOf } from "../../../route/route.ts";
 import { sourceMediaIds } from "./sourceMediaRequests.ts";
@@ -20,11 +20,11 @@ export type SourceMediaView = {
  */
 export const selectSourceMedia = createSelector(
   [
-    (state: RootState) =>
+    (state: AppRoot) =>
       state.app.screen.main.kind === "media"
         ? state.app.screen.main.sourceMedia
         : null,
-    (state: RootState) => {
+    (state: AppRoot) => {
       const main = mainScreenOf(state.app.route);
       return (
         main.screen === "media" &&

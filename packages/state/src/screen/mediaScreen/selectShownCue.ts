@@ -1,5 +1,5 @@
 import type { Cue } from "@easyimmerse/types";
-import type { RootState } from "../../app/createAppStore.ts";
+import type { AppRoot } from "../../app/createAppStore.ts";
 import { selectPlayer } from "../screenSelectors.ts";
 import { findCueAt, findCueShownAt } from "./findCue.ts";
 
@@ -9,7 +9,7 @@ import { findCueAt, findCueShownAt } from "./findCue.ts";
  * as long as playback carried on through its end: a seek into the gap between cues shows none.
  */
 export const selectShownCue = (
-  state: RootState,
+  state: AppRoot,
   cues: readonly Cue[],
 ): Cue | null => {
   const { currentTimeSeconds, lastSeekSeconds } = selectPlayer(state);

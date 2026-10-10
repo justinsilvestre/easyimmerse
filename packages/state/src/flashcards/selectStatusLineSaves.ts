@@ -1,5 +1,5 @@
 import { createSelector } from "reselect";
-import type { RootState } from "../app/createAppStore.ts";
+import type { AppRoot } from "../app/createAppStore.ts";
 import { haveSameItems } from "../app/haveSameItems.ts";
 import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
 import { selectFailedSaves } from "./failedSaveSelectors.ts";
@@ -19,8 +19,8 @@ export type StatusLineSave = FailedSave & {
  */
 export const selectStatusLineSaves = createSelector(
   [
-    (state: RootState) => selectMarkedFailedSaves(state),
-    (state: RootState) => state.app.notices.shown,
+    (state: AppRoot) => selectMarkedFailedSaves(state),
+    (state: AppRoot) => state.app.notices.shown,
   ],
   (saves, notices): readonly StatusLineSave[] => {
     const shownKeys = new Set(notices.map(({ key }) => key));
@@ -34,7 +34,7 @@ export const selectStatusLineSaves = createSelector(
 
 /** Returns every failed save, marked with whether its Retry is under way. */
 const selectMarkedFailedSaves = createSelector(
-  [(state: RootState) => selectFailedSaves(state.app), selectFlashcardRequests],
+  [(state: AppRoot) => selectFailedSaves(state.app), selectFlashcardRequests],
   (failedSaves, requests): readonly StatusLineSave[] =>
     failedSaves.map((failedSave) => {
       const flashcardId = failedSaveIdOf(failedSave);

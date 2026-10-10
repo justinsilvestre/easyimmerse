@@ -1,7 +1,7 @@
 import type { Flashcard, FlashcardDraft } from "@easyimmerse/types";
 import { createSelector } from "reselect";
 import type { AppState } from "../app/appState.ts";
-import type { RootState } from "../app/createAppStore.ts";
+import type { AppRoot } from "../app/createAppStore.ts";
 import { selectPendingFlashcard } from "../screen/lookup/lookupSelectors.ts";
 import { selectFlashcardForm } from "../screen/mediaScreen/mediaScreenSelectors.ts";
 import { type FailedSave, failedSaveIdOf } from "./failedSave.ts";
@@ -31,13 +31,13 @@ export type MediaFlashcards = {
 export const selectMediaFlashcards = createSelector(
   [
     (
-      state: RootState,
+      state: AppRoot,
       listed: readonly Flashcard[] | undefined,
       mediaFileId: string,
     ) => selectListedMediaFlashcards(state, listed, mediaFileId),
-    (_state: RootState, _listed: unknown, mediaFileId: string) => mediaFileId,
-    (state: RootState) => selectFailedSaves(state.app),
-    (state: RootState) => selectFlashcardForm(state.app),
+    (_state: AppRoot, _listed: unknown, mediaFileId: string) => mediaFileId,
+    (state: AppRoot) => selectFailedSaves(state.app),
+    (state: AppRoot) => selectFlashcardForm(state.app),
   ],
   (flashcards, mediaFileId, failedSaves, form) => {
     const failed = failedSaves.filter(
@@ -50,8 +50,8 @@ export const selectMediaFlashcards = createSelector(
 /** The listed flashcards of a media file, kept apart from the open card so that editing it leaves them as they were. */
 const selectListedMediaFlashcards = createSelector(
   [
-    (_state: RootState, listed: readonly Flashcard[] | undefined) => listed,
-    (_state: RootState, _listed: unknown, mediaFileId: string) => mediaFileId,
+    (_state: AppRoot, listed: readonly Flashcard[] | undefined) => listed,
+    (_state: AppRoot, _listed: unknown, mediaFileId: string) => mediaFileId,
     selectFlashcardRequests,
   ],
   (listed, mediaFileId, requests) =>

@@ -1,5 +1,5 @@
 import type { AppState } from "../../app/appState.ts";
-import type { RootState } from "../../app/createAppStore.ts";
+import type { AppRoot } from "../../app/createAppStore.ts";
 import { selectReaderPreferences } from "../../preferences/readerPreferences.ts";
 import {
   selectFlashcardForm,
@@ -11,7 +11,7 @@ import {
 } from "./readerScreenState.ts";
 
 /** Returns the reader's state, or its defaults while no media screen is open. */
-export const selectReaderScreen = (state: RootState): ReaderScreenState =>
+export const selectReaderScreen = (state: AppRoot): ReaderScreenState =>
   state.app.screen.main.kind === "media"
     ? state.app.screen.main.reader
     : initialReaderScreen;

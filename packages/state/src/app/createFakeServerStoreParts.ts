@@ -1,7 +1,11 @@
 import type { Action } from "redux";
+import type { CachedQueries, ServerCacheSlice } from "../server/cacheEntry.ts";
+import { cacheKey } from "../server/cacheKey.ts";
+import { emptyServerCache } from "../server/serverCacheWith.ts";
 import type {
   RequestOutcome,
   RequestRunner,
+  RequestSettled,
   RunningRequest,
   ServerRequest,
 } from "../server/serverRequest.ts";
@@ -9,7 +13,10 @@ import { abortedFailure } from "../server/serverRequest.ts";
 import type { ServerConfig } from "../server/serverState.ts";
 import type { ServerStoreParts } from "./createAppStore.ts";
 
-/** Server store parts for tests, which record what passes through them and settle requests only when a test says so. */
+/**
+ * Server store parts for tests, which record what passes through them and settle requests only when a test says so.
+ * Their cache keeps the answer of every query state code reads, as the real cache does, once the request has settled.
+ */
 export type FakeServerStoreParts = ServerStoreParts & {
   /** Every action dispatched through the server middleware, in order. */
   dispatchedActions: Action[];
@@ -21,8 +28,6 @@ export type FakeServerStoreParts = ServerStoreParts & {
     outcome: RequestOutcome<R["kind"]>,
   ): void;
 };
-
-type FakeServerState = { mounted: true };
 
 type Pending = {
   request: ServerRequest;
@@ -54,8 +59,7 @@ export function createFakeServerStoreParts(
   return {
     dispatchedActions,
     sentRequests,
-    reducerPath: "fakeServer",
-    reducer: (state: FakeServerState = { mounted: true }) => state,
+    reducer: cacheAnswers,
     middleware: () => (next) => (action) => {
       dispatchedActions.push(action as Action);
       return next(action);
@@ -75,6 +79,25 @@ export function createFakeServerStoreParts(
 }
 
 const abortedOutcome: RequestOutcome = { ok: false, error: abortedFailure };
+
+const cachedQueryKinds: readonly string[] = [
+  "getMediaTracks",
+  "choosePlaybackMethod",
+] satisfies (keyof CachedQueries)[];
+
+/** Stores the answer of every settled query that state code reads, under the arguments it was sent with. */
+function cacheAnswers(
+  slice: ServerCacheSlice = emptyServerCache,
+  action: Action,
+): ServerCacheSlice {
+  if (action.type !== "requestSettled") return slice;
+  const { request, outcome } = action as RequestSettled;
+  if (!outcome.ok || !cachedQueryKinds.includes(request.kind)) return slice;
+  const { kind, ...queryArgs } = request;
+  const entry = { status: "fulfilled", data: outcome.data };
+  const key = cacheKey(kind, queryArgs);
+  return { ...slice, queries: { ...slice.queries, [key]: entry } };
+}
 
 function startPending(request: ServerRequest) {
   let resolve: (outcome: RequestOutcome) => void = () => {};

@@ -164,7 +164,9 @@ describe("runRequest", () => {
   it("leaves no mutation entry once a mutation settles", async () => {
     const store = createStore(answering({ data: mediaFile }));
     await settle(store, adding);
-    const backend = store.getState().backend as { mutations: object };
+    const backend = store.getState().backend as unknown as {
+      mutations: object;
+    };
     expect(backend.mutations).toEqual({});
   });
 

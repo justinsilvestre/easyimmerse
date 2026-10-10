@@ -3,6 +3,7 @@ export { actions } from "./app/appAction.ts";
 export type { AppState } from "./app/appState.ts";
 export type {
   AppDispatch,
+  AppRoot,
   AppStore,
   EnhancerComposer,
   RootState,
