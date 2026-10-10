@@ -5,6 +5,7 @@ import {
   selectShownCue,
 } from "@easyimmerse/state";
 import type { Cue } from "@easyimmerse/types";
+import { shallowEqual } from "react-redux";
 import { createSelector } from "reselect";
 import { cuesToPrefetch } from "./cuesToPrefetch.ts";
 
@@ -25,12 +26,5 @@ export const selectCuesToPrefetch = createSelector(
       currentMs: currentSeconds * 1000,
       panelSpan,
     }),
-  { memoizeOptions: { resultEqualityCheck: haveSameItems } },
+  { memoizeOptions: { resultEqualityCheck: shallowEqual } },
 );
-
-function haveSameItems(first: readonly Cue[], second: readonly Cue[]): boolean {
-  return (
-    first.length === second.length &&
-    first.every((item, index) => item === second[index])
-  );
-}
