@@ -317,8 +317,8 @@ As a user:
   - [x] the toolbar and progress bar come back when I move the mouse near the top or bottom edge, scroll up, or tap the middle of the page
   - [x] showing or hiding the toolbar and progress bar does not move the text
 - when I close and reopen an ebook or text file:
-  - [ ] I am returned to my last reading position
-  - [ ] the text looks as I last set it: theme, font, size, spacing, and layout
+  - [x] I am returned to my last reading position
+  - [x] the text looks as I last set it: theme, font, size, spacing, and layout
 - when the ebook or text file has been aligned with an audio file:
   - [ ] I can click on a sentence/segment to play the matching audio
   - [ ] the sentence/segment currently being spoken is highlighted during playback
