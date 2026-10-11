@@ -5,8 +5,8 @@ import type { TextSpan } from "./TextSpan";
  * Text of a document paired with the text of its translation that says the same thing.
  *
  * Either side may hold several spans, for a sentence the translation splits in two or joins
- * with the next, and either side may be empty, for text the translation leaves out or adds.
- * The spans on each side are sorted and do not overlap.
+ * with the next, and either side may be empty, for text the translation leaves out or adds,
+ * but not both. The spans on each side are sorted and do not overlap.
  */
 export type TranslationLink = { 
 /**

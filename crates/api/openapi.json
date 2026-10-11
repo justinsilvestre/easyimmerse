@@ -2829,7 +2829,7 @@
             }
           },
           "400": {
-            "description": "A span or segment ends before it starts, or the counterpart is not another media file of the project",
+            "description": "A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project",
             "content": {
               "application/json": {
                 "schema": {
@@ -5091,6 +5091,27 @@
           }
         }
       },
+      "ChapterProvenance": {
+        "type": "object",
+        "description": "Where the paragraphs of one chapter came from.",
+        "required": [
+          "href",
+          "paragraphs"
+        ],
+        "properties": {
+          "href": {
+            "type": "string",
+            "description": "The path of the chapter's content document inside the EPUB archive: the manifest\nitem's href resolved against the package document's directory and percent-decoded,\nas in `OEBPS/chapter1.xhtml`."
+          },
+          "paragraphs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParagraphProvenance"
+            },
+            "description": "One per entry of the chapter's `paragraphs`, in the same order."
+          }
+        }
+      },
       "ColumnRole": {
         "type": "string",
         "description": "What a column of a table holds, as a person choosing the columns of a table sees it.",
@@ -5615,6 +5636,17 @@
               "null"
             ]
           },
+          "provenance": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DocumentProvenance",
+                "description": "Where each paragraph came from in the source file, for formats that address their text\nby element ids (EPUB). Absent for plain text."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "title": {
             "type": "string"
           }
@@ -5626,6 +5658,22 @@
           "epub",
           "plain_text"
         ]
+      },
+      "DocumentProvenance": {
+        "type": "object",
+        "description": "Where the paragraphs of a parsed EPUB came from, so that text addressed by element id\n(as media overlays address it) can be turned into positions in the parsed document.",
+        "required": [
+          "chapters"
+        ],
+        "properties": {
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChapterProvenance"
+            },
+            "description": "One per entry of `Document.chapters`, in the same order."
+          }
+        }
       },
       "EmbeddedSubtitleTracksResponse": {
         "type": "object",
@@ -6319,6 +6367,32 @@
         ],
         "description": "The plugin's answer to an action in its import interface: the next form to show, or the\njob that runs the import."
       },
+      "InlineElementId": {
+        "type": "object",
+        "description": "An element with an `id` inside a paragraph's block, and the range its text occupies in the\nparagraph after whitespace is collapsed.",
+        "required": [
+          "id",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "end": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The UTF-16 code unit just after the element's text.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string"
+          },
+          "start": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The first UTF-16 code unit of the element's text within the paragraph. An element whose\ntext is empty after collapsing whitespace has an empty range at its position.",
+            "minimum": 0
+          }
+        }
+      },
       "InstalledPlugin": {
         "type": "object",
         "description": "A plugin the server found in its plugin directory.",
@@ -6915,6 +6989,29 @@
           "id": {
             "$ref": "#/components/schemas/FlashcardId",
             "description": "Thirty-two lowercase hexadecimal digits, as in the ids the app makes."
+          }
+        }
+      },
+      "ParagraphProvenance": {
+        "type": "object",
+        "description": "Where one paragraph came from in its content document.",
+        "required": [
+          "inline_ids"
+        ],
+        "properties": {
+          "element_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The `id` attribute of the block element the paragraph was extracted from."
+          },
+          "inline_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InlineElementId"
+            },
+            "description": "Every element with an `id` inside the block, in document order."
           }
         }
       },
@@ -7896,7 +7993,7 @@
       },
       "TextSpan": {
         "type": "object",
-        "description": "A range of one paragraph of a parsed document.\n\n`chapter_index` and `paragraph_index` count from zero within the parsed document.\n`start` and `end` are offsets into the paragraph string counted in UTF-16 code units,\nexactly as JavaScript's `String` indexes them, and `end` is exclusive. Rust code treats\nthe offsets as opaque numbers and never slices paragraphs by them. A span never crosses\na paragraph; text that covers several paragraphs is a list of spans.",
+        "description": "A range of one paragraph of a parsed document.\n\n`chapter_index` and `paragraph_index` count from zero within the parsed document.\n`start` and `end` are offsets into the paragraph string counted in UTF-16 code units,\nexactly as JavaScript's `String` indexes them, and `end` is exclusive. Rust code treats\nthe offsets as opaque numbers and never slices paragraphs by them. A span never crosses\na paragraph; text that covers several paragraphs is a list of spans.\n\nThe position is only valid for the document as the current parser produces it; `quote`\nis what identifies the passage once the parser changes.",
         "required": [
           "chapter_index",
           "paragraph_index",
@@ -7919,6 +8016,13 @@
             "type": "integer",
             "format": "int32",
             "minimum": 0
+          },
+          "quote": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The text the span covers, as the parser produced it. Optional in the type so that\ntests can write spans tersely, but every provider and importer sets it. The reader\nignores a span whose quote no longer matches the text at its position."
           },
           "start": {
             "type": "integer",
@@ -8183,7 +8287,7 @@
       },
       "TranslationLink": {
         "type": "object",
-        "description": "Text of a document paired with the text of its translation that says the same thing.\n\nEither side may hold several spans, for a sentence the translation splits in two or joins\nwith the next, and either side may be empty, for text the translation leaves out or adds.\nThe spans on each side are sorted and do not overlap.",
+        "description": "Text of a document paired with the text of its translation that says the same thing.\n\nEither side may hold several spans, for a sentence the translation splits in two or joins\nwith the next, and either side may be empty, for text the translation leaves out or adds,\nbut not both. The spans on each side are sorted and do not overlap.",
         "required": [
           "spans",
           "translation_spans"

@@ -75,6 +75,20 @@ async fn an_added_alignment_keeps_its_content() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn an_added_alignment_keeps_the_quotes_of_its_spans() {
+    let server = spawn_test_server(false).await;
+    let book_id = add_media(&server, PROJECT, "book.epub").await;
+    let audio_id = add_media(&server, PROJECT, "book.mp3").await;
+    let mut request = audio_request(&audio_id);
+    request["content"]["segments"][0]["span"]["quote"] = json!("Hello there!");
+    let added = add_alignment(&server, &book_id, &request).await;
+    assert_eq!(
+        added["content"]["segments"][0]["span"]["quote"],
+        json!("Hello there!")
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn does_not_list_the_alignments_of_a_media_file_of_another_project() {
     let server = spawn_test_server(false).await;
     let book_id = add_media(&server, OTHER_PROJECT, "book.epub").await;
@@ -117,6 +131,38 @@ async fn refuses_a_segment_that_ends_before_it_starts() {
     let audio_id = add_media(&server, PROJECT, "book.mp3").await;
     let mut request = audio_request(&audio_id);
     request["content"]["segments"][0]["start_ms"] = json!(2000);
+    let response = server
+        .post_json(&alignments_route(PROJECT, &book_id, ""), &request)
+        .await;
+    assert_eq!(response.status, 400);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_a_span_whose_quote_is_not_as_long_as_the_span() {
+    let server = spawn_test_server(false).await;
+    let book_id = add_media(&server, PROJECT, "book.epub").await;
+    let audio_id = add_media(&server, PROJECT, "book.mp3").await;
+    let mut request = audio_request(&audio_id);
+    request["content"]["segments"][0]["span"]["quote"] = json!("too short");
+    let response = server
+        .post_json(&alignments_route(PROJECT, &book_id, ""), &request)
+        .await;
+    assert_eq!(response.status, 400);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_a_translation_link_with_no_spans_on_either_side() {
+    let server = spawn_test_server(false).await;
+    let book_id = add_media(&server, PROJECT, "book.epub").await;
+    let translation_id = add_media(&server, PROJECT, "translation.txt").await;
+    let request = json!({
+        "provider": null,
+        "content": {
+            "kind": "translation",
+            "translation_media_file_id": translation_id,
+            "links": [{ "spans": [], "translation_spans": [] }],
+        },
+    });
     let response = server
         .post_json(&alignments_route(PROJECT, &book_id, ""), &request)
         .await;

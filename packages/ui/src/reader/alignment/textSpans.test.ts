@@ -23,6 +23,10 @@ function span(
   };
 }
 
+function quoted(span: TextSpan, quote: string): TextSpan {
+  return { ...span, quote };
+}
+
 function createDocument(): Document {
   return {
     title: "Book",
@@ -124,6 +128,31 @@ describe("clampSpanToDocument", () => {
   it("returns null for a chapter the document does not have", () => {
     expect(clampSpanToDocument(span(2, 0, 0, 2), createDocument())).toBeNull();
   });
+
+  it("keeps a span whose quote matches the text at its position", () => {
+    const hund = quoted(span(0, 0, 4, 8), "Hund");
+    expect(clampSpanToDocument(hund, createDocument())).toEqual(hund);
+  });
+
+  it("returns null for a span whose quote differs from the text at its position", () => {
+    expect(
+      clampSpanToDocument(quoted(span(0, 0, 4, 8), "Katze"), createDocument()),
+    ).toBeNull();
+  });
+
+  it("compares the quote with the text at the clamped position", () => {
+    expect(
+      clampSpanToDocument(
+        quoted(span(0, 1, 10, 99), "isst."),
+        createDocument(),
+      ),
+    ).toEqual(quoted(span(0, 1, 10, 15), "isst."));
+  });
+
+  it("compares the quote in UTF-16 code units", () => {
+    const moon = quoted(span(1, 0, 11, 18), "🌙 alle");
+    expect(clampSpanToDocument(moon, createDocument())).toEqual(moon);
+  });
 });
 
 describe("textOfSpan", () => {
@@ -138,6 +167,18 @@ describe("textOfSpan", () => {
   it("returns an empty string for a span outside the document", () => {
     expect(textOfSpan(createDocument(), span(3, 0, 0, 2))).toBe("");
   });
+
+  it("returns the text of a span whose quote matches it", () => {
+    expect(textOfSpan(createDocument(), quoted(span(0, 0, 4, 8), "Hund"))).toBe(
+      "Hund",
+    );
+  });
+
+  it("returns an empty string for a span whose quote does not match", () => {
+    expect(
+      textOfSpan(createDocument(), quoted(span(0, 0, 4, 8), "Katze")),
+    ).toBe("");
+  });
 });
 
 describe("textOfSpans", () => {
@@ -150,6 +191,15 @@ describe("textOfSpans", () => {
   it("leaves out spans outside the document", () => {
     expect(
       textOfSpans(createDocument(), [span(0, 0, 4, 8), span(5, 0, 0, 2)]),
+    ).toBe("Hund");
+  });
+
+  it("leaves out spans whose quote does not match", () => {
+    expect(
+      textOfSpans(createDocument(), [
+        span(0, 0, 4, 8),
+        quoted(span(0, 1, 4, 9), "Hund"),
+      ]),
     ).toBe("Hund");
   });
 });

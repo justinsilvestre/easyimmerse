@@ -8,6 +8,9 @@
  * exactly as JavaScript's `String` indexes them, and `end` is exclusive. Rust code treats
  * the offsets as opaque numbers and never slices paragraphs by them. A span never crosses
  * a paragraph; text that covers several paragraphs is a list of spans.
+ *
+ * The position is only valid for the document as the current parser produces it; `quote`
+ * is what identifies the passage once the parser changes.
  */
 export type TextSpan = { chapter_index: number, paragraph_index: number, 
 /**
@@ -17,4 +20,10 @@ start: number,
 /**
  * The UTF-16 code unit just after the span.
  */
-end: number, };
+end: number, 
+/**
+ * The text the span covers, as the parser produced it. Optional in the type so that
+ * tests can write spans tersely, but every provider and importer sets it. The reader
+ * ignores a span whose quote no longer matches the text at its position.
+ */
+quote?: string, };

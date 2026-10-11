@@ -57,7 +57,7 @@ pub async fn list_alignments(
     request_body = AddAlignmentRequest,
     responses(
         (status = 201, description = "The added alignment", body = Alignment),
-        (status = 400, description = "A span or segment ends before it starts, or the counterpart is not another media file of the project", body = ApiError),
+        (status = 400, description = "A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such media file in the project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),

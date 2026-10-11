@@ -990,6 +990,17 @@ export interface components {
             paragraphs: string[];
             title?: string | null;
         };
+        /** @description Where the paragraphs of one chapter came from. */
+        ChapterProvenance: {
+            /**
+             * @description The path of the chapter's content document inside the EPUB archive: the manifest
+             *     item's href resolved against the package document's directory and percent-decoded,
+             *     as in `OEBPS/chapter1.xhtml`.
+             */
+            href: string;
+            /** @description One per entry of the chapter's `paragraphs`, in the same order. */
+            paragraphs: components["schemas"]["ParagraphProvenance"][];
+        };
         /**
          * @description What a column of a table holds, as a person choosing the columns of a table sees it.
          * @enum {string}
@@ -1148,10 +1159,19 @@ export interface components {
         Document: {
             chapters: components["schemas"]["Chapter"][];
             language?: string | null;
+            provenance?: components["schemas"]["DocumentProvenance"] | null;
             title: string;
         };
         /** @enum {string} */
         DocumentFormat: "epub" | "plain_text";
+        /**
+         * @description Where the paragraphs of a parsed EPUB came from, so that text addressed by element id
+         *     (as media overlays address it) can be turned into positions in the parsed document.
+         */
+        DocumentProvenance: {
+            /** @description One per entry of `Document.chapters`, in the same order. */
+            chapters: components["schemas"]["ChapterProvenance"][];
+        };
         EmbeddedSubtitleTracksResponse: {
             tracks: components["schemas"]["TrackInfo"][];
         };
@@ -1359,6 +1379,24 @@ export interface components {
             /** @enum {string} */
             kind: "job";
         };
+        /**
+         * @description An element with an `id` inside a paragraph's block, and the range its text occupies in the
+         *     paragraph after whitespace is collapsed.
+         */
+        InlineElementId: {
+            /**
+             * Format: int32
+             * @description The UTF-16 code unit just after the element's text.
+             */
+            end: number;
+            id: string;
+            /**
+             * Format: int32
+             * @description The first UTF-16 code unit of the element's text within the paragraph. An element whose
+             *     text is empty after collapsing whitespace has an empty range at its position.
+             */
+            start: number;
+        };
         /** @description A plugin the server found in its plugin directory. */
         InstalledPlugin: {
             /** @description The text of the plugin's import button. Set for media-source plugins only. */
@@ -1542,6 +1580,13 @@ export interface components {
             draft: components["schemas"]["FlashcardDraft"];
             /** @description Thirty-two lowercase hexadecimal digits, as in the ids the app makes. */
             id: components["schemas"]["FlashcardId"];
+        };
+        /** @description Where one paragraph came from in its content document. */
+        ParagraphProvenance: {
+            /** @description The `id` attribute of the block element the paragraph was extracted from. */
+            element_id?: string | null;
+            /** @description Every element with an `id` inside the block, in document order. */
+            inline_ids: components["schemas"]["InlineElementId"][];
         };
         ParseLocalDocumentRequest: {
             format?: components["schemas"]["DocumentFormat"] | null;
@@ -1844,6 +1889,9 @@ export interface components {
          *     exactly as JavaScript's `String` indexes them, and `end` is exclusive. Rust code treats
          *     the offsets as opaque numbers and never slices paragraphs by them. A span never crosses
          *     a paragraph; text that covers several paragraphs is a list of spans.
+         *
+         *     The position is only valid for the document as the current parser produces it; `quote`
+         *     is what identifies the passage once the parser changes.
          */
         TextSpan: {
             /** Format: int32 */
@@ -1855,6 +1903,12 @@ export interface components {
             end: number;
             /** Format: int32 */
             paragraph_index: number;
+            /**
+             * @description The text the span covers, as the parser produced it. Optional in the type so that
+             *     tests can write spans tersely, but every provider and importer sets it. The reader
+             *     ignores a span whose quote no longer matches the text at its position.
+             */
+            quote?: string | null;
             /**
              * Format: int32
              * @description The first UTF-16 code unit of the span within the paragraph.
@@ -1953,8 +2007,8 @@ export interface components {
          * @description Text of a document paired with the text of its translation that says the same thing.
          *
          *     Either side may hold several spans, for a sentence the translation splits in two or joins
-         *     with the next, and either side may be empty, for text the translation leaves out or adds.
-         *     The spans on each side are sorted and do not overlap.
+         *     with the next, and either side may be empty, for text the translation leaves out or adds,
+         *     but not both. The spans on each side are sorted and do not overlap.
          */
         TranslationLink: {
             /** @description Spans of the aligned document. */
@@ -4118,7 +4172,7 @@ export interface operations {
                     "application/json": components["schemas"]["Alignment"];
                 };
             };
-            /** @description A span or segment ends before it starts, or the counterpart is not another media file of the project */
+            /** @description A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project */
             400: {
                 headers: {
                     [name: string]: unknown;

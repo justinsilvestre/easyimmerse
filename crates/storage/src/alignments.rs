@@ -142,6 +142,7 @@ mod tests {
             paragraph_index: 0,
             start,
             end,
+            quote: None,
         }
     }
 

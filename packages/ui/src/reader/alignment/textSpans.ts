@@ -50,9 +50,11 @@ export function spansOfParagraph(
 }
 
 /**
- * The span cut to the paragraph it addresses, or null when the document has no such chapter or paragraph.
+ * The span cut to the paragraph it addresses, or null when the document has no such chapter or paragraph,
+ * or when the span has a quote and the text at its clamped position differs from it.
  * Its start and end are clamped to the paragraph's length, so a span past the end of the text becomes empty.
- * Saved alignments go stale when the parser splits a document differently, and this keeps them usable.
+ * Saved alignments go stale when the parser splits a document differently: this keeps them usable,
+ * and ignores a span whose quote shows that it now points at other text.
  */
 export function clampSpanToDocument(
   span: TextSpan,
@@ -60,17 +62,22 @@ export function clampSpanToDocument(
 ): TextSpan | null {
   const paragraph = paragraphOf(document, span);
   if (paragraph === undefined) return null;
-  return {
-    ...span,
-    start: Math.min(span.start, paragraph.length),
-    end: Math.min(span.end, paragraph.length),
-  };
+  const start = Math.min(span.start, paragraph.length);
+  const end = Math.min(span.end, paragraph.length);
+  if (
+    typeof span.quote === "string" &&
+    span.quote !== paragraph.slice(start, end)
+  )
+    return null;
+  return { ...span, start, end };
 }
 
-/** The text a span covers, or an empty string when it lies outside the document. */
+/** The text a span covers, or an empty string when it lies outside the document or its quote does not match. */
 export function textOfSpan(document: Document, span: TextSpan): string {
-  const paragraph = paragraphOf(document, span);
-  return paragraph === undefined ? "" : paragraph.slice(span.start, span.end);
+  const clamped = clampSpanToDocument(span, document);
+  return clamped === null
+    ? ""
+    : (paragraphOf(document, clamped) ?? "").slice(clamped.start, clamped.end);
 }
 
 /** The text the spans cover, joined with single spaces, leaving out spans that cover no text of the document. */
