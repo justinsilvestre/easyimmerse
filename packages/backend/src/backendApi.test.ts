@@ -1,4 +1,5 @@
 import type {
+  AddAlignmentRequest,
   LookupResponse,
   MediaFile,
   PlaybackMethodRequest,
@@ -118,6 +119,11 @@ function createStore(client: BackendClient) {
 
 const mediaArgs = { projectId: "p1", mediaFileId: "m1" };
 
+const audioAlignmentRequest: AddAlignmentRequest = {
+  provider: null,
+  content: { kind: "audio", audio_media_file_id: "a1", segments: [] },
+};
+
 const playbackRequest: PlaybackMethodRequest = {
   environment: {
     engine: "webkit",
@@ -178,6 +184,7 @@ const addedBook: MediaFile = {
   created_at_ms: 0,
   track_selection_json: null,
   origin: null,
+  translation_media_file_id: null,
 };
 
 /** Lists no media files at first, adds a book, and leaves the list's refetch pending. */
@@ -452,6 +459,59 @@ describe("backendApi", () => {
     expect(client.requests).toEqual([
       { method: "GET", path: "/projects/p1/media/m1/subtitles" },
     ]);
+  });
+
+  it("sends GET .../alignments for listAlignments", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.listAlignments.initiate(mediaArgs),
+    );
+    expect(client.requests).toEqual([
+      { method: "GET", path: "/projects/p1/media/m1/alignments" },
+    ]);
+  });
+
+  it("posts the request body for addAlignment", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.addAlignment.initiate({
+        ...mediaArgs,
+        body: audioAlignmentRequest,
+      }),
+    );
+    expect(client.requests[0]).toEqual({
+      method: "POST",
+      path: "/projects/p1/media/m1/alignments",
+      body: { kind: "json", value: audioAlignmentRequest },
+    });
+  });
+
+  it("sends DELETE .../alignments/{alignment_id} for removeAlignment", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.removeAlignment.initiate({
+        ...mediaArgs,
+        alignmentId: "al1",
+      }),
+    );
+    expect(client.requests).toEqual([
+      { method: "DELETE", path: "/projects/p1/media/m1/alignments/al1" },
+    ]);
+  });
+
+  it("puts the selection for setTranslationDocument", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.setTranslationDocument.initiate({
+        ...mediaArgs,
+        body: { translation_media_file_id: "t1" },
+      }),
+    );
+    expect(client.requests[0]).toEqual({
+      method: "PUT",
+      path: "/projects/p1/media/m1/translation-document",
+      body: { kind: "json", value: { translation_media_file_id: "t1" } },
+    });
   });
 
   it("sends GET /conversion-cache for getConversionCacheStatus", async () => {

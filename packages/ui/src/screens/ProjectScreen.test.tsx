@@ -119,6 +119,7 @@ describe("ProjectScreen", () => {
       created_at_ms: 0,
       track_selection_json: null,
       origin: null,
+      translation_media_file_id: null,
     };
     const client = createFakeBackendClient({
       ...fixtureResponses,

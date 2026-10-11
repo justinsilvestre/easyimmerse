@@ -411,6 +411,7 @@ describe("MediaPlayer", () => {
             created_at_ms: 1,
             track_selection_json: null,
             origin: null,
+            translation_media_file_id: null,
           },
         ],
       };

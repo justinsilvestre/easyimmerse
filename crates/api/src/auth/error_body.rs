@@ -90,7 +90,9 @@ impl From<StorageError> for ApiFailure {
             | StorageError::ProjectNotFound(_)
             | StorageError::MediaFileNotFound(_)
             | StorageError::FlashcardNotFound(_)
-            | StorageError::SubtitleTrackNotFound(_) => not_found(error.to_string()),
+            | StorageError::SubtitleTrackNotFound(_)
+            | StorageError::AlignmentNotFound(_) => not_found(error.to_string()),
+            StorageError::PairedWithItself(_) => bad_request(error.to_string()),
             StorageError::FlashcardIdTaken(_) => conflict(error.to_string()),
             StorageError::DictionaryAlreadyImported(_) => ApiFailure::new(
                 StatusCode::CONFLICT,

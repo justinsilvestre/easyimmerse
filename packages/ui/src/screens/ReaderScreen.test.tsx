@@ -38,6 +38,7 @@ const bookFile: MediaFile = {
   created_at_ms: 0,
   track_selection_json: null,
   origin: null,
+  translation_media_file_id: null,
 };
 
 const secondChapter = { chapterIndex: 1, paragraphIndex: 1, offset: 4 };
