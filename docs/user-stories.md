@@ -320,8 +320,8 @@ As a user:
   - [x] I am returned to my last reading position
   - [x] the text looks as I last set it: theme, font, size, spacing, and layout
 - when the ebook or text file has been aligned with an audio file:
-  - [ ] I can click on a sentence/segment to play the matching audio
-  - [ ] the sentence/segment currently being spoken is highlighted during playback
+  - [x] I can Ctrl-click (Cmd-click on a Mac) on a sentence/segment to play the matching audio
+  - [x] the sentence/segment currently being spoken is highlighted during playback
 - when a translation is opened:
   - [ ] I can switch between
       - target language text only

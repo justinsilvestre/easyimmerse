@@ -36,6 +36,8 @@ export type ReaderWordGestures = {
 type WordPointerCallbacks = ReaderWordGestures & {
   /** A click or tap that landed on no word. */
   onBlankClick: (event: MouseEvent<HTMLElement>) => void;
+  /** A mouse click on a word with Ctrl or Cmd held. Without it, such a click counts as a plain click. */
+  onWordCommandClick?: (word: ReaderWord) => void;
 };
 
 /** How far the pointer may travel between press and release for the press to count as a click rather than a drag. */
@@ -66,6 +68,15 @@ export function useWordPointer(
     point: ViewportPoint,
   ) => {
     const input = press.isTouch() ? "touch" : "mouse";
+    const { onWordCommandClick } = latest.current;
+    if (
+      input === "mouse" &&
+      onWordCommandClick &&
+      (event.ctrlKey || event.metaKey)
+    ) {
+      memory.forget();
+      return onWordCommandClick(word);
+    }
     const first =
       input === "touch"
         ? memory.takeDoubleTap(point)

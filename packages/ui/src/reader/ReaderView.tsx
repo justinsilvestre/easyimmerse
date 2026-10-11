@@ -10,6 +10,7 @@ import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
 import type { AnchorRect } from "../lookup/placeAtAnchor.ts";
 import type { PopupSize } from "../lookup/popupSize.ts";
 import { AppearancePanel } from "./AppearancePanel.tsx";
+import { clampSpanToDocument } from "./alignment/textSpans.ts";
 import { ChapterEnd } from "./ChapterEnd.tsx";
 import { ChapterText } from "./ChapterText.tsx";
 import { ContentsPanel } from "./ContentsPanel.tsx";
@@ -23,6 +24,7 @@ import { LookupAnchor } from "./LookupAnchor.tsx";
 import { PagedChapter } from "./PagedChapter.tsx";
 import { ReaderFooter } from "./ReaderFooter.tsx";
 import { ReaderToolbar } from "./ReaderToolbar.tsx";
+import type { ReaderAudio } from "./readerAudio.ts";
 import { type ReaderControls, useReaderControls } from "./readerControls.ts";
 import {
   fontFamilies,
@@ -44,6 +46,7 @@ import {
   useLookedUpHighlight,
 } from "./useLookedUpHighlight.ts";
 import { useParagraphsNearView } from "./useParagraphsNearView.ts";
+import { useSpokenHighlight } from "./useSpokenHighlight.ts";
 import { type ReaderWordGestures, useWordPointer } from "./useWordPointer.ts";
 
 export type ReaderCallbacks = ReaderWordGestures & {
@@ -97,6 +100,8 @@ type ReaderViewProps = {
   sidePanel?: ReactNode;
   /** The parts of the view that the reader's keys work, from the screen that binds the keys. */
   controls?: ReaderControls;
+  /** The audio the book is aligned with, which plays its sentences and shows the one being spoken; absent when it has none. */
+  audio?: ReaderAudio;
 };
 
 const searchLimit = 500;
@@ -110,6 +115,8 @@ const sectionCharacterLimit = 250_000;
  * The screen for reading an ebook or a text file.
  * The text fills the window, set like a book; the toolbar and progress bar fade in when they are wanted.
  * Words are looked up and turned into flashcards with the same gestures as in the subtitles.
+ * In a book aligned with audio, a Ctrl-click or Cmd-click on a word plays its sentence, the sentence being spoken is highlighted,
+ * and the text follows it, as `useSpokenHighlight` describes.
  */
 export function ReaderView(props: ReaderViewProps) {
   const { document, location, reader, dispatch, mediaFileId } = props;
@@ -177,6 +184,23 @@ export function ReaderView(props: ReaderViewProps) {
       );
     else goToChapter(index < 0 ? chapterIndex - 1 : chapterIndex + 1, edge);
   };
+  const spoken = props.audio?.spokenSpan ?? null;
+  const spokenSpan = useMemo(
+    () => spoken && clampSpanToDocument(spoken, document),
+    [spoken, document],
+  );
+  useSpokenHighlight(
+    textContainer,
+    spokenSpan,
+    props.audio?.isPlaying ?? false,
+    shownText,
+    (span) =>
+      jumpTo({
+        chapterIndex: span.chapter_index,
+        paragraphIndex: span.paragraph_index,
+        offset: span.start,
+      }),
+  );
   const turn = (direction: "next" | "previous") => {
     if (isPaged) turner.current?.[direction]();
     else goToChapter(chapterIndex + (direction === "next" ? 1 : -1), "start");
@@ -188,6 +212,7 @@ export function ReaderView(props: ReaderViewProps) {
     onWordPointed: callbacks.onWordPointed,
     onWordHover: callbacks.onWordHover,
     onWordHold: callbacks.onWordHold,
+    onWordCommandClick: props.audio?.onPlayWord,
     onBlankClick: (event) => {
       if (hasLookup) return callbacks.onDismissLookup();
       const share = event.clientX / window.innerWidth;
@@ -311,6 +336,7 @@ export function ReaderView(props: ReaderViewProps) {
         chapterTitle={chapterTitle}
         chapterStarts={chapterStarts}
         isVisible={reader.isChromeVisible}
+        audioBar={props.audio?.bar}
         chapterTitleAt={(at) =>
           chapterTitleOf(
             document,
@@ -320,6 +346,7 @@ export function ReaderView(props: ReaderViewProps) {
         onScrub={(at) => jumpTo(locationAtProgress(document, at))}
         onReveal={showChrome}
       />
+      {props.audio?.dialogs}
       {props.lookup && (
         <LookupAnchor
           wordRect={props.lookupRect ?? null}

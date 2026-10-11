@@ -30,11 +30,13 @@ import {
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
 import { ConnectedReaderView } from "./ConnectedReaderView.tsx";
+import { exampleAudioAlignment } from "./exampleAudioAlignment.ts";
 import {
   exampleNovel,
   examplePlainText,
   exampleShortBook,
 } from "./exampleDocuments.ts";
+import { ReaderAudioBar } from "./ReaderAudioBar.tsx";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 import { useReaderKeyBindings } from "./useReaderKeyBindings.ts";
 import type { ReaderWord } from "./useWordPointer.ts";
@@ -325,6 +327,35 @@ export const PlainTextFile: Story = {
 export const ShortBook: Story = {
   decorators: openedWith(),
   args: { document: exampleShortBook, title: "Sample Book", language: "en" },
+};
+
+const audioContent = exampleAudioAlignment("a1").content;
+const audioSegments =
+  audioContent.kind === "audio" ? audioContent.segments : [];
+
+/** The short book aligned with its audio, paused in the second sentence, which is highlighted as spoken. */
+export const AlignedWithAudio: Story = {
+  decorators: openedWith(),
+  args: {
+    document: exampleShortBook,
+    title: "Sample Book",
+    language: "en",
+    audio: {
+      bar: (
+        <ReaderAudioBar
+          isPlaying={false}
+          currentMs={1000}
+          durationMs={3030}
+          failure={null}
+          onTogglePlay={fn()}
+          onSeek={fn()}
+        />
+      ),
+      spokenSpan: audioSegments[1]?.span ?? null,
+      isPlaying: false,
+      onPlayWord: fn(),
+    },
+  },
 };
 
 const fixtureFiles = [

@@ -1,6 +1,6 @@
 import type { PageInfo } from "@easyimmerse/state";
 import clsx from "clsx";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 /** The steps of the progress slider. */
 const sliderSteps = 1000;
@@ -10,6 +10,7 @@ const sliderSteps = 1000;
  * A quiet line of page and percentage stays at the bottom of the page;
  * while the toolbar shows, a slider above it moves through the whole book, with a tick at the start of each chapter.
  * Like the toolbar, the hidden slider lets clicks through but stays in the tab order.
+ * The player of the audio the book is aligned with, when it has one, shows above the slider.
  */
 export function ReaderFooter({
   progress,
@@ -17,6 +18,7 @@ export function ReaderFooter({
   chapterTitle,
   chapterStarts,
   isVisible,
+  audioBar,
   chapterTitleAt,
   onScrub,
   onReveal,
@@ -28,6 +30,8 @@ export function ReaderFooter({
   /** Where each chapter starts, from 0 to 1. */
   chapterStarts: readonly number[];
   isVisible: boolean;
+  /** The player of the audio the book is aligned with, shown with the slider. */
+  audioBar?: ReactNode;
   /** Names the chapter at a point in the book, for the slider's preview. */
   chapterTitleAt: (progress: number) => string | null;
   onScrub: (progress: number) => void;
@@ -52,6 +56,7 @@ export function ReaderFooter({
         )}
         onFocus={onReveal}
       >
+        {audioBar}
         <div className="relative flex h-5 items-center">
           {chapterStarts.slice(1).map((start, index) => (
             <span

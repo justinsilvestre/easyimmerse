@@ -26,6 +26,7 @@ import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { selectNearbySentences } from "../reader/selectNearbySentences.ts";
 import { sentenceWordLookups } from "../reader/sentenceWordLookups.ts";
 import { unwrapHardLineBreaks } from "../reader/unwrapHardLineBreaks.ts";
+import { useReaderAudio } from "../reader/useReaderAudio.tsx";
 import { useReaderKeyBindings } from "../reader/useReaderKeyBindings.ts";
 
 /**
@@ -33,6 +34,7 @@ import { useReaderKeyBindings } from "../reader/useReaderKeyBindings.ts";
  * The book opens where it was last left, in the appearance last chosen.
  * Words are looked up in the dictionary pop-up as in the subtitles, and a flashcard made from one is filled from its lookup, with its sentence as context.
  * The keys work as `selectReaderKeyBinding` in the state package describes.
+ * A book aligned with an audio file plays it from a bar above the progress slider, as `useReaderAudio` describes.
  */
 export function ReaderScreen({
   project,
@@ -117,6 +119,7 @@ function BookReader({
   useLookupPrefetch(languages.target, nearbySentences, (sentence) =>
     sentenceWordLookups(sentence, textLanguage),
   );
+  const audio = useReaderAudio(project.id, mediaFile.id);
   return (
     <ConnectedReaderView
       mediaFileId={mediaFile.id}
@@ -144,6 +147,7 @@ function BookReader({
       sidePanel={
         form && <ConnectedFlashcardEditor form={form} languages={languages} />
       }
+      audio={audio}
     />
   );
 }

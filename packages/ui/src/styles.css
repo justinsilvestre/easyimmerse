@@ -383,3 +383,15 @@
   background-color: var(--color-accent-soft);
   color: var(--color-accent-fg);
 }
+
+/*
+ * The sentence being spoken while the audio a book is aligned with plays, drawn the same way.
+ * A softer shade of the search marks' color keeps it apart from the looked-up word, which is drawn over it.
+ */
+::highlight(reader-spoken) {
+  background-color: color-mix(
+    in oklab,
+    var(--color-highlight) 65%,
+    transparent
+  );
+}
