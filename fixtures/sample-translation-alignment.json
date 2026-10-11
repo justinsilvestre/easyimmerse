@@ -1,0 +1,87 @@
+{
+  "provider": null,
+  "content": {
+    "kind": "translation",
+    "translation_media_file_id": "translation",
+    "links": [
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 38
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 44
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 39
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 0,
+            "end": 22
+          },
+          {
+            "chapter_index": 0,
+            "paragraph_index": 2,
+            "start": 23,
+            "end": 36
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 0,
+            "start": 0,
+            "end": 33
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 4,
+            "start": 0,
+            "end": 33
+          }
+        ]
+      },
+      {
+        "spans": [
+          {
+            "chapter_index": 1,
+            "paragraph_index": 1,
+            "start": 0,
+            "end": 35
+          }
+        ],
+        "translation_spans": [
+          {
+            "chapter_index": 0,
+            "paragraph_index": 5,
+            "start": 0,
+            "end": 41
+          }
+        ]
+      }
+    ]
+  }
+}
