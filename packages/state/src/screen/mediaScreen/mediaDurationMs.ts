@@ -3,6 +3,7 @@ import type { ReadableState } from "../../app/feature.ts";
 import { mainScreenOf } from "../../route/route.ts";
 import { cacheEntry } from "../../server/cacheEntry.ts";
 import type { MediaScreenState } from "../screenState.ts";
+import { playedMediaFileOf } from "./playedMediaFile.ts";
 
 /** Returns the open media file's length: the player's once it has loaded the file, else the probed one, else zero. */
 export function mediaDurationMs(
@@ -21,7 +22,7 @@ export function mediaScreenDurationMs(
   if (playerSeconds > 0) return playerSeconds * 1000;
   const route = mainScreenOf(app.route);
   if (route.screen !== "media") return 0;
-  const { projectId, mediaFileId } = route;
+  const { projectId, mediaFileId } = playedMediaFileOf(screen, route);
   const tracks = cacheEntry(app.backend, "getMediaTracks", {
     projectId,
     mediaFileId,

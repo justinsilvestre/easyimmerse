@@ -1,12 +1,14 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { PageInfo, ReaderScreenState } from "./readerScreenState.ts";
 
-/** Opens and closes the reader's panels and chrome, keeps its search and what it measured, and counts its jumps. */
+/** Opens and closes the reader's panels and chrome, keeps its search and what it measured, counts its jumps, and keeps the audio it plays. */
 export function updateReaderScreen(
   reader: ReaderScreenState,
   action: AppAction,
 ): ReaderScreenState {
   switch (action.type) {
+    case "readerAudioOpened":
+      return { ...reader, audioMediaFileId: action.audioFile.id };
     case "readerJumped":
       return { ...reader, jumpCount: reader.jumpCount + 1 };
     case "readerMatchChosen":

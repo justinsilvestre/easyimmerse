@@ -17,8 +17,8 @@ import type { StoredPlacesState } from "./storedPlacesState.ts";
 import { initialStoredPlaces } from "./storedPlacesState.ts";
 
 /**
- * Updates the stored places: loads a media file's places when its screen opens,
- * and saves them as reading and playback move on and when its screen closes.
+ * Updates the stored places: loads a media file's places when its screen opens, and the playback position
+ * of the audio file the reader opens, and saves them as reading and playback move on and when its screen closes.
  */
 export const updateStoredPlaces: FeatureUpdate<
   StoredPlacesState,
@@ -35,6 +35,8 @@ export const updateStoredPlaces: FeatureUpdate<
     case "readerJumped":
     case "readerMatchChosen":
       return readingMoved(places, action.mediaFileId, action.location);
+    case "readerAudioOpened":
+      return updated(places, ...playbackLoads(places, action.audioFile.id));
     case "playbackPositionLoaded":
       return updated({
         ...places,
@@ -107,11 +109,19 @@ function withReading(
  * Whether the file is a book is not known yet, so both are loaded; the one that does not apply loads as null.
  */
 function placeLoads(places: StoredPlacesState, mediaFileId: string) {
-  const loads = [
-    places.reading[mediaFileId] === undefined &&
-      ({ type: "loadReadingLocation", mediaFileId } satisfies Effect),
-    places.playback[mediaFileId] === undefined &&
-      ({ type: "loadPlaybackPosition", mediaFileId } satisfies Effect),
-  ];
-  return loads.filter((load) => load !== false);
+  const readingLoads =
+    places.reading[mediaFileId] === undefined
+      ? [{ type: "loadReadingLocation", mediaFileId } satisfies Effect]
+      : [];
+  return [...readingLoads, ...playbackLoads(places, mediaFileId)];
+}
+
+/** Loads the stored playback position of a media file unless it is already known, as for the audio file the reader opens. */
+function playbackLoads(
+  places: StoredPlacesState,
+  mediaFileId: string,
+): Effect[] {
+  return places.playback[mediaFileId] === undefined
+    ? [{ type: "loadPlaybackPosition", mediaFileId }]
+    : [];
 }

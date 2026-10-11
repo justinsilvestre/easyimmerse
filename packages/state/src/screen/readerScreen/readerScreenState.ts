@@ -17,6 +17,8 @@ export type ReaderScreenState = {
   nearSpan: ItemSpan | null;
   /** The page in view in the paged layout, as last measured; null until measured. */
   pageInfo: PageInfo | null;
+  /** The audio file the book is aligned with, which the screen's player plays as `selectPlayedMediaFile` describes; null until the reader finds one. */
+  audioMediaFileId: string | null;
 };
 
 export const initialReaderScreen: ReaderScreenState = {
@@ -26,4 +28,5 @@ export const initialReaderScreen: ReaderScreenState = {
   search: { query: "", activeMatchIndex: null },
   nearSpan: null,
   pageInfo: null,
+  audioMediaFileId: null,
 };
