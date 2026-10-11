@@ -9,6 +9,34 @@ export function updateReaderScreen(
   switch (action.type) {
     case "readerAudioOpened":
       return { ...reader, audioMediaFileId: action.audioFile.id };
+    // A change of view counts as a jump, so that the text now shown opens at the reader's place.
+    case "readerViewModeChosen":
+      return {
+        ...reader,
+        viewMode: action.viewMode,
+        translationLocation:
+          action.translationLocation ?? reader.translationLocation,
+        jumpCount: reader.jumpCount + 1,
+        // The chosen match lies in the text shown before.
+        search: { ...reader.search, activeMatchIndex: null },
+      };
+    case "readerTranslationJumped":
+      return {
+        ...reader,
+        translationLocation: action.location,
+        jumpCount: reader.jumpCount + 1,
+        search:
+          action.matchIndex === null
+            ? reader.search
+            : { ...reader.search, activeMatchIndex: action.matchIndex },
+      };
+    case "readerTranslationLocationReported":
+      return { ...reader, translationLocation: action.location };
+    // The views that show the translation showed the one paired before.
+    case "readerTranslationChosen":
+      return reader.viewMode === "target"
+        ? reader
+        : { ...reader, viewMode: "target", jumpCount: reader.jumpCount + 1 };
     case "readerJumped":
       return { ...reader, jumpCount: reader.jumpCount + 1 };
     case "readerMatchChosen":

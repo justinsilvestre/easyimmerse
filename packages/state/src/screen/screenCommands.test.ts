@@ -83,6 +83,43 @@ describe("screenCommands", () => {
     });
   });
 
+  it("saves the translation a book is paired with", () => {
+    const effects = apply(actions.readerTranslationChosen("p1", "b1", "t1"));
+    expect(effects).toContainEqual({
+      type: "sendRequest",
+      id: "media/b1/translationDocument",
+      request: {
+        kind: "setTranslationDocument",
+        projectId: "p1",
+        mediaFileId: "b1",
+        translationMediaFileId: "t1",
+      },
+    });
+  });
+
+  it("returns a notice when the translation could not be changed", () => {
+    const effects = apply(
+      actions.requestSettled(
+        "media/b1/translationDocument",
+        {
+          kind: "setTranslationDocument",
+          projectId: "p1",
+          mediaFileId: "b1",
+          translationMediaFileId: null,
+        },
+        { ok: false, error: { status: 500, message: "down" } },
+      ),
+    );
+    expect(effects).toEqual([
+      {
+        type: "dispatch",
+        action: actions.noticeRequested(
+          transientNotice("danger", "The translation could not be changed"),
+        ),
+      },
+    ]);
+  });
+
   it("returns a notice when a picked media file could not be added", () => {
     const effects = apply(
       mediaFileAddFailed,

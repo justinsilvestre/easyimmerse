@@ -109,6 +109,13 @@ export type ServerRequest =
       mediaFileId: string;
       selection: SubtitleSelection;
     }
+  /** Pairs a document with the translation it is read beside, or clears the pairing with null. */
+  | {
+      kind: "setTranslationDocument";
+      projectId: string;
+      mediaFileId: string;
+      translationMediaFileId: string | null;
+    }
   /** Creates a new flashcard under its id, or replaces an existing one. `purpose` comes back with the outcome and is not sent. */
   | {
       kind: "saveFlashcard";
@@ -165,6 +172,7 @@ export type ServerResponses = {
   removeMediaFile: void;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   setSubtitleSelection: void;
+  setTranslationDocument: MediaFile;
   saveFlashcard: Flashcard;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteFlashcard: void;

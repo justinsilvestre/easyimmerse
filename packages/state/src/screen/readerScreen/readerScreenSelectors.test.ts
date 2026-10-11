@@ -62,4 +62,15 @@ describe("selectIsReaderPaged", () => {
   it("tells that the text is paged when the stored preferences cannot be read", () => {
     expect(selectIsReaderPaged(withStored("{"))).toBe(true);
   });
+
+  it("tells that the parallel view scrolls in the paged layout", () => {
+    const app = stateAfter(
+      openBook,
+      actions.readerViewModeChosen("parallel"),
+      actions.preferencesLoaded({
+        readerPreferences: JSON.stringify({ layout: "pages" }),
+      }),
+    );
+    expect(selectIsReaderPaged(app)).toBe(false);
+  });
 });

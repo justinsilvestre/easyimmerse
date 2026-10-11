@@ -145,6 +145,19 @@ export const requestEndpoints = {
       { projectId, mediaFileId, selection },
       { track: false },
     ),
+  setTranslationDocument: ({
+    projectId,
+    mediaFileId,
+    translationMediaFileId,
+  }) =>
+    backendApi.endpoints.setTranslationDocument.initiate(
+      {
+        projectId,
+        mediaFileId,
+        body: { translation_media_file_id: translationMediaFileId },
+      },
+      { track: false },
+    ),
   updateProject: ({ projectId, settings }) =>
     backendApi.endpoints.updateProject.initiate(
       { projectId, settings },
