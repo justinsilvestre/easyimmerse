@@ -38,6 +38,11 @@ type WordPointerCallbacks = ReaderWordGestures & {
   onBlankClick: (event: MouseEvent<HTMLElement>) => void;
   /** A mouse click on a word with Ctrl or Cmd held. Without it, such a click counts as a plain click. */
   onWordCommandClick?: (word: ReaderWord) => void;
+  /**
+   * A mouse button held down on the word for as long as a held tap. Mouse presses are timed only while it is given.
+   * It returns false when it does nothing with the press, which then ends in a click as usual; otherwise that click is not reported.
+   */
+  onWordMouseHold?: (word: ReaderWord) => boolean;
 };
 
 /** How far the pointer may travel between press and release for the press to count as a click rather than a drag. */
@@ -102,8 +107,23 @@ export function useWordPointer(
     [lookupTriggerAttribute]: "",
     [clickableWordAttribute]: "",
     onPointerDown: (event: PointerEvent<HTMLElement>) => {
-      const word =
-        event.pointerType === "mouse" ? null : findWord(pointOf(event));
+      if (event.pointerType === "mouse") {
+        // The word is found only once the press has lasted, since most mouse presses are quick clicks.
+        const timesMouse =
+          latest.current.onWordMouseHold !== undefined && event.button === 0;
+        press.start(
+          event,
+          () => {
+            const word = findWord(press.origin());
+            return (
+              word !== null && latest.current.onWordMouseHold?.(word) === true
+            );
+          },
+          timesMouse,
+        );
+        return;
+      }
+      const word = findWord(pointOf(event));
       press.start(event, () => {
         if (word) latest.current.onWordHold(word);
       });

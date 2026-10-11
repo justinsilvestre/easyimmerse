@@ -7,7 +7,7 @@ import {
   selectPreferencesLoaded,
   selectReaderPreferences,
 } from "@easyimmerse/state";
-import type { Document, LookupResult } from "@easyimmerse/types";
+import type { Document, LookupResult, MediaFile } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useState } from "react";
 import { fn } from "storybook/test";
@@ -35,6 +35,8 @@ import {
   exampleNovel,
   examplePlainText,
   exampleShortBook,
+  exampleShortBookAlignment,
+  exampleShortBookTranslation,
 } from "./exampleDocuments.ts";
 import { ReaderAudioBar } from "./ReaderAudioBar.tsx";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
@@ -356,6 +358,58 @@ export const AlignedWithAudio: Story = {
       onPlayWord: fn(),
     },
   },
+};
+
+const translationFile: MediaFile = {
+  id: "t1",
+  project_id: "p1",
+  name: "sample-translation.txt",
+  source: { kind: "path", path: "/books/sample-translation.txt" },
+  created_at_ms: 0,
+  track_selection_json: null,
+  origin: null,
+  translation_media_file_id: null,
+};
+
+const shortBookAlignment = exampleShortBookAlignment("b1", "t1").content;
+
+/** The short book, aligned with its Spanish translation sentence by sentence. */
+const alignedShortBook = {
+  document: exampleShortBook,
+  title: "Sample Book",
+  language: "en",
+  translation: {
+    candidates: [translationFile],
+    paired: translationFile,
+    document: exampleShortBookTranslation,
+    language: "es",
+    links:
+      shortBookAlignment.kind === "translation"
+        ? shortBookAlignment.links
+        : null,
+    onChoose: fn(),
+    onCombine: fn(),
+  },
+} satisfies Partial<ReaderStoryArgs>;
+
+export const TranslationPanelOpen: Story = {
+  decorators: openedWith(actions.readerPanelOpened("translation")),
+  args: alignedShortBook,
+};
+
+export const TranslationOnly: Story = {
+  decorators: openedWith(actions.readerViewModeChosen("translation")),
+  args: alignedShortBook,
+};
+
+export const Interlinear: Story = {
+  decorators: openedWith(actions.readerViewModeChosen("interlinear")),
+  args: alignedShortBook,
+};
+
+export const Parallel: Story = {
+  decorators: openedWith(actions.readerViewModeChosen("parallel")),
+  args: alignedShortBook,
 };
 
 const fixtureFiles = [

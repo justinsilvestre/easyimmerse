@@ -7,9 +7,11 @@ import type { ReaderLocation } from "./readingProgress.ts";
 import { sentenceLookupAt } from "./sentenceLookupAt.ts";
 import {
   caretAtPoint,
+  isInTranslation,
   offsetWithin,
   paragraphAttribute,
   paragraphIndexOf,
+  paragraphTextOf,
   rangeOfSpan,
 } from "./textOffsets.ts";
 import { type TextSpan, wordsAroundCaret } from "./wordAt.ts";
@@ -42,8 +44,9 @@ export function wordAtPoint(
   const paragraph = caret?.node.parentElement?.closest(
     `[${paragraphAttribute}]`,
   );
-  if (!caret || !paragraph) return null;
-  const text = paragraph.textContent ?? "";
+  // The translations shown beside the text are not looked up.
+  if (!caret || !paragraph || isInTranslation(caret.node)) return null;
+  const text = paragraphTextOf(paragraph);
   const offset = offsetWithin(paragraph, caret.node, caret.offset);
   for (const word of wordsAroundCaret(text, offset, language)) {
     const rect = rectsOf(paragraph, word).find((r) => contains(r, point));

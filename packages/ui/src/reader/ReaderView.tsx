@@ -1,11 +1,18 @@
 import {
   actions,
+  isReaderPaged,
   type ReaderPreferences,
   type ReaderScreenAction,
   type ReaderScreenState,
 } from "@easyimmerse/state";
 import type { Document } from "@easyimmerse/types";
-import { type ReactNode, useDeferredValue, useMemo, useRef } from "react";
+import {
+  type MouseEvent,
+  type ReactNode,
+  useDeferredValue,
+  useMemo,
+  useRef,
+} from "react";
 import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
 import type { AnchorRect } from "../lookup/placeAtAnchor.ts";
 import type { PopupSize } from "../lookup/popupSize.ts";
@@ -32,6 +39,7 @@ import {
   lineHeights,
   lineLengthsEm,
 } from "./readerPreferences.ts";
+import type { ReaderTranslation } from "./readerTranslation.ts";
 import {
   chapterStartProgresses,
   locationAtProgress,
@@ -41,12 +49,18 @@ import {
 import { ScrolledChapter } from "./ScrolledChapter.tsx";
 import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
+import { TranslationPanel } from "./TranslationPanel.tsx";
+import { TranslationPopup } from "./TranslationPopup.tsx";
 import {
   type HighlightedWord,
   useLookedUpHighlight,
 } from "./useLookedUpHighlight.ts";
 import { useParagraphsNearView } from "./useParagraphsNearView.ts";
 import { useSpokenHighlight } from "./useSpokenHighlight.ts";
+import {
+  useTranslationPopup,
+  useTranslationView,
+} from "./useTranslationView.ts";
 import { type ReaderWordGestures, useWordPointer } from "./useWordPointer.ts";
 
 export type ReaderCallbacks = ReaderWordGestures & {
@@ -102,6 +116,8 @@ type ReaderViewProps = {
   controls?: ReaderControls;
   /** The audio the book is aligned with, which plays its sentences and shows the one being spoken; absent when it has none. */
   audio?: ReaderAudio;
+  /** The book's translation and how to pair one, for the translation panel and the views that show it. None where absent. */
+  translation?: ReaderTranslation;
 };
 
 const searchLimit = 500;
@@ -119,12 +135,15 @@ const sectionCharacterLimit = 250_000;
  * and the text follows it, as `useSpokenHighlight` describes.
  */
 export function ReaderView(props: ReaderViewProps) {
-  const { document, location, reader, dispatch, mediaFileId } = props;
+  const { reader, dispatch, translation } = props;
   const { preferences, callbacks } = props;
+  // In the translation-only view, the translation's text, place and language stand in for the book's.
+  const shown = useTranslationView(props);
+  const { document, location, language, viewMode } = shown;
   const ownControls = useReaderControls();
   const { pageTurner: turner, searchInput } = props.controls ?? ownControls;
   const isWide = useMediaQuery(wideScreenQuery);
-  const isPaged = preferences.layout === "pages";
+  const isPaged = isReaderPaged(preferences.layout, viewMode);
 
   const query = useDeferredValue(reader.search.query);
   const matches = useMemo(
@@ -161,14 +180,26 @@ export function ReaderView(props: ReaderViewProps) {
     () => [chapter, sectionIndex, layoutKeyOf(preferences)],
     [chapter, sectionIndex, preferences],
   );
-  useParagraphsNearView(textContainer, isPaged, shownText, (span) =>
-    dispatch(actions.readerNearSpanMeasured(span)),
-  );
+  // The paragraphs near the view are the book's, whose words are looked up ahead; the translation's are not.
+  useParagraphsNearView(textContainer, isPaged, shownText, (span) => {
+    if (!shown.isTranslationShown)
+      dispatch(actions.readerNearSpanMeasured(span));
+  });
   const hasLookup = props.lookup != null;
-  useLookedUpHighlight(props.highlightedWord);
+  useLookedUpHighlight(
+    shown.isTranslationShown ? undefined : props.highlightedWord,
+  );
+  const translationPopup = useTranslationPopup({
+    viewMode,
+    translation,
+    location,
+    onWordHold: callbacks.onWordHold,
+    onOpen: () => {
+      if (hasLookup) callbacks.onDismissLookup();
+    },
+  });
 
-  const jumpTo = (to: ReaderLocation) =>
-    dispatch(actions.readerJumped(mediaFileId, to));
+  const { jumpTo } = shown;
   const goToChapter = (index: number, edge: "start" | "end") => {
     const paragraphs = document.chapters[index]?.paragraphs;
     if (!paragraphs) return;
@@ -206,31 +237,38 @@ export function ReaderView(props: ReaderViewProps) {
     else goToChapter(chapterIndex + (direction === "next" ? 1 : -1), "start");
   };
 
-  const wordPointer = useWordPointer(chapterIndex, props.language, {
+  const onBlankClick = (event: MouseEvent<HTMLElement>) => {
+    if (hasLookup) return callbacks.onDismissLookup();
+    const share = event.clientX / window.innerWidth;
+    if (isPaged && share < 0.25) turn("previous");
+    else if (isPaged && share > 0.75) turn("next");
+    else dispatch(actions.readerChromeToggled());
+  };
+  const wordPointer = useWordPointer(chapterIndex, language, {
     onWordClick: callbacks.onWordClick,
     onWordDoubleClick: callbacks.onWordDoubleClick,
     onWordPointed: callbacks.onWordPointed,
     onWordHover: callbacks.onWordHover,
-    onWordHold: callbacks.onWordHold,
     onWordCommandClick: props.audio?.onPlayWord,
-    onBlankClick: (event) => {
-      if (hasLookup) return callbacks.onDismissLookup();
-      const share = event.clientX / window.innerWidth;
-      if (isPaged && share < 0.25) turn("previous");
-      else if (isPaged && share > 0.75) turn("next");
-      else dispatch(actions.readerChromeToggled());
-    },
+    onWordHold: translationPopup.onWordHold,
+    onWordMouseHold: translationPopup.onWordMouseHold,
+    onBlankClick,
   });
+  // The words of the translation are not looked up, since the dictionaries are for the book's language.
+  const pointerProps = shown.isTranslationShown
+    ? { onClick: onBlankClick }
+    : wordPointer;
 
   const layoutKey = layoutKeyOf(preferences);
   const text = (
     <ChapterText
       chapter={chapter}
       section={isPaged ? sections[sectionIndex] : undefined}
-      language={props.language}
+      language={language}
       isJustified={preferences.isJustified}
       skipsOffscreenLayout={!isPaged}
       marks={marks}
+      translation={shown.chapterTranslation}
     />
   );
   const chapterTitle = chapterTitleOf(document, chapterIndex);
@@ -257,6 +295,7 @@ export function ReaderView(props: ReaderViewProps) {
         isVisible={reader.isChromeVisible}
         panel={reader.panel}
         hasContents={document.chapters.length > 1}
+        hasTranslation={translation !== undefined}
         headerContent={props.headerContent}
         onBack={callbacks.onBack}
         onLookup={callbacks.onLookup}
@@ -265,14 +304,14 @@ export function ReaderView(props: ReaderViewProps) {
       />
       <main
         ref={textContainer}
-        key={chapterIndex}
+        key={`${viewMode}:${chapterIndex}`}
         className="absolute inset-0 touch-manipulation transition-opacity duration-300 starting:opacity-0"
         style={{
           fontFamily: fontFamilies[preferences.font],
           fontSize: `${fontSizesRem[preferences.fontSizeStep] ?? 1}rem`,
           lineHeight: lineHeights[preferences.lineSpacing],
         }}
-        {...wordPointer}
+        {...pointerProps}
       >
         {isPaged ? (
           <div className="h-full pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
@@ -284,9 +323,7 @@ export function ReaderView(props: ReaderViewProps) {
               layoutKey={layoutKey}
               maxColumnWidthEm={lineLengthsEm[preferences.lineLength]}
               onLocationChange={(reported) => {
-                dispatch(
-                  actions.readingLocationReported(mediaFileId, reported),
-                );
+                shown.reportLocation(reported);
                 dispatch(actions.readerChromeHidden());
               }}
               onPageMeasured={(info) =>
@@ -304,10 +341,13 @@ export function ReaderView(props: ReaderViewProps) {
             location={location}
             jumpCount={reader.jumpCount}
             layoutKey={layoutKey}
-            maxColumnWidthEm={lineLengthsEm[preferences.lineLength]}
-            onLocationChange={(reported) =>
-              dispatch(actions.readingLocationReported(mediaFileId, reported))
+            maxColumnWidthEm={
+              // The parallel view sets two columns of the chosen length side by side, with a gap of 2em.
+              viewMode === "parallel"
+                ? lineLengthsEm[preferences.lineLength] * 2 + 2
+                : lineLengthsEm[preferences.lineLength]
             }
+            onLocationChange={shown.reportLocation}
             onScrollDirection={(direction) =>
               dispatch(
                 direction === "down"
@@ -389,13 +429,11 @@ export function ReaderView(props: ReaderViewProps) {
           onChooseMatch={(index) => {
             const match = matches[index];
             if (!match) return;
-            dispatch(
-              actions.readerMatchChosen(mediaFileId, index, {
-                chapterIndex: match.chapterIndex,
-                paragraphIndex: match.paragraphIndex,
-                offset: match.start,
-              }),
-            );
+            shown.chooseMatch(index, {
+              chapterIndex: match.chapterIndex,
+              paragraphIndex: match.paragraphIndex,
+              offset: match.start,
+            });
             closePanelOnPhone();
           }}
           onClose={closePanel}
@@ -404,9 +442,37 @@ export function ReaderView(props: ReaderViewProps) {
       {reader.panel === "appearance" && (
         <AppearancePanel
           preferences={preferences}
+          layoutNote={
+            viewMode === "parallel"
+              ? "The parallel view always scrolls, so that each paragraph stays beside its translation."
+              : undefined
+          }
           onChange={callbacks.onPreferencesChange}
           onClose={closePanel}
         />
+      )}
+      {reader.panel === "translation" && translation && (
+        <TranslationPanel
+          candidates={translation.candidates}
+          paired={translation.paired}
+          isAligned={translation.links !== null}
+          viewMode={viewMode}
+          viewModes={shown.viewModes}
+          onChoose={translation.onChoose}
+          onViewModeChange={shown.chooseViewMode}
+          onCombine={translation.onCombine}
+          onClose={closePanel}
+        />
+      )}
+      {translation?.dialog}
+      {translationPopup.popup && (
+        <LookupAnchor wordRect={translationPopup.popup.rect} isWide={isWide}>
+          <TranslationPopup
+            text={translationPopup.popup.text}
+            language={translation?.language ?? language}
+            onClose={translationPopup.close}
+          />
+        </LookupAnchor>
       )}
     </div>
   );
