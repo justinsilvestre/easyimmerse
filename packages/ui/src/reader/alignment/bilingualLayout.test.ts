@@ -73,7 +73,43 @@ describe("parallelRowsOf", () => {
   });
 
   it("puts an unlinked paragraph of the translation before the next linked one", () => {
-    expect(rows.besideParagraph(1, 0)).toEqual([address(3), address(4)]);
+    const unlinkedMiddle: Document = {
+      ...translationOfTwo,
+      chapters: [{ title: null, paragraphs: ["One.", "Aside.", "Two."] }],
+    };
+    const middle = parallelRowsOf(
+      [
+        { spans: [span(0, 0, 0, 5)], translation_spans: [span(0, 0, 0, 4)] },
+        { spans: [span(0, 1, 0, 5)], translation_spans: [span(0, 2, 0, 4)] },
+      ],
+      twoParagraphs,
+      unlinkedMiddle,
+    );
+    expect(middle.besideParagraph(0, 1)).toEqual([address(1), address(2)]);
+  });
+
+  it("puts the unlinked paragraphs before a chapter's first linked one beside its title", () => {
+    expect(rows.besideTitle(1)).toEqual([address(3)]);
+  });
+
+  it("puts the unlinked paragraphs at the start of the translation beside the first chapter's title", () => {
+    expect(rows.besideTitle(0)).toEqual([address(0)]);
+  });
+
+  it("leaves out of a chapter's first paragraph the text shown beside its title", () => {
+    expect(rows.besideParagraph(1, 0)).toEqual([address(4)]);
+  });
+
+  it("puts the unlinked paragraphs before an untitled chapter's first linked one beside that paragraph", () => {
+    const untitled: Document = {
+      ...exampleShortBook,
+      chapters: exampleShortBook.chapters.map((chapter) => ({
+        ...chapter,
+        title: null,
+      })),
+    };
+    const plain = parallelRowsOf(links, untitled, exampleShortBookTranslation);
+    expect(plain.besideParagraph(1, 0)).toEqual([address(3), address(4)]);
   });
 
   it("pairs a paragraph with the translation linked from it", () => {

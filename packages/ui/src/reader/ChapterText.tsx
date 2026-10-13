@@ -17,8 +17,12 @@ export type TextMark = {
  * What the chapter shows of its translation in the bilingual views, in the translation's language:
  * in the interlinear view, the translation of each passage of a paragraph after the passage;
  * in the parallel view, the paragraphs of the translation beside each paragraph.
+ * In both, the paragraphs of the translation that stand for the chapter's title, if any, go with the title.
  */
-export type ChapterTranslation = { language: string } & (
+export type ChapterTranslation = {
+  language: string;
+  titleParagraphs: readonly string[];
+} & (
   | {
       layout: "interlinear";
       linesOf: (paragraphIndex: number) => readonly InterlinearLine[];
@@ -131,21 +135,78 @@ export const ChapterText = memo(function ChapterText({
         isJustified && "hyphens-auto text-justify",
       )}
     >
-      {chapter.title && start === 0 && (
-        <h2 className="mt-[1.5em] mb-[2em] text-center text-[1.5em] leading-tight font-normal tracking-wide break-after-avoid">
-          {chapter.title}
-        </h2>
-      )}
       {translation?.layout === "parallel" ? (
         <div className="grid grid-cols-1 gap-x-[2em] sm:grid-cols-2">
+          {chapter.title && start === 0 && (
+            <>
+              <ChapterHeading title={chapter.title} />
+              <TranslatedHeading
+                paragraphs={translation.titleParagraphs}
+                language={translation.language}
+                isBeside
+              />
+            </>
+          )}
           {paragraphs}
         </div>
       ) : (
-        paragraphs
+        <>
+          {chapter.title && start === 0 && (
+            <>
+              <ChapterHeading title={chapter.title} />
+              {translation && (
+                <TranslatedHeading
+                  paragraphs={translation.titleParagraphs}
+                  language={translation.language}
+                />
+              )}
+            </>
+          )}
+          {paragraphs}
+        </>
       )}
     </article>
   );
 });
+
+function ChapterHeading({ title }: { title: string }) {
+  return (
+    <h2 className="mt-[1.5em] mb-[2em] text-center text-[1.5em] leading-tight font-normal tracking-wide break-after-avoid">
+      {title}
+    </h2>
+  );
+}
+
+/** The translation of a chapter's title, set under it in the interlinear view and beside it, at its size, in the parallel view. */
+function TranslatedHeading({
+  paragraphs,
+  language,
+  isBeside = false,
+}: {
+  paragraphs: readonly string[];
+  language: string;
+  isBeside?: boolean;
+}) {
+  if (paragraphs.length === 0) return <div aria-hidden />;
+  return (
+    <div
+      {...{ [translationAttribute]: "" }}
+      lang={language}
+      className={clsx(
+        "text-center leading-tight tracking-wide text-fg-muted break-after-avoid",
+        isBeside
+          ? "mb-[2em] text-[1.5em] sm:mt-[1.5em]"
+          : "-mt-[1.25em] mb-[2em] text-[1.1em]",
+      )}
+    >
+      {paragraphs.map((paragraph, at) => (
+        // The paragraphs never change order, so their position names them.
+        // biome-ignore lint/suspicious/noArrayIndexKey: see above
+        <p key={at}>{paragraph}</p>
+      ))}
+    </div>
+  );
+}
 
 /** A rough count of characters per line, for estimating the height of paragraphs not yet laid out. */
 const estimatedLineCharacters = 50;

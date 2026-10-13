@@ -40,8 +40,9 @@ function lastSpanOf(spans: readonly TextSpan[]): TextSpan | undefined {
   return [...spans].sort(compareSpans).at(-1);
 }
 
-/** The paragraphs of the translation the parallel view shows beside each paragraph of the book. */
+/** The paragraphs of the translation the bilingual views show beside each chapter title and each paragraph of the book. */
 export type ParallelRows = {
+  besideTitle: (chapterIndex: number) => readonly ParagraphAddress[];
   besideParagraph: (
     chapterIndex: number,
     paragraphIndex: number,
@@ -51,8 +52,9 @@ export type ParallelRows = {
 /**
  * Pairs each paragraph of the book with the paragraphs of the translation linked from it, for the parallel view.
  * A translation paragraph linked from several paragraphs of the book stands beside the first of them only.
- * A translation paragraph that no link reaches, such as a chapter title, stands in its order before the next linked one,
+ * A translation paragraph that no link reaches stands in its order before the next linked one,
  * or after the last linked one at the end, so that every paragraph of the translation is shown once, in its order.
+ * Those that come before the first linked paragraph of a chapter with a title, such as the translated title, stand beside the title instead.
  */
 export function parallelRowsOf(
   links: readonly TranslationLink[],
@@ -60,10 +62,10 @@ export function parallelRowsOf(
   translationDocument: Document,
 ): ParallelRows {
   const byParagraph = linksByParagraph(links);
-  const owners = new Map<string, string>();
-  for (const { chapterIndex, paragraphIndex } of paragraphsOf(document)) {
-    const owner = keyOf({ chapterIndex, paragraphIndex });
-    const nearLinks = byParagraph.get(owner) ?? [];
+  const owners = new Map<string, ParagraphAddress>();
+  for (const owner of paragraphsOf(document)) {
+    const { chapterIndex, paragraphIndex } = owner;
+    const nearLinks = byParagraph.get(keyOf(owner)) ?? [];
     for (const translated of translationParagraphsOf(
       nearLinks,
       chapterIndex,
@@ -74,22 +76,29 @@ export function parallelRowsOf(
     }
   }
   const rows = new Map<string, ParagraphAddress[]>();
-  const add = (owner: string, paragraphs: ParagraphAddress[]) =>
-    rows.set(owner, [...(rows.get(owner) ?? []), ...paragraphs]);
+  const add = (row: string, paragraphs: ParagraphAddress[]) =>
+    rows.set(row, [...(rows.get(row) ?? []), ...paragraphs]);
   let unlinked: ParagraphAddress[] = [];
-  let lastOwner = keyOf({ chapterIndex: 0, paragraphIndex: 0 });
+  let lastOwner: ParagraphAddress | null = null;
   for (const translated of paragraphsOf(translationDocument)) {
     const owner = owners.get(keyOf(translated));
     if (owner === undefined) {
       unlinked.push(translated);
       continue;
     }
-    add(owner, [...unlinked, translated]);
+    const opensChapter = lastOwner?.chapterIndex !== owner.chapterIndex;
+    const hasTitle = Boolean(document.chapters[owner.chapterIndex]?.title);
+    if (opensChapter && hasTitle) {
+      add(titleKeyOf(owner.chapterIndex), unlinked);
+      add(keyOf(owner), [translated]);
+    } else add(keyOf(owner), [...unlinked, translated]);
     unlinked = [];
     lastOwner = owner;
   }
-  if (unlinked.length > 0) add(lastOwner, unlinked);
+  if (unlinked.length > 0)
+    add(keyOf(lastOwner ?? { chapterIndex: 0, paragraphIndex: 0 }), unlinked);
   return {
+    besideTitle: (chapterIndex) => rows.get(titleKeyOf(chapterIndex)) ?? [],
     besideParagraph: (chapterIndex, paragraphIndex) =>
       rows.get(keyOf({ chapterIndex, paragraphIndex })) ?? [],
   };
@@ -127,4 +136,8 @@ function* paragraphsOf(document: Document): Generator<ParagraphAddress> {
 
 function keyOf({ chapterIndex, paragraphIndex }: ParagraphAddress): string {
   return `${chapterIndex}:${paragraphIndex}`;
+}
+
+function titleKeyOf(chapterIndex: number): string {
+  return `${chapterIndex}:title`;
 }

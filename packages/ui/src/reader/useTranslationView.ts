@@ -11,6 +11,7 @@ import {
   interlinearLinesOf,
   parallelRowsOf,
 } from "./alignment/bilingualLayout.ts";
+import type { ParagraphAddress } from "./alignment/textSpans.ts";
 import { linkAt, translationOfLink } from "./alignment/translationAlignment.ts";
 import type { ChapterTranslation } from "./ChapterText.tsx";
 import type { ReaderViewAction } from "./ReaderView.tsx";
@@ -67,15 +68,26 @@ export function useTranslationView({
         }
       : { document, location, language };
   const chapterIndex = shown.location.chapterIndex;
+  const isBilingual = viewMode === "parallel" || viewMode === "interlinear";
   const parallelRows = useMemo(
     () =>
-      viewMode === "parallel" && links && translationDocument
+      isBilingual && links && translationDocument
         ? parallelRowsOf(links, document, translationDocument)
         : null,
-    [viewMode, links, document, translationDocument],
+    [isBilingual, links, document, translationDocument],
   );
   const chapterTranslation = useMemo((): ChapterTranslation | undefined => {
-    if (!links || !translationDocument) return undefined;
+    if (!links || !translationDocument || !parallelRows) return undefined;
+    const paragraphsAt = (addresses: readonly ParagraphAddress[]) =>
+      addresses.map(
+        ({ chapterIndex, paragraphIndex }) =>
+          translationDocument.chapters[chapterIndex]?.paragraphs[
+            paragraphIndex
+          ] ?? "",
+      );
+    const titleParagraphs = paragraphsAt(
+      parallelRows.besideTitle(chapterIndex),
+    );
     if (viewMode === "interlinear") {
       const paragraphs = document.chapters[chapterIndex]?.paragraphs ?? [];
       // Each paragraph's links are looked for among the chapter's alone, which keeps a long book quick to show.
@@ -85,6 +97,7 @@ export function useTranslationView({
       return {
         layout: "interlinear",
         language: translationLanguage,
+        titleParagraphs,
         linesOf: (paragraphIndex) =>
           interlinearLinesOf(
             chapterLinks,
@@ -95,21 +108,15 @@ export function useTranslationView({
           ),
       };
     }
-    if (viewMode === "parallel" && parallelRows)
-      return {
-        layout: "parallel",
-        language: translationLanguage,
-        paragraphsBeside: (paragraphIndex) =>
-          parallelRows
-            .besideParagraph(chapterIndex, paragraphIndex)
-            .map(
-              (address) =>
-                translationDocument.chapters[address.chapterIndex]?.paragraphs[
-                  address.paragraphIndex
-                ] ?? "",
-            ),
-      };
-    return undefined;
+    return {
+      layout: "parallel",
+      language: translationLanguage,
+      titleParagraphs,
+      paragraphsBeside: (paragraphIndex) =>
+        paragraphsAt(
+          parallelRows.besideParagraph(chapterIndex, paragraphIndex),
+        ),
+    };
   }, [
     viewMode,
     links,

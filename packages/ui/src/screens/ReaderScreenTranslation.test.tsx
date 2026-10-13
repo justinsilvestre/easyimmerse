@@ -342,10 +342,21 @@ describe("ReaderScreen translation", () => {
     await renderReader({ isAligned: true });
     await chooseView(/^Parallel/);
     expect(
+      (
+        await screen.findByText("El gato duerme en el alféizar de la ventana.")
+      ).closest(`[${translationAttribute}]`)?.previousElementSibling
+        ?.textContent,
+    ).toBe(sentence);
+  });
+
+  it("shows the translation of the chapter title beside the title in the parallel view", async () => {
+    await renderReader({ isAligned: true });
+    await chooseView(/^Parallel/);
+    expect(
       (await screen.findByText("Capítulo uno")).closest(
         `[${translationAttribute}]`,
       )?.previousElementSibling?.textContent,
-    ).toBe(sentence);
+    ).toBe("Chapter One");
   });
 
   it("shows the translation of the sentence a held word belongs to", async () => {
