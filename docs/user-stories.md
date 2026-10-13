@@ -317,29 +317,29 @@ As a user:
   - [x] the toolbar and progress bar come back when I move the mouse near the top or bottom edge, scroll up, or tap the middle of the page
   - [x] showing or hiding the toolbar and progress bar does not move the text
 - when I close and reopen an ebook or text file:
-  - [ ] I am returned to my last reading position
-  - [ ] the text looks as I last set it: theme, font, size, spacing, and layout
+  - [x] I am returned to my last reading position
+  - [x] the text looks as I last set it: theme, font, size, spacing, and layout
 - when the ebook or text file has been aligned with an audio file:
-  - [ ] I can click on a sentence/segment to play the matching audio
-  - [ ] the sentence/segment currently being spoken is highlighted during playback
+  - [x] I can Ctrl-click (Cmd-click on a Mac) on a sentence/segment to play the matching audio
+  - [x] the sentence/segment currently being spoken is highlighted during playback
 - when a translation is opened:
-  - [ ] I can switch between
+  - [x] I can switch between
       - target language text only
       - translation text only
 - when the ebook or text file has been aligned with a translation, and the target-language text is open:
-  - [ ] I can click on a sentence/segment to see the matching translation
+  - [x] I can click and hold, or tap and hold, on a sentence/segment to see the matching translation
 - when the ebook or text file has been aligned with a translation:
-  - [ ] I can switch between the single-language views and two bilingual views:
+  - [x] I can switch between the single-language views and two bilingual views:
       - interlinear view
       - parallel view
 - when I have opened an ebook, and I also have a translation of it as a separate ebook or text file:
-  - [ ] I can choose to combine the two into a bilingual ebook
+  - [x] I can choose to combine the two into a bilingual ebook
 - when I choose to combine the two ebooks into a bilingual ebook:
   - [ ] I am prompted to choose an alignment provider: the easyImmerse cloud or an installed plugin
   - [ ] I see the progress of the alignment, and can keep using the app in the meantime
   - [ ] the alignment result is saved so I can reopen the bilingual ebook in future sessions
 - when I choose to make a bilingual ebook but no alignment provider is available:
-  - [ ] I am told how to set one up, by subscribing or installing a plugin
+  - [x] I am told how to set one up, by subscribing or installing a plugin
 
 ---
 

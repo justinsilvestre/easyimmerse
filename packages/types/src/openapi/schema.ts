@@ -535,6 +535,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/alignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAlignments"];
+        put?: never;
+        /**
+         * Adds an alignment to a document. The audio file or translation it names must be another
+         *     media file of the same project. Spans are not checked against the documents.
+         */
+        post: operations["addAlignment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/media/{media_id}/alignments/{alignment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeAlignment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/{media_id}/embedded-subtitles": {
         parameters: {
             query?: never;
@@ -758,6 +794,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/media/{media_id}/translation-document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Pairs a document with the translation it is read beside, before the two are aligned,
+         *     or clears the pairing.
+         */
+        put: operations["setTranslationDocument"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/media/{media_id}/waveform": {
         parameters: {
             query?: never;
@@ -815,6 +871,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AddAlignmentRequest: {
+            content: components["schemas"]["AlignmentContent"];
+            /**
+             * @description What produced the alignment: a plugin name, or `cloud`. Null for an alignment added
+             *     from a file.
+             */
+            provider?: string | null;
+        };
         AddMediaFileRequest: {
             /** @description The name shown in the project's media list, usually the file name. */
             name: string;
@@ -826,6 +890,50 @@ export interface components {
             name: string;
             role?: components["schemas"]["SubtitleRole"] | null;
             source: components["schemas"]["TextSource"];
+        };
+        /** @description A saved alignment of a document. */
+        Alignment: {
+            content: components["schemas"]["AlignmentContent"];
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch.
+             */
+            created_at_ms: number;
+            id: components["schemas"]["AlignmentId"];
+            /** @description The document the alignment belongs to. Its counterpart is named inside `content`. */
+            media_file_id: components["schemas"]["MediaFileId"];
+            /**
+             * @description What produced the alignment: a plugin name, or `cloud`. Null for an alignment added
+             *     from a file.
+             */
+            provider?: string | null;
+        };
+        /** @description What a document is aligned with, and how. */
+        AlignmentContent: {
+            /** @description The media file of the audio. */
+            audio_media_file_id: components["schemas"]["MediaFileId"];
+            /** @enum {string} */
+            kind: "audio";
+            /**
+             * @description Sorted by their span's position in the document and by time, usually one per
+             *     sentence. Text with no segment is never highlighted.
+             */
+            segments: components["schemas"]["TimedSpan"][];
+        } | {
+            /** @enum {string} */
+            kind: "translation";
+            /**
+             * @description Sorted by the position of their first document span; links with no document span
+             *     are sorted by their first translation span.
+             */
+            links: components["schemas"]["TranslationLink"][];
+            /** @description The media file of the translation document. */
+            translation_media_file_id: components["schemas"]["MediaFileId"];
+        };
+        AlignmentId: string;
+        AlignmentsResponse: {
+            /** @description The document's alignments, newest first. */
+            alignments: components["schemas"]["Alignment"][];
         };
         /** @description The body of every error response. */
         ApiError: {
@@ -881,6 +989,17 @@ export interface components {
         Chapter: {
             paragraphs: string[];
             title?: string | null;
+        };
+        /** @description Where the paragraphs of one chapter came from. */
+        ChapterProvenance: {
+            /**
+             * @description The path of the chapter's content document inside the EPUB archive: the manifest
+             *     item's href resolved against the package document's directory and percent-decoded,
+             *     as in `OEBPS/chapter1.xhtml`.
+             */
+            href: string;
+            /** @description One per entry of the chapter's `paragraphs`, in the same order. */
+            paragraphs: components["schemas"]["ParagraphProvenance"][];
         };
         /**
          * @description What a column of a table holds, as a person choosing the columns of a table sees it.
@@ -1040,10 +1159,19 @@ export interface components {
         Document: {
             chapters: components["schemas"]["Chapter"][];
             language?: string | null;
+            provenance?: components["schemas"]["DocumentProvenance"] | null;
             title: string;
         };
         /** @enum {string} */
         DocumentFormat: "epub" | "plain_text";
+        /**
+         * @description Where the paragraphs of a parsed EPUB came from, so that text addressed by element id
+         *     (as media overlays address it) can be turned into positions in the parsed document.
+         */
+        DocumentProvenance: {
+            /** @description One per entry of `Document.chapters`, in the same order. */
+            chapters: components["schemas"]["ChapterProvenance"][];
+        };
         EmbeddedSubtitleTracksResponse: {
             tracks: components["schemas"]["TrackInfo"][];
         };
@@ -1251,6 +1379,24 @@ export interface components {
             /** @enum {string} */
             kind: "job";
         };
+        /**
+         * @description An element with an `id` inside a paragraph's block, and the range its text occupies in the
+         *     paragraph after whitespace is collapsed.
+         */
+        InlineElementId: {
+            /**
+             * Format: int32
+             * @description The UTF-16 code unit just after the element's text.
+             */
+            end: number;
+            id: string;
+            /**
+             * Format: int32
+             * @description The first UTF-16 code unit of the element's text within the paragraph. An element whose
+             *     text is empty after collapsing whitespace has an empty range at its position.
+             */
+            start: number;
+        };
         /** @description A plugin the server found in its plugin directory. */
         InstalledPlugin: {
             /** @description The text of the plugin's import button. Set for media-source plugins only. */
@@ -1329,7 +1475,7 @@ export interface components {
         };
         /** @enum {string} */
         MarkupDialect: "pango" | "xdxf";
-        /** @description A video or audio file added to a project. */
+        /** @description A video, audio, or document file added to a project. */
         MediaFile: {
             /**
              * Format: int64
@@ -1347,6 +1493,7 @@ export interface components {
              *     defines. Null until the user has chosen.
              */
             track_selection_json?: string | null;
+            translation_media_file_id?: components["schemas"]["MediaFileId"] | null;
         };
         MediaFileId: string;
         /**
@@ -1433,6 +1580,13 @@ export interface components {
             draft: components["schemas"]["FlashcardDraft"];
             /** @description Thirty-two lowercase hexadecimal digits, as in the ids the app makes. */
             id: components["schemas"]["FlashcardId"];
+        };
+        /** @description Where one paragraph came from in its content document. */
+        ParagraphProvenance: {
+            /** @description The `id` attribute of the block element the paragraph was extracted from. */
+            element_id?: string | null;
+            /** @description Every element with an `id` inside the block, in document order. */
+            inline_ids: components["schemas"]["InlineElementId"][];
         };
         ParseLocalDocumentRequest: {
             format?: components["schemas"]["DocumentFormat"] | null;
@@ -1727,6 +1881,54 @@ export interface components {
             kind: "path";
             path: string;
         };
+        /**
+         * @description A range of one paragraph of a parsed document.
+         *
+         *     `chapter_index` and `paragraph_index` count from zero within the parsed document.
+         *     `start` and `end` are offsets into the paragraph string counted in UTF-16 code units,
+         *     exactly as JavaScript's `String` indexes them, and `end` is exclusive. Rust code treats
+         *     the offsets as opaque numbers and never slices paragraphs by them. A span never crosses
+         *     a paragraph; text that covers several paragraphs is a list of spans.
+         *
+         *     The position is only valid for the document as the current parser produces it; `quote`
+         *     is what identifies the passage once the parser changes.
+         */
+        TextSpan: {
+            /** Format: int32 */
+            chapter_index: number;
+            /**
+             * Format: int32
+             * @description The UTF-16 code unit just after the span.
+             */
+            end: number;
+            /** Format: int32 */
+            paragraph_index: number;
+            /**
+             * @description The text the span covers, as the parser produced it. Optional in the type so that
+             *     tests can write spans tersely, but every provider and importer sets it. The reader
+             *     ignores a span whose quote no longer matches the text at its position.
+             */
+            quote?: string | null;
+            /**
+             * Format: int32
+             * @description The first UTF-16 code unit of the span within the paragraph.
+             */
+            start: number;
+        };
+        /** @description Text of a document heard between two times of an audio file. */
+        TimedSpan: {
+            /**
+             * Format: int64
+             * @description Milliseconds from the start of the audio file; exclusive.
+             */
+            end_ms: number;
+            span: components["schemas"]["TextSpan"];
+            /**
+             * Format: int64
+             * @description Milliseconds from the start of the audio file.
+             */
+            start_ms: number;
+        };
         /** @enum {string} */
         TimedTextFormat: "srt" | "vtt";
         TimedTextTrack: {
@@ -1793,6 +1995,26 @@ export interface components {
              *     cannot play in a media element at all.
              */
             direct_mime_type?: string | null;
+        };
+        /**
+         * @description The translation a document is paired with before the two are aligned, so that either
+         *     can be read on its own.
+         */
+        TranslationDocumentSelection: {
+            translation_media_file_id?: components["schemas"]["MediaFileId"] | null;
+        };
+        /**
+         * @description Text of a document paired with the text of its translation that says the same thing.
+         *
+         *     Either side may hold several spans, for a sentence the translation splits in two or joins
+         *     with the next, and either side may be empty, for text the translation leaves out or adds,
+         *     but not both. The spans on each side are sorted and do not overlap.
+         */
+        TranslationLink: {
+            /** @description Spans of the aligned document. */
+            spans: components["schemas"]["TextSpan"][];
+            /** @description Spans of the translation document. */
+            translation_spans: components["schemas"]["TextSpan"][];
         };
         /** @enum {string} */
         UnsupportedReason: "no_tracks" | "track_not_found" | "video_codec_unsupported" | "audio_codec_unsupported" | "conversion_unavailable" | "picture_too_tall";
@@ -3871,6 +4093,175 @@ export interface operations {
             };
         };
     };
+    listAlignments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id of the document */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The document's alignments, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlignmentsResponse"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addAlignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id of the document */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddAlignmentRequest"];
+            };
+        };
+        responses: {
+            /** @description The added alignment */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Alignment"];
+                };
+            };
+            /** @description A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    removeAlignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id of the document */
+                media_id: string;
+                /** @description The alignment id */
+                alignment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The alignment was removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project, or no such alignment of it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     listEmbeddedSubtitleTracks: {
         parameters: {
             query?: never;
@@ -4846,6 +5237,71 @@ export interface operations {
             };
             /** @description This server cannot probe media (code `conversion_unavailable`) */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setTranslationDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+                /** @description The media file id of the document */
+                media_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranslationDocumentSelection"];
+            };
+        };
+        responses: {
+            /** @description The document's media file with the pairing saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaFile"];
+                };
+            };
+            /** @description The translation is not another media file of the project */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such media file in the project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
                 headers: {
                     [name: string]: unknown;
                 };

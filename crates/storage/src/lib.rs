@@ -3,6 +3,7 @@
 //! `Storage` can be shared between threads. Writes run one at a time,
 //! while reads on a database file run beside them and see only what has been committed.
 
+mod alignments;
 mod connections;
 mod dictionaries;
 mod error;
@@ -24,6 +25,7 @@ pub use subtitle_tracks::{NewSubtitleTrack, StoredSubtitleTrack};
 
 use std::path::Path;
 
+use easyimmerse_core::alignment::{AddAlignmentRequest, Alignment, AlignmentId};
 use easyimmerse_core::dictionary::{
     DictionaryError, DictionaryMedia, DictionarySink, DictionarySource,
 };
@@ -151,6 +153,45 @@ impl Storage {
         track_selection_json: Option<&str>,
     ) -> Result<(), StorageError> {
         self.write(|conn| media_files::set_track_selection_json(conn, id, track_selection_json))
+    }
+
+    /// Pairs a document with the translation it is read beside; `None` clears the pairing.
+    /// The translation must be another media file of the same project.
+    pub fn set_translation_document(
+        &self,
+        id: &MediaFileId,
+        translation_media_file_id: Option<&MediaFileId>,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            media_files::set_translation_document(conn, id, translation_media_file_id)
+        })
+    }
+
+    /// Lists a document's alignments, newest first.
+    pub fn list_alignments(
+        &self,
+        media_file_id: &MediaFileId,
+    ) -> Result<Vec<Alignment>, StorageError> {
+        self.read(|conn| alignments::list_alignments(conn, media_file_id))
+    }
+
+    /// Adds an alignment to a document. Its counterpart must be another media file of the
+    /// same project.
+    pub fn add_alignment(
+        &self,
+        media_file_id: &MediaFileId,
+        request: &AddAlignmentRequest,
+    ) -> Result<Alignment, StorageError> {
+        self.write(|conn| alignments::add_alignment(conn, media_file_id, request))
+    }
+
+    /// Removes one of a document's alignments.
+    pub fn remove_alignment(
+        &self,
+        media_file_id: &MediaFileId,
+        alignment_id: &AlignmentId,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| alignments::remove_alignment(conn, media_file_id, alignment_id))
     }
 
     /// Lists every distinct local path that some media file still points at.

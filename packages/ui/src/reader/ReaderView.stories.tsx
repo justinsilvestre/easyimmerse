@@ -7,7 +7,7 @@ import {
   selectPreferencesLoaded,
   selectReaderPreferences,
 } from "@easyimmerse/state";
-import type { Document, LookupResult } from "@easyimmerse/types";
+import type { Document, LookupResult, MediaFile } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ComponentProps, useState } from "react";
 import { fn } from "storybook/test";
@@ -30,11 +30,15 @@ import {
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { withDispatchedActions } from "../storybook/withDispatchedActions.tsx";
 import { ConnectedReaderView } from "./ConnectedReaderView.tsx";
+import { exampleAudioAlignment } from "./exampleAudioAlignment.ts";
 import {
   exampleNovel,
   examplePlainText,
   exampleShortBook,
+  exampleShortBookAlignment,
+  exampleShortBookTranslation,
 } from "./exampleDocuments.ts";
+import { ReaderAudioBar } from "./ReaderAudioBar.tsx";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 import { useReaderKeyBindings } from "./useReaderKeyBindings.ts";
 import type { ReaderWord } from "./useWordPointer.ts";
@@ -325,6 +329,96 @@ export const PlainTextFile: Story = {
 export const ShortBook: Story = {
   decorators: openedWith(),
   args: { document: exampleShortBook, title: "Sample Book", language: "en" },
+};
+
+const audioContent = exampleAudioAlignment("a1").content;
+const audioSegments =
+  audioContent.kind === "audio" ? audioContent.segments : [];
+
+/** The audio of the short book, paused in the second sentence, which is highlighted as spoken. */
+const pausedAudio = {
+  bar: (
+    <ReaderAudioBar
+      isPlaying={false}
+      currentMs={1000}
+      durationMs={3030}
+      failure={null}
+      onTogglePlay={fn()}
+      onSeek={fn()}
+    />
+  ),
+  spokenSpan: audioSegments[1]?.span ?? null,
+  isPlaying: false,
+  onPlayWord: fn(),
+} satisfies ReaderStoryArgs["audio"];
+
+/** The short book aligned with its audio, paused in the second sentence. */
+export const AlignedWithAudio: Story = {
+  decorators: openedWith(),
+  args: {
+    document: exampleShortBook,
+    title: "Sample Book",
+    language: "en",
+    audio: pausedAudio,
+  },
+};
+
+const translationFile: MediaFile = {
+  id: "t1",
+  project_id: "p1",
+  name: "sample-translation.txt",
+  source: { kind: "path", path: "/books/sample-translation.txt" },
+  created_at_ms: 0,
+  track_selection_json: null,
+  origin: null,
+  translation_media_file_id: null,
+};
+
+const shortBookAlignment = exampleShortBookAlignment("b1", "t1").content;
+
+/** The short book, aligned with its Spanish translation sentence by sentence. */
+const alignedShortBook = {
+  document: exampleShortBook,
+  title: "Sample Book",
+  language: "en",
+  translation: {
+    candidates: [translationFile],
+    paired: translationFile,
+    document: exampleShortBookTranslation,
+    language: "es",
+    links:
+      shortBookAlignment.kind === "translation"
+        ? shortBookAlignment.links
+        : null,
+    onChoose: fn(),
+    onCombine: fn(),
+  },
+} satisfies Partial<ReaderStoryArgs>;
+
+export const TranslationPanelOpen: Story = {
+  decorators: openedWith(actions.readerPanelOpened("translation")),
+  args: alignedShortBook,
+};
+
+export const TranslationOnly: Story = {
+  decorators: openedWith(actions.readerViewModeChosen("translation")),
+  args: alignedShortBook,
+};
+
+export const Interlinear: Story = {
+  decorators: openedWith(actions.readerViewModeChosen("interlinear")),
+  args: alignedShortBook,
+};
+
+export const Parallel: Story = {
+  decorators: openedWith(actions.readerViewModeChosen("parallel")),
+  args: alignedShortBook,
+};
+
+/** The short book aligned with both its audio and its translation, in the interlinear view, paused in the second sentence. */
+export const InterlinearWithAudio: Story = {
+  decorators: openedWith(actions.readerViewModeChosen("interlinear")),
+  args: { ...alignedShortBook, audio: pausedAudio },
 };
 
 const fixtureFiles = [

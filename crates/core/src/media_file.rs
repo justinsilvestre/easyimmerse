@@ -12,7 +12,7 @@ use crate::providers::media_source::MediaLocator;
 #[ts(export)]
 pub struct MediaFileId(pub String);
 
-/// A video or audio file added to a project.
+/// A video, audio, or document file added to a project.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct MediaFile {
@@ -28,6 +28,9 @@ pub struct MediaFile {
     /// The user's saved choice of video and audio tracks, as the JSON the media crate
     /// defines. Null until the user has chosen.
     pub track_selection_json: Option<String>,
+    /// The document that translates this one, when this is a document paired with its
+    /// translation before the two are aligned. Null otherwise.
+    pub translation_media_file_id: Option<MediaFileId>,
 }
 
 /// Where the bytes of a media file come from.

@@ -3,9 +3,9 @@ import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
 import type { PreferencesState } from "../../preferences/preferencesState.ts";
 import type { MediaRoute } from "../../route/route.ts";
-import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { playbackMethodRequest } from "./playbackRequests.ts";
+import { selectPlayedMediaFile } from "./playedMediaFile.ts";
 
 /** The preferences as far as a playback method request needs them: their values, and whether they have loaded. */
 type MethodPreferences = Pick<PreferencesState, "values" | "isLoaded">;
@@ -20,7 +20,7 @@ export function requestFirstPlaybackMethod(
   const isChoosing =
     dialog?.kind === "trackChoice" && dialog.stage === "choosing";
   return playback?.methodRequest === null && !isChoosing
-    ? requestPlaybackMethod(playback, selectShownMediaFile(app), preferences)
+    ? requestPlaybackMethod(playback, selectPlayedMediaFile(app), preferences)
     : updated(playback);
 }
 

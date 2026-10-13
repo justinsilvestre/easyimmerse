@@ -7,20 +7,23 @@ use zip::result::ZipError;
 
 use super::error::DocumentError;
 use super::opf::{Opf, parse_opf};
-use super::xhtml_text::extract_chapter;
-use super::{Chapter, Document};
+use super::xhtml_text::extract_chapter_with_provenance;
+use super::{Chapter, ChapterProvenance, Document, DocumentProvenance};
 
 /// Parses an EPUB archive into a document with one chapter per spine item, skipping the
-/// navigation document.
+/// navigation document, and records where each paragraph came from.
 pub fn parse_epub(bytes: &[u8]) -> Result<Document, DocumentError> {
     let mut archive = ZipArchive::new(Cursor::new(bytes))?;
     let opf_path = find_rootfile_path(&read_entry(&mut archive, "META-INF/container.xml")?)?;
     let opf = parse_opf(&read_entry(&mut archive, &opf_path)?)?;
-    let chapters = read_chapters(&mut archive, &opf, parent_directory(&opf_path))?;
+    let (chapters, provenance) = read_chapters(&mut archive, &opf, parent_directory(&opf_path))?;
     Ok(Document {
         title: opf.title,
         language: opf.language,
         chapters,
+        provenance: Some(DocumentProvenance {
+            chapters: provenance,
+        }),
     })
 }
 
@@ -38,20 +41,24 @@ fn read_chapters(
     archive: &mut ZipArchive<Cursor<&[u8]>>,
     opf: &Opf,
     directory: &str,
-) -> Result<Vec<Chapter>, DocumentError> {
+) -> Result<(Vec<Chapter>, Vec<ChapterProvenance>), DocumentError> {
     let mut chapters = Vec::new();
+    let mut provenance = Vec::new();
     for idref in &opf.spine {
         let item = opf
             .find_manifest_item(idref)
             .ok_or_else(|| DocumentError::UnknownSpineItem(idref.clone()))?;
         if !item.is_navigation() {
-            chapters.push(extract_chapter(&read_entry(
-                archive,
-                &resolve_href(directory, &item.href),
-            )?)?);
+            let href = resolve_href(directory, &item.href);
+            let extracted = extract_chapter_with_provenance(&read_entry(archive, &href)?)?;
+            chapters.push(extracted.chapter);
+            provenance.push(ChapterProvenance {
+                href,
+                paragraphs: extracted.paragraphs,
+            });
         }
     }
-    Ok(chapters)
+    Ok((chapters, provenance))
 }
 
 fn read_entry(

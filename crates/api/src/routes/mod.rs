@@ -1,3 +1,4 @@
+pub mod alignments;
 pub mod conversion_cache;
 pub mod conversions;
 pub mod dictionaries;
