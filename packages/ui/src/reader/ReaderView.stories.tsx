@@ -335,28 +335,31 @@ const audioContent = exampleAudioAlignment("a1").content;
 const audioSegments =
   audioContent.kind === "audio" ? audioContent.segments : [];
 
-/** The short book aligned with its audio, paused in the second sentence, which is highlighted as spoken. */
+/** The audio of the short book, paused in the second sentence, which is highlighted as spoken. */
+const pausedAudio = {
+  bar: (
+    <ReaderAudioBar
+      isPlaying={false}
+      currentMs={1000}
+      durationMs={3030}
+      failure={null}
+      onTogglePlay={fn()}
+      onSeek={fn()}
+    />
+  ),
+  spokenSpan: audioSegments[1]?.span ?? null,
+  isPlaying: false,
+  onPlayWord: fn(),
+} satisfies ReaderStoryArgs["audio"];
+
+/** The short book aligned with its audio, paused in the second sentence. */
 export const AlignedWithAudio: Story = {
   decorators: openedWith(),
   args: {
     document: exampleShortBook,
     title: "Sample Book",
     language: "en",
-    audio: {
-      bar: (
-        <ReaderAudioBar
-          isPlaying={false}
-          currentMs={1000}
-          durationMs={3030}
-          failure={null}
-          onTogglePlay={fn()}
-          onSeek={fn()}
-        />
-      ),
-      spokenSpan: audioSegments[1]?.span ?? null,
-      isPlaying: false,
-      onPlayWord: fn(),
-    },
+    audio: pausedAudio,
   },
 };
 
@@ -410,6 +413,12 @@ export const Interlinear: Story = {
 export const Parallel: Story = {
   decorators: openedWith(actions.readerViewModeChosen("parallel")),
   args: alignedShortBook,
+};
+
+/** The short book aligned with both its audio and its translation, in the interlinear view, paused in the second sentence. */
+export const InterlinearWithAudio: Story = {
+  decorators: openedWith(actions.readerViewModeChosen("interlinear")),
+  args: { ...alignedShortBook, audio: pausedAudio },
 };
 
 const fixtureFiles = [

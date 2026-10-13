@@ -5,6 +5,7 @@ import {
   linksOfParagraph,
   translationOfLink,
   translationParagraphsOf,
+  translationSpansOf,
 } from "./translationAlignment.ts";
 
 function span(
@@ -130,5 +131,24 @@ describe("translationParagraphsOf", () => {
 
   it("returns nothing for a paragraph no link covers", () => {
     expect(translationParagraphsOf([dogLink, catLink], 0, 3)).toEqual([]);
+  });
+});
+
+describe("translationSpansOf", () => {
+  const links = [
+    link([span(0, 0, 0, 5)], [span(0, 0, 0, 4)]),
+    link([span(0, 0, 6, 12)], [span(0, 1, 6, 9), span(0, 1, 0, 5)]),
+  ];
+
+  it("returns the translation spans of the links that overlap the span, in document order", () => {
+    expect(translationSpansOf(links, span(0, 0, 4, 8))).toEqual([
+      span(0, 0, 0, 4),
+      span(0, 1, 0, 5),
+      span(0, 1, 6, 9),
+    ]);
+  });
+
+  it("returns nothing for a span that only touches a link's end", () => {
+    expect(translationSpansOf(links, span(0, 0, 5, 6))).toEqual([]);
   });
 });

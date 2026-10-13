@@ -5,7 +5,7 @@ import {
   type ReaderScreenAction,
   type ReaderScreenState,
 } from "@easyimmerse/state";
-import type { Document } from "@easyimmerse/types";
+import type { Document, TranslationLink } from "@easyimmerse/types";
 import {
   type MouseEvent,
   type ReactNode,
@@ -17,7 +17,6 @@ import { useMediaQuery, wideScreenQuery } from "../hooks/useMediaQuery.ts";
 import type { AnchorRect } from "../lookup/placeAtAnchor.ts";
 import type { PopupSize } from "../lookup/popupSize.ts";
 import { AppearancePanel } from "./AppearancePanel.tsx";
-import { clampSpanToDocument } from "./alignment/textSpans.ts";
 import { ChapterEnd } from "./ChapterEnd.tsx";
 import { ChapterText } from "./ChapterText.tsx";
 import { ContentsPanel } from "./ContentsPanel.tsx";
@@ -49,6 +48,7 @@ import {
 import { ScrolledChapter } from "./ScrolledChapter.tsx";
 import { SearchPanel } from "./SearchPanel.tsx";
 import { searchDocument } from "./searchDocument.ts";
+import { spokenSpansShown } from "./spokenSpansShown.ts";
 import { TranslationPanel } from "./TranslationPanel.tsx";
 import { TranslationPopup } from "./TranslationPopup.tsx";
 import {
@@ -121,6 +121,8 @@ type ReaderViewProps = {
 };
 
 const searchLimit = 500;
+/** The links of a translation shown without an alignment, kept as one array so that the spoken text keeps its identity. */
+const noLinks: readonly TranslationLink[] = [];
 /**
  * The most text the paged layout lays out at once, about the length of a short novel.
  * Layout time grows with the text's length, so a longer chapter is shown in sections.
@@ -177,8 +179,13 @@ export function ReaderView(props: ReaderViewProps) {
 
   const textContainer = useRef<HTMLElement>(null);
   const shownText = useMemo(
-    () => [chapter, sectionIndex, layoutKeyOf(preferences)],
-    [chapter, sectionIndex, preferences],
+    () => [
+      chapter,
+      sectionIndex,
+      layoutKeyOf(preferences),
+      shown.chapterTranslation,
+    ],
+    [chapter, sectionIndex, preferences, shown.chapterTranslation],
   );
   // The paragraphs near the view are the book's, whose words are looked up ahead; the translation's are not.
   useParagraphsNearView(textContainer, isPaged, shownText, (span) => {
@@ -216,13 +223,16 @@ export function ReaderView(props: ReaderViewProps) {
     else goToChapter(index < 0 ? chapterIndex - 1 : chapterIndex + 1, edge);
   };
   const spoken = props.audio?.spokenSpan ?? null;
-  const spokenSpan = useMemo(
-    () => spoken && clampSpanToDocument(spoken, document),
-    [spoken, document],
+  const shownLinks = shown.isTranslationShown
+    ? (translation?.links ?? noLinks)
+    : null;
+  const spokenSpans = useMemo(
+    () => spokenSpansShown(spoken, document, shownLinks),
+    [spoken, document, shownLinks],
   );
   useSpokenHighlight(
     textContainer,
-    spokenSpan,
+    spokenSpans,
     props.audio?.isPlaying ?? false,
     shownText,
     (span) =>

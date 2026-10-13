@@ -19,10 +19,10 @@ export function rangeOfShownSpan(
   return paragraph && rangeOfSpan(paragraph, span.start, span.end);
 }
 
-/** Highlights the range as the text being spoken, in place of any range highlighted before. Does nothing where the browser lacks the CSS Custom Highlight API. */
-export function highlightSpoken(range: Range) {
+/** Highlights the ranges as the text being spoken, in place of any highlighted before. Does nothing where the browser lacks the CSS Custom Highlight API. */
+export function highlightSpoken(ranges: readonly Range[]) {
   if (typeof CSS === "undefined" || !CSS.highlights) return;
-  const highlight = new Highlight(range);
+  const highlight = new Highlight(...ranges);
   // Below the looked-up word's highlight, which may lie inside the sentence.
   highlight.priority = -1;
   CSS.highlights.set(spokenHighlightName, highlight);

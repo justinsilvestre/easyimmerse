@@ -1,5 +1,5 @@
 import type { ReaderLocation } from "@easyimmerse/state";
-import type { Document, TranslationLink } from "@easyimmerse/types";
+import type { Document, TextSpan, TranslationLink } from "@easyimmerse/types";
 import {
   compareSpans,
   isInParagraph,
@@ -46,6 +46,25 @@ export function translationOfLink(
   link: TranslationLink,
 ): string {
   return textOfSpans(translationDocument, link.translation_spans);
+}
+
+/** The translation spans of the links with a document span that shares text with the given span, in their document order. */
+export function translationSpansOf(
+  links: readonly TranslationLink[],
+  span: TextSpan,
+): TextSpan[] {
+  return links
+    .filter(({ spans }) => spans.some((linked) => spansOverlap(linked, span)))
+    .flatMap(({ translation_spans }) => translation_spans)
+    .sort(compareSpans);
+}
+
+function spansOverlap(a: TextSpan, b: TextSpan): boolean {
+  return (
+    isInParagraph(a, b.chapter_index, b.paragraph_index) &&
+    a.start < b.end &&
+    b.start < a.end
+  );
 }
 
 /** The distinct paragraphs of the translation document linked from the given paragraph, in their document order. */
