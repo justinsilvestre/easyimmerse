@@ -66,6 +66,46 @@ describe("ProjectForm", () => {
       fireEvent.click(screen.getByLabelText("Advanced"));
       expect(isChecked("Definition (en)")).toBe(false);
     });
+
+    it("puts the word on the front", () => {
+      renderForm();
+      fireEvent.click(screen.getByLabelText("Advanced"));
+      expect(
+        screen.getByRole("button", { name: "Word (de) on the front" }),
+      ).not.toBeNull();
+    });
+  });
+
+  describe("when a field of a preset moves to the front", () => {
+    it("switches the preset to custom", () => {
+      renderForm();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Word (de) on the back" }),
+      );
+      expect(isChecked("Custom")).toBe(true);
+    });
+
+    it("shows the field on the front", () => {
+      renderForm();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Word (de) on the back" }),
+      );
+      expect(
+        screen.getByRole("button", { name: "Word (de) on the front" }),
+      ).not.toBeNull();
+    });
+  });
+
+  it("offers no side for a field left off the card", () => {
+    renderForm();
+    expect(
+      screen.queryByRole("button", { name: /^Word pronunciation on the/ }),
+    ).toBeNull();
+  });
+
+  it("offers no side for the tags", () => {
+    renderForm();
+    expect(screen.queryByRole("button", { name: /^Tags on the/ })).toBeNull();
   });
 
   describe("when a field of a preset is unchecked", () => {
