@@ -38,13 +38,20 @@ export function isSendingTo(
   );
 }
 
-/** Deletes from Anki the notes of a project's deleted flashcards, after the project's earlier sends, under an id of its own. */
-export function deleteFromAnki(projectId: string, noteIds: readonly number[]) {
+/**
+ * Deletes from Anki the note of a project's deleted flashcard, named by its word, after the project's earlier sends,
+ * so that a note a send in flight creates is deleted too.
+ */
+export function deleteFromAnki(
+  projectId: string,
+  flashcardId: string,
+  word: string,
+) {
   return {
     type: "sendRequestWithFreeId",
     prefix: `project/${projectId}/ankiDelete`,
     scope: ankiScope(projectId),
-    request: { kind: "deleteAnkiNotes", noteIds },
+    request: { kind: "deleteAnkiNote", flashcardId, word },
   } satisfies Effect;
 }
 

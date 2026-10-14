@@ -56,7 +56,7 @@ const sent = (outcome: Partial<AnkiSendOutcome>) =>
     data: { sentCount: 0, failedCount: 0, skippedMediaCount: 0, ...outcome },
   });
 
-/** The deletion of f2, whose note in Anki is 100, or of another flashcard of p1. */
+/** The deletion of f2, whose word is "f2", or of another flashcard of p1. */
 const deletionSettled = (
   purpose: DeletePurpose,
   { ok = true, flashcardId = "f2" } = {},
@@ -69,19 +69,25 @@ const deletionSettled = (
       : { ok: false, error: { status: 500, message: "down" } },
   );
 
-const noteDeletion = {
+const noteDeletion = (flashcardId = "f2", word = flashcardId) => ({
   type: "sendRequest",
   id: "project/p1/ankiDelete/1",
   scope: "ankiSend:p1",
-  request: { kind: "deleteAnkiNotes", noteIds: [100] },
-};
+  request: { kind: "deleteAnkiNote", flashcardId, word },
+});
 
-const noteDeletionFailed = (error: RequestFailure) =>
+const noteDeletionFailed = (error: RequestFailure, word = "f2") =>
   actions.requestSettled(
     "project/p1/ankiDelete/1",
-    { kind: "deleteAnkiNotes", noteIds: [100] },
+    { kind: "deleteAnkiNote", flashcardId: "f2", word },
     { ok: false, error },
   );
+
+const unreachable: RequestFailure = {
+  status: "NETWORK",
+  code: "anki_unreachable",
+  message: "x",
+};
 
 const sendAllRequest = {
   kind: "sendFlashcardsToAnki",
@@ -103,7 +109,7 @@ const ankiKindsSent = ({ sentRequests }: { sentRequests: ServerRequest[] }) =>
   sentRequests
     .map(({ kind }) => kind)
     .filter(
-      (kind) => kind === "sendFlashcardsToAnki" || kind === "deleteAnkiNotes",
+      (kind) => kind === "sendFlashcardsToAnki" || kind === "deleteAnkiNote",
     );
 
 const noticesAfter = (...actions: AppAction[]) =>
@@ -206,27 +212,34 @@ describe("ankiCommands", () => {
 describe("ankiCommands when a flashcard is deleted", () => {
   it("deletes its note from Anki", () => {
     expect(effectsOf(deletionSettled({ type: "delete" }))).toContainEqual(
-      noteDeletion,
+      noteDeletion(),
     );
   });
 
   it("deletes its note when an Undo deletes a new card", () => {
     expect(
       effectsOf(deletionSettled({ type: "undo", word: "f2" })),
-    ).toContainEqual(noteDeletion);
+    ).toContainEqual(noteDeletion());
   });
 
   it("deletes its note when a discard in doubt deletes a card", () => {
     expect(
       effectsOf(deletionSettled({ type: "rollback", word: "f2" })),
-    ).toContainEqual(noteDeletion);
+    ).toContainEqual(noteDeletion());
   });
 
-  it("deletes nothing for a card Anki has no note for", () => {
-    const effects = effectsOf(
-      deletionSettled({ type: "delete" }, { flashcardId: "f1" }),
-    );
-    expect(effects.map(({ type }) => type)).not.toContain("sendRequest");
+  it("looks for the note of a card no send has recorded, since a send in flight may create it", () => {
+    expect(
+      effectsOf(deletionSettled({ type: "delete" }, { flashcardId: "f1" })),
+    ).toContainEqual(noteDeletion("f1"));
+  });
+
+  it("names an uncached card by the word its Undo names", () => {
+    expect(
+      effectsOf(
+        deletionSettled({ type: "undo", word: "Katze" }, { flashcardId: "f9" }),
+      ),
+    ).toContainEqual(noteDeletion("f9", "Katze"));
   });
 
   it("deletes nothing for a project that exports packages", () => {
@@ -235,13 +248,13 @@ describe("ankiCommands when a flashcard is deleted", () => {
       deletionSettled({ type: "delete" }),
       ankiCache("anki_package"),
     )[1];
-    expect(effects).not.toContainEqual(noteDeletion);
+    expect(effects).not.toContainEqual(noteDeletion());
   });
 
   it("deletes nothing when the deletion failed", () => {
     expect(
       effectsOf(deletionSettled({ type: "delete" }, { ok: false })),
-    ).not.toContainEqual(noteDeletion);
+    ).not.toContainEqual(noteDeletion());
   });
 
   it("waits for the project's send under way before deleting the note", () => {
@@ -258,7 +271,7 @@ describe("ankiCommands when a flashcard is deleted", () => {
     await vi.waitUntil(() => ankiKindsSent(server).length === 2);
     expect(ankiKindsSent(server)).toEqual([
       "sendFlashcardsToAnki",
-      "deleteAnkiNotes",
+      "deleteAnkiNote",
     ]);
   });
 
@@ -269,16 +282,19 @@ describe("ankiCommands when a flashcard is deleted", () => {
       message: "collection is not available",
     });
     expect(noticesAfter(refused)).toEqual([
-      "The flashcard's note could not be deleted from Anki: collection is not available",
+      "The note for “f2” could not be deleted from Anki: collection is not available",
     ]);
   });
 
   it("says nothing when Anki is not running, which leaves the note in Anki", () => {
-    const unreachable = noteDeletionFailed({
-      status: "NETWORK",
-      code: "anki_unreachable",
-      message: "x",
+    expect(noticesAfter(noteDeletionFailed(unreachable))).toEqual([]);
+  });
+
+  it("says nothing of an aborted deletion", () => {
+    const aborted = noteDeletionFailed({
+      status: "ABORTED",
+      message: "aborted",
     });
-    expect(noticesAfter(unreachable)).toEqual([]);
+    expect(noticesAfter(aborted)).toEqual([]);
   });
 });

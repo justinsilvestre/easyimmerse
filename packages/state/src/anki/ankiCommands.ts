@@ -42,19 +42,20 @@ function sendSaved({ request, outcome }: RequestSettled, { backend }: AnkiApp) {
     : [];
 }
 
-/** Deletes the note of a deleted flashcard, read from the flashcards cached before the deletion. */
+/** Deletes the note of a deleted flashcard, named by its word as cached before the deletion, or as its Undo or rollback names it. */
 function deleteDeleted(
   { request, outcome }: RequestSettled,
   { backend }: AnkiApp,
 ) {
   if (request.kind !== "deleteFlashcard" || !outcome.ok) return [];
-  const { projectId, flashcardId } = request;
+  const { projectId, flashcardId, purpose } = request;
   if (cachedDestination(backend, projectId) !== "anki_connect") return [];
   const deleted = cachedFlashcards(backend, projectId).find(
     ({ id }) => id === flashcardId,
   );
-  const noteId = deleted?.anki_note_id ?? null;
-  return noteId === null ? [] : [deleteFromAnki(projectId, [noteId])];
+  const word =
+    deleted?.content.word ?? (purpose.type === "delete" ? "" : purpose.word);
+  return [deleteFromAnki(projectId, flashcardId, word)];
 }
 
 function sendNotices(action: RequestSettled) {
@@ -65,8 +66,10 @@ function sendNotices(action: RequestSettled) {
 }
 
 function deleteNotices({ request, outcome }: RequestSettled) {
-  if (request.kind !== "deleteAnkiNotes" || outcome.ok) return [];
-  return isSilentFailure(outcome) ? [] : [deleteFailedNotice(outcome.error)];
+  if (request.kind !== "deleteAnkiNote" || outcome.ok) return [];
+  return isSilentFailure(outcome)
+    ? []
+    : [deleteFailedNotice(request.word, outcome.error)];
 }
 
 function isSilentFailure(outcome: RequestOutcome) {
