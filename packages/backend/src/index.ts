@@ -13,6 +13,7 @@ export {
   useGetSubtitleCuesQuery,
   useLazyLookupTextQuery,
   useLicenseNoticesQuery,
+  useListAnkiPendingDeletionsQuery,
   useListDictionariesQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListFlashcardsQuery,

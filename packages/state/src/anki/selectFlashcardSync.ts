@@ -22,6 +22,8 @@ export type FlashcardSync =
       kind: "ankiConnect";
       connection: AnkiConnectionStatus;
       unsentCount: number;
+      /** The deleted flashcards whose notes are still to be deleted from Anki. */
+      pendingDeletionCount: number;
       /** The first-made flashcard Anki has no note for. */
       nextCard: FlashcardContent | null;
       /** Whether a send of the project's flashcards is under way or waiting. */
@@ -29,7 +31,8 @@ export type FlashcardSync =
     };
 
 /**
- * Selects where the project's flashcards go, from the cached project and flashcards and the last check of the connection to Anki.
+ * Selects where the project's flashcards go, from the cached project, flashcards and pending deletions from Anki,
+ * and the last check of the connection to Anki.
  * The result keeps its reference while those do.
  */
 export const selectFlashcardSync = createSelector(
@@ -42,8 +45,17 @@ export const selectFlashcardSync = createSelector(
       cacheEntry(root.backend, "checkAnkiConnection", undefined),
     (root: RootState, projectId: string) =>
       isSendingTo(root.app.operations.requests, projectId),
+    (root: RootState, projectId: string) =>
+      cacheEntry(root.backend, "listAnkiPendingDeletions", projectId)?.data
+        ?.deletions.length ?? 0,
   ],
-  (destination, flashcards, connection, sending): FlashcardSync => {
+  (
+    destination,
+    flashcards,
+    connection,
+    sending,
+    pendingDeletionCount,
+  ): FlashcardSync => {
     switch (destination) {
       case null:
         return { kind: "notStarted" };
@@ -61,6 +73,7 @@ export const selectFlashcardSync = createSelector(
           kind: "ankiConnect",
           connection: statusOf(connection),
           unsentCount: unsent.length,
+          pendingDeletionCount,
           nextCard: firstMadeContent(unsent),
           isSending: sending,
         };

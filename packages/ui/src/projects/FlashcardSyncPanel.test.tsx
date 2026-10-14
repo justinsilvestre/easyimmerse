@@ -15,8 +15,21 @@ const sendingTo = (
   kind: "ankiConnect",
   connection,
   unsentCount: 2,
+  pendingDeletionCount: 0,
   nextCard: null,
   isSending,
+});
+
+const counting = (
+  unsentCount: number,
+  pendingDeletionCount: number,
+): FlashcardSyncState => ({
+  kind: "ankiConnect",
+  connection: "connected",
+  unsentCount,
+  pendingDeletionCount,
+  nextCard: null,
+  isSending: false,
 });
 
 function renderPanel(state: FlashcardSyncState) {
@@ -77,5 +90,33 @@ describe("FlashcardSyncPanel", () => {
     const calls = renderPanel(sendingTo("connected"));
     fireEvent.click(screen.getByRole("button", { name: "Change destination" }));
     expect(calls).toEqual(["change"]);
+  });
+
+  describe("when the cards go to Anki through AnkiConnect", () => {
+    it("counts the cards waiting to be sent", () => {
+      renderPanel(counting(3, 0));
+      expect(
+        screen.getByText("3 flashcards waiting to be sent."),
+      ).toBeDefined();
+    });
+
+    it("counts the notes waiting to be deleted beside the cards to send", () => {
+      renderPanel(counting(3, 1));
+      expect(
+        screen.getByText("3 flashcards waiting to be sent, 1 note to delete."),
+      ).toBeDefined();
+    });
+
+    it("counts the notes waiting to be deleted when every card is in Anki", () => {
+      renderPanel(counting(0, 2));
+      expect(
+        screen.getByText("2 notes waiting to be deleted from Anki."),
+      ).toBeDefined();
+    });
+
+    it("says every card is in Anki when nothing waits", () => {
+      renderPanel(counting(0, 0));
+      expect(screen.getByText("Every flashcard is in Anki.")).toBeDefined();
+    });
   });
 });

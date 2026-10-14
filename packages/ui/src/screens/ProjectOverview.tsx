@@ -1,4 +1,6 @@
 import {
+  skipToken,
+  useListAnkiPendingDeletionsQuery,
   useListDictionariesQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
@@ -55,6 +57,10 @@ export function ProjectOverview({
   const isAnkiConnectSetupOpen = useAppSelector(selectIsAnkiConnectSetupOpen);
   const flashcardSync = useAppSelector((state) =>
     selectFlashcardSync(state, project.id),
+  );
+  // The panel counts the notes still to be deleted from Anki from this query's cached answer.
+  useListAnkiPendingDeletionsQuery(
+    flashcardSync.kind === "ankiConnect" ? project.id : skipToken,
   );
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
   const navigate = useNavigate();

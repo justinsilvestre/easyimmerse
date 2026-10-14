@@ -67,6 +67,7 @@ export const AnkiChecking: Story = {
       kind: "ankiConnect",
       connection: "checking",
       unsentCount: 3,
+      pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
       isSending: false,
     },
@@ -79,6 +80,7 @@ export const AnkiConnected: Story = {
       kind: "ankiConnect",
       connection: "connected",
       unsentCount: 3,
+      pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
       isSending: false,
     },
@@ -91,6 +93,7 @@ export const SendingToAnki: Story = {
       kind: "ankiConnect",
       connection: "connected",
       unsentCount: 3,
+      pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
       isSending: true,
     },
@@ -103,6 +106,20 @@ export const AnkiUnreachable: Story = {
       kind: "ankiConnect",
       connection: "unreachable",
       unsentCount: 3,
+      pendingDeletionCount: 0,
+      nextCard: exampleFlashcard,
+      isSending: false,
+    },
+  },
+};
+
+export const AnkiUnreachableWithNotesToDelete: Story = {
+  args: {
+    state: {
+      kind: "ankiConnect",
+      connection: "unreachable",
+      unsentCount: 3,
+      pendingDeletionCount: 1,
       nextCard: exampleFlashcard,
       isSending: false,
     },

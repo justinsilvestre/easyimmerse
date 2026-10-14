@@ -60,6 +60,22 @@ describe("selectFlashcardSync", () => {
     });
   });
 
+  it("counts no notes to delete while none are listed", () => {
+    expect(syncOf(checked(true))).toMatchObject({ pendingDeletionCount: 0 });
+  });
+
+  it("counts the notes still to be deleted from Anki", () => {
+    const backend = serverCacheWith(
+      "listAnkiPendingDeletions",
+      "p1",
+      {
+        deletions: [{ flashcard_id: "f9", word: "Katze", requested_at_ms: 1 }],
+      },
+      checked(true),
+    );
+    expect(syncOf(backend)).toMatchObject({ pendingDeletionCount: 1 });
+  });
+
   it("says Anki is connected once it answered the check", () => {
     expect(syncOf(checked(true))).toMatchObject({ connection: "connected" });
   });

@@ -1,4 +1,5 @@
 import type {
+  AnkiPendingDeletions,
   ListFlashcardsResponse,
   PlaybackMethodRequest,
 } from "@easyimmerse/types";
@@ -26,12 +27,14 @@ export type CachedQueries = {
   getProject: string;
   listMediaFiles: string;
   listFlashcards: string;
+  listAnkiPendingDeletions: string;
   checkAnkiConnection: undefined;
 };
 
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
 export type CachedResponses = ServerResponses & {
   listFlashcards: ListFlashcardsResponse;
+  listAnkiPendingDeletions: AnkiPendingDeletions;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */

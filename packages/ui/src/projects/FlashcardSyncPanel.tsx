@@ -193,11 +193,7 @@ function Status({
       return (
         <StatusBlock
           badge={connectionBadges[state.connection]}
-          summary={
-            state.unsentCount === 0
-              ? "Every flashcard is in Anki."
-              : `${pluralize(state.unsentCount, "flashcard")} waiting to be sent.`
-          }
+          summary={ankiConnectSummary(state)}
           hint={
             state.connection === "unreachable"
               ? "Start Anki with the AnkiConnect add-on installed, then check again or send the cards."
@@ -231,6 +227,25 @@ function Status({
         />
       );
   }
+}
+
+/** Counts the flashcards waiting to be sent to Anki and the notes waiting to be deleted from it. */
+function ankiConnectSummary({
+  unsentCount,
+  pendingDeletionCount,
+}: {
+  unsentCount: number;
+  pendingDeletionCount: number;
+}) {
+  const notes = pluralize(pendingDeletionCount, "note");
+  if (unsentCount === 0)
+    return pendingDeletionCount === 0
+      ? "Every flashcard is in Anki."
+      : `${notes} waiting to be deleted from Anki.`;
+  const unsent = `${pluralize(unsentCount, "flashcard")} waiting to be sent`;
+  return pendingDeletionCount === 0
+    ? `${unsent}.`
+    : `${unsent}, ${notes} to delete.`;
 }
 
 const connectionBadges = {
