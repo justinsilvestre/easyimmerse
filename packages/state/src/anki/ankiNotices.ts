@@ -5,11 +5,8 @@ import { transientNotice } from "../notices/transientNotice.ts";
 import type { RequestFailure } from "../server/serverRequest.ts";
 import type { AnkiPackageExport, AnkiSendOutcome } from "./ankiResponses.ts";
 
-/** The code of the failure of a send to Anki, or of a check, when Anki does not answer. */
+/** The code of the failure of a send to Anki when Anki does not answer, which the project screen's panel shows in place of a notice. */
 export const ankiUnreachableCode = "anki_unreachable";
-
-const unreachableMessage =
-  "Anki is not running, or AnkiConnect is not installed.";
 
 /** Tells how many flashcards an export wrote, and how many media files it left out. */
 export function exportedNotice({
@@ -40,9 +37,7 @@ export function sentNotice({
 export function sendFailedNotice(failure: RequestFailure) {
   return notice(
     "danger",
-    failure.code === ankiUnreachableCode
-      ? unreachableMessage
-      : `The flashcards could not be sent to Anki: ${failure.message}`,
+    `The flashcards could not be sent to Anki: ${failure.message}`,
   );
 }
 

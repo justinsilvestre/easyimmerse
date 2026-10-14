@@ -110,7 +110,21 @@ describe("ankiCommands", () => {
     ]);
   });
 
-  it("tells that Anki is not running", () => {
+  it("tells why Anki refused a send", () => {
+    const refused = actions.requestSettled(
+      "project/p1/ankiSend/1",
+      sendRequest,
+      {
+        ok: false,
+        error: { status: 502, code: "anki_failed", message: "deck is full" },
+      },
+    );
+    expect(noticesAfter(refused)).toEqual([
+      "The flashcards could not be sent to Anki: deck is full",
+    ]);
+  });
+
+  it("says nothing when Anki is not running, which the project screen shows", () => {
     const unreachable = actions.requestSettled(
       "project/p1/ankiSend/1",
       sendRequest,
@@ -119,9 +133,7 @@ describe("ankiCommands", () => {
         error: { status: "NETWORK", code: "anki_unreachable", message: "x" },
       },
     );
-    expect(noticesAfter(unreachable)).toEqual([
-      "Anki is not running, or AnkiConnect is not installed.",
-    ]);
+    expect(noticesAfter(unreachable)).toEqual([]);
   });
 
   it("says nothing of an aborted send", () => {
