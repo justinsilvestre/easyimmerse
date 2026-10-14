@@ -70,7 +70,7 @@ function updateShownScreen(
   if (main.kind === "media" && route.screen === "media")
     return updateMediaScreen(main, mediaScreenActionOf(app, action), app);
   if (main.kind === "project" && route.screen === "project")
-    return updateProjectScreen(main, action, route, app.backend);
+    return updateProjectScreen(main, action, route, app);
   if (main.kind === "offline") return updateOfflineScreen(main, action);
   if (route.screen === "newProject" || route.screen === "projectSettings")
     return updated(main, ...updateProjectForm(route, action, app));

@@ -642,7 +642,10 @@ export const backendApi = createApi({
       invalidatesTags: (_result, _error, { projectId }) =>
         flashcardsSentTags(projectId),
     }),
-    /** Sets where a project's flashcards go. */
+    /**
+     * Sets where a project's flashcards go. The project it answers replaces the cached one at once,
+     * so that what follows the change, such as a send to Anki, sees the new destination before the refetch lands.
+     */
     setFlashcardDestination: build.mutation<Project, FlashcardDestinationArgs>({
       query: ({ projectId, destination }) => ({
         method: "PUT",
@@ -652,6 +655,19 @@ export const backendApi = createApi({
           value: { destination } satisfies FlashcardDestinationRequest,
         },
       }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        const result = await queryFulfilled.catch(() => null);
+        if (result !== null)
+          dispatch(
+            backendApi.util.upsertQueryEntries([
+              {
+                endpointName: "getProject",
+                arg: projectId,
+                value: result.data,
+              },
+            ]),
+          );
+      },
       invalidatesTags: ["Projects"],
     }),
     /** The open-source license notices. They are megabytes of text, so the entry goes as soon as no page shows them. */

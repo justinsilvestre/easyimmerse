@@ -4,6 +4,7 @@ import type { RootState } from "../app/createAppStore.ts";
 import { type CacheEntry, cacheEntry } from "../server/cacheEntry.ts";
 import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
 import { isUnexported, isUnsent, oldestFirst } from "./ankiExportSelection.ts";
+import { isSendingTo } from "./ankiRequests.ts";
 
 /** Whether Anki answered the last check: still being asked, answered, or not. */
 export type AnkiConnectionStatus = "checking" | "connected" | "unreachable";
@@ -39,7 +40,8 @@ export const selectFlashcardSync = createSelector(
       cachedFlashcards(root.backend, projectId),
     (root: RootState) =>
       cacheEntry(root.backend, "checkAnkiConnection", undefined),
-    (root: RootState, projectId: string) => isSending(root, projectId),
+    (root: RootState, projectId: string) =>
+      isSendingTo(root.app.operations.requests, projectId),
   ],
   (destination, flashcards, connection, sending): FlashcardSync => {
     switch (destination) {
@@ -74,12 +76,4 @@ function firstMadeContent(flashcards: readonly Flashcard[]) {
 function statusOf(entry: CacheEntry<"checkAnkiConnection">) {
   if (entry === undefined || entry.status === "pending") return "checking";
   return entry.data?.connected ? "connected" : "unreachable";
-}
-
-function isSending(root: RootState, projectId: string): boolean {
-  return root.app.operations.requests.some(
-    ({ request }) =>
-      request.kind === "sendFlashcardsToAnki" &&
-      request.projectId === projectId,
-  );
 }

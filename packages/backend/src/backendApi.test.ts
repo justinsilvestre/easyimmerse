@@ -2,6 +2,7 @@ import type {
   LookupResponse,
   MediaFile,
   PlaybackMethodRequest,
+  Project,
   SourceStepResponse,
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
@@ -563,5 +564,41 @@ describe("checkAnkiConnection", () => {
     expect(
       backendApi.endpoints.checkAnkiConnection.select()(store.getState()).data,
     ).toEqual({ connected: false });
+  });
+});
+
+describe("setFlashcardDestination", () => {
+  it("puts the project it answers into the cache at once", async () => {
+    const project: Project = {
+      id: "p1",
+      settings: {
+        name: "Korean",
+        target_language: "ko",
+        translation_language: "en",
+        flashcard_fields: ["word"],
+        default_tags: [],
+        tags_media_name: false,
+        fills_audio_with_tts: false,
+        flashcard_front_fields: [],
+      },
+      created_at_ms: 0,
+      last_opened_at_ms: 0,
+      media_count: 0,
+      flashcard_count: 0,
+      flashcard_destination: "anki_connect",
+    };
+    const store = createStore({
+      send: async <T>() => ({ data: project as T }),
+    });
+    await store.dispatch(
+      backendApi.endpoints.setFlashcardDestination.initiate({
+        projectId: "p1",
+        destination: "anki_connect",
+      }),
+    );
+    expect(
+      backendApi.endpoints.getProject.select("p1")(store.getState()).data
+        ?.flashcard_destination,
+    ).toBe("anki_connect");
   });
 });

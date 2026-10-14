@@ -1,15 +1,21 @@
 import type { AppAction } from "../app/appAction.ts";
+import type { ReadableState } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
-import type { ServerCacheSlice } from "../server/cacheEntry.ts";
+import { cacheEntry, type ServerCacheSlice } from "../server/cacheEntry.ts";
 import { isSettled } from "../server/isSettled.ts";
-import { cachedFlashcards } from "./ankiCache.ts";
+import type { RequestSettled } from "../server/serverRequest.ts";
+import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
 import { isUnsent, oldestFirst } from "./ankiExportSelection.ts";
 import {
+  ankiConnectionCheckId,
   ankiRequestIds,
   checkAnkiConnection,
+  isSendingTo,
   sendToAnki,
   setDestination,
 } from "./ankiRequests.ts";
+
+type AnkiConnectApp = Pick<ReadableState, "backend" | "operations">;
 
 /**
  * Opens and closes the dialog that explains how to set up AnkiConnect.
@@ -39,34 +45,87 @@ export function updateAnkiConnectSetup(
 /**
  * Returns the effects of the project overview's AnkiConnect actions, which change no state:
  * a check whether Anki can be reached, as asked for or once the overview has read that the project sends to Anki;
- * a send of every flashcard Anki has no note for, oldest first; and the clearing of the project's destination.
+ * a send of every flashcard Anki has no note for, oldest first, as asked for or once Anki is found running;
+ * and the clearing of the project's destination.
  */
 export function ankiConnectEffects(
   action: AppAction,
   projectId: string,
-  backend: ServerCacheSlice,
+  app: AnkiConnectApp,
 ) {
   switch (action.type) {
     case "ankiConnectionCheckRequested":
       return [checkAnkiConnection];
     case "ankiSendRequested":
-      return sendUnsent(projectId, backend);
+      return sendUnsent(projectId, app.backend);
     case "flashcardDestinationCleared":
       return [setDestination(projectId, null)];
     case "requestSettled":
-      return isSettled(
-        action,
-        ankiRequestIds(projectId).destinationRead,
-        "getProject",
-      ) &&
-        action.outcome.ok &&
-        // RTK Query can settle a read it skipped without data, so the project may be missing.
-        action.outcome.data?.flashcard_destination === "anki_connect"
-        ? [checkAnkiConnection]
-        : [];
+      return [
+        ...checkOnRead(action, projectId),
+        ...sendOnceConnected(action, projectId, app),
+      ];
     default:
       return [];
   }
+}
+
+/** Checks the connection once the overview has read that the project sends to Anki. */
+function checkOnRead(action: RequestSettled, projectId: string) {
+  return isSettled(
+    action,
+    ankiRequestIds(projectId).destinationRead,
+    "getProject",
+  ) &&
+    action.outcome.ok &&
+    // RTK Query can settle a read it skipped without data, so the project may be missing.
+    action.outcome.data?.flashcard_destination === "anki_connect"
+    ? [checkAnkiConnection]
+    : [];
+}
+
+/**
+ * Sends the flashcards Anki has no note for once Anki is known to run and the project is known to send there,
+ * whichever of the check and the setting of the destination lands last. Nothing is sent while a send of the project is under way or waiting,
+ * since that send already holds the unsent flashcards.
+ */
+function sendOnceConnected(
+  action: RequestSettled,
+  projectId: string,
+  app: AnkiConnectApp,
+) {
+  const isReady =
+    (hasFoundAnki(action) &&
+      cachedDestination(app.backend, projectId) === "anki_connect") ||
+    (hasSetAnkiConnect(action, projectId) && isAnkiConnected(app.backend));
+  if (!isReady || isSendingTo(app.operations.requests, projectId)) return [];
+  return sendUnsent(projectId, app.backend);
+}
+
+function hasFoundAnki(action: RequestSettled) {
+  return (
+    isSettled(action, ankiConnectionCheckId, "checkAnkiConnection") &&
+    action.outcome.ok &&
+    action.outcome.data.connected
+  );
+}
+
+function hasSetAnkiConnect(action: RequestSettled, projectId: string) {
+  return (
+    isSettled(
+      action,
+      ankiRequestIds(projectId).destination,
+      "setFlashcardDestination",
+    ) &&
+    action.outcome.ok &&
+    action.outcome.data.flashcard_destination === "anki_connect"
+  );
+}
+
+/** Tells whether the last check found Anki running and no check is under way. */
+function isAnkiConnected(backend: ServerCacheSlice) {
+  const check = cacheEntry(backend, "checkAnkiConnection", undefined);
+  return check?.status === "fulfilled" && check.data?.connected === true;
 }
 
 function sendUnsent(projectId: string, backend: ServerCacheSlice) {

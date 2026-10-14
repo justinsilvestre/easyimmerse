@@ -1,5 +1,6 @@
 import type { FlashcardDestination } from "@easyimmerse/types";
 import type { Effect } from "../app/effect.ts";
+import type { RequestRecord } from "../operations/operations.ts";
 
 /** The ids of the requests the project overview sends about where a project's flashcards go. */
 export const ankiRequestIds = (projectId: string) => ({
@@ -23,6 +24,18 @@ export function sendToAnki(projectId: string, flashcardIds: readonly string[]) {
     scope: ankiScope(projectId),
     request: { kind: "sendFlashcardsToAnki", projectId, flashcardIds },
   } satisfies Effect;
+}
+
+/** Tells whether a send of the project's flashcards to Anki is under way or waiting among the recorded requests. */
+export function isSendingTo(
+  requests: readonly RequestRecord[],
+  projectId: string,
+): boolean {
+  return requests.some(
+    ({ request }) =>
+      request.kind === "sendFlashcardsToAnki" &&
+      request.projectId === projectId,
+  );
 }
 
 /** Deletes from Anki the notes of a project's deleted flashcards, after the project's earlier sends, under an id of its own. */

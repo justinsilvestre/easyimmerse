@@ -13,6 +13,7 @@ import type { PickedMediaFile } from "../../platform/effects.ts";
 import type { MainRoute } from "../../route/route.ts";
 import type { ServerCacheSlice } from "../../server/cacheEntry.ts";
 import { isSettled } from "../../server/isSettled.ts";
+import type { ScreenApp } from "../screenApp.ts";
 import type { ProjectScreenState } from "../screenState.ts";
 import { findMediaFileNamed } from "./mediaFileOpenedBy.ts";
 import { mediaFilePickRequestIds } from "./mediaFilePickRequestIds.ts";
@@ -25,20 +26,20 @@ type ProjectRoute = Extract<MainRoute, { screen: "project" }>;
  * Updates the project overview: its media import dialog, the adding of a picked media file, the removal of a media file,
  * and where the project's flashcards go: the Anki export dialog, the AnkiConnect setup dialog, and the sends to Anki.
  * The route opens an added, existing or fetched file (see `mediaFileOpenedBy`), which replaces this screen.
- * `backend` is the server cache, from which the Anki actions read the project's flashcards and media files.
+ * The Anki actions read the project's flashcards and media files from the server cache, and the sends under way from the operations.
  */
 export function updateProjectScreen(
   screen: ProjectScreenState,
   action: AppAction,
   route: ProjectRoute,
-  backend: ServerCacheSlice,
+  app: Pick<ScreenApp, "backend" | "operations">,
 ) {
-  const [next, effects] = updateParts(screen, action, route, backend);
+  const [next, effects] = updateParts(screen, action, route, app.backend);
   return updated(
     next,
     ...effects,
     ...removalEffects(action, route),
-    ...ankiConnectEffects(action, route.projectId, backend),
+    ...ankiConnectEffects(action, route.projectId, app),
   );
 }
 
