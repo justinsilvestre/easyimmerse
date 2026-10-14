@@ -286,8 +286,16 @@ describe("ankiCommands when a flashcard is deleted", () => {
     ]);
   });
 
-  it("says nothing when Anki is not running, which leaves the note in Anki", () => {
-    expect(noticesAfter(noteDeletionFailed(unreachable))).toEqual([]);
+  it("tells that the note stays in Anki when Anki is not running", () => {
+    expect(noticesAfter(noteDeletionFailed(unreachable))).toEqual([
+      "Anki is not running, so the note for “f2” stays in Anki.",
+    ]);
+  });
+
+  it("names a card without a word as the flashcard", () => {
+    expect(noticesAfter(noteDeletionFailed(unreachable, ""))).toEqual([
+      "Anki is not running, so the note for the flashcard stays in Anki.",
+    ]);
   });
 
   it("says nothing of an aborted deletion", () => {

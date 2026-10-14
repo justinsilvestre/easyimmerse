@@ -9,6 +9,7 @@ import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
 import {
   ankiUnreachableCode,
   deleteFailedNotice,
+  noteKeptNotice,
   sendFailedNotice,
   sentNotice,
 } from "./ankiNotices.ts";
@@ -20,9 +21,9 @@ type Settled<K> = Extract<RequestSettled, { request: { kind: K } }>;
 /**
  * Returns the effects of AnkiConnect sends that belong to no screen, in a project whose flashcards go to Anki through AnkiConnect:
  * a saved flashcard is sent there once its save lands, and a deleted flashcard's note is deleted there once the deletion lands.
- * Every send's outcome and every failed deletion is told of, except that Anki could not be reached: the project screen's panel shows that,
- * and a notice would repeat it after every save while Anki is closed.
- * A failed send leaves its flashcards unsent until the next save or Send; a failed deletion leaves the note in Anki.
+ * Every send's outcome is told of, except that Anki could not be reached: the project screen's panel shows that,
+ * and a notice would repeat it after every save while Anki is closed. A failed send leaves its flashcards unsent until the next save or Send.
+ * Every failed deletion is told of, since nothing deletes the note later.
  */
 export function ankiCommands(action: AppAction, app: AnkiApp) {
   if (action.type !== "requestSettled") return [];
@@ -66,9 +67,10 @@ function sendNotices(action: RequestSettled) {
 }
 
 function deleteNotices({ request, outcome }: RequestSettled) {
-  if (request.kind !== "deleteAnkiNote" || outcome.ok) return [];
-  return isSilentFailure(outcome)
-    ? []
+  if (request.kind !== "deleteAnkiNote" || outcome.ok || isAborted(outcome))
+    return [];
+  return outcome.error.code === ankiUnreachableCode
+    ? [noteKeptNotice(request.word)]
     : [deleteFailedNotice(request.word, outcome.error)];
 }
 

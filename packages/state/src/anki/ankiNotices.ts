@@ -49,6 +49,14 @@ export function deleteFailedNotice(word: string, failure: RequestFailure) {
   );
 }
 
+/** Tells that the note of a deleted flashcard stays in Anki because Anki is not running, since nothing deletes it later. */
+export function noteKeptNotice(word: string) {
+  return notice(
+    "info",
+    `Anki is not running, so the note for ${flashcardName(word)} stays in Anki.`,
+  );
+}
+
 function flashcardName(word: string) {
   return word === "" ? "the flashcard" : `“${word}”`;
 }
