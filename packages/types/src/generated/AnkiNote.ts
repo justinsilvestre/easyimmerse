@@ -15,10 +15,6 @@ guid: string,
  */
 note_id: number, 
 /**
- * The flashcard's `updated_at_ms`. When importing a note it already has, Anki updates it only if this time is newer.
- */
-updated_at_ms: number, 
-/**
  * Field values as HTML, in the order of `AnkiNoteType.fields`.
  */
 fields: Array<string>, tags: Array<string>, 

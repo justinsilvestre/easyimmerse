@@ -5031,7 +5031,6 @@
           "flashcard_id",
           "guid",
           "note_id",
-          "updated_at_ms",
           "fields",
           "tags",
           "media"
@@ -5069,12 +5068,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "updated_at_ms": {
-            "type": "integer",
-            "format": "int64",
-            "description": "The flashcard's `updated_at_ms`. When importing a note it already has, Anki updates it only if this time is newer.",
-            "minimum": 0
           }
         }
       },

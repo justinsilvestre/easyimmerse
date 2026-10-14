@@ -13,12 +13,15 @@ use crate::render_note::AnkiNote;
 use crate::sort_field::{field_checksum, strip_html};
 
 /// Inserts a note and its card for each rendered note, the cards in export order.
+/// Every note and card is dated at the export, so that importing the package again updates the notes Anki already has.
 pub(crate) fn insert_notes_and_cards(
     connection: &Connection,
     spec: &DeckSpec,
     notes: &[AnkiNote],
     scheduling: CardScheduling,
+    exported_at_ms: u64,
 ) -> rusqlite::Result<()> {
+    let modified_secs = sql_int(exported_at_ms / 1000);
     let note_type_id = sql_int(note_type(spec).id);
     let deck_id = sql_int(deck_id(spec.project_id));
     let note_ids = unique_ids(notes.iter().map(|note| note.note_id));
@@ -28,7 +31,6 @@ pub(crate) fn insert_notes_and_cards(
         "INSERT INTO cards VALUES (?1, ?2, ?3, 0, ?4, -1, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0, 0, 0, ?13)",
     )?;
     for (position, (note, note_id)) in (1..).zip(notes.iter().zip(note_ids)) {
-        let modified_secs = sql_int(note.updated_at_ms / 1000);
         let sort_field = strip_html(note.fields.first().map_or("", String::as_str));
         insert_note.execute(params![
             sql_int(note_id),

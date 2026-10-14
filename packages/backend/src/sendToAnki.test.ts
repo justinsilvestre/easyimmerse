@@ -10,7 +10,6 @@ const note = (flashcardId: string, word: string): AnkiNote => ({
   flashcard_id: flashcardId,
   guid: `guid-${flashcardId}`,
   note_id: 1,
-  updated_at_ms: 1,
   fields: [word, "", flashcardId],
   tags: [],
   media: [],

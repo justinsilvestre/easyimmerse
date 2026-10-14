@@ -955,11 +955,6 @@ export interface components {
              */
             note_id: number;
             tags: string[];
-            /**
-             * Format: int64
-             * @description The flashcard's `updated_at_ms`. When importing a note it already has, Anki updates it only if this time is newer.
-             */
-            updated_at_ms: number;
         };
         /** @description The note type (Anki "model") of a project's deck, as both the package and AnkiConnect create it. */
         AnkiNoteType: {

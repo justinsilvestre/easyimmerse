@@ -197,6 +197,20 @@ mod export_anki_package {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn dates_the_notes_at_the_recorded_export() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        let response = export_ids(&server, &ids).await;
+        let exported_at_ms = list_flashcards(&server).await[0]["exported_at_ms"]
+            .as_u64()
+            .unwrap();
+        let modified_secs: i64 = open_collection(&response.bytes)
+            .query_row("SELECT mod FROM notes LIMIT 1", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(modified_secs, (exported_at_ms / 1000) as i64);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn sets_the_destination_to_the_package() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;

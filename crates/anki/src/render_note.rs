@@ -17,8 +17,6 @@ pub struct AnkiNote {
     pub guid: String,
     /// The flashcard's `created_at_ms`, which Anki shows as the note's creation date.
     pub note_id: u64,
-    /// The flashcard's `updated_at_ms`. When importing a note it already has, Anki updates it only if this time is newer.
-    pub updated_at_ms: u64,
     /// Field values as HTML, in the order of `AnkiNoteType.fields`.
     pub fields: Vec<String>,
     pub tags: Vec<String>,
@@ -56,7 +54,6 @@ pub fn render_note(flashcard: &Flashcard) -> AnkiNote {
         flashcard_id: flashcard.id.clone(),
         guid: note_guid(&flashcard.id),
         note_id: flashcard.created_at_ms,
-        updated_at_ms: flashcard.updated_at_ms,
         fields: AnkiField::ALL
             .into_iter()
             .map(|field| field_value(field, flashcard, &media))

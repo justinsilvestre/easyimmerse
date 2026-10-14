@@ -30,14 +30,16 @@ pub enum AnkiError {
 
 /// Writes a legacy .apkg: `collection.anki2` at schema 11, the JSON `media` map, and the media files, all stored uncompressed.
 /// Every Anki client reads this format.
+/// Every note and card is dated at `exported_at_ms`, since Anki updates a note it already has only from a newer one.
 pub fn write_package(
     out: impl Write + Seek,
     spec: &DeckSpec,
     notes: &[AnkiNote],
     media: &[PackageMedia],
     scheduling: CardScheduling,
+    exported_at_ms: u64,
 ) -> Result<(), AnkiError> {
-    let collection = collection_bytes(spec, notes, scheduling)?;
+    let collection = collection_bytes(spec, notes, scheduling, exported_at_ms)?;
     let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
     let mut zip = ZipWriter::new(out);
     zip.start_file("collection.anki2", options)?;
@@ -76,6 +78,8 @@ mod tests {
     use crate::test_support::{FLASHCARD_ID, deck_spec, flashcard};
 
     const SECOND_FLASHCARD_ID: &str = "fedcba9876543210fedcba9876543210";
+    /// A time after the flashcards were made and last edited.
+    const EXPORTED_AT_MS: u64 = 1_760_300_000_000;
 
     /// Writes two flashcards made in the same millisecond, with the first one's audio and screenshot.
     fn written_package() -> ZipArchive<Cursor<Vec<u8>>> {
@@ -94,8 +98,15 @@ mod tests {
             },
         ];
         let mut out = Cursor::new(Vec::new());
-        write_package(&mut out, &deck_spec(), &notes, &media, CardScheduling::New)
-            .expect("the package is written");
+        write_package(
+            &mut out,
+            &deck_spec(),
+            &notes,
+            &media,
+            CardScheduling::New,
+            EXPORTED_AT_MS,
+        )
+        .expect("the package is written");
         ZipArchive::new(Cursor::new(out.into_inner())).expect("the package is a zip")
     }
 
@@ -208,7 +219,7 @@ mod tests {
         let expected = (
             "kY9PHXkz:6".to_owned(),
             1_665_021_395,
-            1_760_200_000,
+            1_760_300_000,
             " chapter_one noun ".to_owned(),
             "Haus".to_owned(),
             582_454_829,
@@ -279,14 +290,14 @@ mod tests {
     }
 
     #[test]
-    fn dates_the_card_at_the_flashcard_update_and_marks_it_never_synced() {
+    fn dates_the_card_at_the_export_and_marks_it_never_synced() {
         let (_file, connection) = collection();
         let row: (i64, i64) = connection
             .query_row("SELECT mod, usn FROM cards LIMIT 1", [], |row| {
                 Ok((row.get(0)?, row.get(1)?))
             })
             .expect("the card row exists");
-        assert_eq!(row, (1_760_200_000, -1));
+        assert_eq!(row, (1_760_300_000, -1));
     }
 
     #[test]

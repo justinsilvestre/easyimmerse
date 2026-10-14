@@ -14,17 +14,18 @@ use crate::schema::SCHEMA_11;
 const SCHEMA_VERSION: i64 = 11;
 const MILLIS_PER_DAY: u64 = 86_400_000;
 
-/// Builds the collection database in memory and returns its bytes.
+/// Builds the collection database in memory, with every row dated at the export, and returns its bytes.
 pub(crate) fn collection_bytes(
     spec: &DeckSpec,
     notes: &[AnkiNote],
     scheduling: CardScheduling,
+    exported_at_ms: u64,
 ) -> rusqlite::Result<Vec<u8>> {
     let connection = Connection::open_in_memory()?;
     connection.execute_batch(SCHEMA_11)?;
     let transaction = connection.unchecked_transaction()?;
-    insert_collection_row(&transaction, spec, notes)?;
-    insert_notes_and_cards(&transaction, spec, notes, scheduling)?;
+    insert_collection_row(&transaction, spec, notes, exported_at_ms)?;
+    insert_notes_and_cards(&transaction, spec, notes, scheduling, exported_at_ms)?;
     transaction.commit()?;
     Ok(connection.serialize(MAIN_DB)?.to_vec())
 }
@@ -33,6 +34,7 @@ fn insert_collection_row(
     connection: &Connection,
     spec: &DeckSpec,
     notes: &[AnkiNote],
+    exported_at_ms: u64,
 ) -> rusqlite::Result<()> {
     let note_type = note_type(spec);
     let earliest_ms = notes
@@ -42,17 +44,13 @@ fn insert_collection_row(
     // The collection's creation time is the origin of review due dates.
     // A midnight (in UTC) before every card was made keeps them positive.
     let created_secs = earliest_ms / MILLIS_PER_DAY * MILLIS_PER_DAY / 1000;
-    let modified_ms = notes
-        .iter()
-        .map(|note| note.updated_at_ms)
-        .fold(spec.project_created_at_ms, u64::max);
     let note_type_modified_secs = spec.project_created_at_ms / 1000;
     connection.execute(
         "INSERT INTO col VALUES (1, ?1, ?2, ?3, ?4, 0, 0, 0, ?5, ?6, ?7, ?8, '{}')",
         params![
             sql_int(created_secs),
-            sql_int(modified_ms),
-            sql_int(modified_ms),
+            sql_int(exported_at_ms),
+            sql_int(exported_at_ms),
             SCHEMA_VERSION,
             conf_json(note_type.id, notes.len()),
             models_json(
@@ -63,7 +61,7 @@ fn insert_collection_row(
             decks_json(
                 deck_id(spec.project_id),
                 spec.project_name,
-                modified_ms / 1000
+                exported_at_ms / 1000
             ),
             dconf_json(),
         ],

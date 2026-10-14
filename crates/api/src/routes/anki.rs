@@ -218,9 +218,15 @@ pub async fn set_flashcard_destination(
 struct BuiltPackage {
     bytes: Vec<u8>,
     file_name: String,
+    skipped_media_count: u64,
+    export: ExportRecord,
+}
+
+/// The flashcards a package holds and the time it was built, which dates its notes and marks the flashcards exported.
+struct ExportRecord {
     project_id: ProjectId,
     flashcard_ids: Vec<FlashcardId>,
-    skipped_media_count: u64,
+    exported_at_ms: u64,
 }
 
 async fn build_package(
@@ -239,15 +245,19 @@ async fn build_package(
         );
     }
     let notes = without_skipped_media(notes, &media.skipped);
+    let exported_at_ms = now_ms();
     Ok(BuiltPackage {
-        bytes: write_package_bytes(&project, notes, media.files).await?,
+        bytes: write_package_bytes(&project, notes, media.files, exported_at_ms).await?,
         file_name: format!("{}.apkg", safe_file_name(&project.settings.name)),
-        project_id: project.id,
-        flashcard_ids: flashcards
-            .into_iter()
-            .map(|flashcard| flashcard.id)
-            .collect(),
         skipped_media_count: media.skipped.len() as u64,
+        export: ExportRecord {
+            project_id: project.id,
+            flashcard_ids: flashcards
+                .into_iter()
+                .map(|flashcard| flashcard.id)
+                .collect(),
+            exported_at_ms,
+        },
     })
 }
 
@@ -256,6 +266,7 @@ async fn write_package_bytes(
     project: &Project,
     notes: Vec<AnkiNote>,
     media: Vec<PackageMedia>,
+    exported_at_ms: u64,
 ) -> Result<Vec<u8>, ApiFailure> {
     let project = project.clone();
     let written = tokio::task::spawn_blocking(move || {
@@ -266,6 +277,7 @@ async fn write_package_bytes(
             &notes,
             &media,
             CardScheduling::New,
+            exported_at_ms,
         )
         .map(|()| out.into_inner())
     })
@@ -309,10 +321,10 @@ async fn save_package(
             )
         })?;
     let saved = AnkiPackageSaved {
-        flashcard_count: package.flashcard_ids.len() as u64,
+        flashcard_count: package.export.flashcard_ids.len() as u64,
         skipped_media_count: package.skipped_media_count,
     };
-    record_export(state, package.project_id, package.flashcard_ids).await?;
+    record_export(state, package.export).await?;
     Ok(Json(saved).into_response())
 }
 
@@ -331,29 +343,23 @@ fn package_download(state: AppState, package: BuiltPackage) -> Response {
         HeaderName::from_static(SKIPPED_MEDIA_HEADER),
         HeaderValue::from(package.skipped_media_count),
     );
-    let BuiltPackage {
-        bytes,
-        project_id,
-        flashcard_ids,
-        ..
-    } = package;
+    let BuiltPackage { bytes, export, .. } = package;
     let body = body_then(bytes, async move {
-        if let Err(failure) = record_export(&state, project_id, flashcard_ids).await {
+        if let Err(failure) = record_export(&state, export).await {
             tracing::error!("could not record the export: {}", failure.error.message);
         }
     });
     (StatusCode::OK, headers, body).into_response()
 }
 
-async fn record_export(
-    state: &AppState,
-    project_id: ProjectId,
-    flashcard_ids: Vec<FlashcardId>,
-) -> Result<(), ApiFailure> {
-    let exported_at_ms = now_ms();
+async fn record_export(state: &AppState, export: ExportRecord) -> Result<(), ApiFailure> {
     state
         .with_storage(move |storage| {
-            storage.record_anki_export(&project_id, &flashcard_ids, exported_at_ms)
+            storage.record_anki_export(
+                &export.project_id,
+                &export.flashcard_ids,
+                export.exported_at_ms,
+            )
         })
         .await
 }

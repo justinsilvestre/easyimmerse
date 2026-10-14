@@ -62,7 +62,6 @@ describe("withoutMedia", () => {
     flashcard_id: "f1",
     guid: "guid",
     note_id: 1,
-    updated_at_ms: 1,
     fields: ["Katze", "[sound:f1.m4a]", '<img src="f1.jpg">', "f1"],
     tags: [],
     media: [audio, screenshot],

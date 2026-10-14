@@ -18,7 +18,6 @@ const note: AnkiNote = {
   flashcard_id: "f1",
   guid: "abc",
   note_id: 1,
-  updated_at_ms: 1,
   fields: ["고양이", "고양이가 잔다.", "f1"],
   tags: ["animals"],
   media: [],
