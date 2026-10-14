@@ -12,11 +12,12 @@ import { ankiBackendError, isUnreachable } from "./ankiConnectError.ts";
 import type { BackendRequest, BackendResult } from "./backendClient.ts";
 import type { ServerQuery } from "./sendToAnki.ts";
 
-/** What a deletion from Anki works with: AnkiConnect, the server, and where to report that Anki stopped answering. */
+/** What a deletion from Anki works with: AnkiConnect, the server, and where to report whether Anki answered. */
 export type AnkiDeletionDeps = {
   anki: AnkiConnect;
   server: ServerQuery;
-  reportConnection: (connection: AnkiConnection) => void;
+  /** Records whether Anki answered, and tells whether it answered although the app had not known it to be running. */
+  reportConnection: (connection: AnkiConnection) => boolean;
 };
 
 /** The outcome of a run that has carried out no deletion yet. */
@@ -24,6 +25,7 @@ const noDeletion: AnkiDeletionOutcome = {
   deletedCount: 0,
   remainingCount: 0,
   unrecordedCount: 0,
+  foundAnki: false,
 };
 
 /**
@@ -31,6 +33,7 @@ const noDeletion: AnkiDeletionOutcome = {
  * each deleted flashcard's id, found as a send finds them, and tells the server the deletion is done, whether or not
  * Anki held a note. When Anki stops answering, the deletions not yet done stay pending for the next time.
  * A deletion the server cannot record stays pending too, and the run goes on with the next.
+ * Anki is asked nothing when no deletion is pending.
  */
 export async function deleteAnkiNotes(
   projectId: string,
@@ -39,7 +42,34 @@ export async function deleteAnkiNotes(
   const listed = await deps.server(listRequest(projectId));
   if ("error" in listed) return listed;
   const { deletions } = listed.data as AnkiPendingDeletions;
-  let outcome = noDeletion;
+  if (deletions.length === 0) return { data: noDeletion };
+  const reached = await reachAnki(deps);
+  if ("error" in reached) return reached;
+  if (reached.data === null)
+    return { data: { ...noDeletion, remainingCount: deletions.length } };
+  return carryOutAll(projectId, deletions, deps, reached.data);
+}
+
+/** Asks Anki for its version and resolves whether Anki answered although the app had not known it to be running, or null when it does not answer. */
+async function reachAnki({
+  anki,
+  reportConnection,
+}: AnkiDeletionDeps): Promise<BackendResult<boolean | null>> {
+  try {
+    const version = await anki.invoke<number>(ankiConnectActions.version());
+    return { data: reportConnection({ connected: true, version }) };
+  } catch (error) {
+    return unanswered(error, reportConnection);
+  }
+}
+
+async function carryOutAll(
+  projectId: string,
+  deletions: readonly AnkiPendingDeletion[],
+  deps: AnkiDeletionDeps,
+  foundAnki: boolean,
+): Promise<BackendResult<AnkiDeletionOutcome>> {
+  let outcome = { ...noDeletion, foundAnki };
   for (const [index, deletion] of deletions.entries()) {
     const done = await carryOut(projectId, deletion, deps);
     if ("error" in done) return done;
@@ -92,10 +122,18 @@ async function deleteNotes(
       await anki.invoke(ankiConnectActions.deleteNotes(noteIds));
     return { data: noteIds.length };
   } catch (error) {
-    if (!isUnreachable(error)) return { error: ankiBackendError(error) };
-    reportConnection({ connected: false });
-    return { data: null };
+    return unanswered(error, reportConnection);
   }
+}
+
+/** Fails with Anki's error, or resolves null and reports Anki as not connected when Anki does not answer at all. */
+function unanswered(
+  error: unknown,
+  reportConnection: AnkiDeletionDeps["reportConnection"],
+): BackendResult<null> {
+  if (!isUnreachable(error)) return { error: ankiBackendError(error) };
+  reportConnection({ connected: false });
+  return { data: null };
 }
 
 function listRequest(projectId: string): BackendRequest {

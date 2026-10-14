@@ -206,18 +206,25 @@ function serverQueryOf(
     (await baseQuery(request)) as BackendResult<unknown>;
 }
 
-/** Keeps the last check of the connection to Anki in step with what a send to Anki found. */
+/**
+ * Keeps the last check of the connection to Anki in step with what a send or a deletion found,
+ * and tells whether Anki answered although the last check or report had not found it running.
+ */
 function reportAnkiConnection(
-  dispatch: (action: unknown) => unknown,
+  api: Pick<BaseQueryApi, "dispatch" | "getState">,
   connection: AnkiConnection,
-) {
-  dispatch(
+): boolean {
+  const last = backendApi.endpoints.checkAnkiConnection.select()(
+    api.getState() as BackendState,
+  ).data;
+  api.dispatch(
     backendApi.util.upsertQueryData(
       "checkAnkiConnection",
       undefined,
       connection,
     ),
   );
+  return connection.connected && last?.connected !== true;
 }
 
 /** The data an export or a send to Anki changes: which flashcards went where, and where the project's flashcards go. */
@@ -607,7 +614,7 @@ export const backendApi = createApi({
         ),
     }),
     /**
-     * Whether Anki answers through AnkiConnect. The last answer is kept for the session, and a send to Anki updates it,
+     * Whether Anki answers through AnkiConnect. The last answer is kept for the session, and a send to Anki or a deletion from it updates it,
      * so that the project overview shows the connection as last seen.
      */
     checkAnkiConnection: build.query<AnkiConnection, void>({
@@ -624,7 +631,7 @@ export const backendApi = createApi({
           server: serverQueryOf(baseQuery),
           fetchMedia: createMediaFetch(extra.serverFetch),
           reportConnection: (connection) =>
-            reportAnkiConnection(api.dispatch, connection),
+            reportAnkiConnection(api, connection),
         });
       },
       invalidatesTags: (_result, _error, { projectId }) =>
@@ -647,7 +654,7 @@ export const backendApi = createApi({
           anki: (api.extra as BackendThunkExtra).ankiConnect,
           server: serverQueryOf(baseQuery),
           reportConnection: (connection) =>
-            reportAnkiConnection(api.dispatch, connection),
+            reportAnkiConnection(api, connection),
         }),
       invalidatesTags: (_result, _error, projectId) => [
         { type: "AnkiPendingDeletions", id: projectId },

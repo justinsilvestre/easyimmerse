@@ -273,7 +273,12 @@ describe("ankiConnectEffects", () => {
       },
       {
         ok: true,
-        data: { sentCount: 2, failedCount: 0, skippedMediaCount: 0 },
+        data: {
+          sentCount: 2,
+          failedCount: 0,
+          skippedMediaCount: 0,
+          foundAnki: false,
+        },
       },
     );
     await vi.waitUntil(() => ankiKindsSent(server).length === 2);
@@ -356,7 +361,12 @@ describe("ankiConnectEffects once Anki is found running", () => {
       },
       {
         ok: true,
-        data: { sentCount: 2, failedCount: 0, skippedMediaCount: 0 },
+        data: {
+          sentCount: 2,
+          failedCount: 0,
+          skippedMediaCount: 0,
+          foundAnki: false,
+        },
       },
     );
     await vi.waitUntil(() => ankiKindsSent(server).length === 2);

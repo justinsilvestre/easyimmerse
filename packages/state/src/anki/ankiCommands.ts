@@ -17,9 +17,11 @@ import {
 } from "./ankiNotices.ts";
 import { deleteFromAnki, sendToAnki } from "./ankiRequests.ts";
 import type { AnkiDeletionOutcome } from "./ankiResponses.ts";
+import { sendUnsent, syncWithAnki } from "./syncWithAnki.ts";
 
-type AnkiApp = Pick<ReadableState, "backend">;
+type AnkiApp = Pick<ReadableState, "backend" | "operations">;
 type Settled<K> = Extract<RequestSettled, { request: { kind: K } }>;
+type AnkiSettled = Settled<"sendFlashcardsToAnki" | "deleteAnkiNotes">;
 
 /**
  * Returns the effects of AnkiConnect sends that belong to no screen, in a project whose flashcards go to Anki through AnkiConnect:
@@ -27,12 +29,15 @@ type Settled<K> = Extract<RequestSettled, { request: { kind: K } }>;
  * Every send's outcome is told of, except that Anki could not be reached: the project screen's panel shows that,
  * and a notice would repeat it after every save while Anki is closed. A failed send leaves its flashcards unsent until the next save or Send.
  * A note that Anki could not be reached to delete is deleted the next time Anki is found running, and the notice says so.
+ * Once a send or a deletion finds Anki running although the app had not known it to be, the project is synced with Anki,
+ * on whichever screen the user is.
  */
 export function ankiCommands(action: AppAction, app: AnkiApp) {
   if (action.type !== "requestSettled") return [];
   return [
     ...sendSaved(action, app),
     ...deleteDeleted(action, app),
+    ...syncOnceFound(action, app),
     ...sendNotices(action),
     ...deleteNotices(action),
   ];
@@ -60,6 +65,30 @@ function deleteDeleted(
   const word =
     deleted?.content.word ?? (purpose.type === "delete" ? "" : purpose.word);
   return [deleteFromAnki(projectId, word)];
+}
+
+/**
+ * Syncs the project with Anki after a send or a deletion that found Anki running although the app had not known it to be.
+ * A deletion that found Anki has carried out every pending deletion it could, so only the unsent flashcards follow it.
+ * The settling send is still recorded, so the flashcards it held are not sent again.
+ */
+function syncOnceFound(action: RequestSettled, app: AnkiApp) {
+  if (!hasFoundAnki(action)) return [];
+  const { kind, projectId } = action.request;
+  if (cachedDestination(app.backend, projectId) !== "anki_connect") return [];
+  return kind === "sendFlashcardsToAnki"
+    ? syncWithAnki(projectId, app)
+    : sendUnsent(projectId, app);
+}
+
+function hasFoundAnki(action: RequestSettled): action is AnkiSettled {
+  const { request, outcome } = action as AnkiSettled;
+  return (
+    (request.kind === "sendFlashcardsToAnki" ||
+      request.kind === "deleteAnkiNotes") &&
+    outcome.ok &&
+    outcome.data.foundAnki
+  );
 }
 
 function sendNotices(action: RequestSettled) {

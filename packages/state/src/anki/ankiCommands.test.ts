@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
+import type { AppState } from "../app/appState.ts";
 import { createAppStore } from "../app/createAppStore.ts";
 import { createFakeServerStoreParts } from "../app/createFakeServerStoreParts.ts";
 import { stateAfterWithCache } from "../app/stateAfter.ts";
@@ -57,7 +58,13 @@ const effectsOf = (action: AppAction, destination = "anki_connect" as const) =>
 const sent = (outcome: Partial<AnkiSendOutcome>) =>
   actions.requestSettled("project/p1/ankiSend/1", sendRequest, {
     ok: true,
-    data: { sentCount: 0, failedCount: 0, skippedMediaCount: 0, ...outcome },
+    data: {
+      sentCount: 0,
+      failedCount: 0,
+      skippedMediaCount: 0,
+      foundAnki: false,
+      ...outcome,
+    },
   });
 
 /** The deletion of f2, whose word is "f2", or of another flashcard of p1. */
@@ -94,10 +101,13 @@ const notesDeleted = (
   deletedCount: number,
   remainingCount: number,
   word: string | null = "f2",
-  unrecordedCount = 0,
+  { unrecordedCount = 0, foundAnki = false } = {},
 ) =>
   notesDeletionSettled(
-    { ok: true, data: { deletedCount, remainingCount, unrecordedCount } },
+    {
+      ok: true,
+      data: { deletedCount, remainingCount, unrecordedCount, foundAnki },
+    },
     word,
   );
 
@@ -128,6 +138,42 @@ const ankiKindsSent = ({ sentRequests }: { sentRequests: ServerRequest[] }) =>
     .filter(
       (kind) => kind === "sendFlashcardsToAnki" || kind === "deleteAnkiNotes",
     );
+
+/** The flashcards of each send to Anki under way or waiting, in the order asked for. */
+const sendsHeld = ({ operations }: AppState) =>
+  operations.requests.flatMap(({ request }) =>
+    request.kind === "sendFlashcardsToAnki" ? [request.flashcardIds] : [],
+  );
+
+const deletionsRecorded = ({ operations }: AppState) =>
+  operations.requests.filter(
+    ({ request }) => request.kind === "deleteAnkiNotes",
+  ).length;
+
+/** The state outside the project screen once the save of f1 has asked to send f1 to Anki. */
+const sendingSaved = () =>
+  stateAfterWithCache(ankiCache("anki_connect"), saveSettled(true));
+
+const stateAfterSend = (foundAnki: boolean) =>
+  update(sendingSaved(), sent({ foundAnki }), ankiCache("anki_connect"))[0];
+
+const stateAfterDeletion = (foundAnki: boolean) =>
+  stateAfterWithCache(
+    ankiCache("anki_connect"),
+    notesDeleted(1, 0, "f2", { foundAnki }),
+  );
+
+const sentResponse = (foundAnki: boolean) =>
+  ({
+    ok: true,
+    data: { sentCount: 1, failedCount: 0, skippedMediaCount: 0, foundAnki },
+  }) as const;
+
+const noteDeletionRequest = {
+  kind: "deleteAnkiNotes",
+  projectId: "p1",
+  word: null,
+} as const;
 
 const noticesAfter = (...actions: AppAction[]) =>
   stateAfterWithCache(ankiCache("anki_connect"), ...actions).notices.shown.map(
@@ -283,7 +329,12 @@ describe("ankiCommands when a flashcard is deleted", () => {
     const server = deletingDuringSend();
     server.respond(sendAllRequest, {
       ok: true,
-      data: { sentCount: 2, failedCount: 0, skippedMediaCount: 0 },
+      data: {
+        sentCount: 2,
+        failedCount: 0,
+        skippedMediaCount: 0,
+        foundAnki: false,
+      },
     });
     await vi.waitUntil(() => ankiKindsSent(server).length === 2);
     expect(ankiKindsSent(server)).toEqual([
@@ -320,7 +371,9 @@ describe("ankiCommands when a flashcard is deleted", () => {
   });
 
   it("tells that the server could not record the note's deletion, without blaming Anki", () => {
-    expect(noticesAfter(notesDeleted(1, 0, "f2", 1))).toEqual([
+    expect(
+      noticesAfter(notesDeleted(1, 0, "f2", { unrecordedCount: 1 })),
+    ).toEqual([
       "The deletion of 1 note from Anki could not be recorded on the server. It will be tried again the next time Anki is connected.",
     ]);
   });
@@ -342,7 +395,9 @@ describe("ankiCommands when notes left in Anki are deleted later", () => {
   });
 
   it("tells how many deletions the server could not record", () => {
-    expect(noticesAfter(notesDeleted(2, 0, null, 2))).toEqual([
+    expect(
+      noticesAfter(notesDeleted(2, 0, null, { unrecordedCount: 2 })),
+    ).toEqual([
       "Deleted 2 notes from Anki.",
       "The deletion of 2 notes from Anki could not be recorded on the server. It will be tried again the next time Anki is connected.",
     ]);
@@ -363,6 +418,72 @@ describe("ankiCommands when notes left in Anki are deleted later", () => {
     );
     expect(noticesAfter(refused)).toEqual([
       "The notes could not be deleted from Anki: deck is busy",
+    ]);
+  });
+});
+
+describe("ankiCommands once a send or a deletion finds Anki running", () => {
+  it("sends the cards that the send which found Anki left unsent", () => {
+    expect(sendsHeld(stateAfterSend(true))).toEqual([["f3"]]);
+  });
+
+  it("deletes the notes left to delete after a send finds Anki", () => {
+    expect(deletionsRecorded(stateAfterSend(true))).toBe(1);
+  });
+
+  it("syncs nothing after a send while Anki was known to run", () => {
+    expect(sendsHeld(stateAfterSend(false))).toEqual([]);
+  });
+
+  it("sends the cards left unsent once a deletion finds Anki", () => {
+    expect(sendsHeld(stateAfterDeletion(true))).toEqual([["f3", "f1"]]);
+  });
+
+  it("adds no deletion after the deletion that found Anki", () => {
+    expect(deletionsRecorded(stateAfterDeletion(true))).toBe(0);
+  });
+
+  it("syncs nothing after a deletion while Anki was known to run", () => {
+    expect(sendsHeld(stateAfterDeletion(false))).toEqual([]);
+  });
+
+  it("syncs nothing for a project that exports packages", () => {
+    const backend = ankiCache("anki_package");
+    const [next] = update(
+      stateAfterWithCache(backend),
+      sent({ foundAnki: true }),
+      backend,
+    );
+    expect(sendsHeld(next)).toEqual([]);
+  });
+
+  it("asks Anki for nothing more once the sync has settled", async () => {
+    const server = createFakeServerStoreParts(null, ankiCache("anki_connect"));
+    const store = createAppStore(createRecordingEffects(), server);
+    store.dispatch(saveSettled(true));
+    server.respond(sendRequest, sentResponse(true));
+    await vi.waitUntil(() => ankiKindsSent(server).length === 2);
+    server.respond(
+      { ...sendRequest, flashcardIds: ["f3"] },
+      sentResponse(false),
+    );
+    await vi.waitUntil(() => ankiKindsSent(server).length === 3);
+    server.respond(noteDeletionRequest, {
+      ok: true,
+      data: {
+        deletedCount: 1,
+        remainingCount: 0,
+        unrecordedCount: 0,
+        foundAnki: false,
+      },
+    });
+    await vi.waitUntil(
+      () => store.getState().app.operations.requests.length === 0,
+    );
+    expect(ankiKindsSent(server)).toEqual([
+      "sendFlashcardsToAnki",
+      "sendFlashcardsToAnki",
+      "deleteAnkiNotes",
     ]);
   });
 });

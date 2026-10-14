@@ -35,7 +35,8 @@ export type AnkiSendDeps = {
   anki: AnkiConnect;
   server: ServerQuery;
   fetchMedia: MediaFetch;
-  reportConnection: (connection: AnkiConnection) => void;
+  /** Records whether Anki answered, and tells whether it answered although the app had not known it to be running. */
+  reportConnection: (connection: AnkiConnection) => boolean;
 };
 
 /**
@@ -52,8 +53,8 @@ export async function sendFlashcardsToAnki(
     const version = await deps.anki.invoke<number>(
       ankiConnectActions.version(),
     );
-    deps.reportConnection({ connected: true, version });
-    return await sendWithAnki(args, deps);
+    const foundAnki = deps.reportConnection({ connected: true, version });
+    return await sendWithAnki(args, deps, foundAnki);
   } catch (error) {
     if (isUnreachable(error)) deps.reportConnection({ connected: false });
     return { error: ankiBackendError(error) };
@@ -63,6 +64,7 @@ export async function sendFlashcardsToAnki(
 async function sendWithAnki(
   { projectId, flashcardIds }: AnkiSendArgs,
   deps: AnkiSendDeps,
+  foundAnki: boolean,
 ): Promise<BackendResult<AnkiSendOutcome>> {
   const rendered = await deps.server(notesRequest(projectId, flashcardIds));
   if ("error" in rendered) return rendered;
@@ -79,7 +81,9 @@ async function sendWithAnki(
   });
   const recorded = await deps.server(sentRequest(projectId, sent));
   if ("error" in recorded) return recorded;
-  return { data: { sentCount: sent.length, failedCount, skippedMediaCount } };
+  return {
+    data: { sentCount: sent.length, failedCount, skippedMediaCount, foundAnki },
+  };
 }
 
 async function createDeckAndNoteType(anki: AnkiConnect, notes: AnkiNotes) {

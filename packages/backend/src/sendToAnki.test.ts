@@ -73,9 +73,14 @@ function createFakeServer(notes: BackendResult<unknown> = { data: rendered }) {
 const clipBytes: MediaFetch = async (_projectId, media) =>
   media.kind === "audio" ? new TextEncoder().encode("clip") : null;
 
+/**
+ * Sends f1 and f2 to the fake Anki and server.
+ * `isAnkiNew` is what reporting that Anki answered tells: whether the app had not known Anki to be running.
+ */
 function send(
   answers: AnkiAnswers = ankiAnswers,
   notes?: BackendResult<unknown>,
+  isAnkiNew = false,
 ) {
   const anki = createFakeAnkiConnect(answers);
   const { requests, server } = createFakeServer(notes);
@@ -86,7 +91,10 @@ function send(
       anki,
       server,
       fetchMedia: clipBytes,
-      reportConnection: (connection) => connections.push(connection),
+      reportConnection: (connection) => {
+        connections.push(connection);
+        return isAnkiNew && connection.connected;
+      },
     },
   );
   return { sent, anki, serverRequests: requests, connections };
@@ -115,6 +123,12 @@ describe("sendFlashcardsToAnki", () => {
     const sending = send();
     await sending.sent;
     expect(sending.connections).toEqual([{ connected: true, version: 6 }]);
+  });
+
+  it("tells that it found Anki when the app had not known Anki to be running", async () => {
+    expect(await send(ankiAnswers, undefined, true).sent).toMatchObject({
+      data: { foundAnki: true },
+    });
   });
 
   it("asks the server to render the flashcards as notes", async () => {
@@ -224,7 +238,12 @@ describe("sendFlashcardsToAnki", () => {
       ],
     }).sent;
     expect(sent).toEqual({
-      data: { sentCount: 1, failedCount: 1, skippedMediaCount: 1 },
+      data: {
+        sentCount: 1,
+        failedCount: 1,
+        skippedMediaCount: 1,
+        foundAnki: false,
+      },
     });
   });
 

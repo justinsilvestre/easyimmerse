@@ -11,6 +11,8 @@ export type AnkiSendOutcome = {
   failedCount: number;
   /** The audio clips and screenshots that could not be rendered and are missing from the notes. */
   skippedMediaCount: number;
+  /** Whether Anki answered although the app had not known it to be running, so that what waited for Anki can follow. */
+  foundAnki: boolean;
 };
 
 /** How the deletion from Anki of the notes of a project's deleted flashcards went. */
@@ -21,6 +23,8 @@ export type AnkiDeletionOutcome = {
   remainingCount: number;
   /** The deleted flashcards whose notes Anki no longer holds, but which the server could not record as done and keeps pending. */
   unrecordedCount: number;
+  /** Whether Anki answered although the app had not known it to be running, so that what waited for Anki can follow. */
+  foundAnki: boolean;
 };
 
 /**

@@ -567,6 +567,50 @@ describe("checkAnkiConnection", () => {
   });
 });
 
+/** A server listing one pending deletion from Anki, of f1, and answering every other request with nothing. */
+function createPendingDeletionClient(): BackendClient {
+  const listed = {
+    deletions: [{ flashcard_id: "f1", word: "고양이", requested_at_ms: 1 }],
+  };
+  return {
+    send: async <T>(request: BackendRequest) =>
+      ({ data: request.method === "GET" ? listed : undefined }) as {
+        data: T;
+      },
+  };
+}
+
+/** Anki running, holding no note of any flashcard. */
+const runningAnki = () =>
+  createFakeAnkiConnect({ version: () => 6, findNotes: () => [] });
+
+describe("deleteAnkiNotes", () => {
+  it("keeps the connection to Anki as found once it answers", async () => {
+    const store = createStore(createPendingDeletionClient(), runningAnki());
+    await store.dispatch(backendApi.endpoints.deleteAnkiNotes.initiate("p1"));
+    expect(
+      backendApi.endpoints.checkAnkiConnection.select()(store.getState()).data,
+    ).toEqual({ connected: true, version: 6 });
+  });
+
+  it("tells that it found Anki when no check had found Anki running", async () => {
+    const store = createStore(createPendingDeletionClient(), runningAnki());
+    const deleted = await store.dispatch(
+      backendApi.endpoints.deleteAnkiNotes.initiate("p1"),
+    );
+    expect(deleted.data?.foundAnki).toBe(true);
+  });
+
+  it("does not tell that it found Anki once a check has found Anki running", async () => {
+    const store = createStore(createPendingDeletionClient(), runningAnki());
+    await store.dispatch(backendApi.endpoints.checkAnkiConnection.initiate());
+    const deleted = await store.dispatch(
+      backendApi.endpoints.deleteAnkiNotes.initiate("p1"),
+    );
+    expect(deleted.data?.foundAnki).toBe(false);
+  });
+});
+
 describe("setFlashcardDestination", () => {
   it("puts the project it answers into the cache at once", async () => {
     const project: Project = {

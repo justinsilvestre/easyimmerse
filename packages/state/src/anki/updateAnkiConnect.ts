@@ -4,22 +4,14 @@ import { updated } from "../app/updated.ts";
 import { cacheEntry, type ServerCacheSlice } from "../server/cacheEntry.ts";
 import { isSettled } from "../server/isSettled.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
-import {
-  cachedDestination,
-  cachedFlashcards,
-  hasNoPendingDeletion,
-} from "./ankiCache.ts";
-import { isUnsent, oldestFirst } from "./ankiExportSelection.ts";
+import { cachedDestination } from "./ankiCache.ts";
 import {
   ankiConnectionCheckId,
   ankiRequestIds,
   checkAnkiConnection,
-  deleteFromAnki,
-  flashcardIdsBeingSent,
-  isDeletionWaiting,
-  sendToAnki,
   setDestination,
 } from "./ankiRequests.ts";
+import { syncWithAnki } from "./syncWithAnki.ts";
 
 type AnkiConnectApp = Pick<ReadableState, "backend" | "operations">;
 
@@ -107,26 +99,6 @@ function syncOnceConnected(
   return isReady ? syncWithAnki(projectId, app) : [];
 }
 
-/**
- * Sends the flashcards Anki has no note for, and then deletes the notes of deleted flashcards.
- * A flashcard that a send under way or waiting already holds is left to that send.
- * Nothing is deleted when the cache lists no pending deletion, or while a deletion waits,
- * since that deletion will list every pending one when it starts.
- */
-function syncWithAnki(projectId: string, app: AnkiConnectApp) {
-  return [...sendUnsent(projectId, app), ...deletePending(projectId, app)];
-}
-
-function deletePending(
-  projectId: string,
-  { backend, operations }: AnkiConnectApp,
-) {
-  return hasNoPendingDeletion(backend, projectId) ||
-    isDeletionWaiting(operations.requests, projectId)
-    ? []
-    : [deleteFromAnki(projectId, null)];
-}
-
 function hasFoundAnki(action: RequestSettled) {
   return (
     isSettled(action, ankiConnectionCheckId, "checkAnkiConnection") &&
@@ -151,21 +123,4 @@ function hasSetAnkiConnect(action: RequestSettled, projectId: string) {
 function isAnkiConnected(backend: ServerCacheSlice) {
   const check = cacheEntry(backend, "checkAnkiConnection", undefined);
   return check?.status === "fulfilled" && check.data?.connected === true;
-}
-
-function sendUnsent(
-  projectId: string,
-  { backend, operations }: AnkiConnectApp,
-) {
-  const beingSent = flashcardIdsBeingSent(operations.requests, projectId);
-  const unsent = cachedFlashcards(backend, projectId).filter(
-    (flashcard) => isUnsent(flashcard) && !beingSent.has(flashcard.id),
-  );
-  if (unsent.length === 0) return [];
-  return [
-    sendToAnki(
-      projectId,
-      oldestFirst(unsent).map(({ id }) => id),
-    ),
-  ];
 }

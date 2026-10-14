@@ -8,6 +8,7 @@ import { type AnkiAnswers, createFakeAnkiConnect } from "./fakeAnkiConnect.ts";
 
 /** Anki holding the given notes for every flashcard it is asked about. */
 const holding = (noteIds: number[]): AnkiAnswers => ({
+  version: () => 6,
   findNotes: () => noteIds,
   deleteNotes: () => null,
 });
@@ -40,7 +41,7 @@ const failingToClearF1 = (path: string): BackendResult<unknown> =>
     ? { error: { status: 500, message: "down" } }
     : { data: undefined };
 
-/** Anki that answers the first `count` actions as `answers` says and then stops answering. */
+/** Anki that answers its version, then the first `count` other actions as `answers` says, and then stops answering. */
 function stoppingAfter(count: number, answers: AnkiAnswers): AnkiAnswers {
   let answered = 0;
   const once =
@@ -52,15 +53,21 @@ function stoppingAfter(count: number, answers: AnkiAnswers): AnkiAnswers {
       return handler(params);
     };
   return {
+    version: answers.version,
     findNotes: once(answers.findNotes),
     deleteNotes: once(answers.deleteNotes),
   };
 }
 
+/**
+ * Deletes p1's pending notes from the fake Anki and server.
+ * `isAnkiNew` is what reporting that Anki answered tells: whether the app had not known Anki to be running.
+ */
 function run(
   answers: AnkiAnswers = holding([100]),
   listed?: BackendResult<unknown>,
   cleared?: (path: string) => BackendResult<unknown>,
+  isAnkiNew = false,
 ) {
   const anki = createFakeAnkiConnect(answers);
   const { requests, server } = createFakeServer(listed, cleared);
@@ -68,7 +75,10 @@ function run(
   const result = deleteAnkiNotes("p1", {
     anki,
     server,
-    reportConnection: (connection) => connections.push(connection),
+    reportConnection: (connection) => {
+      connections.push(connection);
+      return isAnkiNew && connection.connected;
+    },
   });
   return { anki, requests, connections, result };
 }
@@ -89,7 +99,7 @@ describe("deleteAnkiNotes", () => {
   it("looks for each note by the deleted flashcard's id", async () => {
     const { anki, result } = run();
     await result;
-    expect(anki.requests[0]).toEqual({
+    expect(anki.requests[1]).toEqual({
       action: "findNotes",
       version: 6,
       params: { query: '"easyImmerse id:f1"' },
@@ -99,7 +109,7 @@ describe("deleteAnkiNotes", () => {
   it("deletes the notes Anki holds for a deleted flashcard", async () => {
     const { anki, result } = run();
     await result;
-    expect(anki.requests[1]).toEqual({
+    expect(anki.requests[2]).toEqual({
       action: "deleteNotes",
       version: 6,
       params: { notes: [100] },
@@ -110,6 +120,7 @@ describe("deleteAnkiNotes", () => {
     const { anki, result } = run(holding([]));
     await result;
     expect(anki.requests.map(({ action }) => action)).toEqual([
+      "version",
       "findNotes",
       "findNotes",
     ]);
@@ -132,8 +143,25 @@ describe("deleteAnkiNotes", () => {
 
   it("counts the notes Anki deleted", async () => {
     expect(await run(holding([100, 101])).result).toEqual({
-      data: { deletedCount: 4, remainingCount: 0, unrecordedCount: 0 },
+      data: {
+        deletedCount: 4,
+        remainingCount: 0,
+        unrecordedCount: 0,
+        foundAnki: false,
+      },
     });
+  });
+
+  it("reports that Anki is connected once it answers", async () => {
+    const { connections, result } = run();
+    await result;
+    expect(connections).toEqual([{ connected: true, version: 6 }]);
+  });
+
+  it("tells that it found Anki when the app had not known Anki to be running", async () => {
+    expect(
+      await run(holding([100]), undefined, undefined, true).result,
+    ).toMatchObject({ data: { foundAnki: true } });
   });
 
   it("asks Anki nothing when no deletion is pending", async () => {
@@ -146,7 +174,7 @@ describe("deleteAnkiNotes", () => {
     it("goes on with the next deletion", async () => {
       const { anki, result } = run(holding([100]), undefined, failingToClearF1);
       await result;
-      expect(anki.requests[2]).toEqual({
+      expect(anki.requests[3]).toEqual({
         action: "findNotes",
         version: 6,
         params: { query: '"easyImmerse id:f2"' },
@@ -157,7 +185,12 @@ describe("deleteAnkiNotes", () => {
       expect(
         await run(holding([100]), undefined, failingToClearF1).result,
       ).toEqual({
-        data: { deletedCount: 2, remainingCount: 0, unrecordedCount: 1 },
+        data: {
+          deletedCount: 2,
+          remainingCount: 0,
+          unrecordedCount: 1,
+          foundAnki: false,
+        },
       });
     });
   });
@@ -167,7 +200,12 @@ describe("deleteAnkiNotes", () => {
 
     it("counts the deletions left pending", async () => {
       expect(await run(halfway()).result).toEqual({
-        data: { deletedCount: 1, remainingCount: 1, unrecordedCount: 0 },
+        data: {
+          deletedCount: 1,
+          remainingCount: 1,
+          unrecordedCount: 0,
+          foundAnki: false,
+        },
       });
     });
 
@@ -177,6 +215,12 @@ describe("deleteAnkiNotes", () => {
       expect(clearedPaths(requests)).toEqual([
         "/projects/p1/anki/pending-deletions/f1",
       ]);
+    });
+
+    it("leaves every deletion pending when Anki does not answer at all", async () => {
+      expect(await run({}).result).toMatchObject({
+        data: { deletedCount: 0, remainingCount: 2 },
+      });
     });
 
     it("reports that Anki is not connected", async () => {
