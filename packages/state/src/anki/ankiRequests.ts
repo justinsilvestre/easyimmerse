@@ -39,20 +39,29 @@ export function isSendingTo(
 }
 
 /**
- * Deletes from Anki the note of a project's deleted flashcard, named by its word, after the project's earlier sends,
- * so that a note a send in flight creates is deleted too.
+ * Deletes from Anki the notes of a project's deleted flashcards, after the project's earlier sends,
+ * so that a note a send in flight creates is deleted too. `word` names the flashcard just deleted, if one was.
  */
-export function deleteFromAnki(
-  projectId: string,
-  flashcardId: string,
-  word: string,
-) {
+export function deleteFromAnki(projectId: string, word: string | null) {
   return {
     type: "sendRequestWithFreeId",
     prefix: `project/${projectId}/ankiDelete`,
     scope: ankiScope(projectId),
-    request: { kind: "deleteAnkiNote", flashcardId, word },
+    request: { kind: "deleteAnkiNotes", projectId, word },
   } satisfies Effect;
+}
+
+/** Tells whether a deletion of the project's notes from Anki waits behind its other requests to AnkiConnect. */
+export function isDeletionWaiting(
+  requests: readonly RequestRecord[],
+  projectId: string,
+): boolean {
+  return requests.some(
+    ({ request, isWaiting }) =>
+      isWaiting &&
+      request.kind === "deleteAnkiNotes" &&
+      request.projectId === projectId,
+  );
 }
 
 /** Asks AnkiConnect whether Anki is running. */

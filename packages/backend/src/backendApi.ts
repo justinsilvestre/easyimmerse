@@ -4,6 +4,7 @@ import {
 } from "@easyimmerse/licenses";
 import type {
   AnkiConnection,
+  AnkiDeletionOutcome,
   AnkiPackageExport,
   AnkiSendOutcome,
   PickedDictionaryFile,
@@ -12,6 +13,7 @@ import { cacheKey, serverCachePath } from "@easyimmerse/state";
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  AnkiPendingDeletions,
   BatchLookupRequest,
   BatchLookupResponse,
   ConversionCacheBudget,
@@ -70,7 +72,7 @@ import {
   type FrameArgs,
   probePictures,
 } from "./browserFrames.ts";
-import { deleteAnkiNote } from "./deleteAnkiNote.ts";
+import { deleteAnkiNotes } from "./deleteAnkiNotes.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
 import {
@@ -244,6 +246,7 @@ export const backendApi = createApi({
     "Projects",
     "MediaFiles",
     "Flashcards",
+    "AnkiPendingDeletions",
     "SubtitleTracks",
     "Dictionaries",
     "ConversionCache",
@@ -340,6 +343,7 @@ export const backendApi = createApi({
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
+        { type: "AnkiPendingDeletions", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
       ],
@@ -626,13 +630,28 @@ export const backendApi = createApi({
       invalidatesTags: (_result, _error, { projectId }) =>
         flashcardsSentTags(projectId),
     }),
-    /** Deletes from Anki the note of a flashcard, if Anki has one, through AnkiConnect from the page. */
-    deleteAnkiNote: build.mutation<void, string>({
-      queryFn: (flashcardId, api) =>
-        deleteAnkiNote(
-          flashcardId,
-          (api.extra as BackendThunkExtra).ankiConnect,
-        ),
+    /** The project's deleted flashcards whose notes are still to be deleted from Anki. */
+    listAnkiPendingDeletions: build.query<AnkiPendingDeletions, string>({
+      query: (projectId) => ({
+        method: "GET",
+        path: `/projects/${projectId}/anki/pending-deletions`,
+      }),
+      providesTags: (_result, _error, projectId) => [
+        { type: "AnkiPendingDeletions", id: projectId },
+      ],
+    }),
+    /** Deletes from Anki the notes of the project's deleted flashcards, through AnkiConnect from the page. */
+    deleteAnkiNotes: build.mutation<AnkiDeletionOutcome, string>({
+      queryFn: (projectId, api, _extraOptions, baseQuery) =>
+        deleteAnkiNotes(projectId, {
+          anki: (api.extra as BackendThunkExtra).ankiConnect,
+          server: serverQueryOf(baseQuery),
+          reportConnection: (connection) =>
+            reportAnkiConnection(api.dispatch, connection),
+        }),
+      invalidatesTags: (_result, _error, projectId) => [
+        { type: "AnkiPendingDeletions", id: projectId },
+      ],
     }),
     /** Exports flashcards as an Anki package, written by the server at a path or handed back for download. */
     exportAnkiPackage: build.mutation<AnkiPackageExport, AnkiExportArgs>({
@@ -793,6 +812,7 @@ export const {
   useListDictionariesQuery,
   useLookupTextQuery,
   useLazyLookupTextQuery,
+  useListAnkiPendingDeletionsQuery,
 } = backendApi;
 
 type BackendState = Parameters<

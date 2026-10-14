@@ -41,20 +41,30 @@ export function sendFailedNotice(failure: RequestFailure) {
   );
 }
 
-/** Tells why the note of a deleted flashcard, named by its word, could not be deleted from Anki. */
-export function deleteFailedNotice(word: string, failure: RequestFailure) {
+/** Tells why the notes of deleted flashcards could not be deleted from Anki, naming the flashcard just deleted by its word, if one was. */
+export function deleteFailedNotice(
+  word: string | null,
+  failure: RequestFailure,
+) {
+  const notes =
+    word === null ? "The notes" : `The note for ${flashcardName(word)}`;
   return notice(
     "danger",
-    `The note for ${flashcardName(word)} could not be deleted from Anki: ${failure.message}`,
+    `${notes} could not be deleted from Anki: ${failure.message}`,
   );
 }
 
-/** Tells that the note of a deleted flashcard stays in Anki because Anki is not running, since nothing deletes it later. */
-export function noteKeptNotice(word: string) {
+/** Tells that the note of a deleted flashcard, named by its word, will be deleted once Anki is running again. */
+export function deletionPendingNotice(word: string) {
   return notice(
     "info",
-    `Anki is not running, so the note for ${flashcardName(word)} stays in Anki.`,
+    `Anki is not running. The note for ${flashcardName(word)} will be deleted from Anki the next time it is connected.`,
   );
+}
+
+/** Tells how many notes of deleted flashcards were deleted from Anki. */
+export function deletedNotice(deletedCount: number) {
+  return notice("success", `Deleted ${count(deletedCount, "note")} from Anki.`);
 }
 
 function flashcardName(word: string) {

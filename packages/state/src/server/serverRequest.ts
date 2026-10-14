@@ -37,6 +37,7 @@ import type {
 import type { Dispatch } from "redux";
 import type {
   AnkiConnection,
+  AnkiDeletionOutcome,
   AnkiPackageExport,
   AnkiSendOutcome,
 } from "../anki/ankiResponses.ts";
@@ -141,8 +142,11 @@ export type ServerRequest =
       projectId: string;
       flashcardIds: readonly string[];
     }
-  /** Deletes from Anki through AnkiConnect the note of a deleted flashcard, if Anki has one. `word` names it in notices and is not sent. */
-  | { kind: "deleteAnkiNote"; flashcardId: string; word: string }
+  /**
+   * Deletes from Anki through AnkiConnect the notes of the project's deleted flashcards that the server lists as pending.
+   * `word` names the flashcard whose deletion asked for this in notices, or is null when nothing deleted just now asked; it is not sent.
+   */
+  | { kind: "deleteAnkiNotes"; projectId: string; word: string | null }
   /** Exports flashcards as an Anki package, saved at `savePath`, or handed back for download when it is null. */
   | {
       kind: "exportAnkiPackage";
@@ -199,8 +203,7 @@ export type ServerResponses = {
   probePictures: boolean;
   checkAnkiConnection: AnkiConnection;
   sendFlashcardsToAnki: AnkiSendOutcome;
-  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
-  deleteAnkiNote: void;
+  deleteAnkiNotes: AnkiDeletionOutcome;
   exportAnkiPackage: AnkiPackageExport;
   setFlashcardDestination: Project;
 };

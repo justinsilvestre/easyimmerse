@@ -10,9 +10,9 @@ import type {
 import type { AnkiConnect } from "./ankiConnect.ts";
 import { ankiConnectActions } from "./ankiConnectActions.ts";
 import {
-  AnkiConnectError,
   ankiBackendError,
   hasSucceeded,
+  isUnreachable,
 } from "./ankiConnectError.ts";
 import { type MediaFetch, withoutMedia } from "./ankiMedia.ts";
 import { syncNotes } from "./ankiNoteSync.ts";
@@ -129,12 +129,6 @@ async function isStored(
     bytesToBase64(bytes),
   );
   return hasSucceeded(anki.invoke(request));
-}
-
-function isUnreachable(error: unknown): boolean {
-  return (
-    error instanceof AnkiConnectError && error.failure.kind === "unreachable"
-  );
 }
 
 function notesRequest(

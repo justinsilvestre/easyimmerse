@@ -13,6 +13,14 @@ export type AnkiSendOutcome = {
   skippedMediaCount: number;
 };
 
+/** How the deletion from Anki of the notes of a project's deleted flashcards went. */
+export type AnkiDeletionOutcome = {
+  /** The notes Anki deleted. */
+  deletedCount: number;
+  /** The deleted flashcards whose notes are still to be deleted, because Anki stopped answering. */
+  remainingCount: number;
+};
+
 /**
  * An exported Anki package: written by the server to the path the user chose,
  * or handed back as a file for the platform to download.

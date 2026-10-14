@@ -23,6 +23,13 @@ export function isActionFailure(error: unknown): boolean {
   return error instanceof AnkiConnectError && error.failure.kind === "failed";
 }
 
+/** Tells whether an error is Anki not answering, as when it is not running. */
+export function isUnreachable(error: unknown): boolean {
+  return (
+    error instanceof AnkiConnectError && error.failure.kind === "unreachable"
+  );
+}
+
 /**
  * Resolves whether an action succeeded. An action Anki answered with an error resolves false,
  * while Anki not answering or refusing this page still rejects, since every later action would fail too.

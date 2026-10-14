@@ -2,6 +2,7 @@ export type { AnkiExportScope } from "./anki/ankiExportDialog.ts";
 export { ankiUnreachableCode } from "./anki/ankiNotices.ts";
 export type {
   AnkiConnection,
+  AnkiDeletionOutcome,
   AnkiPackageExport,
   AnkiSendOutcome,
 } from "./anki/ankiResponses.ts";

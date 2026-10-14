@@ -11,18 +11,19 @@ import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { cacheKey } from "../server/cacheKey.ts";
 import { exampleProject } from "../server/exampleProject.ts";
 import { serverCacheWith } from "../server/serverCacheWith.ts";
+import type { ServerRequest } from "../server/serverRequest.ts";
 import { ankiCache, ankiFlashcard, openOverview } from "./ankiTestSupport.ts";
 
-const after = (backend: ServerCacheSlice, ...actions: AppAction[]) =>
+const openedAfter = (backend: ServerCacheSlice, ...actions: AppAction[]) =>
   stateAfterWithCache(backend, openOverview, ...actions);
 
 const effectsOf = (
   action: AppAction,
   backend: ServerCacheSlice = ankiCache("anki_connect"),
-) => update(after(backend), action, backend)[1];
+) => update(openedAfter(backend), action, backend)[1];
 
 const isSetupOpenAfter = (...actions: AppAction[]) => {
-  const { main } = after(ankiCache(null), ...actions).screen;
+  const { main } = openedAfter(ankiCache(null), ...actions).screen;
   return main.kind === "project" && main.isAnkiConnectSetupOpen;
 };
 
@@ -57,6 +58,14 @@ const sendUnsent = {
     projectId: "p1",
     flashcardIds: ["f3", "f1"],
   },
+};
+
+/** The deletion of the notes left to delete, sent at once since no send of the project is under way. */
+const deleteNotes = {
+  type: "sendRequest",
+  id: "project/p1/ankiDelete/1",
+  scope: "ankiSend:p1",
+  request: { kind: "deleteAnkiNotes", projectId: "p1", word: null },
 };
 
 const checked = (connected: boolean) =>
@@ -100,6 +109,20 @@ const settingUp = (check: "connected" | "pending"): ServerCacheSlice => {
 const sendsRecorded = ({ operations }: AppState) =>
   operations.requests.filter(
     ({ request }) => request.kind === "sendFlashcardsToAnki",
+  ).length;
+
+/** The kinds of the requests to AnkiConnect the fake server received, in order. */
+const ankiKindsSent = ({ sentRequests }: { sentRequests: ServerRequest[] }) =>
+  sentRequests
+    .map(({ kind }) => kind)
+    .filter(
+      (kind) => kind === "sendFlashcardsToAnki" || kind === "deleteAnkiNotes",
+    );
+
+/** Counts the deletions from Anki under way or waiting. */
+const deletionsRecorded = ({ operations }: AppState) =>
+  operations.requests.filter(
+    ({ request }) => request.kind === "deleteAnkiNotes",
   ).length;
 
 const isChecking = ({ operations }: AppState) =>
@@ -174,6 +197,12 @@ describe("ankiConnectEffects once Anki is found running", () => {
     expect(effectsOf(checked(true))).toEqual([sendUnsent]);
   });
 
+  it("deletes the notes left to delete after the send", () => {
+    expect(
+      deletionsRecorded(openedAfter(ankiCache("anki_connect"), checked(true))),
+    ).toBe(1);
+  });
+
   it("sends nothing when Anki does not answer", () => {
     expect(effectsOf(checked(false))).toEqual([]);
   });
@@ -182,24 +211,63 @@ describe("ankiConnectEffects once Anki is found running", () => {
     expect(effectsOf(checked(true), ankiCache("anki_package"))).toEqual([]);
   });
 
-  it("sends nothing when Anki has every card", () => {
+  it("only deletes the notes left to delete when Anki has every card", () => {
     const allSent = ankiCache("anki_connect", [
       ankiFlashcard("f1", "m1", 1, { ankiNoteId: 100 }),
     ]);
-    expect(effectsOf(checked(true), allSent)).toEqual([]);
+    expect(effectsOf(checked(true), allSent)).toEqual([deleteNotes]);
   });
 
   it("adds no send while a send of the project is under way", () => {
     const backend = ankiCache("anki_connect");
-    const sending = after(backend, actions.ankiSendRequested());
+    const sending = openedAfter(backend, actions.ankiSendRequested());
     const [next] = update(sending, checked(true), backend);
     expect(sendsRecorded(next)).toBe(1);
+  });
+
+  it("adds no deletion while one waits", () => {
+    const backend = ankiCache("anki_connect");
+    const waiting = openedAfter(
+      backend,
+      actions.ankiSendRequested(),
+      checked(true),
+    );
+    const [next] = update(waiting, checked(true), backend);
+    expect(deletionsRecorded(next)).toBe(1);
+  });
+
+  it("deletes the notes left to delete only once the send has settled", async () => {
+    const server = createFakeServerStoreParts(null, ankiCache("anki_connect"));
+    const store = createAppStore(createRecordingEffects(), server);
+    store.dispatch(openOverview);
+    store.dispatch(checked(true));
+    server.respond(
+      {
+        kind: "sendFlashcardsToAnki",
+        projectId: "p1",
+        flashcardIds: ["f3", "f1"],
+      },
+      {
+        ok: true,
+        data: { sentCount: 2, failedCount: 0, skippedMediaCount: 0 },
+      },
+    );
+    await vi.waitUntil(() => ankiKindsSent(server).length === 2);
+    expect(ankiKindsSent(server)).toEqual([
+      "sendFlashcardsToAnki",
+      "deleteAnkiNotes",
+    ]);
   });
 
   it("sends the cards once AnkiConnect is chosen after Anki was found running", () => {
     expect(effectsOf(destinationChanged, settingUp("connected"))).toEqual([
       sendUnsent,
     ]);
+  });
+
+  it("deletes the notes left to delete once AnkiConnect is chosen after Anki was found running", () => {
+    const backend = settingUp("connected");
+    expect(deletionsRecorded(openedAfter(backend, destinationChanged))).toBe(1);
   });
 
   it("leaves the send to the check under way when AnkiConnect is chosen", () => {

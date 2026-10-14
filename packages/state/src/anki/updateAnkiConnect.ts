@@ -10,6 +10,8 @@ import {
   ankiConnectionCheckId,
   ankiRequestIds,
   checkAnkiConnection,
+  deleteFromAnki,
+  isDeletionWaiting,
   isSendingTo,
   sendToAnki,
   setDestination,
@@ -46,6 +48,7 @@ export function updateAnkiConnectSetup(
  * Returns the effects of the project overview's AnkiConnect actions, which change no state:
  * a check whether Anki can be reached, as asked for or once the overview has read that the project sends to Anki;
  * a send of every flashcard Anki has no note for, oldest first, as asked for or once Anki is found running;
+ * the deletion of the notes of deleted flashcards that Anki could not be reached for, once Anki is found running;
  * and the clearing of the project's destination.
  */
 export function ankiConnectEffects(
@@ -63,7 +66,7 @@ export function ankiConnectEffects(
     case "requestSettled":
       return [
         ...checkOnRead(action, projectId),
-        ...sendOnceConnected(action, projectId, app),
+        ...syncOnceConnected(action, projectId, app),
       ];
     default:
       return [];
@@ -85,11 +88,12 @@ function checkOnRead(action: RequestSettled, projectId: string) {
 }
 
 /**
- * Sends the flashcards Anki has no note for once Anki is known to run and the project is known to send there,
- * whichever of the check and the setting of the destination lands last. Nothing is sent while a send of the project is under way or waiting,
- * since that send already holds the unsent flashcards.
+ * Sends the flashcards Anki has no note for, and then deletes the notes of deleted flashcards, once Anki is known to run
+ * and the project is known to send there, whichever of the check and the setting of the destination lands last.
+ * Nothing is sent while a send of the project is under way or waiting, since that send already holds the unsent flashcards,
+ * and nothing is deleted while a deletion waits, since that deletion will list every pending one when it starts.
  */
-function sendOnceConnected(
+function syncOnceConnected(
   action: RequestSettled,
   projectId: string,
   app: AnkiConnectApp,
@@ -98,8 +102,16 @@ function sendOnceConnected(
     (hasFoundAnki(action) &&
       cachedDestination(app.backend, projectId) === "anki_connect") ||
     (hasSetAnkiConnect(action, projectId) && isAnkiConnected(app.backend));
-  if (!isReady || isSendingTo(app.operations.requests, projectId)) return [];
-  return sendUnsent(projectId, app.backend);
+  if (!isReady) return [];
+  const { requests } = app.operations;
+  return [
+    ...(isSendingTo(requests, projectId)
+      ? []
+      : sendUnsent(projectId, app.backend)),
+    ...(isDeletionWaiting(requests, projectId)
+      ? []
+      : [deleteFromAnki(projectId, null)]),
+  ];
 }
 
 function hasFoundAnki(action: RequestSettled) {

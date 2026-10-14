@@ -8,7 +8,11 @@ import { update } from "../app/update.ts";
 import { exampleDraft } from "../flashcards/exampleFlashcards.ts";
 import type { DeletePurpose } from "../flashcards/flashcardRequests.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
-import type { RequestFailure, ServerRequest } from "../server/serverRequest.ts";
+import type {
+  RequestFailure,
+  RequestOutcome,
+  ServerRequest,
+} from "../server/serverRequest.ts";
 import type { AnkiSendOutcome } from "./ankiResponses.ts";
 import { ankiCache, ankiFlashcard, openOverview } from "./ankiTestSupport.ts";
 
@@ -69,25 +73,37 @@ const deletionSettled = (
       : { ok: false, error: { status: 500, message: "down" } },
   );
 
-const noteDeletion = (flashcardId = "f2", word = flashcardId) => ({
+const noteDeletion = (word: string | null = "f2") => ({
   type: "sendRequest",
   id: "project/p1/ankiDelete/1",
   scope: "ankiSend:p1",
-  request: { kind: "deleteAnkiNote", flashcardId, word },
+  request: { kind: "deleteAnkiNotes", projectId: "p1", word },
 });
 
-const noteDeletionFailed = (error: RequestFailure, word = "f2") =>
+const notesDeletionSettled = (
+  outcome: RequestOutcome<"deleteAnkiNotes">,
+  word: string | null = "f2",
+) =>
   actions.requestSettled(
     "project/p1/ankiDelete/1",
-    { kind: "deleteAnkiNote", flashcardId: "f2", word },
-    { ok: false, error },
+    { kind: "deleteAnkiNotes", projectId: "p1", word },
+    outcome,
   );
 
-const unreachable: RequestFailure = {
-  status: "NETWORK",
-  code: "anki_unreachable",
-  message: "x",
-};
+const notesDeleted = (
+  deletedCount: number,
+  remainingCount: number,
+  word: string | null = "f2",
+) =>
+  notesDeletionSettled(
+    { ok: true, data: { deletedCount, remainingCount } },
+    word,
+  );
+
+const notesDeletionFailed = (
+  error: RequestFailure,
+  word: string | null = "f2",
+) => notesDeletionSettled({ ok: false, error }, word);
 
 const sendAllRequest = {
   kind: "sendFlashcardsToAnki",
@@ -109,7 +125,7 @@ const ankiKindsSent = ({ sentRequests }: { sentRequests: ServerRequest[] }) =>
   sentRequests
     .map(({ kind }) => kind)
     .filter(
-      (kind) => kind === "sendFlashcardsToAnki" || kind === "deleteAnkiNote",
+      (kind) => kind === "sendFlashcardsToAnki" || kind === "deleteAnkiNotes",
     );
 
 const noticesAfter = (...actions: AppAction[]) =>
@@ -210,7 +226,7 @@ describe("ankiCommands", () => {
 });
 
 describe("ankiCommands when a flashcard is deleted", () => {
-  it("deletes its note from Anki", () => {
+  it("deletes the project's deleted notes from Anki, naming the flashcard", () => {
     expect(effectsOf(deletionSettled({ type: "delete" }))).toContainEqual(
       noteDeletion(),
     );
@@ -239,7 +255,7 @@ describe("ankiCommands when a flashcard is deleted", () => {
       effectsOf(
         deletionSettled({ type: "undo", word: "Katze" }, { flashcardId: "f9" }),
       ),
-    ).toContainEqual(noteDeletion("f9", "Katze"));
+    ).toContainEqual(noteDeletion("Katze"));
   });
 
   it("deletes nothing for a project that exports packages", () => {
@@ -271,12 +287,12 @@ describe("ankiCommands when a flashcard is deleted", () => {
     await vi.waitUntil(() => ankiKindsSent(server).length === 2);
     expect(ankiKindsSent(server)).toEqual([
       "sendFlashcardsToAnki",
-      "deleteAnkiNote",
+      "deleteAnkiNotes",
     ]);
   });
 
   it("tells why Anki could not delete the note", () => {
-    const refused = noteDeletionFailed({
+    const refused = notesDeletionFailed({
       status: 502,
       code: "anki_failed",
       message: "collection is not available",
@@ -286,23 +302,53 @@ describe("ankiCommands when a flashcard is deleted", () => {
     ]);
   });
 
-  it("tells that the note stays in Anki when Anki is not running", () => {
-    expect(noticesAfter(noteDeletionFailed(unreachable))).toEqual([
-      "Anki is not running, so the note for “f2” stays in Anki.",
+  it("tells that the note will be deleted once Anki is connected when Anki is not running", () => {
+    expect(noticesAfter(notesDeleted(0, 1))).toEqual([
+      "Anki is not running. The note for “f2” will be deleted from Anki the next time it is connected.",
     ]);
   });
 
   it("names a card without a word as the flashcard", () => {
-    expect(noticesAfter(noteDeletionFailed(unreachable, ""))).toEqual([
-      "Anki is not running, so the note for the flashcard stays in Anki.",
+    expect(noticesAfter(notesDeleted(0, 1, ""))).toEqual([
+      "Anki is not running. The note for the flashcard will be deleted from Anki the next time it is connected.",
     ]);
   });
 
+  it("says nothing once Anki has deleted the note", () => {
+    expect(noticesAfter(notesDeleted(1, 0))).toEqual([]);
+  });
+
   it("says nothing of an aborted deletion", () => {
-    const aborted = noteDeletionFailed({
+    const aborted = notesDeletionFailed({
       status: "ABORTED",
       message: "aborted",
     });
     expect(noticesAfter(aborted)).toEqual([]);
+  });
+});
+
+describe("ankiCommands when notes left in Anki are deleted later", () => {
+  it("tells how many notes were deleted", () => {
+    expect(noticesAfter(notesDeleted(2, 0, null))).toEqual([
+      "Deleted 2 notes from Anki.",
+    ]);
+  });
+
+  it("says nothing when no note was deleted", () => {
+    expect(noticesAfter(notesDeleted(0, 0, null))).toEqual([]);
+  });
+
+  it("says nothing when Anki stopped answering, which the project screen shows", () => {
+    expect(noticesAfter(notesDeleted(0, 2, null))).toEqual([]);
+  });
+
+  it("tells why Anki could not delete the notes", () => {
+    const refused = notesDeletionFailed(
+      { status: 502, code: "anki_failed", message: "deck is busy" },
+      null,
+    );
+    expect(noticesAfter(refused)).toEqual([
+      "The notes could not be deleted from Anki: deck is busy",
+    ]);
   });
 });
