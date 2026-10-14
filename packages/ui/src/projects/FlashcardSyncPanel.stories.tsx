@@ -69,7 +69,7 @@ export const AnkiChecking: Story = {
       unsentCount: 3,
       pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
-      isSending: false,
+      isSyncing: false,
     },
   },
 };
@@ -82,7 +82,7 @@ export const AnkiConnected: Story = {
       unsentCount: 3,
       pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
-      isSending: false,
+      isSyncing: false,
     },
   },
 };
@@ -95,7 +95,7 @@ export const AnkiConnectedWithOnlyNotesToDelete: Story = {
       unsentCount: 0,
       pendingDeletionCount: 2,
       nextCard: null,
-      isSending: false,
+      isSyncing: false,
     },
   },
 };
@@ -108,7 +108,7 @@ export const SendingToAnki: Story = {
       unsentCount: 3,
       pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
-      isSending: true,
+      isSyncing: true,
     },
   },
 };
@@ -121,7 +121,7 @@ export const AnkiUnreachable: Story = {
       unsentCount: 3,
       pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
-      isSending: false,
+      isSyncing: false,
     },
   },
 };
@@ -134,7 +134,7 @@ export const AnkiUnreachableWithNotesToDelete: Story = {
       unsentCount: 3,
       pendingDeletionCount: 1,
       nextCard: exampleFlashcard,
-      isSending: false,
+      isSyncing: false,
     },
   },
 };

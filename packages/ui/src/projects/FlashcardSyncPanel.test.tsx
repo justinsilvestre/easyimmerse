@@ -10,14 +10,14 @@ afterEach(cleanup);
 
 const sendingTo = (
   connection: "checking" | "connected" | "unreachable",
-  isSending = false,
+  isSyncing = false,
 ): FlashcardSyncState => ({
   kind: "ankiConnect",
   connection,
   unsentCount: 2,
   pendingDeletionCount: 0,
   nextCard: null,
-  isSending,
+  isSyncing,
 });
 
 const counting = (
@@ -29,7 +29,7 @@ const counting = (
   unsentCount,
   pendingDeletionCount,
   nextCard: null,
-  isSending: false,
+  isSyncing: false,
 });
 
 function renderPanel(state: FlashcardSyncState) {

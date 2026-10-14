@@ -4,7 +4,7 @@ import type { RootState } from "../app/createAppStore.ts";
 import { type CacheEntry, cacheEntry } from "../server/cacheEntry.ts";
 import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
 import { isUnexported, isUnsent, oldestFirst } from "./ankiExportSelection.ts";
-import { isSyncingWith } from "./ankiRequests.ts";
+import { hasAnkiConnectRequest } from "./ankiRequests.ts";
 
 /** Whether Anki answered the last check: still being asked, answered, or not. */
 export type AnkiConnectionStatus = "checking" | "connected" | "unreachable";
@@ -27,7 +27,7 @@ export type FlashcardSync =
       /** The first-made flashcard Anki has no note for. */
       nextCard: FlashcardContent | null;
       /** Whether a send of the project's flashcards, or a deletion of its notes from Anki, is under way or waiting. */
-      isSending: boolean;
+      isSyncing: boolean;
     };
 
 /**
@@ -44,7 +44,7 @@ export const selectFlashcardSync = createSelector(
     (root: RootState) =>
       cacheEntry(root.backend, "checkAnkiConnection", undefined),
     (root: RootState, projectId: string) =>
-      isSyncingWith(root.app.operations.requests, projectId),
+      hasAnkiConnectRequest(root.app.operations.requests, projectId),
     (root: RootState, projectId: string) =>
       cacheEntry(root.backend, "listAnkiPendingDeletions", projectId)?.data
         ?.deletions.length ?? 0,
@@ -53,7 +53,7 @@ export const selectFlashcardSync = createSelector(
     destination,
     flashcards,
     connection,
-    sending,
+    syncing,
     pendingDeletionCount,
   ): FlashcardSync => {
     switch (destination) {
@@ -75,7 +75,7 @@ export const selectFlashcardSync = createSelector(
           unsentCount: unsent.length,
           pendingDeletionCount,
           nextCard: firstMadeContent(unsent),
-          isSending: sending,
+          isSyncing: syncing,
         };
       }
     }

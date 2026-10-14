@@ -41,7 +41,7 @@ export function flashcardIdsBeingSent(
 }
 
 /** Tells whether any of the project's requests to AnkiConnect, a send or a deletion, is under way or waiting. */
-export function isSyncingWith(
+export function hasAnkiConnectRequest(
   requests: readonly RequestRecord[],
   projectId: string,
 ): boolean {

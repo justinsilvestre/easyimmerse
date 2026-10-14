@@ -91,19 +91,19 @@ describe("selectFlashcardSync", () => {
     expect(syncOf(checking)).toMatchObject({ connection: "checking" });
   });
 
-  it("says a send is under way while one is", () => {
+  it("says the project is syncing with Anki while a send is under way", () => {
     expect(
       syncOf(checked(true), openOverview, actions.ankiSendRequested()),
-    ).toMatchObject({ isSending: true });
+    ).toMatchObject({ isSyncing: true });
   });
 
-  it("says a send is under way while a deletion from Anki is", () => {
+  it("says the project is syncing with Anki while a deletion from Anki is under way", () => {
     const allSent = ankiCache("anki_connect", [
       ankiFlashcard("f1", "m1", 1, { ankiNoteId: 100 }),
     ]);
     expect(
       syncOf(checked(true, allSent), openOverview, actions.ankiSendRequested()),
-    ).toMatchObject({ isSending: true });
+    ).toMatchObject({ isSyncing: true });
   });
 
   it("keeps its result while nothing it reads changes", () => {

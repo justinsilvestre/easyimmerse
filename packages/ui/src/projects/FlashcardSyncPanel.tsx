@@ -14,10 +14,7 @@ export type FlashcardSyncState =
   | { kind: "review"; dueCount: number; nextCard: FlashcardContent | null };
 
 /** A place the project's flashcards can go, named after the state it leads to. */
-type FlashcardSyncOption = Exclude<
-  FlashcardSyncState["kind"],
-  "notStarted"
->;
+type FlashcardSyncOption = Exclude<FlashcardSyncState["kind"], "notStarted">;
 
 type Callbacks = {
   onExportPackage: () => void;
@@ -206,12 +203,12 @@ function Status({
                 disabled={
                   (state.unsentCount === 0 &&
                     state.pendingDeletionCount === 0) ||
-                  state.isSending
+                  state.isSyncing
                 }
                 onClick={callbacks.onSendToAnki}
               >
                 <Send className="size-4" aria-hidden />
-                {state.isSending ? "Sending…" : "Send to Anki"}
+                {state.isSyncing ? "Sending…" : "Send to Anki"}
               </Button>
               {state.connection === "unreachable" && (
                 <>

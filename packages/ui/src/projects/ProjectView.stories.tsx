@@ -149,7 +149,7 @@ export const SendingThroughAnkiConnect: Story = {
         unsentCount: 3,
         pendingDeletionCount: 0,
         nextCard: exampleFlashcard,
-        isSending: false,
+        isSyncing: false,
       },
       [
         { language: "de", role: "target", dictionaryCount: 2 },
