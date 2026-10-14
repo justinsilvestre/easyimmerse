@@ -66,6 +66,13 @@ async fn create_two(server: &TestServer) -> Vec<String> {
     ]
 }
 
+async fn delete_flashcard(server: &TestServer, id: &str) {
+    let response = server
+        .delete(&format!("/projects/{PROJECT}/flashcards/{id}"))
+        .await;
+    assert_eq!(response.status, 204, "{}", response.text());
+}
+
 async fn add_media(server: &TestServer, source: Value) -> String {
     let response = server
         .post_json(
@@ -240,6 +247,15 @@ mod export_anki_package {
         let other = create_flashcard(&server, "placeholder-2", None).await;
         let response = export_ids(&server, &[other]).await;
         assert_eq!(response.status, 404);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn leaves_out_a_named_flashcard_that_is_gone() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        delete_flashcard(&server, &ids[1]).await;
+        let response = export_ids(&server, &ids).await;
+        assert_eq!(count_notes(&response.bytes), 1);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -455,11 +471,26 @@ mod render_anki_notes {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn refuses_a_flashcard_of_another_project() {
+    async fn passes_over_a_flashcard_of_another_project() {
         let server = spawn_test_server(false).await;
         let other = create_flashcard(&server, "placeholder-2", None).await;
         let response = render(&server, &[other]).await;
-        assert_eq!(response.status, 404);
+        assert_eq!(response.json()["notes"], json!([]));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn renders_the_other_notes_when_a_named_flashcard_is_gone() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        delete_flashcard(&server, &ids[1]).await;
+        let response = render(&server, &ids).await;
+        let flashcard_ids: Vec<Value> = response.json()["notes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|note| note["flashcard_id"].clone())
+            .collect();
+        assert_eq!(flashcard_ids, [json!(ids[0])]);
     }
 }
 
@@ -568,15 +599,52 @@ mod record_anki_notes_sent {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn refuses_a_flashcard_of_another_project() {
+    async fn gives_no_note_id_to_a_flashcard_of_another_project() {
         let server = spawn_test_server(false).await;
         let other = create_flashcard(&server, "placeholder-2", None).await;
-        let response = record(
+        record(
             &server,
             json!([{ "flashcard_id": other, "anki_note_id": 7 }]),
         )
         .await;
-        assert_eq!(response.status, 404);
+        let response = server.get("/projects/placeholder-2/flashcards").await;
+        let flashcards = response.json()["flashcards"].as_array().unwrap().clone();
+        let stored = flashcards.iter().find(|card| card["id"] == other).unwrap();
+        assert!(stored["anki_note_id"].is_null());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn records_the_other_notes_when_a_sent_flashcard_is_gone() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        delete_flashcard(&server, &ids[1]).await;
+        record(
+            &server,
+            json!([
+                { "flashcard_id": ids[0], "anki_note_id": 7 },
+                { "flashcard_id": ids[1], "anki_note_id": 8 },
+            ]),
+        )
+        .await;
+        let flashcards = list_flashcards(&server).await;
+        let kept = flashcards.iter().find(|card| card["id"] == ids[0]).unwrap();
+        assert_eq!(kept["anki_note_id"], 7);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn answers_no_content_when_a_sent_flashcard_is_gone() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        delete_flashcard(&server, &ids[1]).await;
+        let response = record(
+            &server,
+            json!([
+                { "flashcard_id": ids[0], "anki_note_id": 7 },
+                { "flashcard_id": ids[1], "anki_note_id": 8 },
+            ]),
+        )
+        .await;
+        assert_eq!(response.status, 204);
     }
 }
 

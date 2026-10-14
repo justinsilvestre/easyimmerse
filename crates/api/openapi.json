@@ -1922,7 +1922,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Renders the flashcards as notes for the AnkiConnect client, with the deck and note type they belong to.",
+        "summary": "Renders the flashcards as notes for the AnkiConnect client, with the deck and note type they belong to.\nA named flashcard that is not in the project, as one deleted since the send was queued, is passed over.",
         "operationId": "renderAnkiNotes",
         "parameters": [
           {
@@ -1977,7 +1977,7 @@
             }
           },
           "404": {
-            "description": "No such project, or a flashcard not in it",
+            "description": "No such project",
             "content": {
               "application/json": {
                 "schema": {
@@ -2009,7 +2009,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, the flashcards are marked exported\nand the project's flashcard destination becomes `anki_package`.",
+        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, the flashcards are marked exported\nand the project's flashcard destination becomes `anki_package`.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
         "operationId": "exportAnkiPackage",
         "parameters": [
           {
@@ -2100,7 +2100,7 @@
             }
           },
           "404": {
-            "description": "No such project, or a flashcard not in it",
+            "description": "No such project, or none of the named flashcards in it",
             "content": {
               "application/json": {
                 "schema": {
@@ -2278,7 +2278,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Stores the ids of the notes AnkiConnect created for the flashcards,\nand makes `anki_connect` the project's flashcard destination.",
+        "summary": "Stores the ids of the notes AnkiConnect created for the flashcards,\nand makes `anki_connect` the project's flashcard destination.\nA flashcard that is not in the project, as one deleted since the send began, is passed over.",
         "operationId": "recordAnkiNotesSent",
         "parameters": [
           {
@@ -2316,7 +2316,7 @@
             }
           },
           "404": {
-            "description": "No such project, or a flashcard not in it",
+            "description": "No such project",
             "content": {
               "application/json": {
                 "schema": {

@@ -413,7 +413,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Renders the flashcards as notes for the AnkiConnect client, with the deck and note type they belong to. */
+        /**
+         * Renders the flashcards as notes for the AnkiConnect client, with the deck and note type they belong to.
+         *     A named flashcard that is not in the project, as one deleted since the send was queued, is passed over.
+         */
         post: operations["renderAnkiNotes"];
         delete?: never;
         options?: never;
@@ -435,6 +438,7 @@ export interface paths {
          *     A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
          *     Once the package has been saved, or sent to the client in full, the flashcards are marked exported
          *     and the project's flashcard destination becomes `anki_package`.
+         *     A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
          */
         post: operations["exportAnkiPackage"];
         delete?: never;
@@ -495,6 +499,7 @@ export interface paths {
         /**
          * Stores the ids of the notes AnkiConnect created for the flashcards,
          *     and makes `anki_connect` the project's flashcard destination.
+         *     A flashcard that is not in the project, as one deleted since the send began, is passed over.
          */
         post: operations["recordAnkiNotesSent"];
         delete?: never;
@@ -3594,7 +3599,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No such project, or a flashcard not in it */
+            /** @description No such project */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -3671,7 +3676,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No such project, or a flashcard not in it */
+            /** @description No such project, or none of the named flashcards in it */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -3832,7 +3837,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No such project, or a flashcard not in it */
+            /** @description No such project */
             404: {
                 headers: {
                     [name: string]: unknown;

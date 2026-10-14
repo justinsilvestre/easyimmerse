@@ -79,6 +79,7 @@ pub struct FlashcardDestinationRequest {
 /// A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
 /// Once the package has been saved, or sent to the client in full, the flashcards are marked exported
 /// and the project's flashcard destination becomes `anki_package`.
+/// A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
 #[utoipa::path(
     post,
     path = "/projects/{id}/anki/package",
@@ -98,7 +99,7 @@ pub struct FlashcardDestinationRequest {
         (status = 400, description = "No flashcards named, a save path that is not absolute, or a save path that could not be written (code `save_failed`)", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "A save path, from a token that may not name local paths (code `local_paths_not_allowed`)", body = ApiError),
-        (status = 404, description = "No such project, or a flashcard not in it", body = ApiError),
+        (status = 404, description = "No such project, or none of the named flashcards in it", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
         (status = 500, description = "The package could not be built (code `package_failed`)", body = ApiError),
     ),
@@ -114,6 +115,9 @@ pub async fn export_anki_package(
         ensure_absolute(path)?;
     }
     let (project, flashcards) = load_selection(&state, project_id, request.flashcard_ids).await?;
+    if flashcards.is_empty() {
+        return Err(not_found("none of the named flashcards is in the project"));
+    }
     let package = build_package(&state, token, project, flashcards).await?;
     match request.save_path {
         Some(path) => save_package(&state, package, &path).await,
@@ -122,6 +126,7 @@ pub async fn export_anki_package(
 }
 
 /// Renders the flashcards as notes for the AnkiConnect client, with the deck and note type they belong to.
+/// A named flashcard that is not in the project, as one deleted since the send was queued, is passed over.
 #[utoipa::path(
     post,
     path = "/projects/{id}/anki/notes",
@@ -134,7 +139,7 @@ pub async fn export_anki_package(
         (status = 200, description = "The deck, the note type and the notes", body = AnkiNotes),
         (status = 400, description = "No flashcards named", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
-        (status = 404, description = "No such project, or a flashcard not in it", body = ApiError),
+        (status = 404, description = "No such project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -149,6 +154,7 @@ pub async fn render_anki_notes(
 
 /// Stores the ids of the notes AnkiConnect created for the flashcards,
 /// and makes `anki_connect` the project's flashcard destination.
+/// A flashcard that is not in the project, as one deleted since the send began, is passed over.
 #[utoipa::path(
     post,
     path = "/projects/{id}/anki/sent",
@@ -160,7 +166,7 @@ pub async fn render_anki_notes(
     responses(
         (status = 204, description = "The note ids were stored"),
         (status = 401, description = "Missing or invalid token", body = ApiError),
-        (status = 404, description = "No such project, or a flashcard not in it", body = ApiError),
+        (status = 404, description = "No such project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
@@ -169,16 +175,8 @@ pub async fn record_anki_notes_sent(
     Path(project_id): Path<ProjectId>,
     Json(request): Json<AnkiSentRequest>,
 ) -> Result<StatusCode, ApiFailure> {
-    let mut seen = HashSet::new();
-    let notes: Vec<(FlashcardId, u64)> = request
-        .notes
-        .into_iter()
-        .filter(|note| seen.insert(note.flashcard_id.clone()))
-        .map(|note| (note.flashcard_id, note.anki_note_id))
-        .collect();
-    let ids: Vec<FlashcardId> = notes.iter().map(|(id, _)| id.clone()).collect();
     let flashcards = load_project_flashcards(&state, project_id.clone()).await?.1;
-    select_flashcards(flashcards, &ids)?;
+    let notes = notes_of_project(request.notes, &flashcards);
     state
         .with_storage(move |storage| storage.record_anki_notes_sent(&project_id, &notes))
         .await?;
@@ -384,6 +382,7 @@ fn ensure_absolute(path: &str) -> Result<(), ApiFailure> {
 }
 
 /// Loads the project and the named flashcards of it, in the order named and each once.
+/// A named flashcard that is not in the project is passed over.
 async fn load_selection(
     state: &AppState,
     project_id: ProjectId,
@@ -393,7 +392,7 @@ async fn load_selection(
         return Err(bad_request("name at least one flashcard"));
     }
     let (project, flashcards) = load_project_flashcards(state, project_id).await?;
-    Ok((project, select_flashcards(flashcards, &ids)?))
+    Ok((project, select_flashcards(flashcards, &ids)))
 }
 
 async fn load_project_flashcards(
@@ -410,22 +409,22 @@ async fn load_project_flashcards(
         .await
 }
 
-/// Picks the named flashcards out of a project's flashcards; 404 when one is not among them.
-fn select_flashcards(
-    flashcards: Vec<Flashcard>,
-    ids: &[FlashcardId],
-) -> Result<Vec<Flashcard>, ApiFailure> {
+/// Picks the named flashcards out of a project's flashcards, in the order named and each once.
+fn select_flashcards(flashcards: Vec<Flashcard>, ids: &[FlashcardId]) -> Vec<Flashcard> {
     let mut by_id: HashMap<FlashcardId, Flashcard> = flashcards
         .into_iter()
         .map(|flashcard| (flashcard.id.clone(), flashcard))
         .collect();
-    let mut seen = HashSet::new();
-    ids.iter()
-        .filter(|id| seen.insert(*id))
-        .map(|id| {
-            by_id
-                .remove(id)
-                .ok_or_else(|| not_found(format!("no flashcard {:?} in the project", id.0)))
-        })
+    ids.iter().filter_map(|id| by_id.remove(id)).collect()
+}
+
+/// Pairs each named flashcard of the project with its note id, keeping the first note id of a flashcard named twice.
+fn notes_of_project(notes: Vec<AnkiSentNote>, flashcards: &[Flashcard]) -> Vec<(FlashcardId, u64)> {
+    let mut unpaired: HashSet<&FlashcardId> =
+        flashcards.iter().map(|flashcard| &flashcard.id).collect();
+    notes
+        .into_iter()
+        .filter(|note| unpaired.remove(&note.flashcard_id))
+        .map(|note| (note.flashcard_id, note.anki_note_id))
         .collect()
 }
