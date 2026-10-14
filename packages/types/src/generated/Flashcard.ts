@@ -33,4 +33,12 @@ created_at_ms: number,
 /**
  * Milliseconds since the Unix epoch.
  */
-updated_at_ms: number, };
+updated_at_ms: number, 
+/**
+ * Milliseconds since the Unix epoch when the flashcard was last written into an Anki package. Null when it never was.
+ */
+exported_at_ms: number | null, 
+/**
+ * The id of the note that AnkiConnect created for the flashcard. Null until the flashcard has been sent.
+ */
+anki_note_id: number | null, };

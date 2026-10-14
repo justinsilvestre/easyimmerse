@@ -7,10 +7,15 @@ use crate::error::StorageError;
 use crate::media_files::ensure_media_file_in_project;
 use crate::new_row::now_ms;
 use crate::projects::ensure_project_exists;
-use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
+use crate::stored_integer::{read_json, read_optional_unsigned, read_unsigned, to_stored_integer};
 
+/// The columns a saved draft writes.
 const FLASHCARD_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
      content_json, included_fields_json, created_at_ms, updated_at_ms";
+
+/// The columns every flashcard query selects: the draft's columns, then the ones the export writes.
+const SELECTED_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
+     content_json, included_fields_json, created_at_ms, updated_at_ms, exported_at_ms, anki_note_id";
 
 /// Lists a project's flashcards, oldest first.
 pub fn list_flashcards(
@@ -18,7 +23,7 @@ pub fn list_flashcards(
     project_id: &ProjectId,
 ) -> Result<Vec<Flashcard>, StorageError> {
     let mut statement = conn.prepare(&format!(
-        "SELECT {FLASHCARD_COLUMNS} FROM flashcards WHERE project_id = ?1 \
+        "SELECT {SELECTED_COLUMNS} FROM flashcards WHERE project_id = ?1 \
          ORDER BY created_at_ms, rowid"
     ))?;
     let flashcards = statement
@@ -29,7 +34,7 @@ pub fn list_flashcards(
 
 pub fn get_flashcard(conn: &Connection, id: &FlashcardId) -> Result<Flashcard, StorageError> {
     conn.query_row(
-        &format!("SELECT {FLASHCARD_COLUMNS} FROM flashcards WHERE id = ?1"),
+        &format!("SELECT {SELECTED_COLUMNS} FROM flashcards WHERE id = ?1"),
         params![id.0],
         read_flashcard,
     )
@@ -107,6 +112,48 @@ pub fn delete_flashcard(conn: &Connection, id: &FlashcardId) -> Result<(), Stora
     Ok(())
 }
 
+/// Records that the flashcards were written into an Anki package at `exported_at_ms`, all or none of them.
+pub fn mark_flashcards_exported(
+    conn: &mut Connection,
+    ids: &[FlashcardId],
+    exported_at_ms: u64,
+) -> Result<(), StorageError> {
+    let transaction = conn.transaction()?;
+    for id in ids {
+        let updated = transaction.execute(
+            "UPDATE flashcards SET exported_at_ms = ?2 WHERE id = ?1",
+            params![id.0, to_stored_integer(exported_at_ms)],
+        )?;
+        ensure_flashcard_updated(updated, id)?;
+    }
+    transaction.commit()?;
+    Ok(())
+}
+
+/// Stores the id of the note AnkiConnect created for each flashcard, all or none of them.
+pub fn set_anki_note_ids(
+    conn: &mut Connection,
+    notes: &[(FlashcardId, u64)],
+) -> Result<(), StorageError> {
+    let transaction = conn.transaction()?;
+    for (id, anki_note_id) in notes {
+        let updated = transaction.execute(
+            "UPDATE flashcards SET anki_note_id = ?2 WHERE id = ?1",
+            params![id.0, to_stored_integer(*anki_note_id)],
+        )?;
+        ensure_flashcard_updated(updated, id)?;
+    }
+    transaction.commit()?;
+    Ok(())
+}
+
+fn ensure_flashcard_updated(updated: usize, id: &FlashcardId) -> Result<(), StorageError> {
+    if updated == 0 {
+        return Err(StorageError::FlashcardNotFound(id.0.clone()));
+    }
+    Ok(())
+}
+
 fn ensure_media_file_matches(
     conn: &Connection,
     project_id: &ProjectId,
@@ -129,6 +176,8 @@ fn read_flashcard(row: &Row) -> rusqlite::Result<Flashcard> {
         included_fields: read_json(row, 6)?,
         created_at_ms: read_unsigned(row, 7)?,
         updated_at_ms: read_unsigned(row, 8)?,
+        exported_at_ms: read_optional_unsigned(row, 9)?,
+        anki_note_id: read_optional_unsigned(row, 10)?,
     })
 }
 
@@ -368,6 +417,111 @@ mod tests {
         assert_eq!(
             storage.get_flashcard(&created.id).unwrap().media_file_id,
             None
+        );
+    }
+
+    fn create(storage: &Storage, word: &str) -> FlashcardId {
+        storage
+            .create_flashcard(&project(), &new_id(), &draft(None, word))
+            .unwrap()
+            .id
+    }
+
+    #[test]
+    fn a_created_flashcard_was_never_exported() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        assert_eq!(storage.get_flashcard(&id).unwrap().exported_at_ms, None);
+    }
+
+    #[test]
+    fn a_created_flashcard_has_no_anki_note() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        assert_eq!(storage.get_flashcard(&id).unwrap().anki_note_id, None);
+    }
+
+    #[test]
+    fn marking_flashcards_exported_records_the_time() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        storage
+            .mark_flashcards_exported(std::slice::from_ref(&id), 1_000)
+            .unwrap();
+        assert_eq!(
+            storage.get_flashcard(&id).unwrap().exported_at_ms,
+            Some(1_000)
+        );
+    }
+
+    #[test]
+    fn marking_an_unknown_flashcard_exported_fails() {
+        let result =
+            seeded_storage().mark_flashcards_exported(&[FlashcardId("missing".to_string())], 1_000);
+        assert!(matches!(result, Err(StorageError::FlashcardNotFound(_))));
+    }
+
+    #[test]
+    fn marking_an_unknown_flashcard_exported_marks_none_of_them() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        let _ = storage
+            .mark_flashcards_exported(&[id.clone(), FlashcardId("missing".to_string())], 1_000);
+        assert_eq!(storage.get_flashcard(&id).unwrap().exported_at_ms, None);
+    }
+
+    #[test]
+    fn setting_anki_note_ids_stores_them() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        storage
+            .set_anki_note_ids(&[(id.clone(), 1_700_000_000_000)])
+            .unwrap();
+        assert_eq!(
+            storage.get_flashcard(&id).unwrap().anki_note_id,
+            Some(1_700_000_000_000)
+        );
+    }
+
+    #[test]
+    fn setting_the_anki_note_id_of_an_unknown_flashcard_fails() {
+        let result = seeded_storage().set_anki_note_ids(&[(FlashcardId("missing".to_string()), 1)]);
+        assert!(matches!(result, Err(StorageError::FlashcardNotFound(_))));
+    }
+
+    #[test]
+    fn setting_the_anki_note_id_of_an_unknown_flashcard_stores_none_of_them() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        let _ =
+            storage.set_anki_note_ids(&[(id.clone(), 1), (FlashcardId("missing".to_string()), 2)]);
+        assert_eq!(storage.get_flashcard(&id).unwrap().anki_note_id, None);
+    }
+
+    #[test]
+    fn saving_a_flashcard_again_keeps_its_anki_note_id() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        storage.set_anki_note_ids(&[(id.clone(), 7)]).unwrap();
+        storage
+            .create_flashcard(&project(), &id, &draft(None, "essen"))
+            .unwrap();
+        assert_eq!(storage.get_flashcard(&id).unwrap().anki_note_id, Some(7));
+    }
+
+    #[test]
+    fn updating_a_flashcard_keeps_its_export_time() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        storage
+            .mark_flashcards_exported(std::slice::from_ref(&id), 1_000)
+            .unwrap();
+        storage
+            .update_flashcard(&id, &draft(None, "essen"))
+            .unwrap();
+        assert_eq!(
+            storage.get_flashcard(&id).unwrap().exported_at_ms,
+            Some(1_000)
         );
     }
 

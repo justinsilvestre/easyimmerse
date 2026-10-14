@@ -7,6 +7,8 @@ CREATE TABLE projects (
     default_tags_json TEXT NOT NULL,
     tags_media_name INTEGER NOT NULL,
     fills_audio_with_tts INTEGER NOT NULL,
+    flashcard_front_fields_json TEXT NOT NULL,
     created_at_ms INTEGER NOT NULL,
-    last_opened_at_ms INTEGER NOT NULL
+    last_opened_at_ms INTEGER NOT NULL,
+    flashcard_destination TEXT
 );

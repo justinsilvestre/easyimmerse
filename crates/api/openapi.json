@@ -5179,6 +5179,15 @@
           "updated_at_ms"
         ],
         "properties": {
+          "anki_note_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "The id of the note that AnkiConnect created for the flashcard. Null until the flashcard has been sent.",
+            "minimum": 0
+          },
           "content": {
             "$ref": "#/components/schemas/FlashcardContent"
           },
@@ -5195,6 +5204,15 @@
             ],
             "format": "int32",
             "description": "The index of the subtitle cue the card was made from, when it was made from one.",
+            "minimum": 0
+          },
+          "exported_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch when the flashcard was last written into an Anki package. Null when it never was.",
             "minimum": 0
           },
           "id": {
@@ -5300,6 +5318,14 @@
             "type": "string"
           }
         }
+      },
+      "FlashcardDestination": {
+        "type": "string",
+        "description": "A place a project's flashcards can be sent to.",
+        "enum": [
+          "anki_package",
+          "anki_connect"
+        ]
       },
       "FlashcardDraft": {
         "type": "object",
@@ -6825,6 +6851,17 @@
             "format": "int64",
             "minimum": 0
           },
+          "flashcard_destination": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FlashcardDestination",
+                "description": "Where the project's flashcards last went. Null until they are first exported or sent."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "id": {
             "$ref": "#/components/schemas/ProjectId"
           },
@@ -6857,7 +6894,8 @@
           "flashcard_fields",
           "default_tags",
           "tags_media_name",
-          "fills_audio_with_tts"
+          "fills_audio_with_tts",
+          "flashcard_front_fields"
         ],
         "properties": {
           "default_tags": {
@@ -6877,6 +6915,13 @@
               "$ref": "#/components/schemas/FlashcardFieldKey"
             },
             "description": "The fields a new flashcard starts with."
+          },
+          "flashcard_front_fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardFieldKey"
+            },
+            "description": "The included fields shown on the front of a card. The other included fields go on the back."
           },
           "name": {
             "type": "string"

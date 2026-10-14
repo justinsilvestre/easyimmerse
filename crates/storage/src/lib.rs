@@ -32,7 +32,7 @@ use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
 };
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, MediaOrigin};
-use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
+use easyimmerse_core::project::{FlashcardDestination, Project, ProjectId, ProjectSettings};
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
 
@@ -96,6 +96,15 @@ impl Storage {
     /// Records that the project was opened just now, which moves it to the front of the list.
     pub fn mark_project_opened(&self, id: &ProjectId) -> Result<(), StorageError> {
         self.write(|conn| projects::mark_project_opened(conn, id))
+    }
+
+    /// Records where the project's flashcards last went; `None` clears it.
+    pub fn set_flashcard_destination(
+        &self,
+        id: &ProjectId,
+        destination: Option<FlashcardDestination>,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| projects::set_flashcard_destination(conn, id, destination))
     }
 
     pub fn seed_placeholder_projects(&self) -> Result<(), StorageError> {
@@ -185,6 +194,22 @@ impl Storage {
 
     pub fn delete_flashcard(&self, id: &FlashcardId) -> Result<(), StorageError> {
         self.write(|conn| flashcards::delete_flashcard(conn, id))
+    }
+
+    /// Records that the flashcards were written into an Anki package at `exported_at_ms`.
+    /// Marks none of them when any id is unknown.
+    pub fn mark_flashcards_exported(
+        &self,
+        ids: &[FlashcardId],
+        exported_at_ms: u64,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| flashcards::mark_flashcards_exported(conn, ids, exported_at_ms))
+    }
+
+    /// Stores the id of the note AnkiConnect created for each flashcard.
+    /// Stores none of them when any flashcard id is unknown.
+    pub fn set_anki_note_ids(&self, notes: &[(FlashcardId, u64)]) -> Result<(), StorageError> {
+        self.write(|conn| flashcards::set_anki_note_ids(conn, notes))
     }
 
     pub fn list_subtitle_tracks(

@@ -11,6 +11,7 @@ fn settings(name: &str) -> Value {
         "default_tags": ["tv"],
         "tags_media_name": true,
         "fills_audio_with_tts": false,
+        "flashcard_front_fields": ["text_context"],
     })
 }
 

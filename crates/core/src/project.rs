@@ -23,6 +23,8 @@ pub struct Project {
     pub last_opened_at_ms: u64,
     pub media_count: u64,
     pub flashcard_count: u64,
+    /// Where the project's flashcards last went. Null until they are first exported or sent.
+    pub flashcard_destination: Option<FlashcardDestination>,
 }
 
 /// Everything a user sets about a project, as the project form edits it.
@@ -42,6 +44,19 @@ pub struct ProjectSettings {
     pub tags_media_name: bool,
     /// Whether the audio fields are filled with text-to-speech when the media has no audio track.
     pub fills_audio_with_tts: bool,
+    /// The included fields shown on the front of a card. The other included fields go on the back.
+    pub flashcard_front_fields: Vec<FlashcardFieldKey>,
+}
+
+/// A place a project's flashcards can be sent to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum FlashcardDestination {
+    /// A package file that Anki imports.
+    AnkiPackage,
+    /// A running Anki, reached through its AnkiConnect add-on.
+    AnkiConnect,
 }
 
 #[cfg(test)]
@@ -58,11 +73,18 @@ mod tests {
             default_tags: vec![],
             tags_media_name: true,
             fills_audio_with_tts: false,
+            flashcard_front_fields: vec![FlashcardFieldKey::Word],
         };
         let json = serde_json::to_value(&settings).unwrap();
         assert_eq!(
             json["flashcard_fields"],
             serde_json::json!(["word", "l1_definition"])
         );
+    }
+
+    #[test]
+    fn serializes_a_flashcard_destination_in_snake_case() {
+        let json = serde_json::to_value(FlashcardDestination::AnkiConnect).unwrap();
+        assert_eq!(json, serde_json::json!("anki_connect"));
     }
 }

@@ -39,6 +39,7 @@ export type * from "./EmbeddedSubtitleTracksResponse";
 export type * from "./EmptyElement";
 export type * from "./Flashcard";
 export type * from "./FlashcardContent";
+export type * from "./FlashcardDestination";
 export type * from "./FlashcardDraft";
 export type * from "./FlashcardFieldKey";
 export type * from "./FlashcardId";

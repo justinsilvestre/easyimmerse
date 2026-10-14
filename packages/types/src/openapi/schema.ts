@@ -1049,6 +1049,11 @@ export interface components {
         };
         /** @description A flashcard saved in a project. */
         Flashcard: {
+            /**
+             * Format: int64
+             * @description The id of the note that AnkiConnect created for the flashcard. Null until the flashcard has been sent.
+             */
+            anki_note_id?: number | null;
             content: components["schemas"]["FlashcardContent"];
             /**
              * Format: int64
@@ -1060,6 +1065,11 @@ export interface components {
              * @description The index of the subtitle cue the card was made from, when it was made from one.
              */
             cue_index?: number | null;
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch when the flashcard was last written into an Anki package. Null when it never was.
+             */
+            exported_at_ms?: number | null;
             id: components["schemas"]["FlashcardId"];
             /** @description The fields the card shows, in no particular order. */
             included_fields: components["schemas"]["FlashcardFieldKey"][];
@@ -1090,6 +1100,11 @@ export interface components {
             word: string;
             word_pronunciation: string;
         };
+        /**
+         * @description A place a project's flashcards can be sent to.
+         * @enum {string}
+         */
+        FlashcardDestination: "anki_package" | "anki_connect";
         /** @description What the editor sends to create or replace a flashcard. */
         FlashcardDraft: {
             content: components["schemas"]["FlashcardContent"];
@@ -1538,6 +1553,7 @@ export interface components {
             created_at_ms: number;
             /** Format: int64 */
             flashcard_count: number;
+            flashcard_destination?: components["schemas"]["FlashcardDestination"] | null;
             id: components["schemas"]["ProjectId"];
             /**
              * Format: int64
@@ -1557,6 +1573,8 @@ export interface components {
             fills_audio_with_tts: boolean;
             /** @description The fields a new flashcard starts with. */
             flashcard_fields: components["schemas"]["FlashcardFieldKey"][];
+            /** @description The included fields shown on the front of a card. The other included fields go on the back. */
+            flashcard_front_fields: components["schemas"]["FlashcardFieldKey"][];
             name: string;
             /** @description Whether each new flashcard is also tagged with the name of the media file it was made from. */
             tags_media_name: boolean;

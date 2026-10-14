@@ -28,4 +28,8 @@ tags_media_name: boolean,
 /**
  * Whether the audio fields are filled with text-to-speech when the media has no audio track.
  */
-fills_audio_with_tts: boolean, };
+fills_audio_with_tts: boolean, 
+/**
+ * The included fields shown on the front of a card. The other included fields go on the back.
+ */
+flashcard_front_fields: Array<FlashcardFieldKey>, };

@@ -1,5 +1,5 @@
 use easyimmerse_core::flashcard::FlashcardFieldKey;
-use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
+use easyimmerse_core::project::{FlashcardDestination, Project, ProjectId, ProjectSettings};
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
@@ -9,7 +9,7 @@ use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 /// The project columns followed by the two counts, as every project query selects them.
 const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_language, \
      p.flashcard_fields_json, p.default_tags_json, p.tags_media_name, p.fills_audio_with_tts, \
-     p.created_at_ms, p.last_opened_at_ms, \
+     p.flashcard_front_fields_json, p.created_at_ms, p.last_opened_at_ms, p.flashcard_destination, \
      (SELECT COUNT(*) FROM media_files m WHERE m.project_id = p.id), \
      (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id)";
 
@@ -54,7 +54,7 @@ pub fn update_project(
     let updated = conn.execute(
         "UPDATE projects SET name = ?2, target_language = ?3, translation_language = ?4, \
          flashcard_fields_json = ?5, default_tags_json = ?6, tags_media_name = ?7, \
-         fills_audio_with_tts = ?8 WHERE id = ?1",
+         fills_audio_with_tts = ?8, flashcard_front_fields_json = ?9 WHERE id = ?1",
         rusqlite::params_from_iter(settings_params(id, settings)?),
     )?;
     if updated == 0 {
@@ -68,6 +68,22 @@ pub fn mark_project_opened(conn: &Connection, id: &ProjectId) -> Result<(), Stor
     let updated = conn.execute(
         "UPDATE projects SET last_opened_at_ms = ?2 WHERE id = ?1",
         params![id.0, to_stored_integer(now_ms())],
+    )?;
+    if updated == 0 {
+        return Err(StorageError::ProjectNotFound(id.0.clone()));
+    }
+    Ok(())
+}
+
+/// Records where the project's flashcards last went; `None` clears it.
+pub fn set_flashcard_destination(
+    conn: &Connection,
+    id: &ProjectId,
+    destination: Option<FlashcardDestination>,
+) -> Result<(), StorageError> {
+    let updated = conn.execute(
+        "UPDATE projects SET flashcard_destination = ?2 WHERE id = ?1",
+        params![id.0, destination.map(destination_column)],
     )?;
     if updated == 0 {
         return Err(StorageError::ProjectNotFound(id.0.clone()));
@@ -142,6 +158,10 @@ fn placeholder_settings(name: &str, target_language: &str) -> ProjectSettings {
         default_tags: vec![],
         tags_media_name: true,
         fills_audio_with_tts: false,
+        flashcard_front_fields: vec![
+            FlashcardFieldKey::AudioContext,
+            FlashcardFieldKey::Screenshot,
+        ],
     }
 }
 
@@ -156,7 +176,8 @@ fn insert_project(
     conn.execute(
         "INSERT INTO projects (id, name, target_language, translation_language, \
          flashcard_fields_json, default_tags_json, tags_media_name, fills_audio_with_tts, \
-         created_at_ms, last_opened_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+         flashcard_front_fields_json, created_at_ms, last_opened_at_ms) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
         rusqlite::params_from_iter(values),
     )?;
     Ok(())
@@ -176,6 +197,7 @@ fn settings_params(
         Box::new(serde_json::to_string(&settings.default_tags)?),
         Box::new(settings.tags_media_name),
         Box::new(settings.fills_audio_with_tts),
+        Box::new(serde_json::to_string(&settings.flashcard_front_fields)?),
     ])
 }
 
@@ -194,12 +216,36 @@ fn read_project(row: &Row) -> rusqlite::Result<Project> {
             default_tags: read_json(row, 5)?,
             tags_media_name: row.get(6)?,
             fills_audio_with_tts: row.get(7)?,
+            flashcard_front_fields: read_json(row, 8)?,
         },
-        created_at_ms: read_unsigned(row, 8)?,
-        last_opened_at_ms: read_unsigned(row, 9)?,
-        media_count: read_unsigned(row, 10)?,
-        flashcard_count: read_unsigned(row, 11)?,
+        created_at_ms: read_unsigned(row, 9)?,
+        last_opened_at_ms: read_unsigned(row, 10)?,
+        flashcard_destination: read_destination(row, 11)?,
+        media_count: read_unsigned(row, 12)?,
+        flashcard_count: read_unsigned(row, 13)?,
     })
+}
+
+/// Names a destination in the `flashcard_destination` column as it is named in JSON.
+fn destination_column(destination: FlashcardDestination) -> &'static str {
+    match destination {
+        FlashcardDestination::AnkiPackage => "anki_package",
+        FlashcardDestination::AnkiConnect => "anki_connect",
+    }
+}
+
+fn read_destination(row: &Row, index: usize) -> rusqlite::Result<Option<FlashcardDestination>> {
+    let name: Option<String> = row.get(index)?;
+    name.map(|name| match name.as_str() {
+        "anki_package" => Ok(FlashcardDestination::AnkiPackage),
+        "anki_connect" => Ok(FlashcardDestination::AnkiConnect),
+        other => Err(rusqlite::Error::InvalidColumnType(
+            index,
+            format!("unknown flashcard destination {other:?}"),
+            rusqlite::types::Type::Text,
+        )),
+    })
+    .transpose()
 }
 
 #[cfg(test)]
@@ -317,6 +363,77 @@ mod tests {
     #[test]
     fn getting_an_unknown_project_fails() {
         let result = seeded_storage().get_project(&ProjectId("missing".to_string()));
+        assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
+    }
+
+    #[test]
+    fn seeds_placeholder_projects_with_the_audio_and_the_screenshot_on_the_front() {
+        let project = seeded_storage()
+            .get_project(&ProjectId("placeholder-1".to_string()))
+            .unwrap();
+        assert_eq!(
+            project.settings.flashcard_front_fields,
+            vec![
+                FlashcardFieldKey::AudioContext,
+                FlashcardFieldKey::Screenshot
+            ]
+        );
+    }
+
+    #[test]
+    fn a_created_project_has_no_flashcard_destination() {
+        let storage = Storage::open_in_memory().unwrap();
+        let created = storage.create_project(&settings("German")).unwrap();
+        assert_eq!(created.flashcard_destination, None);
+    }
+
+    #[test]
+    fn keeps_the_flashcard_destination_that_was_set() {
+        let storage = seeded_storage();
+        let id = ProjectId("placeholder-1".to_string());
+        storage
+            .set_flashcard_destination(&id, Some(FlashcardDestination::AnkiConnect))
+            .unwrap();
+        assert_eq!(
+            storage.get_project(&id).unwrap().flashcard_destination,
+            Some(FlashcardDestination::AnkiConnect)
+        );
+    }
+
+    #[test]
+    fn clears_the_flashcard_destination() {
+        let storage = seeded_storage();
+        let id = ProjectId("placeholder-1".to_string());
+        storage
+            .set_flashcard_destination(&id, Some(FlashcardDestination::AnkiPackage))
+            .unwrap();
+        storage.set_flashcard_destination(&id, None).unwrap();
+        assert_eq!(
+            storage.get_project(&id).unwrap().flashcard_destination,
+            None
+        );
+    }
+
+    #[test]
+    fn updating_the_settings_keeps_the_flashcard_destination() {
+        let storage = seeded_storage();
+        let id = ProjectId("placeholder-1".to_string());
+        storage
+            .set_flashcard_destination(&id, Some(FlashcardDestination::AnkiPackage))
+            .unwrap();
+        let updated = storage.update_project(&id, &settings("Deutsch")).unwrap();
+        assert_eq!(
+            updated.flashcard_destination,
+            Some(FlashcardDestination::AnkiPackage)
+        );
+    }
+
+    #[test]
+    fn setting_the_flashcard_destination_of_an_unknown_project_fails() {
+        let result = seeded_storage().set_flashcard_destination(
+            &ProjectId("missing".to_string()),
+            Some(FlashcardDestination::AnkiPackage),
+        );
         assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 
