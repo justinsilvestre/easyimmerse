@@ -1,7 +1,7 @@
 import { Button } from "../components/Button.tsx";
 import { ModalDialog } from "../components/ModalDialog.tsx";
 
-/** The AnkiConnect add-on's code, which Anki's add-on dialog installs it by. */
+/** The code by which Anki's add-on dialog installs AnkiConnect. */
 const ankiConnectCode = "2055492159";
 
 /** Explains what sending cards to Anki needs, and lets the user start sending this project's cards there. */

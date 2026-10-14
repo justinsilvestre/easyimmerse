@@ -1,4 +1,4 @@
-import { actions } from "@easyimmerse/state";
+import { actions, cacheKey } from "@easyimmerse/state";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createFakeBackendClient } from "../testSupport/createFakeBackendClient.ts";
@@ -14,6 +14,7 @@ import { ProjectScreen } from "./ProjectScreen.tsx";
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 /** Renders the overview of p1, which holds one flashcard never exported, over a server that writes packages and sets destinations. */
@@ -65,7 +66,35 @@ async function exportToPath({ effects }: ReturnType<typeof renderOverview>) {
   );
 }
 
+/** Whether the server cache still holds the project, which the automatic send to Anki reads the destination from. */
+const holdsProject = (store: ReturnType<typeof renderOverview>["store"]) =>
+  store.getState().backend.queries[cacheKey("getProject", "p1")] !== undefined;
+
+/** Lets more than a minute pass under fake timers, after which an entry no component reads leaves the server cache. */
+const passAMinute = () => act(() => vi.advanceTimersByTime(61_000));
+
 describe("ProjectScreen's Anki destinations", () => {
+  it("keeps the project cached while one of its media files is open, so that a save there is still sent to Anki", async () => {
+    const { store } = renderOverview();
+    await screen.findByRole("heading", { name: "Flashcards" });
+    vi.useFakeTimers();
+    act(() => store.dispatch(actions.openMediaFileRequested("p1", "m1")));
+    await vi.waitFor(() =>
+      expect(screen.queryByRole("heading", { name: "Flashcards" })).toBeNull(),
+    );
+    passAMinute();
+    expect(holdsProject(store)).toBe(true);
+  });
+
+  it("drops the project from the cache a minute after nothing shows it", async () => {
+    const { store } = renderOverview();
+    await screen.findByRole("heading", { name: "Flashcards" });
+    vi.useFakeTimers();
+    cleanup();
+    passAMinute();
+    expect(holdsProject(store)).toBe(false);
+  });
+
   it("has the server write the package at the picked path", async () => {
     const rendered = renderOverview();
     await exportToPath(rendered);
