@@ -6,6 +6,8 @@ import type { PlatformEffect } from "./platformCommands.ts";
 export const platformEffectRunners = {
   openExternalUrl: (effect, { effects }) => effects.openExternalUrl(effect.url),
   guardClose: (effect, { effects }) => effects.guardClose(effect.isActive),
+  downloadFile: (effect, { effects }) =>
+    effects.downloadFile(effect.fileName, effect.bytes),
   copyText: (effect, { effects, dispatch }) =>
     void effects.copyText(effect.text).then(
       () => dispatch(platformActions.textCopied(effect.what)),

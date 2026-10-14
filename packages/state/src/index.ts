@@ -1,3 +1,20 @@
+export type { AnkiExportScope } from "./anki/ankiExportDialog.ts";
+export { ankiUnreachableCode } from "./anki/ankiNotices.ts";
+export type {
+  AnkiConnection,
+  AnkiPackageExport,
+  AnkiSendOutcome,
+} from "./anki/ankiResponses.ts";
+export {
+  type AnkiExportView,
+  selectAnkiExport,
+  selectIsAnkiConnectSetupOpen,
+} from "./anki/selectAnkiExport.ts";
+export {
+  type AnkiConnectionStatus,
+  type FlashcardSync,
+  selectFlashcardSync,
+} from "./anki/selectFlashcardSync.ts";
 export type { AppAction } from "./app/appAction.ts";
 export { actions } from "./app/appAction.ts";
 export type { AppState } from "./app/appState.ts";
@@ -60,6 +77,7 @@ export type {
   PickedFile,
   PickedMediaFile,
   PlaybackProbes,
+  SavePathPick,
 } from "./platform/effects.ts";
 export type { PlayerRegistry } from "./platform/playerRegistry.ts";
 export { createPlayerRegistry } from "./platform/playerRegistry.ts";

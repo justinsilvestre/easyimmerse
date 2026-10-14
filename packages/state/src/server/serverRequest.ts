@@ -4,6 +4,7 @@ import type {
   ConversionCacheBudget,
   ConversionCacheStatus,
   Flashcard,
+  FlashcardDestination,
   FlashcardDraft,
   ImportFormRequest,
   ImportJobStarted,
@@ -34,6 +35,11 @@ import type {
   WaveformResponse,
 } from "@easyimmerse/types";
 import type { Dispatch } from "redux";
+import type {
+  AnkiConnection,
+  AnkiPackageExport,
+  AnkiSendOutcome,
+} from "../anki/ankiResponses.ts";
 import type {
   DeletePurpose,
   SavePurpose,
@@ -126,7 +132,27 @@ export type ServerRequest =
       purpose: DeletePurpose;
     }
   /** Opens a media file the browser holds to learn whether it shows pictures. */
-  | { kind: "probePictures"; file: PickedMediaFile };
+  | { kind: "probePictures"; file: PickedMediaFile }
+  /** Asks AnkiConnect whether Anki is running. */
+  | { kind: "checkAnkiConnection" }
+  /** Sends flashcards to Anki through AnkiConnect, adding new notes and updating those Anki already has. */
+  | {
+      kind: "sendFlashcardsToAnki";
+      projectId: string;
+      flashcardIds: readonly string[];
+    }
+  /** Exports flashcards as an Anki package, saved at `savePath`, or handed back for download when it is null. */
+  | {
+      kind: "exportAnkiPackage";
+      projectId: string;
+      flashcardIds: readonly string[];
+      savePath: string | null;
+    }
+  | {
+      kind: "setFlashcardDestination";
+      projectId: string;
+      destination: FlashcardDestination | null;
+    };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -169,6 +195,10 @@ export type ServerResponses = {
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteFlashcard: void;
   probePictures: boolean;
+  checkAnkiConnection: AnkiConnection;
+  sendFlashcardsToAnki: AnkiSendOutcome;
+  exportAnkiPackage: AnkiPackageExport;
+  setFlashcardDestination: Project;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

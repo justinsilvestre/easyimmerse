@@ -27,4 +27,11 @@ describe("assignFreeRequestIds", () => {
       "hover/2",
     ]);
   });
+
+  it("keeps the scope the request was sent with", () => {
+    const scoped = { ...under("hover"), scope: "anki" };
+    expect(assignFreeRequestIds([], [scoped])).toEqual([
+      { type: "sendRequest", id: "hover/1", request: listing, scope: "anki" },
+    ]);
+  });
 });

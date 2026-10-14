@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { openedAnkiExport } from "../anki/ankiExportDialog.ts";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfter } from "../app/stateAfter.ts";
@@ -29,6 +30,9 @@ const playingM2: AppAction[] = [
   actions.playerDurationChanged(60),
   actions.playerTimeChanged(5),
 ];
+
+/** An Anki export dialog whose export is under way. */
+const exportingDialog = { ...openedAnkiExport, isBusy: true };
 
 /** A project opened and then left for the home screen. */
 const leftProject: AppAction[] = [
@@ -145,6 +149,35 @@ describe("updateScreen", () => {
       kind: "project",
       pendingMediaFile: null,
       mediaImport: null,
+      ankiExport: null,
+      isAnkiConnectSetupOpen: false,
+    });
+  });
+
+  it("reads where the project's flashcards go as its overview opens", () => {
+    const [, effects] = apply(
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+    );
+    expect(effects).toContainEqual({
+      type: "sendRequest",
+      id: "project/p1/destinationRead",
+      request: { kind: "getProject", projectId: "p1" },
+    });
+  });
+
+  it("stops an Anki export under way when the project is left", () => {
+    const app = stateAfter(
+      actions.navigated({ type: "openProject", projectId: "p1" }),
+    );
+    const main = { ...app.screen.main, ankiExport: exportingDialog };
+    const [, effects] = updateScreen(
+      { ...app.screen, main } as typeof app.screen,
+      actions.navigated({ type: "goHome" }),
+      withEmptyServerCache(app),
+    );
+    expect(effects).toContainEqual({
+      type: "abortRequest",
+      id: "project/p1/ankiExport",
     });
   });
 

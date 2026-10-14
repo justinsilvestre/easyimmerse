@@ -1,4 +1,7 @@
-import type { PlaybackMethodRequest } from "@easyimmerse/types";
+import type {
+  ListFlashcardsResponse,
+  PlaybackMethodRequest,
+} from "@easyimmerse/types";
 import { cacheKey } from "./cacheKey.ts";
 import type { ServerResponses } from "./serverRequest.ts";
 
@@ -20,13 +23,22 @@ export type CachedQueries = {
     mediaFileId: string;
     request: PlaybackMethodRequest;
   };
+  getProject: string;
+  listMediaFiles: string;
+  listFlashcards: string;
+  checkAnkiConnection: undefined;
+};
+
+/** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
+export type CachedResponses = ServerResponses & {
+  listFlashcards: ListFlashcardsResponse;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */
 export type CacheEntry<K extends keyof CachedQueries> =
   | {
       status: string;
-      data?: ServerResponses[K];
+      data?: CachedResponses[K];
       error?: { code?: string; message?: string };
     }
   | undefined;

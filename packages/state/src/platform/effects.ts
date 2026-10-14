@@ -18,6 +18,12 @@ export type PickedMediaFile = { name: string; source: MediaFileSource };
  */
 export type PickedDictionaryFile = { name: string; source: MediaFileSource };
 
+/** Where the user chose to save a file: a path, a cancelled dialog, or a platform that has no save dialog and downloads the file instead. */
+export type SavePathPick =
+  | { kind: "path"; path: string }
+  | { kind: "cancelled" }
+  | { kind: "unsupported" };
+
 /** What the browser answers when asked about media support. */
 export type PlaybackProbes = {
   userAgent: string;
@@ -46,6 +52,10 @@ export interface Effects {
   pickDictionaryFile(
     accept: readonly string[],
   ): Promise<PickedDictionaryFile | null>;
+  /** Asks where to save a file, suggesting a name. A platform without a save dialog answers `unsupported`. */
+  pickSavePath(suggestedFileName: string): Promise<SavePathPick>;
+  /** Hands a file to the user as a download. Only a platform that answers `unsupported` to `pickSavePath` is asked to. */
+  downloadFile(fileName: string, bytes: Uint8Array<ArrayBuffer>): void;
   /** Reads how the platform's media element and Media Source Extensions answer questions about formats. */
   readPlaybackProbes(): PlaybackProbes;
   /**

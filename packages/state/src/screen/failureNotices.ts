@@ -28,6 +28,8 @@ export function failureNotices(action: AppAction) {
       return [failure("The media file could not be removed")];
     case "setSubtitleSelection":
       return [failure("The subtitles could not be changed")];
+    case "setFlashcardDestination":
+      return [failure("The flashcards' destination could not be changed")];
     default:
       return [];
   }

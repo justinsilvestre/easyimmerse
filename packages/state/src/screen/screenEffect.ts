@@ -7,6 +7,8 @@ export type ScreenEffect =
   | { type: "pickFile"; accept: readonly string[] }
   | { type: "pickMediaFile"; accept: readonly string[] }
   | { type: "pickDictionaryFile"; accept: readonly string[] }
+  /** Asks where to save an Anki package; answered by ankiExportPathPicked. */
+  | { type: "pickSavePath"; suggestedFileName: string }
   /** Measures the browser's support for a file's formats; answered by playbackEnvironmentMeasured. */
   | {
       type: "measurePlaybackEnvironment";

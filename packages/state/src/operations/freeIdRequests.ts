@@ -12,6 +12,8 @@ export type FreeIdRequestEffect = {
   type: "sendRequestWithFreeId";
   prefix: string;
   request: ServerRequest;
+  /** Requests with the same scope are sent one at a time, as `sendRequest` describes. */
+  scope?: string;
 };
 
 type Unnumbered = Exclude<Effect, FailedRequestsEffect>;
@@ -28,10 +30,12 @@ export function assignFreeRequestIds(
     if (effect.type !== "sendRequestWithFreeId") return effect;
     const id = freeRequestId(effect.prefix, requests, taken);
     taken.push(id);
+    const { request, scope } = effect;
     return {
       type: "sendRequest",
       id,
-      request: effect.request,
+      request,
+      ...(scope === undefined ? {} : { scope }),
     } satisfies Effect;
   });
 }

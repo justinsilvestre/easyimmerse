@@ -3,11 +3,13 @@ import type {
   DefinitionWriter,
   Effects,
   PlayerRegistry,
+  SavePathPick,
 } from "@easyimmerse/state";
 import { createBrowserFileRegistry, systemClock } from "@easyimmerse/state";
 import { createApplyAppearance } from "./applyAppearance.ts";
 import { createCloseGuard } from "./closeGuard.ts";
 import { copyTextToClipboard } from "./copyTextToClipboard.ts";
+import { downloadFile } from "./downloadFile.ts";
 import { openExternalUrl } from "./openExternalUrl.ts";
 import { pickFile } from "./pickFile.ts";
 import { createPickRegisteredFile } from "./pickRegisteredFile.ts";
@@ -34,6 +36,8 @@ export function createWebEffects(options: {
     pickFile,
     pickMediaFile: pickRegisteredFile,
     pickDictionaryFile: pickRegisteredFile,
+    pickSavePath: answerUnsupported,
+    downloadFile,
     readPlaybackProbes,
     writeDefinitionMarkdown: options.writeDefinitionMarkdown,
     savePreference: preferences.save,
@@ -47,6 +51,11 @@ export function createWebEffects(options: {
       window.matchMedia("(prefers-color-scheme: dark)"),
     ),
   };
+}
+
+/** A browser has no save dialog that names a path, so files are downloaded instead. */
+async function answerUnsupported(): Promise<SavePathPick> {
+  return { kind: "unsupported" };
 }
 
 /** A browser has no menu item for Settings, so nothing ever asks for it from outside the page. */
