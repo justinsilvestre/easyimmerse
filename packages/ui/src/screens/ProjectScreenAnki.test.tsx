@@ -70,7 +70,7 @@ async function exportToPath({ effects }: ReturnType<typeof renderOverview>) {
 const holdsProject = (store: ReturnType<typeof renderOverview>["store"]) =>
   store.getState().backend.queries[cacheKey("getProject", "p1")] !== undefined;
 
-/** Lets more than a minute pass under fake timers, after which an entry no component reads leaves the server cache. */
+/** Lets more than a minute pass under fake timers, after which an entry no component reads would ordinarily leave the server cache. */
 const passAMinute = () => act(() => vi.advanceTimersByTime(61_000));
 
 describe("ProjectScreen's Anki destinations", () => {
@@ -86,13 +86,13 @@ describe("ProjectScreen's Anki destinations", () => {
     expect(holdsProject(store)).toBe(true);
   });
 
-  it("drops the project from the cache a minute after nothing shows it", async () => {
+  it("keeps the project cached a minute after nothing shows it, so that a save retried later is still sent to Anki", async () => {
     const { store } = renderOverview();
     await screen.findByRole("heading", { name: "Flashcards" });
     vi.useFakeTimers();
     cleanup();
     passAMinute();
-    expect(holdsProject(store)).toBe(false);
+    expect(holdsProject(store)).toBe(true);
   });
 
   it("has the server write the package at the picked path", async () => {

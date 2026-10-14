@@ -252,11 +252,13 @@ export const backendApi = createApi({
       query: () => ({ method: "GET", path: "/projects" }),
       providesTags: ["Projects"],
     }),
+    /** A project is kept for the session: the automatic send to Anki after a save reads its destination from the cache, and tag invalidation still refreshes it. */
     getProject: build.query<Project, string>({
       query: (projectId) => ({
         method: "GET",
         path: `/projects/${projectId}`,
       }),
+      keepUnusedDataFor: Infinity,
       providesTags: (_result, _error, projectId) => [
         { type: "Projects", id: projectId },
       ],
