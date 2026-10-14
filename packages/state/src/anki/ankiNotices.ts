@@ -62,6 +62,15 @@ export function deletionPendingNotice(word: string) {
   );
 }
 
+/** Tells that the server could not record that the notes of deleted flashcards were deleted from Anki, and that they stay pending. */
+export function deletionUnrecordedNotice(unrecordedCount: number) {
+  return notice(
+    "danger",
+    `The deletion of ${count(unrecordedCount, "note")} from Anki could not be recorded on the server.`,
+    "It will be tried again the next time Anki is connected.",
+  );
+}
+
 /** Tells how many notes of deleted flashcards were deleted from Anki. */
 export function deletedNotice(deletedCount: number) {
   return notice("success", `Deleted ${count(deletedCount, "note")} from Anki.`);

@@ -19,6 +19,8 @@ export type AnkiDeletionOutcome = {
   deletedCount: number;
   /** The deleted flashcards whose notes are still to be deleted, because Anki stopped answering. */
   remainingCount: number;
+  /** The deleted flashcards whose notes Anki no longer holds, but which the server could not record as done and keeps pending. */
+  unrecordedCount: number;
 };
 
 /**

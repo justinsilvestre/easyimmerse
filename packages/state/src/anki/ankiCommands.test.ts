@@ -94,9 +94,10 @@ const notesDeleted = (
   deletedCount: number,
   remainingCount: number,
   word: string | null = "f2",
+  unrecordedCount = 0,
 ) =>
   notesDeletionSettled(
-    { ok: true, data: { deletedCount, remainingCount } },
+    { ok: true, data: { deletedCount, remainingCount, unrecordedCount } },
     word,
   );
 
@@ -318,6 +319,12 @@ describe("ankiCommands when a flashcard is deleted", () => {
     expect(noticesAfter(notesDeleted(1, 0))).toEqual([]);
   });
 
+  it("tells that the server could not record the note's deletion, without blaming Anki", () => {
+    expect(noticesAfter(notesDeleted(1, 0, "f2", 1))).toEqual([
+      "The deletion of 1 note from Anki could not be recorded on the server. It will be tried again the next time Anki is connected.",
+    ]);
+  });
+
   it("says nothing of an aborted deletion", () => {
     const aborted = notesDeletionFailed({
       status: "ABORTED",
@@ -331,6 +338,13 @@ describe("ankiCommands when notes left in Anki are deleted later", () => {
   it("tells how many notes were deleted", () => {
     expect(noticesAfter(notesDeleted(2, 0, null))).toEqual([
       "Deleted 2 notes from Anki.",
+    ]);
+  });
+
+  it("tells how many deletions the server could not record", () => {
+    expect(noticesAfter(notesDeleted(2, 0, null, 2))).toEqual([
+      "Deleted 2 notes from Anki.",
+      "The deletion of 2 notes from Anki could not be recorded on the server. It will be tried again the next time Anki is connected.",
     ]);
   });
 

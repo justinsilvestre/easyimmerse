@@ -11,10 +11,12 @@ import {
   deletedNotice,
   deleteFailedNotice,
   deletionPendingNotice,
+  deletionUnrecordedNotice,
   sendFailedNotice,
   sentNotice,
 } from "./ankiNotices.ts";
 import { deleteFromAnki, sendToAnki } from "./ankiRequests.ts";
+import type { AnkiDeletionOutcome } from "./ankiResponses.ts";
 
 type AnkiApp = Pick<ReadableState, "backend">;
 type Settled<K> = Extract<RequestSettled, { request: { kind: K } }>;
@@ -70,6 +72,7 @@ function sendNotices(action: RequestSettled) {
 /**
  * Tells of a deletion that a flashcard's deletion asked for only when it fails or Anki cannot be reached,
  * and of one that ran once Anki was found running only when it deleted notes or failed.
+ * Either way, it tells of the deletions the server could not record.
  */
 function deleteNotices(action: RequestSettled) {
   if (action.request.kind !== "deleteAnkiNotes") return [];
@@ -78,9 +81,19 @@ function deleteNotices(action: RequestSettled) {
     return isAborted(outcome)
       ? []
       : [deleteFailedNotice(request.word, outcome.error)];
-  const { deletedCount, remainingCount } = outcome.data;
-  if (request.word !== null)
-    return remainingCount > 0 ? [deletionPendingNotice(request.word)] : [];
+  const { unrecordedCount } = outcome.data;
+  return [
+    ...deletionNotices(request.word, outcome.data),
+    ...(unrecordedCount > 0 ? [deletionUnrecordedNotice(unrecordedCount)] : []),
+  ];
+}
+
+function deletionNotices(
+  word: string | null,
+  { deletedCount, remainingCount }: AnkiDeletionOutcome,
+) {
+  if (word !== null)
+    return remainingCount > 0 ? [deletionPendingNotice(word)] : [];
   return deletedCount > 0 ? [deletedNotice(deletedCount)] : [];
 }
 

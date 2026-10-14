@@ -19,15 +19,26 @@ const pending: AnkiPendingDeletions = {
   ],
 };
 
-/** A server that lists `listed` as the pending deletions and records every request. */
-function createFakeServer(listed: BackendResult<unknown> = { data: pending }) {
+/** A server that lists `listed` as the pending deletions, answers each clear with `cleared`, and records every request. */
+function createFakeServer(
+  listed: BackendResult<unknown> = { data: pending },
+  cleared: (path: string) => BackendResult<unknown> = () => ({
+    data: undefined,
+  }),
+) {
   const requests: BackendRequest[] = [];
   const server = async (request: BackendRequest) => {
     requests.push(request);
-    return request.method === "GET" ? listed : { data: undefined };
+    return request.method === "GET" ? listed : cleared(request.path);
   };
   return { requests, server };
 }
+
+/** A server that fails to clear the deletion of f1. */
+const failingToClearF1 = (path: string): BackendResult<unknown> =>
+  path.endsWith("/f1")
+    ? { error: { status: 500, message: "down" } }
+    : { data: undefined };
 
 /** Anki that answers the first `count` actions as `answers` says and then stops answering. */
 function stoppingAfter(count: number, answers: AnkiAnswers): AnkiAnswers {
@@ -49,9 +60,10 @@ function stoppingAfter(count: number, answers: AnkiAnswers): AnkiAnswers {
 function run(
   answers: AnkiAnswers = holding([100]),
   listed?: BackendResult<unknown>,
+  cleared?: (path: string) => BackendResult<unknown>,
 ) {
   const anki = createFakeAnkiConnect(answers);
-  const { requests, server } = createFakeServer(listed);
+  const { requests, server } = createFakeServer(listed, cleared);
   const connections: AnkiConnection[] = [];
   const result = deleteAnkiNotes("p1", {
     anki,
@@ -120,7 +132,7 @@ describe("deleteAnkiNotes", () => {
 
   it("counts the notes Anki deleted", async () => {
     expect(await run(holding([100, 101])).result).toEqual({
-      data: { deletedCount: 4, remainingCount: 0 },
+      data: { deletedCount: 4, remainingCount: 0, unrecordedCount: 0 },
     });
   });
 
@@ -130,12 +142,32 @@ describe("deleteAnkiNotes", () => {
     expect(anki.requests).toEqual([]);
   });
 
+  describe("when the server cannot record a deletion Anki carried out", () => {
+    it("goes on with the next deletion", async () => {
+      const { anki, result } = run(holding([100]), undefined, failingToClearF1);
+      await result;
+      expect(anki.requests[2]).toEqual({
+        action: "findNotes",
+        version: 6,
+        params: { query: '"easyImmerse id:f2"' },
+      });
+    });
+
+    it("counts the deletion as not recorded", async () => {
+      expect(
+        await run(holding([100]), undefined, failingToClearF1).result,
+      ).toEqual({
+        data: { deletedCount: 2, remainingCount: 0, unrecordedCount: 1 },
+      });
+    });
+  });
+
   describe("when Anki stops answering", () => {
     const halfway = () => stoppingAfter(2, holding([100]));
 
     it("counts the deletions left pending", async () => {
       expect(await run(halfway()).result).toEqual({
-        data: { deletedCount: 1, remainingCount: 1 },
+        data: { deletedCount: 1, remainingCount: 1, unrecordedCount: 0 },
       });
     });
 
