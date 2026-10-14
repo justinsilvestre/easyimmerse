@@ -29,7 +29,7 @@ type StartRequest<K extends ServerRequestKind> = (
 /**
  * Starts each kind of request through its endpoint, so that its cache tags and lifecycle apply as for any other caller.
  * Queries do not subscribe, so their entry expires as any unused entry does; mutations are not tracked, so they leave no entry.
- * A job's status is always fetched anew, since the cached status is the one the poll wants to replace.
+ * A job's status and the connection to Anki are always fetched anew, since the cached answer is the one the request wants to replace.
  */
 export const requestEndpoints = {
   listSubtitleTracks: ({ projectId, mediaFileId }) =>
@@ -167,6 +167,26 @@ export const requestEndpoints = {
     ),
   probePictures: ({ file }) =>
     backendApi.endpoints.probePictures.initiate(file, { subscribe: false }),
+  checkAnkiConnection: () =>
+    backendApi.endpoints.checkAnkiConnection.initiate(undefined, {
+      subscribe: false,
+      forceRefetch: true,
+    }),
+  sendFlashcardsToAnki: ({ projectId, flashcardIds }) =>
+    backendApi.endpoints.sendFlashcardsToAnki.initiate(
+      { projectId, flashcardIds },
+      { track: false },
+    ),
+  exportAnkiPackage: ({ projectId, flashcardIds, savePath }) =>
+    backendApi.endpoints.exportAnkiPackage.initiate(
+      { projectId, flashcardIds, savePath },
+      { track: false },
+    ),
+  setFlashcardDestination: ({ projectId, destination }) =>
+    backendApi.endpoints.setFlashcardDestination.initiate(
+      { projectId, destination },
+      { track: false },
+    ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**

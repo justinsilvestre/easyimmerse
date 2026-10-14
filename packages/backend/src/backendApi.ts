@@ -2,7 +2,12 @@ import {
   type LicenseNoticeGroup,
   loadLicenseNoticeGroups,
 } from "@easyimmerse/licenses";
-import type { PickedDictionaryFile } from "@easyimmerse/state";
+import type {
+  AnkiConnection,
+  AnkiPackageExport,
+  AnkiSendOutcome,
+  PickedDictionaryFile,
+} from "@easyimmerse/state";
 import { cacheKey, serverCachePath } from "@easyimmerse/state";
 import type {
   AddMediaFileRequest,
@@ -14,6 +19,8 @@ import type {
   Document,
   EmbeddedSubtitleTracksResponse,
   Flashcard,
+  FlashcardDestination,
+  FlashcardDestinationRequest,
   FlashcardDraft,
   ImportFormRequest,
   ImportJobStarted,
@@ -49,7 +56,14 @@ import type {
 } from "@easyimmerse/types";
 import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
-import type { BackendError } from "./backendClient.ts";
+import { checkAnkiConnection } from "./ankiConnection.ts";
+import { createMediaFetch } from "./ankiMedia.ts";
+import { type AnkiExportArgs, exportAnkiPackage } from "./ankiPackageExport.ts";
+import type {
+  BackendError,
+  BackendRequest,
+  BackendResult,
+} from "./backendClient.ts";
 import {
   type CapturedFrame,
   captureFrame,
@@ -72,6 +86,11 @@ import {
   previewPickedDictionaryTable,
 } from "./pickedDictionary.ts";
 import type { PickedFile } from "./readPickedFile.ts";
+import {
+  type AnkiSendArgs,
+  type ServerQuery,
+  sendFlashcardsToAnki,
+} from "./sendToAnki.ts";
 
 type ProjectArgs = { projectId: string; settings: ProjectSettings };
 
@@ -104,6 +123,11 @@ type AddSubtitleTrackArgs = MediaFileArgs & {
 type SubtitleTrackArgs = MediaFileArgs & { trackId: string };
 
 type SubtitleSelectionArgs = MediaFileArgs & { selection: SubtitleSelection };
+
+type FlashcardDestinationArgs = {
+  projectId: string;
+  destination: FlashcardDestination | null;
+};
 
 /** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
 const lookupContextQuery = (
@@ -166,6 +190,40 @@ async function listSavedFlashcard(
     }),
   );
 }
+
+/** Sends JSON requests to the server through an endpoint's base query, for query functions that send several. */
+function serverQueryOf(
+  baseQuery: (
+    request: BackendRequest,
+  ) =>
+    | QueryReturnValue<unknown, BackendError, unknown>
+    | PromiseLike<QueryReturnValue<unknown, BackendError, unknown>>,
+): ServerQuery {
+  return async (request) =>
+    (await baseQuery(request)) as BackendResult<unknown>;
+}
+
+/** Keeps the last check of the connection to Anki in step with what a send to Anki found. */
+function reportAnkiConnection(
+  dispatch: (action: unknown) => unknown,
+  connection: AnkiConnection,
+) {
+  dispatch(
+    backendApi.util.upsertQueryData(
+      "checkAnkiConnection",
+      undefined,
+      connection,
+    ),
+  );
+}
+
+/** The data an export or a send to Anki changes: which flashcards went where, and where the project's flashcards go. */
+const flashcardsSentTags = (projectId: string) =>
+  [
+    { type: "Flashcards", id: projectId },
+    { type: "Projects", id: projectId },
+    "Projects",
+  ] as const;
 
 const mediaFileAddedTags = (projectId: string) =>
   [
@@ -540,6 +598,53 @@ export const backendApi = createApi({
           api.extra as BackendThunkExtra,
           () => !isQuerySubscribed(api, subscriptionActions()),
         ),
+    }),
+    /**
+     * Whether Anki answers through AnkiConnect. The last answer is kept for the session, and a send to Anki updates it,
+     * so that the project overview shows the connection as last seen.
+     */
+    checkAnkiConnection: build.query<AnkiConnection, void>({
+      queryFn: (_arg, api) =>
+        checkAnkiConnection((api.extra as BackendThunkExtra).ankiConnect),
+      keepUnusedDataFor: Infinity,
+    }),
+    /** Sends flashcards to Anki through AnkiConnect, from the page, since Anki runs on the user's machine. */
+    sendFlashcardsToAnki: build.mutation<AnkiSendOutcome, AnkiSendArgs>({
+      queryFn: (args, api, _extraOptions, baseQuery) => {
+        const extra = api.extra as BackendThunkExtra;
+        return sendFlashcardsToAnki(args, {
+          anki: extra.ankiConnect,
+          server: serverQueryOf(baseQuery),
+          fetchMedia: createMediaFetch(extra.serverFetch),
+          reportConnection: (connection) =>
+            reportAnkiConnection(api.dispatch, connection),
+        });
+      },
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardsSentTags(projectId),
+    }),
+    /** Exports flashcards as an Anki package, written by the server at a path or handed back for download. */
+    exportAnkiPackage: build.mutation<AnkiPackageExport, AnkiExportArgs>({
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        exportAnkiPackage(args, {
+          server: serverQueryOf(baseQuery),
+          serverFetch: (api.extra as BackendThunkExtra).serverFetch,
+          signal: api.signal,
+        }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardsSentTags(projectId),
+    }),
+    /** Sets where a project's flashcards go. */
+    setFlashcardDestination: build.mutation<Project, FlashcardDestinationArgs>({
+      query: ({ projectId, destination }) => ({
+        method: "PUT",
+        path: `/projects/${projectId}/flashcard-destination`,
+        body: {
+          kind: "json",
+          value: { destination } satisfies FlashcardDestinationRequest,
+        },
+      }),
+      invalidatesTags: ["Projects"],
     }),
     /** The open-source license notices. They are megabytes of text, so the entry goes as soon as no page shows them. */
     licenseNotices: build.query<LicenseNoticeGroup[], void>({

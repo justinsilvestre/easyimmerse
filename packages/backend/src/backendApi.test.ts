@@ -7,8 +7,10 @@ import type {
 } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
 import { describe, expect, it } from "vitest";
+import type { AnkiConnect } from "./ankiConnect.ts";
 import { backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
+import { createFakeAnkiConnect } from "./fakeAnkiConnect.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 
 function createRecordingClient(): BackendClient & {
@@ -100,12 +102,17 @@ async function storeAfterApplyingSourceStep(
   return store;
 }
 
-function createStore(client: BackendClient) {
+function createStore(
+  client: BackendClient,
+  ankiConnect: AnkiConnect = createFakeAnkiConnect(),
+) {
   const extra: BackendThunkExtra = {
     client,
     browserFileRegistry: null,
     frameCapturer: null,
     failedPassages: { retryTimes: {} },
+    serverFetch: null,
+    ankiConnect,
   };
   return configureStore({
     reducer: { [backendApi.reducerPath]: backendApi.reducer },
@@ -541,5 +548,20 @@ describe("backendApi", () => {
       await store.dispatch(chooseTranslation());
       expect(listedSelection(store)?.translation_track_id).toBeNull();
     });
+  });
+});
+
+describe("checkAnkiConnection", () => {
+  it("is kept as the last send to Anki found it", async () => {
+    const store = createStore(createRecordingClient());
+    await store.dispatch(
+      backendApi.endpoints.sendFlashcardsToAnki.initiate({
+        projectId: "p1",
+        flashcardIds: ["f1"],
+      }),
+    );
+    expect(
+      backendApi.endpoints.checkAnkiConnection.select()(store.getState()).data,
+    ).toEqual({ connected: false });
   });
 });
