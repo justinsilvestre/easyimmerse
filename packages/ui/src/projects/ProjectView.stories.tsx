@@ -4,7 +4,10 @@ import {
   exampleFlashcard,
   exampleLanguages,
 } from "../flashcards/exampleFlashcard.ts";
-import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
+import {
+  fieldsOfPreset,
+  frontFieldsOfPreset,
+} from "../flashcards/flashcardPresets.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import {
   DictionaryStatus,
@@ -76,6 +79,7 @@ function sections(
       <FlashcardSyncPanel
         state={flashcardSync}
         includedFields={fieldsOfPreset("intermediate")}
+        frontFields={frontFieldsOfPreset("intermediate")}
         languages={exampleLanguages}
         onExportPackage={fn()}
         onSetUpAnkiConnect={fn()}

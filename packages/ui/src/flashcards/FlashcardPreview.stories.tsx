@@ -6,7 +6,7 @@ import {
   exampleScreenshotUrl,
 } from "./exampleFlashcard.ts";
 import { FlashcardPreview } from "./FlashcardPreview.tsx";
-import { fieldsOfPreset } from "./flashcardPresets.ts";
+import { fieldsOfPreset, frontFieldsOfPreset } from "./flashcardPresets.ts";
 
 const meta = {
   title: "Flashcards/FlashcardPreview",
@@ -21,6 +21,7 @@ const meta = {
   args: {
     content: exampleFlashcard,
     includedFields: fieldsOfPreset("beginner"),
+    frontFields: frontFieldsOfPreset("beginner"),
     languages: exampleLanguages,
     screenshotUrl: exampleScreenshotUrl,
     onPlayAudio: fn(),
@@ -33,11 +34,29 @@ type Story = StoryObj<typeof meta>;
 export const Beginner: Story = {};
 
 export const Intermediate: Story = {
-  args: { includedFields: fieldsOfPreset("intermediate") },
+  args: {
+    includedFields: fieldsOfPreset("intermediate"),
+    frontFields: frontFieldsOfPreset("intermediate"),
+  },
 };
 
 export const Advanced: Story = {
-  args: { includedFields: fieldsOfPreset("advanced") },
+  args: {
+    includedFields: fieldsOfPreset("advanced"),
+    frontFields: frontFieldsOfPreset("advanced"),
+  },
+};
+
+/** A flashcard from an ebook has no audio or screenshot, so the front falls back to the word and the sentence. */
+export const FallbackFront: Story = {
+  args: {
+    content: { ...exampleFlashcard, audio_context: null, screenshot: null },
+    screenshotUrl: null,
+  },
+};
+
+export const NoFrontFieldsChosen: Story = {
+  args: { frontFields: [] },
 };
 
 export const EmptyFields: Story = {

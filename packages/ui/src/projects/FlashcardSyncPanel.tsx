@@ -43,12 +43,14 @@ type Callbacks = {
 export function FlashcardSyncPanel({
   state,
   includedFields,
+  frontFields,
   languages,
   comingSoon = [],
   ...callbacks
 }: {
   state: FlashcardSyncState;
   includedFields: readonly FlashcardFieldKey[];
+  frontFields: readonly FlashcardFieldKey[];
   languages: FlashcardLanguages;
   comingSoon?: readonly FlashcardDestination[];
 } & Callbacks) {
@@ -67,6 +69,7 @@ export function FlashcardSyncPanel({
             <FlashcardPreview
               content={state.nextCard}
               includedFields={includedFields}
+              frontFields={frontFields}
               languages={languages}
               compact
             />

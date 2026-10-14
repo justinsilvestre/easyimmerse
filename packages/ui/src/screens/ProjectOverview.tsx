@@ -100,6 +100,7 @@ export function ProjectOverview({
         state={{ kind: "notStarted" }}
         comingSoon={["review", "ankiPackage", "ankiConnect"]}
         includedFields={settings.flashcard_fields}
+        frontFields={settings.flashcard_front_fields}
         languages={{
           target: settings.target_language,
           translation: settings.translation_language,

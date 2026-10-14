@@ -4,7 +4,10 @@ import {
   exampleFlashcard,
   exampleLanguages,
 } from "../flashcards/exampleFlashcard.ts";
-import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
+import {
+  fieldsOfPreset,
+  frontFieldsOfPreset,
+} from "../flashcards/flashcardPresets.ts";
 import { FlashcardSyncPanel } from "./FlashcardSyncPanel.tsx";
 
 const meta = {
@@ -20,6 +23,7 @@ const meta = {
   args: {
     state: { kind: "notStarted" },
     includedFields: fieldsOfPreset("intermediate"),
+    frontFields: frontFieldsOfPreset("intermediate"),
     languages: exampleLanguages,
     onExportPackage: fn(),
     onSetUpAnkiConnect: fn(),
