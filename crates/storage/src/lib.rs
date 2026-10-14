@@ -3,6 +3,7 @@
 //! `Storage` can be shared between threads. Writes run one at a time,
 //! while reads on a database file run beside them and see only what has been committed.
 
+mod anki_sync;
 mod connections;
 mod dictionaries;
 mod error;
@@ -196,20 +197,25 @@ impl Storage {
         self.write(|conn| flashcards::delete_flashcard(conn, id))
     }
 
-    /// Records that the flashcards were written into an Anki package at `exported_at_ms`.
-    /// Marks none of them when any id is unknown.
-    pub fn mark_flashcards_exported(
+    /// Records that the flashcards were written into an Anki package at `exported_at_ms`, and makes the package
+    /// the project's flashcard destination, in one transaction. A flashcard that is gone is passed over.
+    pub fn record_anki_export(
         &self,
+        project_id: &ProjectId,
         ids: &[FlashcardId],
         exported_at_ms: u64,
     ) -> Result<(), StorageError> {
-        self.write(|conn| flashcards::mark_flashcards_exported(conn, ids, exported_at_ms))
+        self.write(|conn| anki_sync::record_anki_export(conn, project_id, ids, exported_at_ms))
     }
 
-    /// Stores the id of the note AnkiConnect created for each flashcard.
-    /// Stores none of them when any flashcard id is unknown.
-    pub fn set_anki_note_ids(&self, notes: &[(FlashcardId, u64)]) -> Result<(), StorageError> {
-        self.write(|conn| flashcards::set_anki_note_ids(conn, notes))
+    /// Stores the id of the note AnkiConnect created for each flashcard, and makes AnkiConnect the project's
+    /// flashcard destination, in one transaction. A flashcard that is gone is passed over.
+    pub fn record_anki_notes_sent(
+        &self,
+        project_id: &ProjectId,
+        notes: &[(FlashcardId, u64)],
+    ) -> Result<(), StorageError> {
+        self.write(|conn| anki_sync::record_anki_notes_sent(conn, project_id, notes))
     }
 
     pub fn list_subtitle_tracks(

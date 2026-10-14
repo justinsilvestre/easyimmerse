@@ -24,7 +24,7 @@ use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::file_download::{attachment_disposition, body_then, safe_file_name};
 use crate::local_path::ensure_local_paths_allowed;
-use crate::media_source_jobs::now_ms;
+use crate::now_ms::now_ms;
 use crate::state::AppState;
 
 /// The response header that counts the media files left out of a downloaded package.
@@ -180,10 +180,7 @@ pub async fn record_anki_notes_sent(
     let flashcards = load_project_flashcards(&state, project_id.clone()).await?.1;
     select_flashcards(flashcards, &ids)?;
     state
-        .with_storage(move |storage| {
-            storage.set_anki_note_ids(&notes)?;
-            storage.set_flashcard_destination(&project_id, Some(FlashcardDestination::AnkiConnect))
-        })
+        .with_storage(move |storage| storage.record_anki_notes_sent(&project_id, &notes))
         .await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -356,8 +353,7 @@ async fn record_export(
     let exported_at_ms = now_ms();
     state
         .with_storage(move |storage| {
-            storage.mark_flashcards_exported(&flashcard_ids, exported_at_ms)?;
-            storage.set_flashcard_destination(&project_id, Some(FlashcardDestination::AnkiPackage))
+            storage.record_anki_export(&project_id, &flashcard_ids, exported_at_ms)
         })
         .await
 }
