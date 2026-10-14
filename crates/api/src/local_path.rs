@@ -79,7 +79,7 @@ pub fn ensure_local_paths_allowed(token: TokenKind, config: &ApiConfig) -> Resul
         Err(ApiFailure::new(
             StatusCode::FORBIDDEN,
             "local_paths_not_allowed",
-            "this token may not read files on the server",
+            "this token may not name files on the server's machine",
         ))
     }
 }

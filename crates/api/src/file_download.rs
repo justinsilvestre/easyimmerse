@@ -25,7 +25,7 @@ pub fn attachment_disposition(file_name: &str) -> HeaderValue {
     .unwrap_or_else(|_| HeaderValue::from_static("attachment"))
 }
 
-/// A body of `bytes` that runs `after` once the connection has taken every byte and before the body ends,
+/// A body of `bytes` that runs `after` once the connection has accepted every byte for sending and before the body ends,
 /// so that the client sees the end of the body only after `after` has finished.
 /// `after` does not run when the client goes away first.
 pub fn body_then(bytes: Vec<u8>, after: impl Future<Output = ()> + Send + 'static) -> Body {
