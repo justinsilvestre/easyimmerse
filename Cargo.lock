@@ -1383,14 +1383,18 @@ name = "easyimmerse-api"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "easyimmerse-anki",
  "easyimmerse-conversion",
  "easyimmerse-core",
  "easyimmerse-media",
  "easyimmerse-media-ffmpeg",
  "easyimmerse-plugins",
  "easyimmerse-storage",
+ "futures-util",
  "hex",
+ "percent-encoding",
  "rand 0.10.3",
+ "rusqlite",
  "serde",
  "serde_json",
  "tempfile",
@@ -1405,6 +1409,7 @@ dependencies = [
  "ureq",
  "utoipa",
  "utoipa-axum",
+ "zip",
 ]
 
 [[package]]

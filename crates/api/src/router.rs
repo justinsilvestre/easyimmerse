@@ -14,10 +14,10 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    conversion_cache, conversions, dictionaries, dictionary_batch_lookup, dictionary_imports,
+    anki, conversion_cache, conversions, dictionaries, dictionary_batch_lookup, dictionary_imports,
     dictionary_lookup, dictionary_media, documents, flashcards, health, local_dictionaries, media,
-    media_frame, media_import, media_playback_method, media_stream, media_tracks, media_waveform,
-    openapi, plugins, preferences, projects, source_form, subtitles, timed_text,
+    media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
+    media_waveform, openapi, plugins, preferences, projects, source_form, subtitles, timed_text,
 };
 use crate::state::AppState;
 
@@ -81,6 +81,10 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             flashcards::update_flashcard,
             flashcards::delete_flashcard
         ))
+        .routes(routes!(anki::export_anki_package))
+        .routes(routes!(anki::render_anki_notes))
+        .routes(routes!(anki::record_anki_notes_sent))
+        .routes(routes!(anki::set_flashcard_destination))
         .routes(routes!(media::list_media_files, media::add_media_file))
         .routes(routes!(media::remove_media_file))
         .routes(routes!(media_import::get_import_form))
@@ -91,6 +95,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(source_form::submit_source_step))
         .routes(routes!(media_stream::stream_media_file))
         .routes(routes!(media_frame::get_media_frame))
+        .routes(routes!(media_clip::get_media_clip))
         .routes(routes!(media_tracks::get_media_tracks))
         .routes(routes!(media_tracks::list_embedded_subtitle_tracks))
         .routes(routes!(

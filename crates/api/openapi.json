@@ -1917,6 +1917,372 @@
         ]
       }
     },
+    "/projects/{id}/anki/notes": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Renders the flashcards as notes for the AnkiConnect client, with the deck and note type they belong to.",
+        "operationId": "renderAnkiNotes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiNotesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The deck, the note type and the notes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnkiNotes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No flashcards named",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or a flashcard not in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/package": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, the flashcards are marked exported\nand the project's flashcard destination becomes `anki_package`.",
+        "operationId": "exportAnkiPackage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiPackageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Without a save path, the package, named in `Content-Disposition`, with the count of media files left out in `X-EasyImmerse-Skipped-Media`. With a save path, what was saved.",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Without a save path: the suggested file name, as `filename` in ASCII and `filename*` in UTF-8"
+              },
+              "X-EasyImmerse-Skipped-Media": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "Without a save path: the count of audio clips and screenshots left out of the package"
+              }
+            },
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnkiPackageSaved"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No flashcards named, a save path that is not absolute, or a save path that could not be written (code `save_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A save path, from a token that may not name local paths (code `local_paths_not_allowed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or a flashcard not in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The package could not be built (code `package_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/sent": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Stores the ids of the notes AnkiConnect created for the flashcards,\nand makes `anki_connect` the project's flashcard destination.",
+        "operationId": "recordAnkiNotesSent",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiSentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The note ids were stored"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project, or a flashcard not in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/flashcard-destination": {
+      "put": {
+        "tags": [
+          "anki"
+        ],
+        "operationId": "setFlashcardDestination",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlashcardDestinationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The project with its new destination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/flashcards": {
       "get": {
         "tags": [
@@ -2691,6 +3057,158 @@
           },
           "421": {
             "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/{media_id}/clip": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Returns the window of the chosen audio track, else of the default audio track,\nencoded as AAC in an MP4 file.",
+        "operationId": "getMediaClip",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_ms",
+            "in": "query",
+            "description": "The clip start in player time, in milliseconds.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "end_ms",
+            "in": "query",
+            "description": "The clip end in player time, in milliseconds; after the start.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "The bearer token, for audio elements, which cannot send headers.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The clip",
+            "content": {
+              "audio/mp4": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The end is not after the start, or the file could not be probed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token may not read local paths",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file, no file at its path, a browser-held file (code `not_resolvable`), or a file without audio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ffmpeg failed (code `clip_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server has no ffmpeg (code `conversion_unavailable`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -4437,6 +4955,299 @@
           }
         }
       },
+      "AnkiMediaRef": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "A clip of the media file's audio, referred to as `[sound:<file_name>]`. `file_name` is `<flashcard id>.m4a`.",
+            "required": [
+              "file_name",
+              "media_file_id",
+              "start_ms",
+              "end_ms",
+              "kind"
+            ],
+            "properties": {
+              "end_ms": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "file_name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "audio"
+                ]
+              },
+              "media_file_id": {
+                "$ref": "#/components/schemas/MediaFileId"
+              },
+              "start_ms": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A frame of the media file's video, referred to as `<img src=\"<file_name>\">`. `file_name` is `<flashcard id>.jpg`.",
+            "required": [
+              "file_name",
+              "media_file_id",
+              "at_ms",
+              "kind"
+            ],
+            "properties": {
+              "at_ms": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "file_name": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "screenshot"
+                ]
+              },
+              "media_file_id": {
+                "$ref": "#/components/schemas/MediaFileId"
+              }
+            }
+          }
+        ],
+        "description": "A media file that a note's fields refer to by name, which the caller renders from the project's media file and supplies."
+      },
+      "AnkiNote": {
+        "type": "object",
+        "description": "One flashcard rendered as an Anki note.",
+        "required": [
+          "flashcard_id",
+          "guid",
+          "note_id",
+          "updated_at_ms",
+          "fields",
+          "tags",
+          "media"
+        ],
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Field values as HTML, in the order of `AnkiNoteType.fields`."
+          },
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "guid": {
+            "type": "string",
+            "description": "Derived from the flashcard id, and so the same across exports. Anki recognizes a note it already has by this value."
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnkiMediaRef"
+            },
+            "description": "The media files the fields refer to, which the caller renders and supplies."
+          },
+          "note_id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The flashcard's `created_at_ms`, which Anki shows as the note's creation date.",
+            "minimum": 0
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "updated_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The flashcard's `updated_at_ms`. When importing a note it already has, Anki updates it only if this time is newer.",
+            "minimum": 0
+          }
+        }
+      },
+      "AnkiNoteType": {
+        "type": "object",
+        "description": "The note type (Anki \"model\") of a project's deck, as both the package and AnkiConnect create it.",
+        "required": [
+          "id",
+          "name",
+          "fields",
+          "templates",
+          "css"
+        ],
+        "properties": {
+          "css": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Field names in order. The first is the sort field and the field Anki checks for duplicates."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "A 31-bit number derived from the project id, stable across exports.",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnkiTemplate"
+            }
+          }
+        }
+      },
+      "AnkiNotes": {
+        "type": "object",
+        "description": "What the AnkiConnect client needs to create the deck, the note type and the notes.",
+        "required": [
+          "deck_name",
+          "note_type",
+          "notes"
+        ],
+        "properties": {
+          "deck_name": {
+            "type": "string"
+          },
+          "note_type": {
+            "$ref": "#/components/schemas/AnkiNoteType"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnkiNote"
+            }
+          }
+        }
+      },
+      "AnkiNotesRequest": {
+        "type": "object",
+        "required": [
+          "flashcard_ids"
+        ],
+        "properties": {
+          "flashcard_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardId"
+            }
+          }
+        }
+      },
+      "AnkiPackageRequest": {
+        "type": "object",
+        "required": [
+          "flashcard_ids"
+        ],
+        "properties": {
+          "flashcard_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardId"
+            },
+            "description": "The flashcards to export, in the order Anki shows them as new cards."
+          },
+          "save_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The absolute path to write the package to, on the server's machine. Null to receive the package in the response."
+          }
+        }
+      },
+      "AnkiPackageSaved": {
+        "type": "object",
+        "description": "What the server wrote to the save path.",
+        "required": [
+          "flashcard_count",
+          "skipped_media_count"
+        ],
+        "properties": {
+          "flashcard_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "skipped_media_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The audio clips and screenshots that could not be rendered and are missing from the package.",
+            "minimum": 0
+          }
+        }
+      },
+      "AnkiSentNote": {
+        "type": "object",
+        "description": "A flashcard that AnkiConnect created or updated a note for.",
+        "required": [
+          "flashcard_id",
+          "anki_note_id"
+        ],
+        "properties": {
+          "anki_note_id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          }
+        }
+      },
+      "AnkiSentRequest": {
+        "type": "object",
+        "required": [
+          "notes"
+        ],
+        "properties": {
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnkiSentNote"
+            }
+          }
+        }
+      },
+      "AnkiTemplate": {
+        "type": "object",
+        "description": "A card template: the HTML of each side of the card, with `{{Field}}` placeholders.",
+        "required": [
+          "name",
+          "front",
+          "back"
+        ],
+        "properties": {
+          "back": {
+            "type": "string"
+          },
+          "front": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "ApiError": {
         "type": "object",
         "description": "The body of every error response.",
@@ -5326,6 +6137,22 @@
           "anki_package",
           "anki_connect"
         ]
+      },
+      "FlashcardDestinationRequest": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FlashcardDestination",
+                "description": "Null clears the destination."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
       },
       "FlashcardDraft": {
         "type": "object",

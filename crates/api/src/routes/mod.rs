@@ -1,3 +1,4 @@
+pub mod anki;
 pub mod conversion_cache;
 pub mod conversions;
 pub mod dictionaries;
@@ -10,6 +11,7 @@ pub mod flashcards;
 pub mod health;
 pub mod local_dictionaries;
 pub mod media;
+pub mod media_clip;
 pub mod media_frame;
 pub mod media_import;
 pub mod media_playback_method;
