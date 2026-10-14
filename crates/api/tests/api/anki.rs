@@ -440,6 +440,23 @@ mod record_anki_notes_sent {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn keeps_the_first_note_id_of_a_flashcard_named_twice() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        record(
+            &server,
+            json!([
+                { "flashcard_id": ids[0], "anki_note_id": 100 },
+                { "flashcard_id": ids[0], "anki_note_id": 200 },
+            ]),
+        )
+        .await;
+        let flashcards = list_flashcards(&server).await;
+        let first = flashcards.iter().find(|card| card["id"] == ids[0]).unwrap();
+        assert_eq!(first["anki_note_id"], 100);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn sets_the_destination_to_anki_connect() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;

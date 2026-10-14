@@ -169,9 +169,11 @@ pub async fn record_anki_notes_sent(
     Path(project_id): Path<ProjectId>,
     Json(request): Json<AnkiSentRequest>,
 ) -> Result<StatusCode, ApiFailure> {
+    let mut seen = HashSet::new();
     let notes: Vec<(FlashcardId, u64)> = request
         .notes
         .into_iter()
+        .filter(|note| seen.insert(note.flashcard_id.clone()))
         .map(|note| (note.flashcard_id, note.anki_note_id))
         .collect();
     let ids: Vec<FlashcardId> = notes.iter().map(|(id, _)| id.clone()).collect();
