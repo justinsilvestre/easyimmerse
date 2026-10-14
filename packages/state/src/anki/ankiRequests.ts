@@ -38,6 +38,14 @@ export function isSendingTo(
   );
 }
 
+/** Tells whether any of the project's requests to AnkiConnect, a send or a deletion, is under way or waiting. */
+export function isSyncingWith(
+  requests: readonly RequestRecord[],
+  projectId: string,
+): boolean {
+  return requests.some(({ scope }) => scope === ankiScope(projectId));
+}
+
 /**
  * Deletes from Anki the notes of a project's deleted flashcards, after the project's earlier sends,
  * so that a note a send in flight creates is deleted too. `word` names the flashcard just deleted, if one was.

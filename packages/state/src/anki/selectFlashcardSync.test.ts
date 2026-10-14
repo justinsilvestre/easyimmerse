@@ -7,6 +7,7 @@ import { cacheKey } from "../server/cacheKey.ts";
 import { serverCacheWith } from "../server/serverCacheWith.ts";
 import {
   ankiCache,
+  ankiFlashcard,
   exampleAnkiFlashcards,
   openOverview,
 } from "./ankiTestSupport.ts";
@@ -93,6 +94,15 @@ describe("selectFlashcardSync", () => {
   it("says a send is under way while one is", () => {
     expect(
       syncOf(checked(true), openOverview, actions.ankiSendRequested()),
+    ).toMatchObject({ isSending: true });
+  });
+
+  it("says a send is under way while a deletion from Anki is", () => {
+    const allSent = ankiCache("anki_connect", [
+      ankiFlashcard("f1", "m1", 1, { ankiNoteId: 100 }),
+    ]);
+    expect(
+      syncOf(checked(true, allSent), openOverview, actions.ankiSendRequested()),
     ).toMatchObject({ isSending: true });
   });
 
