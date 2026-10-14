@@ -79,7 +79,7 @@ export function FlashcardSyncPanel({
             />
           ) : (
             <p className="self-center text-center text-sm text-fg-faint">
-              No flashcards yet
+              Nothing waiting
             </p>
           )}
         </div>
