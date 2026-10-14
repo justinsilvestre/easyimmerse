@@ -60,7 +60,8 @@ export function ankiConnectEffects(
         "getProject",
       ) &&
         action.outcome.ok &&
-        action.outcome.data.flashcard_destination === "anki_connect"
+        // RTK Query can settle a read it skipped without data, so the project may be missing.
+        action.outcome.data?.flashcard_destination === "anki_connect"
         ? [checkAnkiConnection]
         : [];
     default:
