@@ -14,7 +14,7 @@ export type FlashcardSyncState =
   | { kind: "review"; dueCount: number; nextCard: FlashcardContent | null };
 
 /** A place the project's flashcards can go, named after the state it leads to. */
-export type FlashcardDestination = Exclude<
+type FlashcardSyncOption = Exclude<
   FlashcardSyncState["kind"],
   "notStarted"
 >;
@@ -45,7 +45,7 @@ export function FlashcardSyncPanel({
   includedFields: readonly FlashcardFieldKey[];
   frontFields: readonly FlashcardFieldKey[];
   languages: FlashcardLanguages;
-  comingSoon?: readonly FlashcardDestination[];
+  comingSoon?: readonly FlashcardSyncOption[];
 } & Callbacks) {
   return (
     <section
@@ -91,7 +91,7 @@ export function FlashcardSyncPanel({
 function NotStarted({
   comingSoon,
   ...callbacks
-}: { comingSoon: readonly FlashcardDestination[] } & Callbacks) {
+}: { comingSoon: readonly FlashcardSyncOption[] } & Callbacks) {
   return (
     <div className="flex flex-col gap-2">
       <ul className="flex flex-col">
