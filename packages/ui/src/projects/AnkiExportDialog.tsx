@@ -84,9 +84,9 @@ export function AnkiExportDialog({
           ffmpeg and can read the media file.
         </p>
         <p>
-          Importing a package again adds the new cards and refreshes the
-          others, keeping their progress. The look of the cards can be changed
-          in Anki once they are imported.
+          Importing a package again adds the new cards and refreshes the others,
+          keeping their progress. The look of the cards can be changed in Anki
+          once they are imported.
         </p>
       </div>
     </ModalDialog>
