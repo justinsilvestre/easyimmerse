@@ -1,5 +1,20 @@
-import type { AnkiMediaRef } from "@easyimmerse/types";
+import type { AnkiMediaRef, AnkiNote } from "@easyimmerse/types";
 import type { ServerFetch } from "./serverFetch.ts";
+
+/**
+ * Drops a note's reference to a media file that could not be supplied, leaving its field empty.
+ * A field naming a file Anki does not have would show a broken image or a missing sound,
+ * and would keep the card's front from falling back as it does for a flashcard without that media.
+ */
+export function withoutMedia(note: AnkiNote, media: AnkiMediaRef): AnkiNote {
+  return {
+    ...note,
+    fields: note.fields.map((value) =>
+      value.includes(media.file_name) ? "" : value,
+    ),
+    media: note.media.filter((item) => item !== media),
+  };
+}
 
 /** Fetches the bytes of a note's audio clip or screenshot from the server, or resolves null when the server cannot render it. */
 export type MediaFetch = (

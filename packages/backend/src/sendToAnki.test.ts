@@ -11,13 +11,14 @@ const note = (flashcardId: string, word: string): AnkiNote => ({
   guid: `guid-${flashcardId}`,
   note_id: 1,
   updated_at_ms: 1,
-  fields: [word, flashcardId],
+  fields: [word, "", flashcardId],
   tags: [],
   media: [],
 });
 
 const withMedia: AnkiNote = {
   ...note("f1", "고양이"),
+  fields: ["고양이", '<img src="f1.jpg">', "f1"],
   media: [
     {
       kind: "audio",
@@ -40,7 +41,7 @@ const rendered: AnkiNotes = {
   note_type: {
     id: 1 << 30,
     name: "easyImmerse: Korean",
-    fields: ["Word", "easyImmerse id"],
+    fields: ["Word", "Screenshot", "easyImmerse id"],
     templates: [{ name: "Card", front: "{{Word}}", back: "{{Word}}" }],
     css: "",
   },
@@ -174,6 +175,15 @@ describe("sendFlashcardsToAnki", () => {
     });
   });
 
+  it("drops a note's reference to a media file the server cannot render", async () => {
+    const requests = await actionsOf(send());
+    const added = requests.find(({ action }) => action === "addNotes");
+    expect(added?.params.notes).toMatchObject([
+      { fields: { Word: "고양이", Screenshot: "", "easyImmerse id": "f1" } },
+      {},
+    ]);
+  });
+
   it("updates the note Anki holds for a flashcard", async () => {
     const requests = await actionsOf(
       send({
@@ -185,7 +195,10 @@ describe("sendFlashcardsToAnki", () => {
       action: "updateNoteFields",
       version: 6,
       params: {
-        note: { id: 42, fields: { Word: "개", "easyImmerse id": "f2" } },
+        note: {
+          id: 42,
+          fields: { Word: "개", Screenshot: "", "easyImmerse id": "f2" },
+        },
       },
     });
   });

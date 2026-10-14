@@ -1,5 +1,6 @@
+import type { AnkiNote } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import { createMediaFetch, mediaPath } from "./ankiMedia.ts";
+import { createMediaFetch, mediaPath, withoutMedia } from "./ankiMedia.ts";
 
 const audio = {
   kind: "audio",
@@ -53,5 +54,30 @@ describe("createMediaFetch", () => {
 
   it("finds nothing without a server", async () => {
     expect(await createMediaFetch(null)("p1", audio)).toBeNull();
+  });
+});
+
+describe("withoutMedia", () => {
+  const note: AnkiNote = {
+    flashcard_id: "f1",
+    guid: "guid",
+    note_id: 1,
+    updated_at_ms: 1,
+    fields: ["Katze", "[sound:f1.m4a]", '<img src="f1.jpg">', "f1"],
+    tags: [],
+    media: [audio, screenshot],
+  };
+
+  it("empties the field that named the file", () => {
+    expect(withoutMedia(note, screenshot).fields).toEqual([
+      "Katze",
+      "[sound:f1.m4a]",
+      "",
+      "f1",
+    ]);
+  });
+
+  it("keeps the other media", () => {
+    expect(withoutMedia(note, screenshot).media).toEqual([audio]);
   });
 });

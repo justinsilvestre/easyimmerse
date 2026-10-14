@@ -1,5 +1,6 @@
 import type { AnkiConnection, AnkiSendOutcome } from "@easyimmerse/state";
 import type {
+  AnkiMediaRef,
   AnkiNote,
   AnkiNotes,
   AnkiNotesRequest,
@@ -13,7 +14,7 @@ import {
   ankiBackendError,
   hasSucceeded,
 } from "./ankiConnectError.ts";
-import type { MediaFetch } from "./ankiMedia.ts";
+import { type MediaFetch, withoutMedia } from "./ankiMedia.ts";
 import { syncNotes } from "./ankiNoteSync.ts";
 import type { BackendRequest, BackendResult } from "./backendClient.ts";
 import { bytesToBase64 } from "./base64.ts";
@@ -65,10 +66,17 @@ async function sendWithAnki(
 ): Promise<BackendResult<AnkiSendOutcome>> {
   const rendered = await deps.server(notesRequest(projectId, flashcardIds));
   if ("error" in rendered) return rendered;
-  const notes = rendered.data as AnkiNotes;
-  await createDeckAndNoteType(deps.anki, notes);
-  const skippedMediaCount = await storeMedia(notes.notes, projectId, deps);
-  const { sent, failedCount } = await syncNotes(deps.anki, notes);
+  const renderedNotes = rendered.data as AnkiNotes;
+  await createDeckAndNoteType(deps.anki, renderedNotes);
+  const { notes, skippedMediaCount } = await storeMedia(
+    renderedNotes.notes,
+    projectId,
+    deps,
+  );
+  const { sent, failedCount } = await syncNotes(deps.anki, {
+    ...renderedNotes,
+    notes,
+  });
   const recorded = await deps.server(sentRequest(projectId, sent));
   if ("error" in recorded) return recorded;
   return { data: { sentCount: sent.length, failedCount, skippedMediaCount } };
@@ -85,23 +93,42 @@ async function createDeckAndNoteType(anki: AnkiConnect, notes: AnkiNotes) {
     await anki.invoke(ankiConnectActions.createModel(notes.note_type));
 }
 
-/** Stores every note's media in Anki, and returns how many files could not be rendered or stored. */
+/**
+ * Stores every note's media in Anki. A file that cannot be rendered or stored is counted,
+ * and the note no longer refers to it.
+ */
 async function storeMedia(
   notes: readonly AnkiNote[],
   projectId: string,
-  { anki, fetchMedia }: AnkiSendDeps,
-): Promise<number> {
-  let skippedCount = 0;
-  for (const media of notes.flatMap((note) => note.media)) {
-    const bytes = await fetchMedia(projectId, media);
-    const request =
-      bytes &&
-      ankiConnectActions.storeMediaFile(media.file_name, bytesToBase64(bytes));
-    const isStored =
-      request !== null && (await hasSucceeded(anki.invoke(request)));
-    if (!isStored) skippedCount += 1;
+  deps: AnkiSendDeps,
+): Promise<{ notes: AnkiNote[]; skippedMediaCount: number }> {
+  const stored: AnkiNote[] = [];
+  let skippedMediaCount = 0;
+  for (const note of notes) {
+    let kept = note;
+    for (const media of note.media) {
+      if (await isStored(media, projectId, deps)) continue;
+      skippedMediaCount += 1;
+      kept = withoutMedia(kept, media);
+    }
+    stored.push(kept);
   }
-  return skippedCount;
+  return { notes: stored, skippedMediaCount };
+}
+
+/** Renders one media file on the server and stores it in Anki; false when either fails. */
+async function isStored(
+  media: AnkiMediaRef,
+  projectId: string,
+  { anki, fetchMedia }: AnkiSendDeps,
+): Promise<boolean> {
+  const bytes = await fetchMedia(projectId, media);
+  if (bytes === null) return false;
+  const request = ankiConnectActions.storeMediaFile(
+    media.file_name,
+    bytesToBase64(bytes),
+  );
+  return hasSucceeded(anki.invoke(request));
 }
 
 function isUnreachable(error: unknown): boolean {
