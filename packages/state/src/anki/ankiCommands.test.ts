@@ -233,6 +233,10 @@ describe("ankiCommands", () => {
     ]);
   });
 
+  it("says nothing of a send that had no flashcard left to send", () => {
+    expect(noticesAfter(sent({}))).toEqual([]);
+  });
+
   it("tells why Anki refused a send", () => {
     const refused = actions.requestSettled(
       "project/p1/ankiSend/1",

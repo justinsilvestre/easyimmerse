@@ -16,7 +16,7 @@ import {
   sentNotice,
 } from "./ankiNotices.ts";
 import { deleteFromAnki, sendToAnki } from "./ankiRequests.ts";
-import type { AnkiDeletionOutcome } from "./ankiResponses.ts";
+import type { AnkiDeletionOutcome, AnkiSendOutcome } from "./ankiResponses.ts";
 import { sendUnsent, syncWithAnki } from "./syncWithAnki.ts";
 
 type AnkiApp = Pick<ReadableState, "backend" | "operations">;
@@ -91,10 +91,12 @@ function hasFoundAnki(action: RequestSettled): action is AnkiSettled {
   );
 }
 
+/** Tells of every send's outcome, except a send with no flashcard left to send, such as one whose flashcards were all deleted. */
 function sendNotices(action: RequestSettled) {
   if (action.request.kind !== "sendFlashcardsToAnki") return [];
   const { outcome } = action as Settled<"sendFlashcardsToAnki">;
-  if (outcome.ok) return [sentNotice(outcome.data)];
+  if (outcome.ok)
+    return hasSentAny(outcome.data) ? [sentNotice(outcome.data)] : [];
   return isSilentFailure(outcome) ? [] : [sendFailedNotice(outcome.error)];
 }
 
@@ -124,6 +126,10 @@ function deletionNotices(
   if (word !== null)
     return remainingCount > 0 ? [deletionPendingNotice(word)] : [];
   return deletedCount > 0 ? [deletedNotice(deletedCount)] : [];
+}
+
+function hasSentAny({ sentCount, failedCount }: AnkiSendOutcome) {
+  return sentCount + failedCount > 0;
 }
 
 function isSilentFailure(outcome: RequestOutcome) {

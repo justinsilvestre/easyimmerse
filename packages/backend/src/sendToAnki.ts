@@ -39,11 +39,21 @@ export type AnkiSendDeps = {
   reportConnection: (connection: AnkiConnection) => boolean;
 };
 
+/** How many notes a send put into Anki, before it is known whether the send found Anki anew. */
+type SentCounts = Omit<AnkiSendOutcome, "foundAnki">;
+
+const nothingSent: SentCounts = {
+  sentCount: 0,
+  failedCount: 0,
+  skippedMediaCount: 0,
+};
+
 /**
  * Sends flashcards to Anki through AnkiConnect: renders them as notes on the server, creates the deck and the note type
  * when Anki lacks them, stores each note's audio clip and screenshot, adds or updates the notes, and records on the server
  * which notes Anki holds for which flashcards. A note type Anki already has is never changed, since the user may have restyled it.
- * Media the server cannot render is left out and counted.
+ * Media the server cannot render is left out and counted. When the server renders no note, as for flashcards deleted
+ * since the send was asked for, Anki is asked for nothing more and no send is recorded.
  */
 export async function sendFlashcardsToAnki(
   args: AnkiSendArgs,
@@ -54,7 +64,8 @@ export async function sendFlashcardsToAnki(
       ankiConnectActions.version(),
     );
     const foundAnki = deps.reportConnection({ connected: true, version });
-    return await sendWithAnki(args, deps, foundAnki);
+    const sent = await sendWithAnki(args, deps);
+    return "error" in sent ? sent : { data: { ...sent.data, foundAnki } };
   } catch (error) {
     if (isUnreachable(error)) deps.reportConnection({ connected: false });
     return { error: ankiBackendError(error) };
@@ -64,11 +75,19 @@ export async function sendFlashcardsToAnki(
 async function sendWithAnki(
   { projectId, flashcardIds }: AnkiSendArgs,
   deps: AnkiSendDeps,
-  foundAnki: boolean,
-): Promise<BackendResult<AnkiSendOutcome>> {
+): Promise<BackendResult<SentCounts>> {
   const rendered = await deps.server(notesRequest(projectId, flashcardIds));
   if ("error" in rendered) return rendered;
   const renderedNotes = rendered.data as AnkiNotes;
+  if (renderedNotes.notes.length === 0) return { data: nothingSent };
+  return putNotes(projectId, renderedNotes, deps);
+}
+
+async function putNotes(
+  projectId: string,
+  renderedNotes: AnkiNotes,
+  deps: AnkiSendDeps,
+): Promise<BackendResult<SentCounts>> {
   await createDeckAndNoteType(deps.anki, renderedNotes);
   const { notes, skippedMediaCount } = await storeMedia(
     renderedNotes.notes,
@@ -81,9 +100,7 @@ async function sendWithAnki(
   });
   const recorded = await deps.server(sentRequest(projectId, sent));
   if ("error" in recorded) return recorded;
-  return {
-    data: { sentCount: sent.length, failedCount, skippedMediaCount, foundAnki },
-  };
+  return { data: { sentCount: sent.length, failedCount, skippedMediaCount } };
 }
 
 async function createDeckAndNoteType(anki: AnkiConnect, notes: AnkiNotes) {

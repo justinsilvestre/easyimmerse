@@ -146,6 +146,32 @@ describe("sendFlashcardsToAnki", () => {
     expect(await send(ankiAnswers, { error }).sent).toEqual({ error });
   });
 
+  describe("when the server renders no note, as for flashcards deleted since", () => {
+    const noNotes = { data: { ...rendered, notes: [] } };
+
+    it("asks Anki for nothing but its version", async () => {
+      const requests = await actionsOf(send(ankiAnswers, noNotes));
+      expect(requests.map(({ action }) => action)).toEqual(["version"]);
+    });
+
+    it("records no send with the server", async () => {
+      const sending = send(ankiAnswers, noNotes);
+      await sending.sent;
+      expect(sending.serverRequests).toHaveLength(1);
+    });
+
+    it("counts nothing sent", async () => {
+      expect(await send(ankiAnswers, noNotes).sent).toEqual({
+        data: {
+          sentCount: 0,
+          failedCount: 0,
+          skippedMediaCount: 0,
+          foundAnki: false,
+        },
+      });
+    });
+  });
+
   it("creates the deck Anki lacks", async () => {
     const requests = await actionsOf(
       send({ ...ankiAnswers, deckNames: () => [], createDeck: () => 1 }),
