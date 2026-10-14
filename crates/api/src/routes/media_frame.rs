@@ -1,28 +1,24 @@
 //! One frame of a media file's video as a JPEG image, for flashcard screenshots.
 
 use std::path::Path as FilePath;
-use std::process::Stdio;
 
 use axum::Extension;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE};
-use axum::response::{IntoResponse, Response};
+use axum::response::Response;
 use easyimmerse_core::media_file::{MediaFile, MediaFileId};
 use easyimmerse_core::project::ProjectId;
-use easyimmerse_media::{ContainerInfo, TrackInfo, TrackSelection, default_track_selection};
-use easyimmerse_media_ffmpeg::{
-    BinaryName, FfmpegError, FfmpegPaths, FrameGrab, background_command, frame_grab_args,
-    locate_binary,
-};
+use easyimmerse_media_ffmpeg::{FfmpegError, FrameGrab, frame_grab_args};
 use serde::Deserialize;
-use tokio::process::Command;
 use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::routes::media::load_media_file;
-use crate::routes::media_support::{conversion_unavailable, probe_media, resolve_source_path};
+use crate::routes::media_support::{
+    chosen_video_track, locate_ffmpeg, probe_media, rendered_media_response, resolve_source_path,
+    run_ffmpeg_to_stdout,
+};
 use crate::state::AppState;
 
 /// The matched path of the frame route,
@@ -73,76 +69,35 @@ pub async fn get_media_frame(
     Query(query): Query<FrameQuery>,
 ) -> Result<Response, ApiFailure> {
     let media_file = load_media_file(&state, project_id, media_id).await?;
-    let path = resolve_source_path(&state, token, &media_file).await?;
-    let container = probe_media(&state, &path).await?;
-    let track = chosen_video_track(&container, &media_file)
-        .ok_or_else(|| not_found("the media file has no video track"))?;
-    let ffmpeg = locate_binary(BinaryName::Ffmpeg, &FfmpegPaths::default())
-        .map_err(|_| conversion_unavailable())?;
-    let jpeg = grab_frame(&ffmpeg, FilePath::new(&path), track, query.at_ms).await?;
-    Ok((
-        StatusCode::OK,
-        [
-            (CONTENT_TYPE, "image/jpeg"),
-            (CACHE_CONTROL, "private, max-age=86400"),
-        ],
-        jpeg,
-    )
-        .into_response())
+    let jpeg = render_frame(&state, token, &media_file, query.at_ms).await?;
+    Ok(rendered_media_response("image/jpeg", jpeg))
 }
 
-async fn grab_frame(
-    ffmpeg: &FilePath,
-    source: &FilePath,
-    track: &TrackInfo,
+/// Grabs the frame of the media file's chosen video track, else its default video track, at `at_ms` in player time,
+/// as a JPEG image at most 640 pixels wide.
+pub async fn render_frame(
+    state: &AppState,
+    token: TokenKind,
+    media_file: &MediaFile,
     at_ms: u64,
 ) -> Result<Vec<u8>, ApiFailure> {
+    let path = resolve_source_path(state, token, media_file).await?;
+    let container = probe_media(state, &path).await?;
+    let track = chosen_video_track(&container, media_file)
+        .ok_or_else(|| not_found("the media file has no video track"))?;
     let args = frame_grab_args(&FrameGrab {
-        source,
+        source: FilePath::new(&path),
         stream_index: track.index,
         at_micros: i64::try_from(at_ms.saturating_mul(1000)).unwrap_or(i64::MAX),
         max_width: FRAME_MAX_WIDTH,
     });
-    let mut command = background_command(ffmpeg);
-    command.args(args);
-    let output = Command::from(command)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .kill_on_drop(true)
-        .output()
+    let jpeg = run_ffmpeg_to_stdout(&locate_ffmpeg()?, args)
         .await
-        .map_err(|source| {
-            frame_failed(FfmpegError::Spawn {
-                binary: BinaryName::Ffmpeg,
-                source,
-            })
-        })?;
-    if !output.status.success() {
-        return Err(frame_failed(FfmpegError::Failed {
-            binary: BinaryName::Ffmpeg,
-            status: output.status,
-            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-        }));
-    }
-    if output.stdout.is_empty() {
+        .map_err(frame_failed)?;
+    if jpeg.is_empty() {
         return Err(not_found("the video has no frame at that time"));
     }
-    Ok(output.stdout)
-}
-
-/// The saved video track when the file has one, else the default video track.
-fn chosen_video_track<'a>(
-    container: &'a ContainerInfo,
-    media_file: &MediaFile,
-) -> Option<&'a TrackInfo> {
-    let saved = media_file
-        .track_selection_json
-        .as_deref()
-        .and_then(|json| serde_json::from_str::<TrackSelection>(json).ok())
-        .and_then(|selection| selection.video);
-    saved
-        .or(default_track_selection(container).video)
-        .and_then(|index| container.track(index))
+    Ok(jpeg)
 }
 
 fn frame_failed(error: FfmpegError) -> ApiFailure {

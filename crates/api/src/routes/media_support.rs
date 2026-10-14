@@ -1,14 +1,21 @@
 //! What the media routes share: resolving a media file to a readable local path, probing it,
-//! and turning conversion errors into responses.
+//! choosing its tracks, running ffmpeg, and turning conversion errors into responses.
 
+use std::ffi::OsString;
 use std::path::Path;
+use std::process::Stdio;
 use std::sync::Arc;
 
 use axum::http::StatusCode;
+use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE};
+use axum::response::{IntoResponse, Response};
 use easyimmerse_conversion::{ConversionError, ConversionService};
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
-use easyimmerse_media::ContainerInfo;
-use easyimmerse_media_ffmpeg::FfmpegError;
+use easyimmerse_media::{ContainerInfo, TrackInfo, TrackSelection, default_track_selection};
+use easyimmerse_media_ffmpeg::{
+    BinaryName, FfmpegError, FfmpegPaths, background_command, locate_binary,
+};
+use tokio::process::Command;
 
 use crate::auth::error_body::{ApiFailure, bad_request, internal, not_found};
 use crate::auth::token_kind::TokenKind;
@@ -62,6 +69,80 @@ pub async fn probe_media(state: &AppState, path: &str) -> Result<Arc<ContainerIn
             ConversionError::SourceUnreadable { .. } => not_found(error.to_string()),
             other => bad_request(format!("the file could not be probed: {other}")),
         })
+}
+
+/// The saved audio track when the file has one, else the default audio track.
+pub fn chosen_audio_track<'a>(
+    container: &'a ContainerInfo,
+    media_file: &MediaFile,
+) -> Option<&'a TrackInfo> {
+    let saved = saved_track_selection(media_file).and_then(|selection| selection.audio);
+    saved
+        .or(default_track_selection(container).audio)
+        .and_then(|index| container.track(index))
+}
+
+/// The saved video track when the file has one, else the default video track.
+pub fn chosen_video_track<'a>(
+    container: &'a ContainerInfo,
+    media_file: &MediaFile,
+) -> Option<&'a TrackInfo> {
+    let saved = saved_track_selection(media_file).and_then(|selection| selection.video);
+    saved
+        .or(default_track_selection(container).video)
+        .and_then(|index| container.track(index))
+}
+
+fn saved_track_selection(media_file: &MediaFile) -> Option<TrackSelection> {
+    media_file
+        .track_selection_json
+        .as_deref()
+        .and_then(|json| serde_json::from_str::<TrackSelection>(json).ok())
+}
+
+/// The path of the ffmpeg binary; 503 when this server has none.
+pub fn locate_ffmpeg() -> Result<std::path::PathBuf, ApiFailure> {
+    locate_binary(BinaryName::Ffmpeg, &FfmpegPaths::default()).map_err(|_| conversion_unavailable())
+}
+
+/// A response carrying media rendered from a media file, which the client may keep for a day.
+pub fn rendered_media_response(content_type: &'static str, bytes: Vec<u8>) -> Response {
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, content_type),
+            (CACHE_CONTROL, "private, max-age=86400"),
+        ],
+        bytes,
+    )
+        .into_response()
+}
+
+/// Runs ffmpeg with `args` and returns what it wrote to standard output.
+pub async fn run_ffmpeg_to_stdout(
+    ffmpeg: &Path,
+    args: Vec<OsString>,
+) -> Result<Vec<u8>, FfmpegError> {
+    let mut command = background_command(ffmpeg);
+    command.args(args);
+    let output = Command::from(command)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true)
+        .output()
+        .await
+        .map_err(|source| FfmpegError::Spawn {
+            binary: BinaryName::Ffmpeg,
+            source,
+        })?;
+    if !output.status.success() {
+        return Err(FfmpegError::Failed {
+            binary: BinaryName::Ffmpeg,
+            status: output.status,
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        });
+    }
+    Ok(output.stdout)
 }
 
 /// Maps the errors of the conversion routes.
