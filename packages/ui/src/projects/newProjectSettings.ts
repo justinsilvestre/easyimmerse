@@ -1,15 +1,19 @@
 import type { Project, ProjectSettings } from "@easyimmerse/types";
-import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
+import {
+  fieldsOfPreset,
+  frontFieldsOfPreset,
+} from "../flashcards/flashcardPresets.ts";
 
 /** The settings a first project starts from. The translation language is the interface's, which is English for now. */
 export const defaultProjectSettings: ProjectSettings = {
   name: "",
   target_language: "de",
   translation_language: "en",
-  flashcard_fields: fieldsOfPreset("beginner"),
+  flashcard_fields: fieldsOfPreset("intermediate"),
   default_tags: [],
   tags_media_name: true,
   fills_audio_with_tts: false,
+  flashcard_front_fields: frontFieldsOfPreset("intermediate"),
 };
 
 /** The settings the new project form starts from: those of the last created project, without its name. */

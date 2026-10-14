@@ -96,6 +96,7 @@ export function ProjectForm({
         </div>
         <PresetPicker
           fields={state.flashcard_fields}
+          frontFields={state.flashcard_front_fields}
           onPresetChosen={(preset) =>
             dispatch({ type: "presetChosen", preset })
           }

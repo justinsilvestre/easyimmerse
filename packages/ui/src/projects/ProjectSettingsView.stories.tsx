@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
+import {
+  fieldsOfPreset,
+  frontFieldsOfPreset,
+} from "../flashcards/flashcardPresets.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { ProjectSettingsView } from "./ProjectSettingsView.tsx";
 
@@ -16,6 +19,7 @@ const meta = {
       target_language: "de",
       translation_language: "en",
       flashcard_fields: fieldsOfPreset("beginner"),
+      flashcard_front_fields: frontFieldsOfPreset("beginner"),
       default_tags: [],
       tags_media_name: true,
       fills_audio_with_tts: false,
@@ -37,6 +41,7 @@ export const NewProjectPrefilledFromLast: Story = {
       target_language: "ja",
       translation_language: "en",
       flashcard_fields: fieldsOfPreset("intermediate"),
+      flashcard_front_fields: frontFieldsOfPreset("intermediate"),
       default_tags: ["tv"],
       tags_media_name: true,
       fills_audio_with_tts: true,
@@ -52,6 +57,7 @@ export const EditingSettings: Story = {
       target_language: "de",
       translation_language: "en",
       flashcard_fields: fieldsOfPreset("advanced"),
+      flashcard_front_fields: frontFieldsOfPreset("advanced"),
       default_tags: ["tv"],
       tags_media_name: false,
       fills_audio_with_tts: false,

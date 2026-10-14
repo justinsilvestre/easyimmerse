@@ -15,6 +15,8 @@ function flashcardFrom(mediaFileId: string | null): Flashcard {
     included_fields: [],
     created_at_ms: 0,
     updated_at_ms: 0,
+    exported_at_ms: null,
+    anki_note_id: null,
   };
 }
 

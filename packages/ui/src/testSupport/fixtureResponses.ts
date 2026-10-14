@@ -42,6 +42,7 @@ function fixtureSettings(
     default_tags: [],
     tags_media_name: true,
     fills_audio_with_tts: false,
+    flashcard_front_fields: [],
   };
 }
 
@@ -53,6 +54,7 @@ export const fixtureProject: Project = {
   last_opened_at_ms: 1767398400000,
   media_count: 2,
   flashcard_count: 0,
+  flashcard_destination: null,
 };
 
 const fixtureProjects: ListProjectsResponse = {
@@ -65,6 +67,7 @@ const fixtureProjects: ListProjectsResponse = {
       last_opened_at_ms: 1767312000000,
       media_count: 0,
       flashcard_count: 0,
+      flashcard_destination: null,
     },
   ],
 };

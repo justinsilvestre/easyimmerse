@@ -58,6 +58,8 @@ export function exampleListedFlashcard(
     project_id: "p1",
     created_at_ms: 1,
     updated_at_ms: updatedAtMs,
+    exported_at_ms: null,
+    anki_note_id: null,
   };
 }
 

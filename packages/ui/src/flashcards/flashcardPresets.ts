@@ -44,18 +44,41 @@ const presetFields: Record<FlashcardPreset, readonly FlashcardFieldKey[]> = {
   ],
 };
 
+const presetFrontFields: Record<FlashcardPreset, readonly FlashcardFieldKey[]> =
+  {
+    beginner: ["audio_context", "screenshot"],
+    intermediate: ["audio_context", "screenshot"],
+    advanced: ["word", "text_context", "screenshot"],
+  };
+
 /** The fields a flashcard starts with under the preset. */
 export function fieldsOfPreset(preset: FlashcardPreset): FlashcardFieldKey[] {
   return [...presetFields[preset]];
 }
 
-/** Names the preset whose fields match the selection exactly, or `custom` when none does. */
+/** The fields the preset shows on the front of a card. */
+export function frontFieldsOfPreset(
+  preset: FlashcardPreset,
+): FlashcardFieldKey[] {
+  return [...presetFrontFields[preset]];
+}
+
+/**
+ * Names the preset whose fields and front fields match the selection exactly, or `custom` when none does.
+ * Front fields that are not among the fields are ignored, since they do not show.
+ */
 export function presetMatching(
   fields: readonly FlashcardFieldKey[],
+  frontFields: readonly FlashcardFieldKey[],
 ): FlashcardPreset | "custom" {
   const selection = new Set(fields);
-  const match = flashcardPresetOptions.find(({ value }) =>
-    hasSameMembers(selection, presetFields[value]),
+  const frontSelection = new Set(
+    frontFields.filter((field) => selection.has(field)),
+  );
+  const match = flashcardPresetOptions.find(
+    ({ value }) =>
+      hasSameMembers(selection, presetFields[value]) &&
+      hasSameMembers(frontSelection, presetFrontFields[value]),
   );
   return match?.value ?? "custom";
 }
