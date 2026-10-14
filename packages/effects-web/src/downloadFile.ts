@@ -2,7 +2,10 @@
 const revokeDelayMs = 10_000;
 
 /** Hands bytes to the user as a downloaded file, through a temporary object URL and a hidden link that is clicked. */
-export function downloadFile(fileName: string, bytes: Uint8Array<ArrayBuffer>): void {
+export function downloadFile(
+  fileName: string,
+  bytes: Uint8Array<ArrayBuffer>,
+): void {
   const url = URL.createObjectURL(new Blob([bytes]));
   const link = document.createElement("a");
   link.href = url;
