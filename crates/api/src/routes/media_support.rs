@@ -100,6 +100,11 @@ fn saved_track_selection(media_file: &MediaFile) -> Option<TrackSelection> {
         .and_then(|json| serde_json::from_str::<TrackSelection>(json).ok())
 }
 
+/// Converts a time in milliseconds to the microseconds ffmpeg takes, saturating at the largest value.
+pub fn micros(ms: u64) -> i64 {
+    i64::try_from(ms.saturating_mul(1000)).unwrap_or(i64::MAX)
+}
+
 /// The path of the ffmpeg binary; 503 when this server has none.
 pub fn locate_ffmpeg() -> Result<std::path::PathBuf, ApiFailure> {
     locate_binary(BinaryName::Ffmpeg, &FfmpegPaths::default()).map_err(|_| conversion_unavailable())

@@ -16,8 +16,8 @@ use crate::auth::error_body::{ApiError, ApiFailure, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{
-    chosen_video_track, locate_ffmpeg, probe_media, rendered_media_response, resolve_source_path,
-    run_ffmpeg_to_stdout,
+    chosen_video_track, locate_ffmpeg, micros, probe_media, rendered_media_response,
+    resolve_source_path, run_ffmpeg_to_stdout,
 };
 use crate::state::AppState;
 
@@ -88,7 +88,7 @@ pub async fn render_frame(
     let args = frame_grab_args(&FrameGrab {
         source: FilePath::new(&path),
         stream_index: track.index,
-        at_micros: i64::try_from(at_ms.saturating_mul(1000)).unwrap_or(i64::MAX),
+        at_micros: micros(at_ms),
         max_width: FRAME_MAX_WIDTH,
     });
     let jpeg = run_ffmpeg_to_stdout(&locate_ffmpeg()?, args)

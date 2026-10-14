@@ -16,8 +16,8 @@ use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::routes::media::load_media_file;
 use crate::routes::media_support::{
-    chosen_audio_track, locate_ffmpeg, probe_media, rendered_media_response, resolve_source_path,
-    run_ffmpeg_to_stdout,
+    chosen_audio_track, locate_ffmpeg, micros, probe_media, rendered_media_response,
+    resolve_source_path, run_ffmpeg_to_stdout,
 };
 use crate::state::AppState;
 
@@ -97,10 +97,6 @@ pub async fn render_clip(
     run_ffmpeg_to_stdout(&locate_ffmpeg()?, args)
         .await
         .map_err(clip_failed)
-}
-
-fn micros(ms: u64) -> i64 {
-    i64::try_from(ms.saturating_mul(1000)).unwrap_or(i64::MAX)
 }
 
 fn clip_failed(error: FfmpegError) -> ApiFailure {

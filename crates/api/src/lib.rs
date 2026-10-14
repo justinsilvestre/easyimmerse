@@ -16,6 +16,7 @@ pub mod local_path;
 pub mod local_table_file;
 pub mod lookup;
 pub mod media_source_jobs;
+mod now_ms;
 mod plugin_compile_cache;
 pub mod plugins;
 pub mod router;
