@@ -120,6 +120,17 @@ pub enum FlashcardFieldKey {
     Tags,
 }
 
+/// A flashcard deleted while its project sends to Anki through AnkiConnect, whose note is still to be deleted from Anki.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
+#[ts(export)]
+pub struct AnkiPendingDeletion {
+    pub flashcard_id: FlashcardId,
+    /// The flashcard's word when it was deleted, which names the note to the user.
+    pub word: String,
+    /// Milliseconds since the Unix epoch when the flashcard was deleted.
+    pub requested_at_ms: u64,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

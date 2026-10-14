@@ -2137,6 +2137,142 @@
         ]
       }
     },
+    "/projects/{id}/anki/pending-deletions": {
+      "get": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Lists the flashcards of the project whose notes are still to be deleted from Anki.\nDeleting a flashcard while the project's destination is `anki_connect` adds it here, whether or not it was sent.",
+        "operationId": "listAnkiPendingDeletions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The pending deletions, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnkiPendingDeletions"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/pending-deletions/{flashcard_id}": {
+      "delete": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Forgets a pending deletion once the client has deleted the note from Anki, or found none to delete.\nA flashcard without a pending deletion is passed over.",
+        "operationId": "clearAnkiPendingDeletion",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flashcard_id",
+            "in": "path",
+            "description": "The id of the deleted flashcard",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The pending deletion is gone"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/anki/sent": {
       "post": {
         "tags": [
@@ -5186,6 +5322,45 @@
             "format": "int64",
             "description": "The audio clips and screenshots that could not be rendered and are missing from the package.",
             "minimum": 0
+          }
+        }
+      },
+      "AnkiPendingDeletion": {
+        "type": "object",
+        "description": "A flashcard deleted while its project sends to Anki through AnkiConnect, whose note is still to be deleted from Anki.",
+        "required": [
+          "flashcard_id",
+          "word",
+          "requested_at_ms"
+        ],
+        "properties": {
+          "flashcard_id": {
+            "$ref": "#/components/schemas/FlashcardId"
+          },
+          "requested_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch when the flashcard was deleted.",
+            "minimum": 0
+          },
+          "word": {
+            "type": "string",
+            "description": "The flashcard's word when it was deleted, which names the note to the user."
+          }
+        }
+      },
+      "AnkiPendingDeletions": {
+        "type": "object",
+        "required": [
+          "deletions"
+        ],
+        "properties": {
+          "deletions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnkiPendingDeletion"
+            },
+            "description": "Oldest first."
           }
         }
       },

@@ -3,6 +3,7 @@
 //! `Storage` can be shared between threads. Writes run one at a time,
 //! while reads on a database file run beside them and see only what has been committed.
 
+mod anki_pending_deletions;
 mod anki_sync;
 mod connections;
 mod dictionaries;
@@ -28,7 +29,7 @@ use std::path::Path;
 use easyimmerse_core::dictionary::{
     DictionaryError, DictionaryMedia, DictionarySink, DictionarySource,
 };
-use easyimmerse_core::flashcard::{Flashcard, FlashcardDraft, FlashcardId};
+use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardDraft, FlashcardId};
 use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
 };
@@ -193,8 +194,29 @@ impl Storage {
         self.write(|conn| flashcards::update_flashcard(conn, id, draft))
     }
 
+    /// Deletes a flashcard. When its project sends to Anki through AnkiConnect, the deletion of its note from Anki
+    /// is recorded in the same transaction, to be carried out by the client.
     pub fn delete_flashcard(&self, id: &FlashcardId) -> Result<(), StorageError> {
         self.write(|conn| flashcards::delete_flashcard(conn, id))
+    }
+
+    /// Lists the project's flashcards whose notes are still to be deleted from Anki, oldest first.
+    pub fn list_anki_pending_deletions(
+        &self,
+        project_id: &ProjectId,
+    ) -> Result<Vec<AnkiPendingDeletion>, StorageError> {
+        self.read(|conn| anki_pending_deletions::list_anki_pending_deletions(conn, project_id))
+    }
+
+    /// Forgets that a flashcard's note is to be deleted from Anki, once the client has deleted it.
+    pub fn clear_anki_pending_deletion(
+        &self,
+        project_id: &ProjectId,
+        flashcard_id: &FlashcardId,
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            anki_pending_deletions::clear_anki_pending_deletion(conn, project_id, flashcard_id)
+        })
     }
 
     /// Records that the flashcards were written into an Anki package at `exported_at_ms`, and makes the package

@@ -3,6 +3,7 @@ use easyimmerse_core::media_file::MediaFileId;
 use easyimmerse_core::project::ProjectId;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
+use crate::anki_pending_deletions::{forget_anki_pending_deletion, record_anki_pending_deletion};
 use crate::error::StorageError;
 use crate::media_files::ensure_media_file_in_project;
 use crate::new_row::now_ms;
@@ -45,7 +46,21 @@ pub fn get_flashcard(conn: &Connection, id: &FlashcardId) -> Result<Flashcard, S
 /// Saves a flashcard in the project under the id the client chose for it.
 /// Saving again under an id the project already holds replaces that flashcard, so that a retried request leaves one flashcard.
 /// Its media file, when named, must belong to the same project.
+/// Saving a flashcard deleted earlier forgets that its note was to be deleted from Anki.
 pub fn create_flashcard(
+    conn: &mut Connection,
+    project_id: &ProjectId,
+    id: &FlashcardId,
+    draft: &FlashcardDraft,
+) -> Result<Flashcard, StorageError> {
+    let transaction = conn.transaction()?;
+    let flashcard = insert_flashcard(&transaction, project_id, id, draft)?;
+    forget_anki_pending_deletion(&transaction, id)?;
+    transaction.commit()?;
+    Ok(flashcard)
+}
+
+fn insert_flashcard(
     conn: &Connection,
     project_id: &ProjectId,
     id: &FlashcardId,
@@ -104,11 +119,13 @@ pub fn update_flashcard(
     get_flashcard(conn, id)
 }
 
-pub fn delete_flashcard(conn: &Connection, id: &FlashcardId) -> Result<(), StorageError> {
-    let deleted = conn.execute("DELETE FROM flashcards WHERE id = ?1", params![id.0])?;
-    if deleted == 0 {
-        return Err(StorageError::FlashcardNotFound(id.0.clone()));
-    }
+/// Deletes a flashcard, and records that its note is to be deleted from Anki when its project sends there through AnkiConnect.
+pub fn delete_flashcard(conn: &mut Connection, id: &FlashcardId) -> Result<(), StorageError> {
+    let transaction = conn.transaction()?;
+    let flashcard = get_flashcard(&transaction, id)?;
+    record_anki_pending_deletion(&transaction, &flashcard)?;
+    transaction.execute("DELETE FROM flashcards WHERE id = ?1", params![id.0])?;
+    transaction.commit()?;
     Ok(())
 }
 

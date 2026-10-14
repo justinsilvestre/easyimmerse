@@ -14,10 +14,11 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    anki, conversion_cache, conversions, dictionaries, dictionary_batch_lookup, dictionary_imports,
-    dictionary_lookup, dictionary_media, documents, flashcards, health, local_dictionaries, media,
-    media_clip, media_frame, media_import, media_playback_method, media_stream, media_tracks,
-    media_waveform, openapi, plugins, preferences, projects, source_form, subtitles, timed_text,
+    anki, anki_pending_deletions, conversion_cache, conversions, dictionaries,
+    dictionary_batch_lookup, dictionary_imports, dictionary_lookup, dictionary_media, documents,
+    flashcards, health, local_dictionaries, media, media_clip, media_frame, media_import,
+    media_playback_method, media_stream, media_tracks, media_waveform, openapi, plugins,
+    preferences, projects, source_form, subtitles, timed_text,
 };
 use crate::state::AppState;
 
@@ -85,6 +86,8 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(anki::render_anki_notes))
         .routes(routes!(anki::record_anki_notes_sent))
         .routes(routes!(anki::set_flashcard_destination))
+        .routes(routes!(anki_pending_deletions::list_anki_pending_deletions))
+        .routes(routes!(anki_pending_deletions::clear_anki_pending_deletion))
         .routes(routes!(media::list_media_files, media::add_media_file))
         .routes(routes!(media::remove_media_file))
         .routes(routes!(media_import::get_import_form))
