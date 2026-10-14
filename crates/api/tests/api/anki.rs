@@ -229,6 +229,45 @@ mod export_anki_package {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn drops_a_flashcard_named_twice() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        let response = export_ids(&server, &[ids[0].clone(), ids[0].clone(), ids[1].clone()]).await;
+        assert_eq!(count_notes(&response.bytes), 2);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn refuses_a_save_path_that_cannot_be_written() {
+        let server = spawn_test_server(true).await;
+        let ids = create_two(&server).await;
+        let dir = tempfile::tempdir().unwrap();
+        let response = export(
+            &server,
+            &json!({ "flashcard_ids": ids, "save_path": dir.path() }),
+        )
+        .await;
+        assert_eq!(response.json()["code"], "save_failed");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_nothing_exported_when_the_save_fails() {
+        let server = spawn_test_server(true).await;
+        let ids = create_two(&server).await;
+        let dir = tempfile::tempdir().unwrap();
+        export(
+            &server,
+            &json!({ "flashcard_ids": ids, "save_path": dir.path() }),
+        )
+        .await;
+        let exported: Vec<Value> = list_flashcards(&server)
+            .await
+            .iter()
+            .map(|card| card["exported_at_ms"].clone())
+            .collect();
+        assert_eq!(exported, [Value::Null, Value::Null]);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn refuses_an_empty_list() {
         let server = spawn_test_server(false).await;
         let response = export_ids(&server, &[]).await;
@@ -387,6 +426,13 @@ mod render_anki_notes {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn refuses_an_empty_list() {
+        let server = spawn_test_server(false).await;
+        let response = render(&server, &[]).await;
+        assert_eq!(response.status, 400);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn names_the_deck_after_the_project() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;
@@ -437,6 +483,30 @@ mod record_anki_notes_sent {
             note_ids,
             [json!(1_700_000_000_001u64), json!(1_700_000_000_002u64)]
         );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn an_empty_list_sets_the_destination() {
+        let server = spawn_test_server(false).await;
+        record(&server, json!([])).await;
+        assert_eq!(
+            project(&server).await["flashcard_destination"],
+            "anki_connect"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn an_empty_list_gives_no_flashcard_a_note_id() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        record(&server, json!([])).await;
+        let note_ids: Vec<Value> = list_flashcards(&server)
+            .await
+            .iter()
+            .filter(|card| ids.contains(&card["id"].as_str().unwrap().to_owned()))
+            .map(|card| card["anki_note_id"].clone())
+            .collect();
+        assert_eq!(note_ids, [Value::Null, Value::Null]);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -571,6 +641,25 @@ mod media_clip {
             .get(&clip_path(&media_id, "start_ms=2000&end_ms=1000"))
             .await;
         assert_eq!(response.status, 400);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn follows_the_saved_audio_track() {
+        if !ffmpeg_available() {
+            return;
+        }
+        let server = spawn_test_server(true).await;
+        let media_id = add_sample_media(&server).await;
+        server
+            .put_json(
+                &format!("/projects/{PROJECT}/media/{media_id}/track-selection"),
+                &json!({ "video": null, "audio": 7 }),
+            )
+            .await;
+        let response = server
+            .get(&clip_path(&media_id, "start_ms=1000&end_ms=2500"))
+            .await;
+        assert_eq!(response.status, 404);
     }
 
     #[tokio::test(flavor = "multi_thread")]

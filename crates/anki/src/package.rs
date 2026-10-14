@@ -228,6 +228,83 @@ mod tests {
     }
 
     #[test]
+    fn writes_the_field_values_in_order() {
+        let (_file, connection) = collection();
+        let fields: String = connection
+            .query_row("SELECT flds FROM notes ORDER BY id LIMIT 1", [], |row| {
+                row.get(0)
+            })
+            .expect("the note row exists");
+        let values: Vec<&str> = fields.split('\u{1f}').collect();
+        assert_eq!((values[0], values[9]), ("Haus", FLASHCARD_ID));
+    }
+
+    #[test]
+    fn marks_the_note_as_never_synced() {
+        let (_file, connection) = collection();
+        let usn: i64 = connection
+            .query_row("SELECT usn FROM notes LIMIT 1", [], |row| row.get(0))
+            .expect("the note row exists");
+        assert_eq!(usn, -1);
+    }
+
+    #[test]
+    fn gives_a_new_card_no_review_history() {
+        let (_file, connection) = collection();
+        let row: (i64, i64, i64, i64, i64) = connection
+            .query_row(
+                "SELECT ivl, factor, reps, lapses, left FROM cards LIMIT 1",
+                [],
+                |row| {
+                    Ok((
+                        row.get(0)?,
+                        row.get(1)?,
+                        row.get(2)?,
+                        row.get(3)?,
+                        row.get(4)?,
+                    ))
+                },
+            )
+            .expect("the card row exists");
+        assert_eq!(row, (0, 0, 0, 0, 0));
+    }
+
+    #[test]
+    fn gives_a_card_empty_data() {
+        let (_file, connection) = collection();
+        let data: String = connection
+            .query_row("SELECT data FROM cards LIMIT 1", [], |row| row.get(0))
+            .expect("the card row exists");
+        assert_eq!(data, "{}");
+    }
+
+    #[test]
+    fn dates_the_card_at_the_flashcard_update_and_marks_it_never_synced() {
+        let (_file, connection) = collection();
+        let row: (i64, i64) = connection
+            .query_row("SELECT mod, usn FROM cards LIMIT 1", [], |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })
+            .expect("the card row exists");
+        assert_eq!(row, (1_760_200_000, -1));
+    }
+
+    #[test]
+    fn makes_the_note_type_the_current_model() {
+        assert_eq!(collection_json("conf")["curModel"], "1665021395");
+    }
+
+    #[test]
+    fn continues_new_card_positions_after_the_exported_cards() {
+        assert_eq!(collection_json("conf")["nextPos"], 3);
+    }
+
+    #[test]
+    fn gives_the_deck_the_default_options() {
+        assert_eq!(collection_json("dconf")["1"]["name"], "Default");
+    }
+
+    #[test]
     fn writes_new_cards_in_export_order_with_unique_ids() {
         let (_file, connection) = collection();
         let mut statement = connection
