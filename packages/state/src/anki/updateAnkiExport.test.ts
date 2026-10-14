@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
+import { createAppStore } from "../app/createAppStore.ts";
+import { createFakeServerStoreParts } from "../app/createFakeServerStoreParts.ts";
 import { stateAfterWithCache } from "../app/stateAfter.ts";
 import { update } from "../app/update.ts";
+import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import type { RequestOutcome } from "../server/serverRequest.ts";
 import { openedAnkiExport } from "./ankiExportDialog.ts";
 import type { AnkiPackageExport } from "./ankiResponses.ts";
@@ -212,5 +215,26 @@ describe("updateAnkiExport", () => {
         actions.ankiExportClosed(),
       ),
     ).toEqual([]);
+  });
+});
+
+describe("updateAnkiExport in the store", () => {
+  it("downloads the package the server hands back where the platform has no save dialog", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts(null, backend);
+    const store = createAppStore(effects, server);
+    for (const action of [openOverview, ...confirmed]) store.dispatch(action);
+    effects.resolvePickSavePath({ kind: "unsupported" });
+    await vi.waitUntil(() =>
+      server.sentRequests.some(({ kind }) => kind === "exportAnkiPackage"),
+    );
+    server.respond(exportRequest(null), { ok: true, data: downloaded });
+    await vi.waitFor(() =>
+      expect(effects.calls).toContainEqual({
+        type: "downloadFile",
+        fileName: "Korean.apkg",
+        bytes: packageBytes,
+      }),
+    );
   });
 });
