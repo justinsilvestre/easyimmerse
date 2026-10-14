@@ -2,6 +2,9 @@
 
 use easyimmerse_core::flashcard::FlashcardFieldKey;
 
+/// The character that separates field values in an Anki note, which no value may contain.
+pub(crate) const FIELD_SEPARATOR: char = '\u{1f}';
+
 /// A field of the note type. The order of `ALL` is the order of the note's field values.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum AnkiField {
@@ -32,17 +35,11 @@ impl AnkiField {
     ];
 
     /// The fields that cards show, which are all but the flashcard id.
-    pub(crate) const SHOWN: [AnkiField; 9] = [
-        AnkiField::Word,
-        AnkiField::WordPronunciation,
-        AnkiField::Definition,
-        AnkiField::TargetLanguageDefinition,
-        AnkiField::Sentence,
-        AnkiField::SentenceTranslation,
-        AnkiField::SentencePronunciation,
-        AnkiField::SentenceAudio,
-        AnkiField::Screenshot,
-    ];
+    pub(crate) fn shown() -> impl Iterator<Item = AnkiField> {
+        AnkiField::ALL
+            .into_iter()
+            .filter(|field| *field != AnkiField::EasyImmerseId)
+    }
 
     /// The field's position among a note's field values.
     pub(crate) fn index(self) -> usize {

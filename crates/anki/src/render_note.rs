@@ -82,29 +82,24 @@ fn field_value(field: AnkiField, flashcard: &Flashcard, media: &[AnkiMediaRef]) 
         AnkiField::Sentence => plain_text_html(&content.text_context),
         AnkiField::SentenceTranslation => plain_text_html(&content.text_context_translation),
         AnkiField::SentencePronunciation => plain_text_html(&content.text_context_pronunciation),
-        AnkiField::SentenceAudio => sound_reference(media),
-        AnkiField::Screenshot => image_reference(media),
+        AnkiField::SentenceAudio | AnkiField::Screenshot => media_reference(media, field),
         AnkiField::EasyImmerseId => plain_text_html(&flashcard.id.0),
     }
 }
 
-fn sound_reference(media: &[AnkiMediaRef]) -> String {
-    let audio = media.iter().find_map(|item| match item {
-        AnkiMediaRef::Audio { file_name, .. } => Some(file_name),
-        AnkiMediaRef::Screenshot { .. } => None,
-    });
-    audio
-        .map(|name| format!("[sound:{name}]"))
-        .unwrap_or_default()
-}
-
-fn image_reference(media: &[AnkiMediaRef]) -> String {
-    let screenshot = media.iter().find_map(|item| match item {
-        AnkiMediaRef::Screenshot { file_name, .. } => Some(file_name),
-        AnkiMediaRef::Audio { .. } => None,
-    });
-    screenshot
-        .map(|name| format!("<img src=\"{name}\">"))
+/// The markup by which a media field refers to its file: a sound tag for the audio, an image tag for the screenshot.
+fn media_reference(media: &[AnkiMediaRef], field: AnkiField) -> String {
+    media
+        .iter()
+        .find_map(|item| match (item, field) {
+            (AnkiMediaRef::Audio { file_name, .. }, AnkiField::SentenceAudio) => {
+                Some(format!("[sound:{file_name}]"))
+            }
+            (AnkiMediaRef::Screenshot { file_name, .. }, AnkiField::Screenshot) => {
+                Some(format!("<img src=\"{file_name}\">"))
+            }
+            _ => None,
+        })
         .unwrap_or_default()
 }
 

@@ -4,14 +4,13 @@ use std::collections::HashSet;
 
 use rusqlite::{Connection, params};
 
+use crate::anki_field::FIELD_SEPARATOR;
 use crate::card_scheduling::CardScheduling;
 use crate::deck_spec::DeckSpec;
 use crate::derived_id::deck_id;
 use crate::note_type::note_type;
 use crate::render_note::AnkiNote;
 use crate::sort_field::{field_checksum, strip_html};
-
-const FIELD_SEPARATOR: &str = "\u{1f}";
 
 /// Inserts a note and its card for each rendered note, the cards in export order.
 pub(crate) fn insert_notes_and_cards(
@@ -37,7 +36,7 @@ pub(crate) fn insert_notes_and_cards(
             note_type_id,
             modified_secs,
             tags_column(&note.tags),
-            note.fields.join(FIELD_SEPARATOR),
+            note.fields.join(&String::from(FIELD_SEPARATOR)),
             sort_field,
             field_checksum(&sort_field),
         ])?;

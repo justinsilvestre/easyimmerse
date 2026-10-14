@@ -16,8 +16,7 @@ pub(crate) fn card_template(front_fields: &[FlashcardFieldKey]) -> AnkiTemplate 
             .flashcard_field()
             .is_some_and(|key| front_fields.contains(&key))
     };
-    let (front, back): (Vec<AnkiField>, Vec<AnkiField>) =
-        AnkiField::SHOWN.into_iter().partition(is_front);
+    let (front, back): (Vec<AnkiField>, Vec<AnkiField>) = AnkiField::shown().partition(is_front);
     AnkiTemplate {
         name: "Card".to_owned(),
         front: front_template(&front),

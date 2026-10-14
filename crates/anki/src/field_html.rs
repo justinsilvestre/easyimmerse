@@ -2,8 +2,7 @@
 
 use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd, html};
 
-/// The character that separates field values in an Anki note, which no value may contain.
-const FIELD_SEPARATOR: char = '\u{1f}';
+use crate::anki_field::FIELD_SEPARATOR;
 
 /// Escapes plain text for a field and keeps its line breaks.
 pub(crate) fn plain_text_html(text: &str) -> String {
