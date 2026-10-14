@@ -203,7 +203,11 @@ function Status({
             <>
               <Button
                 variant="primary"
-                disabled={state.unsentCount === 0 || state.isSending}
+                disabled={
+                  (state.unsentCount === 0 &&
+                    state.pendingDeletionCount === 0) ||
+                  state.isSending
+                }
                 onClick={callbacks.onSendToAnki}
               >
                 <Send className="size-4" aria-hidden />

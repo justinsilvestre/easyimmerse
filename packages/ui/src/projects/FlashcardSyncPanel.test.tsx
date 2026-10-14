@@ -114,6 +114,23 @@ describe("FlashcardSyncPanel", () => {
       ).toBeDefined();
     });
 
+    it("sends to Anki when only notes wait to be deleted", () => {
+      const calls = renderPanel(counting(0, 2));
+      fireEvent.click(screen.getByRole("button", { name: "Send to Anki" }));
+      expect(calls).toEqual(["send"]);
+    });
+
+    it("offers no send when nothing waits", () => {
+      renderPanel(counting(0, 0));
+      expect(
+        (
+          screen.getByRole("button", {
+            name: "Send to Anki",
+          }) as HTMLButtonElement
+        ).disabled,
+      ).toBe(true);
+    });
+
     it("says every card is in Anki when nothing waits", () => {
       renderPanel(counting(0, 0));
       expect(screen.getByText("Every flashcard is in Anki.")).toBeDefined();

@@ -87,6 +87,19 @@ export const AnkiConnected: Story = {
   },
 };
 
+export const AnkiConnectedWithOnlyNotesToDelete: Story = {
+  args: {
+    state: {
+      kind: "ankiConnect",
+      connection: "connected",
+      unsentCount: 0,
+      pendingDeletionCount: 2,
+      nextCard: null,
+      isSending: false,
+    },
+  },
+};
+
 export const SendingToAnki: Story = {
   args: {
     state: {
