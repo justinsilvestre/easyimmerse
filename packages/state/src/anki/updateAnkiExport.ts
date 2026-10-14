@@ -107,8 +107,8 @@ function pathPicked(
   pick: SavePathPick,
   context: ExportContext,
 ) {
-  const ids = idsToExport(dialog, context);
   if (!dialog.isBusy) return updated(dialog);
+  const ids = idsToExport(dialog, context);
   if (pick.kind === "cancelled" || ids.length === 0)
     return updated({ ...dialog, isBusy: false });
   const savePath = pick.kind === "path" ? pick.path : null;
