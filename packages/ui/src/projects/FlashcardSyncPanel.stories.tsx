@@ -29,6 +29,8 @@ const meta = {
     onSetUpAnkiConnect: fn(),
     onStartReview: fn(),
     onSendToAnki: fn(),
+    onCheckConnection: fn(),
+    onChangeDestination: fn(),
   },
 } satisfies Meta<typeof FlashcardSyncPanel>;
 
@@ -59,6 +61,18 @@ export const AnkiPackageUpToDate: Story = {
   args: { state: { kind: "ankiPackage", unexportedCount: 0, nextCard: null } },
 };
 
+export const AnkiChecking: Story = {
+  args: {
+    state: {
+      kind: "ankiConnect",
+      connection: "checking",
+      unsentCount: 3,
+      nextCard: exampleFlashcard,
+      isSending: false,
+    },
+  },
+};
+
 export const AnkiConnected: Story = {
   args: {
     state: {
@@ -66,6 +80,19 @@ export const AnkiConnected: Story = {
       connection: "connected",
       unsentCount: 3,
       nextCard: exampleFlashcard,
+      isSending: false,
+    },
+  },
+};
+
+export const SendingToAnki: Story = {
+  args: {
+    state: {
+      kind: "ankiConnect",
+      connection: "connected",
+      unsentCount: 3,
+      nextCard: exampleFlashcard,
+      isSending: true,
     },
   },
 };
@@ -77,6 +104,7 @@ export const AnkiUnreachable: Story = {
       connection: "unreachable",
       unsentCount: 3,
       nextCard: exampleFlashcard,
+      isSending: false,
     },
   },
 };

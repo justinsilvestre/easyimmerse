@@ -85,6 +85,8 @@ function sections(
         onSetUpAnkiConnect={fn()}
         onStartReview={fn()}
         onSendToAnki={fn()}
+        onCheckConnection={fn()}
+        onChangeDestination={fn()}
       />
     </>
   );
@@ -146,6 +148,7 @@ export const SendingThroughAnkiConnect: Story = {
         connection: "unreachable",
         unsentCount: 3,
         nextCard: exampleFlashcard,
+        isSending: false,
       },
       [
         { language: "de", role: "target", dictionaryCount: 2 },
