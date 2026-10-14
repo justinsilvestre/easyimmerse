@@ -43,3 +43,15 @@ export function cachedMediaFileIds(
   const listed = cacheEntry(backend, "listMediaFiles", projectId)?.data;
   return listed?.media_files.map(({ id }) => id) ?? noMediaFileIds;
 }
+
+/**
+ * Tells whether the project's pending deletions from Anki are cached as none, and are not being fetched again.
+ * A deletion of a flashcard refetches them, so a deletion just recorded is never missed.
+ */
+export function hasNoPendingDeletion(
+  backend: ServerCacheSlice,
+  projectId: string,
+): boolean {
+  const listed = cacheEntry(backend, "listAnkiPendingDeletions", projectId);
+  return listed?.status === "fulfilled" && listed.data?.deletions.length === 0;
+}

@@ -4,7 +4,11 @@ import { updated } from "../app/updated.ts";
 import { cacheEntry, type ServerCacheSlice } from "../server/cacheEntry.ts";
 import { isSettled } from "../server/isSettled.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
-import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
+import {
+  cachedDestination,
+  cachedFlashcards,
+  hasNoPendingDeletion,
+} from "./ankiCache.ts";
 import { isUnsent, oldestFirst } from "./ankiExportSelection.ts";
 import {
   ankiConnectionCheckId,
@@ -105,17 +109,22 @@ function syncOnceConnected(
 
 /**
  * Sends the flashcards Anki has no note for, and then deletes the notes of deleted flashcards.
- * A flashcard that a send under way or waiting already holds is left to that send,
- * and nothing is deleted while a deletion waits, since that deletion will list every pending one when it starts.
+ * A flashcard that a send under way or waiting already holds is left to that send.
+ * Nothing is deleted when the cache lists no pending deletion, or while a deletion waits,
+ * since that deletion will list every pending one when it starts.
  */
 function syncWithAnki(projectId: string, app: AnkiConnectApp) {
-  const { requests } = app.operations;
-  return [
-    ...sendUnsent(projectId, app),
-    ...(isDeletionWaiting(requests, projectId)
-      ? []
-      : [deleteFromAnki(projectId, null)]),
-  ];
+  return [...sendUnsent(projectId, app), ...deletePending(projectId, app)];
+}
+
+function deletePending(
+  projectId: string,
+  { backend, operations }: AnkiConnectApp,
+) {
+  return hasNoPendingDeletion(backend, projectId) ||
+    isDeletionWaiting(operations.requests, projectId)
+    ? []
+    : [deleteFromAnki(projectId, null)];
 }
 
 function hasFoundAnki(action: RequestSettled) {

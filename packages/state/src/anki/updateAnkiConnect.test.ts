@@ -74,6 +74,17 @@ const allSent = ankiCache("anki_connect", [
   ankiFlashcard("f1", "m1", 1, { ankiNoteId: 100 }),
 ]);
 
+/** p1 with every flashcard in Anki, and the given count of notes left to delete as last fetched, or as being fetched again. */
+const allSentWithPending = (
+  count: number,
+  status: "fulfilled" | "pending" = "fulfilled",
+): ServerCacheSlice => {
+  const deletion = { flashcard_id: "f9", word: "f9", requested_at_ms: 1 };
+  const key = cacheKey("listAnkiPendingDeletions", "p1");
+  const data = { deletions: Array.from({ length: count }, () => deletion) };
+  return { queries: { ...allSent.queries, [key]: { status, data } } };
+};
+
 const checked = (connected: boolean) =>
   actions.requestSettled(
     "ankiConnection",
@@ -210,6 +221,24 @@ describe("ankiConnectEffects", () => {
     ]);
   });
 
+  it("deletes nothing when asked and no note is left to delete", () => {
+    expect(
+      effectsOf(actions.ankiSendRequested(), allSentWithPending(0)),
+    ).toEqual([]);
+  });
+
+  it("deletes the notes left to delete when asked and some are", () => {
+    expect(
+      effectsOf(actions.ankiSendRequested(), allSentWithPending(1)),
+    ).toEqual([deleteNotes]);
+  });
+
+  it("deletes the notes left to delete when asked while their count is fetched again", () => {
+    expect(
+      effectsOf(actions.ankiSendRequested(), allSentWithPending(0, "pending")),
+    ).toEqual([deleteNotes]);
+  });
+
   it("adds no send when asked while a send of the project is under way", () => {
     const backend = ankiCache("anki_connect");
     const sending = openedAfter(backend, actions.ankiSendRequested());
@@ -290,6 +319,10 @@ describe("ankiConnectEffects once Anki is found running", () => {
 
   it("only deletes the notes left to delete when Anki has every card", () => {
     expect(effectsOf(checked(true), allSent)).toEqual([deleteNotes]);
+  });
+
+  it("deletes nothing when no note is left to delete", () => {
+    expect(effectsOf(checked(true), allSentWithPending(0))).toEqual([]);
   });
 
   it("adds no send while a send of the project is under way", () => {
