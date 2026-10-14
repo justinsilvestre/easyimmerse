@@ -123,14 +123,25 @@ fn read_entry(package: &[u8], name: &str) -> Vec<u8> {
     bytes
 }
 
-fn count_notes(package: &[u8]) -> i64 {
+fn open_collection(package: &[u8]) -> Connection {
     let mut file = NamedTempFile::new().unwrap();
     file.write_all(&read_entry(package, "collection.anki2"))
         .unwrap();
-    let connection = Connection::open(file.path()).unwrap();
-    connection
+    Connection::open(file.path()).unwrap()
+}
+
+fn count_notes(package: &[u8]) -> i64 {
+    open_collection(package)
         .query_row("SELECT count(*) FROM notes", [], |row| row.get(0))
         .unwrap()
+}
+
+/// The field values of the package's single note, as Anki stores them: joined by the unit separator.
+fn note_fields(package: &[u8]) -> Vec<String> {
+    let joined: String = open_collection(package)
+        .query_row("SELECT flds FROM notes", [], |row| row.get(0))
+        .unwrap();
+    joined.split('\x1f').map(str::to_owned).collect()
 }
 
 fn media_map(package: &[u8]) -> Value {
@@ -297,6 +308,16 @@ mod export_anki_package {
         let id = create_flashcard(&server, PROJECT, Some(&media_id)).await;
         let response = export_ids(&server, &[id]).await;
         assert_eq!(count_notes(&response.bytes), 1);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn names_no_skipped_media_in_the_note() {
+        let server = spawn_test_server(false).await;
+        let media_id = add_browser_media(&server).await;
+        let id = create_flashcard(&server, PROJECT, Some(&media_id)).await;
+        let response = export_ids(&server, &[id]).await;
+        let fields = note_fields(&response.bytes);
+        assert_eq!((&fields[7], &fields[8]), (&String::new(), &String::new()));
     }
 
     #[tokio::test(flavor = "multi_thread")]

@@ -44,6 +44,14 @@ impl AnkiField {
         AnkiField::Screenshot,
     ];
 
+    /// The field's position among a note's field values.
+    pub(crate) fn index(self) -> usize {
+        AnkiField::ALL
+            .iter()
+            .position(|field| *field == self)
+            .unwrap_or_default()
+    }
+
     pub(crate) fn name(self) -> &'static str {
         match self {
             AnkiField::Word => "Word",

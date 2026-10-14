@@ -41,6 +41,18 @@ pub async fn render_media(state: &AppState, token: TokenKind, notes: &[AnkiNote]
     rendered
 }
 
+/// Drops from the notes the references to the media that was skipped, so that no card names a file the package lacks.
+pub fn without_skipped_media(notes: Vec<AnkiNote>, skipped: &[SkippedMedia]) -> Vec<AnkiNote> {
+    notes
+        .into_iter()
+        .map(|note| {
+            skipped
+                .iter()
+                .fold(note, |note, item| note.without_media(&item.file_name))
+        })
+        .collect()
+}
+
 async fn render_one(
     state: &AppState,
     token: TokenKind,

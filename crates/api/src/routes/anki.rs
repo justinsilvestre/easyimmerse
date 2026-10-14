@@ -10,7 +10,8 @@ use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::{Extension, Json};
 use easyimmerse_anki::{
-    AnkiNote, AnkiNotes, CardScheduling, DeckSpec, render_note, render_notes, write_package,
+    AnkiNote, AnkiNotes, CardScheduling, DeckSpec, PackageMedia, render_note, render_notes,
+    write_package,
 };
 use easyimmerse_core::flashcard::{Flashcard, FlashcardId};
 use easyimmerse_core::project::{FlashcardDestination, Project, ProjectId};
@@ -18,8 +19,8 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
-use crate::anki_media::render_media;
-use crate::auth::error_body::{ApiError, ApiFailure, bad_request, internal, not_found};
+use crate::anki_media::{render_media, without_skipped_media};
+use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::file_download::{attachment_disposition, body_then, safe_file_name};
 use crate::local_path::ensure_local_paths_allowed;
@@ -238,39 +239,60 @@ async fn build_package(
             skipped.reason
         );
     }
-    let skipped_media_count = media.skipped.len() as u64;
-    let file_name = format!("{}.apkg", safe_file_name(&project.settings.name));
-    let project_id = project.id.clone();
-    let bytes = tokio::task::spawn_blocking(move || {
+    let notes = without_skipped_media(notes, &media.skipped);
+    Ok(BuiltPackage {
+        bytes: write_package_bytes(&project, notes, media.files).await?,
+        file_name: format!("{}.apkg", safe_file_name(&project.settings.name)),
+        project_id: project.id,
+        flashcard_ids: flashcards
+            .into_iter()
+            .map(|flashcard| flashcard.id)
+            .collect(),
+        skipped_media_count: media.skipped.len() as u64,
+    })
+}
+
+/// Writes the package in memory on a blocking thread; 500 `package_failed` when it cannot be written.
+async fn write_package_bytes(
+    project: &Project,
+    notes: Vec<AnkiNote>,
+    media: Vec<PackageMedia>,
+) -> Result<Vec<u8>, ApiFailure> {
+    let project = project.clone();
+    let written = tokio::task::spawn_blocking(move || {
         let mut out = Cursor::new(Vec::new());
         write_package(
             &mut out,
             &deck_spec(&project),
             &notes,
-            &media.files,
+            &media,
             CardScheduling::New,
         )
         .map(|()| out.into_inner())
     })
-    .await
-    .map_err(|error| internal(format!("package task failed: {error}")))?
-    .map_err(|error| {
+    .await;
+    let failed = |error: &dyn std::fmt::Display| {
         ApiFailure::new(
             StatusCode::INTERNAL_SERVER_ERROR,
             "package_failed",
             error.to_string(),
         )
-    })?;
-    Ok(BuiltPackage {
-        bytes,
-        file_name,
-        project_id,
-        flashcard_ids: flashcards
-            .into_iter()
-            .map(|flashcard| flashcard.id)
-            .collect(),
-        skipped_media_count,
-    })
+    };
+    written
+        .map_err(|error| failed(&error))?
+        .map_err(|error| failed(&error))
+}
+
+/// Writes the bytes to the path through a sibling `.part` file, so that a failed write leaves no truncated package
+/// and does not destroy a package already at the path.
+async fn write_file_whole(path: &str, bytes: &[u8]) -> std::io::Result<()> {
+    let partial = format!("{path}.part");
+    tokio::fs::write(&partial, bytes).await?;
+    if let Err(error) = tokio::fs::rename(&partial, path).await {
+        tokio::fs::remove_file(&partial).await.ok();
+        return Err(error);
+    }
+    Ok(())
 }
 
 async fn save_package(
@@ -278,7 +300,7 @@ async fn save_package(
     package: BuiltPackage,
     path: &str,
 ) -> Result<Response, ApiFailure> {
-    tokio::fs::write(path, &package.bytes)
+    write_file_whole(path, &package.bytes)
         .await
         .map_err(|error| {
             ApiFailure::new(

@@ -26,6 +26,29 @@ pub struct AnkiNote {
     pub media: Vec<AnkiMediaRef>,
 }
 
+impl AnkiNote {
+    /// Drops the reference to a media file that could not be supplied, leaving its field empty.
+    /// A field that named a file Anki does not have would show a broken image or a missing sound,
+    /// and would keep the card's front from falling back as it does for a flashcard without that media.
+    pub fn without_media(mut self, file_name: &str) -> Self {
+        let Some(index) = self
+            .media
+            .iter()
+            .position(|item| item.file_name() == file_name)
+        else {
+            return self;
+        };
+        let field = match self.media.remove(index) {
+            AnkiMediaRef::Audio { .. } => AnkiField::SentenceAudio,
+            AnkiMediaRef::Screenshot { .. } => AnkiField::Screenshot,
+        };
+        if let Some(value) = self.fields.get_mut(field.index()) {
+            value.clear();
+        }
+        self
+    }
+}
+
 /// Renders a flashcard as a note of its project's note type. Fields the flashcard does not include are left empty.
 pub fn render_note(flashcard: &Flashcard) -> AnkiNote {
     let media = media_refs(flashcard);
@@ -181,6 +204,30 @@ mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn empties_the_field_of_a_media_file_dropped() {
+        let note = render_note(&flashcard()).without_media(&format!("{FLASHCARD_ID}.jpg"));
+        assert_eq!(field(&note, "Screenshot"), "");
+    }
+
+    #[test]
+    fn keeps_the_other_media_when_one_is_dropped() {
+        let note = render_note(&flashcard()).without_media(&format!("{FLASHCARD_ID}.jpg"));
+        assert_eq!(
+            note.media
+                .iter()
+                .map(AnkiMediaRef::file_name)
+                .collect::<Vec<_>>(),
+            [format!("{FLASHCARD_ID}.m4a")]
+        );
+    }
+
+    #[test]
+    fn changes_nothing_when_dropping_a_file_the_note_does_not_name() {
+        let note = render_note(&flashcard());
+        assert_eq!(note.clone().without_media("other.jpg"), note);
     }
 
     #[test]
