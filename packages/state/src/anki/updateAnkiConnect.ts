@@ -11,8 +11,8 @@ import {
   ankiRequestIds,
   checkAnkiConnection,
   deleteFromAnki,
+  flashcardIdsBeingSent,
   isDeletionWaiting,
-  isSendingTo,
   sendToAnki,
   setDestination,
 } from "./ankiRequests.ts";
@@ -105,15 +105,13 @@ function syncOnceConnected(
 
 /**
  * Sends the flashcards Anki has no note for, and then deletes the notes of deleted flashcards.
- * Nothing is sent while a send of the project is under way or waiting, since that send already holds the unsent flashcards,
+ * A flashcard that a send under way or waiting already holds is left to that send,
  * and nothing is deleted while a deletion waits, since that deletion will list every pending one when it starts.
  */
 function syncWithAnki(projectId: string, app: AnkiConnectApp) {
   const { requests } = app.operations;
   return [
-    ...(isSendingTo(requests, projectId)
-      ? []
-      : sendUnsent(projectId, app.backend)),
+    ...sendUnsent(projectId, app),
     ...(isDeletionWaiting(requests, projectId)
       ? []
       : [deleteFromAnki(projectId, null)]),
@@ -146,8 +144,14 @@ function isAnkiConnected(backend: ServerCacheSlice) {
   return check?.status === "fulfilled" && check.data?.connected === true;
 }
 
-function sendUnsent(projectId: string, backend: ServerCacheSlice) {
-  const unsent = cachedFlashcards(backend, projectId).filter(isUnsent);
+function sendUnsent(
+  projectId: string,
+  { backend, operations }: AnkiConnectApp,
+) {
+  const beingSent = flashcardIdsBeingSent(operations.requests, projectId);
+  const unsent = cachedFlashcards(backend, projectId).filter(
+    (flashcard) => isUnsent(flashcard) && !beingSent.has(flashcard.id),
+  );
   if (unsent.length === 0) return [];
   return [
     sendToAnki(

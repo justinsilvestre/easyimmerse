@@ -26,15 +26,17 @@ export function sendToAnki(projectId: string, flashcardIds: readonly string[]) {
   } satisfies Effect;
 }
 
-/** Tells whether a send of the project's flashcards to Anki is under way or waiting among the recorded requests. */
-export function isSendingTo(
+/** Returns the ids of the flashcards that the project's sends to Anki under way or waiting hold. */
+export function flashcardIdsBeingSent(
   requests: readonly RequestRecord[],
   projectId: string,
-): boolean {
-  return requests.some(
-    ({ request }) =>
-      request.kind === "sendFlashcardsToAnki" &&
-      request.projectId === projectId,
+): ReadonlySet<string> {
+  return new Set(
+    requests.flatMap(({ request }) =>
+      request.kind === "sendFlashcardsToAnki" && request.projectId === projectId
+        ? request.flashcardIds
+        : [],
+    ),
   );
 }
 

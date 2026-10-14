@@ -6,6 +6,7 @@ import { createAppStore } from "../app/createAppStore.ts";
 import { createFakeServerStoreParts } from "../app/createFakeServerStoreParts.ts";
 import { stateAfterWithCache } from "../app/stateAfter.ts";
 import { update } from "../app/update.ts";
+import { exampleDraft } from "../flashcards/exampleFlashcards.ts";
 import { createRecordingEffects } from "../platform/recordingEffects.ts";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { cacheKey } from "../server/cacheKey.ts";
@@ -130,6 +131,26 @@ const deletionsRecorded = ({ operations }: AppState) =>
     ({ request }) => request.kind === "deleteAnkiNotes",
   ).length;
 
+/** The flashcards of each send to Anki under way or waiting, in the order asked for. */
+const sendsHeld = ({ operations }: AppState) =>
+  operations.requests.flatMap(({ request }) =>
+    request.kind === "sendFlashcardsToAnki" ? [request.flashcardIds] : [],
+  );
+
+/** The save of f1 from the media screen, after which f1 alone is sent to Anki. */
+const savedF1 = actions.requestSettled(
+  "flashcard/f1/1",
+  {
+    kind: "saveFlashcard",
+    projectId: "p1",
+    flashcardId: "f1",
+    draft: exampleDraft("f1"),
+    isNew: false,
+    purpose: { type: "undo", word: "f1" },
+  },
+  { ok: true, data: ankiFlashcard("f1", "m1", 2) },
+);
+
 const isChecking = ({ operations }: AppState) =>
   operations.requests.some(
     ({ request }) => request.kind === "checkAnkiConnection",
@@ -194,6 +215,13 @@ describe("ankiConnectEffects", () => {
     const sending = openedAfter(backend, actions.ankiSendRequested());
     const [next] = update(sending, actions.ankiSendRequested(), backend);
     expect(sendsRecorded(next)).toBe(1);
+  });
+
+  it("sends only the unsent cards that no send under way holds when asked", () => {
+    const backend = ankiCache("anki_connect");
+    const sending = openedAfter(backend, savedF1);
+    const [next] = update(sending, actions.ankiSendRequested(), backend);
+    expect(sendsHeld(next)).toEqual([["f1"], ["f3"]]);
   });
 
   it("adds no deletion when asked while one waits", () => {
