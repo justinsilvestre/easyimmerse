@@ -70,6 +70,7 @@ import {
   type FrameArgs,
   probePictures,
 } from "./browserFrames.ts";
+import { deleteAnkiNotes } from "./deleteAnkiNotes.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
 import {
@@ -624,6 +625,11 @@ export const backendApi = createApi({
       },
       invalidatesTags: (_result, _error, { projectId }) =>
         flashcardsSentTags(projectId),
+    }),
+    /** Deletes notes from Anki through AnkiConnect, from the page. */
+    deleteAnkiNotes: build.mutation<void, readonly number[]>({
+      queryFn: (noteIds, api) =>
+        deleteAnkiNotes(noteIds, (api.extra as BackendThunkExtra).ankiConnect),
     }),
     /** Exports flashcards as an Anki package, written by the server at a path or handed back for download. */
     exportAnkiPackage: build.mutation<AnkiPackageExport, AnkiExportArgs>({

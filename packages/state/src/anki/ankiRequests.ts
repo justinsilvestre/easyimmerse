@@ -12,13 +12,26 @@ export const ankiRequestIds = (projectId: string) => ({
 /** The id of the check whether Anki can be reached, of which one runs at a time. */
 export const ankiConnectionCheckId = "ankiConnection";
 
+/** The scope of a project's requests to AnkiConnect, which run one at a time in the order they were asked for. */
+const ankiScope = (projectId: string) => `ankiSend:${projectId}`;
+
 /** Sends to Anki the given flashcards of a project, after the project's earlier sends, under an id of its own. */
 export function sendToAnki(projectId: string, flashcardIds: readonly string[]) {
   return {
     type: "sendRequestWithFreeId",
     prefix: `project/${projectId}/ankiSend`,
-    scope: `ankiSend:${projectId}`,
+    scope: ankiScope(projectId),
     request: { kind: "sendFlashcardsToAnki", projectId, flashcardIds },
+  } satisfies Effect;
+}
+
+/** Deletes from Anki the notes of a project's deleted flashcards, after the project's earlier sends, under an id of its own. */
+export function deleteFromAnki(projectId: string, noteIds: readonly number[]) {
+  return {
+    type: "sendRequestWithFreeId",
+    prefix: `project/${projectId}/ankiDelete`,
+    scope: ankiScope(projectId),
+    request: { kind: "deleteAnkiNotes", noteIds },
   } satisfies Effect;
 }
 

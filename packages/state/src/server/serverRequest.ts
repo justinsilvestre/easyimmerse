@@ -141,6 +141,8 @@ export type ServerRequest =
       projectId: string;
       flashcardIds: readonly string[];
     }
+  /** Deletes notes from Anki through AnkiConnect. */
+  | { kind: "deleteAnkiNotes"; noteIds: readonly number[] }
   /** Exports flashcards as an Anki package, saved at `savePath`, or handed back for download when it is null. */
   | {
       kind: "exportAnkiPackage";
@@ -197,6 +199,8 @@ export type ServerResponses = {
   probePictures: boolean;
   checkAnkiConnection: AnkiConnection;
   sendFlashcardsToAnki: AnkiSendOutcome;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  deleteAnkiNotes: void;
   exportAnkiPackage: AnkiPackageExport;
   setFlashcardDestination: Project;
 };

@@ -51,6 +51,9 @@ export const ankiConnectActions = {
     action("addNotes", { notes }),
   updateNoteFields: (id: number, fields: Record<string, string>) =>
     action("updateNoteFields", { note: { id, fields } }),
+  /** Deletes notes with their cards. Anki passes over an id it has no note for. */
+  deleteNotes: (noteIds: readonly number[]) =>
+    action("deleteNotes", { notes: noteIds }),
 };
 
 /** Names each of a note's values by its field in the note type. */

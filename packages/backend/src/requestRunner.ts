@@ -177,6 +177,8 @@ export const requestEndpoints = {
       { projectId, flashcardIds },
       { track: false },
     ),
+  deleteAnkiNotes: ({ noteIds }) =>
+    backendApi.endpoints.deleteAnkiNotes.initiate(noteIds, { track: false }),
   exportAnkiPackage: ({ projectId, flashcardIds, savePath }) =>
     backendApi.endpoints.exportAnkiPackage.initiate(
       { projectId, flashcardIds, savePath },

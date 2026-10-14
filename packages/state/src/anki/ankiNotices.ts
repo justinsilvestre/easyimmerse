@@ -41,6 +41,14 @@ export function sendFailedNotice(failure: RequestFailure) {
   );
 }
 
+/** Tells why the note of a deleted flashcard could not be deleted from Anki. */
+export function deleteFailedNotice(failure: RequestFailure) {
+  return notice(
+    "danger",
+    `The flashcard's note could not be deleted from Anki: ${failure.message}`,
+  );
+}
+
 /** Tells why an export failed. */
 export function exportFailedNotice(failure: RequestFailure) {
   return notice(
