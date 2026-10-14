@@ -9,11 +9,11 @@ export const defaultProjectSettings: ProjectSettings = {
   name: "",
   target_language: "de",
   translation_language: "en",
-  flashcard_fields: fieldsOfPreset("intermediate"),
+  flashcard_fields: fieldsOfPreset("beginner"),
   default_tags: [],
   tags_media_name: true,
   fills_audio_with_tts: false,
-  flashcard_front_fields: frontFieldsOfPreset("intermediate"),
+  flashcard_front_fields: frontFieldsOfPreset("beginner"),
 };
 
 /** The settings the new project form starts from: those of the last created project, without its name. */
