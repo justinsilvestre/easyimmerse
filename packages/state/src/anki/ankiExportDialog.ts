@@ -1,5 +1,5 @@
-/** Which of the chosen media files' flashcards an export includes: those never exported, or all of them. */
-export type AnkiExportScope = "new" | "all";
+/** Which of the chosen media files' flashcards an export includes: those new or changed since they were last marked as exported, or all of them. */
+export type AnkiExportScope = "newAndChanged" | "all";
 
 /** The dialog that exports a project's flashcards as an Anki package, open over the project overview. */
 export type AnkiExportDialog = {
@@ -10,9 +10,9 @@ export type AnkiExportDialog = {
   isBusy: boolean;
 };
 
-/** The export dialog as it opens: every new card of the project. */
+/** The export dialog as it opens: every new or changed card of the project. */
 export const openedAnkiExport: AnkiExportDialog = {
-  scope: "new",
+  scope: "newAndChanged",
   mediaFileIds: null,
   isBusy: false,
 };

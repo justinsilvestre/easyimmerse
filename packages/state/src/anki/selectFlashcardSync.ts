@@ -3,7 +3,13 @@ import { createSelector } from "reselect";
 import type { RootState } from "../app/createAppStore.ts";
 import { type CacheEntry, cacheEntry } from "../server/cacheEntry.ts";
 import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
-import { isUnexported, isUnsent, oldestFirst } from "./ankiExportSelection.ts";
+import {
+  isChangedSinceExport,
+  isNewOrChangedSinceExport,
+  isUnexported,
+  isUnsent,
+  oldestFirst,
+} from "./ankiExportSelection.ts";
 import { hasAnkiConnectRequest } from "./ankiRequests.ts";
 
 /** Whether Anki answered the last check: still being asked, answered, did not answer, or answered that it refuses easyImmerse. */
@@ -20,8 +26,11 @@ export type FlashcardSync =
       kind: "ankiPackage";
       /** Every flashcard of the project. */
       flashcardCount: number;
-      unexportedCount: number;
-      /** The first-made flashcard never exported. */
+      /** The flashcards never marked as exported. */
+      newCount: number;
+      /** The flashcards edited since they were last marked as exported. */
+      changedCount: number;
+      /** The first-made flashcard new or changed since it was last marked as exported. */
       nextCard: FlashcardContent | null;
     }
   | {
@@ -70,12 +79,14 @@ export const selectFlashcardSync = createSelector(
       case null:
         return { kind: "notStarted" };
       case "anki_package": {
-        const unexported = flashcards.filter(isUnexported);
         return {
           kind: "ankiPackage",
           flashcardCount: flashcards.length,
-          unexportedCount: unexported.length,
-          nextCard: firstMadeContent(unexported),
+          newCount: flashcards.filter(isUnexported).length,
+          changedCount: flashcards.filter(isChangedSinceExport).length,
+          nextCard: firstMadeContent(
+            flashcards.filter(isNewOrChangedSinceExport),
+          ),
         };
       }
       case "anki_connect": {

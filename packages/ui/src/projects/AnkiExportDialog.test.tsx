@@ -17,8 +17,8 @@ function renderDialog(
         { id: "m2", name: "episode.mkv", kind: "video", flashcardCount: 1 },
       ]}
       chosenMediaFileIds={null}
-      scope="new"
-      newCount={2}
+      scope="newAndChanged"
+      newAndChangedCount={2}
       allCount={4}
       isBusy={false}
       onScopeChange={(scope: AnkiExportScope) => calls.push(`scope ${scope}`)}
@@ -37,10 +37,10 @@ const isDisabled = (element: HTMLElement) =>
   (element as HTMLButtonElement).disabled;
 
 describe("AnkiExportDialog", () => {
-  it("offers the new cards with their count", () => {
+  it("offers the new and changed cards with their count", () => {
     renderDialog();
     expect(
-      screen.getByRole("radio", { name: "New cards only (2)" }),
+      screen.getByRole("radio", { name: "New and changed (2)" }),
     ).toBeDefined();
   });
 
@@ -62,7 +62,7 @@ describe("AnkiExportDialog", () => {
   });
 
   it("offers no export while the choices hold no card", () => {
-    renderDialog({ newCount: 0 });
+    renderDialog({ newAndChangedCount: 0 });
     expect(isDisabled(exportButton())).toBe(true);
   });
 

@@ -52,7 +52,8 @@ export const AnkiPackageWithNewCards: Story = {
     state: {
       kind: "ankiPackage",
       flashcardCount: 12,
-      unexportedCount: 5,
+      newCount: 5,
+      changedCount: 2,
       nextCard: exampleFlashcard,
     },
   },
@@ -63,7 +64,8 @@ export const AnkiPackageUpToDate: Story = {
     state: {
       kind: "ankiPackage",
       flashcardCount: 12,
-      unexportedCount: 0,
+      newCount: 0,
+      changedCount: 0,
       nextCard: null,
     },
   },

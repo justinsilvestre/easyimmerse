@@ -134,7 +134,8 @@ export const ExportingAnkiPackages: Story = {
     children: sections(media, {
       kind: "ankiPackage",
       flashcardCount: 12,
-      unexportedCount: 5,
+      newCount: 5,
+      changedCount: 2,
       nextCard: exampleFlashcard,
     }),
   },

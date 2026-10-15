@@ -1,9 +1,19 @@
 import type { Flashcard } from "@easyimmerse/types";
 import type { AnkiExportDialog } from "./ankiExportDialog.ts";
 
-/** Tells whether the flashcard was never written into an Anki package. */
+/** Tells whether the flashcard was never marked as exported. */
 export const isUnexported = (flashcard: Flashcard) =>
   flashcard.exported_at_ms === null;
+
+/** Tells whether the flashcard was edited after it was last marked as exported. */
+export const isChangedSinceExport = ({
+  exported_at_ms,
+  updated_at_ms,
+}: Flashcard) => exported_at_ms !== null && updated_at_ms > exported_at_ms;
+
+/** Tells whether the flashcard is new or changed since it was last marked as exported. */
+export const isNewOrChangedSinceExport = (flashcard: Flashcard) =>
+  isUnexported(flashcard) || isChangedSinceExport(flashcard);
 
 /** Tells whether AnkiConnect has no note for the flashcard yet. */
 export const isUnsent = (flashcard: Flashcard) =>
@@ -34,6 +44,9 @@ export function flashcardIdsToExport(
   { scope, mediaFileIds }: Pick<AnkiExportDialog, "scope" | "mediaFileIds">,
 ): string[] {
   const chosen = flashcardsOfMedia(flashcards, mediaFileIds);
-  const inScope = scope === "new" ? chosen.filter(isUnexported) : chosen;
+  const inScope =
+    scope === "newAndChanged"
+      ? chosen.filter(isNewOrChangedSinceExport)
+      : chosen;
   return oldestFirst(inScope).map(({ id }) => id);
 }

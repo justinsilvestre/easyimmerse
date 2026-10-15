@@ -214,13 +214,31 @@ describe("FlashcardSyncPanel", () => {
 
   describe("when the cards are exported as Anki packages", () => {
     const exporting = (
-      unexportedCount: number,
+      newCount: number,
       flashcardCount = 3,
+      changedCount = 0,
     ): FlashcardSyncState => ({
       kind: "ankiPackage",
       flashcardCount,
-      unexportedCount,
+      newCount,
+      changedCount,
       nextCard: null,
+    });
+
+    it("counts the new and the changed cards since the last export", () => {
+      renderPanel(exporting(3, 5, 1));
+      expect(
+        screen.getByText(
+          "3 new and 1 changed flashcards since the last export.",
+        ),
+      ).toBeDefined();
+    });
+
+    it("leaves out a count of zero", () => {
+      renderPanel(exporting(0, 5, 1));
+      expect(
+        screen.getByText("1 changed flashcard since the last export."),
+      ).toBeDefined();
     });
 
     it("says every card has been exported when none is new", () => {

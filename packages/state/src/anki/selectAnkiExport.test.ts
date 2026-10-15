@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfterWithCache } from "../app/stateAfter.ts";
-import { ankiCache, openOverview } from "./ankiTestSupport.ts";
+import { ankiCache, ankiFlashcard, openOverview } from "./ankiTestSupport.ts";
 import {
   selectAnkiExport,
   selectIsAnkiConnectSetupOpen,
@@ -20,10 +20,27 @@ describe("selectAnkiExport", () => {
     expect(selectAnkiExport(rootAfter())).toBeNull();
   });
 
-  it("counts the new and all cards of every media file", () => {
+  it("counts the new and changed and all cards of every media file", () => {
     expect(
       selectAnkiExport(rootAfter(actions.ankiExportOpened())),
-    ).toMatchObject({ newCount: 2, allCount: 3 });
+    ).toMatchObject({ newAndChangedCount: 2, allCount: 3 });
+  });
+
+  it("counts a card edited since it was exported among the new and changed", () => {
+    const edited = ankiCache("anki_package", [
+      ankiFlashcard("f1", "m1", 1, { exportedAtMs: 10, updatedAtMs: 11 }),
+      ankiFlashcard("f2", "m1", 2, { exportedAtMs: 10 }),
+    ]);
+    expect(
+      selectAnkiExport({
+        app: stateAfterWithCache(
+          edited,
+          openOverview,
+          actions.ankiExportOpened(),
+        ),
+        backend: edited,
+      }),
+    ).toMatchObject({ newAndChangedCount: 1 });
   });
 
   it("counts only the cards of the ticked media files", () => {
@@ -34,7 +51,7 @@ describe("selectAnkiExport", () => {
           actions.ankiExportMediaToggled("m1"),
         ),
       ),
-    ).toMatchObject({ newCount: 0, allCount: 1 });
+    ).toMatchObject({ newAndChangedCount: 0, allCount: 1 });
   });
 });
 

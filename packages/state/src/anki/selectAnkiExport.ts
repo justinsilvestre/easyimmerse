@@ -7,7 +7,7 @@ import { flashcardIdsToExport } from "./ankiExportSelection.ts";
 
 /** What the Anki export dialog shows: its choices, and how many flashcards each scope exports from the chosen media files. */
 export type AnkiExportView = AnkiExportDialog & {
-  newCount: number;
+  newAndChangedCount: number;
   allCount: number;
 };
 
@@ -33,8 +33,10 @@ export const selectAnkiExport = createSelector(
     const { mediaFileIds } = dialog;
     return {
       ...dialog,
-      newCount: flashcardIdsToExport(flashcards, { scope: "new", mediaFileIds })
-        .length,
+      newAndChangedCount: flashcardIdsToExport(flashcards, {
+        scope: "newAndChanged",
+        mediaFileIds,
+      }).length,
       allCount: flashcardIdsToExport(flashcards, { scope: "all", mediaFileIds })
         .length,
     };

@@ -53,8 +53,28 @@ describe("selectFlashcardSync", () => {
   it("counts the cards never exported", () => {
     expect(syncOf(ankiCache("anki_package"))).toMatchObject({
       kind: "ankiPackage",
-      unexportedCount: 2,
+      newCount: 2,
     });
+  });
+
+  it("counts the cards edited since they were last exported", () => {
+    const backend = ankiCache("anki_package", [
+      ankiFlashcard("f1", "m1", 1, { exportedAtMs: 10, updatedAtMs: 11 }),
+      ankiFlashcard("f2", "m1", 2, { exportedAtMs: 10, updatedAtMs: 10 }),
+    ]);
+    expect(syncOf(backend)).toMatchObject({ changedCount: 1 });
+  });
+
+  it("previews the first-made card edited since it was exported", () => {
+    const edited = ankiFlashcard("f1", "m1", 1, {
+      exportedAtMs: 10,
+      updatedAtMs: 11,
+    });
+    const backend = ankiCache("anki_package", [
+      edited,
+      ankiFlashcard("f2", "m1", 2),
+    ]);
+    expect(syncOf(backend)).toMatchObject({ nextCard: edited.content });
   });
 
   it("previews the first-made card never exported", () => {

@@ -204,7 +204,7 @@ mod export_anki_package {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn dates_the_notes_at_the_recorded_export() {
+    async fn dates_the_notes_no_earlier_than_the_recorded_export() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;
         let response = export_ids(&server, &ids).await;
@@ -214,7 +214,21 @@ mod export_anki_package {
         let modified_secs: i64 = open_collection(&response.bytes)
             .query_row("SELECT mod FROM notes LIMIT 1", [], |row| row.get(0))
             .unwrap();
-        assert_eq!(modified_secs, (exported_at_ms / 1000) as i64);
+        assert!(modified_secs >= (exported_at_ms / 1000) as i64);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn an_edit_after_the_export_counts_as_a_change() {
+        let server = spawn_test_server(false).await;
+        let id = create_flashcard(&server, PROJECT, None).await;
+        export_ids(&server, std::slice::from_ref(&id)).await;
+        let draft = &new_flashcard(&id, "beber", None)["draft"];
+        let response = server
+            .put_json(&format!("/projects/{PROJECT}/flashcards/{id}"), draft)
+            .await;
+        assert_eq!(response.status, 200, "{}", response.text());
+        let card = &list_flashcards(&server).await[0];
+        assert!(card["updated_at_ms"].as_u64() > card["exported_at_ms"].as_u64());
     }
 
     #[tokio::test(flavor = "multi_thread")]

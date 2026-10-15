@@ -66,7 +66,7 @@ const failed = {
 } as const;
 
 describe("updateAnkiExport", () => {
-  it("opens on the new cards of every media file", () => {
+  it("opens on the new and changed cards of every media file", () => {
     expect(dialogAfter(actions.ankiExportOpened())).toEqual(openedAnkiExport);
   });
 

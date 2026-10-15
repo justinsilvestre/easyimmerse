@@ -66,8 +66,11 @@ pub async fn render_anki_notes(
     Path(project_id): Path<ProjectId>,
     Json(request): Json<AnkiNotesRequest>,
 ) -> Result<Json<AnkiNotes>, ApiFailure> {
-    let (project, flashcards) = load_selection(&state, project_id, request.flashcard_ids).await?;
-    Ok(Json(render_notes(&flashcards, &deck_spec(&project))))
+    let selection = load_selection(&state, project_id, request.flashcard_ids).await?;
+    Ok(Json(render_notes(
+        &selection.flashcards,
+        &deck_spec(&selection.project),
+    )))
 }
 
 /// Stores the ids of the notes AnkiConnect created for the flashcards,

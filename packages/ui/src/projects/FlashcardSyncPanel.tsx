@@ -229,19 +229,32 @@ function Status({
   }
 }
 
-/** Counts the flashcards made since the last export. */
+/** Counts the flashcards new and changed since the last export. */
 function ankiPackageSummary({
   flashcardCount,
-  unexportedCount,
+  newCount,
+  changedCount,
 }: {
   flashcardCount: number;
-  unexportedCount: number;
+  newCount: number;
+  changedCount: number;
 }) {
-  if (unexportedCount > 0)
-    return `${pluralize(unexportedCount, "new flashcard")} since the last export.`;
+  if (newCount + changedCount > 0)
+    return `${newAndChanged(newCount, changedCount)} since the last export.`;
   return flashcardCount === 0
     ? "No flashcards yet."
     : "Every flashcard has been exported.";
+}
+
+/** Counts new and changed flashcards in one phrase, such as `3 new and 1 changed flashcard`, leaving out a count of zero. */
+function newAndChanged(newCount: number, changedCount: number) {
+  const total = newCount + changedCount;
+  const noun = total === 1 ? "flashcard" : "flashcards";
+  const parts = [
+    ...(newCount > 0 ? [`${newCount} new`] : []),
+    ...(changedCount > 0 ? [`${changedCount} changed`] : []),
+  ];
+  return `${parts.join(" and ")} ${noun}`;
 }
 
 /** Counts the flashcards waiting to be sent to Anki and the notes waiting to be deleted from it. */

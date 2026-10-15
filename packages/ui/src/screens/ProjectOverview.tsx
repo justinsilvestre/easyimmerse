@@ -114,7 +114,7 @@ export function ProjectOverview({
           mediaFiles={media.items}
           chosenMediaFileIds={ankiExport.mediaFileIds}
           scope={ankiExport.scope}
-          newCount={ankiExport.newCount}
+          newAndChangedCount={ankiExport.newAndChangedCount}
           allCount={ankiExport.allCount}
           isBusy={ankiExport.isBusy}
           onScopeChange={(scope) =>

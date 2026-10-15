@@ -7,14 +7,14 @@ import { SegmentedControl } from "../components/SegmentedControl.tsx";
 import type { MediaItem } from "./MediaList.tsx";
 
 /**
- * Exports a project's flashcards as an Anki package: the new cards or all of them, from every media file or the ticked ones.
+ * Exports a project's flashcards as an Anki package: the new and changed cards or all of them, from every media file or the ticked ones.
  * Export is unavailable while the choices include no card, and while an export is under way.
  */
 export function AnkiExportDialog({
   mediaFiles,
   chosenMediaFileIds,
   scope,
-  newCount,
+  newAndChangedCount,
   allCount,
   isBusy,
   onScopeChange,
@@ -26,8 +26,8 @@ export function AnkiExportDialog({
   /** The media files whose cards are exported, or null for every card of the project. */
   chosenMediaFileIds: readonly string[] | null;
   scope: AnkiExportScope;
-  /** The cards never exported, from the chosen media files. */
-  newCount: number;
+  /** The cards new or changed since they were last marked as exported, from the chosen media files. */
+  newAndChangedCount: number;
   /** Every card from the chosen media files. */
   allCount: number;
   isBusy: boolean;
@@ -36,7 +36,7 @@ export function AnkiExportDialog({
   onExport: () => void;
   onClose: () => void;
 }) {
-  const count = scope === "new" ? newCount : allCount;
+  const count = scope === "newAndChanged" ? newAndChangedCount : allCount;
   return (
     <ModalDialog
       title="Export an Anki deck"
@@ -58,7 +58,10 @@ export function AnkiExportDialog({
       <SegmentedControl
         label="Cards to export"
         options={[
-          { value: "new", label: `New cards only (${newCount})` },
+          {
+            value: "newAndChanged",
+            label: `New and changed (${newAndChangedCount})`,
+          },
           { value: "all", label: `All cards (${allCount})` },
         ]}
         value={scope}

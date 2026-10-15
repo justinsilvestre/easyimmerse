@@ -8,7 +8,7 @@ import type { AnkiExportScope } from "./ankiExportDialog.ts";
 export const ankiActions = {
   /** The user opened the dialog that exports the flashcards as an Anki package. */
   ankiExportOpened: () => ({ type: "ankiExportOpened" }) as const,
-  /** The user chose whether to export only the cards not yet exported, or all of them. */
+  /** The user chose whether to export only the cards new or changed since they were last marked as exported, or all of them. */
   ankiExportScopeChosen: (scope: AnkiExportScope) =>
     ({ type: "ankiExportScopeChosen", scope }) as const,
   /** The user ticked or cleared a media file whose cards the export includes. */

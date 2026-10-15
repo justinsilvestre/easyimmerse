@@ -24,8 +24,8 @@ const meta = {
       },
     ],
     chosenMediaFileIds: null,
-    scope: "new",
-    newCount: 12,
+    scope: "newAndChanged",
+    newAndChangedCount: 12,
     allCount: 41,
     isBusy: false,
     onScopeChange: fn(),
@@ -45,11 +45,11 @@ export const AllCards: Story = {
 };
 
 export const OneMediaFile: Story = {
-  args: { chosenMediaFileIds: ["m1"], newCount: 12, allCount: 37 },
+  args: { chosenMediaFileIds: ["m1"], newAndChangedCount: 12, allCount: 37 },
 };
 
 export const NothingToExport: Story = {
-  args: { chosenMediaFileIds: ["m2"], newCount: 0, allCount: 4 },
+  args: { chosenMediaFileIds: ["m2"], newAndChangedCount: 0, allCount: 4 },
 };
 
 export const Exporting: Story = {

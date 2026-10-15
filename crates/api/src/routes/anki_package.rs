@@ -9,14 +9,14 @@ use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::{Extension, Json};
 use easyimmerse_anki::{AnkiNote, CardScheduling, PackageMedia, render_note, write_package};
-use easyimmerse_core::flashcard::{Flashcard, FlashcardId};
+use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::{Project, ProjectId};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::anki_media::{render_media, without_skipped_media};
-use crate::anki_selection::{deck_spec, load_selection};
+use crate::anki_selection::{Selection, deck_spec, load_selection};
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request, not_found};
 use crate::auth::token_kind::TokenKind;
 use crate::file_download::{attachment_disposition, body_then, safe_file_name};
@@ -84,11 +84,11 @@ pub async fn export_anki_package(
         ensure_local_paths_allowed(token, &state.config)?;
         ensure_absolute(path)?;
     }
-    let (project, flashcards) = load_selection(&state, project_id, request.flashcard_ids).await?;
-    if flashcards.is_empty() {
+    let selection = load_selection(&state, project_id, request.flashcard_ids).await?;
+    if selection.flashcards.is_empty() {
         return Err(not_found("none of the named flashcards is in the project"));
     }
-    let package = build_package(&state, token, project, flashcards).await?;
+    let package = build_package(&state, token, selection).await?;
     match request.save_path {
         Some(path) => save_package(&state, package, &path).await,
         None => Ok(package_download(state, package)),
@@ -103,19 +103,24 @@ struct BuiltPackage {
     export: ExportRecord,
 }
 
-/// The flashcards a package holds and the time it was built, which dates its notes and marks the flashcards exported.
+/// The flashcards a package holds, and the time they were read, which marks them exported.
 struct ExportRecord {
     project_id: ProjectId,
     flashcard_ids: Vec<FlashcardId>,
     exported_at_ms: u64,
 }
 
+/// Builds the package, dating its notes at the time it is written, since Anki updates a note it already has only from a newer one.
 async fn build_package(
     state: &AppState,
     token: TokenKind,
-    project: Project,
-    flashcards: Vec<Flashcard>,
+    selection: Selection,
 ) -> Result<BuiltPackage, ApiFailure> {
+    let Selection {
+        project,
+        flashcards,
+        read_at_ms,
+    } = selection;
     let notes: Vec<AnkiNote> = flashcards.iter().map(render_note).collect();
     let media = render_media(state, token, &notes).await;
     for skipped in &media.skipped {
@@ -126,9 +131,8 @@ async fn build_package(
         );
     }
     let notes = without_skipped_media(notes, &media.skipped);
-    let exported_at_ms = now_ms();
     Ok(BuiltPackage {
-        bytes: write_package_bytes(&project, notes, media.files, exported_at_ms).await?,
+        bytes: write_package_bytes(&project, notes, media.files, now_ms()).await?,
         file_name: format!("{}.apkg", safe_file_name(&project.settings.name)),
         skipped_media_count: media.skipped.len() as u64,
         export: ExportRecord {
@@ -137,7 +141,7 @@ async fn build_package(
                 .into_iter()
                 .map(|flashcard| flashcard.id)
                 .collect(),
-            exported_at_ms,
+            exported_at_ms: read_at_ms,
         },
     })
 }

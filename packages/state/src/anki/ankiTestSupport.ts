@@ -6,15 +6,19 @@ import { exampleMediaFile } from "../server/exampleMediaFile.ts";
 import { exampleProject } from "../server/exampleProject.ts";
 import { serverCacheWith } from "../server/serverCacheWith.ts";
 
-/** Returns a listed flashcard of p1, made from a media file at a time, and exported and sent as given, for tests. */
+/** Returns a listed flashcard of p1, made from a media file at a time, and exported, sent and edited as given, for tests. */
 export function ankiFlashcard(
   id: string,
   mediaFileId: string | null,
   createdAtMs: number,
-  sentAs: { exportedAtMs?: number; ankiNoteId?: number } = {},
+  sentAs: {
+    exportedAtMs?: number;
+    ankiNoteId?: number;
+    updatedAtMs?: number;
+  } = {},
 ): Flashcard {
   return {
-    ...exampleListedFlashcard(id, id),
+    ...exampleListedFlashcard(id, id, sentAs.updatedAtMs ?? createdAtMs),
     media_file_id: mediaFileId,
     created_at_ms: createdAtMs,
     exported_at_ms: sentAs.exportedAtMs ?? null,
