@@ -13,6 +13,10 @@ export {
   selectIsAnkiConnectSetupOpen,
 } from "./anki/selectAnkiExport.ts";
 export {
+  type AnkiFateOfDeletion,
+  selectAnkiFateOfDeletion,
+} from "./anki/selectAnkiFateOfDeletion.ts";
+export {
   type AnkiConnectionStatus,
   type AnkiConnectSync,
   type FlashcardSync,
