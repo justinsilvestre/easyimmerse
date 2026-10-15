@@ -6,7 +6,7 @@ import type { FlashcardId } from "./FlashcardId";
  */
 export type AnkiPendingDeletion = { flashcard_id: FlashcardId, 
 /**
- * The flashcard's word when it was deleted, which names the note to the user.
+ * The flashcard's word when it was deleted, which names the note to the user. Empty when the flashcard was deleted before the send that put its note into Anki was recorded.
  */
 word: string, 
 /**

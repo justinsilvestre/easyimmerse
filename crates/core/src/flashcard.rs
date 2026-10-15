@@ -125,7 +125,7 @@ pub enum FlashcardFieldKey {
 #[ts(export)]
 pub struct AnkiPendingDeletion {
     pub flashcard_id: FlashcardId,
-    /// The flashcard's word when it was deleted, which names the note to the user.
+    /// The flashcard's word when it was deleted, which names the note to the user. Empty when the flashcard was deleted before the send that put its note into Anki was recorded.
     pub word: String,
     /// Milliseconds since the Unix epoch when the flashcard was deleted.
     pub requested_at_ms: u64,

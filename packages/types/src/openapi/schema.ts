@@ -456,7 +456,7 @@ export interface paths {
         };
         /**
          * Lists the flashcards of the project whose notes are still to be deleted from Anki.
-         *     Deleting a flashcard while the project's destination is `anki_connect` adds it here, whether or not it was sent.
+         *     Deleting a flashcard that has reached Anki while the project's destination is `anki_connect` adds it here, as does recording a send of a flashcard deleted since the send began.
          */
         get: operations["listAnkiPendingDeletions"];
         put?: never;
@@ -499,7 +499,7 @@ export interface paths {
         /**
          * Stores the ids of the notes AnkiConnect created for the flashcards,
          *     and makes `anki_connect` the project's flashcard destination.
-         *     A flashcard that is not in the project, as one deleted since the send began, is passed over.
+         *     A flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
          */
         post: operations["recordAnkiNotesSent"];
         delete?: never;
@@ -1047,7 +1047,7 @@ export interface components {
              * @description Milliseconds since the Unix epoch when the flashcard was deleted.
              */
             requested_at_ms: number;
-            /** @description The flashcard's word when it was deleted, which names the note to the user. */
+            /** @description The flashcard's word when it was deleted, which names the note to the user. Empty when the flashcard was deleted before the send that put its note into Anki was recorded. */
             word: string;
         };
         AnkiPendingDeletions: {

@@ -154,7 +154,7 @@ pub async fn render_anki_notes(
 
 /// Stores the ids of the notes AnkiConnect created for the flashcards,
 /// and makes `anki_connect` the project's flashcard destination.
-/// A flashcard that is not in the project, as one deleted since the send began, is passed over.
+/// A flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
 #[utoipa::path(
     post,
     path = "/projects/{id}/anki/sent",
@@ -175,8 +175,7 @@ pub async fn record_anki_notes_sent(
     Path(project_id): Path<ProjectId>,
     Json(request): Json<AnkiSentRequest>,
 ) -> Result<StatusCode, ApiFailure> {
-    let flashcards = load_project_flashcards(&state, project_id.clone()).await?.1;
-    let notes = notes_of_project(request.notes, &flashcards);
+    let notes = first_note_of_each(request.notes);
     state
         .with_storage(move |storage| storage.record_anki_notes_sent(&project_id, &notes))
         .await?;
@@ -418,13 +417,12 @@ fn select_flashcards(flashcards: Vec<Flashcard>, ids: &[FlashcardId]) -> Vec<Fla
     ids.iter().filter_map(|id| by_id.remove(id)).collect()
 }
 
-/// Pairs each named flashcard of the project with its note id, keeping the first note id of a flashcard named twice.
-fn notes_of_project(notes: Vec<AnkiSentNote>, flashcards: &[Flashcard]) -> Vec<(FlashcardId, u64)> {
-    let mut unpaired: HashSet<&FlashcardId> =
-        flashcards.iter().map(|flashcard| &flashcard.id).collect();
+/// Pairs each named flashcard with its note id, keeping the first note id of a flashcard named twice.
+fn first_note_of_each(notes: Vec<AnkiSentNote>) -> Vec<(FlashcardId, u64)> {
+    let mut paired: HashSet<FlashcardId> = HashSet::new();
     notes
         .into_iter()
-        .filter(|note| unpaired.remove(&note.flashcard_id))
+        .filter(|note| paired.insert(note.flashcard_id.clone()))
         .map(|note| (note.flashcard_id, note.anki_note_id))
         .collect()
 }

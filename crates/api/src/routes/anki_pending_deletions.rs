@@ -20,7 +20,7 @@ pub struct AnkiPendingDeletions {
 }
 
 /// Lists the flashcards of the project whose notes are still to be deleted from Anki.
-/// Deleting a flashcard while the project's destination is `anki_connect` adds it here, whether or not it was sent.
+/// Deleting a flashcard that has reached Anki while the project's destination is `anki_connect` adds it here, as does recording a send of a flashcard deleted since the send began.
 #[utoipa::path(
     get,
     path = "/projects/{id}/anki/pending-deletions",

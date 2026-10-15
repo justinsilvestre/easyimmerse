@@ -194,8 +194,8 @@ impl Storage {
         self.write(|conn| flashcards::update_flashcard(conn, id, draft))
     }
 
-    /// Deletes a flashcard. When its project sends to Anki through AnkiConnect, the deletion of its note from Anki
-    /// is recorded in the same transaction, to be carried out by the client.
+    /// Deletes a flashcard. When the flashcard has reached Anki and its project sends there through AnkiConnect,
+    /// the deletion of its note from Anki is recorded in the same transaction, to be carried out by the client.
     pub fn delete_flashcard(&self, id: &FlashcardId) -> Result<(), StorageError> {
         self.write(|conn| flashcards::delete_flashcard(conn, id))
     }
@@ -230,8 +230,9 @@ impl Storage {
         self.write(|conn| anki_sync::record_anki_export(conn, project_id, ids, exported_at_ms))
     }
 
-    /// Stores the id of the note AnkiConnect created for each flashcard, and makes AnkiConnect the project's
-    /// flashcard destination, in one transaction. A flashcard that is gone is passed over.
+    /// Stores the id of the note AnkiConnect created for each of the project's flashcards, and makes AnkiConnect the project's
+    /// flashcard destination, in one transaction. A flashcard of another project is passed over,
+    /// and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
     pub fn record_anki_notes_sent(
         &self,
         project_id: &ProjectId,

@@ -119,7 +119,8 @@ pub fn update_flashcard(
     get_flashcard(conn, id)
 }
 
-/// Deletes a flashcard, and records that its note is to be deleted from Anki when its project sends there through AnkiConnect.
+/// Deletes a flashcard, and records that its note is to be deleted from Anki when the flashcard has reached Anki
+/// and its project sends there through AnkiConnect.
 pub fn delete_flashcard(conn: &mut Connection, id: &FlashcardId) -> Result<(), StorageError> {
     let transaction = conn.transaction()?;
     let flashcard = get_flashcard(&transaction, id)?;

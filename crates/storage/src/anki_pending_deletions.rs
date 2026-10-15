@@ -9,12 +9,16 @@ use crate::new_row::now_ms;
 use crate::projects::ensure_project_exists;
 use crate::stored_integer::{read_unsigned, to_stored_integer};
 
-/// Records that the flashcard's note is to be deleted from Anki, when its project sends to Anki through AnkiConnect.
-/// The flashcard need not have a note yet, since a send in flight may be creating one.
+/// Records that the flashcard's note is to be deleted from Anki, when the flashcard has reached Anki
+/// and its project sends there through AnkiConnect.
+/// A flashcard whose note a send in flight is still creating gets its deletion once that send is recorded.
 pub fn record_anki_pending_deletion(
     conn: &Connection,
     flashcard: &Flashcard,
 ) -> Result<(), StorageError> {
+    if flashcard.anki_note_id.is_none() {
+        return Ok(());
+    }
     conn.execute(
         "INSERT OR REPLACE INTO anki_pending_deletions (flashcard_id, project_id, word, requested_at_ms) \
          SELECT ?1, id, ?3, ?4 FROM projects WHERE id = ?2 AND flashcard_destination = 'anki_connect'",
@@ -24,6 +28,26 @@ pub fn record_anki_pending_deletion(
             flashcard.content.word,
             to_stored_integer(now_ms()),
         ],
+    )?;
+    Ok(())
+}
+
+/// Records that the note a send put into Anki for a flashcard deleted since the send began is to be deleted,
+/// when the project sends to Anki through AnkiConnect. The word is gone with the flashcard, so the deletion keeps an empty one.
+/// An id that a flashcard still has, or that the app could not have made, is passed over, and a deletion already recorded is kept.
+pub fn record_anki_pending_deletion_of_gone(
+    conn: &Connection,
+    project_id: &ProjectId,
+    flashcard_id: &FlashcardId,
+) -> Result<(), StorageError> {
+    if !flashcard_id.is_well_formed() {
+        return Ok(());
+    }
+    conn.execute(
+        "INSERT OR IGNORE INTO anki_pending_deletions (flashcard_id, project_id, word, requested_at_ms) \
+         SELECT ?1, id, '', ?3 FROM projects WHERE id = ?2 AND flashcard_destination = 'anki_connect' \
+         AND NOT EXISTS (SELECT 1 FROM flashcards WHERE flashcards.id = ?1)",
+        params![flashcard_id.0, project_id.0, to_stored_integer(now_ms())],
     )?;
     Ok(())
 }
@@ -128,9 +152,23 @@ mod tests {
             .id
     }
 
-    /// Creates and deletes a flashcard with the given word, returning its id.
-    fn delete_new(storage: &Storage, word: &str) -> FlashcardId {
+    /// Gives the flashcard a note in Anki, as a send does, without changing the project's destination.
+    fn give_note(storage: &Storage, id: &FlashcardId) {
+        storage
+            .write(|conn| {
+                conn.execute(
+                    "UPDATE flashcards SET anki_note_id = 1 WHERE id = ?1",
+                    params![id.0],
+                )?;
+                Ok(())
+            })
+            .unwrap();
+    }
+
+    /// Creates a flashcard with the given word, gives it a note in Anki and deletes it, returning its id.
+    fn delete_sent(storage: &Storage, word: &str) -> FlashcardId {
         let id = create(storage, word);
+        give_note(storage, &id);
         storage.delete_flashcard(&id).unwrap();
         id
     }
@@ -145,9 +183,9 @@ mod tests {
     }
 
     #[test]
-    fn deleting_a_flashcard_sent_through_anki_connect_records_its_deletion() {
+    fn deleting_a_flashcard_that_reached_anki_records_its_deletion() {
         let storage = storage_sending_to(Some(FlashcardDestination::AnkiConnect));
-        let id = delete_new(&storage, "fressen");
+        let id = delete_sent(&storage, "fressen");
         let listed = storage.list_anki_pending_deletions(&project()).unwrap();
         assert_eq!(
             listed
@@ -159,38 +197,46 @@ mod tests {
     }
 
     #[test]
+    fn deleting_a_flashcard_that_never_reached_anki_records_nothing() {
+        let storage = storage_sending_to(Some(FlashcardDestination::AnkiConnect));
+        let id = create(&storage, "fressen");
+        storage.delete_flashcard(&id).unwrap();
+        assert_eq!(listed_words(&storage), Vec::<String>::new());
+    }
+
+    #[test]
     fn a_pending_deletion_keeps_the_word() {
         let storage = storage_sending_to(Some(FlashcardDestination::AnkiConnect));
-        delete_new(&storage, "fressen");
+        delete_sent(&storage, "fressen");
         assert_eq!(listed_words(&storage), vec!["fressen"]);
     }
 
     #[test]
     fn deleting_a_flashcard_exported_as_a_package_records_nothing() {
         let storage = storage_sending_to(Some(FlashcardDestination::AnkiPackage));
-        delete_new(&storage, "fressen");
+        delete_sent(&storage, "fressen");
         assert_eq!(listed_words(&storage), Vec::<String>::new());
     }
 
     #[test]
     fn deleting_a_flashcard_without_a_destination_records_nothing() {
         let storage = storage_sending_to(None);
-        delete_new(&storage, "fressen");
+        delete_sent(&storage, "fressen");
         assert_eq!(listed_words(&storage), Vec::<String>::new());
     }
 
     #[test]
     fn lists_the_oldest_deletion_first() {
         let storage = storage_sending_to(Some(FlashcardDestination::AnkiConnect));
-        delete_new(&storage, "first");
-        delete_new(&storage, "second");
+        delete_sent(&storage, "first");
+        delete_sent(&storage, "second");
         assert_eq!(listed_words(&storage), vec!["first", "second"]);
     }
 
     #[test]
     fn lists_only_the_deletions_of_the_project() {
         let storage = storage_sending_to(Some(FlashcardDestination::AnkiConnect));
-        delete_new(&storage, "fressen");
+        delete_sent(&storage, "fressen");
         let other = ProjectId("placeholder-2".to_string());
         assert_eq!(storage.list_anki_pending_deletions(&other).unwrap(), vec![]);
     }
@@ -198,7 +244,7 @@ mod tests {
     #[test]
     fn clearing_removes_the_deletion() {
         let storage = storage_sending_to(Some(FlashcardDestination::AnkiConnect));
-        let id = delete_new(&storage, "fressen");
+        let id = delete_sent(&storage, "fressen");
         storage
             .clear_anki_pending_deletion(&project(), &id)
             .unwrap();
@@ -233,7 +279,7 @@ mod tests {
     #[test]
     fn saving_the_flashcard_again_forgets_its_deletion() {
         let storage = storage_sending_to(Some(FlashcardDestination::AnkiConnect));
-        let id = delete_new(&storage, "fressen");
+        let id = delete_sent(&storage, "fressen");
         storage
             .create_flashcard(&project(), &id, &draft("fressen"))
             .unwrap();
@@ -243,7 +289,7 @@ mod tests {
     #[test]
     fn deleting_the_project_removes_its_deletions() {
         let storage = storage_sending_to(Some(FlashcardDestination::AnkiConnect));
-        delete_new(&storage, "fressen");
+        delete_sent(&storage, "fressen");
         storage.delete_project(&project()).unwrap();
         let count: i64 = storage
             .read(|conn| {
