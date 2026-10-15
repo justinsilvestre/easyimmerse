@@ -1,13 +1,12 @@
-import type { FlashcardDestination } from "@easyimmerse/types";
 import type { Effect } from "../app/effect.ts";
 import type { RequestRecord } from "../operations/operations.ts";
 
-/** The ids of the requests the project overview sends about where a project's flashcards go. */
+/** The ids of the requests the project overview sends about how a project's flashcards reach Anki. */
 export const ankiRequestIds = (projectId: string) => ({
   export: `project/${projectId}/ankiExport`,
-  destination: `project/${projectId}/flashcardDestination`,
+  ankiConnect: `project/${projectId}/ankiConnect`,
   /** The read of the project as its overview opens, which tells whether to check the connection to Anki. */
-  destinationRead: `project/${projectId}/destinationRead`,
+  projectRead: `project/${projectId}/projectRead`,
 });
 
 /** The id of the check whether Anki can be reached, of which one runs at a time. */
@@ -87,23 +86,20 @@ export const checkAnkiConnection = {
   request: { kind: "checkAnkiConnection" },
 } satisfies Effect;
 
-/** Sets where a project's flashcards go, or clears it with null. */
-export function setDestination(
-  projectId: string,
-  destination: FlashcardDestination | null,
-) {
+/** Turns AnkiConnect on or off for a project. */
+export function setAnkiConnect(projectId: string, usesAnkiConnect: boolean) {
   return {
     type: "sendRequest",
-    id: ankiRequestIds(projectId).destination,
-    request: { kind: "setFlashcardDestination", projectId, destination },
+    id: ankiRequestIds(projectId).ankiConnect,
+    request: { kind: "setAnkiConnect", projectId, usesAnkiConnect },
   } satisfies Effect;
 }
 
-/** Reads the project, to learn where its flashcards go. */
-export function readDestination(projectId: string) {
+/** Reads the project, to learn whether it uses AnkiConnect. */
+export function readProject(projectId: string) {
   return {
     type: "sendRequest",
-    id: ankiRequestIds(projectId).destinationRead,
+    id: ankiRequestIds(projectId).projectRead,
     request: { kind: "getProject", projectId },
   } satisfies Effect;
 }

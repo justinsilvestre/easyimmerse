@@ -10,5 +10,5 @@ CREATE TABLE projects (
     flashcard_front_fields_json TEXT NOT NULL,
     created_at_ms INTEGER NOT NULL,
     last_opened_at_ms INTEGER NOT NULL,
-    flashcard_destination TEXT
+    uses_anki_connect INTEGER NOT NULL DEFAULT 0
 );

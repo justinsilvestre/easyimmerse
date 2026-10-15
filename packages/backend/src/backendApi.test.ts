@@ -611,7 +611,7 @@ describe("deleteAnkiNotes", () => {
   });
 });
 
-describe("setFlashcardDestination", () => {
+describe("setAnkiConnect", () => {
   it("puts the project it answers into the cache at once", async () => {
     const project: Project = {
       id: "p1",
@@ -629,20 +629,20 @@ describe("setFlashcardDestination", () => {
       last_opened_at_ms: 0,
       media_count: 0,
       flashcard_count: 0,
-      flashcard_destination: "anki_connect",
+      uses_anki_connect: true,
     };
     const store = createStore({
       send: async <T>() => ({ data: project as T }),
     });
     await store.dispatch(
-      backendApi.endpoints.setFlashcardDestination.initiate({
+      backendApi.endpoints.setAnkiConnect.initiate({
         projectId: "p1",
-        destination: "anki_connect",
+        usesAnkiConnect: true,
       }),
     );
     expect(
       backendApi.endpoints.getProject.select("p1")(store.getState()).data
-        ?.flashcard_destination,
-    ).toBe("anki_connect");
+        ?.uses_anki_connect,
+    ).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-import type { Flashcard, FlashcardDestination } from "@easyimmerse/types";
+import type { Flashcard } from "@easyimmerse/types";
 import { actions } from "../app/appAction.ts";
 import { exampleListedFlashcard } from "../flashcards/exampleFlashcards.ts";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
@@ -33,14 +33,14 @@ export const exampleAnkiFlashcards: readonly Flashcard[] = [
   ankiFlashcard("f3", "m1", 1),
 ];
 
-/** A server cache holding p1, named "Korean", with the given destination, its media files m1 and m2, and its flashcards, for tests. */
+/** A server cache holding p1, named "Korean", using AnkiConnect or not, with its media files m1 and m2 and its flashcards, for tests. */
 export function ankiCache(
-  destination: FlashcardDestination | null,
+  usesAnkiConnect: boolean,
   flashcards: readonly Flashcard[] = exampleAnkiFlashcards,
 ): ServerCacheSlice {
   const project = {
     ...exampleProject("p1"),
-    flashcard_destination: destination,
+    uses_anki_connect: usesAnkiConnect,
   };
   const mediaFiles = [
     exampleMediaFile("m1", "pilot.mkv"),

@@ -1,17 +1,17 @@
-import type { Flashcard, FlashcardDestination } from "@easyimmerse/types";
+import type { Flashcard } from "@easyimmerse/types";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { cacheEntry } from "../server/cacheEntry.ts";
 
 const noFlashcards: readonly Flashcard[] = [];
 const noMediaFileIds: readonly string[] = [];
 
-/** Returns where the cached project's flashcards go, or null when they go nowhere yet or the project is not cached. */
-export function cachedDestination(
+/** Tells whether the cached project uses AnkiConnect; false while the project is not cached. */
+export function cachedUsesAnkiConnect(
   backend: ServerCacheSlice,
   projectId: string,
-): FlashcardDestination | null {
+): boolean {
   const project = cacheEntry(backend, "getProject", projectId)?.data;
-  return project?.flashcard_destination ?? null;
+  return project?.uses_anki_connect ?? false;
 }
 
 /** Returns the cached project's name, or null when the project is not cached. */

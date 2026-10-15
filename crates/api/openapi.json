@@ -1917,6 +1917,83 @@
         ]
       }
     },
+    "/projects/{id}/anki-connect": {
+      "put": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Turns AnkiConnect on or off for the project. Exports and sends never change it.",
+        "operationId": "setAnkiConnect",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiConnectSetting"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The project with AnkiConnect turned on or off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/anki/notes": {
       "post": {
         "tags": [
@@ -2009,7 +2086,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, the flashcards are marked exported\nand the project's flashcard destination becomes `anki_package`.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
+        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, the flashcards are marked exported.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
         "operationId": "exportAnkiPackage",
         "parameters": [
           {
@@ -2142,7 +2219,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Lists the flashcards of the project whose notes are still to be deleted from Anki.\nDeleting a flashcard that has reached Anki while the project's destination is `anki_connect` adds it here, as does recording a send of a flashcard deleted since the send began.",
+        "summary": "Lists the flashcards of the project whose notes are still to be deleted from Anki.\nDeleting a flashcard that has reached Anki while the project uses AnkiConnect adds it here, as does recording a send of a flashcard deleted since the send began.",
         "operationId": "listAnkiPendingDeletions",
         "parameters": [
           {
@@ -2278,7 +2355,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Stores the ids of the notes AnkiConnect created for the flashcards,\nand makes `anki_connect` the project's flashcard destination.\nA flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.",
+        "summary": "Stores the ids of the notes AnkiConnect created for the flashcards.\nA flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.",
         "operationId": "recordAnkiNotesSent",
         "parameters": [
           {
@@ -2304,82 +2381,6 @@
         "responses": {
           "204": {
             "description": "The note ids were stored"
-          },
-          "401": {
-            "description": "Missing or invalid token",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such project",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "421": {
-            "description": "Unexpected Host header",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer_token": []
-          }
-        ]
-      }
-    },
-    "/projects/{id}/flashcard-destination": {
-      "put": {
-        "tags": [
-          "anki"
-        ],
-        "operationId": "setFlashcardDestination",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "The project id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FlashcardDestinationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "The project with its new destination",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Project"
-                }
-              }
-            }
           },
           "401": {
             "description": "Missing or invalid token",
@@ -5091,6 +5092,17 @@
           }
         }
       },
+      "AnkiConnectSetting": {
+        "type": "object",
+        "required": [
+          "uses_anki_connect"
+        ],
+        "properties": {
+          "uses_anki_connect": {
+            "type": "boolean"
+          }
+        }
+      },
       "AnkiMediaRef": {
         "oneOf": [
           {
@@ -6295,30 +6307,6 @@
           },
           "word_pronunciation": {
             "type": "string"
-          }
-        }
-      },
-      "FlashcardDestination": {
-        "type": "string",
-        "description": "A place a project's flashcards can be sent to.",
-        "enum": [
-          "anki_package",
-          "anki_connect"
-        ]
-      },
-      "FlashcardDestinationRequest": {
-        "type": "object",
-        "properties": {
-          "destination": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/FlashcardDestination",
-                "description": "Null clears the destination."
-              },
-              {
-                "type": "null"
-              }
-            ]
           }
         }
       },
@@ -7832,7 +7820,8 @@
           "created_at_ms",
           "last_opened_at_ms",
           "media_count",
-          "flashcard_count"
+          "flashcard_count",
+          "uses_anki_connect"
         ],
         "properties": {
           "created_at_ms": {
@@ -7845,17 +7834,6 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
-          },
-          "flashcard_destination": {
-            "oneOf": [
-              {
-                "$ref": "#/components/schemas/FlashcardDestination",
-                "description": "Where the project's flashcards last went. Null until they are first exported or sent."
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "id": {
             "$ref": "#/components/schemas/ProjectId"
@@ -7873,6 +7851,10 @@
           },
           "settings": {
             "$ref": "#/components/schemas/ProjectSettings"
+          },
+          "uses_anki_connect": {
+            "type": "boolean",
+            "description": "Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off."
           }
         }
       },

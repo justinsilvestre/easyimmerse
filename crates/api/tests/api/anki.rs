@@ -115,6 +115,19 @@ async fn list_flashcards(server: &TestServer) -> Vec<Value> {
     response.json()["flashcards"].as_array().unwrap().clone()
 }
 
+async fn set_anki_connect(
+    server: &TestServer,
+    project: &str,
+    uses_anki_connect: bool,
+) -> crate::support::TestResponse {
+    server
+        .put_json(
+            &format!("/projects/{project}/anki-connect"),
+            &json!({ "uses_anki_connect": uses_anki_connect }),
+        )
+        .await
+}
+
 async fn project(server: &TestServer) -> Value {
     server.get(&format!("/projects/{PROJECT}")).await.json()
 }
@@ -232,14 +245,12 @@ mod export_anki_package {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn sets_the_destination_to_the_package() {
+    async fn leaves_anki_connect_on() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;
+        set_anki_connect(&server, PROJECT, true).await;
         export_ids(&server, &ids).await;
-        assert_eq!(
-            project(&server).await["flashcard_destination"],
-            "anki_package"
-        );
+        assert_eq!(project(&server).await["uses_anki_connect"], true);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -359,19 +370,6 @@ mod export_anki_package {
         assert_eq!(
             response.json(),
             json!({ "flashcard_count": 2, "skipped_media_count": 0 })
-        );
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn a_saved_package_sets_the_destination() {
-        let server = spawn_test_server(true).await;
-        let ids = create_two(&server).await;
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("deck.apkg");
-        export(&server, &json!({ "flashcard_ids": ids, "save_path": path })).await;
-        assert_eq!(
-            project(&server).await["flashcard_destination"],
-            "anki_package"
         );
     }
 
@@ -545,13 +543,10 @@ mod record_anki_notes_sent {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn an_empty_list_sets_the_destination() {
+    async fn leaves_anki_connect_off() {
         let server = spawn_test_server(false).await;
         record(&server, json!([])).await;
-        assert_eq!(
-            project(&server).await["flashcard_destination"],
-            "anki_connect"
-        );
+        assert_eq!(project(&server).await["uses_anki_connect"], false);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -583,21 +578,6 @@ mod record_anki_notes_sent {
         let flashcards = list_flashcards(&server).await;
         let first = flashcards.iter().find(|card| card["id"] == ids[0]).unwrap();
         assert_eq!(first["anki_note_id"], 100);
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn sets_the_destination_to_anki_connect() {
-        let server = spawn_test_server(false).await;
-        let ids = create_two(&server).await;
-        record(
-            &server,
-            json!([{ "flashcard_id": ids[0], "anki_note_id": 7 }]),
-        )
-        .await;
-        assert_eq!(
-            project(&server).await["flashcard_destination"],
-            "anki_connect"
-        );
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -662,68 +642,41 @@ mod record_anki_notes_sent {
     }
 }
 
-mod set_flashcard_destination {
+mod set_anki_connect {
     use super::*;
 
-    async fn set(server: &TestServer, destination: Value) -> crate::support::TestResponse {
-        server
-            .put_json(
-                &format!("/projects/{PROJECT}/flashcard-destination"),
-                &json!({ "destination": destination }),
-            )
-            .await
+    #[tokio::test(flavor = "multi_thread")]
+    async fn answers_the_project_with_anki_connect_on() {
+        let server = spawn_test_server(false).await;
+        let response = set_anki_connect(&server, PROJECT, true).await;
+        assert_eq!(response.json()["uses_anki_connect"], true);
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn answers_the_project_with_the_destination() {
+    async fn turns_anki_connect_on() {
         let server = spawn_test_server(false).await;
-        let response = set(&server, json!("anki_connect")).await;
-        assert_eq!(response.json()["flashcard_destination"], "anki_connect");
+        set_anki_connect(&server, PROJECT, true).await;
+        assert_eq!(project(&server).await["uses_anki_connect"], true);
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn stores_the_destination() {
+    async fn turns_anki_connect_off() {
         let server = spawn_test_server(false).await;
-        set(&server, json!("anki_package")).await;
-        assert_eq!(
-            project(&server).await["flashcard_destination"],
-            "anki_package"
-        );
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn clears_the_destination() {
-        let server = spawn_test_server(false).await;
-        set(&server, json!("anki_package")).await;
-        set(&server, Value::Null).await;
-        assert_eq!(project(&server).await["flashcard_destination"], Value::Null);
+        set_anki_connect(&server, PROJECT, true).await;
+        set_anki_connect(&server, PROJECT, false).await;
+        assert_eq!(project(&server).await["uses_anki_connect"], false);
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn refuses_an_unknown_project() {
         let server = spawn_test_server(false).await;
-        let response = server
-            .put_json(
-                "/projects/missing/flashcard-destination",
-                &json!({ "destination": "anki_package" }),
-            )
-            .await;
+        let response = set_anki_connect(&server, "missing", true).await;
         assert_eq!(response.status, 404);
     }
 }
 
 mod anki_pending_deletions {
     use super::*;
-
-    async fn set_destination(server: &TestServer, destination: &str) {
-        let response = server
-            .put_json(
-                &format!("/projects/{PROJECT}/flashcard-destination"),
-                &json!({ "destination": destination }),
-            )
-            .await;
-        assert_eq!(response.status, 200, "{}", response.text());
-    }
 
     async fn record_sent(server: &TestServer, id: &str) {
         let response = server
@@ -735,11 +688,11 @@ mod anki_pending_deletions {
         assert_eq!(response.status, 204, "{}", response.text());
     }
 
-    /// Creates a flashcard, sends it to Anki, gives the project the destination and deletes the flashcard, returning its id.
-    async fn delete_in_project_sending_to(server: &TestServer, destination: &str) -> String {
+    /// Creates a flashcard, sends it to Anki, turns AnkiConnect on or off and deletes the flashcard, returning its id.
+    async fn delete_sent(server: &TestServer, uses_anki_connect: bool) -> String {
         let id = create_flashcard(server, PROJECT, None).await;
         record_sent(server, &id).await;
-        set_destination(server, destination).await;
+        set_anki_connect(server, PROJECT, uses_anki_connect).await;
         delete_flashcard(server, &id).await;
         id
     }
@@ -763,16 +716,16 @@ mod anki_pending_deletions {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn lists_a_flashcard_deleted_in_a_project_sending_through_anki_connect() {
+    async fn lists_a_flashcard_deleted_in_a_project_using_anki_connect() {
         let server = spawn_test_server(false).await;
-        let id = delete_in_project_sending_to(&server, "anki_connect").await;
+        let id = delete_sent(&server, true).await;
         assert_eq!(listed_ids(&server).await, [json!(id)]);
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn lists_nothing_for_a_flashcard_deleted_before_it_reached_anki() {
         let server = spawn_test_server(false).await;
-        set_destination(&server, "anki_connect").await;
+        set_anki_connect(&server, PROJECT, true).await;
         let id = create_flashcard(&server, PROJECT, None).await;
         delete_flashcard(&server, &id).await;
         assert_eq!(listed_ids(&server).await, Vec::<Value>::new());
@@ -781,7 +734,7 @@ mod anki_pending_deletions {
     #[tokio::test(flavor = "multi_thread")]
     async fn lists_a_flashcard_whose_send_is_recorded_after_its_deletion() {
         let server = spawn_test_server(false).await;
-        set_destination(&server, "anki_connect").await;
+        set_anki_connect(&server, PROJECT, true).await;
         let id = create_flashcard(&server, PROJECT, None).await;
         delete_flashcard(&server, &id).await;
         record_sent(&server, &id).await;
@@ -791,7 +744,7 @@ mod anki_pending_deletions {
     #[tokio::test(flavor = "multi_thread")]
     async fn names_the_deleted_flashcard_by_its_word() {
         let server = spawn_test_server(false).await;
-        delete_in_project_sending_to(&server, "anki_connect").await;
+        delete_sent(&server, true).await;
         let response = server
             .get(&format!("/projects/{PROJECT}/anki/pending-deletions"))
             .await;
@@ -799,16 +752,16 @@ mod anki_pending_deletions {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn lists_nothing_for_a_project_exporting_packages() {
+    async fn lists_nothing_for_a_project_not_using_anki_connect() {
         let server = spawn_test_server(false).await;
-        delete_in_project_sending_to(&server, "anki_package").await;
+        delete_sent(&server, false).await;
         assert_eq!(listed_ids(&server).await, Vec::<Value>::new());
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn clearing_removes_the_deletion() {
         let server = spawn_test_server(false).await;
-        let id = delete_in_project_sending_to(&server, "anki_connect").await;
+        let id = delete_sent(&server, true).await;
         clear(&server, PROJECT, &id).await;
         assert_eq!(listed_ids(&server).await, Vec::<Value>::new());
     }
@@ -816,7 +769,7 @@ mod anki_pending_deletions {
     #[tokio::test(flavor = "multi_thread")]
     async fn clearing_answers_no_content() {
         let server = spawn_test_server(false).await;
-        let id = delete_in_project_sending_to(&server, "anki_connect").await;
+        let id = delete_sent(&server, true).await;
         assert_eq!(clear(&server, PROJECT, &id).await.status, 204);
     }
 

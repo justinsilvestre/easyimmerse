@@ -1,16 +1,16 @@
 //! Records of where a project's flashcards went: into an Anki package, or to Anki through AnkiConnect.
 
 use easyimmerse_core::flashcard::FlashcardId;
-use easyimmerse_core::project::{FlashcardDestination, ProjectId};
+use easyimmerse_core::project::ProjectId;
 use rusqlite::{Connection, params};
 
 use crate::anki_pending_deletions::record_anki_pending_deletion_of_gone;
 use crate::error::StorageError;
-use crate::projects::set_flashcard_destination;
+use crate::projects::ensure_project_exists;
 use crate::stored_integer::to_stored_integer;
 
-/// Records that the flashcards were written into an Anki package at `exported_at_ms`, and makes the package
-/// the project's flashcard destination, in one transaction. A flashcard deleted since the export began is passed over.
+/// Records that the flashcards were written into an Anki package at `exported_at_ms`, in one transaction.
+/// A flashcard deleted since the export began is passed over.
 pub fn record_anki_export(
     conn: &mut Connection,
     project_id: &ProjectId,
@@ -18,23 +18,19 @@ pub fn record_anki_export(
     exported_at_ms: u64,
 ) -> Result<(), StorageError> {
     let transaction = conn.transaction()?;
+    ensure_project_exists(&transaction, project_id)?;
     for id in ids {
         transaction.execute(
             "UPDATE flashcards SET exported_at_ms = ?2 WHERE id = ?1",
             params![id.0, to_stored_integer(exported_at_ms)],
         )?;
     }
-    set_flashcard_destination(
-        &transaction,
-        project_id,
-        Some(FlashcardDestination::AnkiPackage),
-    )?;
     transaction.commit()?;
     Ok(())
 }
 
-/// Stores the id of the note AnkiConnect created for each of the project's flashcards, and makes AnkiConnect the project's
-/// flashcard destination, in one transaction. A flashcard of another project is passed over,
+/// Stores the id of the note AnkiConnect created for each of the project's flashcards, in one transaction.
+/// A flashcard of another project is passed over,
 /// and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
 pub fn record_anki_notes_sent(
     conn: &mut Connection,
@@ -42,11 +38,7 @@ pub fn record_anki_notes_sent(
     notes: &[(FlashcardId, u64)],
 ) -> Result<(), StorageError> {
     let transaction = conn.transaction()?;
-    set_flashcard_destination(
-        &transaction,
-        project_id,
-        Some(FlashcardDestination::AnkiConnect),
-    )?;
+    ensure_project_exists(&transaction, project_id)?;
     for (id, anki_note_id) in notes {
         transaction.execute(
             "UPDATE flashcards SET anki_note_id = ?2 WHERE id = ?1 AND project_id = ?3",
@@ -73,9 +65,11 @@ mod tests {
         FlashcardId("missing".to_string())
     }
 
+    /// A storage holding the placeholder projects, the first of which uses AnkiConnect.
     fn seeded_storage() -> Storage {
         let storage = Storage::open_in_memory().unwrap();
         storage.seed_placeholder_projects().unwrap();
+        storage.set_uses_anki_connect(&project(), true).unwrap();
         storage
     }
 
@@ -119,22 +113,6 @@ mod tests {
     }
 
     #[test]
-    fn an_export_makes_the_package_the_destination() {
-        let storage = seeded_storage();
-        let id = create(&storage);
-        storage
-            .record_anki_export(&project(), &[id], 1_000)
-            .unwrap();
-        assert_eq!(
-            storage
-                .get_project(&project())
-                .unwrap()
-                .flashcard_destination,
-            Some(FlashcardDestination::AnkiPackage)
-        );
-    }
-
-    #[test]
     fn an_export_passes_over_a_flashcard_that_is_gone() {
         let storage = seeded_storage();
         let id = create(&storage);
@@ -163,19 +141,6 @@ mod tests {
         assert_eq!(
             storage.get_flashcard(&id).unwrap().anki_note_id,
             Some(1_700_000_000_000)
-        );
-    }
-
-    #[test]
-    fn a_send_makes_anki_connect_the_destination() {
-        let storage = seeded_storage();
-        storage.record_anki_notes_sent(&project(), &[]).unwrap();
-        assert_eq!(
-            storage
-                .get_project(&project())
-                .unwrap()
-                .flashcard_destination,
-            Some(FlashcardDestination::AnkiConnect)
         );
     }
 

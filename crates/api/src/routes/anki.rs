@@ -1,4 +1,4 @@
-//! Rendering a project's flashcards as notes for the AnkiConnect client, recording what it sent, and choosing where the flashcards go.
+//! Rendering a project's flashcards as notes for the AnkiConnect client, recording what it sent, and turning AnkiConnect on or off.
 
 use std::collections::HashSet;
 
@@ -7,7 +7,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use easyimmerse_anki::{AnkiNotes, render_notes};
 use easyimmerse_core::flashcard::FlashcardId;
-use easyimmerse_core::project::{FlashcardDestination, Project, ProjectId};
+use easyimmerse_core::project::{Project, ProjectId};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use utoipa::ToSchema;
@@ -38,9 +38,8 @@ pub struct AnkiSentNote {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
-pub struct FlashcardDestinationRequest {
-    /// Null clears the destination.
-    pub destination: Option<FlashcardDestination>,
+pub struct AnkiConnectSetting {
+    pub uses_anki_connect: bool,
 }
 
 /// Renders the flashcards as notes for the AnkiConnect client, with the deck and note type they belong to.
@@ -73,8 +72,7 @@ pub async fn render_anki_notes(
     )))
 }
 
-/// Stores the ids of the notes AnkiConnect created for the flashcards,
-/// and makes `anki_connect` the project's flashcard destination.
+/// Stores the ids of the notes AnkiConnect created for the flashcards.
 /// A flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
 #[utoipa::path(
     post,
@@ -103,29 +101,30 @@ pub async fn record_anki_notes_sent(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// Turns AnkiConnect on or off for the project. Exports and sends never change it.
 #[utoipa::path(
     put,
-    path = "/projects/{id}/flashcard-destination",
+    path = "/projects/{id}/anki-connect",
     tag = "anki",
-    operation_id = "setFlashcardDestination",
+    operation_id = "setAnkiConnect",
     security(("bearer_token" = [])),
     params(("id" = String, Path, description = "The project id")),
-    request_body = FlashcardDestinationRequest,
+    request_body = AnkiConnectSetting,
     responses(
-        (status = 200, description = "The project with its new destination", body = Project),
+        (status = 200, description = "The project with AnkiConnect turned on or off", body = Project),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
     ),
 )]
-pub async fn set_flashcard_destination(
+pub async fn set_anki_connect(
     State(state): State<AppState>,
     Path(project_id): Path<ProjectId>,
-    Json(request): Json<FlashcardDestinationRequest>,
+    Json(request): Json<AnkiConnectSetting>,
 ) -> Result<Json<Project>, ApiFailure> {
     let project = state
         .with_storage(move |storage| {
-            storage.set_flashcard_destination(&project_id, request.destination)?;
+            storage.set_uses_anki_connect(&project_id, request.uses_anki_connect)?;
             storage.get_project(&project_id)
         })
         .await?;

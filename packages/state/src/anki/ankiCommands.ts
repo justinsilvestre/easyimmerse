@@ -5,7 +5,7 @@ import type {
   RequestOutcome,
   RequestSettled,
 } from "../server/serverRequest.ts";
-import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
+import { cachedFlashcards, cachedUsesAnkiConnect } from "./ankiCache.ts";
 import {
   ankiUnreachableCode,
   deletedNoteNotice,
@@ -29,7 +29,7 @@ type Settled<K> = Extract<RequestSettled, { request: { kind: K } }>;
 type AnkiSettled = Settled<"sendFlashcardsToAnki" | "deleteAnkiNotes">;
 
 /**
- * Returns the effects of AnkiConnect sends that belong to no screen, in a project whose flashcards go to Anki through AnkiConnect:
+ * Returns the effects of AnkiConnect sends that belong to no screen, in a project that uses AnkiConnect:
  * a saved flashcard is sent there once its save lands, and the notes of deleted flashcards are deleted there once a deletion lands.
  * Every send's outcome is told of, except that Anki could not be reached: the project screen's panel shows that,
  * and a notice would repeat it after every save while Anki is closed. A failed send leaves its flashcards unsent until the next save or Send.
@@ -52,7 +52,7 @@ export function ankiCommands(action: AppAction, app: AnkiApp) {
 function sendSaved({ request, outcome }: RequestSettled, { backend }: AnkiApp) {
   if (request.kind !== "saveFlashcard" || !outcome.ok) return [];
   const { projectId, flashcardId } = request;
-  return cachedDestination(backend, projectId) === "anki_connect"
+  return cachedUsesAnkiConnect(backend, projectId)
     ? [sendToAnki(projectId, [flashcardId])]
     : [];
 }
@@ -64,7 +64,7 @@ function deleteDeleted(
 ) {
   if (request.kind !== "deleteFlashcard" || !outcome.ok) return [];
   const { projectId, flashcardId, purpose } = request;
-  if (cachedDestination(backend, projectId) !== "anki_connect") return [];
+  if (!cachedUsesAnkiConnect(backend, projectId)) return [];
   const deleted = cachedFlashcards(backend, projectId).find(
     ({ id }) => id === flashcardId,
   );
@@ -81,7 +81,7 @@ function deleteDeleted(
 function syncOnceFound(action: RequestSettled, app: AnkiApp) {
   if (!hasFoundAnki(action)) return [];
   const { kind, projectId } = action.request;
-  if (cachedDestination(app.backend, projectId) !== "anki_connect") return [];
+  if (!cachedUsesAnkiConnect(app.backend, projectId)) return [];
   return kind === "sendFlashcardsToAnki"
     ? syncWithAnki(projectId, app)
     : sendUnsent(projectId, app);

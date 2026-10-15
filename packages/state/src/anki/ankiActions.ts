@@ -24,7 +24,7 @@ export const ankiActions = {
   /** The user opened the dialog that explains how to set up AnkiConnect. */
   ankiConnectSetupOpened: () => ({ type: "ankiConnectSetupOpened" }) as const,
   ankiConnectSetupClosed: () => ({ type: "ankiConnectSetupClosed" }) as const,
-  /** The user chose to send the project's flashcards to Anki through AnkiConnect from now on. */
+  /** The user turned AnkiConnect on for the project, which stays on until they turn it off. */
   ankiConnectSetupRequested: () =>
     ({ type: "ankiConnectSetupRequested" }) as const,
   /** The user asked whether Anki can be reached now. */
@@ -32,9 +32,8 @@ export const ankiActions = {
     ({ type: "ankiConnectionCheckRequested" }) as const,
   /** The user asked to send every flashcard Anki does not have yet. */
   ankiSendRequested: () => ({ type: "ankiSendRequested" }) as const,
-  /** The user chose to pick where the project's flashcards go anew. */
-  flashcardDestinationCleared: () =>
-    ({ type: "flashcardDestinationCleared" }) as const,
+  /** The user turned AnkiConnect off for the project. */
+  ankiConnectTurnedOff: () => ({ type: "ankiConnectTurnedOff" }) as const,
 };
 
 /** An action of the project overview's Anki exports and AnkiConnect sends. */

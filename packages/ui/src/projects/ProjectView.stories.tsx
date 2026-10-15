@@ -1,9 +1,7 @@
+import type { FlashcardSync } from "@easyimmerse/state";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import {
-  exampleFlashcard,
-  exampleLanguages,
-} from "../flashcards/exampleFlashcard.ts";
+import { exampleLanguages } from "../flashcards/exampleFlashcard.ts";
 import {
   fieldsOfPreset,
   frontFieldsOfPreset,
@@ -14,9 +12,11 @@ import {
   type LanguageDictionaryStatus,
 } from "./DictionaryStatus.tsx";
 import {
-  FlashcardSyncPanel,
-  type FlashcardSyncState,
-} from "./FlashcardSyncPanel.tsx";
+  ankiConnectSync,
+  exportedSync,
+  neverExportedSync,
+} from "./exampleFlashcardSyncs.ts";
+import { FlashcardSyncPanel } from "./FlashcardSyncPanel.tsx";
 import type { MediaItem } from "./MediaList.tsx";
 import { MediaSection } from "./MediaSection.tsx";
 import { ProjectView } from "./ProjectView.tsx";
@@ -62,7 +62,7 @@ const dictionariesSetUp: LanguageDictionaryStatus[] = [
 /** The sections of a project with the given media and flashcard state, wired to the Actions panel. */
 function sections(
   mediaItems: readonly MediaItem[],
-  flashcardSync: FlashcardSyncState,
+  flashcardSync: FlashcardSync,
   dictionaries: readonly LanguageDictionaryStatus[] = dictionariesSetUp,
 ) {
   return (
@@ -77,16 +77,16 @@ function sections(
         onDeleteMedia={fn()}
       />
       <FlashcardSyncPanel
-        state={flashcardSync}
+        sync={flashcardSync}
         includedFields={fieldsOfPreset("intermediate")}
         frontFields={frontFieldsOfPreset("intermediate")}
         languages={exampleLanguages}
         onExportPackage={fn()}
         onSetUpAnkiConnect={fn()}
+        onTurnOffAnkiConnect={fn()}
         onStartReview={fn()}
         onSendToAnki={fn()}
         onCheckConnection={fn()}
-        onChangeDestination={fn()}
       />
     </>
   );
@@ -101,7 +101,7 @@ const meta = {
     name: "German",
     onBack: fn(),
     onEditSettings: fn(),
-    children: sections(media, { kind: "notStarted" }),
+    children: sections(media, neverExportedSync),
   },
 } satisfies Meta<typeof ProjectView>;
 
@@ -110,55 +110,30 @@ type Story = StoryObj<typeof meta>;
 
 export const FreshProject: Story = {
   args: {
-    children: sections([], { kind: "notStarted" }, [
-      { language: "de", role: "target", dictionaryCount: 0 },
-      { language: "en", role: "translation", dictionaryCount: 0 },
-    ]),
+    children: sections(
+      [],
+      { ...neverExportedSync, flashcardCount: 0, nextCard: null },
+      [
+        { language: "de", role: "target", dictionaryCount: 0 },
+        { language: "en", role: "translation", dictionaryCount: 0 },
+      ],
+    ),
   },
 };
 
 export const WithMedia: Story = {};
 
-export const ReviewingInApp: Story = {
-  args: {
-    children: sections(media, {
-      kind: "review",
-      dueCount: 12,
-      nextCard: exampleFlashcard,
-    }),
-  },
-};
-
 export const ExportingAnkiPackages: Story = {
   args: {
-    children: sections(media, {
-      kind: "ankiPackage",
-      flashcardCount: 12,
-      newCount: 5,
-      changedCount: 2,
-      nextCard: exampleFlashcard,
-    }),
+    children: sections(media, exportedSync),
   },
 };
 
 export const SendingThroughAnkiConnect: Story = {
   args: {
-    children: sections(
-      media,
-      {
-        kind: "ankiConnect",
-        connection: "unreachable",
-        deniedOrigin: null,
-        flashcardCount: 12,
-        unsentCount: 3,
-        pendingDeletionCount: 0,
-        nextCard: exampleFlashcard,
-        isSyncing: false,
-      },
-      [
-        { language: "de", role: "target", dictionaryCount: 2 },
-        { language: "en", role: "translation", dictionaryCount: 0 },
-      ],
-    ),
+    children: sections(media, ankiConnectSync({ connection: "unreachable" }), [
+      { language: "de", role: "target", dictionaryCount: 2 },
+      { language: "en", role: "translation", dictionaryCount: 0 },
+    ]),
   },
 };

@@ -11,7 +11,7 @@ import { openedAnkiExport } from "./ankiExportDialog.ts";
 import type { AnkiPackageExport } from "./ankiResponses.ts";
 import { ankiCache, openOverview } from "./ankiTestSupport.ts";
 
-const backend = ankiCache("anki_package");
+const backend = ankiCache(false);
 
 const after = (...actions: AppAction[]) =>
   stateAfterWithCache(backend, openOverview, ...actions);

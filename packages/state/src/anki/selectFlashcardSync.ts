@@ -2,7 +2,7 @@ import type { Flashcard, FlashcardContent } from "@easyimmerse/types";
 import { createSelector } from "reselect";
 import type { RootState } from "../app/createAppStore.ts";
 import { type CacheEntry, cacheEntry } from "../server/cacheEntry.ts";
-import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
+import { cachedFlashcards, cachedUsesAnkiConnect } from "./ankiCache.ts";
 import {
   isChangedSinceExport,
   isNewOrChangedSinceExport,
@@ -19,45 +19,44 @@ export type AnkiConnectionStatus =
   | "unreachable"
   | "denied";
 
-/** Where a project's flashcards go, with what the project overview's flashcards panel shows about it. */
-export type FlashcardSync =
-  | { kind: "notStarted" }
-  | {
-      kind: "ankiPackage";
-      /** Every flashcard of the project. */
-      flashcardCount: number;
-      /** The flashcards never marked as exported. */
-      newCount: number;
-      /** The flashcards edited since they were last marked as exported. */
-      changedCount: number;
-      /** The first-made flashcard new or changed since it was last marked as exported. */
-      nextCard: FlashcardContent | null;
-    }
-  | {
-      kind: "ankiConnect";
-      connection: AnkiConnectionStatus;
-      /** The origin Anki refused, while it refuses easyImmerse and the origin is known, or null otherwise. */
-      deniedOrigin: string | null;
-      /** Every flashcard of the project. */
-      flashcardCount: number;
-      unsentCount: number;
-      /** The deleted flashcards whose notes are still to be deleted from Anki. */
-      pendingDeletionCount: number;
-      /** The first-made flashcard Anki has no note for. */
-      nextCard: FlashcardContent | null;
-      /** Whether a send of the project's flashcards, or a deletion of its notes from Anki, is under way or waiting. */
-      isSyncing: boolean;
-    };
+/** What the project overview's flashcards panel shows about packages for Anki, which can always be exported. */
+export type PackageSync = {
+  /** The flashcards new and changed since they were last marked as exported, or null while none ever was. */
+  sinceLastExport: { newCount: number; changedCount: number } | null;
+};
+
+/** What the project overview's flashcards panel shows about AnkiConnect while it is on for the project. */
+export type AnkiConnectSync = {
+  connection: AnkiConnectionStatus;
+  /** The origin Anki refused, while it refuses easyImmerse and the origin is known, or null otherwise. */
+  deniedOrigin: string | null;
+  unsentCount: number;
+  /** The deleted flashcards whose notes are still to be deleted from Anki. */
+  pendingDeletionCount: number;
+  /** Whether a send of the project's flashcards, or a deletion of its notes from Anki, is under way or waiting. */
+  isSyncing: boolean;
+};
+
+/** What the project overview's flashcards panel shows about each way the project's flashcards reach Anki. */
+export type FlashcardSync = {
+  /** Every flashcard of the project. */
+  flashcardCount: number;
+  package: PackageSync;
+  /** Null while AnkiConnect is off for the project. */
+  ankiConnect: AnkiConnectSync | null;
+  /** The first-made flashcard waiting to reach Anki: through AnkiConnect while it is on, and otherwise in the next export. */
+  nextCard: FlashcardContent | null;
+};
 
 /**
- * Selects where the project's flashcards go, from the cached project, flashcards and pending deletions from Anki,
+ * Selects how the project's flashcards reach Anki, from the cached project, flashcards and pending deletions from Anki,
  * and the last check of the connection to Anki.
  * The result keeps its reference while those do.
  */
 export const selectFlashcardSync = createSelector(
   [
     (root: RootState, projectId: string) =>
-      cachedDestination(root.backend, projectId),
+      cachedUsesAnkiConnect(root.backend, projectId),
     (root: RootState, projectId: string) =>
       cachedFlashcards(root.backend, projectId),
     (root: RootState) =>
@@ -69,42 +68,36 @@ export const selectFlashcardSync = createSelector(
         ?.deletions.length ?? 0,
   ],
   (
-    destination,
+    usesAnkiConnect,
     flashcards,
     connection,
-    syncing,
+    isSyncing,
     pendingDeletionCount,
-  ): FlashcardSync => {
-    switch (destination) {
-      case null:
-        return { kind: "notStarted" };
-      case "anki_package": {
-        return {
-          kind: "ankiPackage",
-          flashcardCount: flashcards.length,
-          newCount: flashcards.filter(isUnexported).length,
-          changedCount: flashcards.filter(isChangedSinceExport).length,
-          nextCard: firstMadeContent(
-            flashcards.filter(isNewOrChangedSinceExport),
-          ),
-        };
-      }
-      case "anki_connect": {
-        const unsent = flashcards.filter(isUnsent);
-        return {
-          kind: "ankiConnect",
+  ): FlashcardSync => ({
+    flashcardCount: flashcards.length,
+    package: { sinceLastExport: sinceLastExport(flashcards) },
+    ankiConnect: usesAnkiConnect
+      ? {
           connection: statusOf(connection),
           deniedOrigin: deniedOriginOf(connection),
-          flashcardCount: flashcards.length,
-          unsentCount: unsent.length,
+          unsentCount: flashcards.filter(isUnsent).length,
           pendingDeletionCount,
-          nextCard: firstMadeContent(unsent),
-          isSyncing: syncing,
-        };
-      }
-    }
-  },
+          isSyncing,
+        }
+      : null,
+    nextCard: firstMadeContent(
+      flashcards.filter(usesAnkiConnect ? isUnsent : isNewOrChangedSinceExport),
+    ),
+  }),
 );
+
+function sinceLastExport(flashcards: readonly Flashcard[]) {
+  if (flashcards.every(isUnexported)) return null;
+  return {
+    newCount: flashcards.filter(isUnexported).length,
+    changedCount: flashcards.filter(isChangedSinceExport).length,
+  };
+}
 
 function firstMadeContent(flashcards: readonly Flashcard[]) {
   return oldestFirst(flashcards)[0]?.content ?? null;

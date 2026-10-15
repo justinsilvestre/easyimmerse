@@ -60,7 +60,7 @@ export function ProjectOverview({
   );
   // The panel counts the notes still to be deleted from Anki from this query's cached answer.
   useListAnkiPendingDeletionsQuery(
-    flashcardSync.kind === "ankiConnect" ? project.id : skipToken,
+    flashcardSync.ankiConnect === null ? skipToken : project.id,
   );
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
   const navigate = useNavigate();
@@ -134,8 +134,7 @@ export function ProjectOverview({
         />
       )}
       <FlashcardSyncPanel
-        state={flashcardSync}
-        comingSoon={["review"]}
+        sync={flashcardSync}
         includedFields={settings.flashcard_fields}
         frontFields={settings.flashcard_front_fields}
         languages={{
@@ -149,9 +148,7 @@ export function ProjectOverview({
         onCheckConnection={() =>
           dispatch(actions.ankiConnectionCheckRequested())
         }
-        onChangeDestination={() =>
-          dispatch(actions.flashcardDestinationCleared())
-        }
+        onTurnOffAnkiConnect={() => dispatch(actions.ankiConnectTurnedOff())}
       />
     </ProjectView>
   );

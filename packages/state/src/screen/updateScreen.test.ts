@@ -160,7 +160,7 @@ describe("updateScreen", () => {
     );
     expect(effects).toContainEqual({
       type: "sendRequest",
-      id: "project/p1/destinationRead",
+      id: "project/p1/projectRead",
       request: { kind: "getProject", projectId: "p1" },
     });
   });

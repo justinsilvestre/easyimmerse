@@ -4,7 +4,6 @@ import type {
   ConversionCacheBudget,
   ConversionCacheStatus,
   Flashcard,
-  FlashcardDestination,
   FlashcardDraft,
   ImportFormRequest,
   ImportJobStarted,
@@ -159,10 +158,11 @@ export type ServerRequest =
       flashcardIds: readonly string[];
       savePath: string | null;
     }
+  /** Turns AnkiConnect on or off for a project. */
   | {
-      kind: "setFlashcardDestination";
+      kind: "setAnkiConnect";
       projectId: string;
-      destination: FlashcardDestination | null;
+      usesAnkiConnect: boolean;
     };
 
 /** The kind of a server request. */
@@ -210,7 +210,7 @@ export type ServerResponses = {
   sendFlashcardsToAnki: AnkiSendOutcome;
   deleteAnkiNotes: AnkiDeletionOutcome;
   exportAnkiPackage: AnkiPackageExport;
-  setFlashcardDestination: Project;
+  setAnkiConnect: Project;
 };
 
 /** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */

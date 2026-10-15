@@ -4,12 +4,12 @@ import { updated } from "../app/updated.ts";
 import { cacheEntry, type ServerCacheSlice } from "../server/cacheEntry.ts";
 import { isSettled } from "../server/isSettled.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
-import { cachedDestination } from "./ankiCache.ts";
+import { cachedUsesAnkiConnect } from "./ankiCache.ts";
 import {
   ankiConnectionCheckId,
   ankiRequestIds,
   checkAnkiConnection,
-  setDestination,
+  setAnkiConnect,
 } from "./ankiRequests.ts";
 import { syncWithAnki } from "./syncWithAnki.ts";
 
@@ -17,7 +17,7 @@ type AnkiConnectApp = Pick<ReadableState, "backend" | "operations">;
 
 /**
  * Opens and closes the dialog that explains how to set up AnkiConnect.
- * Confirming it makes AnkiConnect the project's destination and checks whether Anki can be reached.
+ * Confirming it turns AnkiConnect on for the project and checks whether Anki can be reached.
  */
 export function updateAnkiConnectSetup(
   isOpen: boolean,
@@ -32,7 +32,7 @@ export function updateAnkiConnectSetup(
     case "ankiConnectSetupRequested":
       return updated(
         false,
-        setDestination(projectId, "anki_connect"),
+        setAnkiConnect(projectId, true),
         checkAnkiConnection,
       );
     default:
@@ -42,10 +42,10 @@ export function updateAnkiConnectSetup(
 
 /**
  * Returns the effects of the project overview's AnkiConnect actions, which change no state:
- * a check whether Anki can be reached, as asked for or once the overview has read that the project sends to Anki;
+ * a check whether Anki can be reached, as asked for or once the overview has read that the project uses AnkiConnect;
  * a send of every flashcard Anki has no note for, oldest first, followed by the deletion of the notes of deleted flashcards
  * that Anki could not be reached for, as asked for or once Anki is found running;
- * and the clearing of the project's destination.
+ * and the turning off of AnkiConnect.
  */
 export function ankiConnectEffects(
   action: AppAction,
@@ -57,8 +57,8 @@ export function ankiConnectEffects(
       return [checkAnkiConnection];
     case "ankiSendRequested":
       return syncWithAnki(projectId, app);
-    case "flashcardDestinationCleared":
-      return [setDestination(projectId, null)];
+    case "ankiConnectTurnedOff":
+      return [setAnkiConnect(projectId, false)];
     case "requestSettled":
       return [
         ...checkOnRead(action, projectId),
@@ -69,23 +69,23 @@ export function ankiConnectEffects(
   }
 }
 
-/** Checks the connection once the overview has read that the project sends to Anki. */
+/** Checks the connection once the overview has read that the project uses AnkiConnect. */
 function checkOnRead(action: RequestSettled, projectId: string) {
   return isSettled(
     action,
-    ankiRequestIds(projectId).destinationRead,
+    ankiRequestIds(projectId).projectRead,
     "getProject",
   ) &&
     action.outcome.ok &&
     // RTK Query can settle a read it skipped without data, so the project may be missing.
-    action.outcome.data?.flashcard_destination === "anki_connect"
+    action.outcome.data?.uses_anki_connect === true
     ? [checkAnkiConnection]
     : [];
 }
 
 /**
- * Syncs the project with Anki once Anki is known to run and the project is known to send there,
- * whichever of the check and the setting of the destination lands last.
+ * Syncs the project with Anki once Anki is known to run and the project is known to use AnkiConnect,
+ * whichever of the check and the turning on of AnkiConnect lands last.
  */
 function syncOnceConnected(
   action: RequestSettled,
@@ -93,8 +93,7 @@ function syncOnceConnected(
   app: AnkiConnectApp,
 ) {
   const isReady =
-    (hasFoundAnki(action) &&
-      cachedDestination(app.backend, projectId) === "anki_connect") ||
+    (hasFoundAnki(action) && cachedUsesAnkiConnect(app.backend, projectId)) ||
     (hasSetAnkiConnect(action, projectId) && isAnkiConnected(app.backend));
   return isReady ? syncWithAnki(projectId, app) : [];
 }
@@ -111,11 +110,11 @@ function hasSetAnkiConnect(action: RequestSettled, projectId: string) {
   return (
     isSettled(
       action,
-      ankiRequestIds(projectId).destination,
-      "setFlashcardDestination",
+      ankiRequestIds(projectId).ankiConnect,
+      "setAnkiConnect",
     ) &&
     action.outcome.ok &&
-    action.outcome.data.flashcard_destination === "anki_connect"
+    action.outcome.data.uses_anki_connect
   );
 }
 

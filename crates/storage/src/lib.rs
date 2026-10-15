@@ -34,7 +34,7 @@ use easyimmerse_core::lookup::{
     DictionaryStylesheet, FoundEntry, FoundKanji, FoundKanjiMeta, FoundTermMeta,
 };
 use easyimmerse_core::media_file::{MediaFile, MediaFileId, MediaFileSource, MediaOrigin};
-use easyimmerse_core::project::{FlashcardDestination, Project, ProjectId, ProjectSettings};
+use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use easyimmerse_core::subtitle_track::{SubtitleSelection, SubtitleTrack, SubtitleTrackId};
 use rusqlite::Connection;
 
@@ -100,13 +100,13 @@ impl Storage {
         self.write(|conn| projects::mark_project_opened(conn, id))
     }
 
-    /// Records where the project's flashcards last went; `None` clears it.
-    pub fn set_flashcard_destination(
+    /// Turns AnkiConnect on or off for the project.
+    pub fn set_uses_anki_connect(
         &self,
         id: &ProjectId,
-        destination: Option<FlashcardDestination>,
+        uses_anki_connect: bool,
     ) -> Result<(), StorageError> {
-        self.write(|conn| projects::set_flashcard_destination(conn, id, destination))
+        self.write(|conn| projects::set_uses_anki_connect(conn, id, uses_anki_connect))
     }
 
     pub fn seed_placeholder_projects(&self) -> Result<(), StorageError> {
@@ -194,7 +194,7 @@ impl Storage {
         self.write(|conn| flashcards::update_flashcard(conn, id, draft))
     }
 
-    /// Deletes a flashcard. When the flashcard has reached Anki and its project sends there through AnkiConnect,
+    /// Deletes a flashcard. When the flashcard has reached Anki and its project uses AnkiConnect,
     /// the deletion of its note from Anki is recorded in the same transaction, to be carried out by the client.
     pub fn delete_flashcard(&self, id: &FlashcardId) -> Result<(), StorageError> {
         self.write(|conn| flashcards::delete_flashcard(conn, id))
@@ -219,8 +219,8 @@ impl Storage {
         })
     }
 
-    /// Records that the flashcards were written into an Anki package at `exported_at_ms`, and makes the package
-    /// the project's flashcard destination, in one transaction. A flashcard that is gone is passed over.
+    /// Records that the flashcards were written into an Anki package at `exported_at_ms`, in one transaction.
+    /// A flashcard that is gone is passed over.
     pub fn record_anki_export(
         &self,
         project_id: &ProjectId,
@@ -230,8 +230,8 @@ impl Storage {
         self.write(|conn| anki_sync::record_anki_export(conn, project_id, ids, exported_at_ms))
     }
 
-    /// Stores the id of the note AnkiConnect created for each of the project's flashcards, and makes AnkiConnect the project's
-    /// flashcard destination, in one transaction. A flashcard of another project is passed over,
+    /// Stores the id of the note AnkiConnect created for each of the project's flashcards, in one transaction.
+    /// A flashcard of another project is passed over,
     /// and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
     pub fn record_anki_notes_sent(
         &self,

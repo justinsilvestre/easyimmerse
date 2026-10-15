@@ -8,7 +8,7 @@ import {
   selectIsAnkiConnectSetupOpen,
 } from "./selectAnkiExport.ts";
 
-const backend = ankiCache("anki_package");
+const backend = ankiCache(false);
 
 const rootAfter = (...actions: AppAction[]) => ({
   app: stateAfterWithCache(backend, openOverview, ...actions),
@@ -27,7 +27,7 @@ describe("selectAnkiExport", () => {
   });
 
   it("counts a card edited since it was exported among the new and changed", () => {
-    const edited = ankiCache("anki_package", [
+    const edited = ankiCache(false, [
       ankiFlashcard("f1", "m1", 1, { exportedAtMs: 10, updatedAtMs: 11 }),
       ankiFlashcard("f2", "m1", 2, { exportedAtMs: 10 }),
     ]);

@@ -49,12 +49,8 @@ const sendToAnki = {
   request: sendRequest,
 };
 
-const effectsOf = (action: AppAction, destination = "anki_connect" as const) =>
-  update(
-    stateAfterWithCache(ankiCache(destination)),
-    action,
-    ankiCache(destination),
-  )[1];
+const effectsOf = (action: AppAction) =>
+  update(stateAfterWithCache(ankiCache(true)), action, ankiCache(true))[1];
 
 const sent = (outcome: Partial<AnkiSendOutcome>) =>
   actions.requestSettled("project/p1/ankiSend/1", sendRequest, {
@@ -135,7 +131,7 @@ const sendAllRequest = {
 
 /** A store whose fake server has a send of p1 under way when the deletion of f2 lands. */
 function deletingDuringSend() {
-  const server = createFakeServerStoreParts(null, ankiCache("anki_connect"));
+  const server = createFakeServerStoreParts(null, ankiCache(true));
   const store = createAppStore(createRecordingEffects(), server);
   store.dispatch(openOverview);
   store.dispatch(actions.ankiSendRequested());
@@ -163,14 +159,14 @@ const deletionsRecorded = ({ operations }: AppState) =>
 
 /** The state outside the project screen once the save of f1 has asked to send f1 to Anki. */
 const sendingSaved = () =>
-  stateAfterWithCache(ankiCache("anki_connect"), saveSettled(true));
+  stateAfterWithCache(ankiCache(true), saveSettled(true));
 
 const stateAfterSend = (foundAnki: boolean) =>
-  update(sendingSaved(), sent({ foundAnki }), ankiCache("anki_connect"))[0];
+  update(sendingSaved(), sent({ foundAnki }), ankiCache(true))[0];
 
 const stateAfterDeletion = (foundAnki: boolean) =>
   stateAfterWithCache(
-    ankiCache("anki_connect"),
+    ankiCache(true),
     notesDeleted({ deletedCount: 1, deletedFlashcardIds: ["f2"], foundAnki }),
   );
 
@@ -193,7 +189,7 @@ const noteDeletionRequest = {
 } as const;
 
 const noticesAfter = (...actions: AppAction[]) =>
-  stateAfterWithCache(ankiCache("anki_connect"), ...actions).notices.shown.map(
+  stateAfterWithCache(ankiCache(true), ...actions).notices.shown.map(
     ({ message }) => message,
   );
 
@@ -202,11 +198,11 @@ describe("ankiCommands", () => {
     expect(effectsOf(saveSettled(true))).toContainEqual(sendToAnki);
   });
 
-  it("sends nothing to Anki for a project that exports packages", () => {
+  it("sends nothing to Anki for a project that does not use AnkiConnect", () => {
     const effects = update(
-      stateAfterWithCache(ankiCache("anki_package")),
+      stateAfterWithCache(ankiCache(false)),
       saveSettled(true),
-      ankiCache("anki_package"),
+      ankiCache(false),
     )[1];
     expect(effects).not.toContainEqual(sendToAnki);
   });
@@ -217,7 +213,7 @@ describe("ankiCommands", () => {
 
   it("sends a project's cards after its earlier send", () => {
     const sending = stateAfterWithCache(
-      ankiCache("anki_connect"),
+      ankiCache(true),
       saveSettled(true),
       saveSettled(true),
     );
@@ -338,11 +334,11 @@ describe("ankiCommands when a flashcard is deleted", () => {
     ).toContainEqual(noteDeletion({ flashcardId: "f9", word: "Katze" }));
   });
 
-  it("deletes nothing for a project that exports packages", () => {
+  it("deletes nothing for a project that does not use AnkiConnect", () => {
     const effects = update(
-      stateAfterWithCache(ankiCache("anki_package")),
+      stateAfterWithCache(ankiCache(false)),
       deletionSettled({ type: "delete" }),
-      ankiCache("anki_package"),
+      ankiCache(false),
     )[1];
     expect(effects).not.toContainEqual(noteDeletion());
   });
@@ -546,8 +542,8 @@ describe("ankiCommands once a send or a deletion finds Anki running", () => {
     expect(sendsHeld(stateAfterDeletion(false))).toEqual([]);
   });
 
-  it("syncs nothing for a project that exports packages", () => {
-    const backend = ankiCache("anki_package");
+  it("syncs nothing for a project that does not use AnkiConnect", () => {
+    const backend = ankiCache(false);
     const [next] = update(
       stateAfterWithCache(backend),
       sent({ foundAnki: true }),
@@ -557,7 +553,7 @@ describe("ankiCommands once a send or a deletion finds Anki running", () => {
   });
 
   it("asks Anki for nothing more once the sync has settled", async () => {
-    const server = createFakeServerStoreParts(null, ankiCache("anki_connect"));
+    const server = createFakeServerStoreParts(null, ankiCache(true));
     const store = createAppStore(createRecordingEffects(), server);
     store.dispatch(saveSettled(true));
     server.respond(sendRequest, sentResponse(true));

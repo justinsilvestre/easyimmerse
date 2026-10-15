@@ -1,4 +1,4 @@
-//! The notes the AnkiConnect client still has to delete from Anki, for flashcards deleted while their project sends there.
+//! The notes the AnkiConnect client still has to delete from Anki, for flashcards deleted while their project uses AnkiConnect.
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -20,7 +20,7 @@ pub struct AnkiPendingDeletions {
 }
 
 /// Lists the flashcards of the project whose notes are still to be deleted from Anki.
-/// Deleting a flashcard that has reached Anki while the project's destination is `anki_connect` adds it here, as does recording a send of a flashcard deleted since the send began.
+/// Deleting a flashcard that has reached Anki while the project uses AnkiConnect adds it here, as does recording a send of a flashcard deleted since the send began.
 #[utoipa::path(
     get,
     path = "/projects/{id}/anki/pending-deletions",

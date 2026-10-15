@@ -1,4 +1,4 @@
-import { readDestination } from "../anki/ankiRequests.ts";
+import { readProject } from "../anki/ankiRequests.ts";
 import { abortExport } from "../anki/updateAnkiExport.ts";
 import type { AppAction } from "../app/appAction.ts";
 import { combineUpdates } from "../app/combineUpdates.ts";
@@ -93,7 +93,7 @@ function leavingEffects(main: MainScreenState, route: MainRoute) {
 /** Starts the work a main screen does as it opens: the media screen asks for its file, the project overview where its flashcards go. */
 function enteringEffects(route: MainRoute) {
   if (route.screen === "media") return [mediaFileRequest(route)];
-  if (route.screen === "project") return [readDestination(route.projectId)];
+  if (route.screen === "project") return [readProject(route.projectId)];
   return [];
 }
 

@@ -1,268 +1,100 @@
-import type { AnkiConnectionStatus } from "@easyimmerse/state";
+import type { FlashcardSync } from "@easyimmerse/state";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { exampleLanguages } from "../flashcards/exampleFlashcard.ts";
-import {
-  FlashcardSyncPanel,
-  type FlashcardSyncState,
-} from "./FlashcardSyncPanel.tsx";
+import { FlashcardSyncPanel } from "./FlashcardSyncPanel.tsx";
 
 afterEach(cleanup);
 
-const sendingTo = (
-  connection: AnkiConnectionStatus,
-  isSyncing = false,
-): FlashcardSyncState => ({
-  kind: "ankiConnect",
-  connection,
-  deniedOrigin: null,
-  flashcardCount: 2,
-  unsentCount: 2,
-  pendingDeletionCount: 0,
+const exportingOnly: FlashcardSync = {
+  flashcardCount: 3,
+  package: { sinceLastExport: null },
+  ankiConnect: null,
   nextCard: null,
-  isSyncing,
-});
+};
 
-const refusedAt = (deniedOrigin: string): FlashcardSyncState => ({
-  kind: "ankiConnect",
-  connection: "denied",
-  deniedOrigin,
-  flashcardCount: 2,
-  unsentCount: 2,
-  pendingDeletionCount: 0,
-  nextCard: null,
-  isSyncing: false,
-});
+const usingAnkiConnect: FlashcardSync = {
+  ...exportingOnly,
+  ankiConnect: {
+    connection: "connected",
+    deniedOrigin: null,
+    unsentCount: 0,
+    pendingDeletionCount: 0,
+    isSyncing: false,
+  },
+};
 
-const counting = (
-  unsentCount: number,
-  pendingDeletionCount: number,
-  flashcardCount = 3,
-): FlashcardSyncState => ({
-  kind: "ankiConnect",
-  connection: "connected",
-  deniedOrigin: null,
-  flashcardCount,
-  unsentCount,
-  pendingDeletionCount,
-  nextCard: null,
-  isSyncing: false,
-});
-
-/** Finds the paragraph whose text, across its inline elements, is exactly `text`. */
-const paragraphWithText = (text: string) =>
-  screen.getByText(
-    (_, element) => element?.tagName === "P" && element.textContent === text,
-  );
-
-function renderPanel(state: FlashcardSyncState) {
+function renderPanel(sync: FlashcardSync) {
   const calls: string[] = [];
   const call = (name: string) => () => calls.push(name);
   render(
     <FlashcardSyncPanel
-      state={state}
+      sync={sync}
       includedFields={["word"]}
       frontFields={[]}
       languages={exampleLanguages}
       onExportPackage={call("export")}
       onSetUpAnkiConnect={call("setUp")}
+      onTurnOffAnkiConnect={call("turnOff")}
       onStartReview={call("review")}
       onSendToAnki={call("send")}
       onCheckConnection={call("check")}
-      onChangeDestination={call("change")}
     />,
   );
   return calls;
 }
 
 describe("FlashcardSyncPanel", () => {
-  it("opens the export from the destinations offered at first", () => {
-    const calls = renderPanel({ kind: "notStarted" });
-    fireEvent.click(
-      screen.getByRole("button", { name: /Export an Anki deck/ }),
-    );
-    expect(calls).toEqual(["export"]);
-  });
-
-  it("sends the waiting cards to Anki", () => {
-    const calls = renderPanel(sendingTo("connected"));
-    fireEvent.click(screen.getByRole("button", { name: "Send to Anki" }));
-    expect(calls).toEqual(["send"]);
-  });
-
-  it("offers no second send while one is under way", () => {
-    renderPanel(sendingTo("connected", true));
-    expect(
-      (screen.getByRole("button", { name: "Sending…" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
-  });
-
-  it("says the connection is being checked", () => {
-    renderPanel(sendingTo("checking"));
-    expect(screen.getByText("Checking Anki…")).toBeDefined();
-  });
-
-  it("checks the connection again when Anki was unreachable", () => {
-    const calls = renderPanel(sendingTo("unreachable"));
-    fireEvent.click(screen.getByRole("button", { name: "Check again" }));
-    expect(calls).toEqual(["check"]);
-  });
-
-  it("tells how to make Anki reachable", () => {
-    renderPanel(sendingTo("unreachable"));
-    expect(
-      screen.getByText(
-        "Start Anki with the AnkiConnect add-on installed, then check again.",
-      ),
-    ).toBeDefined();
-  });
-
-  describe("when Anki refused easyImmerse", () => {
-    it("says so", () => {
-      renderPanel(sendingTo("denied"));
-      expect(screen.getByText("Anki refused easyImmerse")).toBeDefined();
+  describe("while AnkiConnect is off", () => {
+    it("offers to set up AnkiConnect", () => {
+      const calls = renderPanel(exportingOnly);
+      fireEvent.click(
+        screen.getByRole("button", { name: /Set up AnkiConnect/ }),
+      );
+      expect(calls).toEqual(["setUp"]);
     });
 
-    it("tells how to allow easyImmerse again, naming the origin Anki refused", () => {
-      renderPanel(refusedAt("tauri://localhost"));
-      expect(
-        paragraphWithText(
-          "Check again and choose Yes when Anki asks. If it does not ask, choose Tools, then Add-ons in Anki, select AnkiConnect, choose Config, remove tauri://localhost from ignoreOriginList, and check again.",
-        ),
-      ).toBeDefined();
-    });
-
-    it("tells how to allow easyImmerse again when the origin Anki refused is not known", () => {
-      renderPanel(sendingTo("denied"));
-      expect(
-        paragraphWithText(
-          "Check again and choose Yes when Anki asks. If it does not ask, choose Tools, then Add-ons in Anki, select AnkiConnect, choose Config, empty ignoreOriginList, and check again.",
-        ),
-      ).toBeDefined();
-    });
-
-    it("checks the connection again", () => {
-      const calls = renderPanel(sendingTo("denied"));
-      fireEvent.click(screen.getByRole("button", { name: "Check again" }));
-      expect(calls).toEqual(["check"]);
-    });
-  });
-
-  it("lets the user choose another destination", () => {
-    const calls = renderPanel(sendingTo("connected"));
-    fireEvent.click(screen.getByRole("button", { name: "Change destination" }));
-    expect(calls).toEqual(["change"]);
-  });
-
-  describe("when the cards go to Anki through AnkiConnect", () => {
-    it("counts the cards waiting to be sent", () => {
-      renderPanel(counting(3, 0));
-      expect(
-        screen.getByText("3 flashcards waiting to be sent."),
-      ).toBeDefined();
-    });
-
-    it("counts the notes waiting to be deleted beside the cards to send", () => {
-      renderPanel(counting(3, 1));
-      expect(
-        screen.getByText("3 flashcards waiting to be sent, 1 note to delete."),
-      ).toBeDefined();
-    });
-
-    it("counts the notes waiting to be deleted when every card is in Anki", () => {
-      renderPanel(counting(0, 2));
-      expect(
-        screen.getByText("2 notes waiting to be deleted from Anki."),
-      ).toBeDefined();
-    });
-
-    it("sends to Anki when only notes wait to be deleted", () => {
-      const calls = renderPanel(counting(0, 2));
-      fireEvent.click(screen.getByRole("button", { name: "Send to Anki" }));
-      expect(calls).toEqual(["send"]);
-    });
-
-    it("offers no send when nothing waits", () => {
-      renderPanel(counting(0, 0));
-      expect(
-        (
-          screen.getByRole("button", {
-            name: "Send to Anki",
-          }) as HTMLButtonElement
-        ).disabled,
-      ).toBe(true);
-    });
-
-    it("says every card is in Anki when nothing waits", () => {
-      renderPanel(counting(0, 0));
-      expect(screen.getByText("Every flashcard is in Anki.")).toBeDefined();
-    });
-
-    it("says there are no cards yet when the project has none", () => {
-      renderPanel(counting(0, 0, 0));
-      expect(screen.getByText("No flashcards yet.")).toBeDefined();
-    });
-
-    it("says beside the summary that no card waits to be sent", () => {
-      renderPanel(counting(0, 2));
-      expect(
-        screen.getByText("No flashcards waiting to be sent."),
-      ).toBeDefined();
-    });
-  });
-
-  describe("when the cards are exported as Anki packages", () => {
-    const exporting = (
-      newCount: number,
-      flashcardCount = 3,
-      changedCount = 0,
-    ): FlashcardSyncState => ({
-      kind: "ankiPackage",
-      flashcardCount,
-      newCount,
-      changedCount,
-      nextCard: null,
-    });
-
-    it("counts the new and the changed cards since the last export", () => {
-      renderPanel(exporting(3, 5, 1));
-      expect(
-        screen.getByText(
-          "3 new and 1 changed flashcards since the last export.",
-        ),
-      ).toBeDefined();
-    });
-
-    it("leaves out a count of zero", () => {
-      renderPanel(exporting(0, 5, 1));
-      expect(
-        screen.getByText("1 changed flashcard since the last export."),
-      ).toBeDefined();
-    });
-
-    it("says every card has been exported when none is new", () => {
-      renderPanel(exporting(0));
-      expect(
-        screen.getByText("Every flashcard has been exported."),
-      ).toBeDefined();
-    });
-
-    it("says there are no cards yet when the project has none", () => {
-      renderPanel(exporting(0, 0));
-      expect(screen.getByText("No flashcards yet.")).toBeDefined();
-    });
-
-    it("says beside the summary that no card waits to be exported", () => {
-      renderPanel(exporting(0));
+    it("says beside the channels that no card waits to be exported", () => {
+      renderPanel(exportingOnly);
       expect(
         screen.getByText("No flashcards waiting to be exported."),
       ).toBeDefined();
     });
   });
 
-  it("says beside the summary that no card is due for review", () => {
-    renderPanel({ kind: "review", dueCount: 0, nextCard: null });
-    expect(screen.getByText("No flashcards due for review.")).toBeDefined();
+  describe("while AnkiConnect is on", () => {
+    it("still offers the export", () => {
+      const calls = renderPanel(usingAnkiConnect);
+      fireEvent.click(
+        screen.getByRole("button", { name: "Export an Anki deck" }),
+      );
+      expect(calls).toEqual(["export"]);
+    });
+
+    it("turns AnkiConnect off", () => {
+      const calls = renderPanel(usingAnkiConnect);
+      fireEvent.click(screen.getByRole("button", { name: "Turn off" }));
+      expect(calls).toEqual(["turnOff"]);
+    });
+
+    it("says beside the channels that no card waits to be sent", () => {
+      renderPanel(usingAnkiConnect);
+      expect(
+        screen.getByText("No flashcards waiting to be sent."),
+      ).toBeDefined();
+    });
+  });
+
+  it("marks the review as coming soon", () => {
+    renderPanel(exportingOnly);
+    expect(screen.getByText("Coming soon")).toBeDefined();
+  });
+
+  it("explains the review when it is chosen", () => {
+    const calls = renderPanel(exportingOnly);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Review in easyImmerse/ }),
+    );
+    expect(calls).toEqual(["review"]);
   });
 });

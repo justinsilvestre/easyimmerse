@@ -404,6 +404,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/anki-connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Turns AnkiConnect on or off for the project. Exports and sends never change it. */
+        put: operations["setAnkiConnect"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/anki/notes": {
         parameters: {
             query?: never;
@@ -436,8 +453,7 @@ export interface paths {
         /**
          * Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
          *     A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
-         *     Once the package has been saved, or sent to the client in full, the flashcards are marked exported
-         *     and the project's flashcard destination becomes `anki_package`.
+         *     Once the package has been saved, or sent to the client in full, the flashcards are marked exported.
          *     A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
          */
         post: operations["exportAnkiPackage"];
@@ -456,7 +472,7 @@ export interface paths {
         };
         /**
          * Lists the flashcards of the project whose notes are still to be deleted from Anki.
-         *     Deleting a flashcard that has reached Anki while the project's destination is `anki_connect` adds it here, as does recording a send of a flashcard deleted since the send began.
+         *     Deleting a flashcard that has reached Anki while the project uses AnkiConnect adds it here, as does recording a send of a flashcard deleted since the send began.
          */
         get: operations["listAnkiPendingDeletions"];
         put?: never;
@@ -497,27 +513,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Stores the ids of the notes AnkiConnect created for the flashcards,
-         *     and makes `anki_connect` the project's flashcard destination.
+         * Stores the ids of the notes AnkiConnect created for the flashcards.
          *     A flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
          */
         post: operations["recordAnkiNotesSent"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/projects/{id}/flashcard-destination": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["setFlashcardDestination"];
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -967,6 +966,9 @@ export interface components {
             role?: components["schemas"]["SubtitleRole"] | null;
             source: components["schemas"]["TextSource"];
         };
+        AnkiConnectSetting: {
+            uses_anki_connect: boolean;
+        };
         /** @description A media file that a note's fields refer to by name, which the caller renders from the project's media file and supplies. */
         AnkiMediaRef: {
             /** Format: int64 */
@@ -1341,14 +1343,6 @@ export interface components {
             text_context_translation: string;
             word: string;
             word_pronunciation: string;
-        };
-        /**
-         * @description A place a project's flashcards can be sent to.
-         * @enum {string}
-         */
-        FlashcardDestination: "anki_package" | "anki_connect";
-        FlashcardDestinationRequest: {
-            destination?: components["schemas"]["FlashcardDestination"] | null;
         };
         /** @description What the editor sends to create or replace a flashcard. */
         FlashcardDraft: {
@@ -1798,7 +1792,6 @@ export interface components {
             created_at_ms: number;
             /** Format: int64 */
             flashcard_count: number;
-            flashcard_destination?: components["schemas"]["FlashcardDestination"] | null;
             id: components["schemas"]["ProjectId"];
             /**
              * Format: int64
@@ -1808,6 +1801,8 @@ export interface components {
             /** Format: int64 */
             media_count: number;
             settings: components["schemas"]["ProjectSettings"];
+            /** @description Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off. */
+            uses_anki_connect: boolean;
         };
         ProjectId: string;
         /** @description Everything a user sets about a project, as the project form edits it. */
@@ -3556,6 +3551,60 @@ export interface operations {
             };
         };
     };
+    setAnkiConnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnkiConnectSetting"];
+            };
+        };
+        responses: {
+            /** @description The project with AnkiConnect turned on or off */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     renderAnkiNotes: {
         parameters: {
             query?: never;
@@ -3827,60 +3876,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Missing or invalid token */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description No such project */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Unexpected Host header */
-            421: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    setFlashcardDestination: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The project id */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FlashcardDestinationRequest"];
-            };
-        };
-        responses: {
-            /** @description The project with its new destination */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Project"];
-                };
             };
             /** @description Missing or invalid token */
             401: {

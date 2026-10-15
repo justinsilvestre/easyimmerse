@@ -21,6 +21,6 @@ export function exampleProject(id: string): Project {
     last_opened_at_ms: 0,
     media_count: 0,
     flashcard_count: 0,
-    flashcard_destination: null,
+    uses_anki_connect: false,
   };
 }

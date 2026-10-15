@@ -13,7 +13,9 @@ export {
 } from "./anki/selectAnkiExport.ts";
 export {
   type AnkiConnectionStatus,
+  type AnkiConnectSync,
   type FlashcardSync,
+  type PackageSync,
   selectFlashcardSync,
 } from "./anki/selectFlashcardSync.ts";
 export type { AppAction } from "./app/appAction.ts";

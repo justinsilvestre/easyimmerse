@@ -85,7 +85,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(anki_package::export_anki_package))
         .routes(routes!(anki::render_anki_notes))
         .routes(routes!(anki::record_anki_notes_sent))
-        .routes(routes!(anki::set_flashcard_destination))
+        .routes(routes!(anki::set_anki_connect))
         .routes(routes!(anki_pending_deletions::list_anki_pending_deletions))
         .routes(routes!(anki_pending_deletions::clear_anki_pending_deletion))
         .routes(routes!(media::list_media_files, media::add_media_file))

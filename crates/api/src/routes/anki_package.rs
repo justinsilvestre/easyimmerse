@@ -47,8 +47,7 @@ pub struct AnkiPackageSaved {
 
 /// Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
 /// A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
-/// Once the package has been saved, or sent to the client in full, the flashcards are marked exported
-/// and the project's flashcard destination becomes `anki_package`.
+/// Once the package has been saved, or sent to the client in full, the flashcards are marked exported.
 /// A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
 #[utoipa::path(
     post,

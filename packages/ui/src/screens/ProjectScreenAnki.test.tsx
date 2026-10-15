@@ -17,7 +17,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** Renders the overview of p1, which holds one flashcard never exported, over a server that writes packages and sets destinations. */
+/** Renders the overview of p1, which holds one flashcard never exported, over a server that writes packages and turns AnkiConnect on. */
 function renderOverview() {
   const client = createFakeBackendClient({
     ...fixtureResponses,
@@ -27,9 +27,9 @@ function renderOverview() {
       flashcard_count: 1,
       skipped_media_count: 0,
     },
-    "PUT /projects/p1/flashcard-destination": {
+    "PUT /projects/p1/anki-connect": {
       ...fixtureProject,
-      flashcard_destination: "anki_connect",
+      uses_anki_connect: true,
     },
   });
   const rendered = renderWithAppStore(
@@ -66,14 +66,14 @@ async function exportToPath({ effects }: ReturnType<typeof renderOverview>) {
   );
 }
 
-/** Whether the server cache still holds the project, which the automatic send to Anki reads the destination from. */
+/** Whether the server cache still holds the project, from which the automatic send to Anki reads whether it uses AnkiConnect. */
 const holdsProject = (store: ReturnType<typeof renderOverview>["store"]) =>
   store.getState().backend.queries[cacheKey("getProject", "p1")] !== undefined;
 
 /** Lets more than a minute pass under fake timers, after which an entry no component reads would ordinarily leave the server cache. */
 const passAMinute = () => act(() => vi.advanceTimersByTime(61_000));
 
-describe("ProjectScreen's Anki destinations", () => {
+describe("ProjectScreen's ways to Anki", () => {
   it("keeps the project cached while one of its media files is open, so that a save there is still sent to Anki", async () => {
     const { store } = renderOverview();
     await screen.findByRole("heading", { name: "Flashcards" });
@@ -118,7 +118,7 @@ describe("ProjectScreen's Anki destinations", () => {
     ).toBeDefined();
   });
 
-  it("makes AnkiConnect the destination once it is set up", async () => {
+  it("turns AnkiConnect on once it is set up", async () => {
     vi.stubGlobal("fetch", () => Promise.reject(new TypeError("refused")));
     const { client } = renderOverview();
     fireEvent.click(
@@ -129,10 +129,9 @@ describe("ProjectScreen's Anki destinations", () => {
     );
     await vi.waitFor(() =>
       expect(
-        client.requests.find(
-          ({ path }) => path === "/projects/p1/flashcard-destination",
-        )?.body,
-      ).toEqual({ kind: "json", value: { destination: "anki_connect" } }),
+        client.requests.find(({ path }) => path === "/projects/p1/anki-connect")
+          ?.body,
+      ).toEqual({ kind: "json", value: { uses_anki_connect: true } }),
     );
   });
 });

@@ -1,5 +1,5 @@
 use easyimmerse_core::flashcard::FlashcardFieldKey;
-use easyimmerse_core::project::{FlashcardDestination, Project, ProjectId, ProjectSettings};
+use easyimmerse_core::project::{Project, ProjectId, ProjectSettings};
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use crate::error::StorageError;
@@ -9,7 +9,7 @@ use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 /// The project columns followed by the two counts, as every project query selects them.
 const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_language, \
      p.flashcard_fields_json, p.default_tags_json, p.tags_media_name, p.fills_audio_with_tts, \
-     p.flashcard_front_fields_json, p.created_at_ms, p.last_opened_at_ms, p.flashcard_destination, \
+     p.flashcard_front_fields_json, p.created_at_ms, p.last_opened_at_ms, p.uses_anki_connect, \
      (SELECT COUNT(*) FROM media_files m WHERE m.project_id = p.id), \
      (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id)";
 
@@ -75,15 +75,15 @@ pub fn mark_project_opened(conn: &Connection, id: &ProjectId) -> Result<(), Stor
     Ok(())
 }
 
-/// Records where the project's flashcards last went; `None` clears it.
-pub fn set_flashcard_destination(
+/// Turns AnkiConnect on or off for the project.
+pub fn set_uses_anki_connect(
     conn: &Connection,
     id: &ProjectId,
-    destination: Option<FlashcardDestination>,
+    uses_anki_connect: bool,
 ) -> Result<(), StorageError> {
     let updated = conn.execute(
-        "UPDATE projects SET flashcard_destination = ?2 WHERE id = ?1",
-        params![id.0, destination.map(destination_column)],
+        "UPDATE projects SET uses_anki_connect = ?2 WHERE id = ?1",
+        params![id.0, uses_anki_connect],
     )?;
     if updated == 0 {
         return Err(StorageError::ProjectNotFound(id.0.clone()));
@@ -220,32 +220,10 @@ fn read_project(row: &Row) -> rusqlite::Result<Project> {
         },
         created_at_ms: read_unsigned(row, 9)?,
         last_opened_at_ms: read_unsigned(row, 10)?,
-        flashcard_destination: read_destination(row, 11)?,
+        uses_anki_connect: row.get(11)?,
         media_count: read_unsigned(row, 12)?,
         flashcard_count: read_unsigned(row, 13)?,
     })
-}
-
-/// Names a destination in the `flashcard_destination` column as it is named in JSON.
-fn destination_column(destination: FlashcardDestination) -> &'static str {
-    match destination {
-        FlashcardDestination::AnkiPackage => "anki_package",
-        FlashcardDestination::AnkiConnect => "anki_connect",
-    }
-}
-
-fn read_destination(row: &Row, index: usize) -> rusqlite::Result<Option<FlashcardDestination>> {
-    let name: Option<String> = row.get(index)?;
-    name.map(|name| match name.as_str() {
-        "anki_package" => Ok(FlashcardDestination::AnkiPackage),
-        "anki_connect" => Ok(FlashcardDestination::AnkiConnect),
-        other => Err(rusqlite::Error::InvalidColumnType(
-            index,
-            format!("unknown flashcard destination {other:?}"),
-            rusqlite::types::Type::Text,
-        )),
-    })
-    .transpose()
 }
 
 #[cfg(test)]
@@ -381,59 +359,42 @@ mod tests {
     }
 
     #[test]
-    fn a_created_project_has_no_flashcard_destination() {
+    fn a_created_project_does_not_use_anki_connect() {
         let storage = Storage::open_in_memory().unwrap();
         let created = storage.create_project(&settings("German")).unwrap();
-        assert_eq!(created.flashcard_destination, None);
+        assert!(!created.uses_anki_connect);
     }
 
     #[test]
-    fn keeps_the_flashcard_destination_that_was_set() {
+    fn keeps_anki_connect_turned_on() {
         let storage = seeded_storage();
         let id = ProjectId("placeholder-1".to_string());
-        storage
-            .set_flashcard_destination(&id, Some(FlashcardDestination::AnkiConnect))
-            .unwrap();
-        assert_eq!(
-            storage.get_project(&id).unwrap().flashcard_destination,
-            Some(FlashcardDestination::AnkiConnect)
-        );
+        storage.set_uses_anki_connect(&id, true).unwrap();
+        assert!(storage.get_project(&id).unwrap().uses_anki_connect);
     }
 
     #[test]
-    fn clears_the_flashcard_destination() {
+    fn turns_anki_connect_off() {
         let storage = seeded_storage();
         let id = ProjectId("placeholder-1".to_string());
-        storage
-            .set_flashcard_destination(&id, Some(FlashcardDestination::AnkiPackage))
-            .unwrap();
-        storage.set_flashcard_destination(&id, None).unwrap();
-        assert_eq!(
-            storage.get_project(&id).unwrap().flashcard_destination,
-            None
-        );
+        storage.set_uses_anki_connect(&id, true).unwrap();
+        storage.set_uses_anki_connect(&id, false).unwrap();
+        assert!(!storage.get_project(&id).unwrap().uses_anki_connect);
     }
 
     #[test]
-    fn updating_the_settings_keeps_the_flashcard_destination() {
+    fn updating_the_settings_keeps_anki_connect_turned_on() {
         let storage = seeded_storage();
         let id = ProjectId("placeholder-1".to_string());
-        storage
-            .set_flashcard_destination(&id, Some(FlashcardDestination::AnkiPackage))
-            .unwrap();
+        storage.set_uses_anki_connect(&id, true).unwrap();
         let updated = storage.update_project(&id, &settings("Deutsch")).unwrap();
-        assert_eq!(
-            updated.flashcard_destination,
-            Some(FlashcardDestination::AnkiPackage)
-        );
+        assert!(updated.uses_anki_connect);
     }
 
     #[test]
-    fn setting_the_flashcard_destination_of_an_unknown_project_fails() {
-        let result = seeded_storage().set_flashcard_destination(
-            &ProjectId("missing".to_string()),
-            Some(FlashcardDestination::AnkiPackage),
-        );
+    fn turning_anki_connect_on_for_an_unknown_project_fails() {
+        let result =
+            seeded_storage().set_uses_anki_connect(&ProjectId("missing".to_string()), true);
         assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 

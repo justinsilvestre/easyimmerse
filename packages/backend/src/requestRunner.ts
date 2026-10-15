@@ -184,9 +184,9 @@ export const requestEndpoints = {
       { projectId, flashcardIds, savePath },
       { track: false },
     ),
-  setFlashcardDestination: ({ projectId, destination }) =>
-    backendApi.endpoints.setFlashcardDestination.initiate(
-      { projectId, destination },
+  setAnkiConnect: ({ projectId, usesAnkiConnect }) =>
+    backendApi.endpoints.setAnkiConnect.initiate(
+      { projectId, usesAnkiConnect },
       { track: false },
     ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };

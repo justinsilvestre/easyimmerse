@@ -30,7 +30,7 @@ export const exampleProjects: readonly Project[] = [
     created_at_ms: daysAgo(40),
     last_opened_at_ms: daysAgo(0),
     media_count: 10,
-    flashcard_destination: null,
+    uses_anki_connect: false,
     flashcard_count: 184,
   },
   {
@@ -39,7 +39,7 @@ export const exampleProjects: readonly Project[] = [
     created_at_ms: daysAgo(12),
     last_opened_at_ms: daysAgo(1),
     media_count: 3,
-    flashcard_destination: null,
+    uses_anki_connect: false,
     flashcard_count: 42,
   },
   {
@@ -48,7 +48,7 @@ export const exampleProjects: readonly Project[] = [
     created_at_ms: daysAgo(90),
     last_opened_at_ms: daysAgo(45),
     media_count: 1,
-    flashcard_destination: null,
+    uses_anki_connect: false,
     flashcard_count: 7,
   },
 ];

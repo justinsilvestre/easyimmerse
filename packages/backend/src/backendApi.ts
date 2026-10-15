@@ -13,6 +13,7 @@ import { cacheKey, serverCachePath } from "@easyimmerse/state";
 import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  AnkiConnectSetting,
   AnkiPendingDeletions,
   BatchLookupRequest,
   BatchLookupResponse,
@@ -21,8 +22,6 @@ import type {
   Document,
   EmbeddedSubtitleTracksResponse,
   Flashcard,
-  FlashcardDestination,
-  FlashcardDestinationRequest,
   FlashcardDraft,
   ImportFormRequest,
   ImportJobStarted,
@@ -127,10 +126,7 @@ type SubtitleTrackArgs = MediaFileArgs & { trackId: string };
 
 type SubtitleSelectionArgs = MediaFileArgs & { selection: SubtitleSelection };
 
-type FlashcardDestinationArgs = {
-  projectId: string;
-  destination: FlashcardDestination | null;
-};
+type AnkiConnectArgs = { projectId: string; usesAnkiConnect: boolean };
 
 /** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
 const lookupContextQuery = (
@@ -227,7 +223,7 @@ function reportAnkiConnection(
   return connection.connected && last?.connected !== true;
 }
 
-/** The data an export or a send to Anki changes: which flashcards went where, and where the project's flashcards go. */
+/** The data an export or a send to Anki changes: which flashcards went where, and the project's counts. */
 const flashcardsSentTags = (projectId: string) =>
   [
     { type: "Flashcards", id: projectId },
@@ -263,7 +259,7 @@ export const backendApi = createApi({
       query: () => ({ method: "GET", path: "/projects" }),
       providesTags: ["Projects"],
     }),
-    /** A project is kept for the session: the automatic send to Anki after a save reads its destination from the cache, and tag invalidation still refreshes it. */
+    /** A project is kept for the session: the automatic send to Anki after a save reads from the cache whether it uses AnkiConnect, and tag invalidation still refreshes it. */
     getProject: build.query<Project, string>({
       query: (projectId) => ({
         method: "GET",
@@ -672,16 +668,18 @@ export const backendApi = createApi({
         flashcardsSentTags(projectId),
     }),
     /**
-     * Sets where a project's flashcards go. The project it answers replaces the cached one at once,
-     * so that what follows the change, such as a send to Anki, sees the new destination before the refetch lands.
+     * Turns AnkiConnect on or off for a project. The project it answers replaces the cached one at once,
+     * so that what follows the change, such as a send to Anki, sees it before the refetch lands.
      */
-    setFlashcardDestination: build.mutation<Project, FlashcardDestinationArgs>({
-      query: ({ projectId, destination }) => ({
+    setAnkiConnect: build.mutation<Project, AnkiConnectArgs>({
+      query: ({ projectId, usesAnkiConnect }) => ({
         method: "PUT",
-        path: `/projects/${projectId}/flashcard-destination`,
+        path: `/projects/${projectId}/anki-connect`,
         body: {
           kind: "json",
-          value: { destination } satisfies FlashcardDestinationRequest,
+          value: {
+            uses_anki_connect: usesAnkiConnect,
+          } satisfies AnkiConnectSetting,
         },
       }),
       async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {

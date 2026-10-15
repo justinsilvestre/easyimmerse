@@ -23,8 +23,8 @@ pub struct Project {
     pub last_opened_at_ms: u64,
     pub media_count: u64,
     pub flashcard_count: u64,
-    /// Where the project's flashcards last went. Null until they are first exported or sent.
-    pub flashcard_destination: Option<FlashcardDestination>,
+    /// Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off.
+    pub uses_anki_connect: bool,
 }
 
 /// Everything a user sets about a project, as the project form edits it.
@@ -48,17 +48,6 @@ pub struct ProjectSettings {
     pub flashcard_front_fields: Vec<FlashcardFieldKey>,
 }
 
-/// A place a project's flashcards can be sent to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
-#[serde(rename_all = "snake_case")]
-#[ts(export)]
-pub enum FlashcardDestination {
-    /// A package file that Anki imports.
-    AnkiPackage,
-    /// A running Anki, reached through its AnkiConnect add-on.
-    AnkiConnect,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,11 +69,5 @@ mod tests {
             json["flashcard_fields"],
             serde_json::json!(["word", "l1_definition"])
         );
-    }
-
-    #[test]
-    fn serializes_a_flashcard_destination_in_snake_case() {
-        let json = serde_json::to_value(FlashcardDestination::AnkiConnect).unwrap();
-        assert_eq!(json, serde_json::json!("anki_connect"));
     }
 }
