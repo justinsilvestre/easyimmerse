@@ -3,12 +3,17 @@ import type { RootState } from "../app/createAppStore.ts";
 import { mainScreenOf } from "../route/route.ts";
 import { cachedFlashcards } from "./ankiCache.ts";
 import type { AnkiExportDialog } from "./ankiExportDialog.ts";
-import { flashcardIdsToExport } from "./ankiExportSelection.ts";
+import {
+  flashcardsToExport,
+  wasSentBeforeExport,
+} from "./ankiExportSelection.ts";
 
 /** What the Anki export dialog shows: its choices, and how many flashcards each scope exports from the chosen media files. */
 export type AnkiExportView = AnkiExportDialog & {
   newAndChangedCount: number;
   allCount: number;
+  /** The exported flashcards that AnkiConnect put into Anki before any export marked them, which an import would duplicate there. */
+  duplicateCount: number;
 };
 
 /**
@@ -31,14 +36,15 @@ export const selectAnkiExport = createSelector(
   (dialog, flashcards): AnkiExportView | null => {
     if (dialog === null) return null;
     const { mediaFileIds } = dialog;
+    const countOf = (scope: AnkiExportDialog["scope"]) =>
+      flashcardsToExport(flashcards, { scope, mediaFileIds }).length;
     return {
       ...dialog,
-      newAndChangedCount: flashcardIdsToExport(flashcards, {
-        scope: "newAndChanged",
-        mediaFileIds,
-      }).length,
-      allCount: flashcardIdsToExport(flashcards, { scope: "all", mediaFileIds })
-        .length,
+      newAndChangedCount: countOf("newAndChanged"),
+      allCount: countOf("all"),
+      duplicateCount: flashcardsToExport(flashcards, dialog).filter(
+        wasSentBeforeExport,
+      ).length,
     };
   },
 );

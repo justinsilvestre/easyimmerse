@@ -117,6 +117,7 @@ export function ProjectOverview({
           newAndChangedCount={ankiExport.newAndChangedCount}
           allCount={ankiExport.allCount}
           marksExported={ankiExport.marksExported}
+          duplicateCount={ankiExport.duplicateCount}
           isBusy={ankiExport.isBusy}
           onScopeChange={(scope) =>
             dispatch(actions.ankiExportScopeChosen(scope))

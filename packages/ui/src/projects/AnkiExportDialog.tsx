@@ -17,6 +17,7 @@ export function AnkiExportDialog({
   newAndChangedCount,
   allCount,
   marksExported,
+  duplicateCount,
   isBusy,
   onScopeChange,
   onMarkingChange,
@@ -34,6 +35,8 @@ export function AnkiExportDialog({
   allCount: number;
   /** Whether the export marks its cards as exported, so that they no longer count as new or changed. */
   marksExported: boolean;
+  /** The exported cards that AnkiConnect put into Anki before any export marked them, which an import there would duplicate. */
+  duplicateCount: number;
   isBusy: boolean;
   onScopeChange: (scope: AnkiExportScope) => void;
   onMarkingChange: (marksExported: boolean) => void;
@@ -92,6 +95,9 @@ export function AnkiExportDialog({
         checked={marksExported}
         onChange={(event) => onMarkingChange(event.target.checked)}
       />
+      {marksExported && duplicateCount > 0 && (
+        <DuplicateWarning count={duplicateCount} />
+      )}
       <div className="flex flex-col gap-2 text-sm text-fg-muted">
         <p>
           Audio and screenshots are included when the easyImmerse server has
@@ -104,5 +110,24 @@ export function AnkiExportDialog({
         </p>
       </div>
     </ModalDialog>
+  );
+}
+
+/**
+ * Warns that some of the cards are already in the Anki that AnkiConnect sends to, under notes whose GUIDs Anki chose,
+ * so that importing the package there would add a second note for each.
+ */
+function DuplicateWarning({ count }: { count: number }) {
+  const sent =
+    count === 1
+      ? "1 of these cards was sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of that card."
+      : `${count} of these cards were sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of each.`;
+  return (
+    <p
+      role="note"
+      className="rounded-md border border-warning-line bg-warning-soft p-3 text-sm text-warning-fg"
+    >
+      {sent}
+    </p>
   );
 }

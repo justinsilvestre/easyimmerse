@@ -43,6 +43,25 @@ describe("selectAnkiExport", () => {
     ).toMatchObject({ newAndChangedCount: 1 });
   });
 
+  it("counts the exported cards that AnkiConnect sent before any export marked them", () => {
+    const sent = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 }),
+      ankiFlashcard("f2", "m1", 2, { sentAtMs: 5, exportedAtMs: 4 }),
+      ankiFlashcard("f3", "m1", 3),
+    ]);
+    expect(
+      selectAnkiExport({
+        app: stateAfterWithCache(
+          sent,
+          openOverview,
+          actions.ankiExportOpened(),
+          actions.ankiExportScopeChosen("all"),
+        ),
+        backend: sent,
+      }),
+    ).toMatchObject({ duplicateCount: 1 });
+  });
+
   it("counts only the cards of the ticked media files", () => {
     expect(
       selectAnkiExport(

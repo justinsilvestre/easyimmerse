@@ -45,15 +45,33 @@ export function flashcardsOfMedia(
   );
 }
 
-/** Returns the ids of the flashcards the dialog's choices export, oldest first. */
-export function flashcardIdsToExport(
+/**
+ * Tells whether AnkiConnect put the flashcard into Anki before any export marked it, so that its note has a GUID of Anki's choosing,
+ * which a package's note for the same flashcard does not match.
+ */
+export const wasSentBeforeExport = (flashcard: Flashcard) =>
+  !isUnsent(flashcard) && isUnexported(flashcard);
+
+/** The dialog's choices that decide which flashcards an export holds. */
+type ExportChoices = Pick<AnkiExportDialog, "scope" | "mediaFileIds">;
+
+/** Returns the flashcards the dialog's choices export, oldest first. */
+export function flashcardsToExport(
   flashcards: readonly Flashcard[],
-  { scope, mediaFileIds }: Pick<AnkiExportDialog, "scope" | "mediaFileIds">,
-): string[] {
+  { scope, mediaFileIds }: ExportChoices,
+): Flashcard[] {
   const chosen = flashcardsOfMedia(flashcards, mediaFileIds);
   const inScope =
     scope === "newAndChanged"
       ? chosen.filter(isNewOrChangedSinceExport)
       : chosen;
-  return oldestFirst(inScope).map(({ id }) => id);
+  return oldestFirst(inScope);
+}
+
+/** Returns the ids of the flashcards the dialog's choices export, oldest first. */
+export function flashcardIdsToExport(
+  flashcards: readonly Flashcard[],
+  choices: ExportChoices,
+): string[] {
+  return flashcardsToExport(flashcards, choices).map(({ id }) => id);
 }

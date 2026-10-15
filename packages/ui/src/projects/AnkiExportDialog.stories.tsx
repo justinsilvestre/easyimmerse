@@ -28,6 +28,7 @@ const meta = {
     newAndChangedCount: 12,
     allCount: 41,
     marksExported: true,
+    duplicateCount: 0,
     isBusy: false,
     onScopeChange: fn(),
     onMarkingChange: fn(),
@@ -44,6 +45,10 @@ export const NewAndChangedCards: Story = {};
 
 export const NotMarkingTheCardsExported: Story = {
   args: { marksExported: false },
+};
+
+export const WarningOfDuplicates: Story = {
+  args: { duplicateCount: 12 },
 };
 
 export const AllCards: Story = {

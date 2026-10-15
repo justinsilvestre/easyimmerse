@@ -21,6 +21,7 @@ function renderDialog(
       newAndChangedCount={2}
       allCount={4}
       marksExported
+      duplicateCount={0}
       isBusy={false}
       onScopeChange={(scope: AnkiExportScope) => calls.push(`scope ${scope}`)}
       onMarkingChange={(marksExported) =>
@@ -92,6 +93,29 @@ describe("AnkiExportDialog", () => {
       screen.getByRole("checkbox", { name: /Mark these cards as exported/ }),
     );
     expect(calls).toEqual(["marking false"]);
+  });
+
+  it("warns that importing would duplicate the cards AnkiConnect sent", () => {
+    renderDialog({ duplicateCount: 2 });
+    expect(
+      screen.getByText(
+        "2 of these cards were sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of each.",
+      ),
+    ).toBeDefined();
+  });
+
+  it("names a single card AnkiConnect sent in its warning", () => {
+    renderDialog({ duplicateCount: 1 });
+    expect(
+      screen.getByText(
+        "1 of these cards was sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of that card.",
+      ),
+    ).toBeDefined();
+  });
+
+  it("does not warn of duplicates while the cards are not marked as exported", () => {
+    renderDialog({ duplicateCount: 2, marksExported: false });
+    expect(screen.queryByRole("note")).toBeNull();
   });
 
   it("ticks every media file while none is chosen", () => {
