@@ -14,6 +14,8 @@ export type AnkiSendOutcome = {
   failedCount: number;
   /** The audio clips and screenshots that could not be rendered and are missing from the notes. */
   skippedMediaCount: number;
+  /** Whether the server recorded which notes Anki holds. The flashcards it did not record still count as unsent. */
+  isRecorded: boolean;
   /** Whether Anki answered although the app had not known it to be running, so that what waited for Anki can follow. */
   foundAnki: boolean;
 };

@@ -17,27 +17,36 @@ export function exportedNotice({
   return notice("success", exported, skippedMediaLine(skippedMediaCount));
 }
 
-/** Tells how many flashcards a send added or updated in Anki, how many Anki refused, and how many media files it left out. */
+/**
+ * Tells how many flashcards a send added or updated in Anki, whether the server recorded them,
+ * how many Anki refused, and how many media files it left out.
+ */
 export function sentNotice({
   sentCount,
   failedCount,
   skippedMediaCount,
+  isRecorded,
 }: AnkiSendOutcome) {
   const sent =
     sentCount === 0 ? "" : `Sent ${count(sentCount, "flashcard")} to Anki.`;
+  const unrecorded = sentCount > 0 && !isRecorded;
   return notice(
-    failedCount === 0 ? "success" : "danger",
+    failedCount === 0 && !unrecorded ? "success" : "danger",
     sent,
+    unrecorded ? unrecordedLine(sentCount) : "",
     failedLine(sentCount, failedCount),
     skippedMediaLine(skippedMediaCount),
   );
 }
 
-/** Tells why a send to Anki failed. */
-export function sendFailedNotice(failure: RequestFailure) {
+/** Tells why a send of the given number of flashcards to Anki failed. */
+export function sendFailedNotice(
+  flashcardCount: number,
+  failure: RequestFailure,
+) {
   return notice(
     "danger",
-    `The flashcards could not be sent to Anki: ${failure.message}`,
+    `${count(flashcardCount, "flashcard")} could not be sent to Anki: ${failure.message}`,
   );
 }
 
@@ -64,8 +73,8 @@ export function deletionPendingNotice(word: string) {
 export function deletionUnrecordedNotice(unrecordedCount: number) {
   return notice(
     "danger",
-    `The deletion of ${count(unrecordedCount, "note")} from Anki could not be recorded on the server.`,
-    "It will be tried again when the project next syncs with Anki.",
+    `The server could not record ${count(unrecordedCount, "deletion")} from Anki.`,
+    `${unrecordedCount === 1 ? "It" : "They"} will be tried again when the project next syncs with Anki.`,
   );
 }
 
@@ -92,6 +101,14 @@ export function exportFailedNotice(failure: RequestFailure) {
     "danger",
     `The Anki package could not be exported: ${failure.message}`,
   );
+}
+
+function unrecordedLine(sentCount: number): string {
+  const flashcards =
+    sentCount === 1
+      ? "the flashcard still counts"
+      : "the flashcards still count";
+  return `The server could not record the send, so ${flashcards} as waiting to be sent.`;
 }
 
 function failedLine(sentCount: number, failedCount: number): string {

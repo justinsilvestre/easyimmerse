@@ -46,12 +46,13 @@ const nothingSent: SentCounts = {
   sentCount: 0,
   failedCount: 0,
   skippedMediaCount: 0,
+  isRecorded: true,
 };
 
 /**
  * Sends flashcards to Anki through AnkiConnect: renders them as notes on the server, creates the deck and the note type
  * when Anki lacks them, stores each note's audio clip and screenshot, adds or updates the notes, and records on the server
- * which notes Anki holds for which flashcards. A note type Anki already has is never changed, since the user may have restyled it.
+ * which notes Anki holds for which flashcards, telling whether it could. A note type Anki already has is never changed, since the user may have restyled it.
  * Media the server cannot render is left out and counted. When the server renders no note, as for flashcards deleted
  * since the send was asked for, Anki is asked for nothing more and no send is recorded.
  */
@@ -100,8 +101,14 @@ async function putNotes(
     notes,
   });
   const recorded = await deps.server(sentRequest(projectId, sent));
-  if ("error" in recorded) return recorded;
-  return { data: { sentCount: sent.length, failedCount, skippedMediaCount } };
+  return {
+    data: {
+      sentCount: sent.length,
+      failedCount,
+      skippedMediaCount,
+      isRecorded: !("error" in recorded),
+    },
+  };
 }
 
 async function createDeckAndNoteType(anki: AnkiConnect, notes: AnkiNotes) {

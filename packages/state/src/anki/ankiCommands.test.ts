@@ -63,6 +63,7 @@ const sent = (outcome: Partial<AnkiSendOutcome>) =>
       sentCount: 0,
       failedCount: 0,
       skippedMediaCount: 0,
+      isRecorded: true,
       foundAnki: false,
       ...outcome,
     },
@@ -176,7 +177,13 @@ const stateAfterDeletion = (foundAnki: boolean) =>
 const sentResponse = (foundAnki: boolean) =>
   ({
     ok: true,
-    data: { sentCount: 1, failedCount: 0, skippedMediaCount: 0, foundAnki },
+    data: {
+      sentCount: 1,
+      failedCount: 0,
+      skippedMediaCount: 0,
+      isRecorded: true,
+      foundAnki,
+    },
   }) as const;
 
 const noteDeletionRequest = {
@@ -243,6 +250,18 @@ describe("ankiCommands", () => {
     ]);
   });
 
+  it("tells that the server could not record the cards Anki holds", () => {
+    expect(noticesAfter(sent({ sentCount: 2, isRecorded: false }))).toEqual([
+      "Sent 2 flashcards to Anki. The server could not record the send, so the flashcards still count as waiting to be sent.",
+    ]);
+  });
+
+  it("tells that the server could not record the one card Anki holds", () => {
+    expect(noticesAfter(sent({ sentCount: 1, isRecorded: false }))).toEqual([
+      "Sent 1 flashcard to Anki. The server could not record the send, so the flashcard still counts as waiting to be sent.",
+    ]);
+  });
+
   it("says nothing of a send that had no flashcard left to send", () => {
     expect(noticesAfter(sent({}))).toEqual([]);
   });
@@ -257,7 +276,7 @@ describe("ankiCommands", () => {
       },
     );
     expect(noticesAfter(refused)).toEqual([
-      "The flashcards could not be sent to Anki: deck is full",
+      "1 flashcard could not be sent to Anki: deck is full",
     ]);
   });
 
@@ -347,6 +366,7 @@ describe("ankiCommands when a flashcard is deleted", () => {
         sentCount: 2,
         failedCount: 0,
         skippedMediaCount: 0,
+        isRecorded: true,
         foundAnki: false,
       },
     });
@@ -437,7 +457,7 @@ describe("ankiCommands when a flashcard is deleted", () => {
       ),
     ).toEqual([
       "Deleted the note for “f2” from Anki.",
-      "The deletion of 1 note from Anki could not be recorded on the server. It will be tried again when the project next syncs with Anki.",
+      "The server could not record 1 deletion from Anki. It will be tried again when the project next syncs with Anki.",
     ]);
   });
 
@@ -476,7 +496,7 @@ describe("ankiCommands when notes left in Anki are deleted later", () => {
       ),
     ).toEqual([
       "Deleted 2 notes from Anki.",
-      "The deletion of 2 notes from Anki could not be recorded on the server. It will be tried again when the project next syncs with Anki.",
+      "The server could not record 2 deletions from Anki. They will be tried again when the project next syncs with Anki.",
     ]);
   });
 

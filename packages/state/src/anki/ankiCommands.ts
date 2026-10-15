@@ -100,10 +100,12 @@ function hasFoundAnki(action: RequestSettled): action is AnkiSettled {
 /** Tells of every send's outcome, except a send with no flashcard left to send, such as one whose flashcards were all deleted. */
 function sendNotices(action: RequestSettled) {
   if (action.request.kind !== "sendFlashcardsToAnki") return [];
-  const { outcome } = action as Settled<"sendFlashcardsToAnki">;
+  const { request, outcome } = action as Settled<"sendFlashcardsToAnki">;
   if (outcome.ok)
     return hasSentAny(outcome.data) ? [sentNotice(outcome.data)] : [];
-  return isSilentFailure(outcome) ? [] : [sendFailedNotice(outcome.error)];
+  return isSilentFailure(outcome)
+    ? []
+    : [sendFailedNotice(request.flashcardIds.length, outcome.error)];
 }
 
 /**

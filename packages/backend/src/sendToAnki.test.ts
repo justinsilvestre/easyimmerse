@@ -61,12 +61,15 @@ const ankiAnswers: AnkiAnswers = {
   updateNoteFields: () => null,
 };
 
-/** A server that renders `rendered` and records every request. */
-function createFakeServer(notes: BackendResult<unknown> = { data: rendered }) {
+/** A server that renders `rendered`, answers the record of a send with `recorded`, and records every request. */
+function createFakeServer(
+  notes: BackendResult<unknown> = { data: rendered },
+  recorded: BackendResult<unknown> = { data: undefined },
+) {
   const requests: BackendRequest[] = [];
   const server = async (request: BackendRequest) => {
     requests.push(request);
-    return request.path.endsWith("/notes") ? notes : { data: undefined };
+    return request.path.endsWith("/notes") ? notes : recorded;
   };
   return { requests, server };
 }
@@ -82,9 +85,10 @@ function send(
   answers: AnkiAnswers = ankiAnswers,
   notes?: BackendResult<unknown>,
   isAnkiNew = false,
+  recorded?: BackendResult<unknown>,
 ) {
   const anki = createFakeAnkiConnect(answers);
-  const { requests, server } = createFakeServer(notes);
+  const { requests, server } = createFakeServer(notes, recorded);
   const connections: AnkiConnection[] = [];
   const sent = sendFlashcardsToAnki(
     { projectId: "p1", flashcardIds: ["f1", "f2"] },
@@ -179,6 +183,7 @@ describe("sendFlashcardsToAnki", () => {
           sentCount: 0,
           failedCount: 0,
           skippedMediaCount: 0,
+          isRecorded: true,
           foundAnki: false,
         },
       });
@@ -281,9 +286,17 @@ describe("sendFlashcardsToAnki", () => {
         sentCount: 1,
         failedCount: 1,
         skippedMediaCount: 1,
+        isRecorded: true,
         foundAnki: false,
       },
     });
+  });
+
+  it("tells that the server could not record the send once Anki holds the notes", async () => {
+    const failure = { error: { status: 500, message: "down" } };
+    expect(
+      await send(ankiAnswers, undefined, false, failure).sent,
+    ).toMatchObject({ data: { sentCount: 2, isRecorded: false } });
   });
 
   it("records with the server which notes Anki holds", async () => {
