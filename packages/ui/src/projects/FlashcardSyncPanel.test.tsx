@@ -23,6 +23,17 @@ const sendingTo = (
   isSyncing,
 });
 
+const refusedAt = (deniedOrigin: string): FlashcardSyncState => ({
+  kind: "ankiConnect",
+  connection: "denied",
+  deniedOrigin,
+  flashcardCount: 2,
+  unsentCount: 2,
+  pendingDeletionCount: 0,
+  nextCard: null,
+  isSyncing: false,
+});
+
 const counting = (
   unsentCount: number,
   pendingDeletionCount: number,
@@ -114,10 +125,7 @@ describe("FlashcardSyncPanel", () => {
     });
 
     it("tells how to allow easyImmerse again, naming the origin Anki refused", () => {
-      renderPanel({
-        ...sendingTo("denied"),
-        deniedOrigin: "tauri://localhost",
-      });
+      renderPanel(refusedAt("tauri://localhost"));
       expect(
         paragraphWithText(
           "Check again and choose Yes when Anki asks. If it does not ask, choose Tools, then Add-ons in Anki, select AnkiConnect, choose Config, remove tauri://localhost from ignoreOriginList, and check again.",
