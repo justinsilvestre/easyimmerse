@@ -87,6 +87,8 @@ function sections(
         onStartReview={fn()}
         onSendToAnki={fn()}
         onCheckConnection={fn()}
+        onCopyAnkiSearch={fn()}
+        onMarkDeletionsDone={fn()}
       />
     </>
   );

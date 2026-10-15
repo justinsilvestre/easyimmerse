@@ -7,6 +7,8 @@ afterEach(cleanup);
 
 const since = (newCount: number, changedCount: number): PackageSync => ({
   sinceLastExport: { newCount, changedCount },
+  deletions: [],
+  ankiSearch: "",
 });
 
 function renderChannel(sync: PackageSync, flashcardCount = 5) {
@@ -17,6 +19,8 @@ function renderChannel(sync: PackageSync, flashcardCount = 5) {
       flashcardCount={flashcardCount}
       isMainChannel
       onExportPackage={() => calls.push("export")}
+      onCopyAnkiSearch={() => calls.push("copy")}
+      onMarkDeletionsDone={() => calls.push("done")}
     />,
   );
   return calls;
@@ -46,14 +50,34 @@ describe("AnkiPackageChannel", () => {
   });
 
   it("says what a package is before the first export", () => {
-    renderChannel({ sinceLastExport: null });
+    renderChannel({ ...since(0, 0), sinceLastExport: null });
     expect(
       screen.getByText("Save a package to import into Anki."),
     ).toBeDefined();
   });
 
+  it("lists the deleted flashcards still in Anki", () => {
+    renderChannel({
+      ...since(0, 0),
+      deletions: [
+        {
+          flashcard_id: "f9",
+          word: "Katze",
+          requested_at_ms: 1,
+          reached_by_package: true,
+        },
+      ],
+    });
+    expect(screen.getByText("Katze")).toBeDefined();
+  });
+
+  it("lists nothing while no deleted flashcard is still in Anki", () => {
+    renderChannel(since(0, 0));
+    expect(screen.queryByRole("list")).toBeNull();
+  });
+
   it("says there are no cards yet when the project has none", () => {
-    renderChannel({ sinceLastExport: null }, 0);
+    renderChannel({ ...since(0, 0), sinceLastExport: null }, 0);
     expect(screen.getByText("No flashcards yet.")).toBeDefined();
   });
 });

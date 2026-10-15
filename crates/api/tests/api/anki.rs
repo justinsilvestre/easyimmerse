@@ -787,6 +787,49 @@ mod anki_pending_deletions {
         assert_eq!(clear(&server, PROJECT, &id).await.status, 204);
     }
 
+    async fn mark_done(
+        server: &TestServer,
+        project: &str,
+        ids: &[&str],
+    ) -> crate::support::TestResponse {
+        server
+            .post_json(
+                &format!("/projects/{project}/anki/pending-deletions/cleared"),
+                &json!({ "flashcard_ids": ids }),
+            )
+            .await
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marking_deletions_done_removes_them() {
+        let server = spawn_test_server(false).await;
+        let id = delete_sent(&server, true).await;
+        mark_done(&server, PROJECT, &[&id]).await;
+        assert_eq!(listed_ids(&server).await, Vec::<Value>::new());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marking_deletions_done_keeps_the_ones_not_named() {
+        let server = spawn_test_server(false).await;
+        let first = delete_sent(&server, true).await;
+        let second = delete_sent(&server, true).await;
+        mark_done(&server, PROJECT, &[&first]).await;
+        assert_eq!(listed_ids(&server).await, [json!(second)]);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marking_deletions_done_answers_no_content() {
+        let server = spawn_test_server(false).await;
+        let id = delete_sent(&server, true).await;
+        assert_eq!(mark_done(&server, PROJECT, &[&id]).await.status, 204);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marking_deletions_done_in_an_unknown_project_is_not_found() {
+        let server = spawn_test_server(false).await;
+        assert_eq!(mark_done(&server, "missing", &[]).await.status, 404);
+    }
+
     #[tokio::test(flavor = "multi_thread")]
     async fn clearing_in_an_unknown_project_is_not_found() {
         let server = spawn_test_server(false).await;

@@ -8,7 +8,7 @@ afterEach(cleanup);
 
 const exportingOnly: FlashcardSync = {
   flashcardCount: 3,
-  package: { sinceLastExport: null },
+  package: { sinceLastExport: null, deletions: [], ankiSearch: "" },
   ankiConnect: null,
   nextCard: null,
 };
@@ -40,6 +40,8 @@ function renderPanel(sync: FlashcardSync) {
       onStartReview={call("review")}
       onSendToAnki={call("send")}
       onCheckConnection={call("check")}
+      onCopyAnkiSearch={call("copy")}
+      onMarkDeletionsDone={call("done")}
     />,
   );
   return calls;

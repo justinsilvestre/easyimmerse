@@ -200,12 +200,23 @@ impl Storage {
         self.write(|conn| flashcards::delete_flashcard(conn, id))
     }
 
-    /// Lists the project's flashcards whose notes are still to be deleted from Anki, oldest first.
+    /// Lists the project's deleted flashcards whose notes may still be in Anki, oldest first.
     pub fn list_anki_pending_deletions(
         &self,
         project_id: &ProjectId,
     ) -> Result<Vec<AnkiPendingDeletion>, StorageError> {
         self.read(|conn| anki_pending_deletions::list_anki_pending_deletions(conn, project_id))
+    }
+
+    /// Removes the named deletions from the project in one transaction, as when the user marks them done.
+    pub fn clear_anki_pending_deletions(
+        &self,
+        project_id: &ProjectId,
+        flashcard_ids: &[FlashcardId],
+    ) -> Result<(), StorageError> {
+        self.write(|conn| {
+            anki_pending_deletions::clear_anki_pending_deletions(conn, project_id, flashcard_ids)
+        })
     }
 
     /// Forgets that a flashcard's note is to be deleted from Anki, once the client has deleted it.

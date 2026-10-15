@@ -88,6 +88,9 @@ fn protected_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(anki::set_anki_connect))
         .routes(routes!(anki_pending_deletions::list_anki_pending_deletions))
         .routes(routes!(anki_pending_deletions::clear_anki_pending_deletion))
+        .routes(routes!(
+            anki_pending_deletions::clear_anki_pending_deletions
+        ))
         .routes(routes!(media::list_media_files, media::add_media_file))
         .routes(routes!(media::remove_media_file))
         .routes(routes!(media_import::get_import_form))

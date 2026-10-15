@@ -1,15 +1,21 @@
 import type { PackageSync } from "@easyimmerse/state";
 import { Download } from "lucide-react";
 import { Button } from "../components/Button.tsx";
+import { DeletedInAnki } from "./DeletedInAnki.tsx";
 import { newAndChangedPhrase } from "./newAndChangedPhrase.ts";
 import { SyncChannel } from "./SyncChannel.tsx";
 
-/** Shows the Anki package, which can always be exported: what changed since the last export, and the button to export. */
+/**
+ * Shows the Anki package, which can always be exported: what changed since the last export, the button to export,
+ * and the deleted flashcards whose notes may still be in Anki.
+ */
 export function AnkiPackageChannel({
   sync,
   flashcardCount,
   isMainChannel,
   onExportPackage,
+  onCopyAnkiSearch,
+  onMarkDeletionsDone,
 }: {
   sync: PackageSync;
   /** Every flashcard of the project. */
@@ -17,6 +23,8 @@ export function AnkiPackageChannel({
   /** Whether packages are how the flashcards reach Anki, as while AnkiConnect is off, which makes Export the main button. */
   isMainChannel: boolean;
   onExportPackage: () => void;
+  onCopyAnkiSearch: () => void;
+  onMarkDeletionsDone: () => void;
 }) {
   return (
     <SyncChannel
@@ -33,6 +41,13 @@ export function AnkiPackageChannel({
           Export an Anki deck
         </Button>
       </div>
+      {sync.deletions.length > 0 && (
+        <DeletedInAnki
+          deletions={sync.deletions}
+          onCopyAnkiSearch={onCopyAnkiSearch}
+          onMarkDone={onMarkDeletionsDone}
+        />
+      )}
     </SyncChannel>
   );
 }

@@ -149,6 +149,7 @@ export const fixtureResponses = {
   "POST /projects/p1/opened": undefined,
   "GET /projects/p1/media": fixtureMediaFiles,
   "GET /projects/p1/flashcards": noFlashcards,
+  "GET /projects/p1/anki/pending-deletions": { deletions: [] },
   "GET /projects/p1/media/m1/subtitles": fixtureSubtitleTracks,
   "GET /projects/p1/media/m1/subtitles/s1/cues": fixtureTrack,
   "GET /projects/p1/media/m2/subtitles": {

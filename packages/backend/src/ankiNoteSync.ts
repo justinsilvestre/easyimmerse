@@ -1,3 +1,4 @@
+import { flashcardNoteQuery } from "@easyimmerse/state";
 import type { AnkiNote, AnkiNotes } from "@easyimmerse/types";
 import type { AnkiConnect } from "./ankiConnect.ts";
 import { ankiResultOf } from "./ankiConnect.ts";
@@ -5,7 +6,6 @@ import {
   ankiConnectActions,
   connectNoteOf,
   fieldsOf,
-  flashcardNoteQuery,
 } from "./ankiConnectActions.ts";
 import { hasSucceeded, recoverActionFailure } from "./ankiConnectError.ts";
 

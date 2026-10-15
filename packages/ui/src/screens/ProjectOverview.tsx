@@ -1,5 +1,4 @@
 import {
-  skipToken,
   useListAnkiPendingDeletionsQuery,
   useListDictionariesQuery,
   useListFlashcardsQuery,
@@ -58,10 +57,8 @@ export function ProjectOverview({
   const flashcardSync = useAppSelector((state) =>
     selectFlashcardSync(state, project.id),
   );
-  // The panel counts the notes still to be deleted from Anki from this query's cached answer.
-  useListAnkiPendingDeletionsQuery(
-    flashcardSync.ankiConnect === null ? skipToken : project.id,
-  );
+  // The panel lists or counts the deleted flashcards still to be deleted from Anki from this query's cached answer.
+  useListAnkiPendingDeletionsQuery(project.id);
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
   const navigate = useNavigate();
   const openDictionaries = () => navigate({ type: "openDictionaries" });
@@ -154,6 +151,15 @@ export function ProjectOverview({
           dispatch(actions.ankiConnectionCheckRequested())
         }
         onTurnOffAnkiConnect={() => dispatch(actions.ankiConnectTurnedOff())}
+        onCopyAnkiSearch={() =>
+          dispatch(
+            actions.textCopyRequested(
+              flashcardSync.package.ankiSearch,
+              "Anki search",
+            ),
+          )
+        }
+        onMarkDeletionsDone={() => dispatch(actions.ankiDeletionsMarkedDone())}
       />
     </ProjectView>
   );

@@ -4,11 +4,12 @@ import { updated } from "../app/updated.ts";
 import { cacheEntry, type ServerCacheSlice } from "../server/cacheEntry.ts";
 import { isSettled } from "../server/isSettled.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
-import { cachedUsesAnkiConnect } from "./ankiCache.ts";
+import { cachedDeletions, cachedUsesAnkiConnect } from "./ankiCache.ts";
 import {
   ankiConnectionCheckId,
   ankiRequestIds,
   checkAnkiConnection,
+  clearDeletions,
   setAnkiConnect,
 } from "./ankiRequests.ts";
 import { syncWithAnki } from "./syncWithAnki.ts";
@@ -45,7 +46,7 @@ export function updateAnkiConnectSetup(
  * a check whether Anki can be reached, as asked for or once the overview has read that the project uses AnkiConnect;
  * a send of every flashcard Anki has no note for, oldest first, followed by the deletion of the notes of deleted flashcards
  * that Anki could not be reached for, as asked for or once Anki is found running;
- * and the turning off of AnkiConnect.
+ * the turning off of AnkiConnect; and the clearing of the deletions the panel lists, which the user marked done.
  */
 export function ankiConnectEffects(
   action: AppAction,
@@ -59,6 +60,8 @@ export function ankiConnectEffects(
       return syncWithAnki(projectId, app);
     case "ankiConnectTurnedOff":
       return [setAnkiConnect(projectId, false)];
+    case "ankiDeletionsMarkedDone":
+      return markedDone(projectId, app);
     case "requestSettled":
       return [
         ...checkOnRead(action, projectId),
@@ -67,6 +70,14 @@ export function ankiConnectEffects(
     default:
       return [];
   }
+}
+
+/** Clears the deletions as cached, which are the ones the panel lists, so that a deletion recorded since stays. */
+function markedDone(projectId: string, { backend }: AnkiConnectApp) {
+  const ids = cachedDeletions(backend, projectId).map(
+    ({ flashcard_id }) => flashcard_id,
+  );
+  return ids.length === 0 ? [] : [clearDeletions(projectId, ids)];
 }
 
 /** Checks the connection once the overview has read that the project uses AnkiConnect. */

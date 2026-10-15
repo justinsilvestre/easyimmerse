@@ -2219,7 +2219,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Lists the flashcards of the project whose notes are still to be deleted from Anki.\nDeleting a flashcard that has reached Anki while the project uses AnkiConnect adds it here, as does recording a send of a flashcard deleted since the send began.",
+        "summary": "Lists the project's deleted flashcards whose notes may still be in Anki.\nDeleting a flashcard that reached Anki, marked as exported or sent, adds it here while the project uses AnkiConnect or lists such deletions,\nas does recording a send of a flashcard deleted since the send began.",
         "operationId": "listAnkiPendingDeletions",
         "parameters": [
           {
@@ -2242,6 +2242,76 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/anki/pending-deletions/cleared": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Forgets the named deletions, as when the user has deleted their notes in Anki and marks them done.\nOnly the named deletions go, so that one recorded since the project screen listed them stays.",
+        "operationId": "clearAnkiPendingDeletions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiDeletionsCleared"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The named deletions are gone"
           },
           "401": {
             "description": "Missing or invalid token",
@@ -5100,6 +5170,21 @@
         "properties": {
           "uses_anki_connect": {
             "type": "boolean"
+          }
+        }
+      },
+      "AnkiDeletionsCleared": {
+        "type": "object",
+        "description": "The deletions the user marked done, as the project screen listed them.",
+        "required": [
+          "flashcard_ids"
+        ],
+        "properties": {
+          "flashcard_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardId"
+            }
           }
         }
       },

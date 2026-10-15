@@ -304,6 +304,26 @@ describe("ankiConnectEffects", () => {
     ]);
   });
 
+  it("clears the listed deletions once they are marked done", () => {
+    expect(
+      effectsOf(actions.ankiDeletionsMarkedDone(), allSentWithPending(2)),
+    ).toEqual([
+      {
+        type: "sendRequest",
+        id: "project/p1/ankiDeletionsCleared",
+        request: {
+          kind: "clearAnkiPendingDeletions",
+          projectId: "p1",
+          flashcardIds: ["f9", "f9"],
+        },
+      },
+    ]);
+  });
+
+  it("clears nothing when no deletion is listed", () => {
+    expect(effectsOf(actions.ankiDeletionsMarkedDone(), allSent)).toEqual([]);
+  });
+
   it("turns AnkiConnect off when asked", () => {
     expect(effectsOf(actions.ankiConnectTurnedOff())).toEqual([
       ankiConnectSet(false),

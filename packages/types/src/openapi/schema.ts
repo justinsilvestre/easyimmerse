@@ -472,12 +472,33 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Lists the flashcards of the project whose notes are still to be deleted from Anki.
-         *     Deleting a flashcard that has reached Anki while the project uses AnkiConnect adds it here, as does recording a send of a flashcard deleted since the send began.
+         * Lists the project's deleted flashcards whose notes may still be in Anki.
+         *     Deleting a flashcard that reached Anki, marked as exported or sent, adds it here while the project uses AnkiConnect or lists such deletions,
+         *     as does recording a send of a flashcard deleted since the send began.
          */
         get: operations["listAnkiPendingDeletions"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/projects/{id}/anki/pending-deletions/cleared": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Forgets the named deletions, as when the user has deleted their notes in Anki and marks them done.
+         *     Only the named deletions go, so that one recorded since the project screen listed them stays.
+         */
+        post: operations["clearAnkiPendingDeletions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -969,6 +990,10 @@ export interface components {
         };
         AnkiConnectSetting: {
             uses_anki_connect: boolean;
+        };
+        /** @description The deletions the user marked done, as the project screen listed them. */
+        AnkiDeletionsCleared: {
+            flashcard_ids: components["schemas"]["FlashcardId"][];
         };
         /** @description A media file that a note's fields refer to by name, which the caller renders from the project's media file and supplies. */
         AnkiMediaRef: {
@@ -3796,6 +3821,58 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AnkiPendingDeletions"];
                 };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    clearAnkiPendingDeletions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnkiDeletionsCleared"];
+            };
+        };
+        responses: {
+            /** @description The named deletions are gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Missing or invalid token */
             401: {

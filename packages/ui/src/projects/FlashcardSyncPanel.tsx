@@ -23,6 +23,8 @@ export function FlashcardSyncPanel({
   onTurnOffAnkiConnect,
   onSendToAnki,
   onCheckConnection,
+  onCopyAnkiSearch,
+  onMarkDeletionsDone,
   onStartReview,
 }: {
   sync: FlashcardSync;
@@ -34,6 +36,8 @@ export function FlashcardSyncPanel({
   onTurnOffAnkiConnect: () => void;
   onSendToAnki: () => void;
   onCheckConnection: () => void;
+  onCopyAnkiSearch: () => void;
+  onMarkDeletionsDone: () => void;
   /** Called by the review option, which is marked as coming soon; it can explain. */
   onStartReview: () => void;
 }) {
@@ -51,6 +55,8 @@ export function FlashcardSyncPanel({
             flashcardCount={flashcardCount}
             isMainChannel={ankiConnect === null}
             onExportPackage={onExportPackage}
+            onCopyAnkiSearch={onCopyAnkiSearch}
+            onMarkDeletionsDone={onMarkDeletionsDone}
           />
           {ankiConnect === null ? (
             <Option

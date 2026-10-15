@@ -6,6 +6,7 @@ export type {
   AnkiPackageExport,
   AnkiSendOutcome,
 } from "./anki/ankiResponses.ts";
+export { flashcardNoteQuery } from "./anki/ankiSearch.ts";
 export {
   type AnkiExportView,
   selectAnkiExport,

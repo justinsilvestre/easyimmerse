@@ -4,6 +4,7 @@ export type * from "./AddSubtitleTrackRequest";
 export type * from "./AlignmentRequest";
 export type * from "./AlignmentResponse";
 export type * from "./AnkiConnectSetting";
+export type * from "./AnkiDeletionsCleared";
 export type * from "./AnkiMediaRef";
 export type * from "./AnkiNote";
 export type * from "./AnkiNoteType";

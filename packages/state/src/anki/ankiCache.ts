@@ -1,9 +1,21 @@
-import type { Flashcard } from "@easyimmerse/types";
+import type { AnkiPendingDeletion, Flashcard } from "@easyimmerse/types";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { cacheEntry } from "../server/cacheEntry.ts";
 
 const noFlashcards: readonly Flashcard[] = [];
 const noMediaFileIds: readonly string[] = [];
+const noDeletions: readonly AnkiPendingDeletion[] = [];
+
+/** Returns the project's cached deletions from Anki, oldest first, or none while they are not cached. */
+export function cachedDeletions(
+  backend: ServerCacheSlice,
+  projectId: string,
+): readonly AnkiPendingDeletion[] {
+  return (
+    cacheEntry(backend, "listAnkiPendingDeletions", projectId)?.data
+      ?.deletions ?? noDeletions
+  );
+}
 
 /** Tells whether the cached project uses AnkiConnect; false while the project is not cached. */
 export function cachedUsesAnkiConnect(

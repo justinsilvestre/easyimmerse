@@ -1,10 +1,6 @@
 import type { AnkiNote, AnkiNoteType } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
-import {
-  ankiConnectActions,
-  connectNoteOf,
-  flashcardNoteQuery,
-} from "./ankiConnectActions.ts";
+import { ankiConnectActions, connectNoteOf } from "./ankiConnectActions.ts";
 
 const noteType: AnkiNoteType = {
   id: 1 << 30,
@@ -70,17 +66,5 @@ describe("connectNoteOf", () => {
       tags: ["animals"],
       options: { allowDuplicate: true },
     });
-  });
-});
-
-describe("flashcardNoteQuery", () => {
-  it("searches the id field for the flashcard's id", () => {
-    expect(flashcardNoteQuery("0190-ab")).toBe('"easyImmerse id:0190-ab"');
-  });
-
-  it("escapes the characters Anki's search treats specially", () => {
-    expect(flashcardNoteQuery('a_b*c"d')).toBe(
-      '"easyImmerse id:a\\_b\\*c\\"d"',
-    );
   });
 });

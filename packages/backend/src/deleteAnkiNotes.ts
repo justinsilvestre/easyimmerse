@@ -1,13 +1,14 @@
-import type { AnkiConnection, AnkiDeletionOutcome } from "@easyimmerse/state";
+import {
+  type AnkiConnection,
+  type AnkiDeletionOutcome,
+  flashcardNoteQuery,
+} from "@easyimmerse/state";
 import type {
   AnkiPendingDeletion,
   AnkiPendingDeletions,
 } from "@easyimmerse/types";
 import type { AnkiConnect } from "./ankiConnect.ts";
-import {
-  ankiConnectActions,
-  flashcardNoteQuery,
-} from "./ankiConnectActions.ts";
+import { ankiConnectActions } from "./ankiConnectActions.ts";
 import {
   ankiBackendError,
   isUnreachable,

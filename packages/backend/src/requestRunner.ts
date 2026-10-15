@@ -184,6 +184,11 @@ export const requestEndpoints = {
       { projectId, flashcardIds, savePath, marksExported },
       { track: false },
     ),
+  clearAnkiPendingDeletions: ({ projectId, flashcardIds }) =>
+    backendApi.endpoints.clearAnkiPendingDeletions.initiate(
+      { projectId, flashcardIds },
+      { track: false },
+    ),
   setAnkiConnect: ({ projectId, usesAnkiConnect }) =>
     backendApi.endpoints.setAnkiConnect.initiate(
       { projectId, usesAnkiConnect },

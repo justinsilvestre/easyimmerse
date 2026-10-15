@@ -7,6 +7,7 @@ import {
 } from "../flashcards/flashcardPresets.ts";
 import {
   ankiConnectSync,
+  deletionsListedSync,
   exportedSync,
   neverExportedSync,
 } from "./exampleFlashcardSyncs.ts";
@@ -33,6 +34,8 @@ const meta = {
     onStartReview: fn(),
     onSendToAnki: fn(),
     onCheckConnection: fn(),
+    onCopyAnkiSearch: fn(),
+    onMarkDeletionsDone: fn(),
   },
 } satisfies Meta<typeof FlashcardSyncPanel>;
 
@@ -49,11 +52,18 @@ export const NewAndChangedSinceTheLastExport: Story = {
   args: { sync: exportedSync },
 };
 
+export const DeletedFlashcardsToDeleteInAnki: Story = {
+  args: { sync: deletionsListedSync },
+};
+
 export const EveryFlashcardExported: Story = {
   args: {
     sync: {
       ...exportedSync,
-      package: { sinceLastExport: { newCount: 0, changedCount: 0 } },
+      package: {
+        ...exportedSync.package,
+        sinceLastExport: { newCount: 0, changedCount: 0 },
+      },
       nextCard: null,
     },
   },

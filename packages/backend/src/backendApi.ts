@@ -14,6 +14,7 @@ import type {
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
   AnkiConnectSetting,
+  AnkiDeletionsCleared,
   AnkiPendingDeletions,
   BatchLookupRequest,
   BatchLookupResponse,
@@ -128,6 +129,11 @@ type SubtitleSelectionArgs = MediaFileArgs & { selection: SubtitleSelection };
 
 type AnkiConnectArgs = { projectId: string; usesAnkiConnect: boolean };
 
+type AnkiDeletionsClearArgs = {
+  projectId: string;
+  flashcardIds: readonly string[];
+};
+
 /** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
 const lookupContextQuery = (
   context: string | undefined,
@@ -223,10 +229,11 @@ function reportAnkiConnection(
   return connection.connected && last?.connected !== true;
 }
 
-/** The data an export or a send to Anki changes: which flashcards went where, and the project's counts. */
+/** The data an export or a send to Anki changes: which flashcards went where, the deletions it records or clears, and the project's counts. */
 const flashcardsSentTags = (projectId: string) =>
   [
     { type: "Flashcards", id: projectId },
+    { type: "AnkiPendingDeletions", id: projectId },
     { type: "Projects", id: projectId },
     "Projects",
   ] as const;
@@ -317,8 +324,10 @@ export const backendApi = createApi({
       async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
         await listSavedFlashcard(dispatch, projectId, queryFulfilled);
       },
+      // Saving a flashcard deleted earlier, as an Undo does, forgets its deletion from Anki.
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
+        { type: "AnkiPendingDeletions", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
       ],
@@ -633,7 +642,7 @@ export const backendApi = createApi({
       invalidatesTags: (_result, _error, { projectId }) =>
         flashcardsSentTags(projectId),
     }),
-    /** The project's deleted flashcards whose notes are still to be deleted from Anki. */
+    /** The project's deleted flashcards whose notes may still be in Anki. */
     listAnkiPendingDeletions: build.query<AnkiPendingDeletions, string>({
       query: (projectId) => ({
         method: "GET",
@@ -653,6 +662,22 @@ export const backendApi = createApi({
             reportAnkiConnection(api, connection),
         }),
       invalidatesTags: (_result, _error, projectId) => [
+        { type: "AnkiPendingDeletions", id: projectId },
+      ],
+    }),
+    /** Forgets the named deletions from Anki, which the user marked done. */
+    clearAnkiPendingDeletions: build.mutation<void, AnkiDeletionsClearArgs>({
+      query: ({ projectId, flashcardIds }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/anki/pending-deletions/cleared`,
+        body: {
+          kind: "json",
+          value: {
+            flashcard_ids: [...flashcardIds],
+          } satisfies AnkiDeletionsCleared,
+        },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
         { type: "AnkiPendingDeletions", id: projectId },
       ],
     }),

@@ -106,6 +106,21 @@ pub fn clear_anki_pending_deletion(
     Ok(())
 }
 
+/// Removes the named deletions from the project, as when the user marks them done. A flashcard without one is passed over.
+pub fn clear_anki_pending_deletions(
+    conn: &mut Connection,
+    project_id: &ProjectId,
+    flashcard_ids: &[FlashcardId],
+) -> Result<(), StorageError> {
+    let transaction = conn.transaction()?;
+    ensure_project_exists(&transaction, project_id)?;
+    for flashcard_id in flashcard_ids {
+        clear_anki_pending_deletion(&transaction, project_id, flashcard_id)?;
+    }
+    transaction.commit()?;
+    Ok(())
+}
+
 fn read_deletion(row: &Row) -> rusqlite::Result<AnkiPendingDeletion> {
     Ok(AnkiPendingDeletion {
         flashcard_id: FlashcardId(row.get(0)?),
@@ -330,6 +345,35 @@ mod tests {
             .clear_anki_pending_deletion(&project(), &id)
             .unwrap();
         assert_eq!(listed_words(&storage), Vec::<String>::new());
+    }
+
+    #[test]
+    fn clearing_several_removes_the_named_deletions() {
+        let storage = storage_using_anki_connect(true);
+        let first = delete_sent(&storage, "first");
+        let second = delete_sent(&storage, "second");
+        storage
+            .clear_anki_pending_deletions(&project(), &[first, second])
+            .unwrap();
+        assert_eq!(listed_words(&storage), Vec::<String>::new());
+    }
+
+    #[test]
+    fn clearing_several_keeps_the_deletions_not_named() {
+        let storage = storage_using_anki_connect(true);
+        let first = delete_sent(&storage, "first");
+        delete_sent(&storage, "second");
+        storage
+            .clear_anki_pending_deletions(&project(), &[first])
+            .unwrap();
+        assert_eq!(listed_words(&storage), vec!["second"]);
+    }
+
+    #[test]
+    fn clearing_several_in_an_unknown_project_fails() {
+        let storage = storage_using_anki_connect(true);
+        let result = storage.clear_anki_pending_deletions(&ProjectId("missing".to_string()), &[]);
+        assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 
     #[test]

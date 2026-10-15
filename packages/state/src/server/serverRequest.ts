@@ -159,6 +159,12 @@ export type ServerRequest =
       savePath: string | null;
       marksExported: boolean;
     }
+  /** Forgets the named deletions from Anki, which the user marked done. */
+  | {
+      kind: "clearAnkiPendingDeletions";
+      projectId: string;
+      flashcardIds: readonly string[];
+    }
   /** Turns AnkiConnect on or off for a project. */
   | {
       kind: "setAnkiConnect";
@@ -211,6 +217,8 @@ export type ServerResponses = {
   sendFlashcardsToAnki: AnkiSendOutcome;
   deleteAnkiNotes: AnkiDeletionOutcome;
   exportAnkiPackage: AnkiPackageExport;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  clearAnkiPendingDeletions: void;
   setAnkiConnect: Project;
 };
 

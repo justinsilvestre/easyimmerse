@@ -45,6 +45,22 @@ const checking: ServerCacheSlice = {
 
 const f3 = exampleAnkiFlashcards[2];
 
+const katze = {
+  flashcard_id: "f9",
+  word: "Katze",
+  requested_at_ms: 1,
+  reached_by_package: true,
+};
+
+/** p1, using AnkiConnect or not, with the deletion of "Katze" from Anki listed. */
+const withDeletions = (usesAnkiConnect: boolean) =>
+  serverCacheWith(
+    "listAnkiPendingDeletions",
+    "p1",
+    { deletions: [katze] },
+    ankiCache(usesAnkiConnect),
+  );
+
 describe("selectFlashcardSync", () => {
   it("counts no new or changed cards before the first export", () => {
     expect(
@@ -81,6 +97,20 @@ describe("selectFlashcardSync", () => {
     });
     const backend = ankiCache(false, [edited, ankiFlashcard("f2", "m1", 2)]);
     expect(syncOf(backend)).toMatchObject({ nextCard: edited.content });
+  });
+
+  it("lists the deletions while AnkiConnect is off", () => {
+    expect(syncOf(withDeletions(false)).package.deletions).toEqual([katze]);
+  });
+
+  it("lists no deletion while AnkiConnect is on, which deletes the notes itself", () => {
+    expect(syncOf(withDeletions(true)).package.deletions).toEqual([]);
+  });
+
+  it("builds the Anki search that finds the notes of the listed deletions", () => {
+    expect(syncOf(withDeletions(false)).package.ankiSearch).toBe(
+      '"easyImmerse id:f9"',
+    );
   });
 
   it("shows no AnkiConnect status while AnkiConnect is off", () => {

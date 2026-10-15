@@ -1,9 +1,6 @@
 import type { AnkiNote, AnkiNoteType } from "@easyimmerse/types";
 import type { AnkiConnectRequest } from "./ankiConnect.ts";
 
-/** The name of the field in which every note of an easyImmerse note type holds its flashcard's id. */
-export const flashcardIdField = "easyImmerse id";
-
 /** A note as AnkiConnect adds it. Duplicates of the first field are allowed, since two flashcards may share a word. */
 export type AnkiConnectNote = {
   deckName: string;
@@ -79,13 +76,4 @@ export function connectNoteOf(
     tags: note.tags,
     options: { allowDuplicate: true },
   };
-}
-
-/** The Anki search that finds the note holding a flashcard's id, with the characters Anki's search treats specially escaped. */
-export function flashcardNoteQuery(flashcardId: string): string {
-  const escaped = flashcardId.replace(
-    /[\\"*_:]/g,
-    (character) => `\\${character}`,
-  );
-  return `"${flashcardIdField}:${escaped}"`;
 }

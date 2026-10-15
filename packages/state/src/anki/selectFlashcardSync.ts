@@ -1,8 +1,16 @@
-import type { Flashcard, FlashcardContent } from "@easyimmerse/types";
+import type {
+  AnkiPendingDeletion,
+  Flashcard,
+  FlashcardContent,
+} from "@easyimmerse/types";
 import { createSelector } from "reselect";
 import type { RootState } from "../app/createAppStore.ts";
 import { type CacheEntry, cacheEntry } from "../server/cacheEntry.ts";
-import { cachedFlashcards, cachedUsesAnkiConnect } from "./ankiCache.ts";
+import {
+  cachedDeletions,
+  cachedFlashcards,
+  cachedUsesAnkiConnect,
+} from "./ankiCache.ts";
 import {
   isChangedSinceExport,
   isChangedSinceSent,
@@ -13,6 +21,7 @@ import {
   oldestFirst,
 } from "./ankiExportSelection.ts";
 import { hasAnkiConnectRequest } from "./ankiRequests.ts";
+import { ankiSearchOf } from "./ankiSearch.ts";
 
 /** Whether Anki answered the last check: still being asked, answered, did not answer, or answered that it refuses easyImmerse. */
 export type AnkiConnectionStatus =
@@ -25,6 +34,10 @@ export type AnkiConnectionStatus =
 export type PackageSync = {
   /** The flashcards new and changed since they were last marked as exported, or null while none ever was. */
   sinceLastExport: { newCount: number; changedCount: number } | null;
+  /** The deleted flashcards whose notes may still be in Anki, oldest first, listed while AnkiConnect is off. */
+  deletions: readonly AnkiPendingDeletion[];
+  /** The Anki search that finds the notes of the listed deletions. */
+  ankiSearch: string;
 };
 
 /** What the project overview's flashcards panel shows about AnkiConnect while it is on for the project. */
@@ -69,25 +82,24 @@ export const selectFlashcardSync = createSelector(
     (root: RootState, projectId: string) =>
       hasAnkiConnectRequest(root.app.operations.requests, projectId),
     (root: RootState, projectId: string) =>
-      cacheEntry(root.backend, "listAnkiPendingDeletions", projectId)?.data
-        ?.deletions.length ?? 0,
+      cachedDeletions(root.backend, projectId),
   ],
   (
     usesAnkiConnect,
     flashcards,
     connection,
     isSyncing,
-    pendingDeletionCount,
+    deletions,
   ): FlashcardSync => ({
     flashcardCount: flashcards.length,
-    package: { sinceLastExport: sinceLastExport(flashcards) },
+    package: packageSync(flashcards, usesAnkiConnect ? noDeletions : deletions),
     ankiConnect: usesAnkiConnect
       ? {
           connection: statusOf(connection),
           deniedOrigin: deniedOriginOf(connection),
           unsentCount: flashcards.filter(isUnsent).length,
           changedCount: flashcards.filter(isChangedSinceSent).length,
-          pendingDeletionCount,
+          pendingDeletionCount: deletions.length,
           isSyncing,
         }
       : null,
@@ -98,6 +110,19 @@ export const selectFlashcardSync = createSelector(
     ),
   }),
 );
+
+const noDeletions: readonly AnkiPendingDeletion[] = [];
+
+function packageSync(
+  flashcards: readonly Flashcard[],
+  deletions: readonly AnkiPendingDeletion[],
+): PackageSync {
+  return {
+    sinceLastExport: sinceLastExport(flashcards),
+    deletions,
+    ankiSearch: ankiSearchOf(deletions.map(({ flashcard_id }) => flashcard_id)),
+  };
+}
 
 function sinceLastExport(flashcards: readonly Flashcard[]) {
   if (flashcards.every(isUnexported)) return null;

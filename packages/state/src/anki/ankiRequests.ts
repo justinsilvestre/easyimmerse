@@ -5,6 +5,7 @@ import type { RequestRecord } from "../operations/operations.ts";
 export const ankiRequestIds = (projectId: string) => ({
   export: `project/${projectId}/ankiExport`,
   ankiConnect: `project/${projectId}/ankiConnect`,
+  deletionsCleared: `project/${projectId}/ankiDeletionsCleared`,
   /** The read of the project as its overview opens, which tells whether to check the connection to Anki. */
   projectRead: `project/${projectId}/projectRead`,
 });
@@ -85,6 +86,18 @@ export const checkAnkiConnection = {
   id: ankiConnectionCheckId,
   request: { kind: "checkAnkiConnection" },
 } satisfies Effect;
+
+/** Forgets the named deletions from Anki of a project. */
+export function clearDeletions(
+  projectId: string,
+  flashcardIds: readonly string[],
+) {
+  return {
+    type: "sendRequest",
+    id: ankiRequestIds(projectId).deletionsCleared,
+    request: { kind: "clearAnkiPendingDeletions", projectId, flashcardIds },
+  } satisfies Effect;
+}
 
 /** Turns AnkiConnect on or off for a project. */
 export function setAnkiConnect(projectId: string, usesAnkiConnect: boolean) {
