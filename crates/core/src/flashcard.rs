@@ -43,10 +43,12 @@ pub struct Flashcard {
     pub created_at_ms: u64,
     /// Milliseconds since the Unix epoch.
     pub updated_at_ms: u64,
-    /// Milliseconds since the Unix epoch when the flashcard was last written into an Anki package. Null when it never was.
+    /// Milliseconds since the Unix epoch when the flashcard was last marked as exported in an Anki package. Null when it never was.
+    /// The flashcard has changed since then when `updated_at_ms` is later.
     pub exported_at_ms: Option<u64>,
-    /// The id of the note that AnkiConnect created for the flashcard. Null until the flashcard has been sent.
-    pub anki_note_id: Option<u64>,
+    /// Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.
+    /// The flashcard has changed since then when `updated_at_ms` is later.
+    pub sent_at_ms: Option<u64>,
 }
 
 /// What the editor sends to create or replace a flashcard.

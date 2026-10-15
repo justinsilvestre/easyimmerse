@@ -15,7 +15,7 @@ export const exportedSync: FlashcardSync = {
   package: { sinceLastExport: { newCount: 5, changedCount: 2 } },
 };
 
-/** A project using AnkiConnect with three flashcards waiting to be sent, as the given changes leave it, for stories. */
+/** A project using AnkiConnect with three new flashcards waiting to be sent, as the given changes leave it, for stories. */
 export function ankiConnectSync(
   changes: Partial<AnkiConnectSync> = {},
 ): FlashcardSync {
@@ -25,6 +25,7 @@ export function ankiConnectSync(
       connection: "connected",
       deniedOrigin: null,
       unsentCount: 3,
+      changedCount: 0,
       pendingDeletionCount: 0,
       isSyncing: false,
       ...changes,

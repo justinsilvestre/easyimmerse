@@ -2355,7 +2355,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Stores the ids of the notes AnkiConnect created for the flashcards.\nA flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.",
+        "summary": "Records that AnkiConnect put the flashcards into Anki as they were when their notes were rendered.\nA flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.",
         "operationId": "recordAnkiNotesSent",
         "parameters": [
           {
@@ -2380,7 +2380,7 @@
         },
         "responses": {
           "204": {
-            "description": "The note ids were stored"
+            "description": "The send was recorded"
           },
           "401": {
             "description": "Missing or invalid token",
@@ -5263,7 +5263,8 @@
         "required": [
           "deck_name",
           "note_type",
-          "notes"
+          "notes",
+          "rendered_at_ms"
         ],
         "properties": {
           "deck_name": {
@@ -5277,6 +5278,12 @@
             "items": {
               "$ref": "#/components/schemas/AnkiNote"
             }
+          },
+          "rendered_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch at which the flashcards were read, which the client hands back once it has sent the notes.",
+            "minimum": 0
           }
         }
       },
@@ -5376,35 +5383,25 @@
           }
         }
       },
-      "AnkiSentNote": {
-        "type": "object",
-        "description": "A flashcard that AnkiConnect created or updated a note for.",
-        "required": [
-          "flashcard_id",
-          "anki_note_id"
-        ],
-        "properties": {
-          "anki_note_id": {
-            "type": "integer",
-            "format": "int64",
-            "minimum": 0
-          },
-          "flashcard_id": {
-            "$ref": "#/components/schemas/FlashcardId"
-          }
-        }
-      },
       "AnkiSentRequest": {
         "type": "object",
+        "description": "The flashcards AnkiConnect created or updated notes for, and when the notes it sent were rendered.",
         "required": [
-          "notes"
+          "flashcard_ids",
+          "rendered_at_ms"
         ],
         "properties": {
-          "notes": {
+          "flashcard_ids": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AnkiSentNote"
+              "$ref": "#/components/schemas/FlashcardId"
             }
+          },
+          "rendered_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The `rendered_at_ms` of the notes the server rendered for the send, so that an edit saved since counts as changed.",
+            "minimum": 0
           }
         }
       },
@@ -6170,15 +6167,6 @@
           "updated_at_ms"
         ],
         "properties": {
-          "anki_note_id": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "description": "The id of the note that AnkiConnect created for the flashcard. Null until the flashcard has been sent.",
-            "minimum": 0
-          },
           "content": {
             "$ref": "#/components/schemas/FlashcardContent"
           },
@@ -6203,7 +6191,7 @@
               "null"
             ],
             "format": "int64",
-            "description": "Milliseconds since the Unix epoch when the flashcard was last written into an Anki package. Null when it never was.",
+            "description": "Milliseconds since the Unix epoch when the flashcard was last marked as exported in an Anki package. Null when it never was.\nThe flashcard has changed since then when `updated_at_ms` is later.",
             "minimum": 0
           },
           "id": {
@@ -6229,6 +6217,15 @@
           },
           "project_id": {
             "$ref": "#/components/schemas/ProjectId"
+          },
+          "sent_at_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.\nThe flashcard has changed since then when `updated_at_ms` is later.",
+            "minimum": 0
           },
           "updated_at_ms": {
             "type": "integer",

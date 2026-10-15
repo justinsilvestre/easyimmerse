@@ -71,7 +71,7 @@ const deleteNotes = {
 
 /** p1 with every flashcard in Anki. */
 const allSent = ankiCache(true, [
-  ankiFlashcard("f1", "m1", 1, { ankiNoteId: 100 }),
+  ankiFlashcard("f1", "m1", 1, { sentAtMs: 100 }),
 ]);
 
 /** p1 with every flashcard in Anki, and the given count of notes left to delete as last fetched, or as being fetched again. */
@@ -202,6 +202,19 @@ describe("ankiConnectEffects", () => {
 
   it("sends every card Anki has no note for, oldest first", () => {
     expect(effectsOf(actions.ankiSendRequested())).toEqual([sendUnsent]);
+  });
+
+  it("sends a card edited since it was last sent", () => {
+    const edited = ankiCache(true, [
+      ankiFlashcard("f1", "m1", 1, { sentAtMs: 5, updatedAtMs: 6 }),
+      ankiFlashcard("f2", "m1", 2, { sentAtMs: 5 }),
+    ]);
+    expect(effectsOf(actions.ankiSendRequested(), edited)).toEqual([
+      {
+        ...sendUnsent,
+        request: { ...sendUnsent.request, flashcardIds: ["f1"] },
+      },
+    ]);
   });
 
   it("deletes the notes left to delete after the send when asked", () => {

@@ -13,7 +13,7 @@ export function ankiFlashcard(
   createdAtMs: number,
   sentAs: {
     exportedAtMs?: number;
-    ankiNoteId?: number;
+    sentAtMs?: number;
     updatedAtMs?: number;
   } = {},
 ): Flashcard {
@@ -22,14 +22,14 @@ export function ankiFlashcard(
     media_file_id: mediaFileId,
     created_at_ms: createdAtMs,
     exported_at_ms: sentAs.exportedAtMs ?? null,
-    anki_note_id: sentAs.ankiNoteId ?? null,
+    sent_at_ms: sentAs.sentAtMs ?? null,
   };
 }
 
 /** Three flashcards of p1: f3 and then f1 from m1, never exported or sent, and f2 from m2, exported and sent. */
 export const exampleAnkiFlashcards: readonly Flashcard[] = [
   ankiFlashcard("f1", "m1", 2),
-  ankiFlashcard("f2", "m2", 3, { exportedAtMs: 10, ankiNoteId: 100 }),
+  ankiFlashcard("f2", "m2", 3, { exportedAtMs: 10, sentAtMs: 100 }),
   ankiFlashcard("f3", "m1", 1),
 ];
 

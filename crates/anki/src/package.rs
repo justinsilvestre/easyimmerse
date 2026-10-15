@@ -86,7 +86,7 @@ mod tests {
         let mut second = flashcard();
         second.id = FlashcardId(SECOND_FLASHCARD_ID.to_owned());
         second.content.word = "Tür".to_owned();
-        let notes = render_notes(&[flashcard(), second], &deck_spec()).notes;
+        let notes = render_notes(&[flashcard(), second], &deck_spec(), EXPORTED_AT_MS).notes;
         let media = [
             PackageMedia {
                 file_name: format!("{FLASHCARD_ID}.m4a"),

@@ -46,6 +46,7 @@ const rendered: AnkiNotes = {
     css: "",
   },
   notes: [withMedia, note("f2", "개")],
+  rendered_at_ms: 1_700,
 };
 
 /** Anki with the deck and the note type, no note of either flashcard, and every note addable as note id 100 and on. */
@@ -304,7 +305,7 @@ describe("sendFlashcardsToAnki", () => {
     ).toMatchObject({ data: { sentCount: 2, isRecorded: false } });
   });
 
-  it("records with the server which notes Anki holds", async () => {
+  it("records with the server which flashcards Anki holds, as of the time their notes were rendered", async () => {
     const sending = send();
     await sending.sent;
     expect(sending.serverRequests[1]).toEqual({
@@ -312,12 +313,7 @@ describe("sendFlashcardsToAnki", () => {
       path: "/projects/p1/anki/sent",
       body: {
         kind: "json",
-        value: {
-          notes: [
-            { flashcard_id: "f1", anki_note_id: 100 },
-            { flashcard_id: "f2", anki_note_id: 101 },
-          ],
-        },
+        value: { flashcard_ids: ["f1", "f2"], rendered_at_ms: 1_700 },
       },
     });
   });

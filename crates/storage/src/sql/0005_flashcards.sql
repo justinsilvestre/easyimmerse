@@ -9,7 +9,7 @@ CREATE TABLE flashcards (
     created_at_ms INTEGER NOT NULL,
     updated_at_ms INTEGER NOT NULL,
     exported_at_ms INTEGER,
-    anki_note_id INTEGER
+    sent_at_ms INTEGER
 );
 
 CREATE INDEX flashcards_by_project ON flashcards (project_id, created_at_ms);

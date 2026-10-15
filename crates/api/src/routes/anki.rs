@@ -1,7 +1,5 @@
 //! Rendering a project's flashcards as notes for the AnkiConnect client, recording what it sent, and turning AnkiConnect on or off.
 
-use std::collections::HashSet;
-
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -22,18 +20,13 @@ pub struct AnkiNotesRequest {
     pub flashcard_ids: Vec<FlashcardId>,
 }
 
+/// The flashcards AnkiConnect created or updated notes for, and when the notes it sent were rendered.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct AnkiSentRequest {
-    pub notes: Vec<AnkiSentNote>,
-}
-
-/// A flashcard that AnkiConnect created or updated a note for.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
-#[ts(export)]
-pub struct AnkiSentNote {
-    pub flashcard_id: FlashcardId,
-    pub anki_note_id: u64,
+    pub flashcard_ids: Vec<FlashcardId>,
+    /// The `rendered_at_ms` of the notes the server rendered for the send, so that an edit saved since counts as changed.
+    pub rendered_at_ms: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -69,10 +62,11 @@ pub async fn render_anki_notes(
     Ok(Json(render_notes(
         &selection.flashcards,
         &deck_spec(&selection.project),
+        selection.read_at_ms,
     )))
 }
 
-/// Stores the ids of the notes AnkiConnect created for the flashcards.
+/// Records that AnkiConnect put the flashcards into Anki as they were when their notes were rendered.
 /// A flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
 #[utoipa::path(
     post,
@@ -83,7 +77,7 @@ pub async fn render_anki_notes(
     params(("id" = String, Path, description = "The project id")),
     request_body = AnkiSentRequest,
     responses(
-        (status = 204, description = "The note ids were stored"),
+        (status = 204, description = "The send was recorded"),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
@@ -94,9 +88,10 @@ pub async fn record_anki_notes_sent(
     Path(project_id): Path<ProjectId>,
     Json(request): Json<AnkiSentRequest>,
 ) -> Result<StatusCode, ApiFailure> {
-    let notes = first_note_of_each(request.notes);
     state
-        .with_storage(move |storage| storage.record_anki_notes_sent(&project_id, &notes))
+        .with_storage(move |storage| {
+            storage.record_anki_send(&project_id, &request.flashcard_ids, request.rendered_at_ms)
+        })
         .await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -129,14 +124,4 @@ pub async fn set_anki_connect(
         })
         .await?;
     Ok(Json(project))
-}
-
-/// Pairs each named flashcard with its note id, keeping the first note id of a flashcard named twice.
-fn first_note_of_each(notes: Vec<AnkiSentNote>) -> Vec<(FlashcardId, u64)> {
-    let mut paired: HashSet<FlashcardId> = HashSet::new();
-    notes
-        .into_iter()
-        .filter(|note| paired.insert(note.flashcard_id.clone()))
-        .map(|note| (note.flashcard_id, note.anki_note_id))
-        .collect()
 }

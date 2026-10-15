@@ -1,4 +1,4 @@
-import type { AnkiNote, AnkiNotes, AnkiSentNote } from "@easyimmerse/types";
+import type { AnkiNote, AnkiNotes } from "@easyimmerse/types";
 import type { AnkiConnect } from "./ankiConnect.ts";
 import { ankiResultOf } from "./ankiConnect.ts";
 import {
@@ -9,8 +9,8 @@ import {
 } from "./ankiConnectActions.ts";
 import { hasSucceeded, recoverActionFailure } from "./ankiConnectError.ts";
 
-/** The notes Anki added or updated, by flashcard, and how many it refused. */
-export type SyncedNotes = { sent: AnkiSentNote[]; failedCount: number };
+/** The flashcards whose notes Anki added or updated, and how many notes it refused. */
+export type SyncedNotes = { sentFlashcardIds: string[]; failedCount: number };
 
 /**
  * Puts the notes into Anki: a note Anki already holds for the same flashcard, found by its id field, is updated,
@@ -26,11 +26,14 @@ export async function syncNotes(
     return id === undefined || id === null ? [] : [{ note, id }];
   });
   const toAdd = notes.notes.filter((_, index) => existing[index] == null);
-  const sent = [
+  const sentFlashcardIds = [
     ...(await updateNotes(anki, notes, toUpdate)),
     ...(await addNotes(anki, notes, toAdd)),
   ];
-  return { sent, failedCount: notes.notes.length - sent.length };
+  return {
+    sentFlashcardIds,
+    failedCount: notes.notes.length - sentFlashcardIds.length,
+  };
 }
 
 /** Finds the note Anki holds for each note's flashcard, in one request, or null for each it has none for. */
@@ -52,15 +55,14 @@ async function updateNotes(
   anki: AnkiConnect,
   { note_type }: AnkiNotes,
   updates: readonly { note: AnkiNote; id: number }[],
-): Promise<AnkiSentNote[]> {
-  const sent: AnkiSentNote[] = [];
+): Promise<string[]> {
+  const sent: string[] = [];
   for (const { note, id } of updates) {
     const request = ankiConnectActions.updateNoteFields(
       id,
       fieldsOf(note_type, note),
     );
-    if (await hasSucceeded(anki.invoke(request)))
-      sent.push({ flashcard_id: note.flashcard_id, anki_note_id: id });
+    if (await hasSucceeded(anki.invoke(request))) sent.push(note.flashcard_id);
   }
   return sent;
 }
@@ -70,7 +72,7 @@ async function addNotes(
   anki: AnkiConnect,
   { deck_name, note_type }: AnkiNotes,
   notes: readonly AnkiNote[],
-): Promise<AnkiSentNote[]> {
+): Promise<string[]> {
   if (notes.length === 0) return [];
   const connectNotes = notes.map((note) =>
     connectNoteOf(deck_name, note_type, note),
@@ -89,8 +91,6 @@ async function addNotes(
     .catch(recoverActionFailure<(number | null)[]>([]));
   return addable.flatMap((note, index) => {
     const id = ids[index];
-    return typeof id === "number"
-      ? [{ flashcard_id: note.flashcard_id, anki_note_id: id }]
-      : [];
+    return typeof id === "number" ? [note.flashcard_id] : [];
   });
 }

@@ -1,6 +1,6 @@
 import type { ReadableState } from "../app/feature.ts";
 import { cachedFlashcards, hasNoPendingDeletion } from "./ankiCache.ts";
-import { isUnsent, oldestFirst } from "./ankiExportSelection.ts";
+import { isWaitingToBeSent, oldestFirst } from "./ankiExportSelection.ts";
 import {
   deleteFromAnki,
   flashcardIdsBeingSent,
@@ -11,7 +11,7 @@ import {
 type AnkiSyncApp = Pick<ReadableState, "backend" | "operations">;
 
 /**
- * Sends the flashcards Anki has no note for, and then deletes the notes of deleted flashcards.
+ * Sends the flashcards new or changed since AnkiConnect last put them into Anki, and then deletes the notes of deleted flashcards.
  * Nothing is deleted when the cache lists no pending deletion, or while a deletion waits,
  * since that deletion will list every pending one when it starts.
  */
@@ -20,7 +20,7 @@ export function syncWithAnki(projectId: string, app: AnkiSyncApp) {
 }
 
 /**
- * Sends the flashcards Anki has no note for, oldest first.
+ * Sends the flashcards new or changed since AnkiConnect last put them into Anki, oldest first.
  * A flashcard that a send under way or waiting already holds, including one whose send is settling, is left to that send.
  */
 export function sendUnsent(
@@ -29,7 +29,7 @@ export function sendUnsent(
 ) {
   const beingSent = flashcardIdsBeingSent(operations.requests, projectId);
   const unsent = cachedFlashcards(backend, projectId).filter(
-    (flashcard) => isUnsent(flashcard) && !beingSent.has(flashcard.id),
+    (flashcard) => isWaitingToBeSent(flashcard) && !beingSent.has(flashcard.id),
   );
   if (unsent.length === 0) return [];
   return [

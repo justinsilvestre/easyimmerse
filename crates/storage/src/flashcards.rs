@@ -16,7 +16,7 @@ const FLASHCARD_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_
 
 /// The columns every flashcard query selects: the draft's columns, then the ones the export writes.
 const SELECTED_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
-     content_json, included_fields_json, created_at_ms, updated_at_ms, exported_at_ms, anki_note_id";
+     content_json, included_fields_json, created_at_ms, updated_at_ms, exported_at_ms, sent_at_ms";
 
 /// Lists a project's flashcards, oldest first.
 pub fn list_flashcards(
@@ -153,7 +153,7 @@ fn read_flashcard(row: &Row) -> rusqlite::Result<Flashcard> {
         created_at_ms: read_unsigned(row, 7)?,
         updated_at_ms: read_unsigned(row, 8)?,
         exported_at_ms: read_optional_unsigned(row, 9)?,
-        anki_note_id: read_optional_unsigned(row, 10)?,
+        sent_at_ms: read_optional_unsigned(row, 10)?,
     })
 }
 
@@ -411,23 +411,23 @@ mod tests {
     }
 
     #[test]
-    fn a_created_flashcard_has_no_anki_note() {
+    fn a_created_flashcard_was_never_sent() {
         let storage = seeded_storage();
         let id = create(&storage, "fressen");
-        assert_eq!(storage.get_flashcard(&id).unwrap().anki_note_id, None);
+        assert_eq!(storage.get_flashcard(&id).unwrap().sent_at_ms, None);
     }
 
     #[test]
-    fn saving_a_flashcard_again_keeps_its_anki_note_id() {
+    fn saving_a_flashcard_again_keeps_when_it_was_sent() {
         let storage = seeded_storage();
         let id = create(&storage, "fressen");
         storage
-            .record_anki_notes_sent(&project(), &[(id.clone(), 7)])
+            .record_anki_send(&project(), std::slice::from_ref(&id), 7)
             .unwrap();
         storage
             .create_flashcard(&project(), &id, &draft(None, "essen"))
             .unwrap();
-        assert_eq!(storage.get_flashcard(&id).unwrap().anki_note_id, Some(7));
+        assert_eq!(storage.get_flashcard(&id).unwrap().sent_at_ms, Some(7));
     }
 
     #[test]

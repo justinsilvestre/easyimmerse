@@ -5,4 +5,8 @@ import type { AnkiNoteType } from "./AnkiNoteType";
 /**
  * What the AnkiConnect client needs to create the deck, the note type and the notes.
  */
-export type AnkiNotes = { deck_name: string, note_type: AnkiNoteType, notes: Array<AnkiNote>, };
+export type AnkiNotes = { deck_name: string, note_type: AnkiNoteType, notes: Array<AnkiNote>, 
+/**
+ * Milliseconds since the Unix epoch at which the flashcards were read, which the client hands back once it has sent the notes.
+ */
+rendered_at_ms: number, };

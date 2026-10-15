@@ -67,6 +67,10 @@ export const AnkiConnected: Story = {
   args: { sync: ankiConnectSync() },
 };
 
+export const AnkiConnectedWithChangedFlashcards: Story = {
+  args: { sync: ankiConnectSync({ changedCount: 2 }) },
+};
+
 export const AnkiConnectedAfterExports: Story = {
   args: {
     sync: { ...ankiConnectSync(), package: exportedSync.package },

@@ -5,9 +5,11 @@ import { type CacheEntry, cacheEntry } from "../server/cacheEntry.ts";
 import { cachedFlashcards, cachedUsesAnkiConnect } from "./ankiCache.ts";
 import {
   isChangedSinceExport,
+  isChangedSinceSent,
   isNewOrChangedSinceExport,
   isUnexported,
   isUnsent,
+  isWaitingToBeSent,
   oldestFirst,
 } from "./ankiExportSelection.ts";
 import { hasAnkiConnectRequest } from "./ankiRequests.ts";
@@ -30,7 +32,10 @@ export type AnkiConnectSync = {
   connection: AnkiConnectionStatus;
   /** The origin Anki refused, while it refuses easyImmerse and the origin is known, or null otherwise. */
   deniedOrigin: string | null;
+  /** The flashcards AnkiConnect never put into Anki. */
   unsentCount: number;
+  /** The flashcards edited since AnkiConnect last put them into Anki. */
+  changedCount: number;
   /** The deleted flashcards whose notes are still to be deleted from Anki. */
   pendingDeletionCount: number;
   /** Whether a send of the project's flashcards, or a deletion of its notes from Anki, is under way or waiting. */
@@ -81,12 +86,15 @@ export const selectFlashcardSync = createSelector(
           connection: statusOf(connection),
           deniedOrigin: deniedOriginOf(connection),
           unsentCount: flashcards.filter(isUnsent).length,
+          changedCount: flashcards.filter(isChangedSinceSent).length,
           pendingDeletionCount,
           isSyncing,
         }
       : null,
     nextCard: firstMadeContent(
-      flashcards.filter(usesAnkiConnect ? isUnsent : isNewOrChangedSinceExport),
+      flashcards.filter(
+        usesAnkiConnect ? isWaitingToBeSent : isNewOrChangedSinceExport,
+      ),
     ),
   }),
 );

@@ -13,7 +13,6 @@ export type * from "./AnkiPackageRequest";
 export type * from "./AnkiPackageSaved";
 export type * from "./AnkiPendingDeletion";
 export type * from "./AnkiPendingDeletions";
-export type * from "./AnkiSentNote";
 export type * from "./AnkiSentRequest";
 export type * from "./AnkiTemplate";
 export type * from "./ApiError";

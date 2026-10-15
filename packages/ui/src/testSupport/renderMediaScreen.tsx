@@ -40,7 +40,7 @@ export const savedFlashcard: Flashcard = {
   created_at_ms: 0,
   updated_at_ms: 0,
   exported_at_ms: null,
-  anki_note_id: null,
+  sent_at_ms: null,
 };
 
 export function dictionarySummary(

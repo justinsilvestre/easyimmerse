@@ -235,6 +235,8 @@ mod export_anki_package {
         let server = spawn_test_server(false).await;
         let id = create_flashcard(&server, PROJECT, None).await;
         export_ids(&server, std::slice::from_ref(&id)).await;
+        // The edit must land in a later millisecond than the export for the comparison to tell them apart.
+        tokio::time::sleep(std::time::Duration::from_millis(2)).await;
         let draft = &new_flashcard(&id, "beber", None)["draft"];
         let response = server
             .put_json(&format!("/projects/{PROJECT}/flashcards/{id}"), draft)
@@ -506,139 +508,97 @@ mod render_anki_notes {
     }
 }
 
-mod record_anki_notes_sent {
+mod record_anki_send {
     use super::*;
 
-    async fn record(server: &TestServer, notes: Value) -> crate::support::TestResponse {
+    async fn record(
+        server: &TestServer,
+        ids: &[&str],
+        rendered_at_ms: u64,
+    ) -> crate::support::TestResponse {
         server
             .post_json(
                 &format!("/projects/{PROJECT}/anki/sent"),
-                &json!({ "notes": notes }),
+                &json!({ "flashcard_ids": ids, "rendered_at_ms": rendered_at_ms }),
             )
             .await
     }
 
+    fn sent_at(flashcards: &[Value], id: &str) -> Value {
+        flashcards.iter().find(|card| card["id"] == id).unwrap()["sent_at_ms"].clone()
+    }
+
     #[tokio::test(flavor = "multi_thread")]
-    async fn stores_the_note_ids() {
+    async fn marks_the_flashcards_sent_when_their_notes_were_rendered() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;
-        record(
-            &server,
-            json!([
-                { "flashcard_id": ids[0], "anki_note_id": 1_700_000_000_001u64 },
-                { "flashcard_id": ids[1], "anki_note_id": 1_700_000_000_002u64 },
-            ]),
-        )
-        .await;
-        let mut note_ids: Vec<Value> = list_flashcards(&server)
-            .await
-            .iter()
-            .map(|card| card["anki_note_id"].clone())
-            .collect();
-        note_ids.sort_by_key(|id| id.as_u64());
-        assert_eq!(
-            note_ids,
-            [json!(1_700_000_000_001u64), json!(1_700_000_000_002u64)]
-        );
+        record(&server, &[&ids[0]], 1_700).await;
+        assert_eq!(sent_at(&list_flashcards(&server).await, &ids[0]), 1_700);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_no_flashcard_that_was_not_named() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        record(&server, &[&ids[0]], 1_700).await;
+        assert!(sent_at(&list_flashcards(&server).await, &ids[1]).is_null());
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn leaves_anki_connect_off() {
         let server = spawn_test_server(false).await;
-        record(&server, json!([])).await;
+        record(&server, &[], 1).await;
         assert_eq!(project(&server).await["uses_anki_connect"], false);
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn an_empty_list_gives_no_flashcard_a_note_id() {
-        let server = spawn_test_server(false).await;
-        let ids = create_two(&server).await;
-        record(&server, json!([])).await;
-        let note_ids: Vec<Value> = list_flashcards(&server)
-            .await
-            .iter()
-            .filter(|card| ids.contains(&card["id"].as_str().unwrap().to_owned()))
-            .map(|card| card["anki_note_id"].clone())
-            .collect();
-        assert_eq!(note_ids, [Value::Null, Value::Null]);
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn keeps_the_first_note_id_of_a_flashcard_named_twice() {
-        let server = spawn_test_server(false).await;
-        let ids = create_two(&server).await;
-        record(
-            &server,
-            json!([
-                { "flashcard_id": ids[0], "anki_note_id": 100 },
-                { "flashcard_id": ids[0], "anki_note_id": 200 },
-            ]),
-        )
-        .await;
-        let flashcards = list_flashcards(&server).await;
-        let first = flashcards.iter().find(|card| card["id"] == ids[0]).unwrap();
-        assert_eq!(first["anki_note_id"], 100);
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn answers_no_content() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;
-        let response = record(
-            &server,
-            json!([{ "flashcard_id": ids[0], "anki_note_id": 7 }]),
-        )
-        .await;
-        assert_eq!(response.status, 204);
+        assert_eq!(record(&server, &[&ids[0]], 1).await.status, 204);
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn gives_no_note_id_to_a_flashcard_of_another_project() {
+    async fn marks_no_flashcard_of_another_project_sent() {
         let server = spawn_test_server(false).await;
         let other = create_flashcard(&server, "placeholder-2", None).await;
-        record(
-            &server,
-            json!([{ "flashcard_id": other, "anki_note_id": 7 }]),
-        )
-        .await;
+        record(&server, &[&other], 1).await;
         let response = server.get("/projects/placeholder-2/flashcards").await;
         let flashcards = response.json()["flashcards"].as_array().unwrap().clone();
-        let stored = flashcards.iter().find(|card| card["id"] == other).unwrap();
-        assert!(stored["anki_note_id"].is_null());
+        assert!(sent_at(&flashcards, &other).is_null());
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn records_the_other_notes_when_a_sent_flashcard_is_gone() {
+    async fn records_the_other_flashcards_when_a_sent_flashcard_is_gone() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;
         delete_flashcard(&server, &ids[1]).await;
-        record(
-            &server,
-            json!([
-                { "flashcard_id": ids[0], "anki_note_id": 7 },
-                { "flashcard_id": ids[1], "anki_note_id": 8 },
-            ]),
-        )
-        .await;
-        let flashcards = list_flashcards(&server).await;
-        let kept = flashcards.iter().find(|card| card["id"] == ids[0]).unwrap();
-        assert_eq!(kept["anki_note_id"], 7);
+        record(&server, &[&ids[0], &ids[1]], 7).await;
+        assert_eq!(sent_at(&list_flashcards(&server).await, &ids[0]), 7);
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn answers_no_content_when_a_sent_flashcard_is_gone() {
+    async fn an_edit_after_the_notes_were_rendered_counts_as_a_change() {
         let server = spawn_test_server(false).await;
-        let ids = create_two(&server).await;
-        delete_flashcard(&server, &ids[1]).await;
-        let response = record(
-            &server,
-            json!([
-                { "flashcard_id": ids[0], "anki_note_id": 7 },
-                { "flashcard_id": ids[1], "anki_note_id": 8 },
-            ]),
-        )
-        .await;
-        assert_eq!(response.status, 204);
+        let id = create_flashcard(&server, PROJECT, None).await;
+        let rendered = server
+            .post_json(
+                &format!("/projects/{PROJECT}/anki/notes"),
+                &json!({ "flashcard_ids": [id] }),
+            )
+            .await
+            .json()["rendered_at_ms"]
+            .as_u64()
+            .unwrap();
+        // The edit must land in a later millisecond than the rendering for the comparison to tell them apart.
+        tokio::time::sleep(std::time::Duration::from_millis(2)).await;
+        let draft = &new_flashcard(&id, "beber", None)["draft"];
+        server
+            .put_json(&format!("/projects/{PROJECT}/flashcards/{id}"), draft)
+            .await;
+        record(&server, &[&id], rendered).await;
+        let card = &list_flashcards(&server).await[0];
+        assert!(card["updated_at_ms"].as_u64() > card["sent_at_ms"].as_u64());
     }
 }
 
@@ -682,7 +642,7 @@ mod anki_pending_deletions {
         let response = server
             .post_json(
                 &format!("/projects/{PROJECT}/anki/sent"),
-                &json!({ "notes": [{ "flashcard_id": id, "anki_note_id": 7 }] }),
+                &json!({ "flashcard_ids": [id], "rendered_at_ms": 7 }),
             )
             .await;
         assert_eq!(response.status, 204, "{}", response.text());

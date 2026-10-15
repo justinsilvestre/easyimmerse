@@ -16,7 +16,7 @@ pub fn record_anki_pending_deletion(
     conn: &Connection,
     flashcard: &Flashcard,
 ) -> Result<(), StorageError> {
-    if flashcard.anki_note_id.is_none() {
+    if flashcard.sent_at_ms.is_none() {
         return Ok(());
     }
     conn.execute(
@@ -156,7 +156,7 @@ mod tests {
         storage
             .write(|conn| {
                 conn.execute(
-                    "UPDATE flashcards SET anki_note_id = 1 WHERE id = ?1",
+                    "UPDATE flashcards SET sent_at_ms = 1 WHERE id = ?1",
                     params![id.0],
                 )?;
                 Ok(())

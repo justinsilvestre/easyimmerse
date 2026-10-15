@@ -103,11 +103,33 @@ describe("selectFlashcardSync", () => {
     });
   });
 
+  it("counts the cards edited since AnkiConnect last sent them", () => {
+    const backend = checked(
+      true,
+      ankiCache(true, [
+        ankiFlashcard("f1", "m1", 1, { sentAtMs: 5, updatedAtMs: 6 }),
+        ankiFlashcard("f2", "m1", 2, { sentAtMs: 5 }),
+      ]),
+    );
+    expect(syncOf(backend)).toMatchObject({ ankiConnect: { changedCount: 1 } });
+  });
+
+  it("previews the first-made card edited since it was sent while AnkiConnect is on", () => {
+    const backend = checked(
+      true,
+      ankiCache(true, [
+        ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 }),
+        ankiFlashcard("f2", "m1", 2, { sentAtMs: 5, updatedAtMs: 6 }),
+      ]),
+    );
+    expect(syncOf(backend).nextCard?.word).toBe("f2");
+  });
+
   it("previews the first-made card Anki has no note for while AnkiConnect is on", () => {
     const backend = checked(
       true,
       ankiCache(true, [
-        ankiFlashcard("f1", "m1", 1, { ankiNoteId: 100 }),
+        ankiFlashcard("f1", "m1", 1, { sentAtMs: 100 }),
         ankiFlashcard("f2", "m1", 2),
       ]),
     );
@@ -178,7 +200,7 @@ describe("selectFlashcardSync", () => {
 
   it("says the project is syncing with Anki while a deletion from Anki is under way", () => {
     const allSent = ankiCache(true, [
-      ankiFlashcard("f1", "m1", 1, { ankiNoteId: 100 }),
+      ankiFlashcard("f1", "m1", 1, { sentAtMs: 100 }),
     ]);
     expect(
       syncOf(checked(true, allSent), openOverview, actions.ankiSendRequested()),

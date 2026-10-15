@@ -1,4 +1,4 @@
-//! Records of where a project's flashcards went: into an Anki package, or to Anki through AnkiConnect.
+//! Records of how a project's flashcards reached Anki: in an Anki package, or through AnkiConnect.
 
 use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::ProjectId;
@@ -29,20 +29,21 @@ pub fn record_anki_export(
     Ok(())
 }
 
-/// Stores the id of the note AnkiConnect created for each of the project's flashcards, in one transaction.
+/// Records that AnkiConnect put the project's flashcards into Anki as they were read at `sent_at_ms`, in one transaction.
 /// A flashcard of another project is passed over,
 /// and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
-pub fn record_anki_notes_sent(
+pub fn record_anki_send(
     conn: &mut Connection,
     project_id: &ProjectId,
-    notes: &[(FlashcardId, u64)],
+    ids: &[FlashcardId],
+    sent_at_ms: u64,
 ) -> Result<(), StorageError> {
     let transaction = conn.transaction()?;
     ensure_project_exists(&transaction, project_id)?;
-    for (id, anki_note_id) in notes {
+    for id in ids {
         transaction.execute(
-            "UPDATE flashcards SET anki_note_id = ?2 WHERE id = ?1 AND project_id = ?3",
-            params![id.0, to_stored_integer(*anki_note_id), project_id.0],
+            "UPDATE flashcards SET sent_at_ms = ?2 WHERE id = ?1 AND project_id = ?3",
+            params![id.0, to_stored_integer(sent_at_ms), project_id.0],
         )?;
         record_anki_pending_deletion_of_gone(&transaction, project_id, id)?;
     }
@@ -132,16 +133,13 @@ mod tests {
     }
 
     #[test]
-    fn a_send_stores_the_note_ids() {
+    fn a_send_records_the_time_the_flashcards_were_read() {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_notes_sent(&project(), &[(id.clone(), 1_700_000_000_000)])
+            .record_anki_send(&project(), std::slice::from_ref(&id), 1_700)
             .unwrap();
-        assert_eq!(
-            storage.get_flashcard(&id).unwrap().anki_note_id,
-            Some(1_700_000_000_000)
-        );
+        assert_eq!(storage.get_flashcard(&id).unwrap().sent_at_ms, Some(1_700));
     }
 
     #[test]
@@ -149,9 +147,9 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_notes_sent(&project(), &[(missing(), 1), (id.clone(), 2)])
+            .record_anki_send(&project(), &[missing(), id.clone()], 2)
             .unwrap();
-        assert_eq!(storage.get_flashcard(&id).unwrap().anki_note_id, Some(2));
+        assert_eq!(storage.get_flashcard(&id).unwrap().sent_at_ms, Some(2));
     }
 
     fn listed_deletion_ids(storage: &Storage) -> Vec<FlashcardId> {
@@ -169,7 +167,7 @@ mod tests {
         let id = create(&storage);
         storage.delete_flashcard(&id).unwrap();
         storage
-            .record_anki_notes_sent(&project(), &[(id.clone(), 1)])
+            .record_anki_send(&project(), &[id.clone()], 1)
             .unwrap();
         assert_eq!(listed_deletion_ids(&storage), vec![id]);
     }
@@ -179,12 +177,10 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_notes_sent(&project(), &[(id.clone(), 1)])
+            .record_anki_send(&project(), &[id.clone()], 1)
             .unwrap();
         storage.delete_flashcard(&id).unwrap();
-        storage
-            .record_anki_notes_sent(&project(), &[(id, 1)])
-            .unwrap();
+        storage.record_anki_send(&project(), &[id], 1).unwrap();
         let words: Vec<String> = storage
             .list_anki_pending_deletions(&project())
             .unwrap()
@@ -198,9 +194,7 @@ mod tests {
     fn a_send_records_no_deletion_for_a_flashcard_that_still_exists() {
         let storage = seeded_storage();
         let id = create(&storage);
-        storage
-            .record_anki_notes_sent(&project(), &[(id, 1)])
-            .unwrap();
+        storage.record_anki_send(&project(), &[id], 1).unwrap();
         assert_eq!(listed_deletion_ids(&storage), Vec::<FlashcardId>::new());
     }
 
@@ -208,25 +202,28 @@ mod tests {
     fn a_send_records_no_deletion_for_an_id_the_app_could_not_have_made() {
         let storage = seeded_storage();
         storage
-            .record_anki_notes_sent(&project(), &[(missing(), 1)])
+            .record_anki_send(&project(), &[missing()], 1)
             .unwrap();
         assert_eq!(listed_deletion_ids(&storage), Vec::<FlashcardId>::new());
     }
 
     #[test]
-    fn a_send_gives_no_note_id_to_a_flashcard_of_another_project() {
+    fn a_send_marks_no_flashcard_of_another_project_sent() {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_notes_sent(&ProjectId("placeholder-2".to_string()), &[(id.clone(), 1)])
+            .record_anki_send(
+                &ProjectId("placeholder-2".to_string()),
+                std::slice::from_ref(&id),
+                1,
+            )
             .unwrap();
-        assert_eq!(storage.get_flashcard(&id).unwrap().anki_note_id, None);
+        assert_eq!(storage.get_flashcard(&id).unwrap().sent_at_ms, None);
     }
 
     #[test]
     fn a_send_to_an_unknown_project_fails() {
-        let result =
-            seeded_storage().record_anki_notes_sent(&ProjectId("missing".to_string()), &[]);
+        let result = seeded_storage().record_anki_send(&ProjectId("missing".to_string()), &[], 1);
         assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 }

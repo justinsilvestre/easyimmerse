@@ -230,15 +230,16 @@ impl Storage {
         self.write(|conn| anki_sync::record_anki_export(conn, project_id, ids, exported_at_ms))
     }
 
-    /// Stores the id of the note AnkiConnect created for each of the project's flashcards, in one transaction.
+    /// Records that AnkiConnect put the project's flashcards into Anki as they were read at `sent_at_ms`, in one transaction.
     /// A flashcard of another project is passed over,
     /// and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
-    pub fn record_anki_notes_sent(
+    pub fn record_anki_send(
         &self,
         project_id: &ProjectId,
-        notes: &[(FlashcardId, u64)],
+        ids: &[FlashcardId],
+        sent_at_ms: u64,
     ) -> Result<(), StorageError> {
-        self.write(|conn| anki_sync::record_anki_notes_sent(conn, project_id, notes))
+        self.write(|conn| anki_sync::record_anki_send(conn, project_id, ids, sent_at_ms))
     }
 
     pub fn list_subtitle_tracks(

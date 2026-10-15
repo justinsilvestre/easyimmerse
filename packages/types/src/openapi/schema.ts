@@ -513,7 +513,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Stores the ids of the notes AnkiConnect created for the flashcards.
+         * Records that AnkiConnect put the flashcards into Anki as they were when their notes were rendered.
          *     A flashcard of another project is passed over, and the note of a flashcard deleted since the send began is recorded as to be deleted from Anki.
          */
         post: operations["recordAnkiNotesSent"];
@@ -1021,6 +1021,11 @@ export interface components {
             deck_name: string;
             note_type: components["schemas"]["AnkiNoteType"];
             notes: components["schemas"]["AnkiNote"][];
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch at which the flashcards were read, which the client hands back once it has sent the notes.
+             */
+            rendered_at_ms: number;
         };
         AnkiNotesRequest: {
             flashcard_ids: components["schemas"]["FlashcardId"][];
@@ -1056,14 +1061,14 @@ export interface components {
             /** @description Oldest first. */
             deletions: components["schemas"]["AnkiPendingDeletion"][];
         };
-        /** @description A flashcard that AnkiConnect created or updated a note for. */
-        AnkiSentNote: {
-            /** Format: int64 */
-            anki_note_id: number;
-            flashcard_id: components["schemas"]["FlashcardId"];
-        };
+        /** @description The flashcards AnkiConnect created or updated notes for, and when the notes it sent were rendered. */
         AnkiSentRequest: {
-            notes: components["schemas"]["AnkiSentNote"][];
+            flashcard_ids: components["schemas"]["FlashcardId"][];
+            /**
+             * Format: int64
+             * @description The `rendered_at_ms` of the notes the server rendered for the send, so that an edit saved since counts as changed.
+             */
+            rendered_at_ms: number;
         };
         /** @description A card template: the HTML of each side of the card, with `{{Field}}` placeholders. */
         AnkiTemplate: {
@@ -1293,11 +1298,6 @@ export interface components {
         };
         /** @description A flashcard saved in a project. */
         Flashcard: {
-            /**
-             * Format: int64
-             * @description The id of the note that AnkiConnect created for the flashcard. Null until the flashcard has been sent.
-             */
-            anki_note_id?: number | null;
             content: components["schemas"]["FlashcardContent"];
             /**
              * Format: int64
@@ -1311,7 +1311,8 @@ export interface components {
             cue_index?: number | null;
             /**
              * Format: int64
-             * @description Milliseconds since the Unix epoch when the flashcard was last written into an Anki package. Null when it never was.
+             * @description Milliseconds since the Unix epoch when the flashcard was last marked as exported in an Anki package. Null when it never was.
+             *     The flashcard has changed since then when `updated_at_ms` is later.
              */
             exported_at_ms?: number | null;
             id: components["schemas"]["FlashcardId"];
@@ -1319,6 +1320,12 @@ export interface components {
             included_fields: components["schemas"]["FlashcardFieldKey"][];
             media_file_id?: components["schemas"]["MediaFileId"] | null;
             project_id: components["schemas"]["ProjectId"];
+            /**
+             * Format: int64
+             * @description Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.
+             *     The flashcard has changed since then when `updated_at_ms` is later.
+             */
+            sent_at_ms?: number | null;
             /**
              * Format: int64
              * @description Milliseconds since the Unix epoch.
@@ -3870,7 +3877,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The note ids were stored */
+            /** @description The send was recorded */
             204: {
                 headers: {
                     [name: string]: unknown;

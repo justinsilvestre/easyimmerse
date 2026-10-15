@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { Button } from "../components/Button.tsx";
 import { pluralize } from "../components/pluralize.ts";
+import { newAndChangedPhrase } from "./newAndChangedPhrase.ts";
 import { SyncChannel } from "./SyncChannel.tsx";
 
 /**
@@ -26,7 +27,9 @@ export function AnkiConnectChannel({
   onSetUpAnkiConnect: () => void;
   onTurnOff: () => void;
 }) {
-  const isUpToDate = sync.unsentCount === 0 && sync.pendingDeletionCount === 0;
+  const isUpToDate =
+    sync.unsentCount + sync.changedCount === 0 &&
+    sync.pendingDeletionCount === 0;
   return (
     <SyncChannel
       icon={<Plug className="size-5" aria-hidden />}
@@ -62,19 +65,20 @@ export function AnkiConnectChannel({
   );
 }
 
-/** Counts the flashcards waiting to be sent to Anki and the notes waiting to be deleted from it. */
+/** Counts the new and changed flashcards waiting to be sent to Anki and the notes waiting to be deleted from it. */
 function ankiConnectSummary(
-  { unsentCount, pendingDeletionCount }: AnkiConnectSync,
+  { unsentCount, changedCount, pendingDeletionCount }: AnkiConnectSync,
   flashcardCount: number,
 ) {
   const notes = pluralize(pendingDeletionCount, "note");
-  if (unsentCount === 0 && pendingDeletionCount > 0)
+  const isAllSent = unsentCount + changedCount === 0;
+  if (isAllSent && pendingDeletionCount > 0)
     return `${notes} waiting to be deleted from Anki.`;
-  if (unsentCount === 0)
+  if (isAllSent)
     return flashcardCount === 0
       ? "No flashcards yet."
       : "Every flashcard is in Anki.";
-  const unsent = `${pluralize(unsentCount, "flashcard")} waiting to be sent`;
+  const unsent = `${newAndChangedPhrase(unsentCount, changedCount)} waiting to be sent`;
   return pendingDeletionCount === 0
     ? `${unsent}.`
     : `${unsent}, ${notes} to delete.`;

@@ -4,7 +4,6 @@ import type {
   AnkiNote,
   AnkiNotes,
   AnkiNotesRequest,
-  AnkiSentNote,
   AnkiSentRequest,
 } from "@easyimmerse/types";
 import type { AnkiConnect } from "./ankiConnect.ts";
@@ -52,7 +51,7 @@ const nothingSent: SentCounts = {
 /**
  * Sends flashcards to Anki through AnkiConnect: renders them as notes on the server, creates the deck and the note type
  * when Anki lacks them, stores each note's audio clip and screenshot, adds or updates the notes, and records on the server
- * which notes Anki holds for which flashcards, telling whether it could. A note type Anki already has is never changed, since the user may have restyled it.
+ * which flashcards Anki now holds as they were rendered, telling whether it could. A note type Anki already has is never changed, since the user may have restyled it.
  * Media the server cannot render is left out and counted. When the server renders no note, as for flashcards deleted
  * since the send was asked for, Anki is asked for nothing more and no send is recorded.
  */
@@ -96,14 +95,16 @@ async function putNotes(
     projectId,
     deps,
   );
-  const { sent, failedCount } = await syncNotes(deps.anki, {
+  const { sentFlashcardIds, failedCount } = await syncNotes(deps.anki, {
     ...renderedNotes,
     notes,
   });
-  const recorded = await deps.server(sentRequest(projectId, sent));
+  const recorded = await deps.server(
+    sentRequest(projectId, sentFlashcardIds, renderedNotes.rendered_at_ms),
+  );
   return {
     data: {
-      sentCount: sent.length,
+      sentCount: sentFlashcardIds.length,
       failedCount,
       skippedMediaCount,
       isRecorded: !("error" in recorded),
@@ -174,10 +175,18 @@ function notesRequest(
   };
 }
 
-function sentRequest(projectId: string, notes: AnkiSentNote[]): BackendRequest {
+function sentRequest(
+  projectId: string,
+  flashcardIds: string[],
+  renderedAtMs: number,
+): BackendRequest {
+  const value = {
+    flashcard_ids: flashcardIds,
+    rendered_at_ms: renderedAtMs,
+  } satisfies AnkiSentRequest;
   return {
     method: "POST",
     path: `/projects/${projectId}/anki/sent`,
-    body: { kind: "json", value: { notes } satisfies AnkiSentRequest },
+    body: { kind: "json", value },
   };
 }

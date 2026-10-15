@@ -19,6 +19,7 @@ const usingAnkiConnect: FlashcardSync = {
     connection: "connected",
     deniedOrigin: null,
     unsentCount: 0,
+    changedCount: 0,
     pendingDeletionCount: 0,
     isSyncing: false,
   },
