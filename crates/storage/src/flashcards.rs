@@ -436,7 +436,12 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage, "fressen");
         storage
-            .record_anki_export(&project(), std::slice::from_ref(&id), Some(1_000))
+            .record_anki_export(&crate::DeliveredPackage {
+                project_id: project(),
+                flashcard_ids: vec![id.clone()],
+                exported_at_ms: Some(1_000),
+                marked_deletions: vec![],
+            })
             .unwrap();
         storage
             .update_flashcard(&id, &draft(None, "essen"))

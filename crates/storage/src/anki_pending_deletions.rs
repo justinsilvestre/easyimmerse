@@ -204,11 +204,12 @@ mod tests {
     fn delete_exported(storage: &Storage, word: &str, is_marked: bool) -> FlashcardId {
         let id = create(storage, word);
         storage
-            .record_anki_export(
-                &project(),
-                std::slice::from_ref(&id),
-                is_marked.then_some(1),
-            )
+            .record_anki_export(&crate::DeliveredPackage {
+                project_id: project(),
+                flashcard_ids: vec![id.clone()],
+                exported_at_ms: is_marked.then_some(1),
+                marked_deletions: vec![],
+            })
             .unwrap();
         storage.delete_flashcard(&id).unwrap();
         id

@@ -4,7 +4,12 @@ import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 /** A project of twelve flashcards never exported, with AnkiConnect off, for stories. */
 export const neverExportedSync: FlashcardSync = {
   flashcardCount: 12,
-  package: { sinceLastExport: null, deletions: [], ankiSearch: "" },
+  package: {
+    sinceLastExport: null,
+    deletions: [],
+    ankiSearch: "",
+    markCount: 0,
+  },
   ankiConnect: null,
   nextCard: exampleFlashcard,
 };
@@ -31,6 +36,7 @@ export const deletionsListedSync: FlashcardSync = {
     })),
     ankiSearch:
       '"easyImmerse id:f0" OR "easyImmerse id:f1" OR "easyImmerse id:f2"',
+    markCount: 3,
   },
 };
 

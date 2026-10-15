@@ -14,6 +14,7 @@ const packageResponse = () =>
     headers: {
       "content-disposition": `attachment; filename="Korean.apkg"; filename*=UTF-8''%ED%95%9C.apkg`,
       "x-easyimmerse-skipped-media": "3",
+      "x-easyimmerse-marked-deletions": "1",
     },
   });
 
@@ -61,6 +62,7 @@ describe("exportAnkiPackage", () => {
         bytes: new Uint8Array([80, 75]),
         flashcardCount: 2,
         skippedMediaCount: 3,
+        markedDeletionCount: 1,
       },
     });
   });
@@ -92,7 +94,13 @@ describe("exportAnkiPackage", () => {
       {
         server: async (request) => {
           requests.push(request);
-          return { data: { flashcard_count: 2, skipped_media_count: 0 } };
+          return {
+            data: {
+              flashcard_count: 2,
+              skipped_media_count: 0,
+              marked_deletion_count: 0,
+            },
+          };
         },
         serverFetch: null,
       },
@@ -118,13 +126,22 @@ describe("exportAnkiPackage", () => {
       { ...args, savePath: "/decks/Korean.apkg" },
       {
         server: async () => ({
-          data: { flashcard_count: 2, skipped_media_count: 1 },
+          data: {
+            flashcard_count: 2,
+            skipped_media_count: 1,
+            marked_deletion_count: 2,
+          },
         }),
         serverFetch: null,
       },
     );
     expect(exported).toEqual({
-      data: { kind: "saved", flashcardCount: 2, skippedMediaCount: 1 },
+      data: {
+        kind: "saved",
+        flashcardCount: 2,
+        skippedMediaCount: 1,
+        markedDeletionCount: 2,
+      },
     });
   });
 });

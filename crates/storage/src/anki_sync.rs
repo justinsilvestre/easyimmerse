@@ -4,27 +4,41 @@ use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::ProjectId;
 use rusqlite::{Connection, params};
 
-use crate::anki_pending_deletions::record_anki_pending_deletion_of_gone;
+use crate::anki_pending_deletions::{
+    clear_anki_pending_deletion, record_anki_pending_deletion_of_gone,
+};
 use crate::error::StorageError;
 use crate::projects::ensure_project_exists;
 use crate::stored_integer::to_stored_integer;
 
-/// Records that the flashcards were written into an Anki package, and marks them exported at `exported_at_ms`
-/// unless it is `None`, in one transaction. A flashcard deleted since the export began is passed over.
+/// What an Anki package held, recorded once it reached the user.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DeliveredPackage {
+    pub project_id: ProjectId,
+    pub flashcard_ids: Vec<FlashcardId>,
+    /// The time the flashcards were read, which marks them exported, or `None` when the export does not mark them.
+    pub exported_at_ms: Option<u64>,
+    /// The deleted flashcards whose notes the package marks for deletion.
+    pub marked_deletions: Vec<FlashcardId>,
+}
+
+/// Records a delivered package in one transaction: a package held its flashcards, which are marked exported when it says so,
+/// and the deletions it marked are dealt with. A flashcard deleted since the export began is passed over.
 pub fn record_anki_export(
     conn: &mut Connection,
-    project_id: &ProjectId,
-    ids: &[FlashcardId],
-    exported_at_ms: Option<u64>,
+    package: &DeliveredPackage,
 ) -> Result<(), StorageError> {
     let transaction = conn.transaction()?;
-    ensure_project_exists(&transaction, project_id)?;
-    for id in ids {
+    ensure_project_exists(&transaction, &package.project_id)?;
+    for id in &package.flashcard_ids {
         transaction.execute(
             "UPDATE flashcards SET was_packaged = 1, \
              exported_at_ms = coalesce(?2, exported_at_ms) WHERE id = ?1",
-            params![id.0, exported_at_ms.map(to_stored_integer)],
+            params![id.0, package.exported_at_ms.map(to_stored_integer)],
         )?;
+    }
+    for id in &package.marked_deletions {
+        clear_anki_pending_deletion(&transaction, &package.project_id, id)?;
     }
     transaction.commit()?;
     Ok(())
@@ -61,6 +75,20 @@ mod tests {
 
     fn project() -> ProjectId {
         ProjectId("placeholder-1".to_string())
+    }
+
+    /// A delivered package of the project's flashcards, marking no deletion.
+    fn package(
+        project_id: &ProjectId,
+        ids: &[FlashcardId],
+        exported_at_ms: Option<u64>,
+    ) -> DeliveredPackage {
+        DeliveredPackage {
+            project_id: project_id.clone(),
+            flashcard_ids: ids.to_vec(),
+            exported_at_ms,
+            marked_deletions: vec![],
+        }
     }
 
     fn missing() -> FlashcardId {
@@ -106,7 +134,7 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_export(&project(), std::slice::from_ref(&id), Some(1_000))
+            .record_anki_export(&package(&project(), std::slice::from_ref(&id), Some(1_000)))
             .unwrap();
         assert_eq!(
             storage.get_flashcard(&id).unwrap().exported_at_ms,
@@ -119,7 +147,7 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_export(&project(), std::slice::from_ref(&id), Some(1_000))
+            .record_anki_export(&package(&project(), std::slice::from_ref(&id), Some(1_000)))
             .unwrap();
         assert!(storage.get_flashcard(&id).unwrap().was_packaged);
     }
@@ -129,10 +157,10 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_export(&project(), std::slice::from_ref(&id), Some(1_000))
+            .record_anki_export(&package(&project(), std::slice::from_ref(&id), Some(1_000)))
             .unwrap();
         storage
-            .record_anki_export(&project(), std::slice::from_ref(&id), None)
+            .record_anki_export(&package(&project(), std::slice::from_ref(&id), None))
             .unwrap();
         assert_eq!(
             storage.get_flashcard(&id).unwrap().exported_at_ms,
@@ -145,9 +173,25 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_export(&project(), std::slice::from_ref(&id), None)
+            .record_anki_export(&package(&project(), std::slice::from_ref(&id), None))
             .unwrap();
         assert!(storage.get_flashcard(&id).unwrap().was_packaged);
+    }
+
+    #[test]
+    fn an_export_clears_the_deletions_it_marked() {
+        let storage = seeded_storage();
+        let id = create(&storage);
+        storage
+            .record_anki_send(&project(), std::slice::from_ref(&id), 1)
+            .unwrap();
+        storage.delete_flashcard(&id).unwrap();
+        let delivered = DeliveredPackage {
+            marked_deletions: vec![id],
+            ..package(&project(), &[], Some(2))
+        };
+        storage.record_anki_export(&delivered).unwrap();
+        assert_eq!(listed_deletion_ids(&storage), Vec::<FlashcardId>::new());
     }
 
     #[test]
@@ -155,7 +199,7 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_export(&project(), &[missing(), id.clone()], Some(1_000))
+            .record_anki_export(&package(&project(), &[missing(), id.clone()], Some(1_000)))
             .unwrap();
         assert_eq!(
             storage.get_flashcard(&id).unwrap().exported_at_ms,
@@ -165,8 +209,11 @@ mod tests {
 
     #[test]
     fn an_export_of_an_unknown_project_fails() {
-        let result =
-            seeded_storage().record_anki_export(&ProjectId("missing".to_string()), &[], Some(1));
+        let result = seeded_storage().record_anki_export(&package(
+            &ProjectId("missing".to_string()),
+            &[],
+            Some(1),
+        ));
         assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 

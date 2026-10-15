@@ -2,6 +2,7 @@
 //! lifecycle. Used by the standalone server and by the embedded server of the native app.
 
 pub mod anki_media;
+pub mod anki_package_delivery;
 pub mod anki_selection;
 pub mod auth;
 pub mod config;

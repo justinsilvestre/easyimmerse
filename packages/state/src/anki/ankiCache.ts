@@ -6,6 +6,20 @@ const noFlashcards: readonly Flashcard[] = [];
 const noMediaFileIds: readonly string[] = [];
 const noDeletions: readonly AnkiPendingDeletion[] = [];
 
+/**
+ * Counts the cached deletions whose notes an export marking its flashcards as exported would mark for deletion:
+ * none while the project uses AnkiConnect, which deletes notes itself, and otherwise those of flashcards that had been marked as exported.
+ */
+export function cachedMarkCount(
+  backend: ServerCacheSlice,
+  projectId: string,
+): number {
+  if (cachedUsesAnkiConnect(backend, projectId)) return 0;
+  return cachedDeletions(backend, projectId).filter(
+    ({ reached_by_package }) => reached_by_package,
+  ).length;
+}
+
 /** Returns the project's cached deletions from Anki, oldest first, or none while they are not cached. */
 export function cachedDeletions(
   backend: ServerCacheSlice,

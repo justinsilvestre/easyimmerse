@@ -35,16 +35,23 @@ export type AnkiDeletionOutcome = {
   foundAnki: boolean;
 };
 
+/** What an exported Anki package holds, beyond its notes' content. */
+type PackageCounts = {
+  flashcardCount: number;
+  /** The audio clips and screenshots that could not be rendered and are missing from the package. */
+  skippedMediaCount: number;
+  /** The notes of deleted flashcards that the package marks for deletion. */
+  markedDeletionCount: number;
+};
+
 /**
  * An exported Anki package: written by the server to the path the user chose,
  * or handed back as a file for the platform to download.
  */
 export type AnkiPackageExport =
-  | { kind: "saved"; flashcardCount: number; skippedMediaCount: number }
-  | {
+  | ({ kind: "saved" } & PackageCounts)
+  | ({
       kind: "downloaded";
       fileName: string;
       bytes: Uint8Array<ArrayBuffer>;
-      flashcardCount: number;
-      skippedMediaCount: number;
-    };
+    } & PackageCounts);

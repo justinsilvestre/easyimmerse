@@ -8,10 +8,13 @@ import { pluralize } from "../components/pluralize.ts";
  */
 export function DeletedInAnki({
   deletions,
+  markCount,
   onCopyAnkiSearch,
   onMarkDone,
 }: {
   deletions: readonly AnkiPendingDeletion[];
+  /** How many of them the next export marking its cards as exported marks for deletion. */
+  markCount: number;
   onCopyAnkiSearch: () => void;
   onMarkDone: () => void;
 }) {
@@ -26,8 +29,7 @@ export function DeletedInAnki({
         ))}
       </ul>
       <p className="text-fg-muted">
-        Paste the search into Anki's browser to find their notes, delete them
-        there, then mark them as done.
+        {deletionsHint(deletions.length, markCount)}
       </p>
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={onCopyAnkiSearch}>
@@ -39,4 +41,13 @@ export function DeletedInAnki({
       </div>
     </div>
   );
+}
+
+/** Tells how to delete the notes in Anki, and how many of them the next export marks for deletion instead. */
+function deletionsHint(count: number, markCount: number) {
+  const search =
+    "Paste the search into Anki's browser to find their notes, delete them there, then mark them as done.";
+  if (markCount === 0) return search;
+  const which = markCount === count ? "them" : `${markCount} of them`;
+  return `${search} Otherwise, the next export that marks its cards as exported marks ${which} for deletion.`;
 }

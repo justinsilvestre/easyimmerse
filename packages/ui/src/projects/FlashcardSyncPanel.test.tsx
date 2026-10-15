@@ -8,7 +8,12 @@ afterEach(cleanup);
 
 const exportingOnly: FlashcardSync = {
   flashcardCount: 3,
-  package: { sinceLastExport: null, deletions: [], ankiSearch: "" },
+  package: {
+    sinceLastExport: null,
+    deletions: [],
+    ankiSearch: "",
+    markCount: 0,
+  },
   ankiConnect: null,
   nextCard: null,
 };

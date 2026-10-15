@@ -11,7 +11,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::anki_selection::{deck_spec, load_selection};
-use crate::auth::error_body::{ApiError, ApiFailure};
+use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
 use crate::state::AppState;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, ToSchema)]
@@ -58,6 +58,9 @@ pub async fn render_anki_notes(
     Path(project_id): Path<ProjectId>,
     Json(request): Json<AnkiNotesRequest>,
 ) -> Result<Json<AnkiNotes>, ApiFailure> {
+    if request.flashcard_ids.is_empty() {
+        return Err(bad_request("name at least one flashcard"));
+    }
     let selection = load_selection(&state, project_id, request.flashcard_ids).await?;
     Ok(Json(render_notes(
         &selection.flashcards,

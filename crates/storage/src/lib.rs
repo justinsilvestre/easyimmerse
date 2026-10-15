@@ -19,6 +19,7 @@ mod sample_content;
 mod stored_integer;
 mod subtitle_tracks;
 
+pub use anki_sync::DeliveredPackage;
 pub use dictionaries::{DictionaryCounts, DictionaryId, StoredDictionary};
 pub use error::StorageError;
 pub use sample_content::SampleContentError;
@@ -230,15 +231,10 @@ impl Storage {
         })
     }
 
-    /// Records that the flashcards were written into an Anki package, and marks them exported at `exported_at_ms`
-    /// unless it is `None`, in one transaction. A flashcard that is gone is passed over.
-    pub fn record_anki_export(
-        &self,
-        project_id: &ProjectId,
-        ids: &[FlashcardId],
-        exported_at_ms: Option<u64>,
-    ) -> Result<(), StorageError> {
-        self.write(|conn| anki_sync::record_anki_export(conn, project_id, ids, exported_at_ms))
+    /// Records a delivered package in one transaction: a package held its flashcards, which are marked exported when it says so,
+    /// and the deletions it marked are dealt with. A flashcard that is gone is passed over.
+    pub fn record_anki_export(&self, package: &DeliveredPackage) -> Result<(), StorageError> {
+        self.write(|conn| anki_sync::record_anki_export(conn, package))
     }
 
     /// Records that AnkiConnect put the project's flashcards into Anki as they were read at `sent_at_ms`, in one transaction.

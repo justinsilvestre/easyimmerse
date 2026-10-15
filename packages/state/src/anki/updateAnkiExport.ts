@@ -8,6 +8,7 @@ import { isSettled } from "../server/isSettled.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
 import {
   cachedFlashcards,
+  cachedMarkCount,
   cachedMediaFileIds,
   cachedProjectName,
   cachedUsesAnkiConnect,
@@ -97,10 +98,9 @@ function toggledMedia(
   return next.length === all.length ? null : next;
 }
 
-/** Asks where to save the package, unless an export is under way or the choices include no flashcard. */
+/** Asks where to save the package, unless an export is under way or the package would hold nothing. */
 function confirmed(dialog: AnkiExportDialog, context: ExportContext) {
-  if (dialog.isBusy || idsToExport(dialog, context).length === 0)
-    return updated(dialog);
+  if (dialog.isBusy || isEmpty(dialog, context)) return updated(dialog);
   const name = cachedProjectName(context.backend, context.projectId);
   return updated(
     { ...dialog, isBusy: true },
@@ -116,7 +116,7 @@ function pathPicked(
 ) {
   if (!dialog.isBusy) return updated(dialog);
   const ids = idsToExport(dialog, context);
-  if (pick.kind === "cancelled" || ids.length === 0)
+  if (pick.kind === "cancelled" || isEmpty(dialog, context))
     return updated({ ...dialog, isBusy: false });
   const savePath = pick.kind === "path" ? pick.path : null;
   return updated(
@@ -153,6 +153,14 @@ function download(exported: AnkiPackageExport) {
   if (exported.kind === "saved") return [];
   const { fileName, bytes } = exported;
   return [{ type: "downloadFile", fileName, bytes }] satisfies Effect[];
+}
+
+/** Tells whether the package would hold no flashcard and mark no deletion. */
+function isEmpty(dialog: AnkiExportDialog, context: ExportContext) {
+  const marks = dialog.marksExported
+    ? cachedMarkCount(context.backend, context.projectId)
+    : 0;
+  return idsToExport(dialog, context).length === 0 && marks === 0;
 }
 
 function idsToExport(dialog: AnkiExportDialog, context: ExportContext) {

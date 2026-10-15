@@ -38,6 +38,8 @@ export type PackageSync = {
   deletions: readonly AnkiPendingDeletion[];
   /** The Anki search that finds the notes of the listed deletions. */
   ankiSearch: string;
+  /** How many of the listed deletions the next export marking its flashcards as exported marks for deletion. */
+  markCount: number;
 };
 
 /** What the project overview's flashcards panel shows about AnkiConnect while it is on for the project. */
@@ -121,6 +123,8 @@ function packageSync(
     sinceLastExport: sinceLastExport(flashcards),
     deletions,
     ankiSearch: ankiSearchOf(deletions.map(({ flashcard_id }) => flashcard_id)),
+    markCount: deletions.filter(({ reached_by_package }) => reached_by_package)
+      .length,
   };
 }
 

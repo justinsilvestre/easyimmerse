@@ -18,6 +18,7 @@ export function AnkiExportDialog({
   allCount,
   marksExported,
   duplicateCount,
+  markCount,
   isBusy,
   onScopeChange,
   onMarkingChange,
@@ -37,6 +38,8 @@ export function AnkiExportDialog({
   marksExported: boolean;
   /** The exported cards that AnkiConnect put into Anki before any export marked them, which an import there would duplicate. */
   duplicateCount: number;
+  /** The notes of deleted flashcards the package marks for deletion when it marks its cards as exported. */
+  markCount: number;
   isBusy: boolean;
   onScopeChange: (scope: AnkiExportScope) => void;
   onMarkingChange: (marksExported: boolean) => void;
@@ -45,6 +48,7 @@ export function AnkiExportDialog({
   onClose: () => void;
 }) {
   const count = scope === "newAndChanged" ? newAndChangedCount : allCount;
+  const marks = marksExported ? markCount : 0;
   return (
     <ModalDialog
       title="Export an Anki deck"
@@ -55,10 +59,10 @@ export function AnkiExportDialog({
           <Button onClick={onClose}>Cancel</Button>
           <Button
             variant="primary"
-            disabled={count === 0 || isBusy}
+            disabled={count + marks === 0 || isBusy}
             onClick={onExport}
           >
-            {isBusy ? "Exporting…" : `Export ${pluralize(count, "card")}`}
+            {exportLabel(count, isBusy)}
           </Button>
         </>
       }
@@ -98,6 +102,12 @@ export function AnkiExportDialog({
       {marksExported && duplicateCount > 0 && (
         <DuplicateWarning count={duplicateCount} />
       )}
+      {marks > 0 && (
+        <p className="text-sm">
+          The package also marks {pluralize(marks, "deleted flashcard")} for
+          deletion in Anki.
+        </p>
+      )}
       <div className="flex flex-col gap-2 text-sm text-fg-muted">
         <p>
           Audio and screenshots are included when the easyImmerse server has
@@ -111,6 +121,12 @@ export function AnkiExportDialog({
       </div>
     </ModalDialog>
   );
+}
+
+/** Names what Export writes: the cards it holds, or just the package when it holds only marks for deletion. */
+function exportLabel(count: number, isBusy: boolean) {
+  if (isBusy) return "Exporting…";
+  return count === 0 ? "Export package" : `Export ${pluralize(count, "card")}`;
 }
 
 /**

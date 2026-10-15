@@ -56,6 +56,15 @@ export const DeletedFlashcardsToDeleteInAnki: Story = {
   args: { sync: deletionsListedSync },
 };
 
+export const DeletedFlashcardsOnlySentToAnki: Story = {
+  args: {
+    sync: {
+      ...deletionsListedSync,
+      package: { ...deletionsListedSync.package, markCount: 0 },
+    },
+  },
+};
+
 export const EveryFlashcardExported: Story = {
   args: {
     sync: {

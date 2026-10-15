@@ -113,6 +113,10 @@ describe("selectFlashcardSync", () => {
     );
   });
 
+  it("counts the listed deletions the next export marking its cards would mark", () => {
+    expect(syncOf(withDeletions(false)).package.markCount).toBe(1);
+  });
+
   it("shows no AnkiConnect status while AnkiConnect is off", () => {
     expect(syncOf(ankiCache(false))).toMatchObject({ ankiConnect: null });
   });

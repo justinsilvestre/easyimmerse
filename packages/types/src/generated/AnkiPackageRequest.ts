@@ -12,5 +12,6 @@ flashcard_ids: Array<FlashcardId>,
 save_path: string | null, 
 /**
  * Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.
+ * Such a package also marks for deletion, while the project does not use AnkiConnect, the notes of deleted flashcards that had been marked as exported.
  */
 marks_exported: boolean, };

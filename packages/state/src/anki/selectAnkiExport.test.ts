@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfterWithCache } from "../app/stateAfter.ts";
+import { serverCacheWith } from "../server/serverCacheWith.ts";
 import { ankiCache, ankiFlashcard, openOverview } from "./ankiTestSupport.ts";
 import {
   selectAnkiExport,
@@ -60,6 +61,40 @@ describe("selectAnkiExport", () => {
         backend: sent,
       }),
     ).toMatchObject({ duplicateCount: 1 });
+  });
+
+  it("counts the deletions an export marking its cards would mark", () => {
+    const deleted = serverCacheWith(
+      "listAnkiPendingDeletions",
+      "p1",
+      {
+        deletions: [
+          {
+            flashcard_id: "f8",
+            word: "a",
+            requested_at_ms: 1,
+            reached_by_package: true,
+          },
+          {
+            flashcard_id: "f9",
+            word: "b",
+            requested_at_ms: 2,
+            reached_by_package: false,
+          },
+        ],
+      },
+      ankiCache(false),
+    );
+    expect(
+      selectAnkiExport({
+        app: stateAfterWithCache(
+          deleted,
+          openOverview,
+          actions.ankiExportOpened(),
+        ),
+        backend: deleted,
+      }),
+    ).toMatchObject({ markCount: 1 });
   });
 
   it("counts only the cards of the ticked media files", () => {

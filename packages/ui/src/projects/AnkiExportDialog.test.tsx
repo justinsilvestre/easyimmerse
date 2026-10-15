@@ -22,6 +22,7 @@ function renderDialog(
       allCount={4}
       marksExported
       duplicateCount={0}
+      markCount={0}
       isBusy={false}
       onScopeChange={(scope: AnkiExportScope) => calls.push(`scope ${scope}`)}
       onMarkingChange={(marksExported) =>
@@ -116,6 +117,26 @@ describe("AnkiExportDialog", () => {
   it("does not warn of duplicates while the cards are not marked as exported", () => {
     renderDialog({ duplicateCount: 2, marksExported: false });
     expect(screen.queryByRole("note")).toBeNull();
+  });
+
+  it("tells how many deleted flashcards the package marks for deletion", () => {
+    renderDialog({ markCount: 2 });
+    expect(
+      screen.getByText(
+        "The package also marks 2 deleted flashcards for deletion in Anki.",
+      ),
+    ).toBeDefined();
+  });
+
+  it("marks no deletion while the cards are not marked as exported", () => {
+    renderDialog({ markCount: 2, marksExported: false });
+    expect(screen.queryByText(/for deletion in Anki/)).toBeNull();
+  });
+
+  it("exports a package that holds only marks for deletion", () => {
+    const calls = renderDialog({ newAndChangedCount: 0, markCount: 1 });
+    fireEvent.click(screen.getByRole("button", { name: "Export package" }));
+    expect(calls).toEqual(["export"]);
   });
 
   it("ticks every media file while none is chosen", () => {

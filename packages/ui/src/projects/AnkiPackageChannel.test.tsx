@@ -9,6 +9,7 @@ const since = (newCount: number, changedCount: number): PackageSync => ({
   sinceLastExport: { newCount, changedCount },
   deletions: [],
   ankiSearch: "",
+  markCount: 0,
 });
 
 function renderChannel(sync: PackageSync, flashcardCount = 5) {

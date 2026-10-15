@@ -44,6 +44,7 @@ export function AnkiPackageChannel({
       {sync.deletions.length > 0 && (
         <DeletedInAnki
           deletions={sync.deletions}
+          markCount={sync.markCount}
           onCopyAnkiSearch={onCopyAnkiSearch}
           onMarkDone={onMarkDeletionsDone}
         />
