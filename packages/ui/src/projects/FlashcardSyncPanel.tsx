@@ -1,4 +1,4 @@
-import type { FlashcardSync } from "@easyimmerse/state";
+import type { AnkiConnectionStatus, FlashcardSync } from "@easyimmerse/state";
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import { Download, GraduationCap, Plug, Send } from "lucide-react";
 import type { ReactNode } from "react";
@@ -191,11 +191,7 @@ function Status({
         <StatusBlock
           badge={connectionBadges[state.connection]}
           summary={ankiConnectSummary(state)}
-          hint={
-            state.connection === "unreachable"
-              ? "Start Anki with the AnkiConnect add-on installed, then check again or send the cards."
-              : undefined
-          }
+          hint={connectionHints[state.connection]}
           action={
             <>
               <Button
@@ -210,7 +206,7 @@ function Status({
                 <Send className="size-4" aria-hidden />
                 {state.isSyncing ? "Sending…" : "Send to Anki"}
               </Button>
-              {state.connection === "unreachable" && (
+              {isUnconnected(state.connection) && (
                 <>
                   <Button onClick={callbacks.onCheckConnection}>
                     Check again
@@ -253,7 +249,26 @@ const connectionBadges = {
   checking: <Badge>Checking Anki…</Badge>,
   connected: <Badge tone="success">Anki connected</Badge>,
   unreachable: <Badge tone="danger">Anki unreachable</Badge>,
-};
+  denied: <Badge tone="danger">Anki refused easyImmerse</Badge>,
+} satisfies Record<AnkiConnectionStatus, ReactNode>;
+
+/**
+ * Tells how to connect to Anki when the last check did not.
+ * AnkiConnect asks again each time a page it refused checks, unless the user chose to ignore that page, which its config then lists.
+ */
+const connectionHints = {
+  checking: undefined,
+  connected: undefined,
+  unreachable:
+    "Start Anki with the AnkiConnect add-on installed, then check again.",
+  denied:
+    "Anki is running but did not allow easyImmerse to use AnkiConnect. Check again, and choose Yes when Anki asks. If Anki does not ask, choose Tools, then Add-ons in Anki, select AnkiConnect and choose Config, remove easyImmerse's address from ignoreOriginList, and check again.",
+} satisfies Record<AnkiConnectionStatus, string | undefined>;
+
+/** Tells whether the last check found that easyImmerse cannot use Anki, so that the user can check again or get help. */
+function isUnconnected(connection: AnkiConnectionStatus) {
+  return connection === "unreachable" || connection === "denied";
+}
 
 function StatusBlock({
   badge,

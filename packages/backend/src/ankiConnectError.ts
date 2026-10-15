@@ -1,4 +1,4 @@
-import { ankiUnreachableCode } from "@easyimmerse/state";
+import { type AnkiConnection, ankiUnreachableCode } from "@easyimmerse/state";
 import type { BackendError } from "./backendClient.ts";
 
 /** Why an AnkiConnect action failed: Anki did not answer, it refused this page, or it answered with an error. */
@@ -28,6 +28,18 @@ export function isUnreachable(error: unknown): boolean {
   return (
     error instanceof AnkiConnectError && error.failure.kind === "unreachable"
   );
+}
+
+/** Tells whether an error is Anki refusing this page. */
+export function isDenied(error: unknown): boolean {
+  return error instanceof AnkiConnectError && error.failure.kind === "denied";
+}
+
+/** Returns the connection to Anki that an error shows, when Anki did not answer or refused this page, or null for any other error. */
+export function lostConnectionOf(error: unknown): AnkiConnection | null {
+  if (isUnreachable(error)) return { connected: false, isDenied: false };
+  if (isDenied(error)) return { connected: false, isDenied: true };
+  return null;
 }
 
 /**

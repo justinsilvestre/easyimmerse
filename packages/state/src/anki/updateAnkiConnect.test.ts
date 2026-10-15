@@ -85,13 +85,13 @@ const allSentWithPending = (
   return { queries: { ...allSent.queries, [key]: { status, data } } };
 };
 
-const checked = (connected: boolean) =>
+const checked = (connected: boolean, isDenied = false) =>
   actions.requestSettled(
     "ankiConnection",
     { kind: "checkAnkiConnection" },
     {
       ok: true,
-      data: connected ? { connected, version: 6 } : { connected },
+      data: connected ? { connected, version: 6 } : { connected, isDenied },
     },
   );
 
@@ -316,6 +316,10 @@ describe("ankiConnectEffects once Anki is found running", () => {
 
   it("sends nothing when Anki does not answer", () => {
     expect(effectsOf(checked(false))).toEqual([]);
+  });
+
+  it("syncs nothing once the check finds that Anki refused easyImmerse", () => {
+    expect(effectsOf(checked(false, true))).toEqual([]);
   });
 
   it("sends nothing for a project that exports packages", () => {

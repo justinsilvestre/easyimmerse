@@ -19,11 +19,15 @@ const syncOf = (backend: ServerCacheSlice, ...actions: AppAction[]) =>
     "p1",
   );
 
-const checked = (connected: boolean, backend = ankiCache("anki_connect")) =>
+const checked = (
+  connected: boolean,
+  backend = ankiCache("anki_connect"),
+  isDenied = false,
+) =>
   serverCacheWith(
     "checkAnkiConnection",
     undefined,
-    connected ? { connected, version: 6 } : { connected },
+    connected ? { connected, version: 6 } : { connected, isDenied },
     backend,
   );
 
@@ -85,6 +89,12 @@ describe("selectFlashcardSync", () => {
     expect(syncOf(checked(false))).toMatchObject({
       connection: "unreachable",
     });
+  });
+
+  it("says Anki refused easyImmerse once it denied the check", () => {
+    expect(
+      syncOf(checked(false, ankiCache("anki_connect"), true)),
+    ).toMatchObject({ connection: "denied" });
   });
 
   it("says the connection is being checked while the check runs", () => {

@@ -12,7 +12,7 @@ import { ankiConnectActions } from "./ankiConnectActions.ts";
 import {
   ankiBackendError,
   hasSucceeded,
-  isUnreachable,
+  lostConnectionOf,
 } from "./ankiConnectError.ts";
 import { type MediaFetch, withoutMedia } from "./ankiMedia.ts";
 import { syncNotes } from "./ankiNoteSync.ts";
@@ -67,7 +67,8 @@ export async function sendFlashcardsToAnki(
     const sent = await sendWithAnki(args, deps);
     return "error" in sent ? sent : { data: { ...sent.data, foundAnki } };
   } catch (error) {
-    if (isUnreachable(error)) deps.reportConnection({ connected: false });
+    const lost = lostConnectionOf(error);
+    if (lost !== null) deps.reportConnection(lost);
     return { error: ankiBackendError(error) };
   }
 }

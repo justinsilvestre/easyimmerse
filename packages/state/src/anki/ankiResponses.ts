@@ -1,7 +1,10 @@
-/** Whether Anki answered through AnkiConnect, with the add-on's API version when it did. */
+/**
+ * Whether Anki answered through AnkiConnect, with the add-on's API version when it did,
+ * or whether it refused easyImmerse when it did not.
+ */
 export type AnkiConnection =
   | { connected: true; version: number }
-  | { connected: false };
+  | { connected: false; isDenied: boolean };
 
 /** How a send of flashcards to Anki through AnkiConnect went. */
 export type AnkiSendOutcome = {

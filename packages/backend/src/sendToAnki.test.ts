@@ -1,6 +1,7 @@
 import type { AnkiConnection } from "@easyimmerse/state";
 import type { AnkiNote, AnkiNotes } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
+import { AnkiConnectError } from "./ankiConnectError.ts";
 import type { MediaFetch } from "./ankiMedia.ts";
 import type { BackendRequest, BackendResult } from "./backendClient.ts";
 import { type AnkiAnswers, createFakeAnkiConnect } from "./fakeAnkiConnect.ts";
@@ -116,7 +117,19 @@ describe("sendFlashcardsToAnki", () => {
   it("reports that Anki is not connected when it does not answer", async () => {
     const sending = send({});
     await sending.sent;
-    expect(sending.connections).toEqual([{ connected: false }]);
+    expect(sending.connections).toEqual([
+      { connected: false, isDenied: false },
+    ]);
+  });
+
+  it("reports that Anki refused easyImmerse when it denies this page", async () => {
+    const sending = send({
+      version: () => {
+        throw new AnkiConnectError({ kind: "denied" });
+      },
+    });
+    await sending.sent;
+    expect(sending.connections).toEqual([{ connected: false, isDenied: true }]);
   });
 
   it("reports that Anki is connected once it answers", async () => {

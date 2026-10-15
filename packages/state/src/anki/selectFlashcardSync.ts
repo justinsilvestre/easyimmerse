@@ -6,8 +6,12 @@ import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
 import { isUnexported, isUnsent, oldestFirst } from "./ankiExportSelection.ts";
 import { hasAnkiConnectRequest } from "./ankiRequests.ts";
 
-/** Whether Anki answered the last check: still being asked, answered, or not. */
-export type AnkiConnectionStatus = "checking" | "connected" | "unreachable";
+/** Whether Anki answered the last check: still being asked, answered, did not answer, or answered that it refuses easyImmerse. */
+export type AnkiConnectionStatus =
+  | "checking"
+  | "connected"
+  | "unreachable"
+  | "denied";
 
 /** Where a project's flashcards go, with what the project overview's flashcards panel shows about it. */
 export type FlashcardSync =
@@ -86,7 +90,11 @@ function firstMadeContent(flashcards: readonly Flashcard[]) {
   return oldestFirst(flashcards)[0]?.content ?? null;
 }
 
-function statusOf(entry: CacheEntry<"checkAnkiConnection">) {
+function statusOf(
+  entry: CacheEntry<"checkAnkiConnection">,
+): AnkiConnectionStatus {
   if (entry === undefined || entry.status === "pending") return "checking";
-  return entry.data?.connected ? "connected" : "unreachable";
+  const connection = entry.data;
+  if (connection?.connected) return "connected";
+  return connection?.isDenied ? "denied" : "unreachable";
 }

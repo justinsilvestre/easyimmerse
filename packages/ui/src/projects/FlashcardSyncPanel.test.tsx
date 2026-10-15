@@ -1,3 +1,4 @@
+import type { AnkiConnectionStatus } from "@easyimmerse/state";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { exampleLanguages } from "../flashcards/exampleFlashcard.ts";
@@ -9,7 +10,7 @@ import {
 afterEach(cleanup);
 
 const sendingTo = (
-  connection: "checking" | "connected" | "unreachable",
+  connection: AnkiConnectionStatus,
   isSyncing = false,
 ): FlashcardSyncState => ({
   kind: "ankiConnect",
@@ -84,6 +85,37 @@ describe("FlashcardSyncPanel", () => {
     const calls = renderPanel(sendingTo("unreachable"));
     fireEvent.click(screen.getByRole("button", { name: "Check again" }));
     expect(calls).toEqual(["check"]);
+  });
+
+  it("tells how to make Anki reachable", () => {
+    renderPanel(sendingTo("unreachable"));
+    expect(
+      screen.getByText(
+        "Start Anki with the AnkiConnect add-on installed, then check again.",
+      ),
+    ).toBeDefined();
+  });
+
+  describe("when Anki refused easyImmerse", () => {
+    it("says so", () => {
+      renderPanel(sendingTo("denied"));
+      expect(screen.getByText("Anki refused easyImmerse")).toBeDefined();
+    });
+
+    it("tells how to allow easyImmerse again", () => {
+      renderPanel(sendingTo("denied"));
+      expect(
+        screen.getByText(
+          "Anki is running but did not allow easyImmerse to use AnkiConnect. Check again, and choose Yes when Anki asks. If Anki does not ask, choose Tools, then Add-ons in Anki, select AnkiConnect and choose Config, remove easyImmerse's address from ignoreOriginList, and check again.",
+        ),
+      ).toBeDefined();
+    });
+
+    it("checks the connection again", () => {
+      const calls = renderPanel(sendingTo("denied"));
+      fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+      expect(calls).toEqual(["check"]);
+    });
   });
 
   it("lets the user choose another destination", () => {

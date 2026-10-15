@@ -234,7 +234,27 @@ describe("deleteAnkiNotes", () => {
     it("reports that Anki is not connected", async () => {
       const { connections, result } = run({});
       await result;
-      expect(connections).toEqual([{ connected: false }]);
+      expect(connections).toEqual([{ connected: false, isDenied: false }]);
+    });
+  });
+
+  describe("when Anki refuses easyImmerse", () => {
+    const denying: AnkiAnswers = {
+      version: () => {
+        throw new AnkiConnectError({ kind: "denied" });
+      },
+    };
+
+    it("fails as Anki refusing this page", async () => {
+      expect(await run(denying).result).toMatchObject({
+        error: { code: "anki_denied" },
+      });
+    });
+
+    it("reports that Anki refused easyImmerse", async () => {
+      const { connections, result } = run(denying);
+      await result;
+      expect(connections).toEqual([{ connected: false, isDenied: true }]);
     });
   });
 

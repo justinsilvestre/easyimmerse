@@ -96,6 +96,30 @@ describe("createAnkiConnect", () => {
     expect(posted).toHaveLength(2);
   });
 
+  it("asks for permission again once Anki stops answering, since it may refuse this page by then", async () => {
+    let isAnswering = true;
+    const { posted, fetchFn } = createFakeAnkiFetch((action) =>
+      isAnswering
+        ? granting(6)(action)
+        : Promise.reject(new TypeError("Failed to fetch")),
+    );
+    const anki = createAnkiConnect(fetchFn);
+    await anki.invoke(ankiConnectActions.version());
+    isAnswering = false;
+    await failureOf(anki.invoke(ankiConnectActions.version()));
+    isAnswering = true;
+    await anki.invoke(ankiConnectActions.version());
+    expect(
+      posted.map(({ body }) => (body as { action: string }).action),
+    ).toEqual([
+      "requestPermission",
+      "version",
+      "version",
+      "requestPermission",
+      "version",
+    ]);
+  });
+
   it("fails with the error Anki answers", async () => {
     const { fetchFn } = createFakeAnkiFetch((action) =>
       action === "requestPermission"

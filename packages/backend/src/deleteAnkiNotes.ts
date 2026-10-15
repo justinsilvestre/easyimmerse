@@ -8,7 +8,11 @@ import {
   ankiConnectActions,
   flashcardNoteQuery,
 } from "./ankiConnectActions.ts";
-import { ankiBackendError, isUnreachable } from "./ankiConnectError.ts";
+import {
+  ankiBackendError,
+  isUnreachable,
+  lostConnectionOf,
+} from "./ankiConnectError.ts";
 import type { BackendRequest, BackendResult } from "./backendClient.ts";
 import type { ServerQuery } from "./sendToAnki.ts";
 
@@ -141,14 +145,19 @@ async function deleteNotes(
   }
 }
 
-/** Fails with Anki's error, or resolves null and reports Anki as not connected when Anki does not answer at all. */
+/**
+ * Resolves null and reports Anki as not connected when Anki does not answer at all.
+ * Otherwise fails with Anki's error, reporting first that Anki refused easyImmerse when it did.
+ */
 function unanswered(
   error: unknown,
   reportConnection: AnkiDeletionDeps["reportConnection"],
 ): BackendResult<null> {
-  if (!isUnreachable(error)) return { error: ankiBackendError(error) };
-  reportConnection({ connected: false });
-  return { data: null };
+  const lost = lostConnectionOf(error);
+  if (lost !== null) reportConnection(lost);
+  return isUnreachable(error)
+    ? { data: null }
+    : { error: ankiBackendError(error) };
 }
 
 function listRequest(projectId: string): BackendRequest {

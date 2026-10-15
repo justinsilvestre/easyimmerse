@@ -1,5 +1,5 @@
 import { ankiConnectActions } from "./ankiConnectActions.ts";
-import { AnkiConnectError } from "./ankiConnectError.ts";
+import { AnkiConnectError, lostConnectionOf } from "./ankiConnectError.ts";
 
 /** Where AnkiConnect listens while Anki runs. */
 export const ankiConnectUrl = "http://127.0.0.1:8765";
@@ -15,7 +15,8 @@ export type AnkiConnectRequest = {
 export type AnkiConnect = {
   /**
    * Sends one action and resolves its result, or rejects with an `AnkiConnectError`.
-   * The first action asks Anki for permission first, since Anki answers only the pages it allows; the answer is kept once granted.
+   * The first action asks Anki for permission first, since Anki answers only the pages it allows.
+   * A granted permission is kept until Anki stops answering or refuses this page, since the user may have withdrawn it by then.
    */
   invoke<T>(request: AnkiConnectRequest): Promise<T>;
 };
@@ -37,7 +38,10 @@ export function createAnkiConnect(
   return {
     invoke: async <T>(request: AnkiConnectRequest) => {
       await askPermissionOnce();
-      return post<T>(request);
+      return post<T>(request).catch((error: unknown) => {
+        if (lostConnectionOf(error) !== null) permission = null;
+        throw error;
+      });
     },
   };
 }

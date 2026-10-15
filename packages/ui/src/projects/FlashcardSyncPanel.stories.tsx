@@ -138,3 +138,16 @@ export const AnkiUnreachableWithNotesToDelete: Story = {
     },
   },
 };
+
+export const AnkiRefusedEasyImmerse: Story = {
+  args: {
+    state: {
+      kind: "ankiConnect",
+      connection: "denied",
+      unsentCount: 3,
+      pendingDeletionCount: 0,
+      nextCard: exampleFlashcard,
+      isSyncing: false,
+    },
+  },
+};

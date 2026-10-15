@@ -563,7 +563,7 @@ describe("checkAnkiConnection", () => {
     );
     expect(
       backendApi.endpoints.checkAnkiConnection.select()(store.getState()).data,
-    ).toEqual({ connected: false });
+    ).toEqual({ connected: false, isDenied: false });
   });
 });
 
