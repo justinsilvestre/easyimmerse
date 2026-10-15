@@ -114,7 +114,7 @@ describe("ProjectScreen's Anki destinations", () => {
     const rendered = renderOverview();
     await exportToPath(rendered);
     expect(
-      await screen.findByText("Exported 1 flashcard to Anki."),
+      await screen.findByText("Exported 1 flashcard to an Anki package."),
     ).toBeDefined();
   });
 

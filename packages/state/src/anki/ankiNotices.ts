@@ -8,12 +8,12 @@ import type { AnkiPackageExport, AnkiSendOutcome } from "./ankiResponses.ts";
 /** The code of the failure of a send to Anki when Anki does not answer, which the project screen's panel shows in place of a notice. */
 export const ankiUnreachableCode = "anki_unreachable";
 
-/** Tells how many flashcards an export wrote, and how many media files it left out. */
+/** Tells how many flashcards an export wrote into the package, and how many media files it left out. */
 export function exportedNotice({
   flashcardCount,
   skippedMediaCount,
 }: AnkiPackageExport) {
-  const exported = `Exported ${count(flashcardCount, "flashcard")} to Anki.`;
+  const exported = `Exported ${count(flashcardCount, "flashcard")} to an Anki package.`;
   return notice("success", exported, skippedMediaLine(skippedMediaCount));
 }
 

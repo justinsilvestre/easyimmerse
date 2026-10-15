@@ -169,14 +169,14 @@ describe("updateAnkiExport", () => {
   it("tells how many cards were exported", () => {
     expect(
       noticesAfter(...confirmed, exported({ ok: true, data: saved() })),
-    ).toEqual(["Exported 2 flashcards to Anki."]);
+    ).toEqual(["Exported 2 flashcards to an Anki package."]);
   });
 
   it("tells how many audio clips and screenshots were left out", () => {
     expect(
       noticesAfter(...confirmed, exported({ ok: true, data: saved(3) })),
     ).toEqual([
-      "Exported 2 flashcards to Anki. 3 audio clips or screenshots could not be included.",
+      "Exported 2 flashcards to an Anki package. 3 audio clips or screenshots could not be included.",
     ]);
   });
 
