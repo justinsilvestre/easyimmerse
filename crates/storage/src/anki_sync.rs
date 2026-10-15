@@ -252,7 +252,7 @@ mod tests {
         let id = create(&storage);
         storage.delete_flashcard(&id).unwrap();
         storage
-            .record_anki_send(&project(), &[id.clone()], 1)
+            .record_anki_send(&project(), std::slice::from_ref(&id), 1)
             .unwrap();
         assert_eq!(listed_deletion_ids(&storage), vec![id]);
     }
@@ -262,7 +262,7 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_send(&project(), &[id.clone()], 1)
+            .record_anki_send(&project(), std::slice::from_ref(&id), 1)
             .unwrap();
         storage.delete_flashcard(&id).unwrap();
         storage.record_anki_send(&project(), &[id], 1).unwrap();
