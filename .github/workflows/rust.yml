@@ -84,7 +84,8 @@ jobs:
         shell: bash
         env:
           EASYIMMERSE_FFMPEG_DIR: ${{ github.workspace }}/apps/native/src-tauri/binaries
-        run: cargo test --workspace --exclude easyimmerse-native --exclude easyimmerse-plugins --no-fail-fast -- --skip plugin_routes:: --show-output 2>&1 | tee "$RUNNER_TEMP/test.log"
+        run: |
+          cargo test --workspace --exclude easyimmerse-native --exclude easyimmerse-plugins --no-fail-fast -- --skip plugin_routes:: --show-output 2>&1 | tee "$RUNNER_TEMP/test.log"
 
       # A test that cannot find ffmpeg passes without testing anything, so it fails the job here.
       # Runners have no GPU, so tests that need a hardware encoder may skip.

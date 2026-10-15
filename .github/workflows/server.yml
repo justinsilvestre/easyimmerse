@@ -76,7 +76,8 @@ jobs:
 
       # The plugin route tests load plugins built by `mise run plugins:build`, so the plugins workflow runs them.
       - name: API integration tests
-        run: cargo test -p easyimmerse-api -p easyimmerse-storage -- --skip plugin_routes::
+        run: |
+          cargo test -p easyimmerse-api -p easyimmerse-storage -- --skip plugin_routes::
 
   record:
     needs: [gate, server]
