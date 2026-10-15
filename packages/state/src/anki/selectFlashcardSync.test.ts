@@ -19,17 +19,22 @@ const syncOf = (backend: ServerCacheSlice, ...actions: AppAction[]) =>
     "p1",
   );
 
-const checked = (
-  connected: boolean,
-  backend = ankiCache("anki_connect"),
-  isDenied = false,
-) =>
+const checked = (connected: boolean, backend = ankiCache("anki_connect")) =>
   serverCacheWith(
     "checkAnkiConnection",
     undefined,
-    connected ? { connected, version: 6 } : { connected, isDenied },
+    connected
+      ? { connected, version: 6 }
+      : { connected, isDenied: false as const },
     backend,
   );
+
+const denied = serverCacheWith(
+  "checkAnkiConnection",
+  undefined,
+  { connected: false, isDenied: true, origin: "tauri://localhost" },
+  ankiCache("anki_connect"),
+);
 
 const checking: ServerCacheSlice = {
   queries: {
@@ -102,9 +107,15 @@ describe("selectFlashcardSync", () => {
   });
 
   it("says Anki refused easyImmerse once it denied the check", () => {
-    expect(
-      syncOf(checked(false, ankiCache("anki_connect"), true)),
-    ).toMatchObject({ connection: "denied" });
+    expect(syncOf(denied)).toMatchObject({ connection: "denied" });
+  });
+
+  it("names the origin Anki refused", () => {
+    expect(syncOf(denied)).toMatchObject({ deniedOrigin: "tauri://localhost" });
+  });
+
+  it("names no refused origin while Anki is connected", () => {
+    expect(syncOf(checked(true))).toMatchObject({ deniedOrigin: null });
   });
 
   it("says the connection is being checked while the check runs", () => {

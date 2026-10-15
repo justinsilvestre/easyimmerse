@@ -241,7 +241,10 @@ describe("deleteAnkiNotes", () => {
   describe("when Anki refuses easyImmerse", () => {
     const denying: AnkiAnswers = {
       version: () => {
-        throw new AnkiConnectError({ kind: "denied" });
+        throw new AnkiConnectError({
+          kind: "denied",
+          origin: "http://localhost:5173",
+        });
       },
     };
 
@@ -254,7 +257,9 @@ describe("deleteAnkiNotes", () => {
     it("reports that Anki refused easyImmerse", async () => {
       const { connections, result } = run(denying);
       await result;
-      expect(connections).toEqual([{ connected: false, isDenied: true }]);
+      expect(connections).toEqual([
+        { connected: false, isDenied: true, origin: "http://localhost:5173" },
+      ]);
     });
   });
 

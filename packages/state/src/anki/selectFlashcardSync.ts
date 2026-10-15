@@ -27,6 +27,8 @@ export type FlashcardSync =
   | {
       kind: "ankiConnect";
       connection: AnkiConnectionStatus;
+      /** The origin Anki refused, while it refuses easyImmerse and the origin is known, or null otherwise. */
+      deniedOrigin: string | null;
       /** Every flashcard of the project. */
       flashcardCount: number;
       unsentCount: number;
@@ -81,6 +83,7 @@ export const selectFlashcardSync = createSelector(
         return {
           kind: "ankiConnect",
           connection: statusOf(connection),
+          deniedOrigin: deniedOriginOf(connection),
           flashcardCount: flashcards.length,
           unsentCount: unsent.length,
           pendingDeletionCount,
@@ -94,6 +97,13 @@ export const selectFlashcardSync = createSelector(
 
 function firstMadeContent(flashcards: readonly Flashcard[]) {
   return oldestFirst(flashcards)[0]?.content ?? null;
+}
+
+function deniedOriginOf(entry: CacheEntry<"checkAnkiConnection">) {
+  const connection = entry?.status === "pending" ? undefined : entry?.data;
+  return connection?.connected === false && connection.isDenied
+    ? connection.origin
+    : null;
 }
 
 function statusOf(

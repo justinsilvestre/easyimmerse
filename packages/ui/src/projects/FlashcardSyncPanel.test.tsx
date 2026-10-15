@@ -15,6 +15,7 @@ const sendingTo = (
 ): FlashcardSyncState => ({
   kind: "ankiConnect",
   connection,
+  deniedOrigin: null,
   flashcardCount: 2,
   unsentCount: 2,
   pendingDeletionCount: 0,
@@ -29,12 +30,19 @@ const counting = (
 ): FlashcardSyncState => ({
   kind: "ankiConnect",
   connection: "connected",
+  deniedOrigin: null,
   flashcardCount,
   unsentCount,
   pendingDeletionCount,
   nextCard: null,
   isSyncing: false,
 });
+
+/** Finds the paragraph whose text, across its inline elements, is exactly `text`. */
+const paragraphWithText = (text: string) =>
+  screen.getByText(
+    (_, element) => element?.tagName === "P" && element.textContent === text,
+  );
 
 function renderPanel(state: FlashcardSyncState) {
   const calls: string[] = [];
@@ -105,11 +113,23 @@ describe("FlashcardSyncPanel", () => {
       expect(screen.getByText("Anki refused easyImmerse")).toBeDefined();
     });
 
-    it("tells how to allow easyImmerse again", () => {
+    it("tells how to allow easyImmerse again, naming the origin Anki refused", () => {
+      renderPanel({
+        ...sendingTo("denied"),
+        deniedOrigin: "tauri://localhost",
+      });
+      expect(
+        paragraphWithText(
+          "Check again and choose Yes when Anki asks. If it does not ask, choose Tools, then Add-ons in Anki, select AnkiConnect, choose Config, remove tauri://localhost from ignoreOriginList, and check again.",
+        ),
+      ).toBeDefined();
+    });
+
+    it("tells how to allow easyImmerse again when the origin Anki refused is not known", () => {
       renderPanel(sendingTo("denied"));
       expect(
-        screen.getByText(
-          "Anki is running but did not allow easyImmerse to use AnkiConnect. Check again, and choose Yes when Anki asks. If Anki does not ask, choose Tools, then Add-ons in Anki, select AnkiConnect and choose Config, remove easyImmerse's address from ignoreOriginList, and check again.",
+        paragraphWithText(
+          "Check again and choose Yes when Anki asks. If it does not ask, choose Tools, then Add-ons in Anki, select AnkiConnect, choose Config, empty ignoreOriginList, and check again.",
         ),
       ).toBeDefined();
     });

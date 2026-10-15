@@ -91,7 +91,11 @@ const checked = (connected: boolean, isDenied = false) =>
     { kind: "checkAnkiConnection" },
     {
       ok: true,
-      data: connected ? { connected, version: 6 } : { connected, isDenied },
+      data: connected
+        ? { connected, version: 6 }
+        : isDenied
+          ? { connected, isDenied, origin: null }
+          : { connected, isDenied },
     },
   );
 

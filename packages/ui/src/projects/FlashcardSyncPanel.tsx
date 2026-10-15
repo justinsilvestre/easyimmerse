@@ -194,7 +194,7 @@ function Status({
         <StatusBlock
           badge={connectionBadges[state.connection]}
           summary={ankiConnectSummary(state)}
-          hint={connectionHints[state.connection]}
+          hint={connectionHint(state)}
           action={
             <>
               <Button
@@ -276,16 +276,46 @@ const connectionBadges = {
 
 /**
  * Tells how to connect to Anki when the last check did not.
- * AnkiConnect asks again each time a page it refused checks, unless the user chose to ignore that page, which its config then lists.
+ * AnkiConnect asks again each time a page it refused checks, unless the user chose to ignore that page's origin, which its config then lists.
+ * When that origin is not known, emptying the list is the step that still works.
  */
-const connectionHints = {
-  checking: undefined,
-  connected: undefined,
-  unreachable:
-    "Start Anki with the AnkiConnect add-on installed, then check again.",
-  denied:
-    "Anki is running but did not allow easyImmerse to use AnkiConnect. Check again, and choose Yes when Anki asks. If Anki does not ask, choose Tools, then Add-ons in Anki, select AnkiConnect and choose Config, remove easyImmerse's address from ignoreOriginList, and check again.",
-} satisfies Record<AnkiConnectionStatus, string | undefined>;
+function connectionHint({
+  connection,
+  deniedOrigin,
+}: {
+  connection: AnkiConnectionStatus;
+  deniedOrigin: string | null;
+}): ReactNode {
+  switch (connection) {
+    case "checking":
+    case "connected":
+      return null;
+    case "unreachable":
+      return "Start Anki with the AnkiConnect add-on installed, then check again.";
+    case "denied":
+      return (
+        <>
+          Check again and choose Yes when Anki asks. If it does not ask, choose
+          Tools, then Add-ons in Anki, select AnkiConnect, choose Config,{" "}
+          {deniedOrigin === null ? (
+            <>
+              empty <Code>ignoreOriginList</Code>
+            </>
+          ) : (
+            <>
+              remove <Code>{deniedOrigin}</Code> from{" "}
+              <Code>ignoreOriginList</Code>
+            </>
+          )}
+          , and check again.
+        </>
+      );
+  }
+}
+
+function Code({ children }: { children: ReactNode }) {
+  return <code className="font-mono">{children}</code>;
+}
 
 /** Tells whether the last check found that easyImmerse cannot use Anki, so that the user can check again or get help. */
 function isUnconnected(connection: AnkiConnectionStatus) {
@@ -300,7 +330,7 @@ function StatusBlock({
 }: {
   badge?: ReactNode;
   summary: string;
-  hint?: string;
+  hint?: ReactNode;
   action: ReactNode;
 }) {
   return (

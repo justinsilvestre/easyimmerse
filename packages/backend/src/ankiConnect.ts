@@ -21,15 +21,19 @@ export type AnkiConnect = {
   invoke<T>(request: AnkiConnectRequest): Promise<T>;
 };
 
-/** Builds an AnkiConnect client over the given fetch. */
+/**
+ * Builds an AnkiConnect client over the given fetch, for a page of the given origin.
+ * The origin is the one the page's fetch sends and AnkiConnect allows or refuses, and is null outside a page.
+ */
 export function createAnkiConnect(
   fetchFn: typeof fetch = (input, init) => globalThis.fetch(input, init),
+  origin: string | null = globalThis.location?.origin ?? null,
 ): AnkiConnect {
   const post = <T>(request: AnkiConnectRequest) =>
-    postAction<T>(fetchFn, request);
+    postAction<T>(fetchFn, request, origin);
   let permission: Promise<void> | null = null;
   const askPermissionOnce = () => {
-    permission ??= askPermission(post).catch((error: unknown) => {
+    permission ??= askPermission(post, origin).catch((error: unknown) => {
       permission = null;
       throw error;
     });
@@ -49,12 +53,12 @@ export function createAnkiConnect(
 type Post = <T>(request: AnkiConnectRequest) => Promise<T>;
 
 /** Asks Anki to allow this page. Anki shows its question only to a page it does not allow yet. */
-async function askPermission(post: Post): Promise<void> {
+async function askPermission(post: Post, origin: string | null): Promise<void> {
   const answer = await post<{ permission?: string }>(
     ankiConnectActions.requestPermission(),
   );
   if (answer.permission !== "granted")
-    throw new AnkiConnectError({ kind: "denied" });
+    throw new AnkiConnectError({ kind: "denied", origin });
 }
 
 /**
@@ -64,6 +68,7 @@ async function askPermission(post: Post): Promise<void> {
 async function postAction<T>(
   fetchFn: typeof fetch,
   request: AnkiConnectRequest,
+  origin: string | null,
 ): Promise<T> {
   const response = await fetchFn(ankiConnectUrl, {
     method: "POST",
@@ -71,7 +76,8 @@ async function postAction<T>(
   }).catch(() => {
     throw new AnkiConnectError({ kind: "unreachable" });
   });
-  if (response.status === 403) throw new AnkiConnectError({ kind: "denied" });
+  if (response.status === 403)
+    throw new AnkiConnectError({ kind: "denied", origin });
   if (!response.ok)
     throw failure(`Anki answered with the status ${response.status}.`);
   return ankiResultOf<T>(await response.json().catch(() => null));

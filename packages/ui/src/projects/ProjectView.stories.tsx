@@ -147,6 +147,7 @@ export const SendingThroughAnkiConnect: Story = {
       {
         kind: "ankiConnect",
         connection: "unreachable",
+        deniedOrigin: null,
         flashcardCount: 12,
         unsentCount: 3,
         pendingDeletionCount: 0,

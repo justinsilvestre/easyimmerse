@@ -75,7 +75,31 @@ describe("createAnkiConnect", () => {
     ).toEqual({ kind: "unreachable" });
   });
 
-  it("fails as denied when Anki refuses this page", async () => {
+  it("fails as denied, naming the page's origin, when Anki refuses this page", async () => {
+    const { fetchFn } = createFakeAnkiFetch(() =>
+      answering({ permission: "denied" }),
+    );
+    const anki = createAnkiConnect(fetchFn, "http://localhost:5173");
+    expect(await failureOf(anki.invoke(ankiConnectActions.version()))).toEqual({
+      kind: "denied",
+      origin: "http://localhost:5173",
+    });
+  });
+
+  it("fails as denied for a later action Anki refuses with 403", async () => {
+    const { fetchFn } = createFakeAnkiFetch((action) =>
+      action === "requestPermission"
+        ? answering({ permission: "granted" })
+        : new Response("", { status: 403 }),
+    );
+    const anki = createAnkiConnect(fetchFn, "tauri://localhost");
+    expect(await failureOf(anki.invoke(ankiConnectActions.version()))).toEqual({
+      kind: "denied",
+      origin: "tauri://localhost",
+    });
+  });
+
+  it("names no origin when it runs outside a page", async () => {
     const { fetchFn } = createFakeAnkiFetch(() =>
       answering({ permission: "denied" }),
     );
@@ -83,7 +107,7 @@ describe("createAnkiConnect", () => {
       await failureOf(
         createAnkiConnect(fetchFn).invoke(ankiConnectActions.version()),
       ),
-    ).toEqual({ kind: "denied" });
+    ).toEqual({ kind: "denied", origin: null });
   });
 
   it("asks for permission again once it was refused", async () => {

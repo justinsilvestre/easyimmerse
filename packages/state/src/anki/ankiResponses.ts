@@ -1,10 +1,11 @@
 /**
  * Whether Anki answered through AnkiConnect, with the add-on's API version when it did,
- * or whether it refused easyImmerse when it did not.
+ * or whether it refused easyImmerse when it did not, with the origin it refused, or null when that is not known.
  */
 export type AnkiConnection =
   | { connected: true; version: number }
-  | { connected: false; isDenied: boolean };
+  | { connected: false; isDenied: false }
+  | { connected: false; isDenied: true; origin: string | null };
 
 /** How a send of flashcards to Anki through AnkiConnect went. */
 export type AnkiSendOutcome = {

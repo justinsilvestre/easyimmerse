@@ -20,11 +20,18 @@ describe("checkAnkiConnection", () => {
   it("is not connected, and denied, once Anki refuses easyImmerse", async () => {
     const anki = createFakeAnkiConnect({
       version: () => {
-        throw new AnkiConnectError({ kind: "denied" });
+        throw new AnkiConnectError({
+          kind: "denied",
+          origin: "http://localhost:5173",
+        });
       },
     });
     expect(await checkAnkiConnection(anki)).toEqual({
-      data: { connected: false, isDenied: true },
+      data: {
+        connected: false,
+        isDenied: true,
+        origin: "http://localhost:5173",
+      },
     });
   });
 });

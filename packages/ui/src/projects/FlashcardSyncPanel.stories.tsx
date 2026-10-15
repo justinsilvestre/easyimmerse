@@ -74,6 +74,7 @@ export const AnkiChecking: Story = {
     state: {
       kind: "ankiConnect",
       connection: "checking",
+      deniedOrigin: null,
       flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,
@@ -88,6 +89,7 @@ export const AnkiConnected: Story = {
     state: {
       kind: "ankiConnect",
       connection: "connected",
+      deniedOrigin: null,
       flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,
@@ -102,6 +104,7 @@ export const AnkiConnectedWithNoFlashcardsYet: Story = {
     state: {
       kind: "ankiConnect",
       connection: "connected",
+      deniedOrigin: null,
       flashcardCount: 0,
       unsentCount: 0,
       pendingDeletionCount: 0,
@@ -116,6 +119,7 @@ export const AnkiConnectedWithOnlyNotesToDelete: Story = {
     state: {
       kind: "ankiConnect",
       connection: "connected",
+      deniedOrigin: null,
       flashcardCount: 12,
       unsentCount: 0,
       pendingDeletionCount: 2,
@@ -130,6 +134,7 @@ export const SendingToAnki: Story = {
     state: {
       kind: "ankiConnect",
       connection: "connected",
+      deniedOrigin: null,
       flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,
@@ -144,6 +149,7 @@ export const AnkiUnreachable: Story = {
     state: {
       kind: "ankiConnect",
       connection: "unreachable",
+      deniedOrigin: null,
       flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,
@@ -158,6 +164,7 @@ export const AnkiUnreachableWithNotesToDelete: Story = {
     state: {
       kind: "ankiConnect",
       connection: "unreachable",
+      deniedOrigin: null,
       flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 1,
@@ -172,6 +179,7 @@ export const AnkiRefusedEasyImmerse: Story = {
     state: {
       kind: "ankiConnect",
       connection: "denied",
+      deniedOrigin: "http://localhost:5173",
       flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,

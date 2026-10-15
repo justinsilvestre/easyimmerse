@@ -129,11 +129,16 @@ describe("sendFlashcardsToAnki", () => {
   it("reports that Anki refused easyImmerse when it denies this page", async () => {
     const sending = send({
       version: () => {
-        throw new AnkiConnectError({ kind: "denied" });
+        throw new AnkiConnectError({
+          kind: "denied",
+          origin: "http://localhost:5173",
+        });
       },
     });
     await sending.sent;
-    expect(sending.connections).toEqual([{ connected: false, isDenied: true }]);
+    expect(sending.connections).toEqual([
+      { connected: false, isDenied: true, origin: "http://localhost:5173" },
+    ]);
   });
 
   it("reports that Anki is connected once it answers", async () => {
