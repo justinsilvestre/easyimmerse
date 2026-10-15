@@ -15,6 +15,7 @@ const sendingTo = (
 ): FlashcardSyncState => ({
   kind: "ankiConnect",
   connection,
+  flashcardCount: 2,
   unsentCount: 2,
   pendingDeletionCount: 0,
   nextCard: null,
@@ -24,9 +25,11 @@ const sendingTo = (
 const counting = (
   unsentCount: number,
   pendingDeletionCount: number,
+  flashcardCount = 3,
 ): FlashcardSyncState => ({
   kind: "ankiConnect",
   connection: "connected",
+  flashcardCount,
   unsentCount,
   pendingDeletionCount,
   nextCard: null,
@@ -167,5 +170,53 @@ describe("FlashcardSyncPanel", () => {
       renderPanel(counting(0, 0));
       expect(screen.getByText("Every flashcard is in Anki.")).toBeDefined();
     });
+
+    it("says there are no cards yet when the project has none", () => {
+      renderPanel(counting(0, 0, 0));
+      expect(screen.getByText("No flashcards yet.")).toBeDefined();
+    });
+
+    it("says beside the summary that no card waits to be sent", () => {
+      renderPanel(counting(0, 2));
+      expect(
+        screen.getByText("No flashcards waiting to be sent."),
+      ).toBeDefined();
+    });
+  });
+
+  describe("when the cards are exported as Anki packages", () => {
+    const exporting = (
+      unexportedCount: number,
+      flashcardCount = 3,
+    ): FlashcardSyncState => ({
+      kind: "ankiPackage",
+      flashcardCount,
+      unexportedCount,
+      nextCard: null,
+    });
+
+    it("says every card has been exported when none is new", () => {
+      renderPanel(exporting(0));
+      expect(
+        screen.getByText("Every flashcard has been exported."),
+      ).toBeDefined();
+    });
+
+    it("says there are no cards yet when the project has none", () => {
+      renderPanel(exporting(0, 0));
+      expect(screen.getByText("No flashcards yet.")).toBeDefined();
+    });
+
+    it("says beside the summary that no card waits to be exported", () => {
+      renderPanel(exporting(0));
+      expect(
+        screen.getByText("No flashcards waiting to be exported."),
+      ).toBeDefined();
+    });
+  });
+
+  it("says beside the summary that no card is due for review", () => {
+    renderPanel({ kind: "review", dueCount: 0, nextCard: null });
+    expect(screen.getByText("No flashcards due for review.")).toBeDefined();
   });
 });

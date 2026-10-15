@@ -133,6 +133,7 @@ export const ExportingAnkiPackages: Story = {
   args: {
     children: sections(media, {
       kind: "ankiPackage",
+      flashcardCount: 12,
       unexportedCount: 5,
       nextCard: exampleFlashcard,
     }),
@@ -146,6 +147,7 @@ export const SendingThroughAnkiConnect: Story = {
       {
         kind: "ankiConnect",
         connection: "unreachable",
+        flashcardCount: 12,
         unsentCount: 3,
         pendingDeletionCount: 0,
         nextCard: exampleFlashcard,

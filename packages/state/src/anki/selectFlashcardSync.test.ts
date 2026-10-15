@@ -58,6 +58,16 @@ describe("selectFlashcardSync", () => {
     });
   });
 
+  it("counts every card of a project exporting packages", () => {
+    expect(syncOf(ankiCache("anki_package"))).toMatchObject({
+      flashcardCount: 3,
+    });
+  });
+
+  it("counts every card of a project sending to Anki", () => {
+    expect(syncOf(checked(true))).toMatchObject({ flashcardCount: 3 });
+  });
+
   it("counts the cards Anki has no note for", () => {
     expect(syncOf(checked(true))).toMatchObject({
       kind: "ankiConnect",

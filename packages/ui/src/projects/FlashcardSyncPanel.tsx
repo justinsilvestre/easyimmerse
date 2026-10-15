@@ -76,7 +76,7 @@ export function FlashcardSyncPanel({
             />
           ) : (
             <p className="self-center text-center text-sm text-fg-faint">
-              Nothing waiting
+              {emptyPreviews[state.kind]}
             </p>
           )}
         </div>
@@ -84,6 +84,13 @@ export function FlashcardSyncPanel({
     </section>
   );
 }
+
+/** What the preview's place says when no flashcard waits, by destination. */
+const emptyPreviews = {
+  review: "No flashcards due for review.",
+  ankiPackage: "No flashcards waiting to be exported.",
+  ankiConnect: "No flashcards waiting to be sent.",
+} satisfies Record<FlashcardSyncOption, string>;
 
 function NotStarted({
   comingSoon,
@@ -173,11 +180,7 @@ function Status({
     case "ankiPackage":
       return (
         <StatusBlock
-          summary={
-            state.unexportedCount === 0
-              ? "Every flashcard has been exported."
-              : `${pluralize(state.unexportedCount, "new flashcard")} since the last export.`
-          }
+          summary={ankiPackageSummary(state)}
           action={
             <Button variant="primary" onClick={callbacks.onExportPackage}>
               <Download className="size-4" aria-hidden />
@@ -226,19 +229,38 @@ function Status({
   }
 }
 
+/** Counts the flashcards made since the last export. */
+function ankiPackageSummary({
+  flashcardCount,
+  unexportedCount,
+}: {
+  flashcardCount: number;
+  unexportedCount: number;
+}) {
+  if (unexportedCount > 0)
+    return `${pluralize(unexportedCount, "new flashcard")} since the last export.`;
+  return flashcardCount === 0
+    ? "No flashcards yet."
+    : "Every flashcard has been exported.";
+}
+
 /** Counts the flashcards waiting to be sent to Anki and the notes waiting to be deleted from it. */
 function ankiConnectSummary({
+  flashcardCount,
   unsentCount,
   pendingDeletionCount,
 }: {
+  flashcardCount: number;
   unsentCount: number;
   pendingDeletionCount: number;
 }) {
   const notes = pluralize(pendingDeletionCount, "note");
+  if (unsentCount === 0 && pendingDeletionCount > 0)
+    return `${notes} waiting to be deleted from Anki.`;
   if (unsentCount === 0)
-    return pendingDeletionCount === 0
-      ? "Every flashcard is in Anki."
-      : `${notes} waiting to be deleted from Anki.`;
+    return flashcardCount === 0
+      ? "No flashcards yet."
+      : "Every flashcard is in Anki.";
   const unsent = `${pluralize(unsentCount, "flashcard")} waiting to be sent`;
   return pendingDeletionCount === 0
     ? `${unsent}.`

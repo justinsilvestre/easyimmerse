@@ -18,6 +18,8 @@ export type FlashcardSync =
   | { kind: "notStarted" }
   | {
       kind: "ankiPackage";
+      /** Every flashcard of the project. */
+      flashcardCount: number;
       unexportedCount: number;
       /** The first-made flashcard never exported. */
       nextCard: FlashcardContent | null;
@@ -25,6 +27,8 @@ export type FlashcardSync =
   | {
       kind: "ankiConnect";
       connection: AnkiConnectionStatus;
+      /** Every flashcard of the project. */
+      flashcardCount: number;
       unsentCount: number;
       /** The deleted flashcards whose notes are still to be deleted from Anki. */
       pendingDeletionCount: number;
@@ -67,6 +71,7 @@ export const selectFlashcardSync = createSelector(
         const unexported = flashcards.filter(isUnexported);
         return {
           kind: "ankiPackage",
+          flashcardCount: flashcards.length,
           unexportedCount: unexported.length,
           nextCard: firstMadeContent(unexported),
         };
@@ -76,6 +81,7 @@ export const selectFlashcardSync = createSelector(
         return {
           kind: "ankiConnect",
           connection: statusOf(connection),
+          flashcardCount: flashcards.length,
           unsentCount: unsent.length,
           pendingDeletionCount,
           nextCard: firstMadeContent(unsent),

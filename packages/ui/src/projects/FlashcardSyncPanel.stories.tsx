@@ -51,6 +51,7 @@ export const AnkiPackageWithNewCards: Story = {
   args: {
     state: {
       kind: "ankiPackage",
+      flashcardCount: 12,
       unexportedCount: 5,
       nextCard: exampleFlashcard,
     },
@@ -58,7 +59,14 @@ export const AnkiPackageWithNewCards: Story = {
 };
 
 export const AnkiPackageUpToDate: Story = {
-  args: { state: { kind: "ankiPackage", unexportedCount: 0, nextCard: null } },
+  args: {
+    state: {
+      kind: "ankiPackage",
+      flashcardCount: 12,
+      unexportedCount: 0,
+      nextCard: null,
+    },
+  },
 };
 
 export const AnkiChecking: Story = {
@@ -66,6 +74,7 @@ export const AnkiChecking: Story = {
     state: {
       kind: "ankiConnect",
       connection: "checking",
+      flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
@@ -79,9 +88,24 @@ export const AnkiConnected: Story = {
     state: {
       kind: "ankiConnect",
       connection: "connected",
+      flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
+      isSyncing: false,
+    },
+  },
+};
+
+export const AnkiConnectedWithNoFlashcardsYet: Story = {
+  args: {
+    state: {
+      kind: "ankiConnect",
+      connection: "connected",
+      flashcardCount: 0,
+      unsentCount: 0,
+      pendingDeletionCount: 0,
+      nextCard: null,
       isSyncing: false,
     },
   },
@@ -92,6 +116,7 @@ export const AnkiConnectedWithOnlyNotesToDelete: Story = {
     state: {
       kind: "ankiConnect",
       connection: "connected",
+      flashcardCount: 12,
       unsentCount: 0,
       pendingDeletionCount: 2,
       nextCard: null,
@@ -105,6 +130,7 @@ export const SendingToAnki: Story = {
     state: {
       kind: "ankiConnect",
       connection: "connected",
+      flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
@@ -118,6 +144,7 @@ export const AnkiUnreachable: Story = {
     state: {
       kind: "ankiConnect",
       connection: "unreachable",
+      flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
@@ -131,6 +158,7 @@ export const AnkiUnreachableWithNotesToDelete: Story = {
     state: {
       kind: "ankiConnect",
       connection: "unreachable",
+      flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 1,
       nextCard: exampleFlashcard,
@@ -144,6 +172,7 @@ export const AnkiRefusedEasyImmerse: Story = {
     state: {
       kind: "ankiConnect",
       connection: "denied",
+      flashcardCount: 12,
       unsentCount: 3,
       pendingDeletionCount: 0,
       nextCard: exampleFlashcard,
