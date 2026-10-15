@@ -5351,15 +5351,20 @@
       },
       "AnkiPendingDeletion": {
         "type": "object",
-        "description": "A flashcard deleted while its project sends to Anki through AnkiConnect, whose note is still to be deleted from Anki.",
+        "description": "A deleted flashcard that had reached Anki, whose note may still be there.\nIt lasts until AnkiConnect deletes the note, an export marks the note for deletion, or the user marks it done.",
         "required": [
           "flashcard_id",
           "word",
-          "requested_at_ms"
+          "requested_at_ms",
+          "reached_by_package"
         ],
         "properties": {
           "flashcard_id": {
             "$ref": "#/components/schemas/FlashcardId"
+          },
+          "reached_by_package": {
+            "type": "boolean",
+            "description": "Whether the flashcard had been marked as exported, so that its note in Anki may carry the GUID that a package's note for it carries."
           },
           "requested_at_ms": {
             "type": "integer",
@@ -7879,7 +7884,8 @@
           "default_tags",
           "tags_media_name",
           "fills_audio_with_tts",
-          "flashcard_front_fields"
+          "flashcard_front_fields",
+          "lists_anki_deletions"
         ],
         "properties": {
           "default_tags": {
@@ -7906,6 +7912,10 @@
               "$ref": "#/components/schemas/FlashcardFieldKey"
             },
             "description": "The included fields shown on the front of a card. The other included fields go on the back."
+          },
+          "lists_anki_deletions": {
+            "type": "boolean",
+            "description": "Whether a deleted flashcard that reached Anki is listed on the project screen, so that the user can delete its note there.\nWhile AnkiConnect is on, deletions are recorded whatever this says, since AnkiConnect deletes the notes."
           },
           "name": {
             "type": "string"

@@ -147,7 +147,14 @@ describe("selectFlashcardSync", () => {
       "listAnkiPendingDeletions",
       "p1",
       {
-        deletions: [{ flashcard_id: "f9", word: "Katze", requested_at_ms: 1 }],
+        deletions: [
+          {
+            flashcard_id: "f9",
+            word: "Katze",
+            requested_at_ms: 1,
+            reached_by_package: false,
+          },
+        ],
       },
       checked(true),
     );

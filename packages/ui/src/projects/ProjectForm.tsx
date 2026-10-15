@@ -122,6 +122,12 @@ export function ProjectForm({
           checked={state.fills_audio_with_tts}
           onChange={() => dispatch({ type: "ttsToggled" })}
         />
+        <CheckboxField
+          label="List deleted flashcards that are still in Anki"
+          hint="When you delete a flashcard you exported or sent to Anki, the project screen lists it so that you can delete it there too. Turning this off stops new ones from being listed; those already listed stay until you mark them done. While AnkiConnect is on, it deletes them from Anki itself."
+          checked={state.lists_anki_deletions}
+          onChange={() => dispatch({ type: "deletionListingToggled" })}
+        />
       </Column>
       <div className="flex justify-end gap-2 md:col-start-1">
         <Button onClick={onCancel}>Cancel</Button>

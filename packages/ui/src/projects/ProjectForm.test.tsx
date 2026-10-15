@@ -19,6 +19,7 @@ const initialValues: ProjectSettings = {
   translation_language: "en",
   flashcard_fields: fieldsOfPreset("intermediate"),
   flashcard_front_fields: frontFieldsOfPreset("intermediate"),
+  lists_anki_deletions: true,
   default_tags: [],
   tags_media_name: true,
   fills_audio_with_tts: false,
@@ -187,6 +188,21 @@ describe("ProjectForm", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     expect(submitted).toEqual(["German"]);
+  });
+
+  it("submits the choice not to list deleted flashcards that are still in Anki", () => {
+    const submitted: boolean[] = [];
+    renderForm((values) => submitted.push(values.lists_anki_deletions));
+    fireEvent.change(screen.getByLabelText("Project name"), {
+      target: { value: "German" },
+    });
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: /List deleted flashcards that are still in Anki/,
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    expect(submitted).toEqual([false]);
   });
 
   describe("when the translation language is the target language", () => {

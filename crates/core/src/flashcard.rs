@@ -124,7 +124,8 @@ pub enum FlashcardFieldKey {
     Tags,
 }
 
-/// A flashcard deleted while its project sends to Anki through AnkiConnect, whose note is still to be deleted from Anki.
+/// A deleted flashcard that had reached Anki, whose note may still be there.
+/// It lasts until AnkiConnect deletes the note, an export marks the note for deletion, or the user marks it done.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct AnkiPendingDeletion {
@@ -133,6 +134,8 @@ pub struct AnkiPendingDeletion {
     pub word: String,
     /// Milliseconds since the Unix epoch when the flashcard was deleted.
     pub requested_at_ms: u64,
+    /// Whether the flashcard had been marked as exported, so that its note in Anki may carry the GUID that a package's note for it carries.
+    pub reached_by_package: bool,
 }
 
 #[cfg(test)]

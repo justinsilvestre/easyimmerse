@@ -32,4 +32,9 @@ fills_audio_with_tts: boolean,
 /**
  * The included fields shown on the front of a card. The other included fields go on the back.
  */
-flashcard_front_fields: Array<FlashcardFieldKey>, };
+flashcard_front_fields: Array<FlashcardFieldKey>, 
+/**
+ * Whether a deleted flashcard that reached Anki is listed on the project screen, so that the user can delete its note there.
+ * While AnkiConnect is on, deletions are recorded whatever this says, since AnkiConnect deletes the notes.
+ */
+lists_anki_deletions: boolean, };

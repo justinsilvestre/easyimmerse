@@ -9,7 +9,8 @@ use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
 /// The project columns followed by the two counts, as every project query selects them.
 const PROJECT_COLUMNS: &str = "p.id, p.name, p.target_language, p.translation_language, \
      p.flashcard_fields_json, p.default_tags_json, p.tags_media_name, p.fills_audio_with_tts, \
-     p.flashcard_front_fields_json, p.created_at_ms, p.last_opened_at_ms, p.uses_anki_connect, \
+     p.flashcard_front_fields_json, p.lists_anki_deletions, p.created_at_ms, p.last_opened_at_ms, \
+     p.uses_anki_connect, \
      (SELECT COUNT(*) FROM media_files m WHERE m.project_id = p.id), \
      (SELECT COUNT(*) FROM flashcards f WHERE f.project_id = p.id)";
 
@@ -54,7 +55,8 @@ pub fn update_project(
     let updated = conn.execute(
         "UPDATE projects SET name = ?2, target_language = ?3, translation_language = ?4, \
          flashcard_fields_json = ?5, default_tags_json = ?6, tags_media_name = ?7, \
-         fills_audio_with_tts = ?8, flashcard_front_fields_json = ?9 WHERE id = ?1",
+         fills_audio_with_tts = ?8, flashcard_front_fields_json = ?9, lists_anki_deletions = ?10 \
+         WHERE id = ?1",
         rusqlite::params_from_iter(settings_params(id, settings)?),
     )?;
     if updated == 0 {
@@ -162,6 +164,7 @@ fn placeholder_settings(name: &str, target_language: &str) -> ProjectSettings {
             FlashcardFieldKey::AudioContext,
             FlashcardFieldKey::Screenshot,
         ],
+        lists_anki_deletions: true,
     }
 }
 
@@ -176,8 +179,8 @@ fn insert_project(
     conn.execute(
         "INSERT INTO projects (id, name, target_language, translation_language, \
          flashcard_fields_json, default_tags_json, tags_media_name, fills_audio_with_tts, \
-         flashcard_front_fields_json, created_at_ms, last_opened_at_ms) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
+         flashcard_front_fields_json, lists_anki_deletions, created_at_ms, last_opened_at_ms) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)",
         rusqlite::params_from_iter(values),
     )?;
     Ok(())
@@ -198,6 +201,7 @@ fn settings_params(
         Box::new(settings.tags_media_name),
         Box::new(settings.fills_audio_with_tts),
         Box::new(serde_json::to_string(&settings.flashcard_front_fields)?),
+        Box::new(settings.lists_anki_deletions),
     ])
 }
 
@@ -217,12 +221,13 @@ fn read_project(row: &Row) -> rusqlite::Result<Project> {
             tags_media_name: row.get(6)?,
             fills_audio_with_tts: row.get(7)?,
             flashcard_front_fields: read_json(row, 8)?,
+            lists_anki_deletions: row.get(9)?,
         },
-        created_at_ms: read_unsigned(row, 9)?,
-        last_opened_at_ms: read_unsigned(row, 10)?,
-        uses_anki_connect: row.get(11)?,
-        media_count: read_unsigned(row, 12)?,
-        flashcard_count: read_unsigned(row, 13)?,
+        created_at_ms: read_unsigned(row, 10)?,
+        last_opened_at_ms: read_unsigned(row, 11)?,
+        uses_anki_connect: row.get(12)?,
+        media_count: read_unsigned(row, 13)?,
+        flashcard_count: read_unsigned(row, 14)?,
     })
 }
 

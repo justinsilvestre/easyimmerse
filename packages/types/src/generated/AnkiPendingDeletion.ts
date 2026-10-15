@@ -2,7 +2,8 @@
 import type { FlashcardId } from "./FlashcardId";
 
 /**
- * A flashcard deleted while its project sends to Anki through AnkiConnect, whose note is still to be deleted from Anki.
+ * A deleted flashcard that had reached Anki, whose note may still be there.
+ * It lasts until AnkiConnect deletes the note, an export marks the note for deletion, or the user marks it done.
  */
 export type AnkiPendingDeletion = { flashcard_id: FlashcardId, 
 /**
@@ -12,4 +13,8 @@ word: string,
 /**
  * Milliseconds since the Unix epoch when the flashcard was deleted.
  */
-requested_at_ms: number, };
+requested_at_ms: number, 
+/**
+ * Whether the flashcard had been marked as exported, so that its note in Anki may carry the GUID that a package's note for it carries.
+ */
+reached_by_package: boolean, };

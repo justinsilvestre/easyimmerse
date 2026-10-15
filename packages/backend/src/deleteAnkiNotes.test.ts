@@ -15,8 +15,18 @@ const holding = (noteIds: number[]): AnkiAnswers => ({
 
 const pending: AnkiPendingDeletions = {
   deletions: [
-    { flashcard_id: "f1", word: "고양이", requested_at_ms: 1 },
-    { flashcard_id: "f2", word: "개", requested_at_ms: 2 },
+    {
+      flashcard_id: "f1",
+      word: "고양이",
+      requested_at_ms: 1,
+      reached_by_package: false,
+    },
+    {
+      flashcard_id: "f2",
+      word: "개",
+      requested_at_ms: 2,
+      reached_by_package: false,
+    },
   ],
 };
 

@@ -1,4 +1,4 @@
-//! The notes still to be deleted from Anki, for flashcards deleted while their project uses AnkiConnect.
+//! The deleted flashcards that had reached Anki, whose notes may still be there.
 
 use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardId};
 use easyimmerse_core::project::ProjectId;
@@ -9,31 +9,40 @@ use crate::new_row::now_ms;
 use crate::projects::ensure_project_exists;
 use crate::stored_integer::{read_unsigned, to_stored_integer};
 
-/// Records that the flashcard's note is to be deleted from Anki, when the flashcard has reached Anki
-/// and its project uses AnkiConnect.
+/// The condition, on the `projects` row, under which a deletion is recorded: someone will deal with it,
+/// AnkiConnect by deleting the note, or the user from the list on the project screen.
+const RECORDS_DELETIONS: &str = "(uses_anki_connect = 1 OR lists_anki_deletions = 1)";
+
+/// Records that the flashcard's note may still be in Anki, when the flashcard reached Anki, marked as exported or sent through AnkiConnect,
+/// and its project uses AnkiConnect or lists such deletions.
 /// A flashcard whose note a send in flight is still creating gets its deletion once that send is recorded.
 pub fn record_anki_pending_deletion(
     conn: &Connection,
     flashcard: &Flashcard,
 ) -> Result<(), StorageError> {
-    if flashcard.sent_at_ms.is_none() {
+    let reached_by_package = flashcard.exported_at_ms.is_some();
+    if !reached_by_package && flashcard.sent_at_ms.is_none() {
         return Ok(());
     }
     conn.execute(
-        "INSERT OR REPLACE INTO anki_pending_deletions (flashcard_id, project_id, word, requested_at_ms) \
-         SELECT ?1, id, ?3, ?4 FROM projects WHERE id = ?2 AND uses_anki_connect = 1",
+        &format!(
+            "INSERT OR REPLACE INTO anki_pending_deletions \
+             (flashcard_id, project_id, word, requested_at_ms, reached_by_package) \
+             SELECT ?1, id, ?3, ?4, ?5 FROM projects WHERE id = ?2 AND {RECORDS_DELETIONS}"
+        ),
         params![
             flashcard.id.0,
             flashcard.project_id.0,
             flashcard.content.word,
             to_stored_integer(now_ms()),
+            reached_by_package,
         ],
     )?;
     Ok(())
 }
 
-/// Records that the note a send put into Anki for a flashcard deleted since the send began is to be deleted,
-/// when the project uses AnkiConnect. The word is gone with the flashcard, so the deletion keeps an empty one.
+/// Records that the note a send put into Anki for a flashcard deleted since the send began may still be there,
+/// when the project uses AnkiConnect or lists such deletions. The word is gone with the flashcard, so the deletion keeps an empty one.
 /// An id that a flashcard still has, or that the app could not have made, is passed over, and a deletion already recorded is kept.
 pub fn record_anki_pending_deletion_of_gone(
     conn: &Connection,
@@ -44,9 +53,12 @@ pub fn record_anki_pending_deletion_of_gone(
         return Ok(());
     }
     conn.execute(
-        "INSERT OR IGNORE INTO anki_pending_deletions (flashcard_id, project_id, word, requested_at_ms) \
-         SELECT ?1, id, '', ?3 FROM projects WHERE id = ?2 AND uses_anki_connect = 1 \
-         AND NOT EXISTS (SELECT 1 FROM flashcards WHERE flashcards.id = ?1)",
+        &format!(
+            "INSERT OR IGNORE INTO anki_pending_deletions \
+             (flashcard_id, project_id, word, requested_at_ms, reached_by_package) \
+             SELECT ?1, id, '', ?3, 0 FROM projects WHERE id = ?2 AND {RECORDS_DELETIONS} \
+             AND NOT EXISTS (SELECT 1 FROM flashcards WHERE flashcards.id = ?1)"
+        ),
         params![flashcard_id.0, project_id.0, to_stored_integer(now_ms())],
     )?;
     Ok(())
@@ -71,7 +83,7 @@ pub fn list_anki_pending_deletions(
 ) -> Result<Vec<AnkiPendingDeletion>, StorageError> {
     ensure_project_exists(conn, project_id)?;
     let mut statement = conn.prepare(
-        "SELECT flashcard_id, word, requested_at_ms FROM anki_pending_deletions \
+        "SELECT flashcard_id, word, requested_at_ms, reached_by_package FROM anki_pending_deletions \
          WHERE project_id = ?1 ORDER BY requested_at_ms, rowid",
     )?;
     let deletions = statement
@@ -99,6 +111,7 @@ fn read_deletion(row: &Row) -> rusqlite::Result<AnkiPendingDeletion> {
         flashcard_id: FlashcardId(row.get(0)?),
         word: row.get(1)?,
         requested_at_ms: read_unsigned(row, 2)?,
+        reached_by_package: row.get(3)?,
     })
 }
 
@@ -113,13 +126,27 @@ mod tests {
         ProjectId("placeholder-1".to_string())
     }
 
+    /// A storage whose first placeholder project uses AnkiConnect or not, and does not list deletions.
     fn storage_using_anki_connect(uses_anki_connect: bool) -> Storage {
-        let storage = Storage::open_in_memory().unwrap();
-        storage.seed_placeholder_projects().unwrap();
+        let storage = storage_listing_deletions(false);
         storage
             .set_uses_anki_connect(&project(), uses_anki_connect)
             .unwrap();
         storage
+    }
+
+    /// A storage whose first placeholder project does not use AnkiConnect, and lists deletions or not.
+    fn storage_listing_deletions(lists_anki_deletions: bool) -> Storage {
+        let storage = Storage::open_in_memory().unwrap();
+        storage.seed_placeholder_projects().unwrap();
+        set_listing(&storage, lists_anki_deletions);
+        storage
+    }
+
+    fn set_listing(storage: &Storage, lists_anki_deletions: bool) {
+        let mut settings = storage.get_project(&project()).unwrap().settings;
+        settings.lists_anki_deletions = lists_anki_deletions;
+        storage.update_project(&project(), &settings).unwrap();
     }
 
     fn draft(word: &str) -> FlashcardDraft {
@@ -154,14 +181,26 @@ mod tests {
     /// Gives the flashcard a note in Anki, as a send does.
     fn give_note(storage: &Storage, id: &FlashcardId) {
         storage
-            .write(|conn| {
-                conn.execute(
-                    "UPDATE flashcards SET sent_at_ms = 1 WHERE id = ?1",
-                    params![id.0],
-                )?;
-                Ok(())
-            })
+            .record_anki_send(&project(), std::slice::from_ref(id), 1)
             .unwrap();
+    }
+
+    /// Creates a flashcard with the given word, exports it, marking it exported or not, and deletes it, returning its id.
+    fn delete_exported(storage: &Storage, word: &str, is_marked: bool) -> FlashcardId {
+        let id = create(storage, word);
+        storage
+            .record_anki_export(
+                &project(),
+                std::slice::from_ref(&id),
+                is_marked.then_some(1),
+            )
+            .unwrap();
+        storage.delete_flashcard(&id).unwrap();
+        id
+    }
+
+    fn listed(storage: &Storage) -> Vec<AnkiPendingDeletion> {
+        storage.list_anki_pending_deletions(&project()).unwrap()
     }
 
     /// Creates a flashcard with the given word, gives it a note in Anki and deletes it, returning its id.
@@ -211,10 +250,60 @@ mod tests {
     }
 
     #[test]
-    fn deleting_a_flashcard_while_anki_connect_is_off_records_nothing() {
+    fn deleting_a_flashcard_while_anki_connect_is_off_and_nothing_is_listed_records_nothing() {
         let storage = storage_using_anki_connect(false);
         delete_sent(&storage, "fressen");
         assert_eq!(listed_words(&storage), Vec::<String>::new());
+    }
+
+    #[test]
+    fn deleting_a_sent_flashcard_records_it_while_the_project_lists_deletions() {
+        let storage = storage_listing_deletions(true);
+        delete_sent(&storage, "fressen");
+        assert_eq!(listed_words(&storage), vec!["fressen"]);
+    }
+
+    #[test]
+    fn deleting_a_flashcard_marked_as_exported_records_it_while_the_project_lists_deletions() {
+        let storage = storage_listing_deletions(true);
+        delete_exported(&storage, "fressen", true);
+        assert_eq!(listed_words(&storage), vec!["fressen"]);
+    }
+
+    #[test]
+    fn deleting_a_flashcard_marked_as_exported_records_it_while_anki_connect_is_on() {
+        let storage = storage_using_anki_connect(true);
+        delete_exported(&storage, "fressen", true);
+        assert_eq!(listed_words(&storage), vec!["fressen"]);
+    }
+
+    #[test]
+    fn deleting_a_flashcard_only_in_an_unmarked_export_records_nothing() {
+        let storage = storage_listing_deletions(true);
+        delete_exported(&storage, "fressen", false);
+        assert_eq!(listed_words(&storage), Vec::<String>::new());
+    }
+
+    #[test]
+    fn a_deletion_of_a_flashcard_marked_as_exported_says_it_reached_anki_in_a_package() {
+        let storage = storage_listing_deletions(true);
+        delete_exported(&storage, "fressen", true);
+        assert!(listed(&storage)[0].reached_by_package);
+    }
+
+    #[test]
+    fn a_deletion_of_a_flashcard_only_sent_says_it_did_not_reach_anki_in_a_package() {
+        let storage = storage_listing_deletions(true);
+        delete_sent(&storage, "fressen");
+        assert!(!listed(&storage)[0].reached_by_package);
+    }
+
+    #[test]
+    fn turning_the_listing_off_keeps_the_deletions_already_listed() {
+        let storage = storage_listing_deletions(true);
+        delete_sent(&storage, "fressen");
+        set_listing(&storage, false);
+        assert_eq!(listed_words(&storage), vec!["fressen"]);
     }
 
     #[test]

@@ -15,7 +15,8 @@ export type ProjectFormAction =
   | { type: "frontFieldToggled"; key: FlashcardFieldKey }
   | { type: "defaultTagsChanged"; tags: readonly string[] }
   | { type: "mediaNameTagToggled" }
-  | { type: "ttsToggled" };
+  | { type: "ttsToggled" }
+  | { type: "deletionListingToggled" };
 
 /** Applies an edit of the project form. A field moved to the front stays there while it is left off the card. */
 export function reduceProjectForm(
@@ -54,5 +55,7 @@ export function reduceProjectForm(
       return { ...state, tags_media_name: !state.tags_media_name };
     case "ttsToggled":
       return { ...state, fills_audio_with_tts: !state.fills_audio_with_tts };
+    case "deletionListingToggled":
+      return { ...state, lists_anki_deletions: !state.lists_anki_deletions };
   }
 }

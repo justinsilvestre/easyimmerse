@@ -754,8 +754,20 @@ mod anki_pending_deletions {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn lists_nothing_for_a_project_not_using_anki_connect() {
+    async fn lists_a_flashcard_deleted_while_anki_connect_is_off_in_a_project_listing_deletions() {
         let server = spawn_test_server(false).await;
+        let id = delete_sent(&server, false).await;
+        assert_eq!(listed_ids(&server).await, [json!(id)]);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn lists_nothing_while_neither_anki_connect_nor_the_listing_is_on() {
+        let server = spawn_test_server(false).await;
+        let mut settings = project(&server).await["settings"].clone();
+        settings["lists_anki_deletions"] = json!(false);
+        server
+            .put_json(&format!("/projects/{PROJECT}"), &settings)
+            .await;
         delete_sent(&server, false).await;
         assert_eq!(listed_ids(&server).await, Vec::<Value>::new());
     }

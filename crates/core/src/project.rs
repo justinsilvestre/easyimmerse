@@ -46,6 +46,9 @@ pub struct ProjectSettings {
     pub fills_audio_with_tts: bool,
     /// The included fields shown on the front of a card. The other included fields go on the back.
     pub flashcard_front_fields: Vec<FlashcardFieldKey>,
+    /// Whether a deleted flashcard that reached Anki is listed on the project screen, so that the user can delete its note there.
+    /// While AnkiConnect is on, deletions are recorded whatever this says, since AnkiConnect deletes the notes.
+    pub lists_anki_deletions: bool,
 }
 
 #[cfg(test)]
@@ -63,6 +66,7 @@ mod tests {
             tags_media_name: true,
             fills_audio_with_tts: false,
             flashcard_front_fields: vec![FlashcardFieldKey::Word],
+            lists_anki_deletions: true,
         };
         let json = serde_json::to_value(&settings).unwrap();
         assert_eq!(

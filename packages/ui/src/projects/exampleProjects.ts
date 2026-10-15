@@ -19,6 +19,7 @@ function settings(name: string, targetLanguage: string): ProjectSettings {
     tags_media_name: true,
     fills_audio_with_tts: false,
     flashcard_front_fields: frontFieldsOfPreset("intermediate"),
+    lists_anki_deletions: true,
   };
 }
 

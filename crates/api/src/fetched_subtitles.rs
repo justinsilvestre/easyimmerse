@@ -156,6 +156,7 @@ mod tests {
             tags_media_name: false,
             fills_audio_with_tts: false,
             flashcard_front_fields: Vec::new(),
+            lists_anki_deletions: true,
         }
     }
 

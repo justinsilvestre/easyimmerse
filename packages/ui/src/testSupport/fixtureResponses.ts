@@ -43,6 +43,7 @@ function fixtureSettings(
     tags_media_name: true,
     fills_audio_with_tts: false,
     flashcard_front_fields: [],
+    lists_anki_deletions: true,
   };
 }
 

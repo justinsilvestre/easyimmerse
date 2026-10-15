@@ -8,6 +8,7 @@ CREATE TABLE projects (
     tags_media_name INTEGER NOT NULL,
     fills_audio_with_tts INTEGER NOT NULL,
     flashcard_front_fields_json TEXT NOT NULL,
+    lists_anki_deletions INTEGER NOT NULL,
     created_at_ms INTEGER NOT NULL,
     last_opened_at_ms INTEGER NOT NULL,
     uses_anki_connect INTEGER NOT NULL DEFAULT 0

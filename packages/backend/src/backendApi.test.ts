@@ -570,7 +570,14 @@ describe("checkAnkiConnection", () => {
 /** A server listing one pending deletion from Anki, of f1, and answering every other request with nothing. */
 function createPendingDeletionClient(): BackendClient {
   const listed = {
-    deletions: [{ flashcard_id: "f1", word: "고양이", requested_at_ms: 1 }],
+    deletions: [
+      {
+        flashcard_id: "f1",
+        word: "고양이",
+        requested_at_ms: 1,
+        reached_by_package: false,
+      },
+    ],
   };
   return {
     send: async <T>(request: BackendRequest) =>
@@ -624,6 +631,7 @@ describe("setAnkiConnect", () => {
         tags_media_name: false,
         fills_audio_with_tts: false,
         flashcard_front_fields: [],
+        lists_anki_deletions: true,
       },
       created_at_ms: 0,
       last_opened_at_ms: 0,

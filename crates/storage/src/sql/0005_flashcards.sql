@@ -16,12 +16,14 @@ CREATE TABLE flashcards (
 CREATE INDEX flashcards_by_project ON flashcards (project_id, created_at_ms);
 CREATE INDEX flashcards_by_media_file ON flashcards (media_file_id);
 
--- Flashcards deleted while their project sends to Anki through AnkiConnect, whose notes the app still has to delete from Anki.
+-- Deleted flashcards that had reached Anki, whose notes may still be there, until AnkiConnect deletes them,
+-- an export marks them for deletion, the user marks them done, or the project is deleted.
 CREATE TABLE anki_pending_deletions (
     flashcard_id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     word TEXT NOT NULL,
-    requested_at_ms INTEGER NOT NULL
+    requested_at_ms INTEGER NOT NULL,
+    reached_by_package INTEGER NOT NULL
 );
 
 CREATE INDEX anki_pending_deletions_by_project ON anki_pending_deletions (project_id, requested_at_ms);

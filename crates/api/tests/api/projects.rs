@@ -12,6 +12,7 @@ fn settings(name: &str) -> Value {
         "tags_media_name": true,
         "fills_audio_with_tts": false,
         "flashcard_front_fields": ["text_context"],
+        "lists_anki_deletions": true,
     })
 }
 

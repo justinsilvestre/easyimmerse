@@ -1049,9 +1049,14 @@ export interface components {
              */
             skipped_media_count: number;
         };
-        /** @description A flashcard deleted while its project sends to Anki through AnkiConnect, whose note is still to be deleted from Anki. */
+        /**
+         * @description A deleted flashcard that had reached Anki, whose note may still be there.
+         *     It lasts until AnkiConnect deletes the note, an export marks the note for deletion, or the user marks it done.
+         */
         AnkiPendingDeletion: {
             flashcard_id: components["schemas"]["FlashcardId"];
+            /** @description Whether the flashcard had been marked as exported, so that its note in Anki may carry the GUID that a package's note for it carries. */
+            reached_by_package: boolean;
             /**
              * Format: int64
              * @description Milliseconds since the Unix epoch when the flashcard was deleted.
@@ -1827,6 +1832,11 @@ export interface components {
             flashcard_fields: components["schemas"]["FlashcardFieldKey"][];
             /** @description The included fields shown on the front of a card. The other included fields go on the back. */
             flashcard_front_fields: components["schemas"]["FlashcardFieldKey"][];
+            /**
+             * @description Whether a deleted flashcard that reached Anki is listed on the project screen, so that the user can delete its note there.
+             *     While AnkiConnect is on, deletions are recorded whatever this says, since AnkiConnect deletes the notes.
+             */
+            lists_anki_deletions: boolean;
             name: string;
             /** @description Whether each new flashcard is also tagged with the name of the media file it was made from. */
             tags_media_name: boolean;

@@ -79,7 +79,12 @@ const allSentWithPending = (
   count: number,
   status: "fulfilled" | "pending" = "fulfilled",
 ): ServerCacheSlice => {
-  const deletion = { flashcard_id: "f9", word: "f9", requested_at_ms: 1 };
+  const deletion = {
+    flashcard_id: "f9",
+    word: "f9",
+    requested_at_ms: 1,
+    reached_by_package: false,
+  };
   const key = cacheKey("listAnkiPendingDeletions", "p1");
   const data = { deletions: Array.from({ length: count }, () => deletion) };
   return { queries: { ...allSent.queries, [key]: { status, data } } };

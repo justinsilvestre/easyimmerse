@@ -10,6 +10,7 @@ export const exampleProjectSettings: ProjectSettings = {
   tags_media_name: false,
   fills_audio_with_tts: false,
   flashcard_front_fields: [],
+  lists_anki_deletions: true,
 };
 
 /** Returns a project with the given id and `exampleProjectSettings`, for tests. */
