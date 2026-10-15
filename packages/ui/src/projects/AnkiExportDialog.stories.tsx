@@ -27,8 +27,10 @@ const meta = {
     scope: "newAndChanged",
     newAndChangedCount: 12,
     allCount: 41,
+    marksExported: true,
     isBusy: false,
     onScopeChange: fn(),
+    onMarkingChange: fn(),
     onMediaToggle: fn(),
     onExport: fn(),
     onClose: fn(),
@@ -38,7 +40,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NewCards: Story = {};
+export const NewAndChangedCards: Story = {};
+
+export const NotMarkingTheCardsExported: Story = {
+  args: { marksExported: false },
+};
 
 export const AllCards: Story = {
   args: { scope: "all" },

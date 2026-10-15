@@ -10,6 +10,7 @@ import {
   cachedFlashcards,
   cachedMediaFileIds,
   cachedProjectName,
+  cachedUsesAnkiConnect,
 } from "./ankiCache.ts";
 import { type AnkiExportDialog, openedAnkiExport } from "./ankiExportDialog.ts";
 import { flashcardIdsToExport } from "./ankiExportSelection.ts";
@@ -33,7 +34,11 @@ export function updateAnkiExport(
 ) {
   switch (action.type) {
     case "ankiExportOpened":
-      return updated(openedAnkiExport);
+      return updated(
+        openedAnkiExport(
+          cachedUsesAnkiConnect(context.backend, context.projectId),
+        ),
+      );
     case "ankiExportClosed":
       return updated(null, ...abortExport(dialog, context.projectId));
     default:
@@ -62,6 +67,8 @@ function updateOpenDialog(
   switch (action.type) {
     case "ankiExportScopeChosen":
       return updated({ ...dialog, scope: action.scope });
+    case "ankiExportMarkingChosen":
+      return updated({ ...dialog, marksExported: action.marksExported });
     case "ankiExportMediaToggled":
       return updated({
         ...dialog,
@@ -112,7 +119,13 @@ function pathPicked(
   if (pick.kind === "cancelled" || ids.length === 0)
     return updated({ ...dialog, isBusy: false });
   const savePath = pick.kind === "path" ? pick.path : null;
-  return updated(dialog, exportPackage(context.projectId, ids, savePath));
+  return updated(
+    dialog,
+    exportPackage(context.projectId, ids, {
+      savePath,
+      marksExported: dialog.marksExported,
+    }),
+  );
 }
 
 function exportSettled(

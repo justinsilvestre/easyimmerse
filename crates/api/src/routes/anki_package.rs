@@ -34,6 +34,8 @@ pub struct AnkiPackageRequest {
     pub flashcard_ids: Vec<FlashcardId>,
     /// The absolute path to write the package to, on the server's machine. Null to receive the package in the response.
     pub save_path: Option<String>,
+    /// Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.
+    pub marks_exported: bool,
 }
 
 /// What the server wrote to the save path.
@@ -47,7 +49,8 @@ pub struct AnkiPackageSaved {
 
 /// Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
 /// A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
-/// Once the package has been saved, or sent to the client in full, the flashcards are marked exported.
+/// Once the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,
+/// and they are marked exported when the request asks for that.
 /// A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
 #[utoipa::path(
     post,
@@ -87,7 +90,7 @@ pub async fn export_anki_package(
     if selection.flashcards.is_empty() {
         return Err(not_found("none of the named flashcards is in the project"));
     }
-    let package = build_package(&state, token, selection).await?;
+    let package = build_package(&state, token, selection, request.marks_exported).await?;
     match request.save_path {
         Some(path) => save_package(&state, package, &path).await,
         None => Ok(package_download(state, package)),
@@ -102,11 +105,11 @@ struct BuiltPackage {
     export: ExportRecord,
 }
 
-/// The flashcards a package holds, and the time they were read, which marks them exported.
+/// The flashcards a package holds, and the time they were read, which marks them exported unless it is `None`.
 struct ExportRecord {
     project_id: ProjectId,
     flashcard_ids: Vec<FlashcardId>,
-    exported_at_ms: u64,
+    exported_at_ms: Option<u64>,
 }
 
 /// Builds the package, dating its notes at the time it is written, since Anki updates a note it already has only from a newer one.
@@ -114,6 +117,7 @@ async fn build_package(
     state: &AppState,
     token: TokenKind,
     selection: Selection,
+    marks_exported: bool,
 ) -> Result<BuiltPackage, ApiFailure> {
     let Selection {
         project,
@@ -140,7 +144,7 @@ async fn build_package(
                 .into_iter()
                 .map(|flashcard| flashcard.id)
                 .collect(),
-            exported_at_ms: read_at_ms,
+            exported_at_ms: marks_exported.then_some(read_at_ms),
         },
     })
 }

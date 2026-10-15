@@ -6,11 +6,12 @@ import { readBackendError } from "./httpBackendClient.ts";
 import type { ServerQuery } from "./sendToAnki.ts";
 import type { ServerFetch } from "./serverFetch.ts";
 
-/** The flashcards of a project to export, and the path to save the package at, or null to receive it. */
+/** The flashcards of a project to export, the path to save the package at, or null to receive it, and whether to mark them exported. */
 export type AnkiExportArgs = {
   projectId: string;
   flashcardIds: readonly string[];
   savePath: string | null;
+  marksExported: boolean;
 };
 
 /** What an export works with: the server's JSON requests, its plain fetch for the package's bytes, and the signal that stops a download. */
@@ -31,14 +32,14 @@ export function exportAnkiPackage(
 }
 
 async function savePackage(
-  { projectId, flashcardIds }: AnkiExportArgs,
+  args: AnkiExportArgs,
   savePath: string,
   server: ServerQuery,
 ): Promise<BackendResult<AnkiPackageExport>> {
   const result = await server({
     method: "POST",
-    path: packagePath(projectId),
-    body: { kind: "json", value: packageRequest(flashcardIds, savePath) },
+    path: packagePath(args.projectId),
+    body: { kind: "json", value: packageRequest(args, savePath) },
   });
   if ("error" in result) return result;
   const saved = result.data as AnkiPackageSaved;
@@ -52,19 +53,21 @@ async function savePackage(
 }
 
 async function downloadPackage(
-  { projectId, flashcardIds }: AnkiExportArgs,
+  args: AnkiExportArgs,
   { serverFetch, signal }: AnkiExportDeps,
 ): Promise<BackendResult<AnkiPackageExport>> {
   if (serverFetch === null) return { error: needsServer };
   try {
-    const response = await serverFetch(packagePath(projectId), {
+    const response = await serverFetch(packagePath(args.projectId), {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(packageRequest(flashcardIds, null)),
+      body: JSON.stringify(packageRequest(args, null)),
       signal,
     });
     if (!response.ok) return { error: await readBackendError(response) };
-    return { data: await downloadedPackage(response, flashcardIds.length) };
+    return {
+      data: await downloadedPackage(response, args.flashcardIds.length),
+    };
   } catch (cause) {
     return { error: { status: "NETWORK", message: messageOf(cause) } };
   }
@@ -98,10 +101,14 @@ function packagePath(projectId: string): string {
 }
 
 function packageRequest(
-  flashcardIds: readonly string[],
+  { flashcardIds, marksExported }: AnkiExportArgs,
   savePath: string | null,
 ): AnkiPackageRequest {
-  return { flashcard_ids: [...flashcardIds], save_path: savePath };
+  return {
+    flashcard_ids: [...flashcardIds],
+    save_path: savePath,
+    marks_exported: marksExported,
+  };
 }
 
 function messageOf(cause: unknown): string {

@@ -11,6 +11,9 @@ export const ankiActions = {
   /** The user chose whether to export only the cards new or changed since they were last marked as exported, or all of them. */
   ankiExportScopeChosen: (scope: AnkiExportScope) =>
     ({ type: "ankiExportScopeChosen", scope }) as const,
+  /** The user chose whether the export marks its cards as exported. */
+  ankiExportMarkingChosen: (marksExported: boolean) =>
+    ({ type: "ankiExportMarkingChosen", marksExported }) as const,
   /** The user ticked or cleared a media file whose cards the export includes. */
   ankiExportMediaToggled: (mediaFileId: string) =>
     ({ type: "ankiExportMediaToggled", mediaFileId }) as const,

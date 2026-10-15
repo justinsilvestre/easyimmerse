@@ -29,12 +29,13 @@ const noticesAfter = (...actions: AppAction[]) =>
 
 const confirmed = [actions.ankiExportOpened(), actions.ankiExportConfirmed()];
 
-const exportRequest = (savePath: string | null) =>
+const exportRequest = (savePath: string | null, marksExported = true) =>
   ({
     kind: "exportAnkiPackage",
     projectId: "p1",
     flashcardIds: ["f3", "f1"],
     savePath,
+    marksExported,
   }) as const;
 
 const exported = (outcome: RequestOutcome<"exportAnkiPackage">) =>
@@ -66,8 +67,51 @@ const failed = {
 } as const;
 
 describe("updateAnkiExport", () => {
-  it("opens on the new and changed cards of every media file", () => {
-    expect(dialogAfter(actions.ankiExportOpened())).toEqual(openedAnkiExport);
+  it("opens on the new and changed cards of every media file, marking them exported", () => {
+    expect(dialogAfter(actions.ankiExportOpened())).toEqual(
+      openedAnkiExport(false),
+    );
+  });
+
+  it("opens without marking the cards exported in a project using AnkiConnect", () => {
+    const usingAnkiConnect = ankiCache(true);
+    const { main } = stateAfterWithCache(
+      usingAnkiConnect,
+      openOverview,
+      actions.ankiExportOpened(),
+    ).screen;
+    expect(main.kind === "project" && main.ankiExport?.marksExported).toBe(
+      false,
+    );
+  });
+
+  it("takes the chosen marking", () => {
+    expect(
+      dialogAfter(
+        actions.ankiExportOpened(),
+        actions.ankiExportMarkingChosen(false),
+      )?.marksExported,
+    ).toBe(false);
+  });
+
+  it("asks the server not to mark the cards exported when the marking is off", () => {
+    expect(
+      effectsOf(
+        actions.ankiExportPathPicked({
+          kind: "path",
+          path: "/decks/Korean.apkg",
+        }),
+        actions.ankiExportOpened(),
+        actions.ankiExportMarkingChosen(false),
+        actions.ankiExportConfirmed(),
+      ),
+    ).toEqual([
+      {
+        type: "sendRequest",
+        id: "project/p1/ankiExport",
+        request: exportRequest("/decks/Korean.apkg", false),
+      },
+    ]);
   });
 
   it("takes the chosen scope", () => {

@@ -453,7 +453,8 @@ export interface paths {
         /**
          * Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
          *     A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
-         *     Once the package has been saved, or sent to the client in full, the flashcards are marked exported.
+         *     Once the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,
+         *     and they are marked exported when the request asks for that.
          *     A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
          */
         post: operations["exportAnkiPackage"];
@@ -1033,6 +1034,8 @@ export interface components {
         AnkiPackageRequest: {
             /** @description The flashcards to export, in the order Anki shows them as new cards. */
             flashcard_ids: components["schemas"]["FlashcardId"][];
+            /** @description Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed. */
+            marks_exported: boolean;
             /** @description The absolute path to write the package to, on the server's machine. Null to receive the package in the response. */
             save_path?: string | null;
         };
@@ -1331,6 +1334,8 @@ export interface components {
              * @description Milliseconds since the Unix epoch.
              */
             updated_at_ms: number;
+            /** @description Whether any Anki package has held the flashcard, whether or not that export marked it as exported. */
+            was_packaged: boolean;
             /**
              * Format: int32
              * @description Where the card's word begins in the text of the cue at `cue_index` with its markup removed, counted in UTF-16 code units.

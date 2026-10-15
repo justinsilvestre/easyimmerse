@@ -9,20 +9,21 @@ use crate::error::StorageError;
 use crate::projects::ensure_project_exists;
 use crate::stored_integer::to_stored_integer;
 
-/// Records that the flashcards were written into an Anki package at `exported_at_ms`, in one transaction.
-/// A flashcard deleted since the export began is passed over.
+/// Records that the flashcards were written into an Anki package, and marks them exported at `exported_at_ms`
+/// unless it is `None`, in one transaction. A flashcard deleted since the export began is passed over.
 pub fn record_anki_export(
     conn: &mut Connection,
     project_id: &ProjectId,
     ids: &[FlashcardId],
-    exported_at_ms: u64,
+    exported_at_ms: Option<u64>,
 ) -> Result<(), StorageError> {
     let transaction = conn.transaction()?;
     ensure_project_exists(&transaction, project_id)?;
     for id in ids {
         transaction.execute(
-            "UPDATE flashcards SET exported_at_ms = ?2 WHERE id = ?1",
-            params![id.0, to_stored_integer(exported_at_ms)],
+            "UPDATE flashcards SET was_packaged = 1, \
+             exported_at_ms = coalesce(?2, exported_at_ms) WHERE id = ?1",
+            params![id.0, exported_at_ms.map(to_stored_integer)],
         )?;
     }
     transaction.commit()?;
@@ -105,7 +106,7 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_export(&project(), std::slice::from_ref(&id), 1_000)
+            .record_anki_export(&project(), std::slice::from_ref(&id), Some(1_000))
             .unwrap();
         assert_eq!(
             storage.get_flashcard(&id).unwrap().exported_at_ms,
@@ -114,11 +115,47 @@ mod tests {
     }
 
     #[test]
+    fn an_export_records_that_a_package_held_the_flashcards() {
+        let storage = seeded_storage();
+        let id = create(&storage);
+        storage
+            .record_anki_export(&project(), std::slice::from_ref(&id), Some(1_000))
+            .unwrap();
+        assert!(storage.get_flashcard(&id).unwrap().was_packaged);
+    }
+
+    #[test]
+    fn an_export_not_marking_the_flashcards_leaves_when_they_were_exported() {
+        let storage = seeded_storage();
+        let id = create(&storage);
+        storage
+            .record_anki_export(&project(), std::slice::from_ref(&id), Some(1_000))
+            .unwrap();
+        storage
+            .record_anki_export(&project(), std::slice::from_ref(&id), None)
+            .unwrap();
+        assert_eq!(
+            storage.get_flashcard(&id).unwrap().exported_at_ms,
+            Some(1_000)
+        );
+    }
+
+    #[test]
+    fn an_export_not_marking_the_flashcards_still_records_that_a_package_held_them() {
+        let storage = seeded_storage();
+        let id = create(&storage);
+        storage
+            .record_anki_export(&project(), std::slice::from_ref(&id), None)
+            .unwrap();
+        assert!(storage.get_flashcard(&id).unwrap().was_packaged);
+    }
+
+    #[test]
     fn an_export_passes_over_a_flashcard_that_is_gone() {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
-            .record_anki_export(&project(), &[missing(), id.clone()], 1_000)
+            .record_anki_export(&project(), &[missing(), id.clone()], Some(1_000))
             .unwrap();
         assert_eq!(
             storage.get_flashcard(&id).unwrap().exported_at_ms,
@@ -128,7 +165,8 @@ mod tests {
 
     #[test]
     fn an_export_of_an_unknown_project_fails() {
-        let result = seeded_storage().record_anki_export(&ProjectId("missing".to_string()), &[], 1);
+        let result =
+            seeded_storage().record_anki_export(&ProjectId("missing".to_string()), &[], Some(1));
         assert!(matches!(result, Err(StorageError::ProjectNotFound(_))));
     }
 

@@ -151,12 +151,13 @@ export type ServerRequest =
       projectId: string;
       justDeleted: DeletedFlashcard | null;
     }
-  /** Exports flashcards as an Anki package, saved at `savePath`, or handed back for download when it is null. */
+  /** Exports flashcards as an Anki package, saved at `savePath`, or handed back for download when it is null, and marks them exported if asked. */
   | {
       kind: "exportAnkiPackage";
       projectId: string;
       flashcardIds: readonly string[];
       savePath: string | null;
+      marksExported: boolean;
     }
   /** Turns AnkiConnect on or off for a project. */
   | {

@@ -46,6 +46,8 @@ pub struct Flashcard {
     /// Milliseconds since the Unix epoch when the flashcard was last marked as exported in an Anki package. Null when it never was.
     /// The flashcard has changed since then when `updated_at_ms` is later.
     pub exported_at_ms: Option<u64>,
+    /// Whether any Anki package has held the flashcard, whether or not that export marked it as exported.
+    pub was_packaged: bool,
     /// Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.
     /// The flashcard has changed since then when `updated_at_ms` is later.
     pub sent_at_ms: Option<u64>,

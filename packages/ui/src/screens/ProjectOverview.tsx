@@ -116,9 +116,13 @@ export function ProjectOverview({
           scope={ankiExport.scope}
           newAndChangedCount={ankiExport.newAndChangedCount}
           allCount={ankiExport.allCount}
+          marksExported={ankiExport.marksExported}
           isBusy={ankiExport.isBusy}
           onScopeChange={(scope) =>
             dispatch(actions.ankiExportScopeChosen(scope))
+          }
+          onMarkingChange={(marksExported) =>
+            dispatch(actions.ankiExportMarkingChosen(marksExported))
           }
           onMediaToggle={(mediaFileId) =>
             dispatch(actions.ankiExportMediaToggled(mediaFileId))

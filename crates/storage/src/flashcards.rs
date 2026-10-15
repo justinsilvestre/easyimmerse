@@ -16,7 +16,7 @@ const FLASHCARD_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_
 
 /// The columns every flashcard query selects: the draft's columns, then the ones the export writes.
 const SELECTED_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
-     content_json, included_fields_json, created_at_ms, updated_at_ms, exported_at_ms, sent_at_ms";
+     content_json, included_fields_json, created_at_ms, updated_at_ms, exported_at_ms, was_packaged, sent_at_ms";
 
 /// Lists a project's flashcards, oldest first.
 pub fn list_flashcards(
@@ -153,7 +153,8 @@ fn read_flashcard(row: &Row) -> rusqlite::Result<Flashcard> {
         created_at_ms: read_unsigned(row, 7)?,
         updated_at_ms: read_unsigned(row, 8)?,
         exported_at_ms: read_optional_unsigned(row, 9)?,
-        sent_at_ms: read_optional_unsigned(row, 10)?,
+        was_packaged: row.get(10)?,
+        sent_at_ms: read_optional_unsigned(row, 11)?,
     })
 }
 
@@ -435,7 +436,7 @@ mod tests {
         let storage = seeded_storage();
         let id = create(&storage, "fressen");
         storage
-            .record_anki_export(&project(), std::slice::from_ref(&id), 1_000)
+            .record_anki_export(&project(), std::slice::from_ref(&id), Some(1_000))
             .unwrap();
         storage
             .update_flashcard(&id, &draft(None, "essen"))

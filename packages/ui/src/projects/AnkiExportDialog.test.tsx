@@ -20,8 +20,12 @@ function renderDialog(
       scope="newAndChanged"
       newAndChangedCount={2}
       allCount={4}
+      marksExported
       isBusy={false}
       onScopeChange={(scope: AnkiExportScope) => calls.push(`scope ${scope}`)}
+      onMarkingChange={(marksExported) =>
+        calls.push(`marking ${marksExported}`)
+      }
       onMediaToggle={(mediaFileId) => calls.push(`toggle ${mediaFileId}`)}
       onExport={() => calls.push("export")}
       onClose={() => calls.push("close")}
@@ -71,11 +75,30 @@ describe("AnkiExportDialog", () => {
     expect(isDisabled(exportButton())).toBe(true);
   });
 
+  it("shows whether the cards are marked as exported", () => {
+    renderDialog({ marksExported: false });
+    expect(
+      (
+        screen.getByRole("checkbox", {
+          name: /Mark these cards as exported/,
+        }) as HTMLInputElement
+      ).checked,
+    ).toBe(false);
+  });
+
+  it("chooses not to mark the cards as exported", () => {
+    const calls = renderDialog();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /Mark these cards as exported/ }),
+    );
+    expect(calls).toEqual(["marking false"]);
+  });
+
   it("ticks every media file while none is chosen", () => {
     renderDialog();
     expect(
       screen
-        .getAllByRole("checkbox")
+        .getAllByRole("checkbox", { name: /\.mkv/ })
         .map((box) => (box as HTMLInputElement).checked),
     ).toEqual([true, true]);
   });

@@ -40,6 +40,10 @@ updated_at_ms: number,
  */
 exported_at_ms: number | null, 
 /**
+ * Whether any Anki package has held the flashcard, whether or not that export marked it as exported.
+ */
+was_packaged: boolean, 
+/**
  * Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.
  * The flashcard has changed since then when `updated_at_ms` is later.
  */

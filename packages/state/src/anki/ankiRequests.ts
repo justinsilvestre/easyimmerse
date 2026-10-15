@@ -104,15 +104,26 @@ export function readProject(projectId: string) {
   } satisfies Effect;
 }
 
-/** Exports flashcards as a package saved at `savePath`, or handed back for download when it is null. */
+/** Where an export saves its package, or null to hand it back for download, and whether it marks its flashcards as exported. */
+export type PackageDelivery = {
+  savePath: string | null;
+  marksExported: boolean;
+};
+
+/** Exports flashcards as a package, delivered as asked. */
 export function exportPackage(
   projectId: string,
   flashcardIds: readonly string[],
-  savePath: string | null,
+  delivery: PackageDelivery,
 ) {
   return {
     type: "sendRequest",
     id: ankiRequestIds(projectId).export,
-    request: { kind: "exportAnkiPackage", projectId, flashcardIds, savePath },
+    request: {
+      kind: "exportAnkiPackage",
+      projectId,
+      flashcardIds,
+      ...delivery,
+    },
   } satisfies Effect;
 }

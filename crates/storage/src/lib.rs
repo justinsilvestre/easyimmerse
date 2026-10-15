@@ -219,13 +219,13 @@ impl Storage {
         })
     }
 
-    /// Records that the flashcards were written into an Anki package at `exported_at_ms`, in one transaction.
-    /// A flashcard that is gone is passed over.
+    /// Records that the flashcards were written into an Anki package, and marks them exported at `exported_at_ms`
+    /// unless it is `None`, in one transaction. A flashcard that is gone is passed over.
     pub fn record_anki_export(
         &self,
         project_id: &ProjectId,
         ids: &[FlashcardId],
-        exported_at_ms: u64,
+        exported_at_ms: Option<u64>,
     ) -> Result<(), StorageError> {
         self.write(|conn| anki_sync::record_anki_export(conn, project_id, ids, exported_at_ms))
     }

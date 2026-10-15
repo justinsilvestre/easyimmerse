@@ -22,6 +22,7 @@ export function ankiFlashcard(
     media_file_id: mediaFileId,
     created_at_ms: createdAtMs,
     exported_at_ms: sentAs.exportedAtMs ?? null,
+    was_packaged: sentAs.exportedAtMs !== undefined,
     sent_at_ms: sentAs.sentAtMs ?? null,
   };
 }

@@ -2086,7 +2086,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, the flashcards are marked exported.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
+        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,\nand they are marked exported when the request asks for that.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
         "operationId": "exportAnkiPackage",
         "parameters": [
           {
@@ -5304,7 +5304,8 @@
       "AnkiPackageRequest": {
         "type": "object",
         "required": [
-          "flashcard_ids"
+          "flashcard_ids",
+          "marks_exported"
         ],
         "properties": {
           "flashcard_ids": {
@@ -5313,6 +5314,10 @@
               "$ref": "#/components/schemas/FlashcardId"
             },
             "description": "The flashcards to export, in the order Anki shows them as new cards."
+          },
+          "marks_exported": {
+            "type": "boolean",
+            "description": "Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed."
           },
           "save_path": {
             "type": [
@@ -6164,7 +6169,8 @@
           "content",
           "included_fields",
           "created_at_ms",
-          "updated_at_ms"
+          "updated_at_ms",
+          "was_packaged"
         ],
         "properties": {
           "content": {
@@ -6232,6 +6238,10 @@
             "format": "int64",
             "description": "Milliseconds since the Unix epoch.",
             "minimum": 0
+          },
+          "was_packaged": {
+            "type": "boolean",
+            "description": "Whether any Anki package has held the flashcard, whether or not that export marked it as exported."
           },
           "word_start": {
             "type": [

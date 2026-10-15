@@ -105,7 +105,11 @@ describe("ProjectScreen's ways to Anki", () => {
         )?.body,
       ).toEqual({
         kind: "json",
-        value: { flashcard_ids: ["f1"], save_path: "/decks/Alpha.apkg" },
+        value: {
+          flashcard_ids: ["f1"],
+          save_path: "/decks/Alpha.apkg",
+          marks_exported: true,
+        },
       }),
     );
   });

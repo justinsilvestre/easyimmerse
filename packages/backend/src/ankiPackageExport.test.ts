@@ -3,7 +3,11 @@ import { exportAnkiPackage } from "./ankiPackageExport.ts";
 import type { BackendRequest } from "./backendClient.ts";
 import type { ServerFetch } from "./serverFetch.ts";
 
-const args = { projectId: "p1", flashcardIds: ["f1", "f2"] };
+const args = {
+  projectId: "p1",
+  flashcardIds: ["f1", "f2"],
+  marksExported: true,
+};
 
 const packageResponse = () =>
   new Response(new Uint8Array([80, 75]), {
@@ -41,7 +45,11 @@ describe("exportAnkiPackage", () => {
     const { calls, exported } = download();
     await exported;
     expect(calls[0]?.init?.body).toBe(
-      JSON.stringify({ flashcard_ids: ["f1", "f2"], save_path: null }),
+      JSON.stringify({
+        flashcard_ids: ["f1", "f2"],
+        save_path: null,
+        marks_exported: true,
+      }),
     );
   });
 
@@ -98,6 +106,7 @@ describe("exportAnkiPackage", () => {
           value: {
             flashcard_ids: ["f1", "f2"],
             save_path: "/decks/Korean.apkg",
+            marks_exported: true,
           },
         },
       },

@@ -9,6 +9,7 @@ CREATE TABLE flashcards (
     created_at_ms INTEGER NOT NULL,
     updated_at_ms INTEGER NOT NULL,
     exported_at_ms INTEGER,
+    was_packaged INTEGER NOT NULL DEFAULT 0,
     sent_at_ms INTEGER
 );
 

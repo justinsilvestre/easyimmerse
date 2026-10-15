@@ -9,4 +9,8 @@ flashcard_ids: Array<FlashcardId>,
 /**
  * The absolute path to write the package to, on the server's machine. Null to receive the package in the response.
  */
-save_path: string | null, };
+save_path: string | null, 
+/**
+ * Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.
+ */
+marks_exported: boolean, };
