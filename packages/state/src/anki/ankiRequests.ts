@@ -48,16 +48,22 @@ export function hasAnkiConnectRequest(
   return requests.some(({ scope }) => scope === ankiScope(projectId));
 }
 
+/** A flashcard just deleted, with the word that names it to the user. */
+export type DeletedFlashcard = { flashcardId: string; word: string };
+
 /**
  * Deletes from Anki the notes of a project's deleted flashcards, after the project's earlier sends,
- * so that a note a send in flight creates is deleted too. `word` names the flashcard just deleted, if one was.
+ * so that a note a send in flight creates is deleted too. `justDeleted` is the flashcard whose deletion asks for this, if one does.
  */
-export function deleteFromAnki(projectId: string, word: string | null) {
+export function deleteFromAnki(
+  projectId: string,
+  justDeleted: DeletedFlashcard | null,
+) {
   return {
     type: "sendRequestWithFreeId",
     prefix: `project/${projectId}/ankiDelete`,
     scope: ankiScope(projectId),
-    request: { kind: "deleteAnkiNotes", projectId, word },
+    request: { kind: "deleteAnkiNotes", projectId, justDeleted },
   } satisfies Effect;
 }
 

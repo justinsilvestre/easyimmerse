@@ -23,7 +23,8 @@ export type AnkiDeletionDeps = {
 /** The outcome of a run that has carried out no deletion yet. */
 const noDeletion: AnkiDeletionOutcome = {
   deletedCount: 0,
-  remainingCount: 0,
+  deletedFlashcardIds: [],
+  remainingFlashcardIds: [],
   unrecordedCount: 0,
   foundAnki: false,
 };
@@ -46,7 +47,7 @@ export async function deleteAnkiNotes(
   const reached = await reachAnki(deps);
   if ("error" in reached) return reached;
   if (reached.data === null)
-    return { data: { ...noDeletion, remainingCount: deletions.length } };
+    return { data: { ...noDeletion, remainingFlashcardIds: idsOf(deletions) } };
   return carryOutAll(projectId, deletions, deps, reached.data);
 }
 
@@ -74,8 +75,13 @@ async function carryOutAll(
     const done = await carryOut(projectId, deletion, deps);
     if ("error" in done) return done;
     if (done.data === null)
-      return { data: { ...outcome, remainingCount: deletions.length - index } };
-    outcome = withDeletion(outcome, done.data);
+      return {
+        data: {
+          ...outcome,
+          remainingFlashcardIds: idsOf(deletions.slice(index)),
+        },
+      };
+    outcome = withDeletion(outcome, deletion, done.data);
   }
   return { data: outcome };
 }
@@ -100,13 +106,22 @@ async function carryOut(
 
 function withDeletion(
   outcome: AnkiDeletionOutcome,
+  { flashcard_id }: AnkiPendingDeletion,
   { deletedCount, isRecorded }: DeletionDone,
 ): AnkiDeletionOutcome {
   return {
     ...outcome,
     deletedCount: outcome.deletedCount + deletedCount,
+    deletedFlashcardIds:
+      deletedCount > 0
+        ? [...outcome.deletedFlashcardIds, flashcard_id]
+        : outcome.deletedFlashcardIds,
     unrecordedCount: outcome.unrecordedCount + (isRecorded ? 0 : 1),
   };
+}
+
+function idsOf(deletions: readonly AnkiPendingDeletion[]): string[] {
+  return deletions.map(({ flashcard_id }) => flashcard_id);
 }
 
 /** Deletes the notes of one deleted flashcard and resolves how many there were, or null when Anki does not answer. */

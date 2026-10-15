@@ -14,7 +14,8 @@ import type {
   RequestOutcome,
   ServerRequest,
 } from "../server/serverRequest.ts";
-import type { AnkiSendOutcome } from "./ankiResponses.ts";
+import type { DeletedFlashcard } from "./ankiRequests.ts";
+import type { AnkiDeletionOutcome, AnkiSendOutcome } from "./ankiResponses.ts";
 import { ankiCache, ankiFlashcard, openOverview } from "./ankiTestSupport.ts";
 
 const saveRequest: ServerRequest = {
@@ -80,41 +81,50 @@ const deletionSettled = (
       : { ok: false, error: { status: 500, message: "down" } },
   );
 
-const noteDeletion = (word: string | null = "f2") => ({
+/** The deletion of f2, whose word is "f2", as the deletion of notes from Anki names it. */
+const f2Deleted: DeletedFlashcard = { flashcardId: "f2", word: "f2" };
+
+const noteDeletion = (justDeleted: DeletedFlashcard | null = f2Deleted) => ({
   type: "sendRequest",
   id: "project/p1/ankiDelete/1",
   scope: "ankiSend:p1",
-  request: { kind: "deleteAnkiNotes", projectId: "p1", word },
+  request: { kind: "deleteAnkiNotes", projectId: "p1", justDeleted },
 });
 
 const notesDeletionSettled = (
   outcome: RequestOutcome<"deleteAnkiNotes">,
-  word: string | null = "f2",
+  justDeleted: DeletedFlashcard | null = f2Deleted,
 ) =>
   actions.requestSettled(
     "project/p1/ankiDelete/1",
-    { kind: "deleteAnkiNotes", projectId: "p1", word },
+    { kind: "deleteAnkiNotes", projectId: "p1", justDeleted },
     outcome,
   );
 
+/** A deletion of notes from Anki that went as given, and otherwise deleted nothing and left nothing pending. */
 const notesDeleted = (
-  deletedCount: number,
-  remainingCount: number,
-  word: string | null = "f2",
-  { unrecordedCount = 0, foundAnki = false } = {},
+  outcome: Partial<AnkiDeletionOutcome>,
+  justDeleted: DeletedFlashcard | null = f2Deleted,
 ) =>
   notesDeletionSettled(
     {
       ok: true,
-      data: { deletedCount, remainingCount, unrecordedCount, foundAnki },
+      data: {
+        deletedCount: 0,
+        deletedFlashcardIds: [],
+        remainingFlashcardIds: [],
+        unrecordedCount: 0,
+        foundAnki: false,
+        ...outcome,
+      },
     },
-    word,
+    justDeleted,
   );
 
 const notesDeletionFailed = (
   error: RequestFailure,
-  word: string | null = "f2",
-) => notesDeletionSettled({ ok: false, error }, word);
+  justDeleted: DeletedFlashcard | null = f2Deleted,
+) => notesDeletionSettled({ ok: false, error }, justDeleted);
 
 const sendAllRequest = {
   kind: "sendFlashcardsToAnki",
@@ -160,7 +170,7 @@ const stateAfterSend = (foundAnki: boolean) =>
 const stateAfterDeletion = (foundAnki: boolean) =>
   stateAfterWithCache(
     ankiCache("anki_connect"),
-    notesDeleted(1, 0, "f2", { foundAnki }),
+    notesDeleted({ deletedCount: 1, deletedFlashcardIds: ["f2"], foundAnki }),
   );
 
 const sentResponse = (foundAnki: boolean) =>
@@ -172,7 +182,7 @@ const sentResponse = (foundAnki: boolean) =>
 const noteDeletionRequest = {
   kind: "deleteAnkiNotes",
   projectId: "p1",
-  word: null,
+  justDeleted: null,
 } as const;
 
 const noticesAfter = (...actions: AppAction[]) =>
@@ -298,7 +308,7 @@ describe("ankiCommands when a flashcard is deleted", () => {
   it("looks for the note of a card no send has recorded, since a send in flight may create it", () => {
     expect(
       effectsOf(deletionSettled({ type: "delete" }, { flashcardId: "f1" })),
-    ).toContainEqual(noteDeletion("f1"));
+    ).toContainEqual(noteDeletion({ flashcardId: "f1", word: "f1" }));
   });
 
   it("names an uncached card by the word its Undo names", () => {
@@ -306,7 +316,7 @@ describe("ankiCommands when a flashcard is deleted", () => {
       effectsOf(
         deletionSettled({ type: "undo", word: "Katze" }, { flashcardId: "f9" }),
       ),
-    ).toContainEqual(noteDeletion("Katze"));
+    ).toContainEqual(noteDeletion({ flashcardId: "f9", word: "Katze" }));
   });
 
   it("deletes nothing for a project that exports packages", () => {
@@ -347,38 +357,87 @@ describe("ankiCommands when a flashcard is deleted", () => {
     ]);
   });
 
-  it("tells why Anki could not delete the note", () => {
+  it("tells why Anki could not delete the notes, without naming a card that may never have reached Anki", () => {
     const refused = notesDeletionFailed({
       status: 502,
       code: "anki_failed",
       message: "collection is not available",
     });
     expect(noticesAfter(refused)).toEqual([
-      "The note for “f2” could not be deleted from Anki: collection is not available",
+      "The notes of deleted flashcards could not be deleted from Anki: collection is not available",
     ]);
   });
 
-  it("tells that the note will be deleted once Anki is connected when Anki is not running", () => {
-    expect(noticesAfter(notesDeleted(0, 1))).toEqual([
-      "Anki is not running. The note for “f2” will be deleted from Anki the next time it is connected.",
+  it("tells that the note will be deleted once Anki can be reached again", () => {
+    expect(
+      noticesAfter(notesDeleted({ remainingFlashcardIds: ["f2"] })),
+    ).toEqual([
+      "Anki could not be reached. The note for “f2” will be deleted from Anki once easyImmerse reaches it again.",
     ]);
   });
 
   it("names a card without a word as the flashcard", () => {
-    expect(noticesAfter(notesDeleted(0, 1, ""))).toEqual([
-      "Anki is not running. The note for the flashcard will be deleted from Anki the next time it is connected.",
+    expect(
+      noticesAfter(
+        notesDeleted(
+          { remainingFlashcardIds: ["f2"] },
+          { flashcardId: "f2", word: "" },
+        ),
+      ),
+    ).toEqual([
+      "Anki could not be reached. The note for the flashcard will be deleted from Anki once easyImmerse reaches it again.",
     ]);
   });
 
-  it("says nothing once Anki has deleted the note", () => {
-    expect(noticesAfter(notesDeleted(1, 0))).toEqual([]);
+  it("says nothing of a card that never reached Anki while older deletions wait for Anki", () => {
+    expect(
+      noticesAfter(notesDeleted({ remainingFlashcardIds: ["f8"] })),
+    ).toEqual([]);
+  });
+
+  it("says nothing of a card that never reached Anki when nothing else was to be deleted", () => {
+    expect(noticesAfter(notesDeleted({}))).toEqual([]);
+  });
+
+  it("names the card once Anki has deleted its note and no other", () => {
+    expect(
+      noticesAfter(
+        notesDeleted({ deletedCount: 1, deletedFlashcardIds: ["f2"] }),
+      ),
+    ).toEqual(["Deleted the note for “f2” from Anki."]);
+  });
+
+  it("counts the notes once Anki has deleted older notes with the card's", () => {
+    expect(
+      noticesAfter(
+        notesDeleted({
+          deletedCount: 3,
+          deletedFlashcardIds: ["f8", "f9", "f2"],
+        }),
+      ),
+    ).toEqual(["Deleted 3 notes from Anki."]);
+  });
+
+  it("counts the note of an older deletion without naming a card that never reached Anki", () => {
+    expect(
+      noticesAfter(
+        notesDeleted({ deletedCount: 1, deletedFlashcardIds: ["f8"] }),
+      ),
+    ).toEqual(["Deleted 1 note from Anki."]);
   });
 
   it("tells that the server could not record the note's deletion, without blaming Anki", () => {
     expect(
-      noticesAfter(notesDeleted(1, 0, "f2", { unrecordedCount: 1 })),
+      noticesAfter(
+        notesDeleted({
+          deletedCount: 1,
+          deletedFlashcardIds: ["f2"],
+          unrecordedCount: 1,
+        }),
+      ),
     ).toEqual([
-      "The deletion of 1 note from Anki could not be recorded on the server. It will be tried again the next time Anki is connected.",
+      "Deleted the note for “f2” from Anki.",
+      "The deletion of 1 note from Anki could not be recorded on the server. It will be tried again when the project next syncs with Anki.",
     ]);
   });
 
@@ -393,26 +452,42 @@ describe("ankiCommands when a flashcard is deleted", () => {
 
 describe("ankiCommands when notes left in Anki are deleted later", () => {
   it("tells how many notes were deleted", () => {
-    expect(noticesAfter(notesDeleted(2, 0, null))).toEqual([
-      "Deleted 2 notes from Anki.",
-    ]);
+    expect(
+      noticesAfter(
+        notesDeleted(
+          { deletedCount: 2, deletedFlashcardIds: ["f8", "f9"] },
+          null,
+        ),
+      ),
+    ).toEqual(["Deleted 2 notes from Anki."]);
   });
 
   it("tells how many deletions the server could not record", () => {
     expect(
-      noticesAfter(notesDeleted(2, 0, null, { unrecordedCount: 2 })),
+      noticesAfter(
+        notesDeleted(
+          {
+            deletedCount: 2,
+            deletedFlashcardIds: ["f8", "f9"],
+            unrecordedCount: 2,
+          },
+          null,
+        ),
+      ),
     ).toEqual([
       "Deleted 2 notes from Anki.",
-      "The deletion of 2 notes from Anki could not be recorded on the server. It will be tried again the next time Anki is connected.",
+      "The deletion of 2 notes from Anki could not be recorded on the server. It will be tried again when the project next syncs with Anki.",
     ]);
   });
 
   it("says nothing when no note was deleted", () => {
-    expect(noticesAfter(notesDeleted(0, 0, null))).toEqual([]);
+    expect(noticesAfter(notesDeleted({}, null))).toEqual([]);
   });
 
   it("says nothing when Anki stopped answering, which the project screen shows", () => {
-    expect(noticesAfter(notesDeleted(0, 2, null))).toEqual([]);
+    expect(
+      noticesAfter(notesDeleted({ remainingFlashcardIds: ["f8", "f9"] }, null)),
+    ).toEqual([]);
   });
 
   it("tells why Anki could not delete the notes", () => {
@@ -421,7 +496,7 @@ describe("ankiCommands when notes left in Anki are deleted later", () => {
       null,
     );
     expect(noticesAfter(refused)).toEqual([
-      "The notes could not be deleted from Anki: deck is busy",
+      "The notes of deleted flashcards could not be deleted from Anki: deck is busy",
     ]);
   });
 });
@@ -476,7 +551,8 @@ describe("ankiCommands once a send or a deletion finds Anki running", () => {
       ok: true,
       data: {
         deletedCount: 1,
-        remainingCount: 0,
+        deletedFlashcardIds: ["f9"],
+        remainingFlashcardIds: [],
         unrecordedCount: 0,
         foundAnki: false,
       },

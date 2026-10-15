@@ -35,6 +35,7 @@ import type {
   WaveformResponse,
 } from "@easyimmerse/types";
 import type { Dispatch } from "redux";
+import type { DeletedFlashcard } from "../anki/ankiRequests.ts";
 import type {
   AnkiConnection,
   AnkiDeletionOutcome,
@@ -144,9 +145,13 @@ export type ServerRequest =
     }
   /**
    * Deletes from Anki through AnkiConnect the notes of the project's deleted flashcards that the server lists as pending.
-   * `word` names the flashcard whose deletion asked for this in notices, or is null when nothing deleted just now asked; it is not sent.
+   * `justDeleted` is the flashcard whose deletion asked for this, which notices name, or null when nothing deleted just now asked; it is not sent.
    */
-  | { kind: "deleteAnkiNotes"; projectId: string; word: string | null }
+  | {
+      kind: "deleteAnkiNotes";
+      projectId: string;
+      justDeleted: DeletedFlashcard | null;
+    }
   /** Exports flashcards as an Anki package, saved at `savePath`, or handed back for download when it is null. */
   | {
       kind: "exportAnkiPackage";

@@ -8,6 +8,7 @@ import type {
 import { cachedDestination, cachedFlashcards } from "./ankiCache.ts";
 import {
   ankiUnreachableCode,
+  deletedNoteNotice,
   deletedNotice,
   deleteFailedNotice,
   deletionPendingNotice,
@@ -15,7 +16,11 @@ import {
   sendFailedNotice,
   sentNotice,
 } from "./ankiNotices.ts";
-import { deleteFromAnki, sendToAnki } from "./ankiRequests.ts";
+import {
+  type DeletedFlashcard,
+  deleteFromAnki,
+  sendToAnki,
+} from "./ankiRequests.ts";
 import type { AnkiDeletionOutcome, AnkiSendOutcome } from "./ankiResponses.ts";
 import { sendUnsent, syncWithAnki } from "./syncWithAnki.ts";
 
@@ -28,7 +33,8 @@ type AnkiSettled = Settled<"sendFlashcardsToAnki" | "deleteAnkiNotes">;
  * a saved flashcard is sent there once its save lands, and the notes of deleted flashcards are deleted there once a deletion lands.
  * Every send's outcome is told of, except that Anki could not be reached: the project screen's panel shows that,
  * and a notice would repeat it after every save while Anki is closed. A failed send leaves its flashcards unsent until the next save or Send.
- * A note that Anki could not be reached to delete is deleted the next time Anki is found running, and the notice says so.
+ * Every deletion that deletes notes is told of. A note that Anki could not be reached to delete is deleted the next time Anki is found running,
+ * and the notice says so.
  * Once a send or a deletion finds Anki running although the app had not known it to be, the project is synced with Anki,
  * on whichever screen the user is.
  */
@@ -64,7 +70,7 @@ function deleteDeleted(
   );
   const word =
     deleted?.content.word ?? (purpose.type === "delete" ? "" : purpose.word);
-  return [deleteFromAnki(projectId, word)];
+  return [deleteFromAnki(projectId, { flashcardId, word })];
 }
 
 /**
@@ -101,31 +107,44 @@ function sendNotices(action: RequestSettled) {
 }
 
 /**
- * Tells of a deletion that a flashcard's deletion asked for only when it fails or Anki cannot be reached,
- * and of one that ran once Anki was found running only when it deleted notes or failed.
- * Either way, it tells of the deletions the server could not record.
+ * Tells of a deletion's failure, of the notes it deleted, and of the deletions the server could not record.
+ * The flashcard just deleted is named only where its note is known to have been deleted or to wait for Anki, since it may never have reached Anki.
  */
 function deleteNotices(action: RequestSettled) {
   if (action.request.kind !== "deleteAnkiNotes") return [];
   const { request, outcome } = action as Settled<"deleteAnkiNotes">;
   if (!outcome.ok)
-    return isAborted(outcome)
-      ? []
-      : [deleteFailedNotice(request.word, outcome.error)];
+    return isAborted(outcome) ? [] : [deleteFailedNotice(outcome.error)];
   const { unrecordedCount } = outcome.data;
   return [
-    ...deletionNotices(request.word, outcome.data),
+    ...deletionNotices(request.justDeleted, outcome.data),
     ...(unrecordedCount > 0 ? [deletionUnrecordedNotice(unrecordedCount)] : []),
   ];
 }
 
+/**
+ * Names the flashcard just deleted when its note waits for Anki, or when it is the only note deleted, and otherwise counts the notes deleted.
+ * A note waiting for Anki is told of only for the flashcard just deleted, since the project screen's panel counts the others.
+ */
 function deletionNotices(
-  word: string | null,
-  { deletedCount, remainingCount }: AnkiDeletionOutcome,
+  justDeleted: DeletedFlashcard | null,
+  outcome: AnkiDeletionOutcome,
 ) {
-  if (word !== null)
-    return remainingCount > 0 ? [deletionPendingNotice(word)] : [];
-  return deletedCount > 0 ? [deletedNotice(deletedCount)] : [];
+  if (justDeleted !== null) {
+    const { flashcardId, word } = justDeleted;
+    if (outcome.remainingFlashcardIds.includes(flashcardId))
+      return [deletionPendingNotice(word)];
+    if (isOnlyNoteDeleted(flashcardId, outcome))
+      return [deletedNoteNotice(word)];
+  }
+  return outcome.deletedCount > 0 ? [deletedNotice(outcome.deletedCount)] : [];
+}
+
+function isOnlyNoteDeleted(
+  flashcardId: string,
+  { deletedCount, deletedFlashcardIds }: AnkiDeletionOutcome,
+) {
+  return deletedCount === 1 && deletedFlashcardIds[0] === flashcardId;
 }
 
 function hasSentAny({ sentCount, failedCount }: AnkiSendOutcome) {

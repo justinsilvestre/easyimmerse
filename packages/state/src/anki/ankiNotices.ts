@@ -41,24 +41,22 @@ export function sendFailedNotice(failure: RequestFailure) {
   );
 }
 
-/** Tells why the notes of deleted flashcards could not be deleted from Anki, naming the flashcard just deleted by its word, if one was. */
-export function deleteFailedNotice(
-  word: string | null,
-  failure: RequestFailure,
-) {
-  const notes =
-    word === null ? "The notes" : `The note for ${flashcardName(word)}`;
+/**
+ * Tells why the notes of deleted flashcards could not be deleted from Anki.
+ * It names no flashcard, since the flashcard just deleted may never have reached Anki.
+ */
+export function deleteFailedNotice(failure: RequestFailure) {
   return notice(
     "danger",
-    `${notes} could not be deleted from Anki: ${failure.message}`,
+    `The notes of deleted flashcards could not be deleted from Anki: ${failure.message}`,
   );
 }
 
-/** Tells that the note of a deleted flashcard, named by its word, will be deleted once Anki is running again. */
+/** Tells that the note of a deleted flashcard, named by its word, will be deleted once Anki can be reached again. */
 export function deletionPendingNotice(word: string) {
   return notice(
     "info",
-    `Anki is not running. The note for ${flashcardName(word)} will be deleted from Anki the next time it is connected.`,
+    `Anki could not be reached. The note for ${flashcardName(word)} will be deleted from Anki once easyImmerse reaches it again.`,
   );
 }
 
@@ -67,7 +65,15 @@ export function deletionUnrecordedNotice(unrecordedCount: number) {
   return notice(
     "danger",
     `The deletion of ${count(unrecordedCount, "note")} from Anki could not be recorded on the server.`,
-    "It will be tried again the next time Anki is connected.",
+    "It will be tried again when the project next syncs with Anki.",
+  );
+}
+
+/** Tells that the note of a deleted flashcard, named by its word, was deleted from Anki. */
+export function deletedNoteNotice(word: string) {
+  return notice(
+    "success",
+    `Deleted the note for ${flashcardName(word)} from Anki.`,
   );
 }
 

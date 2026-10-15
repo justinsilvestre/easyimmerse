@@ -142,13 +142,19 @@ describe("deleteAnkiNotes", () => {
   });
 
   it("counts the notes Anki deleted", async () => {
-    expect(await run(holding([100, 101])).result).toEqual({
-      data: {
-        deletedCount: 4,
-        remainingCount: 0,
-        unrecordedCount: 0,
-        foundAnki: false,
-      },
+    expect(await run(holding([100, 101])).result).toMatchObject({
+      data: { deletedCount: 4 },
+    });
+  });
+
+  it("names the flashcards whose notes Anki deleted", async () => {
+    const answers = {
+      ...holding([]),
+      findNotes: ({ query }: Record<string, unknown>) =>
+        query === '"easyImmerse id:f2"' ? [100] : [],
+    };
+    expect(await run(answers).result).toMatchObject({
+      data: { deletedFlashcardIds: ["f2"] },
     });
   });
 
@@ -187,7 +193,8 @@ describe("deleteAnkiNotes", () => {
       ).toEqual({
         data: {
           deletedCount: 2,
-          remainingCount: 0,
+          deletedFlashcardIds: ["f1", "f2"],
+          remainingFlashcardIds: [],
           unrecordedCount: 1,
           foundAnki: false,
         },
@@ -198,11 +205,12 @@ describe("deleteAnkiNotes", () => {
   describe("when Anki stops answering", () => {
     const halfway = () => stoppingAfter(2, holding([100]));
 
-    it("counts the deletions left pending", async () => {
+    it("names the deleted flashcards whose notes are left pending", async () => {
       expect(await run(halfway()).result).toEqual({
         data: {
           deletedCount: 1,
-          remainingCount: 1,
+          deletedFlashcardIds: ["f1"],
+          remainingFlashcardIds: ["f2"],
           unrecordedCount: 0,
           foundAnki: false,
         },
@@ -219,7 +227,7 @@ describe("deleteAnkiNotes", () => {
 
     it("leaves every deletion pending when Anki does not answer at all", async () => {
       expect(await run({}).result).toMatchObject({
-        data: { deletedCount: 0, remainingCount: 2 },
+        data: { deletedCount: 0, remainingFlashcardIds: ["f1", "f2"] },
       });
     });
 

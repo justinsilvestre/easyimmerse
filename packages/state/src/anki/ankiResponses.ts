@@ -19,8 +19,10 @@ export type AnkiSendOutcome = {
 export type AnkiDeletionOutcome = {
   /** The notes Anki deleted. */
   deletedCount: number;
-  /** The deleted flashcards whose notes are still to be deleted, because Anki stopped answering. */
-  remainingCount: number;
+  /** The ids of the deleted flashcards whose notes Anki deleted. */
+  deletedFlashcardIds: readonly string[];
+  /** The ids of the deleted flashcards whose notes are still to be deleted, because Anki stopped answering. */
+  remainingFlashcardIds: readonly string[];
   /** The deleted flashcards whose notes Anki no longer holds, but which the server could not record as done and keeps pending. */
   unrecordedCount: number;
   /** Whether Anki answered although the app had not known it to be running, so that what waited for Anki can follow. */

@@ -66,7 +66,7 @@ const deleteNotes = {
   type: "sendRequest",
   id: "project/p1/ankiDelete/1",
   scope: "ankiSend:p1",
-  request: { kind: "deleteAnkiNotes", projectId: "p1", word: null },
+  request: { kind: "deleteAnkiNotes", projectId: "p1", justDeleted: null },
 };
 
 /** p1 with every flashcard in Anki. */
