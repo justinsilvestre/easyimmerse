@@ -50,6 +50,23 @@ function recording(client: BackendClient) {
   return { methods, send };
 }
 
+/** Wraps a client so that its first GET answers only once `release` is called. */
+function holdingFirstGet(client: BackendClient) {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let isHolding = true;
+  const send: BackendClient["send"] = async (request, signal) => {
+    if (request.method === "GET" && isHolding) {
+      isHolding = false;
+      await held;
+    }
+    return client.send(request, signal);
+  };
+  return { send, release: () => release() };
+}
+
 const waveformWindow: ServerRequest = {
   kind: "getWaveformWindow",
   projectId: "p1",
@@ -159,6 +176,24 @@ describe("runRequest", () => {
     running.abort();
     const outcome = await running.settled;
     expect(outcome.ok ? null : outcome.error.status).toBe("ABORTED");
+  });
+
+  it("settles with data when a mutation invalidates the query in flight", async () => {
+    const client = holdingFirstGet(mediaClient);
+    const store = createStore(client);
+    const running = runRequest(listing, store.dispatch as Dispatch);
+    await settle(store, adding);
+    client.release();
+    expect(await running.settled).toEqual({
+      ok: true,
+      data: { media_files: [] },
+    });
+  });
+
+  it("settles a query that ends with no data as a failure", async () => {
+    const store = createStore(answering({ data: undefined }));
+    const outcome = await settle(store, listing);
+    expect(outcome.ok).toBe(false);
   });
 
   it("leaves no mutation entry once a mutation settles", async () => {
