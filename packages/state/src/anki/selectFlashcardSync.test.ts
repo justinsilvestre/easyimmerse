@@ -49,8 +49,6 @@ const katze = {
   flashcard_id: "f9",
   word: "Katze",
   requested_at_ms: 1,
-  reached_by_package: true,
-  reached_by_anki_connect: false,
 };
 
 /** p1, using AnkiConnect or not, with the deletion of "Katze" from Anki listed. */
@@ -158,20 +156,6 @@ describe("selectFlashcardSync", () => {
     );
   });
 
-  it("counts the listed deletions the next export marking its cards would mark", () => {
-    expect(syncOf(withDeletions(false)).package.markCount).toBe(1);
-  });
-
-  it("counts no mark for a deletion of a flashcard also sent through AnkiConnect, whose note a mark cannot reach", () => {
-    const backend = serverCacheWith(
-      "listAnkiPendingDeletions",
-      "p1",
-      { deletions: [{ ...katze, reached_by_anki_connect: true }] },
-      ankiCache(false),
-    );
-    expect(syncOf(backend).package.markCount).toBe(0);
-  });
-
   it("shows no AnkiConnect status while AnkiConnect is off", () => {
     expect(syncOf(ankiCache(false))).toMatchObject({ ankiConnect: null });
   });
@@ -218,8 +202,6 @@ describe("selectFlashcardSync", () => {
             flashcard_id: "f9",
             word: "Katze",
             requested_at_ms: 1,
-            reached_by_package: false,
-            reached_by_anki_connect: true,
           },
         ],
       },

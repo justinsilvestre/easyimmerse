@@ -125,7 +125,7 @@ pub enum FlashcardFieldKey {
 }
 
 /// A deleted flashcard that had reached Anki, whose notes may still be there.
-/// It lasts until AnkiConnect deletes the notes, an export marks the only note it can have for deletion, or the user marks it done.
+/// It lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct AnkiPendingDeletion {
@@ -134,18 +134,6 @@ pub struct AnkiPendingDeletion {
     pub word: String,
     /// Milliseconds since the Unix epoch when the flashcard was deleted.
     pub requested_at_ms: u64,
-    /// Whether the flashcard had been marked as exported, so that its note in Anki may carry the GUID that a package's note for it carries.
-    pub reached_by_package: bool,
-    /// Whether AnkiConnect had put the flashcard into Anki, so that Anki may hold a note for it under a GUID that Anki chose.
-    pub reached_by_anki_connect: bool,
-}
-
-impl AnkiPendingDeletion {
-    /// Whether a package's deletion mark reaches every note the flashcard may have in Anki:
-    /// it reached Anki only in packages marking it exported, whose notes carry the GUID the mark shares.
-    pub fn is_markable_by_package(&self) -> bool {
-        self.reached_by_package && !self.reached_by_anki_connect
-    }
 }
 
 #[cfg(test)]

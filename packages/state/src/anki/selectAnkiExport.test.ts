@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
 import { stateAfterWithCache } from "../app/stateAfter.ts";
-import { serverCacheWith } from "../server/serverCacheWith.ts";
 import { ankiCache, ankiFlashcard, openOverview } from "./ankiTestSupport.ts";
 import {
   selectAnkiExport,
@@ -116,47 +115,18 @@ describe("selectAnkiExport", () => {
     ).toMatchObject({ duplicateCount: 1 });
   });
 
-  it("counts the deletions an export marking its cards would mark", () => {
-    const deleted = serverCacheWith(
-      "listAnkiPendingDeletions",
-      "p1",
-      {
-        deletions: [
-          {
-            flashcard_id: "f8",
-            word: "a",
-            requested_at_ms: 1,
-            reached_by_package: true,
-            reached_by_anki_connect: false,
-          },
-          {
-            flashcard_id: "f9",
-            word: "b",
-            requested_at_ms: 2,
-            reached_by_package: false,
-            reached_by_anki_connect: true,
-          },
-          {
-            flashcard_id: "f7",
-            word: "c",
-            requested_at_ms: 3,
-            reached_by_package: true,
-            reached_by_anki_connect: true,
-          },
-        ],
-      },
-      ankiCache(false),
-    );
+  it("tells whether the project uses AnkiConnect", () => {
+    const usingAnkiConnect = ankiCache(true);
     expect(
       selectAnkiExport({
         app: stateAfterWithCache(
-          deleted,
+          usingAnkiConnect,
           openOverview,
           actions.ankiExportOpened(),
         ),
-        backend: deleted,
+        backend: usingAnkiConnect,
       }),
-    ).toMatchObject({ markCount: 1 });
+    ).toMatchObject({ usesAnkiConnect: true });
   });
 
   it("counts only the cards of the ticked media files", () => {

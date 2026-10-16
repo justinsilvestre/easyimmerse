@@ -12,7 +12,6 @@ const exportingOnly: FlashcardSync = {
   package: {
     deletions: [],
     ankiSearch: "",
-    markCount: 0,
   },
   ankiConnect: null,
   nextCard: null,

@@ -48,7 +48,6 @@ async function savePackage(
       kind: "saved",
       flashcardCount: saved.flashcard_count,
       skippedMediaCount: saved.skipped_media_count,
-      markedDeletionCount: saved.marked_deletion_count,
     },
   };
 }
@@ -86,8 +85,6 @@ async function downloadedPackage(
     bytes: new Uint8Array(await response.arrayBuffer()),
     flashcardCount: Number(headers.get("x-easyimmerse-flashcard-count")) || 0,
     skippedMediaCount: Number(headers.get("x-easyimmerse-skipped-media")) || 0,
-    markedDeletionCount:
-      Number(headers.get("x-easyimmerse-marked-deletions")) || 0,
   };
 }
 

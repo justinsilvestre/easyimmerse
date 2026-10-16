@@ -3,25 +3,23 @@
 use std::collections::HashMap;
 
 use easyimmerse_anki::DeckSpec;
-use easyimmerse_core::flashcard::{AnkiPendingDeletion, Flashcard, FlashcardId};
+use easyimmerse_core::flashcard::{Flashcard, FlashcardId};
 use easyimmerse_core::project::{Project, ProjectId};
 
 use crate::auth::error_body::ApiFailure;
 use crate::now_ms::now_ms;
 use crate::state::AppState;
 
-/// A project, the named flashcards of it, and its recorded deletions from Anki, as they stood at `read_at_ms`.
+/// A project and the named flashcards of it, as they stood at `read_at_ms`.
 pub struct Selection {
     pub project: Project,
     pub flashcards: Vec<Flashcard>,
-    /// The project's deleted flashcards whose notes may still be in Anki, oldest first.
-    pub deletions: Vec<AnkiPendingDeletion>,
     /// Milliseconds since the Unix epoch, taken just before the flashcards were read.
     /// An edit saved later has a later `updated_at_ms`, so a record stamped with this time still counts it as changed.
     pub read_at_ms: u64,
 }
 
-/// Loads the project, the named flashcards of it, in the order named and each once, and its recorded deletions.
+/// Loads the project and the named flashcards of it, in the order named and each once.
 /// A named flashcard that is not in the project is passed over.
 pub async fn load_selection(
     state: &AppState,
@@ -45,7 +43,6 @@ async fn load_project_flashcards(
             Ok(Selection {
                 project: storage.get_project(&project_id)?,
                 flashcards: storage.list_flashcards(&project_id)?,
-                deletions: storage.list_anki_pending_deletions(&project_id)?,
                 read_at_ms,
             })
         })

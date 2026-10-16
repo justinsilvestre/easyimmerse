@@ -8,34 +8,16 @@ import type { AnkiPackageExport, AnkiSendOutcome } from "./ankiResponses.ts";
 /** The code of the failure of a send to Anki when Anki does not answer, which the project screen's panel shows in place of a notice. */
 export const ankiUnreachableCode = "anki_unreachable";
 
-/**
- * Tells how many flashcards an export wrote into the package, how many media files it left out,
- * and how many notes of deleted flashcards it marks for deletion, with how to find them in Anki.
- */
+/** Tells how many flashcards an export wrote into the package, and how many media files it left out. */
 export function exportedNotice({
   flashcardCount,
   skippedMediaCount,
-  markedDeletionCount,
 }: AnkiPackageExport) {
-  const exported =
-    flashcardCount === 0
-      ? "Exported an Anki package."
-      : `Exported ${count(flashcardCount, "flashcard")} to an Anki package.`;
   return notice(
     "success",
-    exported,
+    `Exported ${count(flashcardCount, "flashcard")} to an Anki package.`,
     skippedMediaLine(skippedMediaCount),
-    marksLine(markedDeletionCount),
   );
-}
-
-function marksLine(markedCount: number): string {
-  if (markedCount === 0) return "";
-  const notes =
-    markedCount === 1
-      ? "the note of 1 deleted flashcard"
-      : `the notes of ${markedCount} deleted flashcards`;
-  return `It marks ${notes} for deletion: once it is imported, search Anki for tag:easyImmerse::deleted and delete the notes it finds.`;
 }
 
 /**

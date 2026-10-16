@@ -26,7 +26,6 @@ function renderOverview() {
     "POST /projects/p1/anki/package": {
       flashcard_count: 1,
       skipped_media_count: 0,
-      marked_deletion_count: 0,
     },
     "PUT /projects/p1/anki-connect": {
       ...fixtureProject,

@@ -18,7 +18,7 @@ export function AnkiExportDialog({
   allCount,
   marksExported,
   duplicateCount,
-  markCount,
+  usesAnkiConnect,
   isBusy,
   onScopeChange,
   onMarkingChange,
@@ -38,8 +38,8 @@ export function AnkiExportDialog({
   marksExported: boolean;
   /** The exported cards that AnkiConnect put into Anki before any export took them out of the queue, which an import there would duplicate. */
   duplicateCount: number;
-  /** The notes of deleted flashcards the package marks for deletion when it takes its cards out of the queue. */
-  markCount: number;
+  /** Whether the project uses AnkiConnect, which deletes the notes of deleted flashcards from Anki, as no package can. */
+  usesAnkiConnect: boolean;
   isBusy: boolean;
   onScopeChange: (scope: AnkiExportScope) => void;
   onMarkingChange: (marksExported: boolean) => void;
@@ -48,7 +48,6 @@ export function AnkiExportDialog({
   onClose: () => void;
 }) {
   const count = scope === "newAndChanged" ? newAndChangedCount : allCount;
-  const marks = marksExported ? markCount : 0;
   return (
     <ModalDialog
       title="Export an Anki deck"
@@ -59,7 +58,7 @@ export function AnkiExportDialog({
           <Button onClick={onClose}>Cancel</Button>
           <Button
             variant="primary"
-            disabled={count + marks === 0 || isBusy}
+            disabled={count === 0 || isBusy}
             onClick={onExport}
           >
             {exportLabel(count, isBusy)}
@@ -102,12 +101,6 @@ export function AnkiExportDialog({
       {marksExported && duplicateCount > 0 && (
         <DuplicateWarning count={duplicateCount} />
       )}
-      {marks > 0 && (
-        <p className="text-sm">
-          The package also marks {pluralize(marks, "deleted flashcard")} for
-          deletion in Anki.
-        </p>
-      )}
       <div className="flex flex-col gap-2 text-sm text-fg-muted">
         <p>
           Audio and screenshots are included when the easyImmerse server has
@@ -118,15 +111,19 @@ export function AnkiExportDialog({
           keeping their progress. The look of the cards can be changed in Anki
           once they are imported.
         </p>
+        <p>
+          {usesAnkiConnect
+            ? "A package cannot delete notes from Anki, but AnkiConnect deletes the notes of the flashcards you delete."
+            : "A package cannot delete notes from Anki. When you delete a flashcard that went out in a package, delete its note in Anki yourself, or turn on AnkiConnect, which deletes the notes of the flashcards you delete."}
+        </p>
       </div>
     </ModalDialog>
   );
 }
 
-/** Names what Export writes: the cards it holds, or just the package when it holds only marks for deletion. */
+/** Names what Export writes: the cards the package holds. */
 function exportLabel(count: number, isBusy: boolean) {
-  if (isBusy) return "Exporting…";
-  return count === 0 ? "Export package" : `Export ${pluralize(count, "card")}`;
+  return isBusy ? "Exporting…" : `Export ${pluralize(count, "card")}`;
 }
 
 /**

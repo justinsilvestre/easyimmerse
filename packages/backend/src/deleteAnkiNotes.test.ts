@@ -19,15 +19,11 @@ const pending: AnkiPendingDeletions = {
       flashcard_id: "f1",
       word: "고양이",
       requested_at_ms: 1,
-      reached_by_package: false,
-      reached_by_anki_connect: true,
     },
     {
       flashcard_id: "f2",
       word: "개",
       requested_at_ms: 2,
-      reached_by_package: false,
-      reached_by_anki_connect: true,
     },
   ],
 };

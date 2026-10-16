@@ -2086,7 +2086,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nA package that marks its flashcards as exported, while the project does not use AnkiConnect, also holds a note for each recorded deletion\nof a flashcard that had been marked as exported and never sent through AnkiConnect: it shares that flashcard's GUID,\nso Anki's import replaces the note with one that says to delete it.\nOnce the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,\nthey are marked exported when the request asks for that, and the deletions it marked are cleared.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
+        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,\nand they are marked exported when the request asks for that.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
         "operationId": "exportAnkiPackage",
         "parameters": [
           {
@@ -2111,7 +2111,7 @@
         },
         "responses": {
           "200": {
-            "description": "Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count`, of media files left out in `X-EasyImmerse-Skipped-Media` and of deletions marked in `X-EasyImmerse-Marked-Deletions`. With a save path, what was saved.",
+            "description": "Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count` and of media files left out in `X-EasyImmerse-Skipped-Media`. With a save path, what was saved.",
             "headers": {
               "Content-Disposition": {
                 "schema": {
@@ -2126,14 +2126,6 @@
                   "minimum": 0
                 },
                 "description": "Without a save path: the count of flashcards the package holds, which leaves out those named that are not in the project"
-              },
-              "X-EasyImmerse-Marked-Deletions": {
-                "schema": {
-                  "type": "integer",
-                  "format": "int64",
-                  "minimum": 0
-                },
-                "description": "Without a save path: the count of notes of deleted flashcards the package marks for deletion"
               },
               "X-EasyImmerse-Skipped-Media": {
                 "schema": {
@@ -2163,7 +2155,7 @@
             }
           },
           "400": {
-            "description": "No flashcards named and no deletion to mark, a save path that is not absolute, or a save path that could not be written (code `save_failed`)",
+            "description": "No flashcards named, a save path that is not absolute, or a save path that could not be written (code `save_failed`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2193,7 +2185,7 @@
             }
           },
           "404": {
-            "description": "No such project, or none of the named flashcards in it and no deletion to mark",
+            "description": "No such project, or none of the named flashcards in it",
             "content": {
               "application/json": {
                 "schema": {
@@ -5418,7 +5410,7 @@
           },
           "marks_exported": {
             "type": "boolean",
-            "description": "Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.\nSuch a package also marks for deletion, while the project does not use AnkiConnect,\nthe notes of deleted flashcards that had been marked as exported and never sent through AnkiConnect."
+            "description": "Whether delivering the package marks its flashcards as exported, which takes them out of the Anki updates queue."
           },
           "save_path": {
             "type": [
@@ -5434,19 +5426,12 @@
         "description": "What the server wrote to the save path.",
         "required": [
           "flashcard_count",
-          "skipped_media_count",
-          "marked_deletion_count"
+          "skipped_media_count"
         ],
         "properties": {
           "flashcard_count": {
             "type": "integer",
             "format": "int64",
-            "minimum": 0
-          },
-          "marked_deletion_count": {
-            "type": "integer",
-            "format": "int64",
-            "description": "The notes of deleted flashcards that the package marks for deletion.",
             "minimum": 0
           },
           "skipped_media_count": {
@@ -5459,25 +5444,15 @@
       },
       "AnkiPendingDeletion": {
         "type": "object",
-        "description": "A deleted flashcard that had reached Anki, whose notes may still be there.\nIt lasts until AnkiConnect deletes the notes, an export marks the only note it can have for deletion, or the user marks it done.",
+        "description": "A deleted flashcard that had reached Anki, whose notes may still be there.\nIt lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.",
         "required": [
           "flashcard_id",
           "word",
-          "requested_at_ms",
-          "reached_by_package",
-          "reached_by_anki_connect"
+          "requested_at_ms"
         ],
         "properties": {
           "flashcard_id": {
             "$ref": "#/components/schemas/FlashcardId"
-          },
-          "reached_by_anki_connect": {
-            "type": "boolean",
-            "description": "Whether AnkiConnect had put the flashcard into Anki, so that Anki may hold a note for it under a GUID that Anki chose."
-          },
-          "reached_by_package": {
-            "type": "boolean",
-            "description": "Whether the flashcard had been marked as exported, so that its note in Anki may carry the GUID that a package's note for it carries."
           },
           "requested_at_ms": {
             "type": "integer",

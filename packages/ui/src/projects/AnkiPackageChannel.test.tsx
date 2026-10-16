@@ -8,7 +8,6 @@ afterEach(cleanup);
 const noDeletions: PackageSync = {
   deletions: [],
   ankiSearch: "",
-  markCount: 0,
 };
 
 const flushedQueue = (
@@ -78,8 +77,6 @@ describe("AnkiPackageChannel", () => {
           flashcard_id: "f9",
           word: "Katze",
           requested_at_ms: 1,
-          reached_by_package: true,
-          reached_by_anki_connect: false,
         },
       ],
     });

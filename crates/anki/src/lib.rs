@@ -7,7 +7,6 @@ mod card_template;
 mod collection;
 mod collection_json;
 mod deck_spec;
-mod deletion_mark;
 mod derived_id;
 mod field_html;
 mod guid;
@@ -25,7 +24,6 @@ mod test_support;
 
 pub use card_scheduling::CardScheduling;
 pub use deck_spec::DeckSpec;
-pub use deletion_mark::{DELETED_TAG, deletion_mark};
 pub use media_ref::AnkiMediaRef;
 pub use note_type::{AnkiNoteType, AnkiTemplate, note_type};
 pub use package::{AnkiError, PackageMedia, write_package};

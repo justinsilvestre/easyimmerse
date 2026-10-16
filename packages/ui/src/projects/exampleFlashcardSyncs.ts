@@ -12,7 +12,6 @@ export const neverExportedSync: FlashcardSync = {
   package: {
     deletions: [],
     ankiSearch: "",
-    markCount: 0,
   },
   ankiConnect: null,
   nextCard: exampleFlashcard,
@@ -33,12 +32,9 @@ export const deletionsListedSync: FlashcardSync = {
       flashcard_id: `f${index}`,
       word,
       requested_at_ms: index,
-      reached_by_package: true,
-      reached_by_anki_connect: false,
     })),
     ankiSearch:
       '"easyImmerse id:f0" OR "easyImmerse id:f1" OR "easyImmerse id:f2"',
-    markCount: 3,
   },
 };
 

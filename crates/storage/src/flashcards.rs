@@ -440,7 +440,6 @@ mod tests {
                 project_id: project(),
                 flashcard_ids: vec![id.clone()],
                 exported_at_ms: Some(1_000),
-                marked_deletions: vec![],
             })
             .unwrap();
         storage

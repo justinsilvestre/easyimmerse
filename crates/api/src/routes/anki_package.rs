@@ -1,5 +1,4 @@
-//! Exporting a project's flashcards as a legacy Anki deck package (.apkg), saved at a path or sent for download,
-//! with notes that mark the notes of deleted flashcards for deletion.
+//! Exporting a project's flashcards as a legacy Anki deck package (.apkg), saved at a path or sent for download.
 
 use std::io::Cursor;
 use std::path::Path as FilePath;
@@ -8,10 +7,8 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Response;
 use axum::{Extension, Json};
-use easyimmerse_anki::{
-    AnkiNote, CardScheduling, PackageMedia, deletion_mark, render_note, write_package,
-};
-use easyimmerse_core::flashcard::{AnkiPendingDeletion, FlashcardId};
+use easyimmerse_anki::{AnkiNote, CardScheduling, PackageMedia, render_note, write_package};
+use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::{Project, ProjectId};
 use easyimmerse_storage::DeliveredPackage;
 use serde::{Deserialize, Serialize};
@@ -35,9 +32,7 @@ pub struct AnkiPackageRequest {
     pub flashcard_ids: Vec<FlashcardId>,
     /// The absolute path to write the package to, on the server's machine. Null to receive the package in the response.
     pub save_path: Option<String>,
-    /// Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.
-    /// Such a package also marks for deletion, while the project does not use AnkiConnect,
-    /// the notes of deleted flashcards that had been marked as exported and never sent through AnkiConnect.
+    /// Whether delivering the package marks its flashcards as exported, which takes them out of the Anki updates queue.
     pub marks_exported: bool,
 }
 
@@ -48,17 +43,12 @@ pub struct AnkiPackageSaved {
     pub flashcard_count: u64,
     /// The audio clips and screenshots that could not be rendered and are missing from the package.
     pub skipped_media_count: u64,
-    /// The notes of deleted flashcards that the package marks for deletion.
-    pub marked_deletion_count: u64,
 }
 
 /// Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
 /// A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
-/// A package that marks its flashcards as exported, while the project does not use AnkiConnect, also holds a note for each recorded deletion
-/// of a flashcard that had been marked as exported and never sent through AnkiConnect: it shares that flashcard's GUID,
-/// so Anki's import replaces the note with one that says to delete it.
 /// Once the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,
-/// they are marked exported when the request asks for that, and the deletions it marked are cleared.
+/// and they are marked exported when the request asks for that.
 /// A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
 #[utoipa::path(
     post,
@@ -69,19 +59,18 @@ pub struct AnkiPackageSaved {
     params(("id" = String, Path, description = "The project id")),
     request_body = AnkiPackageRequest,
     responses(
-        (status = 200, description = "Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count`, of media files left out in `X-EasyImmerse-Skipped-Media` and of deletions marked in `X-EasyImmerse-Marked-Deletions`. With a save path, what was saved.", content(
+        (status = 200, description = "Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count` and of media files left out in `X-EasyImmerse-Skipped-Media`. With a save path, what was saved.", content(
             (Vec<u8> = "application/octet-stream"),
             (AnkiPackageSaved = "application/json"),
         ), headers(
             ("Content-Disposition" = String, description = "Without a save path: the suggested file name, as `filename` in ASCII and `filename*` in UTF-8"),
             ("X-EasyImmerse-Flashcard-Count" = u64, description = "Without a save path: the count of flashcards the package holds, which leaves out those named that are not in the project"),
             ("X-EasyImmerse-Skipped-Media" = u64, description = "Without a save path: the count of audio clips and screenshots left out of the package"),
-            ("X-EasyImmerse-Marked-Deletions" = u64, description = "Without a save path: the count of notes of deleted flashcards the package marks for deletion"),
         )),
-        (status = 400, description = "No flashcards named and no deletion to mark, a save path that is not absolute, or a save path that could not be written (code `save_failed`)", body = ApiError),
+        (status = 400, description = "No flashcards named, a save path that is not absolute, or a save path that could not be written (code `save_failed`)", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 403, description = "A save path, from a token that may not name local paths (code `local_paths_not_allowed`)", body = ApiError),
-        (status = 404, description = "No such project, or none of the named flashcards in it and no deletion to mark", body = ApiError),
+        (status = 404, description = "No such project, or none of the named flashcards in it", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
         (status = 500, description = "The package could not be built (code `package_failed`)", body = ApiError),
     ),
@@ -96,44 +85,17 @@ pub async fn export_anki_package(
         ensure_local_paths_allowed(token, &state.config)?;
         ensure_absolute(path)?;
     }
-    let is_any_named = !request.flashcard_ids.is_empty();
+    if request.flashcard_ids.is_empty() {
+        return Err(bad_request("name at least one flashcard"));
+    }
     let selection = load_selection(&state, project_id, request.flashcard_ids).await?;
-    let marked = deletions_to_mark(&selection, request.marks_exported);
-    ensure_contents(is_any_named, &selection, &marked)?;
-    let package = build_package(&state, token, selection, &marked, request.marks_exported).await?;
+    if selection.flashcards.is_empty() {
+        return Err(not_found("none of the named flashcards is in the project"));
+    }
+    let package = build_package(&state, token, selection, request.marks_exported).await?;
     match request.save_path {
         Some(path) => save_package(&state, package, &path).await,
         None => Ok(package_download(state, package)),
-    }
-}
-
-/// The recorded deletions a package marks for deletion: when it marks its flashcards as exported and the project does not use AnkiConnect,
-/// which deletes notes itself, those whose every note in Anki may carry the package's GUID.
-/// A flashcard also sent through AnkiConnect may have a note under a GUID Anki chose, which a mark cannot reach, so its deletion stays listed.
-fn deletions_to_mark(selection: &Selection, marks_exported: bool) -> Vec<AnkiPendingDeletion> {
-    if !marks_exported || selection.project.uses_anki_connect {
-        return Vec::new();
-    }
-    selection
-        .deletions
-        .iter()
-        .filter(|deletion| deletion.is_markable_by_package())
-        .cloned()
-        .collect()
-}
-
-/// Refuses a package that would hold nothing: 400 when no flashcard was named, and 404 when none of those named is in the project.
-fn ensure_contents(
-    is_any_named: bool,
-    selection: &Selection,
-    marked: &[AnkiPendingDeletion],
-) -> Result<(), ApiFailure> {
-    if !selection.flashcards.is_empty() || !marked.is_empty() {
-        Ok(())
-    } else if is_any_named {
-        Err(not_found("none of the named flashcards is in the project"))
-    } else {
-        Err(bad_request("name at least one flashcard"))
     }
 }
 
@@ -142,7 +104,6 @@ async fn build_package(
     state: &AppState,
     token: TokenKind,
     selection: Selection,
-    marked: &[AnkiPendingDeletion],
     marks_exported: bool,
 ) -> Result<BuiltPackage, ApiFailure> {
     let notes: Vec<AnkiNote> = selection.flashcards.iter().map(render_note).collect();
@@ -154,8 +115,7 @@ async fn build_package(
             skipped.reason
         );
     }
-    let mut notes = without_skipped_media(notes, &media.skipped);
-    notes.extend(marked.iter().map(deletion_mark));
+    let notes = without_skipped_media(notes, &media.skipped);
     let project = &selection.project;
     Ok(BuiltPackage {
         bytes: write_package_bytes(project, notes, media.files, now_ms()).await?,
@@ -169,10 +129,6 @@ async fn build_package(
                 .map(|flashcard| flashcard.id)
                 .collect(),
             exported_at_ms: marks_exported.then_some(selection.read_at_ms),
-            marked_deletions: marked
-                .iter()
-                .map(|deletion| deletion.flashcard_id.clone())
-                .collect(),
         },
     })
 }

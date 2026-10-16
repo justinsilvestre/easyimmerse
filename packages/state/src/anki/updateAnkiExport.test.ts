@@ -15,8 +15,8 @@ import { ankiCache, openOverview } from "./ankiTestSupport.ts";
 
 const backend = ankiCache(false);
 
-/** The cache with the deletion of a flashcard that had been marked as exported, which an export can mark. */
-const withMarkableDeletion = (cache: ServerCacheSlice) =>
+/** The cache with the deletion of a flashcard that had been marked as exported. */
+const withDeletion = (cache: ServerCacheSlice) =>
   serverCacheWith(
     "listAnkiPendingDeletions",
     "p1",
@@ -26,8 +26,6 @@ const withMarkableDeletion = (cache: ServerCacheSlice) =>
           flashcard_id: "f9",
           word: "Katze",
           requested_at_ms: 1,
-          reached_by_package: true,
-          reached_by_anki_connect: false,
         },
       ],
     },
@@ -66,14 +64,10 @@ const exported = (outcome: RequestOutcome<"exportAnkiPackage">) =>
     outcome,
   );
 
-const saved = (
-  skippedMediaCount = 0,
-  markedDeletionCount = 0,
-): AnkiPackageExport => ({
+const saved = (skippedMediaCount = 0): AnkiPackageExport => ({
   kind: "saved",
   flashcardCount: 2,
   skippedMediaCount,
-  markedDeletionCount,
 });
 
 const packageBytes = new Uint8Array([1, 2]);
@@ -84,7 +78,6 @@ const downloaded: AnkiPackageExport = {
   bytes: packageBytes,
   flashcardCount: 2,
   skippedMediaCount: 0,
-  markedDeletionCount: 0,
 };
 
 const failed = {
@@ -250,37 +243,16 @@ describe("updateAnkiExport", () => {
     ]);
   });
 
-  it("tells how many deletions the package marks, and how to find them in Anki", () => {
-    expect(
-      noticesAfter(...confirmed, exported({ ok: true, data: saved(0, 2) })),
-    ).toEqual([
-      "Exported 2 flashcards to an Anki package. It marks the notes of 2 deleted flashcards for deletion: once it is imported, search Anki for tag:easyImmerse::deleted and delete the notes it finds.",
-    ]);
-  });
-
-  it("asks where to save a package that holds no flashcard but marks a deletion", () => {
-    const onlyMarks = withMarkableDeletion(ankiCache(false, []));
-    const [, effects] = update(
-      stateAfterWithCache(onlyMarks, openOverview, actions.ankiExportOpened()),
-      actions.ankiExportConfirmed(),
-      onlyMarks,
-    );
-    expect(effects).toEqual([
-      { type: "pickSavePath", suggestedFileName: "Korean.apkg" },
-    ]);
-  });
-
-  it("asks for no path when the package would hold no flashcard and mark no deletion", () => {
-    const onlyMarks = withMarkableDeletion(ankiCache(false, []));
+  it("asks for no path when the package would hold no flashcard, though a deletion is listed", () => {
+    const noFlashcards = withDeletion(ankiCache(false, []));
     const [, effects] = update(
       stateAfterWithCache(
-        onlyMarks,
+        noFlashcards,
         openOverview,
         actions.ankiExportOpened(),
-        actions.ankiExportMarkingChosen(false),
       ),
       actions.ankiExportConfirmed(),
-      onlyMarks,
+      noFlashcards,
     );
     expect(effects).toEqual([]);
   });

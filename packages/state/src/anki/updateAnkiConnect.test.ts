@@ -83,8 +83,6 @@ const allSentWithPending = (
     flashcard_id: "f9",
     word: "f9",
     requested_at_ms: 1,
-    reached_by_package: false,
-    reached_by_anki_connect: true,
   };
   const key = cacheKey("listAnkiPendingDeletions", "p1");
   const data = { deletions: Array.from({ length: count }, () => deletion) };

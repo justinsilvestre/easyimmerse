@@ -231,8 +231,8 @@ impl Storage {
         })
     }
 
-    /// Records a delivered package in one transaction: a package held its flashcards, which are marked exported when it says so,
-    /// and the deletions it marked are dealt with. A flashcard that is gone is passed over.
+    /// Records a delivered package in one transaction: a package held its flashcards, which are marked exported when it says so.
+    /// A flashcard that is gone is passed over.
     pub fn record_anki_export(&self, package: &DeliveredPackage) -> Result<(), StorageError> {
         self.write(|conn| anki_sync::record_anki_export(conn, package))
     }

@@ -40,8 +40,6 @@ type PackageCounts = {
   flashcardCount: number;
   /** The audio clips and screenshots that could not be rendered and are missing from the package. */
   skippedMediaCount: number;
-  /** The notes of deleted flashcards that the package marks for deletion. */
-  markedDeletionCount: number;
 };
 
 /**

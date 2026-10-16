@@ -17,9 +17,6 @@ pub const FLASHCARD_COUNT_HEADER: &str = "x-easyimmerse-flashcard-count";
 /// The response header that counts the media files left out of a downloaded package.
 pub const SKIPPED_MEDIA_HEADER: &str = "x-easyimmerse-skipped-media";
 
-/// The response header that counts the notes of deleted flashcards a downloaded package marks for deletion.
-pub const MARKED_DELETIONS_HEADER: &str = "x-easyimmerse-marked-deletions";
-
 /// A package built in memory, with what is recorded once it has been delivered.
 pub struct BuiltPackage {
     pub bytes: Vec<u8>,
@@ -31,10 +28,6 @@ pub struct BuiltPackage {
 impl BuiltPackage {
     fn flashcard_count(&self) -> u64 {
         self.delivered.flashcard_ids.len() as u64
-    }
-
-    fn marked_deletion_count(&self) -> u64 {
-        self.delivered.marked_deletions.len() as u64
     }
 }
 
@@ -67,7 +60,6 @@ pub async fn save_package(
     let saved = AnkiPackageSaved {
         flashcard_count: package.flashcard_count(),
         skipped_media_count: package.skipped_media_count,
-        marked_deletion_count: package.marked_deletion_count(),
     };
     record_export(state, package.delivered).await?;
     Ok(Json(saved).into_response())
@@ -91,10 +83,6 @@ pub fn package_download(state: AppState, package: BuiltPackage) -> Response {
     headers.insert(
         HeaderName::from_static(SKIPPED_MEDIA_HEADER),
         HeaderValue::from(package.skipped_media_count),
-    );
-    headers.insert(
-        HeaderName::from_static(MARKED_DELETIONS_HEADER),
-        HeaderValue::from(package.marked_deletion_count()),
     );
     let BuiltPackage {
         bytes, delivered, ..

@@ -422,7 +422,7 @@ mod export_anki_package {
         .await;
         assert_eq!(
             response.json(),
-            json!({ "flashcard_count": 2, "skipped_media_count": 0, "marked_deletion_count": 0 })
+            json!({ "flashcard_count": 2, "skipped_media_count": 0 })
         );
     }
 
@@ -559,7 +559,7 @@ mod render_anki_notes {
     }
 }
 
-mod deletion_marks {
+mod package_deletions {
     use super::*;
 
     /// Creates a flashcard, exports it marked as exported, and deletes it, returning its id.
@@ -570,15 +570,6 @@ mod deletion_marks {
         id
     }
 
-    async fn export_marking(
-        server: &TestServer,
-        marks_exported: bool,
-    ) -> crate::support::TestResponse {
-        let body =
-            json!({ "flashcard_ids": [], "marks_exported": marks_exported, "save_path": null });
-        export(server, &body).await
-    }
-
     async fn listed_count(server: &TestServer) -> usize {
         let response = server
             .get(&format!("/projects/{PROJECT}/anki/pending-deletions"))
@@ -586,140 +577,33 @@ mod deletion_marks {
         response.json()["deletions"].as_array().unwrap().len()
     }
 
-    fn note_tags(package: &[u8]) -> String {
-        open_collection(package)
-            .query_row("SELECT tags FROM notes", [], |row| row.get(0))
-            .unwrap()
-    }
-
     #[tokio::test(flavor = "multi_thread")]
-    async fn a_package_marking_its_cards_holds_a_mark_for_a_deleted_exported_flashcard() {
+    async fn a_package_holds_no_note_for_a_deleted_flashcard() {
         let server = spawn_test_server(false).await;
         delete_exported(&server).await;
-        let response = export_marking(&server, true).await;
-        assert_eq!(note_tags(&response.bytes).trim(), "easyImmerse::deleted");
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn the_mark_shares_the_guid_of_the_note_it_replaces() {
-        let server = spawn_test_server(false).await;
-        let id = create_flashcard(&server, PROJECT, None).await;
-        let first = export_ids(&server, std::slice::from_ref(&id)).await;
-        delete_flashcard(&server, &id).await;
-        let marking = export_marking(&server, true).await;
-        let guid = |package: &[u8]| -> String {
-            open_collection(package)
-                .query_row("SELECT guid FROM notes", [], |row| row.get(0))
-                .unwrap()
-        };
-        assert_eq!(guid(&marking.bytes), guid(&first.bytes));
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn the_mark_says_to_delete_the_note() {
-        let server = spawn_test_server(false).await;
-        delete_exported(&server).await;
-        let response = export_marking(&server, true).await;
-        assert_eq!(
-            note_fields(&response.bytes)[0],
-            "“comer” was deleted in easyImmerse. Delete this note."
-        );
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn counts_the_marks_in_a_header() {
-        let server = spawn_test_server(false).await;
-        delete_exported(&server).await;
-        let response = export_marking(&server, true).await;
-        assert_eq!(response.header("x-easyimmerse-marked-deletions"), Some("1"));
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn clears_the_deletion_once_the_package_is_delivered() {
-        let server = spawn_test_server(false).await;
-        delete_exported(&server).await;
-        export_marking(&server, true).await;
-        assert_eq!(listed_count(&server).await, 0);
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn marks_a_deletion_in_one_package_only() {
-        let server = spawn_test_server(false).await;
-        delete_exported(&server).await;
-        export_marking(&server, true).await;
-        assert_eq!(export_marking(&server, true).await.status, 400);
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn a_package_not_marking_its_cards_marks_no_deletion() {
-        let server = spawn_test_server(false).await;
-        let id = delete_exported(&server).await;
         let kept = create_flashcard(&server, PROJECT, None).await;
-        let body = json!({ "flashcard_ids": [kept], "marks_exported": false, "save_path": null });
-        export(&server, &body).await;
-        assert_eq!(listed_count(&server).await, 1, "{id} stays recorded");
+        let response = export_ids(&server, &[kept]).await;
+        let note_count: i64 = open_collection(&response.bytes)
+            .query_row("SELECT count(*) FROM notes", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(note_count, 1);
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn marks_no_deletion_while_anki_connect_is_on() {
+    async fn keeps_the_deletion_listed_once_a_package_is_delivered() {
         let server = spawn_test_server(false).await;
         delete_exported(&server).await;
-        set_anki_connect(&server, PROJECT, true).await;
-        assert_eq!(export_marking(&server, true).await.status, 400);
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn marks_no_deletion_of_a_flashcard_only_sent() {
-        let server = spawn_test_server(false).await;
-        let id = create_flashcard(&server, PROJECT, None).await;
-        server
-            .post_json(
-                &format!("/projects/{PROJECT}/anki/sent"),
-                &json!({ "flashcard_ids": [id], "rendered_at_ms": 1 }),
-            )
-            .await;
-        delete_flashcard(&server, &id).await;
-        assert_eq!(export_marking(&server, true).await.status, 400);
-    }
-
-    /// Creates a flashcard, sends it through AnkiConnect, exports it marked as exported, and deletes it.
-    async fn delete_sent_and_exported(server: &TestServer) {
-        let id = create_flashcard(server, PROJECT, None).await;
-        server
-            .post_json(
-                &format!("/projects/{PROJECT}/anki/sent"),
-                &json!({ "flashcard_ids": [id], "rendered_at_ms": 1 }),
-            )
-            .await;
-        export_ids(server, std::slice::from_ref(&id)).await;
-        delete_flashcard(server, &id).await;
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn marks_no_deletion_of_a_flashcard_both_sent_and_exported() {
-        let server = spawn_test_server(false).await;
-        delete_sent_and_exported(&server).await;
-        assert_eq!(export_marking(&server, true).await.status, 400);
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn keeps_listed_the_deletion_of_a_flashcard_both_sent_and_exported() {
-        let server = spawn_test_server(false).await;
-        delete_sent_and_exported(&server).await;
         let kept = create_flashcard(&server, PROJECT, None).await;
         export_ids(&server, &[kept]).await;
         assert_eq!(listed_count(&server).await, 1);
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn answers_how_many_deletions_a_saved_package_marks() {
-        let server = spawn_test_server(true).await;
+    async fn refuses_a_package_naming_no_flashcard_while_a_deletion_is_listed() {
+        let server = spawn_test_server(false).await;
         delete_exported(&server).await;
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("deck.apkg");
-        let body = json!({ "flashcard_ids": [], "marks_exported": true, "save_path": path });
-        let response = export(&server, &body).await;
-        assert_eq!(response.json()["marked_deletion_count"], 1);
+        let body = json!({ "flashcard_ids": [], "marks_exported": true, "save_path": null });
+        assert_eq!(export(&server, &body).await.status, 400);
     }
 }
 

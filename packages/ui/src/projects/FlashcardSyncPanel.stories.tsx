@@ -56,41 +56,6 @@ export const DeletedFlashcardsToDeleteInAnki: Story = {
   args: { sync: deletionsListedSync },
 };
 
-export const DeletedFlashcardsOnlySentToAnki: Story = {
-  args: {
-    sync: {
-      ...deletionsListedSync,
-      package: {
-        ...deletionsListedSync.package,
-        deletions: deletionsListedSync.package.deletions.map((deletion) => ({
-          ...deletion,
-          reached_by_package: false,
-          reached_by_anki_connect: true,
-        })),
-        markCount: 0,
-      },
-    },
-  },
-};
-
-export const DeletedFlashcardsOneAlsoSentToAnki: Story = {
-  args: {
-    sync: {
-      ...deletionsListedSync,
-      package: {
-        ...deletionsListedSync.package,
-        deletions: deletionsListedSync.package.deletions.map(
-          (deletion, index) => ({
-            ...deletion,
-            reached_by_anki_connect: index === 0,
-          }),
-        ),
-        markCount: 2,
-      },
-    },
-  },
-};
-
 export const EveryFlashcardExported: Story = {
   args: {
     sync: {

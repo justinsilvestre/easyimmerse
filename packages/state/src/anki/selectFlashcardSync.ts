@@ -19,7 +19,6 @@ import {
   isNeverDelivered,
   isQueued,
 } from "./ankiUpdatesQueue.ts";
-import { isMarkableByPackage } from "./isMarkableByPackage.ts";
 
 /** Whether Anki answered the last check: still being asked, answered, did not answer, or answered that it refuses easyImmerse. */
 export type AnkiConnectionStatus =
@@ -45,8 +44,6 @@ export type PackageSync = {
   deletions: readonly AnkiPendingDeletion[];
   /** The Anki search that finds the notes of the listed deletions. */
   ankiSearch: string;
-  /** How many of the listed deletions the next export marking its flashcards as exported marks for deletion. */
-  markCount: number;
 };
 
 /** What the project overview's flashcards panel shows about AnkiConnect while it is on for the project. */
@@ -118,7 +115,6 @@ function packageSync(deletions: readonly AnkiPendingDeletion[]): PackageSync {
   return {
     deletions,
     ankiSearch: ankiSearchOf(deletions.map(({ flashcard_id }) => flashcard_id)),
-    markCount: deletions.filter(isMarkableByPackage).length,
   };
 }
 

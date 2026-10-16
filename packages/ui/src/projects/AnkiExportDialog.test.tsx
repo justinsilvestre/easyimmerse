@@ -22,7 +22,7 @@ function renderDialog(
       allCount={4}
       marksExported
       duplicateCount={0}
-      markCount={0}
+      usesAnkiConnect={false}
       isBusy={false}
       onScopeChange={(scope: AnkiExportScope) => calls.push(`scope ${scope}`)}
       onMarkingChange={(marksExported) =>
@@ -131,24 +131,22 @@ describe("AnkiExportDialog", () => {
     expect(screen.queryByRole("note")).toBeNull();
   });
 
-  it("tells how many deleted flashcards the package marks for deletion", () => {
-    renderDialog({ markCount: 2 });
+  it("tells that a package cannot delete notes, which you delete in Anki yourself while AnkiConnect is off", () => {
+    renderDialog();
     expect(
       screen.getByText(
-        "The package also marks 2 deleted flashcards for deletion in Anki.",
+        "A package cannot delete notes from Anki. When you delete a flashcard that went out in a package, delete its note in Anki yourself, or turn on AnkiConnect, which deletes the notes of the flashcards you delete.",
       ),
     ).toBeDefined();
   });
 
-  it("marks no deletion while the cards are kept in the queue", () => {
-    renderDialog({ markCount: 2, marksExported: false });
-    expect(screen.queryByText(/for deletion in Anki/)).toBeNull();
-  });
-
-  it("exports a package that holds only marks for deletion", () => {
-    const calls = renderDialog({ newAndChangedCount: 0, markCount: 1 });
-    fireEvent.click(screen.getByRole("button", { name: "Export package" }));
-    expect(calls).toEqual(["export"]);
+  it("tells that AnkiConnect deletes the notes a package cannot while it is on", () => {
+    renderDialog({ usesAnkiConnect: true });
+    expect(
+      screen.getByText(
+        "A package cannot delete notes from Anki, but AnkiConnect deletes the notes of the flashcards you delete.",
+      ),
+    ).toBeDefined();
   });
 
   it("ticks every media file while none is chosen", () => {

@@ -453,11 +453,8 @@ export interface paths {
         /**
          * Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
          *     A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
-         *     A package that marks its flashcards as exported, while the project does not use AnkiConnect, also holds a note for each recorded deletion
-         *     of a flashcard that had been marked as exported and never sent through AnkiConnect: it shares that flashcard's GUID,
-         *     so Anki's import replaces the note with one that says to delete it.
          *     Once the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,
-         *     they are marked exported when the request asks for that, and the deletions it marked are cleared.
+         *     and they are marked exported when the request asks for that.
          *     A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
          */
         post: operations["exportAnkiPackage"];
@@ -1062,11 +1059,7 @@ export interface components {
         AnkiPackageRequest: {
             /** @description The flashcards to export, in the order Anki shows them as new cards. */
             flashcard_ids: components["schemas"]["FlashcardId"][];
-            /**
-             * @description Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.
-             *     Such a package also marks for deletion, while the project does not use AnkiConnect,
-             *     the notes of deleted flashcards that had been marked as exported and never sent through AnkiConnect.
-             */
+            /** @description Whether delivering the package marks its flashcards as exported, which takes them out of the Anki updates queue. */
             marks_exported: boolean;
             /** @description The absolute path to write the package to, on the server's machine. Null to receive the package in the response. */
             save_path?: string | null;
@@ -1077,25 +1070,16 @@ export interface components {
             flashcard_count: number;
             /**
              * Format: int64
-             * @description The notes of deleted flashcards that the package marks for deletion.
-             */
-            marked_deletion_count: number;
-            /**
-             * Format: int64
              * @description The audio clips and screenshots that could not be rendered and are missing from the package.
              */
             skipped_media_count: number;
         };
         /**
          * @description A deleted flashcard that had reached Anki, whose notes may still be there.
-         *     It lasts until AnkiConnect deletes the notes, an export marks the only note it can have for deletion, or the user marks it done.
+         *     It lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.
          */
         AnkiPendingDeletion: {
             flashcard_id: components["schemas"]["FlashcardId"];
-            /** @description Whether AnkiConnect had put the flashcard into Anki, so that Anki may hold a note for it under a GUID that Anki chose. */
-            reached_by_anki_connect: boolean;
-            /** @description Whether the flashcard had been marked as exported, so that its note in Anki may carry the GUID that a package's note for it carries. */
-            reached_by_package: boolean;
             /**
              * Format: int64
              * @description Milliseconds since the Unix epoch when the flashcard was deleted.
@@ -3745,15 +3729,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count`, of media files left out in `X-EasyImmerse-Skipped-Media` and of deletions marked in `X-EasyImmerse-Marked-Deletions`. With a save path, what was saved. */
+            /** @description Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count` and of media files left out in `X-EasyImmerse-Skipped-Media`. With a save path, what was saved. */
             200: {
                 headers: {
                     /** @description Without a save path: the suggested file name, as `filename` in ASCII and `filename*` in UTF-8 */
                     "Content-Disposition"?: string;
                     /** @description Without a save path: the count of flashcards the package holds, which leaves out those named that are not in the project */
                     "X-EasyImmerse-Flashcard-Count"?: number;
-                    /** @description Without a save path: the count of notes of deleted flashcards the package marks for deletion */
-                    "X-EasyImmerse-Marked-Deletions"?: number;
                     /** @description Without a save path: the count of audio clips and screenshots left out of the package */
                     "X-EasyImmerse-Skipped-Media"?: number;
                     [name: string]: unknown;
@@ -3763,7 +3745,7 @@ export interface operations {
                     "application/json": components["schemas"]["AnkiPackageSaved"];
                 };
             };
-            /** @description No flashcards named and no deletion to mark, a save path that is not absolute, or a save path that could not be written (code `save_failed`) */
+            /** @description No flashcards named, a save path that is not absolute, or a save path that could not be written (code `save_failed`) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3790,7 +3772,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiError"];
                 };
             };
-            /** @description No such project, or none of the named flashcards in it and no deletion to mark */
+            /** @description No such project, or none of the named flashcards in it */
             404: {
                 headers: {
                     [name: string]: unknown;

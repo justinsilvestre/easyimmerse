@@ -8,13 +8,10 @@ import { pluralize } from "../components/pluralize.ts";
  */
 export function DeletedInAnki({
   deletions,
-  markCount,
   onCopyAnkiSearch,
   onMarkDone,
 }: {
   deletions: readonly AnkiPendingDeletion[];
-  /** How many of them the next export taking cards out of the Anki updates queue marks for deletion. */
-  markCount: number;
   onCopyAnkiSearch: () => void;
   onMarkDone: () => void;
 }) {
@@ -29,7 +26,9 @@ export function DeletedInAnki({
         ))}
       </ul>
       <p className="text-fg-muted">
-        {deletionsHint(deletions.length, markCount)}
+        A package cannot delete notes from Anki. Paste the search into Anki's
+        browser to find their notes, delete them there, then mark them as done.
+        If you turn AnkiConnect on, it deletes them for you.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={onCopyAnkiSearch}>
@@ -41,13 +40,4 @@ export function DeletedInAnki({
       </div>
     </div>
   );
-}
-
-/** Tells how to delete the notes in Anki, and how many of them the next export marks for deletion instead. */
-function deletionsHint(count: number, markCount: number) {
-  const search =
-    "Paste the search into Anki's browser to find their notes, delete them there, then mark them as done.";
-  if (markCount === 0) return search;
-  const which = markCount === count ? "them" : `${markCount} of them`;
-  return `${search} Otherwise, the next export that takes cards out of the Anki updates queue marks ${which} for deletion.`;
 }

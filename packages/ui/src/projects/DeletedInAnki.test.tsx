@@ -8,19 +8,13 @@ const deletion = (flashcardId: string, word: string) => ({
   flashcard_id: flashcardId,
   word,
   requested_at_ms: 1,
-  reached_by_package: true,
-  reached_by_anki_connect: false,
 });
 
-function renderList(
-  words: readonly string[] = ["Katze", "Hund"],
-  markCount = 0,
-) {
+function renderList(words: readonly string[] = ["Katze", "Hund"]) {
   const calls: string[] = [];
   render(
     <DeletedInAnki
       deletions={words.map((word, index) => deletion(`f${index}`, word))}
-      markCount={markCount}
       onCopyAnkiSearch={() => calls.push("copy")}
       onMarkDone={() => calls.push("done")}
     />,
@@ -50,27 +44,13 @@ describe("DeletedInAnki", () => {
     expect(screen.getByText("A flashcard without a word")).toBeDefined();
   });
 
-  it("tells how to delete the notes in Anki", () => {
+  it("tells that a package cannot delete the notes, how to delete them in Anki, and that AnkiConnect would", () => {
     renderList();
     expect(
       screen.getByText(
-        "Paste the search into Anki's browser to find their notes, delete them there, then mark them as done.",
+        "A package cannot delete notes from Anki. Paste the search into Anki's browser to find their notes, delete them there, then mark them as done. If you turn AnkiConnect on, it deletes them for you.",
       ),
     ).toBeDefined();
-  });
-
-  it("tells that the next export taking cards out of the Anki updates queue marks them for deletion", () => {
-    renderList(["Katze", "Hund"], 2);
-    expect(
-      screen.getByText(
-        /Otherwise, the next export that takes cards out of the Anki updates queue marks them for deletion\./,
-      ),
-    ).toBeDefined();
-  });
-
-  it("tells how many of them the next export marks when only some can be", () => {
-    renderList(["Katze", "Hund"], 1);
-    expect(screen.getByText(/marks 1 of them for deletion\./)).toBeDefined();
   });
 
   it("copies the Anki search", () => {

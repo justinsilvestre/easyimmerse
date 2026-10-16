@@ -8,7 +8,6 @@ import { isSettled } from "../server/isSettled.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
 import {
   cachedFlashcards,
-  cachedMarkCount,
   cachedMediaFileIds,
   cachedProjectName,
   cachedUsesAnkiConnect,
@@ -155,12 +154,9 @@ function download(exported: AnkiPackageExport) {
   return [{ type: "downloadFile", fileName, bytes }] satisfies Effect[];
 }
 
-/** Tells whether the package would hold no flashcard and mark no deletion. */
+/** Tells whether the package would hold no flashcard. */
 function isEmpty(dialog: AnkiExportDialog, context: ExportContext) {
-  const marks = dialog.marksExported
-    ? cachedMarkCount(context.backend, context.projectId)
-    : 0;
-  return idsToExport(dialog, context).length === 0 && marks === 0;
+  return idsToExport(dialog, context).length === 0;
 }
 
 function idsToExport(dialog: AnkiExportDialog, context: ExportContext) {

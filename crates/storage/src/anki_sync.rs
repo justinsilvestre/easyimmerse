@@ -4,9 +4,7 @@ use easyimmerse_core::flashcard::FlashcardId;
 use easyimmerse_core::project::ProjectId;
 use rusqlite::{Connection, params};
 
-use crate::anki_pending_deletions::{
-    clear_anki_pending_deletion, record_anki_pending_deletion_of_gone,
-};
+use crate::anki_pending_deletions::record_anki_pending_deletion_of_gone;
 use crate::error::StorageError;
 use crate::projects::ensure_project_exists;
 use crate::stored_integer::to_stored_integer;
@@ -18,12 +16,10 @@ pub struct DeliveredPackage {
     pub flashcard_ids: Vec<FlashcardId>,
     /// The time the flashcards were read, which marks them exported, or `None` when the export does not mark them.
     pub exported_at_ms: Option<u64>,
-    /// The deleted flashcards whose notes the package marks for deletion.
-    pub marked_deletions: Vec<FlashcardId>,
 }
 
-/// Records a delivered package in one transaction: a package held its flashcards, which are marked exported when it says so,
-/// and the deletions it marked are dealt with. A flashcard deleted since the export began is passed over.
+/// Records a delivered package in one transaction: a package held its flashcards, which are marked exported when it says so.
+/// A flashcard deleted since the export began is passed over.
 pub fn record_anki_export(
     conn: &mut Connection,
     package: &DeliveredPackage,
@@ -36,9 +32,6 @@ pub fn record_anki_export(
              exported_at_ms = coalesce(?2, exported_at_ms) WHERE id = ?1",
             params![id.0, package.exported_at_ms.map(to_stored_integer)],
         )?;
-    }
-    for id in &package.marked_deletions {
-        clear_anki_pending_deletion(&transaction, &package.project_id, id)?;
     }
     transaction.commit()?;
     Ok(())
@@ -77,7 +70,7 @@ mod tests {
         ProjectId("placeholder-1".to_string())
     }
 
-    /// A delivered package of the project's flashcards, marking no deletion.
+    /// A delivered package of the project's flashcards.
     fn package(
         project_id: &ProjectId,
         ids: &[FlashcardId],
@@ -87,7 +80,6 @@ mod tests {
             project_id: project_id.clone(),
             flashcard_ids: ids.to_vec(),
             exported_at_ms,
-            marked_deletions: vec![],
         }
     }
 
@@ -179,19 +171,18 @@ mod tests {
     }
 
     #[test]
-    fn an_export_clears_the_deletions_it_marked() {
+    fn an_export_keeps_the_deletions_listed() {
         let storage = seeded_storage();
         let id = create(&storage);
         storage
             .record_anki_send(&project(), std::slice::from_ref(&id), 1)
             .unwrap();
         storage.delete_flashcard(&id).unwrap();
-        let delivered = DeliveredPackage {
-            marked_deletions: vec![id],
-            ..package(&project(), &[], Some(2))
-        };
-        storage.record_anki_export(&delivered).unwrap();
-        assert_eq!(listed_deletion_ids(&storage), Vec::<FlashcardId>::new());
+        let kept = create(&storage);
+        storage
+            .record_anki_export(&package(&project(), &[kept], Some(2)))
+            .unwrap();
+        assert_eq!(listed_deletion_ids(&storage), vec![id]);
     }
 
     #[test]
@@ -273,20 +264,6 @@ mod tests {
             .map(|deletion| deletion.word)
             .collect();
         assert_eq!(words, vec!["fressen"]);
-    }
-
-    #[test]
-    fn a_send_recorded_after_a_deletion_records_that_the_flashcard_reached_anki_through_anki_connect()
-     {
-        let storage = seeded_storage();
-        let id = create(&storage);
-        storage
-            .record_anki_export(&package(&project(), std::slice::from_ref(&id), Some(1)))
-            .unwrap();
-        storage.delete_flashcard(&id).unwrap();
-        storage.record_anki_send(&project(), &[id], 1).unwrap();
-        let listed = storage.list_anki_pending_deletions(&project()).unwrap();
-        assert!(listed[0].reached_by_anki_connect);
     }
 
     #[test]

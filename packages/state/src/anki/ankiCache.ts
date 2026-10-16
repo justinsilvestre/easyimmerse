@@ -1,23 +1,10 @@
 import type { AnkiPendingDeletion, Flashcard } from "@easyimmerse/types";
 import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { cacheEntry } from "../server/cacheEntry.ts";
-import { isMarkableByPackage } from "./isMarkableByPackage.ts";
 
 const noFlashcards: readonly Flashcard[] = [];
 const noMediaFileIds: readonly string[] = [];
 const noDeletions: readonly AnkiPendingDeletion[] = [];
-
-/**
- * Counts the cached deletions whose notes an export marking its flashcards as exported would mark for deletion:
- * none while the project uses AnkiConnect, which deletes notes itself, and otherwise those whose every note such a mark reaches.
- */
-export function cachedMarkCount(
-  backend: ServerCacheSlice,
-  projectId: string,
-): number {
-  if (cachedUsesAnkiConnect(backend, projectId)) return 0;
-  return cachedDeletions(backend, projectId).filter(isMarkableByPackage).length;
-}
 
 /** Returns the project's cached deletions from Anki, oldest first, or none while they are not cached. */
 export function cachedDeletions(
