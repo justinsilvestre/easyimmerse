@@ -36,12 +36,14 @@ describe("ankiConnectActions", () => {
     });
   });
 
-  it("updates a note's fields by its id", () => {
-    expect(ankiConnectActions.updateNoteFields(7, { Word: "개" })).toEqual({
-      action: "updateNoteFields",
-      version: 6,
-      params: { note: { id: 7, fields: { Word: "개" } } },
-    });
+  it("updates a note's fields and tags by its id", () => {
+    expect(ankiConnectActions.updateNote(7, { Word: "개" }, ["verbs"])).toEqual(
+      {
+        action: "updateNote",
+        version: 6,
+        params: { note: { id: 7, fields: { Word: "개" }, tags: ["verbs"] } },
+      },
+    );
   });
 
   it("runs several actions in one request", () => {

@@ -58,9 +58,10 @@ async function updateNotes(
 ): Promise<string[]> {
   const sent: string[] = [];
   for (const { note, id } of updates) {
-    const request = ankiConnectActions.updateNoteFields(
+    const request = ankiConnectActions.updateNote(
       id,
       fieldsOf(note_type, note),
+      note.tags,
     );
     if (await hasSucceeded(anki.invoke(request))) sent.push(note.flashcard_id);
   }

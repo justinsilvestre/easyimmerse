@@ -45,7 +45,7 @@ const rendered: AnkiNotes = {
     templates: [{ name: "Card", front: "{{Word}}", back: "{{Word}}" }],
     css: "",
   },
-  notes: [withMedia, note("f2", "개")],
+  notes: [withMedia, { ...note("f2", "개"), tags: ["verbs", "movie"] }],
   rendered_at_ms: 1_700,
 };
 
@@ -59,7 +59,7 @@ const ankiAnswers: AnkiAnswers = {
   canAddNotesWithErrorDetail: ({ notes }) =>
     (notes as unknown[]).map(() => ({ canAdd: true, error: null })),
   addNotes: ({ notes }) => (notes as unknown[]).map((_, index) => 100 + index),
-  updateNoteFields: () => null,
+  updateNote: () => null,
 };
 
 /** A server that renders `rendered`, answers the record of a send with `recorded`, and records every request. */
@@ -247,7 +247,7 @@ describe("sendFlashcardsToAnki", () => {
     ]);
   });
 
-  it("updates the note Anki holds for a flashcard", async () => {
+  it("updates the fields and tags of the note Anki holds for a flashcard", async () => {
     const requests = await actionsOf(
       send({
         ...ankiAnswers,
@@ -255,12 +255,13 @@ describe("sendFlashcardsToAnki", () => {
       }),
     );
     expect(requests).toContainEqual({
-      action: "updateNoteFields",
+      action: "updateNote",
       version: 6,
       params: {
         note: {
           id: 42,
           fields: { Word: "개", Screenshot: "", "easyImmerse id": "f2" },
+          tags: ["verbs", "movie"],
         },
       },
     });

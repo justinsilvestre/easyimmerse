@@ -46,8 +46,9 @@ export const ankiConnectActions = {
     action("canAddNotesWithErrorDetail", { notes }),
   addNotes: (notes: readonly AnkiConnectNote[]) =>
     action("addNotes", { notes }),
-  updateNoteFields: (id: number, fields: Record<string, string>) =>
-    action("updateNoteFields", { note: { id, fields } }),
+  /** Replaces a note's fields and its tags. */
+  updateNote: (id: number, fields: Record<string, string>, tags: string[]) =>
+    action("updateNote", { note: { id, fields, tags } }),
   /** Deletes notes with their cards. Anki passes over an id it has no note for. */
   deleteNotes: (noteIds: readonly number[]) =>
     action("deleteNotes", { notes: noteIds }),
