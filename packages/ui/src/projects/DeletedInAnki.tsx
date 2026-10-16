@@ -13,7 +13,7 @@ export function DeletedInAnki({
   onMarkDone,
 }: {
   deletions: readonly AnkiPendingDeletion[];
-  /** How many of them the next export marking its cards as exported marks for deletion. */
+  /** How many of them the next export taking cards out of the Anki updates queue marks for deletion. */
   markCount: number;
   onCopyAnkiSearch: () => void;
   onMarkDone: () => void;
@@ -49,5 +49,5 @@ function deletionsHint(count: number, markCount: number) {
     "Paste the search into Anki's browser to find their notes, delete them there, then mark them as done.";
   if (markCount === 0) return search;
   const which = markCount === count ? "them" : `${markCount} of them`;
-  return `${search} Otherwise, the next export that marks its cards as exported marks ${which} for deletion.`;
+  return `${search} Otherwise, the next export that takes cards out of the Anki updates queue marks ${which} for deletion.`;
 }

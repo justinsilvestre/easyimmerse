@@ -35,11 +35,11 @@ describe("deletionDescription", () => {
     );
   });
 
-  it("says that the note stays in Anki and that the project screen lists it", () => {
+  it("says that the note stays in Anki and that the project screen lists its deletion in the Anki updates queue", () => {
     expect(
       deletionDescription("Haus", { note: "staysListed", wasPackaged: false }),
     ).toBe(
-      `${base} Its note stays in Anki until you delete it there. The project screen lists it so that you can.`,
+      `${base} Its note stays in Anki until you delete it there. The project screen lists it in the Anki updates queue so that you can.`,
     );
   });
 

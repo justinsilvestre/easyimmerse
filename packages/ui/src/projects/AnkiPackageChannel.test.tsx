@@ -12,13 +12,17 @@ const since = (newCount: number, changedCount: number): PackageSync => ({
   markCount: 0,
 });
 
-function renderChannel(sync: PackageSync, flashcardCount = 5) {
+function renderChannel(
+  sync: PackageSync,
+  flashcardCount = 5,
+  isMainChannel = true,
+) {
   const calls: string[] = [];
   render(
     <AnkiPackageChannel
       sync={sync}
       flashcardCount={flashcardCount}
-      isMainChannel
+      isMainChannel={isMainChannel}
       onExportPackage={() => calls.push("export")}
       onCopyAnkiSearch={() => calls.push("copy")}
       onMarkDeletionsDone={() => calls.push("done")}
@@ -36,18 +40,40 @@ describe("AnkiPackageChannel", () => {
     expect(calls).toEqual(["export"]);
   });
 
-  it("counts the new and the changed cards since the last export", () => {
+  it("counts the new and the changed cards in the Anki updates queue", () => {
     renderChannel(since(3, 1));
     expect(
-      screen.getByText("3 new and 1 changed flashcards since the last export."),
+      screen.getByText(
+        "3 new and 1 changed flashcards in the Anki updates queue.",
+      ),
     ).toBeDefined();
   });
 
-  it("says every card has been exported when none is new or changed", () => {
+  it("says the queue holds no card when none is new or changed", () => {
     renderChannel(since(0, 0));
     expect(
-      screen.getByText("Every flashcard has been exported."),
+      screen.getByText(
+        "No new or changed flashcards in the Anki updates queue.",
+      ),
     ).toBeDefined();
+  });
+
+  describe("while AnkiConnect is how the cards reach Anki", () => {
+    it("counts the new and the changed cards since the last export", () => {
+      renderChannel(since(3, 1), 5, false);
+      expect(
+        screen.getByText(
+          "3 new and 1 changed flashcards since the last export.",
+        ),
+      ).toBeDefined();
+    });
+
+    it("says every card has been exported when none is new or changed", () => {
+      renderChannel(since(0, 0), 5, false);
+      expect(
+        screen.getByText("Every flashcard has been exported."),
+      ).toBeDefined();
+    });
   });
 
   it("says what a package is before the first export", () => {

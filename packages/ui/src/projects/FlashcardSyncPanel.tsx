@@ -11,7 +11,7 @@ import { AnkiPackageChannel } from "./AnkiPackageChannel.tsx";
 /**
  * Shows how the project's flashcards reach Anki: the Anki package, which can always be exported,
  * AnkiConnect, set up or turned on, and the review in easyImmerse, which is not available yet.
- * Beside them is the next card waiting to reach Anki.
+ * Beside them is the next card waiting to reach Anki: the first in the Anki updates queue, or the first to send through AnkiConnect while it is on.
  */
 export function FlashcardSyncPanel({
   sync,
@@ -94,7 +94,7 @@ export function FlashcardSyncPanel({
         ) : (
           <p className="self-center text-center text-sm text-fg-faint">
             {ankiConnect === null
-              ? "No flashcards waiting to be exported."
+              ? "No flashcards in the Anki updates queue."
               : "No flashcards waiting to be sent."}
           </p>
         )}
