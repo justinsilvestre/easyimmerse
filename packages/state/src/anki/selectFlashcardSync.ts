@@ -11,17 +11,14 @@ import {
   cachedFlashcards,
   cachedUsesAnkiConnect,
 } from "./ankiCache.ts";
-import {
-  isChangedSinceExport,
-  isChangedSinceSent,
-  isNewOrChangedSinceExport,
-  isUnexported,
-  isUnsent,
-  isWaitingToBeSent,
-  oldestFirst,
-} from "./ankiExportSelection.ts";
+import { oldestFirst } from "./ankiExportSelection.ts";
 import { hasAnkiConnectRequest } from "./ankiRequests.ts";
 import { ankiSearchOf } from "./ankiSearch.ts";
+import {
+  isChangedSinceDelivered,
+  isNeverDelivered,
+  isQueued,
+} from "./ankiUpdatesQueue.ts";
 import { isMarkableByPackage } from "./isMarkableByPackage.ts";
 
 /** Whether Anki answered the last check: still being asked, answered, did not answer, or answered that it refuses easyImmerse. */
@@ -31,10 +28,19 @@ export type AnkiConnectionStatus =
   | "unreachable"
   | "denied";
 
+/**
+ * The project's Anki updates queue: the flashcards never delivered to Anki and those changed since.
+ * A send through AnkiConnect delivers a flashcard, and so does an export that marks it as exported.
+ */
+export type AnkiUpdatesQueue = {
+  newCount: number;
+  changedCount: number;
+  /** Whether any flashcard of the project was ever delivered to Anki, which removes it from the queue. */
+  hasBeenFlushed: boolean;
+};
+
 /** What the project overview's flashcards panel shows about packages for Anki, which can always be exported. */
 export type PackageSync = {
-  /** The flashcards new and changed since they were last marked as exported, or null while none ever was. */
-  sinceLastExport: { newCount: number; changedCount: number } | null;
   /** The deleted flashcards whose notes may still be in Anki, oldest first, listed while AnkiConnect is off. */
   deletions: readonly AnkiPendingDeletion[];
   /** The Anki search that finds the notes of the listed deletions. */
@@ -48,10 +54,6 @@ export type AnkiConnectSync = {
   connection: AnkiConnectionStatus;
   /** The origin Anki refused, while it refuses easyImmerse and the origin is known, or null otherwise. */
   deniedOrigin: string | null;
-  /** The flashcards AnkiConnect never put into Anki. */
-  unsentCount: number;
-  /** The flashcards edited since AnkiConnect last put them into Anki. */
-  changedCount: number;
   /** The deleted flashcards whose notes are still to be deleted from Anki. */
   pendingDeletionCount: number;
   /** Whether a send of the project's flashcards, or a deletion of its notes from Anki, is under way or waiting. */
@@ -62,10 +64,11 @@ export type AnkiConnectSync = {
 export type FlashcardSync = {
   /** Every flashcard of the project. */
   flashcardCount: number;
+  queue: AnkiUpdatesQueue;
   package: PackageSync;
   /** Null while AnkiConnect is off for the project. */
   ankiConnect: AnkiConnectSync | null;
-  /** The first-made flashcard waiting to reach Anki: through AnkiConnect while it is on, and otherwise in the next export. */
+  /** The first-made flashcard in the Anki updates queue. */
   nextCard: FlashcardContent | null;
 };
 
@@ -95,44 +98,36 @@ export const selectFlashcardSync = createSelector(
     deletions,
   ): FlashcardSync => ({
     flashcardCount: flashcards.length,
-    package: packageSync(flashcards, usesAnkiConnect ? noDeletions : deletions),
+    queue: queueOf(flashcards),
+    package: packageSync(usesAnkiConnect ? noDeletions : deletions),
     ankiConnect: usesAnkiConnect
       ? {
           connection: statusOf(connection),
           deniedOrigin: deniedOriginOf(connection),
-          unsentCount: flashcards.filter(isUnsent).length,
-          changedCount: flashcards.filter(isChangedSinceSent).length,
           pendingDeletionCount: deletions.length,
           isSyncing,
         }
       : null,
-    nextCard: firstMadeContent(
-      flashcards.filter(
-        usesAnkiConnect ? isWaitingToBeSent : isNewOrChangedSinceExport,
-      ),
-    ),
+    nextCard: firstMadeContent(flashcards.filter(isQueued)),
   }),
 );
 
 const noDeletions: readonly AnkiPendingDeletion[] = [];
 
-function packageSync(
-  flashcards: readonly Flashcard[],
-  deletions: readonly AnkiPendingDeletion[],
-): PackageSync {
+function packageSync(deletions: readonly AnkiPendingDeletion[]): PackageSync {
   return {
-    sinceLastExport: sinceLastExport(flashcards),
     deletions,
     ankiSearch: ankiSearchOf(deletions.map(({ flashcard_id }) => flashcard_id)),
     markCount: deletions.filter(isMarkableByPackage).length,
   };
 }
 
-function sinceLastExport(flashcards: readonly Flashcard[]) {
-  if (flashcards.every(isUnexported)) return null;
+function queueOf(flashcards: readonly Flashcard[]): AnkiUpdatesQueue {
+  const newCount = flashcards.filter(isNeverDelivered).length;
   return {
-    newCount: flashcards.filter(isUnexported).length,
-    changedCount: flashcards.filter(isChangedSinceExport).length,
+    newCount,
+    changedCount: flashcards.filter(isChangedSinceDelivered).length,
+    hasBeenFlushed: newCount < flashcards.length,
   };
 }
 

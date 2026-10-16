@@ -95,10 +95,7 @@ export const EveryFlashcardExported: Story = {
   args: {
     sync: {
       ...exportedSync,
-      package: {
-        ...exportedSync.package,
-        sinceLastExport: { newCount: 0, changedCount: 0 },
-      },
+      queue: { newCount: 0, changedCount: 0, hasBeenFlushed: true },
       nextCard: null,
     },
   },
@@ -113,19 +110,19 @@ export const AnkiConnected: Story = {
 };
 
 export const AnkiConnectedWithChangedFlashcards: Story = {
-  args: { sync: ankiConnectSync({ changedCount: 2 }) },
+  args: { sync: ankiConnectSync({}, { changedCount: 2 }) },
 };
 
-export const AnkiConnectedAfterExports: Story = {
+export const AnkiConnectedBeforeAnyFlashcardReachedAnki: Story = {
   args: {
-    sync: { ...ankiConnectSync(), package: exportedSync.package },
+    sync: ankiConnectSync({}, { newCount: 12, hasBeenFlushed: false }),
   },
 };
 
 export const AnkiConnectedWithNoFlashcardsYet: Story = {
   args: {
     sync: {
-      ...ankiConnectSync({ unsentCount: 0 }),
+      ...ankiConnectSync({}, { newCount: 0 }),
       flashcardCount: 0,
       nextCard: null,
     },
@@ -135,7 +132,7 @@ export const AnkiConnectedWithNoFlashcardsYet: Story = {
 export const AnkiConnectedWithOnlyNotesToDelete: Story = {
   args: {
     sync: {
-      ...ankiConnectSync({ unsentCount: 0, pendingDeletionCount: 2 }),
+      ...ankiConnectSync({ pendingDeletionCount: 2 }, { newCount: 0 }),
       nextCard: null,
     },
   },

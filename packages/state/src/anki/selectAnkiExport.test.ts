@@ -44,6 +44,27 @@ describe("selectAnkiExport", () => {
     ).toMatchObject({ newAndChangedCount: 1 });
   });
 
+  it("leaves a card sent through AnkiConnect since its last edit out of the queued cards", () => {
+    const sent = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, {
+        exportedAtMs: 10,
+        updatedAtMs: 11,
+        sentAtMs: 12,
+      }),
+      ankiFlashcard("f2", "m1", 2),
+    ]);
+    expect(
+      selectAnkiExport({
+        app: stateAfterWithCache(
+          sent,
+          openOverview,
+          actions.ankiExportOpened(),
+        ),
+        backend: sent,
+      }),
+    ).toMatchObject({ newAndChangedCount: 1 });
+  });
+
   it("counts the exported cards that AnkiConnect sent before any export marked them", () => {
     const sent = ankiCache(false, [
       ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 }),
@@ -57,6 +78,38 @@ describe("selectAnkiExport", () => {
           openOverview,
           actions.ankiExportOpened(),
           actions.ankiExportScopeChosen("all"),
+        ),
+        backend: sent,
+      }),
+    ).toMatchObject({ duplicateCount: 1 });
+  });
+
+  it("counts no duplicate for a card AnkiConnect sent as it now is, which the queued cards leave out", () => {
+    const sent = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 }),
+    ]);
+    expect(
+      selectAnkiExport({
+        app: stateAfterWithCache(
+          sent,
+          openOverview,
+          actions.ankiExportOpened(),
+        ),
+        backend: sent,
+      }),
+    ).toMatchObject({ duplicateCount: 0 });
+  });
+
+  it("counts a queued card that AnkiConnect sent before any export as a duplicate", () => {
+    const sent = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, { sentAtMs: 5, updatedAtMs: 6 }),
+    ]);
+    expect(
+      selectAnkiExport({
+        app: stateAfterWithCache(
+          sent,
+          openOverview,
+          actions.ankiExportOpened(),
         ),
         backend: sent,
       }),

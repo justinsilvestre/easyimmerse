@@ -8,8 +8,8 @@ afterEach(cleanup);
 
 const exportingOnly: FlashcardSync = {
   flashcardCount: 3,
+  queue: { newCount: 0, changedCount: 0, hasBeenFlushed: true },
   package: {
-    sinceLastExport: null,
     deletions: [],
     ankiSearch: "",
     markCount: 0,
@@ -23,8 +23,6 @@ const usingAnkiConnect: FlashcardSync = {
   ankiConnect: {
     connection: "connected",
     deniedOrigin: null,
-    unsentCount: 0,
-    changedCount: 0,
     pendingDeletionCount: 0,
     isSyncing: false,
   },
@@ -85,10 +83,22 @@ describe("FlashcardSyncPanel", () => {
       expect(calls).toEqual(["turnOff"]);
     });
 
-    it("says beside the channels that no card waits to be sent", () => {
+    it("says beside the channels that no card is in the Anki updates queue", () => {
       renderPanel(usingAnkiConnect);
       expect(
-        screen.getByText("No flashcards waiting to be sent."),
+        screen.getByText("No flashcards in the Anki updates queue."),
+      ).toBeDefined();
+    });
+
+    it("counts the same queue in the package line as in the AnkiConnect line", () => {
+      renderPanel({
+        ...usingAnkiConnect,
+        queue: { newCount: 3, changedCount: 1, hasBeenFlushed: true },
+      });
+      expect(
+        screen.getByText(
+          "3 new and 1 changed flashcards in the Anki updates queue.",
+        ),
       ).toBeDefined();
     });
   });

@@ -1,4 +1,8 @@
-import type { AnkiConnectionStatus, AnkiConnectSync } from "@easyimmerse/state";
+import type {
+  AnkiConnectionStatus,
+  AnkiConnectSync,
+  AnkiUpdatesQueue,
+} from "@easyimmerse/state";
 import { Plug, Send } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "../components/Badge.tsx";
@@ -13,6 +17,7 @@ import { SyncChannel } from "./SyncChannel.tsx";
  */
 export function AnkiConnectChannel({
   sync,
+  queue,
   flashcardCount,
   onSendToAnki,
   onCheckConnection,
@@ -20,6 +25,7 @@ export function AnkiConnectChannel({
   onTurnOff,
 }: {
   sync: AnkiConnectSync;
+  queue: AnkiUpdatesQueue;
   /** Every flashcard of the project. */
   flashcardCount: number;
   onSendToAnki: () => void;
@@ -28,7 +34,7 @@ export function AnkiConnectChannel({
   onTurnOff: () => void;
 }) {
   const isUpToDate =
-    sync.unsentCount + sync.changedCount === 0 &&
+    queue.newCount + queue.changedCount === 0 &&
     sync.pendingDeletionCount === 0;
   return (
     <SyncChannel
@@ -41,7 +47,9 @@ export function AnkiConnectChannel({
       }
     >
       {connectionBadges[sync.connection]}
-      <p>{ankiConnectSummary(sync, flashcardCount)}</p>
+      <p>
+        {ankiConnectSummary(queue, sync.pendingDeletionCount, flashcardCount)}
+      </p>
       <ConnectionHint {...sync} />
       <div className="flex flex-wrap gap-2 pt-1">
         <Button
@@ -65,20 +73,21 @@ export function AnkiConnectChannel({
   );
 }
 
-/** Counts the new and changed flashcards waiting to be sent to Anki and the notes waiting to be deleted from it. */
+/** Counts the flashcards in the Anki updates queue, which wait to be sent to Anki, and the notes waiting to be deleted from it. */
 function ankiConnectSummary(
-  { unsentCount, changedCount, pendingDeletionCount }: AnkiConnectSync,
+  { newCount, changedCount }: AnkiUpdatesQueue,
+  pendingDeletionCount: number,
   flashcardCount: number,
 ) {
   const notes = pluralize(pendingDeletionCount, "note");
-  const isAllSent = unsentCount + changedCount === 0;
+  const isAllSent = newCount + changedCount === 0;
   if (isAllSent && pendingDeletionCount > 0)
     return `${notes} waiting to be deleted from Anki.`;
   if (isAllSent)
     return flashcardCount === 0
       ? "No flashcards yet."
-      : "Every flashcard is in Anki.";
-  const unsent = `${newAndChangedPhrase(unsentCount, changedCount)} waiting to be sent`;
+      : "No flashcards waiting to be sent.";
+  const unsent = `${newAndChangedPhrase(newCount, changedCount)} waiting to be sent`;
   return pendingDeletionCount === 0
     ? `${unsent}.`
     : `${unsent}, ${notes} to delete.`;

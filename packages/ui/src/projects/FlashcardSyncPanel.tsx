@@ -11,7 +11,7 @@ import { AnkiPackageChannel } from "./AnkiPackageChannel.tsx";
 /**
  * Shows how the project's flashcards reach Anki: the Anki package, which can always be exported,
  * AnkiConnect, set up or turned on, and the review in easyImmerse, which is not available yet.
- * Beside them is the next card waiting to reach Anki: the first in the Anki updates queue, or the first to send through AnkiConnect while it is on.
+ * Beside them is the next card waiting to reach Anki: the first in the Anki updates queue, which both the package and AnkiConnect count.
  */
 export function FlashcardSyncPanel({
   sync,
@@ -51,6 +51,7 @@ export function FlashcardSyncPanel({
       <div className="grid items-start gap-4 sm:grid-cols-[1fr_14rem]">
         <div className="flex flex-col divide-y divide-line">
           <AnkiPackageChannel
+            queue={sync.queue}
             sync={sync.package}
             flashcardCount={flashcardCount}
             isMainChannel={ankiConnect === null}
@@ -68,6 +69,7 @@ export function FlashcardSyncPanel({
           ) : (
             <AnkiConnectChannel
               sync={ankiConnect}
+              queue={sync.queue}
               flashcardCount={flashcardCount}
               onSendToAnki={onSendToAnki}
               onCheckConnection={onCheckConnection}
@@ -93,9 +95,7 @@ export function FlashcardSyncPanel({
           />
         ) : (
           <p className="self-center text-center text-sm text-fg-faint">
-            {ankiConnect === null
-              ? "No flashcards in the Anki updates queue."
-              : "No flashcards waiting to be sent."}
+            No flashcards in the Anki updates queue.
           </p>
         )}
       </div>

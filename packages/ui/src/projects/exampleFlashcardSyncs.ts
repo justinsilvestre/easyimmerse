@@ -1,11 +1,15 @@
-import type { AnkiConnectSync, FlashcardSync } from "@easyimmerse/state";
+import type {
+  AnkiConnectSync,
+  AnkiUpdatesQueue,
+  FlashcardSync,
+} from "@easyimmerse/state";
 import { exampleFlashcard } from "../flashcards/exampleFlashcard.ts";
 
 /** A project of twelve flashcards never exported, with AnkiConnect off, for stories. */
 export const neverExportedSync: FlashcardSync = {
   flashcardCount: 12,
+  queue: { newCount: 12, changedCount: 0, hasBeenFlushed: false },
   package: {
-    sinceLastExport: null,
     deletions: [],
     ankiSearch: "",
     markCount: 0,
@@ -17,10 +21,7 @@ export const neverExportedSync: FlashcardSync = {
 /** A project exported before, with five new and two changed flashcards since, and AnkiConnect off, for stories. */
 export const exportedSync: FlashcardSync = {
   ...neverExportedSync,
-  package: {
-    ...neverExportedSync.package,
-    sinceLastExport: { newCount: 5, changedCount: 2 },
-  },
+  queue: { newCount: 5, changedCount: 2, hasBeenFlushed: true },
 };
 
 /** A project exported before, with three deleted flashcards whose notes may still be in Anki, and AnkiConnect off, for stories. */
@@ -41,17 +42,22 @@ export const deletionsListedSync: FlashcardSync = {
   },
 };
 
-/** A project using AnkiConnect with three new flashcards waiting to be sent, as the given changes leave it, for stories. */
+/** A project using AnkiConnect with three new flashcards in the Anki updates queue, as the given changes leave it, for stories. */
 export function ankiConnectSync(
   changes: Partial<AnkiConnectSync> = {},
+  queueChanges: Partial<AnkiUpdatesQueue> = {},
 ): FlashcardSync {
   return {
     ...neverExportedSync,
+    queue: {
+      newCount: 3,
+      changedCount: 0,
+      hasBeenFlushed: true,
+      ...queueChanges,
+    },
     ankiConnect: {
       connection: "connected",
       deniedOrigin: null,
-      unsentCount: 3,
-      changedCount: 0,
       pendingDeletionCount: 0,
       isSyncing: false,
       ...changes,

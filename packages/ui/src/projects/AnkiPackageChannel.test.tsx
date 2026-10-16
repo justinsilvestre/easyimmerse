@@ -1,28 +1,33 @@
-import type { PackageSync } from "@easyimmerse/state";
+import type { AnkiUpdatesQueue, PackageSync } from "@easyimmerse/state";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { AnkiPackageChannel } from "./AnkiPackageChannel.tsx";
 
 afterEach(cleanup);
 
-const since = (newCount: number, changedCount: number): PackageSync => ({
-  sinceLastExport: { newCount, changedCount },
+const noDeletions: PackageSync = {
   deletions: [],
   ankiSearch: "",
   markCount: 0,
-});
+};
+
+const flushedQueue = (
+  newCount: number,
+  changedCount: number,
+): AnkiUpdatesQueue => ({ newCount, changedCount, hasBeenFlushed: true });
 
 function renderChannel(
-  sync: PackageSync,
+  queue: AnkiUpdatesQueue,
+  sync = noDeletions,
   flashcardCount = 5,
-  isMainChannel = true,
 ) {
   const calls: string[] = [];
   render(
     <AnkiPackageChannel
+      queue={queue}
       sync={sync}
       flashcardCount={flashcardCount}
-      isMainChannel={isMainChannel}
+      isMainChannel
       onExportPackage={() => calls.push("export")}
       onCopyAnkiSearch={() => calls.push("copy")}
       onMarkDeletionsDone={() => calls.push("done")}
@@ -33,7 +38,7 @@ function renderChannel(
 
 describe("AnkiPackageChannel", () => {
   it("opens the export", () => {
-    const calls = renderChannel(since(1, 0));
+    const calls = renderChannel(flushedQueue(1, 0));
     fireEvent.click(
       screen.getByRole("button", { name: "Export an Anki deck" }),
     );
@@ -41,7 +46,7 @@ describe("AnkiPackageChannel", () => {
   });
 
   it("counts the new and the changed cards in the Anki updates queue", () => {
-    renderChannel(since(3, 1));
+    renderChannel(flushedQueue(3, 1));
     expect(
       screen.getByText(
         "3 new and 1 changed flashcards in the Anki updates queue.",
@@ -50,7 +55,7 @@ describe("AnkiPackageChannel", () => {
   });
 
   it("says the queue holds no card when none is new or changed", () => {
-    renderChannel(since(0, 0));
+    renderChannel(flushedQueue(0, 0));
     expect(
       screen.getByText(
         "No new or changed flashcards in the Anki updates queue.",
@@ -58,34 +63,16 @@ describe("AnkiPackageChannel", () => {
     ).toBeDefined();
   });
 
-  describe("while AnkiConnect is how the cards reach Anki", () => {
-    it("counts the new and the changed cards since the last export", () => {
-      renderChannel(since(3, 1), 5, false);
-      expect(
-        screen.getByText(
-          "3 new and 1 changed flashcards since the last export.",
-        ),
-      ).toBeDefined();
-    });
-
-    it("says every card has been exported when none is new or changed", () => {
-      renderChannel(since(0, 0), 5, false);
-      expect(
-        screen.getByText("Every flashcard has been exported."),
-      ).toBeDefined();
-    });
-  });
-
   it("says what a package is before the first export", () => {
-    renderChannel({ ...since(0, 0), sinceLastExport: null });
+    renderChannel({ newCount: 5, changedCount: 0, hasBeenFlushed: false });
     expect(
       screen.getByText("Save a package to import into Anki."),
     ).toBeDefined();
   });
 
   it("lists the deleted flashcards still in Anki", () => {
-    renderChannel({
-      ...since(0, 0),
+    renderChannel(flushedQueue(0, 0), {
+      ...noDeletions,
       deletions: [
         {
           flashcard_id: "f9",
@@ -100,12 +87,16 @@ describe("AnkiPackageChannel", () => {
   });
 
   it("lists nothing while no deleted flashcard is still in Anki", () => {
-    renderChannel(since(0, 0));
+    renderChannel(flushedQueue(0, 0));
     expect(screen.queryByRole("list")).toBeNull();
   });
 
   it("says there are no cards yet when the project has none", () => {
-    renderChannel({ ...since(0, 0), sinceLastExport: null }, 0);
+    renderChannel(
+      { newCount: 0, changedCount: 0, hasBeenFlushed: false },
+      noDeletions,
+      0,
+    );
     expect(screen.getByText("No flashcards yet.")).toBeDefined();
   });
 });

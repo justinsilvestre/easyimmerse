@@ -1,30 +1,6 @@
 import type { Flashcard } from "@easyimmerse/types";
 import type { AnkiExportDialog } from "./ankiExportDialog.ts";
-
-/** Tells whether the flashcard was never marked as exported. */
-export const isUnexported = (flashcard: Flashcard) =>
-  flashcard.exported_at_ms === null;
-
-/** Tells whether the flashcard was edited at or after the time it was last marked as exported. */
-export const isChangedSinceExport = ({
-  exported_at_ms,
-  updated_at_ms,
-}: Flashcard) => exported_at_ms !== null && updated_at_ms >= exported_at_ms;
-
-/** Tells whether the flashcard is new or changed since it was last marked as exported. */
-export const isNewOrChangedSinceExport = (flashcard: Flashcard) =>
-  isUnexported(flashcard) || isChangedSinceExport(flashcard);
-
-/** Tells whether AnkiConnect never put the flashcard into Anki. */
-export const isUnsent = (flashcard: Flashcard) => flashcard.sent_at_ms === null;
-
-/** Tells whether the flashcard was edited at or after the time AnkiConnect last put it into Anki. */
-export const isChangedSinceSent = ({ sent_at_ms, updated_at_ms }: Flashcard) =>
-  sent_at_ms !== null && updated_at_ms >= sent_at_ms;
-
-/** Tells whether AnkiConnect has yet to put the flashcard into Anki as it now is. */
-export const isWaitingToBeSent = (flashcard: Flashcard) =>
-  isUnsent(flashcard) || isChangedSinceSent(flashcard);
+import { isQueued } from "./ankiUpdatesQueue.ts";
 
 /** Returns the flashcards in the order they were made, which is the order Anki shows them as new cards. */
 export function oldestFirst(flashcards: readonly Flashcard[]): Flashcard[] {
@@ -49,8 +25,10 @@ export function flashcardsOfMedia(
  * Tells whether AnkiConnect put the flashcard into Anki before any export marked it, so that its note has a GUID of Anki's choosing,
  * which a package's note for the same flashcard does not match.
  */
-export const wasSentBeforeExport = (flashcard: Flashcard) =>
-  !isUnsent(flashcard) && isUnexported(flashcard);
+export const wasSentBeforeExport = ({
+  sent_at_ms,
+  exported_at_ms,
+}: Flashcard) => sent_at_ms !== null && exported_at_ms === null;
 
 /** The dialog's choices that decide which flashcards an export holds. */
 type ExportChoices = Pick<AnkiExportDialog, "scope" | "mediaFileIds">;
@@ -61,10 +39,7 @@ export function flashcardsToExport(
   { scope, mediaFileIds }: ExportChoices,
 ): Flashcard[] {
   const chosen = flashcardsOfMedia(flashcards, mediaFileIds);
-  const inScope =
-    scope === "newAndChanged"
-      ? chosen.filter(isNewOrChangedSinceExport)
-      : chosen;
+  const inScope = scope === "newAndChanged" ? chosen.filter(isQueued) : chosen;
   return oldestFirst(inScope);
 }
 

@@ -63,41 +63,85 @@ const withDeletions = (usesAnkiConnect: boolean) =>
   );
 
 describe("selectFlashcardSync", () => {
-  it("counts no new or changed cards before the first export", () => {
+  it("tells that the queue was never flushed before any card reached Anki", () => {
     expect(
       syncOf(ankiCache(false, [ankiFlashcard("f1", "m1", 1)])),
-    ).toMatchObject({
-      package: { sinceLastExport: null },
-    });
+    ).toMatchObject({ queue: { hasBeenFlushed: false } });
   });
 
-  it("counts the cards never exported since the last export", () => {
+  it("tells that the queue was flushed once a card was sent through AnkiConnect", () => {
+    const backend = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 }),
+    ]);
+    expect(syncOf(backend)).toMatchObject({ queue: { hasBeenFlushed: true } });
+  });
+
+  it("counts the cards never delivered to Anki as new", () => {
     expect(syncOf(ankiCache(false))).toMatchObject({
-      package: { sinceLastExport: { newCount: 2 } },
+      queue: { newCount: 2 },
     });
   });
 
-  it("counts the cards edited since they were last exported", () => {
+  it("counts no card sent through AnkiConnect as new", () => {
+    const backend = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 }),
+      ankiFlashcard("f2", "m1", 2),
+    ]);
+    expect(syncOf(backend)).toMatchObject({ queue: { newCount: 1 } });
+  });
+
+  it("counts the cards edited since they were last exported as changed", () => {
     const backend = ankiCache(false, [
       ankiFlashcard("f1", "m1", 1, { exportedAtMs: 10, updatedAtMs: 11 }),
       ankiFlashcard("f2", "m1", 2, { exportedAtMs: 10, updatedAtMs: 9 }),
     ]);
-    expect(syncOf(backend)).toMatchObject({
-      package: { sinceLastExport: { changedCount: 1 } },
-    });
+    expect(syncOf(backend)).toMatchObject({ queue: { changedCount: 1 } });
   });
 
-  it("previews the first-made card never exported while AnkiConnect is off", () => {
+  it("counts the cards edited since AnkiConnect last sent them as changed", () => {
+    const backend = checked(
+      true,
+      ankiCache(true, [
+        ankiFlashcard("f1", "m1", 1, { sentAtMs: 5, updatedAtMs: 6 }),
+        ankiFlashcard("f2", "m1", 2, { sentAtMs: 5 }),
+      ]),
+    );
+    expect(syncOf(backend)).toMatchObject({ queue: { changedCount: 1 } });
+  });
+
+  it("counts no card exported since AnkiConnect last sent it as changed", () => {
+    const backend = checked(
+      true,
+      ankiCache(true, [
+        ankiFlashcard("f1", "m1", 1, {
+          sentAtMs: 5,
+          updatedAtMs: 6,
+          exportedAtMs: 7,
+        }),
+      ]),
+    );
+    expect(syncOf(backend)).toMatchObject({ queue: { changedCount: 0 } });
+  });
+
+  it("previews the first-made card never delivered", () => {
     expect(syncOf(ankiCache(false))).toMatchObject({ nextCard: f3?.content });
   });
 
-  it("previews the first-made card edited since it was exported while AnkiConnect is off", () => {
+  it("previews the first-made card edited since it was exported", () => {
     const edited = ankiFlashcard("f1", "m1", 1, {
       exportedAtMs: 10,
       updatedAtMs: 11,
     });
     const backend = ankiCache(false, [edited, ankiFlashcard("f2", "m1", 2)]);
     expect(syncOf(backend)).toMatchObject({ nextCard: edited.content });
+  });
+
+  it("previews no card sent through AnkiConnect since its last edit while AnkiConnect is off", () => {
+    const backend = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 }),
+      ankiFlashcard("f2", "m1", 2),
+    ]);
+    expect(syncOf(backend).nextCard?.word).toBe("f2");
   });
 
   it("lists the deletions while AnkiConnect is off", () => {
@@ -134,29 +178,6 @@ describe("selectFlashcardSync", () => {
 
   it("counts every card of the project", () => {
     expect(syncOf(ankiCache(false))).toMatchObject({ flashcardCount: 3 });
-  });
-
-  it("still counts the new cards since the last export while AnkiConnect is on", () => {
-    expect(syncOf(checked(true))).toMatchObject({
-      package: { sinceLastExport: { newCount: 2 } },
-    });
-  });
-
-  it("counts the cards Anki has no note for", () => {
-    expect(syncOf(checked(true))).toMatchObject({
-      ankiConnect: { unsentCount: 2 },
-    });
-  });
-
-  it("counts the cards edited since AnkiConnect last sent them", () => {
-    const backend = checked(
-      true,
-      ankiCache(true, [
-        ankiFlashcard("f1", "m1", 1, { sentAtMs: 5, updatedAtMs: 6 }),
-        ankiFlashcard("f2", "m1", 2, { sentAtMs: 5 }),
-      ]),
-    );
-    expect(syncOf(backend)).toMatchObject({ ankiConnect: { changedCount: 1 } });
   });
 
   it("previews the first-made card edited since it was sent while AnkiConnect is on", () => {

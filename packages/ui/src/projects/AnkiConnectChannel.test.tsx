@@ -1,4 +1,8 @@
-import type { AnkiConnectionStatus, AnkiConnectSync } from "@easyimmerse/state";
+import type {
+  AnkiConnectionStatus,
+  AnkiConnectSync,
+  AnkiUpdatesQueue,
+} from "@easyimmerse/state";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { AnkiConnectChannel } from "./AnkiConnectChannel.tsx";
@@ -8,11 +12,15 @@ afterEach(cleanup);
 const syncOf = (changes: Partial<AnkiConnectSync> = {}): AnkiConnectSync => ({
   connection: "connected",
   deniedOrigin: null,
-  unsentCount: 2,
-  changedCount: 0,
   pendingDeletionCount: 0,
   isSyncing: false,
   ...changes,
+});
+
+const queueOf = (newCount: number, changedCount = 0): AnkiUpdatesQueue => ({
+  newCount,
+  changedCount,
+  hasBeenFlushed: true,
 });
 
 const connectedAs = (connection: AnkiConnectionStatus) =>
@@ -27,12 +35,17 @@ const paragraphWithText = (text: string) =>
 const isDisabled = (name: string) =>
   (screen.getByRole("button", { name }) as HTMLButtonElement).disabled;
 
-function renderChannel(sync: AnkiConnectSync, flashcardCount = 3) {
+function renderChannel(
+  sync: AnkiConnectSync,
+  queue = queueOf(2),
+  flashcardCount = 3,
+) {
   const calls: string[] = [];
   const call = (name: string) => () => calls.push(name);
   render(
     <AnkiConnectChannel
       sync={sync}
+      queue={queue}
       flashcardCount={flashcardCount}
       onSendToAnki={call("send")}
       onCheckConnection={call("check")}
@@ -116,27 +129,27 @@ describe("AnkiConnectChannel", () => {
 
   describe("counting what waits", () => {
     it("counts the new cards waiting to be sent", () => {
-      renderChannel(syncOf({ unsentCount: 3 }));
+      renderChannel(syncOf(), queueOf(3));
       expect(
         screen.getByText("3 new flashcards waiting to be sent."),
       ).toBeDefined();
     });
 
     it("counts the changed cards waiting to be sent beside the new ones", () => {
-      renderChannel(syncOf({ unsentCount: 3, changedCount: 1 }));
+      renderChannel(syncOf(), queueOf(3, 1));
       expect(
         screen.getByText("3 new and 1 changed flashcards waiting to be sent."),
       ).toBeDefined();
     });
 
     it("sends to Anki when only changed cards wait", () => {
-      const calls = renderChannel(syncOf({ unsentCount: 0, changedCount: 1 }));
+      const calls = renderChannel(syncOf(), queueOf(0, 1));
       fireEvent.click(screen.getByRole("button", { name: "Send to Anki" }));
       expect(calls).toEqual(["send"]);
     });
 
     it("counts the notes waiting to be deleted beside the cards to send", () => {
-      renderChannel(syncOf({ unsentCount: 3, pendingDeletionCount: 1 }));
+      renderChannel(syncOf({ pendingDeletionCount: 1 }), queueOf(3));
       expect(
         screen.getByText(
           "3 new flashcards waiting to be sent, 1 note to delete.",
@@ -145,7 +158,7 @@ describe("AnkiConnectChannel", () => {
     });
 
     it("counts the notes waiting to be deleted when every card is in Anki", () => {
-      renderChannel(syncOf({ unsentCount: 0, pendingDeletionCount: 2 }));
+      renderChannel(syncOf({ pendingDeletionCount: 2 }), queueOf(0));
       expect(
         screen.getByText("2 notes waiting to be deleted from Anki."),
       ).toBeDefined();
@@ -153,24 +166,27 @@ describe("AnkiConnectChannel", () => {
 
     it("sends to Anki when only notes wait to be deleted", () => {
       const calls = renderChannel(
-        syncOf({ unsentCount: 0, pendingDeletionCount: 2 }),
+        syncOf({ pendingDeletionCount: 2 }),
+        queueOf(0),
       );
       fireEvent.click(screen.getByRole("button", { name: "Send to Anki" }));
       expect(calls).toEqual(["send"]);
     });
 
     it("offers no send when nothing waits", () => {
-      renderChannel(syncOf({ unsentCount: 0 }));
+      renderChannel(syncOf(), queueOf(0));
       expect(isDisabled("Send to Anki")).toBe(true);
     });
 
-    it("says every card is in Anki when nothing waits", () => {
-      renderChannel(syncOf({ unsentCount: 0 }));
-      expect(screen.getByText("Every flashcard is in Anki.")).toBeDefined();
+    it("says no card waits to be sent when the queue is empty", () => {
+      renderChannel(syncOf(), queueOf(0));
+      expect(
+        screen.getByText("No flashcards waiting to be sent."),
+      ).toBeDefined();
     });
 
     it("says there are no cards yet when the project has none", () => {
-      renderChannel(syncOf({ unsentCount: 0 }), 0);
+      renderChannel(syncOf(), queueOf(0), 0);
       expect(screen.getByText("No flashcards yet.")).toBeDefined();
     });
   });

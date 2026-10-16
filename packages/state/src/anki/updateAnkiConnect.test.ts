@@ -223,6 +223,19 @@ describe("ankiConnectEffects", () => {
     ]);
   });
 
+  it("sends no card marked as exported since its last edit", () => {
+    const exported = ankiCache(true, [
+      ankiFlashcard("f1", "m1", 1, {
+        sentAtMs: 5,
+        updatedAtMs: 6,
+        exportedAtMs: 7,
+      }),
+    ]);
+    expect(effectsOf(actions.ankiSendRequested(), exported)).toEqual([
+      deleteNotes,
+    ]);
+  });
+
   it("deletes the notes left to delete after the send when asked", () => {
     expect(
       deletionsRecorded(

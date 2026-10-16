@@ -19,6 +19,7 @@ export {
 export {
   type AnkiConnectionStatus,
   type AnkiConnectSync,
+  type AnkiUpdatesQueue,
   type FlashcardSync,
   type PackageSync,
   selectFlashcardSync,
