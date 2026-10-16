@@ -95,7 +95,7 @@ export function AnkiExportDialog({
       )}
       <CheckboxField
         label="Mark these cards as exported"
-        hint="The next export then leaves them out unless they change. Leave this off for a deck you share or keep as a backup."
+        hint="The next export then leaves them out unless they change. Leave this off for a copy that easyImmerse does not track, such as a deck you share or keep as a backup. It is not meant for importing into the Anki that this project sends to."
         checked={marksExported}
         onChange={(event) => onMarkingChange(event.target.checked)}
       />
