@@ -124,7 +124,7 @@ pub enum FlashcardFieldKey {
     Tags,
 }
 
-/// A deleted flashcard that had reached Anki, whose notes may still be there.
+/// A deleted flashcard whose notes may still be in Anki: it had reached Anki or, while its project uses AnkiConnect, any package had held it.
 /// It lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]

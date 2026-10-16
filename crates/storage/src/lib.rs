@@ -195,8 +195,8 @@ impl Storage {
         self.write(|conn| flashcards::update_flashcard(conn, id, draft))
     }
 
-    /// Deletes a flashcard. When the flashcard has reached Anki and its project uses AnkiConnect,
-    /// the deletion of its note from Anki is recorded in the same transaction, to be carried out by the client.
+    /// Deletes a flashcard. When its note may be in Anki and its project uses AnkiConnect or lists such deletions,
+    /// the deletion of its note from Anki is recorded in the same transaction.
     pub fn delete_flashcard(&self, id: &FlashcardId) -> Result<(), StorageError> {
         self.write(|conn| flashcards::delete_flashcard(conn, id))
     }

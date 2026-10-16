@@ -51,6 +51,28 @@ describe("deletionDescription", () => {
     );
   });
 
+  it("says that AnkiConnect deletes any note a package gave the flashcard", () => {
+    expect(
+      deletionDescription("Haus", {
+        note: "anyDeletedByAnkiConnect",
+        wasPackaged: true,
+      }),
+    ).toBe(
+      `${base} Any note a package gave it in Anki is deleted too. Importing a package made before now that holds it would bring it back.`,
+    );
+  });
+
+  it("says that AnkiConnect deletes any note a package gave the flashcard once easyImmerse reaches Anki", () => {
+    expect(
+      deletionDescription("Haus", {
+        note: "anyDeletedByAnkiConnectLater",
+        wasPackaged: true,
+      }),
+    ).toBe(
+      `${base} Any note a package gave it in Anki is deleted the next time easyImmerse reaches Anki. Importing a package made before now that holds it would bring it back.`,
+    );
+  });
+
   it("says that importing an old package would bring the flashcard back", () => {
     expect(
       deletionDescription("Haus", { note: "none", wasPackaged: true }),

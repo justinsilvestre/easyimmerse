@@ -43,6 +43,9 @@ const noteLines = {
   deletedByAnkiConnect: "Its note is deleted from Anki too.",
   deletedByAnkiConnectLater:
     "Its note is deleted from Anki the next time easyImmerse reaches Anki.",
+  anyDeletedByAnkiConnect: "Any note a package gave it in Anki is deleted too.",
+  anyDeletedByAnkiConnectLater:
+    "Any note a package gave it in Anki is deleted the next time easyImmerse reaches Anki.",
   staysListed:
     "Its note stays in Anki until you delete it there or turn AnkiConnect on, since a package cannot delete notes. The project screen lists it in the Anki updates queue, with a search that finds the note.",
   stays:

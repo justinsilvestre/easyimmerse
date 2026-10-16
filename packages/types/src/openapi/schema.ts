@@ -1075,7 +1075,7 @@ export interface components {
             skipped_media_count: number;
         };
         /**
-         * @description A deleted flashcard that had reached Anki, whose notes may still be there.
+         * @description A deleted flashcard whose notes may still be in Anki: it had reached Anki or, while its project uses AnkiConnect, any package had held it.
          *     It lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.
          */
         AnkiPendingDeletion: {

@@ -22,6 +22,7 @@ import {
   sendToAnki,
 } from "./ankiRequests.ts";
 import type { AnkiDeletionOutcome, AnkiSendOutcome } from "./ankiResponses.ts";
+import { isNeverDelivered } from "./ankiUpdatesQueue.ts";
 import { sendUnsent, syncWithAnki } from "./syncWithAnki.ts";
 
 type AnkiApp = Pick<ReadableState, "backend" | "operations">;
@@ -70,7 +71,8 @@ function deleteDeleted(
   );
   const word =
     deleted?.content.word ?? (purpose.type === "delete" ? "" : purpose.word);
-  return [deleteFromAnki(projectId, { flashcardId, word })];
+  const reachedAnki = deleted !== undefined && !isNeverDelivered(deleted);
+  return [deleteFromAnki(projectId, { flashcardId, word, reachedAnki })];
 }
 
 /**
@@ -133,9 +135,9 @@ function deletionNotices(
   outcome: AnkiDeletionOutcome,
 ) {
   if (justDeleted !== null) {
-    const { flashcardId, word } = justDeleted;
+    const { flashcardId, word, reachedAnki } = justDeleted;
     if (outcome.remainingFlashcardIds.includes(flashcardId))
-      return [deletionPendingNotice(word)];
+      return [deletionPendingNotice(word, reachedAnki)];
     if (isOnlyNoteDeleted(flashcardId, outcome))
       return [deletedNoteNotice(word)];
   }

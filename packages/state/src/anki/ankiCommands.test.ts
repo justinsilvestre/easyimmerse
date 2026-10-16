@@ -78,8 +78,12 @@ const deletionSettled = (
       : { ok: false, error: { status: 500, message: "down" } },
   );
 
-/** The deletion of f2, whose word is "f2", as the deletion of notes from Anki names it. */
-const f2Deleted: DeletedFlashcard = { flashcardId: "f2", word: "f2" };
+/** The deletion of f2, whose word is "f2" and which had reached Anki, as the deletion of notes from Anki names it. */
+const f2Deleted: DeletedFlashcard = {
+  flashcardId: "f2",
+  word: "f2",
+  reachedAnki: true,
+};
 
 const noteDeletion = (justDeleted: DeletedFlashcard | null = f2Deleted) => ({
   type: "sendRequest",
@@ -323,7 +327,9 @@ describe("ankiCommands when a flashcard is deleted", () => {
   it("looks for the note of a card no send has recorded, since a send in flight may create it", () => {
     expect(
       effectsOf(deletionSettled({ type: "delete" }, { flashcardId: "f1" })),
-    ).toContainEqual(noteDeletion({ flashcardId: "f1", word: "f1" }));
+    ).toContainEqual(
+      noteDeletion({ flashcardId: "f1", word: "f1", reachedAnki: false }),
+    );
   });
 
   it("names an uncached card by the word its Undo names", () => {
@@ -331,7 +337,9 @@ describe("ankiCommands when a flashcard is deleted", () => {
       effectsOf(
         deletionSettled({ type: "undo", word: "Katze" }, { flashcardId: "f9" }),
       ),
-    ).toContainEqual(noteDeletion({ flashcardId: "f9", word: "Katze" }));
+    ).toContainEqual(
+      noteDeletion({ flashcardId: "f9", word: "Katze", reachedAnki: false }),
+    );
   });
 
   it("deletes nothing for a project that does not use AnkiConnect", () => {
@@ -397,11 +405,24 @@ describe("ankiCommands when a flashcard is deleted", () => {
       noticesAfter(
         notesDeleted(
           { remainingFlashcardIds: ["f2"] },
-          { flashcardId: "f2", word: "" },
+          { flashcardId: "f2", word: "", reachedAnki: true },
         ),
       ),
     ).toEqual([
       "Anki could not be reached. The note for the flashcard will be deleted from Anki once easyImmerse reaches it again.",
+    ]);
+  });
+
+  it("tells that any note will be deleted once Anki can be reached again for a card not known to have reached Anki", () => {
+    expect(
+      noticesAfter(
+        notesDeleted(
+          { remainingFlashcardIds: ["f2"] },
+          { flashcardId: "f2", word: "f2", reachedAnki: false },
+        ),
+      ),
+    ).toEqual([
+      "Anki could not be reached. Any note for “f2” will be deleted from Anki once easyImmerse reaches it again.",
     ]);
   });
 

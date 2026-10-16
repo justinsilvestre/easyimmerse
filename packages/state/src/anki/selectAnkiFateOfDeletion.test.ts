@@ -82,6 +82,29 @@ describe("selectAnkiFateOfDeletion", () => {
     ).toBe("deletedByAnkiConnectLater");
   });
 
+  describe("for a flashcard only held by packages that kept it in the queue", () => {
+    const packaged = {
+      ...ankiFlashcard("f1", "m1", 1),
+      was_packaged: true,
+    };
+
+    it("has AnkiConnect delete any note it has while it is on", () => {
+      expect(fateOf(packaged, { usesAnkiConnect: true })?.note).toBe(
+        "anyDeletedByAnkiConnect",
+      );
+    });
+
+    it("has AnkiConnect delete any note it has later while Anki is unreachable", () => {
+      expect(
+        fateOf(packaged, { usesAnkiConnect: true, isConnected: false })?.note,
+      ).toBe("anyDeletedByAnkiConnectLater");
+    });
+
+    it("finds no note while AnkiConnect is off", () => {
+      expect(fateOf(packaged)?.note).toBe("none");
+    });
+  });
+
   it("leaves the note in Anki, listed, while the project lists deletions", () => {
     expect(fateOf(exported)?.note).toBe("staysListed");
   });

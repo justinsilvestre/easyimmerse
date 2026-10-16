@@ -49,7 +49,12 @@ export function hasAnkiConnectRequest(
 }
 
 /** A flashcard just deleted, with the word that names it to the user. */
-export type DeletedFlashcard = { flashcardId: string; word: string };
+export type DeletedFlashcard = {
+  flashcardId: string;
+  word: string;
+  /** Whether the flashcard had been marked as exported or sent when it was deleted, so that its note is known to be in Anki. */
+  reachedAnki: boolean;
+};
 
 /**
  * Deletes from Anki the notes of a project's deleted flashcards, after the project's earlier sends,

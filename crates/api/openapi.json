@@ -5444,7 +5444,7 @@
       },
       "AnkiPendingDeletion": {
         "type": "object",
-        "description": "A deleted flashcard that had reached Anki, whose notes may still be there.\nIt lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.",
+        "description": "A deleted flashcard whose notes may still be in Anki: it had reached Anki or, while its project uses AnkiConnect, any package had held it.\nIt lasts until AnkiConnect deletes the notes or the user marks it done, since a package cannot delete a note from Anki.",
         "required": [
           "flashcard_id",
           "word",

@@ -13,21 +13,25 @@ use crate::stored_integer::{read_unsigned, to_stored_integer};
 /// AnkiConnect by deleting the note, or the user from the list on the project screen.
 const RECORDS_DELETIONS: &str = "(uses_anki_connect = 1 OR lists_anki_deletions = 1)";
 
-/// Records that the flashcard's notes may still be in Anki,
-/// when the flashcard reached Anki, marked as exported or sent through AnkiConnect, and its project uses AnkiConnect or lists such deletions.
+/// Records that the flashcard's notes may still be in Anki:
+/// when the flashcard reached Anki, marked as exported or sent through AnkiConnect, and its project uses AnkiConnect or lists such deletions,
+/// or when any package held it and its project uses AnkiConnect, which clears the deletion when it finds no note.
 /// A flashcard whose note a send in flight is still creating gets its deletion once that send is recorded.
 pub fn record_anki_pending_deletion(
     conn: &Connection,
     flashcard: &Flashcard,
 ) -> Result<(), StorageError> {
-    if flashcard.exported_at_ms.is_none() && flashcard.sent_at_ms.is_none() {
-        return Ok(());
-    }
+    let has_reached_anki = flashcard.exported_at_ms.is_some() || flashcard.sent_at_ms.is_some();
+    let condition = match (has_reached_anki, flashcard.was_packaged) {
+        (true, _) => RECORDS_DELETIONS,
+        (false, true) => "uses_anki_connect = 1",
+        (false, false) => return Ok(()),
+    };
     conn.execute(
         &format!(
             "INSERT OR REPLACE INTO anki_pending_deletions \
              (flashcard_id, project_id, word, requested_at_ms) \
-             SELECT ?1, id, ?3, ?4 FROM projects WHERE id = ?2 AND {RECORDS_DELETIONS}"
+             SELECT ?1, id, ?3, ?4 FROM projects WHERE id = ?2 AND {condition}"
         ),
         params![
             flashcard.id.0,
@@ -288,7 +292,14 @@ mod tests {
     }
 
     #[test]
-    fn deleting_a_flashcard_only_in_an_unmarked_export_records_nothing() {
+    fn deleting_a_flashcard_only_in_an_unmarked_export_records_it_while_anki_connect_is_on() {
+        let storage = storage_using_anki_connect(true);
+        delete_exported(&storage, "fressen", false);
+        assert_eq!(listed_words(&storage), vec!["fressen"]);
+    }
+
+    #[test]
+    fn deleting_a_flashcard_only_in_an_unmarked_export_records_nothing_while_anki_connect_is_off() {
         let storage = storage_listing_deletions(true);
         delete_exported(&storage, "fressen", false);
         assert_eq!(listed_words(&storage), Vec::<String>::new());

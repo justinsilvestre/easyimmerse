@@ -64,11 +64,15 @@ export function deleteFailedNotice(failure: RequestFailure) {
   );
 }
 
-/** Tells that the note of a deleted flashcard, named by its word, will be deleted once Anki can be reached again. */
-export function deletionPendingNotice(word: string) {
+/**
+ * Tells that the note of a deleted flashcard, named by its word, will be deleted once Anki can be reached again.
+ * A flashcard not known to have reached Anki, such as one only held by packages that kept it in the queue, may have no note, so any note is meant.
+ */
+export function deletionPendingNotice(word: string, reachedAnki: boolean) {
+  const note = reachedAnki ? "The note" : "Any note";
   return notice(
     "info",
-    `Anki could not be reached. The note for ${flashcardName(word)} will be deleted from Anki once easyImmerse reaches it again.`,
+    `Anki could not be reached. ${note} for ${flashcardName(word)} will be deleted from Anki once easyImmerse reaches it again.`,
   );
 }
 

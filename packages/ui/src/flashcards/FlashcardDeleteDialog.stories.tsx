@@ -48,3 +48,13 @@ export const OnlyInAPackage: Story = {
 export const DeletedByAnkiConnectAfterPackages: Story = {
   args: { ankiFate: { note: "deletedByAnkiConnect", wasPackaged: true } },
 };
+
+export const AnyPackageNoteDeletedByAnkiConnect: Story = {
+  args: { ankiFate: { note: "anyDeletedByAnkiConnect", wasPackaged: true } },
+};
+
+export const AnyPackageNoteDeletedByAnkiConnectOnceAnkiIsReached: Story = {
+  args: {
+    ankiFate: { note: "anyDeletedByAnkiConnectLater", wasPackaged: true },
+  },
+};
