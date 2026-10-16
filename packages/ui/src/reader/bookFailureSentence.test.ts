@@ -47,6 +47,12 @@ describe("bookFailureSentence", () => {
     ).toBe("The easyImmerse server could not be reached.");
   });
 
+  it("explains a server answer that held no data", () => {
+    expect(bookFailureSentence({ status: "NO_DATA", message: "" })).toBe(
+      "The server's answer could not be read. Try again.",
+    );
+  });
+
   it("explains a path that only the server can read when there is no server", () => {
     expect(
       bookFailureSentence({ status: "OFFLINE", message: "no server" }),

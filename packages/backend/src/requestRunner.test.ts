@@ -193,7 +193,7 @@ describe("runRequest", () => {
   it("settles a query that ends with no data as a failure", async () => {
     const store = createStore(answering({ data: undefined }));
     const outcome = await settle(store, listing);
-    expect(outcome.ok).toBe(false);
+    expect(outcome.ok ? null : outcome.error.status).toBe("NO_DATA");
   });
 
   it("leaves no mutation entry once a mutation settles", async () => {

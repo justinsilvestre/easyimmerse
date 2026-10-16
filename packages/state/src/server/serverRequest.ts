@@ -171,9 +171,9 @@ export type ServerResponses = {
   probePictures: boolean;
 };
 
-/** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */
+/** Why a request failed: an HTTP status, or a marker for a request that never reached a server, was aborted, or ended without data. */
 export type RequestFailure = {
-  status: number | "OFFLINE" | "NETWORK" | "ABORTED";
+  status: number | "OFFLINE" | "NETWORK" | "ABORTED" | "NO_DATA";
   code?: string;
   message: string;
 };
@@ -182,6 +182,12 @@ export type RequestFailure = {
 export const abortedFailure: RequestFailure = {
   status: "ABORTED",
   message: "The request was aborted.",
+};
+
+/** The failure of a query that ended with neither data nor an error. */
+export const noDataFailure: RequestFailure = {
+  status: "NO_DATA",
+  message: "The server's answer could not be read. Try again.",
 };
 
 /** How a request of the given kind ended. */

@@ -5,6 +5,7 @@ import type {
   ServerRequest,
   ServerRequestKind,
 } from "@easyimmerse/state";
+import { noDataFailure } from "@easyimmerse/state";
 import type {
   ThunkAction,
   ThunkDispatch,
@@ -178,11 +179,14 @@ export const runRequest: RequestRunner = (request, dispatch) => {
     typeof request.kind
   >;
   const started = (dispatch as BackendDispatch)(start(request));
-  const data = isQuery(started) ? queryData(started) : started.unwrap();
-  const settled = data.then(
-    (data): RequestOutcome => ({ ok: true, data }) as RequestOutcome,
+  const settled = started.unwrap().then(
+    (data): RequestOutcome =>
+      isQuery(started) && data === undefined
+        ? { ok: false, error: noDataFailure }
+        : ({ ok: true, data } as RequestOutcome),
     (error): RequestOutcome => ({ ok: false, error: toRequestFailure(error) }),
   );
+  if (isQuery(started)) settled.finally(() => started.unsubscribe());
   return { settled, abort: () => started.abort() } as RunningRequest<
     typeof request.kind
   >;
@@ -190,15 +194,4 @@ export const runRequest: RequestRunner = (request, dispatch) => {
 
 function isQuery(started: StartedRequest): started is StartedQuery {
   return "unsubscribe" in started;
-}
-
-/** Waits for a query's data, rejecting when it has none, and then ends its subscription. */
-async function queryData(started: StartedQuery): Promise<unknown> {
-  try {
-    const data = await started.unwrap();
-    if (data === undefined) throw new Error("The request ended without data.");
-    return data;
-  } finally {
-    started.unsubscribe();
-  }
 }
