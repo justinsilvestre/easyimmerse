@@ -91,8 +91,7 @@ function checkOnRead(action: RequestSettled, projectId: string) {
     "getProject",
   ) &&
     action.outcome.ok &&
-    // RTK Query can settle a read it skipped without data, so the project may be missing.
-    action.outcome.data?.uses_anki_connect === true
+    action.outcome.data.uses_anki_connect
     ? [checkAnkiConnection]
     : [];
 }
