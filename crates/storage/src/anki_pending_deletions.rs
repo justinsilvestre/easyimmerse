@@ -13,22 +13,23 @@ use crate::stored_integer::{read_unsigned, to_stored_integer};
 /// AnkiConnect by deleting the note, or the user from the list on the project screen.
 const RECORDS_DELETIONS: &str = "(uses_anki_connect = 1 OR lists_anki_deletions = 1)";
 
-/// Records that the flashcard's note may still be in Anki, when the flashcard reached Anki, marked as exported or sent through AnkiConnect,
-/// and its project uses AnkiConnect or lists such deletions.
+/// Records that the flashcard's notes may still be in Anki, and by which channels they got there,
+/// when the flashcard reached Anki, marked as exported or sent through AnkiConnect, and its project uses AnkiConnect or lists such deletions.
 /// A flashcard whose note a send in flight is still creating gets its deletion once that send is recorded.
 pub fn record_anki_pending_deletion(
     conn: &Connection,
     flashcard: &Flashcard,
 ) -> Result<(), StorageError> {
     let reached_by_package = flashcard.exported_at_ms.is_some();
-    if !reached_by_package && flashcard.sent_at_ms.is_none() {
+    let reached_by_anki_connect = flashcard.sent_at_ms.is_some();
+    if !reached_by_package && !reached_by_anki_connect {
         return Ok(());
     }
     conn.execute(
         &format!(
             "INSERT OR REPLACE INTO anki_pending_deletions \
-             (flashcard_id, project_id, word, requested_at_ms, reached_by_package) \
-             SELECT ?1, id, ?3, ?4, ?5 FROM projects WHERE id = ?2 AND {RECORDS_DELETIONS}"
+             (flashcard_id, project_id, word, requested_at_ms, reached_by_package, reached_by_anki_connect) \
+             SELECT ?1, id, ?3, ?4, ?5, ?6 FROM projects WHERE id = ?2 AND {RECORDS_DELETIONS}"
         ),
         params![
             flashcard.id.0,
@@ -36,6 +37,7 @@ pub fn record_anki_pending_deletion(
             flashcard.content.word,
             to_stored_integer(now_ms()),
             reached_by_package,
+            reached_by_anki_connect,
         ],
     )?;
     Ok(())
@@ -43,7 +45,8 @@ pub fn record_anki_pending_deletion(
 
 /// Records that the note a send put into Anki for a flashcard deleted since the send began may still be there,
 /// when the project uses AnkiConnect or lists such deletions. The word is gone with the flashcard, so the deletion keeps an empty one.
-/// An id that a flashcard still has, or that the app could not have made, is passed over, and a deletion already recorded is kept.
+/// An id that a flashcard still has, or that the app could not have made, is passed over.
+/// A deletion already recorded keeps its word and gains the record that the flashcard reached Anki through AnkiConnect.
 pub fn record_anki_pending_deletion_of_gone(
     conn: &Connection,
     project_id: &ProjectId,
@@ -54,10 +57,11 @@ pub fn record_anki_pending_deletion_of_gone(
     }
     conn.execute(
         &format!(
-            "INSERT OR IGNORE INTO anki_pending_deletions \
-             (flashcard_id, project_id, word, requested_at_ms, reached_by_package) \
-             SELECT ?1, id, '', ?3, 0 FROM projects WHERE id = ?2 AND {RECORDS_DELETIONS} \
-             AND NOT EXISTS (SELECT 1 FROM flashcards WHERE flashcards.id = ?1)"
+            "INSERT INTO anki_pending_deletions \
+             (flashcard_id, project_id, word, requested_at_ms, reached_by_package, reached_by_anki_connect) \
+             SELECT ?1, id, '', ?3, 0, 1 FROM projects WHERE id = ?2 AND {RECORDS_DELETIONS} \
+             AND NOT EXISTS (SELECT 1 FROM flashcards WHERE flashcards.id = ?1) \
+             ON CONFLICT (flashcard_id) DO UPDATE SET reached_by_anki_connect = 1"
         ),
         params![flashcard_id.0, project_id.0, to_stored_integer(now_ms())],
     )?;
@@ -83,7 +87,8 @@ pub fn list_anki_pending_deletions(
 ) -> Result<Vec<AnkiPendingDeletion>, StorageError> {
     ensure_project_exists(conn, project_id)?;
     let mut statement = conn.prepare(
-        "SELECT flashcard_id, word, requested_at_ms, reached_by_package FROM anki_pending_deletions \
+        "SELECT flashcard_id, word, requested_at_ms, reached_by_package, reached_by_anki_connect \
+         FROM anki_pending_deletions \
          WHERE project_id = ?1 ORDER BY requested_at_ms, rowid",
     )?;
     let deletions = statement
@@ -127,6 +132,7 @@ fn read_deletion(row: &Row) -> rusqlite::Result<AnkiPendingDeletion> {
         word: row.get(1)?,
         requested_at_ms: read_unsigned(row, 2)?,
         reached_by_package: row.get(3)?,
+        reached_by_anki_connect: row.get(4)?,
     })
 }
 
@@ -312,6 +318,49 @@ mod tests {
         let storage = storage_listing_deletions(true);
         delete_sent(&storage, "fressen");
         assert!(!listed(&storage)[0].reached_by_package);
+    }
+
+    #[test]
+    fn a_deletion_of_a_sent_flashcard_says_it_reached_anki_through_anki_connect() {
+        let storage = storage_listing_deletions(true);
+        delete_sent(&storage, "fressen");
+        assert!(listed(&storage)[0].reached_by_anki_connect);
+    }
+
+    #[test]
+    fn a_deletion_of_a_flashcard_only_exported_says_it_did_not_reach_anki_through_anki_connect() {
+        let storage = storage_listing_deletions(true);
+        delete_exported(&storage, "fressen", true);
+        assert!(!listed(&storage)[0].reached_by_anki_connect);
+    }
+
+    /// Creates a flashcard, sends it, exports it marked as exported, and deletes it.
+    fn delete_sent_and_exported(storage: &Storage) {
+        let id = create(storage, "fressen");
+        give_note(storage, &id);
+        storage
+            .record_anki_export(&crate::DeliveredPackage {
+                project_id: project(),
+                flashcard_ids: vec![id.clone()],
+                exported_at_ms: Some(2),
+                marked_deletions: vec![],
+            })
+            .unwrap();
+        storage.delete_flashcard(&id).unwrap();
+    }
+
+    #[test]
+    fn a_deletion_of_a_flashcard_sent_and_marked_as_exported_records_both_channels() {
+        let storage = storage_listing_deletions(true);
+        delete_sent_and_exported(&storage);
+        let deletion = &listed(&storage)[0];
+        assert_eq!(
+            (
+                deletion.reached_by_package,
+                deletion.reached_by_anki_connect
+            ),
+            (true, true)
+        );
     }
 
     #[test]

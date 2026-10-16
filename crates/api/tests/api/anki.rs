@@ -682,6 +682,35 @@ mod deletion_marks {
         assert_eq!(export_marking(&server, true).await.status, 400);
     }
 
+    /// Creates a flashcard, sends it through AnkiConnect, exports it marked as exported, and deletes it.
+    async fn delete_sent_and_exported(server: &TestServer) {
+        let id = create_flashcard(server, PROJECT, None).await;
+        server
+            .post_json(
+                &format!("/projects/{PROJECT}/anki/sent"),
+                &json!({ "flashcard_ids": [id], "rendered_at_ms": 1 }),
+            )
+            .await;
+        export_ids(server, std::slice::from_ref(&id)).await;
+        delete_flashcard(server, &id).await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_no_deletion_of_a_flashcard_both_sent_and_exported() {
+        let server = spawn_test_server(false).await;
+        delete_sent_and_exported(&server).await;
+        assert_eq!(export_marking(&server, true).await.status, 400);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn keeps_listed_the_deletion_of_a_flashcard_both_sent_and_exported() {
+        let server = spawn_test_server(false).await;
+        delete_sent_and_exported(&server).await;
+        let kept = create_flashcard(&server, PROJECT, None).await;
+        export_ids(&server, &[kept]).await;
+        assert_eq!(listed_count(&server).await, 1);
+    }
+
     #[tokio::test(flavor = "multi_thread")]
     async fn answers_how_many_deletions_a_saved_package_marks() {
         let server = spawn_test_server(true).await;

@@ -66,6 +66,7 @@ describe("AnkiPackageChannel", () => {
           word: "Katze",
           requested_at_ms: 1,
           reached_by_package: true,
+          reached_by_anki_connect: false,
         },
       ],
     });

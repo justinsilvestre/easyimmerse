@@ -2086,7 +2086,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nA package that marks its flashcards as exported, while the project does not use AnkiConnect, also holds a note for each recorded deletion\nof a flashcard that had been marked as exported: it shares that flashcard's GUID, so Anki's import replaces the note with one that says to delete it.\nOnce the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,\nthey are marked exported when the request asks for that, and the deletions it marked are cleared.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
+        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nA package that marks its flashcards as exported, while the project does not use AnkiConnect, also holds a note for each recorded deletion\nof a flashcard that had been marked as exported and never sent through AnkiConnect: it shares that flashcard's GUID,\nso Anki's import replaces the note with one that says to delete it.\nOnce the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,\nthey are marked exported when the request asks for that, and the deletions it marked are cleared.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
         "operationId": "exportAnkiPackage",
         "parameters": [
           {
@@ -5418,7 +5418,7 @@
           },
           "marks_exported": {
             "type": "boolean",
-            "description": "Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.\nSuch a package also marks for deletion, while the project does not use AnkiConnect, the notes of deleted flashcards that had been marked as exported."
+            "description": "Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.\nSuch a package also marks for deletion, while the project does not use AnkiConnect,\nthe notes of deleted flashcards that had been marked as exported and never sent through AnkiConnect."
           },
           "save_path": {
             "type": [
@@ -5459,16 +5459,21 @@
       },
       "AnkiPendingDeletion": {
         "type": "object",
-        "description": "A deleted flashcard that had reached Anki, whose note may still be there.\nIt lasts until AnkiConnect deletes the note, an export marks the note for deletion, or the user marks it done.",
+        "description": "A deleted flashcard that had reached Anki, whose notes may still be there.\nIt lasts until AnkiConnect deletes the notes, an export marks the only note it can have for deletion, or the user marks it done.",
         "required": [
           "flashcard_id",
           "word",
           "requested_at_ms",
-          "reached_by_package"
+          "reached_by_package",
+          "reached_by_anki_connect"
         ],
         "properties": {
           "flashcard_id": {
             "$ref": "#/components/schemas/FlashcardId"
+          },
+          "reached_by_anki_connect": {
+            "type": "boolean",
+            "description": "Whether AnkiConnect had put the flashcard into Anki, so that Anki may hold a note for it under a GUID that Anki chose."
           },
           "reached_by_package": {
             "type": "boolean",

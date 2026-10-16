@@ -33,6 +33,7 @@ export const deletionsListedSync: FlashcardSync = {
       word,
       requested_at_ms: index,
       reached_by_package: true,
+      reached_by_anki_connect: false,
     })),
     ankiSearch:
       '"easyImmerse id:f0" OR "easyImmerse id:f1" OR "easyImmerse id:f2"',

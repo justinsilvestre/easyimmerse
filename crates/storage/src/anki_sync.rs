@@ -276,6 +276,20 @@ mod tests {
     }
 
     #[test]
+    fn a_send_recorded_after_a_deletion_records_that_the_flashcard_reached_anki_through_anki_connect()
+     {
+        let storage = seeded_storage();
+        let id = create(&storage);
+        storage
+            .record_anki_export(&package(&project(), std::slice::from_ref(&id), Some(1)))
+            .unwrap();
+        storage.delete_flashcard(&id).unwrap();
+        storage.record_anki_send(&project(), &[id], 1).unwrap();
+        let listed = storage.list_anki_pending_deletions(&project()).unwrap();
+        assert!(listed[0].reached_by_anki_connect);
+    }
+
+    #[test]
     fn a_send_records_no_deletion_for_a_flashcard_that_still_exists() {
         let storage = seeded_storage();
         let id = create(&storage);

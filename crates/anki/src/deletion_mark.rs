@@ -49,6 +49,7 @@ mod tests {
             word: word.to_owned(),
             requested_at_ms: 1_760_400_000_000,
             reached_by_package: true,
+            reached_by_anki_connect: false,
         }
     }
 

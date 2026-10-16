@@ -36,7 +36,8 @@ pub struct AnkiPackageRequest {
     /// The absolute path to write the package to, on the server's machine. Null to receive the package in the response.
     pub save_path: Option<String>,
     /// Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.
-    /// Such a package also marks for deletion, while the project does not use AnkiConnect, the notes of deleted flashcards that had been marked as exported.
+    /// Such a package also marks for deletion, while the project does not use AnkiConnect,
+    /// the notes of deleted flashcards that had been marked as exported and never sent through AnkiConnect.
     pub marks_exported: bool,
 }
 
@@ -54,7 +55,8 @@ pub struct AnkiPackageSaved {
 /// Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
 /// A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
 /// A package that marks its flashcards as exported, while the project does not use AnkiConnect, also holds a note for each recorded deletion
-/// of a flashcard that had been marked as exported: it shares that flashcard's GUID, so Anki's import replaces the note with one that says to delete it.
+/// of a flashcard that had been marked as exported and never sent through AnkiConnect: it shares that flashcard's GUID,
+/// so Anki's import replaces the note with one that says to delete it.
 /// Once the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,
 /// they are marked exported when the request asks for that, and the deletions it marked are cleared.
 /// A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
@@ -106,7 +108,8 @@ pub async fn export_anki_package(
 }
 
 /// The recorded deletions a package marks for deletion: when it marks its flashcards as exported and the project does not use AnkiConnect,
-/// which deletes notes itself, those of flashcards that had been marked as exported, since only their notes may carry the package's GUID.
+/// which deletes notes itself, those whose every note in Anki may carry the package's GUID.
+/// A flashcard also sent through AnkiConnect may have a note under a GUID Anki chose, which a mark cannot reach, so its deletion stays listed.
 fn deletions_to_mark(selection: &Selection, marks_exported: bool) -> Vec<AnkiPendingDeletion> {
     if !marks_exported || selection.project.uses_anki_connect {
         return Vec::new();
@@ -114,7 +117,7 @@ fn deletions_to_mark(selection: &Selection, marks_exported: bool) -> Vec<AnkiPen
     selection
         .deletions
         .iter()
-        .filter(|deletion| deletion.reached_by_package)
+        .filter(|deletion| deletion.is_markable_by_package())
         .cloned()
         .collect()
 }

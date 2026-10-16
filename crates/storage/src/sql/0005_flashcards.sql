@@ -23,7 +23,8 @@ CREATE TABLE anki_pending_deletions (
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     word TEXT NOT NULL,
     requested_at_ms INTEGER NOT NULL,
-    reached_by_package INTEGER NOT NULL
+    reached_by_package INTEGER NOT NULL,
+    reached_by_anki_connect INTEGER NOT NULL
 );
 
 CREATE INDEX anki_pending_deletions_by_project ON anki_pending_deletions (project_id, requested_at_ms);

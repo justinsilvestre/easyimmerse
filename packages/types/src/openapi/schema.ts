@@ -454,7 +454,8 @@ export interface paths {
          * Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
          *     A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
          *     A package that marks its flashcards as exported, while the project does not use AnkiConnect, also holds a note for each recorded deletion
-         *     of a flashcard that had been marked as exported: it shares that flashcard's GUID, so Anki's import replaces the note with one that says to delete it.
+         *     of a flashcard that had been marked as exported and never sent through AnkiConnect: it shares that flashcard's GUID,
+         *     so Anki's import replaces the note with one that says to delete it.
          *     Once the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,
          *     they are marked exported when the request asks for that, and the deletions it marked are cleared.
          *     A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
@@ -1063,7 +1064,8 @@ export interface components {
             flashcard_ids: components["schemas"]["FlashcardId"][];
             /**
              * @description Whether delivering the package marks its flashcards as exported, so that they no longer count as new or changed.
-             *     Such a package also marks for deletion, while the project does not use AnkiConnect, the notes of deleted flashcards that had been marked as exported.
+             *     Such a package also marks for deletion, while the project does not use AnkiConnect,
+             *     the notes of deleted flashcards that had been marked as exported and never sent through AnkiConnect.
              */
             marks_exported: boolean;
             /** @description The absolute path to write the package to, on the server's machine. Null to receive the package in the response. */
@@ -1085,11 +1087,13 @@ export interface components {
             skipped_media_count: number;
         };
         /**
-         * @description A deleted flashcard that had reached Anki, whose note may still be there.
-         *     It lasts until AnkiConnect deletes the note, an export marks the note for deletion, or the user marks it done.
+         * @description A deleted flashcard that had reached Anki, whose notes may still be there.
+         *     It lasts until AnkiConnect deletes the notes, an export marks the only note it can have for deletion, or the user marks it done.
          */
         AnkiPendingDeletion: {
             flashcard_id: components["schemas"]["FlashcardId"];
+            /** @description Whether AnkiConnect had put the flashcard into Anki, so that Anki may hold a note for it under a GUID that Anki chose. */
+            reached_by_anki_connect: boolean;
             /** @description Whether the flashcard had been marked as exported, so that its note in Anki may carry the GUID that a package's note for it carries. */
             reached_by_package: boolean;
             /**

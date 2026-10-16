@@ -22,6 +22,7 @@ import {
 } from "./ankiExportSelection.ts";
 import { hasAnkiConnectRequest } from "./ankiRequests.ts";
 import { ankiSearchOf } from "./ankiSearch.ts";
+import { isMarkableByPackage } from "./isMarkableByPackage.ts";
 
 /** Whether Anki answered the last check: still being asked, answered, did not answer, or answered that it refuses easyImmerse. */
 export type AnkiConnectionStatus =
@@ -123,8 +124,7 @@ function packageSync(
     sinceLastExport: sinceLastExport(flashcards),
     deletions,
     ankiSearch: ankiSearchOf(deletions.map(({ flashcard_id }) => flashcard_id)),
-    markCount: deletions.filter(({ reached_by_package }) => reached_by_package)
-      .length,
+    markCount: deletions.filter(isMarkableByPackage).length,
   };
 }
 
