@@ -42,9 +42,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NewAndChangedCards: Story = {};
+export const QueuedCards: Story = {};
 
-export const NotMarkingTheCardsExported: Story = {
+export const KeepingTheCardsInTheQueue: Story = {
   args: { marksExported: false },
 };
 

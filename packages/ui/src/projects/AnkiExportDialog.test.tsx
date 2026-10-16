@@ -39,14 +39,19 @@ function renderDialog(
 
 const exportButton = () => screen.getByRole("button", { name: /^Export/ });
 
+const keepInQueueCheckbox = () =>
+  screen.getByRole("checkbox", {
+    name: /Keep these cards in the Anki updates queue/,
+  });
+
 const isDisabled = (element: HTMLElement) =>
   (element as HTMLButtonElement).disabled;
 
 describe("AnkiExportDialog", () => {
-  it("offers the new and changed cards with their count", () => {
+  it("offers the cards in the Anki updates queue with their count", () => {
     renderDialog();
     expect(
-      screen.getByRole("radio", { name: "New and changed (2)" }),
+      screen.getByRole("radio", { name: "Queued cards (2)" }),
     ).toBeDefined();
   });
 
@@ -77,30 +82,30 @@ describe("AnkiExportDialog", () => {
     expect(isDisabled(exportButton())).toBe(true);
   });
 
-  it("shows whether the cards are marked as exported", () => {
+  it("shows that the cards are kept in the Anki updates queue while they are not marked as exported", () => {
     renderDialog({ marksExported: false });
-    expect(
-      (
-        screen.getByRole("checkbox", {
-          name: /Mark these cards as exported/,
-        }) as HTMLInputElement
-      ).checked,
-    ).toBe(false);
+    expect((keepInQueueCheckbox() as HTMLInputElement).checked).toBe(true);
   });
 
-  it("says that cards left unmarked are a copy not meant for the Anki the project sends to", () => {
+  it("says that cards kept in the queue suit a copy not meant for the Anki the project sends to", () => {
     renderDialog();
     expect(
-      screen.getByText(/does not track.*not meant for importing into the Anki/),
+      screen.getByText(
+        /share or keep as a backup.*not one to import into the Anki/,
+      ),
     ).toBeDefined();
   });
 
-  it("chooses not to mark the cards as exported", () => {
+  it("chooses to keep the cards in the queue by not marking them as exported", () => {
     const calls = renderDialog();
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: /Mark these cards as exported/ }),
-    );
+    fireEvent.click(keepInQueueCheckbox());
     expect(calls).toEqual(["marking false"]);
+  });
+
+  it("chooses to take the cards out of the queue by marking them as exported", () => {
+    const calls = renderDialog({ marksExported: false });
+    fireEvent.click(keepInQueueCheckbox());
+    expect(calls).toEqual(["marking true"]);
   });
 
   it("warns that importing would duplicate the cards AnkiConnect sent", () => {
@@ -121,7 +126,7 @@ describe("AnkiExportDialog", () => {
     ).toBeDefined();
   });
 
-  it("does not warn of duplicates while the cards are not marked as exported", () => {
+  it("does not warn of duplicates while the cards are kept in the queue", () => {
     renderDialog({ duplicateCount: 2, marksExported: false });
     expect(screen.queryByRole("note")).toBeNull();
   });
@@ -135,7 +140,7 @@ describe("AnkiExportDialog", () => {
     ).toBeDefined();
   });
 
-  it("marks no deletion while the cards are not marked as exported", () => {
+  it("marks no deletion while the cards are kept in the queue", () => {
     renderDialog({ markCount: 2, marksExported: false });
     expect(screen.queryByText(/for deletion in Anki/)).toBeNull();
   });

@@ -1,9 +1,11 @@
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import clsx from "clsx";
-import { Play } from "lucide-react";
+import { Play, Volume2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { splitIntoWords } from "../components/ClickableText.tsx";
 import { cardSidesOf } from "./cardSidesOf.ts";
+import { DefinitionMarkdown } from "./DefinitionMarkdown.tsx";
 import {
   type FlashcardLanguages,
   findFlashcardField,
@@ -48,6 +50,7 @@ export function FlashcardPreview({
   compact?: boolean;
   /** The image of the card's screenshot. Null when none can be shown. */
   screenshotUrl?: string | null;
+  /** Plays the sentence audio. Without it, the preview only marks that the card has audio. */
   onPlayAudio?: () => void;
 }) {
   const sides = cardSidesOf(content, includedFields, frontFields);
@@ -161,19 +164,23 @@ function Field({
         </p>
       );
     case "l1_definition":
-      return (
-        <p>
-          <ValueOrLabel value={content.l1_definition} label={label} />
-        </p>
-      );
     case "l2_definition":
       return (
-        <p className="text-fg-soft">
-          <ValueOrLabel value={content.l2_definition} label={label} />
-        </p>
+        <DefinitionField
+          markdown={content[fieldKey]}
+          label={label}
+          className={clsx(fieldKey === "l2_definition" && "text-fg-soft")}
+        />
       );
     case "audio_context":
-      return content.audio_context && <PlayButton context={context} />;
+      return (
+        content.audio_context &&
+        (context.onPlayAudio ? (
+          <PlayButton onPlay={context.onPlayAudio} compact={compact} />
+        ) : (
+          <AudioMark compact={compact} />
+        ))
+      );
     case "screenshot":
       return (
         context.screenshotUrl !== null && (
@@ -202,19 +209,34 @@ function Field({
   }
 }
 
-function PlayButton({ context }: { context: FieldContext }) {
+function PlayButton({
+  onPlay,
+  compact,
+}: {
+  onPlay: () => void;
+  compact: boolean;
+}) {
   return (
     <button
       type="button"
       aria-label="Play the sentence audio"
-      onClick={context.onPlayAudio}
+      onClick={onPlay}
       className={clsx(
         "mt-1 flex items-center justify-center rounded-full border border-line-strong text-fg-muted hover:bg-surface-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-        context.compact ? "size-6" : "size-8",
+        compact ? "size-6" : "size-8",
       )}
     >
-      <Play className={context.compact ? "size-3" : "size-4"} aria-hidden />
+      <Play className={compact ? "size-3" : "size-4"} aria-hidden />
     </button>
+  );
+}
+
+/** Marks where the sentence audio plays on the card, when the preview has no way to play it. */
+function AudioMark({ compact }: { compact: boolean }) {
+  return (
+    <span role="img" aria-label="Sentence audio" className="mt-1 text-fg-muted">
+      <Volume2 className={compact ? "size-3" : "size-4"} aria-hidden />
+    </span>
   );
 }
 
@@ -226,10 +248,42 @@ function SideLabel({ children }: { children: string }) {
   );
 }
 
+/** Shows a definition's Markdown as Anki renders it, or the field's name as a placeholder when it is empty. */
+function DefinitionField({
+  markdown,
+  label,
+  className,
+}: {
+  markdown: string;
+  label: string;
+  className?: string;
+}) {
+  if (!markdown.trim())
+    return (
+      <p className={className}>
+        <ValueOrLabel value="" label={label} />
+      </p>
+    );
+  return <DefinitionMarkdown markdown={markdown} className={className} />;
+}
+
 /** Shows the value, or the field's name as a placeholder when it is empty. */
 function ValueOrLabel({ value, label }: { value: string; label: string }) {
-  if (value.trim()) return value;
+  const text = value.trim();
+  if (text) return <TextWithLineBreaks text={text} />;
   return <span className="text-fg-faint italic">{label}</span>;
+}
+
+/** Shows plain text with each of its line breaks kept, as the exported Anki card does. */
+function TextWithLineBreaks({ text }: { text: string }) {
+  const parts: ReactNode[] = [];
+  let lineStart = 0;
+  for (const line of text.split("\n")) {
+    if (lineStart > 0) parts.push(<br key={lineStart} />);
+    parts.push(line.replaceAll("\r", ""));
+    lineStart += line.length + 1;
+  }
+  return parts;
 }
 
 function HighlightedWord({
@@ -242,7 +296,7 @@ function HighlightedWord({
   label: string;
 }) {
   if (!text.trim()) return <ValueOrLabel value="" label={label} />;
-  return splitIntoWords(text).map((part) =>
+  return splitIntoWords(text.trim()).map((part) =>
     part.isWord && part.text === word ? (
       <mark
         key={part.start}
@@ -251,7 +305,7 @@ function HighlightedWord({
         {part.text}
       </mark>
     ) : (
-      part.text
+      <TextWithLineBreaks key={part.start} text={part.text} />
     ),
   );
 }

@@ -6,7 +6,7 @@ import { newAndChangedPhrase } from "./newAndChangedPhrase.ts";
 import { SyncChannel } from "./SyncChannel.tsx";
 
 /**
- * Shows the Anki package, which can always be exported: what changed since the last export, the button to export,
+ * Shows the Anki package, which can always be exported: what waits in the Anki updates queue, the button to export,
  * and the deleted flashcards whose notes may still be in Anki.
  */
 export function AnkiPackageChannel({
@@ -31,7 +31,7 @@ export function AnkiPackageChannel({
       icon={<Download className="size-5" aria-hidden />}
       title="Anki package"
     >
-      <p>{packageSummary(sync, flashcardCount)}</p>
+      <p>{packageSummary(sync, flashcardCount, isMainChannel)}</p>
       <div className="pt-1">
         <Button
           variant={isMainChannel ? "primary" : "secondary"}
@@ -53,15 +53,24 @@ export function AnkiPackageChannel({
   );
 }
 
-/** Counts the flashcards new and changed since the last export, or says what a package is before the first. */
+/**
+ * Counts the flashcards new and changed since the last export, or says what a package is before the first.
+ * It calls them the Anki updates queue only while packages are how the flashcards reach Anki, since AnkiConnect otherwise keeps its own count.
+ */
 function packageSummary(
   { sinceLastExport }: PackageSync,
   flashcardCount: number,
+  isMainChannel: boolean,
 ) {
   if (flashcardCount === 0) return "No flashcards yet.";
   if (sinceLastExport === null) return "Save a package to import into Anki.";
   const { newCount, changedCount } = sinceLastExport;
-  if (newCount + changedCount === 0)
-    return "Every flashcard has been exported.";
-  return `${newAndChangedPhrase(newCount, changedCount)} since the last export.`;
+  const isEmpty = newCount + changedCount === 0;
+  if (!isMainChannel)
+    return isEmpty
+      ? "Every flashcard has been exported."
+      : `${newAndChangedPhrase(newCount, changedCount)} since the last export.`;
+  return isEmpty
+    ? "No new or changed flashcards in the Anki updates queue."
+    : `${newAndChangedPhrase(newCount, changedCount)} in the Anki updates queue.`;
 }

@@ -24,7 +24,6 @@ const meta = {
     frontFields: frontFieldsOfPreset("beginner"),
     languages: exampleLanguages,
     screenshotUrl: exampleScreenshotUrl,
-    onPlayAudio: fn(),
   },
 } satisfies Meta<typeof FlashcardPreview>;
 
@@ -32,6 +31,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Beginner: Story = {};
+
+/** With a way to play the sentence audio, the preview offers a play button in place of the audio mark. */
+export const PlayableAudio: Story = {
+  args: { onPlayAudio: fn() },
+};
 
 export const Intermediate: Story = {
   args: {
@@ -72,3 +76,32 @@ export const EmptyFields: Story = {
 };
 
 export const Compact: Story = { args: { compact: true } };
+
+/** Definitions written in Markdown appear formatted, as the exported Anki card shows them. */
+export const FormattedDefinitions: Story = {
+  args: {
+    content: {
+      ...exampleFlashcard,
+      l1_definition:
+        "1. to *eat* (of an animal)\n2. to **devour**, to ~~eat~~ gobble up",
+      l2_definition:
+        "- (von Tieren) *Nahrung zu sich nehmen*\n- (derb) gierig essen\n\nSiehe [Duden](https://www.duden.de/rechtschreibung/fressen).",
+    },
+    includedFields: [...fieldsOfPreset("beginner"), "l2_definition"],
+  },
+};
+
+export const FormattedDefinitionsCompact: Story = {
+  args: { ...FormattedDefinitions.args, compact: true },
+};
+
+/** Plain-text fields keep their line breaks, as the exported Anki card shows them. */
+export const MultilineFields: Story = {
+  args: {
+    content: {
+      ...exampleFlashcard,
+      text_context: "Der Hund will fressen.\nEr hat Hunger.",
+      text_context_translation: "The dog wants to eat.\nIt is hungry.",
+    },
+  },
+};

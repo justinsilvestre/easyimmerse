@@ -7,8 +7,8 @@ import { SegmentedControl } from "../components/SegmentedControl.tsx";
 import type { MediaItem } from "./MediaList.tsx";
 
 /**
- * Exports a project's flashcards as an Anki package: the new and changed cards or all of them, from every media file or the ticked ones,
- * marking them as exported or not. Export is unavailable while the choices include no card, and while an export is under way.
+ * Exports a project's flashcards as an Anki package: the cards in the Anki updates queue or all of them, from every media file or the ticked ones,
+ * taking them out of the queue or keeping them in it. Export is unavailable while the choices include no card, and while an export is under way.
  */
 export function AnkiExportDialog({
   mediaFiles,
@@ -30,15 +30,15 @@ export function AnkiExportDialog({
   /** The media files whose cards are exported, or null for every card of the project. */
   chosenMediaFileIds: readonly string[] | null;
   scope: AnkiExportScope;
-  /** The cards new or changed since they were last marked as exported, from the chosen media files. */
+  /** The cards in the Anki updates queue, new or changed since an export last took them out of it, from the chosen media files. */
   newAndChangedCount: number;
   /** Every card from the chosen media files. */
   allCount: number;
-  /** Whether the export marks its cards as exported, so that they no longer count as new or changed. */
+  /** Whether the export takes its cards out of the Anki updates queue, so that they no longer count as new or changed. */
   marksExported: boolean;
-  /** The exported cards that AnkiConnect put into Anki before any export marked them, which an import there would duplicate. */
+  /** The exported cards that AnkiConnect put into Anki before any export took them out of the queue, which an import there would duplicate. */
   duplicateCount: number;
-  /** The notes of deleted flashcards the package marks for deletion when it marks its cards as exported. */
+  /** The notes of deleted flashcards the package marks for deletion when it takes its cards out of the queue. */
   markCount: number;
   isBusy: boolean;
   onScopeChange: (scope: AnkiExportScope) => void;
@@ -72,7 +72,7 @@ export function AnkiExportDialog({
         options={[
           {
             value: "newAndChanged",
-            label: `New and changed (${newAndChangedCount})`,
+            label: `Queued cards (${newAndChangedCount})`,
           },
           { value: "all", label: `All cards (${allCount})` },
         ]}
@@ -94,10 +94,10 @@ export function AnkiExportDialog({
         </fieldset>
       )}
       <CheckboxField
-        label="Mark these cards as exported"
-        hint="The next export then leaves them out unless they change. Leave this off for a copy that easyImmerse does not track, such as a deck you share or keep as a backup. It is not meant for importing into the Anki that this project sends to."
-        checked={marksExported}
-        onChange={(event) => onMarkingChange(event.target.checked)}
+        label="Keep these cards in the Anki updates queue"
+        hint="Choose this for a copy such as a deck you share or keep as a backup, not one to import into the Anki that this project sends to. Otherwise the export takes the cards out of the queue, and the next export leaves them out unless they change."
+        checked={!marksExported}
+        onChange={(event) => onMarkingChange(!event.target.checked)}
       />
       {marksExported && duplicateCount > 0 && (
         <DuplicateWarning count={duplicateCount} />

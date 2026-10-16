@@ -44,7 +44,7 @@ const noteLines = {
   deletedByAnkiConnectLater:
     "Its note is deleted from Anki the next time easyImmerse reaches Anki.",
   staysListed:
-    "Its note stays in Anki until you delete it there. The project screen lists it so that you can.",
+    "Its note stays in Anki until you delete it there. The project screen lists it in the Anki updates queue so that you can.",
   stays: "Its note stays in Anki until you delete it there.",
 } satisfies Record<AnkiFateOfDeletion["note"], string>;
 

@@ -62,10 +62,10 @@ describe("FlashcardSyncPanel", () => {
       expect(calls).toEqual(["setUp"]);
     });
 
-    it("says beside the channels that no card waits to be exported", () => {
+    it("says beside the channels that no card is in the Anki updates queue", () => {
       renderPanel(exportingOnly);
       expect(
-        screen.getByText("No flashcards waiting to be exported."),
+        screen.getByText("No flashcards in the Anki updates queue."),
       ).toBeDefined();
     });
   });

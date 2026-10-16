@@ -190,10 +190,12 @@ describe("ProjectForm", () => {
     expect(submitted).toEqual(["German"]);
   });
 
-  it("says that the listed deleted flashcards were marked as exported or sent to Anki", () => {
+  it("says that the listed deleted flashcards were taken out of the Anki updates queue by an export or sent to Anki", () => {
     renderForm();
     expect(
-      screen.getByText(/flashcard you marked as exported or sent to Anki/),
+      screen.getByText(
+        /flashcard that an export took out of the Anki updates queue, or that AnkiConnect sent to Anki/,
+      ),
     ).toBeDefined();
   });
 

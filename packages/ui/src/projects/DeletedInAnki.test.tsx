@@ -59,11 +59,11 @@ describe("DeletedInAnki", () => {
     ).toBeDefined();
   });
 
-  it("tells that the next export marking its cards marks them for deletion", () => {
+  it("tells that the next export taking cards out of the Anki updates queue marks them for deletion", () => {
     renderList(["Katze", "Hund"], 2);
     expect(
       screen.getByText(
-        /Otherwise, the next export that marks its cards as exported marks them for deletion\./,
+        /Otherwise, the next export that takes cards out of the Anki updates queue marks them for deletion\./,
       ),
     ).toBeDefined();
   });
