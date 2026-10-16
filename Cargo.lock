@@ -1555,6 +1555,7 @@ dependencies = [
 name = "easyimmerse-storage"
 version = "0.1.0"
 dependencies = [
+ "dunce",
  "easyimmerse-core",
  "flate2",
  "hex",
