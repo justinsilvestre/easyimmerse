@@ -94,3 +94,14 @@ export const FormattedDefinitions: Story = {
 export const FormattedDefinitionsCompact: Story = {
   args: { ...FormattedDefinitions.args, compact: true },
 };
+
+/** Plain-text fields keep their line breaks, as the exported Anki card shows them. */
+export const MultilineFields: Story = {
+  args: {
+    content: {
+      ...exampleFlashcard,
+      text_context: "Der Hund will fressen.\nEr hat Hunger.",
+      text_context_translation: "The dog wants to eat.\nIt is hungry.",
+    },
+  },
+};

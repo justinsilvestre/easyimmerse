@@ -1,6 +1,7 @@
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import clsx from "clsx";
 import { Play, Volume2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Badge } from "../components/Badge.tsx";
 import { splitIntoWords } from "../components/ClickableText.tsx";
 import { cardSidesOf } from "./cardSidesOf.ts";
@@ -268,8 +269,21 @@ function DefinitionField({
 
 /** Shows the value, or the field's name as a placeholder when it is empty. */
 function ValueOrLabel({ value, label }: { value: string; label: string }) {
-  if (value.trim()) return value;
+  const text = value.trim();
+  if (text) return <TextWithLineBreaks text={text} />;
   return <span className="text-fg-faint italic">{label}</span>;
+}
+
+/** Shows plain text with each of its line breaks kept, as the exported Anki card does. */
+function TextWithLineBreaks({ text }: { text: string }) {
+  const parts: ReactNode[] = [];
+  let lineStart = 0;
+  for (const line of text.split("\n")) {
+    if (lineStart > 0) parts.push(<br key={lineStart} />);
+    parts.push(line.replaceAll("\r", ""));
+    lineStart += line.length + 1;
+  }
+  return parts;
 }
 
 function HighlightedWord({
@@ -282,7 +296,7 @@ function HighlightedWord({
   label: string;
 }) {
   if (!text.trim()) return <ValueOrLabel value="" label={label} />;
-  return splitIntoWords(text).map((part) =>
+  return splitIntoWords(text.trim()).map((part) =>
     part.isWord && part.text === word ? (
       <mark
         key={part.start}
@@ -291,7 +305,7 @@ function HighlightedWord({
         {part.text}
       </mark>
     ) : (
-      part.text
+      <TextWithLineBreaks key={part.start} text={part.text} />
     ),
   );
 }
