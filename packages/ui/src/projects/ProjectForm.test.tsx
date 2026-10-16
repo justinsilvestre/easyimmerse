@@ -190,6 +190,13 @@ describe("ProjectForm", () => {
     expect(submitted).toEqual(["German"]);
   });
 
+  it("says that the listed deleted flashcards were marked as exported or sent to Anki", () => {
+    renderForm();
+    expect(
+      screen.getByText(/flashcard you marked as exported or sent to Anki/),
+    ).toBeDefined();
+  });
+
   it("submits the choice not to list deleted flashcards that are still in Anki", () => {
     const submitted: boolean[] = [];
     renderForm((values) => submitted.push(values.lists_anki_deletions));
