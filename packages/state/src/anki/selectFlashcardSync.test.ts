@@ -79,7 +79,7 @@ describe("selectFlashcardSync", () => {
   it("counts the cards edited since they were last exported", () => {
     const backend = ankiCache(false, [
       ankiFlashcard("f1", "m1", 1, { exportedAtMs: 10, updatedAtMs: 11 }),
-      ankiFlashcard("f2", "m1", 2, { exportedAtMs: 10, updatedAtMs: 10 }),
+      ankiFlashcard("f2", "m1", 2, { exportedAtMs: 10, updatedAtMs: 9 }),
     ]);
     expect(syncOf(backend)).toMatchObject({
       package: { sinceLastExport: { changedCount: 1 } },

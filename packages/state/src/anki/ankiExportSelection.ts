@@ -5,11 +5,11 @@ import type { AnkiExportDialog } from "./ankiExportDialog.ts";
 export const isUnexported = (flashcard: Flashcard) =>
   flashcard.exported_at_ms === null;
 
-/** Tells whether the flashcard was edited after it was last marked as exported. */
+/** Tells whether the flashcard was edited at or after the time it was last marked as exported. */
 export const isChangedSinceExport = ({
   exported_at_ms,
   updated_at_ms,
-}: Flashcard) => exported_at_ms !== null && updated_at_ms > exported_at_ms;
+}: Flashcard) => exported_at_ms !== null && updated_at_ms >= exported_at_ms;
 
 /** Tells whether the flashcard is new or changed since it was last marked as exported. */
 export const isNewOrChangedSinceExport = (flashcard: Flashcard) =>
@@ -18,9 +18,9 @@ export const isNewOrChangedSinceExport = (flashcard: Flashcard) =>
 /** Tells whether AnkiConnect never put the flashcard into Anki. */
 export const isUnsent = (flashcard: Flashcard) => flashcard.sent_at_ms === null;
 
-/** Tells whether the flashcard was edited after AnkiConnect last put it into Anki. */
+/** Tells whether the flashcard was edited at or after the time AnkiConnect last put it into Anki. */
 export const isChangedSinceSent = ({ sent_at_ms, updated_at_ms }: Flashcard) =>
-  sent_at_ms !== null && updated_at_ms > sent_at_ms;
+  sent_at_ms !== null && updated_at_ms >= sent_at_ms;
 
 /** Tells whether AnkiConnect has yet to put the flashcard into Anki as it now is. */
 export const isWaitingToBeSent = (flashcard: Flashcard) =>
