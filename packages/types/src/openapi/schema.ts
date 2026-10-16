@@ -3741,11 +3741,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Without a save path, the package, named in `Content-Disposition`, with the count of media files left out in `X-EasyImmerse-Skipped-Media` and of deletions marked in `X-EasyImmerse-Marked-Deletions`. With a save path, what was saved. */
+            /** @description Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count`, of media files left out in `X-EasyImmerse-Skipped-Media` and of deletions marked in `X-EasyImmerse-Marked-Deletions`. With a save path, what was saved. */
             200: {
                 headers: {
                     /** @description Without a save path: the suggested file name, as `filename` in ASCII and `filename*` in UTF-8 */
                     "Content-Disposition"?: string;
+                    /** @description Without a save path: the count of flashcards the package holds, which leaves out those named that are not in the project */
+                    "X-EasyImmerse-Flashcard-Count"?: number;
                     /** @description Without a save path: the count of notes of deleted flashcards the package marks for deletion */
                     "X-EasyImmerse-Marked-Deletions"?: number;
                     /** @description Without a save path: the count of audio clips and screenshots left out of the package */

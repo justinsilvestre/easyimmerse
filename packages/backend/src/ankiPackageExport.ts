@@ -66,18 +66,15 @@ async function downloadPackage(
       signal,
     });
     if (!response.ok) return { error: await readBackendError(response) };
-    return {
-      data: await downloadedPackage(response, args.flashcardIds.length),
-    };
+    return { data: await downloadedPackage(response) };
   } catch (cause) {
     return { error: { status: "NETWORK", message: messageOf(cause) } };
   }
 }
 
-/** Reads a package the server answered with, named as its header says. */
+/** Reads a package the server answered with, named and counted as its headers say. */
 async function downloadedPackage(
   response: Response,
-  flashcardCount: number,
 ): Promise<AnkiPackageExport> {
   const { headers } = response;
   return {
@@ -87,7 +84,7 @@ async function downloadedPackage(
       "flashcards.apkg",
     ),
     bytes: new Uint8Array(await response.arrayBuffer()),
-    flashcardCount,
+    flashcardCount: Number(headers.get("x-easyimmerse-flashcard-count")) || 0,
     skippedMediaCount: Number(headers.get("x-easyimmerse-skipped-media")) || 0,
     markedDeletionCount:
       Number(headers.get("x-easyimmerse-marked-deletions")) || 0,

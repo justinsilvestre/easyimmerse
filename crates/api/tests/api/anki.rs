@@ -316,6 +316,15 @@ mod export_anki_package {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn counts_in_a_header_only_the_flashcards_packaged() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        delete_flashcard(&server, &ids[1]).await;
+        let response = export_ids(&server, &ids).await;
+        assert_eq!(response.header("x-easyimmerse-flashcard-count"), Some("1"));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn drops_a_flashcard_named_twice() {
         let server = spawn_test_server(false).await;
         let ids = create_two(&server).await;

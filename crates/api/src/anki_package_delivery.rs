@@ -11,6 +11,9 @@ use crate::file_download::{attachment_disposition, body_then};
 use crate::routes::anki_package::AnkiPackageSaved;
 use crate::state::AppState;
 
+/// The response header that counts the flashcards a downloaded package holds.
+pub const FLASHCARD_COUNT_HEADER: &str = "x-easyimmerse-flashcard-count";
+
 /// The response header that counts the media files left out of a downloaded package.
 pub const SKIPPED_MEDIA_HEADER: &str = "x-easyimmerse-skipped-media";
 
@@ -26,6 +29,10 @@ pub struct BuiltPackage {
 }
 
 impl BuiltPackage {
+    fn flashcard_count(&self) -> u64 {
+        self.delivered.flashcard_ids.len() as u64
+    }
+
     fn marked_deletion_count(&self) -> u64 {
         self.delivered.marked_deletions.len() as u64
     }
@@ -58,7 +65,7 @@ pub async fn save_package(
             )
         })?;
     let saved = AnkiPackageSaved {
-        flashcard_count: package.delivered.flashcard_ids.len() as u64,
+        flashcard_count: package.flashcard_count(),
         skipped_media_count: package.skipped_media_count,
         marked_deletion_count: package.marked_deletion_count(),
     };
@@ -76,6 +83,10 @@ pub fn package_download(state: AppState, package: BuiltPackage) -> Response {
     headers.insert(
         CONTENT_DISPOSITION,
         attachment_disposition(&package.file_name),
+    );
+    headers.insert(
+        HeaderName::from_static(FLASHCARD_COUNT_HEADER),
+        HeaderValue::from(package.flashcard_count()),
     );
     headers.insert(
         HeaderName::from_static(SKIPPED_MEDIA_HEADER),

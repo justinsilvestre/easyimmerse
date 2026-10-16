@@ -2111,13 +2111,21 @@
         },
         "responses": {
           "200": {
-            "description": "Without a save path, the package, named in `Content-Disposition`, with the count of media files left out in `X-EasyImmerse-Skipped-Media` and of deletions marked in `X-EasyImmerse-Marked-Deletions`. With a save path, what was saved.",
+            "description": "Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count`, of media files left out in `X-EasyImmerse-Skipped-Media` and of deletions marked in `X-EasyImmerse-Marked-Deletions`. With a save path, what was saved.",
             "headers": {
               "Content-Disposition": {
                 "schema": {
                   "type": "string"
                 },
                 "description": "Without a save path: the suggested file name, as `filename` in ASCII and `filename*` in UTF-8"
+              },
+              "X-EasyImmerse-Flashcard-Count": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "description": "Without a save path: the count of flashcards the package holds, which leaves out those named that are not in the project"
               },
               "X-EasyImmerse-Marked-Deletions": {
                 "schema": {

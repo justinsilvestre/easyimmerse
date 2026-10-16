@@ -13,6 +13,7 @@ const packageResponse = () =>
   new Response(new Uint8Array([80, 75]), {
     headers: {
       "content-disposition": `attachment; filename="Korean.apkg"; filename*=UTF-8''%ED%95%9C.apkg`,
+      "x-easyimmerse-flashcard-count": "1",
       "x-easyimmerse-skipped-media": "3",
       "x-easyimmerse-marked-deletions": "1",
     },
@@ -60,10 +61,16 @@ describe("exportAnkiPackage", () => {
         kind: "downloaded",
         fileName: "한.apkg",
         bytes: new Uint8Array([80, 75]),
-        flashcardCount: 2,
+        flashcardCount: 1,
         skippedMediaCount: 3,
         markedDeletionCount: 1,
       },
+    });
+  });
+
+  it("counts the flashcards the server packaged rather than those asked for", async () => {
+    expect(await download().exported).toMatchObject({
+      data: { flashcardCount: 1 },
     });
   });
 

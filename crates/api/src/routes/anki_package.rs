@@ -67,11 +67,12 @@ pub struct AnkiPackageSaved {
     params(("id" = String, Path, description = "The project id")),
     request_body = AnkiPackageRequest,
     responses(
-        (status = 200, description = "Without a save path, the package, named in `Content-Disposition`, with the count of media files left out in `X-EasyImmerse-Skipped-Media` and of deletions marked in `X-EasyImmerse-Marked-Deletions`. With a save path, what was saved.", content(
+        (status = 200, description = "Without a save path, the package, named in `Content-Disposition`, with the count of flashcards it holds in `X-EasyImmerse-Flashcard-Count`, of media files left out in `X-EasyImmerse-Skipped-Media` and of deletions marked in `X-EasyImmerse-Marked-Deletions`. With a save path, what was saved.", content(
             (Vec<u8> = "application/octet-stream"),
             (AnkiPackageSaved = "application/json"),
         ), headers(
             ("Content-Disposition" = String, description = "Without a save path: the suggested file name, as `filename` in ASCII and `filename*` in UTF-8"),
+            ("X-EasyImmerse-Flashcard-Count" = u64, description = "Without a save path: the count of flashcards the package holds, which leaves out those named that are not in the project"),
             ("X-EasyImmerse-Skipped-Media" = u64, description = "Without a save path: the count of audio clips and screenshots left out of the package"),
             ("X-EasyImmerse-Marked-Deletions" = u64, description = "Without a save path: the count of notes of deleted flashcards the package marks for deletion"),
         )),
