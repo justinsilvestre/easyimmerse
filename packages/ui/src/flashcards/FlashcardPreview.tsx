@@ -1,6 +1,6 @@
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import clsx from "clsx";
-import { Play } from "lucide-react";
+import { Play, Volume2 } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { splitIntoWords } from "../components/ClickableText.tsx";
 import { cardSidesOf } from "./cardSidesOf.ts";
@@ -49,6 +49,7 @@ export function FlashcardPreview({
   compact?: boolean;
   /** The image of the card's screenshot. Null when none can be shown. */
   screenshotUrl?: string | null;
+  /** Plays the sentence audio. Without it, the preview only marks that the card has audio. */
   onPlayAudio?: () => void;
 }) {
   const sides = cardSidesOf(content, includedFields, frontFields);
@@ -171,7 +172,14 @@ function Field({
         />
       );
     case "audio_context":
-      return content.audio_context && <PlayButton context={context} />;
+      return (
+        content.audio_context &&
+        (context.onPlayAudio ? (
+          <PlayButton onPlay={context.onPlayAudio} compact={compact} />
+        ) : (
+          <AudioMark compact={compact} />
+        ))
+      );
     case "screenshot":
       return (
         context.screenshotUrl !== null && (
@@ -200,19 +208,34 @@ function Field({
   }
 }
 
-function PlayButton({ context }: { context: FieldContext }) {
+function PlayButton({
+  onPlay,
+  compact,
+}: {
+  onPlay: () => void;
+  compact: boolean;
+}) {
   return (
     <button
       type="button"
       aria-label="Play the sentence audio"
-      onClick={context.onPlayAudio}
+      onClick={onPlay}
       className={clsx(
         "mt-1 flex items-center justify-center rounded-full border border-line-strong text-fg-muted hover:bg-surface-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-        context.compact ? "size-6" : "size-8",
+        compact ? "size-6" : "size-8",
       )}
     >
-      <Play className={context.compact ? "size-3" : "size-4"} aria-hidden />
+      <Play className={compact ? "size-3" : "size-4"} aria-hidden />
     </button>
+  );
+}
+
+/** Marks where the sentence audio plays on the card, when the preview has no way to play it. */
+function AudioMark({ compact }: { compact: boolean }) {
+  return (
+    <span role="img" aria-label="Sentence audio" className="mt-1 text-fg-muted">
+      <Volume2 className={compact ? "size-3" : "size-4"} aria-hidden />
+    </span>
   );
 }
 

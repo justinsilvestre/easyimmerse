@@ -24,7 +24,6 @@ const meta = {
     frontFields: frontFieldsOfPreset("beginner"),
     languages: exampleLanguages,
     screenshotUrl: exampleScreenshotUrl,
-    onPlayAudio: fn(),
   },
 } satisfies Meta<typeof FlashcardPreview>;
 
@@ -32,6 +31,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Beginner: Story = {};
+
+/** With a way to play the sentence audio, the preview offers a play button in place of the audio mark. */
+export const PlayableAudio: Story = {
+  args: { onPlayAudio: fn() },
+};
 
 export const Intermediate: Story = {
   args: {
