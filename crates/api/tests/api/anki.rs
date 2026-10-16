@@ -929,7 +929,7 @@ mod media_clip {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn follows_the_saved_audio_track() {
+    async fn falls_back_to_the_default_audio_track_when_the_saved_one_is_missing() {
         if !ffmpeg_available() {
             return;
         }
@@ -944,7 +944,7 @@ mod media_clip {
         let response = server
             .get(&clip_path(&media_id, "start_ms=1000&end_ms=2500"))
             .await;
-        assert_eq!(response.status, 404);
+        assert_eq!(response.status, 200);
     }
 
     #[tokio::test(flavor = "multi_thread")]
