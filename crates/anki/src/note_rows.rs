@@ -21,9 +21,9 @@ pub(crate) fn insert_notes_and_cards(
     scheduling: CardScheduling,
     exported_at_ms: u64,
 ) -> rusqlite::Result<()> {
-    let modified_secs = sql_int(exported_at_ms / 1000);
-    let note_type_id = sql_int(note_type(spec).id);
-    let deck_id = sql_int(deck_id(spec.project_id));
+    let modified_secs = sql_int(exported_at_ms / 1000)?;
+    let note_type_id = sql_int(note_type(spec).id)?;
+    let deck_id = sql_int(deck_id(spec.project_id))?;
     let note_ids = unique_ids(notes.iter().map(|note| note.note_id));
     let mut insert_note = connection
         .prepare("INSERT INTO notes VALUES (?1, ?2, ?3, ?4, -1, ?5, ?6, ?7, ?8, 0, '')")?;
@@ -31,9 +31,10 @@ pub(crate) fn insert_notes_and_cards(
         "INSERT INTO cards VALUES (?1, ?2, ?3, 0, ?4, -1, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0, 0, 0, ?13)",
     )?;
     for (position, (note, note_id)) in (1..).zip(notes.iter().zip(note_ids)) {
+        let row_id = sql_int(note_id)?;
         let sort_field = strip_html(note.fields.first().map_or("", String::as_str));
         insert_note.execute(params![
-            sql_int(note_id),
+            row_id,
             note.guid,
             note_type_id,
             modified_secs,
@@ -45,8 +46,8 @@ pub(crate) fn insert_notes_and_cards(
         let card = scheduling.columns(position);
         // A card's id is its note's id plus the ordinal of its template, which is always 0.
         insert_card.execute(params![
-            sql_int(note_id),
-            sql_int(note_id),
+            row_id,
+            row_id,
             deck_id,
             modified_secs,
             card.kind,
@@ -86,7 +87,22 @@ fn tags_column(tags: &[String]) -> String {
     }
 }
 
-/// Converts a number for SQLite, which stores signed 64-bit integers. Timestamps and ids are far below the limit.
-pub(crate) fn sql_int(value: u64) -> i64 {
-    i64::try_from(value).unwrap_or(i64::MAX)
+/// Converts a number for SQLite, which stores signed 64-bit integers. Fails when the number does not fit.
+pub(crate) fn sql_int(value: u64) -> rusqlite::Result<i64> {
+    i64::try_from(value).map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn converts_a_number_that_fits() {
+        assert_eq!(sql_int(7).ok(), Some(7));
+    }
+
+    #[test]
+    fn fails_on_a_number_that_does_not_fit() {
+        assert!(sql_int(u64::MAX).is_err());
+    }
 }

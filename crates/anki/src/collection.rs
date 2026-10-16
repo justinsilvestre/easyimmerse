@@ -45,12 +45,14 @@ fn insert_collection_row(
     // A midnight (in UTC) before every card was made keeps them positive.
     let created_secs = earliest_ms / MILLIS_PER_DAY * MILLIS_PER_DAY / 1000;
     let note_type_modified_secs = spec.project_created_at_ms / 1000;
+    let created_secs = sql_int(created_secs)?;
+    let exported_at_ms_sql = sql_int(exported_at_ms)?;
     connection.execute(
         "INSERT INTO col VALUES (1, ?1, ?2, ?3, ?4, 0, 0, 0, ?5, ?6, ?7, ?8, '{}')",
         params![
-            sql_int(created_secs),
-            sql_int(exported_at_ms),
-            sql_int(exported_at_ms),
+            created_secs,
+            exported_at_ms_sql,
+            exported_at_ms_sql,
             SCHEMA_VERSION,
             conf_json(note_type.id, notes.len()),
             models_json(
