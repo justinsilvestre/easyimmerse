@@ -72,3 +72,21 @@ export const EmptyFields: Story = {
 };
 
 export const Compact: Story = { args: { compact: true } };
+
+/** Definitions written in Markdown appear formatted, as the exported Anki card shows them. */
+export const FormattedDefinitions: Story = {
+  args: {
+    content: {
+      ...exampleFlashcard,
+      l1_definition:
+        "1. to *eat* (of an animal)\n2. to **devour**, to ~~eat~~ gobble up",
+      l2_definition:
+        "- (von Tieren) *Nahrung zu sich nehmen*\n- (derb) gierig essen\n\nSiehe [Duden](https://www.duden.de/rechtschreibung/fressen).",
+    },
+    includedFields: [...fieldsOfPreset("beginner"), "l2_definition"],
+  },
+};
+
+export const FormattedDefinitionsCompact: Story = {
+  args: { ...FormattedDefinitions.args, compact: true },
+};

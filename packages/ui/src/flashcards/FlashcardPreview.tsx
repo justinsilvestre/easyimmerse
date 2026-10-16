@@ -4,6 +4,7 @@ import { Play } from "lucide-react";
 import { Badge } from "../components/Badge.tsx";
 import { splitIntoWords } from "../components/ClickableText.tsx";
 import { cardSidesOf } from "./cardSidesOf.ts";
+import { DefinitionMarkdown } from "./DefinitionMarkdown.tsx";
 import {
   type FlashcardLanguages,
   findFlashcardField,
@@ -161,16 +162,13 @@ function Field({
         </p>
       );
     case "l1_definition":
-      return (
-        <p>
-          <ValueOrLabel value={content.l1_definition} label={label} />
-        </p>
-      );
     case "l2_definition":
       return (
-        <p className="text-fg-soft">
-          <ValueOrLabel value={content.l2_definition} label={label} />
-        </p>
+        <DefinitionField
+          markdown={content[fieldKey]}
+          label={label}
+          className={clsx(fieldKey === "l2_definition" && "text-fg-soft")}
+        />
       );
     case "audio_context":
       return content.audio_context && <PlayButton context={context} />;
@@ -224,6 +222,25 @@ function SideLabel({ children }: { children: string }) {
       {children}
     </span>
   );
+}
+
+/** Shows a definition's Markdown as Anki renders it, or the field's name as a placeholder when it is empty. */
+function DefinitionField({
+  markdown,
+  label,
+  className,
+}: {
+  markdown: string;
+  label: string;
+  className?: string;
+}) {
+  if (!markdown.trim())
+    return (
+      <p className={className}>
+        <ValueOrLabel value="" label={label} />
+      </p>
+    );
+  return <DefinitionMarkdown markdown={markdown} className={className} />;
 }
 
 /** Shows the value, or the field's name as a placeholder when it is empty. */
