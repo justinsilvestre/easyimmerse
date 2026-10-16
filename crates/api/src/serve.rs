@@ -100,10 +100,11 @@ pub async fn serve(
 }
 
 /// Creates the directory if needed and returns its absolute path, so that plugin grants
-/// do not depend on the server's working directory.
+/// do not depend on the server's working directory. On Windows the path keeps its ordinary
+/// form rather than the `\\?\` form, in which a plugin's `/` separators would not count.
 fn create_absolute_dir(dir: &Path) -> std::io::Result<PathBuf> {
     std::fs::create_dir_all(dir)?;
-    dir.canonicalize()
+    dunce::canonicalize(dir)
 }
 
 /// The binaries are looked up through `EASYIMMERSE_FFMPEG_DIR`, next to the executable, and

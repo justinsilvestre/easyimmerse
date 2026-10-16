@@ -1383,6 +1383,7 @@ name = "easyimmerse-api"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "dunce",
  "easyimmerse-anki",
  "easyimmerse-conversion",
  "easyimmerse-core",

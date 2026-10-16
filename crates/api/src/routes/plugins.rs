@@ -352,7 +352,7 @@ pub(crate) fn canonicalize_inside<'a>(
     output_dir: &FsPath,
     paths: impl Iterator<Item = &'a mut String>,
 ) -> Result<(), ApiFailure> {
-    let output_dir = output_dir.canonicalize().map_err(|error| {
+    let output_dir = dunce::canonicalize(output_dir).map_err(|error| {
         internal(format!(
             "could not resolve {}: {error}",
             output_dir.display()
@@ -365,8 +365,7 @@ pub(crate) fn canonicalize_inside<'a>(
 }
 
 fn canonicalize_one_inside(output_dir: &FsPath, path: &str) -> Result<String, ApiFailure> {
-    FsPath::new(path)
-        .canonicalize()
+    dunce::canonicalize(path)
         .ok()
         .filter(|canonical| canonical.starts_with(output_dir))
         .and_then(|canonical| canonical.into_os_string().into_string().ok())
@@ -458,7 +457,9 @@ mod tests {
             .to_string_lossy()
             .into_owned();
         canonicalize_inside(output_dir.path(), std::iter::once(&mut path)).unwrap();
-        let canonical = output_dir.path().canonicalize().unwrap().join("media.mp4");
+        let canonical = dunce::canonicalize(output_dir.path())
+            .unwrap()
+            .join("media.mp4");
         assert_eq!(path, canonical.to_string_lossy());
     }
 }

@@ -9,6 +9,7 @@ rust-version.workspace = true
 
 [dependencies]
 axum = { workspace = true }
+dunce = { workspace = true }
 easyimmerse-anki = { workspace = true }
 easyimmerse-conversion = { workspace = true }
 easyimmerse-core = { workspace = true }
