@@ -88,6 +88,13 @@ describe("AnkiExportDialog", () => {
     ).toBe(false);
   });
 
+  it("says that cards left unmarked are a copy not meant for the Anki the project sends to", () => {
+    renderDialog();
+    expect(
+      screen.getByText(/does not track.*not meant for importing into the Anki/),
+    ).toBeDefined();
+  });
+
   it("chooses not to mark the cards as exported", () => {
     const calls = renderDialog();
     fireEvent.click(
