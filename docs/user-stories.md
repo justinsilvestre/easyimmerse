@@ -54,25 +54,44 @@ As a user:
   - [x] the new project form opens
 - when I open the new project form:
   - [x] my last created project's language and settings are pre-filled in the form
-  - [x] I can enter the project settings:
+  - [x] I can enter the project settings.
+- when I submit the new project form:
+  - [x] I am taken to the new project's screen
+
+---
+
+### Project settings
+
+As a user:
+- when I'm editing a project's settings:
+  - [ ] I can change the following settings:
     - project name
     - target language
     - translation language (defaulting to my interface language)
     - flashcard settings:
       - which fields to include by default in new flashcards (with presets for beginner, intermediate, and advanced learners)
+      - which of the included fields appear on the front of a card (vs. the back)
       - default tags for new flashcards, and whether each flashcard is also tagged with its media file's name (on by default)
+      - whether I'd like easyImmerse to log when I delete any flashcard that was previously exported to Anki (on by default).
       - whether to try filling in the audio fields with TTS in the absence of an audio track
   - [x] I see a preview of an example flashcard with the current settings, which updates as I change the settings
   - [x] on a narrow screen, the example flashcard stays in view under the preset as a small card that I can expand
+- when a flashcard field is marked as included by default:
+  - [x] I see beside the checkbox and indication of which side of the card it is on, and I can move it to the other side with a click
+  - [x] a screen reader names the field together with its side, for example "Screenshot on the front"
+- when I change which fields are included by default, or change which side of the card a field is on:
+  - [x] the example flashcard shows the change
+  - [x] the preset shows as *Custom* if the fields no longer match a preset
 - when I select the *beginner* flashcard preset in the new project form:
   - [x] the pronunciation fields are included by default
+  - [x] the front of a card shows the sentence audio and the screenshot
 - when I select the *intermediate* flashcard preset in the new project form:
   - [x] the pronunciation fields are excluded by default
+  - [x] the front of a card shows the sentence audio and the screenshot
 - when I select the *advanced* flashcard preset in the new project form:
   - [x] the L1 translation field is excluded by default
   - [x] the L2 definition field is included by default
-- when I submit the new project form:
-  - [x] I am taken to the new project's screen
+  - [x] the front of a card shows the word, the sentence and the screenshot
 
 ---
 
@@ -92,15 +111,15 @@ As a user:
   - [ ] I see a button to export an Anki deck package for the project
   - [ ] I see a button to set up AnkiConnect for direct export to Anki
   - [ ] I see a button to start reviewing flashcards in the easyImmerse SRS
-- when the last export/review action was to use the easyImmerse SRS:
+- when the last export/review action was to use AnkiConnect or export an Anki deck package:
+  - [ ] I see a button to set up AnkiConnect for direct export to Anki, or if setup was already completed, I see whether AnkiConnect syncing is on and the connection status
+  - [x] I see a button to export an Anki deck package for the project
+  - [ ] I can open a menu and see a button to start reviewing flashcards in the easyImmerse SRS
+  - [x] I see a preview of the first-created flashcard that is new or changed since the last export
+- when the last review action was to use the easyImmerse SRS:
   - [ ] I see a preview of the next flashcard to review, and a button to continue reviewing in the easyImmerse SRS
-- when the last export/review action was to export an Anki deck package for the project:
-  - [ ] I see an indication of whether/how many cards have yet to be exported to Anki, and a preview of the first-created unexported flashcard
-  - [ ] I see a button to export new an Anki deck package for the project
-- when the last export/review action was to use AnkiConnect:
-  - [ ] I see an indication of the status of the AnkiConnect connection, and helpful suggestions if it is not working
-  - [ ] I see an indication of whether/how many cards have yet to be sent to Anki, and a preview of the first-created unsent flashcard
-  - [ ] I see a button to send new flashcards to Anki via AnkiConnect
+- when updates are waiting in the Anki updates queue:
+  - [x] I can see the flashcard sync panel
 - when I click on the "Add media" button:
   - [x] I am prompted to select a media file to add to the project
 - when a media-source plugin is active:
@@ -462,13 +481,6 @@ As a user:
   - [ ] I see an indication that my work is unsaved, and a button to save it
 - when I have made flashcards without having logged in:
   - [ ] I see an indication that my work is not backed up, and a button to log in or sign up
-- when a flashcard is created and AnkiConnect is enabled and running:
-  - [ ] the flashcard is sent directly to Anki, and I see an indication of whether it was successful
-- when a flashcard is created and AnkiConnect is enabled but not running:
-  - [ ] the flashcard is queued to be sent to Anki, and I see an indication of that
-  - [ ] the flashcard is sent to Anki the next time AnkiConnect is reachable, and I see an indication of whether it was successful
-- when a flashcard is created and AnkiConnect is not enabled:
-  - [x] the flashcard is saved in the project
 
 ---
 
@@ -509,16 +521,86 @@ As a web app user:
 
 ---
 
+### Sending cards to Anki
+
+As a user:
+- when updates are waiting in the Anki updates queue:
+  - [x] I can press a button to send them to Anki, and see an indication of whether it was successful
+- when an earlier export has removed cards from the Anki updates queue:
+  - [x] I see how many cards are new and how many have changed since the last export/queue flush
+- when a flashcard is saved and AnkiConnect is on, but Anki is not currently connected:
+  - [x] I see an indication that Anki could not be reached
+  - [x] the project's Anki updates queue is updated
+- when AnkiConnect is on, and easyImmerse successfully connects to Anki:
+  - [x] updates in the queue are sent to Anki, and I see an indication of whether they were successful
+
+---
+
+### Flashcard sync panel
+
+As a user:
+- when I click the button to set up AnkiConnect for direct export to Anki:
+  - [x] I see an explanation of what to install and that Anki must be running
+- when AnkiConnect is on and Anki gets connected:
+  - [x] any updates waiting in the Anki updates queue are sent to Anki at once, and I see an indication of whether it was successful
+- when I've switched on AnkiConnect for the project:
+  - [x] it stays on for the project until I turn it off
+  - [x] the project's flashcards are sent to Anki at once, as long as Anki is running and connected
+- when a flashcard is saved, AnkiConnect is on, and Anki is currently connected:
+  - [x] successfully saved flashcards are sent directly to Anki
+  - [x] any updates waiting in the Anki updates queue are sent along with the new update
+  - [x] an edit of a card already having an Anki note updates that note in place
+  - [x] I see an indication of whether the save to Anki was successful
+- when I delete a flashcard, or undo the creation of a new one, and AnkiConnect is on:
+  - [x] the flashcard's note is immediately deleted from Anki
+  - [x] I see an indication of whether the note's deletion from Anki was successful
+  - [x] if Anki cannot be reached, I am told that the note will be deleted from Anki the next time it is connected, and the deletion is added to the Anki updates queue
+- when I am asked to confirm the deletion of a flashcard:
+  - [x] if the flashcard reached Anki and AnkiConnect is on, I am told that its note is deleted from Anki too
+  - [x] if the flashcard reached Anki but and AnkiConnect is off, I am told that its note stays in Anki until I delete it there, and (when the project settings allow it) that the deletion will be waiting in the Anki updates queue visible from the project screen
+  - [x] if the flashcard was ever included in any previous Anki package exports, I am told that importing one of those old packages into Anki would bring the card back
+- when deletions are waiting in the Anki updates queue, and AnkiConnect is off:
+  - [x] I see them listed by word
+  - [x] I can copy a search that finds the corresponding notes in Anki's browser
+  - [x] I can mark them as done, which clears the list
+  - [x] I am told how many of them the next export that removes cards from the Anki updates queue marks for deletion
+- when AnkiConnect is on for the project, but Anki is not connected:
+  - [ ] I see helpful suggestions to get AnkiConnect working, and a button to check again
+- when AnkiConnect is on for the project, but Anki refuse easyImmerse:
+  - [x] I am told steps to allow easyImmerse to connect, naming the address AnkiConnect must allow
+- when AnkiConnect is on for the project:
+  - [x] I see an indication of the status of the AnkiConnect connection, checked when I open the project
+  - [x] I see how many cards are new and how many have changed since they were sent to Anki
+  - [x] I see how many deleted flashcards have yet to have their notes deleted from Anki
+  - [x] I see a preview of the first-created flashcard waiting to be sent
+  - [x] I see a button to send new/changed/deleted flashcards to Anki via AnkiConnect
+  - [x] I can turn AnkiConnect off
+
+---
+
 ### Exporting flashcard decks
 
 As a user:
 - when I choose to export my flashcards to Anki:
-  - [ ] I can choose to export all cards
-  - [ ] I can choose to export only cards not yet exported
-  - [ ] I can choose to export only cards from specific media files
+  - [x] I can choose to export all cards
+  - [x] I can choose to export only cards in the Anki updates queue (i.e. newly added or changed since last export; this is on by default)
+  - [x] I see how many cards a full/changes-only export would include
+  - [x] I can choose to preserve the Anki updates queue after this export is complete (in case I wish e.g. to make a backup of my deck or to share my deck with someone else, but reserve the right to make a targeted update to my Anki deck later; this is off by default, except when AnkiConnect is on)
+  - [x] when the export removes cards from the Anki updates queue, and some of them were sent to Anki through AnkiConnect before any export removed them, I am warned that importing the package into that Anki would give me two of each
+  - [x] when the export removes cards from the Anki updates queue, AnkiConnect is off, and the queue holds flashcards I deleted after exporting them, I am told that the package marks their notes for deletion, and I can export a package that does only that
+  - [x] I can choose to export only cards from specific media files, each listed with its number of cards
   - [ ] I can choose to export all cards from a selected media file, or only specific cards from that media file
+  - [x] I am told that the audio and screenshots are included when the easyImmerse server has ffmpeg and can read the media file
+  - [x] I am told that importing a package again adds the new cards and refreshes the others, keeping their progress, and that the look of the cards can be changed in Anki once imported
 - when I choose to export my flashcards as an Anki deck package:
-  - [ ] I am prompted to choose where to save the Anki deck package, including its media
+  - [x] on desktop, I am prompted to choose where to save the Anki deck package, including its media
+  - [ ] on mobile, I am prompted to choose where to save the Anki deck package, including its media
+  - [x] in a browser, the package, including its media, is downloaded
+  - [x] I see how many flashcards were exported, how many audio clips or screenshots could not be included, and how many notes of deleted flashcards the package marks for deletion, with the search that finds them in Anki
+  - [x] the cards are removed from the Anki updates queue, unless I chose to keep them, only once the package has been saved or downloaded in full
+- when I send my flashcards to Anki through AnkiConnect:
+  - [x] I see how many flashcards were sent successfully or refused by Anki
+  - [x] I see how many audio clips or screenshots could not be included
 
 ---
 
