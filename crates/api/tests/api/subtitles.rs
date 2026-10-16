@@ -139,8 +139,7 @@ async fn stores_a_path_source_by_its_canonical_path() {
         .unwrap()
         .get_subtitle_track(&id)
         .unwrap();
-    let canonical = spelled
-        .canonicalize()
+    let canonical = dunce::canonicalize(spelled)
         .unwrap()
         .to_string_lossy()
         .into_owned();
