@@ -3336,7 +3336,7 @@
           {
             "name": "end_ms",
             "in": "query",
-            "description": "The clip end in player time, in milliseconds; after the start.",
+            "description": "The clip end in player time, in milliseconds; after the start.\nAn end past the end of the media is moved back to it.\nThe clip may not be longer than 120000 milliseconds.",
             "required": true,
             "schema": {
               "type": "integer",
@@ -3371,7 +3371,7 @@
             }
           },
           "400": {
-            "description": "The end is not after the start, or the file could not be probed",
+            "description": "The end is not after the start (or the start is past the media), the clip is longer than 120000 milliseconds, or the file could not be probed",
             "content": {
               "application/json": {
                 "schema": {

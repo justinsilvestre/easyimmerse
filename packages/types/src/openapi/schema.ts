@@ -4606,7 +4606,11 @@ export interface operations {
             query: {
                 /** @description The clip start in player time, in milliseconds. */
                 start_ms: number;
-                /** @description The clip end in player time, in milliseconds; after the start. */
+                /**
+                 * @description The clip end in player time, in milliseconds; after the start.
+                 *     An end past the end of the media is moved back to it.
+                 *     The clip may not be longer than 120000 milliseconds.
+                 */
                 end_ms: number;
                 /** @description The bearer token, for audio elements, which cannot send headers. */
                 token?: string;
@@ -4631,7 +4635,7 @@ export interface operations {
                     "audio/mp4": number[];
                 };
             };
-            /** @description The end is not after the start, or the file could not be probed */
+            /** @description The end is not after the start (or the start is past the media), the clip is longer than 120000 milliseconds, or the file could not be probed */
             400: {
                 headers: {
                     [name: string]: unknown;
