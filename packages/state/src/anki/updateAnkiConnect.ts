@@ -1,10 +1,13 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { ReadableState } from "../app/feature.ts";
 import { updated } from "../app/updated.ts";
-import { cacheEntry, type ServerCacheSlice } from "../server/cacheEntry.ts";
 import { isSettled } from "../server/isSettled.ts";
 import type { RequestSettled } from "../server/serverRequest.ts";
-import { cachedDeletions, cachedUsesAnkiConnect } from "./ankiCache.ts";
+import {
+  cachedDeletions,
+  cachedIsAnkiConnected,
+  cachedUsesAnkiConnect,
+} from "./ankiCache.ts";
 import {
   ankiConnectionCheckId,
   ankiRequestIds,
@@ -105,7 +108,8 @@ function syncOnceConnected(
 ) {
   const isReady =
     (hasFoundAnki(action) && cachedUsesAnkiConnect(app.backend, projectId)) ||
-    (hasSetAnkiConnect(action, projectId) && isAnkiConnected(app.backend));
+    (hasSetAnkiConnect(action, projectId) &&
+      cachedIsAnkiConnected(app.backend));
   return isReady ? syncWithAnki(projectId, app) : [];
 }
 
@@ -127,10 +131,4 @@ function hasSetAnkiConnect(action: RequestSettled, projectId: string) {
     action.outcome.ok &&
     action.outcome.data.uses_anki_connect
   );
-}
-
-/** Tells whether the last check found Anki running and no check is under way. */
-function isAnkiConnected(backend: ServerCacheSlice) {
-  const check = cacheEntry(backend, "checkAnkiConnection", undefined);
-  return check?.status === "fulfilled" && check.data?.connected === true;
 }

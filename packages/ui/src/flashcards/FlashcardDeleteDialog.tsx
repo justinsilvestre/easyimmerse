@@ -41,6 +41,8 @@ export function FlashcardDeleteDialog({
 const noteLines = {
   none: "",
   deletedByAnkiConnect: "Its note is deleted from Anki too.",
+  deletedByAnkiConnectLater:
+    "Its note is deleted from Anki the next time easyImmerse reaches Anki.",
   staysListed:
     "Its note stays in Anki until you delete it there. The project screen lists it so that you can.",
   stays: "Its note stays in Anki until you delete it there.",

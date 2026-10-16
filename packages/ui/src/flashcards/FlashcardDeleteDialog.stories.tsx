@@ -29,6 +29,10 @@ export const DeletedByAnkiConnect: Story = {
   args: { ankiFate: { note: "deletedByAnkiConnect", wasPackaged: false } },
 };
 
+export const DeletedByAnkiConnectOnceAnkiIsReached: Story = {
+  args: { ankiFate: { note: "deletedByAnkiConnectLater", wasPackaged: false } },
+};
+
 export const StaysInAnkiAndListed: Story = {
   args: { ankiFate: { note: "staysListed", wasPackaged: true } },
 };

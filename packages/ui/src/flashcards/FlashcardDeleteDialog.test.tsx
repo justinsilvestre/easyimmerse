@@ -24,6 +24,17 @@ describe("deletionDescription", () => {
     ).toBe(`${base} Its note is deleted from Anki too.`);
   });
 
+  it("says that AnkiConnect deletes the note once easyImmerse reaches Anki", () => {
+    expect(
+      deletionDescription("Haus", {
+        note: "deletedByAnkiConnectLater",
+        wasPackaged: false,
+      }),
+    ).toBe(
+      `${base} Its note is deleted from Anki the next time easyImmerse reaches Anki.`,
+    );
+  });
+
   it("says that the note stays in Anki and that the project screen lists it", () => {
     expect(
       deletionDescription("Haus", { note: "staysListed", wasPackaged: false }),

@@ -1,15 +1,36 @@
 import type { Flashcard } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { stateAfterWithCache } from "../app/stateAfter.ts";
+import type { ServerCacheSlice } from "../server/cacheEntry.ts";
 import { exampleProject } from "../server/exampleProject.ts";
 import { serverCacheWith } from "../server/serverCacheWith.ts";
 import { ankiCache, ankiFlashcard } from "./ankiTestSupport.ts";
 import { selectAnkiFateOfDeletion } from "./selectAnkiFateOfDeletion.ts";
 
-/** The fate of f1's note, in p1 using AnkiConnect or not and listing deletions or not. */
+/** A server cache whose last check of the connection to Anki found it running or not, or that holds no check when null. */
+function checkedCache(
+  isConnected: boolean | null,
+  backend: ServerCacheSlice,
+): ServerCacheSlice {
+  if (isConnected === null) return backend;
+  return serverCacheWith(
+    "checkAnkiConnection",
+    undefined,
+    isConnected
+      ? { connected: true, version: 6 }
+      : { connected: false, isDenied: false as const },
+    backend,
+  );
+}
+
+/** The fate of f1's note, in p1 using AnkiConnect or not and listing deletions or not, with Anki found running or not. */
 function fateOf(
   flashcard: Flashcard,
-  { usesAnkiConnect = false, listsDeletions = true } = {},
+  {
+    usesAnkiConnect = false,
+    listsDeletions = true,
+    isConnected = true as boolean | null,
+  } = {},
 ) {
   const project = exampleProject("p1");
   const backend = serverCacheWith(
@@ -20,7 +41,7 @@ function fateOf(
       uses_anki_connect: usesAnkiConnect,
       settings: { ...project.settings, lists_anki_deletions: listsDeletions },
     },
-    ankiCache(usesAnkiConnect, [flashcard]),
+    checkedCache(isConnected, ankiCache(usesAnkiConnect, [flashcard])),
   );
   return selectAnkiFateOfDeletion(
     { app: stateAfterWithCache(backend), backend },
@@ -47,6 +68,18 @@ describe("selectAnkiFateOfDeletion", () => {
     expect(fateOf(sent, { usesAnkiConnect: true })?.note).toBe(
       "deletedByAnkiConnect",
     );
+  });
+
+  it("has AnkiConnect delete the note later while the last check found Anki unreachable", () => {
+    expect(
+      fateOf(exported, { usesAnkiConnect: true, isConnected: false })?.note,
+    ).toBe("deletedByAnkiConnectLater");
+  });
+
+  it("has AnkiConnect delete the note later while Anki has not been checked", () => {
+    expect(
+      fateOf(exported, { usesAnkiConnect: true, isConnected: null })?.note,
+    ).toBe("deletedByAnkiConnectLater");
   });
 
   it("leaves the note in Anki, listed, while the project lists deletions", () => {

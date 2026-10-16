@@ -40,6 +40,12 @@ export function cachedUsesAnkiConnect(
   return project?.uses_anki_connect ?? false;
 }
 
+/** Tells whether the last check found Anki running and no check is under way. */
+export function cachedIsAnkiConnected(backend: ServerCacheSlice): boolean {
+  const check = cacheEntry(backend, "checkAnkiConnection", undefined);
+  return check?.status === "fulfilled" && check.data?.connected === true;
+}
+
 /** Returns the cached project's name, or null when the project is not cached. */
 export function cachedProjectName(
   backend: ServerCacheSlice,
