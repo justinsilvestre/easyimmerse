@@ -128,7 +128,8 @@ function exportLabel(count: number, isBusy: boolean) {
 
 /**
  * Warns that some of the cards are already in the Anki that AnkiConnect sends to, under notes whose GUIDs Anki chose,
- * so that importing the package there would add a second note for each.
+ * so that importing the package there would add a second note for each, and tells how Anki's browser finds such doubles:
+ * the easyImmerse id field is unique to each flashcard, so Find Duplicates on it lists exactly the doubled notes.
  */
 function DuplicateWarning({ count }: { count: number }) {
   const sent =
@@ -140,7 +141,8 @@ function DuplicateWarning({ count }: { count: number }) {
       role="note"
       className="rounded-md border border-warning-line bg-warning-soft p-3 text-sm text-warning-fg"
     >
-      {sent}
+      {sent} You can find any doubled notes with Notes &gt; Find Duplicates in
+      Anki's browser, searching the “easyImmerse id” field.
     </p>
   );
 }

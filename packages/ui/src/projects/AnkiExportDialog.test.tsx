@@ -112,7 +112,7 @@ describe("AnkiExportDialog", () => {
     renderDialog({ duplicateCount: 2 });
     expect(
       screen.getByText(
-        "2 of these cards were sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of each.",
+        "2 of these cards were sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of each. You can find any doubled notes with Notes > Find Duplicates in Anki's browser, searching the “easyImmerse id” field.",
       ),
     ).toBeDefined();
   });
@@ -121,7 +121,7 @@ describe("AnkiExportDialog", () => {
     renderDialog({ duplicateCount: 1 });
     expect(
       screen.getByText(
-        "1 of these cards was sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of that card.",
+        "1 of these cards was sent to Anki through AnkiConnect. Importing this package into that Anki would give you two of that card. You can find any doubled notes with Notes > Find Duplicates in Anki's browser, searching the “easyImmerse id” field.",
       ),
     ).toBeDefined();
   });
