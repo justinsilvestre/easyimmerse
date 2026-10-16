@@ -26,12 +26,11 @@ pub(crate) fn plain_text_html(text: &str) -> String {
 /// Links and images keep their destination only when it is an http, https or mailto URL.
 pub(crate) fn markdown_html(markdown: &str) -> String {
     let options = Options::ENABLE_TABLES | Options::ENABLE_STRIKETHROUGH;
-    let events = without_unsafe_destinations(
-        Parser::new_ext(markdown, options).map(|event| match event {
+    let events =
+        without_unsafe_destinations(Parser::new_ext(markdown, options).map(|event| match event {
             Event::Html(raw) | Event::InlineHtml(raw) => Event::Text(raw),
             other => other,
-        }),
-    );
+        }));
     let shown = if is_single_paragraph(&events) {
         &events[1..events.len() - 1]
     } else {

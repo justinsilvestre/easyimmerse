@@ -6,8 +6,8 @@ use crate::card_scheduling::CardScheduling;
 use crate::collection_json::{conf_json, dconf_json, decks_json, models_json};
 use crate::deck_spec::DeckSpec;
 use crate::derived_id::deck_id;
-use crate::note_rows::{insert_notes_and_cards, sql_int};
-use crate::note_type::note_type;
+use crate::note_rows::{RowStamp, insert_notes_and_cards, sql_int};
+use crate::note_type::{AnkiNoteType, note_type};
 use crate::render_note::AnkiNote;
 use crate::schema::SCHEMA_11;
 
@@ -21,22 +21,34 @@ pub(crate) fn collection_bytes(
     scheduling: CardScheduling,
     exported_at_ms: u64,
 ) -> rusqlite::Result<Vec<u8>> {
+    let note_type = note_type(spec);
+    let collection_row = collection_row(spec, &note_type, notes, exported_at_ms)?;
+    let stamp = RowStamp::new(spec, &note_type, exported_at_ms)?;
     let connection = Connection::open_in_memory()?;
     connection.execute_batch(SCHEMA_11)?;
     let transaction = connection.unchecked_transaction()?;
-    insert_collection_row(&transaction, spec, notes, exported_at_ms)?;
-    insert_notes_and_cards(&transaction, spec, notes, scheduling, exported_at_ms)?;
+    insert_collection_row(&transaction, &collection_row)?;
+    insert_notes_and_cards(&transaction, &stamp, notes, scheduling)?;
     transaction.commit()?;
     Ok(connection.serialize(MAIN_DB)?.to_vec())
 }
 
-fn insert_collection_row(
-    connection: &Connection,
+/// The values of the single row of the `col` table.
+struct CollectionRow {
+    created_secs: i64,
+    exported_at_ms: i64,
+    conf: String,
+    models: String,
+    decks: String,
+    dconf: String,
+}
+
+fn collection_row(
     spec: &DeckSpec,
+    note_type: &AnkiNoteType,
     notes: &[AnkiNote],
     exported_at_ms: u64,
-) -> rusqlite::Result<()> {
-    let note_type = note_type(spec);
+) -> rusqlite::Result<CollectionRow> {
     let earliest_ms = notes
         .iter()
         .map(|note| note.note_id)
@@ -45,27 +57,29 @@ fn insert_collection_row(
     // A midnight (in UTC) before every card was made keeps them positive.
     let created_secs = earliest_ms / MILLIS_PER_DAY * MILLIS_PER_DAY / 1000;
     let note_type_modified_secs = spec.project_created_at_ms / 1000;
-    let created_secs = sql_int(created_secs)?;
-    let exported_at_ms_sql = sql_int(exported_at_ms)?;
+    let deck_id = deck_id(spec.project_id);
+    Ok(CollectionRow {
+        created_secs: sql_int(created_secs)?,
+        exported_at_ms: sql_int(exported_at_ms)?,
+        conf: conf_json(note_type.id, notes.len()),
+        models: models_json(note_type, deck_id, note_type_modified_secs),
+        decks: decks_json(deck_id, spec.project_name, exported_at_ms / 1000),
+        dconf: dconf_json(),
+    })
+}
+
+fn insert_collection_row(connection: &Connection, row: &CollectionRow) -> rusqlite::Result<()> {
     connection.execute(
         "INSERT INTO col VALUES (1, ?1, ?2, ?3, ?4, 0, 0, 0, ?5, ?6, ?7, ?8, '{}')",
         params![
-            created_secs,
-            exported_at_ms_sql,
-            exported_at_ms_sql,
+            row.created_secs,
+            row.exported_at_ms,
+            row.exported_at_ms,
             SCHEMA_VERSION,
-            conf_json(note_type.id, notes.len()),
-            models_json(
-                &note_type,
-                deck_id(spec.project_id),
-                note_type_modified_secs
-            ),
-            decks_json(
-                deck_id(spec.project_id),
-                spec.project_name,
-                exported_at_ms / 1000
-            ),
-            dconf_json(),
+            row.conf,
+            row.models,
+            row.decks,
+            row.dconf,
         ],
     )?;
     Ok(())
