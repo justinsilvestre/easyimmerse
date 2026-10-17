@@ -22,12 +22,22 @@ pub struct BuiltPackage {
     pub bytes: Vec<u8>,
     pub file_name: String,
     pub skipped_media_count: u64,
+    /// The time the flashcards were read for the package.
+    pub read_at_ms: u64,
     pub delivered: DeliveredPackage,
 }
 
 impl BuiltPackage {
     fn flashcard_count(&self) -> u64 {
         self.delivered.flashcard_ids.len() as u64
+    }
+
+    fn saved(&self) -> AnkiPackageSaved {
+        AnkiPackageSaved {
+            flashcard_count: self.flashcard_count(),
+            skipped_media_count: self.skipped_media_count,
+            read_at_ms: self.read_at_ms,
+        }
     }
 }
 
@@ -43,11 +53,26 @@ async fn write_file_whole(path: &str, bytes: &[u8]) -> std::io::Result<()> {
     Ok(())
 }
 
+/// Writes the package to the path and records it as delivered, answering what was saved.
 pub async fn save_package(
     state: &AppState,
     package: BuiltPackage,
     path: &str,
 ) -> Result<Response, ApiFailure> {
+    write_package_file(&package, path).await?;
+    let saved = package.saved();
+    record_export(state, package.delivered).await?;
+    Ok(Json(saved).into_response())
+}
+
+/// Writes the package to the path without recording it, answering what was saved.
+pub async fn stage_package(package: BuiltPackage, path: &str) -> Result<Response, ApiFailure> {
+    write_package_file(&package, path).await?;
+    Ok(Json(package.saved()).into_response())
+}
+
+/// Writes the package to the path; 400 `save_failed` when it cannot be written.
+async fn write_package_file(package: &BuiltPackage, path: &str) -> Result<(), ApiFailure> {
     write_file_whole(path, &package.bytes)
         .await
         .map_err(|error| {
@@ -56,13 +81,7 @@ pub async fn save_package(
                 "save_failed",
                 format!("could not write the package to {path:?}: {error}"),
             )
-        })?;
-    let saved = AnkiPackageSaved {
-        flashcard_count: package.flashcard_count(),
-        skipped_media_count: package.skipped_media_count,
-    };
-    record_export(state, package.delivered).await?;
-    Ok(Json(saved).into_response())
+        })
 }
 
 /// Sends the package as the response body, and records the export once the body has been sent in full.

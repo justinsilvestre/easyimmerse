@@ -7,4 +7,8 @@ export type AnkiPackageSaved = { flashcard_count: number,
 /**
  * The audio clips and screenshots that could not be rendered and are missing from the package.
  */
-skipped_media_count: number, };
+skipped_media_count: number, 
+/**
+ * The time the flashcards were read for the package, to pass back when recording the export.
+ */
+read_at_ms: number, };

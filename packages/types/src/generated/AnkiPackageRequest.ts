@@ -13,4 +13,10 @@ save_path: string | null,
 /**
  * Whether delivering the package marks its flashcards as exported, which takes them out of the Anki updates queue.
  */
-marks_exported: boolean, };
+marks_exported: boolean, 
+/**
+ * Whether the package is only staged at the save path, for the client to let the user keep a copy elsewhere.
+ * A staged package is not recorded as delivered: the client records it with `recordAnkiExported` once the user has kept a copy.
+ * Requires a save path.
+ */
+staged: boolean, };

@@ -420,10 +420,27 @@ mod export_anki_package {
             &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path }),
         )
         .await;
+        let mut saved = response.json();
+        saved.as_object_mut().unwrap().remove("read_at_ms");
         assert_eq!(
-            response.json(),
+            saved,
             json!({ "flashcard_count": 2, "skipped_media_count": 0 })
         );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn answers_when_the_saved_flashcards_were_read() {
+        let server = spawn_test_server(true).await;
+        let ids = create_two(&server).await;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("deck.apkg");
+        let response = export(
+            &server,
+            &json!({ "flashcard_ids": ids, "marks_exported": true, "save_path": path }),
+        )
+        .await;
+        let exported_at_ms = list_flashcards(&server).await[0]["exported_at_ms"].clone();
+        assert_eq!(response.json()["read_at_ms"], exported_at_ms);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -479,6 +496,156 @@ mod export_anki_package {
         let id = create_flashcard(&server, PROJECT, Some(&media_id)).await;
         let response = export_ids(&server, &[id]).await;
         assert_eq!(response.header("x-easyimmerse-skipped-media"), Some("0"));
+    }
+}
+
+mod staged_export {
+    use super::*;
+
+    /// Stages a package of the flashcards in a fresh directory, returning the response and the directory.
+    async fn stage(
+        server: &TestServer,
+        ids: &[String],
+    ) -> (crate::support::TestResponse, tempfile::TempDir) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("deck.apkg");
+        let body = json!({
+            "flashcard_ids": ids, "marks_exported": true, "save_path": path, "staged": true,
+        });
+        (export(server, &body).await, dir)
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn writes_the_package_to_the_save_path() {
+        let server = spawn_test_server(true).await;
+        let ids = create_two(&server).await;
+        let (_, dir) = stage(&server, &ids).await;
+        let package = std::fs::read(dir.path().join("deck.apkg")).unwrap();
+        assert_eq!(count_notes(&package), 2);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_nothing_exported() {
+        let server = spawn_test_server(true).await;
+        let ids = create_two(&server).await;
+        stage(&server, &ids).await;
+        assert!(list_flashcards(&server).await[0]["exported_at_ms"].is_null());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn records_no_package_holding_the_flashcards() {
+        let server = spawn_test_server(true).await;
+        let ids = create_two(&server).await;
+        stage(&server, &ids).await;
+        assert_eq!(list_flashcards(&server).await[0]["was_packaged"], false);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn answers_when_the_flashcards_were_read() {
+        let server = spawn_test_server(true).await;
+        let ids = create_two(&server).await;
+        let (response, _dir) = stage(&server, &ids).await;
+        assert!(response.json()["read_at_ms"].is_u64());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn refuses_a_staged_export_without_a_save_path() {
+        let server = spawn_test_server(true).await;
+        let ids = create_two(&server).await;
+        let body = json!({
+            "flashcard_ids": ids, "marks_exported": true, "save_path": null, "staged": true,
+        });
+        assert_eq!(export(&server, &body).await.status, 400);
+    }
+}
+
+mod record_anki_exported {
+    use super::*;
+
+    async fn record(
+        server: &TestServer,
+        project: &str,
+        ids: &[&str],
+        marks_exported: bool,
+    ) -> crate::support::TestResponse {
+        server
+            .post_json(
+                &format!("/projects/{project}/anki/exported"),
+                &json!({ "flashcard_ids": ids, "marks_exported": marks_exported, "read_at_ms": 1_700 }),
+            )
+            .await
+    }
+
+    fn find<'a>(flashcards: &'a [Value], id: &str) -> &'a Value {
+        flashcards.iter().find(|card| card["id"] == id).unwrap()
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_the_flashcards_exported_when_they_were_read() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        record(&server, PROJECT, &[&ids[0]], true).await;
+        let flashcards = list_flashcards(&server).await;
+        assert_eq!(find(&flashcards, &ids[0])["exported_at_ms"], 1_700);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn records_that_a_package_held_the_flashcards() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        record(&server, PROJECT, &[&ids[0]], true).await;
+        let flashcards = list_flashcards(&server).await;
+        assert_eq!(find(&flashcards, &ids[0])["was_packaged"], true);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_no_flashcard_that_was_not_named() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        record(&server, PROJECT, &[&ids[0]], true).await;
+        let flashcards = list_flashcards(&server).await;
+        assert!(find(&flashcards, &ids[1])["exported_at_ms"].is_null());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_nothing_exported_when_not_asked_to() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        record(&server, PROJECT, &[&ids[0]], false).await;
+        let flashcards = list_flashcards(&server).await;
+        assert!(find(&flashcards, &ids[0])["exported_at_ms"].is_null());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn records_that_a_package_held_the_flashcards_when_not_marking_them() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        record(&server, PROJECT, &[&ids[0]], false).await;
+        let flashcards = list_flashcards(&server).await;
+        assert_eq!(find(&flashcards, &ids[0])["was_packaged"], true);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_no_flashcard_of_another_project_exported() {
+        let server = spawn_test_server(false).await;
+        let other = create_flashcard(&server, "placeholder-2", None).await;
+        record(&server, PROJECT, &[&other], true).await;
+        let response = server.get("/projects/placeholder-2/flashcards").await;
+        let flashcards = response.json()["flashcards"].as_array().unwrap().clone();
+        assert!(find(&flashcards, &other)["exported_at_ms"].is_null());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn answers_no_content() {
+        let server = spawn_test_server(false).await;
+        let ids = create_two(&server).await;
+        assert_eq!(record(&server, PROJECT, &[&ids[0]], true).await.status, 204);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn refuses_an_unknown_project() {
+        let server = spawn_test_server(false).await;
+        assert_eq!(record(&server, "missing", &[], true).await.status, 404);
     }
 }
 

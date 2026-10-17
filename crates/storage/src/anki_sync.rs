@@ -19,7 +19,7 @@ pub struct DeliveredPackage {
 }
 
 /// Records a delivered package in one transaction: a package held its flashcards, which are marked exported when it says so.
-/// A flashcard deleted since the export began is passed over.
+/// A flashcard of another project, or one deleted since the export began, is passed over.
 pub fn record_anki_export(
     conn: &mut Connection,
     package: &DeliveredPackage,
@@ -29,8 +29,12 @@ pub fn record_anki_export(
     for id in &package.flashcard_ids {
         transaction.execute(
             "UPDATE flashcards SET was_packaged = 1, \
-             exported_at_ms = coalesce(?2, exported_at_ms) WHERE id = ?1",
-            params![id.0, package.exported_at_ms.map(to_stored_integer)],
+             exported_at_ms = coalesce(?2, exported_at_ms) WHERE id = ?1 AND project_id = ?3",
+            params![
+                id.0,
+                package.exported_at_ms.map(to_stored_integer),
+                package.project_id.0
+            ],
         )?;
     }
     transaction.commit()?;
@@ -196,6 +200,20 @@ mod tests {
             storage.get_flashcard(&id).unwrap().exported_at_ms,
             Some(1_000)
         );
+    }
+
+    #[test]
+    fn an_export_marks_no_flashcard_of_another_project_exported() {
+        let storage = seeded_storage();
+        let id = create(&storage);
+        storage
+            .record_anki_export(&package(
+                &ProjectId("placeholder-2".to_string()),
+                std::slice::from_ref(&id),
+                Some(1_000),
+            ))
+            .unwrap();
+        assert_eq!(storage.get_flashcard(&id).unwrap().exported_at_ms, None);
     }
 
     #[test]

@@ -1,4 +1,5 @@
 pub mod anki;
+pub mod anki_exported;
 pub mod anki_package;
 pub mod anki_pending_deletions;
 pub mod conversion_cache;

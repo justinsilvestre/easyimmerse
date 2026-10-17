@@ -421,6 +421,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{id}/anki/exported": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Records that a package held the flashcards, and marks them exported when the request asks for that.
+         *     A flashcard of another project, or one deleted since the package was staged, is passed over.
+         */
+        post: operations["recordAnkiExported"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/projects/{id}/anki/notes": {
         parameters: {
             query?: never;
@@ -454,7 +474,7 @@ export interface paths {
          * Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.
          *     A clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.
          *     Once the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,
-         *     and they are marked exported when the request asks for that.
+         *     and they are marked exported when the request asks for that. A staged package is not recorded.
          *     A named flashcard that is not in the project, as one deleted since the export was requested, is left out.
          */
         post: operations["exportAnkiPackage"];
@@ -995,6 +1015,17 @@ export interface components {
         AnkiDeletionsCleared: {
             flashcard_ids: components["schemas"]["FlashcardId"][];
         };
+        /** @description The flashcards a staged package held, once the user has kept a copy of it. */
+        AnkiExportedRequest: {
+            flashcard_ids: components["schemas"]["FlashcardId"][];
+            /** @description Whether the export marks the flashcards as exported, which takes them out of the Anki updates queue. */
+            marks_exported: boolean;
+            /**
+             * Format: int64
+             * @description The `read_at_ms` the server answered when it staged the package, so that an edit saved since counts as changed.
+             */
+            read_at_ms: number;
+        };
         /** @description A media file that a note's fields refer to by name, which the caller renders from the project's media file and supplies. */
         AnkiMediaRef: {
             /** Format: int64 */
@@ -1063,11 +1094,22 @@ export interface components {
             marks_exported: boolean;
             /** @description The absolute path to write the package to, on the server's machine. Null to receive the package in the response. */
             save_path?: string | null;
+            /**
+             * @description Whether the package is only staged at the save path, for the client to let the user keep a copy elsewhere.
+             *     A staged package is not recorded as delivered: the client records it with `recordAnkiExported` once the user has kept a copy.
+             *     Requires a save path.
+             */
+            staged?: boolean;
         };
         /** @description What the server wrote to the save path. */
         AnkiPackageSaved: {
             /** Format: int64 */
             flashcard_count: number;
+            /**
+             * Format: int64
+             * @description The time the flashcards were read for the package, to pass back when recording the export.
+             */
+            read_at_ms: number;
             /**
              * Format: int64
              * @description The audio clips and screenshots that could not be rendered and are missing from the package.
@@ -3650,6 +3692,58 @@ export interface operations {
             };
         };
     };
+    recordAnkiExported: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The project id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnkiExportedRequest"];
+            };
+        };
+        responses: {
+            /** @description The export was recorded */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description No such project */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Unexpected Host header */
+            421: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     renderAnkiNotes: {
         parameters: {
             query?: never;
@@ -3745,7 +3839,7 @@ export interface operations {
                     "application/json": components["schemas"]["AnkiPackageSaved"];
                 };
             };
-            /** @description No flashcards named, a save path that is not absolute, or a save path that could not be written (code `save_failed`) */
+            /** @description No flashcards named, a staged export without a save path, a save path that is not absolute, or a save path that could not be written (code `save_failed`) */
             400: {
                 headers: {
                     [name: string]: unknown;

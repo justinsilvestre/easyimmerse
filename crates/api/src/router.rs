@@ -14,11 +14,11 @@ use utoipa_axum::routes;
 use crate::auth::bearer_token::require_bearer_token;
 use crate::auth::host_check::check_host;
 use crate::routes::{
-    anki, anki_package, anki_pending_deletions, conversion_cache, conversions, dictionaries,
-    dictionary_batch_lookup, dictionary_imports, dictionary_lookup, dictionary_media, documents,
-    flashcards, health, local_dictionaries, media, media_clip, media_frame, media_import,
-    media_playback_method, media_stream, media_tracks, media_waveform, openapi, plugins,
-    preferences, projects, source_form, subtitles, timed_text,
+    anki, anki_exported, anki_package, anki_pending_deletions, conversion_cache, conversions,
+    dictionaries, dictionary_batch_lookup, dictionary_imports, dictionary_lookup, dictionary_media,
+    documents, flashcards, health, local_dictionaries, media, media_clip, media_frame,
+    media_import, media_playback_method, media_stream, media_tracks, media_waveform, openapi,
+    plugins, preferences, projects, source_form, subtitles, timed_text,
 };
 use crate::state::AppState;
 
@@ -83,6 +83,7 @@ fn protected_routes() -> OpenApiRouter<AppState> {
             flashcards::delete_flashcard
         ))
         .routes(routes!(anki_package::export_anki_package))
+        .routes(routes!(anki_exported::record_anki_exported))
         .routes(routes!(anki::render_anki_notes))
         .routes(routes!(anki::record_anki_notes_sent))
         .routes(routes!(anki::set_anki_connect))

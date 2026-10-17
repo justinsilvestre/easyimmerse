@@ -1994,6 +1994,76 @@
         ]
       }
     },
+    "/projects/{id}/anki/exported": {
+      "post": {
+        "tags": [
+          "anki"
+        ],
+        "summary": "Records that a package held the flashcards, and marks them exported when the request asks for that.\nA flashcard of another project, or one deleted since the package was staged, is passed over.",
+        "operationId": "recordAnkiExported",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnkiExportedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The export was recorded"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/anki/notes": {
       "post": {
         "tags": [
@@ -2086,7 +2156,7 @@
         "tags": [
           "anki"
         ],
-        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,\nand they are marked exported when the request asks for that.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
+        "summary": "Writes the flashcards into a legacy Anki deck package (.apkg) with their audio clips and screenshots.\nA clip or screenshot the server cannot render, as from a file the browser holds, is left out and counted.\nOnce the package has been saved, or sent to the client in full, it is recorded that a package held the flashcards,\nand they are marked exported when the request asks for that. A staged package is not recorded.\nA named flashcard that is not in the project, as one deleted since the export was requested, is left out.",
         "operationId": "exportAnkiPackage",
         "parameters": [
           {
@@ -2155,7 +2225,7 @@
             }
           },
           "400": {
-            "description": "No flashcards named, a save path that is not absolute, or a save path that could not be written (code `save_failed`)",
+            "description": "No flashcards named, a staged export without a save path, a save path that is not absolute, or a save path that could not be written (code `save_failed`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5196,6 +5266,33 @@
           }
         }
       },
+      "AnkiExportedRequest": {
+        "type": "object",
+        "description": "The flashcards a staged package held, once the user has kept a copy of it.",
+        "required": [
+          "flashcard_ids",
+          "marks_exported",
+          "read_at_ms"
+        ],
+        "properties": {
+          "flashcard_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlashcardId"
+            }
+          },
+          "marks_exported": {
+            "type": "boolean",
+            "description": "Whether the export marks the flashcards as exported, which takes them out of the Anki updates queue."
+          },
+          "read_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The `read_at_ms` the server answered when it staged the package, so that an edit saved since counts as changed.",
+            "minimum": 0
+          }
+        }
+      },
       "AnkiMediaRef": {
         "oneOf": [
           {
@@ -5418,6 +5515,10 @@
               "null"
             ],
             "description": "The absolute path to write the package to, on the server's machine. Null to receive the package in the response."
+          },
+          "staged": {
+            "type": "boolean",
+            "description": "Whether the package is only staged at the save path, for the client to let the user keep a copy elsewhere.\nA staged package is not recorded as delivered: the client records it with `recordAnkiExported` once the user has kept a copy.\nRequires a save path."
           }
         }
       },
@@ -5426,12 +5527,19 @@
         "description": "What the server wrote to the save path.",
         "required": [
           "flashcard_count",
-          "skipped_media_count"
+          "skipped_media_count",
+          "read_at_ms"
         ],
         "properties": {
           "flashcard_count": {
             "type": "integer",
             "format": "int64",
+            "minimum": 0
+          },
+          "read_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The time the flashcards were read for the package, to pass back when recording the export.",
             "minimum": 0
           },
           "skipped_media_count": {
