@@ -126,8 +126,13 @@ describe("AnkiExportDialog", () => {
     ).toBeDefined();
   });
 
-  it("does not warn of duplicates while the cards are kept in the queue", () => {
+  it("warns of duplicates while the cards are kept in the queue", () => {
     renderDialog({ duplicateCount: 2, marksExported: false });
+    expect(screen.queryByRole("note")).not.toBeNull();
+  });
+
+  it("does not warn of duplicates while no card was sent through AnkiConnect", () => {
+    renderDialog({ duplicateCount: 0 });
     expect(screen.queryByRole("note")).toBeNull();
   });
 

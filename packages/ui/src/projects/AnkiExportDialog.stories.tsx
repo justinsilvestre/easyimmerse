@@ -52,6 +52,10 @@ export const WarningOfDuplicates: Story = {
   args: { duplicateCount: 12 },
 };
 
+export const WarningOfDuplicatesWhileKeepingTheQueue: Story = {
+  args: { duplicateCount: 12, marksExported: false, usesAnkiConnect: true },
+};
+
 export const WithAnkiConnectOn: Story = {
   args: { usesAnkiConnect: true, marksExported: false },
 };

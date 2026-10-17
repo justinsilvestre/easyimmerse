@@ -98,9 +98,7 @@ export function AnkiExportDialog({
         checked={!marksExported}
         onChange={(event) => onMarkingChange(!event.target.checked)}
       />
-      {marksExported && duplicateCount > 0 && (
-        <DuplicateWarning count={duplicateCount} />
-      )}
+      {duplicateCount > 0 && <DuplicateWarning count={duplicateCount} />}
       <div className="flex flex-col gap-2 text-sm text-fg-muted">
         <p>
           Audio and screenshots are included when the easyImmerse server has
