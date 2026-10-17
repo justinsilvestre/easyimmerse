@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "apps/server", "apps/native/src-tauri"]
+members = ["crates/*", "apps/server", "apps/native/src-tauri", "apps/native/tauri-plugin-save-copy"]
 default-members = ["crates/*", "apps/server"]
 exclude = ["plugins"]
 
@@ -21,6 +21,7 @@ easyimmerse-plugin-api = { path = "crates/plugin-api" }
 easyimmerse-plugins = { path = "crates/plugins" }
 easyimmerse-api = { path = "crates/api" }
 easyimmerse-anki = { path = "crates/anki" }
+tauri-plugin-save-copy = { path = "apps/native/tauri-plugin-save-copy" }
 
 adler2 = "2.0"
 anyhow = "1.0"
@@ -57,6 +58,7 @@ sha2 = "0.11"
 tar = { version = "0.4", default-features = false }
 tauri = "2.12"
 tauri-build = "2.7"
+tauri-plugin = "2.7"
 tauri-plugin-dialog = "2.8"
 tauri-plugin-notification = "2.5"
 tauri-plugin-opener = "2.7"
