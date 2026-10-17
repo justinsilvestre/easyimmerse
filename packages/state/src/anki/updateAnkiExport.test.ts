@@ -48,13 +48,18 @@ const noticesAfter = (...actions: AppAction[]) =>
 
 const confirmed = [actions.ankiExportOpened(), actions.ankiExportConfirmed()];
 
-const exportRequest = (savePath: string | null, marksExported = true) =>
+const exportRequest = (
+  savePath: string | null,
+  marksExported = true,
+  staged = false,
+) =>
   ({
     kind: "exportAnkiPackage",
     projectId: "p1",
     flashcardIds: ["f3", "f1"],
     savePath,
     marksExported,
+    staged,
   }) as const;
 
 const exported = (outcome: RequestOutcome<"exportAnkiPackage">) =>
@@ -68,7 +73,35 @@ const saved = (skippedMediaCount = 0): AnkiPackageExport => ({
   kind: "saved",
   flashcardCount: 2,
   skippedMediaCount,
+  readAtMs: 1234,
 });
+
+const stagingPath = "/cache/Korean.apkg";
+
+const stagedExported = (
+  outcome: RequestOutcome<"exportAnkiPackage">,
+  marksExported = true,
+) =>
+  actions.requestSettled(
+    "project/p1/ankiExport",
+    exportRequest(stagingPath, marksExported, true),
+    outcome,
+  );
+
+/** Exports to the staging path with the given marking, up to the package written there. */
+const staged = (marksExported = true) => [
+  actions.ankiExportOpened(),
+  actions.ankiExportMarkingChosen(marksExported),
+  actions.ankiExportConfirmed(),
+  actions.ankiExportPathPicked({ kind: "staging", path: stagingPath }),
+  stagedExported({ ok: true, data: saved() }, marksExported),
+];
+
+const copySaved = actions.ankiExportCopyFinished({ kind: "saved" });
+
+const copyCancelled = actions.ankiExportCopyFinished({ kind: "cancelled" });
+
+const copyFailed = actions.ankiExportCopyFailed("no space left");
 
 const packageBytes = new Uint8Array([1, 2]);
 
@@ -295,6 +328,92 @@ describe("updateAnkiExport", () => {
   });
 });
 
+describe("updateAnkiExport when the platform keeps a copy of a staged package", () => {
+  it("exports to the staging path with the chosen marking, asking the server to record nothing", () => {
+    expect(
+      effectsOf(
+        actions.ankiExportPathPicked({ kind: "staging", path: stagingPath }),
+        actions.ankiExportOpened(),
+        actions.ankiExportMarkingChosen(false),
+        actions.ankiExportConfirmed(),
+      ),
+    ).toEqual([
+      {
+        type: "sendRequest",
+        id: "project/p1/ankiExport",
+        request: exportRequest(stagingPath, false, true),
+      },
+    ]);
+  });
+
+  it("asks the platform to let the user keep a copy of the written package", () => {
+    expect(
+      effectsOf(
+        stagedExported({ ok: true, data: saved() }),
+        ...staged().slice(0, -1),
+      ),
+    ).toContainEqual({
+      type: "saveCopy",
+      path: stagingPath,
+      fileName: "Korean.apkg",
+    });
+  });
+
+  it("stays busy while the user keeps a copy", () => {
+    expect(dialogAfter(...staged())?.isBusy).toBe(true);
+  });
+
+  it("says nothing before the user has kept a copy", () => {
+    expect(noticesAfter(...staged())).toEqual([]);
+  });
+
+  it("records the export with the chosen marking once the user kept a copy", () => {
+    expect(effectsOf(copySaved, ...staged(false))).toContainEqual({
+      type: "sendRequest",
+      id: "project/p1/ankiExported",
+      request: {
+        kind: "recordAnkiExported",
+        projectId: "p1",
+        flashcardIds: ["f3", "f1"],
+        marksExported: false,
+        readAtMs: 1234,
+      },
+    });
+  });
+
+  it("closes once the user kept a copy", () => {
+    expect(dialogAfter(...staged(), copySaved)).toBeNull();
+  });
+
+  it("tells how many cards were exported once the user kept a copy", () => {
+    expect(noticesAfter(...staged(), copySaved)).toEqual([
+      "Exported 2 flashcards to an Anki package.",
+    ]);
+  });
+
+  it("stays open, no longer busy, when the user cancels keeping a copy", () => {
+    expect(dialogAfter(...staged(), copyCancelled)?.isBusy).toBe(false);
+  });
+
+  it("records nothing when the user cancels keeping a copy", () => {
+    expect(effectsOf(copyCancelled, ...staged())).toEqual([]);
+  });
+
+  it("stays open, no longer busy, when keeping a copy fails", () => {
+    expect(dialogAfter(...staged(), copyFailed)?.isBusy).toBe(false);
+  });
+
+  it("tells why keeping a copy failed", () => {
+    expect(noticesAfter(...staged(), copyFailed)).toEqual([
+      "The Anki package could not be exported: no space left",
+    ]);
+  });
+
+  it("stops no request when closed while the user keeps a copy", () => {
+    expect(effectsOf(actions.ankiExportClosed(), ...staged())).toEqual([]);
+  });
+});
+
 describe("updateAnkiExport in the store", () => {
   it("downloads the package the server hands back where the platform has no save dialog", async () => {
     const effects = createRecordingEffects();
@@ -311,6 +430,34 @@ describe("updateAnkiExport in the store", () => {
         type: "downloadFile",
         fileName: "Korean.apkg",
         bytes: packageBytes,
+      }),
+    );
+  });
+
+  it("records the export once the user keeps a copy of the staged package", async () => {
+    const effects = createRecordingEffects();
+    const server = createFakeServerStoreParts(null, backend);
+    const store = createAppStore(effects, server);
+    for (const action of [openOverview, ...confirmed]) store.dispatch(action);
+    effects.resolvePickSavePath({ kind: "staging", path: stagingPath });
+    await vi.waitUntil(() =>
+      server.sentRequests.some(({ kind }) => kind === "exportAnkiPackage"),
+    );
+    server.respond(exportRequest(stagingPath, true, true), {
+      ok: true,
+      data: saved(),
+    });
+    await vi.waitUntil(() =>
+      effects.calls.some(({ type }) => type === "saveCopy"),
+    );
+    effects.resolveSaveCopy({ kind: "saved" });
+    await vi.waitFor(() =>
+      expect(server.sentRequests).toContainEqual({
+        kind: "recordAnkiExported",
+        projectId: "p1",
+        flashcardIds: ["f3", "f1"],
+        marksExported: true,
+        readAtMs: 1234,
       }),
     );
   });

@@ -12,7 +12,7 @@ export const ankiUnreachableCode = "anki_unreachable";
 export function exportedNotice({
   flashcardCount,
   skippedMediaCount,
-}: AnkiPackageExport) {
+}: Pick<AnkiPackageExport, "flashcardCount" | "skippedMediaCount">) {
   return notice(
     "success",
     `Exported ${count(flashcardCount, "flashcard")} to an Anki package.`,
@@ -103,7 +103,7 @@ function flashcardName(word: string) {
 }
 
 /** Tells why an export failed. */
-export function exportFailedNotice(failure: RequestFailure) {
+export function exportFailedNotice(failure: Pick<RequestFailure, "message">) {
   return notice(
     "danger",
     `The Anki package could not be exported: ${failure.message}`,

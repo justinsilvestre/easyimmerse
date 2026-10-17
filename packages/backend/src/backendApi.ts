@@ -15,6 +15,7 @@ import type {
   AddSubtitleTrackRequest,
   AnkiConnectSetting,
   AnkiDeletionsCleared,
+  AnkiExportedRequest,
   AnkiPendingDeletions,
   BatchLookupRequest,
   BatchLookupResponse,
@@ -132,6 +133,13 @@ type AnkiConnectArgs = { projectId: string; usesAnkiConnect: boolean };
 type AnkiDeletionsClearArgs = {
   projectId: string;
   flashcardIds: readonly string[];
+};
+
+type AnkiExportedArgs = {
+  projectId: string;
+  flashcardIds: readonly string[];
+  marksExported: boolean;
+  readAtMs: number;
 };
 
 /** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
@@ -689,6 +697,23 @@ export const backendApi = createApi({
           serverFetch: (api.extra as BackendThunkExtra).serverFetch,
           signal: api.signal,
         }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardsSentTags(projectId),
+    }),
+    /** Records the delivery of a package the server wrote at a staging path, once the user has kept a copy of it. */
+    recordAnkiExported: build.mutation<void, AnkiExportedArgs>({
+      query: ({ projectId, flashcardIds, marksExported, readAtMs }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/anki/exported`,
+        body: {
+          kind: "json",
+          value: {
+            flashcard_ids: [...flashcardIds],
+            marks_exported: marksExported,
+            read_at_ms: readAtMs,
+          } satisfies AnkiExportedRequest,
+        },
+      }),
       invalidatesTags: (_result, _error, { projectId }) =>
         flashcardsSentTags(projectId),
     }),

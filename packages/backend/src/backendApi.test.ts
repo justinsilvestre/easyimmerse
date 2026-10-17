@@ -482,6 +482,32 @@ describe("backendApi", () => {
     ]);
   });
 
+  it("posts the flashcards, marking, and read time for recordAnkiExported", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.recordAnkiExported.initiate({
+        projectId: "p1",
+        flashcardIds: ["f1", "f2"],
+        marksExported: true,
+        readAtMs: 1234,
+      }),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "POST",
+        path: "/projects/p1/anki/exported",
+        body: {
+          kind: "json",
+          value: {
+            flashcard_ids: ["f1", "f2"],
+            marks_exported: true,
+            read_at_ms: 1234,
+          },
+        },
+      },
+    ]);
+  });
+
   it("fetches the subtitle tracks again after a source step fails", async () => {
     const client = createFailingSourceStepClient();
     const store = createStore(client);

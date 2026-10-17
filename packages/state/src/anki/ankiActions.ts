@@ -1,4 +1,4 @@
-import type { SavePathPick } from "../platform/effects.ts";
+import type { SaveCopyOutcome, SavePathPick } from "../platform/effects.ts";
 import type { AnkiExportScope } from "./ankiExportDialog.ts";
 
 /**
@@ -22,6 +22,12 @@ export const ankiActions = {
   /** The platform answered where to save the package. */
   ankiExportPathPicked: (pick: SavePathPick) =>
     ({ type: "ankiExportPathPicked", pick }) as const,
+  /** The user kept a copy of the package the server wrote at a staging path, or cancelled. */
+  ankiExportCopyFinished: (outcome: SaveCopyOutcome) =>
+    ({ type: "ankiExportCopyFinished", outcome }) as const,
+  /** The platform could not let the user keep a copy of the staged package, for the given reason. */
+  ankiExportCopyFailed: (message: string) =>
+    ({ type: "ankiExportCopyFailed", message }) as const,
   /** The user closed the export dialog, which stops an export under way. */
   ankiExportClosed: () => ({ type: "ankiExportClosed" }) as const,
   /** The user opened the dialog that explains how to set up AnkiConnect. */

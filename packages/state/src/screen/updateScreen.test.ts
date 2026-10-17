@@ -32,7 +32,7 @@ const playingM2: AppAction[] = [
 ];
 
 /** An Anki export dialog whose export is under way. */
-const exportingDialog = { ...openedAnkiExport, isBusy: true };
+const exportingDialog = { ...openedAnkiExport(false), isBusy: true };
 
 /** A project opened and then left for the home screen. */
 const leftProject: AppAction[] = [

@@ -18,11 +18,18 @@ export type PickedMediaFile = { name: string; source: MediaFileSource };
  */
 export type PickedDictionaryFile = { name: string; source: MediaFileSource };
 
-/** Where the user chose to save a file: a path, a cancelled dialog, or a platform that has no save dialog and downloads the file instead. */
+/**
+ * Where the user chose to save a file: a path, a cancelled dialog, or a platform that has no save dialog and downloads the file instead.
+ * A `staging` path lies inside the app: the platform lets the user choose where to keep a copy once the file is written there.
+ */
 export type SavePathPick =
   | { kind: "path"; path: string }
+  | { kind: "staging"; path: string }
   | { kind: "cancelled" }
   | { kind: "unsupported" };
+
+/** Whether the user kept a copy of a staged file or cancelled. */
+export type SaveCopyOutcome = { kind: "saved" } | { kind: "cancelled" };
 
 /** What the browser answers when asked about media support. */
 export type PlaybackProbes = {
@@ -54,6 +61,11 @@ export interface Effects {
   ): Promise<PickedDictionaryFile | null>;
   /** Asks where to save a file, suggesting a name. A platform without a save dialog answers `unsupported`. */
   pickSavePath(suggestedFileName: string): Promise<SavePathPick>;
+  /**
+   * Lets the user choose where to keep a copy of the file written at a staging path, suggesting the name, and removes the staged file.
+   * Only a platform that answers `staging` to `pickSavePath` is asked to.
+   */
+  saveCopy(path: string, fileName: string): Promise<SaveCopyOutcome>;
   /** Hands a file to the user as a download. Only a platform that answers `unsupported` to `pickSavePath` is asked to. */
   downloadFile(fileName: string, bytes: Uint8Array<ArrayBuffer>): void;
   /** Reads how the platform's media element and Media Source Extensions answer questions about formats. */

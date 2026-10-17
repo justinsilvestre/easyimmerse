@@ -24,6 +24,23 @@ function pickSavePathWith(effects: ReturnType<typeof createRecordingEffects>) {
   return dispatched;
 }
 
+/** Runs the copy of a staged package through the given effects, and collects the actions it dispatches. */
+function saveCopyWith(effects: ReturnType<typeof createRecordingEffects>) {
+  const dispatched: AppAction[] = [];
+  screenEffectRunners.saveCopy(
+    { type: "saveCopy", path: "/cache/Korean.apkg", fileName: "Korean.apkg" },
+    {
+      effects,
+      dispatch: (action) => dispatched.push(action),
+      timers: createTimerTable(effects.clock),
+      requests: createRequestTable(() => {
+        throw new Error("No request is expected.");
+      }),
+    },
+  );
+  return dispatched;
+}
+
 describe("screenEffectRunners", () => {
   it("asks the platform where to save, suggesting the name", () => {
     const effects = createRecordingEffects();
@@ -43,6 +60,40 @@ describe("screenEffectRunners", () => {
           kind: "path",
           path: "/decks/Korean.apkg",
         }),
+      ]),
+    );
+  });
+
+  it("asks the platform to let the user keep a copy of the staged file", () => {
+    const effects = createRecordingEffects();
+    saveCopyWith(effects);
+    expect(effects.calls).toEqual([
+      {
+        type: "saveCopy",
+        path: "/cache/Korean.apkg",
+        fileName: "Korean.apkg",
+      },
+    ]);
+  });
+
+  it("reports how keeping a copy ended", async () => {
+    const effects = createRecordingEffects();
+    const dispatched = saveCopyWith(effects);
+    effects.resolveSaveCopy({ kind: "cancelled" });
+    await vi.waitFor(() =>
+      expect(dispatched).toEqual([
+        actions.ankiExportCopyFinished({ kind: "cancelled" }),
+      ]),
+    );
+  });
+
+  it("reports why keeping a copy failed", async () => {
+    const effects = createRecordingEffects();
+    const dispatched = saveCopyWith(effects);
+    effects.rejectSaveCopy(new Error("no space left"));
+    await vi.waitFor(() =>
+      expect(dispatched).toEqual([
+        actions.ankiExportCopyFailed("no space left"),
       ]),
     );
   });

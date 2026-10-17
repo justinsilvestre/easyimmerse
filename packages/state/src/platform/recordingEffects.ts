@@ -9,6 +9,7 @@ import type {
   PickedFile,
   PickedMediaFile,
   PlaybackProbes,
+  SaveCopyOutcome,
   SavePathPick,
 } from "./effects.ts";
 
@@ -31,6 +32,7 @@ type EffectCall =
   | { type: "pickMediaFile"; accept: readonly string[] }
   | { type: "pickDictionaryFile"; accept: readonly string[] }
   | { type: "pickSavePath"; suggestedFileName: string }
+  | { type: "saveCopy"; path: string; fileName: string }
   | { type: "downloadFile"; fileName: string; bytes: Uint8Array<ArrayBuffer> }
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
@@ -58,6 +60,10 @@ export type RecordingEffects = Effects & {
   resolvePickDictionaryFile(file: PickedDictionaryFile | null): void;
   /** Settles the pending pickSavePath promise. Throws when no pick is pending. */
   resolvePickSavePath(pick: SavePathPick): void;
+  /** Settles the pending saveCopy promise. Throws when no copy is pending. */
+  resolveSaveCopy(outcome: SaveCopyOutcome): void;
+  /** Rejects the pending saveCopy promise. Throws when no copy is pending. */
+  rejectSaveCopy(error: Error): void;
   /** Acts as the platform asking for the Settings screen, by calling every subscribed listener. */
   requestSettings(): void;
   /** Acts as the operating system switching between light and dark, by calling every subscribed listener. */
@@ -116,6 +122,7 @@ export function createRecordingEffects(
     "dictionary file pick",
   );
   const savePathPick = createPendingPick<SavePathPick>("save path pick");
+  const copy = createPendingPick<SaveCopyOutcome>("copy");
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   let refusesCopies = false;
@@ -159,6 +166,10 @@ export function createRecordingEffects(
     pickSavePath: (suggestedFileName) => {
       calls.push({ type: "pickSavePath", suggestedFileName });
       return savePathPick.start();
+    },
+    saveCopy: (path, fileName) => {
+      calls.push({ type: "saveCopy", path, fileName });
+      return copy.start();
     },
     downloadFile: (fileName, bytes) => {
       calls.push({ type: "downloadFile", fileName, bytes });
@@ -212,6 +223,12 @@ export function createRecordingEffects(
     },
     resolvePickSavePath: (pick) => {
       savePathPick.take().resolve(pick);
+    },
+    resolveSaveCopy: (outcome) => {
+      copy.take().resolve(outcome);
+    },
+    rejectSaveCopy: (error) => {
+      copy.take().reject(error);
     },
     requestSettings: () => {
       for (const listener of settingsListeners) listener();

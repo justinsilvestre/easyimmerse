@@ -42,12 +42,18 @@ type PackageCounts = {
   skippedMediaCount: number;
 };
 
+/** An Anki package the server wrote at a path, with the time it read the flashcards, which recording the export later needs. */
+export type SavedAnkiPackage = {
+  kind: "saved";
+  readAtMs: number;
+} & PackageCounts;
+
 /**
  * An exported Anki package: written by the server to the path the user chose,
  * or handed back as a file for the platform to download.
  */
 export type AnkiPackageExport =
-  | ({ kind: "saved" } & PackageCounts)
+  | SavedAnkiPackage
   | ({
       kind: "downloaded";
       fileName: string;

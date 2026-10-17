@@ -4,6 +4,8 @@ import type { RequestRecord } from "../operations/operations.ts";
 /** The ids of the requests the project overview sends about how a project's flashcards reach Anki. */
 export const ankiRequestIds = (projectId: string) => ({
   export: `project/${projectId}/ankiExport`,
+  /** The record of an export whose package the user kept a copy of after the server wrote it at a staging path. */
+  exported: `project/${projectId}/ankiExported`,
   ankiConnect: `project/${projectId}/ankiConnect`,
   deletionsCleared: `project/${projectId}/ankiDeletionsCleared`,
   /** The read of the project as its overview opens, which tells whether to check the connection to Anki. */
@@ -122,10 +124,14 @@ export function readProject(projectId: string) {
   } satisfies Effect;
 }
 
-/** Where an export saves its package, or null to hand it back for download, and whether it marks its flashcards as exported. */
+/**
+ * Where an export saves its package, or null to hand it back for download, and whether it marks its flashcards as exported.
+ * A `staged` package is written at a path inside the app and its delivery is recorded only once the user keeps a copy.
+ */
 export type PackageDelivery = {
   savePath: string | null;
   marksExported: boolean;
+  staged: boolean;
 };
 
 /** Exports flashcards as a package, delivered as asked. */
@@ -142,6 +148,25 @@ export function exportPackage(
       projectId,
       flashcardIds,
       ...delivery,
+    },
+  } satisfies Effect;
+}
+
+/** Records the delivery of a staged package the user kept a copy of, with the time the server read its flashcards. */
+export function recordExported(
+  projectId: string,
+  flashcardIds: readonly string[],
+  { marksExported, readAtMs }: { marksExported: boolean; readAtMs: number },
+) {
+  return {
+    type: "sendRequest",
+    id: ankiRequestIds(projectId).exported,
+    request: {
+      kind: "recordAnkiExported",
+      projectId,
+      flashcardIds,
+      marksExported,
+      readAtMs,
     },
   } satisfies Effect;
 }

@@ -15,8 +15,13 @@ import {
 import { type AnkiExportDialog, openedAnkiExport } from "./ankiExportDialog.ts";
 import { flashcardIdsToExport } from "./ankiExportSelection.ts";
 import { exportedNotice, exportFailedNotice } from "./ankiNotices.ts";
-import { ankiRequestIds, exportPackage } from "./ankiRequests.ts";
+import {
+  ankiRequestIds,
+  exportPackage,
+  type PackageDelivery,
+} from "./ankiRequests.ts";
 import type { AnkiPackageExport } from "./ankiResponses.ts";
+import { copyEnded, copyStaged } from "./updateAnkiExportCopy.ts";
 
 /** The project the dialog exports from, with the server cache it reads the project's flashcards and media files from. */
 type ExportContext = { projectId: string; backend: ServerCacheSlice };
@@ -25,6 +30,7 @@ type ExportContext = { projectId: string; backend: ServerCacheSlice };
  * Runs the dialog that exports a project's flashcards as an Anki package.
  * Export asks the platform where to save the package; the server then writes it there,
  * or, on a platform without a save dialog, hands it back for the platform to download.
+ * A package written at a staging path inside the app is delivered only once the user keeps a copy of it.
  * A finished export closes the dialog and says how it went; closing the dialog stops an export under way.
  */
 export function updateAnkiExport(
@@ -48,12 +54,12 @@ export function updateAnkiExport(
   }
 }
 
-/** Stops the export an open dialog has under way, if any. */
+/** Stops the export an open dialog has under way, if any. A staged package is already written, so nothing is stopped while the user keeps a copy. */
 export function abortExport(
   dialog: AnkiExportDialog | null,
   projectId: string,
 ) {
-  if (dialog?.isBusy !== true) return [];
+  if (dialog?.isBusy !== true || dialog.staged !== null) return [];
   return [
     { type: "abortRequest", id: ankiRequestIds(projectId).export },
   ] satisfies Effect[];
@@ -79,7 +85,15 @@ function updateOpenDialog(
     case "ankiExportPathPicked":
       return pathPicked(dialog, action.pick, context);
     case "requestSettled":
-      return exportSettled(dialog, action, context.projectId);
+      return exportSettled(dialog, action, context);
+    case "ankiExportCopyFinished":
+    case "ankiExportCopyFailed":
+      return copyEnded(
+        dialog,
+        action,
+        context.projectId,
+        idsToExport(dialog, context),
+      );
     default:
       return updated(dialog);
   }
@@ -100,10 +114,9 @@ function toggledMedia(
 /** Asks where to save the package, unless an export is under way or the package would hold nothing. */
 function confirmed(dialog: AnkiExportDialog, context: ExportContext) {
   if (dialog.isBusy || isEmpty(dialog, context)) return updated(dialog);
-  const name = cachedProjectName(context.backend, context.projectId);
   return updated(
     { ...dialog, isBusy: true },
-    { type: "pickSavePath", suggestedFileName: packageFileName(name) },
+    { type: "pickSavePath", suggestedFileName: packageFileName(context) },
   );
 }
 
@@ -117,25 +130,37 @@ function pathPicked(
   const ids = idsToExport(dialog, context);
   if (pick.kind === "cancelled" || isEmpty(dialog, context))
     return updated({ ...dialog, isBusy: false });
-  const savePath = pick.kind === "path" ? pick.path : null;
   return updated(
     dialog,
-    exportPackage(context.projectId, ids, {
-      savePath,
-      marksExported: dialog.marksExported,
-    }),
+    exportPackage(context.projectId, ids, deliveryOf(pick, dialog)),
   );
+}
+
+function deliveryOf(
+  pick: Exclude<SavePathPick, { kind: "cancelled" }>,
+  { marksExported }: AnkiExportDialog,
+): PackageDelivery {
+  const savePath = pick.kind === "unsupported" ? null : pick.path;
+  return { savePath, marksExported, staged: pick.kind === "staging" };
 }
 
 function exportSettled(
   dialog: AnkiExportDialog,
   action: RequestSettled,
-  projectId: string,
+  context: ExportContext,
 ) {
-  if (!isSettled(action, ankiRequestIds(projectId).export, "exportAnkiPackage"))
-    return updated(dialog);
-  const { outcome } = action;
+  const id = ankiRequestIds(context.projectId).export;
+  if (!isSettled(action, id, "exportAnkiPackage")) return updated(dialog);
+  const { outcome, request } = action;
   if (isAborted(outcome)) return updated({ ...dialog, isBusy: false });
+  const stagingPath = request.staged ? request.savePath : null;
+  if (outcome.ok && outcome.data.kind === "saved" && stagingPath !== null)
+    return copyStaged(
+      dialog,
+      outcome.data,
+      stagingPath,
+      packageFileName(context),
+    );
   if (outcome.ok)
     return updated(
       null,
@@ -165,7 +190,9 @@ function idsToExport(dialog: AnkiExportDialog, context: ExportContext) {
 }
 
 /** Names the package after the project, without the characters file systems forbid. */
-function packageFileName(projectName: string | null): string {
-  const name = projectName?.replace(/[/\\:*?"<>|]/g, "_").trim();
+function packageFileName({ backend, projectId }: ExportContext): string {
+  const name = cachedProjectName(backend, projectId)
+    ?.replace(/[/\\:*?"<>|]/g, "_")
+    .trim();
   return `${name || "flashcards"}.apkg`;
 }

@@ -37,6 +37,7 @@ export function createWebEffects(options: {
     pickMediaFile: pickRegisteredFile,
     pickDictionaryFile: pickRegisteredFile,
     pickSavePath: answerUnsupported,
+    saveCopy: refuseCopy,
     downloadFile,
     readPlaybackProbes,
     writeDefinitionMarkdown: options.writeDefinitionMarkdown,
@@ -56,6 +57,11 @@ export function createWebEffects(options: {
 /** A browser has no save dialog that names a path, so files are downloaded instead. */
 async function answerUnsupported(): Promise<SavePathPick> {
   return { kind: "unsupported" };
+}
+
+/** A browser never answers a staging path, so it is never asked to keep a copy of a staged file. */
+async function refuseCopy(): Promise<never> {
+  throw new Error("A browser keeps no copy of a staged file.");
 }
 
 /** A browser has no menu item for Settings, so nothing ever asks for it from outside the page. */

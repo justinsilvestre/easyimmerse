@@ -109,6 +109,7 @@ describe("ProjectScreen's ways to Anki", () => {
           flashcard_ids: ["f1"],
           save_path: "/decks/Alpha.apkg",
           marks_exported: true,
+          staged: false,
         },
       }),
     );

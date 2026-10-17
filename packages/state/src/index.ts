@@ -86,6 +86,7 @@ export type {
   PickedFile,
   PickedMediaFile,
   PlaybackProbes,
+  SaveCopyOutcome,
   SavePathPick,
 } from "./platform/effects.ts";
 export type { PlayerRegistry } from "./platform/playerRegistry.ts";

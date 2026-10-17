@@ -9,6 +9,8 @@ export type ScreenEffect =
   | { type: "pickDictionaryFile"; accept: readonly string[] }
   /** Asks where to save an Anki package; answered by ankiExportPathPicked. */
   | { type: "pickSavePath"; suggestedFileName: string }
+  /** Lets the user keep a copy of an Anki package written at a staging path; answered by ankiExportCopyFinished or ankiExportCopyFailed. */
+  | { type: "saveCopy"; path: string; fileName: string }
   /** Measures the browser's support for a file's formats; answered by playbackEnvironmentMeasured. */
   | {
       type: "measurePlaybackEnvironment";

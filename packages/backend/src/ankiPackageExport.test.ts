@@ -7,6 +7,7 @@ const args = {
   projectId: "p1",
   flashcardIds: ["f1", "f2"],
   marksExported: true,
+  staged: false,
 };
 
 const packageResponse = () =>
@@ -50,6 +51,7 @@ describe("exportAnkiPackage", () => {
         flashcard_ids: ["f1", "f2"],
         save_path: null,
         marks_exported: true,
+        staged: false,
       }),
     );
   });
@@ -103,6 +105,7 @@ describe("exportAnkiPackage", () => {
             data: {
               flashcard_count: 2,
               skipped_media_count: 0,
+              read_at_ms: 1234,
             },
           };
         },
@@ -119,6 +122,7 @@ describe("exportAnkiPackage", () => {
             flashcard_ids: ["f1", "f2"],
             save_path: "/decks/Korean.apkg",
             marks_exported: true,
+            staged: false,
           },
         },
       },
@@ -133,6 +137,7 @@ describe("exportAnkiPackage", () => {
           data: {
             flashcard_count: 2,
             skipped_media_count: 1,
+            read_at_ms: 1234,
           },
         }),
         serverFetch: null,
@@ -143,6 +148,36 @@ describe("exportAnkiPackage", () => {
         kind: "saved",
         flashcardCount: 2,
         skippedMediaCount: 1,
+        readAtMs: 1234,
+      },
+    });
+  });
+
+  it("asks the server to write a staged package without recording it", async () => {
+    const requests: BackendRequest[] = [];
+    await exportAnkiPackage(
+      { ...args, savePath: "/cache/Korean.apkg", staged: true },
+      {
+        server: async (request) => {
+          requests.push(request);
+          return {
+            data: {
+              flashcard_count: 2,
+              skipped_media_count: 0,
+              read_at_ms: 1234,
+            },
+          };
+        },
+        serverFetch: null,
+      },
+    );
+    expect(requests[0]?.body).toEqual({
+      kind: "json",
+      value: {
+        flashcard_ids: ["f1", "f2"],
+        save_path: "/cache/Korean.apkg",
+        marks_exported: true,
+        staged: true,
       },
     });
   });

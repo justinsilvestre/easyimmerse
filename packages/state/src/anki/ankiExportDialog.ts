@@ -1,3 +1,5 @@
+import type { SavedAnkiPackage } from "./ankiResponses.ts";
+
 /** Which of the chosen media files' flashcards an export includes: those in the Anki updates queue, or all of them. */
 export type AnkiExportScope = "newAndChanged" | "all";
 
@@ -10,6 +12,8 @@ export type AnkiExportDialog = {
   mediaFileIds: readonly string[] | null;
   /** True from the press of Export until the package is exported, fails, or the save dialog is cancelled. */
   isBusy: boolean;
+  /** The package the server wrote at a staging path inside the app, while the user chooses where to keep a copy; otherwise null. */
+  staged: SavedAnkiPackage | null;
 };
 
 /**
@@ -22,5 +26,6 @@ export function openedAnkiExport(usesAnkiConnect: boolean): AnkiExportDialog {
     marksExported: !usesAnkiConnect,
     mediaFileIds: null,
     isBusy: false,
+    staged: null,
   };
 }

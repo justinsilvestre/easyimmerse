@@ -151,13 +151,25 @@ export type ServerRequest =
       projectId: string;
       justDeleted: DeletedFlashcard | null;
     }
-  /** Exports flashcards as an Anki package, saved at `savePath`, or handed back for download when it is null, and marks them exported if asked. */
+  /**
+   * Exports flashcards as an Anki package, saved at `savePath`, or handed back for download when it is null, and marks them exported if asked.
+   * A `staged` export records nothing, since its delivery is recorded by `recordAnkiExported` once the user keeps a copy.
+   */
   | {
       kind: "exportAnkiPackage";
       projectId: string;
       flashcardIds: readonly string[];
       savePath: string | null;
       marksExported: boolean;
+      staged: boolean;
+    }
+  /** Records the delivery of a staged package the user kept a copy of, marking its flashcards exported as of `readAtMs` if asked. */
+  | {
+      kind: "recordAnkiExported";
+      projectId: string;
+      flashcardIds: readonly string[];
+      marksExported: boolean;
+      readAtMs: number;
     }
   /** Forgets the named deletions from Anki, which the user marked done. */
   | {
@@ -217,6 +229,8 @@ export type ServerResponses = {
   sendFlashcardsToAnki: AnkiSendOutcome;
   deleteAnkiNotes: AnkiDeletionOutcome;
   exportAnkiPackage: AnkiPackageExport;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  recordAnkiExported: void;
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   clearAnkiPendingDeletions: void;
   setAnkiConnect: Project;

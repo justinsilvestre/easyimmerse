@@ -178,9 +178,20 @@ export const requestEndpoints = {
     ),
   deleteAnkiNotes: ({ projectId }) =>
     backendApi.endpoints.deleteAnkiNotes.initiate(projectId, { track: false }),
-  exportAnkiPackage: ({ projectId, flashcardIds, savePath, marksExported }) =>
+  exportAnkiPackage: ({
+    projectId,
+    flashcardIds,
+    savePath,
+    marksExported,
+    staged,
+  }) =>
     backendApi.endpoints.exportAnkiPackage.initiate(
-      { projectId, flashcardIds, savePath, marksExported },
+      { projectId, flashcardIds, savePath, marksExported, staged },
+      { track: false },
+    ),
+  recordAnkiExported: ({ projectId, flashcardIds, marksExported, readAtMs }) =>
+    backendApi.endpoints.recordAnkiExported.initiate(
+      { projectId, flashcardIds, marksExported, readAtMs },
       { track: false },
     ),
   clearAnkiPendingDeletions: ({ projectId, flashcardIds }) =>

@@ -6,12 +6,16 @@ import { readBackendError } from "./httpBackendClient.ts";
 import type { ServerQuery } from "./sendToAnki.ts";
 import type { ServerFetch } from "./serverFetch.ts";
 
-/** The flashcards of a project to export, the path to save the package at, or null to receive it, and whether to mark them exported. */
+/**
+ * The flashcards of a project to export, the path to save the package at, or null to receive it, and whether to mark them exported.
+ * A `staged` package is written without being recorded, since the client records its delivery once the user keeps a copy.
+ */
 export type AnkiExportArgs = {
   projectId: string;
   flashcardIds: readonly string[];
   savePath: string | null;
   marksExported: boolean;
+  staged: boolean;
 };
 
 /** What an export works with: the server's JSON requests, its plain fetch for the package's bytes, and the signal that stops a download. */
@@ -48,6 +52,7 @@ async function savePackage(
       kind: "saved",
       flashcardCount: saved.flashcard_count,
       skippedMediaCount: saved.skipped_media_count,
+      readAtMs: saved.read_at_ms,
     },
   };
 }
@@ -98,13 +103,14 @@ function packagePath(projectId: string): string {
 }
 
 function packageRequest(
-  { flashcardIds, marksExported }: AnkiExportArgs,
+  { flashcardIds, marksExported, staged }: AnkiExportArgs,
   savePath: string | null,
 ): AnkiPackageRequest {
   return {
     flashcard_ids: [...flashcardIds],
     save_path: savePath,
     marks_exported: marksExported,
+    staged,
   };
 }
 
