@@ -49,9 +49,8 @@ class SaveCopyPlugin(private val activity: Activity) : Plugin(activity) {
 
   @ActivityCallback
   fun saveCopyResult(invoke: Invoke, result: ActivityResult) {
-    val staged: File
-    try {
-      staged = File(invoke.parseArgs(SaveCopyArgs::class.java).path)
+    val staged = try {
+      File(invoke.parseArgs(SaveCopyArgs::class.java).path)
     } catch (ex: Exception) {
       rejectWith(invoke, ex, "Could not read the file to save")
       return

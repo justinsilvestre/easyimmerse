@@ -32,6 +32,7 @@ type ExportContext = { projectId: string; backend: ServerCacheSlice };
  * or, on a platform without a save dialog, hands it back for the platform to download.
  * A package written at a staging path inside the app is delivered only once the user keeps a copy of it.
  * A finished export closes the dialog and says how it went; closing the dialog stops an export under way.
+ * The dialog cannot be closed while the user chooses where to keep a copy, so that the copy is recorded once kept.
  */
 export function updateAnkiExport(
   dialog: AnkiExportDialog | null,
@@ -46,7 +47,9 @@ export function updateAnkiExport(
         ),
       );
     case "ankiExportClosed":
-      return updated(null, ...abortExport(dialog, context.projectId));
+      return dialog?.staged
+        ? updated(dialog)
+        : updated(null, ...abortExport(dialog, context.projectId));
     default:
       return dialog === null
         ? updated(dialog)
@@ -88,12 +91,7 @@ function updateOpenDialog(
       return exportSettled(dialog, action, context);
     case "ankiExportCopyFinished":
     case "ankiExportCopyFailed":
-      return copyEnded(
-        dialog,
-        action,
-        context.projectId,
-        idsToExport(dialog, context),
-      );
+      return copyEnded(dialog, action, context.projectId);
     default:
       return updated(dialog);
   }
@@ -157,7 +155,11 @@ function exportSettled(
   if (outcome.ok && outcome.data.kind === "saved" && stagingPath !== null)
     return copyStaged(
       dialog,
-      outcome.data,
+      {
+        ...outcome.data,
+        flashcardIds: request.flashcardIds,
+        marksExported: request.marksExported,
+      },
       stagingPath,
       packageFileName(context),
     );

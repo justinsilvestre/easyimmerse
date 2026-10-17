@@ -1,10 +1,12 @@
 import type { AppAction } from "../app/appAction.ts";
 import type { Effect } from "../app/effect.ts";
 import { updated } from "../app/updated.ts";
-import type { AnkiExportDialog } from "./ankiExportDialog.ts";
+import type {
+  AnkiExportDialog,
+  StagedAnkiPackage,
+} from "./ankiExportDialog.ts";
 import { exportedNotice, exportFailedNotice } from "./ankiNotices.ts";
 import { recordExported } from "./ankiRequests.ts";
-import type { SavedAnkiPackage } from "./ankiResponses.ts";
 
 /** The end of the user's choice of where to keep a copy of a staged package. */
 type CopyEnd = Extract<
@@ -15,7 +17,7 @@ type CopyEnd = Extract<
 /** Asks the platform to let the user keep a copy of the package the server wrote at a staging path; the dialog stays busy meanwhile. */
 export function copyStaged(
   dialog: AnkiExportDialog,
-  staged: SavedAnkiPackage,
+  staged: StagedAnkiPackage,
   path: string,
   fileName: string,
 ) {
@@ -27,16 +29,15 @@ export function copyStaged(
 }
 
 /**
- * Ends an export once the user kept a copy of its staged package: records the delivery of the given flashcards, closes the dialog, and says how it went.
+ * Ends an export once the user kept a copy of its staged package: records the delivery of the flashcards the package holds, closes the dialog, and says how it went.
  * A cancelled copy leaves the dialog open, and a failed one also says why.
  */
 export function copyEnded(
   dialog: AnkiExportDialog,
   action: CopyEnd,
   projectId: string,
-  flashcardIds: readonly string[],
 ) {
-  const { staged, marksExported } = dialog;
+  const { staged } = dialog;
   if (staged === null) return updated(dialog);
   const reopened = { ...dialog, isBusy: false, staged: null };
   if (action.type === "ankiExportCopyFailed")
@@ -44,10 +45,7 @@ export function copyEnded(
   if (action.outcome.kind === "cancelled") return updated(reopened);
   return updated(
     null,
-    recordExported(projectId, flashcardIds, {
-      marksExported,
-      readAtMs: staged.readAtMs,
-    }),
+    recordExported(projectId, staged.flashcardIds, staged),
     exportedNotice(staged),
   );
 }

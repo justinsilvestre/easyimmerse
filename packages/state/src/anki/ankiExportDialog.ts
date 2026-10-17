@@ -10,10 +10,19 @@ export type AnkiExportDialog = {
   marksExported: boolean;
   /** The media files whose flashcards the export includes, or null for every flashcard of the project. */
   mediaFileIds: readonly string[] | null;
-  /** True from the press of Export until the package is exported, fails, or the save dialog is cancelled. */
+  /**
+   * True from the press of Export until the package is exported, fails, or the save dialog is cancelled,
+   * and, for a package written at a staging path, until the user has kept a copy or declined to.
+   */
   isBusy: boolean;
   /** The package the server wrote at a staging path inside the app, while the user chooses where to keep a copy; otherwise null. */
-  staged: SavedAnkiPackage | null;
+  staged: StagedAnkiPackage | null;
+};
+
+/** A package written at a staging path, with the flashcards it holds and the marking the export asked for, which recording its delivery needs. */
+export type StagedAnkiPackage = SavedAnkiPackage & {
+  flashcardIds: readonly string[];
+  marksExported: boolean;
 };
 
 /**

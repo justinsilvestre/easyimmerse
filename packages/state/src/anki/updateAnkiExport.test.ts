@@ -381,6 +381,34 @@ describe("updateAnkiExport when the platform keeps a copy of a staged package", 
     });
   });
 
+  it("records the flashcards and marking the export sent, not those chosen since", () => {
+    const sentEarlier = actions.requestSettled(
+      "project/p1/ankiExport",
+      {
+        ...exportRequest(stagingPath, false, true),
+        flashcardIds: ["f1"],
+      },
+      { ok: true, data: saved() },
+    );
+    expect(
+      effectsOf(copySaved, ...staged().slice(0, -1), sentEarlier),
+    ).toContainEqual({
+      type: "sendRequest",
+      id: "project/p1/ankiExported",
+      request: {
+        kind: "recordAnkiExported",
+        projectId: "p1",
+        flashcardIds: ["f1"],
+        marksExported: false,
+        readAtMs: 1234,
+      },
+    });
+  });
+
+  it("stays open when closed while the user keeps a copy", () => {
+    expect(dialogAfter(...staged(), actions.ankiExportClosed())).not.toBeNull();
+  });
+
   it("closes once the user kept a copy", () => {
     expect(dialogAfter(...staged(), copySaved)).toBeNull();
   });
