@@ -600,7 +600,7 @@ As a user:
 - when I choose to export my flashcards to Anki, and AnkiConnect is ON:
   - [x] I am told that a package cannot delete notes from Anki, but that AnkiConnect can delete the notes of the flashcards I delete
 - when I choose to export my flashcards to Anki, and some of the cards were first added to Anki through AnkiConnect, rather than from a package:
-  - [ ] I am warned that importing the package into the same Anki collection would add a second copy of each of those cards, because Anki does not recognize them as the notes AnkiConnect created
+  - [x] I am warned that importing the package into the same Anki collection would add a second copy of each of those cards, because Anki does not recognize them as the notes AnkiConnect created
   - [x] I am told that I can find the doubled notes with Notes > Find Duplicates in Anki's browser, searching the "easyImmerse id" field
 - when I export my flashcards as an Anki deck package:
   - [x] on desktop, I am prompted to choose where to save the package, including its media
