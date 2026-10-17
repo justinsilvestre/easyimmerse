@@ -610,7 +610,7 @@ As a user:
   - [x] I am told that I can find the doubled notes with Notes > Find Duplicates in Anki's browser, searching the "easyImmerse id" field
 - when I export my flashcards as an Anki deck package:
   - [x] on desktop, I am prompted to choose where to save the package, including its media
-  - [ ] on mobile, I am prompted to choose where to save the package, including its media
+  - [x] on mobile, I am prompted to choose where to save the package, including its media
   - [x] in a browser, the package, including its media, is downloaded
   - [x] I see how many flashcards were exported, and how many audio clips or screenshots could not be included
   - [x] only once the package has been saved or downloaded in full, the cards are removed from the Anki updates queue unless I chose to keep them there
