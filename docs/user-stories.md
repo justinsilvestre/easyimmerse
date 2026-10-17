@@ -576,6 +576,12 @@ As a user:
   - [x] I see a preview of the earliest-created flashcard waiting to be sent
   - [x] I see a button to send new, changed, and deleted flashcards to Anki through AnkiConnect
   - [x] I can turn AnkiConnect off
+- when I see a preview of a flashcard waiting to be sent:
+  - [ ] I see its screenshot, as the card in Anki would show it
+  - [ ] I can play its audio clip
+- when a flashcard reached Anki without its audio clip or screenshot, because easyImmerse could not read the media file at the time:
+  - [ ] I see it listed among the flashcards whose media is missing in Anki
+  - [ ] once easyImmerse can read the media file again, I can bring the missing audio clip or screenshot into Anki
 - when AnkiConnect is on for the project, but Anki is not connected:
   - [ ] I see helpful suggestions for getting AnkiConnect working, and a button to check again
 - when AnkiConnect is on for the project, but Anki refuses the connection from easyImmerse:
@@ -631,6 +637,10 @@ As a user:
 ### Reviewing flashcards
 
 To be implemented after MVP.
+
+As a user:
+- when I export flashcards that I have reviewed in easyImmerse to Anki:
+  - [ ] each card keeps its review progress, and is due in Anki on the same day it would be due in easyImmerse, in my own time zone
 
 ---
 
