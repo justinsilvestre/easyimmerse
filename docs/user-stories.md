@@ -115,7 +115,7 @@ As a user:
   - [ ] I see a button to set up AnkiConnect for direct export to Anki, or if setup was already completed, I see whether AnkiConnect syncing is on and the connection status
   - [x] I see a button to export an Anki deck package for the project
   - [ ] I can open a menu and see a button to start reviewing flashcards in the easyImmerse SRS
-  - [x] I see a preview of the first-created flashcard that is new or changed since the last export
+  - [x] I see a preview of the first-created flashcard in the Anki updates queue
 - when the last review action was to use the easyImmerse SRS:
   - [ ] I see a preview of the next flashcard to review, and a button to continue reviewing in the easyImmerse SRS
 - when updates are waiting in the Anki updates queue:
@@ -525,14 +525,14 @@ As a web app user:
 
 As a user:
 - when updates are waiting in the Anki updates queue:
-  - [x] I can press a button to send them to Anki, and see an indication of whether it was successful
+  - [x] I can press a button to try sending them to Anki, and I see whether it succeeded
 - when an earlier export has removed cards from the Anki updates queue:
-  - [x] I see how many cards are new and how many have changed since the last export/queue flush
-- when a flashcard is saved and AnkiConnect is on, but Anki is not currently connected:
-  - [x] I see an indication that Anki could not be reached
-  - [x] the project's Anki updates queue is updated
-- when AnkiConnect is on, and easyImmerse successfully connects to Anki:
-  - [x] updates in the queue are sent to Anki, and I see an indication of whether they were successful
+  - [x] I see how many cards are new and how many have changed since that export, or since the queue was last emptied
+- when I save a flashcard while AnkiConnect is on, but Anki is not connected:
+  - [x] I see that Anki could not be reached
+  - [x] the change is added to the project's Anki updates queue
+- when AnkiConnect is on, and easyImmerse connects to Anki:
+  - [x] the updates in the queue are sent to Anki, and I see whether they succeeded
 
 ---
 
@@ -540,41 +540,46 @@ As a user:
 
 As a user:
 - when I click the button to set up AnkiConnect for direct export to Anki:
-  - [x] I see an explanation of what to install and that Anki must be running
-- when AnkiConnect is on and Anki gets connected:
-  - [x] any updates waiting in the Anki updates queue are sent to Anki at once, and I see an indication of whether it was successful
-- when I've switched on AnkiConnect for the project:
+  - [x] I see what to install, and that Anki must be running
+- when I switch on AnkiConnect for the project:
   - [x] it stays on for the project until I turn it off
-  - [x] the project's flashcards are sent to Anki at once, as long as Anki is running and connected
-- when a flashcard is saved, AnkiConnect is on, and Anki is currently connected:
-  - [x] successfully saved flashcards are sent directly to Anki
-  - [x] any updates waiting in the Anki updates queue are sent along with the new update
-  - [x] an edit of a card already having an Anki note updates that note in place
-  - [x] I see an indication of whether the save to Anki was successful
-- when I delete a flashcard, or undo the creation of a new one, and AnkiConnect is on:
-  - [x] the flashcard's note is immediately deleted from Anki
-  - [x] I see an indication of whether the note's deletion from Anki was successful
-  - [x] if Anki cannot be reached, I am told that the note will be deleted from Anki the next time it is connected, and the deletion is added to the Anki updates queue
-- when I am asked to confirm the deletion of a flashcard:
-  - [x] if the flashcard reached Anki and AnkiConnect is on, I am told that its note is deleted from Anki too
-  - [x] if the flashcard reached Anki but and AnkiConnect is off, I am told that its note stays in Anki until I delete it there, and (when the project settings allow it) that the deletion will be waiting in the Anki updates queue visible from the project screen
-  - [x] if the flashcard was ever included in any previous Anki package exports, I am told that importing one of those old packages into Anki would bring the card back
+  - [x] the flashcards in the Anki updates queue are sent to Anki at once, as long as Anki is running and connected
+- when AnkiConnect is on, and Anki gets connected:
+  - [x] any updates waiting in the Anki updates queue are sent to Anki at once, and I see whether it succeeded
+- when I save a flashcard while AnkiConnect is on, and Anki is connected:
+  - [x] the flashcard is sent directly to Anki
+  - [x] any updates waiting in the Anki updates queue are sent along with it
+  - [x] if the flashcard already has a note in Anki, that note is updated in place
+  - [x] I see whether the save to Anki succeeded
+- when I delete a flashcard, or undo the creation of a new one, while AnkiConnect is on:
+  - [x] the flashcard's note in Anki, if it has one, is deleted at once
+  - [x] I see whether the note's deletion from Anki succeeded
+- when I delete a flashcard, or undo the creation of a new one, while AnkiConnect is on BUT Anki cannot be reached:
+  - [x] I am told that the note will be deleted from Anki the next time Anki is connected
+  - [x] the deletion is added to the Anki updates queue
+- when I am asked to confirm the deletion of a flashcard, and AnkiConnect is on:
+  - [x] if the flashcard has a note in Anki (or may have one from a package I imported) I am told that the note will be deleted from Anki too
+- when I am asked to confirm the deletion of a flashcard that reached Anki, and AnkiConnect is off:
+  - [x] I am told that its note stays in Anki until I delete it there, since a package cannot delete notes
+  - [x] when the project settings allow it, I am told that the deletion will wait in the Anki updates queue on the project screen, with a copiable search query to help me find the note via Anki's search functionality, until I delete the note or turn AnkiConnect on
+- when I am asked to confirm the deletion of a flashcard that was included in an earlier Anki package export:
+  - [x] I am told that importing one of those old packages into Anki would bring the card back
 - when deletions are waiting in the Anki updates queue, and AnkiConnect is off:
   - [x] I see them listed by word
-  - [x] I can copy a search that finds the corresponding notes in Anki's browser
+  - [x] I can copy a search that finds their notes in Anki's browser
   - [x] I can mark them as done, which clears the list
-  - [x] I am told how many of them the next export that removes cards from the Anki updates queue marks for deletion
-- when AnkiConnect is on for the project, but Anki is not connected:
-  - [ ] I see helpful suggestions to get AnkiConnect working, and a button to check again
-- when AnkiConnect is on for the project, but Anki refuse easyImmerse:
-  - [x] I am told steps to allow easyImmerse to connect, naming the address AnkiConnect must allow
+  - [x] I am told that a package cannot delete notes from Anki, so I must delete them there myself, or turn on AnkiConnect to have them deleted for me
 - when AnkiConnect is on for the project:
-  - [x] I see an indication of the status of the AnkiConnect connection, checked when I open the project
-  - [x] I see how many cards are new and how many have changed since they were sent to Anki
-  - [x] I see how many deleted flashcards have yet to have their notes deleted from Anki
-  - [x] I see a preview of the first-created flashcard waiting to be sent
-  - [x] I see a button to send new/changed/deleted flashcards to Anki via AnkiConnect
+  - [x] I see the status of the AnkiConnect connection, checked when I open the project
+  - [x] I see how many cards in the Anki updates queue are new and how many have changed, the same counts shown when exporting an Anki package
+  - [x] I see how many deleted flashcards still have notes in Anki
+  - [x] I see a preview of the earliest-created flashcard waiting to be sent
+  - [x] I see a button to send new, changed, and deleted flashcards to Anki through AnkiConnect
   - [x] I can turn AnkiConnect off
+- when AnkiConnect is on for the project, but Anki is not connected:
+  - [ ] I see helpful suggestions for getting AnkiConnect working, and a button to check again
+- when AnkiConnect is on for the project, but Anki refuses the connection from easyImmerse:
+  - [x] I am told how to allow easyImmerse to connect, including the address AnkiConnect must allow
 
 ---
 
@@ -583,23 +588,28 @@ As a user:
 As a user:
 - when I choose to export my flashcards to Anki:
   - [x] I can choose to export all cards
-  - [x] I can choose to export only cards in the Anki updates queue (i.e. newly added or changed since last export; this is on by default)
-  - [x] I see how many cards a full/changes-only export would include
-  - [x] I can choose to preserve the Anki updates queue after this export is complete (in case I wish e.g. to make a backup of my deck or to share my deck with someone else, but reserve the right to make a targeted update to my Anki deck later; this is off by default, except when AnkiConnect is on)
-  - [x] when the export removes cards from the Anki updates queue, and some of them were sent to Anki through AnkiConnect before any export removed them, I am warned that importing the package into that Anki would give me two of each
-  - [x] when the export removes cards from the Anki updates queue, AnkiConnect is off, and the queue holds flashcards I deleted after exporting them, I am told that the package marks their notes for deletion, and I can export a package that does only that
+  - [x] I can choose to export only the cards in the Anki updates queue (this being the default option; this queue contains the cards added, or changed since they last reached Anki through AnkiConnect or through an export that removed them from the queue)
+  - [x] I see how many cards each of these choices would include
   - [x] I can choose to export only cards from specific media files, each listed with its number of cards
   - [ ] I can choose to export all cards from a selected media file, or only specific cards from that media file
+  - [x] I can choose to keep the cards in the Anki updates queue after the export (this being the default option *only when AnkiConnect is on*; the point is to let me back up my deck or share it with someone, and still make a targeted update to my own Anki deck later)
   - [x] I am told that the audio and screenshots are included when the easyImmerse server has ffmpeg and can read the media file
-  - [x] I am told that importing a package again adds the new cards and refreshes the others, keeping their progress, and that the look of the cards can be changed in Anki once imported
-- when I choose to export my flashcards as an Anki deck package:
-  - [x] on desktop, I am prompted to choose where to save the Anki deck package, including its media
-  - [ ] on mobile, I am prompted to choose where to save the Anki deck package, including its media
+  - [x] I am told that importing a package again adds the new cards and refreshes the others, keeping their review progress, and that I can change the look of the cards in Anki after importing them
+- when I choose to export my flashcards to Anki, and AnkiConnect is OFF:
+  - [x] I am told that a package cannot delete notes from Anki, so when I delete a flashcard that was exported as part of a package, I must delete its note in Anki myself, or turn on AnkiConnect to have it done
+- when I choose to export my flashcards to Anki, and AnkiConnect is ON:
+  - [x] I am told that a package cannot delete notes from Anki, but that AnkiConnect can delete the notes of the flashcards I delete
+- when I choose to export my flashcards to Anki, and some of the cards were first added to Anki through AnkiConnect, rather than from a package:
+  - [ ] I am warned that importing the package into the same Anki collection would add a second copy of each of those cards, because Anki does not recognize them as the notes AnkiConnect created
+  - [x] I am told that I can find the doubled notes with Notes > Find Duplicates in Anki's browser, searching the "easyImmerse id" field
+- when I export my flashcards as an Anki deck package:
+  - [x] on desktop, I am prompted to choose where to save the package, including its media
+  - [ ] on mobile, I am prompted to choose where to save the package, including its media
   - [x] in a browser, the package, including its media, is downloaded
-  - [x] I see how many flashcards were exported, how many audio clips or screenshots could not be included, and how many notes of deleted flashcards the package marks for deletion, with the search that finds them in Anki
-  - [x] the cards are removed from the Anki updates queue, unless I chose to keep them, only once the package has been saved or downloaded in full
+  - [x] I see how many flashcards were exported, and how many audio clips or screenshots could not be included
+  - [x] only once the package has been saved or downloaded in full, the cards are removed from the Anki updates queue unless I chose to keep them there
 - when I send my flashcards to Anki through AnkiConnect:
-  - [x] I see how many flashcards were sent successfully or refused by Anki
+  - [x] I see how many flashcards were sent successfully, and how many Anki refused
   - [x] I see how many audio clips or screenshots could not be included
 
 ---
