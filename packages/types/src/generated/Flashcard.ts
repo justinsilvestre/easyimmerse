@@ -33,4 +33,18 @@ created_at_ms: number,
 /**
  * Milliseconds since the Unix epoch.
  */
-updated_at_ms: number, };
+updated_at_ms: number, 
+/**
+ * Milliseconds since the Unix epoch when the flashcard was last marked as exported in an Anki package. Null when it never was.
+ * The flashcard has changed since then when `updated_at_ms` is later.
+ */
+exported_at_ms: number | null, 
+/**
+ * Whether any Anki package has held the flashcard, whether or not that export marked it as exported.
+ */
+was_packaged: boolean, 
+/**
+ * Milliseconds since the Unix epoch at which the content that AnkiConnect last put into Anki was read. Null until the flashcard is first sent.
+ * The flashcard has changed since then when `updated_at_ms` is later.
+ */
+sent_at_ms: number | null, };

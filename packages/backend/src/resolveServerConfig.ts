@@ -1,8 +1,13 @@
 import type { ServerConfig } from "@easyimmerse/state";
 
+/** Whether the native shell runs on a desktop or on a phone. */
+export type NativePlatform = "desktop" | "mobile";
+
 declare global {
-  /** Injected by a native shell before the app's script runs. */
-  var __EASYIMMERSE__: ServerConfig | undefined;
+  /** Injected by a native shell before the app's script runs: its embedded server, and the platform it runs on. */
+  var __EASYIMMERSE__:
+    | (ServerConfig & { platform: NativePlatform })
+    | undefined;
 }
 
 const storageKey = "easyimmerse.server";

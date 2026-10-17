@@ -4,7 +4,7 @@ The Tauri app for macOS, Windows, Linux, Android, and iOS. `src/` holds the fron
 
 ## The shell
 
-On start-up, the shell opens the SQLite database in the app data directory, creates the app cache directory for converted media, binds the API server to `127.0.0.1:8787` (or a free port when that one is taken), and creates the main window with `window.__EASYIMMERSE__ = { serverUrl, token }` injected before the page runs. The page then talks to the server over plain HTTP. Tauri IPC carries only the dialog, notification, and opener plugins, plus the `check_plugin_host` command in builds with the `plugin-check` feature, which the [plugin host README](../../crates/plugins/README.md) describes.
+On start-up, the shell opens the SQLite database in the app data directory, creates the app cache directory for converted media, binds the API server to `127.0.0.1:8787` (or a free port when that one is taken), and creates the main window with `window.__EASYIMMERSE__ = { serverUrl, token, platform }` injected before the page runs, where `platform` is `"desktop"` or `"mobile"`. The page then talks to the server over plain HTTP. Tauri IPC carries only the dialog, notification, and opener plugins, the save-copy plugin on Android and iOS, and the `check_plugin_host` command in builds with the `plugin-check` feature, which the [plugin host README](../../crates/plugins/README.md) describes. The save-copy plugin, in `tauri-plugin-save-copy/`, opens the system's save picker so that the user can keep a copy of a file the server wrote inside the app, such as an Anki package, and then deletes that file.
 
 ## ffmpeg sidecars
 

@@ -1,7 +1,10 @@
 import type { ProjectSettings } from "@easyimmerse/types";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
+import {
+  fieldsOfPreset,
+  frontFieldsOfPreset,
+} from "../flashcards/flashcardPresets.ts";
 import { createFakeMediaQueryList } from "../testSupport/createFakeMediaQueryList.ts";
 import { ProjectForm } from "./ProjectForm.tsx";
 
@@ -15,6 +18,8 @@ const initialValues: ProjectSettings = {
   target_language: "de",
   translation_language: "en",
   flashcard_fields: fieldsOfPreset("intermediate"),
+  flashcard_front_fields: frontFieldsOfPreset("intermediate"),
+  lists_anki_deletions: true,
   default_tags: [],
   tags_media_name: true,
   fills_audio_with_tts: false,
@@ -62,6 +67,46 @@ describe("ProjectForm", () => {
       fireEvent.click(screen.getByLabelText("Advanced"));
       expect(isChecked("Definition (en)")).toBe(false);
     });
+
+    it("puts the word on the front", () => {
+      renderForm();
+      fireEvent.click(screen.getByLabelText("Advanced"));
+      expect(
+        screen.getByRole("button", { name: "Word (de) on the front" }),
+      ).not.toBeNull();
+    });
+  });
+
+  describe("when a field of a preset moves to the front", () => {
+    it("switches the preset to custom", () => {
+      renderForm();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Word (de) on the back" }),
+      );
+      expect(isChecked("Custom")).toBe(true);
+    });
+
+    it("shows the field on the front", () => {
+      renderForm();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Word (de) on the back" }),
+      );
+      expect(
+        screen.getByRole("button", { name: "Word (de) on the front" }),
+      ).not.toBeNull();
+    });
+  });
+
+  it("offers no side for a field left off the card", () => {
+    renderForm();
+    expect(
+      screen.queryByRole("button", { name: /^Word pronunciation on the/ }),
+    ).toBeNull();
+  });
+
+  it("offers no side for the tags", () => {
+    renderForm();
+    expect(screen.queryByRole("button", { name: /^Tags on the/ })).toBeNull();
   });
 
   describe("when a field of a preset is unchecked", () => {
@@ -143,6 +188,30 @@ describe("ProjectForm", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     expect(submitted).toEqual(["German"]);
+  });
+
+  it("says that the listed deleted flashcards were taken out of the Anki updates queue by an export or sent to Anki", () => {
+    renderForm();
+    expect(
+      screen.getByText(
+        /flashcard that an export took out of the Anki updates queue, or that AnkiConnect sent to Anki/,
+      ),
+    ).toBeDefined();
+  });
+
+  it("submits the choice not to list deleted flashcards that are still in Anki", () => {
+    const submitted: boolean[] = [];
+    renderForm((values) => submitted.push(values.lists_anki_deletions));
+    fireEvent.change(screen.getByLabelText("Project name"), {
+      target: { value: "German" },
+    });
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: /List deleted flashcards that are still in Anki/,
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    expect(submitted).toEqual([false]);
   });
 
   describe("when the translation language is the target language", () => {

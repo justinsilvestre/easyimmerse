@@ -42,6 +42,8 @@ function fixtureSettings(
     default_tags: [],
     tags_media_name: true,
     fills_audio_with_tts: false,
+    flashcard_front_fields: [],
+    lists_anki_deletions: true,
   };
 }
 
@@ -53,6 +55,7 @@ export const fixtureProject: Project = {
   last_opened_at_ms: 1767398400000,
   media_count: 2,
   flashcard_count: 0,
+  uses_anki_connect: false,
 };
 
 const fixtureProjects: ListProjectsResponse = {
@@ -65,6 +68,7 @@ const fixtureProjects: ListProjectsResponse = {
       last_opened_at_ms: 1767312000000,
       media_count: 0,
       flashcard_count: 0,
+      uses_anki_connect: false,
     },
   ],
 };
@@ -145,6 +149,7 @@ export const fixtureResponses = {
   "POST /projects/p1/opened": undefined,
   "GET /projects/p1/media": fixtureMediaFiles,
   "GET /projects/p1/flashcards": noFlashcards,
+  "GET /projects/p1/anki/pending-deletions": { deletions: [] },
   "GET /projects/p1/media/m1/subtitles": fixtureSubtitleTracks,
   "GET /projects/p1/media/m1/subtitles/s1/cues": fixtureTrack,
   "GET /projects/p1/media/m2/subtitles": {

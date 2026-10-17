@@ -23,6 +23,8 @@ pub struct Project {
     pub last_opened_at_ms: u64,
     pub media_count: u64,
     pub flashcard_count: u64,
+    /// Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off.
+    pub uses_anki_connect: bool,
 }
 
 /// Everything a user sets about a project, as the project form edits it.
@@ -42,6 +44,11 @@ pub struct ProjectSettings {
     pub tags_media_name: bool,
     /// Whether the audio fields are filled with text-to-speech when the media has no audio track.
     pub fills_audio_with_tts: bool,
+    /// The included fields shown on the front of a card. The other included fields go on the back.
+    pub flashcard_front_fields: Vec<FlashcardFieldKey>,
+    /// Whether a deleted flashcard that reached Anki is listed on the project screen, so that the user can delete its note there.
+    /// While AnkiConnect is on, deletions are recorded whatever this says, since AnkiConnect deletes the notes.
+    pub lists_anki_deletions: bool,
 }
 
 #[cfg(test)]
@@ -58,6 +65,8 @@ mod tests {
             default_tags: vec![],
             tags_media_name: true,
             fills_audio_with_tts: false,
+            flashcard_front_fields: vec![FlashcardFieldKey::Word],
+            lists_anki_deletions: true,
         };
         let json = serde_json::to_value(&settings).unwrap();
         assert_eq!(

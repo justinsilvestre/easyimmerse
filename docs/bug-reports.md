@@ -21,6 +21,7 @@ Each bug report is to be logged in this format:
 - Transcoding test drops frames once 2026-10-04
   - Run the `rust` workflow's macOS job; in run 37219960258 `accuracy::transcoded_frames_present_at_their_source_times` in `crates/conversion` produced 236 frames instead of 250 with the VideoToolbox encoder, after passing in the six runs before and the run after it.
   - A converted file should hold every source frame on every run. Until the cause is known (the encoder on a virtual Mac, or a run stopped before its last segment), a repeat failure should be investigated rather than rerun.
+  - In run 39031140114 (2026-10-17) the same test failed differently: after the encoder check passed, ffmpeg's VideoToolbox encoder refused the third segment's frames with "IOServiceMatching failed for: AppleM2ScalerParavirtDriver", an error of the runner's paravirtualized graphics driver, while the other platforms passed. This points to the virtual Mac's encoder as the cause of both symptoms.
 - Cache clearing test drops connection 2026-10-05
   - Run the `rust` workflow's `windows-11-arm` job; in runs 37225462574, 37241200447, and 37310370925, `media_conversion::clearing_the_cache_answers_with_the_status` in `crates/api` panicked because the connection was aborted (Windows error 10053) before the response arrived. Other runs of the same job pass, and it has not been reproduced on macOS. The test posts a `{}` body to a route that never reads a body, which may be related.
   - The request should get its response on every run, so the test passes on every platform.

@@ -58,6 +58,9 @@ export function exampleListedFlashcard(
     project_id: "p1",
     created_at_ms: 1,
     updated_at_ms: updatedAtMs,
+    exported_at_ms: null,
+    was_packaged: false,
+    sent_at_ms: null,
   };
 }
 

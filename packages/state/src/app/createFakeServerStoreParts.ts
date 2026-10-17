@@ -35,11 +35,12 @@ type Pending = {
 };
 
 /**
- * Builds trivial server store parts for tests, for the given server if any.
+ * Builds trivial server store parts for tests, for the given server if any, over a server cache that starts as `cache`.
  * A request stays pending until the test responds to it, and settles as aborted as soon as it is aborted.
  */
 export function createFakeServerStoreParts(
   serverConfig: ServerConfig | null = null,
+  cache: ServerCacheSlice = emptyServerCache,
 ): FakeServerStoreParts {
   const dispatchedActions: Action[] = [];
   const sentRequests: ServerRequest[] = [];
@@ -59,7 +60,7 @@ export function createFakeServerStoreParts(
   return {
     dispatchedActions,
     sentRequests,
-    reducer: cacheAnswers,
+    reducer: (slice = cache, action) => cacheAnswers(slice, action),
     middleware: () => (next) => (action) => {
       dispatchedActions.push(action as Action);
       return next(action);

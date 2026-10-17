@@ -13,4 +13,8 @@ created_at_ms: number,
 /**
  * Milliseconds since the Unix epoch. Equal to `created_at_ms` until the project is first opened.
  */
-last_opened_at_ms: number, media_count: number, flashcard_count: number, };
+last_opened_at_ms: number, media_count: number, flashcard_count: number, 
+/**
+ * Whether the project's flashcards are sent to Anki through AnkiConnect. The setup turns it on, and only the user turns it off.
+ */
+uses_anki_connect: boolean, };

@@ -3,14 +3,20 @@ use easyimmerse_core::media_file::MediaFileId;
 use easyimmerse_core::project::ProjectId;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 
+use crate::anki_pending_deletions::{forget_anki_pending_deletion, record_anki_pending_deletion};
 use crate::error::StorageError;
 use crate::media_files::ensure_media_file_in_project;
 use crate::new_row::now_ms;
 use crate::projects::ensure_project_exists;
-use crate::stored_integer::{read_json, read_unsigned, to_stored_integer};
+use crate::stored_integer::{read_json, read_optional_unsigned, read_unsigned, to_stored_integer};
 
+/// The columns a saved draft writes.
 const FLASHCARD_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
      content_json, included_fields_json, created_at_ms, updated_at_ms";
+
+/// The columns every flashcard query selects: the draft's columns, then the ones the export writes.
+const SELECTED_COLUMNS: &str = "id, project_id, media_file_id, cue_index, word_start, \
+     content_json, included_fields_json, created_at_ms, updated_at_ms, exported_at_ms, was_packaged, sent_at_ms";
 
 /// Lists a project's flashcards, oldest first.
 pub fn list_flashcards(
@@ -18,7 +24,7 @@ pub fn list_flashcards(
     project_id: &ProjectId,
 ) -> Result<Vec<Flashcard>, StorageError> {
     let mut statement = conn.prepare(&format!(
-        "SELECT {FLASHCARD_COLUMNS} FROM flashcards WHERE project_id = ?1 \
+        "SELECT {SELECTED_COLUMNS} FROM flashcards WHERE project_id = ?1 \
          ORDER BY created_at_ms, rowid"
     ))?;
     let flashcards = statement
@@ -29,7 +35,7 @@ pub fn list_flashcards(
 
 pub fn get_flashcard(conn: &Connection, id: &FlashcardId) -> Result<Flashcard, StorageError> {
     conn.query_row(
-        &format!("SELECT {FLASHCARD_COLUMNS} FROM flashcards WHERE id = ?1"),
+        &format!("SELECT {SELECTED_COLUMNS} FROM flashcards WHERE id = ?1"),
         params![id.0],
         read_flashcard,
     )
@@ -40,7 +46,21 @@ pub fn get_flashcard(conn: &Connection, id: &FlashcardId) -> Result<Flashcard, S
 /// Saves a flashcard in the project under the id the client chose for it.
 /// Saving again under an id the project already holds replaces that flashcard, so that a retried request leaves one flashcard.
 /// Its media file, when named, must belong to the same project.
+/// Saving a flashcard deleted earlier forgets that its note was to be deleted from Anki.
 pub fn create_flashcard(
+    conn: &mut Connection,
+    project_id: &ProjectId,
+    id: &FlashcardId,
+    draft: &FlashcardDraft,
+) -> Result<Flashcard, StorageError> {
+    let transaction = conn.transaction()?;
+    let flashcard = insert_flashcard(&transaction, project_id, id, draft)?;
+    forget_anki_pending_deletion(&transaction, id)?;
+    transaction.commit()?;
+    Ok(flashcard)
+}
+
+fn insert_flashcard(
     conn: &Connection,
     project_id: &ProjectId,
     id: &FlashcardId,
@@ -99,11 +119,14 @@ pub fn update_flashcard(
     get_flashcard(conn, id)
 }
 
-pub fn delete_flashcard(conn: &Connection, id: &FlashcardId) -> Result<(), StorageError> {
-    let deleted = conn.execute("DELETE FROM flashcards WHERE id = ?1", params![id.0])?;
-    if deleted == 0 {
-        return Err(StorageError::FlashcardNotFound(id.0.clone()));
-    }
+/// Deletes a flashcard, and records that its note is to be deleted from Anki when the flashcard has reached Anki
+/// and its project sends there through AnkiConnect.
+pub fn delete_flashcard(conn: &mut Connection, id: &FlashcardId) -> Result<(), StorageError> {
+    let transaction = conn.transaction()?;
+    let flashcard = get_flashcard(&transaction, id)?;
+    record_anki_pending_deletion(&transaction, &flashcard)?;
+    transaction.execute("DELETE FROM flashcards WHERE id = ?1", params![id.0])?;
+    transaction.commit()?;
     Ok(())
 }
 
@@ -129,6 +152,9 @@ fn read_flashcard(row: &Row) -> rusqlite::Result<Flashcard> {
         included_fields: read_json(row, 6)?,
         created_at_ms: read_unsigned(row, 7)?,
         updated_at_ms: read_unsigned(row, 8)?,
+        exported_at_ms: read_optional_unsigned(row, 9)?,
+        was_packaged: row.get(10)?,
+        sent_at_ms: read_optional_unsigned(row, 11)?,
     })
 }
 
@@ -368,6 +394,60 @@ mod tests {
         assert_eq!(
             storage.get_flashcard(&created.id).unwrap().media_file_id,
             None
+        );
+    }
+
+    fn create(storage: &Storage, word: &str) -> FlashcardId {
+        storage
+            .create_flashcard(&project(), &new_id(), &draft(None, word))
+            .unwrap()
+            .id
+    }
+
+    #[test]
+    fn a_created_flashcard_was_never_exported() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        assert_eq!(storage.get_flashcard(&id).unwrap().exported_at_ms, None);
+    }
+
+    #[test]
+    fn a_created_flashcard_was_never_sent() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        assert_eq!(storage.get_flashcard(&id).unwrap().sent_at_ms, None);
+    }
+
+    #[test]
+    fn saving_a_flashcard_again_keeps_when_it_was_sent() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        storage
+            .record_anki_send(&project(), std::slice::from_ref(&id), 7)
+            .unwrap();
+        storage
+            .create_flashcard(&project(), &id, &draft(None, "essen"))
+            .unwrap();
+        assert_eq!(storage.get_flashcard(&id).unwrap().sent_at_ms, Some(7));
+    }
+
+    #[test]
+    fn updating_a_flashcard_keeps_its_export_time() {
+        let storage = seeded_storage();
+        let id = create(&storage, "fressen");
+        storage
+            .record_anki_export(&crate::DeliveredPackage {
+                project_id: project(),
+                flashcard_ids: vec![id.clone()],
+                exported_at_ms: Some(1_000),
+            })
+            .unwrap();
+        storage
+            .update_flashcard(&id, &draft(None, "essen"))
+            .unwrap();
+        assert_eq!(
+            storage.get_flashcard(&id).unwrap().exported_at_ms,
+            Some(1_000)
         );
     }
 

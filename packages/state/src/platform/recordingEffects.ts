@@ -9,6 +9,8 @@ import type {
   PickedFile,
   PickedMediaFile,
   PlaybackProbes,
+  SaveCopyOutcome,
+  SavePathPick,
 } from "./effects.ts";
 
 /** The recording effects' answers about media support: a WebKit browser that plays MP4 directly and through Media Source Extensions. */
@@ -29,6 +31,9 @@ type EffectCall =
   | { type: "pickFile"; accept: readonly string[] }
   | { type: "pickMediaFile"; accept: readonly string[] }
   | { type: "pickDictionaryFile"; accept: readonly string[] }
+  | { type: "pickSavePath"; suggestedFileName: string }
+  | { type: "saveCopy"; path: string; fileName: string }
+  | { type: "downloadFile"; fileName: string; bytes: Uint8Array<ArrayBuffer> }
   | { type: "savePreference"; key: string; value: string }
   | { type: "loadPreference"; key: string }
   | { type: "openExternalUrl"; url: string }
@@ -53,6 +58,12 @@ export type RecordingEffects = Effects & {
   rejectPickMediaFile(error: Error): void;
   /** Settles the pending pickDictionaryFile promise. Throws when no pick is pending. */
   resolvePickDictionaryFile(file: PickedDictionaryFile | null): void;
+  /** Settles the pending pickSavePath promise. Throws when no pick is pending. */
+  resolvePickSavePath(pick: SavePathPick): void;
+  /** Settles the pending saveCopy promise. Throws when no copy is pending. */
+  resolveSaveCopy(outcome: SaveCopyOutcome): void;
+  /** Rejects the pending saveCopy promise. Throws when no copy is pending. */
+  rejectSaveCopy(error: Error): void;
   /** Acts as the platform asking for the Settings screen, by calling every subscribed listener. */
   requestSettings(): void;
   /** Acts as the operating system switching between light and dark, by calling every subscribed listener. */
@@ -63,20 +74,20 @@ export type RecordingEffects = Effects & {
   releasePreferenceLoads(): void;
 };
 
-type PendingPick<F> = {
-  resolve: (file: F | null) => void;
+type PendingPick<R> = {
+  resolve: (answer: R) => void;
   reject: (error: Error) => void;
 };
 
 /** Holds at most one unsettled promise, handing it out once to whoever settles it. */
-function createPendingPick<F>(description: string) {
-  let pending: PendingPick<F> | null = null;
+function createPendingPick<R>(description: string) {
+  let pending: PendingPick<R> | null = null;
   return {
     start: () =>
-      new Promise<F | null>((resolve, reject) => {
+      new Promise<R>((resolve, reject) => {
         pending = { resolve, reject };
       }),
-    take: (): PendingPick<F> => {
+    take: (): PendingPick<R> => {
       if (pending === null) throw new Error(`No ${description} is pending.`);
       const pick = pending;
       pending = null;
@@ -103,11 +114,15 @@ export function createRecordingEffects(
   const preferences = new Map(Object.entries(storedPreferences));
   const preferenceLoads = Promise.withResolvers<void>();
   if (!holdsPreferenceLoads) preferenceLoads.resolve();
-  const filePick = createPendingPick<PickedFile>("file pick");
-  const mediaFilePick = createPendingPick<PickedMediaFile>("media file pick");
-  const dictionaryFilePick = createPendingPick<PickedDictionaryFile>(
+  const filePick = createPendingPick<PickedFile | null>("file pick");
+  const mediaFilePick = createPendingPick<PickedMediaFile | null>(
+    "media file pick",
+  );
+  const dictionaryFilePick = createPendingPick<PickedDictionaryFile | null>(
     "dictionary file pick",
   );
+  const savePathPick = createPendingPick<SavePathPick>("save path pick");
+  const copy = createPendingPick<SaveCopyOutcome>("copy");
   const settingsListeners = new Set<() => void>();
   const systemThemeListeners = new Set<(theme: Theme) => void>();
   let refusesCopies = false;
@@ -147,6 +162,17 @@ export function createRecordingEffects(
     pickDictionaryFile: (accept) => {
       calls.push({ type: "pickDictionaryFile", accept });
       return dictionaryFilePick.start();
+    },
+    pickSavePath: (suggestedFileName) => {
+      calls.push({ type: "pickSavePath", suggestedFileName });
+      return savePathPick.start();
+    },
+    saveCopy: (path, fileName) => {
+      calls.push({ type: "saveCopy", path, fileName });
+      return copy.start();
+    },
+    downloadFile: (fileName, bytes) => {
+      calls.push({ type: "downloadFile", fileName, bytes });
     },
     readPlaybackProbes: () => recordedPlaybackProbes,
     writeDefinitionMarkdown,
@@ -194,6 +220,15 @@ export function createRecordingEffects(
     },
     resolvePickDictionaryFile: (file) => {
       dictionaryFilePick.take().resolve(file);
+    },
+    resolvePickSavePath: (pick) => {
+      savePathPick.take().resolve(pick);
+    },
+    resolveSaveCopy: (outcome) => {
+      copy.take().resolve(outcome);
+    },
+    rejectSaveCopy: (error) => {
+      copy.take().reject(error);
     },
     requestSettings: () => {
       for (const listener of settingsListeners) listener();

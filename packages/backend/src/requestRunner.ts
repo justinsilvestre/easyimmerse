@@ -5,6 +5,7 @@ import type {
   ServerRequest,
   ServerRequestKind,
 } from "@easyimmerse/state";
+import { noDataFailure } from "@easyimmerse/state";
 import type {
   ThunkAction,
   ThunkDispatch,
@@ -18,7 +19,11 @@ type RequestOf<K extends ServerRequestKind> = Extract<
   { kind: K }
 >;
 
-type StartedRequest = { unwrap(): Promise<unknown>; abort(): void };
+type StartedMutation = { unwrap(): Promise<unknown>; abort(): void };
+
+type StartedQuery = StartedMutation & { unsubscribe(): void };
+
+type StartedRequest = StartedMutation | StartedQuery;
 
 type BackendDispatch = ThunkDispatch<unknown, unknown, UnknownAction>;
 
@@ -28,26 +33,25 @@ type StartRequest<K extends ServerRequestKind> = (
 
 /**
  * Starts each kind of request through its endpoint, so that its cache tags and lifecycle apply as for any other caller.
- * Queries do not subscribe, so their entry expires as any unused entry does; mutations are not tracked, so they leave no entry.
- * A job's status is always fetched anew, since the cached status is the one the poll wants to replace.
+ * Queries subscribe until they settle, so a tag invalidated meanwhile refetches the entry instead of removing it, and the entry then expires as any unused entry does.
+ * Mutations are not tracked, so they leave no entry.
+ * A job's status and the connection to Anki are always fetched anew, since the cached answer is the one the request wants to replace.
  */
 export const requestEndpoints = {
   listSubtitleTracks: ({ projectId, mediaFileId }) =>
-    backendApi.endpoints.listSubtitleTracks.initiate(
-      { projectId, mediaFileId },
-      { subscribe: false },
-    ),
+    backendApi.endpoints.listSubtitleTracks.initiate({
+      projectId,
+      mediaFileId,
+    }),
   addSubtitleTrack: ({ projectId, mediaFileId, request }) =>
     backendApi.endpoints.addSubtitleTrack.initiate(
       { projectId, mediaFileId, request },
       { track: false },
     ),
   getProject: ({ projectId }) =>
-    backendApi.endpoints.getProject.initiate(projectId, { subscribe: false }),
+    backendApi.endpoints.getProject.initiate(projectId),
   listMediaFiles: ({ projectId }) =>
-    backendApi.endpoints.listMediaFiles.initiate(projectId, {
-      subscribe: false,
-    }),
+    backendApi.endpoints.listMediaFiles.initiate(projectId),
   addMediaFile: ({ projectId, request }) =>
     backendApi.endpoints.addMediaFile.initiate(
       { projectId, request },
@@ -56,14 +60,11 @@ export const requestEndpoints = {
   parseTimedText: ({ request }) =>
     backendApi.endpoints.parseTimedText.initiate(request, { track: false }),
   getImportJob: ({ jobId }) =>
-    backendApi.endpoints.getImportJob.initiate(jobId, {
-      subscribe: false,
-      forceRefetch: true,
-    }),
+    backendApi.endpoints.getImportJob.initiate(jobId, { forceRefetch: true }),
   getMediaSourceJob: ({ projectId, jobId }) =>
     backendApi.endpoints.getMediaSourceJob.initiate(
       { projectId, jobId },
-      { subscribe: false, forceRefetch: true },
+      { forceRefetch: true },
     ),
   getImportForm: ({ projectId, request }) =>
     backendApi.endpoints.getImportForm.initiate(
@@ -100,27 +101,26 @@ export const requestEndpoints = {
       track: false,
     }),
   getMediaTracks: ({ projectId, mediaFileId }) =>
-    backendApi.endpoints.getMediaTracks.initiate(
-      { projectId, mediaFileId },
-      { subscribe: false },
-    ),
+    backendApi.endpoints.getMediaTracks.initiate({ projectId, mediaFileId }),
   choosePlaybackMethod: ({ projectId, mediaFileId, request }) =>
-    backendApi.endpoints.choosePlaybackMethod.initiate(
-      { projectId, mediaFileId, request },
-      { subscribe: false },
-    ),
+    backendApi.endpoints.choosePlaybackMethod.initiate({
+      projectId,
+      mediaFileId,
+      request,
+    }),
   saveTrackSelection: ({ projectId, mediaFileId, selection }) =>
     backendApi.endpoints.saveTrackSelection.initiate(
       { projectId, mediaFileId, selection },
       { track: false },
     ),
   getWaveformWindow: ({ projectId, mediaFileId, startMs, endMs }) =>
-    backendApi.endpoints.getWaveformWindow.initiate(
-      { projectId, mediaFileId, startMs, endMs },
-      { subscribe: false },
-    ),
-  lookupText: ({ query }) =>
-    backendApi.endpoints.lookupText.initiate(query, { subscribe: false }),
+    backendApi.endpoints.getWaveformWindow.initiate({
+      projectId,
+      mediaFileId,
+      startMs,
+      endMs,
+    }),
+  lookupText: ({ query }) => backendApi.endpoints.lookupText.initiate(query),
   deleteDictionary: ({ dictionaryId }) =>
     backendApi.endpoints.deleteDictionary.initiate(dictionaryId, {
       track: false,
@@ -166,12 +166,50 @@ export const requestEndpoints = {
       { track: false },
     ),
   probePictures: ({ file }) =>
-    backendApi.endpoints.probePictures.initiate(file, { subscribe: false }),
+    backendApi.endpoints.probePictures.initiate(file),
+  checkAnkiConnection: () =>
+    backendApi.endpoints.checkAnkiConnection.initiate(undefined, {
+      forceRefetch: true,
+    }),
+  sendFlashcardsToAnki: ({ projectId, flashcardIds }) =>
+    backendApi.endpoints.sendFlashcardsToAnki.initiate(
+      { projectId, flashcardIds },
+      { track: false },
+    ),
+  deleteAnkiNotes: ({ projectId }) =>
+    backendApi.endpoints.deleteAnkiNotes.initiate(projectId, { track: false }),
+  exportAnkiPackage: ({
+    projectId,
+    flashcardIds,
+    savePath,
+    marksExported,
+    staged,
+  }) =>
+    backendApi.endpoints.exportAnkiPackage.initiate(
+      { projectId, flashcardIds, savePath, marksExported, staged },
+      { track: false },
+    ),
+  recordAnkiExported: ({ projectId, flashcardIds, marksExported, readAtMs }) =>
+    backendApi.endpoints.recordAnkiExported.initiate(
+      { projectId, flashcardIds, marksExported, readAtMs },
+      { track: false },
+    ),
+  clearAnkiPendingDeletions: ({ projectId, flashcardIds }) =>
+    backendApi.endpoints.clearAnkiPendingDeletions.initiate(
+      { projectId, flashcardIds },
+      { track: false },
+    ),
+  setAnkiConnect: ({ projectId, usesAnkiConnect }) =>
+    backendApi.endpoints.setAnkiConnect.initiate(
+      { projectId, usesAnkiConnect },
+      { track: false },
+    ),
 } satisfies { [K in ServerRequestKind]: StartRequest<K> };
 
 /**
  * Sends a request through its endpoint in the store that `dispatch` belongs to, and reports its outcome.
  * Aborting a query that another caller started does not stop it, and the request then settles with its data.
+ * A query that ends with neither data nor an error settles as a failure.
  */
 export const runRequest: RequestRunner = (request, dispatch) => {
   const start = requestEndpoints[request.kind] as StartRequest<
@@ -179,10 +217,18 @@ export const runRequest: RequestRunner = (request, dispatch) => {
   >;
   const started = (dispatch as BackendDispatch)(start(request));
   const settled = started.unwrap().then(
-    (data): RequestOutcome => ({ ok: true, data }) as RequestOutcome,
+    (data): RequestOutcome =>
+      isQuery(started) && data === undefined
+        ? { ok: false, error: noDataFailure }
+        : ({ ok: true, data } as RequestOutcome),
     (error): RequestOutcome => ({ ok: false, error: toRequestFailure(error) }),
   );
+  if (isQuery(started)) settled.finally(() => started.unsubscribe());
   return { settled, abort: () => started.abort() } as RunningRequest<
     typeof request.kind
   >;
 };
+
+function isQuery(started: StartedRequest): started is StartedQuery {
+  return "unsubscribe" in started;
+}
