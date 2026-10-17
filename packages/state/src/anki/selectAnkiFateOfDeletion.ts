@@ -10,7 +10,7 @@ export type AnkiFateOfDeletion = {
   /**
    * What becomes of its note in the user's Anki: there was none,
    * AnkiConnect deletes it now or, while the last check did not find Anki running, once easyImmerse next reaches Anki,
-   * AnkiConnect deletes any note a package that kept it in the queue gave it, now or later,
+   * AnkiConnect deletes the note it has if the user imported it from a package that kept it in the queue, now or later,
    * or it stays until the user deletes it there, listed on the project screen or not.
    */
   note:

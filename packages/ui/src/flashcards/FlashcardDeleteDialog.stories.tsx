@@ -49,11 +49,11 @@ export const DeletedByAnkiConnectAfterPackages: Story = {
   args: { ankiFate: { note: "deletedByAnkiConnect", wasPackaged: true } },
 };
 
-export const AnyPackageNoteDeletedByAnkiConnect: Story = {
+export const ImportedNoteDeletedByAnkiConnect: Story = {
   args: { ankiFate: { note: "anyDeletedByAnkiConnect", wasPackaged: true } },
 };
 
-export const AnyPackageNoteDeletedByAnkiConnectOnceAnkiIsReached: Story = {
+export const ImportedNoteDeletedByAnkiConnectOnceAnkiIsReached: Story = {
   args: {
     ankiFate: { note: "anyDeletedByAnkiConnectLater", wasPackaged: true },
   },
