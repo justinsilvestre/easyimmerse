@@ -44,6 +44,7 @@ export function ProjectFormPreview({ values }: { values: ProjectSettings }) {
       <FlashcardPreview
         content={{ ...exampleFlashcard, tags }}
         includedFields={values.flashcard_fields}
+        frontFields={values.flashcard_front_fields}
         screenshotUrl={exampleScreenshotUrl}
         languages={{
           target: values.target_language,

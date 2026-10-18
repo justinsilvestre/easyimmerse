@@ -1,3 +1,4 @@
+import type { NativePlatform } from "@easyimmerse/backend";
 import {
   createBackendStoreParts,
   createHttpBackendClient,
@@ -12,11 +13,12 @@ import "@easyimmerse/ui/styles.css";
 
 /** Connects to the embedded server the native shell injected, wires the effects and store, and mounts the app. */
 export function bootstrap(): void {
-  const server = readInjectedServerConfig();
+  const { server, platform } = readInjectedConfig();
   const playerRegistry = createPlayerRegistry();
   const effects = createNativeEffects({
     playerRegistry,
     server,
+    platform,
     writeDefinitionMarkdown: definitionMarkdown,
   });
   const store = createAppStore(
@@ -28,14 +30,18 @@ export function bootstrap(): void {
   );
 }
 
-function readInjectedServerConfig(): ServerConfig {
-  const config = resolveServerConfig();
-  if (window.__EASYIMMERSE__ === undefined || config === null) {
+function readInjectedConfig(): {
+  server: ServerConfig;
+  platform: NativePlatform;
+} {
+  const injected = window.__EASYIMMERSE__;
+  const server = resolveServerConfig();
+  if (injected === undefined || server === null) {
     throw new Error(
       "The native shell did not inject window.__EASYIMMERSE__ before the app started.",
     );
   }
-  return config;
+  return { server, platform: injected.platform };
 }
 
 function findRootElement(): HTMLElement {

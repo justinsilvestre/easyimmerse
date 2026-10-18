@@ -1,3 +1,5 @@
+import { readProject } from "../anki/ankiRequests.ts";
+import { abortExport } from "../anki/updateAnkiExport.ts";
 import type { AppAction } from "../app/appAction.ts";
 import { combineUpdates } from "../app/combineUpdates.ts";
 import type { Feature } from "../app/feature.ts";
@@ -68,7 +70,7 @@ function updateShownScreen(
   if (main.kind === "media" && route.screen === "media")
     return updateMediaScreen(main, mediaScreenActionOf(app, action), app);
   if (main.kind === "project" && route.screen === "project")
-    return updateProjectScreen(main, action, route);
+    return updateProjectScreen(main, action, route, app);
   if (main.kind === "offline") return updateOfflineScreen(main, action);
   if (route.screen === "newProject" || route.screen === "projectSettings")
     return updated(main, ...updateProjectForm(route, action, app));
@@ -78,16 +80,21 @@ function updateShownScreen(
 /** Stops the work that belongs to a main screen being replaced. */
 function leavingEffects(main: MainScreenState, route: MainRoute) {
   if (main.kind === "project" && route.screen === "project")
-    return endImport(route.projectId, main.mediaImport);
+    return [
+      ...endImport(route.projectId, main.mediaImport),
+      ...abortExport(main.ankiExport, route.projectId),
+    ];
   if (main.kind === "offline") return [abortParse];
   if (main.kind === "media" && route.screen === "media")
     return leaveMediaScreen(main, route);
   return [];
 }
 
-/** Starts the work a main screen does as it opens. */
+/** Starts the work a main screen does as it opens: the media screen asks for its file, the project overview where its flashcards go. */
 function enteringEffects(route: MainRoute) {
-  return route.screen === "media" ? [mediaFileRequest(route)] : [];
+  if (route.screen === "media") return [mediaFileRequest(route)];
+  if (route.screen === "project") return [readProject(route.projectId)];
+  return [];
 }
 
 function leaveMediaScreen(main: MediaScreenState, route: MediaRoute) {

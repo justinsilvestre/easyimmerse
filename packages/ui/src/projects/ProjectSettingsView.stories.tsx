@@ -1,6 +1,10 @@
+import type { ProjectSettings } from "@easyimmerse/types";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
+import {
+  fieldsOfPreset,
+  frontFieldsOfPreset,
+} from "../flashcards/flashcardPresets.ts";
 import { withAppStore } from "../storybook/withAppStore.tsx";
 import { ProjectSettingsView } from "./ProjectSettingsView.tsx";
 
@@ -16,6 +20,8 @@ const meta = {
       target_language: "de",
       translation_language: "en",
       flashcard_fields: fieldsOfPreset("beginner"),
+      flashcard_front_fields: frontFieldsOfPreset("beginner"),
+      lists_anki_deletions: true,
       default_tags: [],
       tags_media_name: true,
       fills_audio_with_tts: false,
@@ -37,6 +43,8 @@ export const NewProjectPrefilledFromLast: Story = {
       target_language: "ja",
       translation_language: "en",
       flashcard_fields: fieldsOfPreset("intermediate"),
+      flashcard_front_fields: frontFieldsOfPreset("intermediate"),
+      lists_anki_deletions: true,
       default_tags: ["tv"],
       tags_media_name: true,
       fills_audio_with_tts: true,
@@ -44,17 +52,25 @@ export const NewProjectPrefilledFromLast: Story = {
   },
 };
 
+const editedSettings: ProjectSettings = {
+  name: "German",
+  target_language: "de",
+  translation_language: "en",
+  flashcard_fields: fieldsOfPreset("advanced"),
+  flashcard_front_fields: frontFieldsOfPreset("advanced"),
+  lists_anki_deletions: true,
+  default_tags: ["tv"],
+  tags_media_name: false,
+  fills_audio_with_tts: false,
+};
+
 export const EditingSettings: Story = {
+  args: { mode: "edit", initialValues: editedSettings },
+};
+
+export const EditingSettingsWithoutTheDeletionList: Story = {
   args: {
     mode: "edit",
-    initialValues: {
-      name: "German",
-      target_language: "de",
-      translation_language: "en",
-      flashcard_fields: fieldsOfPreset("advanced"),
-      default_tags: ["tv"],
-      tags_media_name: false,
-      fills_audio_with_tts: false,
-    },
+    initialValues: { ...editedSettings, lists_anki_deletions: false },
   },
 };

@@ -30,6 +30,16 @@ export function failureNotices(action: AppAction) {
       return [failure("The subtitles could not be changed")];
     case "setTranslationDocument":
       return [failure("The translation could not be changed")];
+    case "clearAnkiPendingDeletions":
+      return [failure("The deleted flashcards could not be marked as done")];
+    case "recordAnkiExported":
+      return [
+        failure(
+          "The Anki deck package was saved, but the export could not be recorded",
+        ),
+      ];
+    case "setAnkiConnect":
+      return [failure("AnkiConnect could not be turned on or off")];
     default:
       return [];
   }

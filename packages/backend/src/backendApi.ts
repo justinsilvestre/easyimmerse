@@ -2,7 +2,13 @@ import {
   type LicenseNoticeGroup,
   loadLicenseNoticeGroups,
 } from "@easyimmerse/licenses";
-import type { PickedDictionaryFile } from "@easyimmerse/state";
+import type {
+  AnkiConnection,
+  AnkiDeletionOutcome,
+  AnkiPackageExport,
+  AnkiSendOutcome,
+  PickedDictionaryFile,
+} from "@easyimmerse/state";
 import { cacheKey, serverCachePath } from "@easyimmerse/state";
 import type {
   AddAlignmentRequest,
@@ -10,6 +16,10 @@ import type {
   AddSubtitleTrackRequest,
   Alignment,
   AlignmentsResponse,
+  AnkiConnectSetting,
+  AnkiDeletionsCleared,
+  AnkiExportedRequest,
+  AnkiPendingDeletions,
   BatchLookupRequest,
   BatchLookupResponse,
   ConversionCacheBudget,
@@ -53,13 +63,21 @@ import type {
 } from "@easyimmerse/types";
 import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
-import type { BackendError } from "./backendClient.ts";
+import { checkAnkiConnection } from "./ankiConnection.ts";
+import { createMediaFetch } from "./ankiMedia.ts";
+import { type AnkiExportArgs, exportAnkiPackage } from "./ankiPackageExport.ts";
+import type {
+  BackendError,
+  BackendRequest,
+  BackendResult,
+} from "./backendClient.ts";
 import {
   type CapturedFrame,
   captureFrame,
   type FrameArgs,
   probePictures,
 } from "./browserFrames.ts";
+import { deleteAnkiNotes } from "./deleteAnkiNotes.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 import { injectedBaseQuery } from "./injectedBaseQuery.ts";
 import {
@@ -76,6 +94,11 @@ import {
   previewPickedDictionaryTable,
 } from "./pickedDictionary.ts";
 import type { PickedFile } from "./readPickedFile.ts";
+import {
+  type AnkiSendArgs,
+  type ServerQuery,
+  sendFlashcardsToAnki,
+} from "./sendToAnki.ts";
 
 type ProjectArgs = { projectId: string; settings: ProjectSettings };
 
@@ -115,6 +138,20 @@ type AlignmentArgs = MediaFileArgs & { alignmentId: string };
 
 type TranslationDocumentArgs = MediaFileArgs & {
   body: TranslationDocumentSelection;
+};
+
+type AnkiConnectArgs = { projectId: string; usesAnkiConnect: boolean };
+
+type AnkiDeletionsClearArgs = {
+  projectId: string;
+  flashcardIds: readonly string[];
+};
+
+type AnkiExportedArgs = {
+  projectId: string;
+  flashcardIds: readonly string[];
+  marksExported: boolean;
+  readAtMs: number;
 };
 
 /** Encodes the text around a looked-up character, when the caller has it, as query parameters. */
@@ -182,6 +219,48 @@ async function listSavedFlashcard(
   );
 }
 
+/** Sends JSON requests to the server through an endpoint's base query, for query functions that send several. */
+function serverQueryOf(
+  baseQuery: (
+    request: BackendRequest,
+  ) =>
+    | QueryReturnValue<unknown, BackendError, unknown>
+    | PromiseLike<QueryReturnValue<unknown, BackendError, unknown>>,
+): ServerQuery {
+  return async (request) =>
+    (await baseQuery(request)) as BackendResult<unknown>;
+}
+
+/**
+ * Keeps the last check of the connection to Anki in step with what a send or a deletion found,
+ * and tells whether Anki answered although the last check or report had not found it running.
+ */
+function reportAnkiConnection(
+  api: Pick<BaseQueryApi, "dispatch" | "getState">,
+  connection: AnkiConnection,
+): boolean {
+  const last = backendApi.endpoints.checkAnkiConnection.select()(
+    api.getState() as BackendState,
+  ).data;
+  api.dispatch(
+    backendApi.util.upsertQueryData(
+      "checkAnkiConnection",
+      undefined,
+      connection,
+    ),
+  );
+  return connection.connected && last?.connected !== true;
+}
+
+/** The data an export or a send to Anki changes: which flashcards went where, the deletions it records or clears, and the project's counts. */
+const flashcardsSentTags = (projectId: string) =>
+  [
+    { type: "Flashcards", id: projectId },
+    { type: "AnkiPendingDeletions", id: projectId },
+    { type: "Projects", id: projectId },
+    "Projects",
+  ] as const;
+
 const mediaFileAddedTags = (projectId: string) =>
   [
     { type: "MediaFiles", id: projectId },
@@ -200,6 +279,7 @@ export const backendApi = createApi({
     "Projects",
     "MediaFiles",
     "Flashcards",
+    "AnkiPendingDeletions",
     "SubtitleTracks",
     "Alignments",
     "Dictionaries",
@@ -210,11 +290,13 @@ export const backendApi = createApi({
       query: () => ({ method: "GET", path: "/projects" }),
       providesTags: ["Projects"],
     }),
+    /** A project is kept for the session: the automatic send to Anki after a save reads from the cache whether it uses AnkiConnect, and tag invalidation still refreshes it. */
     getProject: build.query<Project, string>({
       query: (projectId) => ({
         method: "GET",
         path: `/projects/${projectId}`,
       }),
+      keepUnusedDataFor: Infinity,
       providesTags: (_result, _error, projectId) => [
         { type: "Projects", id: projectId },
       ],
@@ -266,8 +348,10 @@ export const backendApi = createApi({
       async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
         await listSavedFlashcard(dispatch, projectId, queryFulfilled);
       },
+      // Saving a flashcard deleted earlier, as an Undo does, forgets its deletion from Anki.
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
+        { type: "AnkiPendingDeletions", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
       ],
@@ -295,6 +379,7 @@ export const backendApi = createApi({
       }),
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "Flashcards", id: projectId },
+        { type: "AnkiPendingDeletions", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
       ],
@@ -593,6 +678,127 @@ export const backendApi = createApi({
           () => !isQuerySubscribed(api, subscriptionActions()),
         ),
     }),
+    /**
+     * Whether Anki answers through AnkiConnect. The last answer is kept for the session, and a send to Anki or a deletion from it updates it,
+     * so that the project overview shows the connection as last seen.
+     */
+    checkAnkiConnection: build.query<AnkiConnection, void>({
+      queryFn: (_arg, api) =>
+        checkAnkiConnection((api.extra as BackendThunkExtra).ankiConnect),
+      keepUnusedDataFor: Infinity,
+    }),
+    /** Sends flashcards to Anki through AnkiConnect, from the page, since Anki runs on the user's machine. */
+    sendFlashcardsToAnki: build.mutation<AnkiSendOutcome, AnkiSendArgs>({
+      queryFn: (args, api, _extraOptions, baseQuery) => {
+        const extra = api.extra as BackendThunkExtra;
+        return sendFlashcardsToAnki(args, {
+          anki: extra.ankiConnect,
+          server: serverQueryOf(baseQuery),
+          fetchMedia: createMediaFetch(extra.serverFetch),
+          reportConnection: (connection) =>
+            reportAnkiConnection(api, connection),
+        });
+      },
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardsSentTags(projectId),
+    }),
+    /** The project's deleted flashcards whose notes may still be in Anki. */
+    listAnkiPendingDeletions: build.query<AnkiPendingDeletions, string>({
+      query: (projectId) => ({
+        method: "GET",
+        path: `/projects/${projectId}/anki/pending-deletions`,
+      }),
+      providesTags: (_result, _error, projectId) => [
+        { type: "AnkiPendingDeletions", id: projectId },
+      ],
+    }),
+    /** Deletes from Anki the notes of the project's deleted flashcards, through AnkiConnect from the page. */
+    deleteAnkiNotes: build.mutation<AnkiDeletionOutcome, string>({
+      queryFn: (projectId, api, _extraOptions, baseQuery) =>
+        deleteAnkiNotes(projectId, {
+          anki: (api.extra as BackendThunkExtra).ankiConnect,
+          server: serverQueryOf(baseQuery),
+          reportConnection: (connection) =>
+            reportAnkiConnection(api, connection),
+        }),
+      invalidatesTags: (_result, _error, projectId) => [
+        { type: "AnkiPendingDeletions", id: projectId },
+      ],
+    }),
+    /** Forgets the named deletions from Anki, which the user marked done. */
+    clearAnkiPendingDeletions: build.mutation<void, AnkiDeletionsClearArgs>({
+      query: ({ projectId, flashcardIds }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/anki/pending-deletions/cleared`,
+        body: {
+          kind: "json",
+          value: {
+            flashcard_ids: [...flashcardIds],
+          } satisfies AnkiDeletionsCleared,
+        },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "AnkiPendingDeletions", id: projectId },
+      ],
+    }),
+    /** Exports flashcards as an Anki package, written by the server at a path or handed back for download. */
+    exportAnkiPackage: build.mutation<AnkiPackageExport, AnkiExportArgs>({
+      queryFn: (args, api, _extraOptions, baseQuery) =>
+        exportAnkiPackage(args, {
+          server: serverQueryOf(baseQuery),
+          serverFetch: (api.extra as BackendThunkExtra).serverFetch,
+          signal: api.signal,
+        }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardsSentTags(projectId),
+    }),
+    /** Records the delivery of a package the server wrote at a staging path, once the user has kept a copy of it. */
+    recordAnkiExported: build.mutation<void, AnkiExportedArgs>({
+      query: ({ projectId, flashcardIds, marksExported, readAtMs }) => ({
+        method: "POST",
+        path: `/projects/${projectId}/anki/exported`,
+        body: {
+          kind: "json",
+          value: {
+            flashcard_ids: [...flashcardIds],
+            marks_exported: marksExported,
+            read_at_ms: readAtMs,
+          } satisfies AnkiExportedRequest,
+        },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) =>
+        flashcardsSentTags(projectId),
+    }),
+    /**
+     * Turns AnkiConnect on or off for a project. The project it answers replaces the cached one at once,
+     * so that what follows the change, such as a send to Anki, sees it before the refetch lands.
+     */
+    setAnkiConnect: build.mutation<Project, AnkiConnectArgs>({
+      query: ({ projectId, usesAnkiConnect }) => ({
+        method: "PUT",
+        path: `/projects/${projectId}/anki-connect`,
+        body: {
+          kind: "json",
+          value: {
+            uses_anki_connect: usesAnkiConnect,
+          } satisfies AnkiConnectSetting,
+        },
+      }),
+      async onQueryStarted({ projectId }, { dispatch, queryFulfilled }) {
+        const result = await queryFulfilled.catch(() => null);
+        if (result !== null)
+          dispatch(
+            backendApi.util.upsertQueryEntries([
+              {
+                endpointName: "getProject",
+                arg: projectId,
+                value: result.data,
+              },
+            ]),
+          );
+      },
+      invalidatesTags: ["Projects"],
+    }),
     /** The open-source license notices. They are megabytes of text, so the entry goes as soon as no page shows them. */
     licenseNotices: build.query<LicenseNoticeGroup[], void>({
       queryFn: () => loadLicenseNotices(loadLicenseNoticeGroups),
@@ -717,6 +923,7 @@ export const {
   useListDictionariesQuery,
   useLookupTextQuery,
   useLazyLookupTextQuery,
+  useListAnkiPendingDeletionsQuery,
 } = backendApi;
 
 type BackendState = Parameters<

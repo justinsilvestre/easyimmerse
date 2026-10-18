@@ -116,14 +116,12 @@ async fn an_unknown_import_job_is_not_found() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn importing_a_file_body_without_its_name_is_a_bad_request() {
+async fn importing_a_file_without_its_name_is_a_bad_request() {
     let server = spawn_test_server(false).await;
+    // The route refuses the request before reading the body, and on Windows a client still
+    // sending a body then has its connection aborted, so this request has none.
     let response = server
-        .post_bytes(
-            "/dictionaries",
-            "application/octet-stream",
-            read_fixture("sample-yomitan.zip"),
-        )
+        .post_bytes("/dictionaries", "application/octet-stream", Vec::new())
         .await;
     assert_eq!(response.status, 400);
 }

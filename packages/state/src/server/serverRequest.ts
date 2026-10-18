@@ -10,6 +10,7 @@ import type {
   ImportJobStatus,
   ImportStepRequest,
   ImportStepResponse,
+  ListFlashcardsResponse,
   ListMediaFilesResponse,
   LookupQuery,
   LookupResponse,
@@ -34,6 +35,13 @@ import type {
   WaveformResponse,
 } from "@easyimmerse/types";
 import type { Dispatch } from "redux";
+import type { DeletedFlashcard } from "../anki/ankiRequests.ts";
+import type {
+  AnkiConnection,
+  AnkiDeletionOutcome,
+  AnkiPackageExport,
+  AnkiSendOutcome,
+} from "../anki/ankiResponses.ts";
 import type {
   DeletePurpose,
   SavePurpose,
@@ -54,6 +62,7 @@ export type ServerRequest =
     }
   | { kind: "getProject"; projectId: string }
   | { kind: "listMediaFiles"; projectId: string }
+  | { kind: "listFlashcards"; projectId: string }
   | { kind: "addMediaFile"; projectId: string; request: AddMediaFileRequest }
   | { kind: "parseTimedText"; request: ParseTimedTextRequest }
   | { kind: "getImportJob"; jobId: string }
@@ -133,7 +142,56 @@ export type ServerRequest =
       purpose: DeletePurpose;
     }
   /** Opens a media file the browser holds to learn whether it shows pictures. */
-  | { kind: "probePictures"; file: PickedMediaFile };
+  | { kind: "probePictures"; file: PickedMediaFile }
+  /** Asks AnkiConnect whether Anki is running. */
+  | { kind: "checkAnkiConnection" }
+  /** Sends flashcards to Anki through AnkiConnect, adding new notes and updating those Anki already has. */
+  | {
+      kind: "sendFlashcardsToAnki";
+      projectId: string;
+      flashcardIds: readonly string[];
+    }
+  /**
+   * Deletes from Anki through AnkiConnect the notes of the project's deleted flashcards that the server lists as pending.
+   * `justDeleted` is the flashcard whose deletion asked for this, which notices name, or null when nothing deleted just now asked; it is not sent.
+   */
+  | {
+      kind: "deleteAnkiNotes";
+      projectId: string;
+      justDeleted: DeletedFlashcard | null;
+    }
+  /**
+   * Exports flashcards as an Anki package, saved at `savePath`, or handed back for download when it is null, and marks them exported if asked.
+   * A `staged` export records nothing, since its delivery is recorded by `recordAnkiExported` once the user keeps a copy.
+   */
+  | {
+      kind: "exportAnkiPackage";
+      projectId: string;
+      flashcardIds: readonly string[];
+      savePath: string | null;
+      marksExported: boolean;
+      staged: boolean;
+    }
+  /** Records the delivery of a staged package the user kept a copy of, marking its flashcards exported as of `readAtMs` if asked. */
+  | {
+      kind: "recordAnkiExported";
+      projectId: string;
+      flashcardIds: readonly string[];
+      marksExported: boolean;
+      readAtMs: number;
+    }
+  /** Forgets the named deletions from Anki, which the user marked done. */
+  | {
+      kind: "clearAnkiPendingDeletions";
+      projectId: string;
+      flashcardIds: readonly string[];
+    }
+  /** Turns AnkiConnect on or off for a project. */
+  | {
+      kind: "setAnkiConnect";
+      projectId: string;
+      usesAnkiConnect: boolean;
+    };
 
 /** The kind of a server request. */
 export type ServerRequestKind = ServerRequest["kind"];
@@ -144,6 +202,7 @@ export type ServerResponses = {
   addSubtitleTrack: SubtitleTrack;
   getProject: Project;
   listMediaFiles: ListMediaFilesResponse;
+  listFlashcards: ListFlashcardsResponse;
   addMediaFile: MediaFile;
   parseTimedText: TimedTextTrack;
   getImportJob: ImportJobStatus;
@@ -177,11 +236,20 @@ export type ServerResponses = {
   // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
   deleteFlashcard: void;
   probePictures: boolean;
+  checkAnkiConnection: AnkiConnection;
+  sendFlashcardsToAnki: AnkiSendOutcome;
+  deleteAnkiNotes: AnkiDeletionOutcome;
+  exportAnkiPackage: AnkiPackageExport;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  recordAnkiExported: void;
+  // biome-ignore lint/suspicious/noConfusingVoidType: The endpoint answers with no data, which RTK Query types as void.
+  clearAnkiPendingDeletions: void;
+  setAnkiConnect: Project;
 };
 
-/** Why a request failed: an HTTP status, or a marker for a request that never reached a server or was aborted. */
+/** Why a request failed: an HTTP status, or a marker for a request that never reached a server, was aborted, or ended without data. */
 export type RequestFailure = {
-  status: number | "OFFLINE" | "NETWORK" | "ABORTED";
+  status: number | "OFFLINE" | "NETWORK" | "ABORTED" | "NO_DATA";
   code?: string;
   message: string;
 };
@@ -190,6 +258,12 @@ export type RequestFailure = {
 export const abortedFailure: RequestFailure = {
   status: "ABORTED",
   message: "The request was aborted.",
+};
+
+/** The failure of a query that ended with neither data nor an error. */
+export const noDataFailure: RequestFailure = {
+  status: "NO_DATA",
+  message: "The server's answer could not be read. Try again.",
 };
 
 /** How a request of the given kind ended. */

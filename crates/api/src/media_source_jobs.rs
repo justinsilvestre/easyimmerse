@@ -4,7 +4,6 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use easyimmerse_core::media_file::MediaFile;
 use easyimmerse_core::project::ProjectId;
@@ -15,6 +14,7 @@ use ts_rs::TS;
 use utoipa::ToSchema;
 
 use crate::auth::error_body::ApiError;
+use crate::now_ms::now_ms;
 
 /// How many finished jobs the server remembers, so that a client can still read the
 /// outcome of a fetch it started a while ago.
@@ -219,13 +219,6 @@ fn shell_words(args: &[String]) -> String {
         })
         .collect::<Vec<_>>()
         .join(" ")
-}
-
-pub fn now_ms() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|elapsed| elapsed.as_millis() as u64)
-        .unwrap_or(0)
 }
 
 /// The jobs the server has run since it started, newest last.

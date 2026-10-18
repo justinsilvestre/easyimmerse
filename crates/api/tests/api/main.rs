@@ -1,4 +1,5 @@
 mod alignments;
+mod anki;
 mod auth;
 mod dictionaries;
 mod dictionary_batch_lookup;

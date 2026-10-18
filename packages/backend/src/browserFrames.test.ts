@@ -2,6 +2,7 @@ import { createBrowserFileRegistry } from "@easyimmerse/state";
 import type { MediaFileSource } from "@easyimmerse/types";
 import { describe, expect, it } from "vitest";
 import { captureFrame, probePictures } from "./browserFrames.ts";
+import { createFakeAnkiConnect } from "./fakeAnkiConnect.ts";
 import type { FrameCapturer } from "./frameCapturer.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 
@@ -35,6 +36,8 @@ function extraWith(
     browserFileRegistry,
     frameCapturer,
     failedPassages: { retryTimes: {} },
+    serverFetch: null,
+    ankiConnect: createFakeAnkiConnect(),
   };
 }
 

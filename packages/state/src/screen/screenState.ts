@@ -1,4 +1,5 @@
 import type { Cue, TrackSelection } from "@easyimmerse/types";
+import type { AnkiExportDialog } from "../anki/ankiExportDialog.ts";
 import type { FlashcardForm } from "../flashcards/flashcardForm.ts";
 import type { PickedFile, PickedMediaFile } from "../platform/effects.ts";
 import type { MainRoute } from "../route/route.ts";
@@ -52,11 +53,13 @@ export type OfflineScreenState = {
   hasFailed: boolean;
 };
 
-/** The project overview's state: a picked media file, held while its requests run, and the media import dialog. */
+/** The project overview's state: a picked media file, held while its requests run, and the overview's dialogs. */
 export type ProjectScreenState = {
   kind: "project";
   pendingMediaFile: PickedMediaFile | null;
   mediaImport: MediaImportWizard | null;
+  ankiExport: AnkiExportDialog | null;
+  isAnkiConnectSetupOpen: boolean;
 };
 
 /** The main screen's own state, keyed by the route's main screen. The ids it belongs to are in the route. */
@@ -114,7 +117,13 @@ export function initialMainScreen(
     case "offline":
       return { kind: "offline", cues: [], hasFailed: false };
     case "project":
-      return { kind: "project", pendingMediaFile: null, mediaImport: null };
+      return {
+        kind: "project",
+        pendingMediaFile: null,
+        mediaImport: null,
+        ankiExport: null,
+        isAnkiConnectSetupOpen: false,
+      };
     case "media":
       return {
         kind: "media",

@@ -1,12 +1,20 @@
 use serde_json::Value;
 
-/// Builds the script that tells the page where the embedded server is. The values are JSON
-/// string literals, so a token or URL can never break out of the assignment.
+/// The kind of platform the app runs on, as the page reads it.
+const PLATFORM: &str = if cfg!(mobile) { "mobile" } else { "desktop" };
+
+/// Builds the script that tells the page where the embedded server is and which kind of platform it runs on.
+/// The values are JSON string literals, so a token or URL can never break out of the assignment.
 pub fn injected_config_script(server_url: &str, token: &str) -> String {
+    config_script(server_url, token, PLATFORM)
+}
+
+fn config_script(server_url: &str, token: &str, platform: &str) -> String {
     format!(
-        "window.__EASYIMMERSE__ = Object.freeze({{ serverUrl: {}, token: {} }});",
+        "window.__EASYIMMERSE__ = Object.freeze({{ serverUrl: {}, token: {}, platform: {} }});",
         js_string_literal(server_url),
-        js_string_literal(token)
+        js_string_literal(token),
+        js_string_literal(platform)
     )
 }
 
@@ -22,11 +30,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn assigns_a_frozen_object_with_both_values() {
+    fn assigns_a_frozen_object_with_the_desktop_platform_on_desktop() {
         assert_eq!(
             injected_config_script("http://127.0.0.1:8787", "abc"),
-            r#"window.__EASYIMMERSE__ = Object.freeze({ serverUrl: "http://127.0.0.1:8787", token: "abc" });"#
+            r#"window.__EASYIMMERSE__ = Object.freeze({ serverUrl: "http://127.0.0.1:8787", token: "abc", platform: "desktop" });"#
         );
+    }
+
+    #[test]
+    fn names_the_platform_it_is_given() {
+        let script = config_script("http://127.0.0.1:8787", "abc", "mobile");
+        assert!(script.ends_with(r#"platform: "mobile" });"#));
     }
 
     #[test]
@@ -38,7 +52,7 @@ mod tests {
     #[test]
     fn escapes_quotes_so_the_literal_stays_intact() {
         let script = injected_config_script("http://127.0.0.1:8787", r#"a"b\c"#);
-        assert!(script.ends_with(r#"token: "a\"b\\c" });"#));
+        assert!(script.contains(r#"token: "a\"b\\c", "#));
     }
 
     #[test]

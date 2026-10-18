@@ -39,6 +39,9 @@ export const savedFlashcard: Flashcard = {
   included_fields: ["word", "audio_context", "screenshot"],
   created_at_ms: 0,
   updated_at_ms: 0,
+  exported_at_ms: null,
+  was_packaged: false,
+  sent_at_ms: null,
 };
 
 export function dictionarySummary(

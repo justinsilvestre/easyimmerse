@@ -1,5 +1,8 @@
 import type { Project, ProjectSettings } from "@easyimmerse/types";
-import { fieldsOfPreset } from "../flashcards/flashcardPresets.ts";
+import {
+  fieldsOfPreset,
+  frontFieldsOfPreset,
+} from "../flashcards/flashcardPresets.ts";
 import { dayMs } from "./formatRelativeDate.ts";
 
 function daysAgo(days: number): number {
@@ -15,6 +18,8 @@ function settings(name: string, targetLanguage: string): ProjectSettings {
     default_tags: [],
     tags_media_name: true,
     fills_audio_with_tts: false,
+    flashcard_front_fields: frontFieldsOfPreset("intermediate"),
+    lists_anki_deletions: true,
   };
 }
 
@@ -26,6 +31,7 @@ export const exampleProjects: readonly Project[] = [
     created_at_ms: daysAgo(40),
     last_opened_at_ms: daysAgo(0),
     media_count: 10,
+    uses_anki_connect: false,
     flashcard_count: 184,
   },
   {
@@ -34,6 +40,7 @@ export const exampleProjects: readonly Project[] = [
     created_at_ms: daysAgo(12),
     last_opened_at_ms: daysAgo(1),
     media_count: 3,
+    uses_anki_connect: false,
     flashcard_count: 42,
   },
   {
@@ -42,6 +49,7 @@ export const exampleProjects: readonly Project[] = [
     created_at_ms: daysAgo(90),
     last_opened_at_ms: daysAgo(45),
     media_count: 1,
+    uses_anki_connect: false,
     flashcard_count: 7,
   },
 ];

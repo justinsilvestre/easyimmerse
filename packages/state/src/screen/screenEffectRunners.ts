@@ -3,7 +3,7 @@ import type { EffectRunners } from "../app/runEffect.ts";
 import { measurePlaybackEnvironment } from "./mediaScreen/measurePlaybackEnvironment.ts";
 import type { ScreenEffect } from "./screenEffect.ts";
 
-/** Performs the screens' effects. A file pick that fails counts as cancelled. The measure of media support is reported at once. */
+/** Performs the screens' effects. A file or save path pick that fails counts as cancelled; a copy that fails reports why. The measure of media support is reported at once. */
 export const screenEffectRunners = {
   seekPlayer: (effect, { effects }) => effects.seekPlayer(effect.seconds),
   togglePlayer: (_, { effects }) => effects.togglePlayer(),
@@ -45,6 +45,18 @@ export const screenEffectRunners = {
       )
       .catch(() => dispatch(actions.dictionaryFilePickCancelled()));
   },
+  pickSavePath: (effect, { effects, dispatch }) => {
+    effects
+      .pickSavePath(effect.suggestedFileName)
+      .catch(() => ({ kind: "cancelled" }) as const)
+      .then((pick) => dispatch(actions.ankiExportPathPicked(pick)));
+  },
+  saveCopy: (effect, { effects, dispatch }) => {
+    effects.saveCopy(effect.path, effect.fileName).then(
+      (outcome) => dispatch(actions.ankiExportCopyFinished(outcome)),
+      (error) => dispatch(actions.ankiExportCopyFailed(messageOf(error))),
+    );
+  },
   measurePlaybackEnvironment: (effect, { effects, dispatch }) =>
     dispatch(
       actions.playbackEnvironmentMeasured(
@@ -57,3 +69,7 @@ export const screenEffectRunners = {
       ),
     ),
 } satisfies EffectRunners<ScreenEffect>;
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

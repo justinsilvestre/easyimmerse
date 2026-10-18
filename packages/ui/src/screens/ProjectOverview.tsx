@@ -1,4 +1,5 @@
 import {
+  useListAnkiPendingDeletionsQuery,
   useListDictionariesQuery,
   useListFlashcardsQuery,
   useListMediaFilesQuery,
@@ -7,6 +8,9 @@ import {
 import {
   actions,
   type MediaImportSource,
+  selectAnkiExport,
+  selectFlashcardSync,
+  selectIsAnkiConnectSetupOpen,
   selectMediaImport,
   transientNotice,
 } from "@easyimmerse/state";
@@ -14,18 +18,20 @@ import type { Project } from "@easyimmerse/types";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
 import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
+import { AnkiConnectSetupDialog } from "../projects/AnkiConnectSetupDialog.tsx";
+import { AnkiExportDialog } from "../projects/AnkiExportDialog.tsx";
 import { DictionaryStatus } from "../projects/DictionaryStatus.tsx";
 import { dictionaryStatusesOf } from "../projects/dictionaryStatusesOf.ts";
-import { FlashcardSyncPanel } from "../projects/FlashcardSyncPanel.tsx";
 import { ImportMediaDialog } from "../projects/ImportMediaDialog.tsx";
 import { MediaSection } from "../projects/MediaSection.tsx";
 import { mediaItemsOf } from "../projects/mediaItemsOf.ts";
+import { ProjectFlashcardsPanel } from "../projects/ProjectFlashcardsPanel.tsx";
 import { ProjectView } from "../projects/ProjectView.tsx";
 
 /**
  * The project screen: whether its languages have dictionaries, its media files, and where its flashcards go.
  * Work is saved on the server as it happens, so the screen offers nothing to save by hand.
- * The ways to review or export flashcards are not built yet, so each is marked as coming soon and explains so when chosen.
+ * The review is not built yet, so it is marked as coming soon and explains so when chosen.
  */
 export function ProjectOverview({
   project,
@@ -40,15 +46,19 @@ export function ProjectOverview({
   const notYet = () =>
     dispatch(
       actions.noticeRequested(
-        transientNotice(
-          "info",
-          "Reviewing and exporting flashcards is not available yet.",
-        ),
+        transientNotice("info", "Reviewing flashcards is not available yet."),
       ),
     );
   const media = useMediaItems(project.id);
   const importSources = useImportSources();
   const importMedia = useAppSelector(selectMediaImport);
+  const ankiExport = useAppSelector(selectAnkiExport);
+  const isAnkiConnectSetupOpen = useAppSelector(selectIsAnkiConnectSetupOpen);
+  const flashcardSync = useAppSelector((state) =>
+    selectFlashcardSync(state, project.id),
+  );
+  // The panel lists or counts the deleted flashcards still to be deleted from Anki from this query's cached answer.
+  useListAnkiPendingDeletionsQuery(project.id);
   const dictionaries = useListDictionariesQuery().data?.dictionaries;
   const navigate = useNavigate();
   const openDictionaries = () => navigate({ type: "openDictionaries" });
@@ -96,18 +106,60 @@ export function ProjectOverview({
           onClose={() => dispatch(actions.mediaImportClosed())}
         />
       )}
-      <FlashcardSyncPanel
-        state={{ kind: "notStarted" }}
-        comingSoon={["review", "ankiPackage", "ankiConnect"]}
+      {ankiExport && (
+        <AnkiExportDialog
+          mediaFiles={media.items}
+          chosenMediaFileIds={ankiExport.mediaFileIds}
+          scope={ankiExport.scope}
+          newAndChangedCount={ankiExport.newAndChangedCount}
+          allCount={ankiExport.allCount}
+          marksExported={ankiExport.marksExported}
+          duplicateCount={ankiExport.duplicateCount}
+          isBusy={ankiExport.isBusy}
+          onScopeChange={(scope) =>
+            dispatch(actions.ankiExportScopeChosen(scope))
+          }
+          onMarkingChange={(marksExported) =>
+            dispatch(actions.ankiExportMarkingChosen(marksExported))
+          }
+          onMediaToggle={(mediaFileId) =>
+            dispatch(actions.ankiExportMediaToggled(mediaFileId))
+          }
+          onExport={() => dispatch(actions.ankiExportConfirmed())}
+          onClose={() => dispatch(actions.ankiExportClosed())}
+        />
+      )}
+      {isAnkiConnectSetupOpen && (
+        <AnkiConnectSetupDialog
+          onConnect={() => dispatch(actions.ankiConnectSetupRequested())}
+          onClose={() => dispatch(actions.ankiConnectSetupClosed())}
+        />
+      )}
+      <ProjectFlashcardsPanel
+        sync={flashcardSync}
         includedFields={settings.flashcard_fields}
+        frontFields={settings.flashcard_front_fields}
         languages={{
           target: settings.target_language,
           translation: settings.translation_language,
         }}
-        onExportPackage={notYet}
-        onSetUpAnkiConnect={notYet}
+        onExportPackage={() => dispatch(actions.ankiExportOpened())}
+        onSetUpAnkiConnect={() => dispatch(actions.ankiConnectSetupOpened())}
         onStartReview={notYet}
-        onSendToAnki={notYet}
+        onCheckConnection={() =>
+          dispatch(actions.ankiConnectionCheckRequested())
+        }
+        onTryAnkiSyncAgain={() => dispatch(actions.ankiSendRequested())}
+        onTurnOffAnkiConnect={() => dispatch(actions.ankiConnectTurnedOff())}
+        onCopyAnkiSearch={() =>
+          dispatch(
+            actions.textCopyRequested(
+              flashcardSync.package.ankiSearch,
+              "Anki search",
+            ),
+          )
+        }
+        onMarkDeletionsDone={() => dispatch(actions.ankiDeletionsMarkedDone())}
       />
     </ProjectView>
   );

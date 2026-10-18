@@ -52,7 +52,8 @@ pub async fn resolve_local_file(
     if !metadata.is_file() {
         return Err(not_found(format!("no file at {path:?}")));
     }
-    canonical
+    dunce::simplified(&canonical)
+        .to_path_buf()
         .into_os_string()
         .into_string()
         .map_err(|_| bad_request(format!("the path of {path:?} is not valid UTF-8")))
@@ -79,7 +80,7 @@ pub fn ensure_local_paths_allowed(token: TokenKind, config: &ApiConfig) -> Resul
         Err(ApiFailure::new(
             StatusCode::FORBIDDEN,
             "local_paths_not_allowed",
-            "this token may not read files on the server",
+            "this token may not name files on the server's machine",
         ))
     }
 }
@@ -143,7 +144,7 @@ mod tests {
     #[tokio::test]
     async fn resolves_an_existing_file_to_its_canonical_path() {
         let path = format!("{}/../../fixtures/./sample.mp4", env!("CARGO_MANIFEST_DIR"));
-        let canonical = std::fs::canonicalize(&path).unwrap();
+        let canonical = dunce::canonicalize(&path).unwrap();
         let result = resolve_local_file(TokenKind::Launch, &config(true), &path).await;
         assert_eq!(result, Ok(canonical.to_string_lossy().into_owned()));
     }

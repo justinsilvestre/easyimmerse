@@ -15,6 +15,7 @@ export {
   useLazyLookupTextQuery,
   useLicenseNoticesQuery,
   useListAlignmentsQuery,
+  useListAnkiPendingDeletionsQuery,
   useListDictionariesQuery,
   useListEmbeddedSubtitleTracksQuery,
   useListFlashcardsQuery,
@@ -51,5 +52,8 @@ export { buildMediaFrameUrl, buildMediaStreamUrl } from "./mediaStreamUrl.ts";
 export { usePrefetchLookupRangeQuery } from "./prefetchLookupRange.ts";
 export { prefetchLookups, prefetchRepeatMs } from "./prefetchLookups.ts";
 export { isSamePickedFile, type PickedFile } from "./readPickedFile.ts";
-export { resolveServerConfig } from "./resolveServerConfig.ts";
+export {
+  type NativePlatform,
+  resolveServerConfig,
+} from "./resolveServerConfig.ts";
 export { createWasmBackendClient } from "./wasmBackendClient.ts";

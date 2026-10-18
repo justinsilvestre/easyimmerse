@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { resolveServerConfig } from "./resolveServerConfig.ts";
 
-const injected = { serverUrl: "http://127.0.0.1:1", token: "injected" };
+const injected = {
+  serverUrl: "http://127.0.0.1:1",
+  token: "injected",
+  platform: "desktop",
+} as const;
 const fromEnv = {
   VITE_EASYIMMERSE_SERVER_URL: "http://127.0.0.1:2",
   VITE_EASYIMMERSE_TOKEN: "env",

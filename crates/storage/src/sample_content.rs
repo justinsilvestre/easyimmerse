@@ -92,9 +92,7 @@ struct Fixtures {
 }
 
 fn read_fixtures(dir: &Path) -> Result<Fixtures, SampleContentError> {
-    let dir = dir
-        .canonicalize()
-        .map_err(|source| fixture_error(dir, source))?;
+    let dir = dunce::canonicalize(dir).map_err(|source| fixture_error(dir, source))?;
     let video = dir.join(VIDEO_NAME);
     std::fs::metadata(&video).map_err(|source| fixture_error(&video, source))?;
     let book = dir.join(BOOK_NAME);
