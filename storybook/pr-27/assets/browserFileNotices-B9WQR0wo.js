@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";var t;function n(){return(n=e((()=>{t={unreachable:`This file was added in a web browser, and this app cannot reach it.`,notOpen:e=>`This file is no longer open in the browser. Add it again to ${e} it.`}})))()}export{n,t};
