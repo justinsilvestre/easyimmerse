@@ -6,18 +6,16 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::{Extension, Json};
 use easyimmerse_conversion::ConversionError;
-use easyimmerse_core::media_file::{MediaFile, MediaFileId};
+use easyimmerse_core::media_file::MediaFileId;
 use easyimmerse_core::project::ProjectId;
-use easyimmerse_media::{
-    ContainerInfo, TrackInfo, TrackSelection, WaveformResponse, default_track_selection,
-};
+use easyimmerse_media::WaveformResponse;
 use serde::Deserialize;
 use utoipa::IntoParams;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
 use crate::auth::token_kind::TokenKind;
 use crate::routes::media::load_media_file;
-use crate::routes::media_support::{probe_media, resolve_source_path};
+use crate::routes::media_support::{chosen_audio_track, probe_media, resolve_source_path};
 use crate::state::AppState;
 
 #[derive(Debug, Deserialize, IntoParams)]
@@ -77,21 +75,6 @@ pub async fn get_media_waveform(
             other => waveform_failed(other),
         })?;
     Ok(Json(response))
-}
-
-/// The saved audio track when the file has one, else the default audio track.
-fn chosen_audio_track<'a>(
-    container: &'a ContainerInfo,
-    media_file: &MediaFile,
-) -> Option<&'a TrackInfo> {
-    let saved = media_file
-        .track_selection_json
-        .as_deref()
-        .and_then(|json| serde_json::from_str::<TrackSelection>(json).ok())
-        .and_then(|selection| selection.audio);
-    saved
-        .or(default_track_selection(container).audio)
-        .and_then(|index| container.track(index))
 }
 
 fn waveform_unavailable() -> ApiFailure {

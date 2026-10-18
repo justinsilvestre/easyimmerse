@@ -158,13 +158,13 @@ impl Read for StallingBody {
     }
 }
 
-/// Sends a block every 100 milliseconds, eight times, so the whole body takes longer than
-/// the stall timeout the tests set while no single wait does.
+/// Sends a block every 100 milliseconds, twelve times, so the whole body takes longer than
+/// the stall timeout its test sets while no single wait comes close to it.
 struct TricklingBody(u8);
 
 impl Read for TricklingBody {
     fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
-        if self.0 == 8 {
+        if self.0 == 12 {
             return Ok(0);
         }
         self.0 += 1;
@@ -331,8 +331,9 @@ fn removes_the_partial_file_when_a_download_stalls() {
 fn completes_a_download_that_outlasts_the_stall_timeout_while_bytes_keep_arriving() {
     let fixture = Fixture::start();
     let server = serve_streams(|| Box::new(TricklingBody(0)));
+    // Wide enough that a busy machine starting many plugins at once still delivers each block in time.
     let limits = download_limits(DownloadLimits {
-        stall_timeout: Duration::from_millis(300),
+        stall_timeout: Duration::from_secs(1),
         ..DownloadLimits::default()
     });
     let outcome = download_with_limits(

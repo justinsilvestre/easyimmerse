@@ -8,10 +8,12 @@ import {
   flashcardFieldGroups,
   labelOfFieldGroup,
 } from "../flashcards/flashcardFields.ts";
+import { CardSideToggle } from "./CardSideToggle.tsx";
 import type { ProjectFormAction } from "./editProject.ts";
 
 /**
  * The checkboxes for the fields a new flashcard starts with, grouped by language.
+ * Beside each included field except the tags, a toggle says whether it is on the front or the back of the card.
  * On a wide screen the groups stand side by side; on a narrow one, tabs show one group at a time.
  */
 export function ProjectFormFields({
@@ -65,16 +67,38 @@ export function ProjectFormFields({
             </legend>
             {flashcardFieldDefinitions
               .filter((field) => field.group === group)
-              .map((field) => (
-                <CheckboxField
-                  key={field.key}
-                  label={field.label(languages)}
-                  checked={values.flashcard_fields.includes(field.key)}
-                  onChange={() =>
-                    dispatch({ type: "fieldToggled", key: field.key })
-                  }
-                />
-              ))}
+              .map((field) => {
+                const label = field.label(languages);
+                const isIncluded = values.flashcard_fields.includes(field.key);
+                return (
+                  <div
+                    key={field.key}
+                    className="flex items-start justify-between gap-2"
+                  >
+                    <CheckboxField
+                      label={label}
+                      checked={isIncluded}
+                      onChange={() =>
+                        dispatch({ type: "fieldToggled", key: field.key })
+                      }
+                    />
+                    {isIncluded && field.key !== "tags" && (
+                      <CardSideToggle
+                        fieldLabel={label}
+                        isFront={values.flashcard_front_fields.includes(
+                          field.key,
+                        )}
+                        onToggle={() =>
+                          dispatch({
+                            type: "frontFieldToggled",
+                            key: field.key,
+                          })
+                        }
+                      />
+                    )}
+                  </div>
+                );
+              })}
           </fieldset>
         ))}
       </div>

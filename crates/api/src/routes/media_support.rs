@@ -1,14 +1,23 @@
 //! What the media routes share: resolving a media file to a readable local path, probing it,
-//! and turning conversion errors into responses.
+//! choosing its tracks, running ffmpeg, and turning conversion errors into responses.
 
+use std::ffi::OsString;
 use std::path::Path;
+use std::process::Stdio;
 use std::sync::Arc;
 
 use axum::http::StatusCode;
+use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE};
+use axum::response::{IntoResponse, Response};
 use easyimmerse_conversion::{ConversionError, ConversionService};
 use easyimmerse_core::media_file::{MediaFile, MediaFileSource};
-use easyimmerse_media::ContainerInfo;
-use easyimmerse_media_ffmpeg::FfmpegError;
+use easyimmerse_media::{
+    ContainerInfo, TrackInfo, TrackKind, TrackSelection, default_track_selection,
+};
+use easyimmerse_media_ffmpeg::{
+    BinaryName, FfmpegError, FfmpegPaths, background_command, locate_binary,
+};
+use tokio::process::Command;
 
 use crate::auth::error_body::{ApiFailure, bad_request, internal, not_found};
 use crate::auth::token_kind::TokenKind;
@@ -64,6 +73,99 @@ pub async fn probe_media(state: &AppState, path: &str) -> Result<Arc<ContainerIn
         })
 }
 
+/// The saved audio track when the container has it, else the default audio track.
+pub fn chosen_audio_track<'a>(
+    container: &'a ContainerInfo,
+    media_file: &MediaFile,
+) -> Option<&'a TrackInfo> {
+    let saved = saved_track_selection(media_file).and_then(|selection| selection.audio);
+    chosen_track(container, saved, TrackKind::Audio)
+}
+
+/// The saved video track when the container has it, else the default video track.
+pub fn chosen_video_track<'a>(
+    container: &'a ContainerInfo,
+    media_file: &MediaFile,
+) -> Option<&'a TrackInfo> {
+    let saved = saved_track_selection(media_file).and_then(|selection| selection.video);
+    chosen_track(container, saved, TrackKind::Video)
+}
+
+fn chosen_track(
+    container: &ContainerInfo,
+    saved_index: Option<u32>,
+    kind: TrackKind,
+) -> Option<&TrackInfo> {
+    let saved = saved_index
+        .and_then(|index| container.track(index))
+        .filter(|track| track.kind == kind);
+    saved.or_else(|| {
+        let defaults = default_track_selection(container);
+        let default_index = match kind {
+            TrackKind::Video => defaults.video,
+            _ => defaults.audio,
+        };
+        default_index.and_then(|index| container.track(index))
+    })
+}
+
+fn saved_track_selection(media_file: &MediaFile) -> Option<TrackSelection> {
+    media_file
+        .track_selection_json
+        .as_deref()
+        .and_then(|json| serde_json::from_str::<TrackSelection>(json).ok())
+}
+
+/// Converts a time in milliseconds to the microseconds ffmpeg takes, saturating at the largest value.
+pub fn micros(ms: u64) -> i64 {
+    i64::try_from(ms.saturating_mul(1000)).unwrap_or(i64::MAX)
+}
+
+/// The path of the ffmpeg binary; 503 when this server has none.
+pub fn locate_ffmpeg() -> Result<std::path::PathBuf, ApiFailure> {
+    locate_binary(BinaryName::Ffmpeg, &FfmpegPaths::default()).map_err(|_| conversion_unavailable())
+}
+
+/// A response carrying media rendered from a media file, which the client may keep for a day.
+pub fn rendered_media_response(content_type: &'static str, bytes: Vec<u8>) -> Response {
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, content_type),
+            (CACHE_CONTROL, "private, max-age=86400"),
+        ],
+        bytes,
+    )
+        .into_response()
+}
+
+/// Runs ffmpeg with `args` and returns what it wrote to standard output.
+pub async fn run_ffmpeg_to_stdout(
+    ffmpeg: &Path,
+    args: Vec<OsString>,
+) -> Result<Vec<u8>, FfmpegError> {
+    let mut command = background_command(ffmpeg);
+    command.args(args);
+    let output = Command::from(command)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true)
+        .output()
+        .await
+        .map_err(|source| FfmpegError::Spawn {
+            binary: BinaryName::Ffmpeg,
+            source,
+        })?;
+    if !output.status.success() {
+        return Err(FfmpegError::Failed {
+            binary: BinaryName::Ffmpeg,
+            status: output.status,
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        });
+    }
+    Ok(output.stdout)
+}
+
 /// Maps the errors of the conversion routes.
 pub fn conversion_failure(error: ConversionError) -> ApiFailure {
     match error {
@@ -92,6 +194,62 @@ pub fn conversion_failure(error: ConversionError) -> ApiFailure {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use easyimmerse_core::media_file::MediaFileId;
+    use easyimmerse_core::project::ProjectId;
+    use easyimmerse_media::ContainerFormat;
+
+    fn track(index: u32, kind: TrackKind) -> TrackInfo {
+        TrackInfo {
+            index,
+            kind,
+            ..TrackInfo::default()
+        }
+    }
+
+    fn container() -> ContainerInfo {
+        ContainerInfo {
+            format: ContainerFormat::Matroska,
+            duration_ms: None,
+            start_ms: None,
+            bit_rate: None,
+            tracks: vec![track(0, TrackKind::Video), track(1, TrackKind::Audio)],
+        }
+    }
+
+    fn media_file_saving(selection_json: &str) -> MediaFile {
+        MediaFile {
+            id: MediaFileId("m".to_owned()),
+            project_id: ProjectId("p".to_owned()),
+            name: "m".to_owned(),
+            source: MediaFileSource::Path {
+                path: "m.mkv".to_owned(),
+            },
+            origin: None,
+            created_at_ms: 0,
+            track_selection_json: Some(selection_json.to_owned()),
+        }
+    }
+
+    fn chosen_audio_index(selection_json: &str) -> Option<u32> {
+        chosen_audio_track(&container(), &media_file_saving(selection_json)).map(|t| t.index)
+    }
+
+    #[test]
+    fn chooses_the_default_audio_track_when_the_saved_one_is_missing() {
+        assert_eq!(chosen_audio_index(r#"{"video":null,"audio":7}"#), Some(1));
+    }
+
+    #[test]
+    fn chooses_the_default_audio_track_when_the_saved_one_is_a_video_track() {
+        assert_eq!(chosen_audio_index(r#"{"video":null,"audio":0}"#), Some(1));
+    }
+
+    #[test]
+    fn chooses_the_default_video_track_when_the_saved_one_is_missing() {
+        let media_file = media_file_saving(r#"{"video":9,"audio":null}"#);
+        let chosen = chosen_video_track(&container(), &media_file).map(|t| t.index);
+        assert_eq!(chosen, Some(0));
+    }
 
     #[test]
     fn maps_an_unknown_key_to_not_found() {

@@ -63,12 +63,15 @@ function serializeBody(body: BackendRequestBody | undefined): BodyInit | null {
 }
 
 async function readResponse<T>(response: Response): Promise<BackendResult<T>> {
-  if (!response.ok) return { error: await readError(response) };
+  if (!response.ok) return { error: await readBackendError(response) };
   if (response.status === 204) return { data: undefined as T };
   return { data: (await response.json()) as T };
 }
 
-async function readError(response: Response): Promise<BackendError> {
+/** Reads the error a server's failed response describes, or its status alone when the body is not the API's error. */
+export async function readBackendError(
+  response: Response,
+): Promise<BackendError> {
   const apiError = await readApiError(response);
   if (apiError === null)
     return { status: response.status, message: response.statusText };

@@ -1,3 +1,4 @@
+import type { AnkiFateOfDeletion } from "@easyimmerse/state";
 import { reduceEditor } from "@easyimmerse/state";
 import type { FlashcardContent, FlashcardFieldKey } from "@easyimmerse/types";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
@@ -204,7 +205,11 @@ function renderWithMedia(saveStatus: "idle" | "saving") {
 /** Renders the editor, recording presses of Close and Delete. */
 function renderWithLeavingButtons(
   saveStatus: "idle" | "waitingForDefinitions" | "saving",
-  { isNew = false, hasSaveFailed = false } = {},
+  {
+    isNew = false,
+    hasSaveFailed = false,
+    ankiFate = null as AnkiFateOfDeletion | null,
+  } = {},
 ) {
   const presses: string[] = [];
   renderWithAppStore(
@@ -219,6 +224,7 @@ function renderWithLeavingButtons(
       saveStatus={saveStatus}
       isNew={isNew}
       hasSaveFailed={hasSaveFailed}
+      ankiFate={ankiFate}
       onSave={() => undefined}
       onDelete={() => presses.push("delete")}
       onClose={() => presses.push("close")}
@@ -282,6 +288,16 @@ describe("FlashcardEditor's Delete", () => {
     renderWithLeavingButtons("idle");
     pressDelete();
     expect(confirmDialog().textContent).toContain(`“${exampleFlashcard.word}”`);
+  });
+
+  it("tells what becomes of the flashcard in Anki", () => {
+    renderWithLeavingButtons("idle", {
+      ankiFate: { note: "stays", wasPackaged: false },
+    });
+    pressDelete();
+    expect(confirmDialog().textContent).toContain(
+      "Its corresponding Anki note stays in Anki until you delete it there.",
+    );
   });
 
   it("deletes once the deletion is confirmed", () => {

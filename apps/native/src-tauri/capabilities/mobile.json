@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "mobile",
+  "description": "What the main window may ask the native shell to do on Android and iOS only, where the save-copy plugin exists.",
+  "platforms": ["android", "iOS"],
+  "windows": ["main"],
+  "permissions": ["save-copy:allow-save-copy"]
+}

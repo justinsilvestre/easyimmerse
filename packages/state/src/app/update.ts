@@ -1,3 +1,4 @@
+import { ankiCommands } from "../anki/ankiCommands.ts";
 import { flashcardCommands } from "../flashcards/flashcardCommands.ts";
 import { noticesFeature } from "../notices/updateNotices.ts";
 import { operationsFeature } from "../operations/operations.ts";
@@ -51,7 +52,7 @@ export const initialAppState = Object.fromEntries(
 /**
  * Lets every feature update its own slice, each seeing the state and the server cache before the action, and gathers their effects in the order of the feature table.
  * The state keeps its reference when no slice changes.
- * Beside the features, the root update takes three fixed steps: it adds the platform, screen and flashcard commands, which change no state;
+ * Beside the features, the root update takes three fixed steps: it adds the platform, screen, flashcard and Anki commands, which change no state;
  * it passes every effect through `trackOperations`, which turns the jobs watched into status requests and timers,
  * records the requests sent, and holds back those that must wait; and it guards the app's closing whenever unsaved work
  * begins, and stops once none is left, as `closeGuardEffects` describes.
@@ -74,6 +75,7 @@ export const update: UpdateFunction<
   effects.push(...platformCommands(action));
   effects.push(...screenCommands(action, state));
   effects.push(...flashcardCommands(action, state));
+  effects.push(...ankiCommands(action, readable));
   const [operations, performed] = trackOperations(next.operations, effects);
   const tracked =
     operations === next.operations ? next : { ...next, operations };

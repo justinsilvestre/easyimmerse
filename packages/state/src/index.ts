@@ -1,3 +1,33 @@
+export type { AnkiExportScope } from "./anki/ankiExportDialog.ts";
+export { ankiUnreachableCode } from "./anki/ankiNotices.ts";
+export type {
+  AnkiConnection,
+  AnkiDeletionOutcome,
+  AnkiPackageExport,
+  AnkiSendOutcome,
+} from "./anki/ankiResponses.ts";
+export { flashcardNoteQuery } from "./anki/ankiSearch.ts";
+export {
+  type ProjectFlashcardsMode,
+  projectFlashcardsModeOf,
+} from "./anki/projectFlashcardsMode.ts";
+export {
+  type AnkiExportView,
+  selectAnkiExport,
+  selectIsAnkiConnectSetupOpen,
+} from "./anki/selectAnkiExport.ts";
+export {
+  type AnkiFateOfDeletion,
+  selectAnkiFateOfDeletion,
+} from "./anki/selectAnkiFateOfDeletion.ts";
+export {
+  type AnkiConnectionStatus,
+  type AnkiConnectSync,
+  type AnkiUpdatesQueue,
+  type FlashcardSync,
+  type PackageSync,
+  selectFlashcardSync,
+} from "./anki/selectFlashcardSync.ts";
 export type { AppAction } from "./app/appAction.ts";
 export { actions } from "./app/appAction.ts";
 export type { AppState } from "./app/appState.ts";
@@ -60,6 +90,8 @@ export type {
   PickedFile,
   PickedMediaFile,
   PlaybackProbes,
+  SaveCopyOutcome,
+  SavePathPick,
 } from "./platform/effects.ts";
 export type { PlayerRegistry } from "./platform/playerRegistry.ts";
 export { createPlayerRegistry } from "./platform/playerRegistry.ts";
@@ -201,7 +233,7 @@ export type {
   ServerRequestKind,
   ServerResponses,
 } from "./server/serverRequest.ts";
-export { abortedFailure } from "./server/serverRequest.ts";
+export { abortedFailure, noDataFailure } from "./server/serverRequest.ts";
 export { selectServerConfig } from "./server/serverSelectors.ts";
 export type { ServerConfig } from "./server/serverState.ts";
 export type { ReaderLocation } from "./storedPlaces/readingLocation.ts";

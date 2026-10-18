@@ -1,0 +1,52 @@
+import type { Flashcard } from "@easyimmerse/types";
+import type { AnkiExportDialog } from "./ankiExportDialog.ts";
+import { isQueued } from "./ankiUpdatesQueue.ts";
+
+/** Returns the flashcards in the order they were made, which is the order Anki shows them as new cards. */
+export function oldestFirst(flashcards: readonly Flashcard[]): Flashcard[] {
+  return [...flashcards].sort(
+    (left, right) => left.created_at_ms - right.created_at_ms,
+  );
+}
+
+/** Returns the flashcards made from the chosen media files, or every flashcard when none are chosen. */
+export function flashcardsOfMedia(
+  flashcards: readonly Flashcard[],
+  mediaFileIds: readonly string[] | null,
+): readonly Flashcard[] {
+  if (mediaFileIds === null) return flashcards;
+  return flashcards.filter(
+    ({ media_file_id }) =>
+      media_file_id !== null && mediaFileIds.includes(media_file_id),
+  );
+}
+
+/**
+ * Tells whether AnkiConnect put the flashcard into Anki before any export marked it, so that its note has a GUID of Anki's choosing,
+ * which a package's note for the same flashcard does not match.
+ */
+export const wasSentBeforeExport = ({
+  sent_at_ms,
+  exported_at_ms,
+}: Flashcard) => sent_at_ms !== null && exported_at_ms === null;
+
+/** The dialog's choices that decide which flashcards an export holds. */
+type ExportChoices = Pick<AnkiExportDialog, "scope" | "mediaFileIds">;
+
+/** Returns the flashcards the dialog's choices export, oldest first. */
+export function flashcardsToExport(
+  flashcards: readonly Flashcard[],
+  { scope, mediaFileIds }: ExportChoices,
+): Flashcard[] {
+  const chosen = flashcardsOfMedia(flashcards, mediaFileIds);
+  const inScope = scope === "newAndChanged" ? chosen.filter(isQueued) : chosen;
+  return oldestFirst(inScope);
+}
+
+/** Returns the ids of the flashcards the dialog's choices export, oldest first. */
+export function flashcardIdsToExport(
+  flashcards: readonly Flashcard[],
+  choices: ExportChoices,
+): string[] {
+  return flashcardsToExport(flashcards, choices).map(({ id }) => id);
+}

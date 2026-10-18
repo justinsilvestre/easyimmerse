@@ -53,7 +53,7 @@ async fn lists_an_added_media_file() {
 async fn an_added_media_file_carries_its_canonical_path() {
     let server = spawn_test_server(true).await;
     let added = add(&server, "sample.mp4", path_source("sample.mp4")).await;
-    let canonical = fixture_path("sample.mp4").canonicalize().unwrap();
+    let canonical = dunce::canonicalize(fixture_path("sample.mp4")).unwrap();
     assert_eq!(
         added["source"],
         json!({ "kind": "path", "path": canonical })

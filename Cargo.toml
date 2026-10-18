@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "apps/server", "apps/native/src-tauri"]
+members = ["crates/*", "apps/server", "apps/native/src-tauri", "apps/native/tauri-plugin-save-copy"]
 default-members = ["crates/*", "apps/server"]
 exclude = ["plugins"]
 
@@ -20,6 +20,8 @@ easyimmerse-storage = { path = "crates/storage" }
 easyimmerse-plugin-api = { path = "crates/plugin-api" }
 easyimmerse-plugins = { path = "crates/plugins" }
 easyimmerse-api = { path = "crates/api" }
+easyimmerse-anki = { path = "crates/anki" }
+tauri-plugin-save-copy = { path = "apps/native/tauri-plugin-save-copy" }
 
 adler2 = "2.0"
 anyhow = "1.0"
@@ -29,9 +31,11 @@ bzip2-rs = "0.1"
 chardetng = "0.1"
 clap = { version = "4.6", features = ["derive", "env"] }
 csv = "1.4"
+dunce = "1.0"
 encoding_rs = "0.8"
 flate2 = { version = "1.1", default-features = false, features = ["zlib-rs"] }
 fs4 = "1.1"
+futures-util = { version = "0.3", default-features = false }
 hex = "0.4"
 lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz"] }
 lzokay = { version = "2.0", default-features = false, features = ["decompress"] }
@@ -42,16 +46,19 @@ paranoid-android = "0.2"
 rand = "0.10"
 ripemd = { version = "0.2", default-features = false }
 percent-encoding = "2.3"
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
 roxmltree = "0.21"
 ruzstd = { version = "0.9", default-features = false, features = ["std"] }
 rusqlite = { version = "0.40", features = ["bundled"] }
 rusqlite_migration = "2.6"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+sha1 = "0.11"
 sha2 = "0.11"
 tar = { version = "0.4", default-features = false }
 tauri = "2.12"
 tauri-build = "2.7"
+tauri-plugin = "2.7"
 tauri-plugin-dialog = "2.8"
 tauri-plugin-notification = "2.5"
 tauri-plugin-opener = "2.7"

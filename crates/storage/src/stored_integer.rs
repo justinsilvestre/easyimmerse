@@ -11,6 +11,11 @@ pub fn read_unsigned(row: &Row, index: usize) -> rusqlite::Result<u64> {
     Ok(u64::try_from(value).unwrap_or(0))
 }
 
+pub fn read_optional_unsigned(row: &Row, index: usize) -> rusqlite::Result<Option<u64>> {
+    let value: Option<i64> = row.get(index)?;
+    Ok(value.map(|value| u64::try_from(value).unwrap_or(0)))
+}
+
 /// Reads a JSON column in a row callback, reporting a malformed value as a column type error
 /// so that the callback stays within rusqlite's error type.
 pub fn read_json<T: serde::de::DeserializeOwned>(row: &Row, index: usize) -> rusqlite::Result<T> {

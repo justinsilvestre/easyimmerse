@@ -2,13 +2,16 @@ import type {
   LookupResponse,
   MediaFile,
   PlaybackMethodRequest,
+  Project,
   SourceStepResponse,
   SubtitleTracksResponse,
 } from "@easyimmerse/types";
 import { configureStore } from "@reduxjs/toolkit";
 import { describe, expect, it } from "vitest";
+import type { AnkiConnect } from "./ankiConnect.ts";
 import { backendApi } from "./backendApi.ts";
 import type { BackendClient, BackendRequest } from "./backendClient.ts";
+import { createFakeAnkiConnect } from "./fakeAnkiConnect.ts";
 import type { BackendThunkExtra } from "./injectedBaseQuery.ts";
 
 function createRecordingClient(): BackendClient & {
@@ -100,12 +103,17 @@ async function storeAfterApplyingSourceStep(
   return store;
 }
 
-function createStore(client: BackendClient) {
+function createStore(
+  client: BackendClient,
+  ankiConnect: AnkiConnect = createFakeAnkiConnect(),
+) {
   const extra: BackendThunkExtra = {
     client,
     browserFileRegistry: null,
     frameCapturer: null,
     failedPassages: { retryTimes: {} },
+    serverFetch: null,
+    ankiConnect,
   };
   return configureStore({
     reducer: { [backendApi.reducerPath]: backendApi.reducer },
@@ -474,6 +482,32 @@ describe("backendApi", () => {
     ]);
   });
 
+  it("posts the flashcards, marking, and read time for recordAnkiExported", async () => {
+    const client = createRecordingClient();
+    await createStore(client).dispatch(
+      backendApi.endpoints.recordAnkiExported.initiate({
+        projectId: "p1",
+        flashcardIds: ["f1", "f2"],
+        marksExported: true,
+        readAtMs: 1234,
+      }),
+    );
+    expect(client.requests).toEqual([
+      {
+        method: "POST",
+        path: "/projects/p1/anki/exported",
+        body: {
+          kind: "json",
+          value: {
+            flashcard_ids: ["f1", "f2"],
+            marks_exported: true,
+            read_at_ms: 1234,
+          },
+        },
+      },
+    ]);
+  });
+
   it("fetches the subtitle tracks again after a source step fails", async () => {
     const client = createFailingSourceStepClient();
     const store = createStore(client);
@@ -541,5 +575,107 @@ describe("backendApi", () => {
       await store.dispatch(chooseTranslation());
       expect(listedSelection(store)?.translation_track_id).toBeNull();
     });
+  });
+});
+
+describe("checkAnkiConnection", () => {
+  it("is kept as the last send to Anki found it", async () => {
+    const store = createStore(createRecordingClient());
+    await store.dispatch(
+      backendApi.endpoints.sendFlashcardsToAnki.initiate({
+        projectId: "p1",
+        flashcardIds: ["f1"],
+      }),
+    );
+    expect(
+      backendApi.endpoints.checkAnkiConnection.select()(store.getState()).data,
+    ).toEqual({ connected: false, isDenied: false });
+  });
+});
+
+/** A server listing one pending deletion from Anki, of f1, and answering every other request with nothing. */
+function createPendingDeletionClient(): BackendClient {
+  const listed = {
+    deletions: [
+      {
+        flashcard_id: "f1",
+        word: "고양이",
+        requested_at_ms: 1,
+      },
+    ],
+  };
+  return {
+    send: async <T>(request: BackendRequest) =>
+      ({ data: request.method === "GET" ? listed : undefined }) as {
+        data: T;
+      },
+  };
+}
+
+/** Anki running, holding no note of any flashcard. */
+const runningAnki = () =>
+  createFakeAnkiConnect({ version: () => 6, findNotes: () => [] });
+
+describe("deleteAnkiNotes", () => {
+  it("keeps the connection to Anki as found once it answers", async () => {
+    const store = createStore(createPendingDeletionClient(), runningAnki());
+    await store.dispatch(backendApi.endpoints.deleteAnkiNotes.initiate("p1"));
+    expect(
+      backendApi.endpoints.checkAnkiConnection.select()(store.getState()).data,
+    ).toEqual({ connected: true, version: 6 });
+  });
+
+  it("tells that it found Anki when no check had found Anki running", async () => {
+    const store = createStore(createPendingDeletionClient(), runningAnki());
+    const deleted = await store.dispatch(
+      backendApi.endpoints.deleteAnkiNotes.initiate("p1"),
+    );
+    expect(deleted.data?.foundAnki).toBe(true);
+  });
+
+  it("does not tell that it found Anki once a check has found Anki running", async () => {
+    const store = createStore(createPendingDeletionClient(), runningAnki());
+    await store.dispatch(backendApi.endpoints.checkAnkiConnection.initiate());
+    const deleted = await store.dispatch(
+      backendApi.endpoints.deleteAnkiNotes.initiate("p1"),
+    );
+    expect(deleted.data?.foundAnki).toBe(false);
+  });
+});
+
+describe("setAnkiConnect", () => {
+  it("puts the project it answers into the cache at once", async () => {
+    const project: Project = {
+      id: "p1",
+      settings: {
+        name: "Korean",
+        target_language: "ko",
+        translation_language: "en",
+        flashcard_fields: ["word"],
+        default_tags: [],
+        tags_media_name: false,
+        fills_audio_with_tts: false,
+        flashcard_front_fields: [],
+        lists_anki_deletions: true,
+      },
+      created_at_ms: 0,
+      last_opened_at_ms: 0,
+      media_count: 0,
+      flashcard_count: 0,
+      uses_anki_connect: true,
+    };
+    const store = createStore({
+      send: async <T>() => ({ data: project as T }),
+    });
+    await store.dispatch(
+      backendApi.endpoints.setAnkiConnect.initiate({
+        projectId: "p1",
+        usesAnkiConnect: true,
+      }),
+    );
+    expect(
+      backendApi.endpoints.getProject.select("p1")(store.getState()).data
+        ?.uses_anki_connect,
+    ).toBe(true);
   });
 });

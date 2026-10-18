@@ -1,13 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { actions } from "../../app/appAction.ts";
 import { transientNotice } from "../../notices/transientNotice.ts";
+import { operationsFeature } from "../../operations/operations.ts";
 import type { PickedMediaFile } from "../../platform/effects.ts";
 import { exampleMediaFile } from "../../server/exampleMediaFile.ts";
+import { emptyServerCache } from "../../server/serverCacheWith.ts";
 import type { ServerRequest } from "../../server/serverRequest.ts";
 import type { ProjectScreenState } from "../screenState.ts";
 import { updateProjectScreen } from "./updateProjectScreen.ts";
 
 const route = { screen: "project", projectId: "p1" } as const;
+
+const app = {
+  backend: emptyServerCache,
+  operations: operationsFeature.initialState,
+};
 
 const picked: PickedMediaFile = {
   name: "pilot.mkv",
@@ -18,12 +25,16 @@ const idle: ProjectScreenState = {
   kind: "project",
   pendingMediaFile: null,
   mediaImport: null,
+  ankiExport: null,
+  isAnkiConnectSetupOpen: false,
 };
 
 const chosen: ProjectScreenState = {
   kind: "project",
   pendingMediaFile: picked,
   mediaImport: null,
+  ankiExport: null,
+  isAnkiConnectSetupOpen: false,
 };
 
 const listRequest: ServerRequest = { kind: "listMediaFiles", projectId: "p1" };
@@ -48,6 +59,7 @@ describe("updateProjectScreen", () => {
       idle,
       actions.mediaFileChosen(picked),
       route,
+      app,
     );
     expect(screen).toEqual(chosen);
   });
@@ -57,6 +69,7 @@ describe("updateProjectScreen", () => {
       idle,
       actions.mediaFileChosen(picked),
       route,
+      app,
     );
     expect(effects).toEqual([
       {
@@ -72,6 +85,7 @@ describe("updateProjectScreen", () => {
       chosen,
       listed("episode.mkv"),
       route,
+      app,
     );
     expect(effects).toEqual([
       {
@@ -88,7 +102,7 @@ describe("updateProjectScreen", () => {
       listRequest,
       { ok: false, error: { status: 500, message: "down" } },
     );
-    const [, effects] = updateProjectScreen(chosen, failed, route);
+    const [, effects] = updateProjectScreen(chosen, failed, route, app);
     expect(effects).toEqual([
       {
         type: "sendRequest",
@@ -99,7 +113,12 @@ describe("updateProjectScreen", () => {
   });
 
   it("says that a file of the same name is already in the project", () => {
-    const [, effects] = updateProjectScreen(chosen, listed("pilot.mkv"), route);
+    const [, effects] = updateProjectScreen(
+      chosen,
+      listed("pilot.mkv"),
+      route,
+      app,
+    );
     expect(effects).toEqual([
       {
         type: "dispatch",
@@ -119,7 +138,7 @@ describe("updateProjectScreen", () => {
         error: { status: 500, message: "down" },
       },
     );
-    const [screen] = updateProjectScreen(chosen, added, route);
+    const [screen] = updateProjectScreen(chosen, added, route, app);
     expect(screen.pendingMediaFile).toBeNull();
   });
 
@@ -131,12 +150,13 @@ describe("updateProjectScreen", () => {
         data: { media_files: [] },
       }),
       route,
+      app,
     );
     expect(effects).toEqual([]);
   });
 
   it("ignores a listing once no file is chosen", () => {
-    const [, effects] = updateProjectScreen(idle, listed(), route);
+    const [, effects] = updateProjectScreen(idle, listed(), route, app);
     expect(effects).toEqual([]);
   });
 
@@ -145,6 +165,7 @@ describe("updateProjectScreen", () => {
       idle,
       actions.mediaFileRemovalRequested("m2"),
       route,
+      app,
     );
     expect(effects).toEqual([
       {

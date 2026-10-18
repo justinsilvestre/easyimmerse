@@ -34,7 +34,7 @@ run = [
   "node scripts/dependency-notices/index.ts --check",
   "cargo fmt --all --check",
   "cargo fmt --manifest-path plugins/Cargo.toml --all --check",
-  "cargo clippy --workspace --exclude easyimmerse-native --all-targets -- -D warnings",
+  "cargo clippy --workspace --exclude easyimmerse-native --exclude tauri-plugin-save-copy --all-targets -- -D warnings",
   "cargo test",
 ]
 
@@ -42,7 +42,7 @@ run = [
 description = "Regenerate packages/types/src/generated from Rust with ts-rs, and the shared lookup constants"
 run = [
   "rm -rf packages/types/src/generated",
-  "cargo test -p easyimmerse-core -p easyimmerse-media -p easyimmerse-api --lib export_bindings",
+  "cargo test -p easyimmerse-core -p easyimmerse-media -p easyimmerse-anki -p easyimmerse-api --lib export_bindings",
   "node packages/types/scripts/writeGeneratedIndex.ts",
   "EASYIMMERSE_UPDATE_CONSTANTS=1 cargo test -p easyimmerse-api --lib the_committed_module_is_current",
 ]
