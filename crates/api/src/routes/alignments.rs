@@ -5,9 +5,10 @@ use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use easyimmerse_core::alignment::{
-    AddAlignmentRequest, Alignment, AlignmentId, AlignmentsResponse, TranslationDocumentSelection,
+    AddAlignmentRequest, Alignment, AlignmentContent, AlignmentId, AlignmentsResponse,
+    TranslationDocumentSelection,
 };
-use easyimmerse_core::media_file::{MediaFile, MediaFileId};
+use easyimmerse_core::media_file::{MediaFile, MediaFileId, is_document_file_name};
 use easyimmerse_core::project::ProjectId;
 
 use crate::auth::error_body::{ApiError, ApiFailure, bad_request};
@@ -57,7 +58,7 @@ pub async fn list_alignments(
     request_body = AddAlignmentRequest,
     responses(
         (status = 201, description = "The added alignment", body = Alignment),
-        (status = 400, description = "A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project", body = ApiError),
+        (status = 400, description = "A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project of the kind the alignment needs: a video or an audio file for an audio alignment, a document for a translation alignment", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such media file in the project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
@@ -73,8 +74,9 @@ pub async fn add_alignment(
         .content
         .validate()
         .map_err(|error| bad_request(error.to_string()))?;
-    let counterpart = request.content.counterpart_media_file_id().clone();
-    ensure_counterpart(&state, project_id, &media_id, counterpart).await?;
+    let counterpart_id = request.content.counterpart_media_file_id().clone();
+    let counterpart = ensure_counterpart(&state, project_id, &media_id, counterpart_id).await?;
+    ensure_counterpart_fits_kind(&request.content, &counterpart)?;
     let alignment = state
         .with_storage(move |storage| storage.add_alignment(&media_id, &request))
         .await?;
@@ -125,7 +127,7 @@ pub async fn remove_alignment(
     request_body = TranslationDocumentSelection,
     responses(
         (status = 200, description = "The document's media file with the pairing saved", body = MediaFile),
-        (status = 400, description = "The translation is not another media file of the project", body = ApiError),
+        (status = 400, description = "The translation is not another document of the project", body = ApiError),
         (status = 401, description = "Missing or invalid token", body = ApiError),
         (status = 404, description = "No such media file in the project", body = ApiError),
         (status = 421, description = "Unexpected Host header", body = ApiError),
@@ -138,7 +140,13 @@ pub async fn set_translation_document(
 ) -> Result<Json<MediaFile>, ApiFailure> {
     load_media_file(&state, project_id.clone(), media_id.clone()).await?;
     if let Some(translation_id) = selection.translation_media_file_id.clone() {
-        ensure_counterpart(&state, project_id, &media_id, translation_id).await?;
+        let translation = ensure_counterpart(&state, project_id, &media_id, translation_id).await?;
+        if !is_document_file_name(&translation.name) {
+            return Err(bad_request(format!(
+                "a translation must be a document, but {:?} is not an ebook or a text file",
+                translation.name
+            )));
+        }
     }
     let media_file = state
         .with_storage(move |storage| {
@@ -152,13 +160,34 @@ pub async fn set_translation_document(
     Ok(Json(media_file))
 }
 
-/// Answers 400 unless `counterpart` is a media file of the project other than the document.
+/// Answers 400 unless the counterpart is what the alignment's kind lines the document up with:
+/// a video or an audio file for an audio alignment, a document for a translation alignment.
+fn ensure_counterpart_fits_kind(
+    content: &AlignmentContent,
+    counterpart: &MediaFile,
+) -> Result<(), ApiFailure> {
+    let is_document = is_document_file_name(&counterpart.name);
+    match content {
+        AlignmentContent::Audio { .. } if is_document => Err(bad_request(format!(
+            "an audio alignment needs a video or an audio file, but {:?} is a document",
+            counterpart.name
+        ))),
+        AlignmentContent::Translation { .. } if !is_document => Err(bad_request(format!(
+            "a translation alignment needs a document, but {:?} is not an ebook or a text file",
+            counterpart.name
+        ))),
+        _ => Ok(()),
+    }
+}
+
+/// Answers 400 unless `counterpart` is a media file of the project other than the document,
+/// and otherwise returns that media file.
 async fn ensure_counterpart(
     state: &AppState,
     project_id: ProjectId,
     media_id: &MediaFileId,
     counterpart: MediaFileId,
-) -> Result<(), ApiFailure> {
+) -> Result<MediaFile, ApiFailure> {
     if counterpart == *media_id {
         return Err(bad_request(format!(
             "the media file {:?} cannot be aligned or paired with itself",
@@ -167,7 +196,6 @@ async fn ensure_counterpart(
     }
     load_media_file(state, project_id, counterpart)
         .await
-        .map(|_| ())
         .map_err(|failure| {
             if failure.status == StatusCode::NOT_FOUND {
                 bad_request(failure.error.message)

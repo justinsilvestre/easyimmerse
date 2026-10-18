@@ -39,6 +39,17 @@ fn audio_request(audio_id: &str) -> Value {
     })
 }
 
+fn translation_request(translation_id: &str) -> Value {
+    json!({
+        "provider": null,
+        "content": {
+            "kind": "translation",
+            "translation_media_file_id": translation_id,
+            "links": [{ "spans": [span(0, 12)], "translation_spans": [span(0, 10)] }],
+        },
+    })
+}
+
 async fn add_alignment(server: &TestServer, book_id: &str, request: &Value) -> Value {
     let response = server
         .post_json(&alignments_route(PROJECT, book_id, ""), request)
@@ -122,6 +133,46 @@ async fn refuses_a_counterpart_of_another_project() {
         )
         .await;
     assert_eq!(response.status, 400);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_an_audio_alignment_with_a_document() {
+    let server = spawn_test_server(false).await;
+    let book_id = add_media(&server, PROJECT, "book.epub").await;
+    let other_book_id = add_media(&server, PROJECT, "other.epub").await;
+    let response = server
+        .post_json(
+            &alignments_route(PROJECT, &book_id, ""),
+            &audio_request(&other_book_id),
+        )
+        .await;
+    assert_eq!(response.status, 400);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_a_translation_alignment_with_an_audio_file() {
+    let server = spawn_test_server(false).await;
+    let book_id = add_media(&server, PROJECT, "book.epub").await;
+    let audio_id = add_media(&server, PROJECT, "book.mp3").await;
+    let response = server
+        .post_json(
+            &alignments_route(PROJECT, &book_id, ""),
+            &translation_request(&audio_id),
+        )
+        .await;
+    assert_eq!(response.status, 400);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn adds_a_translation_alignment_with_a_document() {
+    let server = spawn_test_server(false).await;
+    let book_id = add_media(&server, PROJECT, "book.epub").await;
+    let translation_id = add_media(&server, PROJECT, "translation.txt").await;
+    let added = add_alignment(&server, &book_id, &translation_request(&translation_id)).await;
+    assert_eq!(
+        added["content"]["translation_media_file_id"],
+        json!(translation_id)
+    );
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -283,6 +334,20 @@ async fn refuses_a_translation_document_of_another_project() {
         .put_json(
             &translation_document_route(&book_id),
             &json!({ "translation_media_file_id": translation_id }),
+        )
+        .await;
+    assert_eq!(response.status, 400);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn refuses_an_audio_file_as_a_translation_document() {
+    let server = spawn_test_server(false).await;
+    let book_id = add_media(&server, PROJECT, "book.epub").await;
+    let audio_id = add_media(&server, PROJECT, "book.mp3").await;
+    let response = server
+        .put_json(
+            &translation_document_route(&book_id),
+            &json!({ "translation_media_file_id": audio_id }),
         )
         .await;
     assert_eq!(response.status, 400);

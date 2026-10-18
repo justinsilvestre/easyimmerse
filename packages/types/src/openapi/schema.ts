@@ -4172,7 +4172,7 @@ export interface operations {
                     "application/json": components["schemas"]["Alignment"];
                 };
             };
-            /** @description A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project */
+            /** @description A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project of the kind the alignment needs: a video or an audio file for an audio alignment, a document for a translation alignment */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -5273,7 +5273,7 @@ export interface operations {
                     "application/json": components["schemas"]["MediaFile"];
                 };
             };
-            /** @description The translation is not another media file of the project */
+            /** @description The translation is not another document of the project */
             400: {
                 headers: {
                     [name: string]: unknown;
