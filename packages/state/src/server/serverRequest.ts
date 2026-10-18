@@ -10,6 +10,7 @@ import type {
   ImportJobStatus,
   ImportStepRequest,
   ImportStepResponse,
+  ListFlashcardsResponse,
   ListMediaFilesResponse,
   LookupQuery,
   LookupResponse,
@@ -61,6 +62,7 @@ export type ServerRequest =
     }
   | { kind: "getProject"; projectId: string }
   | { kind: "listMediaFiles"; projectId: string }
+  | { kind: "listFlashcards"; projectId: string }
   | { kind: "addMediaFile"; projectId: string; request: AddMediaFileRequest }
   | { kind: "parseTimedText"; request: ParseTimedTextRequest }
   | { kind: "getImportJob"; jobId: string }
@@ -193,6 +195,7 @@ export type ServerResponses = {
   addSubtitleTrack: SubtitleTrack;
   getProject: Project;
   listMediaFiles: ListMediaFilesResponse;
+  listFlashcards: ListFlashcardsResponse;
   addMediaFile: MediaFile;
   parseTimedText: TimedTextTrack;
   getImportJob: ImportJobStatus;

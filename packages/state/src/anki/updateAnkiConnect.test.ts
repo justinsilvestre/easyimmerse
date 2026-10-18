@@ -1,3 +1,4 @@
+import type { Flashcard } from "@easyimmerse/types";
 import { describe, expect, it, vi } from "vitest";
 import type { AppAction } from "../app/appAction.ts";
 import { actions } from "../app/appAction.ts";
@@ -48,6 +49,13 @@ const projectRead = (usesAnkiConnect: boolean) =>
       ok: true,
       data: { ...exampleProject("p1"), uses_anki_connect: usesAnkiConnect },
     },
+  );
+
+const flashcardsRead = (flashcards: Flashcard[]) =>
+  actions.requestSettled(
+    "project/p1/flashcardsRead",
+    { kind: "listFlashcards", projectId: "p1" },
+    { ok: true, data: { flashcards } },
   );
 
 const sendUnsent = {
@@ -346,8 +354,26 @@ describe("ankiConnectEffects", () => {
     expect(effectsOf(projectRead(true))).toEqual([check]);
   });
 
-  it("checks nothing for a project that does not use AnkiConnect", () => {
-    expect(effectsOf(projectRead(false))).toEqual([]);
+  it("reads the flashcards of a project that does not use AnkiConnect, to learn whether any was sent through it", () => {
+    expect(effectsOf(projectRead(false))).toEqual([
+      {
+        type: "sendRequest",
+        id: "project/p1/flashcardsRead",
+        request: { kind: "listFlashcards", projectId: "p1" },
+      },
+    ]);
+  });
+
+  it("checks the connection once the overview reads that a flashcard was sent through AnkiConnect", () => {
+    const sent = ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 });
+    expect(effectsOf(flashcardsRead([sent]), ankiCache(false))).toEqual([
+      check,
+    ]);
+  });
+
+  it("checks nothing once the overview reads that no flashcard was sent through AnkiConnect", () => {
+    const exported = ankiFlashcard("f1", "m1", 1, { exportedAtMs: 5 });
+    expect(effectsOf(flashcardsRead([exported]), ankiCache(false))).toEqual([]);
   });
 });
 

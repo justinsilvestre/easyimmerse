@@ -10,6 +10,14 @@ function lastDeliveredAtMs({ exported_at_ms, sent_at_ms }: Flashcard) {
   return Math.max(exported_at_ms, sent_at_ms);
 }
 
+/** Tells whether the flashcard was ever sent to Anki through AnkiConnect. */
+export const isSentThroughAnkiConnect = ({ sent_at_ms }: Flashcard) =>
+  sent_at_ms !== null;
+
+/** Tells whether the flashcard was ever marked as exported in an Anki deck package. */
+export const isExportedInPackage = ({ exported_at_ms }: Flashcard) =>
+  exported_at_ms !== null;
+
 /** Tells whether the flashcard was never sent through AnkiConnect or marked as exported. */
 export const isNeverDelivered = (flashcard: Flashcard) =>
   lastDeliveredAtMs(flashcard) === null;

@@ -14,6 +14,8 @@ export const ankiRequestIds = (projectId: string) => ({
   deletionsCleared: `project/${projectId}/ankiDeletionsCleared`,
   /** The read of the project as its overview opens, which tells whether to check the connection to Anki. */
   projectRead: `project/${projectId}/projectRead`,
+  /** The read of the flashcards of a project with AnkiConnect off, which tells whether any was sent through it before. */
+  flashcardsRead: `project/${projectId}/flashcardsRead`,
 });
 
 /** The id of the check whether Anki can be reached, of which one runs at a time. */
@@ -125,6 +127,15 @@ export function readProject(projectId: string) {
     type: "sendRequest",
     id: ankiRequestIds(projectId).projectRead,
     request: { kind: "getProject", projectId },
+  } satisfies Effect;
+}
+
+/** Reads the project's flashcards, to learn whether any was sent through AnkiConnect. */
+export function readFlashcards(projectId: string) {
+  return {
+    type: "sendRequest",
+    id: ankiRequestIds(projectId).flashcardsRead,
+    request: { kind: "listFlashcards", projectId },
   } satisfies Effect;
 }
 

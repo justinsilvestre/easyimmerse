@@ -1,6 +1,5 @@
 import type {
   AnkiPendingDeletions,
-  ListFlashcardsResponse,
   PlaybackMethodRequest,
 } from "@easyimmerse/types";
 import { cacheKey } from "./cacheKey.ts";
@@ -33,7 +32,6 @@ export type CachedQueries = {
 
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
 export type CachedResponses = ServerResponses & {
-  listFlashcards: ListFlashcardsResponse;
   listAnkiPendingDeletions: AnkiPendingDeletions;
 };
 

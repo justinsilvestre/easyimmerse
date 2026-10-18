@@ -529,17 +529,17 @@ As a user:
 
 As a user:
 - when no flashcard of this project has reached Anki, and I have not reviewed any in the easyImmerse SRS:
-  - [ ] I can see three buttons in this order:
+  - [x] I can see three buttons in this order:
     - a button to start reviewing flashcards in the easyImmerse SRS
     - a button to set up AnkiConnect for direct export to Anki
     - a button to export an Anki deck package
-- when AnkiConnect is on for the project, OR when AnkiConnect is off though flashcards of this project have have reached Anki through AnkiConnect before:
-  - [ ] I can see whether Anki is connected
-  - [ ] I can see any updates waiting in the Anki updates queue
-  - [ ] I can open a "More options" menu with buttons to export an Anki deck package and to start reviewing flashcards in the easyImmerse SRS
+- when AnkiConnect is on for the project, OR when AnkiConnect is off though flashcards of this project have reached Anki through AnkiConnect before:
+  - [x] I can see whether Anki is connected
+  - [x] I can see any updates waiting in the Anki updates queue
+  - [x] I can open a "More options" menu with buttons to export an Anki deck package and to start reviewing flashcards in the easyImmerse SRS
 - when AnkiConnect is off, and flashcards of this project have reached Anki through a deck package:
-  - [ ] I can see what waits in the Anki updates queue and the button to export an Anki deck package
-  - [ ] I can open a "More options" menu with buttons to set up AnkiConnect and to start reviewing flashcards in the easyImmerse SRS
+  - [x] I can see what waits in the Anki updates queue and the button to export an Anki deck package
+  - [x] I can open a "More options" menu with buttons to set up AnkiConnect and to start reviewing flashcards in the easyImmerse SRS
 - when flashcards are waiting in the Anki updates queue, and I have no reviews in the easyImmerse SRS due in the future for flashcards of this project:
   - [x] I see a preview of the first-created flashcard in the Anki updates queue
 - when AnkiConnect is off, and I have reviews in the easyImmerse SRS due in the future for flashcards of this project:
@@ -591,7 +591,7 @@ As a user:
   - [ ] I see it listed among the flashcards whose media is missing in Anki
   - [ ] once easyImmerse can read the media file again, I can bring the missing audio clip or screenshot into Anki
 - when AnkiConnect is on for the project, but Anki is not connected:
-  - [ ] I see helpful suggestions for getting AnkiConnect working, and a button to check again
+  - [x] I see helpful suggestions for getting AnkiConnect working, and a button to check again
 - when AnkiConnect is on for the project, but Anki refuses the connection from easyImmerse:
   - [x] I am told how to allow easyImmerse to connect, including the address AnkiConnect must allow
 

@@ -13,7 +13,12 @@ const noDeletions: PackageSync = {
 const flushedQueue = (
   newCount: number,
   changedCount: number,
-): AnkiUpdatesQueue => ({ newCount, changedCount, hasBeenFlushed: true });
+): AnkiUpdatesQueue => ({
+  newCount,
+  changedCount,
+  hasBeenSent: false,
+  hasBeenExported: true,
+});
 
 function renderChannel(
   queue: AnkiUpdatesQueue,
@@ -84,7 +89,12 @@ describe("AnkiPackageChannel", () => {
 
   it("says there are no cards yet when the project has none", () => {
     renderChannel(
-      { newCount: 0, changedCount: 0, hasBeenFlushed: false },
+      {
+        newCount: 0,
+        changedCount: 0,
+        hasBeenSent: false,
+        hasBeenExported: false,
+      },
       noDeletions,
       0,
     );

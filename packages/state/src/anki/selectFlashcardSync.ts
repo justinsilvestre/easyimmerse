@@ -17,8 +17,10 @@ import { ankiSearchOf } from "./ankiSearch.ts";
 import { hasSyncFailed } from "./ankiSyncFailures.ts";
 import {
   isChangedSinceDelivered,
+  isExportedInPackage,
   isNeverDelivered,
   isQueued,
+  isSentThroughAnkiConnect,
 } from "./ankiUpdatesQueue.ts";
 
 /** Whether Anki answered the last check: still being asked, answered, did not answer, or answered that it refuses easyImmerse. */
@@ -35,8 +37,10 @@ export type AnkiConnectionStatus =
 export type AnkiUpdatesQueue = {
   newCount: number;
   changedCount: number;
-  /** Whether any flashcard of the project was ever delivered to Anki, which removes it from the queue. */
-  hasBeenFlushed: boolean;
+  /** Whether any flashcard of the project was ever sent to Anki through AnkiConnect. */
+  hasBeenSent: boolean;
+  /** Whether any flashcard of the project was ever marked as exported in an Anki deck package. */
+  hasBeenExported: boolean;
 };
 
 /** What the project overview's flashcards panel shows about packages for Anki, which can always be exported. */
@@ -47,8 +51,10 @@ export type PackageSync = {
   ankiSearch: string;
 };
 
-/** What the project overview's flashcards panel shows about AnkiConnect while it is on for the project. */
+/** What the project overview's flashcards panel shows about AnkiConnect. */
 export type AnkiConnectSync = {
+  /** Whether AnkiConnect is on for the project. */
+  isOn: boolean;
   connection: AnkiConnectionStatus;
   /** The origin Anki refused, while it refuses easyImmerse and the origin is known, or null otherwise. */
   deniedOrigin: string | null;
@@ -56,7 +62,7 @@ export type AnkiConnectSync = {
   pendingDeletionCount: number;
   /** Whether a send of the project's flashcards, or a deletion of its notes from Anki, is under way or waiting. */
   isSyncing: boolean;
-  /** Whether the last send or deletion failed while Anki stays connected, and nothing has been tried since. */
+  /** Whether the last send or deletion failed while AnkiConnect is on and Anki stays connected, and nothing has been tried since. */
   hasSyncFailed: boolean;
 };
 
@@ -66,8 +72,7 @@ export type FlashcardSync = {
   flashcardCount: number;
   queue: AnkiUpdatesQueue;
   package: PackageSync;
-  /** Null while AnkiConnect is off for the project. */
-  ankiConnect: AnkiConnectSync | null;
+  ankiConnect: AnkiConnectSync;
   /** The first-made flashcard in the Anki updates queue. */
   nextCard: FlashcardContent | null;
 };
@@ -103,16 +108,18 @@ export const selectFlashcardSync = createSelector(
     flashcardCount: flashcards.length,
     queue: queueOf(flashcards),
     package: packageSync(usesAnkiConnect ? noDeletions : deletions),
-    ankiConnect: usesAnkiConnect
-      ? {
-          connection: statusOf(connection),
-          deniedOrigin: deniedOriginOf(connection),
-          pendingDeletionCount: deletions.length,
-          isSyncing,
-          hasSyncFailed:
-            hasFailed && !isSyncing && statusOf(connection) === "connected",
-        }
-      : null,
+    ankiConnect: {
+      isOn: usesAnkiConnect,
+      connection: statusOf(connection),
+      deniedOrigin: deniedOriginOf(connection),
+      pendingDeletionCount: deletions.length,
+      isSyncing,
+      hasSyncFailed:
+        usesAnkiConnect &&
+        hasFailed &&
+        !isSyncing &&
+        statusOf(connection) === "connected",
+    },
     nextCard: firstMadeContent(flashcards.filter(isQueued)),
   }),
 );
@@ -126,13 +133,13 @@ function packageSync(deletions: readonly AnkiPendingDeletion[]): PackageSync {
   };
 }
 
-function queueOf(flashcards: readonly Flashcard[]): AnkiUpdatesQueue {
-  const newCount = flashcards.filter(isNeverDelivered).length;
+function queueOf(flashcards: readonly Flashcard[]) {
   return {
-    newCount,
+    newCount: flashcards.filter(isNeverDelivered).length,
     changedCount: flashcards.filter(isChangedSinceDelivered).length,
-    hasBeenFlushed: newCount < flashcards.length,
-  };
+    hasBeenSent: flashcards.some(isSentThroughAnkiConnect),
+    hasBeenExported: flashcards.some(isExportedInPackage),
+  } satisfies AnkiUpdatesQueue;
 }
 
 function firstMadeContent(flashcards: readonly Flashcard[]) {

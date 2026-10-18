@@ -1,4 +1,4 @@
-import type { FlashcardSync } from "@easyimmerse/state";
+import type { AnkiConnectSync, FlashcardSync } from "@easyimmerse/state";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -9,31 +9,46 @@ import { ProjectFlashcardsPanel } from "./ProjectFlashcardsPanel.tsx";
 
 afterEach(cleanup);
 
+const ankiConnectOff: AnkiConnectSync = {
+  isOn: false,
+  connection: "connected",
+  deniedOrigin: null,
+  pendingDeletionCount: 0,
+  isSyncing: false,
+  hasSyncFailed: false,
+};
+
 const neverDelivered: FlashcardSync = {
   flashcardCount: 3,
-  queue: { newCount: 3, changedCount: 0, hasBeenFlushed: false },
+  queue: {
+    newCount: 3,
+    changedCount: 0,
+    hasBeenSent: false,
+    hasBeenExported: false,
+  },
   package: {
     deletions: [],
     ankiSearch: "",
   },
-  ankiConnect: null,
+  ankiConnect: ankiConnectOff,
   nextCard: null,
 };
 
 const exportedBefore: FlashcardSync = {
   ...neverDelivered,
-  queue: { newCount: 0, changedCount: 0, hasBeenFlushed: true },
+  queue: { ...neverDelivered.queue, newCount: 0, hasBeenExported: true },
 };
 
 const usingAnkiConnect: FlashcardSync = {
   ...exportedBefore,
-  ankiConnect: {
-    connection: "connected",
-    deniedOrigin: null,
-    pendingDeletionCount: 0,
-    isSyncing: false,
-    hasSyncFailed: false,
-  },
+  ankiConnect: { ...ankiConnectOff, isOn: true },
+};
+
+/** AnkiConnect turned off after it sent flashcards, with two new flashcards waiting. */
+const offAfterSending: FlashcardSync = {
+  ...neverDelivered,
+  queue: { ...neverDelivered.queue, newCount: 2, hasBeenSent: true },
+  nextCard: exampleFlashcard,
 };
 
 function renderPanel(sync: FlashcardSync) {
@@ -99,7 +114,7 @@ describe("ProjectFlashcardsPanel", () => {
     it("captions the next card with what waits to be exported", () => {
       renderPanel({
         ...exportedBefore,
-        queue: { newCount: 5, changedCount: 2, hasBeenFlushed: true },
+        queue: { ...exportedBefore.queue, newCount: 5, changedCount: 2 },
         nextCard: exampleFlashcard,
       });
       expect(figureCaption()).toBe(
@@ -110,7 +125,7 @@ describe("ProjectFlashcardsPanel", () => {
     it("captions the next card with what will be sent through AnkiConnect", () => {
       renderPanel({
         ...usingAnkiConnect,
-        queue: { newCount: 3, changedCount: 0, hasBeenFlushed: true },
+        queue: { ...usingAnkiConnect.queue, newCount: 3 },
         nextCard: exampleFlashcard,
       });
       expect(figureCaption()).toBe("3 new flashcards waiting for Anki.");
@@ -127,7 +142,7 @@ describe("ProjectFlashcardsPanel", () => {
       renderPanel({
         ...neverDelivered,
         flashcardCount: 0,
-        queue: { newCount: 0, changedCount: 0, hasBeenFlushed: false },
+        queue: { ...neverDelivered.queue, newCount: 0 },
       });
       expect(screen.queryByText("Preview")).toBeNull();
     });
@@ -139,9 +154,9 @@ describe("ProjectFlashcardsPanel", () => {
       expect(
         screen.getAllByRole("button").map((button) => button.textContent),
       ).toEqual([
-        "Export an Anki deck packageSave a file to import into Anki.",
-        "Set up AnkiConnectSend flashcards to Anki as you make them.",
         "Review in easyImmerseStudy the flashcards here, with spaced repetition.Coming soon",
+        "Set up AnkiConnectSend flashcards to Anki as you make them.",
+        "Export an Anki deck packageSave a file to import into Anki.",
       ]);
     });
 
@@ -259,6 +274,84 @@ describe("ProjectFlashcardsPanel", () => {
         screen.getByRole("menuitem", { name: "Export an Anki deck package" }),
       );
       expect(calls).toEqual(["export"]);
+    });
+  });
+
+  describe("while AnkiConnect is off after it sent flashcards", () => {
+    it("names AnkiConnect", () => {
+      renderPanel(offAfterSending);
+      expect(screen.getByRole("heading").textContent).toBe(
+        "Making flashcards with AnkiConnect",
+      );
+    });
+
+    it("shows AnkiConnect switched off", () => {
+      renderPanel(offAfterSending);
+      expect(
+        screen
+          .getByRole("switch", { name: "AnkiConnect on for this project" })
+          .getAttribute("aria-checked"),
+      ).toBe("false");
+    });
+
+    it("opens the setup with the switch", () => {
+      const calls = renderPanel(offAfterSending);
+      fireEvent.click(
+        screen.getByRole("switch", { name: "AnkiConnect on for this project" }),
+      );
+      expect(calls).toEqual(["setUp"]);
+    });
+
+    it("says whether Anki is connected", () => {
+      renderPanel(offAfterSending);
+      expect(screen.getByText("Anki connected")).toBeDefined();
+    });
+
+    it("captions the next card with what waits until AnkiConnect is turned on", () => {
+      renderPanel(offAfterSending);
+      expect(figureCaption()).toBe(
+        "2 new flashcards waiting until AnkiConnect is turned on.",
+      );
+    });
+
+    it("keeps the other ways in the More options menu", () => {
+      renderPanel(offAfterSending);
+      openMoreOptions();
+      expect(menuItemNames()).toEqual([
+        "Export an Anki deck package",
+        "Review in easyImmerse (coming soon)",
+      ]);
+    });
+
+    it("offers no button to send, try again or check again", () => {
+      renderPanel({
+        ...offAfterSending,
+        ankiConnect: { ...ankiConnectOff, connection: "unreachable" },
+      });
+      expect(screen.queryAllByRole("button", { name: /Send|again/ })).toEqual(
+        [],
+      );
+    });
+
+    it("gives no troubleshooting hint while Anki is unreachable", () => {
+      renderPanel({
+        ...offAfterSending,
+        ankiConnect: { ...ankiConnectOff, connection: "unreachable" },
+      });
+      expect(screen.queryByText(/Start Anki/)).toBeNull();
+    });
+
+    it("lists the deleted flashcards still in Anki", () => {
+      renderPanel({
+        ...offAfterSending,
+        package: {
+          deletions: [
+            { flashcard_id: "f9", word: "Katze", requested_at_ms: 1 },
+          ],
+          ankiSearch: '"easyImmerse id:f9"',
+        },
+      });
+      expect(screen.getByText("Katze")).toBeDefined();
     });
   });
 });

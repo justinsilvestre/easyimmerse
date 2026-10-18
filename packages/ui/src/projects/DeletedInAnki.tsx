@@ -33,8 +33,7 @@ export function DeletedInAnki({
         Anki's card browser and delete them from there.
       </p>
       <p className="text-sm text-fg-muted">
-        Consider using AnkiConnect in the future to automatically sync your Anki
-        collection with your easyImmerse flashcards.
+        Turn AnkiConnect on to have easyImmerse delete them for you.
       </p>
       <figure>
         <figcaption className="sr-only">Anki search</figcaption>

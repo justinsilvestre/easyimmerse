@@ -13,9 +13,11 @@ import {
   ankiRequestIds,
   checkAnkiConnection,
   clearDeletions,
+  readFlashcards,
   setAnkiConnect,
 } from "./ankiRequests.ts";
 import { forgetSyncFailures } from "./ankiSyncFailures.ts";
+import { isSentThroughAnkiConnect } from "./ankiUpdatesQueue.ts";
 import { syncWithAnki } from "./syncWithAnki.ts";
 
 type AnkiConnectApp = Pick<ReadableState, "backend" | "operations">;
@@ -47,7 +49,7 @@ export function updateAnkiConnectSetup(
 
 /**
  * Returns the effects of the project overview's AnkiConnect actions, which change no state:
- * a check whether Anki can be reached, as asked for or once the overview has read that the project uses AnkiConnect;
+ * a check whether Anki can be reached, as asked for or once the overview has read that the project uses AnkiConnect or has sent flashcards through it;
  * a send of every flashcard Anki has no note for, oldest first, followed by the deletion of the notes of deleted flashcards
  * that Anki could not be reached for, as asked for, which forgets the last failed ones, or once Anki is found running;
  * the turning off of AnkiConnect; and the clearing of the deletions the panel lists, which the user marked done.
@@ -87,15 +89,19 @@ function markedDone(projectId: string, { backend }: AnkiConnectApp) {
   return ids.length === 0 ? [] : [clearDeletions(projectId, ids)];
 }
 
-/** Checks the connection once the overview has read that the project uses AnkiConnect. */
+/**
+ * Checks the connection once the overview has read that the project uses AnkiConnect,
+ * or, for a project with AnkiConnect off, once it has read that a flashcard was sent through AnkiConnect before.
+ */
 function checkOnRead(action: RequestSettled, projectId: string) {
-  return isSettled(
-    action,
-    ankiRequestIds(projectId).projectRead,
-    "getProject",
-  ) &&
+  const ids = ankiRequestIds(projectId);
+  if (isSettled(action, ids.projectRead, "getProject") && action.outcome.ok)
+    return action.outcome.data.uses_anki_connect
+      ? [checkAnkiConnection]
+      : [readFlashcards(projectId)];
+  return isSettled(action, ids.flashcardsRead, "listFlashcards") &&
     action.outcome.ok &&
-    action.outcome.data.uses_anki_connect
+    action.outcome.data.flashcards.some(isSentThroughAnkiConnect)
     ? [checkAnkiConnection]
     : [];
 }

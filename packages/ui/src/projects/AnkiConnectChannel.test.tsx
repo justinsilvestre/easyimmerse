@@ -10,6 +10,7 @@ import { AnkiConnectChannel } from "./AnkiConnectChannel.tsx";
 afterEach(cleanup);
 
 const syncOf = (changes: Partial<AnkiConnectSync> = {}): AnkiConnectSync => ({
+  isOn: true,
   connection: "connected",
   deniedOrigin: null,
   pendingDeletionCount: 0,
@@ -21,7 +22,8 @@ const syncOf = (changes: Partial<AnkiConnectSync> = {}): AnkiConnectSync => ({
 const queueOf = (newCount: number, changedCount = 0): AnkiUpdatesQueue => ({
   newCount,
   changedCount,
-  hasBeenFlushed: true,
+  hasBeenSent: true,
+  hasBeenExported: false,
 });
 
 const connectedAs = (connection: AnkiConnectionStatus) =>

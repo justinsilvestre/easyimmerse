@@ -13,12 +13,13 @@ import { FlashcardPreview } from "../flashcards/FlashcardPreview.tsx";
 import type { FlashcardLanguages } from "../flashcards/flashcardFields.ts";
 import { AnkiConnectChannel } from "./AnkiConnectChannel.tsx";
 import { AnkiPackageChannel } from "./AnkiPackageChannel.tsx";
+import { DeletedInAnki } from "./DeletedInAnki.tsx";
 import { FlashcardsColumns } from "./FlashcardsColumns.tsx";
 import { QueueSummary } from "./QueueSummary.tsx";
 
 /**
- * Shows the ways to use the project's flashcards: the Anki deck package, AnkiConnect, and the review in easyImmerse, which is not available yet.
- * Until one is in use, all three are offered alike. Once AnkiConnect is on, or flashcards have reached Anki through a package,
+ * Shows the ways to use the project's flashcards: the review in easyImmerse, which is not available yet, AnkiConnect, and the Anki deck package.
+ * Until one is in use, all three are offered alike. Once AnkiConnect is on or has sent flashcards, or flashcards have been exported in a package,
  * that way fills the panel and a "More options" menu holds the others.
  * On the left is the next card waiting to reach Anki, the first in the Anki updates queue that both the package and AnkiConnect count,
  * with the main button of the way in use under it.
@@ -53,7 +54,7 @@ export function ProjectFlashcardsPanel({
   /** Called by the review option, which is marked as coming soon; it can explain. */
   onStartReview: () => void;
 }) {
-  const { ankiConnect, flashcardCount } = sync;
+  const { flashcardCount } = sync;
   const mode = projectFlashcardsModeOf(sync);
   const hasFlashcards = flashcardCount > 0;
   const preview = sync.nextCard && (
@@ -114,10 +115,11 @@ export function ProjectFlashcardsPanel({
         >
           <div className="flex w-full flex-col divide-y divide-line">
             <Option
-              icon={<Download className="size-5" aria-hidden />}
-              title="Export an Anki deck package"
-              description="Save a file to import into Anki."
-              onClick={onExportPackage}
+              icon={<GraduationCap className="size-5" aria-hidden />}
+              title="Review in easyImmerse"
+              description="Study the flashcards here, with spaced repetition."
+              badge={<Badge>Coming soon</Badge>}
+              onClick={onStartReview}
             />
             <Option
               icon={<Plug className="size-5" aria-hidden />}
@@ -126,11 +128,10 @@ export function ProjectFlashcardsPanel({
               onClick={onSetUpAnkiConnect}
             />
             <Option
-              icon={<GraduationCap className="size-5" aria-hidden />}
-              title="Review in easyImmerse"
-              description="Study the flashcards here, with spaced repetition."
-              badge={<Badge>Coming soon</Badge>}
-              onClick={onStartReview}
+              icon={<Download className="size-5" aria-hidden />}
+              title="Export an Anki deck package"
+              description="Save a file to import into Anki."
+              onClick={onExportPackage}
             />
           </div>
         </FlashcardsColumns>
@@ -146,9 +147,9 @@ export function ProjectFlashcardsPanel({
           onMarkDeletionsDone={onMarkDeletionsDone}
         />
       )}
-      {ankiConnect !== null && (
+      {mode === "ankiConnect" && (
         <AnkiConnectChannel
-          sync={ankiConnect}
+          sync={sync.ankiConnect}
           queue={sync.queue}
           flashcardCount={flashcardCount}
           preview={preview}
@@ -156,7 +157,16 @@ export function ProjectFlashcardsPanel({
           onTryAgain={onTryAnkiSyncAgain}
           onSetUpAnkiConnect={onSetUpAnkiConnect}
           onTurnOff={onTurnOffAnkiConnect}
-        />
+        >
+          {sync.package.deletions.length > 0 && (
+            <DeletedInAnki
+              deletions={sync.package.deletions}
+              ankiSearch={sync.package.ankiSearch}
+              onCopyAnkiSearch={onCopyAnkiSearch}
+              onMarkDone={onMarkDeletionsDone}
+            />
+          )}
+        </AnkiConnectChannel>
       )}
     </section>
   );

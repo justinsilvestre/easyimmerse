@@ -62,17 +62,34 @@ const withDeletions = (usesAnkiConnect: boolean) =>
   );
 
 describe("selectFlashcardSync", () => {
-  it("tells that the queue was never flushed before any card reached Anki", () => {
-    expect(
-      syncOf(ankiCache(false, [ankiFlashcard("f1", "m1", 1)])),
-    ).toMatchObject({ queue: { hasBeenFlushed: false } });
+  it("tells that no card was sent through AnkiConnect while cards were only exported", () => {
+    const backend = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, { exportedAtMs: 5 }),
+    ]);
+    expect(syncOf(backend)).toMatchObject({ queue: { hasBeenSent: false } });
   });
 
-  it("tells that the queue was flushed once a card was sent through AnkiConnect", () => {
+  it("tells that a card was sent through AnkiConnect", () => {
     const backend = ankiCache(false, [
       ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 }),
     ]);
-    expect(syncOf(backend)).toMatchObject({ queue: { hasBeenFlushed: true } });
+    expect(syncOf(backend)).toMatchObject({ queue: { hasBeenSent: true } });
+  });
+
+  it("tells that no card was exported in a package while cards were only sent", () => {
+    const backend = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, { sentAtMs: 5 }),
+    ]);
+    expect(syncOf(backend)).toMatchObject({
+      queue: { hasBeenExported: false },
+    });
+  });
+
+  it("tells that a card was exported in a package", () => {
+    const backend = ankiCache(false, [
+      ankiFlashcard("f1", "m1", 1, { exportedAtMs: 5 }),
+    ]);
+    expect(syncOf(backend)).toMatchObject({ queue: { hasBeenExported: true } });
   });
 
   it("counts the cards never delivered to Anki as new", () => {
@@ -157,8 +174,22 @@ describe("selectFlashcardSync", () => {
     );
   });
 
-  it("shows no AnkiConnect status while AnkiConnect is off", () => {
-    expect(syncOf(ankiCache(false))).toMatchObject({ ankiConnect: null });
+  it("tells that AnkiConnect is off", () => {
+    expect(syncOf(ankiCache(false))).toMatchObject({
+      ankiConnect: { isOn: false },
+    });
+  });
+
+  it("tells that AnkiConnect is on", () => {
+    expect(syncOf(checked(true))).toMatchObject({
+      ankiConnect: { isOn: true },
+    });
+  });
+
+  it("says whether Anki is connected while AnkiConnect is off", () => {
+    expect(syncOf(checked(true, ankiCache(false)))).toMatchObject({
+      ankiConnect: { connection: "connected" },
+    });
   });
 
   it("counts every card of the project", () => {
@@ -275,6 +306,12 @@ describe("selectFlashcardSync", () => {
       expect(syncOf(checked(true), sendFailed)).toMatchObject({
         ankiConnect: { hasSyncFailed: true },
       });
+    });
+
+    it("says no sync failed while AnkiConnect is off", () => {
+      expect(syncOf(checked(true, ankiCache(false)), sendFailed)).toMatchObject(
+        { ankiConnect: { hasSyncFailed: false } },
+      );
     });
 
     it("says no sync failed while Anki is unreachable", () => {

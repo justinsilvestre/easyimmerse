@@ -10,10 +10,11 @@ import { Switch } from "../components/Switch.tsx";
 export type ChannelStatus = AnkiConnectionStatus | "syncFailed";
 
 /**
- * Groups, under a label that names them all, the switch that turns AnkiConnect off, the status badge,
- * the way to check or try again, and, while Anki cannot be used, how to reach it with a link to the setup steps.
+ * Groups, under a label that names them all, the switch that turns AnkiConnect off or opens its setup, the status badge,
+ * and, while AnkiConnect is on, the way to check or try again and, while Anki cannot be used, how to reach it with a link to the setup steps.
  */
 export function AnkiConnectStatus({
+  isOn,
   status,
   isSyncing,
   deniedOrigin,
@@ -22,6 +23,7 @@ export function AnkiConnectStatus({
   onSetUpAnkiConnect,
   onTurnOff,
 }: {
+  isOn: boolean;
   status: ChannelStatus;
   isSyncing: boolean;
   /** The origin Anki refused, when it refuses easyImmerse and the origin is known. */
@@ -31,7 +33,8 @@ export function AnkiConnectStatus({
   onSetUpAnkiConnect: () => void;
   onTurnOff: () => void;
 }) {
-  const isUnconnected = status === "unreachable" || status === "denied";
+  const isUnconnected =
+    isOn && (status === "unreachable" || status === "denied");
   return (
     <fieldset className="flex w-full min-w-0 flex-col gap-1.5">
       <legend className="mb-1.5 text-xs font-medium text-fg-muted">
@@ -40,18 +43,20 @@ export function AnkiConnectStatus({
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <Switch
-            label="On"
+            label={isOn ? "On" : "Off"}
             accessibleLabel="AnkiConnect on for this project"
-            checked
-            onChange={onTurnOff}
+            checked={isOn}
+            onChange={isOn ? onTurnOff : onSetUpAnkiConnect}
           />
           {statusBadges[status]}
-          <StatusAction
-            status={status}
-            isSyncing={isSyncing}
-            onCheckConnection={onCheckConnection}
-            onTryAgain={onTryAgain}
-          />
+          {isOn && (
+            <StatusAction
+              status={status}
+              isSyncing={isSyncing}
+              onCheckConnection={onCheckConnection}
+              onTryAgain={onTryAgain}
+            />
+          )}
         </div>
         {isUnconnected && (
           <ConnectionHint

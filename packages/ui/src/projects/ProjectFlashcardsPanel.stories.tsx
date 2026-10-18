@@ -6,6 +6,7 @@ import {
   frontFieldsOfPreset,
 } from "../flashcards/flashcardPresets.ts";
 import {
+  ankiConnectOffAfterSendingSync,
   ankiConnectSync,
   deletionsListedSync,
   exportedSync,
@@ -60,7 +61,7 @@ export const EveryFlashcardExported: Story = {
   args: {
     sync: {
       ...exportedSync,
-      queue: { newCount: 0, changedCount: 0, hasBeenFlushed: true },
+      queue: { ...exportedSync.queue, newCount: 0, changedCount: 0 },
       nextCard: null,
     },
   },
@@ -88,7 +89,7 @@ export const SendingToAnkiBeforeAnyFlashcardReachedAnki: Story = {
   args: {
     sync: ankiConnectSync(
       { isSyncing: true },
-      { newCount: 12, hasBeenFlushed: false },
+      { newCount: 12, hasBeenSent: false },
     ),
   },
 };
@@ -141,5 +142,20 @@ export const AnkiRefusedEasyImmerse: Story = {
       connection: "denied",
       deniedOrigin: "http://localhost:5173",
     }),
+  },
+};
+
+export const AnkiConnectOffAfterSending: Story = {
+  args: { sync: ankiConnectOffAfterSendingSync },
+};
+
+export const AnkiConnectOffAfterSendingEveryFlashcard: Story = {
+  args: {
+    sync: {
+      ...ankiConnectOffAfterSendingSync,
+      queue: { ...ankiConnectOffAfterSendingSync.queue, newCount: 0 },
+      package: { deletions: [], ankiSearch: "" },
+      nextCard: null,
+    },
   },
 };
