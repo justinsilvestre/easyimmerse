@@ -21,7 +21,7 @@ import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 /**
  * Loads the translation a book is paired with, and its newest translation alignment when it is with that translation,
  * for the reader's translation panel and views. Pairing goes through the store; combining the two into a bilingual ebook
- * opens a dialog that tells what alignment provider it needs, which the reader shows.
+ * opens a dialog, which the reader shows, that tells that easyImmerse cannot align the two yet.
  * Also returns the translation of the passage at a place in the book, for a flashcard's context, or an empty string where none is linked.
  */
 export function useBookTranslation(

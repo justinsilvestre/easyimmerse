@@ -3,10 +3,9 @@ import { Button } from "../components/Button.tsx";
 import { ModalDialog } from "../components/ModalDialog.tsx";
 
 /**
- * Explains what combining a book with its translation into a bilingual ebook needs: an alignment provider,
- * which matches each sentence of the book with its translation.
- * The easyImmerse cloud does not exist yet, and this version cannot run alignment plugins,
- * so the dialog says how to get a provider, and that a plugin it found cannot run yet. No alignment is started.
+ * Tells that a book cannot yet be combined with its translation into a bilingual ebook,
+ * since easyImmerse cannot yet match each sentence of the book with its translation,
+ * and, when an alignment plugin is installed, that this version cannot run it. No alignment is started.
  */
 export function BilingualEbookDialog({
   alignmentPlugins,
@@ -32,22 +31,15 @@ export function BilingualEbookDialog({
       ) : found ? (
         <p role="status" className="text-sm text-fg-soft">
           The alignment plugin “{found.title}” is installed, but this version of
-          easyImmerse cannot run alignment plugins yet.
+          easyImmerse cannot run alignment plugins yet, so a bilingual ebook
+          cannot be made for now.
         </p>
       ) : (
-        <div role="status" className="flex flex-col gap-3 text-sm text-fg-soft">
-          <p>
-            Making a bilingual ebook needs an alignment provider, which matches
-            each sentence of the book with its translation. None is available
-            yet. You can get one in either of two ways:
-          </p>
-          <ul className="flex list-disc flex-col gap-1 pl-5">
-            <li>
-              Subscribe to the easyImmerse cloud, which aligns books for you.
-            </li>
-            <li>Install an alignment plugin in the easyImmerse desktop app.</li>
-          </ul>
-        </div>
+        <p role="status" className="text-sm text-fg-soft">
+          A bilingual ebook needs each sentence of the book matched with its
+          translation. easyImmerse cannot match them yet, so a bilingual ebook
+          cannot be made for now.
+        </p>
       )}
     </ModalDialog>
   );

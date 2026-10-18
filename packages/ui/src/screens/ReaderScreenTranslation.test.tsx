@@ -399,7 +399,7 @@ describe("ReaderScreen translation", () => {
     ).toBe("El gato duerme en el alféizar de la ventana.");
   });
 
-  it("explains how to get an alignment provider when none is installed", async () => {
+  it("tells that a bilingual ebook cannot be made yet when no alignment plugin is installed", async () => {
     await renderReader({ isPaired: true });
     openPanel();
     fireEvent.click(
@@ -408,7 +408,7 @@ describe("ReaderScreen translation", () => {
       }),
     );
     expect(
-      await screen.findByText(/needs an alignment provider/),
+      await screen.findByText(/easyImmerse cannot match them yet/),
     ).toBeDefined();
   });
 

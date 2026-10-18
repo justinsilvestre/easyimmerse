@@ -15,7 +15,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NoProvider: Story = {};
+export const NoPluginInstalled: Story = {};
 
 export const ListingPlugins: Story = {
   args: { alignmentPlugins: null },
