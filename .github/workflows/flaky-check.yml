@@ -1,0 +1,62 @@
+# Throwaway workflow: repeats the conversion test binary on many macOS runners, with and
+# without the fix, and with and without extra CPU load.
+name: flaky-check
+
+on:
+  push:
+    tags: ["flaky-check-*"]
+
+jobs:
+  repeat:
+    strategy:
+      fail-fast: false
+      matrix:
+        side: [before, after]
+        load: [none, busy]
+        slot: [1, 2, 3, 4]
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Restore the real-time flag for the before side
+        if: matrix.side == 'before'
+        run: |
+          sed -i '' 's/\["-c:v", encoder, "-profile:v", "high"\]/["-c:v", encoder, "-realtime", "1", "-profile:v", "high"]/' crates/media-ffmpeg/src/conversion_command.rs
+          grep -q '"-realtime", "1"' crates/media-ffmpeg/src/conversion_command.rs
+
+      - name: Fetch the ffmpeg sidecar
+        run: mise run fetch-ffmpeg
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Build the test binary
+        run: cargo test -p easyimmerse-conversion --test conversion --no-run
+
+      - name: Repeat the test binary
+        env:
+          EASYIMMERSE_FFMPEG_DIR: ${{ github.workspace }}/apps/native/src-tauri/binaries
+        run: |
+          sysctl -n hw.ncpu
+          if [ "${{ matrix.load }}" = busy ]; then
+            yes > /dev/null & yes > /dev/null & yes > /dev/null &
+          fi
+          pass=0; fail=0; skip=0; other=0
+          for i in $(seq 1 25); do
+            out=$(cargo test -p easyimmerse-conversion --test conversion 2>&1) || true
+            if grep -q 'accuracy::transcoded_frames_present_at_their_source_times \.\.\. FAILED' <<<"$out"; then
+              fail=$((fail+1)); echo "run $i: FAILED"
+              grep -E 'left:|right:|diagnostic|segment [0-9]+:|videotoolbox|IOService|exited with' <<<"$out" || true
+            elif grep -q 'skipped: no working hardware' <<<"$out"; then
+              skip=$((skip+1)); echo "run $i: skipped"
+            elif grep -q 'test result: FAILED' <<<"$out"; then
+              other=$((other+1)); echo "run $i: another test failed"
+              grep -E '\.\.\. FAILED' <<<"$out" || true
+            else
+              pass=$((pass+1)); echo "run $i: passed"
+            fi
+          done
+          result="RESULT side=${{ matrix.side }} load=${{ matrix.load }} slot=${{ matrix.slot }} pass=$pass fail=$fail skip=$skip other=$other"
+          echo "$result"
+          echo "$result" >> "$GITHUB_STEP_SUMMARY"
+          test "$fail" -eq 0

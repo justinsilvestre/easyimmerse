@@ -126,6 +126,14 @@ async fn transcoded_frames_present_at_their_source_times() {
     let test = open_service();
     let (key, _) = register(&test.service, MPEG4_VORBIS, transcode_plan(&encoder)).await;
     let (converted, _) = convert(&test.service, &key, 0..5, test.cache_dir.path()).await;
+    let missing: Vec<usize> = (0..250)
+        .filter(|index| !converted.frames.contains(index))
+        .collect();
+    eprintln!(
+        "diagnostic: samples in fragments {}, decoded frames {}, missing {missing:?}",
+        converted.presentation_times.len(),
+        converted.frames.len()
+    );
     assert_eq!(
         (
             converted.frames.len(),
