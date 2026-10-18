@@ -1,6 +1,7 @@
 import type {
   AnkiPendingDeletions,
   PlaybackMethodRequest,
+  TimedTextTrack,
 } from "@easyimmerse/types";
 import { cacheKey } from "./cacheKey.ts";
 import type { ServerResponses } from "./serverRequest.ts";
@@ -23,6 +24,8 @@ export type CachedQueries = {
     mediaFileId: string;
     request: PlaybackMethodRequest;
   };
+  listSubtitleTracks: { projectId: string; mediaFileId: string };
+  getSubtitleCues: { projectId: string; mediaFileId: string; trackId: string };
   getProject: string;
   listMediaFiles: string;
   listFlashcards: string;
@@ -33,6 +36,7 @@ export type CachedQueries = {
 /** The data of each query whose entry state code reads: a request's data, or that of a query only components send. */
 export type CachedResponses = ServerResponses & {
   listAnkiPendingDeletions: AnkiPendingDeletions;
+  getSubtitleCues: TimedTextTrack;
 };
 
 /** A query's entry in the server cache: its answer, or the error it failed with. Undefined while the cache holds none. */

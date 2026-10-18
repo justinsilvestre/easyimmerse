@@ -14,10 +14,8 @@ import {
   selectLookupEscapeBinding,
 } from "./keyBinding.ts";
 
-/** What the media screen completes with data only it holds: the cues, the drafts of flashcards, and the fullscreen state. */
+/** What the media screen completes with data only it holds: the drafts of flashcards, and the fullscreen state. */
 type MediaKeyCommand =
-  | { type: "skipCue"; direction: "back" | "forward" }
-  | { type: "replayCue" }
   | { type: "toggleFullscreen" }
   | { type: "startFlashcardAtCursor"; destination: FlashcardDestination };
 
@@ -44,17 +42,11 @@ export function selectMediaKeyBinding(
     case "k":
       return bindAction(screenActions.playToggleRequested());
     case "ArrowLeft":
-      return bindCommand<MediaKeyCommand>({
-        type: "skipCue",
-        direction: "back",
-      });
+      return bindAction(screenActions.cueSkipRequested("back"));
     case "ArrowRight":
-      return bindCommand<MediaKeyCommand>({
-        type: "skipCue",
-        direction: "forward",
-      });
+      return bindAction(screenActions.cueSkipRequested("forward"));
     case "r":
-      return bindCommand<MediaKeyCommand>({ type: "replayCue" });
+      return bindAction(screenActions.cueReplayRequested());
     case "m":
       return bindAction(preferencesActions.muteToggleRequested());
     case "f":
