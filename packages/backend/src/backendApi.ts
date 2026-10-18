@@ -11,8 +11,11 @@ import type {
 } from "@easyimmerse/state";
 import { cacheKey, serverCachePath } from "@easyimmerse/state";
 import type {
+  AddAlignmentRequest,
   AddMediaFileRequest,
   AddSubtitleTrackRequest,
+  Alignment,
+  AlignmentsResponse,
   AnkiConnectSetting,
   AnkiDeletionsCleared,
   AnkiExportedRequest,
@@ -55,6 +58,7 @@ import type {
   TimedTextTrack,
   TrackSelection,
   TracksResponse,
+  TranslationDocumentSelection,
   WaveformResponse,
 } from "@easyimmerse/types";
 import type { BaseQueryApi, QueryReturnValue } from "@reduxjs/toolkit/query";
@@ -128,6 +132,14 @@ type SubtitleTrackArgs = MediaFileArgs & { trackId: string };
 
 type SubtitleSelectionArgs = MediaFileArgs & { selection: SubtitleSelection };
 
+type AddAlignmentArgs = MediaFileArgs & { body: AddAlignmentRequest };
+
+type AlignmentArgs = MediaFileArgs & { alignmentId: string };
+
+type TranslationDocumentArgs = MediaFileArgs & {
+  body: TranslationDocumentSelection;
+};
+
 type AnkiConnectArgs = { projectId: string; usesAnkiConnect: boolean };
 
 type AnkiDeletionsClearArgs = {
@@ -162,6 +174,9 @@ const mediaFilePath = ({ projectId, mediaFileId }: MediaFileArgs) =>
 
 const subtitleTracksTag = ({ mediaFileId }: MediaFileArgs) =>
   [{ type: "SubtitleTracks", id: mediaFileId }] as const;
+
+const alignmentsTag = ({ mediaFileId }: MediaFileArgs) =>
+  [{ type: "Alignments", id: mediaFileId }] as const;
 
 /**
  * Puts a media file the server added into the project's list.
@@ -266,6 +281,7 @@ export const backendApi = createApi({
     "Flashcards",
     "AnkiPendingDeletions",
     "SubtitleTracks",
+    "Alignments",
     "Dictionaries",
     "ConversionCache",
   ],
@@ -434,11 +450,13 @@ export const backendApi = createApi({
         method: "DELETE",
         path: `/projects/${projectId}/media/${mediaFileId}`,
       }),
+      // Removing a file also removes the alignments of other documents that name it.
       invalidatesTags: (_result, _error, { projectId }) => [
         { type: "MediaFiles", id: projectId },
         { type: "Flashcards", id: projectId },
         { type: "Projects", id: projectId },
         "Projects",
+        "Alignments",
       ],
     }),
     getMediaTracks: build.query<TracksResponse, MediaFileArgs>({
@@ -574,6 +592,40 @@ export const backendApi = createApi({
         await queryFulfilled.catch(patch.undo);
       },
       invalidatesTags: (_result, _error, args) => subtitleTracksTag(args),
+    }),
+    /** A document's alignments with its audio and its translation, newest first. */
+    listAlignments: build.query<AlignmentsResponse, MediaFileArgs>({
+      query: (args) => ({
+        method: "GET",
+        path: `${mediaFilePath(args)}/alignments`,
+      }),
+      providesTags: (_result, _error, args) => alignmentsTag(args),
+    }),
+    addAlignment: build.mutation<Alignment, AddAlignmentArgs>({
+      query: ({ body, ...args }) => ({
+        method: "POST",
+        path: `${mediaFilePath(args)}/alignments`,
+        body: { kind: "json", value: body },
+      }),
+      invalidatesTags: (_result, _error, args) => alignmentsTag(args),
+    }),
+    removeAlignment: build.mutation<void, AlignmentArgs>({
+      query: ({ alignmentId, ...args }) => ({
+        method: "DELETE",
+        path: `${mediaFilePath(args)}/alignments/${encodeURIComponent(alignmentId)}`,
+      }),
+      invalidatesTags: (_result, _error, args) => alignmentsTag(args),
+    }),
+    /** Pairs a document with the translation it is read beside, before the two are aligned, or clears the pairing. */
+    setTranslationDocument: build.mutation<MediaFile, TranslationDocumentArgs>({
+      query: ({ body, ...args }) => ({
+        method: "PUT",
+        path: `${mediaFilePath(args)}/translation-document`,
+        body: { kind: "json", value: body },
+      }),
+      invalidatesTags: (_result, _error, { projectId }) => [
+        { type: "MediaFiles", id: projectId },
+      ],
     }),
     getConversionCacheStatus: build.query<ConversionCacheStatus, void>({
       query: () => ({ method: "GET", path: "/conversion-cache" }),
@@ -859,6 +911,10 @@ export const {
   useListEmbeddedSubtitleTracksQuery,
   useListSubtitleTracksQuery,
   useGetSubtitleCuesQuery,
+  useListAlignmentsQuery,
+  useAddAlignmentMutation,
+  useRemoveAlignmentMutation,
+  useSetTranslationDocumentMutation,
   useGetConversionCacheStatusQuery,
   useOpenBookQuery,
   useLicenseNoticesQuery,

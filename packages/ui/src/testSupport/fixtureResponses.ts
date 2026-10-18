@@ -101,6 +101,7 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       created_at_ms: 1767225600000,
       track_selection_json: null,
       origin: null,
+      translation_media_file_id: null,
     },
     {
       id: "m2",
@@ -114,6 +115,7 @@ export const fixtureMediaFiles: ListMediaFilesResponse = {
       created_at_ms: 1767312000000,
       track_selection_json: null,
       origin: null,
+      translation_media_file_id: null,
     },
   ],
 };

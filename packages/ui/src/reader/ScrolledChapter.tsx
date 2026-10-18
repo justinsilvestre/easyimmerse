@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
 import { firstIndexWhere } from "./firstIndexWhere.ts";
 import { paragraphAt, paragraphsOf } from "./pagePositions.ts";
 import type { ReaderLocation } from "./readingProgress.ts";
-import { characterRect } from "./textOffsets.ts";
+import { characterRect, paragraphTextOf } from "./textOffsets.ts";
 import { readerViewportAttribute } from "./useParagraphsNearView.ts";
 
 /** The scroll distance that reveals or hides the toolbar. */
@@ -139,7 +139,7 @@ function locationAtTop(
   const paragraph = paragraphs[paragraphIndex];
   const offset = paragraph
     ? firstIndexWhere(
-        paragraph.textContent?.length ?? 0,
+        paragraphTextOf(paragraph).length,
         (at) => (characterRect(paragraph, at)?.bottom ?? 0) > top,
       )
     : 0;

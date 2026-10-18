@@ -181,6 +181,7 @@ export {
   selectDialog,
   selectPathPlayback,
 } from "./screen/mediaScreen/playbackSelectors.ts";
+export { selectOpenPlayedMediaFile } from "./screen/mediaScreen/playedMediaFile.ts";
 export type { BufferedRange } from "./screen/mediaScreen/playerState.ts";
 export { selectShownCue } from "./screen/mediaScreen/selectShownCue.ts";
 export { selectSourceMedia } from "./screen/mediaScreen/sourceMedia/sourceMediaSelectors.ts";
@@ -199,12 +200,19 @@ export {
 } from "./screen/mediaScreen/waveformWindowPolicy.ts";
 export type { MediaImportSource } from "./screen/projectScreen/mediaImportWizard.ts";
 export { selectMediaImport } from "./screen/projectScreen/selectMediaImport.ts";
+export { selectReaderAudioMediaFileId } from "./screen/readerScreen/readerAudioSelectors.ts";
 export type { ReaderScreenAction } from "./screen/readerScreen/readerScreenActions.ts";
-export { selectReaderScreen } from "./screen/readerScreen/readerScreenSelectors.ts";
+export {
+  isReaderPaged,
+  selectReaderScreen,
+  shownReaderViewMode,
+} from "./screen/readerScreen/readerScreenSelectors.ts";
 export type {
   PageInfo,
   ReaderPanel,
   ReaderScreenState,
+  ReaderTranslationStatus,
+  ReaderViewMode,
 } from "./screen/readerScreen/readerScreenState.ts";
 export { initialReaderScreen } from "./screen/readerScreen/readerScreenState.ts";
 export {

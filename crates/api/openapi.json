@@ -3358,6 +3358,252 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/alignments": {
+      "get": {
+        "tags": [
+          "alignments"
+        ],
+        "operationId": "listAlignments",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id of the document",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The document's alignments, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlignmentsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "alignments"
+        ],
+        "summary": "Adds an alignment to a document. The audio file or translation it names must be another\nmedia file of the same project. Spans are not checked against the documents.",
+        "operationId": "addAlignment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id of the document",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddAlignmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "The added alignment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Alignment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A span or segment ends before it starts, a span's quote is not as long as the span, a translation link has no spans on either side, or the counterpart is not another media file of the project of the kind the alignment needs: a video or an audio file for an audio alignment, a document for a translation alignment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
+    "/projects/{id}/media/{media_id}/alignments/{alignment_id}": {
+      "delete": {
+        "tags": [
+          "alignments"
+        ],
+        "operationId": "removeAlignment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id of the document",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "alignment_id",
+            "in": "path",
+            "description": "The alignment id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The alignment was removed"
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project, or no such alignment of it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/clip": {
       "get": {
         "tags": [
@@ -4900,6 +5146,102 @@
         ]
       }
     },
+    "/projects/{id}/media/{media_id}/translation-document": {
+      "put": {
+        "tags": [
+          "alignments"
+        ],
+        "summary": "Pairs a document with the translation it is read beside, before the two are aligned,\nor clears the pairing.",
+        "operationId": "setTranslationDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The project id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "description": "The media file id of the document",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslationDocumentSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The document's media file with the pairing saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaFile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The translation is not another document of the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such media file in the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "421": {
+            "description": "Unexpected Host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer_token": []
+          }
+        ]
+      }
+    },
     "/projects/{id}/media/{media_id}/waveform": {
       "get": {
         "tags": [
@@ -5186,6 +5528,24 @@
   },
   "components": {
     "schemas": {
+      "AddAlignmentRequest": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/AlignmentContent"
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What produced the alignment: a plugin name, or `cloud`. Null for an alignment added\nfrom a file."
+          }
+        }
+      },
       "AddMediaFileRequest": {
         "type": "object",
         "required": [
@@ -5237,6 +5597,120 @@
           },
           "source": {
             "$ref": "#/components/schemas/TextSource"
+          }
+        }
+      },
+      "Alignment": {
+        "type": "object",
+        "description": "A saved alignment of a document.",
+        "required": [
+          "id",
+          "media_file_id",
+          "created_at_ms",
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/AlignmentContent"
+          },
+          "created_at_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds since the Unix epoch.",
+            "minimum": 0
+          },
+          "id": {
+            "$ref": "#/components/schemas/AlignmentId"
+          },
+          "media_file_id": {
+            "$ref": "#/components/schemas/MediaFileId",
+            "description": "The document the alignment belongs to. Its counterpart is named inside `content`."
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What produced the alignment: a plugin name, or `cloud`. Null for an alignment added\nfrom a file."
+          }
+        }
+      },
+      "AlignmentContent": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "The document lined up with an audio file that reads it aloud.",
+            "required": [
+              "audio_media_file_id",
+              "segments",
+              "kind"
+            ],
+            "properties": {
+              "audio_media_file_id": {
+                "$ref": "#/components/schemas/MediaFileId",
+                "description": "The media file of the audio."
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "audio"
+                ]
+              },
+              "segments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TimedSpan"
+                },
+                "description": "Sorted by their span's position in the document and by time, usually one per\nsentence. Text with no segment is never highlighted."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The document lined up with another document of the project that translates it.",
+            "required": [
+              "translation_media_file_id",
+              "links",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "translation"
+                ]
+              },
+              "links": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TranslationLink"
+                },
+                "description": "Sorted by the position of their first document span; links with no document span\nare sorted by their first translation span."
+              },
+              "translation_media_file_id": {
+                "$ref": "#/components/schemas/MediaFileId",
+                "description": "The media file of the translation document."
+              }
+            }
+          }
+        ],
+        "description": "What a document is aligned with, and how."
+      },
+      "AlignmentId": {
+        "type": "string"
+      },
+      "AlignmentsResponse": {
+        "type": "object",
+        "required": [
+          "alignments"
+        ],
+        "properties": {
+          "alignments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Alignment"
+            },
+            "description": "The document's alignments, newest first."
           }
         }
       },
@@ -5811,6 +6285,27 @@
           }
         }
       },
+      "ChapterProvenance": {
+        "type": "object",
+        "description": "Where the paragraphs of one chapter came from.",
+        "required": [
+          "href",
+          "paragraphs"
+        ],
+        "properties": {
+          "href": {
+            "type": "string",
+            "description": "The path of the chapter's content document inside the EPUB archive: the manifest\nitem's href resolved against the package document's directory and percent-decoded,\nas in `OEBPS/chapter1.xhtml`."
+          },
+          "paragraphs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParagraphProvenance"
+            },
+            "description": "One per entry of the chapter's `paragraphs`, in the same order."
+          }
+        }
+      },
       "ColumnRole": {
         "type": "string",
         "description": "What a column of a table holds, as a person choosing the columns of a table sees it.",
@@ -6335,6 +6830,17 @@
               "null"
             ]
           },
+          "provenance": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DocumentProvenance",
+                "description": "Where each paragraph came from in the source file, for formats that address their text\nby element ids (EPUB). Absent for plain text."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "title": {
             "type": "string"
           }
@@ -6346,6 +6852,22 @@
           "epub",
           "plain_text"
         ]
+      },
+      "DocumentProvenance": {
+        "type": "object",
+        "description": "Where the paragraphs of a parsed EPUB came from, so that text addressed by element id\n(as media overlays address it) can be turned into positions in the parsed document.",
+        "required": [
+          "chapters"
+        ],
+        "properties": {
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChapterProvenance"
+            },
+            "description": "One per entry of `Document.chapters`, in the same order."
+          }
+        }
       },
       "EmbeddedSubtitleTracksResponse": {
         "type": "object",
@@ -7062,6 +7584,32 @@
         ],
         "description": "The plugin's answer to an action in its import interface: the next form to show, or the\njob that runs the import."
       },
+      "InlineElementId": {
+        "type": "object",
+        "description": "An element with an `id` inside a paragraph's block, and the range its text occupies in the\nparagraph after whitespace is collapsed.",
+        "required": [
+          "id",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "end": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The UTF-16 code unit just after the element's text.",
+            "minimum": 0
+          },
+          "id": {
+            "type": "string"
+          },
+          "start": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The first UTF-16 code unit of the element's text within the paragraph. An element whose\ntext is empty after collapsing whitespace has an empty range at its position.",
+            "minimum": 0
+          }
+        }
+      },
       "InstalledPlugin": {
         "type": "object",
         "description": "A plugin the server found in its plugin directory.",
@@ -7376,7 +7924,7 @@
       },
       "MediaFile": {
         "type": "object",
-        "description": "A video or audio file added to a project.",
+        "description": "A video, audio, or document file added to a project.",
         "required": [
           "id",
           "project_id",
@@ -7421,6 +7969,17 @@
               "null"
             ],
             "description": "The user's saved choice of video and audio tracks, as the JSON the media crate\ndefines. Null until the user has chosen."
+          },
+          "translation_media_file_id": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MediaFileId",
+                "description": "The document that translates this one, when this is a document paired with its\ntranslation before the two are aligned. Null otherwise."
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -7647,6 +8206,29 @@
           "id": {
             "$ref": "#/components/schemas/FlashcardId",
             "description": "Thirty-two lowercase hexadecimal digits, as in the ids the app makes."
+          }
+        }
+      },
+      "ParagraphProvenance": {
+        "type": "object",
+        "description": "Where one paragraph came from in its content document.",
+        "required": [
+          "inline_ids"
+        ],
+        "properties": {
+          "element_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The `id` attribute of the block element the paragraph was extracted from."
+          },
+          "inline_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InlineElementId"
+            },
+            "description": "Every element with an `id` inside the block, in document order."
           }
         }
       },
@@ -8644,6 +9226,73 @@
         ],
         "description": "Where the text of a request comes from.\n\nThe `path` variant names a file on the machine running the server. The server resolves\nit, and only for requests authenticated with the per-launch token. The WebAssembly build\nsupports only the `inline` variant."
       },
+      "TextSpan": {
+        "type": "object",
+        "description": "A range of one paragraph of a parsed document.\n\n`chapter_index` and `paragraph_index` count from zero within the parsed document.\n`start` and `end` are offsets into the paragraph string counted in UTF-16 code units,\nexactly as JavaScript's `String` indexes them, and `end` is exclusive. Rust code treats\nthe offsets as opaque numbers and never slices paragraphs by them. A span never crosses\na paragraph; text that covers several paragraphs is a list of spans.\n\nThe position is only valid for the document as the current parser produces it; `quote`\nis what identifies the passage once the parser changes.",
+        "required": [
+          "chapter_index",
+          "paragraph_index",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "chapter_index": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "end": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The UTF-16 code unit just after the span.",
+            "minimum": 0
+          },
+          "paragraph_index": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "quote": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The text the span covers, as the parser produced it. Optional in the type so that\ntests can write spans tersely, but every provider and importer sets it. The reader\nignores a span whose quote no longer matches the text at its position."
+          },
+          "start": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The first UTF-16 code unit of the span within the paragraph.",
+            "minimum": 0
+          }
+        }
+      },
+      "TimedSpan": {
+        "type": "object",
+        "description": "Text of a document heard between two times of an audio file.",
+        "required": [
+          "span",
+          "start_ms",
+          "end_ms"
+        ],
+        "properties": {
+          "end_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds from the start of the audio file; exclusive.",
+            "minimum": 0
+          },
+          "span": {
+            "$ref": "#/components/schemas/TextSpan"
+          },
+          "start_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Milliseconds from the start of the audio file.",
+            "minimum": 0
+          }
+        }
+      },
       "TimedTextFormat": {
         "type": "string",
         "enum": [
@@ -8851,6 +9500,47 @@
               "null"
             ],
             "description": "The MIME type with codecs to pass to `canPlayType`, or `None` when the file's own bytes\ncannot play in a media element at all."
+          }
+        }
+      },
+      "TranslationDocumentSelection": {
+        "type": "object",
+        "description": "The translation a document is paired with before the two are aligned, so that either\ncan be read on its own.",
+        "properties": {
+          "translation_media_file_id": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MediaFileId",
+                "description": "Null clears the pairing."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "TranslationLink": {
+        "type": "object",
+        "description": "Text of a document paired with the text of its translation that says the same thing.\n\nEither side may hold several spans, for a sentence the translation splits in two or joins\nwith the next, and either side may be empty, for text the translation leaves out or adds,\nbut not both. The spans on each side are sorted and do not overlap.",
+        "required": [
+          "spans",
+          "translation_spans"
+        ],
+        "properties": {
+          "spans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextSpan"
+            },
+            "description": "Spans of the aligned document."
+          },
+          "translation_spans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextSpan"
+            },
+            "description": "Spans of the translation document."
           }
         }
       },

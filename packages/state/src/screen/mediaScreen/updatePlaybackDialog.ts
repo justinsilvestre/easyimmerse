@@ -7,6 +7,7 @@ import { selectMediaScreen } from "./mediaScreenSelectors.ts";
 import type { PathPlayback } from "./pathPlayback.ts";
 import { needsTrackChoice } from "./playbackMethodRules.ts";
 import { playbackRequestIds } from "./playbackRequests.ts";
+import { playedMediaFileOf } from "./playedMediaFile.ts";
 
 type DialogState = ScreenState["dialog"];
 
@@ -63,7 +64,10 @@ function selectOpenPathPlayback(
   const open = selectMediaScreen(app);
   const playback = open?.screen.playback ?? null;
   return open && playback
-    ? { mediaFileId: open.route.mediaFileId, playback }
+    ? {
+        mediaFileId: playedMediaFileOf(open.screen, open.route).mediaFileId,
+        playback,
+      }
     : null;
 }
 

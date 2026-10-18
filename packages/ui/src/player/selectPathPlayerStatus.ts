@@ -1,11 +1,10 @@
-import type { RootState } from "@easyimmerse/state";
 import {
-  mainScreenOf,
+  type RootState,
   selectOpenMethodEntry,
+  selectOpenPlayedMediaFile,
   selectOpenTracksEntry,
   selectPathPlayback,
   selectPreference,
-  selectRoute,
   selectServerConfig,
 } from "@easyimmerse/state";
 import { createSelector } from "reselect";
@@ -13,24 +12,35 @@ import { derivePlayerStatus } from "./derivePlayerStatus.ts";
 import { loadingPlayback } from "./PlayerStatus.ts";
 
 /**
- * Returns what the player shows for the open file on the server's disk,
+ * Returns what the player shows for the file on the server's disk that the open media screen plays,
  * from the tracks and the playback method that the media screen's update asked for.
+ * In the reader, that file is the audio file the book is aligned with.
  */
 export const selectPathPlayerStatus = createSelector(
   [
     selectServerConfig,
-    selectRoute,
+    (root: RootState) => selectOpenPlayedMediaFile(root.app)?.projectId,
+    (root: RootState) => selectOpenPlayedMediaFile(root.app)?.mediaFileId,
     selectOpenTracksEntry,
     selectOpenMethodEntry,
     selectPathPlayback,
     selectPreference("conversionNoticeDismissed"),
   ],
-  (server, route, tracks, methodEntry, playback, noticeDismissed) => {
-    const file = openFileOf(route);
-    if (file === null) return loadingPlayback;
+  (
+    server,
+    projectId,
+    mediaFileId,
+    tracks,
+    methodEntry,
+    playback,
+    noticeDismissed,
+  ) => {
+    if (projectId === undefined || mediaFileId === undefined)
+      return loadingPlayback;
     return derivePlayerStatus({
       server,
-      ...file,
+      projectId,
+      mediaFileId,
       tracks: tracks?.data,
       tracksError: tracks?.error,
       playback: methodEntry?.data,
@@ -41,9 +51,3 @@ export const selectPathPlayerStatus = createSelector(
     });
   },
 );
-
-function openFileOf(route: RootState["app"]["route"]) {
-  const main = mainScreenOf(route);
-  if (main.screen !== "media") return null;
-  return { projectId: main.projectId, mediaFileId: main.mediaFileId };
-}

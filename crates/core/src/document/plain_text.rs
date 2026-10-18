@@ -14,6 +14,7 @@ pub fn parse_plain_text(text: &str) -> Document {
             title: None,
             paragraphs,
         }],
+        provenance: None,
     }
 }
 
@@ -51,6 +52,11 @@ mod tests {
             parse_plain_text("First one.\n\n\u{feff}Second one.").chapters[0].paragraphs,
             vec!["First one.", "Second one."]
         );
+    }
+
+    #[test]
+    fn records_no_provenance() {
+        assert_eq!(parse_plain_text("Hello.").provenance, None);
     }
 
     #[test]

@@ -41,6 +41,11 @@
 
   --color-highlight: var(--color-amber-200);
   --color-highlight-strong: var(--color-amber-400);
+  --color-highlight-soft: color-mix(
+    in oklab,
+    var(--color-amber-200) 65%,
+    transparent
+  );
   --color-info-fg: var(--color-violet-700);
   --color-info-soft: var(--color-violet-50);
 }
@@ -291,6 +296,11 @@
       transparent
     );
     --color-highlight-strong: var(--color-amber-700);
+    --color-highlight-soft: color-mix(
+      in oklab,
+      var(--color-amber-500) 28%,
+      transparent
+    );
     --color-info-fg: var(--color-violet-300);
     --color-info-soft: color-mix(
       in oklab,
@@ -322,6 +332,11 @@
 
     --color-highlight: var(--color-amber-200);
     --color-highlight-strong: var(--color-amber-400);
+    --color-highlight-soft: color-mix(
+      in oklab,
+      var(--color-amber-200) 65%,
+      transparent
+    );
     --color-info-fg: var(--color-violet-700);
     --color-info-soft: var(--color-violet-50);
   }
@@ -350,6 +365,7 @@
 
     --color-highlight: #f0d488;
     --color-highlight-strong: #ddaa45;
+    --color-highlight-soft: color-mix(in oklab, #f0d488 65%, transparent);
     --color-info-fg: var(--color-violet-700);
     --color-info-soft: var(--color-violet-50);
   }
@@ -382,4 +398,15 @@
 ::highlight(reader-word) {
   background-color: var(--color-accent-soft);
   color: var(--color-accent-fg);
+}
+
+/*
+ * The sentence being spoken while the audio a book is aligned with plays, drawn the same way.
+ * A softer shade of the search marks' color keeps it apart from the looked-up word, which is drawn over it.
+ * The text color is set with the background, since some browsers take both from the root rather than from the reader's theme,
+ * and the two then still come from the same theme.
+ */
+::highlight(reader-spoken) {
+  background-color: var(--color-highlight-soft);
+  color: var(--color-fg);
 }

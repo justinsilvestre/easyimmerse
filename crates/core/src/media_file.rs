@@ -12,7 +12,7 @@ use crate::providers::media_source::MediaLocator;
 #[ts(export)]
 pub struct MediaFileId(pub String);
 
-/// A video or audio file added to a project.
+/// A video, audio, or document file added to a project.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS, ToSchema)]
 #[ts(export)]
 pub struct MediaFile {
@@ -28,6 +28,9 @@ pub struct MediaFile {
     /// The user's saved choice of video and audio tracks, as the JSON the media crate
     /// defines. Null until the user has chosen.
     pub track_selection_json: Option<String>,
+    /// The document that translates this one, when this is a document paired with its
+    /// translation before the two are aligned. Null otherwise.
+    pub translation_media_file_id: Option<MediaFileId>,
 }
 
 /// Where the bytes of a media file come from.
@@ -59,9 +62,37 @@ pub struct MediaOrigin {
     pub locator: MediaLocator,
 }
 
+/// The endings of the names of documents, which open in the reader: ebooks and text files.
+/// The client tells documents apart by the same endings.
+const DOCUMENT_EXTENSIONS: [&str; 2] = [".epub", ".txt"];
+
+/// Tells from its name whether a media file is a document, an ebook or a text file, rather
+/// than a video or an audio file.
+pub fn is_document_file_name(name: &str) -> bool {
+    let name = name.to_ascii_lowercase();
+    DOCUMENT_EXTENSIONS
+        .iter()
+        .any(|extension| name.ends_with(extension))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tells_that_an_ebook_is_a_document() {
+        assert!(is_document_file_name("Die Verwandlung.EPUB"));
+    }
+
+    #[test]
+    fn tells_that_a_text_file_is_a_document() {
+        assert!(is_document_file_name("translation.txt"));
+    }
+
+    #[test]
+    fn tells_that_an_audio_file_is_not_a_document() {
+        assert!(!is_document_file_name("book.mp3"));
+    }
 
     #[test]
     fn tags_a_path_source_with_its_kind() {

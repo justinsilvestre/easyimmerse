@@ -5,7 +5,7 @@ import type { MediaOrigin } from "./MediaOrigin";
 import type { ProjectId } from "./ProjectId";
 
 /**
- * A video or audio file added to a project.
+ * A video, audio, or document file added to a project.
  */
 export type MediaFile = { id: MediaFileId, project_id: ProjectId, 
 /**
@@ -24,4 +24,9 @@ created_at_ms: number,
  * The user's saved choice of video and audio tracks, as the JSON the media crate
  * defines. Null until the user has chosen.
  */
-track_selection_json: string | null, };
+track_selection_json: string | null, 
+/**
+ * The document that translates this one, when this is a document paired with its
+ * translation before the two are aligned. Null otherwise.
+ */
+translation_media_file_id: MediaFileId | null, };

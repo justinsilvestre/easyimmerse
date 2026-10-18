@@ -10,7 +10,7 @@ use crate::stored_integer::{read_unsigned, to_stored_integer};
 
 const MEDIA_FILE_COLUMNS: &str = "id, project_id, name, source_kind, source_path, browser_file_size, \
      browser_file_last_modified_ms, created_at_ms, track_selection_json, origin_plugin, \
-     origin_locator";
+     origin_locator, translation_media_file_id";
 
 /// Lists a project's media files, oldest first.
 pub fn list_media_files(
@@ -53,6 +53,7 @@ pub fn add_media_file(
         origin: None,
         created_at_ms: now_ms(),
         track_selection_json: None,
+        translation_media_file_id: None,
     };
     insert_media_file(conn, &media_file)?;
     Ok(media_file)
@@ -69,6 +70,30 @@ pub fn set_media_file_origin(
         params![id.0, origin.plugin, origin.locator.0],
     )?;
     ensure_one_row_changed(updated, id)
+}
+
+/// Pairs a document with the translation it is read beside; `None` clears the pairing.
+/// The translation must be another media file of the same project.
+pub fn set_translation_document(
+    conn: &Connection,
+    id: &MediaFileId,
+    translation_media_file_id: Option<&MediaFileId>,
+) -> Result<(), StorageError> {
+    let media_file = get_media_file(conn, id)?;
+    if let Some(translation_id) = translation_media_file_id {
+        if translation_id == id {
+            return Err(StorageError::PairedWithItself(id.0.clone()));
+        }
+        ensure_media_file_in_project(conn, &media_file.project_id, translation_id)?;
+    }
+    conn.execute(
+        "UPDATE media_files SET translation_media_file_id = ?2 WHERE id = ?1",
+        params![
+            id.0,
+            translation_media_file_id.map(|translation_id| &translation_id.0)
+        ],
+    )?;
+    Ok(())
 }
 
 pub fn remove_media_file(conn: &Connection, id: &MediaFileId) -> Result<(), StorageError> {
@@ -123,7 +148,7 @@ fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), St
     conn.execute(
         &format!(
             "INSERT INTO media_files ({MEDIA_FILE_COLUMNS}) \
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)"
         ),
         params![
             media_file.id.0,
@@ -137,6 +162,10 @@ fn insert_media_file(conn: &Connection, media_file: &MediaFile) -> Result<(), St
             media_file.track_selection_json,
             media_file.origin.as_ref().map(|origin| &origin.plugin),
             media_file.origin.as_ref().map(|origin| &origin.locator.0),
+            media_file
+                .translation_media_file_id
+                .as_ref()
+                .map(|id| &id.0),
         ],
     )?;
     Ok(())
@@ -168,6 +197,7 @@ fn read_media_file(row: &Row) -> rusqlite::Result<MediaFile> {
         origin: read_origin(row)?,
         created_at_ms: read_unsigned(row, 7)?,
         track_selection_json: row.get(8)?,
+        translation_media_file_id: row.get::<_, Option<String>>(11)?.map(MediaFileId),
     })
 }
 

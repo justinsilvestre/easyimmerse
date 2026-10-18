@@ -1,3 +1,4 @@
+pub mod alignments;
 pub mod anki;
 pub mod anki_exported;
 pub mod anki_package;

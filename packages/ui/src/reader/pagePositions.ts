@@ -5,6 +5,7 @@ import {
   characterRect,
   paragraphAttribute,
   paragraphIndexOf,
+  paragraphTextOf,
 } from "./textOffsets.ts";
 
 /**
@@ -44,7 +45,7 @@ export function locationOfPage(
   });
   const paragraph = paragraphs[position];
   if (!paragraph) return { chapterIndex, paragraphIndex: 0, offset: 0 };
-  const offset = firstIndexWhere(paragraph.textContent?.length ?? 0, (at) => {
+  const offset = firstIndexWhere(paragraphTextOf(paragraph).length, (at) => {
     const rect = characterRect(paragraph, at);
     return rect !== null && pageOf(text, rect.left) >= page;
   });

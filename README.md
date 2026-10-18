@@ -238,7 +238,7 @@ Notes on the internals of individual parts live beside them:
 - [packages/wasm/README.md](packages/wasm/README.md): the offline WebAssembly package and its build.
 - [fixtures/README.md](fixtures/README.md): the sample files shared by every layer's tests.
 - [plugins/plugin-manifest.md](plugins/plugin-manifest.md): the `plugin.toml` format of the example plugins.
-- [docs/](docs/): the product documentation: overview, user stories, UX refinements, and bug reports.
+- [docs/](docs/): the product documentation: overview, user stories, UX refinements, bug reports, and the [alignment data](docs/alignment-data.md) format.
 
 ## License
 

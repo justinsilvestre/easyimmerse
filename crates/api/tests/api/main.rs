@@ -1,3 +1,4 @@
+mod alignments;
 mod anki;
 mod auth;
 mod dictionaries;

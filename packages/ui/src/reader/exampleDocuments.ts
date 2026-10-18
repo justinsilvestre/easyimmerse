@@ -1,5 +1,11 @@
 import verwandlungText from "@easyimmerse/fixtures/die-verwandlung.txt?raw";
-import type { Document } from "@easyimmerse/types";
+import translationText from "@easyimmerse/fixtures/sample-translation.txt?raw";
+import translationAlignmentJson from "@easyimmerse/fixtures/sample-translation-alignment.json?raw";
+import type {
+  AddAlignmentRequest,
+  Alignment,
+  Document,
+} from "@easyimmerse/types";
 
 const partHeading = /^(I{1,3})\.$/;
 
@@ -46,6 +52,47 @@ export const exampleShortBook: Document = {
     },
   ],
 };
+
+/**
+ * The Spanish translation of the small EPUB fixture as the plain-text parser returns it:
+ * one untitled chapter, whose paragraphs include the chapter titles.
+ */
+export const exampleShortBookTranslation: Document = {
+  title: "",
+  language: null,
+  chapters: [
+    {
+      title: null,
+      paragraphs: translationText
+        .split(/\n\s*\n/)
+        .map((block) => block.trim())
+        .filter((block) => block !== ""),
+    },
+  ],
+};
+
+/**
+ * The fixture alignment of the small EPUB fixture with its Spanish translation, one link per sentence,
+ * saved for the book `mediaFileId` with its translation's media file `translationMediaFileId`.
+ */
+export function exampleShortBookAlignment(
+  mediaFileId: string,
+  translationMediaFileId: string,
+): Alignment {
+  const { provider, content } = JSON.parse(
+    translationAlignmentJson,
+  ) as AddAlignmentRequest;
+  return {
+    id: "a1",
+    media_file_id: mediaFileId,
+    provider,
+    created_at_ms: 0,
+    content:
+      content.kind === "translation"
+        ? { ...content, translation_media_file_id: translationMediaFileId }
+        : content,
+  };
+}
 
 function splitIntoParts(text: string): Document["chapters"] {
   const chapters: Document["chapters"] = [];

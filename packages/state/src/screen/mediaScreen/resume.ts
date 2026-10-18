@@ -1,7 +1,7 @@
 import type { AppAction } from "../../app/appAction.ts";
 import type { AppState } from "../../app/appState.ts";
 import { updated } from "../../app/updated.ts";
-import { selectShownMediaFile } from "./mediaScreenSelectors.ts";
+import { selectPlayedMediaFile } from "./playedMediaFile.ts";
 import type { PlayingState } from "./playingState.ts";
 import { seekTo } from "./seekTo.ts";
 
@@ -11,7 +11,7 @@ const resumeMarginMs = 5_000;
 type PositionLoaded = Extract<AppAction, { type: "playbackPositionLoaded" }>;
 
 /**
- * Takes the open file's stored position, the first time it loads during this opening, and seeks to it once the player knows the duration.
+ * Takes the played file's stored position, the first time it loads during this opening, and seeks to it once the player knows the duration.
  * The position is used once per opening.
  */
 export function positionLoaded(
@@ -19,7 +19,7 @@ export function positionLoaded(
   action: PositionLoaded,
   app: Pick<AppState, "route" | "screen" | "storedPlaces">,
 ) {
-  const { mediaFileId } = selectShownMediaFile(app);
+  const { mediaFileId } = selectPlayedMediaFile(app);
   return action.mediaFileId === mediaFileId &&
     app.storedPlaces.playback[mediaFileId] === undefined
     ? resume(

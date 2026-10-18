@@ -6,6 +6,7 @@ import {
   selectIsReaderPaged,
   selectIsReaderPanelOpen,
   selectReaderScreen,
+  selectShownReaderViewMode,
 } from "./readerScreenSelectors.ts";
 import { initialReaderScreen } from "./readerScreenState.ts";
 
@@ -61,5 +62,70 @@ describe("selectIsReaderPaged", () => {
 
   it("tells that the text is paged when the stored preferences cannot be read", () => {
     expect(selectIsReaderPaged(withStored("{"))).toBe(true);
+  });
+
+  it("tells that the parallel view scrolls in the paged layout", () => {
+    const app = stateAfter(
+      openBook,
+      actions.readerTranslationStatusReported("aligned"),
+      actions.readerViewModeChosen("parallel"),
+      actions.preferencesLoaded({
+        readerPreferences: JSON.stringify({ layout: "pages" }),
+      }),
+    );
+    expect(selectIsReaderPaged(app)).toBe(false);
+  });
+
+  it("tells that the text is paged where the parallel view is chosen but the book is shown alone", () => {
+    const app = stateAfter(
+      openBook,
+      actions.readerTranslationStatusReported("unaligned"),
+      actions.readerViewModeChosen("parallel"),
+      actions.preferencesLoaded({
+        readerPreferences: JSON.stringify({ layout: "pages" }),
+      }),
+    );
+    expect(selectIsReaderPaged(app)).toBe(true);
+  });
+});
+
+describe("selectShownReaderViewMode", () => {
+  it("shows the book alone while no media screen is open", () => {
+    expect(selectShownReaderViewMode(stateAfter())).toBe("target");
+  });
+
+  it("shows the chosen view once the translation it needs is ready", () => {
+    const app = stateAfter(
+      openBook,
+      actions.readerTranslationStatusReported("aligned"),
+      actions.readerViewModeChosen("interlinear"),
+    );
+    expect(selectShownReaderViewMode(app)).toBe("interlinear");
+  });
+
+  it("shows the book alone while the chosen translation has not loaded", () => {
+    const app = stateAfter(
+      openBook,
+      actions.readerViewModeChosen("translation"),
+    );
+    expect(selectShownReaderViewMode(app)).toBe("target");
+  });
+
+  it("shows the translation alone once it has loaded unaligned", () => {
+    const app = stateAfter(
+      openBook,
+      actions.readerTranslationStatusReported("unaligned"),
+      actions.readerViewModeChosen("translation"),
+    );
+    expect(selectShownReaderViewMode(app)).toBe("translation");
+  });
+
+  it("shows the book alone where a view of both texts is chosen but the translation is not aligned", () => {
+    const app = stateAfter(
+      openBook,
+      actions.readerTranslationStatusReported("unaligned"),
+      actions.readerViewModeChosen("interlinear"),
+    );
+    expect(selectShownReaderViewMode(app)).toBe("target");
   });
 });

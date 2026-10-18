@@ -3,6 +3,7 @@ export {
   hasProbedPictures,
   selectCachedLookup,
   selectCachedWaveformWindow,
+  useAddAlignmentMutation,
   useCaptureFrameQuery,
   useChoosePlaybackMethodQuery,
   useCreateFlashcardMutation,
@@ -13,6 +14,7 @@ export {
   useGetSubtitleCuesQuery,
   useLazyLookupTextQuery,
   useLicenseNoticesQuery,
+  useListAlignmentsQuery,
   useListAnkiPendingDeletionsQuery,
   useListDictionariesQuery,
   useListEmbeddedSubtitleTracksQuery,
@@ -24,6 +26,8 @@ export {
   useLookupTextQuery,
   useOpenBookQuery,
   useProbePicturesQuery,
+  useRemoveAlignmentMutation,
+  useSetTranslationDocumentMutation,
   useUpdateFlashcardMutation,
 } from "./backendApi.ts";
 export type {

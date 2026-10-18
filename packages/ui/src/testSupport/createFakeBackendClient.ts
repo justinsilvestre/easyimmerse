@@ -3,6 +3,12 @@ import type {
   BackendError,
   BackendRequest,
 } from "@easyimmerse/backend";
+import type {
+  AlignmentsResponse,
+  ListMediaFilesResponse,
+  MediaFile,
+  TranslationDocumentSelection,
+} from "@easyimmerse/types";
 
 /** A canned response, or a function computing one from the request, possibly as a promise. */
 export type FakeResponse = unknown | ((request: BackendRequest) => unknown);
@@ -29,7 +35,11 @@ export type FakeRoute = [
 
 /**
  * Builds a client that answers each `METHOD /path` with a canned response and records every request.
- * The routes are tried first, then the exact `METHOD /path` keys. Anything else gets a 404.
+ * The routes are tried first, then the exact `METHOD /path` keys, then the defaults below.
+ * Anything else gets a 404.
+ *
+ * By default a media file has no alignments, and saving its translation document answers the
+ * media file as the canned `GET /projects/{id}/media` lists it, with the translation set.
  */
 export function createFakeBackendClient(
   responses: Record<string, FakeResponse>,
@@ -62,7 +72,48 @@ function findResponse(
   );
   if (route) return { response: route[2] };
   const key = describe(request);
-  return key in responses ? { response: responses[key] } : null;
+  if (key in responses) return { response: responses[key] };
+  const fallback = defaultRoutes(responses).find(
+    ([method, path]) => method === request.method && path.test(request.path),
+  );
+  return fallback ? { response: fallback[2] } : null;
+}
+
+const noAlignments: AlignmentsResponse = { alignments: [] };
+
+function defaultRoutes(
+  responses: Record<string, FakeResponse>,
+): readonly FakeRoute[] {
+  return [
+    ["GET", /^\/projects\/[^/]+\/media\/[^/]+\/alignments$/, noAlignments],
+    [
+      "PUT",
+      /^\/projects\/[^/]+\/media\/[^/]+\/translation-document$/,
+      (request: BackendRequest) => withTranslationDocument(responses, request),
+    ],
+  ];
+}
+
+/** The listed media file a translation-document request names, with the translation it sets, or a 404. */
+function withTranslationDocument(
+  responses: Record<string, FakeResponse>,
+  request: BackendRequest,
+): MediaFile | FakeFailure {
+  const [, , projectId, , mediaFileId] = request.path.split("/");
+  const listed = responses[`GET /projects/${projectId}/media`] as
+    | ListMediaFilesResponse
+    | undefined;
+  const mediaFile = listed?.media_files.find(({ id }) => id === mediaFileId);
+  if (mediaFile === undefined)
+    return fakeFailure({
+      status: 404,
+      message: `No canned media file for ${describe(request)}`,
+    });
+  const selection = request.body?.value as TranslationDocumentSelection;
+  return {
+    ...mediaFile,
+    translation_media_file_id: selection.translation_media_file_id,
+  };
 }
 
 function respond(response: FakeResponse, request: BackendRequest): unknown {

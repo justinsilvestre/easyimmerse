@@ -26,6 +26,8 @@ import { ReaderStatus } from "../reader/ReaderStatus.tsx";
 import { selectNearbySentences } from "../reader/selectNearbySentences.ts";
 import { sentenceWordLookups } from "../reader/sentenceWordLookups.ts";
 import { unwrapHardLineBreaks } from "../reader/unwrapHardLineBreaks.ts";
+import { useBookTranslation } from "../reader/useBookTranslation.tsx";
+import { useReaderAudio } from "../reader/useReaderAudio.tsx";
 import { useReaderKeyBindings } from "../reader/useReaderKeyBindings.ts";
 
 /**
@@ -33,6 +35,9 @@ import { useReaderKeyBindings } from "../reader/useReaderKeyBindings.ts";
  * The book opens where it was last left, in the appearance last chosen.
  * Words are looked up in the dictionary pop-up as in the subtitles, and a flashcard made from one is filled from its lookup, with its sentence as context.
  * The keys work as `selectReaderKeyBinding` in the state package describes.
+ * A book aligned with an audio file plays it from a bar above the progress slider, as `useReaderAudio` describes.
+ * Another document of the project can be paired with the book as its translation, and read alone,
+ * or once the two are aligned, together with the book.
  */
 export function ReaderScreen({
   project,
@@ -73,8 +78,11 @@ export function ReaderScreen({
     return <ReaderStatus title={title} onBack={close} />;
   return (
     <BookReader
+      // Each book starts afresh, as the reader's state in the store does when a book opens.
+      key={mediaFile.id}
       project={project}
       mediaFile={mediaFile}
+      mediaFiles={data?.media_files ?? [mediaFile]}
       document={book.currentData}
     />
   );
@@ -83,10 +91,13 @@ export function ReaderScreen({
 function BookReader({
   project,
   mediaFile,
+  mediaFiles,
   document,
 }: {
   project: Project;
   mediaFile: MediaFile;
+  /** The project's media files, among which the book's translation is chosen. */
+  mediaFiles: readonly MediaFile[];
   document: Document;
 }) {
   const dispatch = useAppDispatch();
@@ -100,16 +111,21 @@ function BookReader({
     target: settings.target_language,
     translation: settings.translation_language,
   };
-  /** The draft of a flashcard for a word, with its sentence as context. */
+  const text = useMemo(() => unwrapHardLineBreaks(document), [document]);
+  const bilingual = useBookTranslation(project, mediaFile, mediaFiles, text);
+  /** The draft of a flashcard for a word, with its sentence as context, translated where the book is aligned with its translation. */
   const draftFor = (word: string, place: LookupPlace | null) =>
     draftFromText({
       word,
       sentence: place?.source.kind === "text" ? place.source.sentence : "",
+      sentenceTranslation:
+        place?.source.kind === "text"
+          ? bilingual.passageTranslationAt(place.source.location)
+          : "",
       mediaFile,
       settings,
     });
   const lookup = useReaderLookup(languages, draftFor);
-  const text = useMemo(() => unwrapHardLineBreaks(document), [document]);
   const textLanguage = document.language ?? settings.target_language;
   const nearbySentences = useAppSelector((state) =>
     selectNearbySentences(state, text, mediaFile.id, textLanguage),
@@ -117,6 +133,7 @@ function BookReader({
   useLookupPrefetch(languages.target, nearbySentences, (sentence) =>
     sentenceWordLookups(sentence, textLanguage),
   );
+  const audio = useReaderAudio(project.id, mediaFile.id, text);
   return (
     <ConnectedReaderView
       mediaFileId={mediaFile.id}
@@ -144,6 +161,8 @@ function BookReader({
       sidePanel={
         form && <ConnectedFlashcardEditor form={form} languages={languages} />
       }
+      audio={audio}
+      translation={bilingual.translation}
     />
   );
 }

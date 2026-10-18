@@ -27,10 +27,13 @@ const themeSwatches: Record<Theme, { label: string; className: string }> = {
 /** The controls for how the text looks: theme, font, size, spacing, and layout. */
 export function AppearancePanel({
   preferences,
+  layoutNote,
   onChange,
   onClose,
 }: {
   preferences: ReaderPreferences;
+  /** Shown under the layout choice, such as why the view shown scrolls whatever the choice. */
+  layoutNote?: string;
   onChange: (preferences: ReaderPreferences) => void;
   onClose: () => void;
 }) {
@@ -125,6 +128,9 @@ export function AppearancePanel({
           ]}
           onChange={(layout) => set({ layout })}
         />
+        {layoutNote && (
+          <p className="-mt-2 text-xs text-fg-muted">{layoutNote}</p>
+        )}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"

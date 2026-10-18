@@ -1,10 +1,12 @@
 import { updated } from "../app/updated.ts";
 import type { OpenMediaScreen } from "../screen/mediaScreen/mediaScreenSelectors.ts";
+import { playedMediaFileOf } from "../screen/mediaScreen/playedMediaFile.ts";
 import type { StoredPlacesState } from "./storedPlacesState.ts";
 
 /**
- * Remembers where playback is in the open media file and saves it, once the player has loaded the file.
- * A book never loads the player, so its position is not saved.
+ * Remembers where playback is in the file the player plays and saves it, once the player has loaded the file.
+ * A book never loads the player itself, so its own position is not saved; the reader's player plays the audio file
+ * the book is aligned with, whose position is saved as the media screen saves it, as `playedMediaFileOf` describes.
  */
 export function savePlayback(
   places: StoredPlacesState,
@@ -12,7 +14,7 @@ export function savePlayback(
   seconds: number,
 ) {
   if (open.screen.playing.player.durationSeconds === 0) return updated(places);
-  const { mediaFileId } = open.route;
+  const { mediaFileId } = playedMediaFileOf(open.screen, open.route);
   const ms = seconds * 1000;
   return updated(
     { ...places, playback: { ...places.playback, [mediaFileId]: ms } },

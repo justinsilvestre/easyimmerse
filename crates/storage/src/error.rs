@@ -34,6 +34,10 @@ pub enum StorageError {
     FlashcardIdTaken(String),
     #[error("no subtitle track has the id {0:?}")]
     SubtitleTrackNotFound(String),
+    #[error("no alignment has the id {0:?}")]
+    AlignmentNotFound(String),
+    #[error("the media file {0:?} cannot be aligned or paired with itself")]
+    PairedWithItself(String),
 }
 
 impl From<DictionaryError> for StorageError {

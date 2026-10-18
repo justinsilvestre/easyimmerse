@@ -367,6 +367,7 @@ mod tests {
             origin: None,
             created_at_ms: 0,
             track_selection_json: None,
+            translation_media_file_id: None,
         }
     }
 
