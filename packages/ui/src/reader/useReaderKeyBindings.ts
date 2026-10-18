@@ -20,16 +20,18 @@ type ReaderKeyHandlers = {
 
 /**
  * Binds the reader's keys, as `selectReaderKeyBinding` in the state package describes,
- * and returns the controls to give the reader view, through which the keys turn its pages and focus its search field.
+ * and returns the controls to give the reader view, through which the keys turn its pages, move its lookup cursor
+ * and focus its search field.
  */
 export function useReaderKeyBindings(
   handlers: ReaderKeyHandlers = {},
 ): ReaderControls {
   const dispatch = useAppDispatch();
   const controls = useReaderControls();
-  const { pageTurner, searchInput } = controls;
+  const { pageTurner, searchInput, cursorStepper } = controls;
   useKeyBindings(selectReaderKeyBinding, {
     turnPage: ({ direction }) => pageTurner.current?.[direction](),
+    stepCursor: ({ step }) => cursorStepper.current?.(step),
     openBookSearch: () => {
       dispatch(actions.readerPanelOpened("search"));
       searchInput.current?.focus();

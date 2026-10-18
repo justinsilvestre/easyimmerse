@@ -2,13 +2,19 @@ import { actions, type ChosenWord } from "@easyimmerse/state";
 import type { TextSpan } from "@easyimmerse/types";
 import type { ComponentProps } from "react";
 import { useAppDispatch } from "../hooks/useAppDispatch.ts";
+import { useAppSelector } from "../hooks/useAppSelector.ts";
 import { useNavigate } from "../hooks/useNavigate.ts";
+import {
+  highlightOfCursor,
+  selectReaderCursor,
+} from "../reader/readerCursor.ts";
 import type {
   ReaderWord,
   ReaderWordGestures,
 } from "../reader/useWordPointer.ts";
 import type { DictionaryPopup } from "./DictionaryPopup.tsx";
 import type { LookupPlace } from "./lookupPlace.ts";
+import { matchedLengthAhead } from "./matchedLengthAhead.ts";
 import type { SentenceRowSource } from "./sentenceRowSource.ts";
 import { useWordLookup } from "./useWordLookup.ts";
 import type { WordFlashcards } from "./wordFlashcards.ts";
@@ -25,9 +31,11 @@ export type ReaderSentenceRowSource = SentenceRowSource & {
 
 /**
  * Looks up words of an ebook or text in the dictionary pop-up, with the same gestures as the subtitles' words.
+ * The mouse and the keyboard move the screen's one lookup cursor through the text.
  * A flashcard made from a word is saved at once, with the draft `draftFor` makes, as on the media screen.
  * Returns the gestures for the text's words, the pop-up's props, or null while it is closed,
- * the rectangle of the word the pop-up stands beside, the word it highlights, and the text whose translation its sentence row shows.
+ * the rectangle of the word the pop-up stands beside, the word it highlights, which is the cursor's while the keyboard
+ * placed it and otherwise the pop-up's, and the text whose translation its sentence row shows.
  */
 export function useReaderLookup(
   languages: { target: string; translation: string },
@@ -36,6 +44,7 @@ export function useReaderLookup(
 ) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const cursor = useAppSelector(selectReaderCursor);
   const lookup = useWordLookup(
     languages,
     { draftFor, savesAtOnce: true },
@@ -72,13 +81,15 @@ export function useReaderLookup(
   const occurrence = lookup.activeOccurrence;
   const wordGestures: ReaderWordGestures = {
     onWordClick: (word, input) => lookup.clickWord(chosenFor(word), input),
-    onWordPointed: (word) =>
+    onWordPointed: (word, input) =>
       dispatch(
         word
-          ? actions.lookupCursorMoved(chosenFor(word), "mouse")
-          : actions.lookupCursorLeft("mouse"),
+          ? actions.lookupCursorMoved(chosenFor(word), input)
+          : actions.lookupCursorLeft(input),
       ),
     onWordHover: (word) => dispatch(actions.lookupWordHovered(chosenFor(word))),
+    lookUpMatchedLength: (word) =>
+      matchedLengthAhead(dispatch, lookup.wordOf(word.text, word.lookup).query),
     onWordDoubleClick: (word) => lookup.startFlashcardFor(chosenFor(word)),
     onWordHold: (word) => lookup.holdWord(chosenFor(word)),
   };
@@ -86,16 +97,18 @@ export function useReaderLookup(
     popup,
     wordGestures,
     highlightedWord:
-      occurrence?.source?.kind === "text"
-        ? {
-            word: {
-              text: lookup.shownTerm,
-              location: occurrence.source.location,
-              isUnspaced: occurrence.source.isUnspaced,
-            },
-            matchedLength: occurrence.length,
-          }
-        : undefined,
+      cursor?.input === "keyboard"
+        ? highlightOfCursor(cursor)
+        : occurrence?.source?.kind === "text"
+          ? {
+              word: {
+                text: lookup.shownTerm,
+                location: occurrence.source.location,
+                isUnspaced: occurrence.source.isUnspaced,
+              },
+              matchedLength: occurrence.length,
+            }
+          : undefined,
     /** The text whose translation the pop-up's sentence row shows, highlighted as the sentence the translation covers. */
     highlightedSentence:
       lookup.translatedSource === undefined

@@ -2,6 +2,7 @@ import { useListMediaFilesQuery } from "@easyimmerse/backend";
 import {
   type AppAction,
   actions,
+  type ChosenWord,
   defaultReaderPreferences,
   type ReaderPreferences,
   selectIsReadingLocationLoaded,
@@ -50,6 +51,7 @@ import {
   exampleShortBookTranslation,
 } from "./exampleDocuments.ts";
 import { ReaderAudioBar } from "./ReaderAudioBar.tsx";
+import { highlightOfCursor, selectReaderCursor } from "./readerCursor.ts";
 import { unwrapHardLineBreaks } from "./unwrapHardLineBreaks.ts";
 import { useBookTranslation } from "./useBookTranslation.tsx";
 import { useReaderKeyBindings } from "./useReaderKeyBindings.ts";
@@ -148,6 +150,25 @@ function popupFor(word: string, onClose: () => void) {
   );
 }
 
+/** A word of the story's text as the dictionary lookup chooses it; without dictionaries, the lookup matches nothing. */
+function chosenOf(word: ReaderWord): ChosenWord {
+  const { chapterIndex, paragraphIndex, offset } = word.location;
+  return {
+    word: { term: word.text, query: null },
+    source: {
+      kind: "text",
+      sentence: word.sentence,
+      location: word.location,
+      isUnspaced: word.isUnspaced,
+    },
+    occurrence: {
+      passage: `${chapterIndex}:${paragraphIndex}`,
+      start: offset,
+    },
+    anchor: null,
+  };
+}
+
 /**
  * Keeps the preferences in the story's store and the looked-up word in state, so that the appearance controls,
  * the keys and the dictionary pop-up work in every story.
@@ -155,6 +176,7 @@ function popupFor(word: string, onClose: () => void) {
  * "Ungeziefer" and "fressen" have entries.
  * Escape, L and T act on the store's lookup, so they leave alone a pop-up that the story opened itself;
  * R on the word under the mouse goes through the store.
+ * Tab into the text and the arrow keys move the keyboard's cursor, which the store holds and the reader highlights.
  * The book's translation comes from the fake backend the story's store talks to.
  */
 function StatefulReader(args: ReaderStoryArgs) {
@@ -171,6 +193,7 @@ function StatefulReader(args: ReaderStoryArgs) {
     mediaFiles,
     args.document,
   );
+  const cursor = useAppSelector(selectReaderCursor);
   const controls = useReaderKeyBindings({ playAt: args.audio?.playAt });
   const [word, setWord] = useState<ReaderWord | null>(null);
   const [isInitialLookupOpen, setInitialLookupOpen] = useState(true);
@@ -191,9 +214,24 @@ function StatefulReader(args: ReaderStoryArgs) {
       translation={bilingual.translation}
       lookup={lookup}
       lookupRect={word?.rect}
-      highlightedWord={word ? { word } : undefined}
+      highlightedWord={
+        cursor?.input === "keyboard"
+          ? highlightOfCursor(cursor)
+          : word
+            ? { word }
+            : undefined
+      }
       callbacks={{
         ...args.callbacks,
+        onWordPointed: (pointed, input) => {
+          args.callbacks.onWordPointed?.(pointed, input);
+          if (input === "keyboard")
+            dispatch(
+              pointed
+                ? actions.lookupCursorMoved(chosenOf(pointed), input)
+                : actions.lookupCursorLeft(input),
+            );
+        },
         onWordClick: (clicked, input) => {
           args.callbacks.onWordClick(clicked, input);
           setWord(clicked);
@@ -272,6 +310,35 @@ export const Dark: Story = {
 
 export const Scrolling: Story = {
   decorators: openedWith(storingPreferences({ layout: "scroll" })),
+};
+
+const firstParagraph = exampleNovel.chapters[0]?.paragraphs[0] ?? "";
+const ungezieferOffset = firstParagraph.indexOf("Ungeziefer");
+
+/** The word "Ungeziefer" in the first paragraph of the novel, chosen as the keyboard's cursor chooses a word. */
+const keyboardWord: ChosenWord = {
+  word: { term: "Ungeziefer", query: null },
+  source: {
+    kind: "text",
+    sentence: firstParagraph,
+    location: { chapterIndex: 0, paragraphIndex: 0, offset: ungezieferOffset },
+    isUnspaced: false,
+  },
+  occurrence: { passage: "0:0", start: ungezieferOffset },
+  anchor: null,
+};
+
+/** The keyboard's cursor on a word of the first page, highlighted without a pop-up. */
+export const KeyboardCursorPaged: Story = {
+  decorators: openedWith(actions.lookupCursorMoved(keyboardWord, "keyboard")),
+};
+
+/** The keyboard's cursor on a word of the first paragraph in the scrolling layout. */
+export const KeyboardCursorScrolling: Story = {
+  decorators: openedWith(
+    storingPreferences({ layout: "scroll" }),
+    actions.lookupCursorMoved(keyboardWord, "keyboard"),
+  ),
 };
 
 export const LargeSansSerif: Story = {
