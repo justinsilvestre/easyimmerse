@@ -340,13 +340,13 @@ As a user:
       - interlinear view
       - parallel view
 - when I have opened an ebook, and I also have a translation of it as a separate ebook or text file:
-  - [x] I can choose to combine the two into a bilingual ebook
+  - [ ] I can choose to combine the two into a bilingual ebook
 - when I choose to combine the two ebooks into a bilingual ebook:
   - [ ] I am prompted to choose an alignment provider: the easyImmerse cloud or an installed plugin
   - [ ] I see the progress of the alignment, and can keep using the app in the meantime
   - [ ] the alignment result is saved so I can reopen the bilingual ebook in future sessions
 - when I choose to make a bilingual ebook but no alignment provider is available:
-  - [x] I am told how to set one up, by subscribing or installing a plugin
+  - [ ] I am told how to set one up, by subscribing or installing a plugin
 
 ---
 
